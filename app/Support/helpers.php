@@ -52,6 +52,38 @@ if (!function_exists('asset_url')) {
     }
 }
 
+if (!function_exists('user_media_public_url')) {
+    /**
+     * Résout une photo / bannière utilisateur (chemin relatif uploads/… ou URL absolue http(s)).
+     */
+    function user_media_public_url(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $path) === 1) {
+            return $path;
+        }
+        $base = function_exists('url') ? rtrim(url(''), '/') : '';
+
+        return $base . '/' . ltrim(str_replace('\\', '/', $path), '/');
+    }
+}
+
+if (!function_exists('user_display_initials')) {
+    /**
+     * Initiale(s) de repli pour l’avatar (1 caractère par défaut).
+     */
+    function user_display_initials(string $displayName, int $length = 1): string
+    {
+        $clean = preg_replace('/\s+/u', '', $displayName) ?: 'A';
+        $len = max(1, min(3, $length));
+
+        return mb_strtoupper(mb_substr($clean, 0, $len));
+    }
+}
+
 if (!function_exists('config')) {
     function config(string $key, mixed $default = null): mixed
     {
@@ -286,7 +318,13 @@ if (!function_exists('url')) {
         if ($prefix === '' && isset($_SERVER['SCRIPT_NAME']) && str_contains((string) $_SERVER['SCRIPT_NAME'], '/public/')) {
             $prefix = '/public';
         }
-        $base = $base . $prefix;
+        // Évite /public/public si APP_URL contient déjà le préfixe (erreur de config fréquente).
+        if ($prefix !== '' && ($base === $prefix || str_ends_with($base, $prefix))) {
+            // préfixe déjà présent dans APP_URL
+        } else {
+            $base .= $prefix;
+        }
+
         return $base . ($path ? '/' . ltrim($path, '/') : '');
     }
 }

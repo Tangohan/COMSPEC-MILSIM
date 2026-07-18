@@ -8,7 +8,7 @@ declare(strict_types=1);
  * - $opBoardPublishSourceType : 'event' | 'mission' | 'formation'
  * - $opBoardPublishSourceId : int > 0
  * - $opBoardPublishCsrf : jeton CSRF (chaîne)
- * - $opBoardPublishVariant : 'events_dark' | 'mission' | 'mission_compact' | 'course' (styles d’encart)
+ * - $opBoardPublishVariant : 'events_dark' | 'mission' | 'mission_compact' | 'course' | 'sheets' (styles d’encart)
  */
 $opBoardPublishSourceType = (string) ($opBoardPublishSourceType ?? 'mission');
 $opBoardPublishSourceId = (int) ($opBoardPublishSourceId ?? 0);
@@ -41,6 +41,13 @@ if ($opBoardPublishVariant === 'events_dark'): ?>
                                 <button type="submit" class="flex w-full min-h-[2.5rem] items-center justify-center rounded-xl border border-emerald-400/60 bg-white px-4 py-2 text-xs font-black uppercase tracking-wider text-emerald-900 shadow-sm transition-colors hover:bg-emerald-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">Publier au mur opérationnel</button>
                             </form>
                             <p class="mt-2 text-[10px] leading-snug text-slate-600"><?= htmlspecialchars($opBoardPublishHelp, ENT_QUOTES, 'UTF-8') ?></p>
+<?php elseif ($opBoardPublishVariant === 'sheets'): ?>
+                            <form method="post" action="<?= $action ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= $csrfEsc ?>">
+                                <input type="hidden" name="source_type" value="<?= $typeEsc ?>">
+                                <input type="hidden" name="source_id" value="<?= $opBoardPublishSourceId ?>">
+                                <button type="submit" title="<?= htmlspecialchars($opBoardPublishHelp, ENT_QUOTES, 'UTF-8') ?>">Publier au mur</button>
+                            </form>
 <?php elseif ($opBoardPublishVariant === 'mission_compact'): ?>
 <div class="mt-2 mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
     <form method="post" action="<?= $action ?>" class="inline-block shrink-0">

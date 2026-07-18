@@ -1,0 +1,28 @@
+:root {
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-legal: Manrope, system-ui, sans-serif;
+  --font-legal-display: "Space Grotesk", system-ui, sans-serif;
+
+  /* Display (landing hero, marque) — Inter 900 italic uppercase, tight tracking */
+  --display-weight: 900;
+  --display-tracking: -0.045em;
+  --display-xl: clamp(3.25rem, 14vw, 9.5rem); /* @kind other */
+  --display-lg: clamp(2.5rem, 9vw, 6.5rem); /* @kind other */
+  --display-md: clamp(2rem, 6vw, 4.25rem); /* @kind other */
+
+  /* Kickers / eyebrows */
+  --kicker-size: 0.6875rem;
+  --kicker-tracking: 0.28em;
+  --kicker-weight: 600;
+
+  /* Buttons / labels */
+  --label-tracking: 0.22em;
+  --label-weight: 900;
+
+  /* Body */
+  --body-size: 1.05rem;
+  --body-line: 1.7; /* @kind other */
+  --body-sm-size: 0.875rem;
+}

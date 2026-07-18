@@ -17,65 +17,46 @@ class HubController
 
         $sections = [];
 
-        $sections[] = [
-            'id' => 'actions',
-            'title' => 'Actions du moment',
-            'subtitle' => 'Ce qu’il faut traiter ou consulter en priorité.',
-            'entries' => [
-                [
-                    'label' => 'Centre d’actions',
-                    'url' => url('centre-actions'),
-                    'description' => 'Synthèse des éléments à traiter et liens vers vos files.',
-                    'icon' => 'activity',
-                    'accent' => 'emerald',
-                    'featured' => true,
-                ],
-                [
-                    'label' => 'Boîte de réception',
-                    'url' => url('boite-reception'),
-                    'description' => 'Messages, activité et canaux d’échange.',
-                    'icon' => 'messages',
-                    'accent' => 'sky',
-                ],
+        $priorityEntries = [
+            [
+                'label' => 'Centre d’actions',
+                'url' => url('centre-actions'),
+                'description' => 'Ce qui demande votre attention : notifications, dossiers et files à traiter.',
+                'icon' => 'activity',
+                'accent' => 'emerald',
+                'featured' => true,
+            ],
+            [
+                'label' => 'Tableau de bord',
+                'url' => url('dashboard'),
+                'description' => 'Synthèse du jour : briefing, manœuvres à venir et raccourcis personnels.',
+                'icon' => 'dashboard',
+                'accent' => 'emerald',
+                'featured' => true,
+            ],
+            [
+                'label' => 'Boîte de réception',
+                'url' => url('boite-reception'),
+                'description' => 'Messages, activité récente et canaux d’échange.',
+                'icon' => 'messages',
+                'accent' => 'sky',
             ],
         ];
 
-        $sections[] = [
-            'id' => 'vue-ensemble',
-            'title' => 'Vue d’ensemble',
-            'subtitle' => 'Repères du jour et accès au tableau de bord principal.',
-            'entries' => [
-                [
-                    'label' => 'Briefing',
-                    'url' => url('dashboard'),
-                    'description' => 'Synthèse personnelle, raccourcis et actualités de votre espace.',
-                    'icon' => 'dashboard',
-                    'accent' => 'emerald',
-                    'featured' => true,
-                ],
-                [
-                    'label' => 'Mon activité',
-                    'url' => url('activite'),
-                    'description' => 'Suivi des échanges : forum, courrier et notifications récentes.',
-                    'icon' => 'activity',
-                    'accent' => 'sky',
-                ],
-            ],
-        ];
         $canOpsBoardEdit = $gate->allows('operational.board.edit')
             || $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');
         if ($canOpsBoardEdit) {
-            $sections[0]['entries'][] = [
+            $priorityEntries[] = [
                 'label' => 'Pilotage du mur opérationnel',
                 'url' => url('back-office/tableau-operationnel'),
-                'description' => 'Publication, validation et mise à jour des entrées affichées au mur.',
+                'description' => 'Publier, valider et mettre à jour les informations affichées au mur.',
                 'icon' => 'dashboard',
                 'accent' => 'amber',
             ];
         } elseif ($gate->allows('operational.board.view')) {
-            $sections[0]['entries'][] = [
+            $priorityEntries[] = [
                 'label' => 'Mur opérationnel',
                 'url' => url('tableau-operationnel'),
                 'description' => 'Permanences, consignes et informations publiées pour l’unité.',
@@ -84,9 +65,24 @@ class HubController
             ];
         }
 
+        $priorityEntries[] = [
+            'label' => 'Mon activité',
+            'url' => url('activite'),
+            'description' => 'Suivi des échanges : forum, courrier et notifications récentes.',
+            'icon' => 'activity',
+            'accent' => 'sky',
+        ];
+
+        $sections[] = [
+            'id' => 'priorites',
+            'title' => 'Priorités du moment',
+            'subtitle' => 'Commencez ici : synthèse du jour et éléments à traiter.',
+            'entries' => $priorityEntries,
+        ];
+
         $comm = [
             [
-                'label' => 'Briefing & forum',
+                'label' => 'Forum et briefings',
                 'url' => url('forum'),
                 'description' => 'Annonces, fils de discussion et briefings de la communauté.',
                 'icon' => 'forum',
@@ -100,9 +96,9 @@ class HubController
                 'accent' => 'indigo',
             ],
             [
-                'label' => 'Recherche',
+                'label' => 'Recherche dans le portail',
                 'url' => url('search'),
-                'description' => 'Trouver un membre, un contenu ou une ressource sur le portail.',
+                'description' => 'Retrouver un membre, un contenu ou une ressource.',
                 'icon' => 'search',
                 'accent' => 'slate',
             ],
@@ -118,7 +114,7 @@ class HubController
         }
         $sections[] = [
             'id' => 'communication',
-            'title' => 'Communication & informations',
+            'title' => 'Communication',
             'subtitle' => 'Échanger, s’informer et retrouver les canaux utiles.',
             'entries' => $comm,
         ];
@@ -130,16 +126,17 @@ class HubController
                 'description' => 'Identité opérationnelle, qualifications et formations.',
                 'icon' => 'personnel',
                 'accent' => 'emerald',
+                'featured' => true,
             ],
             [
                 'label' => 'Espace RH et formations',
                 'url' => url('personnel/mon-espace-rh'),
-                'description' => 'Charte, parcours, ancienneté et programmes de préqualification éventuels.',
+                'description' => 'Charte, parcours, ancienneté et programmes de préqualification.',
                 'icon' => 'rh_hub',
                 'accent' => 'violet',
             ],
             [
-                'label' => 'Pointage & présence',
+                'label' => 'Pointage et présence',
                 'url' => url('pointage'),
                 'description' => 'Sessions, présence et activité du jour.',
                 'icon' => 'pointage',
@@ -148,41 +145,40 @@ class HubController
         ];
         if ($gate->allows('organization.orbat.view')) {
             $personnelEntries[] = [
-                'label' => 'ORBAT',
+                'label' => 'Organigramme des unités',
                 'url' => url('orbat'),
-                'description' => 'Organigramme et rattachement aux unités.',
+                'description' => 'Structure des unités et rattachement des effectifs.',
                 'icon' => 'orbat',
                 'accent' => 'slate',
             ];
         }
         $sections[] = [
             'id' => 'personnel',
-            'title' => 'Personnel & organisation',
+            'title' => 'Personnel et organisation',
             'subtitle' => 'Votre dossier, la présence et la structure des unités.',
             'entries' => $personnelEntries,
         ];
 
-        $terrain = [
-            [
-                'label' => 'ATAK / carte tactique',
-                'url' => url('atak'),
-                'description' => 'Carte, marqueurs et outils de coordination.',
-                'icon' => 'atak',
-                'accent' => 'orange',
-            ],
-            [
-                'label' => 'Équipement',
-                'url' => url('equipment'),
-                'description' => 'Classes d’équipement et fiches matériel.',
-                'icon' => 'equipment',
-                'accent' => 'stone',
-            ],
-        ];
         $sections[] = [
             'id' => 'terrain',
-            'title' => 'Terrain & matériel',
-            'subtitle' => 'Outils tactiques et référentiels matériels.',
-            'entries' => $terrain,
+            'title' => 'Terrain et matériel',
+            'subtitle' => 'Carte tactique et référentiels d’équipement.',
+            'entries' => [
+                [
+                    'label' => 'Carte tactique',
+                    'url' => url('atak'),
+                    'description' => 'Carte, marqueurs et outils de coordination sur le terrain.',
+                    'icon' => 'atak',
+                    'accent' => 'orange',
+                ],
+                [
+                    'label' => 'Équipement',
+                    'url' => url('equipment'),
+                    'description' => 'Classes d’équipement et fiches matériel.',
+                    'icon' => 'equipment',
+                    'accent' => 'stone',
+                ],
+            ],
         ];
 
         $docsTrain = [
@@ -207,14 +203,14 @@ class HubController
             $docsTrain[] = [
                 'label' => 'Gestion documentaire',
                 'url' => url('documents/gestion'),
-                'description' => 'Dépôt, classement et administration des fichiers.',
+                'description' => 'Dépôt, classement et administration des fichiers partagés.',
                 'icon' => 'documents_admin',
                 'accent' => 'cyan',
             ];
         }
         $sections[] = [
             'id' => 'ressources',
-            'title' => 'Documents & formations',
+            'title' => 'Documents et formations',
             'subtitle' => 'Références, parcours pédagogiques et fichiers partagés.',
             'entries' => $docsTrain,
         ];
@@ -224,7 +220,7 @@ class HubController
             $adminEntries[] = [
                 'label' => 'Administration plateforme',
                 'url' => url('admin'),
-                'description' => 'Paramètres globaux, rôles site et maintenance.',
+                'description' => 'Paramètres globaux, rôles et maintenance du site.',
                 'icon' => 'admin_platform',
                 'accent' => 'rose',
                 'badge' => 'Plateforme',
@@ -232,9 +228,9 @@ class HubController
         }
         if ($gate->allows('admin.organization') || $gate->allows('admin.access')) {
             $adminEntries[] = [
-                'label' => 'Back-office communauté',
+                'label' => 'Administration de la communauté',
                 'url' => url('back-office'),
-                'description' => 'Membres, invitations, structure et réglages de la communauté.',
+                'description' => 'Membres, invitations, structure et réglages de votre communauté.',
                 'icon' => 'admin_org',
                 'accent' => 'purple',
                 'badge' => 'Communauté',

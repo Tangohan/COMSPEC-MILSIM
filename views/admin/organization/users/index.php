@@ -318,12 +318,19 @@ $truncateRole = static function (string $label, int $max = 22): string {
                                     $labelCompl = 'Incomplet';
                                 }
                                 $avatarBg = $isTech ? 'bg-slate-100 text-slate-700' : (($u['status'] ?? '') === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700');
+                                $rowAvatarSrc = function_exists('user_media_public_url')
+                                    ? user_media_public_url($u['avatar_url'] ?? null)
+                                    : null;
                             ?>
                             <tr class="transition hover:bg-slate-50/80">
                                 <td class="px-6 py-5 align-top">
                                     <div class="flex items-start gap-4">
-                                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black <?= $avatarBg ?>">
-                                            <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
+                                        <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-sm font-black <?= $avatarBg ?>">
+                                            <?php if ($rowAvatarSrc): ?>
+                                                <img src="<?= htmlspecialchars($rowAvatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-cover">
+                                            <?php else: ?>
+                                                <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-bold text-slate-900">

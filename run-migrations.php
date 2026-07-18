@@ -114,6 +114,7 @@ $bootstrapFiles = [
     'seniority_engine_migration.php',
     'arma_playtime_migration.php',
     'personnel_org_history_migration.php',
+    'personnel_stage_bilans_migration.php',
     'personnel_profile_extended_details_migration.php',
     'hr_charter_lms_migration.php',
     'core_schema_extensions_migration.php',
@@ -188,6 +189,7 @@ run_moderation_granular_sanctions_migration($pdo);
 run_seniority_engine_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
+run_personnel_stage_bilans_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
@@ -477,6 +479,13 @@ try {
     run_training_roles_org_course_seed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_roles_org_course : ' . $e->getMessage() . "\n";
+}
+
+require_once $root . '/bootstrap/training_bureau_recrutement_course_seed.php';
+try {
+    run_training_bureau_recrutement_course_seed($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_bureau_recrutement_course : ' . $e->getMessage() . "\n";
 }
 
 // Pointage / RSVP : colonnes community_events + community_event_rsvps (idempotent si bootstrap déjà passé)
@@ -1871,11 +1880,25 @@ try {
     echo '  [ATTENTION] demo_nda_gate : ' . $e->getMessage() . "\n";
 }
 
+$cronSystemMigrate = require $root . '/bootstrap/cron_system_migration.php';
+try {
+    $cronSystemMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] cron_system : ' . $e->getMessage() . "\n";
+}
+
 $userEmailLoginOtpMigrate = require $root . '/bootstrap/user_email_login_otp_migration.php';
 try {
     $userEmailLoginOtpMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_email_login_otp : ' . $e->getMessage() . "\n";
+}
+
+$userProfileBannerMigrate = require $root . '/bootstrap/user_profile_banner_migration.php';
+try {
+    $userProfileBannerMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] user_profile_banner : ' . $e->getMessage() . "\n";
 }
 
 $tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';

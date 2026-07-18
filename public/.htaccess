@@ -25,6 +25,10 @@
     RewriteRule ^compte\.html$ /account [R=301,L]
     RewriteRule ^mot-de-passe-oublie\.html$ /forgot-password [R=301,L]
 
+    # Assets / uploads : jamais via index.php (sinon MIME text/html au lieu de text/css, etc.).
+    RewriteRule ^(assets|uploads)/ - [L]
+    RewriteRule ^(sw\.js|manifest\.webmanifest|favicon\.ico)$ - [L]
+
     # Fichiers réels uniquement (CSS, JS, images, etc.). Ne pas exclure les répertoires :
     # sinon un dossier physique du même nom qu’un segment d’URL (ex. …/certificates/)
     # court-circuite index.php et les sous-chemins (ex. …/certificates/gabarit) tombent en 404 Apache.
@@ -33,6 +37,13 @@
 
     # Front controller
     RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Types MIME explicites (évite un fallback HTML côté hébergeur)
+<IfModule mod_mime.c>
+    AddType text/css .css
+    AddType application/javascript .js
+    AddType application/manifest+json .webmanifest
 </IfModule>
 
 # ——— Sécurité ———

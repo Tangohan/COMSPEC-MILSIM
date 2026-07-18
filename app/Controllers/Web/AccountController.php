@@ -984,6 +984,81 @@ class AccountController
         ]);
     }
 
+    /** Bannière du bandeau haut du menu session / profil. */
+    public function banner(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->userRepository->hasProfileBannerUrlColumn()) {
+            Session::flash('error', 'La personnalisation de la couverture n’est pas encore disponible. Relancez les mises à jour de la base, puis réessayez.');
+            return Response::redirect(url('account'));
+        }
+
+        $errors = [];
+        $success = Session::getFlash('success');
+        $error = Session::getFlash('error');
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $freshUser = $tenantId > 0 ? $this->userRepository->findById((int) $user['id'], $tenantId) : null;
+        $accountUser = $freshUser ?? $user;
+
+        if ($request->isPost()) {
+            if (!Csrf::validate($request->input('_csrf_token'))) {
+                Session::flash('error', 'Session expirée.');
+                return Response::redirect(url('account/banner'));
+            }
+
+            if ($request->input('remove_banner') === '1') {
+                $this->userRepository->update((int) $user['id'], $tenantId, ['profile_banner_url' => null]);
+                Session::flash('success', 'Couverture du menu session retirée.');
+                return Response::redirect(url('account/banner'));
+            }
+
+            $file = $_FILES['banner'] ?? null;
+            if (!$file || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
+                $errors['banner'] = ['Veuillez sélectionner une image (JPG, PNG ou WebP, max 2 Mo).'];
+            } else {
+                $allowed = ['image/jpeg', 'image/png', 'image/webp'];
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime = finfo_file($finfo, $file['tmp_name']);
+                finfo_close($finfo);
+                if (!in_array($mime, $allowed, true) || $file['size'] > 2 * 1024 * 1024) {
+                    $errors['banner'] = ['Format non autorisé ou fichier trop volumineux (max 2 Mo).'];
+                } else {
+                    $dir = base_path('public/uploads/banners');
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0755, true);
+                    }
+                    $ext = match ($mime) {
+                        'image/jpeg' => 'jpg',
+                        'image/png' => 'png',
+                        'image/webp' => 'webp',
+                        default => 'jpg',
+                    };
+                    $name = $user['id'] . '_' . time() . '.' . $ext;
+                    $path = $dir . DIRECTORY_SEPARATOR . $name;
+                    if (move_uploaded_file($file['tmp_name'], $path)) {
+                        $urlPath = 'uploads/banners/' . $name;
+                        $this->userRepository->update((int) $user['id'], $tenantId, ['profile_banner_url' => $urlPath]);
+                        Session::flash('success', 'Couverture du menu session mise à jour.');
+                        return Response::redirect(url('account/banner'));
+                    }
+                    $errors['banner'] = ['Impossible d\'enregistrer le fichier.'];
+                }
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'account.banner',
+            'title' => 'Couverture du menu session',
+            'user' => $accountUser,
+            'errors' => $errors,
+            'success' => $success,
+            'error' => $error,
+        ]);
+    }
+
     public function password(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();

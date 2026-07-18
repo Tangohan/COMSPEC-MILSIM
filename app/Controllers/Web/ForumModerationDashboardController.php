@@ -62,7 +62,7 @@ final class ForumModerationDashboardController
             ? $this->moderationLogRepository->listRecentForTenant($tenantId, 40)
             : [];
 
-        return Response::view('layout.forum', [
+        return Response::view('layout.main', [
             'content' => 'admin.forum_moderation',
             'title' => 'Modération forum',
             'forumConfig' => forum_config_for_tenant($tenantId),

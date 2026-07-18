@@ -345,6 +345,7 @@ return [
                         ['label' => 'Paramètres système', 'path' => 'admin/settings', 'permission' => 'admin.system'],
                         ['label' => 'Alertes plateforme', 'path' => 'admin/system/alerts', 'permission' => 'admin.system'],
                         ['label' => 'Maintenance BDD', 'path' => 'admin/maintenance', 'permission' => 'admin.system'],
+                        ['label' => 'Tâches automatiques', 'path' => 'admin/system/cron', 'permission' => 'admin.system', 'description' => 'Planification et historique des travaux récurrents'],
                         ['label' => 'Journaux / audit', 'path' => 'admin/audit', 'permission' => 'admin.system'],
                         ['label' => 'Mises à jour plateforme', 'path' => 'admin/system/updates', 'permission' => 'admin.system', 'description' => 'Déposer et déployer un package de mise à jour versionné'],
                         ['label' => 'Publications et préqualification', 'path' => 'admin/system/deployment', 'permission' => 'admin.system', 'description' => 'Versions par environnement et communautés de test'],

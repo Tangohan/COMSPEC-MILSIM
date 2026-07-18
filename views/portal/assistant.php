@@ -16,9 +16,12 @@ $askUrl = url('api/assistant/ask');
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <label for="assistant-question" class="block text-sm font-semibold text-slate-900">Votre question</label>
             <textarea id="assistant-question" rows="4" class="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30" placeholder="Ex. Où trouver le calendrier des manœuvres ?"></textarea>
-            <button type="button" id="assistant-ask-btn" class="mt-4 inline-flex rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
-                Demander
-            </button>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <button type="button" id="assistant-ask-btn" class="inline-flex rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    Demander
+                </button>
+                <p class="text-xs text-slate-500">Entrée + Ctrl pour envoyer</p>
+            </div>
             <div id="assistant-answer" class="mt-6 hidden rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700" role="status" aria-live="polite"></div>
         </section>
 
@@ -35,13 +38,19 @@ $askUrl = url('api/assistant/ask');
     var input = document.getElementById('assistant-question');
     var out = document.getElementById('assistant-answer');
     if (!btn || !input || !out) return;
-    btn.addEventListener('click', function () {
+
+    function escapeHtml(s) {
+        return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function ask() {
         var q = (input.value || '').trim();
         if (!q) {
             out.classList.remove('hidden');
             out.textContent = 'Saisissez une question pour continuer.';
             return;
         }
+        btn.disabled = true;
         out.classList.remove('hidden');
         out.textContent = 'Recherche en cours…';
         var body = new FormData();
@@ -58,11 +67,12 @@ $askUrl = url('api/assistant/ask');
                     out.textContent = (data && data.error) ? data.error : 'Impossible d’obtenir une réponse pour le moment.';
                     return;
                 }
-                var html = '<p>' + String(data.answer || '').replace(/</g, '&lt;') + '</p>';
+                var html = '<p class="leading-relaxed">' + escapeHtml(data.answer || '') + '</p>';
                 if (data.suggestions && data.suggestions.length) {
-                    html += '<ul class="mt-3 space-y-1">';
+                    html += '<ul class="mt-4 space-y-2 border-t border-slate-200/80 pt-4">';
                     data.suggestions.forEach(function (s) {
-                        html += '<li><a class="font-semibold text-emerald-700 underline-offset-2 hover:underline" href="' + String(s.href || '#').replace(/"/g, '') + '">' + String(s.label || '').replace(/</g, '&lt;') + '</a></li>';
+                        var href = String(s.href || '#').replace(/"/g, '');
+                        html += '<li><a class="font-semibold text-emerald-700 underline-offset-2 hover:underline" href="' + href + '">' + escapeHtml(s.label || '') + '</a></li>';
                     });
                     html += '</ul>';
                 }
@@ -70,7 +80,18 @@ $askUrl = url('api/assistant/ask');
             })
             .catch(function () {
                 out.textContent = 'Impossible d’obtenir une réponse pour le moment. Réessayez plus tard.';
+            })
+            .finally(function () {
+                btn.disabled = false;
             });
+    }
+
+    btn.addEventListener('click', ask);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            ask();
+        }
     });
 })();
 </script>

@@ -1,0 +1,101 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Zone compacte alertes & annonces — tuiles sombres (split visuel / panneau).
+ *
+ * @var list<array{kind?:string,category?:string,title?:string,body?:string,cta_label?:?string,cta_url?:?string}> $announce_items
+ * @var string|null $announce_manage_url
+ * @var string $announce_heading
+ * @var string $announce_kicker
+ * @var string $announce_empty
+ * @var string $announce_id
+ */
+
+$announceItems = is_array($announce_items ?? null) ? $announce_items : [];
+$announceManageUrl = isset($announce_manage_url) && is_string($announce_manage_url) && $announce_manage_url !== ''
+    ? $announce_manage_url
+    : null;
+$announceHeading = (string) ($announce_heading ?? 'Alertes & annonces');
+$announceKicker = (string) ($announce_kicker ?? 'Transmission');
+$announceEmpty = (string) ($announce_empty ?? 'Aucune alerte ni annonce pour le moment.');
+$announceId = (string) ($announce_id ?? 'dashboard-announce');
+
+$kindLabelFr = static function (string $kind): string {
+    return match (strtolower(trim($kind))) {
+        'urgent' => 'Urgent',
+        'novelty' => 'Nouveau',
+        'discount' => 'Promotion',
+        'notice' => 'Annonce',
+        default => 'Information',
+    };
+};
+
+$count = count($announceItems);
+$statusLine = $count === 0
+    ? 'Aucune transmission en cours'
+    : ($count === 1
+        ? '1 message actif'
+        : $count . ' messages actifs');
+?>
+<section id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce scroll-mt-24" aria-labelledby="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>-title">
+    <div class="dash-announce__brief">
+        <div class="dash-announce__brief-label">
+            <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
+            <h2 id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>-title" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
+        </div>
+        <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if ($announceManageUrl !== null): ?>
+            <a href="<?= htmlspecialchars($announceManageUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-link">Gérer →</a>
+        <?php endif; ?>
+    </div>
+
+    <?php if ($announceItems === []): ?>
+        <p class="dash-announce__empty"><?= htmlspecialchars($announceEmpty, ENT_QUOTES, 'UTF-8') ?></p>
+    <?php else: ?>
+        <div class="dash-announce__grid">
+            <?php foreach ($announceItems as $item): ?>
+                <?php
+                $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
+                if (!in_array($kind, ['info', 'urgent', 'novelty', 'discount', 'notice'], true)) {
+                    $kind = 'info';
+                }
+                $category = trim((string) ($item['category'] ?? ''));
+                if ($category === '') {
+                    $category = $kindLabelFr($kind);
+                }
+                $title = trim((string) ($item['title'] ?? ''));
+                $body = trim((string) ($item['body'] ?? ''));
+                $ctaLabel = isset($item['cta_label']) && is_string($item['cta_label']) && $item['cta_label'] !== ''
+                    ? (string) $item['cta_label']
+                    : null;
+                $ctaUrl = isset($item['cta_url']) && is_string($item['cta_url']) && $item['cta_url'] !== ''
+                    ? (string) $item['cta_url']
+                    : null;
+                if ($title === '') {
+                    continue;
+                }
+                $tag = ($ctaUrl !== null) ? 'a' : 'article';
+                $hrefAttr = $ctaUrl !== null ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
+                ?>
+                <<?= $tag ?> class="dash-announce-tile dash-announce-tile--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?>"<?= $hrefAttr ?>>
+                    <div class="dash-announce-tile__visual" aria-hidden="true">
+                        <span class="dash-announce-tile__glyph"></span>
+                    </div>
+                    <div class="dash-announce-tile__panel">
+                        <p class="dash-announce-tile__kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="dash-announce-tile__title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if ($body !== ''): ?>
+                            <p class="dash-announce-tile__body"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <?php if ($ctaLabel !== null): ?>
+                            <span class="dash-announce-tile__cta"><?= htmlspecialchars(mb_strtoupper($ctaLabel, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?> →</span>
+                        <?php elseif ($ctaUrl !== null): ?>
+                            <span class="dash-announce-tile__cta">OUVRIR →</span>
+                        <?php endif; ?>
+                    </div>
+                </<?= $tag ?>>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>

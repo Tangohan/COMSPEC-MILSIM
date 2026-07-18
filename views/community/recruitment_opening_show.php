@@ -36,6 +36,7 @@ if ($blocks === [] && isset($opening['responsibility_blocks']) && is_array($open
 $pc = \App\Services\Recruitment\RecruitmentOpeningPresentation::personnelCategoryLabel((string) ($opening['personnel_category'] ?? 'other'));
 $arm = \App\Services\Recruitment\RecruitmentOpeningPresentation::armDomainLabel(isset($opening['arm_domain']) ? (string) $opening['arm_domain'] : null);
 $clr = \App\Services\Recruitment\RecruitmentOpeningPresentation::clearanceLabel((string) ($opening['clearance_level'] ?? 'none'));
+$clrKey = (string) ($opening['clearance_level'] ?? 'none');
 $ref = (string) ($opening['reference_public'] ?? '');
 $unitName = (string) ($opening['unit_name'] ?? '');
 $title = (string) ($opening['title'] ?? '');
@@ -43,148 +44,220 @@ $h1 = $title;
 if ($jobRoleName !== '') {
     $h1 .= ' (' . $jobRoleName . ')';
 }
-$bandeau = $ref !== '' ? 'Réf. ' . $ref . ($arm !== '—' ? ' // ' . $arm : '') : ($arm !== '—' ? $arm : 'Avis de vacance');
+$statusBadge = \App\Services\Recruitment\RecruitmentOpeningPresentation::statusPublicBadge((string) ($opening['status'] ?? ''));
+$statusKey = (string) ($opening['status'] ?? '');
+$engagement = trim((string) ($opening['employment_contract_label'] ?? ''));
+$contextLabel = trim((string) ($opening['employment_context_label'] ?? ''));
+$summary = trim((string) ($opening['summary'] ?? ''));
+$lead = trim((string) ($opening['mission_lead'] ?? ''));
+$desc = trim((string) ($opening['description'] ?? ''));
+$tn = trim((string) ($opening['technical_notice'] ?? ''));
+$hasSidebar = $profiles !== [] || $tn !== '';
+$hasMissionBody = $lead !== '' || $desc !== '' || $blocks !== [] || $summary !== '';
 $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($opening['id'] ?? 0));
+$communityUrl = url('c/' . rawurlencode($slug));
 ?>
 <style>
-  .recruitment-opening-grain::before {
+  .ro-page {
+    --ro-athena: #059669;
+    --ro-athena-soft: #ecfdf5;
+    --ro-athena-mid: #10b981;
+    --ro-ink: #0f172a;
+  }
+  .ro-page .ro-grain::before {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: .035;
+    opacity: .03;
     background-image: radial-gradient(circle at 20% 20%, #000 0.5px, transparent 0.6px), radial-gradient(circle at 80% 70%, #000 0.5px, transparent 0.6px);
-    background-size: 18px 18px;
+    background-size: 16px 16px;
   }
-  .recruitment-panneau-tactique { box-shadow: 0 24px 80px -40px rgba(15,23,42,0.2); }
+  .ro-panel {
+    box-shadow: 0 18px 50px -28px rgba(15, 23, 42, 0.28);
+  }
+  .ro-meta-card {
+    background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  }
+  .ro-cta-primary {
+    background: var(--ro-athena);
+  }
+  .ro-cta-primary:hover {
+    background: #047857;
+  }
   @media print {
     .portal-nav, [data-portal-nav], .no-print { display: none !important; }
     body { background: #fff !important; }
-    .recruitment-print-main { padding-top: 0 !important; }
+    .ro-print-main { padding-top: 0 !important; }
+    .ro-panel { box-shadow: none !important; }
   }
 </style>
-<div class="recruitment-print-main bg-slate-50 min-h-screen relative recruitment-opening-grain">
-  <nav class="no-print h-16 border-b border-slate-200 flex items-center bg-white/90 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 md:px-10 lg:px-12">
-    <div class="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest max-w-7xl mx-auto w-full min-w-0">
-      <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug)), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-400 hover:text-slate-900 transition-colors italic"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
-      <span class="text-slate-300">/</span>
-      <span class="text-blue-700">Avis de vacance de poste</span>
+<div class="ro-page ro-print-main bg-slate-100/80 min-h-screen relative ro-grain">
+  <nav class="no-print h-14 border-b border-slate-200/90 flex items-center bg-white/95 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 md:px-10">
+    <div class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.18em] max-w-6xl mx-auto w-full min-w-0">
+      <a href="<?= htmlspecialchars($communityUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-400 hover:text-[color:var(--ro-athena)] transition-colors truncate"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
+      <span class="text-slate-300 shrink-0" aria-hidden="true">/</span>
+      <span class="text-slate-700 shrink-0">Avis de vacance</span>
     </div>
   </nav>
 
-  <main class="max-w-7xl mx-auto w-full px-5 pb-10 pt-6 sm:px-8 sm:pb-12 sm:pt-8 md:px-12 md:pb-14 md:pt-10 lg:px-14 lg:pt-12">
-    <div class="grid grid-cols-12 gap-6 sm:gap-8 lg:gap-10">
-      <section class="col-span-12 lg:col-span-9">
-        <div class="recruitment-panneau-tactique rounded-xl border border-slate-200 border-t-[6px] border-t-blue-700 overflow-hidden relative bg-white shadow-sm">
-          <div class="absolute top-8 right-6 sm:top-10 sm:right-8 md:top-12 md:right-10 text-[clamp(2rem,8vw,3rem)] font-black opacity-[0.05] -rotate-12 pointer-events-none uppercase select-none leading-none" aria-hidden="true">Document officiel</div>
+  <main class="max-w-6xl mx-auto w-full px-4 pb-10 pt-5 sm:px-6 sm:pb-12 sm:pt-7 md:px-8 md:pt-8">
+    <div class="grid grid-cols-12 gap-5 lg:gap-7">
+      <section class="col-span-12 <?= $relatedOpenings !== [] ? 'lg:col-span-9' : 'lg:col-span-12' ?>">
+        <article class="ro-panel rounded-2xl border border-slate-200/90 overflow-hidden bg-white">
+          <div class="h-1.5 w-full bg-[color:var(--ro-athena)]" aria-hidden="true"></div>
 
-          <header class="p-6 sm:p-8 md:p-10 lg:p-12 border-b border-slate-100 bg-slate-50/50">
-            <div class="flex justify-between items-start mb-6 sm:mb-8 gap-4 sm:gap-6 flex-wrap">
-              <div>
-                <span class="text-[11px] font-black text-blue-700 tracking-[0.2em] uppercase border-b-2 border-blue-700 pb-1"><?= htmlspecialchars($bandeau, ENT_QUOTES, 'UTF-8') ?></span>
-                <h1 class="text-2xl md:text-4xl font-black italic tracking-tighter text-slate-900 uppercase mt-4"><?= htmlspecialchars($h1, ENT_QUOTES, 'UTF-8') ?></h1>
-                <p class="text-lg md:text-xl font-bold text-slate-500 mt-2 uppercase"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></p>
-              </div>
-              <div class="text-right shrink-0">
-                <div class="inline-block border-2 border-emerald-500/20 px-4 py-2.5 sm:px-5 sm:py-3 bg-emerald-50 rounded-md">
-                  <p class="text-[9px] font-black text-emerald-700 uppercase">Statut</p>
-                  <p class="text-emerald-600 font-black tracking-widest uppercase"><?= htmlspecialchars(\App\Services\Recruitment\RecruitmentOpeningPresentation::statusPublicBadge((string) ($opening['status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></p>
-                </div>
-              </div>
+          <header class="px-5 pt-5 pb-5 sm:px-7 sm:pt-6 sm:pb-6 md:px-8 border-b border-slate-100">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <?php if ($ref !== ''): ?>
+              <p class="text-[11px] font-bold tracking-[0.14em] uppercase text-[color:var(--ro-athena)]">
+                Réf. <?= htmlspecialchars($ref, ENT_QUOTES, 'UTF-8') ?>
+              </p>
+              <?php else: ?>
+              <p class="text-[11px] font-bold tracking-[0.14em] uppercase text-slate-400">Avis de vacance</p>
+              <?php endif; ?>
+              <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wide
+                <?= $statusKey === 'published'
+                  ? 'border-emerald-200 bg-[color:var(--ro-athena-soft)] text-[color:var(--ro-athena)]'
+                  : ($statusKey === 'closed' ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-slate-200 bg-slate-50 text-slate-500') ?>">
+                <span class="h-1.5 w-1.5 rounded-full <?= $statusKey === 'published' ? 'bg-[color:var(--ro-athena)]' : 'bg-slate-400' ?>" aria-hidden="true"></span>
+                <?= htmlspecialchars($statusBadge, ENT_QUOTES, 'UTF-8') ?>
+              </span>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 md:gap-6">
-              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Catégorie</p>
-                <p class="text-sm font-black text-slate-800 uppercase mt-1"><?= htmlspecialchars($pc, ENT_QUOTES, 'UTF-8') ?></p>
+            <h1 class="text-xl sm:text-2xl md:text-[1.75rem] font-black tracking-tight text-[color:var(--ro-ink)] leading-snug">
+              <?= htmlspecialchars($h1, ENT_QUOTES, 'UTF-8') ?>
+            </h1>
+            <?php if ($unitName !== ''): ?>
+            <p class="mt-1.5 text-sm sm:text-base font-semibold text-slate-500"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+            <?php if ($contextLabel !== ''): ?>
+            <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl"><?= htmlspecialchars($contextLabel, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
+
+            <div class="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+              <div class="ro-meta-card rounded-xl border border-slate-200/90 px-3.5 py-3 min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Catégorie</p>
+                <p class="mt-1 text-sm font-bold text-slate-800 leading-snug"><?= htmlspecialchars($pc, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Arme / domaine</p>
-                <p class="text-sm font-black text-slate-800 uppercase mt-1"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></p>
+              <div class="ro-meta-card rounded-xl border border-slate-200/90 px-3.5 py-3 min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Arme / domaine</p>
+                <p class="mt-1 text-sm font-bold text-slate-800 leading-snug"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 sm:p-5 border border-slate-200 rounded-lg min-w-0">
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Engagement</p>
-                <p class="text-sm font-black text-slate-800 uppercase italic mt-1"><?= htmlspecialchars(trim((string) ($opening['employment_contract_label'] ?? '')) !== '' ? (string) $opening['employment_contract_label'] : '—', ENT_QUOTES, 'UTF-8') ?></p>
+              <div class="ro-meta-card rounded-xl border border-slate-200/90 px-3.5 py-3 min-w-0">
+                <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Engagement</p>
+                <p class="mt-1 text-sm font-bold text-slate-800 leading-snug"><?= htmlspecialchars($engagement !== '' ? $engagement : 'Non précisé', ENT_QUOTES, 'UTF-8') ?></p>
               </div>
-              <div class="p-4 sm:p-5 border border-orange-200 bg-orange-50/30 rounded-lg min-w-0">
-                <p class="text-[10px] text-orange-500 font-bold uppercase tracking-tight">Habilitation</p>
-                <p class="text-sm font-black text-orange-700 uppercase mt-1"><?= htmlspecialchars($clr, ENT_QUOTES, 'UTF-8') ?></p>
+              <div class="rounded-xl border px-3.5 py-3 min-w-0 <?= $clrKey !== 'none' ? 'border-amber-200/90 bg-amber-50/60' : 'border-slate-200/90 ro-meta-card' ?>">
+                <p class="text-[10px] font-bold uppercase tracking-wide <?= $clrKey !== 'none' ? 'text-amber-700' : 'text-slate-400' ?>">Habilitation</p>
+                <p class="mt-1 text-sm font-bold leading-snug <?= $clrKey !== 'none' ? 'text-amber-900' : 'text-slate-800' ?>"><?= htmlspecialchars($clr, ENT_QUOTES, 'UTF-8') ?></p>
               </div>
             </div>
           </header>
 
-          <div class="grid grid-cols-12">
-            <aside class="col-span-12 lg:col-span-4 border-r border-slate-100 p-6 sm:p-8 md:p-10 lg:p-12 bg-slate-50/30 space-y-8 sm:space-y-10">
+          <div class="grid grid-cols-12 <?= $hasSidebar ? '' : '' ?>">
+            <?php if ($hasSidebar): ?>
+            <aside class="col-span-12 lg:col-span-4 border-b lg:border-b-0 lg:border-r border-slate-100 px-5 py-5 sm:px-6 sm:py-6 md:px-7 bg-slate-50/40 space-y-6">
               <?php if ($profiles !== []): ?>
               <div>
-                <h3 class="text-[11px] font-black text-slate-400 mb-6 tracking-widest uppercase flex items-center gap-2">
-                  <span class="w-2 h-2 bg-blue-700 rounded-full"></span> Profil candidat
-                </h3>
-                <ul class="space-y-6">
+                <h2 class="text-[11px] font-bold tracking-[0.16em] uppercase text-slate-500 flex items-center gap-2 mb-3.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-[color:var(--ro-athena)]" aria-hidden="true"></span>
+                  Profil recherché
+                </h2>
+                <ul class="space-y-3">
                   <?php foreach ($profiles as $pr): ?>
                     <?php if (!is_array($pr)) { continue; } ?>
-                  <li class="border-b border-slate-200 pb-2">
-                    <p class="text-[9px] font-black text-blue-700 uppercase"><?= htmlspecialchars((string) ($pr['rubrique'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                    <p class="text-xs font-bold text-slate-700 mt-1"><?= htmlspecialchars((string) ($pr['detail'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                  <li class="rounded-xl border border-slate-200/80 bg-white px-3.5 py-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wide text-[color:var(--ro-athena)]"><?= htmlspecialchars((string) ($pr['rubrique'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="mt-1 text-sm text-slate-700 leading-snug"><?= htmlspecialchars((string) ($pr['detail'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                   </li>
                   <?php endforeach; ?>
                 </ul>
               </div>
               <?php endif; ?>
 
-              <?php $tn = trim((string) ($opening['technical_notice'] ?? '')); ?>
               <?php if ($tn !== ''): ?>
-              <div class="p-6 bg-slate-900 text-white rounded shadow-xl">
-                <h3 class="text-[11px] font-black mb-2 uppercase italic text-blue-400 underline">Avis technique</h3>
-                <p class="text-[10px] leading-relaxed font-mono opacity-90"><?= nl2br(htmlspecialchars($tn, ENT_QUOTES, 'UTF-8')) ?></p>
+              <div class="rounded-xl bg-slate-900 text-white px-4 py-4">
+                <h2 class="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-300 mb-2">Avis technique</h2>
+                <p class="text-xs leading-relaxed text-slate-200"><?= nl2br(htmlspecialchars($tn, ENT_QUOTES, 'UTF-8')) ?></p>
               </div>
               <?php endif; ?>
             </aside>
+            <?php endif; ?>
 
-            <article class="col-span-12 lg:col-span-8 p-6 sm:p-8 md:p-10 lg:p-12">
-              <h3 class="text-[11px] font-black text-slate-400 mb-5 sm:mb-6 tracking-widest uppercase">Description de la mission</h3>
-              <?php $lead = trim((string) ($opening['mission_lead'] ?? '')); ?>
-              <?php if ($lead !== ''): ?>
-              <p class="text-lg text-slate-700 leading-relaxed mb-10 font-medium"><?= nl2br(htmlspecialchars($lead, ENT_QUOTES, 'UTF-8')) ?></p>
-              <?php endif; ?>
-              <?php $desc = trim((string) ($opening['description'] ?? '')); ?>
-              <?php if ($desc !== ''): ?>
-              <div class="prose prose-slate max-w-none text-sm text-slate-600 mb-10"><?= nl2br(htmlspecialchars($desc, ENT_QUOTES, 'UTF-8')) ?></div>
-              <?php endif; ?>
+            <div class="<?= $hasSidebar ? 'col-span-12 lg:col-span-8' : 'col-span-12' ?> px-5 py-5 sm:px-7 sm:py-6 md:px-8 md:py-7 flex flex-col">
+              <h2 class="text-[11px] font-bold tracking-[0.16em] uppercase text-slate-500 mb-3.5">Description de la mission</h2>
 
-              <?php if ($blocks !== []): ?>
-              <div class="grid gap-6">
-                <?php foreach ($blocks as $b): ?>
-                  <?php if (!is_array($b)) { continue; } ?>
-                <div class="group p-5 border border-slate-200 hover:border-blue-700 transition-all">
-                  <span class="text-[9px] font-black text-slate-400 group-hover:text-blue-700 uppercase tracking-tighter"><?= htmlspecialchars((string) ($b['theme'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                  <h4 class="text-sm font-black text-slate-900 uppercase mt-1"><?= htmlspecialchars((string) ($b['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h4>
-                  <p class="text-xs text-slate-500 mt-2"><?= nl2br(htmlspecialchars((string) ($b['corps'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
-                </div>
-                <?php endforeach; ?>
-              </div>
-              <?php endif; ?>
-
-              <div class="no-print mt-12 sm:mt-16 mb-2 flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <?php if (!$communityLocked): ?>
-                <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta flex-1 rounded-lg py-4 sm:py-5 px-4 bg-slate-900 hover:bg-blue-800 text-white text-center text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3" data-comspec-zone="fiche_poste" data-comspec-opening="<?= (int) ($opening['id'] ?? 0) ?>">Candidater au poste</a>
-                <?php else: ?>
-                <p class="flex-1 py-4 sm:py-5 px-4 text-center text-sm text-slate-500 border border-slate-200 rounded-lg">Le recrutement est fermé pour cette communauté.</p>
+              <?php if ($hasMissionBody): ?>
+                <?php if ($lead !== ''): ?>
+                <p class="text-base text-slate-800 leading-relaxed mb-4 font-medium"><?= nl2br(htmlspecialchars($lead, ENT_QUOTES, 'UTF-8')) ?></p>
+                <?php elseif ($summary !== '' && $desc === ''): ?>
+                <p class="text-base text-slate-700 leading-relaxed mb-4"><?= nl2br(htmlspecialchars($summary, ENT_QUOTES, 'UTF-8')) ?></p>
                 <?php endif; ?>
-                <button type="button" class="shrink-0 rounded-lg px-6 sm:px-8 py-4 sm:py-5 border-2 border-slate-200 hover:bg-slate-50 text-slate-900 text-[12px] font-black uppercase transition-all" onclick="window.print()">Version imprimable</button>
+
+                <?php if ($desc !== ''): ?>
+                <div class="text-sm text-slate-600 leading-relaxed mb-5 space-y-3"><?= nl2br(htmlspecialchars($desc, ENT_QUOTES, 'UTF-8')) ?></div>
+                <?php elseif ($summary !== '' && $lead !== ''): ?>
+                <p class="text-sm text-slate-600 leading-relaxed mb-5"><?= nl2br(htmlspecialchars($summary, ENT_QUOTES, 'UTF-8')) ?></p>
+                <?php endif; ?>
+
+                <?php if ($blocks !== []): ?>
+                <div class="grid gap-3 mb-2">
+                  <?php foreach ($blocks as $b): ?>
+                    <?php if (!is_array($b)) { continue; } ?>
+                  <div class="rounded-xl border border-slate-200/90 bg-slate-50/50 px-4 py-3.5 hover:border-emerald-300/80 transition-colors">
+                    <?php if (trim((string) ($b['theme'] ?? '')) !== ''): ?>
+                    <span class="text-[10px] font-bold uppercase tracking-wide text-slate-400"><?= htmlspecialchars((string) ($b['theme'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                    <h3 class="text-sm font-bold text-slate-900 mt-0.5"><?= htmlspecialchars((string) ($b['titre'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                    <?php if (trim((string) ($b['corps'] ?? '')) !== ''): ?>
+                    <p class="text-sm text-slate-600 mt-1.5 leading-relaxed"><?= nl2br(htmlspecialchars((string) ($b['corps'] ?? ''), ENT_QUOTES, 'UTF-8')) ?></p>
+                    <?php endif; ?>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+              <?php else: ?>
+                <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 mb-2">
+                  <p class="text-sm font-semibold text-slate-700">Aucune description fournie pour le moment</p>
+                  <p class="mt-1 text-sm text-slate-500 leading-relaxed">Les détails de la mission seront précisés par l’équipe recrutement. Vous pouvez tout de même candidater si le poste vous intéresse.</p>
+                </div>
+              <?php endif; ?>
+
+              <div class="no-print mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5 sm:gap-3">
+                <?php if (!$communityLocked): ?>
+                <a href="<?= htmlspecialchars($enlistUrl, ENT_QUOTES, 'UTF-8') ?>"
+                   class="comspec-analytics-cta ro-cta-primary inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-bold text-white shadow-sm shadow-emerald-900/10 transition-colors sm:min-w-[12.5rem]"
+                   data-comspec-zone="fiche_poste"
+                   data-comspec-opening="<?= (int) ($opening['id'] ?? 0) ?>">
+                  Candidater au poste
+                </a>
+                <?php else: ?>
+                <p class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Le recrutement est fermé pour cette communauté.</p>
+                <?php endif; ?>
+                <button type="button"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                        onclick="window.print()">
+                  Version imprimable
+                </button>
+                <a href="<?= htmlspecialchars($communityUrl . '#carrieres', ENT_QUOTES, 'UTF-8') ?>"
+                   class="inline-flex items-center justify-center rounded-xl px-3 py-3 text-sm font-semibold text-slate-500 hover:text-[color:var(--ro-athena)] transition-colors sm:ml-auto">
+                  ← Retour aux offres
+                </a>
               </div>
-            </article>
+            </div>
           </div>
-        </div>
+        </article>
       </section>
 
-      <aside class="no-print col-span-12 lg:col-span-3 space-y-6 pt-2 lg:pt-0">
-        <?php if ($relatedOpenings !== []): ?>
-        <div class="bg-white border border-slate-200 p-5 sm:p-6 rounded-lg shadow-sm">
-          <h4 class="text-[10px] font-black text-slate-900 mb-4 uppercase flex items-center gap-2">
-            <span class="w-3 h-[1px] bg-slate-900"></span> Postes liés
-          </h4>
-          <div class="space-y-4">
+      <?php if ($relatedOpenings !== []): ?>
+      <aside class="no-print col-span-12 lg:col-span-3 space-y-4">
+        <div class="bg-white border border-slate-200/90 rounded-2xl shadow-sm px-4 py-4 sm:px-5">
+          <h2 class="text-[11px] font-bold tracking-[0.14em] uppercase text-slate-500 mb-3 flex items-center gap-2">
+            <span class="h-px w-3 bg-slate-300" aria-hidden="true"></span>
+            Postes liés
+          </h2>
+          <div class="space-y-1">
             <?php foreach ($relatedOpenings as $rel): ?>
               <?php
                 $rs = (string) ($rel['public_page_slug'] ?? '');
@@ -193,15 +266,15 @@ $enlistUrl = url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) (
                 }
                 $rurl = url('c/' . rawurlencode($tSlug) . '/avis/' . rawurlencode($rs));
               ?>
-            <a href="<?= htmlspecialchars($rurl, ENT_QUOTES, 'UTF-8') ?>" class="block group border-t border-slate-100 first:border-t-0 first:pt-0 pt-4 first:mt-0 mt-0">
-              <p class="text-[11px] font-black text-slate-800 group-hover:text-blue-700"><?= htmlspecialchars((string) ($rel['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-              <p class="text-[9px] text-slate-400 font-mono italic mt-1"><?= htmlspecialchars((string) ($rel['unit_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            <a href="<?= htmlspecialchars($rurl, ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl px-3 py-2.5 hover:bg-emerald-50/80 transition-colors group">
+              <p class="text-sm font-bold text-slate-800 group-hover:text-[color:var(--ro-athena)] leading-snug"><?= htmlspecialchars((string) ($rel['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+              <p class="text-xs text-slate-400 mt-0.5"><?= htmlspecialchars((string) ($rel['unit_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
             </a>
             <?php endforeach; ?>
           </div>
         </div>
-        <?php endif; ?>
       </aside>
+      <?php endif; ?>
     </div>
   </main>
 </div>

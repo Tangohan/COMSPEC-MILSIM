@@ -55,6 +55,14 @@ final class EnlistmentCandidatePortalController
         }
         foreach ($this->candidatePortalJourneyService->buildSteps($enlistmentRow, $timelineRows, $messages, $attachments) as $st) {
             if (is_array($st) && (($st['state'] ?? '') === 'current')) {
+                $pause = trim((string) ($st['pause_kind'] ?? ''));
+                if ($pause === 'pending') {
+                    return 'Dossier mis en attente';
+                }
+                if ($pause === 'interview') {
+                    return 'Entretien proposé';
+                }
+
                 return trim((string) ($st['label'] ?? ''));
             }
         }
@@ -108,6 +116,16 @@ final class EnlistmentCandidatePortalController
         $email = strtolower(trim((string) ($row['email'] ?? '')));
 
         return $this->portalAutoModerationCoordinator->isPortalAccessBlocked($tenantId, $email, trim($request->ip()));
+    }
+
+    /**
+     * Fil clos : candidature refusée, non admise, ou acceptée avec compte membre déjà rattaché.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function isDossierMessagingClosed(array $row): bool
+    {
+        return $this->candidatePortalJourneyService->isPortalMessagingClosed($row);
     }
 
     /**
@@ -273,9 +291,18 @@ final class EnlistmentCandidatePortalController
         $portalSteps = $this->candidatePortalJourneyService->buildSteps($row, $timelineRows, $messages, $attachments);
         $tenantSettings = $tenantId > 0 ? $this->tenantRepository->getSettings($tenantId) : [];
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings(is_array($tenantSettings) ? $tenantSettings : []);
+        $submittedAgeHours = TenantRecruitmentSettings::hoursElapsedSince(
+            trim((string) ($row['created_at'] ?? '')) !== '' ? (string) $row['created_at'] : null
+        );
+        $statusRaw = (string) ($row['status'] ?? '');
+        $slaBreached = $statusRaw === 'submitted'
+            && $submittedAgeHours !== null
+            && $submittedAgeHours > $slaHours;
         $referentLabel = $this->portalReferentLabelForCandidate($row, $tenantId);
         $ageDays = $this->enlistmentAgeDaysPortal($row);
-        $retroEligible = $ageDays !== null && $ageDays >= 30;
+        $retroEligible = !EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusRaw)
+            && $ageDays !== null
+            && $ageDays >= 30;
         $retroTable = $this->recruitmentEngagementRepository->retroTableExists();
         $candidateRetroRow = $retroTable
             ? $this->recruitmentEngagementRepository->findRetro($tenantId, $enlistmentId, EnlistmentRecruitmentEngagementRepository::SCOPE_CANDIDATE_RETURN)
@@ -299,6 +326,8 @@ final class EnlistmentCandidatePortalController
             'portalViewer' => $this->buildPortalViewerContext($row),
             'portalReferentLabel' => $referentLabel,
             'portalRecruitmentSlaHours' => $slaHours,
+            'portalSubmittedAgeHours' => $submittedAgeHours,
+            'portalSlaBreached' => $slaBreached,
         ]);
     }
 
@@ -321,6 +350,11 @@ final class EnlistmentCandidatePortalController
             Session::flash('enlistment_retry_url', (string) ($v['enlistmentRetryUrl'] ?? url('enlistment')));
 
             return Response::redirect(url('enlistment/error'));
+        }
+        if ($this->isDossierMessagingClosed($row)) {
+            Session::flash('error', $this->candidatePortalJourneyService->portalMessagingClosedFlash($row, 'message'));
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
 
         $body = trim((string) $request->input('candidate_message', ''));
@@ -442,6 +476,11 @@ final class EnlistmentCandidatePortalController
             Session::flash('enlistment_retry_url', (string) ($v['enlistmentRetryUrl'] ?? url('enlistment')));
 
             return Response::redirect(url('enlistment/error'));
+        }
+        if ($this->isDossierMessagingClosed($row)) {
+            Session::flash('error', $this->candidatePortalJourneyService->portalMessagingClosedFlash($row, 'upload'));
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
         $tenantId = (int) ($row['tenant_id'] ?? 0);
         $enlistmentId = (int) ($row['id'] ?? 0);
@@ -591,6 +630,14 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
         $ageDays = $this->enlistmentAgeDaysPortal($row);
+        if (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus((string) ($row['status'] ?? ''))) {
+            $msg = ((string) ($row['status'] ?? '')) === 'blocked'
+                ? 'Pas de bilan pour une candidature non admise.'
+                : 'Pas de bilan pour une candidature refusée.';
+            Session::flash('error', $msg);
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
         if ($ageDays === null || $ageDays < 30) {
             Session::flash('error', 'Ce bilan n’est proposé qu’à partir de 30 jours après la réception de votre dossier.');
 

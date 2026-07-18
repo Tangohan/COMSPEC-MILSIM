@@ -86,6 +86,44 @@ final class TenantRecruitmentSettings
     }
 
     /**
+     * Libellé humain pour un délai en heures (affichage candidat / instructeur).
+     */
+    public static function formatSlaHoursLabel(int $hours): string
+    {
+        $hours = max(1, $hours);
+        if ($hours % 24 === 0) {
+            $days = intdiv($hours, 24);
+
+            return $days === 1
+                ? '24 h (environ 1 jour)'
+                : $hours . ' h (environ ' . $days . ' jours)';
+        }
+
+        return $hours . ' h';
+    }
+
+    /**
+     * Heures écoulées depuis une date (soumission, etc.). Null si date invalide.
+     */
+    public static function hoursElapsedSince(?string $datetime): ?int
+    {
+        $base = trim((string) $datetime);
+        if ($base === '') {
+            return null;
+        }
+        $ts = strtotime($base);
+        if ($ts === false || $ts <= 0) {
+            return null;
+        }
+        $delta = time() - $ts;
+        if ($delta < 0) {
+            return 0;
+        }
+
+        return (int) floor($delta / 3600);
+    }
+
+    /**
      * @param array<string, mixed> $tenantSettings
      * @return array<string, mixed>
      */

@@ -154,13 +154,7 @@ class OperationsApiController
         $aar = $this->replayService->buildAfterActionReview($missionId, $this->nullableQuery($request, 'from'), $this->nullableQuery($request, 'to'));
 
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($missionId, $aar): Response {
-            if (!class_exists(\TCPDF::class, false)) {
-                $path = base_path('tcpdf/tcpdf.php');
-                if (is_file($path)) {
-                    require_once $path;
-                }
-            }
-            if (!class_exists(\TCPDF::class, false)) {
+            if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return $this->error(
                     'operations.aar.pdf_engine_unavailable',
                     'Moteur PDF indisponible.',

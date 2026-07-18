@@ -1,5 +1,7 @@
 /**
  * Lecteur « canvas » : Swiper si disponible, sinon affichage classique.
+ * Validation leçon : toutes les étapes visitées + confirmation sur la dernière
+ * (attente courte ou clic « Suivant » / Terminer).
  */
 (function () {
   'use strict';
@@ -14,8 +16,10 @@
     if (!t) return;
     t.textContent = message;
     t.classList.remove('hidden');
-    var wrong = root.querySelector('[data-lms-blank].ring-rose-400');
-    if (wrong && typeof wrong.focus === 'function') {
+    var wrong =
+      root.querySelector('[data-lms-blank].lms-fill-blank-input--wrong') ||
+      root.querySelector('[data-lms-blank].ring-rose-400');
+    if (wrong && typeof wrong.focus === 'function' && !wrong.readOnly) {
       try {
         wrong.focus();
       } catch (e) {}
@@ -42,14 +46,121 @@
     if (bar) bar.style.width = pct + '%';
   }
 
-  /** Temps minimum sur chaque étape (configurable via window.__LMS_LESSON_PROGRESS__.strict.slideDwellMs). */
-  function getSlideDwellMs() {
+  /** Temps minimum sur la dernière étape avant déblocage du bouton Terminer (ms). */
+  function getLastSlideDwellMs() {
     var c = window.__LMS_LESSON_PROGRESS__;
     var v = c && c.strict && c.strict.slideDwellMs;
-    return typeof v === 'number' && v > 0 ? v : 2600;
+    return typeof v === 'number' && v > 0 ? v : 1800;
   }
 
-  function validateFillBlanksInSlideEl(slideEl) {
+  function signalLessonComplete(immediate) {
+    if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
+      window.LmsLessonProgress.signalComplete(!!immediate);
+    }
+  }
+
+  function normalizeBlankValue(s) {
+    return String(s || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFC')
+      .replace(/\s+/g, ' ');
+  }
+
+  function isBlankLocked(inp) {
+    return !!(inp && (inp.readOnly || inp.getAttribute('data-lms-blank-locked') === '1'));
+  }
+
+  function clearBlankTransientClasses(inp) {
+    if (!inp) return;
+    inp.classList.remove(
+      'ring-2',
+      'ring-rose-400',
+      'ring-emerald-400',
+      'bg-rose-50',
+      'lms-fill-blank-input--wrong',
+      'lms-fill-blank-input--ok'
+    );
+  }
+
+  function lockBlankInput(inp) {
+    if (!inp || isBlankLocked(inp)) return;
+    var expected = (inp.getAttribute('data-expected') || '').trim();
+    if (expected !== '') {
+      inp.value = expected;
+    }
+    inp.readOnly = true;
+    inp.setAttribute('data-lms-blank-locked', '1');
+    inp.setAttribute('aria-invalid', 'false');
+    inp.setAttribute('aria-readonly', 'true');
+    clearBlankTransientClasses(inp);
+    inp.classList.add('lms-fill-blank-input--ok', 'ring-2', 'ring-emerald-400');
+  }
+
+  function markBlankWrong(inp) {
+    if (!inp || isBlankLocked(inp)) return;
+    clearBlankTransientClasses(inp);
+    inp.classList.add('lms-fill-blank-input--wrong', 'ring-2', 'ring-rose-400', 'bg-rose-50');
+    inp.setAttribute('aria-invalid', 'true');
+  }
+
+  function clearBlankFeedback(inp) {
+    if (!inp || isBlankLocked(inp)) return;
+    clearBlankTransientClasses(inp);
+    inp.removeAttribute('aria-invalid');
+  }
+
+  /**
+   * Vérifie un champ : lock immédiat si correct ; feedback soft si incorrect.
+   * @param {{showWrong?: boolean}} opts
+   * @returns {boolean}
+   */
+  function evaluateBlankInput(inp, opts) {
+    opts = opts || {};
+    if (!inp) return true;
+    if (isBlankLocked(inp)) return true;
+    var exp = normalizeBlankValue(inp.getAttribute('data-expected'));
+    var val = normalizeBlankValue(inp.value);
+    if (val === '') {
+      clearBlankFeedback(inp);
+      return false;
+    }
+    if (val === exp) {
+      lockBlankInput(inp);
+      return true;
+    }
+    if (opts.showWrong !== false) {
+      markBlankWrong(inp);
+    }
+    return false;
+  }
+
+  function slideHasFillBlanks(slideEl) {
+    return !!(slideEl && slideEl.querySelector('[data-lms-fill-blanks-slide] [data-lms-blank]'));
+  }
+
+  function fillBlanksCompleteInSlide(slideEl) {
+    if (!slideEl) return true;
+    var host = slideEl.querySelector('[data-lms-fill-blanks-slide]');
+    if (!host) return true;
+    var inputs = host.querySelectorAll('[data-lms-blank]');
+    if (!inputs.length) return true;
+    for (var i = 0; i < inputs.length; i++) {
+      var inp = inputs[i];
+      if (isBlankLocked(inp)) continue;
+      if (normalizeBlankValue(inp.value) !== normalizeBlankValue(inp.getAttribute('data-expected'))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * @param {Element|null} slideEl
+   * @param {{toast?: boolean, markEmpty?: boolean}} opts
+   */
+  function validateFillBlanksInSlideEl(slideEl, opts) {
+    opts = opts || {};
     if (!slideEl) return true;
     var root = slideEl.closest('[data-lms-canvas-player]');
     var host = slideEl.querySelector('[data-lms-fill-blanks-slide]');
@@ -58,25 +169,64 @@
     if (!inputs.length) return true;
     var ok = true;
     inputs.forEach(function (inp) {
-      var exp = (inp.getAttribute('data-expected') || '').trim().toLowerCase();
-      var val = (inp.value || '').trim().toLowerCase();
-      if (val !== exp) ok = false;
-      inp.classList.remove('ring-2', 'ring-rose-400', 'ring-emerald-400', 'bg-rose-50');
-      if (!val) {
+      if (isBlankLocked(inp)) return;
+      var exp = normalizeBlankValue(inp.getAttribute('data-expected'));
+      var val = normalizeBlankValue(inp.value);
+      if (val === exp && val !== '') {
+        lockBlankInput(inp);
+        return;
+      }
+      ok = false;
+      if (val === '' && opts.markEmpty !== false) {
+        clearBlankTransientClasses(inp);
         inp.classList.add('ring-2', 'ring-rose-400');
-      } else if (val !== exp) {
-        inp.classList.add('ring-2', 'ring-rose-400', 'bg-rose-50');
-      } else {
-        inp.classList.add('ring-2', 'ring-emerald-400');
+        inp.setAttribute('aria-invalid', 'true');
+      } else if (val !== '') {
+        markBlankWrong(inp);
       }
     });
-    if (!ok && root) {
+    if (!ok && opts.toast !== false && root) {
       showCanvasToast(
         root,
-        'Vérifiez les champs surlignés : ils doivent correspondre exactement aux termes attendus avant de passer à l’étape suivante.'
+        'Complétez chaque champ : une réponse correcte se verrouille tout de suite. Corrigez les champs surlignés avant de continuer.'
       );
     }
     return ok;
+  }
+
+  function wireLiveFillBlanks(root, onChange) {
+    root.querySelectorAll('[data-lms-fill-blanks-slide]').forEach(function (host) {
+      if (host.__lmsFillLiveWired) return;
+      host.__lmsFillLiveWired = true;
+      host.querySelectorAll('[data-lms-blank]').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          if (isBlankLocked(inp)) return;
+          var exp = normalizeBlankValue(inp.getAttribute('data-expected'));
+          var val = normalizeBlankValue(inp.value);
+          if (val === '') {
+            clearBlankFeedback(inp);
+          } else if (val === exp) {
+            lockBlankInput(inp);
+          } else {
+            /* Feedback immédiat sans bloquer la frappe */
+            markBlankWrong(inp);
+          }
+          if (typeof onChange === 'function') onChange();
+        });
+        inp.addEventListener('blur', function () {
+          if (isBlankLocked(inp)) return;
+          evaluateBlankInput(inp, { showWrong: true });
+          if (typeof onChange === 'function') onChange();
+        });
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            evaluateBlankInput(inp, { showWrong: true });
+            if (typeof onChange === 'function') onChange();
+          }
+        });
+      });
+    });
   }
 
   function initPlayer(root) {
@@ -87,6 +237,93 @@
     var nextBtn = qs(root, '[data-lms-next]');
     var slides = root.querySelectorAll('[data-lms-slide]');
     var total = slides.length;
+    var visited = new Set();
+    var lastDwellTimer = null;
+
+    function markVisited(index) {
+      if (typeof index === 'number' && index >= 0 && index < total) {
+        visited.add(index);
+      }
+    }
+
+    function allVisited() {
+      if (visited.size < total) return false;
+      for (var k = 0; k < total; k++) {
+        if (!visited.has(k)) return false;
+      }
+      return true;
+    }
+
+    function currentSlideEl(activeIndex) {
+      if (swiperEl && root.__lmsSwiper && root.__lmsSwiper.slides) {
+        return root.__lmsSwiper.slides[activeIndex] || null;
+      }
+      return slides[activeIndex] || null;
+    }
+
+    function syncNextButton(activeIndex) {
+      if (!nextBtn) return;
+      var onLast = activeIndex >= total - 1;
+      var slideEl = currentSlideEl(activeIndex);
+      var blanksBlock = slideHasFillBlanks(slideEl) && !fillBlanksCompleteInSlide(slideEl);
+      nextBtn.disabled = !!blanksBlock;
+      if (onLast) {
+        nextBtn.textContent = 'Terminer →';
+        nextBtn.setAttribute(
+          'aria-label',
+          blanksBlock
+            ? 'Terminer — complétez d’abord tous les champs'
+            : 'Terminer le parcours visuel'
+        );
+      } else {
+        nextBtn.textContent = 'Suivant →';
+        nextBtn.setAttribute(
+          'aria-label',
+          blanksBlock ? 'Étape suivante — complétez d’abord tous les champs' : 'Étape suivante'
+        );
+      }
+    }
+
+    function refreshNextFromActive() {
+      var i =
+        swiperEl && root.__lmsSwiper
+          ? root.__lmsSwiper.activeIndex
+          : root.__lmsFbIndex | 0;
+      syncNextButton(i);
+    }
+
+    function isOnLast() {
+      if (swiperEl && root.__lmsSwiper) {
+        return root.__lmsSwiper.activeIndex >= total - 1;
+      }
+      return (root.__lmsFbIndex | 0) >= total - 1;
+    }
+
+    /** @param {boolean} force — clic « Terminer » ; sinon après délai sur la dernière étape (débloque seulement) */
+    function tryComplete(force) {
+      if (!allVisited()) {
+        if (force) {
+          showCanvasToast(
+            root,
+            'Parcourez toutes les étapes du parcours (Précédent / Suivant) avant de terminer.'
+          );
+        }
+        return;
+      }
+      if (!isOnLast()) return;
+      if (!force && !root.__lmsLastDwellOk) return;
+      signalLessonComplete(!!force);
+    }
+
+    function scheduleLastDwell(activeIndex) {
+      clearTimeout(lastDwellTimer);
+      root.__lmsLastDwellOk = false;
+      if (activeIndex !== total - 1) return;
+      lastDwellTimer = setTimeout(function () {
+        root.__lmsLastDwellOk = true;
+        tryComplete(false);
+      }, getLastSlideDwellMs());
+    }
 
     function wireModals() {
       root.querySelectorAll('[data-lms-open-modal]').forEach(function (btn) {
@@ -111,52 +348,9 @@
     }
 
     wireModals();
+    wireLiveFillBlanks(root, refreshNextFromActive);
 
     if (swiperEl && typeof window.Swiper === 'function' && total > 0) {
-      var MIN_DWELL = getSlideDwellMs();
-      var slideEnterTime = Object.create(null);
-      var slideConfirmed = new Set();
-      var lastSlideTimer = null;
-
-      function confirmIfDwelt(index) {
-        if (typeof index !== 'number' || index < 0 || index >= total) return;
-        var t0 = slideEnterTime[index];
-        if (t0 != null && Date.now() - t0 >= MIN_DWELL) {
-          slideConfirmed.add(index);
-        }
-      }
-
-      function scheduleLastDwell(activeIndex) {
-        clearTimeout(lastSlideTimer);
-        if (activeIndex !== total - 1) return;
-        lastSlideTimer = setTimeout(function () {
-          confirmIfDwelt(total - 1);
-          trySignalLessonComplete();
-        }, MIN_DWELL + 120);
-      }
-
-      function trySignalLessonComplete() {
-        if (slideConfirmed.size < total) return;
-        for (var k = 0; k < total; k++) {
-          if (!slideConfirmed.has(k)) return;
-        }
-        if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
-          window.LmsLessonProgress.signalComplete();
-        }
-      }
-
-      function onSwiperSlideChange(swIn) {
-        var i = swIn.activeIndex;
-        var prev = swIn.previousIndex;
-        if (typeof prev === 'number' && prev >= 0 && prev !== i) {
-          confirmIfDwelt(prev);
-        }
-        slideEnterTime[i] = Date.now();
-        updateSlideProgress(root, i, total);
-        scheduleLastDwell(i);
-        trySignalLessonComplete();
-      }
-
       var sw = new window.Swiper(swiperEl, {
         slidesPerView: 1,
         spaceBetween: 0,
@@ -168,27 +362,31 @@
         a11y: { enabled: true },
         on: {
           init: function (swIn) {
-            slideEnterTime[swIn.activeIndex] = Date.now();
+            root.__lmsSwiper = swIn;
+            markVisited(swIn.activeIndex);
             updateSlideProgress(root, swIn.activeIndex, total);
+            syncNextButton(swIn.activeIndex);
             scheduleLastDwell(swIn.activeIndex);
-            trySignalLessonComplete();
             if (prevBtn) prevBtn.disabled = swIn.activeIndex === 0;
-            if (nextBtn) nextBtn.disabled = total <= 1;
           },
           slideChange: function (swIn) {
             var i = swIn.activeIndex;
+            markVisited(i);
             if (prevBtn) prevBtn.disabled = i === 0;
-            if (nextBtn) nextBtn.disabled = i >= total - 1;
-            onSwiperSlideChange(swIn);
+            syncNextButton(i);
+            updateSlideProgress(root, i, total);
+            scheduleLastDwell(i);
           },
         },
       });
+      root.__lmsSwiper = sw;
 
       var origSlideTo = sw.slideTo.bind(sw);
       sw.slideTo = function (index, speed, runCallbacks, internal) {
         var cur = sw.activeIndex;
         var target = typeof index === 'number' ? index : parseInt(index, 10);
-        if (target > cur && !validateFillBlanksInSlideEl(sw.slides[cur])) {
+        if (target > cur && !validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
+          syncNextButton(cur);
           return sw;
         }
         return origSlideTo(index, speed, runCallbacks, internal);
@@ -201,7 +399,16 @@
       }
       if (nextBtn) {
         nextBtn.addEventListener('click', function () {
-          if (!validateFillBlanksInSlideEl(sw.slides[sw.activeIndex])) return;
+          var cur = sw.activeIndex;
+          if (!validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
+            syncNextButton(cur);
+            return;
+          }
+          markVisited(cur);
+          if (cur >= total - 1) {
+            tryComplete(true);
+            return;
+          }
           sw.slideNext();
         });
       }
@@ -210,7 +417,16 @@
         var r = root.getBoundingClientRect();
         if (r.top > window.innerHeight || r.bottom < 0) return;
         if (e.key === 'ArrowRight') {
-          if (!validateFillBlanksInSlideEl(sw.slides[sw.activeIndex])) return;
+          var cur = sw.activeIndex;
+          if (!validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
+            syncNextButton(cur);
+            return;
+          }
+          markVisited(cur);
+          if (cur >= total - 1) {
+            tryComplete(true);
+            return;
+          }
           sw.slideNext();
         }
         if (e.key === 'ArrowLeft') sw.slidePrev();
@@ -220,53 +436,20 @@
 
     /* Fallback sans Swiper */
     var idx = -1;
-    var MIN_DWELL_FB = getSlideDwellMs();
-    var slideEnterTimeFb = Object.create(null);
-    var slideConfirmedFb = new Set();
-    var lastTimerFb = null;
-
-    function confirmIfDweltFb(index) {
-      if (typeof index !== 'number' || index < 0 || index >= total) return;
-      var t0 = slideEnterTimeFb[index];
-      if (t0 != null && Date.now() - t0 >= MIN_DWELL_FB) {
-        slideConfirmedFb.add(index);
-      }
-    }
-
-    function scheduleLastFb(activeIndex) {
-      clearTimeout(lastTimerFb);
-      if (activeIndex !== total - 1) return;
-      lastTimerFb = setTimeout(function () {
-        confirmIfDweltFb(total - 1);
-        tryCompleteFb();
-      }, MIN_DWELL_FB + 120);
-    }
-
-    function tryCompleteFb() {
-      if (slideConfirmedFb.size < total) return;
-      for (var k = 0; k < total; k++) {
-        if (!slideConfirmedFb.has(k)) return;
-      }
-      if (window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
-        window.LmsLessonProgress.signalComplete();
-      }
-    }
+    root.__lmsFbIndex = 0;
 
     function show(i) {
       var newI = Math.max(0, Math.min(i, total - 1));
-      if (newI !== idx) {
-        if (idx >= 0) confirmIfDweltFb(idx);
-        idx = newI;
-        slideEnterTimeFb[idx] = Date.now();
-        scheduleLastFb(idx);
-      }
+      idx = newI;
+      root.__lmsFbIndex = idx;
+      markVisited(idx);
       slides.forEach(function (el, j) {
         el.classList.toggle('hidden', j !== idx);
       });
       if (prevBtn) prevBtn.disabled = idx === 0;
-      if (nextBtn) nextBtn.disabled = idx >= total - 1;
+      syncNextButton(idx);
       updateSlideProgress(root, idx, total);
-      tryCompleteFb();
+      scheduleLastDwell(idx);
     }
 
     if (prevBtn)
@@ -276,7 +459,15 @@
     if (nextBtn)
       nextBtn.addEventListener('click', function () {
         var curEl = slides[idx];
-        if (!validateFillBlanksInSlideEl(curEl)) return;
+        if (!validateFillBlanksInSlideEl(curEl, { toast: true })) {
+          syncNextButton(idx);
+          return;
+        }
+        markVisited(idx);
+        if (idx >= total - 1) {
+          tryComplete(true);
+          return;
+        }
         show(idx + 1);
       });
     document.addEventListener('keydown', function (e) {
@@ -284,7 +475,15 @@
       var r = root.getBoundingClientRect();
       if (r.top > window.innerHeight || r.bottom < 0) return;
       if (e.key === 'ArrowRight') {
-        if (!validateFillBlanksInSlideEl(slides[idx])) return;
+        if (!validateFillBlanksInSlideEl(slides[idx], { toast: true })) {
+          syncNextButton(idx);
+          return;
+        }
+        markVisited(idx);
+        if (idx >= total - 1) {
+          tryComplete(true);
+          return;
+        }
         show(idx + 1);
       }
       if (e.key === 'ArrowLeft') show(idx - 1);

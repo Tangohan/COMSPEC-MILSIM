@@ -43,37 +43,37 @@ $orgFormatDt = static function (?string $raw): string {
     return $t ? date('d/m/Y H:i', $t) : htmlspecialchars($raw, ENT_QUOTES, 'UTF-8');
 };
 
-$kpiCardClass = static function (array $k): string {
+$kpiCardClass = static function (array $k, bool $large = false): string {
     $id = (string) ($k['id'] ?? '');
     $valStr = $k['value'] ?? null;
     $n = is_numeric($valStr) ? (int) $valStr : null;
-    $base = 'rounded-2xl border-2 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md ';
+    $base = 'org-dash__kpi' . ($large ? ' org-dash__kpi--lg' : '');
     switch ($id) {
         case 'invites_expired':
-            return $base . 'border-slate-200 border-l-[3px] border-l-amber-500';
+            return $base . ' org-dash__kpi--amber';
         case 'invites_pending':
-            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-amber-400' : 'border-l-slate-200');
+            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--amber' : ' org-dash__kpi--slate');
         case 'profiles_incomplete':
-            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-amber-400' : 'border-l-slate-200');
+            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--amber' : ' org-dash__kpi--slate');
         case 'members_no_unit':
-            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-violet-400' : 'border-l-slate-200');
+            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--violet' : ' org-dash__kpi--slate');
         case 'members_no_role':
-            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-orange-400' : 'border-l-slate-200');
+            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--orange' : ' org-dash__kpi--slate');
         case 'training_expiring':
-            return $base . 'border-slate-200 border-l-[3px] border-l-sky-500';
+            return $base . ' org-dash__kpi--sky';
         case 'moderation_open':
             if (!empty($k['error'])) {
-                return $base . 'border-slate-200 border-l-[3px] border-l-slate-300';
+                return $base . ' org-dash__kpi--slate';
             }
 
-            return $base . 'border-slate-200 border-l-[3px] ' . (($n !== null && $n > 0) ? 'border-l-rose-400' : 'border-l-emerald-500/60');
+            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--rose' : ' org-dash__kpi--mint');
         case 'members_inactive':
-            return $base . 'border-slate-200 border-l-[3px] border-l-slate-300';
+            return $base . ' org-dash__kpi--slate';
         case 'members_active':
         case 'active_30d':
-            return $base . 'border-slate-200 border-l-[3px] border-l-blue-600';
+            return $base . ' org-dash__kpi--accent';
         default:
-            return $base . 'border-slate-200';
+            return $base;
     }
 };
 
@@ -117,137 +117,161 @@ $modActionLabelFr = static function (string $t): string {
     };
 };
 ?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-dashboard.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('assets/css/announce-tiles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <style>
-    .org-dash-grain {
-        background-image: radial-gradient(circle at 20% 20%, rgba(15, 23, 42, 0.07) 0.5px, transparent 0.6px),
-            radial-gradient(circle at 80% 70%, rgba(15, 23, 42, 0.05) 0.5px, transparent 0.6px);
-        background-size: 18px 18px;
+    .bo-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
+    .bo-sheet thead th {
+        position: sticky; top: 0; z-index: 2;
+        background: #0f172a; color: #e2e8f0;
+        border-bottom: 1px solid #1e293b;
+        padding: 0.7rem 0.85rem;
+        text-align: left;
+        font-size: 0.625rem;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        white-space: nowrap;
     }
+    .bo-sheet thead th.num { text-align: right; }
+    .bo-sheet tbody td {
+        padding: 0.65rem 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid #f1f5f9;
+        vertical-align: middle;
+        color: #0f172a;
+        background: #fff;
+    }
+    .bo-sheet tbody td:last-child { border-right: none; }
+    .bo-sheet tbody tr:nth-child(even) td { background: #f8fafc; }
+    .bo-sheet tbody tr:hover td { background: #eff6ff; }
+    .bo-sheet tbody tr:last-child td { border-bottom: none; }
+    .bo-sheet .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+    .bo-sheet .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.75rem; }
+    .bo-sheet-wrap {
+        max-height: min(70vh, 42rem);
+        overflow: auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.75rem;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .bo-sheet-toolbar {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        border: 1px solid #cbd5e1; border-bottom: none;
+        border-radius: 0.75rem 0.75rem 0 0;
+        background: linear-gradient(180deg, #f8fafc, #fff);
+    }
+    .bo-sheet-panel { border-radius: 0.75rem; }
+    .bo-sheet-panel .bo-sheet-wrap { border-radius: 0 0 0.75rem 0.75rem; }
 </style>
 <div
-    class="relative min-h-0 flex-1 overflow-x-hidden"
+    class="org-dash"
     x-data="{ tab: 'overview' }"
     x-init="if (location.hash === '#rh') { tab = 'rh'; } else if (location.hash === '#watch') { tab = 'watch'; }"
 >
-    <div class="pointer-events-none absolute inset-0 org-dash-grain opacity-[0.45]" aria-hidden="true"></div>
-    <div class="relative mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 space-y-8 lg:space-y-10">
+    <div class="org-dash__frame">
 
-        <header class="space-y-8">
-            <div class="text-center sm:text-left">
-                <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 sm:mx-0">
-                    <span class="h-2 w-2 shrink-0 animate-pulse rounded-full bg-blue-600" aria-hidden="true"></span>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-blue-700">Espace administration</span>
-                </div>
-                <h1 class="text-3xl font-black uppercase italic tracking-tighter text-[#0f172a] sm:text-4xl">
-                    Centre de <span class="text-blue-600">pilotage</span>
-                </h1>
-                <p class="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:mx-0">
-                    Membres, structure, recrutement et modération pour
-                    <?php if ($tenantName !== ''): ?>
-                        <span class="font-semibold text-slate-800"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>.
-                    <?php else: ?>
-                        votre communauté.
-                    <?php endif; ?>
-                </p>
-                <div class="mx-auto mt-6 h-1.5 w-24 rounded-full bg-blue-600 sm:mx-0" aria-hidden="true"></div>
-                <div class="mt-6 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-                    <dl class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                        <div class="flex items-baseline gap-2">
-                            <dt class="font-bold uppercase tracking-wider">Affichage</dt>
-                            <dd class="font-semibold tabular-nums text-slate-800"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+        <header class="org-dash__hero">
+            <div class="org-dash__hero-inner">
+                <div>
+                    <p class="org-dash__brand">Athena · État-major</p>
+                    <h1 class="org-dash__title">Centre de <span>pilotage</span></h1>
+                    <p class="org-dash__lead">
+                        Membres, structure, recrutement et modération pour
+                        <?php if ($tenantName !== ''): ?>
+                            <strong><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong>.
+                        <?php else: ?>
+                            <strong>votre communauté</strong>.
+                        <?php endif; ?>
+                        Passez d’une synthèse claire aux tableurs RH et surveillance.
+                    </p>
+                    <dl class="org-dash__hero-meta">
+                        <div class="org-dash__meta-pill">
+                            <dt>Affichage</dt>
+                            <dd class="tabular-nums"><?= htmlspecialchars($nowLabel, ENT_QUOTES, 'UTF-8') ?></dd>
                         </div>
                         <?php if ($showPlatformEnv && $envLabel !== ''): ?>
-                        <div class="hidden h-4 w-px bg-slate-200 sm:block" aria-hidden="true"></div>
-                        <div class="flex items-baseline gap-2">
-                            <dt class="font-bold uppercase tracking-wider">Mode</dt>
-                            <dd><span class="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700"><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></span></dd>
+                        <div class="org-dash__meta-pill">
+                            <dt>Mode</dt>
+                            <dd><?= htmlspecialchars($envLabel, ENT_QUOTES, 'UTF-8') ?></dd>
                         </div>
                         <?php endif; ?>
                     </dl>
-                    <a href="<?= url('dashboard') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800">
-                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"/></svg>
-                        Portail membre
-                    </a>
+                </div>
+                <div class="org-dash__hero-actions">
+                    <a href="<?= url('dashboard') ?>" class="org-dash__btn org-dash__btn--solid">Portail membre</a>
                     <?php if ($gate->allows('admin.system')): ?>
-                    <a href="<?= url('admin') ?>" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-900 transition hover:bg-amber-100">
-                        Plateforme
-                    </a>
+                    <a href="<?= url('admin') ?>" class="org-dash__btn org-dash__btn--warn">Plateforme</a>
                     <?php endif; ?>
-                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 transition hover:bg-slate-100">
-                        Journal d’audit
-                    </a>
+                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--ghost">Journal d’audit</a>
                 </div>
             </div>
-
-            <div class="rounded-xl border-l-4 border-blue-600 bg-blue-50 p-5 sm:p-6">
-                <h2 class="text-lg font-black uppercase italic text-blue-950">Vue d’ensemble opérationnelle</h2>
-                <p class="mt-2 text-sm leading-relaxed text-slate-700">
-                    Ce tableau de bord regroupe les indicateurs utiles au quotidien : effectifs, candidatures, formations et signaux de modération.
-                    Utilisez les onglets pour vous concentrer sur la synthèse, le suivi RH ou la surveillance.
-                </p>
-            </div>
-
-            <nav class="flex flex-wrap gap-1 border-b border-slate-300 sm:gap-2" aria-label="Sections du tableau de bord">
-                <button type="button" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }" :class="tab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
-                    Synthèse
-                </button>
-                <button type="button" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }" :class="tab === 'rh' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
-                    RH &amp; recrutement
-                </button>
-                <button type="button" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }" :class="tab === 'watch' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-900'" class="border-b-2 px-4 py-3 text-sm font-black uppercase italic transition-colors sm:px-6">
-                    Surveillance
-                </button>
+            <nav class="org-dash__tabs" aria-label="Sections du tableau de bord">
+                <button type="button" class="org-dash__tab" :class="tab === 'overview' && 'is-active'" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }">Synthèse</button>
+                <button type="button" class="org-dash__tab" :class="tab === 'rh' && 'is-active'" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }">RH &amp; recrutement</button>
+                <button type="button" class="org-dash__tab" :class="tab === 'watch' && 'is-active'" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }">Surveillance</button>
             </nav>
         </header>
 
-        <div x-show="tab === 'overview'" class="space-y-8 lg:space-y-10">
+        <div x-show="tab === 'overview'">
 
-        <section aria-labelledby="org-kpi-heading">
-            <div class="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <?php
+        $announce_items = is_array($orgAnnounceItems ?? null) ? $orgAnnounceItems : [];
+        $announce_heading = 'Alertes & annonces';
+        $announce_kicker = 'Transmission';
+        $announce_empty = 'Aucune alerte ni annonce publiée — créez-en depuis la gestion des messages.';
+        $announce_id = 'org-announce';
+        $announce_manage_url = url('back-office/alerts');
+        require base_path('views/partials/announce_tiles.php');
+        ?>
+
+        <section class="org-dash__section" aria-labelledby="org-kpi-heading">
+            <div class="org-dash__section-head">
                 <div>
-                    <h2 id="org-kpi-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Indicateurs stratégiques</h2>
-                    <p class="mt-1 text-sm text-slate-600">Synthèse opérationnelle et signaux de charge sur votre communauté.</p>
+                    <p class="org-dash__kicker">Section 01</p>
+                    <h2 id="org-kpi-heading" class="org-dash__section-title">Indicateurs stratégiques</h2>
+                    <p class="org-dash__section-lead">Synthèse opérationnelle et signaux de charge sur votre communauté.</p>
                 </div>
             </div>
 
             <?php if ($blockError): ?>
-                <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 shadow-sm">
-                    <?= htmlspecialchars($blockError, ENT_QUOTES, 'UTF-8') ?>
-                </div>
+                <div class="org-dash__alert"><?= htmlspecialchars($blockError, ENT_QUOTES, 'UTF-8') ?></div>
             <?php elseif (!empty($kpis)): ?>
-                <div class="space-y-4">
+                <div class="org-dash__stack">
                     <?php if (!empty($primaryKpis)): ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="org-dash__grid org-dash__grid--kpi-primary">
                         <?php foreach ($primaryKpis as $k): ?>
-                            <div class="<?= htmlspecialchars($kpiCardClass($k), ENT_QUOTES, 'UTF-8') ?> p-6">
-                                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                            <article class="<?= htmlspecialchars($kpiCardClass($k, true), ENT_QUOTES, 'UTF-8') ?>">
+                                <p class="org-dash__kpi-label"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php if (!empty($k['error'])): ?>
-                                    <p class="text-lg font-semibold text-rose-600"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-error"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php else: ?>
-                                    <p class="text-4xl font-black text-slate-900 tabular-nums tracking-tight"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-value"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
                                 <?php if (!empty($k['hint'])): ?>
-                                    <p class="text-xs text-slate-500 mt-2"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-hint"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
-                            </div>
+                            </article>
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
 
                     <?php if (!empty($secondaryKpis)): ?>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+                    <div class="org-dash__grid org-dash__grid--kpi-secondary">
                         <?php foreach ($secondaryKpis as $k): ?>
-                            <div class="<?= htmlspecialchars($kpiCardClass($k), ENT_QUOTES, 'UTF-8') ?> p-4">
-                                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 leading-tight"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                            <article class="<?= htmlspecialchars($kpiCardClass($k, false), ENT_QUOTES, 'UTF-8') ?>">
+                                <p class="org-dash__kpi-label"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php if (!empty($k['error'])): ?>
-                                    <p class="text-sm font-semibold text-rose-600"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-error"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php else: ?>
-                                    <p class="text-2xl font-black text-slate-900 tabular-nums"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-value"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
                                 <?php if (!empty($k['hint'])): ?>
-                                    <p class="text-[11px] text-slate-500 mt-1"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="org-dash__kpi-hint"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
-                            </div>
+                            </article>
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
@@ -255,163 +279,136 @@ $modActionLabelFr = static function (string $t): string {
             <?php endif; ?>
         </section>
 
-        <section class="space-y-4" aria-labelledby="org-actions-rapides-heading">
-            <div>
-                <h2 id="org-actions-rapides-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Raccourcis</h2>
-                <p class="mt-1 text-sm text-slate-600">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
+        <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
+            <div class="org-dash__section-head">
+                <div>
+                    <p class="org-dash__kicker">Section 02</p>
+                    <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Raccourcis</h2>
+                    <p class="org-dash__section-lead">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
+                </div>
             </div>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <a href="<?= url('back-office/users/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+            <div class="org-dash__grid org-dash__grid--actions">
+                <a href="<?= url('back-office/users/create') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-blue-600 text-lg font-black italic text-white">+</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-blue-600">Effectifs</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--blue" aria-hidden="true">+</span>
+                            <span class="org-dash__action-tag">Effectifs</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouveau membre</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Créer un compte et préparer l’arrivée d’un opérateur.</p>
+                        <h3 class="org-dash__action-title">Nouveau membre</h3>
+                        <p class="org-dash__action-text">Créer un compte et préparer l’arrivée d’un opérateur.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
-                <a href="<?= url('back-office/groups/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+                <a href="<?= url('back-office/groups/create') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-slate-800 text-lg font-black italic text-white">G</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Structure</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark" aria-hidden="true">G</span>
+                            <span class="org-dash__action-tag">Structure</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouveau groupe</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Organiser une sous-unité ou une cellule.</p>
+                        <h3 class="org-dash__action-title">Nouveau groupe</h3>
+                        <p class="org-dash__action-text">Organiser une sous-unité ou une cellule.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
-                <a href="<?= url('back-office/teams/create') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5">
+                <a href="<?= url('back-office/teams/create') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-slate-800 text-lg font-black italic text-white">E</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">Équipes</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark" aria-hidden="true">E</span>
+                            <span class="org-dash__action-tag">Équipes</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Nouvelle équipe</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Constituer une équipe pour une mission ou un créneau.</p>
+                        <h3 class="org-dash__action-title">Nouvelle équipe</h3>
+                        <p class="org-dash__action-text">Constituer une équipe pour une mission ou un créneau.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php if ($canInv): ?>
-                <a href="<?= url('back-office/invitations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-amber-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-900/5">
+                <a href="<?= url('back-office/invitations') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-amber-500 text-lg font-black italic text-amber-950">@</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-amber-700">Accès</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--amber" aria-hidden="true">@</span>
+                            <span class="org-dash__action-tag">Accès</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Invitations</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Inviter par e-mail et suivre les liens envoyés.</p>
+                        <h3 class="org-dash__action-title">Invitations</h3>
+                        <p class="org-dash__action-text">Inviter par e-mail et suivre les liens envoyés.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-amber-700">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canMemberModeration): ?>
-                <a href="<?= url('back-office/moderation') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-rose-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-900/5">
+                <a href="<?= url('back-office/moderation') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-rose-600 text-lg font-black italic text-white">!</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-rose-600">Modération</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--rose" aria-hidden="true">!</span>
+                            <span class="org-dash__action-tag">Modération</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Restrictions</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Sanctions, limitations et suivi des comptes concernés.</p>
+                        <h3 class="org-dash__action-title">Restrictions</h3>
+                        <p class="org-dash__action-text">Sanctions, limitations et suivi des comptes concernés.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-rose-700">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php endif; ?>
-                <a href="<?= url('back-office/centre-operations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-900/5 sm:col-span-2 xl:col-span-1">
+                <a href="<?= url('back-office/centre-operations') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-emerald-600 text-lg font-black italic text-white">⌁</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700">Opérations</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--mint" aria-hidden="true">⌁</span>
+                            <span class="org-dash__action-tag">Opérations</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Ops admin</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">File actionnable, playbooks incidents, audit et objectifs KPI.</p>
-                        <p class="mt-3 text-xs text-slate-500"><a href="<?= url('back-office/tableau-operationnel') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-900">Ouvrir le tableau opérationnel</a> (permanences, missions, consignes)</p>
+                        <h3 class="org-dash__action-title">Ops admin</h3>
+                        <p class="org-dash__action-text">File actionnable, playbooks incidents, audit et objectifs.</p>
+                        <p class="org-dash__action-text" style="margin-top:0.5rem"><a href="<?= url('back-office/tableau-operationnel') ?>" class="org-dash__section-link">Tableau opérationnel</a></p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-700">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php if (!empty($orgIntegrationsPlanAllowed)): ?>
-                <a href="<?= url('back-office/integrations') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-violet-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-violet-400 hover:shadow-lg hover:shadow-violet-900/5">
+                <a href="<?= url('back-office/integrations') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-violet-600 text-lg font-black italic text-white">↗</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-violet-700">Connexions</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--violet" aria-hidden="true">↗</span>
+                            <span class="org-dash__action-tag">Connexions</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Intégrations</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Services liés et paramètres d’interopérabilité.</p>
+                        <h3 class="org-dash__action-title">Intégrations</h3>
+                        <p class="org-dash__action-text">Services liés et paramètres d’interopérabilité.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-violet-700">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php endif; ?>
                 <?php if (\App\Core\Gate::getInstance()->allows('admin.compliance.export')): ?>
-                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-900/5">
+                <a href="<?= url('back-office/conformite/export-dossier') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center border-2 border-emerald-600 text-lg font-black italic text-emerald-700">D</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-emerald-800">Conformité</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--outline" aria-hidden="true">D</span>
+                            <span class="org-dash__action-tag">Conformité</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Export dossier</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Assembler les pièces utiles à un contrôle ou une revue.</p>
+                        <h3 class="org-dash__action-title">Export dossier</h3>
+                        <p class="org-dash__action-text">Assembler les pièces utiles à un contrôle ou une revue.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-emerald-800">
-                        Ouvrir
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canSeniorityBoTile): ?>
-                <a href="<?= url('back-office/organisation/anciennete') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-indigo-100 bg-white p-6 shadow-sm transition-all duration-200 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-900/5">
+                <a href="<?= url('back-office/organisation/anciennete') ?>" class="org-dash__action">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-indigo-600 text-lg font-black italic text-white">A</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-indigo-800">Effectifs</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--indigo" aria-hidden="true">A</span>
+                            <span class="org-dash__action-tag">Effectifs</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Ancienneté</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Publiez les indicateurs visibles sur les fiches et dans l’espace RH, ou installez le jeu standard en un clic.</p>
+                        <h3 class="org-dash__action-title">Ancienneté</h3>
+                        <p class="org-dash__action-text">Indicateurs visibles sur les fiches et dans l’espace RH.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-indigo-800">
-                        Configurer
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Configurer →</span>
                 </a>
                 <?php endif; ?>
                 <?php if ($canTenantTechModules): ?>
-                <a href="<?= url('back-office/ressources/modpacks') ?>" class="group flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-900/5 sm:col-span-2 xl:col-span-2">
+                <a href="<?= url('back-office/ressources/modpacks') ?>" class="org-dash__action org-dash__action--wide">
                     <div>
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex h-12 w-12 items-center justify-center bg-slate-900 text-lg font-black italic text-white">R</div>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-blue-600">Ressources</span>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark" aria-hidden="true">R</span>
+                            <span class="org-dash__action-tag">Ressources</span>
                         </div>
-                        <h3 class="mt-4 text-lg font-black uppercase italic tracking-tight text-slate-900">Modpacks &amp; outils terrain</h3>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-500">Packs mods, cartographie et configuration associée pour votre communauté.</p>
+                        <h3 class="org-dash__action-title">Modpacks &amp; outils terrain</h3>
+                        <p class="org-dash__action-text">Packs mods, cartographie et configuration associée pour votre communauté.</p>
                     </div>
-                    <span class="mt-6 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors group-hover:text-blue-600">
-                        Ouvrir les ressources
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                    </span>
+                    <span class="org-dash__action-foot">Ouvrir les ressources →</span>
                 </a>
                 <?php endif; ?>
             </div>
@@ -431,28 +428,29 @@ $modActionLabelFr = static function (string $t): string {
         };
         ?>
         <?php if ($canTraining): ?>
-        <section aria-labelledby="org-training-feed-heading" class="space-y-4">
-            <div class="flex flex-wrap items-end justify-between gap-4">
+        <section class="org-dash__section" aria-labelledby="org-training-feed-heading">
+            <div class="org-dash__section-head">
                 <div>
-                    <h2 id="org-training-feed-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Formations — alertes récentes</h2>
-                    <p class="mt-1 text-sm text-slate-600">Inscriptions à valider, parcours terminés et demandes d’aide sur un module (issues du portail apprenant).</p>
+                    <p class="org-dash__kicker">Section 03</p>
+                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Formations — alertes récentes</h2>
+                    <p class="org-dash__section-lead">Inscriptions à valider, parcours terminés et demandes d’aide sur un module.</p>
                 </div>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-emerald-800 hover:text-emerald-950">Assignations →</a>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Assignations →</a>
             </div>
-            <div class="rounded-2xl border border-emerald-200/70 bg-white shadow-sm overflow-hidden">
+            <div class="org-dash__panel org-dash__panel--mint">
                 <?php if ($orgTrainingFeedErr): ?>
-                    <div class="p-5 text-sm text-rose-600"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="org-dash__empty" style="color:#e11d48"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
                 <?php elseif ($orgTrainingFeed === []): ?>
-                    <div class="p-8 text-center text-sm text-slate-600">Aucune alerte récente liée aux formations.</div>
+                    <div class="org-dash__empty">Aucune alerte récente liée aux formations.</div>
                 <?php else: ?>
-                    <ul class="divide-y divide-slate-100">
+                    <ul class="org-dash__feed">
                         <?php foreach ($orgTrainingFeed as $frow): ?>
                             <?php
                             $cat = (string) ($frow['category'] ?? '');
                             [$catLab, $catClass] = $trainingFeedBadge($cat);
                             $fLink = trim((string) ($frow['link_url'] ?? ''));
                             ?>
-                            <li class="px-5 py-4 hover:bg-emerald-50/30 transition-colors">
+                            <li class="org-dash__feed-item">
                                 <div class="flex flex-wrap items-start gap-3">
                                     <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 <?= htmlspecialchars($catClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($catLab, ENT_QUOTES, 'UTF-8') ?></span>
                                     <div class="min-w-0 flex-1">
@@ -502,367 +500,500 @@ $modActionLabelFr = static function (string $t): string {
         $ecRejected = (int) ($orgEnlistmentCounts['rejected'] ?? 0);
         $enlistStatusBadge = static function (string $status): array {
             return match ($status) {
-                'submitted' => ['En attente', 'bg-amber-100 text-amber-950 ring-1 ring-amber-200/80'],
-                'reviewed' => ['Traitée', 'bg-emerald-100 text-emerald-950 ring-1 ring-emerald-200/80'],
-                'rejected' => ['Rejetée', 'bg-rose-100 text-rose-950 ring-1 ring-rose-200/80'],
-                default => ['Autre état', 'bg-slate-100 text-slate-800 ring-1 ring-slate-200/80'],
+                'submitted' => ['En attente', 'bg-amber-50 text-amber-900 ring-amber-200'],
+                'reviewed' => ['Traitée', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+                'rejected' => ['Rejetée', 'bg-rose-50 text-rose-900 ring-rose-200'],
+                default => ['Autre état', 'bg-slate-100 text-slate-800 ring-slate-200'],
             };
         };
+
+        $rhAlertSheet = [];
+        $pushAlertRows = static function (string $kind, string $kindLabel, string $chip, array $list, string $listUrl) use (&$rhAlertSheet): void {
+            foreach ($list as $row) {
+                $rhAlertSheet[] = [
+                    'kind' => $kind,
+                    'kind_label' => $kindLabel,
+                    'kind_chip' => $chip,
+                    'name' => (string) ($row['display_name'] ?? $row['email'] ?? '—'),
+                    'email' => (string) ($row['email'] ?? ''),
+                    'user_id' => (int) ($row['id'] ?? 0),
+                    'list_url' => $listUrl,
+                ];
+            }
+        };
+        if (empty($wq['error_incomplete'])) {
+            $pushAlertRows('incomplete', 'Profil incomplet', 'bg-amber-50 text-amber-900 ring-amber-200', $wq['incomplete_profiles'] ?? [], url('back-office/users') . '?filter_incomplete=1');
+        }
+        if (empty($wq['error_no_unit'])) {
+            $pushAlertRows('no_unit', 'Sans unité', 'bg-violet-50 text-violet-900 ring-violet-200', $wq['users_without_unit'] ?? [], url('back-office/users') . '?filter_no_unit=1');
+        }
+        if (empty($wq['error_no_role'])) {
+            $pushAlertRows('no_role', 'Sans rôle', 'bg-orange-50 text-orange-900 ring-orange-200', $wq['users_without_role'] ?? [], url('back-office/users') . '?filter_no_role=1');
+        }
+        $rhAlertCount = count($rhAlertSheet);
+        $rhJournalCount = is_array($rhRows) ? count($rhRows) : 0;
+        $rhEnlistCount = is_array($orgEnlistmentRecent) ? count($orgEnlistmentRecent) : 0;
         ?>
-        <div x-show="tab === 'rh'" x-cloak class="space-y-8 lg:space-y-10">
+        <div x-show="tab === 'rh'" x-cloak class="space-y-8 lg:space-y-10" id="rh">
 
-        <section aria-labelledby="org-recruitment-rh-heading" class="space-y-4">
-            <div class="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h2 id="org-recruitment-rh-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Recrutement &amp; traçabilité RH</h2>
-                    <p class="mt-1 text-sm text-slate-600">États des candidatures, dernières soumissions et mouvements de comptes, rôles, groupes et invitations.</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px]">
-                    <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-50 to-white">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Candidatures</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Répartition par état · dernières mises à jour</p>
-                        </div>
-                        <a href="<?= url('back-office/recruitments') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-900">Liste complète →</a>
-                    </div>
-                    <?php if ($orgEnlistmentErr): ?>
-                        <div class="p-5 flex-1 flex items-center">
-                            <p class="text-sm text-rose-600"><?= htmlspecialchars($orgEnlistmentErr, ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                    <?php else: ?>
-                        <div class="px-5 pt-4 flex flex-wrap gap-2">
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 ring-1 ring-amber-200/70" title="En attente de décision">
-                                <span class="tabular-nums text-base font-black"><?= $ecSubmitted ?></span> en attente
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 ring-1 ring-emerald-200/70">
-                                <span class="tabular-nums text-base font-black"><?= $ecReviewed ?></span> traitées
-                            </span>
-                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-950 ring-1 ring-rose-200/70">
-                                <span class="tabular-nums text-base font-black"><?= $ecRejected ?></span> rejetées
-                            </span>
-                        </div>
-                        <?php if (empty($orgEnlistmentRecent)): ?>
-                            <div class="p-8 text-center flex-1 flex flex-col justify-center">
-                                <p class="text-sm font-medium text-slate-700">Aucune candidature enregistrée</p>
-                                <p class="text-xs text-slate-500 mt-1">Les dossiers soumis via le formulaire de recrutement apparaîtront ici.</p>
-                            </div>
-                        <?php else: ?>
-                            <ul class="divide-y divide-slate-100 mt-2 flex-1">
-                                <?php foreach ($orgEnlistmentRecent as $erow): ?>
-                                    <?php
-                                    $st = (string) ($erow['status'] ?? '');
-                                    [$stLabel, $stClass] = $enlistStatusBadge($st);
-                                    $eid = (int) ($erow['id'] ?? 0);
-                                    $name = trim((string) ($erow['first_name'] ?? '') . ' ' . (string) ($erow['last_name'] ?? ''));
-                                    if ($name === '') {
-                                        $name = (string) ($erow['email'] ?? '—');
-                                    }
-                                    ?>
-                                    <li class="px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/80">
-                                        <div class="min-w-0">
-                                            <a href="<?= url('back-office/recruitments/' . $eid . '?dossier=1') ?>" class="font-semibold text-slate-900 hover:text-blue-800 hover:underline truncate block"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></a>
-                                            <span class="text-xs text-slate-500 truncate block"><?= htmlspecialchars((string) ($erow['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                        </div>
-                                        <div class="flex shrink-0 items-center gap-2">
-                                            <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="text-[11px] text-slate-400 tabular-nums whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($erow['updated_at']) ? (string) $erow['updated_at'] : (isset($erow['created_at']) ? (string) $erow['created_at'] : null)), ENT_QUOTES, 'UTF-8') ?></span>
-                                        </div>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                    <?php endif; ?>
-                </div>
-
-                <div class="rounded-2xl border border-indigo-200/70 bg-white shadow-sm overflow-hidden flex flex-col min-h-[280px]">
-                    <div class="px-5 py-4 border-b border-indigo-100 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-50/80 to-white">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Fil RH &amp; affectations</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Rôles, comptes, groupes, invitations — hors actions plateforme pure.</p>
-                        </div>
-                        <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 text-sm font-semibold text-indigo-800 hover:text-indigo-950">Journal complet →</a>
-                    </div>
-                    <?php if ($rhErr): ?>
-                        <div class="p-5 flex-1 flex items-center">
-                            <p class="text-sm text-rose-600"><?= htmlspecialchars($rhErr, ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                    <?php elseif (empty($rhRows)): ?>
-                        <div class="p-8 text-center flex-1 flex flex-col justify-center">
-                            <p class="text-sm font-medium text-slate-700">Aucun mouvement RH récent</p>
-                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Les changements de rôle, d’affectation à un groupe ou les invitations apparaissent ici lorsqu’ils sont journalisés.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="divide-y divide-slate-100">
-                            <?php foreach ($rhRows as $rrow): ?>
-                                <li class="px-5 py-3 hover:bg-indigo-50/40 transition-colors">
-                                    <div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
-                                        <div class="shrink-0 w-36 text-xs font-medium text-slate-500 tabular-nums">
-                                            <?= htmlspecialchars($orgFormatDt(isset($rrow['created_at']) ? (string) $rrow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?>
-                                        </div>
-                                        <div class="min-w-0 flex-1">
-                                            <?php $rhAction = (string) ($rrow['action'] ?? ''); ?>
-                                            <span class="inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-950 mb-1" title="<?= htmlspecialchars($rhAction, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(audit_action_label_fr($rhAction), ENT_QUOTES, 'UTF-8') ?></span>
-                                            <p class="text-sm text-slate-700">
-                                                <span class="text-slate-500">Acteur ·</span>
-                                                <?= htmlspecialchars((string) ($rrow['actor_email'] ?? ('#' . (string) ($rrow['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>
-                                            </p>
-                                            <?php
-                                            $ov = trim((string) ($rrow['old_value'] ?? ''));
-                                            $nv = trim((string) ($rrow['new_value'] ?? ''));
-                                            if ($rhAction === 'role_assigned' && ($ov !== '' || $nv !== '')): ?>
-                                                <p class="text-xs text-slate-600 mt-1 font-mono"><?= htmlspecialchars($ov === '' ? $nv : ($nv === '' ? $ov : $ov . ' → ' . $nv), ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php elseif (($rhAction === 'group_member_added' || $rhAction === 'group_member_removed') && ($nv !== '' || $ov !== '')): ?>
-                                                <p class="text-xs text-slate-600 mt-1">Unité / groupe · #<?= htmlspecialchars($nv !== '' ? $nv : $ov, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </section>
-
-        <section aria-labelledby="org-personnel-alerts-heading" class="space-y-4">
+        <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h2 id="org-personnel-alerts-heading" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Alertes effectifs</h2>
-                <p class="mt-1 text-sm text-slate-600">Membres actifs à traiter : profil incomplet, affectation d’unité, ou rôle communautaire manquant (hors comptes techniques).</p>
+                <p class="text-[11px] font-black uppercase tracking-[0.28em] text-blue-700">RH &amp; recrutement</p>
+                <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Tableur RH</h2>
+                <p class="mt-1 max-w-2xl text-sm text-slate-600">Candidatures, mouvements RH et alertes effectifs en vue tableur — pleine largeur.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
-                <?php
-                $alertCard = static function (string $title, string $badgeOk, string $badgeWarn, array $rows, ?string $err, string $moreUrl, string $borderAccent): void {
-                    $n = is_array($rows) ? count($rows) : 0;
-                    ?>
-                <div class="rounded-2xl border <?= htmlspecialchars($borderAccent, ENT_QUOTES, 'UTF-8') ?> bg-white p-5 shadow-sm flex flex-col min-h-[200px]">
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
-                        <?php if ($err): ?>
-                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">Erreur</span>
-                        <?php elseif ($n > 0): ?>
-                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md"><?= (int) $n ?> affiché(s)</span>
-                        <?php else: ?>
-                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md"><?= htmlspecialchars($badgeOk, ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($err): ?>
-                        <p class="text-sm text-rose-600 flex-1"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php elseif (empty($rows)): ?>
-                        <p class="text-sm text-slate-600 flex-1"><?= htmlspecialchars($badgeWarn, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php else: ?>
-                        <ul class="text-sm space-y-2 flex-1 min-h-0">
-                            <?php foreach ($rows as $row): ?>
-                                <li class="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
-                                    <a href="<?= url('back-office/users/' . (int) ($row['id'] ?? 0)) ?>" class="font-medium text-blue-800 hover:text-blue-950 hover:underline">
-                                        <?= htmlspecialchars((string) ($row['display_name'] ?? $row['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                    </a>
-                                    <span class="block text-xs text-slate-500 truncate"><?= htmlspecialchars((string) ($row['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                    <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-slate-800 hover:text-slate-950">Voir la liste filtrée →</a>
+            <dl class="flex flex-wrap gap-3 text-xs">
+                <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-amber-800">En attente</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-amber-950"><?= (int) $ecSubmitted ?></dd>
                 </div>
-                <?php
-                };
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-emerald-800">Traitées</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-emerald-950"><?= (int) $ecReviewed ?></dd>
+                </div>
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-rose-800">Rejetées</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-rose-950"><?= (int) $ecRejected ?></dd>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-slate-500">Alertes</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $rhAlertCount ?></dd>
+                </div>
+            </dl>
+        </header>
 
-                $alertCard(
-                    'Profils incomplets',
-                    'OK',
-                    'Aucun profil actif ne correspond aux critères (identité ou rôle manquant).',
-                    $wq['incomplete_profiles'] ?? [],
-                    $wq['error_incomplete'] ?? null,
-                    url('back-office/users') . '?filter_incomplete=1',
-                    'border-amber-200/80'
-                );
-                $alertCard(
-                    'Sans unité',
-                    'OK',
-                    'Tous les membres actifs ont une affectation en cours (ou table d’affectations absente).',
-                    $wq['users_without_unit'] ?? [],
-                    $wq['error_no_unit'] ?? null,
-                    url('back-office/users') . '?filter_no_unit=1',
-                    'border-violet-200/80'
-                );
-                $alertCard(
-                    'Sans rôle communautaire',
-                    'OK',
-                    'Chaque membre actif a un rôle assigné.',
-                    $wq['users_without_role'] ?? [],
-                    $wq['error_no_role'] ?? null,
-                    url('back-office/users') . '?filter_no_role=1',
-                    'border-orange-200/80'
-                );
-                ?>
+        <section class="bo-sheet-panel" aria-labelledby="org-rh-enlist-heading" x-data="{ filter: 'all' }">
+            <div class="bo-sheet-toolbar">
+                <div>
+                    <h3 id="org-rh-enlist-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Candidatures</h3>
+                    <p class="mt-0.5 text-xs text-slate-500"><?= (int) $rhEnlistCount ?> dossier(s) récents · répartition par état ci-dessus.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php
+                    $enlistFilters = [
+                        'all' => 'Tout',
+                        'submitted' => 'En attente',
+                        'reviewed' => 'Traitées',
+                        'rejected' => 'Rejetées',
+                    ];
+                    foreach ($enlistFilters as $fkey => $flabel):
+                    ?>
+                    <button
+                        type="button"
+                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
+                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
+                    <?php endforeach; ?>
+                    <a href="<?= url('back-office/recruitments') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Liste complète</a>
+                </div>
+            </div>
+            <?php if ($orgEnlistmentErr): ?>
+                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($orgEnlistmentErr, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <div class="bo-sheet-wrap">
+                <table class="bo-sheet min-w-[52rem]">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th>Candidat</th>
+                            <th>E-mail</th>
+                            <th>État</th>
+                            <th>Mise à jour</th>
+                            <th class="num">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($orgEnlistmentErr): ?>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Candidatures temporairement indisponibles.</td></tr>
+                    <?php elseif (empty($orgEnlistmentRecent)): ?>
+                        <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune candidature enregistrée pour le moment.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($orgEnlistmentRecent as $i => $erow):
+                            $st = (string) ($erow['status'] ?? '');
+                            [$stLabel, $stClass] = $enlistStatusBadge($st);
+                            $eid = (int) ($erow['id'] ?? 0);
+                            $name = trim((string) ($erow['first_name'] ?? '') . ' ' . (string) ($erow['last_name'] ?? ''));
+                            if ($name === '') {
+                                $name = (string) ($erow['email'] ?? '—');
+                            }
+                            $filterKey = in_array($st, ['submitted', 'reviewed', 'rejected'], true) ? $st : 'all';
+                            ?>
+                            <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars($filterKey, ENT_QUOTES, 'UTF-8') ?>'">
+                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                <td class="font-semibold"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="text-slate-600"><?= htmlspecialchars((string) ($erow['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($erow['updated_at']) ? (string) $erow['updated_at'] : (isset($erow['created_at']) ? (string) $erow['created_at'] : null)), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="num">
+                                    <a href="<?= url('back-office/recruitments/' . $eid . '?dossier=1') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Dossier</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bo-sheet-panel" aria-labelledby="org-rh-journal-heading">
+            <div class="bo-sheet-toolbar">
+                <div>
+                    <h3 id="org-rh-journal-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Fil RH &amp; affectations</h3>
+                    <p class="mt-0.5 text-xs text-slate-500"><?= (int) $rhJournalCount ?> mouvement(s) · rôles, comptes, groupes, invitations.</p>
+                </div>
+                <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Journal complet</a>
+            </div>
+            <?php if ($rhErr): ?>
+                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($rhErr, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <div class="bo-sheet-wrap">
+                <table class="bo-sheet min-w-[56rem]">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th style="width:10rem">Date</th>
+                            <th>Action</th>
+                            <th>Acteur</th>
+                            <th>Ancienne valeur</th>
+                            <th>Nouvelle valeur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($rhErr): ?>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Fil RH temporairement indisponible.</td></tr>
+                    <?php elseif (empty($rhRows)): ?>
+                        <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucun mouvement RH récent.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($rhRows as $i => $rrow):
+                            $rhAction = (string) ($rrow['action'] ?? '');
+                            $ov = trim((string) ($rrow['old_value'] ?? ''));
+                            $nv = trim((string) ($rrow['new_value'] ?? ''));
+                            if (($rhAction === 'group_member_added' || $rhAction === 'group_member_removed') && ($nv !== '' || $ov !== '')) {
+                                $ovShow = $ov;
+                                $nvShow = $nv !== '' ? $nv : $ov;
+                            } else {
+                                $ovShow = $ov;
+                                $nvShow = $nv;
+                            }
+                            ?>
+                            <tr>
+                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($rrow['created_at']) ? (string) $rrow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <span class="inline-flex rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-950 ring-1 ring-indigo-200/80">
+                                        <?= htmlspecialchars(audit_action_label_fr($rhAction), ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td class="font-medium"><?= htmlspecialchars((string) ($rrow['actor_email'] ?? ('#' . (string) ($rrow['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="mono text-slate-500 max-w-[14rem] truncate" title="<?= htmlspecialchars($ovShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($ovShow !== '' ? $ovShow : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="mono text-slate-700 max-w-[14rem] truncate" title="<?= htmlspecialchars($nvShow, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($nvShow !== '' ? $nvShow : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bo-sheet-panel" aria-labelledby="org-rh-alerts-heading" x-data="{ filter: 'all' }">
+            <div class="bo-sheet-toolbar">
+                <div>
+                    <h3 id="org-rh-alerts-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Alertes effectifs</h3>
+                    <p class="mt-0.5 text-xs text-slate-500">Profils incomplets, sans unité ou sans rôle communautaire.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php
+                    $alertFilters = [
+                        'all' => 'Tout',
+                        'incomplete' => 'Profils',
+                        'no_unit' => 'Sans unité',
+                        'no_role' => 'Sans rôle',
+                    ];
+                    foreach ($alertFilters as $fkey => $flabel):
+                    ?>
+                    <button
+                        type="button"
+                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
+                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php
+            $alertErrs = array_filter([
+                $wq['error_incomplete'] ?? null,
+                $wq['error_no_unit'] ?? null,
+                $wq['error_no_role'] ?? null,
+            ]);
+            ?>
+            <?php if ($alertErrs !== []): ?>
+                <div class="border border-t-0 border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    <?php foreach ($alertErrs as $ae): ?>
+                        <p><?= htmlspecialchars((string) $ae, ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+            <div class="bo-sheet-wrap">
+                <table class="bo-sheet min-w-[48rem]">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th>Type d’alerte</th>
+                            <th>Membre</th>
+                            <th>E-mail</th>
+                            <th class="num">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($rhAlertSheet === []): ?>
+                        <tr><td colspan="5" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune alerte effectifs — les profils actifs sont complets.</td></tr>
+                    <?php else: ?>
+                        <?php foreach ($rhAlertSheet as $i => $arow): ?>
+                            <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars((string) $arow['kind'], ENT_QUOTES, 'UTF-8') ?>'">
+                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                <td>
+                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars((string) $arow['kind_chip'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string) $arow['kind_label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td class="font-semibold"><?= htmlspecialchars((string) $arow['name'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="text-slate-600"><?= htmlspecialchars((string) $arow['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="num">
+                                    <div class="inline-flex flex-wrap justify-end gap-1.5">
+                                        <?php if ((int) $arow['user_id'] > 0): ?>
+                                            <a href="<?= url('back-office/users/' . (int) $arow['user_id']) ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Fiche</a>
+                                        <?php endif; ?>
+                                        <a href="<?= htmlspecialchars((string) $arow['list_url'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Liste</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </section>
 
         </div>
 
-        <div x-show="tab === 'watch'" x-cloak class="space-y-8 lg:space-y-10">
+        <div x-show="tab === 'watch'" x-cloak class="space-y-8 lg:space-y-10" id="watch">
+        <?php
+        $watchSheetRows = [];
+        $expErr = $wq['error_invitations'] ?? null;
+        $trErr = $wq['error_training'] ?? null;
+        if (empty($expErr) && is_array($wq['expired_invitations'] ?? null)) {
+            foreach ($wq['expired_invitations'] as $inv) {
+                $watchSheetRows[] = [
+                    'kind' => 'invitation',
+                    'kind_label' => 'Invitation expirée',
+                    'kind_chip' => 'bg-amber-50 text-amber-900 ring-amber-200',
+                    'subject' => (string) ($inv['email'] ?? '—'),
+                    'detail' => 'À traiter dans les invitations',
+                    'when' => (string) ($inv['expires_at'] ?? ''),
+                    'when_label' => $orgFormatDt(isset($inv['expires_at']) ? (string) $inv['expires_at'] : null),
+                    'href' => url('back-office/invitations'),
+                    'action_label' => 'Gérer',
+                ];
+            }
+        }
+        if (empty($trErr) && is_array($wq['training_expiring'] ?? null)) {
+            foreach ($wq['training_expiring'] as $trow) {
+                $watchSheetRows[] = [
+                    'kind' => 'formation',
+                    'kind_label' => 'Formation · échéance',
+                    'kind_chip' => 'bg-sky-50 text-sky-900 ring-sky-200',
+                    'subject' => (string) ($trow['email'] ?? '—'),
+                    'detail' => (string) ($trow['course_title'] ?? 'Parcours'),
+                    'when' => (string) ($trow['expires_at'] ?? $trow['due_at'] ?? ''),
+                    'when_label' => $orgFormatDt(isset($trow['expires_at']) ? (string) $trow['expires_at'] : (isset($trow['due_at']) ? (string) $trow['due_at'] : null)),
+                    'href' => training_lms_admin_url(),
+                    'action_label' => 'Ouvrir',
+                ];
+            }
+        }
+        if (empty($modErr) && is_array($mod)) {
+            foreach ($mod as $a) {
+                $watchSheetRows[] = [
+                    'kind' => 'moderation',
+                    'kind_label' => $modActionLabelFr((string) ($a['action_type'] ?? '')),
+                    'kind_chip' => 'bg-rose-50 text-rose-900 ring-rose-200',
+                    'subject' => (string) ($a['target_email'] ?? '—'),
+                    'detail' => !empty($a['actor_email']) ? ('Par ' . (string) $a['actor_email']) : 'Mesure récente',
+                    'when' => (string) ($a['created_at'] ?? ''),
+                    'when_label' => $orgFormatDt(isset($a['created_at']) ? (string) $a['created_at'] : null),
+                    'href' => $canMemberModeration ? url('back-office/moderation') : '',
+                    'action_label' => 'Voir',
+                ];
+            }
+        }
+        $watchCount = count($watchSheetRows);
+        $journalCount = is_array($rows) ? count($rows) : 0;
+        ?>
 
-        <div class="grid grid-cols-1 gap-6 lg:gap-8 items-start">
-            <section class="w-full" aria-labelledby="org-journal-heading">
-                <div class="overflow-hidden rounded-2xl border-2 border-blue-200/80 bg-white shadow-sm">
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-blue-100 bg-gradient-to-r from-blue-50/80 to-white px-5 py-4">
-                        <div>
-                            <h2 id="org-journal-heading" class="text-lg font-black uppercase italic tracking-tight text-slate-900">Journal opérationnel</h2>
-                            <p class="mt-0.5 text-xs text-slate-500">Derniers événements enregistrés pour cette organisation.</p>
-                        </div>
-                        <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 hover:text-blue-900">
-                            Voir tout
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-                        </a>
-                    </div>
-                    <?php if ($activityError): ?>
-                        <div class="p-6">
-                            <p class="text-sm text-rose-600"><?= htmlspecialchars($activityError, ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                    <?php elseif (empty($rows)): ?>
-                        <div class="p-10 text-center">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3" aria-hidden="true">
-                                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                            </div>
-                            <p class="text-sm font-medium text-slate-700">Aucun événement récent</p>
-                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Le journal se remplira au fil des actions administratives et des connexions.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="divide-y divide-slate-100">
-                            <?php foreach ($rows as $row): ?>
-                                <li class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 hover:bg-slate-50/80 transition-colors">
-                                    <div class="shrink-0 w-36 text-xs font-medium text-slate-500 tabular-nums">
-                                        <?= htmlspecialchars($orgFormatDt(isset($row['created_at']) ? (string) $row['created_at'] : null), ENT_QUOTES, 'UTF-8') ?>
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <?php $actionSlug = (string) ($row['action'] ?? ''); ?>
-                                        <span class="mb-1 inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-800"><?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <p class="text-sm text-slate-700">
-                                            <span class="text-slate-500">Acteur ·</span>
-                                            <?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?>
-                                        </p>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </section>
-        </div>
-
-        <section aria-labelledby="org-watch-heading">
-            <div class="mb-4">
-                <h2 id="org-watch-heading" class="text-xs font-black uppercase tracking-widest text-slate-500">Surveillance et signaux</h2>
-                <p class="mt-1 text-sm text-slate-600">Files à traiter et mesures de modération récentes.</p>
+        <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.28em] text-blue-700">Surveillance</p>
+                <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Tableur opérationnel</h2>
+                <p class="mt-1 max-w-2xl text-sm text-slate-600">File à traiter et journal d’activité en vue tableur — pleine largeur, colonnes fixes, défilement vertical.</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
-                <div class="rounded-2xl border border-amber-200/80 bg-white p-5 shadow-sm flex flex-col min-h-[220px]">
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <h3 class="text-sm font-bold text-slate-900">Invitations expirées</h3>
-                        <?php
-                        $expCount = is_array($wq['expired_invitations'] ?? null) ? count($wq['expired_invitations']) : 0;
-                        $expErr = $wq['error_invitations'] ?? null;
-                        ?>
-                        <?php if (!$expErr && $expCount > 0): ?>
-                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md"><?= (int) $expCount ?> en file</span>
-                        <?php elseif (!$expErr): ?>
-                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">OK</span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!empty($expErr)): ?>
-                        <p class="text-sm text-rose-600 flex-1"><?= htmlspecialchars((string) $expErr, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php elseif (empty($wq['expired_invitations'])): ?>
-                        <div class="flex-1 flex flex-col justify-center py-4">
-                            <p class="text-sm text-slate-600">Aucune invitation expirée en attente de traitement.</p>
-                            <p class="text-xs text-slate-400 mt-2">Les relances et renvois se gèrent depuis Invitations.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="text-sm space-y-2 flex-1">
-                            <?php foreach ($wq['expired_invitations'] as $inv): ?>
-                                <li class="flex justify-between gap-2 text-slate-700 border-b border-amber-50 pb-2 last:border-0 last:pb-0">
-                                    <span class="truncate font-medium"><?= htmlspecialchars((string) ($inv['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="text-slate-500 whitespace-nowrap text-xs tabular-nums"><?= htmlspecialchars((string) ($inv['expires_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <a href="<?= url('back-office/invitations') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-amber-800 hover:text-amber-950">Gérer les invitations →</a>
-                    <?php endif; ?>
+            <dl class="flex flex-wrap gap-3 text-xs">
+                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-slate-500">À traiter</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $watchCount ?></dd>
                 </div>
+                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                    <dt class="font-bold uppercase tracking-wider text-slate-500">Journal</dt>
+                    <dd class="mt-0.5 text-lg font-black tabular-nums text-slate-900"><?= (int) $journalCount ?></dd>
+                </div>
+            </dl>
+        </header>
 
-                <div class="rounded-2xl border border-sky-200/80 bg-white p-5 shadow-sm flex flex-col min-h-[220px]">
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <h3 class="text-sm font-bold text-slate-900">Formations · échéance proche</h3>
-                        <?php
-                        $trCount = is_array($wq['training_expiring'] ?? null) ? count($wq['training_expiring']) : 0;
-                        $trErr = $wq['error_training'] ?? null;
-                        ?>
-                        <?php if (!$trErr && $trCount > 0): ?>
-                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-sky-800 bg-sky-100 px-2 py-0.5 rounded-md"><?= (int) $trCount ?> relance(s)</span>
-                        <?php elseif (!$trErr): ?>
-                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">À jour</span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!empty($trErr)): ?>
-                        <p class="text-sm text-rose-600 flex-1"><?= htmlspecialchars((string) $trErr, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php elseif (empty($wq['training_expiring'])): ?>
-                        <div class="flex-1 flex flex-col justify-center py-4">
-                            <p class="text-sm text-slate-600">Rien à relancer sur les 30 prochains jours.</p>
-                            <p class="text-xs text-slate-400 mt-2">Les inscriptions à surveiller apparaîtront ici.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="text-sm space-y-2 flex-1">
-                            <?php foreach ($wq['training_expiring'] as $row): ?>
-                                <li class="text-slate-700 border-b border-sky-50 pb-2 last:border-0 last:pb-0">
-                                    <span class="font-medium text-slate-900"><?= htmlspecialchars((string) ($row['course_title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="block text-xs text-slate-500 mt-0.5"><?= htmlspecialchars((string) ($row['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <a href="<?= training_lms_admin_url() ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-sky-800 hover:text-sky-950">Formations (LMS) →</a>
-                    <?php endif; ?>
+        <section class="bo-sheet-panel" aria-labelledby="org-watch-sheet-heading" x-data="{ filter: 'all' }">
+            <div class="bo-sheet-toolbar">
+                <div>
+                    <h3 id="org-watch-sheet-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">File à traiter</h3>
+                    <p class="mt-0.5 text-xs text-slate-500">Invitations expirées, formations à échéance et mesures de modération.</p>
                 </div>
+                <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer la file">
+                    <?php
+                    $filters = [
+                        'all' => 'Tout',
+                        'invitation' => 'Invitations',
+                        'formation' => 'Formations',
+                        'moderation' => 'Modération',
+                    ];
+                    foreach ($filters as $fkey => $flabel):
+                    ?>
+                    <button
+                        type="button"
+                        @click="filter = '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>'"
+                        :class="filter === '<?= htmlspecialchars($fkey, ENT_QUOTES, 'UTF-8') ?>' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                        class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                    ><?= htmlspecialchars($flabel, ENT_QUOTES, 'UTF-8') ?></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php if (!empty($expErr) || !empty($trErr) || !empty($modErr)): ?>
+                <div class="border border-t-0 border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                    <?php if (!empty($expErr)): ?><p><?= htmlspecialchars((string) $expErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                    <?php if (!empty($trErr)): ?><p><?= htmlspecialchars((string) $trErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                    <?php if (!empty($modErr)): ?><p><?= htmlspecialchars((string) $modErr, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                </div>
+            <?php endif; ?>
+            <div class="bo-sheet-wrap">
+                <table class="bo-sheet min-w-[56rem]">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th>Type</th>
+                            <th>Personne / e-mail</th>
+                            <th>Détail</th>
+                            <th>Date</th>
+                            <th class="num">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($watchSheetRows === []): ?>
+                        <tr>
+                            <td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">
+                                Rien à traiter pour le moment — invitations, formations et modération sont au vert.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($watchSheetRows as $i => $wrow): ?>
+                            <tr
+                                x-show="filter === 'all' || filter === '<?= htmlspecialchars((string) $wrow['kind'], ENT_QUOTES, 'UTF-8') ?>'"
+                                data-kind="<?= htmlspecialchars((string) $wrow['kind'], ENT_QUOTES, 'UTF-8') ?>"
+                            >
+                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                <td>
+                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars((string) $wrow['kind_chip'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string) $wrow['kind_label'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td class="font-semibold"><?= htmlspecialchars((string) $wrow['subject'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="text-slate-600"><?= htmlspecialchars((string) $wrow['detail'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars((string) $wrow['when_label'], ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="num">
+                                    <?php if ((string) $wrow['href'] !== ''): ?>
+                                        <a href="<?= htmlspecialchars((string) $wrow['href'], ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">
+                                            <?= htmlspecialchars((string) $wrow['action_label'], ENT_QUOTES, 'UTF-8') ?>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">—</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-                <div class="rounded-2xl border border-rose-200/70 bg-white p-5 shadow-sm flex flex-col min-h-[220px]">
-                    <div class="flex items-start justify-between gap-2 mb-3">
-                        <h3 class="text-sm font-bold text-slate-900">Modération récente</h3>
-                        <?php if (!$modErr && !empty($mod)): ?>
-                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md"><?= count($mod) ?> vue(s)</span>
-                        <?php elseif (!$modErr): ?>
-                            <span class="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">Calme</span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($modErr): ?>
-                        <p class="text-sm text-rose-600 flex-1"><?= htmlspecialchars((string) $modErr, ENT_QUOTES, 'UTF-8') ?></p>
-                    <?php elseif (empty($mod)): ?>
-                        <div class="flex-1 flex flex-col justify-center py-4">
-                            <p class="text-sm text-slate-600">Aucune action de modération récente.</p>
-                            <p class="text-xs text-slate-400 mt-2">Les sanctions et avertissements apparaissent ici.</p>
-                        </div>
-                    <?php else: ?>
-                        <ul class="text-sm space-y-2 flex-1">
-                            <?php foreach ($mod as $a): ?>
-                                <li class="text-slate-700 border-b border-rose-50 pb-2 last:border-0 last:pb-0">
-                                    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                                        <span class="text-[11px] font-black uppercase tracking-wide text-slate-800"><?= htmlspecialchars($modActionLabelFr((string) ($a['action_type'] ?? '')), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php if (!empty($a['created_at'])): ?>
-                                            <span class="text-[10px] text-slate-400 tabular-nums"><?= htmlspecialchars($orgFormatDt((string) $a['created_at']), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <p class="text-xs text-slate-500 mt-1">
-                                        Cible · <?= htmlspecialchars((string) ($a['target_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                                        <?php if (!empty($a['actor_email'])): ?>
-                                            <span class="text-slate-400"> · </span><?= htmlspecialchars((string) $a['actor_email'], ENT_QUOTES, 'UTF-8') ?>
-                                        <?php endif; ?>
-                                    </p>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php if ($canMemberModeration): ?>
-                        <a href="<?= url('back-office/moderation') ?>" class="inline-flex items-center gap-1 mt-4 text-sm font-semibold text-rose-800 hover:text-rose-950">Ouvrir les restrictions membres →</a>
-                        <?php endif; ?>
-                    <?php endif; ?>
+        <section class="bo-sheet-panel" aria-labelledby="org-journal-heading">
+            <div class="bo-sheet-toolbar">
+                <div>
+                    <h3 id="org-journal-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Journal opérationnel</h3>
+                    <p class="mt-0.5 text-xs text-slate-500">Derniers événements enregistrés pour cette communauté.</p>
                 </div>
+                <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">
+                    Journal complet
+                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+                </a>
+            </div>
+            <?php if ($activityError): ?>
+                <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($activityError, ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
+            <div class="bo-sheet-wrap">
+                <table class="bo-sheet min-w-[52rem]">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem">#</th>
+                            <th style="width:10rem">Date</th>
+                            <th>Action</th>
+                            <th>Acteur</th>
+                            <th>Ancienne valeur</th>
+                            <th>Nouvelle valeur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ($activityError): ?>
+                        <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Journal temporairement indisponible.</td></tr>
+                    <?php elseif (empty($rows)): ?>
+                        <tr>
+                            <td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">
+                                Aucun événement récent — le journal se remplira au fil des actions administratives.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($rows as $i => $row):
+                            $actionSlug = (string) ($row['action'] ?? '');
+                            $oldVal = trim((string) ($row['old_value'] ?? ''));
+                            $newVal = trim((string) ($row['new_value'] ?? ''));
+                            ?>
+                            <tr>
+                                <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($row['created_at']) ? (string) $row['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <span class="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-800 ring-1 ring-slate-200/80">
+                                        <?= htmlspecialchars(audit_action_label_fr($actionSlug), ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </td>
+                                <td class="font-medium"><?= htmlspecialchars((string) ($row['actor_email'] ?? ('#' . (string) ($row['user_id'] ?? ''))), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="mono text-slate-500 max-w-[14rem] truncate" title="<?= htmlspecialchars($oldVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($oldVal !== '' ? $oldVal : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="mono text-slate-700 max-w-[14rem] truncate" title="<?= htmlspecialchars($newVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($newVal !== '' ? $newVal : '—', ENT_QUOTES, 'UTF-8') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </section>
 

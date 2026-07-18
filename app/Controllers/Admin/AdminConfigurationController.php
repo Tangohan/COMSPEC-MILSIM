@@ -110,7 +110,7 @@ class AdminConfigurationController
 
         $rows = $this->enlistmentRepository->listReviewedWithSubmitterForTenant($tenantId);
         if ($rows === []) {
-            Session::flash('error', 'Aucune candidature acceptée avec compte rattaché (submitter_user_id), ou colonnes compte absentes.');
+            Session::flash('error', 'Aucune candidature acceptée avec un compte rattaché, ou données de compte indisponibles.');
 
             return Response::redirect(url('back-office/configuration'));
         }

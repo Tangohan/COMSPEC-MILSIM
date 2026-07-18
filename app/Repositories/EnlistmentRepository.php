@@ -438,14 +438,33 @@ class EnlistmentRepository
 
     /**
      * Dernières candidatures (tous statuts), pour tableau de bord org.
+     * Colonnes larges (dossier, canal, affectation, portail) pour alimenter un tableau dense.
      *
      * @return list<array<string, mixed>>
      */
     public function recentForTenantDashboard(int $tenantId, int $limit = 12): array
     {
         $limit = max(1, min(50, $limit));
+        $cols = [
+            'id', 'first_name', 'last_name', 'email', 'callsign', 'country', 'experience',
+            'specialty', 'platform', 'availability', 'status', 'reviewed_by', 'reviewed_at',
+            'reviewer_comment', 'submitter_user_id', 'created_at', 'updated_at',
+        ];
+        if ($this->hasAccountColumns()) {
+            $cols[] = 'submitted_via';
+            $cols[] = 'consent_sharing_at';
+        }
+        if ($this->hasRecruitmentOpeningIdColumn()) {
+            $cols[] = 'recruitment_opening_id';
+        }
+        if ($this->hasPortalStatusDisplayColumns()) {
+            $cols[] = 'candidate_portal_status_mode';
+            $cols[] = 'candidate_portal_status_manual_text';
+            $cols[] = 'candidate_portal_status_manual_band';
+        }
+        $select = implode(', ', $cols);
         $stmt = $this->pdo->prepare(
-            "SELECT id, first_name, last_name, email, status, created_at, updated_at, reviewed_at, submitter_user_id
+            "SELECT {$select}
              FROM enlistments WHERE tenant_id = ?
              ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
              LIMIT {$limit}"
@@ -471,6 +490,23 @@ class EnlistmentRepository
              WHERE tenant_id = ? AND id = ? AND status = \'submitted\''
         );
         $stmt->execute([$newStatus, $reviewerUserId, $reviewerComment, $tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Désigne (ou met à jour) le référent qui instruit le dossier, sans changer le statut.
+     */
+    public function assignReferent(int $tenantId, int $id, int $reviewerUserId): bool
+    {
+        if ($tenantId < 1 || $id < 1 || $reviewerUserId < 1) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET reviewed_by = ?, updated_at = NOW()
+             WHERE tenant_id = ? AND id = ?'
+        );
+        $stmt->execute([$reviewerUserId, $tenantId, $id]);
 
         return $stmt->rowCount() > 0;
     }
@@ -744,7 +780,7 @@ class EnlistmentRepository
      */
     public function listRecentForSubmitterAcrossTenants(int $userId, string $userEmail, int $limit = 8): array
     {
-        $limit = max(1, min(20, $limit));
+        $limit = max(1, min(50, $limit));
         $emailNorm = strtolower(trim($userEmail));
         if ($this->hasAccountColumns()) {
             $stmt = $this->pdo->prepare(

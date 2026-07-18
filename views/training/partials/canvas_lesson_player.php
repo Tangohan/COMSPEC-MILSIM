@@ -12,18 +12,17 @@ if (!$deck || empty($deck['slides']) || !is_array($deck['slides'])) {
 $slides = $deck['slides'];
 $modals = isset($deck['modals']) && is_array($deck['modals']) ? $deck['modals'] : [];
 $slideCount = count($slides);
-$closure = isset($deck['closure']) && is_array($deck['closure']) ? $deck['closure'] : null;
 $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
 ?>
-<div class="lms-canvas-player space-y-6" data-lms-canvas-player data-lms-canvas-slide-count="<?= (int) $slideCount ?>">
+<div class="lms-canvas-player space-y-3" data-lms-canvas-player data-lms-canvas-slide-count="<?= (int) $slideCount ?>">
     <div class="hidden rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-sm" data-lms-canvas-toast role="alert" aria-live="polite"></div>
-    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm" data-lms-canvas-slide-progress-wrap>
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm" data-lms-canvas-slide-progress-wrap>
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p class="lms-canvas-label">Progression des étapes</p>
             <p class="text-sm font-bold text-slate-900" data-lms-canvas-slide-label>Étape 1 sur <?= (int) $slideCount ?></p>
         </div>
-        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-            <div class="h-full rounded-full bg-emerald-500 transition-all duration-300 lms-canvas-slide-progress-inner" data-lms-canvas-slide-progress-bar style="width: <?= $initialSlidePct ?>%"></div>
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div class="h-full rounded-full bg-emerald-600 transition-all duration-300 lms-canvas-slide-progress-inner" data-lms-canvas-slide-progress-bar style="width: <?= $initialSlidePct ?>%"></div>
         </div>
     </div>
     <div class="swiper lms-canvas-swiper">
@@ -33,7 +32,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
         $sl = is_array($sl) ? $sl : [];
         $tpl = (string) ($sl['template'] ?? 'title_hero');
         $surface = trim((string) ($sl['surface'] ?? 'default'));
-        $slideWrap = 'lms-canvas-slide flex min-h-0 flex-col p-6 md:p-10';
+        $slideWrap = 'lms-canvas-slide flex min-h-0 flex-col p-4 md:p-5';
         if ($surface === 'elevated') {
             $slideWrap .= ' lms-canvas-slide--elevated';
         }
@@ -100,7 +99,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             </ol>
             <?php endif; ?>
             <?php elseif ($tpl === 'reading_article'): ?>
-            <div class="max-w-3xl mx-auto">
+            <div class="lms-reading-article-wrap">
                 <p class="lms-canvas-template-label mb-3 text-emerald-800/90">Article de lecture</p>
                 <?php if (!empty($sl['title'])): ?>
                 <h2 class="text-2xl md:text-3xl font-semibold text-slate-900 tracking-tight leading-tight mb-3"><?= htmlspecialchars((string) $sl['title']) ?></h2>
@@ -127,7 +126,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             <div class="prose prose-slate max-w-none text-slate-800 text-base leading-relaxed lms-fill-blanks-host" data-lms-fill-blanks-slide>
                 <?= $fbHtml ?>
             </div>
-            <p class="text-xs text-slate-500 mt-4">Renseignez chaque champ ; le bouton « Suivant » vérifie vos réponses avant de continuer.</p>
+            <p class="text-xs text-slate-500 mt-4">Chaque réponse correcte se verrouille tout de suite. Quand tous les champs sont validés, utilisez « Suivant » pour continuer.</p>
             <?php elseif ($tpl === 'resources_list'): ?>
             <?php
             $resList = function_exists('training_canvas_slide_resources') ? training_canvas_slide_resources($sl) : [];
@@ -145,7 +144,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             <?php if ($resList === []): ?>
             <p class="text-sm text-slate-500">Ajoutez des liens dans l’éditeur (liste de ressources).</p>
             <?php else: ?>
-            <ul class="lms-resources-plain space-y-2 text-base text-slate-800 max-w-2xl">
+            <ul class="lms-resources-plain space-y-2 text-base text-slate-800">
                 <?php foreach ($resList as $r): ?>
                 <li class="pl-1">
                     <a href="<?= htmlspecialchars((string) $r['url']) ?>" target="_blank" rel="noopener noreferrer" class="font-semibold text-violet-800 underline decoration-violet-300 underline-offset-2 hover:text-violet-950 hover:decoration-violet-600"><?= htmlspecialchars((string) $r['title']) ?></a>
@@ -166,14 +165,14 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             <?php if ($lines === []): ?>
             <p class="text-sm text-slate-500">Ajoutez des lignes dans le corps de la slide (éditeur).</p>
             <?php else: ?>
-            <ul class="lms-knowledge-list list-disc pl-6 space-y-2.5 text-base md:text-lg text-slate-800 leading-relaxed max-w-3xl">
+            <ul class="lms-knowledge-list list-disc pl-6 space-y-2.5 text-base md:text-lg text-slate-800 leading-relaxed">
                 <?php foreach ($lines as $line): ?>
                 <li><?= htmlspecialchars($line) ?></li>
                 <?php endforeach; ?>
             </ul>
             <?php endif; ?>
             <?php elseif ($tpl === 'quote'): ?>
-            <blockquote class="text-xl md:text-2xl font-serif italic text-slate-800 border-l-4 border-violet-500 pl-6">
+            <blockquote class="text-xl md:text-2xl font-sans italic text-slate-800 border-l-4 border-violet-500 pl-6">
                 <?= training_canvas_sanitize_html((string) ($sl['body'] ?? '')) ?>
             </blockquote>
             <?php elseif ($tpl === 'image_full' && !empty($sl['imageUrl'])): ?>
@@ -282,12 +281,6 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
                     </ul>
                 </div>
             </div>
-            <?php if (!empty($sl['synthesis'])): ?>
-            <div class="mt-6 rounded-xl border border-slate-200 bg-white p-4 prose prose-slate prose-sm max-w-none text-slate-800">
-                <p class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">Synthèse</p>
-                <?= training_canvas_sanitize_html((string) $sl['synthesis']) ?>
-            </div>
-            <?php endif; ?>
             <?php elseif ($tpl === 'process_steps'): ?>
             <p class="lms-canvas-template-label mb-3 text-indigo-800/90">Procédure pas à pas</p>
             <?php if (!empty($sl['title'])): ?>
@@ -467,7 +460,7 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
             $slideActionsInner = ob_get_clean();
             ?>
             <?php if ($slideActionsInner !== ''): ?>
-            <div class="mt-auto mt-8 flex flex-wrap gap-3 pt-4">
+            <div class="mt-auto mt-5 flex flex-wrap gap-3 pt-3">
                 <?= $slideActionsInner ?>
             </div>
             <?php endif; ?>
@@ -478,61 +471,13 @@ $initialSlidePct = $slideCount > 0 ? (int) round(100 / $slideCount) : 0;
         <div class="swiper-pagination !relative !mt-4"></div>
     </div>
 
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
         <div class="flex gap-2">
-            <button type="button" data-lms-prev class="px-4 py-2 rounded-lg border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-40">← Précédent</button>
-            <button type="button" data-lms-next class="px-4 py-2 rounded-lg border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-40">Suivant →</button>
+            <button type="button" data-lms-prev class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-40">← Précédent</button>
+            <button type="button" data-lms-next class="lms-btn lms-btn--primary lms-btn--compact disabled:opacity-40">Suivant →</button>
         </div>
         <div class="flex gap-1.5 lms-canvas-dots" aria-hidden="true"></div>
     </div>
-
-    <?php if ($closure !== null): ?>
-    <div class="rounded-[1.5rem] border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm md:p-8" data-lms-canvas-closure>
-        <?php if (!empty($closure['title'])): ?>
-        <h3 class="lms-synthesis-title text-lg text-slate-900 md:text-xl"><?= htmlspecialchars((string) $closure['title']) ?></h3>
-        <?php endif; ?>
-        <div class="mt-6 grid gap-6 md:grid-cols-2">
-            <?php
-            $seen = $closure['seen'] ?? [];
-            if (is_array($seen) && $seen !== []):
-                ?>
-            <div>
-                <p class="mb-2 lms-canvas-label">Ce que vous avez parcouru</p>
-                <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-700">
-                    <?php foreach ($seen as $line):
-                        if (!is_string($line) || trim($line) === '') {
-                            continue;
-                        }
-                        ?>
-                    <li><?= htmlspecialchars($line) ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php
-            endif;
-            $acquired = $closure['acquired'] ?? [];
-            if (is_array($acquired) && $acquired !== []):
-                ?>
-            <div>
-                <p class="mb-2 lms-canvas-label text-emerald-800">Ce que vous pouvez en retirer</p>
-                <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-800">
-                    <?php foreach ($acquired as $line):
-                        if (!is_string($line) || trim($line) === '') {
-                            continue;
-                        }
-                        ?>
-                    <li><?= htmlspecialchars($line) ?></li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-        </div>
-        <?php if (!empty($closure['nextHint'])): ?>
-        <p class="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700"><?= nl2br(htmlspecialchars((string) $closure['nextHint'])) ?></p>
-        <?php endif; ?>
-        <p class="mt-4 text-xs text-slate-500">Utilisez les boutons <strong>Précédent</strong> / <strong>Suivant</strong> au-dessus pour parcourir les étapes, puis la navigation sous la leçon pour poursuivre la formation.</p>
-    </div>
-    <?php endif; ?>
 </div>
 
 <?php foreach ($modals as $m): ?>

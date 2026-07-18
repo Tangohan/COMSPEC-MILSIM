@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
-?>
-<style>
-    .bo-side-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-    .bo-side-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 999px; }
-    .bo-side-scroll::-webkit-scrollbar-track { background: transparent; }
-</style>
-<?php
+
+/**
+ * Aside back-office — rail à tuiles (pattern dashboard) + panneaux drill.
+ * Navigation regroupée par thèmes métier.
+ */
+
 $p = function_exists('back_office_path_suffix') ? back_office_path_suffix() : '';
 $gate = \App\Core\Gate::getInstance();
 $canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
@@ -58,38 +57,16 @@ try {
 } catch (\Throwable) {
 }
 
-$boLink = static function (string $path, string $label, bool $active, ?int $badge = null, ?string $badgeTone = null): void {
-    $cls = $active
-        ? 'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-semibold text-white shadow-sm ring-1 ring-white/10'
-        : 'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white';
-    $tone = $badgeTone ?? 'rose';
-    $bg = match ($tone) {
-        'emerald' => 'bg-emerald-600',
-        'sky' => 'bg-sky-600',
-        default => 'bg-rose-500',
-    };
-    $pill = '';
-    $ariaExtra = '';
-    if ($badge !== null && $badge > 0) {
-        $t = $badge > 99 ? '99+' : (string) $badge;
-        $pill = '<span class="inline-flex min-w-[1.35rem] shrink-0 justify-center rounded-full ' . $bg . ' px-1.5 py-0.5 text-[10px] font-black leading-none text-white" aria-hidden="true">' . htmlspecialchars($t, ENT_QUOTES, 'UTF-8') . '</span>';
-        $ariaN = $badge > 99 ? '99+' : (string) $badge;
-        $ariaExtra = ' aria-label="' . htmlspecialchars($label . ' — ' . $ariaN . ' notification(s)', ENT_QUOTES, 'UTF-8') . '"';
-    }
-    echo '<a href="' . htmlspecialchars(url($path), ENT_QUOTES, 'UTF-8') . '" class="' . $cls . '"' . $ariaExtra
-        . '><span class="min-w-0 flex-1 truncate">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span>' . $pill . '</a>';
-};
+$rwPath = function_exists('recruitment_workspace_path') ? recruitment_workspace_path() : 'back-office/ressources/recrutement';
+$legacyLmsBo = 'back-office/ressources/training';
+$studioPath = function_exists('training_studio_path') ? training_studio_path() : 'formation/studio';
+$legacyStudioPath = $legacyLmsBo . '/studio';
+$lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'formation';
 
-$boSection = static function (string $title): void {
-    echo '<p class="mt-6 mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 first:mt-0">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</p>';
-};
-
-/* Préfixe boNav* : ne pas utiliser $groups, $users, etc. — ce sont des noms de données vues écrasés avant le require du contenu. */
 $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
 $boNavInv = str_starts_with($p, 'back-office/invitations');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
-$rwPath = function_exists('recruitment_workspace_path') ? recruitment_workspace_path() : 'back-office/ressources/recrutement';
 $boNavRecWorkspaceDash = $p === $rwPath;
 $boNavRecWorkspaceAnalytics = $p === $rwPath . '/analyses';
 $boNavRecSettings = str_starts_with($p, 'back-office/recruitments/settings');
@@ -122,7 +99,7 @@ $boNavTeams = str_starts_with($p, 'back-office/teams');
 $boNavCats = str_starts_with($p, 'back-office/categories');
 $boNavGrades = str_starts_with($p, 'back-office/referentiels/grades');
 $boNavSeniority = str_starts_with($p, 'back-office/organisation/anciennete');
-$boNavCommCode = $p === 'back-office/community';
+$boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';
 $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
@@ -131,6 +108,8 @@ $boNavAnalytics = $p === 'back-office/analytics';
 $boNavAnalyticsConversion = str_starts_with($p, 'back-office/analytics/conversion');
 $boNavPins = str_starts_with($p, 'back-office/dashboard-pins');
 $boNavCoop = str_starts_with($p, 'back-office/cooperation/');
+$boNavCoopCatalog = str_starts_with($p, 'back-office/cooperation/catalog');
+$boNavCoopAnnouncements = str_starts_with($p, 'back-office/cooperation/announcements');
 $boNavForumMissionPriority = str_starts_with($p, 'back-office/forum/priorite-mission/');
 $boNavOnb = str_starts_with($p, 'back-office/onboarding-recovery');
 $boNavOnbMembers = str_starts_with($p, 'back-office/onboarding-members');
@@ -151,12 +130,8 @@ $boNavOpsAdmin = str_starts_with($p, 'back-office/centre-operations') || str_sta
 $boNavPositions = str_starts_with($p, 'back-office/positions');
 $boNavConformite = str_starts_with($p, 'back-office/conformite');
 $boNavDoctrine = str_starts_with($p, 'back-office/doctrine');
-$legacyLmsBo = 'back-office/ressources/training';
-$studioPath = function_exists('training_studio_path') ? training_studio_path() : 'formation/studio';
-$legacyStudioPath = $legacyLmsBo . '/studio';
 $boNavStudioActive = str_starts_with($p, $studioPath . '/') || $p === $studioPath
     || str_starts_with($p, $legacyStudioPath . '/') || $p === $legacyStudioPath;
-$lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_path() : 'formation';
 $boNavLmsRes = $p === $lmsResPath || str_starts_with($p, $lmsResPath . '/') || $p === $legacyLmsBo || str_starts_with($p, $legacyLmsBo . '/');
 $boNavHrCharter = str_starts_with($p, $lmsResPath . '/charte-rh') || str_starts_with($p, $legacyLmsBo . '/charte-rh');
 $boNavLmsFeedback = str_starts_with($p, $lmsResPath . '/feedback') || str_starts_with($p, $legacyLmsBo . '/feedback');
@@ -167,6 +142,12 @@ $boNavLmsAuditTrail = str_starts_with($p, $lmsResPath . '/audit') || str_starts_
 $boNavLmsCompetences = str_starts_with($p, $lmsResPath . '/competences') || str_starts_with($p, $legacyLmsBo . '/competences');
 $boNavPjrAssignments = str_starts_with($p, 'back-office/personnel-job-roles/assignments');
 $boNavPlatformShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
+$boNavForumMod = str_starts_with($p, 'back-office/forum-moderation');
+$boNavContentMod = str_starts_with($p, 'admin/content-moderation');
+$boNavDocs = str_starts_with($p, 'documents/gestion') || $p === 'documents/gestion';
+$boNavModpacks = str_starts_with($p, 'admin/modpacks');
+$boNavForumConfig = str_starts_with($p, 'admin/forum-config');
+$boNavAtak = str_starts_with($p, 'admin/atak-config');
 $canMurOperationnel = $gate->allows('operational.board.view')
     || $gate->allows('operational.board.edit')
     || $gate->allows('admin.organization')
@@ -177,180 +158,473 @@ $boNavLmsSubPage = $boNavHrCharter || $boNavLmsFeedback || $boNavStudioActive
 $canOrgStructure = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
 $canAccessManagementBo = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('admin.access.manage');
 $canDoctrineBo = $gate->allows('admin.system') || $gate->allows('admin.organization') || $gate->allows('admin.access');
-?>
-<div class="flex h-full min-h-0 flex-col border-r border-slate-800/80 bg-slate-950">
-    <div class="border-b border-slate-800/80 px-4 py-5">
-        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-400/90">Back-office</p>
-        <p class="mt-1 text-base font-black tracking-tight text-white">Communauté</p>
-        <?php if ($tenantLabel !== ''): ?>
-            <p class="mt-1 truncate text-xs font-medium text-slate-400" title="<?= htmlspecialchars($tenantLabel, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($tenantLabel, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php else: ?>
-            <p class="mt-1 text-xs text-slate-500">Administration de votre espace</p>
-        <?php endif; ?>
-    </div>
+$canCoopCatalog = function_exists('can') && (can('cooperation.catalog.manage') || can('cooperation.announcements.manage'));
 
-    <nav class="bo-side-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-5" aria-label="Navigation back-office">
-        <?php $boSection('Vue d’ensemble'); ?>
-        <?php $boLink('back-office', 'Tableau de bord', $boNavHome); ?>
+$h = static function (string $value): string {
+    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+};
 
-        <?php $boSection('Membres & accès'); ?>
-        <?php $boLink('back-office/users', 'Utilisateurs', $boNavUsers); ?>
-        <?php if ($canInv): ?>
-            <?php $boLink('back-office/invitations', 'Invitations', $boNavInv); ?>
-        <?php endif; ?>
-        <?php $boSection('Recrutement'); ?>
-        <?php $boLink($rwPath, 'Bureau recrutement', $boNavRecWorkspaceDash); ?>
-        <?php
-        $boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
-        $boRecBadge = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0 ? $boRecN : null;
-        $boLink('back-office/recruitments', 'File des dossiers', $boNavRec && !$boNavRecSettings && !$boNavRecMessages, $boRecBadge, 'emerald');
-        ?>
-        <?php $boLink($rwPath . '/analyses', 'Analyses candidatures', $boNavRecWorkspaceAnalytics); ?>
-        <?php $boLink('back-office/recruitments/settings', 'SLA recrutement', $boNavRecSettings); ?>
-        <?php $boLink('back-office/recruitments/messages-prefaits', 'Messages préfaits', $boNavRecMessages); ?>
-        <?php if ($canRecOffers): ?>
-            <?php $boLink('back-office/recruitment/offers', 'Offres publiées', $boNavRecOffers); ?>
-            <?php $boLink('back-office/recruitment/offers/create', 'Nouvelle offre', $boNavRecOfferNew); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/roles', 'Rôles communautaires', $boNavRoles); ?>
-        <?php if ($canAccessManagementBo): ?>
-            <?php $boLink('back-office/access-management', 'Gestion des accès (RBAC+ABAC)', $boNavAccessMgmt); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/roles/presets', 'Profils & kits de rôles', $boNavRolesPresets); ?>
-        <?php $boLink('back-office/roles-functions', 'Cellule S1 — doctrine des fonctions', $boNavRolesFx); ?>
-        <?php $boLink('back-office/personnel-job-roles', 'Emplois & missions', $boNavPjr && !$boNavPjrAssignments); ?>
-        <?php if ($canOrgStructure): ?>
-            <?php $boLink('back-office/personnel-job-roles/assignments', 'Affectations emplois & missions', $boNavPjrAssignments); ?>
-        <?php endif; ?>
-        <?php $boLink('deploiement', 'Déploiement personnel', $boNavPersonnelDeployment); ?>
-        <?php $boLink('back-office/roleplay-followup', 'Suivi roleplay', $boNavRoleplayFollowup); ?>
+$n = 0;
+$num = static function () use (&$n): string {
+    $n++;
 
-        <?php $boSection('Organisation'); ?>
-        <?php $boLink('back-office/organisation-effectifs', 'Structure des effectifs', $boNavEff); ?>
-        <?php if ($canStructureRecruitmentHub): ?>
-            <?php $boLink('back-office/organisation/structure', 'Structure & recrutement', $boNavStructureHub); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/groups', 'Groupes', $boNavGroups); ?>
-        <?php $boLink('back-office/teams', 'Équipes', $boNavTeams); ?>
-        <?php $boLink('back-office/categories', 'Catégories', $boNavCats); ?>
-        <?php $boLink('back-office/referentiels/grades', 'Référentiel des grades', $boNavGrades); ?>
-        <?php if ($canOrgStructure): ?>
-            <?php $boLink('back-office/positions', 'Postes & fonctions (état-major)', $boNavPositions); ?>
-        <?php endif; ?>
-        <?php if ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support')): ?>
-            <?php $boLink('back-office/organisation/anciennete', 'Ancienneté (fiches & RH)', $boNavSeniority); ?>
-        <?php endif; ?>
+    return str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+};
 
-        <?php if ($canCommsSection): ?>
-            <?php $boSection('Communications'); ?>
-            <?php $boLink('back-office/communications', 'Nouveau message', $boNavCommunications && !$boNavCommsHistory && !$boNavCommsTemplates && !$boNavCommsGroups); ?>
-            <?php $boLink('back-office/communications/history', 'Historique des envois', $boNavCommsHistory); ?>
-            <?php $boLink('back-office/communications/templates', 'Modèles d’e-mail', $boNavCommsTemplates); ?>
-            <?php $boLink('back-office/communications/groups', 'Groupes de diffusion', $boNavCommsGroups); ?>
-        <?php endif; ?>
+$icon = static function (string $key): string {
+    $icons = [
+        'overview' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.5 12 4l9 7.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>',
+        'users' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9.5" cy="8" r="3.2"/><path stroke-linecap="round" d="M3.5 20v-1.3c0-2.7 2.7-4.8 6-4.8s6 2.1 6 4.8V20"/><path stroke-linecap="round" d="M16.5 7.5a2.4 2.4 0 1 1 0 4.8M20.5 20v-1c0-1.8-1.2-3.2-3-3.7"/></svg>',
+        'recruitment' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9.5" cy="8" r="3.2"/><path stroke-linecap="round" d="M3.5 20v-1.3c0-2.7 2.7-4.8 6-4.8s6 2.1 6 4.8V20"/><path stroke-linecap="round" d="M18.5 6.5v5M16 9h5"/></svg>',
+        'access' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M9.5 12.2 11.2 14l3.5-4"/></svg>',
+        'structure' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg>',
+        'comms' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5.5" width="17" height="13" rx="1.6"/><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 7 6.7 5a2 2 0 0 0 2.1 0l6.7-5"/></svg>',
+        'community' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z"/><path stroke-linecap="round" d="M4 8.5 12 13l8-4.5M12 13v7"/></svg>',
+        'ops' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5 14.25 2.25 12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/></svg>',
+        'events' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15.5" rx="1.5"/><path stroke-linecap="round" d="M3.5 9.5h17M8 3v3.2M16 3v3.2"/></svg>',
+        'training' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.75 9 5-9 5-9-5 9-5Zm0 10.5 6.16-3.422a12 12 0 0 1-.84 1.54L12 18.75l-5.32-3.04a12 12 0 0 1-.84-1.54L12 14.25Z"/></svg>',
+        'documents' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6.5A1.5 1.5 0 0 1 5.5 5h4l1.6 2h8.4A1.5 1.5 0 0 1 21 8.5v9A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-9"/></svg>',
+        'tools' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>',
+        'moderation' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6.5v5.4c0 4.6-3 7.7-7 8.6-4-.9-7-4-7-8.6V6.5L12 3.5Z"/><path stroke-linecap="round" d="M12 8v4.5M12 15.2h.01"/></svg>',
+        'admin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>',
+    ];
 
-        <?php $boSection('Communauté'); ?>
-        <?php $boLink('back-office/community', 'Identité & code d’accès', $boNavCommCode); ?>
-        <?php $boLink('back-office/community/presentation', 'Page d’accueil publique', $boNavCommPres); ?>
-        <?php $boLink('back-office/alerts', 'Annonces & alertes', $boNavAlerts); ?>
-        <?php $boLink('back-office/configuration', 'Paramètres avancés', $boNavConfig); ?>
-        <?php if ($canIntegrationsBo): ?>
-            <?php $boLink('back-office/integrations', 'Intégrations externes', $boNavInteg); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/analytics', 'Indicateurs d’usage', $boNavAnalytics); ?>
-        <?php $boLink('back-office/analytics/conversion', 'Conversion communautés', $boNavAnalyticsConversion); ?>
-        <?php $boLink('back-office/dashboard-pins', 'Raccourcis du portail', $boNavPins); ?>
-        <?php $boLink('back-office/onboarding-members', 'Onboarding membres', $boNavOnbMembers); ?>
-        <?php $boLink('back-office/onboarding-recovery', 'Aide après inscription', $boNavOnb); ?>
+    return $icons[$key] ?? '';
+};
 
-        <?php $boSection('Pilotage'); ?>
-        <?php if ($canMurOperationnel): ?>
-            <?php $boLink('tableau-operationnel', 'Mur opérationnel (vue membres)', $boNavPortalOpsBoard); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/centre-operations', 'Centre d’opérations admin', $boNavOpsAdmin); ?>
-        <?php $boLink('back-office/tableau-operationnel', 'Pilotage du mur opérationnel', $boNavOpsBoard); ?>
-        <?php $boLink('back-office/courrier/traceabilite', 'Traçabilité courrier', $boNavCourrierTrace); ?>
-        <?php if ($canDoctrineBo): ?>
-            <?php $boLink('back-office/doctrine', 'Doctrine & SOP', $boNavDoctrine); ?>
-        <?php endif; ?>
-        <?php if ($canOrgStructure): ?>
-            <?php $boLink('back-office/conformite/export-dossier', 'Export dossier conformité', $boNavConformite); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/audit', 'Journal d’activité', $boNavAudit); ?>
-        <?php if ($canMemberModeration): ?>
-            <?php $boLink('back-office/moderation', 'Restrictions membres', $boNavMod); ?>
-        <?php endif; ?>
-        <?php if ($canTenantSecurityIndicators): ?>
-            <?php $boLink('back-office/security-indicators', 'Blocages portail & sécurité', $boNavSecurityIndicators); ?>
-        <?php endif; ?>
-        <?php $boLink('back-office/events', 'RSVP & pointage', $boNavEvents); ?>
-        <?php $boLink('back-office/events/insights', 'Insights présence', $boNavEventInsights); ?>
+/**
+ * @param list<array{label:string,href:string,hint?:string,active?:bool,badge?:int|null,badgeTone?:string}|null> $items
+ * @return list<array{label:string,href:string,hint?:string,active?:bool,badge?:int|null,badgeTone?:string}>
+ */
+$links = static function (array $items): array {
+    $out = [];
+    foreach ($items as $item) {
+        if (is_array($item) && isset($item['label'], $item['href']) && $item['href'] !== '') {
+            $out[] = $item;
+        }
+    }
 
-        <?php if ($canDocs || $canTraining || $canTenantModules): ?>
-            <?php $boSection('Ressources & outils'); ?>
-            <?php if ($canDocs): ?>
-                <?php $boLink('documents/gestion', 'Bibliothèque documentaire', false); ?>
-            <?php endif; ?>
-            <?php if ($canTraining): ?>
-                <?php $boLink($lmsResPath, 'Formations (tableau de bord)', $boNavLmsRes && !$boNavLmsSubPage); ?>
-                <?php $boLink($lmsResPath . '/enrollments', 'Inscriptions & validations', $boNavLmsEnrollments); ?>
-                <?php $boLink($lmsResPath . '/reports', 'Rapports & suivis', $boNavLmsReports); ?>
-                <?php $boLink($lmsResPath . '/certificates', 'Certificats & attestations', $boNavLmsCertificates); ?>
-                <?php $boLink($lmsResPath . '/audit', 'Journal pédagogique (audit)', $boNavLmsAuditTrail); ?>
-                <?php $boLink($lmsResPath . '/competences/bureau-personnel', 'Compétences (LMS)', $boNavLmsCompetences); ?>
-                <?php $boLink($lmsResPath . '/charte-rh', 'Charte RH (formations)', $boNavHrCharter); ?>
-                <?php $boLink($lmsResPath . '/feedback', 'Feedback post-leçon', $boNavLmsFeedback); ?>
-                <?php $boLink(training_studio_path(), 'Studio des parcours', $boNavStudioActive); ?>
-            <?php endif; ?>
-            <?php if ($canTenantModules): ?>
-                <?php $boLink('admin/modpacks', 'Modpacks', false); ?>
-                <?php $boLink('admin/forum-config', 'Briefing & forum', false); ?>
-                <?php $boLink('back-office/forum/priorite-mission/nouveau', 'Publication priorité mission', $boNavForumMissionPriority); ?>
-                <?php $boLink('back-office/cooperation/missions', 'Coopérations inter-unités', $boNavCoop); ?>
-                <?php if (function_exists('can') && (can('cooperation.catalog.manage') || can('cooperation.announcements.manage'))): ?>
-                    <?php $boLink('back-office/cooperation/catalog', 'Types de coopération (catalogue)', str_starts_with($p, 'back-office/cooperation/catalog')); ?>
-                    <?php $boLink('back-office/cooperation/announcements', 'Annonces coopération', str_starts_with($p, 'back-office/cooperation/announcements')); ?>
-                <?php endif; ?>
-                <?php $boLink('admin/atak-config', 'Cartographie & ATAK', false); ?>
-            <?php endif; ?>
-        <?php endif; ?>
+    return $out;
+};
 
-        <?php if ($gate->allows('admin.system') || $gate->allows('site.support')): ?>
-            <?php $boSection('Plateforme'); ?>
-            <?php $boLink('admin', $gate->allows('admin.system') ? 'Administration site' : 'Pilotage site (vue assistance)', $boNavPlatformShell); ?>
-        <?php endif; ?>
-        <?php if ($canForumModConsole): ?>
-            <?php $boSection('Modération'); ?>
+/**
+ * @param list<array{label:string,href:string,hint?:string,active?:bool,badge?:int|null,badgeTone?:string}> $tileLinks
+ */
+$tile = static function (
+    string $id,
+    string $label,
+    string $hint,
+    string $variant,
+    ?string $badge,
+    array $tileLinks,
+    string $iconKey = '',
+    bool $active = false
+): array {
+    return [
+        'id' => $id,
+        'label' => $label,
+        'hint' => $hint,
+        'variant' => $variant,
+        'badge' => $badge,
+        'active' => $active,
+        'links' => $tileLinks,
+        'icon' => $iconKey,
+    ];
+};
+
+$boRecN = (int) ($boBadges['recruitments_submitted'] ?? 0);
+$boRecBadge = !empty($boBadges['show_staff_recruitment']) && $boRecN > 0 ? $boRecN : null;
+$boModN = (int) ($boBadges['forum_moderation_total'] ?? 0);
+$boModBadge = $boModN > 0 ? $boModN : null;
+$boPersN = (int) ($boBadges['personal_inbox'] ?? 0);
+$boPersBadge = $boPersN > 0 ? $boPersN : null;
+
+$coreTiles = [];
+$opsTiles = [];
+$resourceTiles = [];
+$adminTiles = [];
+
+$coreTiles[] = $tile('overview', 'Vue d’ensemble', 'Accueil de l’administration', 'default', null, $links([
+    ['label' => 'Tableau de bord', 'href' => url('back-office'), 'hint' => 'Synthèse et raccourcis', 'active' => $boNavHome],
+]), 'overview', $boNavHome);
+
+$coreTiles[] = $tile('members', 'Membres', 'Comptes et invitations', 'default', null, $links([
+    ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté', 'active' => $boNavUsers],
+    $canInv
+        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'hint' => 'Codes d’accès', 'active' => $boNavInv]
+        : null,
+]), 'users', $boNavUsers || $boNavInv);
+
+$coreTiles[] = $tile(
+    'recruitment',
+    'Recrutement',
+    'Dossiers et offres',
+    'bo',
+    $boRecBadge !== null ? (string) $boRecBadge : null,
+    $links([
+        ['label' => 'Bureau recrutement', 'href' => url($rwPath), 'hint' => 'Pilotage des candidatures', 'active' => $boNavRecWorkspaceDash],
+        [
+            'label' => 'File des dossiers',
+            'href' => url('back-office/recruitments'),
+            'hint' => 'À instruire',
+            'active' => $boNavRec && !$boNavRecSettings && !$boNavRecMessages,
+            'badge' => $boRecBadge,
+        ],
+        ['label' => 'Analyses candidatures', 'href' => url($rwPath . '/analyses'), 'hint' => 'Indicateurs', 'active' => $boNavRecWorkspaceAnalytics],
+        ['label' => 'Délais de traitement', 'href' => url('back-office/recruitments/settings'), 'hint' => 'Objectifs d’instruction', 'active' => $boNavRecSettings],
+        ['label' => 'Messages préfaits', 'href' => url('back-office/recruitments/messages-prefaits'), 'hint' => 'Réponses types', 'active' => $boNavRecMessages],
+        $canRecOffers
+            ? ['label' => 'Offres publiées', 'href' => url('back-office/recruitment/offers'), 'hint' => 'Avis d’ouverture', 'active' => $boNavRecOffers]
+            : null,
+        $canRecOffers
+            ? ['label' => 'Nouvelle offre', 'href' => url('back-office/recruitment/offers/create'), 'hint' => 'Créer une ouverture', 'active' => $boNavRecOfferNew]
+            : null,
+    ]),
+    'recruitment',
+    $boNavRecWorkspaceDash || $boNavRecWorkspaceAnalytics || ($boNavRec && !$boNavRecSettings && !$boNavRecMessages) || $boNavRecSettings || $boNavRecMessages || $boNavRecOffers || $boNavRecOfferNew
+);
+
+$coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions', 'default', null, $links([
+    ['label' => 'Rôles communautaires', 'href' => url('back-office/roles'), 'hint' => 'Profils de droits', 'active' => $boNavRoles],
+    $canAccessManagementBo
+        ? ['label' => 'Gestion des accès', 'href' => url('back-office/access-management'), 'hint' => 'Permissions avancées', 'active' => $boNavAccessMgmt]
+        : null,
+    ['label' => 'Profils & kits de rôles', 'href' => url('back-office/roles/presets'), 'hint' => 'Modèles prêts à l’emploi', 'active' => $boNavRolesPresets],
+    ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'hint' => 'Cellule S1', 'active' => $boNavRolesFx],
+    ['label' => 'Emplois & missions', 'href' => url('back-office/personnel-job-roles'), 'hint' => 'Référentiel métier', 'active' => $boNavPjr && !$boNavPjrAssignments],
+    $canOrgStructure
+        ? ['label' => 'Affectations emplois', 'href' => url('back-office/personnel-job-roles/assignments'), 'hint' => 'Qui tient quel emploi', 'active' => $boNavPjrAssignments]
+        : null,
+    ['label' => 'Déploiement personnel', 'href' => url('deploiement'), 'hint' => 'Affectations terrain', 'active' => $boNavPersonnelDeployment],
+    ['label' => 'Suivi roleplay', 'href' => url('back-office/roleplay-followup'), 'hint' => 'Suivi narratif', 'active' => $boNavRoleplayFollowup],
+]), 'access', $boNavRoles || $boNavAccessMgmt || $boNavRolesPresets || $boNavRolesFx || ($boNavPjr && !$boNavPjrAssignments) || $boNavPjrAssignments || $boNavPersonnelDeployment || $boNavRoleplayFollowup);
+
+$coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiels', 'default', null, $links([
+    ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Arborescence ORBAT', 'active' => $boNavEff],
+    $canStructureRecruitmentHub
+        ? ['label' => 'Structure & recrutement', 'href' => url('back-office/organisation/structure'), 'hint' => 'Liens recrutement / postes', 'active' => $boNavStructureHub]
+        : null,
+    ['label' => 'Groupes', 'href' => url('back-office/groups'), 'hint' => 'Regroupements', 'active' => $boNavGroups],
+    ['label' => 'Équipes', 'href' => url('back-office/teams'), 'hint' => 'Équipes opérationnelles', 'active' => $boNavTeams],
+    ['label' => 'Catégories', 'href' => url('back-office/categories'), 'hint' => 'Rubriques du forum', 'active' => $boNavCats],
+    ['label' => 'Référentiel des grades', 'href' => url('back-office/referentiels/grades'), 'hint' => 'Grades et insignes', 'active' => $boNavGrades],
+    $canOrgStructure
+        ? ['label' => 'Postes & fonctions', 'href' => url('back-office/positions'), 'hint' => 'État-major', 'active' => $boNavPositions]
+        : null,
+    ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'))
+        ? ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'hint' => 'Fiches et RH', 'active' => $boNavSeniority]
+        : null,
+]), 'structure', $boNavEff || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority);
+
+if ($canCommsSection) {
+    $coreTiles[] = $tile('comms', 'Communications', 'Messages et diffusion', 'default', null, $links([
+        ['label' => 'Nouveau message', 'href' => url('back-office/communications'), 'hint' => 'Composer un envoi', 'active' => $boNavCommunications && !$boNavCommsHistory && !$boNavCommsTemplates && !$boNavCommsGroups],
+        ['label' => 'Historique des envois', 'href' => url('back-office/communications/history'), 'hint' => 'Journal des messages', 'active' => $boNavCommsHistory],
+        ['label' => 'Modèles d’e-mail', 'href' => url('back-office/communications/templates'), 'hint' => 'Gabarit réutilisables', 'active' => $boNavCommsTemplates],
+        ['label' => 'Groupes de diffusion', 'href' => url('back-office/communications/groups'), 'hint' => 'Listes de destinataires', 'active' => $boNavCommsGroups],
+    ]), 'comms', $boNavCommunications || $boNavCommsHistory || $boNavCommsTemplates || $boNavCommsGroups);
+}
+
+$coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'default', null, $links([
+    ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité et options', 'active' => $boNavOrgSettings],
+    ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'hint' => 'Vitrine publique', 'active' => $boNavCommPres],
+    ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'hint' => 'Messages portail', 'active' => $boNavAlerts],
+    ['label' => 'Paramètres avancés', 'href' => url('back-office/configuration'), 'hint' => 'Réglages fins', 'active' => $boNavConfig],
+    $canIntegrationsBo
+        ? ['label' => 'Intégrations externes', 'href' => url('back-office/integrations'), 'hint' => 'Services connectés', 'active' => $boNavInteg]
+        : null,
+    ['label' => 'Indicateurs d’usage', 'href' => url('back-office/analytics'), 'hint' => 'Fréquentation', 'active' => $boNavAnalytics],
+    ['label' => 'Conversion communautés', 'href' => url('back-office/analytics/conversion'), 'hint' => 'Passage à l’adhésion', 'active' => $boNavAnalyticsConversion],
+    ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'hint' => 'Épingles tableau de bord', 'active' => $boNavPins],
+    ['label' => 'Onboarding membres', 'href' => url('back-office/onboarding-members'), 'hint' => 'Parcours d’accueil', 'active' => $boNavOnbMembers],
+    ['label' => 'Aide après inscription', 'href' => url('back-office/onboarding-recovery'), 'hint' => 'Relances et assistance', 'active' => $boNavOnb],
+]), 'community', $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb);
+
+$opsTiles[] = $tile('pilotage', 'Pilotage', 'Opérations et conformité', 'default', null, $links([
+    $canMurOperationnel
+        ? ['label' => 'Mur opérationnel', 'href' => url('tableau-operationnel'), 'hint' => 'Vue membres', 'active' => $boNavPortalOpsBoard]
+        : null,
+    ['label' => 'Centre d’opérations', 'href' => url('back-office/centre-operations'), 'hint' => 'File actionnable', 'active' => $boNavOpsAdmin],
+    ['label' => 'Pilotage du mur', 'href' => url('back-office/tableau-operationnel'), 'hint' => 'Administration du mur', 'active' => $boNavOpsBoard],
+    ['label' => 'Traçabilité courrier', 'href' => url('back-office/courrier/traceabilite'), 'hint' => 'Suivi des envois', 'active' => $boNavCourrierTrace],
+    $canDoctrineBo
+        ? ['label' => 'Doctrine & SOP', 'href' => url('back-office/doctrine'), 'hint' => 'Référentiels internes', 'active' => $boNavDoctrine]
+        : null,
+    $canOrgStructure
+        ? ['label' => 'Export conformité', 'href' => url('back-office/conformite/export-dossier'), 'hint' => 'Dossier exportable', 'active' => $boNavConformite]
+        : null,
+    ['label' => 'Journal d’activité', 'href' => url('back-office/audit'), 'hint' => 'Historique des actions', 'active' => $boNavAudit],
+]), 'ops', $boNavPortalOpsBoard || $boNavOpsAdmin || $boNavOpsBoard || $boNavCourrierTrace || $boNavDoctrine || $boNavConformite || $boNavAudit);
+
+$opsTiles[] = $tile('events', 'Présences', 'Manœuvres et pointage', 'default', null, $links([
+    ['label' => 'RSVP & pointage', 'href' => url('back-office/events'), 'hint' => 'Confirmations et présence', 'active' => $boNavEvents],
+    ['label' => 'Insights présence', 'href' => url('back-office/events/insights'), 'hint' => 'Analyse des présences', 'active' => $boNavEventInsights],
+]), 'events', $boNavEvents || $boNavEventInsights);
+
+$moderationLinks = $links([
+    $canMemberModeration
+        ? ['label' => 'Restrictions membres', 'href' => url('back-office/moderation'), 'hint' => 'Sanctions et limitations', 'active' => $boNavMod]
+        : null,
+    $canTenantSecurityIndicators
+        ? ['label' => 'Blocages & sécurité', 'href' => url('back-office/security-indicators'), 'hint' => 'Indicateurs de sécurité', 'active' => $boNavSecurityIndicators]
+        : null,
+    $canForumModConsole
+        ? [
+            'label' => 'Console modération forum',
+            'href' => url('back-office/forum-moderation'),
+            'hint' => 'Signalements et file',
+            'active' => $boNavForumMod,
+            'badge' => $boModBadge,
+            'badgeTone' => 'rose',
+        ]
+        : null,
+    $canForumModConsole
+        ? ['label' => 'Fichiers et pièces jointes', 'href' => url('admin/content-moderation'), 'hint' => 'Contrôle des médias', 'active' => $boNavContentMod]
+        : null,
+]);
+if ($moderationLinks !== []) {
+    $opsTiles[] = $tile(
+        'moderation',
+        'Modération',
+        'Sécurité et forum',
+        'admin',
+        $boModBadge !== null ? (string) $boModBadge : null,
+        $moderationLinks,
+        'moderation',
+        $boNavMod || $boNavSecurityIndicators || $boNavForumMod || $boNavContentMod
+    );
+}
+
+if ($canTraining) {
+    $resourceTiles[] = $tile('training', 'Formations', 'Parcours et suivi pédagogique', 'bo', null, $links([
+        ['label' => 'Tableau de bord formations', 'href' => url($lmsResPath), 'hint' => 'Pilotage LMS', 'active' => $boNavLmsRes && !$boNavLmsSubPage],
+        ['label' => 'Inscriptions & validations', 'href' => url($lmsResPath . '/enrollments'), 'hint' => 'Demandes et validations', 'active' => $boNavLmsEnrollments],
+        ['label' => 'Rapports & suivis', 'href' => url($lmsResPath . '/reports'), 'hint' => 'Indicateurs pédagogiques', 'active' => $boNavLmsReports],
+        ['label' => 'Certificats & attestations', 'href' => url($lmsResPath . '/certificates'), 'hint' => 'Documents délivrés', 'active' => $boNavLmsCertificates],
+        ['label' => 'Journal pédagogique', 'href' => url($lmsResPath . '/audit'), 'hint' => 'Historique des actions', 'active' => $boNavLmsAuditTrail],
+        ['label' => 'Compétences', 'href' => url($lmsResPath . '/competences/bureau-personnel'), 'hint' => 'Bureau personnel', 'active' => $boNavLmsCompetences],
+        ['label' => 'Charte RH', 'href' => url($lmsResPath . '/charte-rh'), 'hint' => 'Cadre RH formations', 'active' => $boNavHrCharter],
+        ['label' => 'Feedback post-leçon', 'href' => url($lmsResPath . '/feedback'), 'hint' => 'Retours apprenants', 'active' => $boNavLmsFeedback],
+        ['label' => 'Studio des parcours', 'href' => url(training_studio_path()), 'hint' => 'Conception des modules', 'active' => $boNavStudioActive],
+    ]), 'training', $boNavLmsRes || $boNavLmsSubPage);
+}
+
+if ($canDocs) {
+    $resourceTiles[] = $tile('documents', 'Documents', 'Bibliothèque documentaire', 'default', null, $links([
+        ['label' => 'Bibliothèque documentaire', 'href' => url('documents/gestion'), 'hint' => 'Publication et classement', 'active' => $boNavDocs],
+    ]), 'documents', $boNavDocs);
+}
+
+if ($canTenantModules) {
+    $resourceTiles[] = $tile('tools', 'Outils avancés', 'Forum, coopérations, carte', 'bo', null, $links([
+        ['label' => 'Modpacks', 'href' => url('admin/modpacks'), 'hint' => 'Packs de mods', 'active' => $boNavModpacks],
+        ['label' => 'Briefing & forum', 'href' => url('admin/forum-config'), 'hint' => 'Configuration forum', 'active' => $boNavForumConfig],
+        ['label' => 'Publication priorité mission', 'href' => url('back-office/forum/priorite-mission/nouveau'), 'hint' => 'Annonce prioritaire', 'active' => $boNavForumMissionPriority],
+        ['label' => 'Coopérations inter-unités', 'href' => url('back-office/cooperation/missions'), 'hint' => 'Missions partagées', 'active' => $boNavCoop && !$boNavCoopCatalog && !$boNavCoopAnnouncements],
+        $canCoopCatalog
+            ? ['label' => 'Types de coopération', 'href' => url('back-office/cooperation/catalog'), 'hint' => 'Catalogue', 'active' => $boNavCoopCatalog]
+            : null,
+        $canCoopCatalog
+            ? ['label' => 'Annonces coopération', 'href' => url('back-office/cooperation/announcements'), 'hint' => 'Publications', 'active' => $boNavCoopAnnouncements]
+            : null,
+        ['label' => 'Cartographie & ATAK', 'href' => url('admin/atak-config'), 'hint' => 'Carte tactique', 'active' => $boNavAtak],
+    ]), 'tools', $boNavModpacks || $boNavForumConfig || $boNavForumMissionPriority || $boNavCoop || $boNavAtak);
+}
+
+if ($gate->allows('admin.system') || $gate->allows('site.support')) {
+    $adminTiles[] = $tile('platform', 'Plateforme', 'Administration site', 'admin', null, $links([
+        [
+            'label' => $gate->allows('admin.system') ? 'Administration site' : 'Pilotage site (assistance)',
+            'href' => url('admin'),
+            'hint' => 'Espace plateforme',
+            'active' => $boNavPlatformShell,
+        ],
+    ]), 'admin', $boNavPlatformShell);
+}
+
+$renderLinks = static function (array $item) use ($h): void {
+    ?>
+    <ul class="dash-rail__links" role="list">
+        <?php foreach ($item['links'] as $link): ?>
             <?php
-            $boModN = (int) ($boBadges['forum_moderation_total'] ?? 0);
-            $boModBadge = $boModN > 0 ? $boModN : null;
-            $boLink('back-office/forum-moderation', 'Console modération forum', str_starts_with($p, 'back-office/forum-moderation'), $boModBadge, 'rose');
+            $linkActive = !empty($link['active']);
+            $linkBadge = isset($link['badge']) && (int) $link['badge'] > 0 ? (int) $link['badge'] : null;
+            $badgeTone = (string) ($link['badgeTone'] ?? '');
+            $badgeCls = 'dash-rail__link-badge' . ($badgeTone === 'rose' ? ' dash-rail__link-badge--rose' : ($badgeTone === 'sky' ? ' dash-rail__link-badge--sky' : ''));
             ?>
-            <?php $boLink('admin/content-moderation', 'Fichiers et pièces jointes', str_starts_with($p, 'admin/content-moderation')); ?>
-        <?php endif; ?>
-    </nav>
+            <li>
+                <a class="dash-rail__link<?= $linkActive ? ' is-active' : '' ?>" href="<?= $h((string) $link['href']) ?>">
+                    <span class="dash-rail__link-main">
+                        <span class="dash-rail__link-label"><?= $h((string) $link['label']) ?></span>
+                        <?php if (!empty($link['hint'])): ?>
+                            <span class="dash-rail__link-hint"><?= $h((string) $link['hint']) ?></span>
+                        <?php endif; ?>
+                    </span>
+                    <?php if ($linkBadge !== null): ?>
+                        <span class="<?= $h($badgeCls) ?>" aria-hidden="true"><?= $h($linkBadge > 99 ? '99+' : (string) $linkBadge) ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php
+};
 
-    <div class="border-t border-slate-800/80 space-y-2 p-3">
-        <?php
-        $boPersN = (int) ($boBadges['personal_inbox'] ?? 0);
-        $boPersBadge = $boPersN > 0 ? $boPersN : null;
-        $boPersAria = $boPersBadge !== null
-            ? ' aria-label="Mon activité — ' . ($boPersN > 99 ? '99+' : (string) $boPersN) . ' notification(s)"'
-            : '';
-        $boPersPill = $boPersBadge !== null
-            ? '<span class="inline-flex min-w-[1.35rem] shrink-0 justify-center rounded-full bg-sky-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white" aria-hidden="true">' . htmlspecialchars($boPersN > 99 ? '99+' : (string) $boPersN, ENT_QUOTES, 'UTF-8') . '</span>'
-            : '';
-        ?>
-        <a href="<?= htmlspecialchars(url('activite'), ENT_QUOTES, 'UTF-8') ?>" class="flex w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"<?= $boPersAria ?>>
-            <span class="flex min-w-0 items-center gap-2">
-                <svg class="h-4 w-4 shrink-0 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-                <span class="truncate">Mon activité</span>
+$renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon): void {
+    $id = (string) $item['id'];
+    $label = (string) $item['label'];
+    $active = !empty($item['active']);
+    $variant = (string) ($item['variant'] ?? 'default');
+    $badge = $item['badge'] ?? null;
+    $classes = ['dash-rail__tile'];
+    if ($active) {
+        $classes[] = 'is-active';
+    }
+    if ($variant === 'bo') {
+        $classes[] = 'dash-rail__tile--bo';
+    } elseif ($variant === 'admin') {
+        $classes[] = 'dash-rail__tile--admin';
+    }
+    $nestedId = 'bo-rail-nested-' . $id;
+    $idxLabel = $num();
+    $iconMarkup = $icon((string) ($item['icon'] ?? ''));
+    ?>
+    <div class="dash-rail__item" data-dash-rail-item="<?= $h($id) ?>">
+        <button
+            type="button"
+            class="<?= $h(implode(' ', $classes)) ?>"
+            data-dash-rail-open="<?= $h($id) ?>"
+            aria-expanded="false"
+            aria-controls="<?= $h($nestedId) ?>"
+        >
+            <?php if ($iconMarkup !== ''): ?>
+                <span class="dash-rail__tile-icon" aria-hidden="true"><?= $iconMarkup ?></span>
+            <?php else: ?>
+                <b class="dash-rail__idx"><?= $h($idxLabel) ?></b>
+            <?php endif; ?>
+            <span class="dash-rail__copy">
+                <strong class="dash-rail__label"><?= $h($label) ?></strong>
+                <em class="dash-rail__hint"><?= $h((string) $item['hint']) ?></em>
             </span>
-            <?= $boPersPill ?>
-        </a>
-        <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white">
-            <svg class="h-4 w-4 shrink-0 opacity-80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
-            Retour au portail
-        </a>
+            <?php if ($active): ?>
+                <i class="dash-rail__meta dash-rail__meta--actif">Actif</i>
+            <?php elseif (is_string($badge) && $badge !== ''): ?>
+                <i class="dash-rail__meta dash-rail__meta--badge" aria-label="<?= $h($badge . ' élément(s)') ?>"><?= $h($badge) ?></i>
+            <?php else: ?>
+                <i class="dash-rail__meta dash-rail__meta--empty" aria-hidden="true">—</i>
+            <?php endif; ?>
+        </button>
+        <div
+            class="dash-rail__nested"
+            id="<?= $h($nestedId) ?>"
+            data-dash-rail-nested="<?= $h($id) ?>"
+            data-dash-rail-title="<?= $h($label) ?>"
+            data-dash-rail-lead="<?= $h((string) $item['hint']) ?>"
+            hidden
+        >
+            <div class="dash-rail__nested-body">
+                <?php $renderLinks($item); ?>
+            </div>
+        </div>
+    </div>
+    <?php
+};
+?>
+<div
+    class="bo-rail dash-rail flex h-full min-h-0 flex-col"
+    id="bo-rail"
+    aria-label="Navigation back-office"
+    data-dash-rail
+    data-dash-rail-autoload
+    data-dash-rail-persist-drill
+    role="navigation"
+>
+    <div class="dash-rail__inner">
+        <div class="dash-rail__panel">
+            <div class="dash-rail__view dash-rail__view--root" data-dash-rail-root>
+                <div class="dash-rail__brand">
+                    <p class="dash-rail__eyebrow">Athena / État-major</p>
+                    <h2 class="dash-rail__title">Back-office</h2>
+                    <p class="dash-rail__unit"><?= $h($tenantLabel !== '' ? $tenantLabel : 'Administration de votre espace') ?></p>
+                </div>
+
+                <nav class="dash-rail__nav" aria-label="Rubriques back-office">
+                    <p class="dash-rail__section">Gestion</p>
+                    <?php foreach ($coreTiles as $item): ?>
+                        <?php $renderTile($item); ?>
+                    <?php endforeach; ?>
+
+                    <?php if ($opsTiles !== []): ?>
+                        <p class="dash-rail__section dash-rail__section--ops">Pilotage</p>
+                        <?php foreach ($opsTiles as $item): ?>
+                            <?php $renderTile($item); ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                    <?php if ($resourceTiles !== []): ?>
+                        <p class="dash-rail__section dash-rail__section--bo">Ressources</p>
+                        <?php foreach ($resourceTiles as $item): ?>
+                            <?php $renderTile($item); ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+
+                    <?php if ($adminTiles !== []): ?>
+                        <p class="dash-rail__section dash-rail__section--admin">Plateforme</p>
+                        <?php foreach ($adminTiles as $item): ?>
+                            <?php $renderTile($item); ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </nav>
+
+                <div class="dash-rail__foot">
+                    <?php
+                    $boPersAria = $boPersBadge !== null
+                        ? ' aria-label="Mon activité — ' . ($boPersN > 99 ? '99+' : (string) $boPersN) . ' notification(s)"'
+                        : '';
+                    ?>
+                    <a href="<?= $h(url('activite')) ?>" class="bo-rail__foot-link"<?= $boPersAria ?>>
+                        <span class="bo-rail__foot-link-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                            <span>Mon activité</span>
+                        </span>
+                        <?php if ($boPersBadge !== null): ?>
+                            <span class="bo-rail__foot-badge" aria-hidden="true"><?= $h($boPersN > 99 ? '99+' : (string) $boPersN) ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a href="<?= $h(url('dashboard')) ?>" class="bo-rail__foot-link bo-rail__foot-link--portal">
+                        <span class="bo-rail__foot-link-inner">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+                            <span>Retour au portail</span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <div
+                class="dash-rail__view dash-rail__view--drill"
+                data-dash-rail-drill
+                hidden
+                role="region"
+                aria-labelledby="bo-rail-drill-heading"
+            >
+                <div class="dash-rail__drill-head">
+                    <button
+                        type="button"
+                        class="dash-rail__back"
+                        data-dash-rail-back
+                        aria-label="Retour à la navigation"
+                    >
+                        <span aria-hidden="true">←</span>
+                        <span>Retour</span>
+                    </button>
+                    <div class="dash-rail__drill-titles">
+                        <p class="dash-rail__drill-kicker">Rubrique</p>
+                        <h3 class="dash-rail__drill-title" id="bo-rail-drill-heading">Rubrique</h3>
+                        <p class="dash-rail__drill-lead" data-dash-rail-drill-lead></p>
+                    </div>
+                </div>
+                <div class="dash-rail__drill-body" data-dash-rail-drill-body></div>
+            </div>
+        </div>
     </div>
 </div>

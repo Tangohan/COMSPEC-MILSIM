@@ -11,6 +11,10 @@ $diffRows = AuditSnapshotPresenter::diffRows(
     isset($row['old_value']) ? (string) $row['old_value'] : null,
     isset($row['new_value']) ? (string) $row['new_value'] : null
 );
+$actorPrimary = AuditSnapshotPresenter::actorPrimaryLabel($row);
+$actorSecondary = AuditSnapshotPresenter::actorSecondaryLabel($row);
+$target = AuditSnapshotPresenter::entityTargetLabels($row);
+$browser = AuditSnapshotPresenter::browserHint(isset($row['user_agent']) ? (string) $row['user_agent'] : null);
 ?>
 <div class="max-w-4xl mx-auto px-6 py-12">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -26,7 +30,7 @@ $diffRows = AuditSnapshotPresenter::diffRows(
             </div>
             <div>
                 <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Référence</dt>
-                <dd class="mt-1 font-mono text-slate-800"><?= $id ?></dd>
+                <dd class="mt-1 text-slate-800"><?= $id ?></dd>
             </div>
             <?php if ($scope === 'system'): ?>
             <div>
@@ -35,27 +39,34 @@ $diffRows = AuditSnapshotPresenter::diffRows(
             </div>
             <?php endif; ?>
             <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Compte acteur</dt>
-                <dd class="mt-1 text-slate-900"><?= htmlspecialchars((string) ($row['actor_email'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Acteur</dt>
+                <dd class="mt-1 text-slate-900">
+                    <?= htmlspecialchars($actorPrimary, ENT_QUOTES, 'UTF-8') ?>
+                    <?php if ($actorSecondary !== ''): ?>
+                        <span class="block text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($actorSecondary, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                </dd>
             </div>
             <div class="sm:col-span-2">
                 <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Action</dt>
                 <dd class="mt-1 text-slate-900 font-medium"><?= htmlspecialchars(audit_action_label_fr($act), ENT_QUOTES, 'UTF-8') ?></dd>
             </div>
             <div class="sm:col-span-2">
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Cible</dt>
-                <dd class="mt-1 text-slate-700"><?= htmlspecialchars(trim((string) ($row['entity_type'] ?? '') . ' #' . (string) ($row['entity_id'] ?? '')), ENT_QUOTES, 'UTF-8') ?></dd>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Élément concerné</dt>
+                <dd class="mt-1 text-slate-700">
+                    <?= htmlspecialchars($target['primary'], ENT_QUOTES, 'UTF-8') ?>
+                    <?php if ($target['secondary'] !== ''): ?>
+                        <span class="block text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($target['secondary'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                </dd>
             </div>
             <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Réseau (extrait)</dt>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Adresse réseau (extrait)</dt>
                 <dd class="mt-1 text-slate-800"><?= htmlspecialchars(AuditSnapshotPresenter::maskIpForDisplay(isset($row['ip']) ? (string) $row['ip'] : null), ENT_QUOTES, 'UTF-8') ?></dd>
             </div>
             <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Navigateur (extrait)</dt>
-                <dd class="mt-1 text-xs text-slate-600 break-all"><?php
-                    $ua = isset($row['user_agent']) ? (string) $row['user_agent'] : '';
-                    echo htmlspecialchars($ua === '' ? '—' : (strlen($ua) > 120 ? substr($ua, 0, 117) . '…' : $ua), ENT_QUOTES, 'UTF-8');
-                ?></dd>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Navigateur</dt>
+                <dd class="mt-1 text-slate-800"><?= htmlspecialchars($browser !== '' ? $browser : '—', ENT_QUOTES, 'UTF-8') ?></dd>
             </div>
         </dl>
     </div>

@@ -39,6 +39,12 @@ final class EmailEvents
     /** Modération automatique sur le portail candidat / recrutement — alerte aux parties concernées. */
     public const ENLISTMENT_PORTAL_AUTOMOD_ALERT = 'ENLISTMENT_PORTAL_AUTOMOD_ALERT';
 
+    /** Rappel bilan recrutement (équipe) après 30 jours. */
+    public const ENLISTMENT_RETRO_STAFF_REMINDER = 'ENLISTMENT_RETRO_STAFF_REMINDER';
+
+    /** Rappel bilan recrutement (candidat) après 30 jours. */
+    public const ENLISTMENT_RETRO_CANDIDATE_REMINDER = 'ENLISTMENT_RETRO_CANDIDATE_REMINDER';
+
     /** Formation assignée par le staff (hors auto-inscription). */
     public const TRAINING_ENROLLMENT_ASSIGNED = 'TRAINING_ENROLLMENT_ASSIGNED';
     /** Parcours formation entièrement validé par l’apprenant. */
@@ -130,6 +136,8 @@ final class EmailEvents
         self::ENLISTMENT_PORTAL_CANDIDATE_REPLY_STAFF,
         self::ENLISTMENT_PORTAL_UPDATE_CANDIDATE,
         self::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
+        self::ENLISTMENT_RETRO_STAFF_REMINDER,
+        self::ENLISTMENT_RETRO_CANDIDATE_REMINDER,
         self::TRAINING_ENROLLMENT_ASSIGNED,
         self::TRAINING_COURSE_COMPLETED,
         self::TRAINING_ENROLLMENT_PENDING_APPROVAL,

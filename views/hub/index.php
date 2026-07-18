@@ -1,21 +1,8 @@
 <?php
-$hubSections = $hubSections ?? [];
+declare(strict_types=1);
 
-$hubAccentIcon = [
-    'emerald' => 'bg-emerald-100 text-emerald-800 ring-emerald-200/80',
-    'sky' => 'bg-sky-100 text-sky-800 ring-sky-200/80',
-    'violet' => 'bg-violet-100 text-violet-900 ring-violet-200/80',
-    'indigo' => 'bg-indigo-100 text-indigo-800 ring-indigo-200/80',
-    'slate' => 'bg-slate-200 text-slate-800 ring-slate-300/80',
-    'amber' => 'bg-amber-100 text-amber-900 ring-amber-200/80',
-    'teal' => 'bg-teal-100 text-teal-800 ring-teal-200/80',
-    'orange' => 'bg-orange-100 text-orange-800 ring-orange-200/80',
-    'stone' => 'bg-stone-200 text-stone-800 ring-stone-300/80',
-    'blue' => 'bg-blue-100 text-blue-800 ring-blue-200/80',
-    'cyan' => 'bg-cyan-100 text-cyan-800 ring-cyan-200/80',
-    'rose' => 'bg-rose-100 text-rose-800 ring-rose-200/80',
-    'purple' => 'bg-purple-100 text-purple-800 ring-purple-200/80',
-];
+$hubSections = $hubSections ?? [];
+$hub_next_steps = $hub_next_steps ?? [];
 
 $hubIconPaths = [
     'dashboard' => 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z',
@@ -37,103 +24,191 @@ $hubIconPaths = [
     'admin_org' => 'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9.75h18M3.75 21h16.5a.75.75 0 0 0 .75-.75V4.5a.75.75 0 0 0-.75-.75H3.75A.75.75 0 0 0 3 4.5v15.75a.75.75 0 0 0 .75.75Z',
     '_default' => 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z',
 ];
+
+$hubVisibleSections = [];
+foreach ($hubSections as $section) {
+    $entries = $section['entries'] ?? [];
+    if (!is_array($entries) || $entries === []) {
+        continue;
+    }
+    $hubVisibleSections[] = $section;
+}
+
+$featuredEntries = [];
+foreach ($hubVisibleSections as $section) {
+    foreach ($section['entries'] ?? [] as $entry) {
+        if (!empty($entry['featured'])) {
+            $featuredEntries[] = $entry;
+        }
+    }
+}
+$featuredEntries = array_slice($featuredEntries, 0, 4);
 ?>
 
-<div class="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
-    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12)_0.5px,transparent_0.6px)] bg-[length:20px_20px] opacity-50" aria-hidden="true"></div>
-    <div class="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/90">Portail Athena</p>
-        <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Centre de commandement</h1>
-        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            Tout est regroupé par thème : repérez d’abord la section qui vous concerne, puis ouvrez la tuile qui correspond à votre besoin du moment.
-        </p>
-        <div class="mt-8 flex flex-wrap gap-3">
-            <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-emerald-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
-                Tableau de bord
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
-            </a>
-            <a href="<?= htmlspecialchars(url('activite'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
-                Mon activité récente
-            </a>
-            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-xl border border-violet-300/40 bg-violet-500/15 px-4 py-2.5 text-sm font-semibold text-violet-100 backdrop-blur-sm transition hover:bg-violet-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
-                Espace RH et formations
-            </a>
-        </div>
+<style>
+  .hub-portal { --hub-accent: #059669; --hub-ink: #0f172a; }
+  .hub-portal a:focus-visible { outline: 2px solid var(--hub-accent); outline-offset: 2px; }
+  .hub-jump a {
+    display: inline-flex; align-items: center; border-radius: 0.5rem;
+    border: 1px solid #e2e8f0; background: #fff; padding: 0.35rem 0.7rem;
+    font-size: 0.75rem; font-weight: 700; color: #334155; text-decoration: none;
+    transition: border-color .12s ease, color .12s ease, background .12s ease;
+  }
+  .hub-jump a:hover { border-color: #6ee7b7; background: #ecfdf5; color: #047857; }
+  .hub-quick {
+    display: flex; align-items: center; gap: 0.65rem;
+    border-radius: 0.65rem; border: 1px solid #a7f3d0; background: #ecfdf5;
+    padding: 0.55rem 0.75rem; text-decoration: none; color: inherit;
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .hub-quick:hover { border-color: #059669; background: #d1fae5; }
+  .hub-quick__icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.85rem; height: 1.85rem; flex-shrink: 0; border-radius: 0.45rem;
+    background: #059669; color: #fff;
+  }
+  .hub-quick__icon svg { width: 1rem; height: 1rem; }
+  .hub-section {
+    border: 1px solid #e2e8f0; border-radius: 0.75rem; background: #fff;
+    overflow: hidden;
+  }
+  .hub-section__head {
+    border-bottom: 1px solid #e2e8f0; background: #f8fafc;
+    padding: 0.65rem 0.85rem;
+  }
+  .hub-link {
+    display: flex; align-items: flex-start; gap: 0.7rem;
+    padding: 0.65rem 0.85rem; text-decoration: none; color: inherit;
+    border-top: 1px solid #f1f5f9;
+    transition: background .12s ease;
+  }
+  .hub-link:first-child { border-top: 0; }
+  .hub-link:hover { background: #f0fdf4; }
+  .hub-link__icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.75rem; height: 1.75rem; flex-shrink: 0; margin-top: 0.05rem;
+    border-radius: 0.4rem; background: #ecfdf5; color: #059669;
+  }
+  .hub-link__icon svg { width: 0.95rem; height: 0.95rem; }
+  .hub-link--featured .hub-link__icon { background: #059669; color: #fff; }
+</style>
+
+<div class="hub-portal mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+  <header class="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+    <div class="min-w-0">
+      <p class="text-[10px] font-black uppercase tracking-[0.22em] text-[#059669]">Athena</p>
+      <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+        Centre de commandement
+      </h1>
+      <p class="mt-1 max-w-2xl text-sm text-slate-600">
+        Annuaire des espaces Athena : ouvrez l’outil dont vous avez besoin.
+      </p>
     </div>
-</div>
-
-<div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-    <?php if ($hubSections !== []): ?>
-    <nav class="mb-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="Sections du centre de commandement">
-        <?php foreach ($hubSections as $nav): ?>
-        <a
-            href="#<?= htmlspecialchars((string)($nav['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-        ><?= htmlspecialchars((string)($nav['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
-        <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
-
-    <div class="space-y-14">
-        <?php foreach ($hubSections as $section): ?>
-        <section id="<?= htmlspecialchars((string)($section['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" class="scroll-mt-24">
-            <header class="mb-6 border-b border-slate-200 pb-4">
-                <h2 class="text-xl font-bold text-slate-900 sm:text-2xl"><?= htmlspecialchars((string)($section['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
-                <?php if (!empty($section['subtitle'])): ?>
-                <p class="mt-1 max-w-3xl text-sm text-slate-600 sm:text-base"><?= htmlspecialchars((string)$section['subtitle'], ENT_QUOTES, 'UTF-8') ?></p>
-                <?php endif; ?>
-            </header>
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <?php foreach ($section['entries'] as $entry):
-                    $accent = $entry['accent'] ?? 'slate';
-                    $iconWrap = $hubAccentIcon[$accent] ?? $hubAccentIcon['slate'];
-                    $iconKey = (string)($entry['icon'] ?? '');
-                    $pathD = $hubIconPaths[$iconKey] ?? $hubIconPaths['_default'];
-                    $featured = !empty($entry['featured']);
-                ?>
-                <a
-                    href="<?= htmlspecialchars((string)($entry['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"
-                    class="group relative flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 <?= $featured ? 'border-emerald-200/80 ring-2 ring-emerald-500/20' : '' ?>"
-                >
-                    <div class="flex items-start gap-4">
-                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset <?= htmlspecialchars($iconWrap, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="<?= htmlspecialchars($pathD, ENT_QUOTES, 'UTF-8') ?>"/>
-                            </svg>
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-base font-semibold text-slate-900"><?= htmlspecialchars((string)($entry['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                                <?php if (!empty($entry['badge'])): ?>
-                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600"><?= htmlspecialchars((string)$entry['badge'], ENT_QUOTES, 'UTF-8') ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <p class="mt-2 text-sm leading-relaxed text-slate-600"><?= htmlspecialchars((string)($entry['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                        </div>
-                    </div>
-                    <span class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 group-hover:text-emerald-800">
-                        Ouvrir
-                        <svg class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
-                    </span>
-                </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-        <?php endforeach; ?>
+    <div class="flex shrink-0 flex-wrap gap-2">
+      <a
+        href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-[#059669] px-3.5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+      >
+        Tableau de bord
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+      </a>
+      <a
+        href="<?= htmlspecialchars(url('centre-actions'), ENT_QUOTES, 'UTF-8') ?>"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-bold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
+      >
+        Ce qui demande attention
+      </a>
     </div>
+  </header>
 
-    <?php if ($hubSections === []): ?>
-    <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Aucun accès n’est disponible pour le moment. Contactez un responsable de la communauté si vous pensez qu’il s’agit d’une erreur.</p>
-    <?php endif; ?>
+  <?php if ($hubVisibleSections !== []): ?>
+  <nav class="hub-jump mt-4 flex flex-wrap gap-1.5" aria-label="Rubriques">
+    <?php foreach ($hubVisibleSections as $nav): ?>
+    <a href="#<?= htmlspecialchars((string) ($nav['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      <?= htmlspecialchars((string) ($nav['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+    </a>
+    <?php endforeach; ?>
+  </nav>
+  <?php endif; ?>
 
-    <?php
-    $next_steps = $hub_next_steps ?? [];
-    $next_steps_title = 'Pour la suite';
-    $next_steps_intro = 'Quelques actions utiles selon votre profil et les modules disponibles.';
-    require base_path('views/partials/ui/next_steps_block.php');
+  <?php if ($featuredEntries !== []): ?>
+  <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Accès fréquents">
+    <?php foreach ($featuredEntries as $entry):
+      $iconKey = (string) ($entry['icon'] ?? '');
+      $pathD = $hubIconPaths[$iconKey] ?? $hubIconPaths['_default'];
     ?>
+    <a href="<?= htmlspecialchars((string) ($entry['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="hub-quick">
+      <span class="hub-quick__icon" aria-hidden="true">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="<?= htmlspecialchars($pathD, ENT_QUOTES, 'UTF-8') ?>"/></svg>
+      </span>
+      <span class="min-w-0">
+        <span class="block truncate text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($entry['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="mt-0.5 block truncate text-[11px] text-slate-600"><?= htmlspecialchars((string) ($entry['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+      </span>
+    </a>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
 
-    <p class="mt-12 text-center text-sm text-slate-500">
-        <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au tableau de bord</a>
-    </p>
+  <?php if ($hubVisibleSections !== []): ?>
+  <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <?php foreach ($hubVisibleSections as $section):
+      $entries = $section['entries'] ?? [];
+    ?>
+    <section
+      id="<?= htmlspecialchars((string) ($section['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+      class="hub-section scroll-mt-20"
+      aria-labelledby="hub-sec-<?= htmlspecialchars((string) ($section['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+    >
+      <header class="hub-section__head">
+        <h2
+          id="hub-sec-<?= htmlspecialchars((string) ($section['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+          class="text-sm font-black text-slate-900"
+        ><?= htmlspecialchars((string) ($section['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
+        <?php if (!empty($section['subtitle'])): ?>
+        <p class="mt-0.5 text-xs leading-snug text-slate-500"><?= htmlspecialchars((string) $section['subtitle'], ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+      </header>
+      <ul>
+        <?php foreach ($entries as $entry):
+          $iconKey = (string) ($entry['icon'] ?? '');
+          $pathD = $hubIconPaths[$iconKey] ?? $hubIconPaths['_default'];
+          $isFeatured = !empty($entry['featured']);
+        ?>
+        <li>
+          <a
+            href="<?= htmlspecialchars((string) ($entry['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"
+            class="hub-link<?= $isFeatured ? ' hub-link--featured' : '' ?>"
+          >
+            <span class="hub-link__icon" aria-hidden="true">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="<?= htmlspecialchars($pathD, ENT_QUOTES, 'UTF-8') ?>"/></svg>
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="flex flex-wrap items-center gap-1.5">
+                <span class="text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($entry['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if (!empty($entry['badge'])): ?>
+                <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600"><?= htmlspecialchars((string) $entry['badge'], ENT_QUOTES, 'UTF-8') ?></span>
+                <?php endif; ?>
+              </span>
+              <span class="mt-0.5 block text-xs leading-snug text-slate-600"><?= htmlspecialchars((string) ($entry['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+            </span>
+          </a>
+        </li>
+        <?php endforeach; ?>
+      </ul>
+    </section>
+    <?php endforeach; ?>
+  </div>
+  <?php else: ?>
+  <p class="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Aucun accès n’est disponible pour le moment. Contactez un responsable de la communauté si vous pensez qu’il s’agit d’une erreur.
+  </p>
+  <?php endif; ?>
+
+  <?php
+  $next_steps = $hub_next_steps;
+  $next_steps_title = 'Suggestions selon votre profil';
+  $next_steps_intro = 'Quelques pistes utiles pour enchaîner, selon les modules auxquels vous avez accès.';
+  require base_path('views/partials/ui/next_steps_block.php');
+  ?>
 </div>

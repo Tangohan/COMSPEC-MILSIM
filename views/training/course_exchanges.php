@@ -35,6 +35,38 @@ ob_start();
 require base_path('views/training/partials/lms_head.php');
 $headHtml = ob_get_clean();
 $ficheUrl = url('formations/' . rawurlencode($slugForForms));
+$fmtExDate = static function (?string $raw): string {
+    $raw = trim((string) $raw);
+    if ($raw === '') {
+        return '';
+    }
+    $ts = strtotime($raw);
+    if ($ts === false) {
+        return $raw;
+    }
+
+    return date('d/m/Y à H:i', $ts);
+};
+$exInitial = static function (string $who): string {
+    $who = trim($who);
+    if ($who === '') {
+        return '?';
+    }
+    if (function_exists('mb_substr') && function_exists('mb_strtoupper')) {
+        return mb_strtoupper(mb_substr($who, 0, 1));
+    }
+
+    return strtoupper(substr($who, 0, 1));
+};
+$questionsCount = count($courseQuestions);
+$answeredCount = 0;
+foreach ($courseQuestions as $cqRow) {
+    if (!empty($cqRow['answer_text']) || (($cqRow['status'] ?? '') === 'answered')) {
+        $answeredCount++;
+    }
+}
+$reviewsCount = count($courseReviews);
+$commentsCount = count($courseComments);
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -49,6 +81,9 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
             $lmsBase = $base;
             $currentLessonId = null;
             $lmsHideEchangesSidebarLink = true;
+            $lmsSequenceContext = 'echanges';
+            $lmsCompletedLessonIds = is_array($lmsCompletedLessonIds ?? null) ? $lmsCompletedLessonIds : [];
+            $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : [];
             require base_path('views/training/partials/lms_course_sidebar.php');
             ?>
 
@@ -76,11 +111,11 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
                             <span class="text-sm text-amber-800 font-bold">Moyenne des notes : <?= htmlspecialchars(number_format((float) $courseAvgRating, 1, ',', ' ')) ?> / 5</span>
                             <?php endif; ?>
                         </div>
-                        <nav class="mt-8 flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-wider" aria-label="Sections de la page">
-                            <a href="#section-avis" class="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-emerald-700 transition-colors">Avis</a>
-                            <a href="#section-questions" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">Questions</a>
+                        <nav class="lms-ex-tabs" aria-label="Sections de la page">
+                            <a href="#section-avis">Avis<?php if ($reviewsCount > 0): ?> <span class="lms-ex-tabs__count"><?= $reviewsCount ?></span><?php endif; ?></a>
+                            <a href="#section-questions">Questions<?php if ($questionsCount > 0): ?> <span class="lms-ex-tabs__count"><?= $questionsCount ?></span><?php endif; ?></a>
                             <?php if ($lmsCommentsEnabled): ?>
-                            <a href="#section-commentaires" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">Commentaires</a>
+                            <a href="#section-commentaires">Commentaires<?php if ($commentsCount > 0): ?> <span class="lms-ex-tabs__count"><?= $commentsCount ?></span><?php endif; ?></a>
                             <?php endif; ?>
                         </nav>
                         <div class="mt-8 flex flex-wrap gap-3">
@@ -93,12 +128,17 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
                 </header>
 
                 <section id="section-avis" class="lms-panel rounded-[2rem] p-6 md:p-10 scroll-mt-24">
-                    <div class="flex items-center gap-3 mb-6">
-                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800 text-lg" aria-hidden="true">★</span>
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Note et avis</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Une note courte suffit ; le commentaire est optionnel.</p>
+                    <div class="lms-ex-section-head">
+                        <div class="lms-ex-section-head__title">
+                            <span class="lms-ex-section-head__icon lms-ex-section-head__icon--amber" aria-hidden="true">★</span>
+                            <div>
+                                <h2>Note et avis</h2>
+                                <p>Une note courte suffit ; le commentaire est optionnel.</p>
+                            </div>
                         </div>
+                        <?php if ($reviewsCount > 0): ?>
+                        <span class="lms-ex-section-head__meta"><?= $reviewsCount ?> avis</span>
+                        <?php endif; ?>
                     </div>
                     <?php if ($viewerLoggedIn): ?>
                     <form method="post" action="<?= url('formations/review') ?>" class="space-y-5 border-b border-slate-100 pb-8 mb-8">
@@ -125,14 +165,14 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
                         <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700">Publier mon avis</button>
                     </form>
                     <?php else: ?>
-                    <p class="text-sm text-slate-600 border-b border-slate-100 pb-8 mb-8"><a href="<?= url('login') ?>" class="font-bold text-emerald-700 hover:underline">Connectez-vous</a> pour laisser une note.</p>
+                    <p class="lms-ex-login-hint border-b border-slate-100 pb-8 mb-8"><a href="<?= url('login') ?>">Connectez-vous</a> pour laisser une note.</p>
                     <?php endif; ?>
                     <?php if ($courseReviews !== []): ?>
                     <ul class="space-y-4">
                         <?php foreach ($courseReviews as $rv): ?>
                         <?php
                         $who = (string) ($rv['display_name'] ?? $rv['callsign'] ?? 'Membre');
-                        $initial = function_exists('mb_substr') ? mb_strtoupper(mb_substr($who, 0, 1)) : strtoupper(substr($who, 0, 1));
+                        $initial = $exInitial($who);
                         ?>
                         <li class="flex gap-4 rounded-2xl border border-slate-100 bg-white/80 p-5 shadow-sm">
                             <div class="shrink-0 w-11 h-11 rounded-xl bg-slate-200 text-slate-700 font-black flex items-center justify-center text-sm"><?= htmlspecialchars($initial) ?></div>
@@ -140,93 +180,151 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
                                 <?php $rvStars = max(0, min(5, (int) ($rv['rating'] ?? 0))); ?>
                                 <p class="text-sm font-bold text-slate-900"><?= htmlspecialchars($who) ?> <span class="text-amber-600 font-black"><?= str_repeat('★', $rvStars) ?><span class="text-slate-300"><?= str_repeat('★', 5 - $rvStars) ?></span></span></p>
                                 <?php if (!empty($rv['body'])): ?><p class="text-sm text-slate-700 mt-2 leading-relaxed"><?= nl2br(htmlspecialchars((string) $rv['body'])) ?></p><?php endif; ?>
-                                <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars((string) ($rv['created_at'] ?? '')) ?></p>
+                                <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars($fmtExDate((string) ($rv['created_at'] ?? ''))) ?></p>
                             </div>
                         </li>
                         <?php endforeach; ?>
                     </ul>
                     <?php else: ?>
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center">
-                        <p class="text-slate-600 text-sm">Pas encore d’avis publié. Soyez le premier à partager votre retour.</p>
+                    <div class="lms-ex-empty">
+                        <span class="lms-ex-empty__icon" aria-hidden="true">★</span>
+                        <strong>Pas encore d’avis</strong>
+                        <p>Soyez le premier à partager votre retour sur ce parcours.</p>
                     </div>
                     <?php endif; ?>
                 </section>
 
                 <section id="section-questions" class="lms-panel rounded-[2rem] p-6 md:p-10 scroll-mt-24">
-                    <div class="flex items-center gap-3 mb-6">
-                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-800 text-lg" aria-hidden="true">?</span>
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Questions au staff</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Les réponses apparaissent ici lorsqu’elles sont publiées.</p>
-                        </div>
-                    </div>
-                    <div class="space-y-4 mb-8">
-                    <?php foreach ($courseQuestions as $cq): ?>
-                        <div class="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-                            <p class="text-sm text-slate-800 leading-relaxed"><?= nl2br(htmlspecialchars((string) ($cq['question_text'] ?? ''))) ?></p>
-                            <?php if (!empty($cq['answer_text'])): ?>
-                            <div class="mt-4 pt-4 border-t border-slate-200/80">
-                                <p class="text-[10px] font-black uppercase tracking-wider text-emerald-700 mb-1">Réponse</p>
-                                <p class="text-sm text-emerald-950 leading-relaxed"><?= nl2br(htmlspecialchars((string) $cq['answer_text'])) ?></p>
+                    <div class="lms-ex-section-head">
+                        <div class="lms-ex-section-head__title">
+                            <span class="lms-ex-section-head__icon lms-ex-section-head__icon--sky" aria-hidden="true">?</span>
+                            <div>
+                                <h2>Questions au staff</h2>
+                                <p>Posez une question claire sur le parcours. Les réponses publiées apparaissent dans le fil ci-dessous.</p>
                             </div>
-                            <?php endif; ?>
                         </div>
-                    <?php endforeach; ?>
-                    <?php if ($courseQuestions === []): ?>
-                        <p class="text-sm text-slate-500 text-center py-6">Aucune question publique pour l’instant.</p>
-                    <?php endif; ?>
+                        <?php if ($questionsCount > 0): ?>
+                        <span class="lms-ex-section-head__meta"><?= $answeredCount ?> / <?= $questionsCount ?> répondue<?= $answeredCount > 1 ? 's' : '' ?></span>
+                        <?php endif; ?>
                     </div>
+
                     <?php if ($viewerLoggedIn): ?>
-                    <form method="post" action="<?= url('formations/question') ?>" class="space-y-3 rounded-2xl bg-white border border-slate-100 p-5">
+                    <form method="post" action="<?= url('formations/question') ?>" class="lms-ex-compose">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                         <input type="hidden" name="social_return" value="echanges">
-                        <label for="question_text" class="block text-xs font-bold text-slate-600">Nouvelle question</label>
-                        <textarea id="question_text" name="question_text" rows="3" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Formulez votre demande clairement…" required></textarea>
-                        <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700">Envoyer au staff</button>
+                        <label for="question_text" class="lms-ex-compose__label">Votre question</label>
+                        <textarea id="question_text" name="question_text" rows="4" placeholder="Ex. : À quel moment dois-je préparer mon dossier ? Qui contacter après le parcours ?" required></textarea>
+                        <div class="lms-ex-compose__actions">
+                            <button type="submit" class="lms-ex-compose__btn">Envoyer au staff</button>
+                            <p class="lms-ex-compose__hint">Une fois envoyée, votre question reste visible ici. La réponse du staff s’affiche dès qu’elle est publiée.</p>
+                        </div>
                     </form>
                     <?php else: ?>
-                    <p class="text-sm text-slate-600"><a href="<?= url('login') ?>" class="font-bold text-emerald-700 hover:underline">Connectez-vous</a> pour poser une question.</p>
+                    <p class="lms-ex-login-hint mb-8"><a href="<?= url('login') ?>">Connectez-vous</a> pour poser une question au staff.</p>
+                    <?php endif; ?>
+
+                    <?php if ($courseQuestions !== []): ?>
+                    <div class="lms-ex-thread" role="list">
+                        <?php foreach ($courseQuestions as $cq): ?>
+                        <?php
+                        $qAuthor = trim((string) ($cq['author_name'] ?? 'Membre'));
+                        $qAnswered = !empty($cq['answer_text']) || (($cq['status'] ?? '') === 'answered');
+                        $qStaff = trim((string) ($cq['staff_name'] ?? ''));
+                        $qCreated = $fmtExDate((string) ($cq['created_at'] ?? ''));
+                        $qAnsweredAt = $fmtExDate((string) ($cq['answered_at'] ?? ''));
+                        ?>
+                        <article class="lms-ex-qa" role="listitem">
+                            <div class="lms-ex-qa__q">
+                                <div class="lms-ex-qa__meta">
+                                    <div class="lms-ex-qa__who">
+                                        <span class="lms-ex-qa__avatar" aria-hidden="true"><?= htmlspecialchars($exInitial($qAuthor)) ?></span>
+                                        <div>
+                                            <p class="lms-ex-qa__name"><?= htmlspecialchars($qAuthor !== '' ? $qAuthor : 'Membre') ?></p>
+                                            <?php if ($qCreated !== ''): ?>
+                                            <p class="lms-ex-qa__date"><?= htmlspecialchars($qCreated) ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <?php if ($qAnswered): ?>
+                                    <span class="lms-ex-qa__badge lms-ex-qa__badge--answered">Répondue</span>
+                                    <?php else: ?>
+                                    <span class="lms-ex-qa__badge lms-ex-qa__badge--open">En attente</span>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="lms-ex-qa__body"><?= nl2br(htmlspecialchars((string) ($cq['question_text'] ?? ''))) ?></p>
+                            </div>
+                            <?php if (!empty($cq['answer_text'])): ?>
+                            <div class="lms-ex-qa__a">
+                                <p class="lms-ex-qa__a-label">
+                                    <span>Réponse du staff<?= $qStaff !== '' ? ' · ' . htmlspecialchars($qStaff) : '' ?></span>
+                                    <?php if ($qAnsweredAt !== ''): ?>
+                                    <span><?= htmlspecialchars($qAnsweredAt) ?></span>
+                                    <?php endif; ?>
+                                </p>
+                                <p class="lms-ex-qa__a-body"><?= nl2br(htmlspecialchars((string) $cq['answer_text'])) ?></p>
+                            </div>
+                            <?php endif; ?>
+                        </article>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <div class="lms-ex-empty">
+                        <span class="lms-ex-empty__icon" aria-hidden="true">?</span>
+                        <strong>Aucune question pour l’instant</strong>
+                        <p>Une interrogation sur le déroulé, les prérequis ou la suite ? Posez-la ici : le staff y répondra.</p>
+                    </div>
                     <?php endif; ?>
                 </section>
 
                 <?php if ($lmsCommentsEnabled): ?>
                 <section id="section-commentaires" class="lms-panel rounded-[2rem] p-6 md:p-10 scroll-mt-24">
-                    <div class="flex items-center gap-3 mb-6">
-                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-800" aria-hidden="true">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                        </span>
-                        <div>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Commentaires</h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Échanges libres entre participants.</p>
+                    <div class="lms-ex-section-head">
+                        <div class="lms-ex-section-head__title">
+                            <span class="lms-ex-section-head__icon lms-ex-section-head__icon--violet" aria-hidden="true">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            </span>
+                            <div>
+                                <h2>Commentaires</h2>
+                                <p>Échanges libres entre participants.</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="space-y-5 mb-8">
-                    <?php foreach ($courseComments as $cc): ?>
-                        <div class="rounded-xl border-l-4 border-violet-200 bg-violet-50/30 pl-4 py-3 pr-3">
-                            <p class="text-xs font-bold text-slate-800"><?= htmlspecialchars((string) ($cc['display_name'] ?? '')) ?></p>
-                            <p class="text-sm text-slate-800 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) ($cc['body'] ?? ''))) ?></p>
-                            <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars((string) ($cc['created_at'] ?? '')) ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if ($courseComments === []): ?>
-                        <p class="text-sm text-slate-500 text-center py-6">Aucun commentaire pour le moment.</p>
-                    <?php endif; ?>
+                        <?php if ($commentsCount > 0): ?>
+                        <span class="lms-ex-section-head__meta"><?= $commentsCount ?> commentaire<?= $commentsCount > 1 ? 's' : '' ?></span>
+                        <?php endif; ?>
                     </div>
                     <?php if ($viewerLoggedIn): ?>
-                    <form method="post" action="<?= url('formations/comment') ?>" class="space-y-3 rounded-2xl bg-white border border-slate-100 p-5">
+                    <form method="post" action="<?= url('formations/comment') ?>" class="lms-ex-compose lms-ex-compose--neutral">
                         <?= \App\Core\Csrf::field() ?>
                         <input type="hidden" name="course_id" value="<?= $courseId ?>">
                         <input type="hidden" name="course_slug" value="<?= htmlspecialchars($slugForForms) ?>">
                         <input type="hidden" name="social_return" value="echanges">
-                        <label for="comment_body" class="block text-xs font-bold text-slate-600">Votre commentaire</label>
-                        <textarea id="comment_body" name="comment_body" rows="3" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Partagez une remarque utile…" required></textarea>
-                        <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700">Publier</button>
+                        <label for="comment_body" class="lms-ex-compose__label">Votre commentaire</label>
+                        <textarea id="comment_body" name="comment_body" rows="3" placeholder="Partagez une remarque utile…" required></textarea>
+                        <div class="lms-ex-compose__actions">
+                            <button type="submit" class="lms-ex-compose__btn">Publier</button>
+                        </div>
                     </form>
                     <?php else: ?>
-                    <p class="text-sm text-slate-600"><a href="<?= url('login') ?>" class="font-bold text-emerald-700 hover:underline">Connectez-vous</a> pour commenter.</p>
+                    <p class="lms-ex-login-hint mb-8"><a href="<?= url('login') ?>">Connectez-vous</a> pour commenter.</p>
                     <?php endif; ?>
+                    <div class="space-y-5">
+                    <?php foreach ($courseComments as $cc): ?>
+                        <div class="rounded-xl border-l-4 border-violet-200 bg-violet-50/30 pl-4 py-3 pr-3">
+                            <p class="text-xs font-bold text-slate-800"><?= htmlspecialchars((string) ($cc['display_name'] ?? '')) ?></p>
+                            <p class="text-sm text-slate-800 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) ($cc['body'] ?? ''))) ?></p>
+                            <p class="text-[11px] text-slate-400 mt-2"><?= htmlspecialchars($fmtExDate((string) ($cc['created_at'] ?? ''))) ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if ($courseComments === []): ?>
+                        <div class="lms-ex-empty">
+                            <span class="lms-ex-empty__icon" aria-hidden="true" style="background:#ede9fe;color:#5b21b6">…</span>
+                            <strong>Aucun commentaire</strong>
+                            <p>Lancez la discussion avec une remarque utile pour les autres participants.</p>
+                        </div>
+                    <?php endif; ?>
+                    </div>
                 </section>
                 <?php endif; ?>
 
@@ -239,5 +337,20 @@ $ficheUrl = url('formations/' . rawurlencode($slugForForms));
             </main>
         </div>
     </div>
+    <script>
+    (function () {
+      var tabs = document.querySelectorAll('.lms-ex-tabs a');
+      if (!tabs.length) return;
+      function setActive() {
+        var hash = (location.hash || '#section-avis').toLowerCase();
+        tabs.forEach(function (a) {
+          var href = (a.getAttribute('href') || '').toLowerCase();
+          a.classList.toggle('is-active', href === hash);
+        });
+      }
+      setActive();
+      window.addEventListener('hashchange', setActive);
+    })();
+    </script>
 </body>
 </html>

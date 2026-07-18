@@ -118,8 +118,13 @@ $trainingStudioHideSidebar = !empty($trainingStudioHideSidebar);
 
     <div class="training-studio-app <?= $trainingStudioHideSidebar ? 'training-studio-app--preamble' : 'training-studio-app--sidebar-open' ?>">
         <div class="training-studio-banner">
-            <span class="training-studio-banner__label">ATHENA — Studio de formations</span>
-            <a href="<?= htmlspecialchars($portalHomeUrl) ?>" class="training-studio-banner__portal">Retour au portail</a>
+            <span class="training-studio-banner__label"><?= $trainingStudioHideSidebar ? 'Athena — Studio' : 'ATHENA — Studio de formations' ?></span>
+            <div class="training-studio-banner__actions">
+                <?php if ($trainingStudioHideSidebar): ?>
+                <a href="<?= htmlspecialchars(training_lms_admin_url(), ENT_QUOTES, 'UTF-8') ?>" class="training-studio-banner__link">Pilotage</a>
+                <?php endif; ?>
+                <a href="<?= htmlspecialchars($portalHomeUrl) ?>" class="training-studio-banner__portal">Retour au portail</a>
+            </div>
         </div>
 
         <div class="training-studio-app__grid">

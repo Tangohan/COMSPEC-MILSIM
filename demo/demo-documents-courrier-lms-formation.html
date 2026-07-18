@@ -3,299 +3,737 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#059669" />
   <title>Démo — Liaison Documents / Courrier / LMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f1f5f9;
-      --ink: #0f172a;
-      --muted: #475569;
-      --primary: #08203f;
-      --primary-2: #123f67;
-      --surface: #fff;
-      --border: #cbd5e1;
-      --soft: #e2e8f0;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-muted: #f1f5f9;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #059669;
+      --primary-strong: #065f46;
+      --primary-soft: #ecfdf5;
+      --mint: #34d399;
+      --void: #050505;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --warning: #b45309;
+      --warning-soft: #fffbeb;
+      --info: #1e40af;
+      --info-soft: #eff6ff;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+      --shadow-md: 0 8px 24px -12px rgba(15, 23, 42, .18);
+      --shadow-lg: 0 24px 80px -32px rgba(15, 23, 42, .22);
     }
+
     * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
     body {
       margin: 0;
-      font-family: Inter, Segoe UI, Roboto, sans-serif;
+      font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
       background: var(--bg);
-      color: var(--ink);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
     }
-    .layout {
-      display: grid;
-      grid-template-columns: 360px minmax(0, 1fr) 370px;
-      gap: 1rem;
-      padding: 1rem;
-      min-height: 100vh;
-    }
-    .panel {
-      background: var(--surface);
-      border-radius: 14px;
-      box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
-      padding: 1rem;
-    }
-    h1, h2, h3, h4 { margin: 0 0 .6rem; }
-    .kicker { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
-    label { display:block; font-size: .82rem; color: var(--muted); margin-top:.7rem; }
-    input, select, textarea {
-      width: 100%;
-      margin-top: .35rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .55rem .65rem;
-      font-size: .9rem;
-      font-family: inherit;
-      background: #fff;
-    }
-    textarea { resize: vertical; }
-    button {
-      border: none;
-      border-radius: 10px;
-      padding: .65rem .8rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-soft { background: var(--soft); color: #0f172a; }
-    .btn-line { border: 1px solid var(--border); background: #fff; color: #0f172a; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .8rem; }
 
-    .preview {
-      background: linear-gradient(140deg, var(--primary) 0%, var(--primary-2) 50%, #dbeafe 50.5%, #dbeafe 100%);
-      border-radius: 14px;
-      min-height: 360px;
+    /* ——— Shell / topbar ——— */
+    .doc-shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 4rem;
+    }
+
+    .doc-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .doc-kicker {
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin: 0 0 .5rem;
+    }
+
+    .doc-topbar h1 {
+      font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin: 0 0 .4rem;
+    }
+
+    .doc-topbar__desc {
+      font-size: .88rem;
+      color: var(--muted);
+      max-width: 42rem;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ——— Mobile quick-nav ——— */
+    .doc-mobile-nav { display: none; }
+
+    /* ——— Toolbar modèles ——— */
+    .doc-toolbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      padding: 1.15rem 1.35rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 1rem 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .doc-field { display: block; font-size: .78rem; font-weight: 700; color: var(--muted); }
+    .doc-field + .doc-field { margin-top: 0; }
+
+    .doc-toolbar__field { min-width: 220px; }
+    .doc-toolbar__field--grow { flex: 1 1 260px; }
+    .doc-toolbar__actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-left: auto; }
+    .doc-toolbar__hint {
+      flex-basis: 100%;
+      margin: 0;
+      font-size: .78rem;
+      color: var(--muted);
+      padding-top: .6rem;
+      border-top: 1px dashed var(--border);
+    }
+    .doc-toolbar__hint a { color: var(--primary-strong); font-weight: 700; text-decoration: none; }
+    .doc-toolbar__hint a:hover { text-decoration: underline; }
+
+    label.doc-field input,
+    label.doc-field select,
+    label.doc-field textarea {
+      display: block;
+      width: 100%;
+      margin-top: .4rem;
+      border: 1.5px solid var(--border);
+      border-radius: .7rem;
+      padding: .65rem .8rem;
+      font-size: .88rem;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    label.doc-field input:focus,
+    label.doc-field select:focus,
+    label.doc-field textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(5, 150, 105, .12);
+    }
+    label.doc-field textarea { resize: vertical; }
+
+    /* ——— Grid principale ——— */
+    .doc-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 320px;
+      gap: 1.75rem;
+      align-items: start;
+    }
+
+    .doc-col { min-width: 0; }
+
+    /* ——— Cartes ——— */
+    .doc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      padding: 1.4rem 1.5rem;
+    }
+    .doc-card + .doc-card { margin-top: 1.25rem; }
+
+    .doc-card__head { margin-bottom: 1rem; }
+    .doc-card__kicker {
+      font-size: .64rem;
+      font-weight: 800;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin: 0 0 .35rem;
+    }
+    .doc-card__head h2 {
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+      letter-spacing: -.01em;
+    }
+    .doc-help {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: .5rem 0 0;
+    }
+
+    /* ——— Actions sticky (config) ——— */
+    .doc-actions {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      margin-top: 1.25rem;
+    }
+
+    /* ——— Boutons ——— */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      padding: .72rem 1.15rem;
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: transform .12s ease, filter .12s ease, background-color .12s ease, border-color .12s ease;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: #0f172a; color: #fff; }
+    .btn-primary:hover { background: var(--primary-strong); }
+    .btn-emerald { background: linear-gradient(135deg, #059669, #10b981); color: #fff; box-shadow: 0 10px 24px rgba(16, 185, 129, .28); }
+    .btn-emerald:hover { filter: brightness(1.06); }
+    .btn-outline { background: #fff; border-color: var(--border); color: #334155; }
+    .btn-outline:hover { background: var(--surface-muted); border-color: var(--border-strong); }
+    .btn-block { width: 100%; }
+    .btn-sm { padding: .55rem .9rem; font-size: .66rem; }
+
+    /* ——— Couverture / preview dominante ——— */
+    .doc-cover {
       position: relative;
       overflow: hidden;
-      color: #fff;
-      padding: 2rem;
+      border-radius: 1.5rem;
+      min-height: 300px;
+      padding: 2.5rem 2.25rem;
+      display: flex;
+      align-items: flex-end;
+      color: #f4f4f0;
+      background:
+        radial-gradient(circle at 16% -10%, rgba(52, 211, 153, .32), transparent 55%),
+        radial-gradient(circle at 100% 120%, rgba(5, 150, 105, .38), transparent 55%),
+        linear-gradient(155deg, #050505 0%, #06231a 45%, #0b3d2e 100%);
+      box-shadow: var(--shadow-lg);
     }
-    .preview::after {
+    .doc-cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(244, 244, 240, .05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 244, 240, .05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: .6;
+      pointer-events: none;
+    }
+    .doc-cover::after {
       content: attr(data-watermark);
       position: absolute;
       inset: 0;
       display: grid;
       place-items: center;
-      font-size: 3rem;
+      font-size: clamp(2.1rem, 6vw, 3.4rem);
       font-weight: 900;
-      color: rgba(255,255,255,.1);
-      transform: rotate(-28deg);
-      pointer-events: none;
+      letter-spacing: .12em;
       text-transform: uppercase;
-      letter-spacing: .1em;
+      color: rgba(244, 244, 240, .07);
+      transform: rotate(-18deg) scale(1.15);
+      white-space: nowrap;
+      pointer-events: none;
     }
-    .cover-sub { max-width: 60%; font-size: 1.05rem; line-height: 1.3; }
-    .badge {
-      display:inline-block;
-      border:1px solid rgba(255,255,255,.35);
-      border-radius:999px;
-      padding:.2rem .55rem;
-      font-size:.72rem;
-      margin-bottom:.8rem;
-    }
-    .doc-meta {
-      background: #fff;
-      border-radius: 12px;
-      margin-top: .9rem;
-      padding: 1rem;
-      color: #0f172a;
-      border: 1px solid #e2e8f0;
-    }
-    .toc li { margin: .35rem 0; color: #334155; }
-    .security-chip {
+    .doc-cover__inner { position: relative; z-index: 1; max-width: 640px; }
+    .doc-cover__badge {
       display: inline-flex;
-      padding: .25rem .55rem;
+      align-items: center;
+      padding: .3rem .8rem;
+      border-radius: 999px;
+      font-size: .66rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: rgba(52, 211, 153, .16);
+      border: 1px solid rgba(52, 211, 153, .4);
+      color: var(--mint);
+      margin-bottom: 1.1rem;
+    }
+    .doc-cover__title {
+      font-size: clamp(1.55rem, 3vw, 2.3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 .6rem;
+    }
+    .doc-cover__subtitle {
+      font-size: 1rem;
+      color: rgba(244, 244, 240, .8);
+      max-width: 34rem;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    /* ——— Sommaire ——— */
+    .doc-toc { list-style: none; margin: 0; padding: 0; }
+    .doc-toc li {
+      padding: .55rem 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: .87rem;
+      color: #334155;
+    }
+    .doc-toc li:last-child { border-bottom: none; }
+
+    /* ——— Éditeur ——— */
+    .doc-editor-tabs {
+      display: flex;
+      gap: .4rem;
+      padding-bottom: .9rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .tab-btn {
+      padding: .5rem 1rem;
+      border-radius: .7rem;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tab-btn.active { background: var(--primary-soft); color: var(--primary-strong); border-color: #a7f3d0; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar button {
+      padding: .4rem .65rem;
+      border-radius: .55rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: .78rem;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .toolbar button:hover { border-color: #a7f3d0; background: #f0fdf4; color: #065f46; }
+
+    .editor {
+      min-height: 260px;
+      padding: .2rem .1rem;
+      outline: none;
+      line-height: 1.65;
+      font-size: .93rem;
+      color: var(--text);
+    }
+    .editor h2, .editor h3, .editor h4 { margin-top: 1rem; color: var(--text); }
+    .editor-source {
+      display: none;
+      width: 100%;
+      min-height: 260px;
+      border: 1px solid var(--border);
+      border-radius: .75rem;
+      padding: .9rem;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .8rem;
+      margin: 0;
+      resize: vertical;
+      background: var(--surface-muted);
+    }
+    .editor-source.visible { display: block; }
+    .hidden { display: none !important; }
+
+    /* ——— Chips (sécurité / filigrane) ——— */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .32rem .75rem;
       border-radius: 999px;
       font-size: .72rem;
       font-weight: 700;
-      background:#fee2e2;
-      color:#991b1b;
+      border: 1px solid transparent;
     }
-    .timeline { list-style:none; padding:0; margin:0; }
-    .timeline li { border-left: 2px solid #cbd5e1; margin-left: .4rem; padding-left: .8rem; padding-bottom: .8rem; }
-    .muted { color: var(--muted); font-size: .86rem; }
-    .qr {
-      width: 108px;
-      height: 108px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
+    .chip--info { background: var(--info-soft); color: var(--info); border-color: #bfdbfe; }
+    .chip--warning { background: var(--warning-soft); color: var(--warning); border-color: #fde68a; }
+    .chip--danger { background: var(--danger-soft); color: var(--danger); border-color: #fecaca; }
+    .chip--success { background: var(--primary-soft); color: var(--primary-strong); border-color: #a7f3d0; }
+    .chip--muted { background: var(--surface-muted); color: var(--muted); border-color: var(--border); }
+    .doc-chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .doc-chip-row + .doc-chip-row { margin-top: .6rem; }
+    .doc-chip-label { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 .4rem; }
+
+    /* ——— Historique ——— */
+    .doc-timeline { list-style: none; margin: 0; padding: 0; }
+    .doc-timeline li {
+      position: relative;
+      padding: 0 0 1.1rem 1.1rem;
+      border-left: 2px solid var(--border);
+    }
+    .doc-timeline li:last-child { padding-bottom: 0; }
+    .doc-timeline li::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: .2rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .doc-timeline__version { font-weight: 800; color: var(--text); font-size: .85rem; }
+    .doc-timeline__date { font-size: .74rem; color: var(--muted); margin-left: .5rem; }
+    .doc-timeline p { margin: .3rem 0 0; font-size: .8rem; color: var(--muted); line-height: 1.45; }
+
+    /* ——— QR ——— */
+    .doc-qr-wrap { display: flex; align-items: center; gap: 1rem; margin-top: .75rem; }
+    .doc-qr {
+      width: 104px;
+      height: 104px;
+      border-radius: .85rem;
+      border: 1px solid var(--border);
       background: #fff;
+      padding: .4rem;
       object-fit: contain;
-      margin-top: .6rem;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
     }
-    .editor-wrap {
-      margin-top: .9rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #fff;
-    }
-    .editor-tabs {
+
+    /* ——— Actions rapides ——— */
+    .doc-actions-list { display: flex; flex-direction: column; gap: .6rem; }
+
+    /* ——— Code source (détails) ——— */
+    .doc-code-toggle summary {
+      cursor: pointer;
+      font-size: .78rem;
+      font-weight: 800;
+      color: var(--primary-strong);
+      list-style: none;
       display: flex;
+      align-items: center;
       gap: .45rem;
-      padding: .55rem;
-      border-bottom: 1px solid #e2e8f0;
-      background: #f8fafc;
+      user-select: none;
     }
-    .tab-btn {
-      padding: .45rem .65rem;
-      border-radius: 8px;
-      background: #fff;
-      border: 1px solid #cbd5e1;
+    .doc-code-toggle summary::-webkit-details-marker { display: none; }
+    .doc-code-toggle summary::before { content: '▸'; font-size: .68rem; transition: transform .15s ease; }
+    .doc-code-toggle[open] summary::before { transform: rotate(90deg); }
+    .doc-code-toggle textarea {
+      margin-top: .85rem;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: .7rem;
+      padding: .75rem;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .72rem;
+      background: var(--surface-muted);
+      resize: vertical;
+      color: #334155;
+    }
+    .doc-code-toggle__actions { display: flex; justify-content: flex-end; margin-top: .6rem; }
+
+    /* ——— Toast ——— */
+    .doc-toast-stack {
+      position: fixed;
+      right: 1.25rem;
+      bottom: 1.25rem;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+    .doc-toast {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: .8rem 1.1rem;
+      border-radius: .85rem;
       font-size: .82rem;
       font-weight: 600;
+      box-shadow: var(--shadow-md);
+      border-left: 3px solid var(--mint);
+      max-width: 320px;
+      animation: doc-toast-in .18s ease-out;
     }
-    .tab-btn.active { background: #dbeafe; border-color: #93c5fd; }
-    .toolbar {
-      display: flex;
-      gap: .45rem;
-      flex-wrap: wrap;
-      padding: .55rem;
-      border-bottom: 1px solid #e2e8f0;
-      background: #f8fafc;
+    @keyframes doc-toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ——— Responsive ——— */
+    @media (min-width: 1181px) {
+      .doc-col--config, .doc-col--history {
+        position: sticky;
+        top: 1.5rem;
+        max-height: calc(100vh - 3rem);
+        overflow-y: auto;
+      }
     }
-    .toolbar button {
-      padding: .35rem .55rem;
-      border-radius: 8px;
-      background: #fff;
-      border: 1px solid #cbd5e1;
-      font-size: .82rem;
-      font-weight: 600;
+
+    @media (max-width: 1180px) {
+      .doc-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+      .doc-col--preview { order: 1; }
+      .doc-col--config { order: 2; }
+      .doc-col--history { order: 3; }
+      .doc-col { scroll-margin-top: 4.75rem; }
+
+      .doc-mobile-nav {
+        display: flex;
+        gap: .5rem;
+        overflow-x: auto;
+        margin-bottom: 1.25rem;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--bg);
+        padding: .75rem 0 .9rem;
+      }
+      .doc-mobile-nav a {
+        flex: 0 0 auto;
+        padding: .5rem .95rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff;
+        font-size: .72rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-decoration: none;
+      }
     }
-    .editor {
-      min-height: 220px;
-      padding: .9rem;
-      outline: none;
-      line-height: 1.45;
-      font-size: .92rem;
+
+    @media (max-width: 640px) {
+      .doc-shell { padding: 1.25rem 1rem 3rem; }
+      .doc-cover { padding: 1.75rem 1.35rem; min-height: 240px; }
+      .doc-toolbar__actions { margin-left: 0; width: 100%; }
+      .doc-toolbar__actions .btn { flex: 1 1 auto; }
     }
-    .editor h2, .editor h3, .editor h4 { margin-top: .85rem; }
-    .editor-source {
-      min-height: 220px;
-      border: 0;
-      border-top: 1px solid #e2e8f0;
-      border-radius: 0;
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: .8rem;
-      display: none;
+
+    /* ——— Impression / PDF ——— */
+    @media print {
+      .doc-mobile-nav, .doc-toolbar, .doc-topbar, .doc-col--config, .doc-col--history, .doc-toast-stack { display: none !important; }
+      .doc-grid { grid-template-columns: 1fr !important; gap: 0 !important; }
+      .doc-shell { padding: 0 !important; max-width: none; }
+      .doc-cover { break-inside: avoid; box-shadow: none; }
+      .doc-card { box-shadow: none; border: none; padding: 0; margin-top: 1.5rem !important; }
+      body { background: #fff; }
     }
-    .editor-source.visible { display: block; }
-    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="layout">
-    <aside class="panel">
-      <p class="kicker">Configuration</p>
-      <h2>Liaison Docs / Courrier / LMS</h2>
-
-      <label>Template intégré (Athena)</label>
-      <select id="template"></select>
-      <p class="muted" style="margin-top:.45rem">
-        Compatible avec le workflow de la page
-        <a href="https://athena.ttrd.fr/public/formation/pages-html/1/modifier" target="_blank" rel="noopener noreferrer">/public/formation/pages-html/1/modifier</a>.
-      </p>
-
-      <label>Nom du nouveau template</label>
-      <input id="newTemplateName" placeholder="Ex: Guide EVASAN niveau 2" />
-
-      <label>Titre</label>
-      <input id="title" value="Contrôle des flux sécurité routière" />
-
-      <label>Sous-titre</label>
-      <textarea id="subtitle" rows="2">Constatation des accidents — Procès-verbal</textarea>
-
-      <label>Filigrane</label>
-      <select id="watermark">
-        <option>Officiel</option>
-        <option selected>Diffusion limitée</option>
-        <option>Brouillon</option>
-      </select>
-
-      <label>Niveau de sécurité</label>
-      <select id="security">
-        <option>Interne</option>
-        <option selected>Diffusion restreinte</option>
-        <option>Sensible</option>
-      </select>
-
-      <label>Lien QR (fiche LMS)</label>
-      <input id="qrData" value="https://comspec.local/formations/controle-des-flux" />
-
-      <div class="row">
-        <button class="btn-primary" id="applyBtn">Appliquer</button>
-        <button class="btn-line" id="saveTemplateBtn" type="button">Sauver template</button>
+  <div class="doc-shell">
+    <header class="doc-topbar">
+      <div>
+        <p class="doc-kicker">Pilotage formation · Liaison documentaire</p>
+        <h1>Studio Documents / Courrier / LMS</h1>
+        <p class="doc-topbar__desc">Assembler couverture, sommaire, sécurité et QR code pour produire un document officiel prêt à publier et à diffuser dans le parcours LMS.</p>
       </div>
+    </header>
 
-      <div class="row">
-        <button class="btn-soft" id="newFromCurrentBtn" type="button">Nouveau depuis doc</button>
-        <button class="btn-soft" id="publishBtn">Publier v3.5</button>
+    <nav class="doc-mobile-nav" aria-label="Navigation rapide">
+      <a href="#preview-panel">Aperçu</a>
+      <a href="#config-panel">Configuration</a>
+      <a href="#history-panel">Historique</a>
+    </nav>
+
+    <section class="doc-toolbar">
+      <label class="doc-field doc-toolbar__field">Modèle de document
+        <select id="template"></select>
+      </label>
+      <label class="doc-field doc-toolbar__field doc-toolbar__field--grow">Nom du nouveau modèle
+        <input id="newTemplateName" placeholder="Ex. Guide EVASAN niveau 2" />
+      </label>
+      <div class="doc-toolbar__actions">
+        <button class="btn btn-outline btn-sm" id="saveTemplateBtn" type="button">Enregistrer comme modèle</button>
+        <button class="btn btn-outline btn-sm" id="newFromCurrentBtn" type="button">Nouveau depuis ce document</button>
       </div>
+      <p class="doc-toolbar__hint">Choisissez un modèle réel, modifiez-le en visuel ou en source, puis générez un document publiable. Ce document reste relié au <a href="https://athena.ttrd.fr/public/formation/pages-html/1/modifier" target="_blank" rel="noopener noreferrer">studio d'édition complet</a>.</p>
+    </section>
 
-      <p class="muted" style="margin-top:.8rem">Objectif: sélectionner un template réel, l'éditer en visuel/HTML source, puis générer un document HTML publiable.</p>
-    </aside>
+    <div class="doc-grid">
+      <aside class="doc-col doc-col--config" id="config-panel">
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Configuration</p>
+            <h2>Identité du document</h2>
+          </div>
+          <label class="doc-field">Titre
+            <input id="title" value="Contrôle des flux sécurité routière" />
+          </label>
+          <label class="doc-field" style="margin-top:1rem">Sous-titre
+            <textarea id="subtitle" rows="2">Constatation des accidents — Procès-verbal</textarea>
+          </label>
+        </div>
 
-    <main class="panel">
-      <p class="kicker">Preview document</p>
-      <div class="preview" id="cover" data-watermark="Diffusion limitée">
-        <span class="badge" id="coverBadge">Série 37 · Fiche 37-22</span>
-        <h1 id="coverTitle" style="font-size:2rem;max-width:65%;line-height:1.05;">Contrôle des flux sécurité routière</h1>
-        <p id="coverSubtitle" class="cover-sub">Constatation des accidents — Procès-verbal</p>
-      </div>
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Sécurité &amp; diffusion</p>
+            <h2>Classification</h2>
+          </div>
+          <label class="doc-field">Filigrane
+            <select id="watermark">
+              <option>Officiel</option>
+              <option selected>Diffusion limitée</option>
+              <option>Brouillon</option>
+            </select>
+          </label>
+          <label class="doc-field" style="margin-top:1rem">Niveau de sécurité
+            <select id="security">
+              <option>Interne</option>
+              <option selected>Diffusion restreinte</option>
+              <option>Sensible</option>
+            </select>
+          </label>
+        </div>
 
-      <section class="doc-meta">
-        <h3>Sommaire auto (depuis H2/H3)</h3>
-        <ol class="toc" id="tocList"></ol>
-        <p class="muted" id="docDescription">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Accès numérique</p>
+            <h2>Fiche LMS liée</h2>
+          </div>
+          <label class="doc-field">Destination du QR code
+            <input id="qrData" value="https://comspec.local/formations/controle-des-flux" />
+          </label>
+          <p class="doc-help">Cette adresse sera encodée dans le QR code affiché en pied de document, pour un accès direct depuis un téléphone.</p>
+        </div>
+
+        <div class="doc-actions">
+          <button class="btn btn-primary btn-block" id="applyBtn" type="button">Appliquer les changements</button>
+          <button class="btn btn-emerald btn-block" id="publishBtn" type="button">Publier la version 3.5</button>
+        </div>
+      </aside>
+
+      <section class="doc-col doc-col--preview" id="preview-panel">
+        <div class="doc-cover" id="cover" data-watermark="Diffusion limitée">
+          <div class="doc-cover__inner">
+            <span class="doc-cover__badge" id="coverBadge">Série 37 · Fiche 37-22</span>
+            <h1 class="doc-cover__title" id="coverTitle">Contrôle des flux sécurité routière</h1>
+            <p class="doc-cover__subtitle" id="coverSubtitle">Constatation des accidents — Procès-verbal</p>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Sommaire</p>
+            <h2>Généré automatiquement depuis les intertitres</h2>
+          </div>
+          <ol class="doc-toc" id="tocList"></ol>
+          <p class="doc-help" id="docDescription">18 pages · Description : support de référence opérationnelle synchronisé avec les modules LMS.</p>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Contenu</p>
+            <h2>Corps du document</h2>
+          </div>
+          <div class="doc-editor-tabs">
+            <button id="tabVisual" class="tab-btn active" type="button">Éditeur visuel</button>
+            <button id="tabSource" class="tab-btn" type="button">Source HTML</button>
+          </div>
+          <div class="toolbar" id="toolbar">
+            <button type="button" data-cmd="bold"><strong>B</strong></button>
+            <button type="button" data-cmd="italic"><em>I</em></button>
+            <button type="button" data-cmd="insertUnorderedList">Liste</button>
+            <button type="button" data-cmd="formatBlock" data-value="H2">H2</button>
+            <button type="button" data-cmd="formatBlock" data-value="H3">H3</button>
+            <button type="button" data-cmd="createLink">Lien</button>
+            <button type="button" data-cmd="removeFormat">Nettoyer</button>
+          </div>
+          <div id="editor" class="editor" contenteditable="true"></div>
+          <textarea id="editorSource" class="editor-source"></textarea>
+        </div>
       </section>
 
-      <section class="editor-wrap">
-        <div class="editor-tabs">
-          <button id="tabVisual" class="tab-btn active" type="button">Éditeur visuel</button>
-          <button id="tabSource" class="tab-btn" type="button">Source HTML</button>
+      <aside class="doc-col doc-col--history" id="history-panel">
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Classification actuelle</p>
+          </div>
+          <p class="doc-chip-label">Niveau de sécurité</p>
+          <div class="doc-chip-row">
+            <span class="chip chip--warning" id="securityChip">Diffusion restreinte</span>
+          </div>
+          <p class="doc-chip-label" style="margin-top:.9rem">Filigrane</p>
+          <div class="doc-chip-row">
+            <span class="chip chip--warning" id="watermarkChip">Diffusion limitée</span>
+          </div>
         </div>
-        <div class="toolbar" id="toolbar">
-          <button type="button" data-cmd="bold"><strong>B</strong></button>
-          <button type="button" data-cmd="italic"><em>I</em></button>
-          <button type="button" data-cmd="insertUnorderedList">Liste</button>
-          <button type="button" data-cmd="formatBlock" data-value="H2">H2</button>
-          <button type="button" data-cmd="formatBlock" data-value="H3">H3</button>
-          <button type="button" data-cmd="createLink">Lien</button>
-          <button type="button" data-cmd="removeFormat">Nettoyer</button>
+
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Historique</p>
+            <h2>Journal des mises à jour</h2>
+          </div>
+          <ul class="doc-timeline">
+            <li>
+              <span class="doc-timeline__version">v3.5</span><span class="doc-timeline__date">21/04/2026</span>
+              <p>Modèles intégrables + édition visuelle/source + export HTML.</p>
+            </li>
+            <li>
+              <span class="doc-timeline__version">v3.4</span><span class="doc-timeline__date">19/04/2026</span>
+              <p>Ajout du chapitre « Cas particuliers » + QR versionné.</p>
+            </li>
+          </ul>
         </div>
-        <div id="editor" class="editor" contenteditable="true"></div>
-        <textarea id="editorSource" class="editor-source"></textarea>
-      </section>
-    </main>
 
-    <aside class="panel">
-      <p class="kicker">Historique et sécurité</p>
-      <h3>Historique des MàJ</h3>
-      <ul class="timeline">
-        <li>
-          <strong>v3.5</strong> · 21/04/2026<br>
-          <span class="muted">Templates intégrables + édition visuelle/source + export HTML.</span>
-        </li>
-        <li>
-          <strong>v3.4</strong> · 19/04/2026<br>
-          <span class="muted">Ajout chapitre « Cas particuliers » + QR versionné.</span>
-        </li>
-      </ul>
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Diffusion</p>
+            <h2>QR code</h2>
+          </div>
+          <p class="doc-help">Pied de page et accès mobile à la fiche numérique.</p>
+          <div class="doc-qr-wrap">
+            <img id="qr" class="doc-qr" alt="QR code de la fiche LMS" src="https://api.qrserver.com/v1/create-qr-code/?size=104x104&data=https%3A%2F%2Fcomspec.local%2Fformations%2Fcontrole-des-flux" />
+            <p class="doc-help" style="margin-top:0">Scanné depuis le document imprimé ou le PDF, il renvoie vers la fiche LMS liée.</p>
+          </div>
+        </div>
 
-      <div style="margin-top:1rem">
-        <span class="security-chip" id="securityChip">Diffusion restreinte</span>
-      </div>
+        <div class="doc-card">
+          <div class="doc-card__head">
+            <p class="doc-card__kicker">Actions rapides</p>
+            <h2>Publication &amp; export</h2>
+          </div>
+          <div class="doc-actions-list">
+            <button class="btn btn-outline btn-block" id="generatePdfBtn" type="button">Générer le PDF</button>
+          </div>
+          <p class="doc-help">Le PDF reprend la mise en page du document telle qu'affichée dans l'aperçu ci-contre.</p>
 
-      <h3 style="margin-top:1rem">QR code</h3>
-      <p class="muted">Pied de page et version numérique</p>
-      <img id="qr" class="qr" alt="QR code" src="https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=https%3A%2F%2Fcomspec.local%2Fformations%2Fcontrole-des-flux" />
-
-      <h3 style="margin-top:1rem">HTML document généré</h3>
-      <textarea id="generatedHtml" rows="11" readonly></textarea>
-      <p class="muted" style="margin-top:1rem">À intégrer ensuite dans la publication DOCUMENTS / COURRIER / LMS.</p>
-    </aside>
+          <details class="doc-code-toggle" style="margin-top:1.1rem">
+            <summary>Code source du document</summary>
+            <textarea id="generatedHtml" rows="9" readonly></textarea>
+            <div class="doc-code-toggle__actions">
+              <button class="btn btn-outline btn-sm" id="copyCodeBtn" type="button">Copier</button>
+            </div>
+            <p class="doc-help">À intégrer ensuite dans la publication Documents / Courrier / LMS.</p>
+          </details>
+        </div>
+      </aside>
+    </div>
   </div>
+
+  <div class="doc-toast-stack" id="toastStack" aria-live="polite"></div>
 
   <script>
     const templateEl = document.getElementById('template');
@@ -311,6 +749,7 @@
     const cover = document.getElementById('cover');
     const coverBadge = document.getElementById('coverBadge');
     const securityChip = document.getElementById('securityChip');
+    const watermarkChip = document.getElementById('watermarkChip');
     const qr = document.getElementById('qr');
     const tocList = document.getElementById('tocList');
     const editor = document.getElementById('editor');
@@ -318,6 +757,23 @@
     const docDescription = document.getElementById('docDescription');
     const generatedHtml = document.getElementById('generatedHtml');
     const toolbar = document.getElementById('toolbar');
+    const toastStack = document.getElementById('toastStack');
+
+    const securityToneMap = { 'Interne': 'info', 'Diffusion restreinte': 'warning', 'Sensible': 'danger' };
+    const watermarkToneMap = { 'Officiel': 'success', 'Diffusion limitée': 'warning', 'Brouillon': 'muted' };
+
+    function setChipTone(el, tone, fallback) {
+      el.classList.remove('chip--info', 'chip--warning', 'chip--danger', 'chip--success', 'chip--muted');
+      el.classList.add('chip--' + (tone || fallback));
+    }
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'doc-toast';
+      toast.textContent = message;
+      toastStack.appendChild(toast);
+      setTimeout(() => toast.remove(), 3600);
+    }
 
     const defaultTemplates = {
       pv_routier: {
@@ -388,7 +844,7 @@
   <p>Lancer une prévisualisation puis publier dans le canal LMS validé.</p>
 </section>
 <section>
-  <h2>Audit & versioning</h2>
+  <h2>Audit &amp; versioning</h2>
   <p>Conserver l'historique des modifications et des validations commandement.</p>
 </section>`.trim()
       }
@@ -448,8 +904,11 @@
       coverSubtitle.textContent = subtitleEl.value.trim() || 'Description';
       cover.dataset.watermark = watermarkEl.value;
       securityChip.textContent = securityEl.value;
+      watermarkChip.textContent = watermarkEl.value;
+      setChipTone(securityChip, securityToneMap[securityEl.value], 'warning');
+      setChipTone(watermarkChip, watermarkToneMap[watermarkEl.value], 'warning');
       const data = encodeURIComponent(qrDataEl.value.trim() || 'https://comspec.local/formations');
-      qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=108x108&data=${data}`;
+      qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=104x104&data=${data}`;
       refreshGeneratedHtml();
     }
 
@@ -469,7 +928,7 @@
 
     function saveCurrentTemplate() {
       const explicitName = newTemplateNameEl.value.trim();
-      const baseName = explicitName || titleEl.value.trim() || 'Nouveau template';
+      const baseName = explicitName || titleEl.value.trim() || 'Nouveau modèle';
       const key = sanitizeTemplateKey(baseName);
       templates[key] = {
         label: baseName,
@@ -483,7 +942,7 @@
       fillTemplateSelect();
       templateEl.value = key;
       newTemplateNameEl.value = '';
-      alert(`Template « ${baseName} » sauvegardé.`);
+      showToast(`Modèle « ${baseName} » enregistré.`);
     }
 
     function switchEditorMode(isSourceMode) {
@@ -500,9 +959,31 @@
       }
     }
 
-    document.getElementById('applyBtn').addEventListener('click', updatePreview);
+    document.getElementById('applyBtn').addEventListener('click', () => {
+      updatePreview();
+      showToast('Aperçu mis à jour avec les derniers réglages.');
+    });
     document.getElementById('publishBtn').addEventListener('click', () => {
-      alert('Publication simulée : document HTML validé et prêt pour /public/formation/pages-html/{id}/modifier.');
+      showToast('Publication simulée : le document est validé et prêt à être finalisé dans l\'éditeur complet.');
+    });
+    document.getElementById('generatePdfBtn').addEventListener('click', () => {
+      window.print();
+    });
+    document.getElementById('copyCodeBtn').addEventListener('click', () => {
+      const btn = document.getElementById('copyCodeBtn');
+      const restore = () => { btn.textContent = 'Copier'; };
+      const markCopied = () => { btn.textContent = 'Copié !'; setTimeout(restore, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(generatedHtml.value).then(markCopied).catch(() => {
+          generatedHtml.select();
+          document.execCommand('copy');
+          markCopied();
+        });
+      } else {
+        generatedHtml.select();
+        document.execCommand('copy');
+        markCopied();
+      }
     });
 
     document.getElementById('saveTemplateBtn').addEventListener('click', saveCurrentTemplate);

@@ -82,8 +82,12 @@ final class AuditLogRepository
         }
         if (!empty($filters['search'])) {
             $q = '%' . $this->likeEscape(trim((string) $filters['search'])) . '%';
-            $where[] = '(a.action LIKE ? OR a.entity_type LIKE ? OR CAST(a.entity_id AS CHAR) LIKE ? OR u.email LIKE ? OR t.name LIKE ? OR a.ip LIKE ? OR a.user_agent LIKE ? OR a.old_value LIKE ? OR a.new_value LIKE ?)';
-            array_push($params, $q, $q, $q, $q, $q, $q, $q, $q, $q);
+            $where[] = '(a.action LIKE ? OR a.entity_type LIKE ? OR CAST(a.entity_id AS CHAR) LIKE ?
+                OR u.email LIKE ? OR u.display_name LIKE ? OR u.callsign LIKE ?
+                OR eu.email LIKE ? OR eu.display_name LIKE ? OR eu.callsign LIKE ?
+                OR d.title LIKE ? OR r.name LIKE ? OR et.name LIKE ?
+                OR t.name LIKE ? OR a.ip LIKE ? OR a.user_agent LIKE ? OR a.old_value LIKE ? OR a.new_value LIKE ?)';
+            array_push($params, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q, $q);
         }
 
         if (!empty($filters['organization_journal'])) {
@@ -100,20 +104,17 @@ final class AuditLogRepository
         }
 
         $whereSql = implode(' AND ', $where);
+        $fromSql = $this->listFromSql();
         $countStmt = $this->pdo->prepare(
             "SELECT COUNT(*)
-             FROM audit_logs a
-             LEFT JOIN tenants t ON t.id = a.tenant_id
-             LEFT JOIN users u ON u.id = a.user_id
+             {$fromSql}
              WHERE {$whereSql}"
         );
         $countStmt->execute($params);
         $total = (int) $countStmt->fetchColumn();
 
-        $sql = "SELECT a.*, t.name AS tenant_name, u.email AS actor_email
-                FROM audit_logs a
-                LEFT JOIN tenants t ON t.id = a.tenant_id
-                LEFT JOIN users u ON u.id = a.user_id
+        $sql = 'SELECT ' . $this->listSelectSql() . "
+                {$fromSql}
                 WHERE {$whereSql}
                 ORDER BY a.id DESC
                 LIMIT " . (int) $perPage . ' OFFSET ' . (int) $offset;
@@ -145,12 +146,10 @@ final class AuditLogRepository
     {
         $limit = max(1, min(50, $limit));
         $stmt = $this->pdo->prepare(
-            "SELECT a.*, t.name AS tenant_name, u.email AS actor_email
-             FROM audit_logs a
-             LEFT JOIN tenants t ON t.id = a.tenant_id
-             LEFT JOIN users u ON u.id = a.user_id
+            'SELECT ' . $this->listSelectSql() . '
+             ' . $this->listFromSql() . '
              ORDER BY a.id DESC
-             LIMIT {$limit}"
+             LIMIT ' . (int) $limit
         );
         $stmt->execute();
 
@@ -173,10 +172,8 @@ final class AuditLogRepository
         }
         $limit = max(1, min(50, $limit));
         $placeholders = implode(',', array_fill(0, count($actions), '?'));
-        $sql = "SELECT a.*, t.name AS tenant_name, u.email AS actor_email
-             FROM audit_logs a
-             LEFT JOIN tenants t ON t.id = a.tenant_id
-             LEFT JOIN users u ON u.id = a.user_id
+        $sql = 'SELECT ' . $this->listSelectSql() . '
+             ' . $this->listFromSql() . "
              WHERE a.action IN ({$placeholders})
              ORDER BY a.id DESC
              LIMIT " . (int) $limit;
@@ -197,9 +194,8 @@ final class AuditLogRepository
         $limit = max(1, min(50, $limit));
         if (!$organizationJournal) {
             $stmt = $this->pdo->prepare(
-                'SELECT a.*, u.email AS actor_email
-                 FROM audit_logs a
-                 LEFT JOIN users u ON u.id = a.user_id
+                'SELECT ' . $this->listSelectSql() . '
+                 ' . $this->listFromSql() . '
                  WHERE a.tenant_id = ?
                  ORDER BY a.id DESC
                  LIMIT ' . (int) $limit
@@ -211,9 +207,8 @@ final class AuditLogRepository
 
         $excludedActions = ['site_role.assigned', 'site_role.revoked', 'permission.scope_migration'];
         $placeholders = implode(',', array_fill(0, count($excludedActions), '?'));
-        $sql = "SELECT a.*, u.email AS actor_email
-             FROM audit_logs a
-             LEFT JOIN users u ON u.id = a.user_id
+        $sql = 'SELECT ' . $this->listSelectSql() . '
+             ' . $this->listFromSql() . "
              WHERE a.tenant_id = ?
              AND a.action NOT IN ({$placeholders})
              ORDER BY a.id DESC
@@ -251,9 +246,8 @@ final class AuditLogRepository
         $excludedActions = ['site_role.assigned', 'site_role.revoked', 'permission.scope_migration'];
         $exPh = implode(',', array_fill(0, count($excludedActions), '?'));
 
-        $sql = "SELECT a.*, u.email AS actor_email
-             FROM audit_logs a
-             LEFT JOIN users u ON u.id = a.user_id
+        $sql = 'SELECT ' . $this->listSelectSql() . '
+             ' . $this->listFromSql() . "
              WHERE a.tenant_id = ?
              AND a.action IN ({$placeholders})
              AND a.action NOT IN ({$exPh})
@@ -280,12 +274,11 @@ final class AuditLogRepository
         if ($id < 1) {
             return null;
         }
-        $sql = 'SELECT a.*, t.name AS tenant_name, u.email AS actor_email
-                FROM audit_logs a
-                LEFT JOIN tenants t ON t.id = a.tenant_id
-                LEFT JOIN users u ON u.id = a.user_id
-                WHERE a.id = ?';
-        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $sql = 'SELECT ' . $this->listSelectSql() . '
+                ' . $this->listFromSql() . '
+                WHERE a.id = ?
+                LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row) || $row === []) {
@@ -329,5 +322,30 @@ final class AuditLogRepository
         $s = trim((string) $v);
 
         return $s !== '' ? $s : null;
+    }
+
+    private function listSelectSql(): string
+    {
+        return 'a.*, t.name AS tenant_name,
+                u.email AS actor_email,
+                u.display_name AS actor_display_name,
+                u.callsign AS actor_callsign,
+                eu.display_name AS entity_user_display_name,
+                eu.callsign AS entity_user_callsign,
+                eu.email AS entity_user_email,
+                d.title AS entity_document_title,
+                r.name AS entity_role_name,
+                et.name AS entity_tenant_name';
+    }
+
+    private function listFromSql(): string
+    {
+        return 'FROM audit_logs a
+                LEFT JOIN tenants t ON t.id = a.tenant_id
+                LEFT JOIN users u ON u.id = a.user_id
+                LEFT JOIN users eu ON eu.id = a.entity_id AND a.entity_type IN (\'user\', \'auth\')
+                LEFT JOIN documents d ON d.id = a.entity_id AND a.entity_type = \'document\'
+                LEFT JOIN roles r ON r.id = a.entity_id AND a.entity_type = \'role\'
+                LEFT JOIN tenants et ON et.id = a.entity_id AND a.entity_type = \'tenant\'';
     }
 }

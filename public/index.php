@@ -78,17 +78,78 @@ register_shutdown_function(function () use ($showErrors, $root) {
 require $root . '/bootstrap/app.php';
 
 $requestPath = \App\Core\Request::normalizePathFromServer();
+
+// Filet : si un asset tombe malgré tout sur le front controller, le servir en statique
+// (évite une page HTML 404/login avec MIME text/html sur un <link rel="stylesheet">).
+$publicDir = __DIR__;
+$isPublicAsset = $requestPath === '/sw.js'
+    || $requestPath === '/manifest.webmanifest'
+    || str_starts_with($requestPath, '/assets/')
+    || str_starts_with($requestPath, '/uploads/');
+if ($isPublicAsset && !str_contains($requestPath, '..')) {
+    $candidate = $publicDir . str_replace('/', DIRECTORY_SEPARATOR, $requestPath);
+    $realBase = realpath($publicDir);
+    $realFile = is_file($candidate) ? realpath($candidate) : false;
+    if ($realBase !== false && $realFile !== false && str_starts_with($realFile, $realBase . DIRECTORY_SEPARATOR)) {
+        $ext = strtolower(pathinfo($realFile, PATHINFO_EXTENSION));
+        $mimes = [
+            'css' => 'text/css; charset=utf-8',
+            'js' => 'application/javascript; charset=utf-8',
+            'mjs' => 'application/javascript; charset=utf-8',
+            'json' => 'application/json; charset=utf-8',
+            'webmanifest' => 'application/manifest+json; charset=utf-8',
+            'map' => 'application/json; charset=utf-8',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'svg' => 'image/svg+xml',
+            'ico' => 'image/x-icon',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+            'ttf' => 'font/ttf',
+            'webm' => 'video/webm',
+            'mp4' => 'video/mp4',
+        ];
+        $mime = $mimes[$ext] ?? (function_exists('mime_content_type') ? (mime_content_type($realFile) ?: 'application/octet-stream') : 'application/octet-stream');
+        header('Content-Type: ' . $mime);
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: public, max-age=604800');
+        header('Content-Length: ' . (string) filesize($realFile));
+        readfile($realFile);
+        exit;
+    }
+    // Asset introuvable : 404 vide (pas de HTML) pour ne pas casser le MIME des feuilles de style.
+    http_response_code(404);
+    $ext = strtolower(pathinfo($requestPath, PATHINFO_EXTENSION));
+    if ($ext === 'css') {
+        header('Content-Type: text/css; charset=utf-8');
+    } elseif ($ext === 'js' || $ext === 'mjs') {
+        header('Content-Type: application/javascript; charset=utf-8');
+    }
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store');
+    exit;
+}
+
 $maintenanceSafelist = [
     '/api/stripe/webhook',
     '/api/health',
     '/api/system/version',
+    '/cron/run',
     '/maintenance-toggle.php',
 ];
 $maintenancePrefixSafelist = [
+    '/assets/',
+    '/uploads/',
     '/calendrier/abonnement/',
     '/admin/system/updates',
+    '/cron/',
 ];
-$maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true);
+$maintenanceSkipped = in_array($requestPath, $maintenanceSafelist, true)
+    || $requestPath === '/sw.js'
+    || $requestPath === '/manifest.webmanifest';
 if (!$maintenanceSkipped) {
     foreach ($maintenancePrefixSafelist as $pfx) {
         if (str_starts_with($requestPath, $pfx)) {

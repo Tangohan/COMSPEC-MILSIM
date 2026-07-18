@@ -55,38 +55,231 @@ final class AuditSnapshotPresenter
         'restrictions' => 'Restrictions associées',
         'statut' => 'État après action',
         'expires_at' => 'Fin prévue',
+        'valeur' => 'Valeur',
+        'title' => 'Titre',
+    ];
+
+    /** @var array<string, string> */
+    private const ENTITY_TYPE_LABELS = [
+        'user' => 'Compte',
+        'auth' => 'Connexion',
+        'tenant' => 'Communauté',
+        'document' => 'Document',
+        'role' => 'Rôle',
+        'group' => 'Groupe',
+        'invitation' => 'Invitation',
+        'course' => 'Formation',
+        'enrollment' => 'Inscription',
+        'module' => 'Fonctionnalité',
+        'access_rule' => 'Règle d’accès',
+    ];
+
+    /** @var array<string, string> */
+    private const STATUS_VALUE_LABELS = [
+        'active' => 'Compte actif',
+        'inactive' => 'Compte inactif',
+        'pending_verification' => 'En attente de vérification de l’e-mail',
+        'suspended' => 'Compte suspendu',
+        'banned' => 'Compte banni',
+        'draft' => 'Brouillon',
+        'published' => 'Publié',
+        'archived' => 'Archivé',
     ];
 
     /**
-     * Résumé court pour une ligne de liste (sans JSON).
+     * Résumé court pour une ligne de liste (libellés métier, pas de JSON).
      */
     public static function listSummary(?string $oldValue, ?string $newValue): string
     {
-        $o = self::decodeObject($oldValue);
-        $n = self::decodeObject($newValue);
-        if ($o === null && $n === null) {
+        $rows = self::diffRows($oldValue, $newValue);
+        if ($rows === []) {
             return '—';
         }
-        if (is_array($o) && is_array($n)) {
-            $keys = array_keys(array_merge($o, $n));
-            $c = count($keys);
-            if ($c === 0) {
-                return '—';
+
+        $parts = [];
+        $shown = 0;
+        foreach ($rows as $row) {
+            if ($shown >= 2) {
+                break;
             }
+            $before = trim((string) ($row['before'] ?? ''));
+            $after = trim((string) ($row['after'] ?? ''));
+            if ($before === '—' && $after === '—') {
+                continue;
+            }
+            $label = (string) ($row['label'] ?? 'Champ');
+            if ($before === '—' || $before === '') {
+                $parts[] = $label . ' : ' . $after;
+            } elseif ($after === '—' || $after === '') {
+                $parts[] = $label . ' : ' . $before . ' → (vide)';
+            } else {
+                $parts[] = $label . ' : ' . $before . ' → ' . $after;
+            }
+            $shown++;
+        }
+
+        if ($parts === []) {
+            $c = count($rows);
             if ($c === 1) {
-                return '1 champ modifié';
+                return '1 élément enregistré';
             }
 
-            return $c . ' champs modifiés';
-        }
-        if ($n !== null && $n !== []) {
-            return 'Données associées';
-        }
-        if ($o !== null && $o !== []) {
-            return 'Valeur précédente enregistrée';
+            return $c . ' éléments enregistrés';
         }
 
-        return '—';
+        $extra = count($rows) - $shown;
+        $text = implode(' · ', $parts);
+        if ($extra > 0) {
+            $text .= ' · +' . $extra . ' autre' . ($extra > 1 ? 's' : '');
+        }
+
+        return $text;
+    }
+
+    /**
+     * Nom / indicatif prioritaire pour l’acteur (comme les mesures d’usage).
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function actorPrimaryLabel(array $row): string
+    {
+        $dn = trim((string) ($row['actor_display_name'] ?? ''));
+        if ($dn !== '') {
+            return $dn;
+        }
+        $cs = trim((string) ($row['actor_callsign'] ?? ''));
+        if ($cs !== '') {
+            return $cs;
+        }
+        $email = trim((string) ($row['actor_email'] ?? ''));
+        if ($email !== '') {
+            return $email;
+        }
+        $uid = (int) ($row['user_id'] ?? 0);
+
+        return $uid > 0 ? 'Compte n°' . $uid : 'Système';
+    }
+
+    /**
+     * Sous-ligne acteur (e-mail si le libellé principal n’est pas déjà l’e-mail).
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function actorSecondaryLabel(array $row): string
+    {
+        $email = trim((string) ($row['actor_email'] ?? ''));
+        if ($email === '') {
+            return '';
+        }
+        $primary = self::actorPrimaryLabel($row);
+        if (strcasecmp($primary, $email) === 0) {
+            $cs = trim((string) ($row['actor_callsign'] ?? ''));
+            $dn = trim((string) ($row['actor_display_name'] ?? ''));
+            if ($cs !== '' && strcasecmp($primary, $cs) !== 0) {
+                return $cs;
+            }
+            if ($dn !== '' && strcasecmp($primary, $dn) !== 0) {
+                return $dn;
+            }
+
+            return '';
+        }
+
+        return $email;
+    }
+
+    /**
+     * Cible humaine : type + nom résolu, sans « Authentification · n°5 » brut.
+     *
+     * @param array<string, mixed> $row
+     * @return array{primary: string, secondary: string}
+     */
+    public static function entityTargetLabels(array $row): array
+    {
+        $type = trim((string) ($row['entity_type'] ?? ''));
+        $id = (int) ($row['entity_id'] ?? 0);
+        $typeLabel = self::entityTypeLabel($type);
+
+        if ($type === '' && $id < 1) {
+            return ['primary' => '—', 'secondary' => ''];
+        }
+
+        $resolved = self::resolveEntityName($row, $type);
+        if ($resolved !== '') {
+            $primary = $resolved;
+            $secondary = $typeLabel;
+            if ($id > 0 && !in_array($type, ['auth'], true)) {
+                $secondary .= ' · réf. ' . $id;
+            }
+
+            return ['primary' => $primary, 'secondary' => $secondary];
+        }
+
+        // Connexion : l’id pointe vers le compte — ne pas afficher « Connexion · n°… »
+        if ($type === 'auth') {
+            if ($id > 0) {
+                return [
+                    'primary' => 'Compte n°' . $id,
+                    'secondary' => 'Session / authentification',
+                ];
+            }
+
+            return ['primary' => 'Session / authentification', 'secondary' => ''];
+        }
+
+        if ($typeLabel !== '—' && $id > 0) {
+            return [
+                'primary' => $typeLabel,
+                'secondary' => 'Référence ' . $id,
+            ];
+        }
+
+        if ($typeLabel !== '—') {
+            return ['primary' => $typeLabel, 'secondary' => ''];
+        }
+
+        return ['primary' => 'Élément n°' . $id, 'secondary' => ''];
+    }
+
+    public static function entityTypeLabel(?string $type): string
+    {
+        $type = trim((string) $type);
+        if ($type === '') {
+            return '—';
+        }
+        if (isset(self::ENTITY_TYPE_LABELS[$type])) {
+            return self::ENTITY_TYPE_LABELS[$type];
+        }
+
+        return ucfirst(str_replace(['_', '-'], ' ', $type));
+    }
+
+    /**
+     * Indice navigateur court (sans jargon technique).
+     */
+    public static function browserHint(?string $userAgent): string
+    {
+        $ua = trim((string) $userAgent);
+        if ($ua === '') {
+            return '';
+        }
+        if (stripos($ua, 'Edg/') !== false || stripos($ua, 'Edge/') !== false) {
+            return 'Microsoft Edge';
+        }
+        if (stripos($ua, 'Chrome/') !== false && stripos($ua, 'Chromium') === false) {
+            return 'Google Chrome';
+        }
+        if (stripos($ua, 'Firefox/') !== false) {
+            return 'Mozilla Firefox';
+        }
+        if (stripos($ua, 'Safari/') !== false && stripos($ua, 'Chrome/') === false) {
+            return 'Safari';
+        }
+        if (stripos($ua, 'Opera/') !== false || stripos($ua, 'OPR/') !== false) {
+            return 'Opera';
+        }
+
+        return 'Navigateur';
     }
 
     /**
@@ -111,8 +304,8 @@ final class AuditSnapshotPresenter
             $rows[] = [
                 'key' => $k,
                 'label' => self::fieldLabel($k),
-                'before' => self::scalarToDisplay($o[$k] ?? null),
-                'after' => self::scalarToDisplay($n[$k] ?? null),
+                'before' => self::scalarToDisplay($o[$k] ?? null, $k),
+                'after' => self::scalarToDisplay($n[$k] ?? null, $k),
             ];
         }
 
@@ -144,6 +337,67 @@ final class AuditSnapshotPresenter
     }
 
     /**
+     * @param array<string, mixed> $row
+     */
+    private static function resolveEntityName(array $row, string $type): string
+    {
+        if (in_array($type, ['user', 'auth'], true)) {
+            $dn = trim((string) ($row['entity_user_display_name'] ?? ''));
+            if ($dn !== '') {
+                return $dn;
+            }
+            $cs = trim((string) ($row['entity_user_callsign'] ?? ''));
+            if ($cs !== '') {
+                return $cs;
+            }
+            $em = trim((string) ($row['entity_user_email'] ?? ''));
+            if ($em !== '') {
+                return $em;
+            }
+        }
+        if ($type === 'document') {
+            $t = trim((string) ($row['entity_document_title'] ?? ''));
+            if ($t !== '') {
+                return $t;
+            }
+        }
+        if ($type === 'role') {
+            $n = trim((string) ($row['entity_role_name'] ?? ''));
+            if ($n !== '') {
+                return $n;
+            }
+        }
+        if ($type === 'tenant') {
+            $n = trim((string) ($row['entity_tenant_name'] ?? ''));
+            if ($n !== '') {
+                return $n;
+            }
+        }
+
+        // Fallback : extraire un nom depuis le snapshot
+        foreach ([$row['new_value'] ?? null, $row['old_value'] ?? null] as $raw) {
+            $obj = self::decodeObject(is_string($raw) ? $raw : null);
+            if (!is_array($obj)) {
+                continue;
+            }
+            foreach (['display_name', 'callsign', 'name', 'title', 'role_name', 'email'] as $k) {
+                $v = trim((string) ($obj[$k] ?? ''));
+                if ($v !== '') {
+                    return $v;
+                }
+            }
+            if (isset($obj['valeur']) && is_scalar($obj['valeur'])) {
+                $v = trim((string) $obj['valeur']);
+                if ($v !== '' && filter_var($v, FILTER_VALIDATE_EMAIL)) {
+                    return $v;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     private static function decodeObject(?string $json): ?array
@@ -160,7 +414,7 @@ final class AuditSnapshotPresenter
         return is_array($v) ? $v : null;
     }
 
-    private static function scalarToDisplay(mixed $v): string
+    private static function scalarToDisplay(mixed $v, string $key = ''): string
     {
         if ($v === null) {
             return '—';
@@ -170,8 +424,14 @@ final class AuditSnapshotPresenter
         }
         if (is_scalar($v)) {
             $s = (string) $v;
+            if ($s === '') {
+                return '—';
+            }
+            if ($key === 'status' || $key === 'statut') {
+                return self::STATUS_VALUE_LABELS[$s] ?? $s;
+            }
 
-            return $s === '' ? '—' : $s;
+            return $s;
         }
         $enc = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 

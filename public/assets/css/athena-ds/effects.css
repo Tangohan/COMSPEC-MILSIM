@@ -1,0 +1,19 @@
+:root {
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-pill: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+  --shadow-lg: 0 24px 80px -32px rgba(15, 23, 42, 0.18);
+  --shadow-dark: 0 24px 90px rgba(0, 0, 0, 0.45);
+
+  --focus-ring: 0 0 0 4px rgba(16, 185, 129, 0.15);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */
+  --duration-fast: 140ms; /* @kind other */
+  --duration-base: 200ms; /* @kind other */
+  --duration-rise: 900ms; /* @kind other */
+}

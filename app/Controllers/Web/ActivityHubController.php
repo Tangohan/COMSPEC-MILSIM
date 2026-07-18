@@ -67,7 +67,7 @@ final class ActivityHubController
             ->countsForUser($tenantId, $userId, $gate);
 
         return Response::view('layout.main', [
-            'title' => 'Mon activité',
+            'title' => 'Votre activité',
             'content' => 'notifications.hub',
             'activity_forum_items' => $forumItems,
             'activity_courrier_items' => $courrierItems,

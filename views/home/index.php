@@ -42,6 +42,9 @@ $resolveLogo = static function (string $logo) use ($base): string {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
+    <?php endif; ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
     <link href="<?= $base ?>/assets/css/home-impact.css" rel="stylesheet">
 </head>
@@ -118,49 +121,39 @@ $resolveLogo = static function (string $logo) use ($base): string {
     </header>
 
     <main>
-        <!-- Hero immersif + slider -->
-        <section class="relative flex min-h-[100svh] flex-col justify-between overflow-hidden bg-black pt-14" id="hero-immersive">
+        <!-- Vidéo / diaporama immersif (plein écran) -->
+        <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero-immersive" aria-label="Introduction visuelle">
             <div class="pointer-events-none absolute inset-0" id="heroSlider">
                 <div class="slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out">
-                    <img id="hero-poster" src="<?= $base ?>/assets/images/fog-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-45 grayscale brightness-[0.45] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
+                    <img id="hero-poster" src="<?= $base ?>/assets/images/fog-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
                 </div>
                 <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/fog-banner.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-45 grayscale brightness-[0.45] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    <img src="<?= $base ?>/assets/images/fog-banner.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
                 </div>
                 <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/hero-explosion.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-45 grayscale brightness-[0.45] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    <img src="<?= $base ?>/assets/images/hero-explosion.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
                 </div>
                 <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/night-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-45 grayscale brightness-[0.45] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    <img src="<?= $base ?>/assets/images/night-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
                 </div>
-                <video id="hero-video" class="absolute inset-0 hidden h-full w-full object-cover opacity-50" playsinline loop muted preload="none" poster="<?= $base ?>/assets/images/fog-team.jpg">
+                <video id="hero-video" class="absolute inset-0 hidden h-full w-full object-cover opacity-60" playsinline loop muted preload="none" poster="<?= $base ?>/assets/images/fog-team.jpg">
                     <source data-src="<?= $base ?>/assets/video/hero-athena.webm" type="video/webm">
                     <source data-src="<?= $base ?>/assets/video/hero-athena.mp4" type="video/mp4">
                 </video>
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/30"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/25"></div>
             </div>
 
-            <div class="relative z-10 flex flex-1 flex-col justify-center hi-section">
-                <p class="hi-kicker hi-kicker-glitch hi-reveal text-emerald-400/90">Portail MILSIM · Commandement d’unité</p>
-                <h1 class="hi-display hi-hero-brand hi-glitch hi-reveal mt-6 text-white" data-text="Athena" aria-label="Athena">
-                    <span class="hi-glitch__main" aria-hidden="true">Athena<span class="hi-glitch__dot">.</span></span>
-                </h1>
-                <p class="hi-body hi-reveal hi-reveal-delay mt-8 max-w-xl text-white/70">
-                    Une base pour votre communauté Arma — du recrutement au terrain.
-                    Organisation, présence, doctrine et C2 au même endroit.
+            <div class="relative z-10 mx-auto flex w-full max-w-[100rem] flex-col items-start gap-4 px-5 pb-10 pt-24 md:px-8 md:pb-12">
+                <p class="hi-kicker text-emerald-400/90">Athena Compsec</p>
+                <p class="max-w-md text-sm font-medium leading-relaxed text-white/70 md:text-base">
+                    Introduction visuelle du portail — le détail et les accès sont juste en dessous.
                 </p>
-                <div class="hi-reveal hi-reveal-delay mt-10 flex flex-wrap gap-3">
-                    <?php if (!$loggedIn): ?>
-                        <a href="<?= url('register') ?>" class="hi-cta hi-cta-solid">Créer ma communauté</a>
-                        <a href="<?= url('join') ?>" class="hi-cta hi-cta-ghost">J’ai un code</a>
-                    <?php else: ?>
-                        <a href="<?= url('hub') ?>" class="hi-cta hi-cta-solid">Centre de commandement</a>
-                        <a href="<?= url('dashboard') ?>" class="hi-cta hi-cta-ghost">Briefing personnel</a>
-                    <?php endif; ?>
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="#hero-classic" class="hi-cta hi-cta-solid">Voir Athena</a>
+                    <button type="button" id="btn-enable-immersive" class="hi-body-sm hidden text-left text-emerald-400/80 underline decoration-emerald-500/30 underline-offset-4 hover:text-emerald-300">
+                        Activer l’expérience immersive
+                    </button>
                 </div>
-                <button type="button" id="btn-enable-immersive" class="hi-body-sm mt-6 hidden text-left text-emerald-400/80 underline decoration-emerald-500/30 underline-offset-4 hover:text-emerald-300">
-                    Activer l’expérience immersive
-                </button>
             </div>
 
             <div class="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-sm">
@@ -193,6 +186,29 @@ $resolveLogo = static function (string $logo) use ($base): string {
                             <span id="timestamp" class="tabular-nums text-white/55">--:--:--</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hero classique Athena (après la vidéo) -->
+        <section id="hero-classic" class="hi-hero-classic scroll-mt-14 border-b border-slate-200 bg-[var(--hi-paper)] text-slate-900" aria-labelledby="hero-classic-title">
+            <div class="hi-section mx-auto max-w-[100rem]">
+                <p class="hi-kicker text-emerald-700">Portail MILSIM · Commandement d’unité</p>
+                <h1 id="hero-classic-title" class="hi-display hi-hero-brand mt-6 text-slate-900">
+                    Athena<span class="text-emerald-600">.</span>
+                </h1>
+                <p class="hi-body mt-8 max-w-xl text-slate-600">
+                    Une base pour votre communauté Arma — du recrutement au terrain.
+                    Organisation, présence, doctrine et C2 au même endroit.
+                </p>
+                <div class="mt-10 flex flex-wrap gap-3">
+                    <?php if (!$loggedIn): ?>
+                        <a href="<?= url('register') ?>" class="hi-cta hi-cta-ink">Créer ma communauté</a>
+                        <a href="<?= url('join') ?>" class="hi-cta hi-cta-ghost-ink">J’ai un code</a>
+                    <?php else: ?>
+                        <a href="<?= url('hub') ?>" class="hi-cta hi-cta-ink">Centre de commandement</a>
+                        <a href="<?= url('dashboard') ?>" class="hi-cta hi-cta-ghost-ink">Briefing personnel</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>

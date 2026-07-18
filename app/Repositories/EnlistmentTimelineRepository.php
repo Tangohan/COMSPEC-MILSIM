@@ -121,6 +121,52 @@ final class EnlistmentTimelineRepository
     }
 
     /**
+     * Repère les bilans équipe déjà journalisés (file de secours si la table rétro manque une ligne).
+     *
+     * @param list<int> $enlistmentIds
+     * @return array<int, string> map id => date SQL
+     */
+    public function mapStaffRetroDoneFromTimeline(int $tenantId, array $enlistmentIds): array
+    {
+        if (!$this->tableExists() || $tenantId < 1) {
+            return [];
+        }
+        $ids = [];
+        foreach ($enlistmentIds as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT enlistment_id, MAX(created_at) AS done_at
+             FROM enlistment_timeline_entries
+             WHERE tenant_id = ?
+               AND enlistment_id IN ({$placeholders})
+               AND (
+                    summary LIKE 'Bilan de recrutement%'
+                    OR metadata LIKE '%\"retro\":\"staff_one_month\"%'
+                    OR metadata LIKE '%\"retro\": \"staff_one_month\"%'
+               )
+             GROUP BY enlistment_id"
+        );
+        $stmt->execute(array_merge([$tenantId], array_values($ids)));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $eid = (int) ($r['enlistment_id'] ?? 0);
+            if ($eid > 0) {
+                $out[$eid] = trim((string) ($r['done_at'] ?? ''));
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Dossiers ayant déclenché la modération automatique du portail (événements les plus récents en premier).
      *
      * @return list<array<string, mixed>>

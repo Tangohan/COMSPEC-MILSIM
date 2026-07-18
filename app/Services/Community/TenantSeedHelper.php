@@ -700,4 +700,17 @@ final class TenantSeedHelper
         require_once $path;
         run_training_roles_org_course_for_tenant($pdo, $tenantId, $authorUserId);
     }
+
+    /**
+     * Formation LMS « Bureau recrutement » — idempotent par slug.
+     */
+    public static function ensureBureauRecrutementCourse(PDO $pdo, int $tenantId, ?int $authorUserId = null): void
+    {
+        $path = dirname(__DIR__, 3) . '/bootstrap/training_bureau_recrutement_course_seed.php';
+        if (!is_file($path)) {
+            return;
+        }
+        require_once $path;
+        run_training_bureau_recrutement_course_for_tenant($pdo, $tenantId, $authorUserId);
+    }
 }

@@ -26,6 +26,9 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/portal-nav.css" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
+    <link href="<?= $baseUrl ?>/assets/css/athena-header.css" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/forum.css'))): ?>
     <link href="<?= $baseUrl ?>/assets/css/forum.css" rel="stylesheet">
     <?php endif; ?>
@@ -40,6 +43,9 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php require base_path('views/partials/header_portal.php'); ?>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/portal-alerts.js"></script>
     <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/navigation.js"></script>
+    <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
+    <script defer src="<?= htmlspecialchars($baseUrl) ?>/assets/js/athena-header.js"></script>
+    <?php endif; ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="min-h-[80vh] bg-[#f8fafc]">

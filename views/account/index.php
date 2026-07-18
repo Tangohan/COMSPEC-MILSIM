@@ -93,15 +93,23 @@ $sections = [
     [
         'id' => 'media',
         'kicker' => 'Images',
-        'title' => 'Photo de profil et portrait',
-        'intro' => 'Deux visuels distincts : l’avatar du compte (forum, listes) et le portrait opérationnel (fiches, organigramme).',
+        'title' => 'Photo de profil, couverture et portrait',
+        'intro' => 'Trois visuels distincts : la photo du compte (navigation, forum), la couverture du menu session, et le portrait opérationnel (fiches, organigramme).',
         'tiles' => [
             [
                 'href' => url('account/image'),
                 'title' => 'Photo de compte',
-                'desc' => 'Avatar visible dans la navigation, le forum et les listes de membres.',
+                'desc' => 'Visible dans la navigation, le menu session, le forum et les listes de membres.',
                 'accent' => 'from-sky-500 to-blue-600',
                 'ring' => 'group-hover:ring-sky-500/25',
+                'icon' => '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+            ],
+            [
+                'href' => url('account/banner'),
+                'title' => 'Couverture du menu session',
+                'desc' => 'Image du bandeau haut lorsque vous ouvrez votre menu profil.',
+                'accent' => 'from-emerald-500 to-teal-700',
+                'ring' => 'group-hover:ring-emerald-500/25',
                 'icon' => '<svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
             ],
             [
@@ -208,8 +216,22 @@ $sections = [
                     </p>
                     <div class="mt-6 flex flex-wrap items-center gap-3">
                         <?php if ($displayName !== ''): ?>
+                        <?php
+                        $accountAvatarSrc = function_exists('user_media_public_url')
+                            ? user_media_public_url($accountUser['avatar_url'] ?? null)
+                            : null;
+                        $accountInitials = function_exists('user_display_initials')
+                            ? user_display_initials($displayName)
+                            : htmlspecialchars(mb_strtoupper(mb_substr($displayName, 0, 1)));
+                        ?>
                         <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white shadow-sm backdrop-blur-sm">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-black text-white" aria-hidden="true"><?= htmlspecialchars(mb_strtoupper(mb_substr($displayName, 0, 1))) ?></span>
+                            <span class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-xs font-black text-white" aria-hidden="true">
+                                <?php if ($accountAvatarSrc): ?>
+                                    <img src="<?= htmlspecialchars($accountAvatarSrc) ?>" alt="" class="h-full w-full object-cover">
+                                <?php else: ?>
+                                    <?= htmlspecialchars($accountInitials) ?>
+                                <?php endif; ?>
+                            </span>
                             <?= htmlspecialchars($displayName) ?>
                         </span>
                         <?php endif; ?>

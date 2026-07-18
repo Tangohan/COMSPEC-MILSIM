@@ -78,11 +78,12 @@ final class DemoNdaGateService
 
     public function isPublicAssetPath(string $path): bool
     {
-        if ($path === '/manifest.webmanifest' || $path === '/sw.js') {
+        if ($path === '/manifest.webmanifest' || $path === '/sw.js' || $path === '/favicon.ico') {
             return true;
         }
         $prefixes = [
             '/assets/',
+            '/uploads/',
             '/favicon',
             '/robots.txt',
         ];
@@ -103,8 +104,12 @@ final class DemoNdaGateService
         $exact = [
             '/api/stripe/webhook',
             '/api/health',
+            '/cron/run',
         ];
         if (in_array($path, $exact, true)) {
+            return true;
+        }
+        if (str_starts_with($path, '/cron/')) {
             return true;
         }
 

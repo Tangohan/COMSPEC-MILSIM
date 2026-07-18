@@ -4,78 +4,129 @@
  */
 
 [data-accent="sky"] {
-  --nav-accent: #0284c7;
+  --nav-accent: var(--ds-nav-sky, var(--athena-sky, #0284c7));
   --nav-accent-soft: rgba(14, 165, 233, 0.12);
   --nav-accent-ring: rgba(14, 165, 233, 0.35);
   --nav-mega-aside-tint: linear-gradient(145deg, rgba(14, 165, 233, 0.14) 0%, rgba(15, 23, 42, 0.06) 55%, rgba(255, 255, 255, 0.9) 100%);
 }
 
 [data-accent="amber"] {
-  --nav-accent: #d97706;
+  --nav-accent: var(--ds-nav-amber, #d97706);
   --nav-accent-soft: rgba(245, 158, 11, 0.14);
   --nav-accent-ring: rgba(245, 158, 11, 0.38);
   --nav-mega-aside-tint: linear-gradient(145deg, rgba(245, 158, 11, 0.16) 0%, rgba(120, 113, 108, 0.08) 50%, rgba(255, 255, 255, 0.95) 100%);
 }
 
 [data-accent="emerald"] {
-  --nav-accent: #059669;
-  --nav-accent-soft: rgba(16, 185, 129, 0.14);
-  --nav-accent-ring: rgba(16, 185, 129, 0.35);
-  --nav-mega-aside-tint: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.05) 55%, rgba(255, 255, 255, 0.92) 100%);
+  /* Domaine Effectifs/Formation : émeraude portail DS (#059669) — le mint #34d399 reste pour l’état actif barre sombre */
+  --nav-accent: var(--ds-nav-emerald, #059669);
+  --nav-accent-soft: rgba(5, 150, 105, 0.14);
+  --nav-accent-ring: rgba(5, 150, 105, 0.35);
+  --nav-mega-aside-tint: linear-gradient(145deg, rgba(5, 150, 105, 0.15) 0%, rgba(15, 23, 42, 0.05) 55%, rgba(255, 255, 255, 0.92) 100%);
 }
 
 [data-accent="violet"] {
-  --nav-accent: #7c3aed;
+  --nav-accent: var(--ds-nav-violet, #7c3aed);
   --nav-accent-soft: rgba(139, 92, 246, 0.14);
   --nav-accent-ring: rgba(139, 92, 246, 0.38);
   --nav-mega-aside-tint: linear-gradient(145deg, rgba(139, 92, 246, 0.16) 0%, rgba(30, 27, 75, 0.08) 50%, rgba(255, 255, 255, 0.95) 100%);
 }
 
 [data-accent="rose"] {
-  --nav-accent: #e11d48;
+  --nav-accent: var(--ds-nav-rose, #e11d48);
   --nav-accent-soft: rgba(244, 63, 94, 0.12);
   --nav-accent-ring: rgba(244, 63, 94, 0.32);
   --nav-mega-aside-tint: linear-gradient(145deg, rgba(244, 63, 94, 0.12) 0%, rgba(15, 23, 42, 0.08) 55%, rgba(248, 250, 252, 0.98) 100%);
 }
 
 [data-accent="slate"] {
-  --nav-accent: #475569;
+  --nav-accent: var(--ds-nav-slate, #475569);
   --nav-accent-soft: rgba(71, 85, 105, 0.12);
   --nav-accent-ring: rgba(71, 85, 105, 0.35);
   --nav-mega-aside-tint: linear-gradient(145deg, rgba(71, 85, 105, 0.12) 0%, rgba(15, 23, 42, 0.06) 100%);
 }
 
 .portal-nav {
-  --portal-bar-h: 3.5rem;
+  --portal-bar-h: 4rem;
 }
 
-/* Administration (rose) : actif / ouvert sans cadre criard — évite bordure rouge qui chevauche les icônes */
+/*
+ * Barre principale : 1 ligne (marque | menus | outils).
+ * Ne pas compter sur xl:grid-cols-[…] Tailwind — souvent absent du CSS compilé
+ * → display:grid sans colonnes = empilement vertical (marque seule puis menus).
+ */
+.portal-nav__bar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding-block: 0.5rem;
+}
+
+.portal-nav__brand {
+  flex: 0 0 auto;
+}
+
+.portal-nav__menu {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.portal-nav__tools {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@media (min-width: 1280px) {
+  .portal-nav__bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.5rem;
+    min-height: var(--portal-bar-h, 4rem);
+    padding-block: 0.625rem;
+  }
+
+  .portal-nav__menu {
+    flex: initial;
+    justify-content: flex-start;
+  }
+
+  .portal-nav__tools {
+    margin-left: 0;
+    justify-self: end;
+  }
+}
+
+/* Administration (rose) : actif / ouvert sans cadre criard */
 [data-accent='rose'] .portal-nav__link--mega .portal-nav__trigger-inner {
   border: 1px solid transparent;
 }
 
 [data-accent='rose'] .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner,
 [data-accent='rose'] .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner {
-  background: rgba(244, 63, 94, 0.16);
+  background: rgba(244, 63, 94, 0.1);
   border-color: transparent;
   outline: none;
   box-shadow: none;
 }
 
-/* Barre principale — thème Athena (noir / émeraude) */
+/* Barre principale — claire (style portail validé) */
 .portal-nav__shell {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(5, 5, 5, 0.92);
-  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgb(226 232 240);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
   isolation: isolate;
 }
 
-@supports (backdrop-filter: blur(14px)) {
+@supports (backdrop-filter: blur(10px)) {
   .portal-nav__shell {
-    background: rgba(5, 5, 5, 0.82);
+    background: rgba(255, 255, 255, 0.88);
   }
 }
 
+/* Alias explicite (même rendu que le défaut) */
 .portal-nav__shell--light {
   border-bottom: 1px solid rgb(226 232 240);
   background: rgba(255, 255, 255, 0.94);
@@ -88,58 +139,79 @@
   }
 }
 
-/* Alias rétrocompat */
+/* Variante sombre optionnelle (void + mint discret) */
 .portal-nav__shell--dark {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(5, 5, 5, 0.92);
+  --nav-accent: var(--athena-mint, var(--ds-color-accent, #34d399));
+  --nav-accent-soft: rgba(52, 211, 153, 0.16);
+  --nav-accent-ring: rgba(52, 211, 153, 0.4);
+  border-bottom: 1px solid rgba(244, 244, 240, 0.08);
+  background: color-mix(in srgb, var(--athena-void, var(--ds-color-void, #050505)) 92%, transparent);
+  backdrop-filter: blur(14px);
 }
 
 @supports (backdrop-filter: blur(14px)) {
   .portal-nav__shell--dark {
-    background: rgba(5, 5, 5, 0.82);
-    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--athena-void, var(--ds-color-void, #050505)) 82%, transparent);
   }
 }
 
-.portal-nav__shell .portal-nav__link--simple,
-.portal-nav__shell .portal-nav__link--mega {
+@supports not (color: color-mix(in srgb, white, black)) {
+  .portal-nav__shell--dark {
+    background: rgba(5, 5, 5, 0.92);
+  }
+  @supports (backdrop-filter: blur(14px)) {
+    .portal-nav__shell--dark {
+      background: rgba(5, 5, 5, 0.82);
+    }
+  }
+}
+
+.portal-nav__shell--dark .portal-nav__link--simple,
+.portal-nav__shell--dark .portal-nav__link--mega {
   color: rgba(244, 244, 240, 0.72);
 }
 
-.portal-nav__shell .portal-nav__link--simple:hover,
-.portal-nav__shell .portal-nav__link--mega:hover {
+.portal-nav__shell--dark .portal-nav__link--simple:hover,
+.portal-nav__shell--dark .portal-nav__link--mega:hover {
   color: #fff;
 }
 
-.portal-nav__shell .portal-nav__link--mega:hover .portal-nav__trigger-inner,
-.portal-nav__shell .portal-nav__link--simple:hover {
+.portal-nav__shell--dark .portal-nav__link--mega:hover .portal-nav__trigger-inner,
+.portal-nav__shell--dark .portal-nav__link--simple:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.portal-nav__shell .portal-nav__link--simple[data-active='1'],
-.portal-nav__shell .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner {
+.portal-nav__shell--dark .portal-nav__link--simple[data-active='1'],
+.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner,
+.portal-nav__shell--dark .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner {
   color: #fff;
   background: rgba(52, 211, 153, 0.12);
+  box-shadow: none;
 }
 
-.portal-nav__shell .portal-nav__link--simple[data-active='1']::after,
-.portal-nav__shell .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner::after {
-  background: #34d399;
+.portal-nav__shell--dark .portal-nav__link--simple[data-active='1']::after,
+.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner::after,
+.portal-nav__shell--dark .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner::after {
+  background: var(--athena-mint, var(--ds-color-accent, #34d399));
+  width: 1.25rem;
+  height: 2px;
+  box-shadow: none;
 }
 
-.portal-nav__shell .portal-nav__link--mega .portal-nav__trigger-inner svg {
+.portal-nav__shell--dark .portal-nav__link--mega .portal-nav__trigger-inner svg {
   color: rgba(244, 244, 240, 0.35);
 }
 
-.portal-nav__shell .portal-nav__link--mega:hover .portal-nav__trigger-inner svg,
-.portal-nav__shell .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner svg {
-  color: rgba(244, 244, 240, 0.7);
+.portal-nav__shell--dark .portal-nav__link--mega:hover .portal-nav__trigger-inner svg,
+.portal-nav__shell--dark .portal-nav__link--mega.nav-mega-is-open .portal-nav__trigger-inner svg,
+.portal-nav__shell--dark .portal-nav__link--mega[data-active='1'] .portal-nav__trigger-inner svg {
+  color: var(--athena-mint, #34d399);
 }
 
 .portal-nav__brand-mark {
   width: 4px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #34d399 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--athena-mint, #34d399) 0%, transparent 100%);
 }
 
 /* Bloc marque (carte + monogramme) */
@@ -148,7 +220,7 @@
     145deg,
     rgb(15 23 42) 0%,
     rgb(51 65 85) 42%,
-    color-mix(in srgb, var(--nav-accent, #059669) 88%, rgb(15 23 42)) 100%
+    color-mix(in srgb, var(--nav-accent, var(--athena-mint, #34d399)) 88%, rgb(15 23 42)) 100%
   );
   box-shadow:
     0 4px 14px -4px rgba(15, 23, 42, 0.4),
@@ -157,7 +229,7 @@
 
 @supports not (color: color-mix(in srgb, white, black)) {
   .portal-nav__brand-monogram {
-    background: linear-gradient(145deg, rgb(15 23 42) 0%, rgb(51 65 85) 45%, var(--nav-accent, #059669) 100%);
+    background: linear-gradient(145deg, rgb(15 23 42) 0%, rgb(51 65 85) 45%, var(--nav-accent, var(--athena-mint, #34d399)) 100%);
   }
 }
 
@@ -173,7 +245,7 @@
 
 .portal-nav__link--mega[data-active="1"] .portal-nav__trigger-inner,
 .portal-nav__link--simple[data-active="1"] {
-  color: inherit;
+  color: rgb(15 23 42);
   background: var(--nav-accent-soft, rgba(71, 85, 105, 0.14));
 }
 
@@ -187,7 +259,7 @@
   width: 1.25rem;
   height: 2px;
   border-radius: 9999px;
-  background: var(--nav-accent, #34d399);
+  background: var(--nav-accent, var(--athena-mint, #34d399));
 }
 
 /* Méga panneau */

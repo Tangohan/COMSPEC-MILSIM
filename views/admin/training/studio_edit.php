@@ -64,7 +64,7 @@ if ($resourceTypeLabels === []) {
 }
 $fileResourceTypeLabels = array_intersect_key(
     $resourceTypeLabels,
-    array_flip(['pdf', 'image', 'video', 'audio', 'zip', 'attachment'])
+    array_flip(['image', 'pdf', 'video', 'audio', 'zip', 'attachment'])
 );
 if ($fileResourceTypeLabels === []) {
     $fileResourceTypeLabels = ['attachment' => 'Fichier joint'];
@@ -199,6 +199,23 @@ $defaultCanvasJson = json_encode([
     </div>
     <?php endif; ?>
 
+    <?php
+    $trainingStudioSection = $trainingStudioSection ?? 'fiche';
+    if (!in_array($trainingStudioSection, ['fiche', 'presentation', 'structure'], true)) {
+        $trainingStudioSection = 'fiche';
+    }
+    $studioU = static fn (string $s): string => training_studio_url($cid . '/' . $s);
+    $heroVis = (string) ($course['visibility'] ?? 'draft');
+    $heroVisLabel = $visLabels[$heroVis] ?? $heroVis;
+    $heroBadgeClass = match ($heroVis) {
+        'published' => 'ts-hero-badge--published',
+        'private' => 'ts-hero-badge--private',
+        'archived' => 'ts-hero-badge--archived',
+        default => 'ts-hero-badge--draft',
+    };
+    $heroModuleCount = max(count($modules), $studioMetaModuleCount);
+    $heroLessonCount = max($studioLessonTotal, $studioMetaLessonCount);
+    ?>
     <header class="training-studio-hero mb-8">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div class="min-w-0">
@@ -207,6 +224,10 @@ $defaultCanvasJson = json_encode([
                 <?php if ($tenant): ?>
                 <p class="text-slate-600 text-sm mt-2">Communauté <strong><?= htmlspecialchars(community_display_name($tenant)) ?></strong></p>
                 <?php endif; ?>
+                <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <span class="ts-hero-badge <?= htmlspecialchars($heroBadgeClass) ?>"><?= htmlspecialchars($heroVisLabel) ?></span>
+                    <span class="text-xs font-semibold text-slate-500"><?= (int) $heroModuleCount ?> module<?= $heroModuleCount === 1 ? '' : 's' ?> · <?= (int) $heroLessonCount ?> leçon<?= $heroLessonCount === 1 ? '' : 's' ?></span>
+                </div>
                 <p class="text-sm text-slate-500 mt-3">
                     <a href="<?= training_studio_url() ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:text-emerald-800">← Toutes les formations</a>
                     <span class="text-slate-300 mx-2">·</span>
@@ -224,318 +245,43 @@ $defaultCanvasJson = json_encode([
         </div>
     </header>
 
-    <?php
-    $trainingStudioSection = $trainingStudioSection ?? 'fiche';
-    if (!in_array($trainingStudioSection, ['fiche', 'presentation', 'structure'], true)) {
-        $trainingStudioSection = 'fiche';
-    }
-    $studioU = static fn (string $s): string => training_studio_url($cid . '/' . $s);
-    ?>
-    <nav class="mb-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200/80 bg-slate-100/60 p-1.5 shadow-inner" aria-label="Sections du studio">
-        <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'fiche' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Données &amp; inscription</a>
-        <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'presentation' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Présentation apprenant</a>
-        <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black uppercase tracking-wider transition <?= $trainingStudioSection === 'structure' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900' ?>">Modules, leçons &amp; ressources</a>
+    <nav class="ts-section-tabs mb-8" aria-label="Sections du studio">
+        <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="<?= $trainingStudioSection === 'fiche' ? 'is-active' : '' ?>"><span class="ts-section-tabs__n">1</span> Données</a>
+        <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="<?= $trainingStudioSection === 'presentation' ? 'is-active' : '' ?>"><span class="ts-section-tabs__n">2</span> Présentation</a>
+        <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="<?= $trainingStudioSection === 'structure' ? 'is-active' : '' ?>"><span class="ts-section-tabs__n">3</span> Modules</a>
     </nav>
-    <section class="mb-8 rounded-2xl border border-violet-200/80 bg-violet-50/70 p-4 md:p-5">
-        <h2 class="text-xs font-black uppercase tracking-[0.18em] text-violet-900 mb-3">Assistant de mise en ligne</h2>
-        <ol class="grid gap-2 text-sm md:grid-cols-2">
-            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 1.</strong> Fiche minimale (titre, slug, visibilité).</li>
-            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 2.</strong> Premier module + première leçon.</li>
-            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 3.</strong> Présentation apprenant.</li>
-            <li class="rounded-xl border border-violet-200 bg-white px-3 py-2"><strong>Étape 4.</strong> Vérification publication et aperçu.</li>
-        </ol>
-    </section>
-    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 md:p-5">
-        <div class="flex items-center justify-between gap-3">
-            <h2 class="text-xs font-black uppercase tracking-[0.18em] text-emerald-900">Checklist prêt-à-publier</h2>
-            <span class="text-sm font-black text-emerald-900"><?= $studioReadinessScore ?>%</span>
-        </div>
-        <div class="mt-2 h-2 rounded-full bg-emerald-100">
-            <div class="h-2 rounded-full bg-emerald-500" style="width: <?= $studioReadinessScore ?>%"></div>
-        </div>
-        <ul class="mt-3 grid gap-2 text-sm md:grid-cols-2">
-            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['slug'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Slug renseigné</li>
-            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['objectifs'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Objectifs saisis</li>
-            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['visibilite'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Visibilité prête à publier</li>
-            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['ressources'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Modules/leçons présents</li>
-            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['quiz'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Quiz/questionnaire prévu</li>
-        </ul>
-    </section>
 
     <?php if ($trainingStudioSection === 'fiche'): ?>
-    <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-10 mb-12" id="studio-fiche-form">
-        <?= \App\Core\Csrf::field() ?>
-        <input type="hidden" name="_action" value="save_course">
-        <input type="hidden" name="_studio_section" value="fiche">
-
-        <section id="studio-fiche" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-4 shadow-sm">
-            <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Fiche formation</h2>
-            <p class="text-xs text-slate-500">Les formations <strong>publiées</strong> apparaissent dans le catalogue apprenant. Les brouillons restent réservés au Studio.</p>
-            <details class="rounded-xl border border-sky-200 bg-sky-50/90 p-4 text-sm text-sky-950 shadow-sm">
-                <summary class="cursor-pointer font-bold text-sky-950">Aide : pièces jointes et liens par leçon</summary>
-                <p class="mt-2 text-xs leading-relaxed text-sky-900/90">Pour ajouter des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> ou des <strong class="font-semibold">documents du centre documentaire</strong> visibles sous chaque leçon, ouvrez l’onglet <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-bold text-sky-900 underline decoration-sky-400 hover:decoration-sky-700">Modules, leçons &amp; ressources</a>.</p>
-            </details>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Titre</label>
-                    <input type="text" name="title" required value="<?= htmlspecialchars((string) ($course['title'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+    <div class="ts-fiche-layout mb-10">
+        <div class="ts-fiche-main min-w-0">
+            <?php require __DIR__ . '/partials/studio_fiche_form.php'; ?>
+        </div>
+        <aside class="ts-fiche-aside" aria-label="Préparation à la publication">
+            <div class="ts-fiche-aside-card">
+                <h2>Prêt à publier</h2>
+                <div class="ts-readiness-meter">
+                    <strong><?= (int) $studioReadinessScore ?>%</strong>
+                    <span><?= (int) $studioReadinessDone ?> / <?= (int) $studioReadinessTotal ?></span>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Adresse courte du lien</label>
-                    <input type="text" name="slug" required value="<?= htmlspecialchars($slug) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" title="Segment utilisé dans l’adresse web du parcours">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Code affichage (ex. A-03)</label>
-                    <input type="text" name="course_code" maxlength="32" value="<?= htmlspecialchars((string) ($course['course_code'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" placeholder="Optionnel">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Visibilité</label>
-                    <?php $curVis = (string) ($course['visibility'] ?? 'draft'); ?>
-                    <select name="visibility" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                        <?php foreach ($visibilityOptions as $v):
-                            $pubLocked = ($v === 'published' && !$canPublish && $curVis !== 'published');
-                        ?>
-                        <option value="<?= htmlspecialchars($v) ?>" <?= ($curVis === $v) ? 'selected' : '' ?> <?= $pubLocked ? 'disabled' : '' ?>><?= htmlspecialchars($visLabels[$v] ?? $v) ?><?= $pubLocked ? ' (permission requise)' : '' ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php if (!empty($pedagogyColumnsReady)): ?>
-                <div class="md:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 space-y-3">
-                    <p class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Responsabilités pédagogiques</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Responsable pédagogique</label>
-                            <select name="pedagogical_owner_user_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
-                                <option value="">— Non renseigné —</option>
-                                <?php foreach ($studioStaffPickUsers ?? [] as $su):
-                                    $sid = (int) ($su['id'] ?? 0);
-                                    $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
-                                    $curOwner = (int) ($course['pedagogical_owner_user_id'] ?? 0);
-                                ?>
-                                <option value="<?= $sid ?>" <?= $curOwner === $sid ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <p class="text-[11px] text-slate-600 mt-1">Obligatoire pour une mise en ligne publique.</p>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Validateur final (optionnel)</label>
-                            <select name="final_validator_user_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
-                                <option value="">— Aucun —</option>
-                                <?php foreach ($studioStaffPickUsers ?? [] as $su):
-                                    $sid = (int) ($su['id'] ?? 0);
-                                    $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
-                                    $curVal = (int) ($course['final_validator_user_id'] ?? 0);
-                                ?>
-                                <option value="<?= $sid ?>" <?= $curVal === $sid ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-                <div class="md:col-span-2 rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-2">
-                    <label class="block text-xs font-bold text-slate-600">Portée du catalogue</label>
-                    <?php if ($studioCanSetPlatformScope): ?>
-                    <select name="lms_scope" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
-                        <option value="tenant" <?= $curLmsScope === 'tenant' ? 'selected' : '' ?>>Parcours de la communauté — proposé aux membres de cette organisation</option>
-                        <option value="platform" <?= $curLmsScope === 'platform' ? 'selected' : '' ?>>Proposé sur toute la plateforme — visible par toutes les organisations éligibles</option>
-                    </select>
-                    <p class="text-xs text-slate-500 leading-relaxed">Les parcours proposés sur toute la plateforme partagent les mêmes adresses courtes : choisissez un segment de lien unique à l’échelle du site.</p>
-                    <?php else: ?>
-                    <p class="text-sm text-slate-800 font-medium"><?= htmlspecialchars(function_exists('training_lms_course_scope_label_fr') ? training_lms_course_scope_label_fr($curLmsScope) : '') ?></p>
-                    <?php if ($curLmsScope === 'platform'): ?>
-                    <p class="text-xs text-slate-500">Seuls les administrateurs de la plateforme peuvent modifier cette portée.</p>
-                    <?php endif; ?>
-                    <?php endif; ?>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Catégorie</label>
-                    <input type="text" name="category" value="<?= htmlspecialchars((string) ($course['category'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Optionnel">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Niveau</label>
-                    <select name="level" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                        <?php foreach ($levelOptions as $lv): ?>
-                        <option value="<?= htmlspecialchars($lv) ?>" <?= (($course['level'] ?? 'initiation') === $lv) ? 'selected' : '' ?>><?= htmlspecialchars($levelLabels[$lv] ?? $lv) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Langue (code)</label>
-                    <input type="text" name="language_code" maxlength="10" value="<?= htmlspecialchars((string) ($course['language_code'] ?? 'fr')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Durée estimée (min)</label>
-                    <input type="number" name="estimated_minutes" min="0" step="1" value="<?= (int) ($course['estimated_minutes'] ?? 0) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Score de réussite (%)</label>
-                    <input type="number" name="passing_score" min="0" max="100" step="0.01" value="<?= htmlspecialchars((string) ($course['passing_score'] ?? '80')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div class="md:col-span-2 flex flex-wrap gap-6">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" name="is_mandatory" value="1" <?= !empty($course['is_mandatory']) ? 'checked' : '' ?>>
-                        Formation obligatoire
-                    </label>
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" name="is_certifying" value="1" <?= !empty($course['is_certifying']) ? 'checked' : '' ?>>
-                        Certifiante
-                    </label>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Validité (jours)</label>
-                    <?php $validityDaysField = $course['validity_days'] ?? null; ?>
-                    <input type="number" name="validity_days" min="0" step="1" value="<?= $validityDaysField !== null && $validityDaysField !== '' ? (int) $validityDaysField : '' ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Vide = illimité">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Accroche courte</label>
-                    <input type="text" name="short_description" maxlength="500" value="<?= htmlspecialchars((string) ($course['short_description'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Description</label>
-                    <textarea name="description" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"><?= htmlspecialchars((string) ($course['description'] ?? '')) ?></textarea>
-                </div>
-                <div class="md:col-span-2 rounded-xl border border-sky-100 bg-sky-50/50 p-4 text-sm text-sky-950">
-                    <p class="font-bold text-sky-950 mb-1">Apparence &amp; médias de couverture</p>
-                    <p class="text-xs text-sky-900/90">Thème couleur, typographie, miniature, bannière et consignes audio se règlent dans l’onglet <a href="<?= htmlspecialchars($studioU('presentation')) ?>" class="font-black underline decoration-sky-400 hover:text-sky-950">Présentation apprenant</a>.</p>
-                </div>
-                <div class="md:col-span-2" data-lms-objectives-scope>
-                    <label class="block text-xs font-bold text-slate-600 mb-2">Objectifs pédagogiques</label>
-                    <div class="space-y-2" data-lms-objectives-list>
-                        <?php foreach ($courseObjectiveLines as $objLine): ?>
-                        <div class="flex gap-2 items-center" data-lms-objective-row>
-                            <input type="text" name="course_learning_objectives[]" value="<?= htmlspecialchars($objLine) ?>" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex. Savoir appliquer la consigne de sécurité">
-                            <button type="button" class="shrink-0 px-2 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-100" data-lms-objective-remove title="Retirer cette ligne">Retirer</button>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <button type="button" class="mt-2 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-emerald-800 border border-dashed border-emerald-300 rounded-lg hover:bg-emerald-50" data-lms-objective-add>+ Ajouter un objectif</button>
-                </div>
+                <div class="ts-readiness-bar" aria-hidden="true"><i style="width: <?= (int) $studioReadinessScore ?>%"></i></div>
+                <ul class="ts-readiness-list">
+                    <li class="<?= !empty($studioReadinessChecks['slug']) ? 'is-ok' : 'is-todo' ?>">Adresse courte renseignée</li>
+                    <li class="<?= !empty($studioReadinessChecks['objectifs']) ? 'is-ok' : 'is-todo' ?>">Objectifs pédagogiques saisis</li>
+                    <li class="<?= !empty($studioReadinessChecks['visibilite']) ? 'is-ok' : 'is-todo' ?>">Visibilité prête à publier</li>
+                    <li class="<?= !empty($studioReadinessChecks['ressources']) ? 'is-ok' : 'is-todo' ?>">Modules et leçons présents</li>
+                    <li class="<?= !empty($studioReadinessChecks['quiz']) ? 'is-ok' : 'is-todo' ?>">Questionnaire prévu</li>
+                </ul>
             </div>
-
-            <div id="studio-engagement" class="md:col-span-2 border-t border-slate-200 pt-8 mt-6 scroll-mt-28">
-                <h3 class="text-sm font-black uppercase tracking-[0.18em] text-slate-600 mb-3">Politique d’inscription &amp; consignes</h3>
-                <p class="text-xs text-slate-500 mb-4 max-w-3xl">Conditions pour l’<strong>auto-inscription</strong> (les assignations manuelles par le staff restent possibles). Prérequis = formation précédente <strong>validée</strong> ; certificats = autres formations dont l’attestation est exigée.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-800">
-                        <input type="checkbox" name="policy_enrollments_blocked" value="1" <?= !empty($policy['enrollments_blocked']) ? 'checked' : '' ?>>
-                        Bloquer toutes les nouvelles inscriptions
-                    </label>
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-800">
-                        <input type="checkbox" name="policy_self_enroll_disabled" value="1" <?= isset($policy['self_enroll_allowed']) && $policy['self_enroll_allowed'] === false ? 'checked' : '' ?>>
-                        Désactiver l’auto-inscription (inscription libre)
-                    </label>
-                    <input type="hidden" name="policy_self_enroll_requires_approval" value="0">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-800 md:col-span-2">
-                        <input type="checkbox" name="policy_self_enroll_requires_approval" value="1" <?= !empty($policy['self_enroll_requires_approval']) ? 'checked' : '' ?>>
-                        Exiger une validation par un formateur après chaque auto-inscription
-                    </label>
-                    <p class="text-[11px] text-slate-500 md:col-span-2 -mt-2">Sans effet si l’inscription libre est désactivée. Les personnes choisies ci-dessous (et l’auteur de la fiche) reçoivent une alerte par e-mail.</p>
-                    <input type="hidden" name="policy_comments_enabled" value="0">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-800 md:col-span-2">
-                        <input type="checkbox" name="policy_comments_enabled" value="1" <?= function_exists('training_lms_policy_comments_enabled') ? (training_lms_policy_comments_enabled($policy) ? 'checked' : '') : 'checked' ?>>
-                        Autoriser les commentaires sur la page « Avis &amp; échanges »
-                    </label>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Formateurs notifiés pour valider les inscriptions</label>
-                    <select name="policy_enrollment_approver_user_ids[]" multiple size="6" class="w-full max-w-xl border border-slate-200 rounded-lg px-2 py-2 text-sm">
-                        <?php foreach ($studioStaffPickUsers as $su):
-                            $suid = (int) ($su['id'] ?? 0);
-                            if ($suid < 1) {
-                                continue;
-                            }
-                            $slab = trim((string) ($su['display_name'] ?? ''));
-                            if ($slab === '') {
-                                $slab = (string) ($su['email'] ?? ('#' . $suid));
-                            }
-                        ?>
-                        <option value="<?= $suid ?>" <?= in_array($suid, $policyApproverIds, true) ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <p class="text-[11px] text-slate-500 mt-1">Vide = seul l’auteur de la fiche formation est prévenu (en plus des gestionnaires disposant déjà des droits d’assignation).</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Prérequis (formations validées avant)</label>
-                        <select name="policy_prerequisite_course_ids[]" multiple size="6" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm">
-                            <?php foreach ($studioOtherCourses as $oc):
-                                $oid = (int) ($oc['id'] ?? 0);
-                            ?>
-                            <option value="<?= $oid ?>" <?= in_array($oid, $policyPrereq, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($oc['title'] ?? '')) ?> (<?= htmlspecialchars((string) ($oc['visibility'] ?? '')) ?>)</option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-[11px] text-slate-500 mt-1">Ctrl+clic pour plusieurs.</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Attestations requises (autres formations)</label>
-                        <select name="policy_certificate_course_ids[]" multiple size="6" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm">
-                            <?php foreach ($studioOtherCourses as $oc):
-                                $oid = (int) ($oc['id'] ?? 0);
-                            ?>
-                            <option value="<?= $oid ?>" <?= in_array($oid, $policyCerts, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($oc['title'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Rôles autorisés (au moins un)</label>
-                        <select name="policy_required_role_ids[]" multiple size="6" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm">
-                            <?php foreach ($studioRoles as $r):
-                                $rid = (int) ($r['id'] ?? 0);
-                            ?>
-                            <option value="<?= $rid ?>" <?= in_array($rid, $policyRoles, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($r['name'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-[11px] text-slate-500 mt-1">Vide = aucune contrainte de rôle.</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Grades autorisés</label>
-                        <select name="policy_required_grade_ids[]" multiple size="6" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm">
-                            <?php foreach ($studioGrades as $g):
-                                $gid = (int) ($g['id'] ?? 0);
-                            ?>
-                            <option value="<?= $gid ?>" <?= in_array($gid, $policyGrades, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <p class="block text-xs font-bold text-slate-600 mb-2">Statuts de compte autorisés pour l’auto-inscription</p>
-                        <p class="text-[11px] text-slate-500 mb-2">Laissez tout décoché pour n’imposer aucune contrainte sur le statut. Sinon, l’apprenant doit correspondre à <strong>au moins une</strong> des cases cochées.</p>
-                        <div class="flex flex-wrap gap-4">
-                            <?php foreach ($policyUserStatusLabels as $stVal => $stLabel): ?>
-                            <label class="inline-flex items-center gap-2 text-sm text-slate-800">
-                                <input type="checkbox" name="policy_user_status[]" value="<?= htmlspecialchars($stVal) ?>" <?= in_array($stVal, $policyStatusesSelected, true) ? 'checked' : '' ?>>
-                                <?= htmlspecialchars($stLabel) ?>
-                            </label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="border-t border-slate-100 pt-6 mt-2" id="studio-engagement-share">
-                    <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Repérer la formation ailleurs</h4>
-                    <p class="text-[11px] text-slate-500 mb-3 max-w-3xl">Code court unique : les membres connectés à <strong>cette</strong> communauté peuvent le saisir sur la page dédiée pour ouvrir directement la fiche. Si la formation appartient à une autre communauté, le portail l’indique clairement sans mélanger les espaces.</p>
-                    <div class="flex flex-wrap items-end gap-3">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Code actuel</label>
-                            <input type="text" readonly class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono tracking-widest bg-slate-50 w-48" value="<?= $shareCodeDisplay !== '' ? htmlspecialchars($shareCodeDisplay) : '— (enregistrez la fiche pour en générer un)' ?>">
-                        </div>
-                        <p class="text-xs text-slate-600 pb-2">Page apprenant : <a href="<?= url('formations/code-acces') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950" target="_blank" rel="noopener">Ouvrir la saisie du code</a></p>
-                    </div>
-                </div>
+            <div class="ts-fiche-aside-card">
+                <h2>Guide de mise en ligne</h2>
+                <ol class="ts-guide-list">
+                    <li><b>1</b><span>Complétez la fiche (titre, adresse courte, visibilité).</span></li>
+                    <li><b>2</b><span>Ajoutez un premier module et une première leçon.</span></li>
+                    <li><b>3</b><span>Soignez la présentation apprenant.</span></li>
+                    <li><b>4</b><span>Vérifiez la publication, puis l’aperçu.</span></li>
+                </ol>
             </div>
-
-            <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-black rounded-xl hover:bg-slate-800 shadow-md">Enregistrer la fiche</button>
-        </section>
-    </form>
-
-    <div class="training-studio-panel scroll-mt-28 p-6 md:p-8 shadow-sm mb-10 border border-dashed border-slate-200">
-        <p class="text-xs font-bold text-slate-700 mb-2">Code de partage</p>
-        <p class="text-sm text-slate-600 mb-4">Générez un nouveau code si l’ancien a été partagé trop largement. Les liens déjà envoyés avec l’ancien code ne fonctionneront plus.</p>
-        <form method="post" action="<?= training_studio_url($cid) ?>" class="inline-flex">
-            <?= \App\Core\Csrf::field() ?>
-            <input type="hidden" name="_action" value="regenerate_enrollment_share_code">
-            <button type="submit" class="px-4 py-2.5 bg-amber-600 text-white text-xs font-black uppercase tracking-wide rounded-xl hover:bg-amber-700 shadow-sm">Régénérer le code</button>
-        </form>
+        </aside>
     </div>
 
     <section id="studio-sessions-qa" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-8 shadow-sm mb-10">
@@ -570,8 +316,8 @@ $defaultCanvasJson = json_encode([
                 <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Libellé</label><input type="text" name="session_label" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
                 <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Lieu</label><input type="text" name="session_location" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
                 <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Places max</label><input type="number" name="session_max_seats" min="0" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
-                <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">ID instructeur (user)</label><input type="number" name="session_instructor_user_id" min="0" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Optionnel"></div>
-                <div class="sm:col-span-2"><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Audio briefing (URL)</label><input type="url" name="session_audio_url" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
+                <div><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Instructeur (numéro de membre, optionnel)</label><input type="number" name="session_instructor_user_id" min="0" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Optionnel"></div>
+                <div class="sm:col-span-2"><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Audio de briefing (lien)</label><input type="url" name="session_audio_url" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></div>
                 <div class="sm:col-span-2"><label class="block text-[11px] font-bold text-slate-600 mb-0.5">Notes</label><textarea name="session_notes" rows="2" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm"></textarea></div>
                 <div class="sm:col-span-2"><button type="submit" class="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Ajouter un créneau</button></div>
             </form>
@@ -608,6 +354,23 @@ $defaultCanvasJson = json_encode([
     </section>
 
     <?php elseif ($trainingStudioSection === 'presentation'): ?>
+    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 md:p-5">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xs font-black uppercase tracking-[0.18em] text-emerald-900">Checklist prêt-à-publier</h2>
+            <span class="text-sm font-black text-emerald-900"><?= $studioReadinessScore ?>%</span>
+        </div>
+        <div class="mt-2 h-2 rounded-full bg-emerald-100">
+            <div class="h-2 rounded-full bg-emerald-500" style="width: <?= $studioReadinessScore ?>%"></div>
+        </div>
+        <ul class="mt-3 grid gap-2 text-sm md:grid-cols-2">
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['slug'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Adresse courte renseignée</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['objectifs'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Objectifs pédagogiques saisis</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['visibilite'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Visibilité prête à publier</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['ressources'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Modules et leçons présents</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['quiz'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Questionnaire prévu</li>
+        </ul>
+    </section>
+
     <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-8 mb-12" id="studio-presentation-form">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="_action" value="save_course">
@@ -710,6 +473,23 @@ $defaultCanvasJson = json_encode([
     </form>
 
     <?php else: ?>
+    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 md:p-5">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-xs font-black uppercase tracking-[0.18em] text-emerald-900">Checklist prêt-à-publier</h2>
+            <span class="text-sm font-black text-emerald-900"><?= $studioReadinessScore ?>%</span>
+        </div>
+        <div class="mt-2 h-2 rounded-full bg-emerald-100">
+            <div class="h-2 rounded-full bg-emerald-500" style="width: <?= $studioReadinessScore ?>%"></div>
+        </div>
+        <ul class="mt-3 grid gap-2 text-sm md:grid-cols-2">
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['slug'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Adresse courte renseignée</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['objectifs'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Objectifs pédagogiques saisis</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['visibilite'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Visibilité prête à publier</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['ressources'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Modules et leçons présents</li>
+            <li class="rounded-lg border px-3 py-2 <?= $studioReadinessChecks['quiz'] ? 'border-emerald-200 bg-white text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' ?>">Questionnaire prévu</li>
+        </ul>
+    </section>
+
 
     <details class="rounded-2xl border border-slate-200 bg-white p-5 mb-6 text-sm text-slate-800 shadow-sm open:ring-1 open:ring-slate-100">
         <summary class="cursor-pointer font-black text-slate-900 uppercase tracking-wide text-xs select-none">Comprendre les types de leçon</summary>
@@ -730,13 +510,13 @@ $defaultCanvasJson = json_encode([
         <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-800 text-[11px] font-black tracking-tight" title="Modules">M</span>
         Structure pédagogique
     </h2>
-    <div id="studio-ressources-aide" class="scroll-mt-28 rounded-xl border border-sky-300/80 bg-gradient-to-br from-sky-50 to-white p-4 md:p-5 mb-6 text-sm text-slate-800 shadow-sm ring-1 ring-sky-100">
-        <p class="font-black text-xs uppercase tracking-wider text-sky-900">Où se trouve le panneau Ressources ?</p>
-        <p class="mt-2 text-sm leading-relaxed text-slate-700">Il n’y a pas de zone « Ressources » en haut de page : pour chaque <strong class="font-semibold text-slate-900">leçon</strong>, un encart bleu <strong class="font-semibold text-sky-900">Ressources</strong> figure <strong class="font-semibold text-slate-900">dans la carte de cette leçon</strong> — à droite du formulaire sur grand écran, ou juste en dessous sur téléphone ou tablette. Ouvrez-le pour ajouter un lien, un fichier ou un document du centre.</p>
+    <div id="studio-ressources-aide" class="ts-structure-aide scroll-mt-28 mb-8">
+        <p class="ts-structure-aide__kicker">Où se trouve le panneau Ressources ?</p>
+        <p class="ts-structure-aide__body">Pour chaque <strong>leçon</strong>, un panneau <strong>Ressources</strong> occupe la colonne de droite (ou s’affiche juste sous le formulaire sur mobile). Vous pouvez y ajouter une <strong>image</strong> (JPG, PNG, WebP), un lien web, un autre fichier, ou un document du centre documentaire — visibles en bas de leçon pour les apprenants inscrits.</p>
         <?php if ($studioStructureEmptyButMetaShowsModules): ?>
-        <p class="mt-3 rounded-lg border border-amber-200/90 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">Le menu indique encore des modules, mais la liste n’apparaît pas ici. <strong class="font-semibold">Actualisez la page</strong> (rechargement complet). Si rien ne s’affiche après actualisation, contactez un <strong class="font-semibold">administrateur du site</strong>.</p>
+        <p class="ts-structure-aide__warn">Le menu indique encore des modules, mais la liste n’apparaît pas ici. <strong>Actualisez la page</strong> (rechargement complet). Si rien ne s’affiche après actualisation, contactez un <strong>administrateur du site</strong>.</p>
         <?php elseif (count($modules) > 0 && $studioLessonTotal === 0): ?>
-        <p class="mt-3 rounded-lg border border-sky-200/90 bg-white/80 px-3 py-2.5 text-sm text-slate-800">Ajoutez au moins une <strong class="font-semibold">leçon</strong> dans un module ci-dessous : le panneau <strong class="font-semibold text-sky-900">Ressources</strong> apparaît alors sur cette leçon.</p>
+        <p class="ts-structure-aide__hint">Ajoutez au moins une <strong>leçon</strong> dans un module ci-dessous : le panneau <strong>Ressources</strong> apparaît alors sur cette leçon.</p>
         <?php endif; ?>
     </div>
     <p class="text-sm text-slate-600 mb-3 max-w-2xl">Réordonnez les <strong>modules</strong> depuis la <strong>frise</strong> ci-dessous ou depuis chaque carte (poignée ⠿). Dans chaque module, réordonnez les <strong>leçons</strong> de la même façon. L’ordre est enregistré tout de suite.</p>
@@ -872,14 +652,14 @@ $defaultCanvasJson = json_encode([
                 $resCount = count($studioRes);
                 $docStatusLabels = function_exists('training_lms_document_status_labels_fr') ? training_lms_document_status_labels_fr() : [];
             ?>
-            <div class="studio-sort-lesson-card border border-slate-100 rounded-lg p-3 bg-slate-50/50 space-y-3" data-lesson-id="<?= (int) $lid ?>">
+            <div class="studio-sort-lesson-card ts-lesson-card border border-slate-100 rounded-xl p-4 md:p-5 bg-slate-50/50 space-y-3" data-lesson-id="<?= (int) $lid ?>">
                 <div class="flex flex-wrap justify-between gap-2 items-center">
                     <div class="flex items-center gap-2 min-w-0">
                         <span class="studio-lesson-drag-handle cursor-grab text-slate-400 hover:text-slate-600 select-none text-base leading-none" title="Glisser pour déplacer la leçon" aria-hidden="true">⠿</span>
                         <span class="text-xs font-semibold text-slate-700 truncate">Leçon <?= (int) $li ?></span>
                     </div>
                 </div>
-                <div class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_17.5rem] gap-4 lg:items-start">
+                <div class="ts-lesson-layout flex flex-col xl:grid xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,1fr)] gap-5 xl:items-start">
                     <div class="min-w-0 space-y-3 order-1">
                         <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-2">
                             <?= \App\Core\Csrf::field() ?>
@@ -976,15 +756,15 @@ $defaultCanvasJson = json_encode([
                             <button type="submit" class="text-xs text-rose-600 underline">Supprimer la leçon</button>
                         </form>
                     </div>
-                    <aside class="order-2 lg:sticky lg:top-28 self-start w-full max-lg:max-w-xl">
-                        <details class="rounded-lg border border-sky-200 bg-sky-50/60 text-slate-800 shadow-sm" id="<?= htmlspecialchars($lessonResAnchor) ?>" open>
-                            <summary class="cursor-pointer select-none px-3 py-2.5 text-xs font-black uppercase tracking-wide text-sky-900">
+                    <aside class="order-2 xl:sticky xl:top-28 self-start w-full">
+                        <details class="ts-res-panel rounded-xl border border-sky-200 bg-sky-50/70 text-slate-800 shadow-sm" id="<?= htmlspecialchars($lessonResAnchor) ?>" open>
+                            <summary class="ts-res-panel__summary cursor-pointer select-none px-4 py-3 text-xs font-black uppercase tracking-wide text-sky-900">
                                 Ressources<?= $resCount > 0 ? ' (' . (int) $resCount . ')' : '' ?>
                             </summary>
-                            <div class="px-3 pb-3 pt-1 border-t border-sky-100 space-y-3">
-                                <p class="text-[10px] text-sky-900/85 leading-snug">Ajoutez des <strong class="font-semibold">liens web</strong>, des <strong class="font-semibold">fichiers</strong> (dépôt ou emplacement serveur) ou des <strong class="font-semibold">documents du centre documentaire</strong> : ils apparaissent en bas de leçon pour les apprenants inscrits.</p>
+                            <div class="px-4 pb-4 pt-2 border-t border-sky-100 space-y-4">
+                                <p class="text-xs text-sky-950/90 leading-relaxed">Ajoutez une <strong class="font-semibold">image</strong>, un <strong class="font-semibold">lien web</strong>, un <strong class="font-semibold">fichier</strong> ou un <strong class="font-semibold">document du centre</strong> : les apprenants les retrouvent en bas de leçon.</p>
                                 <?php if ($studioRes !== []): ?>
-                                <ul class="text-xs space-y-2">
+                                <ul class="ts-res-list space-y-3">
                                     <?php foreach ($studioRes as $sr):
                                         $srid = (int) ($sr['id'] ?? 0);
                                         $kindLab = function_exists('training_lms_studio_resource_kind_label_fr')
@@ -992,77 +772,97 @@ $defaultCanvasJson = json_encode([
                                             : ($resourceTypeLabels[(string) ($sr['resource_type'] ?? 'link')] ?? '');
                                         $dSt = (string) ($sr['document_status'] ?? '');
                                         $dStLab = ($dSt !== '' && isset($docStatusLabels[$dSt])) ? $docStatusLabels[$dSt] : '';
+                                        $srIsImage = function_exists('training_lms_resource_is_image') && training_lms_resource_is_image($sr) && !empty($sr['file_path']);
+                                        $srPreviewUrl = $srIsImage
+                                            ? training_studio_url($cid . '/ressource/' . $srid) . '?inline=1'
+                                            : '';
                                     ?>
-                                    <li class="flex flex-wrap justify-between gap-2 items-start border-b border-sky-100/80 pb-2">
-                                        <span class="text-slate-800 min-w-0">
-                                            <span class="font-semibold block"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span>
-                                            <span class="text-slate-500"><?= htmlspecialchars($kindLab) ?><?php if ($dStLab !== '' && !empty($sr['document_id'])): ?> · <?= htmlspecialchars($dStLab) ?><?php endif; ?></span>
+                                    <li class="ts-res-item flex flex-wrap gap-3 items-start border-b border-sky-100/90 pb-3 last:border-0 last:pb-0">
+                                        <?php if ($srPreviewUrl !== ''): ?>
+                                        <a href="<?= htmlspecialchars($srPreviewUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener" class="ts-res-thumb shrink-0" title="Aperçu de l’image">
+                                            <img src="<?= htmlspecialchars($srPreviewUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" width="96" height="72">
+                                        </a>
+                                        <?php endif; ?>
+                                        <span class="text-sm text-slate-800 min-w-0 flex-1">
+                                            <span class="font-semibold block leading-snug"><?= htmlspecialchars((string) ($sr['title'] ?? '')) ?></span>
+                                            <span class="text-xs text-slate-500"><?= htmlspecialchars($kindLab) ?><?php if ($dStLab !== '' && !empty($sr['document_id'])): ?> · <?= htmlspecialchars($dStLab) ?><?php endif; ?></span>
                                         </span>
                                         <form method="post" action="<?= training_studio_url($cid) ?>" class="shrink-0" onsubmit="return confirm('Retirer cette ressource de la leçon ?');">
                                             <?= \App\Core\Csrf::field() ?>
                                             <input type="hidden" name="_action" value="delete_lesson_resource">
                                             <input type="hidden" name="resource_id" value="<?= $srid ?>">
-                                            <button type="submit" class="text-[11px] font-bold text-rose-600 hover:underline">Retirer</button>
+                                            <button type="submit" class="text-xs font-bold text-rose-600 hover:underline">Retirer</button>
                                         </form>
                                     </li>
                                     <?php endforeach; ?>
                                 </ul>
                                 <?php else: ?>
-                                <p class="text-xs text-slate-600">Aucune ressource pour l’instant.</p>
+                                <p class="text-sm text-slate-600">Aucune ressource pour l’instant.</p>
                                 <?php endif; ?>
-                                <form method="post" action="<?= training_studio_url($cid) ?>" enctype="multipart/form-data" class="space-y-2 pt-2 border-t border-sky-100" data-lms-lesson-resource-form>
+                                <form method="post" action="<?= training_studio_url($cid) ?>" enctype="multipart/form-data" class="ts-res-form space-y-3 pt-3 border-t border-sky-100" data-lms-lesson-resource-form>
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="_action" value="add_lesson_resource">
                                     <input type="hidden" name="lesson_id" value="<?= (int) $lid ?>">
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Titre affiché pour l’apprenant</label>
-                                        <input type="text" name="resource_title" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Laisser vide pour reprendre le titre du document">
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre affiché pour l’apprenant</label>
+                                        <input type="text" name="resource_title" maxlength="255" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Laisser vide pour reprendre le nom du fichier ou du document">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Que souhaitez-vous lier ?</label>
-                                        <select name="resource_add_mode" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-resource-mode>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Que souhaitez-vous lier ?</label>
+                                        <select name="resource_add_mode" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-lms-resource-mode>
+                                            <option value="image">Une image (JPG, PNG, WebP)</option>
                                             <option value="link">Une adresse web (site, article, vidéo en ligne…)</option>
-                                            <option value="file">Un fichier (dépôt ou copie déjà sur le serveur)</option>
+                                            <option value="file">Un autre fichier (PDF, archive, audio…)</option>
                                             <option value="library">Un document du centre documentaire de la communauté</option>
                                             <option value="library_upload">Bibliothèque d’assets (upload type YouTube Studio)</option>
                                         </select>
                                     </div>
-                                    <div class="space-y-2" data-lms-res-panel="link">
+                                    <div class="space-y-2" data-lms-res-panel="image">
+                                        <input type="hidden" name="resource_type" value="image">
+                                        <div class="rounded-lg border border-sky-200 bg-white/90 px-3 py-2.5 text-xs text-sky-950">
+                                            L’image s’affiche dans la leçon pour les apprenants. Formats acceptés : JPG, PNG, WebP (max. 15 Mo).
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Choisir une image</label>
+                                            <input type="file" name="resource_upload" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-100 file:px-3 file:py-2 file:text-xs file:font-bold file:text-sky-900">
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2 hidden" data-lms-res-panel="link">
                                         <input type="hidden" name="resource_type" value="link">
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Adresse web</label>
-                                            <input type="text" name="resource_external_url" inputmode="url" autocomplete="off" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="https://…">
-                                            <p class="mt-0.5 text-[10px] text-slate-500">Collez l’adresse complète affichée dans le navigateur (de préférence en https).</p>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Adresse web</label>
+                                            <input type="text" name="resource_external_url" inputmode="url" autocomplete="off" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://…">
+                                            <p class="mt-1 text-[11px] text-slate-500">Collez l’adresse complète affichée dans le navigateur (de préférence en https).</p>
                                         </div>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="file">
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Type de fichier pour l’apprenant</label>
-                                            <select name="resource_type" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm">
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Type de fichier pour l’apprenant</label>
+                                            <select name="resource_type" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
                                                 <?php foreach ($fileResourceTypeLabels as $rk => $rlab): ?>
                                                 <option value="<?= htmlspecialchars($rk) ?>"<?= $rk === 'attachment' ? ' selected' : '' ?>><?= htmlspecialchars($rlab) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Envoyer un fichier depuis votre poste</label>
-                                            <input type="file" name="resource_upload" class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-sky-100 file:px-2 file:py-1">
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Envoyer un fichier depuis votre poste</label>
+                                            <input type="file" name="resource_upload" accept=".pdf,.jpg,.jpeg,.png,.webp,.zip,.mp4,.mp3,.doc,.docx,image/*,application/pdf" class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-100 file:px-3 file:py-2 file:text-xs file:font-bold file:text-sky-900">
                                         </div>
-                                        <details class="text-[10px] text-slate-600">
+                                        <details class="text-xs text-slate-600">
                                             <summary class="cursor-pointer font-bold text-slate-700">Fichier déjà présent sur le serveur</summary>
                                             <p class="mt-1 mb-1">Si le fichier a été placé manuellement sur l’hébergement, indiquez son chemin relatif à la racine du projet (réservé aux équipes techniques).</p>
-                                            <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded px-2 py-1.5 text-xs" placeholder="Ex. storage/…">
+                                            <input type="text" name="resource_file_path" maxlength="255" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs" placeholder="Ex. storage/…">
                                         </details>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="library">
                                         <?php if ($studioDocPickerCount > 5): ?>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Filtrer la liste</label>
-                                            <input type="search" data-lms-doc-filter class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" placeholder="Titre, statut…" autocomplete="off">
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Filtrer la liste</label>
+                                            <input type="search" data-lms-doc-filter class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Titre, statut…" autocomplete="off">
                                         </div>
                                         <?php endif; ?>
                                         <div>
-                                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Document du centre</label>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Document du centre</label>
                                             <?php
                                             $lmsDocsByStudioCat = [];
                                             foreach ($libraryDocumentsForPicker as $lmsPickDoc) {
@@ -1077,7 +877,7 @@ $defaultCanvasJson = json_encode([
                                             uksort($lmsDocsByStudioCat, 'strnatcasecmp');
                                             $lmsSelectSize = $studioDocPickerCount > 12 ? min(10, max(4, $studioDocPickerCount)) : null;
                                             ?>
-                                            <select name="document_id" class="w-full border border-slate-200 rounded px-2 py-1.5 text-sm" data-lms-doc-select<?= $lmsSelectSize !== null ? ' size="' . (int) $lmsSelectSize . '"' : '' ?>>
+                                            <select name="document_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-lms-doc-select<?= $lmsSelectSize !== null ? ' size="' . (int) $lmsSelectSize . '"' : '' ?>>
                                                 <option value="">— Choisir un document —</option>
                                                 <?php foreach ($lmsDocsByStudioCat as $lmsGrpLabel => $lmsGrpDocs): ?>
                                                 <optgroup label="<?= htmlspecialchars($lmsGrpLabel) ?>">
@@ -1093,30 +893,30 @@ $defaultCanvasJson = json_encode([
                                                 <?php endforeach; ?>
                                             </select>
                                             <?php if ($studioDocPickerCount > 12): ?>
-                                            <p class="mt-0.5 text-[10px] text-slate-500">Liste déroulante élargie : faites défiler ou utilisez le filtre ci-dessus.</p>
+                                            <p class="mt-1 text-[11px] text-slate-500">Liste déroulante élargie : faites défiler ou utilisez le filtre ci-dessus.</p>
                                             <?php endif; ?>
                                         </div>
                                         <?php if ($studioCanDocsAdmin): ?>
-                                        <p class="text-[10px] text-slate-600">
+                                        <p class="text-xs text-slate-600">
                                             <a href="<?= htmlspecialchars(url('documents/gestion'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-sky-800 underline decoration-sky-200 hover:decoration-sky-600">Ouvrir la gestion documentaire</a>
                                             pour publier ou mettre à jour des fichiers du centre.
                                         </p>
                                         <?php endif; ?>
                                         <?php if ($studioDocPickerCount === 0): ?>
-                                        <p class="rounded border border-amber-200 bg-amber-50/80 px-2 py-1.5 text-[10px] text-amber-950">Aucun document dans le centre pour cette communauté. Ajoutez-en depuis la gestion documentaire, puis revenez ici.</p>
+                                        <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucun document dans le centre pour cette communauté. Ajoutez-en depuis la gestion documentaire, puis revenez ici.</p>
                                         <?php endif; ?>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="library_upload">
-                                        <div class="rounded-lg border border-violet-200 bg-violet-50/70 px-2.5 py-2 text-[11px] text-violet-900">
+                                        <div class="rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2.5 text-xs text-violet-900">
                                             <p class="font-semibold">Bibliothèque d’assets Studio</p>
                                             <p class="mt-0.5">Importez un média depuis votre ordinateur, ajoutez un descriptif et choisissez sa visibilité <strong>privé</strong> comme sur YouTube Studio.</p>
                                         </div>
-                                        <button type="button" class="w-full rounded-lg border border-violet-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-violet-800 hover:bg-violet-50" data-lms-open-upload-modal data-lms-upload-modal-target="studio-asset-modal-<?= (int) $lid ?>">
+                                        <button type="button" class="w-full rounded-lg border border-violet-300 bg-white px-3 py-2.5 text-xs font-black uppercase tracking-wide text-violet-800 hover:bg-violet-50" data-lms-open-upload-modal data-lms-upload-modal-target="studio-asset-modal-<?= (int) $lid ?>">
                                             Ouvrir le modal d’upload d’asset
                                         </button>
-                                        <p class="text-[10px] text-slate-500">Après l’upload, l’asset est ajouté à la bibliothèque documentaire puis lié à cette leçon.</p>
+                                        <p class="text-[11px] text-slate-500">Après l’upload, l’asset est ajouté à la bibliothèque documentaire puis lié à cette leçon.</p>
                                     </div>
-                                    <button type="submit" class="w-full px-3 py-1.5 bg-sky-700 text-white text-xs font-bold rounded-lg hover:bg-sky-800" data-lms-inline-submit>Ajouter la ressource</button>
+                                    <button type="submit" class="w-full px-4 py-2.5 bg-sky-700 text-white text-sm font-bold rounded-xl hover:bg-sky-800" data-lms-inline-submit>Ajouter la ressource</button>
                                 </form>
                                 <dialog id="studio-asset-modal-<?= (int) $lid ?>" class="w-full max-w-xl rounded-2xl border border-slate-200 p-0 shadow-xl backdrop:bg-slate-950/45">
                                     <form method="dialog" class="border-b border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
@@ -1130,8 +930,8 @@ $defaultCanvasJson = json_encode([
                                         <input type="hidden" name="resource_add_mode" value="library_upload">
                                         <div>
                                             <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Fichier (depuis votre poste)</label>
-                                            <input type="file" name="resource_library_upload" required class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-2 file:py-1">
-                                            <p class="mt-1 text-[10px] text-slate-500">Formats acceptés par la bibliothèque : PDF, JPG/PNG/WEBP, MP4 (max 10 Mo).</p>
+                                            <input type="file" name="resource_library_upload" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp,.pdf,video/mp4,.mp4" required class="block w-full text-xs text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-2 file:py-1">
+                                            <p class="mt-1 text-[10px] text-slate-500">Formats acceptés : PDF, images JPG/PNG/WebP, vidéo MP4 (max 10 Mo).</p>
                                         </div>
                                         <div>
                                             <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Titre de l’asset</label>

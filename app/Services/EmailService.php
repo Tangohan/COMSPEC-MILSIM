@@ -626,6 +626,64 @@ final class EmailService
     }
 
     /**
+     * Rappel bilan recrutement (équipe) — dossier sans note après 30 jours.
+     */
+    public function sendRecruitmentRetroStaffReminder(
+        string $to,
+        string $tenantName,
+        string $candidateFullName,
+        int $ageDays,
+        int $enlistmentId,
+        string $reviewUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_RETRO_STAFF_REMINDER,
+            'enlistment_retro_staff_reminder',
+            $to,
+            'Bilan recrutement à renseigner — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'candidateFullName' => $candidateFullName,
+                'ageDays' => $ageDays,
+                'enlistmentId' => $enlistmentId,
+                'reviewUrl' => $reviewUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_retro_staff', 'enlistment_id' => $enlistmentId]
+        );
+    }
+
+    /**
+     * Rappel bilan recrutement (candidat) — invitation à laisser un retour après 30 jours.
+     */
+    public function sendRecruitmentRetroCandidateReminder(
+        string $to,
+        string $tenantName,
+        string $firstName,
+        int $ageDays,
+        string $portalUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ENLISTMENT_RETRO_CANDIDATE_REMINDER,
+            'enlistment_retro_candidate_reminder',
+            $to,
+            'Votre avis sur le recrutement — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'firstName' => $firstName,
+                'ageDays' => $ageDays,
+                'portalUrl' => $portalUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'enlistment_retro_candidate']
+        );
+    }
+
+    /**
      * Candidature acceptée — message au candidat (message du recruteur + lien espace).
      *
      * @param 'existing'|'new_password_pending' $accountScenario existing : compte déjà présent sur la communauté ; new_password_pending : compte tout juste créé, autre mail pour le mot de passe.

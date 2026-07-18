@@ -361,8 +361,8 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
       <div class="relative max-w-7xl mx-auto px-6">
         <div class="flex flex-col md:flex-row justify-between items-end mb-16 pb-8 border-b-2 border-slate-200">
           <div>
-            <h4 class="text-blue-600 text-xs font-black uppercase tracking-[0.3em] mb-2">Direction des ressources humaines</h4>
-            <h2 class="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter text-slate-900">Prospection <span class="text-blue-600">opérationnelle</span></h2>
+            <h4 class="text-emerald-600 text-xs font-black uppercase tracking-[0.3em] mb-2">Direction des ressources humaines</h4>
+            <h2 class="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter text-slate-900">Prospection <span class="text-emerald-600">opérationnelle</span></h2>
           </div>
           <div class="text-right font-mono text-[10px] text-slate-400 uppercase hidden md:block mt-4 md:mt-0">
             <?php
@@ -394,13 +394,13 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
             <div class="bg-slate-900 text-white p-6 flex flex-col justify-center items-center md:w-48 text-center border-r border-slate-200">
               <span class="text-[10px] font-black uppercase tracking-widest opacity-60 mb-2">Catégorie</span>
               <span class="text-lg font-black italic uppercase leading-tight"><?= htmlspecialchars($pc, ENT_QUOTES, 'UTF-8') ?></span>
-              <div class="mt-4 px-3 py-1 bg-blue-600 text-[9px] font-bold uppercase tracking-wide"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></div>
+              <div class="mt-4 px-3 py-1 bg-emerald-600 text-[9px] font-bold uppercase tracking-wide"><?= htmlspecialchars($arm, ENT_QUOTES, 'UTF-8') ?></div>
             </div>
             <div class="p-8 flex-grow">
               <div class="flex justify-between items-start mb-4 gap-4 flex-wrap">
                 <div>
                   <h3 class="text-2xl font-black uppercase italic text-slate-900"><?= htmlspecialchars((string) ($ro['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-                  <p class="text-sm font-bold text-blue-600 uppercase tracking-tight mt-1"><?= htmlspecialchars((string) ($ro['unit_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                  <p class="text-sm font-bold text-emerald-700 uppercase tracking-tight mt-1"><?= htmlspecialchars((string) ($ro['unit_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <div class="text-right shrink-0">
                   <span class="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded">Réf. <?= htmlspecialchars($ref !== '' ? $ref : '—', ENT_QUOTES, 'UTF-8') ?></span>
@@ -425,11 +425,11 @@ if ($heroSubtitle === '' && ($cp['presentationMode'] ?? '') === 'military' && !e
               </div>
             </div>
             <div class="p-8 bg-slate-50 border-t md:border-t-0 md:border-l border-slate-100 flex flex-col items-stretch justify-center gap-3 min-w-[200px]">
-              <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-center bg-white border-2 border-slate-200 text-slate-900 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">Voir la fiche</a>
+              <a href="<?= htmlspecialchars($detailUrl, ENT_QUOTES, 'UTF-8') ?>" class="text-center bg-white border-2 border-slate-200 text-slate-900 px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:border-emerald-300 hover:bg-emerald-50/50 transition-all">Voir la fiche</a>
               <?php if (!$isLocked && $publicAudience !== 'platform'): ?>
-              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-slate-900 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
+              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-emerald-600 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
               <?php elseif (!$isLocked): ?>
-              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-blue-600 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
+              <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment?ouverture=' . (int) ($ro['id'] ?? 0)), ENT_QUOTES, 'UTF-8') ?>" class="comspec-analytics-cta text-center bg-emerald-600 text-white px-6 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all" data-comspec-zone="liste_postes" data-comspec-opening="<?= (int) ($ro['id'] ?? 0) ?>">Candidater</a>
               <?php endif; ?>
             </div>
           </div>

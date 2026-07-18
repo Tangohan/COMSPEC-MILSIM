@@ -51,6 +51,11 @@ class RecruitmentOffersController
             return Response::redirect(url('dashboard'));
         }
         $st = trim((string) $request->query('status', 'all'));
+        $tenant = $this->tenantRepository->findById($tenantId) ?? [];
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $publicOffersVitrineUrl = $slug !== ''
+            ? url('c/' . rawurlencode($slug)) . '#carrieres'
+            : '';
 
         return Response::view('layout.recruitment_lms', [
             'title' => 'Offres publiées',
@@ -59,6 +64,7 @@ class RecruitmentOffersController
             'openings' => $this->openings->listForTenantAdmin($tenantId, $st === 'all' ? null : $st),
             'statusFilter' => $st,
             'statusLabels' => RecruitmentOpeningPresentation::statusLabels(),
+            'publicOffersVitrineUrl' => $publicOffersVitrineUrl,
             'recruitmentSidebarCounts' => $this->recruitmentSidebarCounts(),
             'recruitmentAdminNav' => 'offers',
             'showPortalFooter' => false,

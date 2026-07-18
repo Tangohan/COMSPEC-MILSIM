@@ -114,14 +114,45 @@ class TrainingController
 
     private function trainingQuizHasPassingAttempt(int $enrollmentId, int $quizId): bool
     {
-        $attempts = $this->trainingQuizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
-        foreach ($attempts as $a) {
-            if ((int) ($a['passed'] ?? 0) === 1) {
-                return true;
+        return $this->quizService->findPassingAttempt($enrollmentId, $quizId) !== null;
+    }
+
+    /**
+     * Cartes de progression pour le sommaire LMS (leçons validées + évaluations réussies).
+     *
+     * @param array<string, mixed> $course
+     * @return array{0: array<int, true>, 1: array<int, true>}
+     */
+    private function trainingLmsProgressMaps(int $enrollmentId, array $course): array
+    {
+        $completedLessonIds = [];
+        $progressDetail = $this->progressService->getProgressForEnrollment($enrollmentId);
+        foreach ($progressDetail['progress'] ?? [] as $row) {
+            if ((string) ($row['status'] ?? '') !== 'completed') {
+                continue;
+            }
+            $lid = (int) ($row['lesson_id'] ?? 0);
+            if ($lid > 0) {
+                $completedLessonIds[$lid] = true;
+            }
+        }
+        $passedQuizIds = [];
+        foreach ($course['modules'] ?? [] as $mod) {
+            if (!is_array($mod)) {
+                continue;
+            }
+            foreach ($mod['quizzes'] ?? [] as $qz) {
+                if (!is_array($qz)) {
+                    continue;
+                }
+                $qid = (int) ($qz['id'] ?? 0);
+                if ($qid > 0 && $this->trainingQuizHasPassingAttempt($enrollmentId, $qid)) {
+                    $passedQuizIds[$qid] = true;
+                }
             }
         }
 
-        return false;
+        return [$completedLessonIds, $passedQuizIds];
     }
 
     private function responseIfHrCharterBlocking(Request $request, int $tenantId, ?int $userId): ?Response
@@ -374,17 +405,13 @@ class TrainingController
         ];
 
         $filter = (string) $request->query('filter', 'all');
-        $displayed = $withProgress;
-        if ($filter === 'active') {
-            $displayed = array_values(array_filter($withProgress, static fn (array $x): bool => in_array($x['status'] ?? '', ['assigned', 'in_progress'], true)));
-        } elseif ($filter === 'done') {
-            $displayed = array_values(array_filter($withProgress, static fn (array $x): bool => ($x['status'] ?? '') === 'completed'));
+        if (!in_array($filter, ['all', 'active', 'done', 'expiring', 'pending'], true)) {
+            $filter = 'all';
         }
 
-        return Response::view('layout.main', [
+        return Response::view('training.my-training', [
             'title' => 'Mes formations',
-            'content' => 'training.my-training',
-            'enrollments' => $displayed,
+            'enrollments' => $withProgress,
             'trainingStats' => $stats,
             'trainingFilter' => $filter,
         ]);
@@ -519,16 +546,28 @@ class TrainingController
         $progressPercent = ($enrollment && $canAccessLearning) ? $this->trainingService->getGlobalProgress((int) $enrollment['id']) : 0;
         $certificate = ($enrollment && $canAccessLearning) ? $this->certificateService->getByEnrollment((int) $enrollment['id']) : null;
         $lmsShowCompletionBanner = false;
-        if ($enrollment && $canAccessLearning && $userId
-            && (string) ($enrollment['status'] ?? '') === 'completed'
-            && (int) $progressPercent >= 100) {
-            $lmsShowCompletionBanner = true;
-            if ((int) ($course['is_certifying'] ?? 0) === 1) {
-                $cpDone = $this->progressService->computeCourseProgress((int) $enrollment['id']);
-                if (!empty($cpDone['completed']) && !$certificate) {
-                    $issued = $this->certificateService->issueCertificate((int) $enrollment['id'], $tenantId, (int) $userId);
-                    if ($issued) {
-                        $certificate = $issued;
+        if ($enrollment && $canAccessLearning && $userId) {
+            $enrStatus = (string) ($enrollment['status'] ?? '');
+            $cpBanner = $this->progressService->computeCourseProgress((int) $enrollment['id']);
+            if ($enrStatus === 'completed' || !empty($cpBanner['completed'])) {
+                $lmsShowCompletionBanner = true;
+                if ($enrStatus !== 'completed' && !empty($cpBanner['completed'])) {
+                    try {
+                        $this->progressService->maybeCompleteEnrollmentAndNotify(
+                            (int) $enrollment['id'],
+                            $tenantId,
+                            (int) $userId
+                        );
+                        $enrollment = $this->enrollmentRepository->findById((int) $enrollment['id'], $tenantId) ?: $enrollment;
+                    } catch (\Throwable) {
+                    }
+                }
+                if ((int) ($course['is_certifying'] ?? 0) === 1) {
+                    if (!$certificate) {
+                        $issued = $this->certificateService->issueCertificate((int) $enrollment['id'], $tenantId, (int) $userId);
+                        if ($issued) {
+                            $certificate = $issued;
+                        }
                     }
                 }
             }
@@ -576,6 +615,11 @@ class TrainingController
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');
 
+        $lmsPassedQuizIds = [];
+        if ($canAccessLearning && $enrollment) {
+            [, $lmsPassedQuizIds] = $this->trainingLmsProgressMaps((int) $enrollment['id'], $course);
+        }
+
         return Response::view('training.course', [
             'title' => $course['title'],
             'course' => $course,
@@ -596,6 +640,7 @@ class TrainingController
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
             'canWithdrawEnrollment' => $canWithdrawEnrollment,
             'canPublishOperationalBoard' => $canPublishOperationalBoard,
+            'lmsPassedQuizIds' => $lmsPassedQuizIds,
             'analyticsBeacon' => [
                 'tenantId' => $tenantId,
                 'category' => AnalyticsEventCategory::TRAINING,
@@ -1132,6 +1177,26 @@ class TrainingController
             }
         }
 
+        [$lmsCompletedLessonIds, $lmsPassedQuizIds] = $this->trainingLmsProgressMaps($enrollmentId, $course);
+        $cpFooter = $this->progressService->computeCourseProgress($enrollmentId);
+        $courseCompletedForFooter = !empty($cpFooter['completed'])
+            || (string) ($enrollment['status'] ?? '') === 'completed';
+        $certificateUrlForFooter = '';
+        if ($courseCompletedForFooter) {
+            $certFooter = $this->certificateService->getByEnrollment($enrollmentId);
+            if ($certFooter && (int) ($certFooter['id'] ?? 0) > 0) {
+                $certificateUrlForFooter = url('formations/certificate/' . (int) $certFooter['id']);
+            } elseif ((int) ($course['is_certifying'] ?? 0) === 1) {
+                try {
+                    $issuedFooter = $this->certificateService->issueCertificate($enrollmentId, $tenantId, $userId);
+                    if ($issuedFooter && (int) ($issuedFooter['id'] ?? 0) > 0) {
+                        $certificateUrlForFooter = url('formations/certificate/' . (int) $issuedFooter['id']);
+                    }
+                } catch (\Throwable) {
+                }
+            }
+        }
+
         return Response::view('training.lesson', [
             'title' => $lesson['title'],
             'lesson' => $lesson,
@@ -1148,6 +1213,9 @@ class TrainingController
             'moduleLessonStep' => $moduleLessonStep,
             'lessonFeedback' => $lessonFeedback,
             'eventRecommendation' => $eventRecommendation,
+            'lmsPassedQuizIds' => $lmsPassedQuizIds,
+            'courseCompletedForFooter' => $courseCompletedForFooter,
+            'certificateUrlForFooter' => $certificateUrlForFooter,
         ]);
     }
 
@@ -1341,6 +1409,7 @@ class TrainingController
         if ($attemptId < 1) {
             return Response::view('training.quiz_not_found', [])->setStatusCode(404);
         }
+        $this->quizService->markAttemptExpiredIfTimeElapsed($attemptId);
         $attempt = $this->quizService->getAttempt($attemptId, $tenantId, $userId);
         if (!$attempt) {
             return Response::view('training.quiz_not_found', [])->setStatusCode(404);
@@ -1351,9 +1420,37 @@ class TrainingController
         if (!$course || !$enrollment) {
             return Response::view('training.quiz_not_found', [])->setStatusCode(404);
         }
-        $progressPercent = $this->trainingService->getGlobalProgress((int) $enrollment['id']);
+
+        $enrollmentId = (int) $enrollment['id'];
+        $quizId = (int) ($attempt['quiz_id'] ?? 0);
+        // Tentative ouverte alors qu’une réussite existe déjà → basculer sur la tentative réussie.
+        if (($attempt['status'] ?? '') === 'in_progress' && $quizId > 0) {
+            $passed = $this->quizService->findPassingAttempt($enrollmentId, $quizId);
+            if ($passed !== null) {
+                $passedId = (int) ($passed['id'] ?? 0);
+                if ($passedId > 0 && $passedId !== $attemptId) {
+                    $this->quizService->markAttemptExpiredIfTimeElapsed($attemptId);
+                    $this->trainingQuizRepository->updateAttempt($attemptId, ['status' => 'expired']);
+
+                    return Response::redirect(url('formations/quiz/' . $passedId));
+                }
+            }
+        }
+
+        $progressPercent = $this->trainingService->getGlobalProgress($enrollmentId);
         $quizMeta = $attempt['quiz'] ?? [];
         $quizTitle = trim((string) ($quizMeta['title'] ?? '')) ?: 'Quiz';
+        [$lmsCompletedLessonIds, $lmsPassedQuizIds] = $this->trainingLmsProgressMaps($enrollmentId, $course);
+
+        $courseSlug = trim((string) ($course['slug'] ?? $enrollment['course_slug'] ?? ''));
+        $courseUrl = $courseSlug !== '' ? url('formations/' . rawurlencode($courseSlug)) : url('formations/mes-formations');
+        $echangesUrl = $courseSlug !== '' ? url('formations/' . rawurlencode($courseSlug) . '/echanges') : '';
+        $certificate = $this->certificateService->getByEnrollment($enrollmentId);
+        $courseDone = (string) ($enrollment['status'] ?? '') === 'completed'
+            || !empty($this->progressService->computeCourseProgress($enrollmentId)['completed']);
+        $certificateUrl = ($certificate && (int) ($certificate['id'] ?? 0) > 0)
+            ? url('formations/certificate/' . (int) $certificate['id'])
+            : '';
 
         return Response::view('training.quiz', [
             'title' => $quizTitle,
@@ -1362,8 +1459,16 @@ class TrainingController
             'enrollment' => $enrollment,
             'progressPercent' => $progressPercent,
             'quizTitle' => $quizTitle,
+            'quizId' => (int) ($quizMeta['id'] ?? $quizId),
             'timeLimitMinutes' => $quizMeta['time_limit_minutes'] ?? null,
             'passingScore' => $quizMeta['passing_score'] ?? null,
+            'lmsCompletedLessonIds' => $lmsCompletedLessonIds,
+            'lmsPassedQuizIds' => $lmsPassedQuizIds,
+            'quizCourseUrl' => $courseUrl,
+            'quizEchangesUrl' => $echangesUrl,
+            'quizCertificateUrl' => $certificateUrl,
+            'quizCourseCompleted' => $courseDone,
+            'quizIsCertifying' => (int) ($course['is_certifying'] ?? 0) === 1,
         ]);
     }
 
@@ -1383,6 +1488,18 @@ class TrainingController
         $cert = $this->certificateService->getById($id, (int) $tenantId);
         if (!$cert || (int) $cert['user_id'] !== (int) $userId) {
             return (new Response())->setStatusCode(404)->setBody('Certificat non trouvé.');
+        }
+        // Filet de sécurité : si le document n’a pas encore été produit (ex. panne temporaire
+        // au moment de l’émission), on retente ici pour que le membre n’ait pas besoin d’attendre
+        // une action du staff.
+        if ((string) ($cert['status'] ?? '') === 'valid') {
+            $rel = trim((string) ($cert['pdf_path'] ?? ''));
+            if ($rel === '' || !is_file(base_path($rel))) {
+                $healed = $this->certificateService->ensurePdfForCertificate($id, (int) $tenantId);
+                if ($healed) {
+                    $cert = $healed;
+                }
+            }
         }
 
         return Response::view('training.certificate', [

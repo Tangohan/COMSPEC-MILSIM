@@ -6,17 +6,9 @@ $emailMasked = $emailMasked ?? '—';
 $expiresAt = (int) ($expiresAt ?? 0);
 $title = $title ?? 'Double vérification';
 $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
-$heroCandidates = ['fog-team.jpg', 'fog-banner.jpg', 'night-team.jpg'];
-$heroImg = '';
-foreach ($heroCandidates as $file) {
-    if (is_file(base_path('public/assets/images/' . $file))) {
-        $heroImg = $base . '/assets/images/' . $file;
-        break;
-    }
-}
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full bg-black">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,6 +21,10 @@ foreach ($heroCandidates as $file) {
     <?php $tailwindBaseUrl = $base; require base_path('views/partials/tailwind_cdn_or_build.php'); ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/home-impact.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <style>
+        html, body {
+            background: #050505;
+            min-height: 100%;
+        }
         .otp-cell {
             width: 2.75rem;
             height: 3.25rem;
@@ -55,36 +51,26 @@ foreach ($heroCandidates as $file) {
             background: rgba(52, 211, 153, 0.06);
         }
         .otp-cell::placeholder { color: rgba(244, 244, 240, 0.2); }
+        .otp-auth-section {
+            padding-block: clamp(2.5rem, 6vh, 4.5rem);
+            padding-inline: clamp(1.25rem, 4vw, 4rem);
+        }
     </style>
 </head>
-<body class="home-impact bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950">
+<body class="home-impact min-h-[100svh] bg-[var(--hi-void,#050505)] text-[var(--hi-ink,#f4f4f0)] antialiased selection:bg-emerald-500 selection:text-slate-950">
 
-<section class="relative flex min-h-[100svh] flex-col overflow-hidden bg-black">
-    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-        <?php if ($heroImg !== ''): ?>
-            <img
-                src="<?= htmlspecialchars($heroImg, ENT_QUOTES, 'UTF-8') ?>"
-                alt=""
-                class="h-full w-full object-cover opacity-40 grayscale brightness-[0.42]"
-                width="1920"
-                height="1080"
-                decoding="async"
-                fetchpriority="high"
-            >
-        <?php endif; ?>
-        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/65 to-black/40"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.55)_100%)]"></div>
-    </div>
+<section class="relative flex min-h-[100svh] flex-col bg-[var(--hi-void,#050505)]">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(52,211,153,0.06),transparent_55%)]" aria-hidden="true"></div>
 
-    <header class="relative z-10 border-b border-white/5 bg-black/50 backdrop-blur-md">
-        <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between px-5 md:px-8">
+    <header class="relative z-10 shrink-0 border-b border-white/5 bg-black">
+        <div class="mx-auto flex h-12 max-w-[100rem] items-center justify-between px-5 md:px-8">
             <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-white/45 transition hover:text-white">Retour</a>
             <span class="text-[11px] font-black uppercase tracking-[0.32em] text-white"><?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?></span>
             <span class="hi-kicker text-emerald-400/85">Connexion</span>
         </div>
     </header>
 
-    <div class="relative z-10 flex flex-1 flex-col justify-center hi-section">
+    <div class="relative z-10 flex flex-1 flex-col justify-center otp-auth-section">
         <p class="hi-kicker hi-reveal text-emerald-400/90">Double vérification</p>
         <h1 class="hi-display hi-hero-brand hi-reveal hi-reveal-delay mt-6 text-white">
             <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-400">.</span>
@@ -154,8 +140,8 @@ foreach ($heroCandidates as $file) {
         <?php endif; ?>
     </div>
 
-    <div class="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-sm">
-        <div class="mx-auto flex max-w-[100rem] items-center justify-between gap-4 px-5 py-4 md:px-8">
+    <div class="relative z-10 shrink-0 border-t border-white/10 bg-black">
+        <div class="mx-auto flex max-w-[100rem] items-center justify-between gap-4 px-5 py-2 md:px-8">
             <p class="hi-body-sm text-[10px] uppercase tracking-[0.14em] text-white/45">Sécurité du compte</p>
             <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="hi-body-sm text-[10px] uppercase tracking-[0.14em] text-emerald-400/80 transition hover:text-emerald-300">
                 Autre compte

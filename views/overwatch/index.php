@@ -1,22 +1,29 @@
 <?php
-$base = url('');
-$apiBase = rtrim($base, '/') . '/api';
+$base = rtrim(url(''), '/');
+$apiBase = $base . '/api';
 $title = $title ?? 'COMSPEC Overwatch — C2';
 $overwatchContext = $overwatchContext ?? [
     'tenantId' => 0,
     'defaultMapId' => 1,
-    'defaultMapSlug' => 'altis',
+    'defaultMapSlug' => 'world',
     'defaultMissionId' => 'mission_0_map_1',
     'apiBase' => $apiBase,
     'syncIntervalMs' => 8000,
+    'assetBase' => $base,
 ];
-$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'World (OSM)', 'type' => 'world']];
+$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
 $overwatchWorkspaces = $overwatchWorkspaces ?? [['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis', 'isDefault' => true]];
 $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;
-$overwatchDefaultMapSlug = $overwatchDefaultMapSlug ?? 'altis';
+$overwatchDefaultMapSlug = $overwatchDefaultMapSlug ?? 'world';
 $overwatchDefaultWorkspace = $overwatchDefaultWorkspace ?? ['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis'];
 $overwatchPageCsrf = \App\Core\Csrf::token();
+$leafletCss = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.css'))
+    ? asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')
+    : 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+$leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
+    ? asset_url('assets/vendor/leaflet-1.9.4/leaflet.js')
+    : 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -24,109 +31,148 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= htmlspecialchars($title) ?></title>
-  <link rel="stylesheet" href="<?= htmlspecialchars($base) ?>/assets/css/tailwind.css" />
-  <link rel="stylesheet" href="<?= htmlspecialchars($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
-  <script src="<?= htmlspecialchars($base) ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/comspec-operational-map.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="<?= htmlspecialchars($leafletCss, ENT_QUOTES, 'UTF-8') ?>" />
+  <script src="<?= htmlspecialchars($leafletJs, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/atak-map-crs.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <style>
-    #overwatch-map { height: 100%; min-height: 500px; }
+    html, body { height: 100%; }
     .panel-tab { display: none; }
     .panel-tab.active { display: block; }
+    #overwatch-map {
+      width: 100%;
+      height: 100%;
+      min-height: 420px;
+      background: #e2e8f0;
+      border-radius: 1rem;
+    }
+    .overwatch-shell { min-height: 100vh; }
+    .overwatch-map-stage {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 420px;
+      height: min(62vh, 720px);
+    }
+    @media (min-width: 1280px) {
+      .overwatch-map-stage { height: calc(100vh - 14rem); min-height: 520px; }
+    }
+    .overwatch-map-status {
+      position: absolute; inset: 0; z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(248, 250, 252, 0.92);
+      pointer-events: none;
+      transition: opacity .25s ease;
+    }
+    .overwatch-map-status.is-hidden { opacity: 0; visibility: hidden; }
+    .leaflet-container { font: inherit; width: 100% !important; height: 100% !important; }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 antialiased min-h-screen">
-  <div class="flex flex-col h-screen">
-    <header class="overwatch-header flex-shrink-0 border-b border-slate-200 bg-white px-4 py-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-4">
-          <h1 class="text-xl font-black uppercase tracking-tight">COMSPEC Overwatch</h1>
-          <span class="text-xs text-slate-500" id="overwatch-theatre-label">—</span>
-          <span class="text-xs text-slate-500 font-mono" id="overwatch-mission-id-label">—</span>
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <div class="overwatch-shell flex flex-col">
+    <header class="flex-shrink-0 border-b border-slate-200 bg-white">
+      <div class="h-1.5 bg-gradient-to-r from-emerald-700 via-teal-500 to-slate-800"></div>
+      <div class="px-4 md:px-6 py-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div class="min-w-0">
+          <p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-1">Supervision C2</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-slate-950">COMSPEC Overwatch</h1>
+            <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-slate-200 bg-slate-50 text-slate-600">En attente</span>
+          </div>
+          <p class="mt-1 text-sm text-slate-500">Carte de commandement, appuis-feu, zones signalées et suivi des liaisons.</p>
+          <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+            <span class="text-xs text-slate-500" id="overwatch-theatre-label">—</span>
+            <span class="text-xs text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
+            <span class="text-xs text-slate-400 font-mono" id="overwatch-zulu">—:—:— Z</span>
+            <span class="text-xs text-slate-400" id="overwatch-sync-indicator">—</span>
+          </div>
         </div>
-        <div class="flex items-center gap-3 flex-wrap">
-          <label class="flex items-center gap-1" title="Contexte opérationnel (théâtre / carte mission)">
-            <span class="text-xs font-bold text-slate-500 uppercase">Théâtre</span>
-            <select id="overwatch-workspace" class="border border-slate-300 rounded px-2 py-1 text-sm">
+        <div class="flex flex-wrap items-end gap-3">
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Théâtre</span>
+            <select id="overwatch-workspace" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold min-w-[160px]">
               <?php foreach ($overwatchWorkspaces as $w): ?>
               <option value="<?= (int)($w['mapId'] ?? 1) ?>" <?= !empty($w['isDefault']) ? 'selected' : '' ?>><?= htmlspecialchars($w['label'] ?? '') ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <label class="flex items-center gap-1">
-            <span class="text-xs font-bold text-slate-500 uppercase">Carte</span>
-            <select id="overwatch-map-select" class="border border-slate-300 rounded px-2 py-1 text-sm">
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Fond de carte</span>
+            <select id="overwatch-map-select" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold min-w-[180px]">
               <?php foreach ($overwatchMapsList as $m): ?>
-              <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'altis') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
+              <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'world') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <span class="text-xs text-slate-400 font-mono" id="overwatch-zulu">—:—:— Z</span>
-          <span class="text-xs text-slate-400" id="overwatch-sync-indicator">—</span>
-          <button type="button" id="overwatch-access-request-open" class="text-xs font-bold uppercase px-2 py-1 rounded border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100">Demander l’accès</button>
-          <nav class="flex gap-2">
-            <a href="<?= htmlspecialchars(url('atak')) ?>" class="text-sm text-slate-500 hover:text-slate-800">ATAK</a>
-            <a href="<?= htmlspecialchars(url('tacmap')) ?>" class="text-sm text-slate-500 hover:text-slate-800">TACMAP</a>
-            <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="text-sm text-slate-500 hover:text-slate-800">Dashboard</a>
+          <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-100">Demander l’accès</button>
+          <nav class="flex flex-wrap gap-2 text-sm font-semibold">
+            <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">ATAK</a>
+            <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">TACMAP</a>
+            <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">Tableau de bord</a>
           </nav>
         </div>
       </div>
     </header>
 
-    <div class="flex flex-1 min-h-0">
-      <aside class="overwatch-sidebar-left w-56 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-hidden">
-        <div class="p-3 border-b border-slate-200">
-          <label class="block text-xs font-bold text-slate-500 mb-1">Recherche unité</label>
-          <input type="text" id="overwatch-unit-search" placeholder="Indicatif…" class="w-full border border-slate-300 rounded px-2 py-1 text-sm mb-2" />
-          <h2 class="text-xs font-black uppercase tracking-tight text-slate-500 mb-2">Calques tactiques</h2>
-          <div class="space-y-2">
+    <div class="flex flex-1 min-h-0 flex-col xl:flex-row">
+      <aside class="overwatch-sidebar-left w-full xl:w-56 flex-shrink-0 border-b xl:border-b-0 xl:border-r border-slate-200 bg-white flex flex-col overflow-hidden">
+        <div class="p-4 border-b border-slate-100">
+          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Recherche unité</label>
+          <input type="text" id="overwatch-unit-search" placeholder="Indicatif…" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-4" />
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Calques</h2>
+          <div class="space-y-2.5">
             <label class="flex items-center justify-between gap-2 cursor-pointer">
-              <input type="checkbox" id="layer-units" class="rounded border-slate-300" checked />
-              <span class="text-sm">Unités</span>
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-units" class="rounded border-slate-300 text-emerald-700" checked /> Unités</span>
               <span class="text-xs text-slate-400 font-mono" id="layer-units-count">0</span>
             </label>
             <label class="flex items-center justify-between gap-2 cursor-pointer">
-              <input type="checkbox" id="layer-danger-zones" class="rounded border-slate-300" checked />
-              <span class="text-sm">Danger zones</span>
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-danger-zones" class="rounded border-slate-300 text-emerald-700" checked /> Zones signalées</span>
               <span class="text-xs text-slate-400 font-mono" id="layer-danger-zones-count">0</span>
             </label>
             <label class="flex items-center justify-between gap-2 cursor-pointer">
-              <input type="checkbox" id="layer-fire-support" class="rounded border-slate-300" checked />
-              <span class="text-sm">Fire support</span>
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-fire-support" class="rounded border-slate-300 text-emerald-700" checked /> Appui-feu</span>
               <span class="text-xs text-slate-400 font-mono" id="layer-fire-support-count">0</span>
             </label>
             <label class="flex items-center justify-between gap-2 cursor-pointer">
-              <input type="checkbox" id="layer-iff" class="rounded border-slate-300" />
-              <span class="text-sm">IFF</span>
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-iff" class="rounded border-slate-300 text-emerald-700" /> Identification</span>
               <span class="text-xs text-slate-400 font-mono" id="layer-iff-count">0</span>
             </label>
           </div>
         </div>
-        <div class="p-3 text-xs text-slate-500 flex-1">
-          <p id="overwatch-units-off-map" class="hidden">Unités actives hors projection monde.</p>
+        <div class="p-4 text-xs text-slate-500 flex-1">
+          <p id="overwatch-units-off-map" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">Unités actives hors projection monde.</p>
         </div>
       </aside>
-      <main class="flex-1 min-w-0 p-2 flex flex-col min-h-0">
-        <div class="flex gap-2 mb-1 flex-wrap items-center">
-          <button type="button" id="overwatch-measure-btn" class="px-2 py-1 text-xs font-bold uppercase border border-slate-300 rounded hover:bg-slate-100">Mesure</button>
-          <label class="flex items-center gap-1 cursor-pointer">
-            <input type="checkbox" id="overwatch-grid-toggle" class="rounded border-slate-300" />
+
+      <main class="flex-1 min-w-0 p-3 md:p-4 flex flex-col min-h-0 gap-2">
+        <div class="flex gap-2 flex-wrap items-center">
+          <button type="button" id="overwatch-measure-btn" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-700 hover:bg-slate-50">Mesure</button>
+          <label class="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+            <input type="checkbox" id="overwatch-grid-toggle" class="rounded border-slate-300 text-emerald-700" />
             <span class="text-xs font-bold text-slate-600">Grille (A1, B2…)</span>
           </label>
           <span class="text-xs text-slate-500 self-center" id="overwatch-measure-result"></span>
         </div>
-        <div id="overwatch-map" class="flex-1 rounded-xl border border-slate-200 bg-white shadow-sm min-h-300"></div>
+        <div class="overwatch-map-stage rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-2">
+          <div id="overwatch-map-status" class="overwatch-map-status" role="status">
+            <div class="text-center px-4">
+              <p class="text-sm font-bold text-slate-800">Chargement de la carte…</p>
+              <p class="mt-1 text-xs text-slate-500" id="overwatch-map-status-detail">Initialisation du fond cartographique</p>
+            </div>
+          </div>
+          <div id="overwatch-map"></div>
+        </div>
       </main>
 
-      <aside class="w-[380px] flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-hidden">
-        <div class="border-b border-slate-200 p-2 flex gap-1 flex-wrap">
-          <button type="button" data-tab="fire-support" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold bg-slate-800 text-white">Fire Support</button>
-          <button type="button" data-tab="danger-zones" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">Danger Zones</button>
-          <button type="button" data-tab="logistics" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">Logistics</button>
-          <button type="button" data-tab="sitrep" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">SITREP</button>
-          <button type="button" data-tab="replay" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">Replay</button>
-          <button type="button" data-tab="iff" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">IFF</button>
-          <button type="button" data-tab="command-chat" class="tab-btn px-3 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">Tchat Cmd</button>
+      <aside class="w-full xl:w-[380px] flex-shrink-0 border-t xl:border-t-0 xl:border-l border-slate-200 bg-white flex flex-col overflow-hidden max-h-[70vh] xl:max-h-none">
+        <div class="border-b border-slate-100 p-2 flex gap-1 flex-wrap">
+          <button type="button" data-tab="fire-support" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold bg-slate-900 text-white">Appui-feu</button>
+          <button type="button" data-tab="danger-zones" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Zones</button>
+          <button type="button" data-tab="logistics" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Logistique</button>
+          <button type="button" data-tab="sitrep" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Situation</button>
+          <button type="button" data-tab="replay" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Replay</button>
+          <button type="button" data-tab="iff" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Identification</button>
+          <button type="button" data-tab="command-chat" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Tchat</button>
         </div>
         <div class="flex-1 overflow-y-auto p-4">
           <?php require __DIR__ . '/fire-support.php'; ?>
@@ -140,8 +186,8 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
             <p class="text-xs text-slate-500 mb-2">Messages partagés sur le théâtre actif (liaison ATAK).</p>
             <div id="command-chat-messages" class="border border-slate-200 rounded-lg p-2 mb-3 h-48 overflow-y-auto bg-slate-50 text-sm space-y-1"></div>
             <div class="flex gap-2">
-              <input type="text" id="command-chat-input" placeholder="Message…" class="flex-1 border border-slate-300 rounded px-2 py-1 text-sm" />
-              <button type="button" id="command-chat-send" class="px-3 py-1 rounded bg-slate-800 text-white text-xs font-bold uppercase">Envoyer</button>
+              <input type="text" id="command-chat-input" placeholder="Message…" class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm" />
+              <button type="button" id="command-chat-send" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase">Envoyer</button>
             </div>
           </div>
         </div>
@@ -149,51 +195,24 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
     </div>
 
     <section class="overwatch-health border-t border-slate-200 bg-white" aria-labelledby="overwatch-health-title">
-      <button type="button" id="overwatch-health-toggle" class="w-full px-4 py-2 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center justify-between" aria-expanded="false" aria-controls="overwatch-health-body">
-        <span id="overwatch-health-title">Colonne santé — Liaisons techniques et jeu</span>
+      <button type="button" id="overwatch-health-toggle" class="w-full px-4 py-2.5 text-left text-sm font-bold text-slate-600 hover:bg-slate-50 flex items-center justify-between" aria-expanded="false" aria-controls="overwatch-health-body">
+        <span id="overwatch-health-title">État des liaisons techniques</span>
         <span class="text-slate-400" aria-hidden="true">▼</span>
       </button>
       <div id="overwatch-health-body" class="border-t border-slate-100 overflow-hidden" hidden>
         <div class="px-4 py-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Données serveur</span>
-            <span id="health-db" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Sync unités</span>
-            <span id="health-units" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Fire support</span>
-            <span id="health-fire-support" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Danger zones</span>
-            <span id="health-danger-zones" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Logistics</span>
-            <span id="health-logistics" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">SITREP</span>
-            <span id="health-sitrep" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">IFF</span>
-            <span id="health-iff" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Replay</span>
-            <span id="health-replay" class="font-mono font-bold text-slate-700">—</span>
-          </div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded bg-slate-50">
-            <span class="text-slate-600">Tchat Cmd</span>
-            <span id="health-chat" class="font-mono font-bold text-slate-700">—</span>
-          </div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Données serveur</span><span id="health-db" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Sync unités</span><span id="health-units" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Appui-feu</span><span id="health-fire-support" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Zones</span><span id="health-danger-zones" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Logistique</span><span id="health-logistics" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Situation</span><span id="health-sitrep" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Identification</span><span id="health-iff" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Replay</span><span id="health-replay" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Tchat</span><span id="health-chat" class="font-mono font-bold text-slate-700">—</span></div>
         </div>
         <div class="px-4 pb-3">
-          <button type="button" id="overwatch-health-refresh" class="text-xs text-slate-500 hover:text-slate-800 underline">Actualiser la santé</button>
+          <button type="button" id="overwatch-health-refresh" class="text-xs text-slate-500 hover:text-slate-800 underline">Actualiser l’état</button>
         </div>
       </div>
     </section>
@@ -213,7 +232,7 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
     </div>
   </div>
 
-  <script>
+<script>
     (function() {
       const overwatchContext = <?= json_encode($overwatchContext) ?>;
       const overwatchMapsList = <?= json_encode($overwatchMapsList) ?>;
@@ -264,8 +283,8 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
       tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.dataset.tab;
-          tabBtns.forEach(b => { b.classList.remove('bg-slate-800', 'text-white'); b.classList.add('text-slate-600'); });
-          btn.classList.add('bg-slate-800', 'text-white'); btn.classList.remove('text-slate-600');
+          tabBtns.forEach(b => { b.classList.remove('bg-slate-900', 'bg-slate-800', 'text-white'); b.classList.add('text-slate-600'); });
+          btn.classList.add('bg-slate-900', 'text-white'); btn.classList.remove('text-slate-600');
           panels.forEach(p => {
             p.classList.remove('active');
             if (p.id === 'panel-' + id) p.classList.add('active');
@@ -322,101 +341,188 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
         };
       }
 
-      function applyBaseLayer(slug) {
+      function applyBaseLayer(slug, opts) {
+        opts = opts || {};
         try {
-          var isWorld = slug === 'world';
+          if (typeof L === 'undefined') {
+            setMapStatus(true, 'Carte indisponible', 'La bibliothèque cartographique n’a pas pu être chargée. Rechargez la page.');
+            return;
+          }
+          var requested = slug || 'world';
+          var isWorld = requested === 'world';
           var mapEl = document.getElementById('overwatch-map');
           if (!mapEl) return;
+          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Fond monde' : ('Carte ' + requested));
 
-        if (map) {
-          if (currentBaseLayer) {
-            map.removeLayer(currentBaseLayer);
-            currentBaseLayer = null;
-          }
-          var needRecreate = (isWorld && window.OverwatchState.currentMapType !== 'world') ||
-            (!isWorld && window.OverwatchState.currentMapType !== 'arma');
-          if (needRecreate) {
-            map.remove();
-            map = null;
-            Object.keys(layerGroups).forEach(function (k) { layerGroups[k] = null; });
-          }
-        }
-
-        if (!map) {
-          if (isWorld) {
-            map = L.map('overwatch-map', { minZoom: 2, maxZoom: 18 }).setView([0.5, 0.5], 4);
-          } else {
-            var cfg = overwatchMapsConfigs[slug] ? buildArmaConfig(overwatchMapsConfigs[slug]) : null;
-            if (!cfg) return;
-            map = L.map('overwatch-map', {
-              minZoom: cfg.minZoom,
-              maxZoom: cfg.maxZoom,
-              crs: cfg.CRS,
-            });
-            map.setView(cfg.center, cfg.defaultZoom);
-            if (cfg.bounds && cfg.bounds.length === 2) {
-              map.setMaxBounds(L.latLngBounds(L.latLng(cfg.bounds[0][0], cfg.bounds[0][1]), L.latLng(cfg.bounds[1][0], cfg.bounds[1][1])));
+          if (!isWorld) {
+            var cfgProbe = overwatchMapsConfigs[requested] ? buildArmaConfig(overwatchMapsConfigs[requested]) : null;
+            if (!cfgProbe || !cfgProbe.tilePattern) {
+              requested = 'world';
+              isWorld = true;
+              var sel = document.getElementById('overwatch-map-select');
+              if (sel) sel.value = 'world';
+              setMapStatus(true, 'Basculement vers le fond monde', 'La carte mission demandée est indisponible.');
             }
           }
-          layerGroups.base = L.layerGroup().addTo(map);
-          layerGroups.units = L.layerGroup().addTo(map);
-          layerGroups.dangerZones = L.layerGroup().addTo(map);
-          layerGroups.fireSupport = L.layerGroup().addTo(map);
-          layerGroups.drawings = L.layerGroup().addTo(map);
-          layerGroups.markers = L.layerGroup().addTo(map);
-          layerGroups.iff = L.layerGroup().addTo(map);
-          layerGroups.grid = L.layerGroup();
-        }
 
-        if (isWorld) {
-          currentBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' });
-          currentBaseLayer.addTo(map);
-          map.setView([0.5, 0.5], 4);
-          window.OverwatchState.currentMapType = 'world';
-        } else {
-          var cfg = overwatchMapsConfigs[slug] ? buildArmaConfig(overwatchMapsConfigs[slug]) : null;
-          if (!cfg) return;
-          currentBaseLayer = L.tileLayer(cfg.tilePattern, { attribution: cfg.attribution, tileSize: cfg.tileSize });
-          currentBaseLayer.addTo(map);
-          map.setView(cfg.center, cfg.defaultZoom);
-          if (cfg.bounds && cfg.bounds.length === 2) {
-            map.setMaxBounds(L.latLngBounds(L.latLng(cfg.bounds[0][0], cfg.bounds[0][1]), L.latLng(cfg.bounds[1][0], cfg.bounds[1][1])));
+          if (map) {
+            if (currentBaseLayer) {
+              try { map.removeLayer(currentBaseLayer); } catch (e) {}
+              currentBaseLayer = null;
+            }
+            var needRecreate = (isWorld && window.OverwatchState.currentMapType !== 'world') ||
+              (!isWorld && window.OverwatchState.currentMapType !== 'arma');
+            if (needRecreate) {
+              try { map.remove(); } catch (e) {}
+              map = null;
+              Object.keys(layerGroups).forEach(function (k) { layerGroups[k] = null; });
+            }
           }
-          window.OverwatchState.currentMapType = 'arma';
-        }
-        window.OverwatchState.currentMapSlug = isWorld ? 'world' : slug;
 
-        if (overwatchUnitsIntervalId) {
-          clearInterval(overwatchUnitsIntervalId);
-          overwatchUnitsIntervalId = null;
-        }
-        if (!isWorld) {
-          overwatchUnitsIntervalId = setInterval(function () { syncUnits(); }, syncIntervalMs);
-          syncUnits();
-        } else {
-          window.OverwatchState.unitsCount = 0;
-          if (layerGroups.units) layerGroups.units.clearLayers();
-        }
+          if (!map) {
+            if (isWorld) {
+              map = L.map('overwatch-map', { minZoom: 2, maxZoom: 18, zoomControl: true });
+              map.setView([46.6, 2.4], 6);
+            } else {
+              var cfg = buildArmaConfig(overwatchMapsConfigs[requested]);
+              if (!cfg) {
+                return applyBaseLayer('world');
+              }
+              map = L.map('overwatch-map', {
+                minZoom: cfg.minZoom,
+                maxZoom: cfg.maxZoom,
+                crs: cfg.CRS,
+                zoomControl: true
+              });
+              map.setView(cfg.center, cfg.defaultZoom);
+              if (cfg.bounds && cfg.bounds.length === 2) {
+                map.setMaxBounds(L.latLngBounds(L.latLng(cfg.bounds[0][0], cfg.bounds[0][1]), L.latLng(cfg.bounds[1][0], cfg.bounds[1][1])));
+              }
+            }
+            layerGroups.base = L.layerGroup().addTo(map);
+            layerGroups.units = L.layerGroup().addTo(map);
+            layerGroups.dangerZones = L.layerGroup().addTo(map);
+            layerGroups.fireSupport = L.layerGroup().addTo(map);
+            layerGroups.drawings = L.layerGroup().addTo(map);
+            layerGroups.markers = L.layerGroup().addTo(map);
+            layerGroups.iff = L.layerGroup().addTo(map);
+            layerGroups.grid = L.layerGroup();
+          }
 
-        window.overwatchMap = map;
-        applyLayerVisibility();
-        attachMapClickHandlers();
-        updateSyncIndicator(window.OverwatchState.syncStatus, window.OverwatchState.lastSyncAt);
-        refreshOperationalContext();
-        updateLayerCounts();
-        var gridToggle = document.getElementById('overwatch-grid-toggle');
-        if (gridToggle && gridToggle.checked && layerGroups.grid) {
-          layerGroups.grid.addTo(map);
-          renderMapGrid();
-        }
+          if (isWorld) {
+            currentBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap',
+              maxZoom: 19,
+              crossOrigin: true
+            });
+            currentBaseLayer.on('tileerror', function () {
+              if (window.OverwatchState._worldFallbackTried) return;
+              window.OverwatchState._worldFallbackTried = true;
+              try { map.removeLayer(currentBaseLayer); } catch (e) {}
+              currentBaseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+              });
+              currentBaseLayer.addTo(map);
+            });
+            currentBaseLayer.addTo(map);
+            map.setView([46.6, 2.4], 6);
+            window.OverwatchState.currentMapType = 'world';
+          } else {
+            var cfg2 = buildArmaConfig(overwatchMapsConfigs[requested]);
+            if (!cfg2) {
+              return applyBaseLayer('world');
+            }
+            currentBaseLayer = L.tileLayer(cfg2.tilePattern, {
+              attribution: cfg2.attribution,
+              tileSize: cfg2.tileSize,
+              minZoom: cfg2.minZoom,
+              maxZoom: cfg2.maxZoom,
+              noWrap: true,
+              errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+            });
+            var tileErrors = 0;
+            currentBaseLayer.on('tileerror', function () {
+              tileErrors++;
+              if (tileErrors > 8 && !window.OverwatchState._armaFallbackTried) {
+                window.OverwatchState._armaFallbackTried = true;
+                setMapStatus(true, 'Tuiles mission indisponibles', 'Passage au fond monde…');
+                applyBaseLayer('world');
+              }
+            });
+            currentBaseLayer.addTo(map);
+            map.setView(cfg2.center, cfg2.defaultZoom);
+            if (cfg2.bounds && cfg2.bounds.length === 2) {
+              map.setMaxBounds(L.latLngBounds(L.latLng(cfg2.bounds[0][0], cfg2.bounds[0][1]), L.latLng(cfg2.bounds[1][0], cfg2.bounds[1][1])));
+            }
+            window.OverwatchState.currentMapType = 'arma';
+          }
+          window.OverwatchState.currentMapSlug = isWorld ? 'world' : requested;
+
+          if (overwatchUnitsIntervalId) {
+            clearInterval(overwatchUnitsIntervalId);
+            overwatchUnitsIntervalId = null;
+          }
+          if (!isWorld) {
+            overwatchUnitsIntervalId = setInterval(function () { syncUnits(); }, syncIntervalMs);
+            syncUnits();
+          } else {
+            window.OverwatchState.unitsCount = 0;
+            if (layerGroups.units) layerGroups.units.clearLayers();
+          }
+
+          window.overwatchMap = map;
+          applyLayerVisibility();
+          attachMapClickHandlers();
+          updateSyncIndicator(window.OverwatchState.syncStatus, window.OverwatchState.lastSyncAt);
+          refreshOperationalContext();
+          updateLayerCounts();
+          var gridToggle = document.getElementById('overwatch-grid-toggle');
+          if (gridToggle && gridToggle.checked && layerGroups.grid) {
+            layerGroups.grid.addTo(map);
+            renderMapGrid();
+          }
+          scheduleInvalidate();
+          setMapStatus(false);
+          var badge = document.getElementById('overwatch-sync-badge');
+          if (badge) {
+            badge.textContent = isWorld ? 'Fond monde' : 'Carte mission';
+            badge.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-emerald-200 bg-emerald-50 text-emerald-900';
+          }
         } catch (err) {
           if (typeof console !== 'undefined' && console.error) console.error('Overwatch applyBaseLayer:', err);
           window.OverwatchState.syncStatus = 'error';
           updateSyncIndicator('error', null);
+          setMapStatus(true, 'Erreur de carte', (err && err.message) ? err.message : 'Initialisation impossible');
+          if (slug !== 'world') {
+            try { applyBaseLayer('world'); } catch (e2) {}
+          }
         }
       }
 
-      function setWorkspace(mapId) {
+      function setMapStatus(show, title, detail) {
+        var el = document.getElementById('overwatch-map-status');
+        var detailEl = document.getElementById('overwatch-map-status-detail');
+        if (!el) return;
+        if (title) {
+          var titleEl = el.querySelector('p.text-sm');
+          if (titleEl) titleEl.textContent = title;
+        }
+        if (detailEl && detail) detailEl.textContent = detail;
+        el.classList.toggle('is-hidden', !show);
+      }
+
+      function scheduleInvalidate() {
+        if (!map) return;
+        setTimeout(function () { try { map.invalidateSize(true); } catch (e) {} }, 50);
+        setTimeout(function () { try { map.invalidateSize(true); } catch (e) {} }, 250);
+        setTimeout(function () { try { map.invalidateSize(true); } catch (e) {} }, 800);
+      }
+
+      window.addEventListener('resize', function () { scheduleInvalidate(); });
+
+function setWorkspace(mapId) {
         mapId = parseInt(mapId, 10);
         var ws = overwatchWorkspaces.find(function (w) { return w.mapId === mapId; });
         window.OverwatchState.currentMapId = mapId;
@@ -771,7 +877,7 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
       document.getElementById('command-chat-input') && document.getElementById('command-chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendCommandChat(); });
       document.querySelector('[data-tab="command-chat"]') && document.querySelector('[data-tab="command-chat"]').addEventListener('click', loadCommandChat);
 
-      var initialMapSlug = (document.getElementById('overwatch-map-select') && document.getElementById('overwatch-map-select').value) || '<?= isset($overwatchDefaultMapSlug) ? addslashes($overwatchDefaultMapSlug) : 'altis' ?>';
+      var initialMapSlug = (document.getElementById('overwatch-map-select') && document.getElementById('overwatch-map-select').value) || '<?= isset($overwatchDefaultMapSlug) ? addslashes($overwatchDefaultMapSlug) : 'world' ?>';
       applyBaseLayer(initialMapSlug);
       updateHeaderLabels();
       updateUnitsOffMapBanner();
@@ -957,7 +1063,7 @@ $overwatchPageCsrf = \App\Core\Csrf::token();
             });
         });
         map.on('click', function (e) {
-          var activeTab = document.querySelector('.tab-btn.bg-slate-800');
+          var activeTab = document.querySelector('.tab-btn.bg-slate-900') || document.querySelector('.tab-btn.bg-slate-800');
           if (activeTab && activeTab.dataset.tab === 'danger-zones') {
             var coords = getClickMissionCoords(e);
             var dzX = document.getElementById('dz-center-x');

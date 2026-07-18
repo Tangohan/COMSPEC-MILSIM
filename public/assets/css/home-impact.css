@@ -1,16 +1,16 @@
 /**
- * Landing Athena — aura impact (inspiration typographique « grosses sections »)
- * Palette militaire sobre : noir, slate, émeraude. Pas de violet marketing.
+ * Landing Athena — registre immersif (aligné athena-ds / design-system).
+ * Valeurs = tokens DS ; fallbacks si design-system.css n’est pas chargé.
  */
 .home-impact {
-  --hi-ink: #f4f4f0;
-  --hi-muted: rgba(244, 244, 240, 0.55);
-  --hi-dim: rgba(244, 244, 240, 0.28);
-  --hi-accent: #34d399;
-  --hi-field: #0b3d2e;
-  --hi-field-deep: #06261c;
-  --hi-void: #050505;
-  --hi-paper: #f7f7f4;
+  --hi-ink: var(--ds-color-ink, #f4f4f0);
+  --hi-muted: var(--ds-color-ink-muted, rgba(244, 244, 240, 0.55));
+  --hi-dim: var(--ds-color-ink-dim, rgba(244, 244, 240, 0.28));
+  --hi-accent: var(--ds-color-accent, #34d399);
+  --hi-field: var(--ds-color-field, #0b3d2e);
+  --hi-field-deep: var(--ds-color-field-deep, #06261c);
+  --hi-void: var(--ds-color-void, #050505);
+  --hi-paper: var(--ds-color-paper, #f7f7f4);
   --hi-rule: rgba(15, 23, 42, 0.1);
   font-feature-settings: "ss01" on, "kern" on;
 }
@@ -392,6 +392,28 @@
 
 .home-impact .hi-cta-ink:hover {
   background: #1e293b;
+}
+
+.home-impact .hi-cta-ghost-ink {
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+  background: transparent;
+}
+
+.home-impact .hi-cta-ghost-ink:hover {
+  border-color: rgba(5, 150, 105, 0.45);
+  background: rgba(5, 150, 105, 0.06);
+  color: #047857;
+}
+
+.home-impact .hi-hero-classic {
+  background:
+    radial-gradient(900px 320px at 8% 0%, rgba(5, 150, 105, 0.1), transparent 55%),
+    linear-gradient(180deg, #fbfbf8 0%, var(--hi-paper) 100%);
+}
+
+.home-impact .hi-hero-classic .hi-hero-brand {
+  font-size: clamp(3.5rem, 12vw, 8.5rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {

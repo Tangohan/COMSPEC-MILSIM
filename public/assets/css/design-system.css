@@ -1,9 +1,20 @@
 /**
- * Athena Command — Design System
- * Tokens unifiés portail clair + accents C2 (sombre réservé ATAK/terrain).
+ * Athena Command — Design System (portail)
+ *
+ * Source de vérité : public/assets/css/athena-ds/ (miroir du pack Athena Design System).
+ * Deux registres — ne pas les mélanger sur un même écran :
+ *   - Portail clair : primary émeraude #059669
+ *   - Immersif (landing/auth/ATAK) : void #050505 + accent mint #34d399
  */
+@import url('athena-ds/colors.css');
+@import url('athena-ds/fonts.css');
+@import url('athena-ds/typography.css');
+@import url('athena-ds/spacing.css');
+@import url('athena-ds/effects.css');
+/* base.css non importé ici : reset body global trop large pour le portail existant. */
+
 :root {
-  /* Couleurs */
+  /* ——— Portail clair (Athena Command) — hex directs (ne pas chaîner --bg/--text de styles.css) ——— */
   --ds-color-bg: #f8fafc;
   --ds-color-surface: #ffffff;
   --ds-color-surface-muted: #f1f5f9;
@@ -15,44 +26,90 @@
   --ds-color-primary-strong: #065f46;
   --ds-color-primary-soft: #ecfdf5;
   --ds-color-danger: #b91c1c;
+  --ds-color-danger-soft: #fef2f2;
   --ds-color-warning: #b45309;
+  --ds-color-warning-soft: #fffbeb;
   --ds-color-info: #1d4ed8;
+  --ds-color-info-soft: #eff6ff;
+
+  /* ——— Immersif / marque (landing, nav sombre, ATAK) ——— */
+  --ds-color-void: #050505;
+  --ds-color-ink: #f4f4f0;
+  --ds-color-ink-muted: rgba(244, 244, 240, 0.55);
+  --ds-color-ink-dim: rgba(244, 244, 240, 0.28);
+  /* Hex directs : styles.css :root écrase --accent (olive legacy) */
+  --ds-color-accent: #34d399;
+  --ds-color-accent-strong: #6ee7b7;
+  --ds-color-accent-ink: #052e1c;
+  --ds-color-field: #0b3d2e;
+  --ds-color-field-deep: #06261c;
+  --ds-color-paper: #f7f7f4;
   --ds-color-accent-c2: #0ea5e9;
 
-  /* Alias Athena Command */
+  /* Accents méga-menu (domaines) */
+  --ds-nav-sky: var(--nav-sky, #0284c7);
+  --ds-nav-amber: var(--nav-amber, #d97706);
+  --ds-nav-emerald: var(--nav-emerald, #059669);
+  --ds-nav-violet: var(--nav-violet, #7c3aed);
+  --ds-nav-rose: var(--nav-rose, #e11d48);
+  --ds-nav-slate: var(--nav-slate, #475569);
+
+  /* Alias marque (consommateurs : portal-nav, bottom-nav, wordmark) */
+  --athena-mint: var(--ds-color-accent); /* #34d399 */
+  --athena-mint-bright: #4ade80; /* point du logo ATHENA. */
+  --athena-emerald: #10b981;
+  --athena-emerald-deep: #059669;
+  --athena-sky: var(--ds-color-accent-c2);
+  --athena-forest: #064e3b; /* fonds / accents secondaires uniquement */
+  --athena-void: var(--ds-color-void);
   --athena-bg: var(--ds-color-bg);
   --athena-surface: var(--ds-color-surface);
   --athena-ink: var(--ds-color-text);
   --athena-muted: var(--ds-color-muted);
-  --athena-accent: var(--ds-color-primary);
+  --athena-accent: var(--ds-color-accent);
   --athena-radius: var(--ds-radius-md);
   --athena-focus: var(--ds-focus-ring);
 
-  /* Rayons */
-  --ds-radius-sm: 0.75rem;
-  --ds-radius-md: 1rem;
-  --ds-radius-lg: 1.5rem;
-  --ds-radius-xl: 2rem;
+  /* Rayons — branchés athena-ds/effects.css */
+  --ds-radius-sm: var(--radius-sm, 0.75rem);
+  --ds-radius-md: var(--radius-md, 1rem);
+  --ds-radius-lg: var(--radius-lg, 1.5rem);
+  --ds-radius-xl: var(--radius-xl, 2rem);
+  --ds-radius-pill: var(--radius-pill, 9999px);
 
-  /* Espacements */
-  --ds-space-1: 0.25rem;
-  --ds-space-2: 0.5rem;
-  --ds-space-3: 0.75rem;
-  --ds-space-4: 1rem;
-  --ds-space-5: 1.25rem;
-  --ds-space-6: 1.5rem;
-  --ds-space-8: 2rem;
-  --ds-space-10: 2.5rem;
+  /* Espacements — branchés athena-ds/spacing.css */
+  --ds-space-1: var(--space-1, 0.25rem);
+  --ds-space-2: var(--space-2, 0.5rem);
+  --ds-space-3: var(--space-3, 0.75rem);
+  --ds-space-4: var(--space-4, 1rem);
+  --ds-space-5: var(--space-5, 1.25rem);
+  --ds-space-6: var(--space-6, 1.5rem);
+  --ds-space-8: var(--space-8, 2rem);
+  --ds-space-10: var(--space-10, 2.5rem);
+  --ds-space-section: var(--space-section, clamp(4.5rem, 12vh, 9rem));
+  --ds-space-section-inline: var(--space-section-inline, clamp(1.25rem, 4vw, 4rem));
 
-  /* Ombres & focus */
-  --ds-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --ds-shadow-md: 0 8px 24px -12px rgba(15, 23, 42, 0.18);
-  --ds-focus-ring: 0 0 0 4px rgba(16, 185, 129, 0.15);
+  /* Ombres, focus, motion — branchés athena-ds/effects.css */
+  --ds-shadow-sm: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+  --ds-shadow-md: var(--shadow-md, 0 8px 24px -12px rgba(15, 23, 42, 0.18));
+  --ds-shadow-lg: var(--shadow-lg, 0 24px 80px -32px rgba(15, 23, 42, 0.18));
+  --ds-shadow-dark: var(--shadow-dark, 0 24px 90px rgba(0, 0, 0, 0.45));
+  --ds-focus-ring: var(--focus-ring, 0 0 0 4px rgba(16, 185, 129, 0.15));
+  --ds-ease-out: var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  --ds-duration-fast: var(--duration-fast, 140ms);
+  --ds-duration-base: var(--duration-base, 200ms);
+  --ds-duration-rise: var(--duration-rise, 900ms);
 
-  /* Typo */
-  --ds-font-sans: Inter, system-ui, sans-serif;
-  --ds-font-serif: Inter, "Segoe UI", system-ui, sans-serif;
-  --ds-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Typo — branchés athena-ds/typography.css */
+  --ds-font-sans: var(--font-sans, Inter, system-ui, sans-serif);
+  --ds-font-serif: var(--font-serif, "Source Serif 4", Georgia, "Times New Roman", serif);
+  --ds-font-mono: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  --ds-font-legal: var(--font-legal, Manrope, system-ui, sans-serif);
+  --ds-display-weight: var(--display-weight, 900);
+  --ds-display-tracking: var(--display-tracking, -0.045em);
+  --ds-kicker-size: var(--kicker-size, 0.6875rem);
+  --ds-kicker-tracking: var(--kicker-tracking, 0.28em);
+  --ds-label-tracking: var(--label-tracking, 0.22em);
 }
 
 /* ——— Surfaces ——— */
@@ -61,14 +118,37 @@
   border: 1px solid var(--ds-color-border);
   border-radius: var(--ds-radius-lg);
   box-shadow: var(--ds-shadow-sm);
+  padding: 1.35rem;
 }
 
 .ds-card--interactive {
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  transition: border-color var(--ds-duration-fast) ease, box-shadow var(--ds-duration-fast) ease, transform var(--ds-duration-fast) ease;
 }
 .ds-card--interactive:hover {
   border-color: var(--ds-color-border-strong);
   box-shadow: var(--ds-shadow-md);
+}
+
+/* Panneau ops / C2 (registre immersif — coins carrés) */
+.ds-card--ops {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0;
+  background: rgba(11, 18, 23, 0.82);
+  border: 1px solid rgba(157, 181, 162, 0.18);
+  box-shadow: var(--ds-shadow-dark);
+  color: var(--ds-color-ink);
+  padding: 1.35rem;
+}
+.ds-card--ops::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ds-color-accent), transparent);
+  opacity: 0.7;
 }
 
 .ds-label {
@@ -114,11 +194,20 @@
   transition: transform 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 .ds-btn:hover { transform: translateY(-1px); }
-.ds-btn--primary { background: #0f172a; color: #fff; width: auto; }
+.ds-btn--primary { background: var(--ds-color-text); color: #fff; width: auto; }
 .ds-btn--primary:hover { background: var(--ds-color-primary); }
 .ds-btn--secondary { background: var(--ds-color-primary); color: #fff; width: auto; }
-.ds-btn--secondary:hover { background: #0f172a; }
-.ds-btn--ghost { background: transparent; color: #64748b; width: auto; }
+.ds-btn--secondary:hover { background: var(--ds-color-text); }
+.ds-btn--ghost { background: transparent; color: var(--ds-color-muted); width: auto; }
+.ds-btn--dark-solid { background: var(--ds-color-accent); color: var(--ds-color-accent-ink); width: auto; }
+.ds-btn--dark-solid:hover { background: var(--ds-color-accent-strong); }
+.ds-btn--dark-ghost {
+  background: transparent;
+  color: var(--ds-color-ink);
+  border: 1px solid var(--ds-color-ink-dim);
+  width: auto;
+}
+.ds-btn--danger { background: var(--ds-color-danger); color: #fff; width: auto; }
 .ds-btn--block { width: 100%; }
 
 .ds-state {
@@ -185,7 +274,7 @@
 .ds-tag {
   display: inline-flex;
   align-items: center;
-  border-radius: 9999px;
+  border-radius: var(--ds-radius-pill);
   padding: 0.2rem 0.65rem;
   font-size: 0.65rem;
   font-weight: 800;
@@ -195,11 +284,11 @@
   color: var(--ds-color-muted);
   border: 1px solid var(--ds-color-border);
 }
-.ds-tag--success { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
-.ds-tag--warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-.ds-tag--danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-.ds-tag--info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-.ds-tag--locked { background: #f8fafc; color: #94a3b8; border-style: dashed; }
+.ds-tag--success { background: var(--ds-color-primary-soft); color: var(--ds-color-primary-strong); border-color: #a7f3d0; }
+.ds-tag--warning { background: var(--ds-color-warning-soft); color: #92400e; border-color: #fde68a; }
+.ds-tag--danger { background: var(--ds-color-danger-soft); color: #991b1b; border-color: #fecaca; }
+.ds-tag--info { background: var(--ds-color-info-soft); color: #1e40af; border-color: #bfdbfe; }
+.ds-tag--locked { background: var(--ds-color-bg); color: #94a3b8; border-style: dashed; }
 
 /* ——— Empty / Loading ——— */
 .ds-empty {
@@ -279,8 +368,9 @@
 }
 .athena-bottom-nav a[aria-current="page"],
 .athena-bottom-nav a.is-active {
-  color: var(--ds-color-primary-strong);
+  color: var(--ds-color-primary);
   background: var(--ds-color-primary-soft);
+  box-shadow: inset 0 -2px 0 0 var(--athena-mint, var(--ds-color-accent));
 }
 .athena-bottom-nav svg { width: 1.25rem; height: 1.25rem; }
 
@@ -293,8 +383,8 @@
   display: none;
   width: 3.25rem;
   height: 3.25rem;
-  border-radius: 9999px;
-  background: #0f172a;
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-color-text);
   color: #fff;
   align-items: center;
   justify-content: center;

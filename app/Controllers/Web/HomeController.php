@@ -100,6 +100,7 @@ class HomeController
         $modpack = null;
         $currentUser = null;
         $personnelExtras = null;
+        $personnelProfile = null;
         $grade = null;
         $atakModDownloadUrl = null;
         $communityMemberships = [];
@@ -127,6 +128,8 @@ class HomeController
                 $extrasRepo = \App\Core\Container::get(\App\Repositories\PersonnelExtrasRepository::class);
                 $gradeRepo = \App\Core\Container::get(\App\Repositories\GradeRepository::class);
                 $personnelExtras = $extrasRepo->getByUserId((int) $currentUser['id']);
+                $personnelProfile = \App\Core\Container::get(\App\Repositories\PersonnelProfileRepository::class)
+                    ->getByUserId((int) $currentUser['id']);
                 if (!empty($currentUser['grade_id'])) {
                     $grade = $gradeRepo->findById((int) $currentUser['grade_id'], (int) $tenantId);
                 }
@@ -166,9 +169,16 @@ class HomeController
         $staffEnlistmentsPending = [];
         $showStaffEnlistments = false;
         $dashboardPins = [];
+        $dashboardAnnounceItems = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
         $candidateEnlistmentTracking = [];
+        $myApplicationsAll = [];
+        $staffApplicationsAll = [];
+        $candidateDossierNumber = null;
+        $canManageInvitations = false;
+        $pendingInvitationsCount = 0;
+        $emailAlertsDisabledCount = 0;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -205,6 +215,42 @@ class HomeController
                     }
                 }
 
+                // Tableau complet « Mes candidatures » (tous statuts, toutes communautés) pour le dashboard.
+                try {
+                    $openingRepoForMine = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
+                    $openingsTableReady = $openingRepoForMine->tablesExist();
+                    $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                    foreach ($myApplicationsRows as $row) {
+                        $appTid = (int) ($row['tenant_id'] ?? 0);
+                        $appId = (int) ($row['id'] ?? 0);
+                        if ($appTid < 1 || $appId < 1) {
+                            continue;
+                        }
+                        $appToken = $enlistRepo->findValidCandidatePortalTokenForEnlistment($appTid, $appId);
+                        if ($appToken === null) {
+                            $appToken = $enlistRepo->ensureCandidatePortalToken($appTid, $appId, 24 * 7);
+                        }
+                        $row['candidate_portal_href'] = $appToken !== null
+                            ? url('enlistment/suivi/' . rawurlencode($appToken))
+                            : null;
+                        $row['opening_title'] = null;
+                        $openingId = (int) ($row['recruitment_opening_id'] ?? 0);
+                        if ($openingId > 0 && $openingsTableReady) {
+                            try {
+                                $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
+                                if ($openingRow) {
+                                    $row['opening_title'] = trim((string) ($openingRow['title'] ?? '')) ?: null;
+                                }
+                            } catch (\Throwable) {
+                                $row['opening_title'] = null;
+                            }
+                        }
+                        $myApplicationsAll[] = $row;
+                    }
+                } catch (\Throwable) {
+                    $myApplicationsAll = [];
+                }
+
                 $gate = \App\Core\Gate::getInstance();
                 $roleSlug = \App\Core\Container::get(\App\Repositories\UserRepository::class)->getRoleSlugForUser($uid) ?? '';
                 $staffSlugs = ['recruiter', 'community_owner', 'hr', 'tenant_admin'];
@@ -212,6 +258,45 @@ class HomeController
                     || in_array($roleSlug, $staffSlugs, true);
                 if ($showStaffEnlistments) {
                     $staffEnlistmentsPending = $enlistRepo->listPendingSubmittedForTenant($tid, 25);
+                    try {
+                        $staffApplicationsAll = self::enrichStaffApplicationsForDashboard(
+                            $enlistRepo->recentForTenantDashboard($tid, 40),
+                            $tid
+                        );
+                    } catch (\Throwable) {
+                        $staffApplicationsAll = [];
+                    }
+                }
+
+                try {
+                    $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);
+                    $candidateDossierNumber = $latestDossier ? (int) ($latestDossier['id'] ?? 0) : null;
+                    if ($candidateDossierNumber === 0) {
+                        $candidateDossierNumber = null;
+                    }
+                } catch (\Throwable) {
+                    $candidateDossierNumber = null;
+                }
+
+                $canManageInvitations = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
+                if ($canManageInvitations) {
+                    try {
+                        $invitationRepo = \App\Core\Container::get(\App\Repositories\CommunityInvitationRepository::class);
+                        $pendingInvitationsCount = count($invitationRepo->listForTenant($tid, 'pending'));
+                    } catch (\Throwable) {
+                        $pendingInvitationsCount = 0;
+                    }
+                }
+
+                try {
+                    $notifPrefRepo = \App\Core\Container::get(\App\Repositories\UserNotificationPreferencesRepository::class);
+                    foreach ($notifPrefRepo->listForUser($uid) as $notifRow) {
+                        if ((string) ($notifRow['channel'] ?? '') === 'email' && (int) ($notifRow['enabled'] ?? 1) === 0) {
+                            ++$emailAlertsDisabledCount;
+                        }
+                    }
+                } catch (\Throwable) {
+                    $emailAlertsDisabledCount = 0;
                 }
 
                 try {
@@ -219,6 +304,40 @@ class HomeController
                         ->listResolvedPinsForViewer($tid, $uid);
                 } catch (\Throwable) {
                     $dashboardPins = [];
+                }
+
+                try {
+                    $alertRows = \App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
+                        ->forCurrentRequest();
+                    foreach ($alertRows as $alert) {
+                        $dashboardAnnounceItems[] = [
+                            'kind' => (string) ($alert['kind'] ?? 'info'),
+                            'title' => (string) ($alert['title'] ?? ''),
+                            'body' => (string) ($alert['body'] ?? ''),
+                            'cta_label' => $alert['cta_label'] ?? null,
+                            'cta_url' => $alert['cta_url'] ?? null,
+                        ];
+                    }
+                } catch (\Throwable) {
+                    // Les tuiles restent optionnelles si le service d’alertes est indisponible.
+                }
+
+                foreach ($dashboardPins as $pin) {
+                    if ((string) ($pin['kind'] ?? '') !== 'notice') {
+                        continue;
+                    }
+                    $noticeBody = trim((string) ($pin['notice_text'] ?? ''));
+                    if ($noticeBody === '') {
+                        continue;
+                    }
+                    $dashboardAnnounceItems[] = [
+                        'kind' => 'notice',
+                        'category' => 'Annonce',
+                        'title' => (string) ($pin['label'] ?? 'Annonce'),
+                        'body' => $noticeBody,
+                        'cta_label' => null,
+                        'cta_url' => null,
+                    ];
                 }
 
                 try {
@@ -262,6 +381,7 @@ class HomeController
             'modpack' => $modpack,
             'currentUser' => $currentUser,
             'personnelExtras' => $personnelExtras,
+            'personnelProfile' => $personnelProfile,
             'grade' => $grade,
             'atakModDownloadUrl' => $atakModDownloadUrl,
             'communityMemberships' => $communityMemberships,
@@ -274,11 +394,229 @@ class HomeController
             'staff_enlistments_pending' => $staffEnlistmentsPending,
             'show_staff_enlistments' => $showStaffEnlistments,
             'dashboard_pins' => $dashboardPins,
+            'dashboard_announce_items' => $dashboardAnnounceItems,
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
             'dashboard_next_steps' => $dashboardNextSteps,
             'candidate_enlistment_tracking' => $candidateEnlistmentTracking,
+            'my_applications_all' => $myApplicationsAll,
+            'staff_applications_all' => $staffApplicationsAll,
+            'candidate_dossier_number' => $candidateDossierNumber,
+            'can_manage_invitations' => $canManageInvitations,
+            'pending_invitations_count' => $pendingInvitationsCount,
+            'email_alerts_disabled_count' => $emailAlertsDisabledCount,
         ]);
+    }
+
+    /**
+     * Enrichit les candidatures « tableau de bord staff » avec les mêmes signaux que le bureau
+     * recrutement (délai/alerte, instructeur, affectation prévue, bilan) — sans rien inventer :
+     * uniquement des données déjà présentes en base ou déjà calculées côté back-office.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private static function enrichStaffApplicationsForDashboard(array $rows, int $tenantId): array
+    {
+        if ($rows === []) {
+            return [];
+        }
+
+        $slaHours = 72;
+        try {
+            $tenantSettings = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->getSettings($tenantId);
+            $slaHours = \App\Services\Recruitment\TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
+        } catch (\Throwable) {
+            $slaHours = 72;
+        }
+
+        $reviewerIds = [];
+        $openingIds = [];
+        $enlistmentIds = [];
+        foreach ($rows as $r) {
+            $rid = (int) ($r['reviewed_by'] ?? 0);
+            if ($rid > 0) {
+                $reviewerIds[$rid] = $rid;
+            }
+            $oid = (int) ($r['recruitment_opening_id'] ?? 0);
+            if ($oid > 0) {
+                $openingIds[$oid] = $oid;
+            }
+            $eid = (int) ($r['id'] ?? 0);
+            if ($eid > 0) {
+                $enlistmentIds[] = $eid;
+            }
+        }
+
+        $reviewerUsers = [];
+        try {
+            if ($reviewerIds !== []) {
+                $reviewerUsers = \App\Core\Container::get(\App\Repositories\UserRepository::class)
+                    ->findByIdsForTenant($tenantId, array_values($reviewerIds));
+            }
+        } catch (\Throwable) {
+            $reviewerUsers = [];
+        }
+
+        $openingsById = [];
+        $jobRoleLabels = [];
+        try {
+            $openingRepo = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
+            if ($openingIds !== [] && $openingRepo->tablesExist()) {
+                $jobRoleRepo = new \App\Repositories\PersonnelJobRoleRepository();
+                foreach ($openingIds as $oid) {
+                    $orow = $openingRepo->findByIdForTenant((int) $oid, $tenantId);
+                    if (!$orow) {
+                        continue;
+                    }
+                    $openingsById[(int) $oid] = $orow;
+                    $jrid = (int) ($orow['personnel_job_role_id'] ?? 0);
+                    if ($jrid > 0 && !isset($jobRoleLabels[$jrid])) {
+                        $jr = $jobRoleRepo->findRoleById($jrid, $tenantId);
+                        $lab = trim((string) (($jr ?? [])['name'] ?? ''));
+                        if ($lab === '') {
+                            $lab = trim((string) (($jr ?? [])['title'] ?? ''));
+                        }
+                        $jobRoleLabels[$jrid] = $lab;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $openingsById = [];
+            $jobRoleLabels = [];
+        }
+
+        $staffRetroDoneMap = [];
+        $retroTableReady = false;
+        try {
+            $engagementRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class);
+            $retroTableReady = $engagementRepo->retroTableExists();
+            if ($retroTableReady && $enlistmentIds !== []) {
+                $staffRetroDoneMap = $engagementRepo->mapStaffRetroDoneIds($tenantId, $enlistmentIds);
+            }
+        } catch (\Throwable) {
+            $staffRetroDoneMap = [];
+            $retroTableReady = false;
+        }
+
+        foreach ($rows as &$row) {
+            $isSubmitted = ((string) ($row['status'] ?? '')) === 'submitted';
+            $ageHours = self::enlistmentSubmittedAgeHours($row);
+            $row['submitted_age_hours'] = $ageHours;
+            $row['submitted_sla_breached'] = $isSubmitted && $ageHours !== null && $ageHours > $slaHours;
+            $row['enlistment_sla_hours'] = $slaHours;
+
+            $lastAction = trim((string) ($row['updated_at'] ?? ''));
+            if ($lastAction === '') {
+                $lastAction = trim((string) ($row['created_at'] ?? ''));
+            }
+            $row['last_action_at'] = $lastAction !== '' ? $lastAction : null;
+
+            $ageDays = self::enlistmentAgeDaysFromRow($row);
+            $row['enlistment_age_days'] = $ageDays;
+
+            $eid = (int) ($row['id'] ?? 0);
+            $doneAt = $eid > 0 && array_key_exists($eid, $staffRetroDoneMap)
+                ? trim((string) $staffRetroDoneMap[$eid])
+                : null;
+            $row['staff_retro_done_at'] = $doneAt !== null && $doneAt !== '' ? $doneAt : null;
+            $statusForRetro = (string) ($row['status'] ?? '');
+            if ($doneAt !== null) {
+                $row['staff_retro_status'] = 'done';
+            } elseif (\App\Repositories\EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro)) {
+                $row['staff_retro_status'] = 'not_applicable';
+            } elseif (!$retroTableReady) {
+                $row['staff_retro_status'] = 'unavailable';
+            } elseif ($ageDays !== null && $ageDays >= 30) {
+                $row['staff_retro_status'] = 'due';
+            } else {
+                $row['staff_retro_status'] = 'waiting';
+            }
+
+            $reviewedById = (int) ($row['reviewed_by'] ?? 0);
+            $row['instructor_user_id'] = $reviewedById > 0 ? $reviewedById : null;
+            $row['instructor_label'] = $reviewedById > 0
+                ? self::displayLabelForTenantUserRow($reviewerUsers[$reviewedById] ?? null, $reviewedById)
+                : '';
+
+            $oid = (int) ($row['recruitment_opening_id'] ?? 0);
+            $opening = $oid > 0 ? ($openingsById[$oid] ?? null) : null;
+            $unitLabel = $opening ? trim((string) ($opening['unit_name'] ?? '')) : '';
+            $jrid = $opening ? (int) ($opening['personnel_job_role_id'] ?? 0) : 0;
+            $roleLabel = $jrid > 0 ? trim((string) ($jobRoleLabels[$jrid] ?? '')) : '';
+            if ($roleLabel === '') {
+                $roleLabel = trim((string) ($row['specialty'] ?? ''));
+            }
+            $row['assignment_unit_label'] = $unitLabel;
+            $row['assignment_role_label'] = $roleLabel;
+            $row['assignment_opening_title'] = $opening ? trim((string) ($opening['title'] ?? '')) : '';
+            $row['assignment_define_url'] = url('back-office/recruitments/' . $eid . '?dossier=1#coordination-dossier');
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private static function enlistmentSubmittedAgeHours(array $enlistment): ?int
+    {
+        $base = trim((string) ($enlistment['updated_at'] ?? ''));
+        if ($base === '') {
+            $base = trim((string) ($enlistment['created_at'] ?? ''));
+        }
+        if ($base === '') {
+            return null;
+        }
+        $ts = strtotime($base);
+        if ($ts === false || $ts <= 0) {
+            return null;
+        }
+        $delta = time() - $ts;
+        if ($delta < 0) {
+            return 0;
+        }
+
+        return (int) floor($delta / 3600);
+    }
+
+    private static function enlistmentAgeDaysFromRow(array $enlistment): ?int
+    {
+        $base = trim((string) ($enlistment['created_at'] ?? ''));
+        if ($base === '') {
+            return null;
+        }
+        $ts = strtotime($base);
+        if ($ts === false || $ts <= 0) {
+            return null;
+        }
+        try {
+            $start = (new \DateTimeImmutable('@' . $ts))->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+            $end = new \DateTimeImmutable('now');
+            $startDay = $start->setTime(0, 0, 0);
+            $endDay = $end->setTime(0, 0, 0);
+
+            return max(0, (int) $startDay->diff($endDay)->days);
+        } catch (\Throwable) {
+            return max(0, (int) floor((time() - $ts) / 86400));
+        }
+    }
+
+    private static function displayLabelForTenantUserRow(?array $urow, int $userId): string
+    {
+        if ($userId < 1) {
+            return '';
+        }
+        if (!is_array($urow)) {
+            return 'Membre n°' . $userId;
+        }
+        $lab = trim((string) ($urow['display_name'] ?? ''));
+        if ($lab === '') {
+            $lab = trim((string) ($urow['callsign'] ?? ''));
+        }
+        if ($lab === '') {
+            $lab = trim((string) ($urow['email'] ?? ''));
+        }
+
+        return $lab !== '' ? $lab : ('Membre n°' . $userId);
     }
 
     /**
@@ -465,8 +803,24 @@ class HomeController
         $defaultMap = $tenantId ? $atakMapRepo->getDefaultForTenant($tenantId) : $atakMapRepo->getBySlug('altis');
         $defaultMap = $defaultMap ?? $atakMapRepo->getBySlug('altis');
         $defaultMapId = $defaultMap ? (int) $defaultMap['id'] : 1;
-        $defaultMapSlug = $defaultMap['slug'] ?? 'altis';
+        $defaultMapSlug = $defaultMap['slug'] ?? 'world';
         $defaultMapLabel = $defaultMap['label'] ?? 'Principal';
+
+        // Si aucune carte Arma n’a de motif de tuiles, démarrer sur le fond monde (évite carte vide).
+        $hasUsableArma = false;
+        foreach ($atakMapsList as $m) {
+            if (trim((string) ($m['tile_pattern'] ?? '')) !== '') {
+                $hasUsableArma = true;
+                break;
+            }
+        }
+        if (!$hasUsableArma) {
+            $defaultMapSlug = 'world';
+            $defaultMapLabel = 'Monde (OpenStreetMap)';
+        } elseif ($defaultMap && trim((string) ($defaultMap['tile_pattern'] ?? '')) === '') {
+            $defaultMapSlug = 'world';
+            $defaultMapLabel = 'Monde (OpenStreetMap)';
+        }
 
         $overwatchMapsList = [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
         foreach ($atakMapsList as $m) {
@@ -491,18 +845,25 @@ class HomeController
             ];
         }
         if (empty($overwatchWorkspaces)) {
-            $overwatchWorkspaces[] = ['mapId' => $defaultMapId, 'label' => $defaultMapLabel, 'slug' => $defaultMapSlug, 'isDefault' => true];
+            $overwatchWorkspaces[] = ['mapId' => $defaultMapId, 'label' => $defaultMapLabel, 'slug' => $defaultMapSlug === 'world' ? 'altis' : $defaultMapSlug, 'isDefault' => true];
         }
 
         $baseUrl = rtrim(url(''), '/');
         $overwatchMapsConfigs = [];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
+            $pattern = trim((string) ($m['tile_pattern'] ?? ''));
+            if ($pattern === '') {
+                continue;
+            }
+            if (!preg_match('#^https?://#i', $pattern)) {
+                $pattern = $baseUrl . (str_starts_with($pattern, '/') ? $pattern : '/' . $pattern);
+            }
             $overwatchMapsConfigs[$m['slug']] = [
                 'mapId' => (int) $m['id'],
                 'slug' => $m['slug'],
                 'label' => $m['label'] ?? $m['slug'],
-                'tilePattern' => $baseUrl . ($m['tile_pattern'] ?? ''),
+                'tilePattern' => $pattern,
                 'center' => $c['center'] ?? [15000, 15000],
                 'defaultZoom' => (int) ($c['defaultZoom'] ?? 3),
                 'minZoom' => (int) ($c['minZoom'] ?? 0),
@@ -520,6 +881,7 @@ class HomeController
             'defaultMissionId' => "mission_{$tenantId}_map_{$defaultMapId}",
             'apiBase' => $baseUrl . '/api',
             'syncIntervalMs' => 8000,
+            'assetBase' => $baseUrl,
         ];
 
         return [

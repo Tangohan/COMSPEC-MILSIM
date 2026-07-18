@@ -578,6 +578,35 @@ class TrainingApiController
                     isset($attempt['started_at']) ? (string) $attempt['started_at'] : null
                 );
             }
+        } else {
+            // Tentative déjà notée : enrichir pour l’écran de résultat (fin de parcours).
+            $enrollmentId = (int) ($attempt['enrollment_id'] ?? 0);
+            $passed = (int) ($attempt['passed'] ?? 0) === 1;
+            if ($enrollmentId > 0 && $passed) {
+                $enrollment = $this->enrollmentRepository->findById($enrollmentId, $this->tenantId());
+                $courseId = $enrollment ? (int) ($enrollment['course_id'] ?? 0) : 0;
+                $course = $courseId > 0 ? $this->courseRepository->findByIdForViewer($courseId, $this->tenantId()) : null;
+                $slug = trim((string) ($course['slug'] ?? $enrollment['course_slug'] ?? ''));
+                $courseUrl = $slug !== ''
+                    ? url('formations/' . rawurlencode($slug))
+                    : url('formations/mes-formations');
+                $echangesUrl = $slug !== ''
+                    ? url('formations/' . rawurlencode($slug) . '/echanges')
+                    : '';
+                $cp = $this->progressService->computeCourseProgress($enrollmentId);
+                $courseCompleted = !empty($cp['completed'])
+                    || (string) ($enrollment['status'] ?? '') === 'completed';
+                $cert = $this->certificateService->getByEnrollment($enrollmentId);
+                $certificateUrl = ($cert && (int) ($cert['id'] ?? 0) > 0)
+                    ? url('formations/certificate/' . (int) $cert['id'])
+                    : '';
+                $attempt['course_completed'] = $courseCompleted;
+                $attempt['course_url'] = $courseUrl;
+                $attempt['echanges_url'] = $echangesUrl;
+                $attempt['certificate_url'] = $certificateUrl;
+                $attempt['is_certifying'] = $course ? ((int) ($course['is_certifying'] ?? 0) === 1) : false;
+                $attempt['success_url'] = $certificateUrl !== '' ? $certificateUrl : $courseUrl;
+            }
         }
         return Response::json($attempt);
     }
@@ -606,7 +635,45 @@ class TrainingApiController
         }
         try {
             $attempt = $this->quizService->submitAttempt($attemptId, $responses, $tenantId, $userId);
-            return Response::json(['attempt' => $attempt]);
+            $payload = ['attempt' => $attempt];
+            $enrollmentId = (int) ($attempt['enrollment_id'] ?? 0);
+            $passed = (int) ($attempt['passed'] ?? 0) === 1;
+            if ($enrollmentId > 0 && $passed) {
+                $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+                $courseId = $enrollment ? (int) ($enrollment['course_id'] ?? 0) : 0;
+                $course = $courseId > 0 ? $this->courseRepository->findByIdForViewer($courseId, $tenantId) : null;
+                $slug = trim((string) ($course['slug'] ?? $enrollment['course_slug'] ?? ''));
+                $courseUrl = $slug !== ''
+                    ? url('formations/' . rawurlencode($slug))
+                    : url('formations/mes-formations');
+                $echangesUrl = $slug !== ''
+                    ? url('formations/' . rawurlencode($slug) . '/echanges')
+                    : '';
+                // Relire l’inscription après maybeCompleteEnrollment (statut / certificat).
+                $enrollmentFresh = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
+                $cp = $this->progressService->computeCourseProgress($enrollmentId);
+                $courseCompleted = !empty($cp['completed'])
+                    || (string) ($enrollmentFresh['status'] ?? '') === 'completed';
+                $cert = $this->certificateService->getByEnrollment($enrollmentId);
+                if ($courseCompleted && !$cert && $course && (int) ($course['is_certifying'] ?? 0) === 1) {
+                    try {
+                        $cert = $this->certificateService->issueCertificate($enrollmentId, $tenantId, $userId);
+                    } catch (\Throwable) {
+                        $cert = $this->certificateService->getByEnrollment($enrollmentId);
+                    }
+                }
+                $certificateUrl = ($cert && (int) ($cert['id'] ?? 0) > 0)
+                    ? url('formations/certificate/' . (int) $cert['id'])
+                    : '';
+                $payload['course_completed'] = $courseCompleted;
+                $payload['course_url'] = $courseUrl;
+                $payload['echanges_url'] = $echangesUrl;
+                $payload['certificate_url'] = $certificateUrl;
+                $payload['is_certifying'] = $course ? ((int) ($course['is_certifying'] ?? 0) === 1) : false;
+                $payload['success_url'] = $certificateUrl !== '' ? $certificateUrl : $courseUrl;
+            }
+
+            return Response::json($payload);
         } catch (\Throwable $e) {
             return Response::json(['error' => $e->getMessage()], 400);
         }
@@ -643,16 +710,25 @@ class TrainingApiController
         if (!$cert || (int) $cert['user_id'] !== $userId) {
             return Response::json(['error' => 'Certificat non trouvé.'], 404);
         }
-        $pdfPath = $cert['pdf_path'];
-        if (empty($pdfPath)) {
-            return Response::json(['error' => 'PDF non disponible.'], 404);
+        $pdfPath = (string) ($cert['pdf_path'] ?? '');
+        $pdfAbs = $pdfPath !== '' && !str_starts_with($pdfPath, '/') && !preg_match('#^[A-Za-z]:#', $pdfPath)
+            ? base_path($pdfPath)
+            : $pdfPath;
+        if (($pdfAbs === '' || !is_file($pdfAbs)) && (string) ($cert['status'] ?? '') === 'valid') {
+            // Filet de sécurité : tente une génération immédiate plutôt que de renvoyer une erreur sèche.
+            $healed = $this->certificateService->ensurePdfForCertificate($id, $this->tenantId());
+            if ($healed) {
+                $cert = $healed;
+                $pdfPath = (string) ($cert['pdf_path'] ?? '');
+                $pdfAbs = $pdfPath !== '' && !str_starts_with($pdfPath, '/') && !preg_match('#^[A-Za-z]:#', $pdfPath)
+                    ? base_path($pdfPath)
+                    : $pdfPath;
+            }
         }
-        if (!str_starts_with($pdfPath, '/') && !preg_match('#^[A-Za-z]:#', $pdfPath)) {
-            $pdfPath = base_path($pdfPath);
+        if ($pdfAbs === '' || !is_file($pdfAbs)) {
+            return Response::json(['error' => 'Le document n’est pas encore disponible. Réessayez dans un instant.'], 404);
         }
-        if (!is_file($pdfPath)) {
-            return Response::json(['error' => 'PDF non disponible.'], 404);
-        }
+        $pdfPath = $pdfAbs;
         $response = new Response();
         $response->header('Content-Type', 'application/pdf');
         $response->header('Content-Disposition', 'attachment; filename="attestation-' . (int) $cert['id'] . '.pdf"');
@@ -737,9 +813,11 @@ class TrainingApiController
             $mime = 'application/octet-stream';
         }
         $safeName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', basename($path)) ?: 'fichier';
+        $inline = trim((string) $request->query('inline', '')) === '1'
+            && (str_starts_with($mime, 'image/') || (string) ($res['resource_type'] ?? '') === 'image');
         $response = new Response();
         $response->header('Content-Type', $mime);
-        $response->header('Content-Disposition', 'attachment; filename="' . $safeName . '"');
+        $response->header('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $safeName . '"');
         $response->setBodyStream(static function () use ($path): void {
             readfile($path);
         });

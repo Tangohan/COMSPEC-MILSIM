@@ -287,24 +287,88 @@ class RecruitmentWorkspaceController
         if ($tenantId <= 0) {
             return Response::redirect(url('login'));
         }
-        $weeks = $this->enlistmentRepository->countsCreatedByWeekForTenant($tenantId, 12);
+        $weeksCount = 12;
+        $rawWeeks = $this->enlistmentRepository->countsCreatedByWeekForTenant($tenantId, $weeksCount);
+        $weeks = $this->fillWeeklyCreatedSeries($rawWeeks, $weeksCount);
         $via = $this->enlistmentRepository->countsBySubmittedViaForTenant($tenantId);
         $statusCounts = $this->enlistmentRepository->countsByStatusForTenant($tenantId);
         $topOpenings = $this->recruitmentOpeningRepository->tablesExist()
             ? $this->enlistmentRepository->topLinkedOpeningsByVolume($tenantId, 15)
             : [];
 
+        $periodEnd = new \DateTimeImmutable('today');
+        $periodStart = $periodEnd->modify('-' . ($weeksCount * 7 - 1) . ' days');
+        if ($weeks !== []) {
+            $firstWeek = (string) ($weeks[0]['week_start'] ?? '');
+            if ($firstWeek !== '') {
+                try {
+                    $periodStart = new \DateTimeImmutable($firstWeek);
+                } catch (\Exception) {
+                    // conserve le calcul par défaut
+                }
+            }
+            $lastWeekStart = (string) ($weeks[count($weeks) - 1]['week_start'] ?? '');
+            if ($lastWeekStart !== '') {
+                try {
+                    $weekEnd = (new \DateTimeImmutable($lastWeekStart))->modify('+6 days');
+                    $today = new \DateTimeImmutable('today');
+                    $periodEnd = $weekEnd > $today ? $today : $weekEnd;
+                } catch (\Exception) {
+                    // conserve aujourd’hui
+                }
+            }
+        }
+        $createdInPeriod = 0;
+        foreach ($weeks as $row) {
+            $createdInPeriod += (int) ($row['c'] ?? 0);
+        }
+
         return Response::view('layout.recruitment_lms', [
             'content' => 'admin.recruitment_workspace.analytics',
             'title' => 'Analyses candidatures',
             'recruitmentLmsTitle' => 'Analyses candidatures',
             'recruitmentAdminNav' => 'analytics',
+            'lmsThemeVars' => '--lms-accent: #059669; --lms-accent-rgb: 5, 150, 105;',
             'weeklyCreated' => $weeks,
             'submittedViaCounts' => $via,
             'enlistmentCounts' => $statusCounts,
             'recruitmentSidebarCounts' => $statusCounts,
             'topOpenings' => $topOpenings,
+            'analyticsWeeksCount' => $weeksCount,
+            'analyticsPeriodStart' => $periodStart->format('Y-m-d'),
+            'analyticsPeriodEnd' => $periodEnd->format('Y-m-d'),
+            'analyticsGeneratedAt' => (new \DateTimeImmutable('now'))->format('Y-m-d H:i:s'),
+            'analyticsCreatedInPeriod' => $createdInPeriod,
             'showPortalFooter' => false,
         ]);
+    }
+
+    /**
+     * Complète les semaines manquantes (valeur 0) pour un graphique continu.
+     *
+     * @param list<array{week_start: string, c: int}> $rows
+     * @return list<array{week_start: string, c: int}>
+     */
+    private function fillWeeklyCreatedSeries(array $rows, int $weeks): array
+    {
+        $weeks = max(1, min(52, $weeks));
+        $byStart = [];
+        foreach ($rows as $row) {
+            $ws = (string) ($row['week_start'] ?? '');
+            if ($ws === '') {
+                continue;
+            }
+            $byStart[$ws] = (int) ($row['c'] ?? 0);
+        }
+        $out = [];
+        $cursor = new \DateTimeImmutable('monday this week');
+        $cursor = $cursor->modify('-' . ($weeks - 1) . ' weeks');
+        for ($i = 0; $i < $weeks; $i++) {
+            $key = $cursor->format('Y-m-d');
+            $out[] = ['week_start' => $key, 'c' => $byStart[$key] ?? 0];
+            $cursor = $cursor->modify('+1 week');
+        }
+
+        return $out;
     }
 }

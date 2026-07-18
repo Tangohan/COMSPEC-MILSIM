@@ -19,6 +19,18 @@ ob_start();
 require base_path('views/training/partials/lms_head.php');
 $headHtml = ob_get_clean();
 $currentLessonId = null;
+$lmsSequenceContext = 'quiz';
+$lmsSequenceQuizId = (int) ($quizId ?? 0);
+if ($lmsSequenceQuizId < 1 && isset($quiz) && is_array($quiz)) {
+    $lmsSequenceQuizId = (int) ($quiz['id'] ?? 0);
+}
+$lmsCompletedLessonIds = is_array($lmsCompletedLessonIds ?? null) ? $lmsCompletedLessonIds : [];
+$lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : [];
+$quizCourseUrl = (string) ($quizCourseUrl ?? url('formations/' . rawurlencode((string) ($course['slug'] ?? ''))));
+$quizEchangesUrl = (string) ($quizEchangesUrl ?? '');
+$quizCertificateUrl = (string) ($quizCertificateUrl ?? '');
+$quizCourseCompleted = !empty($quizCourseCompleted);
+$quizIsCertifying = !empty($quizIsCertifying);
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth module-shell">
@@ -48,7 +60,7 @@ $currentLessonId = null;
                             <?php endif; ?>
                         </div>
                     </div>
-                    <a href="<?= htmlspecialchars(url('formations/' . rawurlencode((string) ($course['slug'] ?? '')))) ?>" class="shrink-0 text-[11px] font-black uppercase tracking-wider text-slate-600 hover:text-emerald-700 border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-50">← Fiche formation</a>
+                    <a href="<?= htmlspecialchars($quizCourseUrl) ?>" class="shrink-0 text-[11px] font-black uppercase tracking-wider text-slate-600 hover:text-emerald-700 border border-slate-200 rounded-xl px-4 py-2 hover:bg-slate-50">← Fiche formation</a>
                 </div>
             </header>
 
@@ -60,7 +72,11 @@ $currentLessonId = null;
                     data-base="<?= htmlspecialchars($base) ?>"
                     data-csrf="<?= htmlspecialchars($csrfToken) ?>"
                     data-formations-url="<?= htmlspecialchars(url('formations')) ?>"
-                    data-course-url="<?= htmlspecialchars(url('formations/' . rawurlencode((string) ($course['slug'] ?? '')))) ?>"
+                    data-course-url="<?= htmlspecialchars($quizCourseUrl) ?>"
+                    data-echanges-url="<?= htmlspecialchars($quizEchangesUrl) ?>"
+                    data-certificate-url="<?= htmlspecialchars($quizCertificateUrl) ?>"
+                    data-course-completed="<?= $quizCourseCompleted ? '1' : '0' ?>"
+                    data-is-certifying="<?= $quizIsCertifying ? '1' : '0' ?>"
                 >
                     <div class="lms-panel rounded-2xl p-8 md:p-10 text-center">
                         <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 mb-4" aria-hidden="true">

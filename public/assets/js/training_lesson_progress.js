@@ -1,6 +1,7 @@
 /**
- * Validation automatique de leçon LMS : critères plus stricts pour éviter une validation
- * sans parcours réel (scroll bref, slides enchaînées trop vite, saut en fin de vidéo, etc.).
+ * Progression de leçon LMS : le parcours débloque le bouton « Terminer »,
+ * la validation côté serveur n’est enregistrée qu’après confirmation explicite
+ * (sauf actions déjà volontaires : Terminer du parcours visuel, envoi d’évaluation).
  */
 (function () {
   'use strict';
@@ -28,6 +29,50 @@
     });
   }
 
+  function openFeedbackModal() {
+    var modal = document.getElementById('lms-feedback-modal');
+    if (!modal) {
+      return;
+    }
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lms-modal-open');
+  }
+
+  function closeFeedbackModal() {
+    var modal = document.getElementById('lms-feedback-modal');
+    if (!modal) {
+      return;
+    }
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('lms-modal-open');
+  }
+
+  function markFeedbackDone(message) {
+    var formWrap = document.getElementById('lms-feedback-form-wrap');
+    var done = document.getElementById('lms-feedback-done');
+    var modal = document.getElementById('lms-feedback-modal');
+    if (formWrap) {
+      formWrap.classList.add('hidden');
+      formWrap.innerHTML = '';
+    }
+    if (done) {
+      done.classList.remove('hidden');
+      var title = done.querySelector('p');
+      if (title) {
+        title.textContent = message || 'Merci : votre retour a bien été enregistré.';
+      }
+    }
+    if (modal) {
+      modal.setAttribute('data-lms-feedback-done', '1');
+    }
+    var c = cfg();
+    if (c) {
+      c.hasFeedback = true;
+    }
+  }
+
   function markUiSuccess(percent) {
     var hint = document.getElementById('lms-progress-status');
     if (hint) {
@@ -39,12 +84,20 @@
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Leçon validée';
-      btn.classList.add('opacity-60', 'cursor-default');
-      btn.classList.remove('hover:bg-emerald-700');
+      btn.classList.add('lms-btn--disabled', 'opacity-60', 'cursor-default');
+      btn.classList.remove('lms-btn--primary', 'hover:bg-emerald-700');
+      btn.removeAttribute('data-lms-await-parcours');
     }
     updateProgressBars(percent);
     if (typeof window.lmsTrainingToastShow === 'function') {
       window.lmsTrainingToastShow('Leçon validée — vous pouvez poursuivre le parcours.', 'success');
+    }
+    var c = cfg();
+    if (c) {
+      c.alreadyCompleted = true;
+    }
+    if (!c || !c.hasFeedback) {
+      openFeedbackModal();
     }
   }
 
@@ -82,6 +135,7 @@
   }
 
   var posted = false;
+  var readyArmed = false;
 
   function warnMediaSkip() {
     if (typeof window.lmsTrainingToastShow === 'function') {
@@ -108,69 +162,138 @@
     return t / el.duration;
   }
 
-  window.LmsLessonProgress = {
-    signalComplete: function () {
-      var c = cfg();
-      if (!c || !c.auto || c.alreadyCompleted || posted) {
-        return;
-      }
-      posted = true;
-      var token = window.__LMS_CSRF__ || '';
-      fetch(c.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'X-CSRF-Token': token,
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          enrollment_id: c.enrollmentId,
-          lesson_id: c.lessonId,
-          status: 'completed',
-          _csrf_token: token,
-        }),
-      })
-        .then(function (r) {
-          var ct = (r.headers.get('content-type') || '').toLowerCase();
-          if (ct.indexOf('application/json') === -1) {
-            return r.text().then(function () {
-              throw new Error('Réponse inattendue du serveur. Rechargez la page.');
-            });
-          }
-          return r.json().then(function (j) {
-            if (!r.ok) {
-              throw new Error((j && j.error) || 'Erreur');
-            }
-            return j;
+  function armReady() {
+    var c = cfg();
+    if (!c || c.alreadyCompleted || posted || readyArmed) {
+      return;
+    }
+    readyArmed = true;
+    var btn = document.getElementById('lms-btn-complete');
+    if (btn && btn.getAttribute('data-lms-await-parcours') === '1') {
+      btn.disabled = false;
+      btn.classList.remove('lms-btn--disabled', 'opacity-60');
+      btn.classList.add('lms-btn--primary');
+      btn.textContent = 'Terminer la leçon';
+    }
+    var hint = document.getElementById('lms-progress-status');
+    if (hint) {
+      hint.textContent =
+        'Contenu parcouru. Cliquez sur « Terminer la leçon » pour enregistrer votre validation auprès du système.';
+      hint.classList.remove('text-rose-600');
+      hint.classList.add('text-slate-600');
+    }
+    if (typeof window.lmsTrainingToastShow === 'function') {
+      window.lmsTrainingToastShow('Parcours complété — validez avec « Terminer la leçon ».', 'info');
+    }
+  }
+
+  function confirmComplete() {
+    var c = cfg();
+    if (!c || !c.apiUrl || c.alreadyCompleted || posted) {
+      return;
+    }
+    posted = true;
+    var token = window.__LMS_CSRF__ || '';
+    var btn = document.getElementById('lms-btn-complete');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement…';
+    }
+    fetch(c.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-CSRF-Token': token,
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        enrollment_id: c.enrollmentId,
+        lesson_id: c.lessonId,
+        status: 'completed',
+        _csrf_token: token,
+      }),
+    })
+      .then(function (r) {
+        var ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (ct.indexOf('application/json') === -1) {
+          return r.text().then(function () {
+            throw new Error('Réponse inattendue du serveur. Rechargez la page.');
           });
-        })
-        .then(function (data) {
-          markUiSuccess(typeof data.percent === 'number' ? data.percent : null);
-          if (data && data.event_recommendation) {
-            renderEventRecommendation(data.event_recommendation);
+        }
+        return r.json().then(function (j) {
+          if (!r.ok) {
+            throw new Error((j && j.error) || 'Erreur');
           }
-        })
-        .catch(function (err) {
-          posted = false;
-          var msg =
-            err && err.message
-              ? err.message
-              : 'La validation automatique a échoué. Rechargez la page ou réessayez dans un instant.';
-          if (typeof window.lmsTrainingToastShow === 'function') {
-            window.lmsTrainingToastShow(msg, 'error');
-          }
-          var hint = document.getElementById('lms-progress-status');
-          if (hint) {
-            hint.textContent = msg;
-            hint.classList.remove('text-slate-600', 'text-emerald-700');
-            hint.classList.add('text-rose-600', 'font-semibold');
-          }
+          return j;
         });
+      })
+      .then(function (data) {
+        markUiSuccess(typeof data.percent === 'number' ? data.percent : null);
+        if (data && data.event_recommendation) {
+          renderEventRecommendation(data.event_recommendation);
+        }
+      })
+      .catch(function (err) {
+        posted = false;
+        var msg =
+          err && err.message
+            ? err.message
+            : 'L’enregistrement a échoué. Rechargez la page ou réessayez dans un instant.';
+        if (typeof window.lmsTrainingToastShow === 'function') {
+          window.lmsTrainingToastShow(msg, 'error');
+        }
+        var hint = document.getElementById('lms-progress-status');
+        if (hint) {
+          hint.textContent = msg;
+          hint.classList.remove('text-slate-600', 'text-emerald-700');
+          hint.classList.add('text-rose-600', 'font-semibold');
+        }
+        if (btn && btn.getAttribute('data-lms-await-parcours') === '1') {
+          btn.disabled = !readyArmed;
+          btn.textContent = 'Terminer la leçon';
+          if (readyArmed) {
+            btn.classList.remove('lms-btn--disabled');
+            btn.classList.add('lms-btn--primary');
+          }
+        } else if (btn && btn.type === 'submit') {
+          btn.disabled = false;
+          btn.textContent = 'Terminer la leçon';
+        }
+      });
+  }
+
+  window.LmsLessonProgress = {
+    /** Débloque le bouton « Terminer » après parcours du contenu. */
+    armReady: armReady,
+    /** Enregistre la validation auprès du système (action explicite). */
+    confirmComplete: confirmComplete,
+    /**
+     * Compat : sans argument = débloquer ; avec true = valider tout de suite
+     * (ex. clic « Terminer » du parcours visuel, évaluation réussie).
+     */
+    signalComplete: function (immediate) {
+      if (immediate) {
+        confirmComplete();
+      } else {
+        armReady();
+      }
     },
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    var feedbackModal = document.getElementById('lms-feedback-modal');
+    if (feedbackModal) {
+      feedbackModal.querySelectorAll('[data-lms-feedback-close]').forEach(function (el) {
+        el.addEventListener('click', closeFeedbackModal);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !feedbackModal.classList.contains('hidden')) {
+          closeFeedbackModal();
+        }
+      });
+    }
+
     var feedbackForm = document.querySelector('form[data-lesson-feedback]');
     if (feedbackForm) {
       feedbackForm.addEventListener('submit', function (event) {
@@ -180,7 +303,7 @@
         var api = c0 && c0.feedbackApiUrl ? c0.feedbackApiUrl : '';
         if (!api) {
           if (feedbackStatus) {
-            feedbackStatus.textContent = 'API feedback indisponible.';
+            feedbackStatus.textContent = 'Enregistrement indisponible pour le moment.';
             feedbackStatus.className = 'text-xs text-rose-600';
           }
           return;
@@ -209,23 +332,38 @@
             });
           })
           .then(function (payload) {
-            if (feedbackStatus) {
-              feedbackStatus.textContent = (payload && payload.message) || 'Feedback enregistré.';
-              feedbackStatus.className = 'text-xs text-emerald-700';
-            }
+            markFeedbackDone((payload && payload.message) || 'Merci : votre retour a bien été enregistré.');
             if (typeof window.lmsTrainingToastShow === 'function') {
-              window.lmsTrainingToastShow('Feedback post-leçon enregistré.', 'success');
+              window.lmsTrainingToastShow('Avis enregistré.', 'success');
             }
           })
           .catch(function (err) {
             if (feedbackStatus) {
-              feedbackStatus.textContent = (err && err.message) || 'Impossible d’enregistrer le feedback.';
+              feedbackStatus.textContent = (err && err.message) || 'Impossible d’enregistrer votre avis.';
               feedbackStatus.className = 'text-xs text-rose-600';
             }
             if (typeof window.lmsTrainingToastShow === 'function') {
-              window.lmsTrainingToastShow('Impossible d’enregistrer le feedback.', 'error');
+              window.lmsTrainingToastShow('Impossible d’enregistrer votre avis.', 'error');
             }
           });
+      });
+    }
+
+    var progressForm = document.querySelector('form[data-progress-lesson]');
+    if (progressForm) {
+      progressForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        confirmComplete();
+      });
+    }
+
+    var awaitBtn = document.getElementById('lms-btn-complete');
+    if (awaitBtn && awaitBtn.getAttribute('data-lms-await-parcours') === '1') {
+      awaitBtn.addEventListener('click', function () {
+        if (awaitBtn.disabled) {
+          return;
+        }
+        confirmComplete();
       });
     }
 
@@ -269,11 +407,11 @@
         return false;
       }
 
-      function tryRichtextComplete() {
+      function tryRichtextReady() {
         if (!sentinelOk || !scrollEnough()) {
           return;
         }
-        window.LmsLessonProgress.signalComplete();
+        window.LmsLessonProgress.armReady();
       }
 
       function clearSustain() {
@@ -290,7 +428,7 @@
               if (!sustainTimer) {
                 sustainTimer = setTimeout(function () {
                   sentinelOk = true;
-                  tryRichtextComplete();
+                  tryRichtextReady();
                 }, SENT_MS);
               }
             } else {
@@ -302,7 +440,7 @@
         { root: null, threshold: [0, 0.32, 0.55], rootMargin: '0px 0px -10% 0px' }
       );
       io.observe(sent);
-      window.addEventListener('scroll', tryRichtextComplete, { passive: true });
+      window.addEventListener('scroll', tryRichtextReady, { passive: true });
       return;
     }
 
@@ -312,7 +450,7 @@
         var minR = strictNum('mediaPlayedMinRatio', 0.88);
         v.addEventListener('ended', function () {
           if (mediaPlayedRatio(v) >= minR) {
-            window.LmsLessonProgress.signalComplete();
+            window.LmsLessonProgress.armReady();
           } else {
             warnMediaSkip();
           }
@@ -327,7 +465,7 @@
         var minRa = strictNum('mediaPlayedMinRatio', 0.88);
         a.addEventListener('ended', function () {
           if (mediaPlayedRatio(a) >= minRa) {
-            window.LmsLessonProgress.signalComplete();
+            window.LmsLessonProgress.armReady();
           } else {
             warnMediaSkip();
           }

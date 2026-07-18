@@ -131,6 +131,7 @@ use App\Controllers\Web\DocumentationController;
 use App\Controllers\Web\LegalController;
 use App\Controllers\Web\DemoNdaController;
 use App\Controllers\Admin\System\SystemDemoNdaController;
+use App\Controllers\Admin\System\SystemCronController;
 use App\Controllers\Web\DossierOperateurController;
 use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
@@ -139,6 +140,7 @@ use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
 use App\Controllers\Admin\Organization\OrganizationCommunityController;
+use App\Controllers\Admin\Organization\OrganizationSettingsController;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
@@ -227,6 +229,8 @@ return function (Router $router) {
     $router->get('/communities', [CommunityController::class, 'registry'], [AuthMiddleware::class]);
     $router->post('/community/switch', [CommunityController::class, 'switchTenant'], [AuthMiddleware::class]);
     $router->post('/api/stripe/webhook', [StripeWebhookController::class, 'handle']);
+    $router->get('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
+    $router->post('/cron/run', [\App\Controllers\Web\CronController::class, 'run']);
     $router->post('/analytics/beacon', [AnalyticsBeaconController::class, 'post']);
     $router->get('/register', [RegisterController::class, 'show'], [GuestMiddleware::class]);
     $router->post('/register', [RegisterController::class, 'store'], [GuestMiddleware::class]);
@@ -334,6 +338,8 @@ return function (Router $router) {
     $router->post('/account/mail', [AccountController::class, 'mail'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
+    $router->get('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
+    $router->post('/account/banner', [AccountController::class, 'banner'], [AuthMiddleware::class]);
     $router->get('/account/portrait', [AccountController::class, 'portrait'], [AuthMiddleware::class]);
     $router->post('/account/portrait', [AccountController::class, 'portrait'], [AuthMiddleware::class]);
     $router->get('/account/password', [AccountController::class, 'password'], [AuthMiddleware::class]);
@@ -358,6 +364,7 @@ return function (Router $router) {
     $router->post('/personnel/{id}/generate-matricule', [PersonnelController::class, 'generateMatricule'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/sync-steam', [PersonnelController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/notes', [PersonnelController::class, 'updateNotes'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/bilans', [PersonnelController::class, 'storeStageBilan'], [AuthMiddleware::class]);
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
     $router->get('/api/orbat/roster', [OrbatApiController::class, 'roster'], [AuthMiddleware::class]);
     $router->get('/api/orbat/structure-options', [OrbatApiController::class, 'structureOptions'], [AuthMiddleware::class]);
@@ -453,6 +460,8 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/save-mail', [SystemRecruitmentPortalToolsController::class, 'saveAutomodMailSetting'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/recruitment-portal-tools/revoke-indicator', [SystemRecruitmentPortalToolsController::class, 'revokeIndicator'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -501,6 +510,8 @@ return function (Router $router) {
     $router->post('/admin/system/updates/{id}/deploy', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'deploy'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/updates/{id}/rollback', [\App\Controllers\Admin\System\SystemUpdatesController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/tenants', [SystemTenantsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/tenants/{id}/edit', [SystemTenantsController::class, 'edit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/audit/{id}', [SystemAuditController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -531,8 +542,10 @@ return function (Router $router) {
     $router->post('/back-office/organisation/anciennete/synchroniser-effectifs', [OrganizationSeniorityAdminController::class, 'syncAllPersonnel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/organisation/anciennete/completer-depuis-dossier', [OrganizationSeniorityAdminController::class, 'syncDossierInference'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/structure', [OrganizationDashboardController::class, 'structureRecruitmentHub'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->get('/back-office/community', [OrganizationCommunityController::class, 'settings'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
-    $router->post('/back-office/community', [OrganizationCommunityController::class, 'settingsUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/organisation/parametres', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/community', [OrganizationSettingsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/community', [OrganizationSettingsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -698,6 +711,7 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/{id}/finalize-membership', [AdminRecruitmentsController::class, 'finalizeMembership'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/timeline-comment', [AdminRecruitmentsController::class, 'timelineComment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/recruteur-volontariat', [AdminRecruitmentsController::class, 'recruiterPick'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/{id}/referent', [AdminRecruitmentsController::class, 'assignReferent'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/bilan-equipe', [AdminRecruitmentsController::class, 'staffRetroSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers', [RecruitmentOffersController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers/create', [RecruitmentOffersController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -884,6 +898,7 @@ return function (Router $router) {
     $router->get('/formation/studio/{id}/echange/export', [AdminTrainingStudioExchangeController::class, 'exportDownload'], $trainingResMw);
     $router->get('/formation/studio/{id}/echange', [AdminTrainingStudioExchangeController::class, 'exchange'], $trainingResMw);
     $router->get('/formation/studio/{id}/preview', [AdminTrainingStudioController::class, 'preview'], $trainingResMw);
+    $router->get('/formation/studio/{id}/ressource/{resourceId}', [AdminTrainingStudioController::class, 'resourceFile'], $trainingResMw);
     $router->get('/formation/studio/{id}/fiche', [AdminTrainingStudioController::class, 'editFiche'], $trainingResMw);
     $router->get('/formation/studio/{id}/presentation', [AdminTrainingStudioController::class, 'editPresentation'], $trainingResMw);
     $router->get('/formation/studio/{id}/structure', [AdminTrainingStudioController::class, 'editStructure'], $trainingResMw);
@@ -902,6 +917,7 @@ return function (Router $router) {
     $router->get('/formation/feedback', [AdminTrainingController::class, 'lessonFeedback'], $trainingResMw);
     $router->get('/formation/certificates', [AdminTrainingController::class, 'certificates'], $trainingResMw);
     $router->post('/formation/certificates/generer-documents', [AdminTrainingController::class, 'certificatesGeneratePendingPdfs'], $trainingResMw);
+    $router->post('/formation/certificates/{id}/generer-document', [AdminTrainingController::class, 'certificateRegenerateOne'], $trainingResMw);
     $router->get('/formation/certificates/gabarit/exemple-pdf', [AdminTrainingController::class, 'certificateGabaritExamplePdf'], $trainingResMw);
     $router->get('/formation/certificates/gabarit/fichier', [AdminTrainingController::class, 'certificateGabaritFile'], $trainingResMw);
     $router->get('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);

@@ -97,6 +97,7 @@ final class TenantBootstrapService
 
             TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
             TenantSeedHelper::ensureRolesOrgCourse($pdo, $tenantId, $newUserId);
+            TenantSeedHelper::ensureBureauRecrutementCourse($pdo, $tenantId, $newUserId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $communitySettings = [
@@ -305,7 +306,7 @@ final class TenantBootstrapService
         if ($raw === 'premium') {
             return 'standard';
         }
-        if (in_array($raw, ['free', 'standard', 'pro'], true)) {
+        if (in_array($raw, ['free', 'standard', 'pro', 'pro_plus'], true)) {
             return $raw;
         }
 

@@ -3,7 +3,9 @@ $user = $user ?? [];
 $errors = $errors ?? [];
 $success = $success ?? null;
 $error = $error ?? null;
-$avatarUrl = !empty($user['avatar_url']) ? (url('') . '/' . ltrim($user['avatar_url'], '/')) : null;
+$avatarUrl = function_exists('user_media_public_url')
+    ? user_media_public_url($user['avatar_url'] ?? null)
+    : (!empty($user['avatar_url']) ? (url('') . '/' . ltrim($user['avatar_url'], '/')) : null);
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black text-slate-900 mb-2">Photo de profil</h1>
@@ -37,5 +39,5 @@ $avatarUrl = !empty($user['avatar_url']) ? (url('') . '/' . ltrim($user['avatar_
             <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Mettre à jour la photo</button>
         </form>
     </div>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> — <a href="<?= url('account/banner') ?>" class="underline">Couverture du menu session</a></p>
 </div>

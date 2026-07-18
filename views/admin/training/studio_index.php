@@ -13,8 +13,9 @@ $visLabels = [
     'archived' => 'Archivé',
 ];
 $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visibility'] ?? '') === 'published'));
+$draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibility'] ?? '') === 'draft'));
 ?>
-<div>
+<div class="ts-index">
     <?php
     $flashOk = \App\Core\Session::getFlash('success');
     $flashErr = \App\Core\Session::getFlash('error');
@@ -26,28 +27,24 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
     <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-950 text-sm font-medium shadow-sm"><?= htmlspecialchars((string) $flashErr) ?></div>
     <?php endif; ?>
 
-    <header class="training-studio-hero mb-8">
-        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-8">
-            <div class="min-w-0">
+    <header class="training-studio-hero mb-6">
+        <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6 xl:gap-10">
+            <div class="min-w-0 flex-1">
                 <p class="text-[0.65rem] font-black tracking-[0.35em] uppercase text-emerald-600 mb-3">Studio formation</p>
-                <h1 class="text-2xl md:text-4xl font-black text-slate-900 tracking-tight uppercase leading-tight">Tableau des formations</h1>
-                <p class="text-slate-600 text-sm mt-3 max-w-2xl leading-relaxed">Créez des parcours, ajoutez des modules et des leçons, puis publiez-les dans le catalogue apprenant.</p>
-                <details class="mt-2 max-w-2xl text-sm text-slate-500">
-                    <summary class="cursor-pointer font-semibold text-slate-700">En savoir plus sur les ressources par leçon</summary>
-                    <p class="mt-1 leading-relaxed">Utilisez le bouton <strong class="text-slate-700">Structure &amp; ressources</strong> sur une formation : le panneau <strong class="text-slate-700">Ressources</strong> permet d’ajouter liens web, fichiers et documents du centre documentaire.</p>
-                </details>
-                <p class="text-sm text-slate-500 mt-2">
-                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Tableau de bord formations</a>
-                    <span class="text-slate-300 mx-2">·</span>
+                <h1 class="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">Vos parcours</h1>
+                <p class="text-slate-600 text-sm mt-3 max-w-3xl leading-relaxed">Créez, structurez et publiez les formations de la communauté. Ouvrez la fiche pour les données, ou Modules pour le contenu pédagogique.</p>
+                <p class="text-sm text-slate-500 mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-emerald-600 hover:text-emerald-800">← Pilotage des formations</a>
+                    <span class="text-slate-300">·</span>
                     <a href="<?= htmlspecialchars($lmsChangelogUrl) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-emerald-800">Journal du Studio</a>
-                    <span class="text-slate-300 mx-2">·</span>
+                    <span class="text-slate-300">·</span>
                     <a href="<?= htmlspecialchars(url(training_studio_path() . '/echange/importer')) ?>" class="text-slate-600 underline decoration-slate-200 hover:text-emerald-800">Importer une formation</a>
                     <?php if ($lmsPlatformVersion !== ''): ?>
-                    <span class="text-slate-400 ml-1">(v<?= htmlspecialchars($lmsPlatformVersion) ?>)</span>
+                    <span class="text-slate-400">(v<?= htmlspecialchars($lmsPlatformVersion) ?>)</span>
                     <?php endif; ?>
                 </p>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0 w-full sm:w-auto max-w-md">
+            <div class="ts-index-hero-stats shrink-0">
                 <div class="training-studio-stat">
                     <p class="training-studio-stat__k">Total</p>
                     <p class="training-studio-stat__v"><?= (int) count($courses) ?></p>
@@ -56,156 +53,166 @@ $publishedCount = count(array_filter($courses, static fn (array $c) => ($c['visi
                     <p class="training-studio-stat__k">Publiées</p>
                     <p class="training-studio-stat__v text-emerald-600"><?= (int) $publishedCount ?></p>
                 </div>
-                <div class="training-studio-stat col-span-2 sm:col-span-1">
-                    <p class="training-studio-stat__k">Filtre</p>
-                    <p class="training-studio-stat__v !text-lg"><?= $visibilityFilter === '' ? 'Tous' : htmlspecialchars($visLabels[$visibilityFilter] ?? $visibilityFilter) ?></p>
+                <div class="training-studio-stat">
+                    <p class="training-studio-stat__k">Brouillons</p>
+                    <p class="training-studio-stat__v"><?= (int) $draftCount ?></p>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="space-y-8">
-            <section class="training-studio-panel overflow-hidden w-full">
-                <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/80">
-                    <div>
-                        <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Vos formations</h2>
-                        <p class="text-sm text-slate-600 mt-0.5"><strong>Fiche</strong> pour les métadonnées ; <strong class="text-sky-900">Structure &amp; ressources</strong> pour les modules, leçons et pièces jointes par leçon.</p>
-                    </div>
-                    <form method="get" action="<?= training_studio_url() ?>" class="flex flex-wrap items-center gap-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Visibilité</label>
-                        <select name="visibility" class="border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium bg-white shadow-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400" onchange="this.form.submit()">
-                            <option value="">Toutes</option>
-                            <?php foreach ($visLabels as $k => $lab): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= $visibilityFilter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </form>
-                </div>
+    <section class="training-studio-panel ts-index-create p-5 md:p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-4">
+            <div>
+                <h2 class="text-xs font-black uppercase tracking-[0.2em] text-emerald-800 mb-1">Nouvelle formation</h2>
+                <p class="text-sm text-slate-600">Créée en brouillon par défaut. Ensuite : fiche → premier module → présentation → publication.</p>
+            </div>
+            <?php
+            $tcap = $trainingCourseCapacity ?? null;
+            $tcapBlocked = is_array($tcap) && empty($tcap['unlimited']) && empty($tcap['can_create']);
+            ?>
+            <?php if (is_array($tcap) && empty($tcap['unlimited']) && (int) ($tcap['limit'] ?? 0) > 0): ?>
+            <p class="text-xs text-slate-600 shrink-0 lg:pt-1">Offre : <strong class="text-slate-900"><?= (int) ($tcap['used'] ?? 0) ?></strong> / <?= (int) ($tcap['limit'] ?? 0) ?> parcours</p>
+            <?php endif; ?>
+        </div>
+        <?php if ($tcapBlocked): ?>
+        <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            Nombre maximal de parcours atteint pour votre formule. Passez à une offre supérieure ou retirez un parcours existant.
+        </div>
+        <?php endif; ?>
+        <form method="post" action="<?= training_studio_url() ?>" class="ts-index-create__grid"<?= $tcapBlocked ? ' aria-disabled="true"' : '' ?>>
+            <?= \App\Core\Csrf::field() ?>
+            <div class="ts-field min-w-0">
+                <label for="studio-new-course-title">Titre</label>
+                <input id="studio-new-course-title" type="text" name="title" required placeholder="Ex. Introduction tactique"<?= $tcapBlocked ? ' disabled' : '' ?>>
+            </div>
+            <div class="ts-field min-w-0">
+                <label for="studio-new-course-slug">Adresse courte <span class="font-normal normal-case tracking-normal text-slate-400">(optionnel)</span></label>
+                <input id="studio-new-course-slug" type="text" name="slug" class="font-mono text-xs" placeholder="Générée si vide"<?= $tcapBlocked ? ' disabled' : '' ?>>
+            </div>
+            <?php if ($studioCanSetPlatformScope): ?>
+            <div class="ts-field min-w-0">
+                <label for="studio-new-course-scope">Portée</label>
+                <select id="studio-new-course-scope" name="lms_scope"<?= $tcapBlocked ? ' disabled' : '' ?>>
+                    <option value="tenant" selected>Communauté</option>
+                    <option value="platform">Toute la plateforme</option>
+                </select>
+            </div>
+            <?php endif; ?>
+            <div class="ts-field min-w-0">
+                <label for="studio-new-course-visibility">Visibilité</label>
+                <select id="studio-new-course-visibility" name="visibility"<?= $tcapBlocked ? ' disabled' : '' ?>>
+                    <?php foreach ($visLabels as $k => $lab): ?>
+                    <option value="<?= htmlspecialchars($k) ?>" <?= $k === 'draft' ? 'selected' : '' ?> <?= ($k === 'published' && !$canPublish) ? 'disabled' : '' ?>><?= htmlspecialchars($lab) ?><?= ($k === 'published' && !$canPublish) ? ' (permission requise)' : '' ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php if (!empty($pedagogyColumnsReady)): ?>
+            <div class="ts-field min-w-0">
+                <label for="studio-new-owner">Responsable pédagogique</label>
+                <select id="studio-new-owner" name="pedagogical_owner_user_id"<?= $tcapBlocked ? ' disabled' : '' ?>>
+                    <option value="">— Plus tard —</option>
+                    <?php foreach ($studioStaffPickUsers ?? [] as $su):
+                        $sid = (int) ($su['id'] ?? 0);
+                        $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
+                    ?>
+                    <option value="<?= $sid ?>"><?= htmlspecialchars($slab) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <div class="min-w-0 flex items-end">
+                <button type="submit" class="ts-index-create__submit w-full xl:w-auto"<?= $tcapBlocked ? ' disabled' : '' ?>>Créer</button>
+            </div>
+        </form>
+        <?php if ($studioCanSetPlatformScope): ?>
+        <p class="text-xs text-slate-500 mt-3">Les parcours « toute la plateforme » doivent avoir une adresse courte unique sur l’ensemble du site.</p>
+        <?php endif; ?>
+    </section>
 
-                <?php if (empty($courses)): ?>
-                <div class="p-10 text-center">
-                    <p class="text-slate-600 font-medium">Aucune formation pour ce filtre.</p>
-                    <p class="text-sm text-slate-500 mt-2">Utilisez le formulaire <strong class="font-semibold text-slate-700">Nouvelle formation</strong> sous cette liste.</p>
+    <section class="training-studio-panel overflow-hidden">
+        <div class="px-5 py-4 md:px-6 border-b border-slate-100">
+            <div class="ts-index-toolbar !mb-0">
+                <div class="ts-index-toolbar__title">
+                    <h2>Liste des formations</h2>
+                    <p><strong>Fiche</strong> pour les données et l’inscription · <strong>Modules</strong> pour le contenu et les ressources par leçon.</p>
                 </div>
-                <?php else: ?>
-                <div class="divide-y divide-slate-100">
+                <form method="get" action="<?= training_studio_url() ?>" class="ts-index-filter">
+                    <label for="studio-vis-filter">Visibilité</label>
+                    <select id="studio-vis-filter" name="visibility" onchange="this.form.submit()">
+                        <option value="">Toutes</option>
+                        <?php foreach ($visLabels as $k => $lab): ?>
+                        <option value="<?= htmlspecialchars($k) ?>" <?= $visibilityFilter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <?php if (empty($courses)): ?>
+        <div class="p-12 text-center">
+            <p class="text-slate-700 font-semibold text-base">Aucune formation pour ce filtre.</p>
+            <p class="text-sm text-slate-500 mt-2">Utilisez le formulaire <strong class="text-slate-700">Nouvelle formation</strong> ci-dessus.</p>
+        </div>
+        <?php else: ?>
+        <div class="ts-index-table-wrap">
+            <table class="ts-index-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Parcours</th>
+                        <th scope="col">Statut</th>
+                        <th scope="col" class="hidden lg:table-cell">Portée</th>
+                        <th scope="col" class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
                     <?php foreach ($courses as $c):
                         $t = (string) ($c['title'] ?? '');
                         $initial = $t !== '' ? mb_strtoupper(mb_substr($t, 0, 1)) : '?';
                         $isPub = ($c['visibility'] ?? '') === 'published';
-                        ?>
-                    <div class="training-studio-course-row">
-                        <div class="flex items-center gap-4 min-w-0 flex-1 ts-course-row__main">
-                            <div class="training-studio-thumb" aria-hidden="true"><?= htmlspecialchars($initial) ?></div>
-                            <div class="min-w-0 flex-1">
-                                <p class="font-bold text-slate-900 text-sm sm:text-base leading-snug sm:line-clamp-2 break-words"><?= htmlspecialchars($t) ?></p>
-                                <p class="text-xs font-mono text-slate-500 truncate mt-0.5"><?= htmlspecialchars((string) ($c['slug'] ?? '')) ?></p>
+                        $visKey = (string) ($c['visibility'] ?? '');
+                        $visShort = $visLabels[$visKey] ?? $visKey;
+                        $lmsBehind = function_exists('lms_course_studio_created_before_current') && lms_course_studio_created_before_current($c);
+                        $rowScope = (string) ($c['lms_scope'] ?? 'tenant');
+                        $cidRow = (int) ($c['id'] ?? 0);
+                    ?>
+                    <tr>
+                        <td>
+                            <div class="ts-index-course">
+                                <div class="training-studio-thumb" aria-hidden="true"><?= htmlspecialchars($initial) ?></div>
+                                <div class="ts-index-course__text">
+                                    <strong><?= htmlspecialchars($t) ?></strong>
+                                    <span title="<?= htmlspecialchars((string) ($c['slug'] ?? '')) ?>"><?= htmlspecialchars((string) ($c['slug'] ?? '')) ?></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 sm:gap-2.5 w-full lg:w-auto justify-start lg:justify-end flex-wrap ts-course-row__meta">
-                            <?php
-                            $lmsBehind = function_exists('lms_course_studio_created_before_current') && lms_course_studio_created_before_current($c);
-                            ?>
-                            <?php if ($lmsBehind): ?>
-                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md bg-amber-100 text-amber-950 border border-amber-200/90 shrink-0" title="Créée avec une version antérieure du Studio — ouvrez la formation et enregistrez pour aligner la trace sur la version actuelle.">Anc. version</span>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md <?= $isPub ? 'bg-emerald-100 text-emerald-900 border border-emerald-200/90' : 'bg-slate-200 text-slate-800 border border-slate-300/80' ?>"><?= htmlspecialchars($visShort) ?></span>
+                                <?php if ($lmsBehind): ?>
+                                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md bg-amber-100 text-amber-950 border border-amber-200/90" title="Créée avec une version antérieure du Studio — ouvrez et enregistrez pour aligner la trace.">Anc. version</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td class="hidden lg:table-cell">
+                            <?php if ($rowScope === 'platform'): ?>
+                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md bg-sky-100 text-sky-900 border border-sky-200/90">Plateforme</span>
+                            <?php else: ?>
+                            <span class="text-xs text-slate-500 font-medium">Communauté</span>
                             <?php endif; ?>
-                            <?php
-                            $rowScope = (string) ($c['lms_scope'] ?? 'tenant');
-                            if ($rowScope === 'platform'):
-                            ?>
-                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md bg-violet-100 text-violet-900 border border-violet-200/90 shrink-0" title="Proposé dans le catalogue de toutes les organisations concernées par ce type de parcours.">Plateforme</span>
-                            <?php endif; ?>
-                            <?php
-                            $visKey = (string) ($c['visibility'] ?? '');
-                            $visShort = match ($visKey) {
-                                'published' => 'Publié',
-                                'draft' => 'Brouillon',
-                                'private' => 'Privé',
-                                'archived' => 'Archivé',
-                                default => $visLabels[$visKey] ?? $visKey,
-                            };
-                            ?>
-                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md <?= $isPub ? 'bg-emerald-100 text-emerald-900 border border-emerald-200/90' : 'bg-slate-200 text-slate-800 border border-slate-300/80' ?> shrink-0" title="<?= htmlspecialchars($visLabels[$visKey] ?? $visKey) ?>"><?= htmlspecialchars($visShort) ?></span>
-                            <a href="<?= htmlspecialchars(training_studio_url((string) (int) $c['id'] . '/echange/export')) ?>"
-                               class="inline-flex items-center justify-center px-3 py-2 border border-slate-200 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-50 shadow-sm transition-colors"
-                               title="Télécharger une sauvegarde complète du parcours (fichier structuré réimportable dans le Studio)">Exporter</a>
-                            <a href="<?= htmlspecialchars(training_studio_url((string) (int) $c['id'] . '/structure#studio-ressources-aide')) ?>" class="inline-flex items-center justify-center px-3 py-2 border border-sky-200 bg-sky-50 text-sky-950 text-xs font-bold rounded-lg hover:bg-sky-100 shadow-sm transition-colors" title="Modules, leçons et panneau Ressources par leçon">Structure &amp; ressources</a>
-                            <a href="<?= training_studio_url((string) (int) $c['id']) ?>" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 shadow-sm transition-colors">Fiche</a>
-                        </div>
-                    </div>
+                        </td>
+                        <td>
+                            <div class="ts-index-actions">
+                                <a href="<?= htmlspecialchars(training_studio_url((string) $cidRow . '/echange/export')) ?>" class="ts-index-btn ts-index-btn--ghost" title="Télécharger une sauvegarde réimportable">Exporter</a>
+                                <a href="<?= htmlspecialchars(training_studio_url((string) $cidRow . '/structure#studio-ressources-aide')) ?>" class="ts-index-btn ts-index-btn--sky" title="Modules, leçons et ressources">Modules</a>
+                                <a href="<?= training_studio_url((string) $cidRow) ?>" class="ts-index-btn ts-index-btn--primary">Fiche</a>
+                            </div>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-            </section>
-
-            <section class="training-studio-panel p-6 md:p-8 border-t-4 border-t-violet-500 shadow-lg shadow-slate-900/5 w-full">
-                <h2 class="text-xs font-black uppercase tracking-[0.22em] text-violet-900/80 mb-1">Nouvelle formation</h2>
-                <p class="text-sm text-slate-600 mb-2 max-w-3xl">Créée en brouillon par défaut ; vous pourrez compléter la fiche ensuite.</p>
-                <p class="text-xs text-slate-500 mb-6 max-w-3xl">Après création, suivez le parcours guidé : <strong>fiche minimale</strong> → <strong>1er module + 1re leçon</strong> → <strong>présentation apprenant</strong> → <strong>vérification publication</strong>.</p>
-                <?php
-                $tcap = $trainingCourseCapacity ?? null;
-                $tcapBlocked = is_array($tcap) && empty($tcap['unlimited']) && empty($tcap['can_create']);
-                ?>
-                <?php if ($tcapBlocked): ?>
-                <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                    Vous avez atteint le nombre maximal de parcours prévus pour votre formule (<?= (int) ($tcap['used'] ?? 0) ?> sur <?= (int) ($tcap['limit'] ?? 0) ?>). Passez à une offre supérieure ou supprimez un parcours existant pour en ajouter un nouveau.
-                </div>
-                <?php elseif (is_array($tcap) && empty($tcap['unlimited']) && (int) ($tcap['limit'] ?? 0) > 0): ?>
-                <p class="mb-4 text-xs text-slate-600">Parcours sur cette communauté : <strong class="text-slate-900"><?= (int) ($tcap['used'] ?? 0) ?></strong> / <?= (int) ($tcap['limit'] ?? 0) ?> prévus dans l’offre.</p>
-                <?php endif; ?>
-                <?php
-                $studioNewTitleCol = $studioCanSetPlatformScope ? 'xl:col-span-4' : 'xl:col-span-6';
-                $studioNewVisibilityMdCol = $studioCanSetPlatformScope ? 'md:col-span-2' : 'md:col-span-1';
-                ?>
-                <form method="post" action="<?= training_studio_url() ?>" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-x-5 xl:gap-y-4 xl:items-end"<?= $tcapBlocked ? ' aria-disabled="true"' : '' ?>>
-                    <?= \App\Core\Csrf::field() ?>
-                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-2 <?= $studioNewTitleCol ?>">
-                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-title">Titre</label>
-                        <input id="studio-new-course-title" type="text" name="title" required class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400" placeholder="Ex. Introduction tactique">
-                    </div>
-                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-1 xl:col-span-2">
-                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-slug">Adresse courte <span class="font-normal text-slate-400">(optionnel)</span></label>
-                        <input id="studio-new-course-slug" type="text" name="slug" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono shadow-inner focus:ring-2 focus:ring-violet-400/40" placeholder="généré si vide">
-                    </div>
-                    <?php if ($studioCanSetPlatformScope): ?>
-                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-1 xl:col-span-2">
-                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-scope">Portée du catalogue</label>
-                        <select id="studio-new-course-scope" name="lms_scope" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40 bg-white">
-                            <option value="tenant" selected>Communauté</option>
-                            <option value="platform">Toute la plateforme</option>
-                        </select>
-                    </div>
-                    <?php endif; ?>
-                    <div class="flex flex-col gap-1.5 min-w-0 <?= $studioNewVisibilityMdCol ?> xl:col-span-2">
-                        <label class="text-xs font-bold text-slate-600" for="studio-new-course-visibility">Visibilité initiale</label>
-                        <select id="studio-new-course-visibility" name="visibility" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner focus:ring-2 focus:ring-violet-400/40">
-                            <?php foreach ($visLabels as $k => $lab): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= $k === 'draft' ? 'selected' : '' ?> <?= ($k === 'published' && !$canPublish) ? 'disabled' : '' ?>><?= htmlspecialchars($lab) ?><?= ($k === 'published' && !$canPublish) ? ' (permission requise)' : '' ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php if (!empty($pedagogyColumnsReady)): ?>
-                    <div class="flex flex-col gap-1.5 min-w-0 md:col-span-2 xl:col-span-2">
-                        <label class="text-xs font-bold text-slate-600" for="studio-new-owner">Responsable pédagogique</label>
-                        <select id="studio-new-owner" name="pedagogical_owner_user_id" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm shadow-inner bg-white">
-                            <option value="">— Plus tard —</option>
-                            <?php foreach ($studioStaffPickUsers ?? [] as $su):
-                                $sid = (int) ($su['id'] ?? 0);
-                                $slab = trim((string) ($su['display_name'] ?? '')) !== '' ? (string) $su['display_name'] : ('#' . $sid);
-                            ?>
-                            <option value="<?= $sid ?>"><?= htmlspecialchars($slab) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="text-[11px] text-slate-500">Requis si vous publiez dès la création.</p>
-                    </div>
-                    <?php endif; ?>
-                    <div class="flex min-w-0 md:col-span-2 xl:col-span-2 xl:items-end">
-                        <button type="submit" class="w-full min-h-[2.75rem] px-5 py-3 bg-gradient-to-br from-violet-600 to-violet-800 text-white text-sm font-black rounded-xl hover:from-violet-500 hover:to-violet-700 shadow-md shadow-violet-900/20 transition-all disabled:cursor-not-allowed disabled:opacity-50"<?= $tcapBlocked ? ' disabled' : '' ?>>Créer la formation</button>
-                    </div>
-                </form>
-                <?php if ($studioCanSetPlatformScope): ?>
-                <p class="text-xs text-slate-500 mt-3 max-w-3xl">Les parcours « toute la plateforme » doivent avoir une adresse courte unique sur l’ensemble du site.</p>
-                <?php endif; ?>
-            </section>
-    </div>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </section>
 </div>

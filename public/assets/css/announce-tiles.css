@@ -1,0 +1,267 @@
+/* Alertes & annonces — tuiles sombres (split visuel / panneau) */
+.dash-announce {
+  --announce-bg: #050505;
+  --announce-panel: #0a0a0a;
+  --announce-muted: #a3a3a3;
+  --announce-line: rgba(255, 255, 255, 0.08);
+  --announce-accent: #a78bfa;
+  background: var(--announce-bg);
+  color: #fff;
+  border-bottom: 1px solid #111;
+  padding: 1.25rem 1.25rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dash-announce {
+    padding: 1.35rem 2rem 1.75rem;
+  }
+}
+
+.org-dash .dash-announce {
+  margin: 0 0 1.75rem;
+  border: 1px solid #1a1a1a;
+  border-bottom-color: #1a1a1a;
+}
+
+.dash-announce__brief {
+  display: grid;
+  gap: 0.65rem 1.5rem;
+  align-items: end;
+  margin-bottom: 1.1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--announce-line);
+}
+
+@media (min-width: 720px) {
+  .dash-announce__brief {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+}
+
+.dash-announce__brief-kicker {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #e5e5e5;
+}
+
+.dash-announce__brief-title {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #34d399;
+  line-height: 1.15;
+}
+
+.dash-announce__brief-status {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--announce-muted);
+  max-width: 28rem;
+}
+
+.dash-announce__brief-link {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--announce-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.dash-announce__brief-link:hover {
+  color: #c4b5fd;
+}
+
+.dash-announce__empty {
+  margin: 0;
+  padding: 1.25rem 0 0.35rem;
+  font-size: 0.875rem;
+  color: var(--announce-muted);
+}
+
+.dash-announce__grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 900px) {
+  .dash-announce__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dash-announce-tile {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 28%) minmax(0, 1fr);
+  min-height: 8.5rem;
+  background: var(--announce-panel);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  border: 0;
+  box-shadow: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+a.dash-announce-tile:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+a.dash-announce-tile:focus-visible {
+  outline: 2px solid var(--announce-accent);
+  outline-offset: 2px;
+}
+
+.dash-announce-tile__visual {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.18), transparent 55%),
+    linear-gradient(160deg, #1a1a1a 0%, #0d0d0d 55%, #050505 100%);
+  overflow: hidden;
+}
+
+.dash-announce-tile__visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      -18deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.03) 10px,
+      rgba(255, 255, 255, 0.03) 11px
+    );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.dash-announce-tile__glyph {
+  position: absolute;
+  inset: auto 12% 18% 12%;
+  height: 42%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
+}
+
+.dash-announce-tile--urgent .dash-announce-tile__visual {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(244, 63, 94, 0.45), transparent 55%),
+    linear-gradient(160deg, #3f0a14 0%, #140508 100%);
+}
+.dash-announce-tile--novelty .dash-announce-tile__visual {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(52, 211, 153, 0.4), transparent 55%),
+    linear-gradient(160deg, #0a2e22 0%, #050f0c 100%);
+}
+.dash-announce-tile--discount .dash-announce-tile__visual {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(251, 191, 36, 0.4), transparent 55%),
+    linear-gradient(160deg, #3a2a08 0%, #120e04 100%);
+}
+.dash-announce-tile--notice .dash-announce-tile__visual,
+.dash-announce-tile--info .dash-announce-tile__visual {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(167, 139, 250, 0.42), transparent 55%),
+    linear-gradient(160deg, #1e1238 0%, #0a0614 100%);
+}
+
+.dash-announce-tile__panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem 1.1rem;
+  border-left: 1px solid var(--announce-line);
+  position: relative;
+}
+
+.dash-announce-tile__panel::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--announce-accent);
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.55);
+}
+
+.dash-announce-tile--urgent .dash-announce-tile__panel::after {
+  background: #fb7185;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.55);
+}
+.dash-announce-tile--novelty .dash-announce-tile__panel::after {
+  background: #34d399;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.45);
+}
+.dash-announce-tile--discount .dash-announce-tile__panel::after {
+  background: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+}
+
+.dash-announce-tile__kind {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--announce-accent);
+}
+
+.dash-announce-tile--urgent .dash-announce-tile__kind { color: #fb7185; }
+.dash-announce-tile--novelty .dash-announce-tile__kind { color: #34d399; }
+.dash-announce-tile--discount .dash-announce-tile__kind { color: #fbbf24; }
+
+.dash-announce-tile__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: #fff;
+}
+
+.dash-announce-tile__body {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #d4d4d4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.dash-announce-tile__cta {
+  margin-top: 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+}
+
+a.dash-announce-tile:hover .dash-announce-tile__cta {
+  color: #e5e5e5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.dash-announce-tile {
+    transition: none;
+  }
+  a.dash-announce-tile:hover {
+    transform: none;
+  }
+}

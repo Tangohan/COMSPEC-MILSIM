@@ -64,6 +64,129 @@ class RoleRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Rôles organisation (communauté/intra) attribués, pour un lot d’utilisateurs, avec styles d’affichage
+     * (badge_style, semantic_tier). Repli sur le rôle unique legacy (`users.role_id`) transmis via
+     * `$legacyRoleIdByUserId` quand aucune ligne multi-rôles n’existe pour l’utilisateur.
+     *
+     * Deux requêtes batchées au maximum (tenant_user_roles puis user_roles), jamais une par utilisateur.
+     *
+     * @param list<int> $userIds
+     * @param array<int,int|null> $legacyRoleIdByUserId
+     * @return array<int, list<array<string,mixed>>>
+     */
+    public function listOrganizationRolesForUsers(int $tenantId, array $userIds, array $legacyRoleIdByUserId = []): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $v): bool => $v > 0)));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $roleCols = "r.id, r.name, r.slug, r.role_layer, r.badge_style,
+            COALESCE(r.semantic_tier, 'function') AS semantic_tier,
+            COALESCE(r.display_priority, 0) AS display_priority";
+
+        $byUser = [];
+        $seenPair = [];
+        $addRow = static function (array &$byUser, array &$seenPair, int $uid, array $role): void {
+            $rid = (int) ($role['id'] ?? 0);
+            if ($rid < 1 || isset($seenPair[$uid][$rid])) {
+                return;
+            }
+            $seenPair[$uid][$rid] = true;
+            $byUser[$uid][] = $role;
+        };
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT tur.user_id AS __uid, {$roleCols}
+                 FROM tenant_user_roles tur
+                 INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = ?
+                 WHERE tur.tenant_id = ? AND tur.org_unit_id IS NULL AND tur.user_id IN ({$placeholders})"
+            );
+            $stmt->execute(array_merge([$tenantId, $tenantId], $userIds));
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['__uid'] ?? 0);
+                unset($row['__uid']);
+                $addRow($byUser, $seenPair, $uid, $row);
+            }
+        } catch (\Throwable) {
+        }
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT ur.user_id AS __uid, {$roleCols}
+                 FROM user_roles ur
+                 INNER JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ?
+                 WHERE ur.user_id IN ({$placeholders})"
+            );
+            $stmt->execute(array_merge([$tenantId], $userIds));
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $uid = (int) ($row['__uid'] ?? 0);
+                unset($row['__uid']);
+                $addRow($byUser, $seenPair, $uid, $row);
+            }
+        } catch (\Throwable) {
+        }
+
+        $missingByRoleId = [];
+        foreach ($userIds as $uid) {
+            if (!empty($byUser[$uid])) {
+                continue;
+            }
+            $legacy = (int) ($legacyRoleIdByUserId[$uid] ?? 0);
+            if ($legacy > 0) {
+                $missingByRoleId[$legacy][] = $uid;
+            }
+        }
+        if ($missingByRoleId !== []) {
+            $roleIds = array_keys($missingByRoleId);
+            $ph2 = implode(',', array_fill(0, count($roleIds), '?'));
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT {$roleCols} FROM roles r WHERE r.tenant_id = ? AND r.id IN ({$ph2})"
+                );
+                $stmt->execute(array_merge([$tenantId], $roleIds));
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $rid = (int) ($row['id'] ?? 0);
+                    foreach ($missingByRoleId[$rid] ?? [] as $uid) {
+                        $addRow($byUser, $seenPair, $uid, $row);
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        $tierRank = static function (array $x): int {
+            return match ((string) ($x['semantic_tier'] ?? 'function')) {
+                'authority' => 1,
+                'function' => 2,
+                'liaison' => 3,
+                'support' => 4,
+                'specialty' => 5,
+                'status' => 6,
+                default => 2,
+            };
+        };
+        foreach ($byUser as &$rows) {
+            usort($rows, static function (array $a, array $b) use ($tierRank): int {
+                $cmp = $tierRank($a) <=> $tierRank($b);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+                $cmp = ((int) ($a['display_priority'] ?? 0)) <=> ((int) ($b['display_priority'] ?? 0));
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return strcmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+            });
+        }
+        unset($rows);
+
+        return $byUser;
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT * FROM roles WHERE id = ?';

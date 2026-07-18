@@ -1,5 +1,6 @@
 /**
  * Loader Halo Reach — grille diamant, balayage lumineux circulaire.
+ * N’interrompt pas les navigations same-document (ancres # / même pathname).
  */
 (function () {
   'use strict';
@@ -19,14 +20,29 @@
   var HALF = 8;
   var SPACING = 14;
   var MAX_R = 118;
+  var SEEN_KEY = 'athena-halo-loader-seen';
 
   /** @type {{el: SVGLineElement, ang: number, dist: number}[]} */
   var segs = [];
   var progress = 0;
   var done = false;
   var start = performance.now();
-  var minMs = reduced ? 280 : 1200;
-  var maxMs = reduced ? 600 : 2400;
+  var navType = '';
+  try {
+    var navEntries = performance.getEntriesByType && performance.getEntriesByType('navigation');
+    if (navEntries && navEntries[0]) {
+      navType = String(navEntries[0].type || '');
+    }
+  } catch (e) { /* ignore */ }
+
+  var alreadySeen = false;
+  try {
+    alreadySeen = sessionStorage.getItem(SEEN_KEY) === '1';
+  } catch (e2) { /* ignore */ }
+
+  var skipAnim = reduced || navType === 'back_forward' || alreadySeen;
+  var minMs = skipAnim ? 0 : 1200;
+  var maxMs = skipAnim ? 120 : 2400;
   var phase = 0;
 
   function toXY(i, j) {
@@ -47,7 +63,6 @@
     var dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > MAX_R) return;
 
-    // Raccourcir légèrement pour l’effet « capsule » discrète
     var vx = b.x - a.x;
     var vy = b.y - a.y;
     var len = Math.sqrt(vx * vx + vy * vy) || 1;
@@ -107,15 +122,12 @@
       dAng = Math.abs(normAng(s.ang - phase));
       dRing = Math.abs(s.dist - ring);
       score = 0;
-      // Anneau principal tournant
       if (dRing < band) {
         score += (1 - dRing / band) * (1 - Math.min(dAng, 1.15) / 1.15);
       }
-      // Noyau
       if (s.dist < 28 + p * 0.12) {
         score += 0.35 * (1 - s.dist / 40);
       }
-      // Bras / chevrons périodiques (effet mandala)
       if (dAng < 0.28 && s.dist > 30 && s.dist < ring + 8) {
         score += 0.55;
       }
@@ -140,22 +152,25 @@
   function finish() {
     if (done) return;
     done = true;
+    try {
+      sessionStorage.setItem(SEEN_KEY, '1');
+    } catch (e3) { /* ignore */ }
     setProgress(100);
     window.setTimeout(function () {
       root.classList.add('is-done');
       root.setAttribute('aria-busy', 'false');
       window.setTimeout(function () {
         if (root.parentNode) root.parentNode.removeChild(root);
-      }, 520);
-    }, reduced ? 80 : 240);
+      }, skipAnim ? 80 : 520);
+    }, skipAnim ? 0 : (reduced ? 80 : 240));
   }
 
   function tick(now) {
     var elapsed = now - start;
-    if (!reduced) {
+    if (!reduced && !skipAnim) {
       phase = (elapsed / 900) % (Math.PI * 2);
     }
-    var natural = Math.min(100, (elapsed / maxMs) * 100);
+    var natural = Math.min(100, (elapsed / Math.max(maxMs, 1)) * 100);
     var eased = natural < 70 ? natural * 0.92 : 70 + (natural - 70) * 1.35;
     var pageReady = document.readyState === 'complete';
     if (pageReady && elapsed >= minMs) {
@@ -167,7 +182,108 @@
     window.requestAnimationFrame(tick);
   }
 
+  /**
+   * True si la cible est le même document (seule l’ancre peut changer).
+   * Couvre aussi /legal ↔ /legal/site (même hub juridique).
+   */
+  function isSameDocumentUrl(url) {
+    if (!url || url.origin !== window.location.origin) return false;
+    var curPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    var nextPath = url.pathname.replace(/\/+$/, '') || '/';
+    if (curPath === nextPath && url.search === window.location.search) {
+      return true;
+    }
+    function isLegalHub(p) {
+      return /\/legal$/.test(p) || /\/legal\/site$/.test(p);
+    }
+    return isLegalHub(curPath) && isLegalHub(nextPath) && url.search === window.location.search;
+  }
+
+  function scrollToHash(hash) {
+    var id = String(hash || '').replace(/^#/, '');
+    if (!id) {
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+      return;
+    }
+    var el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    }
+  }
+
+  function markLegalTopicActive(hash) {
+    var id = String(hash || '').replace(/^#/, '');
+    document.querySelectorAll('.legal-topic').forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      a.classList.toggle('is-active', id !== '' && href.indexOf('#' + id) !== -1);
+    });
+  }
+
+  /** Intercepte les clics same-document pour éviter tout rechargement + loader. */
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented) return;
+    if (e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    if (a.target && a.target !== '' && a.target !== '_self') return;
+    if (a.hasAttribute('download')) return;
+
+    var raw = a.getAttribute('href');
+    if (!raw || raw.charAt(0) === '?') return;
+    if (/^(mailto:|tel:|javascript:)/i.test(raw)) return;
+
+    var url;
+    try {
+      url = new URL(a.href, window.location.href);
+    } catch (err) {
+      return;
+    }
+
+    if (!isSameDocumentUrl(url)) return;
+
+    e.preventDefault();
+
+    var curPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    var nextPath = url.pathname.replace(/\/+$/, '') || '/';
+    var samePath = curPath === nextPath && url.search === window.location.search;
+
+    if (samePath) {
+      if ((url.hash || '') !== (window.location.hash || '')) {
+        if (url.hash) {
+          window.location.hash = url.hash;
+        } else {
+          history.pushState(null, '', window.location.pathname + window.location.search);
+          scrollToHash('');
+          markLegalTopicActive('');
+        }
+      } else {
+        scrollToHash(url.hash);
+        markLegalTopicActive(url.hash);
+      }
+      return;
+    }
+
+    // Même hub juridique, chemin différent (/legal ↔ /legal/site) : pas de reload.
+    try {
+      history.pushState(null, '', url.pathname + url.search + (url.hash || ''));
+    } catch (err2) {
+      window.location.hash = url.hash || '';
+      return;
+    }
+    scrollToHash(url.hash);
+    markLegalTopicActive(url.hash);
+  }, true);
+
   buildGrid();
+
+  if (skipAnim) {
+    setProgress(100);
+    finish();
+    return;
+  }
+
   setProgress(0);
   window.requestAnimationFrame(tick);
 

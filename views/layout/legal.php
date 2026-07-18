@@ -54,8 +54,8 @@ $hideHaloLoader = !empty($hideHaloLoader);
             <div class="legal-footer-inner">
                 <nav class="legal-footer-nav" aria-label="Liens utiles">
                     <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>">Accueil</a>
-                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>">Légal</a>
-                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu">CGU / CGV</a>
+                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#' : url('legal/site'), ENT_QUOTES, 'UTF-8') ?>">Légal</a>
+                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#cgu' : url('legal/site') . '#cgu', ENT_QUOTES, 'UTF-8') ?>">CGU / CGV</a>
                     <a href="<?= htmlspecialchars(url('demande-donnees'), ENT_QUOTES, 'UTF-8') ?>">Vos droits</a>
                     <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>">Connexion</a>
                 </nav>
@@ -71,17 +71,23 @@ $hideHaloLoader = !empty($hideHaloLoader);
     <?php endif; ?>
     <script>
     (function () {
-      var hash = window.location.hash.replace(/^#/, '');
-      if (!hash) return;
-      var el = document.getElementById(hash);
-      if (el) {
-        window.setTimeout(function () {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 80);
+      function syncFromHash() {
+        var hash = window.location.hash.replace(/^#/, '');
+        document.querySelectorAll('.legal-topic').forEach(function (a) {
+          var href = a.getAttribute('href') || '';
+          a.classList.toggle('is-active', hash !== '' && href.indexOf('#' + hash) !== -1);
+        });
+        if (!hash) return;
+        var el = document.getElementById(hash);
+        if (el) {
+          window.setTimeout(function () {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 80);
+        }
       }
-      document.querySelectorAll('.legal-topic[href*="#' + hash + '"]').forEach(function (a) {
-        a.classList.add('is-active');
-      });
+      syncFromHash();
+      window.addEventListener('hashchange', syncFromHash);
+      window.addEventListener('popstate', syncFromHash);
     })();
     </script>
 </body>

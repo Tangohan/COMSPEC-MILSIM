@@ -1,0 +1,52 @@
+/* Miroir Athena Design System — palette canonique (ne pas inventer d’autres hex ici). */
+:root {
+  /* ————— Landing / immersive dark (marketing, auth, ATAK/terrain) ————— */
+  --void: #050505;
+  --ink: #f4f4f0;
+  --ink-muted: rgba(244, 244, 240, 0.55);
+  --ink-dim: rgba(244, 244, 240, 0.28);
+  --accent: #34d399;
+  --accent-strong: #6ee7b7;
+  --accent-ink: #052e1c;
+  --field: #0b3d2e;
+  --field-deep: #06261c;
+  --paper: #f7f7f4;
+  --rule-dark: rgba(244, 244, 240, 0.14);
+
+  /* ————— Portail clair (Athena Command — produit par défaut) ————— */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --muted: #64748b;
+
+  --primary: #059669;
+  --primary-strong: #065f46;
+  --primary-soft: #ecfdf5;
+
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --info: #1d4ed8;
+  --info-soft: #eff6ff;
+  --accent-c2: #0ea5e9;
+
+  /* Méga-menu accent set (per navigation domain — see config/navigation.php) */
+  --nav-sky: #0284c7;
+  --nav-amber: #d97706;
+  --nav-emerald: #059669;
+  --nav-violet: #7c3aed;
+  --nav-rose: #e11d48;
+  --nav-slate: #475569;
+
+  /* Semantic aliases */
+  --surface-card: var(--surface);
+  --surface-sunken: var(--surface-muted);
+  --text-body: var(--text);
+  --text-muted: var(--muted);
+  --link: var(--primary);
+  --link-hover: var(--primary-strong);
+}

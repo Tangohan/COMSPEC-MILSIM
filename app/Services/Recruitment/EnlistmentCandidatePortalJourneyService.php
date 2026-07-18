@@ -11,12 +11,125 @@ namespace App\Services\Recruitment;
 final class EnlistmentCandidatePortalJourneyService
 {
     /**
+     * Suite d’instruction non terminale (dossier reste « soumis ») : mise en attente ou entretien.
+     * Source : journal (métadonnée followup_action) puis repli sur le commentaire d’instruction.
+     *
+     * @param array<string, mixed> $enlistment
+     * @param list<array<string, mixed>> $timelineRows
+     *
+     * @return 'pending'|'interview'|null
+     */
+    public function resolveInstructionFollowup(array $enlistment, array $timelineRows): ?string
+    {
+        $status = (string) ($enlistment['status'] ?? 'submitted');
+        if ($status !== 'submitted') {
+            return null;
+        }
+
+        $latestAction = null;
+        $latestTs = null;
+        foreach ($timelineRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $meta = $row['metadata'] ?? null;
+            $meta = is_array($meta) ? $meta : [];
+            $action = (string) ($meta['followup_action'] ?? '');
+            if ($action !== 'pending' && $action !== 'interview') {
+                continue;
+            }
+            $ts = $this->parseTs((string) ($row['created_at'] ?? ''));
+            if ($ts === null) {
+                $ts = 0;
+            }
+            if ($latestTs === null || $ts >= $latestTs) {
+                $latestTs = $ts;
+                $latestAction = $action;
+            }
+        }
+        if ($latestAction !== null) {
+            return $latestAction;
+        }
+
+        $comment = (string) ($enlistment['reviewer_comment'] ?? '');
+        if ($comment === '') {
+            return null;
+        }
+        $posPending = mb_strrpos($comment, '[MISE EN ATTENTE]');
+        $posInterview = mb_strrpos($comment, '[DEMANDE ENTRETIEN]');
+        $hasPending = $posPending !== false;
+        $hasInterview = $posInterview !== false;
+        if (!$hasPending && !$hasInterview) {
+            return null;
+        }
+        if ($hasPending && !$hasInterview) {
+            return 'pending';
+        }
+        if ($hasInterview && !$hasPending) {
+            return 'interview';
+        }
+
+        return ((int) $posInterview) >= ((int) $posPending) ? 'interview' : 'pending';
+    }
+
+    /**
+     * Compte membre déjà lié à la candidature (colonne submitter_user_id).
+     *
+     * @param array<string, mixed> $enlistment
+     */
+    public function isMemberAccountLinked(array $enlistment): bool
+    {
+        return (int) ($enlistment['submitter_user_id'] ?? 0) > 0;
+    }
+
+    /**
+     * Fil / pièces clos : refus, non-admission, ou acceptation avec rattachement déjà effectué.
+     *
+     * @param array<string, mixed> $enlistment
+     */
+    public function isPortalMessagingClosed(array $enlistment): bool
+    {
+        $status = (string) ($enlistment['status'] ?? '');
+        if ($status === 'rejected' || $status === 'blocked') {
+            return true;
+        }
+
+        return $status === 'reviewed' && $this->isMemberAccountLinked($enlistment);
+    }
+
+    /**
+     * Message flash métier quand le fil (ou l’envoi de pièces) est clos.
+     *
+     * @param array<string, mixed> $enlistment
+     * @param 'message'|'upload' $context
+     */
+    public function portalMessagingClosedFlash(array $enlistment, string $context = 'message'): string
+    {
+        $status = (string) ($enlistment['status'] ?? '');
+        $isUpload = $context === 'upload';
+        if ($status === 'rejected') {
+            return $isUpload
+                ? 'Ce dossier est clos — candidature refusée. L’envoi de pièces est désactivé.'
+                : 'Ce dossier est clos — candidature refusée. Les messages sont désactivés.';
+        }
+        if ($status === 'blocked') {
+            return $isUpload
+                ? 'Ce dossier est clos — candidature non admise. L’envoi de pièces est désactivé.'
+                : 'Ce dossier est clos — candidature non admise. Les messages sont désactivés.';
+        }
+
+        return $isUpload
+            ? 'Ce dossier est clos — rattachement effectué. L’envoi de pièces est désactivé.'
+            : 'Ce dossier est clos — rattachement effectué. Les messages sont désactivés.';
+    }
+
+    /**
      * @param array<string, mixed> $enlistment
      * @param list<array<string, mixed>> $timelineRows
      * @param list<array<string, mixed>> $messages
      * @param list<array<string, mixed>> $attachments
      *
-     * @return list<array{id: string, label: string, hint: string, state: string, tooltip?: string}>
+     * @return list<array{id: string, label: string, hint: string, state: string, tooltip?: string, pause_kind?: string, current_note?: string}>
      *         ids : reception, portal_moderation_filter, portal_moderation_incident, instruction, suivi, decision, adhesion
      */
     public function buildSteps(
@@ -27,6 +140,8 @@ final class EnlistmentCandidatePortalJourneyService
     ): array {
         $status = (string) ($enlistment['status'] ?? 'submitted');
         $terminal = in_array($status, ['reviewed', 'rejected', 'blocked'], true);
+        $followup = $this->resolveInstructionFollowup($enlistment, $timelineRows);
+        $memberLinked = $this->isMemberAccountLinked($enlistment);
 
         $hasRecruiterMessage = false;
         foreach ($messages as $m) {
@@ -58,14 +173,56 @@ final class EnlistmentCandidatePortalJourneyService
             $stInstruction = 'done';
             $stSuivi = 'done';
             $stDecision = 'done';
-            $stAdhesion = 'current';
+            // Avant : toujours « current » même si submitter_user_id était déjà renseigné.
+            $stAdhesion = $memberLinked ? 'done' : 'current';
         } elseif ($status === 'rejected' || $status === 'blocked') {
             $stInstruction = 'done';
             $stSuivi = 'done';
             $stDecision = 'done';
+            $stAdhesion = 'cancelled';
         }
 
-        $tooltips = $this->buildStepTooltips($enlistment, $timelineRows, $messages, $attachments);
+        $tooltips = $this->buildStepTooltips($enlistment, $timelineRows, $messages, $attachments, $followup);
+        $isRejected = $status === 'rejected';
+        $isBlocked = $status === 'blocked';
+        $isJourneyClosedNegative = $isRejected || $isBlocked;
+
+        $instructionHint = 'L’équipe examine votre dossier et tranche les suites possibles.';
+        $suiviHint = 'Échanges sur le fil, envoi de pièces ou d’enregistrements vocaux si l’équipe l’autorise.';
+        $decisionHint = match ($status) {
+            'reviewed' => 'Dossier accepté par la communauté.',
+            'rejected' => 'Candidature refusée — dossier clos.',
+            'blocked' => 'Candidature non admise — dossier clos.',
+            default => 'L’équipe rend sa décision sur ce dossier.',
+        };
+        if ($isJourneyClosedNegative) {
+            $instructionHint = 'Instruction terminée.';
+            $suiviHint = 'Échanges clos.';
+        } elseif ($status === 'reviewed' && $memberLinked) {
+            $suiviHint = 'Échanges clos — rattachement effectué.';
+        }
+        if ($followup === 'pending') {
+            $instructionHint = 'L’équipe a temporairement mis votre dossier en attente. Le traitement reprendra plus tard.';
+            $suiviHint = 'Votre dossier est en attente. Consultez le fil ci-dessous : l’équipe vous y a laissé un message.';
+            $decisionHint = 'La décision finale n’a pas encore été rendue — dossier temporairement mis en attente.';
+        } elseif ($followup === 'interview') {
+            $instructionHint = 'L’équipe souhaite échanger avec vous (entretien) avant de trancher.';
+            $suiviHint = 'Un entretien a été proposé. Suivez les consignes sur le fil pour convenir d’un créneau.';
+            $decisionHint = 'La décision finale viendra après l’entretien proposé par l’équipe.';
+        }
+
+        $adhesionHint = 'Une fois accepté, l’équipe vous indiquera comment finaliser votre accès membre.';
+        if ($status === 'reviewed') {
+            $adhesionHint = $memberLinked
+                ? 'Compte membre rattaché.'
+                : 'Après acceptation : création ou liaison de votre compte sur le portail selon les consignes de l’équipe.';
+        } elseif ($isRejected) {
+            $adhesionHint = 'Non applicable — candidature refusée.';
+        } elseif ($isBlocked) {
+            $adhesionHint = 'Non applicable — candidature non admise.';
+        } elseif ($terminal) {
+            $adhesionHint = 'Étape non requise dans l’état actuel du dossier.';
+        }
 
         $steps = [
             [
@@ -89,42 +246,43 @@ final class EnlistmentCandidatePortalJourneyService
             [
                 'id' => 'instruction',
                 'label' => 'Instruction et arbitrage',
-                'hint' => 'L’équipe examine votre dossier et tranche les suites possibles.',
+                'hint' => $instructionHint,
                 'state' => $stInstruction,
             ],
             [
                 'id' => 'suivi',
                 'label' => 'Suivi, pièces et messages',
-                'hint' => 'Échanges sur le fil, envoi de pièces ou d’enregistrements vocaux si l’équipe l’autorise.',
+                'hint' => $suiviHint,
                 'state' => $stSuivi,
             ],
             [
                 'id' => 'decision',
                 'label' => 'Décision',
-                'hint' => match ($status) {
-                    'reviewed' => 'Dossier accepté par la communauté.',
-                    'rejected' => 'Dossier refusé. Vous pouvez encore écrire sur le fil pour des précisions.',
-                    'blocked' => 'Dossier classé non admis.',
-                    default => 'L’équipe rend sa décision sur ce dossier.',
-                },
+                'hint' => $decisionHint,
                 'state' => $stDecision,
             ],
             [
                 'id' => 'adhesion',
                 'label' => 'Rattachement au compte membre',
-                'hint' => $status === 'reviewed'
-                    ? 'Après acceptation : création ou liaison de votre compte sur le portail selon les consignes de l’équipe.'
-                    : ($terminal && $status !== 'reviewed'
-                        ? 'Étape non requise dans l’état actuel du dossier.'
-                        : 'Une fois accepté, l’équipe vous indiquera comment finaliser votre accès membre.'),
+                'hint' => $adhesionHint,
                 'state' => $stAdhesion,
             ],
         ];
 
         foreach ($steps as $i => $def) {
             $id = (string) ($def['id'] ?? '');
+            if ($isJourneyClosedNegative) {
+                // Mode refusé / non admis : parcours clos — pas d’infobulles ni de notes d’étape en cours.
+                continue;
+            }
             if ($id !== '' && isset($tooltips[$id]) && $tooltips[$id] !== '') {
                 $steps[$i]['tooltip'] = $tooltips[$id];
+            }
+            if ($followup !== null && ($def['state'] ?? '') === 'current') {
+                $steps[$i]['pause_kind'] = $followup;
+                $steps[$i]['current_note'] = $followup === 'interview'
+                    ? 'Entretien proposé — l’équipe souhaite échanger avec vous. Suivez les consignes sur le fil (et le courriel si vous l’avez reçu).'
+                    : 'Dossier mis en attente — le traitement est temporairement suspendu. Vous serez informé de la suite sur ce fil ou par e-mail.';
             }
         }
 
@@ -184,6 +342,7 @@ final class EnlistmentCandidatePortalJourneyService
      * @param list<array<string, mixed>> $timelineRows
      * @param list<array<string, mixed>> $messages
      * @param list<array<string, mixed>> $attachments
+     * @param 'pending'|'interview'|null $followup
      *
      * @return array<string, string>
      */
@@ -192,6 +351,7 @@ final class EnlistmentCandidatePortalJourneyService
         array $timelineRows,
         array $messages,
         array $attachments,
+        ?string $followup = null,
     ): array {
         $status = (string) ($enlistment['status'] ?? 'submitted');
         $terminal = in_array($status, ['reviewed', 'rejected', 'blocked'], true);
@@ -318,21 +478,40 @@ final class EnlistmentCandidatePortalJourneyService
             $out['decision'] = 'Décision enregistrée le ' . $this->formatFr($decisionTs) . '.';
         } elseif ($terminal) {
             $out['decision'] = 'Décision actuelle sans horodatage précis (voir le fil pour le détail).';
+        } elseif ($followup === 'pending') {
+            $out['decision'] = 'Décision finale non rendue — dossier temporairement mis en attente par l’équipe.';
+        } elseif ($followup === 'interview') {
+            $out['decision'] = 'Décision finale non rendue — un entretien a été proposé avant de trancher.';
         } else {
             $out['decision'] = 'Décision en attente — aucune date pour l’instant.';
         }
 
+        if ($followup === 'pending') {
+            $out['suivi'] = ($out['suivi'] ?? '') . ' L’équipe a indiqué une mise en attente du dossier.';
+            $out['instruction'] = ($out['instruction'] ?? '') . ' Suite : dossier mis en attente.';
+        } elseif ($followup === 'interview') {
+            $out['suivi'] = ($out['suivi'] ?? '') . ' L’équipe a proposé un entretien.';
+            $out['instruction'] = ($out['instruction'] ?? '') . ' Suite : entretien proposé.';
+        }
+
         if ($status === 'reviewed') {
+            $memberLinked = $this->isMemberAccountLinked($enlistment);
             if ($reviewedAt !== null) {
                 $line = 'Candidature acceptée le ' . $this->formatFr($reviewedAt) . '.';
-                if (isset($timelineFirstTs['adhesion'])) {
+                if ($memberLinked) {
+                    $line .= isset($timelineFirstTs['adhesion'])
+                        ? ' Compte membre rattaché (repère le ' . $this->formatFr($timelineFirstTs['adhesion']) . ').'
+                        : ' Compte membre rattaché.';
+                } elseif (isset($timelineFirstTs['adhesion'])) {
                     $line .= ' Repère « rattachement » le ' . $this->formatFr($timelineFirstTs['adhesion']) . '.';
                 } else {
                     $line .= ' Finalisez votre rattachement membre avec l’équipe.';
                 }
                 $out['adhesion'] = $line;
             } else {
-                $out['adhesion'] = 'Candidature acceptée — horodatage non disponible. Finalisez le rattachement avec l’équipe.';
+                $out['adhesion'] = $memberLinked
+                    ? 'Candidature acceptée — compte membre rattaché.'
+                    : 'Candidature acceptée — horodatage non disponible. Finalisez le rattachement avec l’équipe.';
             }
         } elseif ($terminal) {
             $out['adhesion'] = 'Non applicable après une décision de refus ou de non-admission.';

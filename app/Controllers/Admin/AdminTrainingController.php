@@ -28,6 +28,7 @@ use App\Services\Training\TrainingProgressService;
 use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingCertificatePdfService;
 use App\Services\Training\TrainingCertificateAssetStorageService;
+use App\Services\Training\TrainingCourseMediaUploadService;
 use App\Support\TrainingCertificatePdfEngine;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -52,6 +53,7 @@ class AdminTrainingController
         private TrainingCertificateService $certificateService,
         private TrainingCertificatePdfService $certificatePdfService,
         private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
+        private TrainingCourseMediaUploadService $courseMediaUploadService,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -431,29 +433,106 @@ class AdminTrainingController
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!TrainingCertificatePdfEngine::isAvailable()) {
-            Session::flash('error', 'La génération des documents PDF n’est pas disponible sur ce serveur. Contactez l’équipe technique.');
+            Session::flash(
+                'error',
+                TrainingCertificatePdfEngine::staffUnavailabilityHint()
+                    ?? 'La génération des documents PDF n’est pas disponible sur ce serveur. Contactez l’équipe technique.'
+            );
 
             return $redirect;
         }
-        $pendingBefore = 0;
-        foreach ($this->certificateRepository->listForTenantAdmin($tenantId, 300) as $c) {
-            if (($c['status'] ?? '') !== 'valid') {
-                continue;
-            }
-            $rel = trim((string) ($c['pdf_path'] ?? ''));
-            if ($rel === '' || !is_file(base_path($rel))) {
-                $pendingBefore++;
-            }
-        }
-        $n = $this->certificateService->backfillPendingPdfDocuments($tenantId, 80);
-        if ($n > 0) {
-            Session::flash('success', $n === 1
-                ? 'Un document PDF a été généré.'
-                : $n . ' documents PDF ont été générés.');
+        $pendingBefore = $this->certificateService->countPendingPdfDocuments($tenantId);
+        $result = $this->certificateService->backfillPendingPdfDocuments($tenantId, 80);
+        $generated = $result['generated'];
+        $failed = $result['failed'];
+        $remaining = $result['remaining'];
+
+        if ($generated > 0 && $failed === 0) {
+            Session::flash('success', $generated === 1
+                ? 'Un document a été généré.'
+                : $generated . ' documents ont été générés.');
+        } elseif ($generated > 0 && $failed > 0) {
+            Session::flash(
+                'warning',
+                $generated . ' document(s) généré(s), mais ' . $failed . ' échec(s). '
+                    . TrainingCertificatePdfEngine::staffGenerationFailureHint(
+                        $this->certificatePdfService->getLastFailureReason()
+                    )
+            );
+        } elseif ($failed > 0) {
+            Session::flash(
+                'error',
+                $failed . ' document(s) n’ont pas pu être générés. '
+                    . TrainingCertificatePdfEngine::staffGenerationFailureHint(
+                        $this->certificatePdfService->getLastFailureReason()
+                    )
+            );
         } elseif ($pendingBefore > 0) {
-            Session::flash('error', 'Aucun PDF n’a pu être généré alors que des attestations sont encore sans fichier. Vérifiez le gabarit PDF, l’espace disque et les journaux serveur (erreurs Dompdf / écriture).');
+            Session::flash('info', 'Aucun document en attente n’a été trouvé lors du traitement (peut-être déjà à jour).');
         } else {
-            Session::flash('info', 'Aucun PDF en attente : la file est vide ou les attestations sont déjà à jour.');
+            Session::flash('info', 'Aucun document en attente : tout est déjà à jour.');
+        }
+
+        if ($remaining > 0) {
+            Session::flash(
+                'info',
+                $remaining . ' attestation(s) supplémentaire(s) restent en attente ; relancez l’action pour les traiter.'
+            );
+        }
+
+        return $redirect;
+    }
+
+    public function certificateRegenerateOne(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $redirect = Response::redirect(training_lms_admin_url('certificates'));
+        if (!$request->isPost()) {
+            return $redirect;
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return $redirect;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $certId = (int) ($params['id'] ?? 0);
+        $cert = $this->certificateRepository->findById($certId, $tenantId);
+        if (!$cert) {
+            Session::flash('error', 'Attestation introuvable.');
+
+            return $redirect;
+        }
+        if (($cert['status'] ?? '') !== 'valid') {
+            Session::flash('error', 'Seules les attestations encore valides peuvent recevoir un document.');
+
+            return $redirect;
+        }
+        if (!TrainingCertificatePdfEngine::isAvailable()) {
+            Session::flash(
+                'error',
+                TrainingCertificatePdfEngine::staffUnavailabilityHint()
+                    ?? 'La génération des documents PDF n’est pas disponible sur ce serveur. Contactez l’équipe technique.'
+            );
+
+            return $redirect;
+        }
+        $relExisting = trim((string) ($cert['pdf_path'] ?? ''));
+        if ($relExisting !== '' && is_file(base_path($relExisting))) {
+            Session::flash('success', 'Le document de « ' . (string) ($cert['certificate_number'] ?? $certId) . ' » est déjà disponible.');
+
+            return $redirect;
+        }
+        $path = $this->certificatePdfService->generateAndStore($certId, $tenantId);
+        if ($path !== null && is_file(base_path($path))) {
+            Session::flash('success', 'Le document de « ' . (string) ($cert['certificate_number'] ?? $certId) . ' » a été généré.');
+        } else {
+            Session::flash(
+                'error',
+                TrainingCertificatePdfEngine::staffGenerationFailureHint(
+                    $this->certificatePdfService->getLastFailureReason()
+                )
+            );
         }
 
         return $redirect;
@@ -486,6 +565,7 @@ class AdminTrainingController
             'totalModules' => $this->trainingShellTotalModules($tenantId),
             'tpl' => $tpl,
             'trainingCertificatePdfAvailable' => TrainingCertificatePdfEngine::isAvailable(),
+            'trainingCertificatePdfHint' => TrainingCertificatePdfEngine::staffUnavailabilityHint(),
             'certGabaritLogoReadable' => $certGabaritLogoReadable,
             'certGabaritFondReadable' => $certGabaritFondReadable,
             'certLayoutShowFinalScore' => $layoutFlags['show_final_score'],
@@ -577,14 +657,20 @@ class AdminTrainingController
             throw new \RuntimeException('Accès refusé.', 403);
         }
         $tenantId = (int) Session::get('tenant_id');
-        $binary = $this->certificatePdfService->generatePreviewBinary($tenantId);
-        if ($binary === null || $binary === '') {
+        if (!TrainingCertificatePdfEngine::isAvailable()) {
             Session::flash(
                 'error',
-                'La génération PDF n’est pas disponible sur ce serveur. '
-                . 'Sur l’hébergement, exécutez « composer install » à la racine du projet (package dompdf/dompdf), '
-                . 'ou placez TCPDF dans le dossier tcpdf/ (fichier tcpdf/tcpdf.php). Sans l’un ou l’autre, aucun PDF d’attestation ne peut être produit.'
+                TrainingCertificatePdfEngine::staffUnavailabilityHint()
+                    ?? 'La génération des attestations PDF n’est pas prête sur ce serveur. '
+                    . 'Contactez l’équipe technique pour vérifier la bibliothèque PDF et les polices associées.'
             );
+
+            return Response::redirect(training_lms_admin_url('certificates/gabarit'));
+        }
+
+        $binary = $this->certificatePdfService->generatePreviewBinary($tenantId);
+        if ($binary === null || $binary === '') {
+            Session::flash('error', TrainingCertificatePdfEngine::staffGenerationFailureHint());
 
             return Response::redirect(training_lms_admin_url('certificates/gabarit'));
         }
@@ -696,9 +782,29 @@ class AdminTrainingController
             $sortRaw = trim((string) $request->input('showcase_sort_order', ''));
             $sortOrder = $sortRaw === '' ? null : max(0, (int) $sortRaw);
 
+            try {
+                $thumbnailPath = $this->resolveShowcaseMediaPath(
+                    $tenantId,
+                    (string) ($course['thumbnail_path'] ?? ''),
+                    $_FILES['thumbnail_upload'] ?? null,
+                    $request->input('thumbnail_remove', '') === '1',
+                    'thumbnail'
+                );
+                $bannerPath = $this->resolveShowcaseMediaPath(
+                    $tenantId,
+                    (string) ($course['banner_path'] ?? ''),
+                    $_FILES['banner_upload'] ?? null,
+                    $request->input('banner_remove', '') === '1',
+                    'banner'
+                );
+            } catch (\InvalidArgumentException|\RuntimeException $e) {
+                Session::flash('error', $e->getMessage());
+                return Response::redirect(training_lms_admin_url('courses/' . $id . '/showcase'));
+            }
+
             $this->courseRepository->update($id, [
-                'thumbnail_path' => trim((string) $request->input('thumbnail_path', '')) ?: null,
-                'banner_path' => trim((string) $request->input('banner_path', '')) ?: null,
+                'thumbnail_path' => $thumbnailPath,
+                'banner_path' => $bannerPath,
                 'short_description' => trim((string) $request->input('short_description', '')) ?: null,
                 'description' => trim((string) $request->input('description', '')) ?: null,
                 'showcase_cycle_date' => $showcaseCycleDate,
@@ -724,6 +830,37 @@ class AdminTrainingController
             'course' => $course,
             'tenant' => $tenant,
         ]);
+    }
+
+    /**
+     * Détermine le chemin final (miniature ou bannière) après traitement d’un envoi de fichier éventuel :
+     * priorité au retrait explicite, puis au nouveau fichier joint, sinon on conserve la valeur existante
+     * (compatible avec les chemins/URLs déjà enregistrés en base).
+     *
+     * @param array{name?: string, type?: string, tmp_name?: string, error?: int, size?: int}|null $file
+     */
+    private function resolveShowcaseMediaPath(int $tenantId, string $currentPath, ?array $file, bool $remove, string $prefix): ?string
+    {
+        $current = trim($currentPath) ?: null;
+
+        $uploaded = $this->courseMediaUploadService->storeUpload($tenantId, $file, $prefix);
+        if ($uploaded !== null) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return $uploaded;
+        }
+
+        if ($remove) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return null;
+        }
+
+        return $current;
     }
 
     /** Même périmètre que l’export Studio : pas d’export pour le seul rôle « assignation ». */

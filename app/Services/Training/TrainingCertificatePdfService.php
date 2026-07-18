@@ -11,6 +11,8 @@ use App\Support\TrainingCertificatePdfEngine;
 
 class TrainingCertificatePdfService
 {
+    private ?string $lastFailureReason = null;
+
     public function __construct(
         private TrainingCertificateRepository $certificateRepository,
         private TrainingCertificateTemplateRepository $templateRepository,
@@ -18,17 +20,29 @@ class TrainingCertificatePdfService
         private TrainingCertificateAssetStorageService $assetStorage,
     ) {}
 
+    public function getLastFailureReason(): ?string
+    {
+        return $this->lastFailureReason;
+    }
+
     /**
      * Génère le PDF, l’enregistre et met à jour pdf_path. Retourne le chemin relatif ou null.
      */
     public function generateAndStore(int $certificateId, int $tenantId): ?string
     {
+        $this->lastFailureReason = null;
+
         if (!TrainingCertificatePdfEngine::isAvailable()) {
+            $this->lastFailureReason = TrainingCertificatePdfEngine::staffUnavailabilityHint()
+                ?? 'Aucun moteur PDF utilisable sur ce serveur.';
+
             return null;
         }
 
         $cert = $this->certificateRepository->findById($certificateId, $tenantId);
         if (!$cert) {
+            $this->lastFailureReason = 'Attestation introuvable pour cette communauté.';
+
             return null;
         }
 
@@ -38,17 +52,33 @@ class TrainingCertificatePdfService
 
         $binary = $this->renderPdfBinary($tpl, $payload);
         if ($binary === null || $binary === '') {
+            if ($this->lastFailureReason === null) {
+                $this->lastFailureReason = 'Le moteur PDF n’a produit aucun fichier.';
+            }
+
             return null;
         }
 
         $relDir = 'storage/app/training-certificates-generated/' . $tenantId;
         $absDir = base_path($relDir);
-        if (!is_dir($absDir) && !mkdir($absDir, 0775, true) && !is_dir($absDir)) {
+        if (!is_dir($absDir) && !@mkdir($absDir, 0775, true) && !is_dir($absDir)) {
+            $this->lastFailureReason = 'Impossible de créer le dossier de stockage des attestations (droits d’écriture).';
+
+            return null;
+        }
+        if (!is_writable($absDir)) {
+            @chmod($absDir, 0775);
+        }
+        if (!is_writable($absDir)) {
+            $this->lastFailureReason = 'Le dossier de stockage des attestations n’est pas accessible en écriture.';
+
             return null;
         }
         $relPath = $relDir . '/' . $certificateId . '.pdf';
         $absPath = base_path($relPath);
-        if (file_put_contents($absPath, $binary) === false) {
+        if (@file_put_contents($absPath, $binary) === false) {
+            $this->lastFailureReason = 'Impossible d’enregistrer le fichier PDF sur le serveur (espace disque ou droits).';
+
             return null;
         }
         $this->certificateRepository->updatePdfPath($certificateId, $relPath);
@@ -83,17 +113,34 @@ class TrainingCertificatePdfService
             }
         }
         if (class_exists(\Dompdf\Dompdf::class)) {
-            $html = $this->buildDompdfHtml($tpl, $payload);
-            $root = realpath(base_path()) ?: base_path();
-            $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false, 'chroot' => $root]);
-            $dompdf->loadHtml($html);
-            $dompdf->setPaper('A4', 'landscape');
-            $dompdf->render();
-            $binary = $dompdf->output();
-            if ($binary !== false && $binary !== '') {
-                return $binary;
+            try {
+                $html = $this->buildDompdfHtml($tpl, $payload);
+                $root = realpath(base_path()) ?: base_path();
+                $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false, 'chroot' => $root]);
+                $dompdf->loadHtml($html);
+                $dompdf->setPaper('A4', 'landscape');
+                $dompdf->render();
+                $binary = $dompdf->output();
+                if ($binary !== false && $binary !== '') {
+                    return $binary;
+                }
+                error_log('[training_certificate_pdf] Dompdf : sortie vide (render sans exception).');
+                $this->lastFailureReason = 'Le moteur de secours n’a produit aucun document.';
+            } catch (\Throwable $e) {
+                error_log(
+                    '[training_certificate_pdf] Dompdf : ' . $e->getMessage()
+                    . ' @ ' . $e->getFile() . ':' . $e->getLine()
+                );
+                $this->lastFailureReason = 'Échec du moteur de secours PDF.';
             }
+
+            return null;
         }
+
+        if ($this->lastFailureReason === null) {
+            $this->lastFailureReason = 'TCPDF n’a pas pu produire le document et aucun moteur de secours n’est installé.';
+        }
+        error_log('[training_certificate_pdf] Aucun moteur PDF utilisable après échec TCPDF (Dompdf absent).');
 
         return null;
     }
@@ -213,14 +260,46 @@ class TrainingCertificatePdfService
     private function renderWithTcpdf(array $tpl, array $payload): ?string
     {
         if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
+            $this->lastFailureReason = 'Impossible de charger la bibliothèque PDF.';
+
+            return null;
+        }
+        if (TrainingCertificatePdfEngine::resolveCertificateFontFamily() === null) {
+            $this->lastFailureReason = 'Polices du document PDF incomplètes sur le serveur.';
+
             return null;
         }
 
         try {
-            return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(
-                fn (): ?string => $this->renderWithTcpdfInner($tpl, $payload)
+            // Tentative avec images du gabarit ; si TCPDF Error() détruit le doc (image invalide / cache),
+            // on recommence sans images pour garantir un PDF exploitable.
+            $withImages = TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(
+                fn (): ?string => $this->renderWithTcpdfInner($tpl, $payload, true)
             );
-        } catch (\Throwable) {
+            if ($withImages !== null && $withImages !== '') {
+                $this->lastFailureReason = null;
+
+                return $withImages;
+            }
+
+            $withoutImages = TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(
+                fn (): ?string => $this->renderWithTcpdfInner($tpl, $payload, false)
+            );
+            if ($withoutImages !== null && $withoutImages !== '') {
+                $this->lastFailureReason = null;
+                error_log('[training_certificate_pdf] TCPDF : PDF généré sans images du gabarit (logo/fond exclus).');
+
+                return $withoutImages;
+            }
+
+            return null;
+        } catch (\Throwable $e) {
+            error_log(
+                '[training_certificate_pdf] TCPDF : ' . $e->getMessage()
+                . ' @ ' . $e->getFile() . ':' . $e->getLine()
+            );
+            $this->lastFailureReason = 'Erreur lors de la composition du document PDF.';
+
             return null;
         }
     }
@@ -229,10 +308,15 @@ class TrainingCertificatePdfService
      * @param array<string, mixed> $tpl
      * @param array<string, mixed> $payload
      */
-    private function renderWithTcpdfInner(array $tpl, array $payload): ?string
+    private function renderWithTcpdfInner(array $tpl, array $payload, bool $withImages): ?string
     {
-        $logoAbs = $this->assetStorage->absolutePath($tpl['logo_relative_path']);
-        $bgAbs = $this->assetStorage->absolutePath($tpl['background_relative_path']);
+        $font = TrainingCertificatePdfEngine::resolveCertificateFontFamily();
+        if ($font === null) {
+            return null;
+        }
+
+        $logoAbs = $withImages ? $this->tcpdfSafeImagePath($this->assetStorage->absolutePath($tpl['logo_relative_path'])) : null;
+        $bgAbs = $withImages ? $this->tcpdfSafeImagePath($this->assetStorage->absolutePath($tpl['background_relative_path'])) : null;
 
         $pdf = new \TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->setPrintHeader(false);
@@ -244,17 +328,21 @@ class TrainingCertificatePdfService
         $pageW = $pdf->getPageWidth();
         $pageH = $pdf->getPageHeight();
 
-        if ($bgAbs !== null && is_file($bgAbs)) {
+        if ($bgAbs !== null) {
             try {
                 $pdf->Image($bgAbs, 0, 0, $pageW, $pageH, '', '', '', false, 300, '', false, false, 0, false, false, false);
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                // Error() détruit le document : il faut abandonner cette tentative.
+                $this->lastFailureReason = 'L’image de fond du gabarit n’a pas pu être intégrée. Utilisez un JPEG ou un PNG.';
+                error_log('[training_certificate_pdf] TCPDF fond : ' . $e->getMessage());
+
+                return null;
             }
         }
 
-        $pdf->SetAlpha(0.92);
+        // Fond blanc opaque (évite setAlpha, plus fragile selon versions / caches).
         $pdf->SetFillColor(255, 255, 255);
         $pdf->Rect(14, 14, $pageW - 28, $pageH - 28, 'F');
-        $pdf->SetAlpha(1);
 
         $accentRgb = $this->hexToRgb($tpl['accent_hex']);
         $pdf->SetDrawColor($accentRgb[0], $accentRgb[1], $accentRgb[2]);
@@ -265,46 +353,49 @@ class TrainingCertificatePdfService
         $contentW = $pageW - 44;
         $y = 20;
 
-        if ($logoAbs !== null && is_file($logoAbs)) {
+        if ($logoAbs !== null) {
             try {
                 $pdf->Image($logoAbs, $contentX, $y, 45, 0);
                 $y += 20;
-            } catch (\Throwable) {
-                $y += 4;
+            } catch (\Throwable $e) {
+                $this->lastFailureReason = 'Le logo du gabarit n’a pas pu être intégré. Utilisez un JPEG ou un PNG.';
+                error_log('[training_certificate_pdf] TCPDF logo : ' . $e->getMessage());
+
+                return null;
             }
         }
 
         $primaryRgb = $this->hexToRgb($tpl['primary_hex']);
         $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
-        $pdf->SetFont('dejavusans', 'B', 20);
+        $pdf->SetFont($font, 'B', 20);
         $pdf->SetXY($contentX, $y);
         $pdf->MultiCell($contentW, 10, $tpl['headline'], 0, 'L', false, 1);
         $y = $pdf->GetY() + 2;
 
         if ($tpl['subtitle'] !== '') {
             $pdf->SetTextColor(71, 85, 105);
-            $pdf->SetFont('dejavusans', '', 11);
+            $pdf->SetFont($font, '', 11);
             $pdf->SetXY($contentX, $y);
             $pdf->MultiCell($contentW, 6, $tpl['subtitle'], 0, 'L', false, 1);
             $y = $pdf->GetY() + 6;
         }
 
         $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
-        $pdf->SetFont('dejavusans', '', 12);
+        $pdf->SetFont($font, '', 12);
         $pdf->SetXY($contentX, $y);
         $pdf->Write(8, 'Décernée à ');
-        $pdf->SetFont('dejavusans', 'B', 12);
+        $pdf->SetFont($font, 'B', 12);
         $pdf->Write(8, (string) $payload['learner_name']);
         $y = $pdf->GetY() + 12;
 
-        $pdf->SetFont('dejavusans', 'B', 15);
+        $pdf->SetFont($font, 'B', 15);
         $pdf->SetTextColor($accentRgb[0], $accentRgb[1], $accentRgb[2]);
         $pdf->SetXY($contentX, $y);
         $pdf->MultiCell($contentW, 9, (string) $payload['course_title'], 0, 'L', false, 1);
         $y = $pdf->GetY() + 6;
 
         $pdf->SetTextColor(100, 116, 139);
-        $pdf->SetFont('dejavusans', '', 10);
+        $pdf->SetFont($font, '', 10);
         $lines = [
             'Référence : ' . (string) $payload['certificate_number'],
             'Délivrée le ' . (string) $payload['issued_date_fr'],
@@ -323,7 +414,7 @@ class TrainingCertificatePdfService
 
         if ($tpl['footer_legal'] !== '') {
             $pdf->SetTextColor(148, 163, 184);
-            $pdf->SetFont('dejavusans', '', 8);
+            $pdf->SetFont($font, '', 8);
             $footerY = $pageH - 28;
             $pdf->SetXY($contentX, $footerY);
             $pdf->MultiCell($contentW, 4, $tpl['footer_legal'], 0, 'L', false, 1);
@@ -331,7 +422,30 @@ class TrainingCertificatePdfService
 
         $out = $pdf->Output('', 'S');
 
-        return is_string($out) ? $out : null;
+        return is_string($out) && $out !== '' ? $out : null;
+    }
+
+    /**
+     * Chemins image utilisables par TCPDF (JPEG / PNG / GIF). WebP et formats exotiques exclus.
+     */
+    private function tcpdfSafeImagePath(?string $absolutePath): ?string
+    {
+        if ($absolutePath === null || $absolutePath === '' || !is_file($absolutePath) || !is_readable($absolutePath)) {
+            return null;
+        }
+        $info = @getimagesize($absolutePath);
+        if ($info === false) {
+            return null;
+        }
+        $type = (int) ($info[2] ?? 0);
+        $allowed = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_GIF];
+        if (!in_array($type, $allowed, true)) {
+            error_log('[training_certificate_pdf] Image gabarit ignorée (format non supporté par TCPDF) : ' . $absolutePath);
+
+            return null;
+        }
+
+        return $absolutePath;
     }
 
     private function buildImageDataUriHtml(string $absolutePath, string $cssClass): string

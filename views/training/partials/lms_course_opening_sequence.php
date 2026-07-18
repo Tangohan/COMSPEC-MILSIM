@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 $lmsOpeningCourseId = (int) ($lmsOpeningCourseId ?? 0);
 $lmsOpeningTitle = (string) ($lmsOpeningTitle ?? '');
-$lmsOpeningBannerSrc = (string) ($lmsOpeningBannerSrc ?? '');
+$lmsOpeningBannerSrc = trim((string) ($lmsOpeningBannerSrc ?? ''));
 $lmsOpeningCtaMode = (string) ($lmsOpeningCtaMode ?? 'scroll_inscription');
 $lmsOpeningLessonUrl = (string) ($lmsOpeningLessonUrl ?? '');
 $lmsOpeningLoaderImageSrc = (string) ($lmsOpeningLoaderImageSrc ?? '');
@@ -20,13 +20,17 @@ $lmsOpeningLoaderBody = trim((string) ($lmsOpeningLoaderBody ?? ''));
 if ($lmsOpeningCourseId < 1) {
     return;
 }
+if ($lmsOpeningBannerSrc === '' && function_exists('training_course_default_cover_url')) {
+    $lmsOpeningBannerSrc = training_course_default_cover_url();
+} elseif ($lmsOpeningBannerSrc === '' && function_exists('training_media_url')) {
+    $lmsOpeningBannerSrc = training_media_url(null);
+}
 $storageKey = 'lms_course_intro_' . $lmsOpeningCourseId;
 $configJson = json_encode([
     'storageKey' => $storageKey,
     'ctaMode' => $lmsOpeningCtaMode === 'lesson' ? 'lesson' : 'scroll_inscription',
     'lessonUrl' => $lmsOpeningLessonUrl,
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE);
-$bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE);
 ?>
 <div id="lms-course-opening-root" class="lms-course-open-root" hidden>
     <div id="lms-course-opening-loader" class="lms-course-open-loader" role="status" aria-live="polite" aria-busy="true">
@@ -50,12 +54,25 @@ $bannerUrlCss = json_encode($lmsOpeningBannerSrc, JSON_HEX_TAG | JSON_HEX_APOS |
     </div>
     <div id="lms-course-opening-intro" class="lms-course-open-intro" role="dialog" aria-modal="true" aria-labelledby="lms-course-opening-title" aria-hidden="true" hidden>
         <div class="lms-course-open-intro__stack">
-            <div class="lms-course-open-intro__image" style="background-image: url(<?= $bannerUrlCss ?>);"></div>
+            <div class="lms-course-open-intro__image" aria-hidden="true">
+                <?php if ($lmsOpeningBannerSrc !== ''): ?>
+                <img
+                    src="<?= htmlspecialchars($lmsOpeningBannerSrc, ENT_QUOTES, 'UTF-8') ?>"
+                    alt=""
+                    class="lms-course-open-intro__img"
+                    loading="eager"
+                    decoding="async"
+                    fetchpriority="high"
+                    onerror="this.remove()"
+                >
+                <?php endif; ?>
+            </div>
             <div class="lms-course-open-intro__content">
                 <div class="lms-course-open-intro__copy">
-                    <p class="lms-course-open-intro__kicker">Parcours</p>
+                    <p class="lms-course-open-intro__kicker">Préambule</p>
                     <h2 id="lms-course-opening-title" class="lms-course-open-intro__title"><?= htmlspecialchars($lmsOpeningTitle, ENT_QUOTES, 'UTF-8') ?></h2>
-                    <button type="button" id="lms-course-opening-cta" class="lms-course-open-intro__cta">Commencer</button>
+                    <p class="lms-course-open-intro__lead" style="margin:0 0 1rem;max-width:28rem;font-size:0.875rem;line-height:1.5;color:rgba(255,255,255,0.72)">Cadre du parcours, puis enchaînement module après module.</p>
+                    <button type="button" id="lms-course-opening-cta" class="lms-course-open-intro__cta"><?= htmlspecialchars($lmsOpeningCtaLabel ?? 'Commencer', ENT_QUOTES, 'UTF-8') ?></button>
                 </div>
             </div>
         </div>

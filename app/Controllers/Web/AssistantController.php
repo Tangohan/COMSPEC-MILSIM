@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Services\Portal\AssistantAnswerService;
 
 final class AssistantController
 {
+    public function __construct(
+        private AssistantAnswerService $assistantAnswerService,
+    ) {}
+
     public function index(Request $request, array $params = []): Response
     {
         return Response::view('layout.main', [
@@ -41,16 +47,13 @@ final class AssistantController
             $question = mb_substr($question, 0, 500);
         }
 
-        return Response::json([
-            'success' => true,
-            'answer' => 'L’assistant est en cours de déploiement pour votre communauté. '
-                . 'En attendant, utilisez la recherche du portail ou le guide intégré pour trouver documents, sujets et modules.',
-            'suggestions' => [
-                ['label' => 'Ouvrir la recherche', 'href' => url('search')],
-                ['label' => 'Consulter le guide', 'href' => url('documentation')],
-                ['label' => 'Centre de commandement', 'href' => url('hub')],
-            ],
-            'scoped' => true,
-        ]);
+        $payload = $this->assistantAnswerService->answer(
+            $tenantId,
+            $userId,
+            $question,
+            Gate::getInstance()
+        );
+
+        return Response::json(array_merge(['success' => true], $payload));
     }
 }

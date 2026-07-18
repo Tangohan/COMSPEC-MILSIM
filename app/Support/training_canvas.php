@@ -228,7 +228,7 @@ function training_canvas_fill_blanks_html(string $sanitizedHtml): string
             $id = 'lms-blank-' . substr(sha1($expected . random_bytes(4)), 0, 10);
 
             return '<input type="text" name="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8')
-                . '" autocomplete="off" class="lms-fill-blank-input inline-block min-w-[6rem] max-w-[16rem] border-b-2 border-violet-400 bg-violet-50/60 px-1.5 py-0.5 mx-0.5 rounded-t text-sm font-medium text-slate-900 focus:ring-2 focus:ring-violet-300 outline-none align-baseline" data-lms-blank data-expected="'
+                . '" autocomplete="off" spellcheck="false" class="lms-fill-blank-input inline-block min-w-[6rem] max-w-[16rem] border-b-2 border-violet-400 bg-violet-50/60 px-1.5 py-0.5 mx-0.5 rounded-t text-sm font-medium text-slate-900 focus:ring-2 focus:ring-violet-300 outline-none align-baseline" data-lms-blank data-expected="'
                 . htmlspecialchars($expected, ENT_QUOTES, 'UTF-8') . '" aria-label="Compléter le mot manquant" />';
         },
         $sanitizedHtml

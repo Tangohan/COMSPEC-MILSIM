@@ -43,5 +43,5 @@ if (!empty($personnelProfile['character_portrait_path'])) {
             <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Mettre à jour le portrait</button>
         </form>
     </div>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> — <a href="<?= url('account/image') ?>" class="underline">Photo de compte (avatar)</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> — <a href="<?= url('account/image') ?>" class="underline">Photo de compte (avatar)</a> — <a href="<?= url('account/banner') ?>" class="underline">Couverture du menu session</a></p>
 </div>

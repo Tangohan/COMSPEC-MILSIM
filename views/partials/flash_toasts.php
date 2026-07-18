@@ -148,7 +148,7 @@ $eyebrowFor = static function (string $variant, string $message): string {
   function updateToastOffset() {
     var root = document.getElementById('flash-toast-root');
     if (!root) return;
-    var nav = document.querySelector('[data-portal-nav]');
+    var nav = document.querySelector('[data-portal-nav]') || document.querySelector('[data-athena-header]') || document.querySelector('.dash-topnav');
     var safeTop = 16; // 1rem fallback
     if (nav && typeof nav.getBoundingClientRect === 'function') {
       var rect = nav.getBoundingClientRect();

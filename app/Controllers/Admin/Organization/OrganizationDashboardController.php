@@ -130,6 +130,44 @@ class OrganizationDashboardController
             }
         }
 
+        $orgAnnounceItems = [];
+        try {
+            foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
+                $orgAnnounceItems[] = [
+                    'kind' => (string) ($alert['kind'] ?? 'info'),
+                    'title' => (string) ($alert['title'] ?? ''),
+                    'body' => trim((string) ($alert['body'] ?? '')),
+                    'cta_label' => isset($alert['cta_label']) && $alert['cta_label'] !== '' ? (string) $alert['cta_label'] : null,
+                    'cta_url' => isset($alert['cta_url']) && $alert['cta_url'] !== '' ? (string) $alert['cta_url'] : null,
+                ];
+            }
+        } catch (\Throwable) {
+            $orgAnnounceItems = [];
+        }
+        try {
+            $pinRows = (new \App\Repositories\TenantDashboardPinRepository())->listOrderedForTenant($tenantId);
+            foreach ($pinRows as $pin) {
+                if ((string) ($pin['pin_type'] ?? '') !== 'notice') {
+                    continue;
+                }
+                $body = trim((string) ($pin['notice_body'] ?? ''));
+                if ($body === '') {
+                    continue;
+                }
+                $label = trim((string) ($pin['title'] ?? ''));
+                $orgAnnounceItems[] = [
+                    'kind' => 'notice',
+                    'category' => 'Annonce',
+                    'title' => $label !== '' ? $label : 'Annonce',
+                    'body' => $body,
+                    'cta_label' => 'Gérer',
+                    'cta_url' => url('back-office/dashboard-pins'),
+                ];
+            }
+        } catch (\Throwable) {
+            // Les consignes épinglées restent optionnelles.
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Administration organisationnelle',
@@ -150,6 +188,7 @@ class OrganizationDashboardController
             'orgTrainingFeedError' => $orgTrainingFeedError,
             'orgTrainingFeedCompletionAnalytics' => $orgTrainingFeedCompletionAnalytics,
             'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
+            'orgAnnounceItems' => $orgAnnounceItems,
             'tenantName' => $tenantName,
         ]);
     }

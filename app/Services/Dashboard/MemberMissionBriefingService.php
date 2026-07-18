@@ -24,7 +24,8 @@ final class MemberMissionBriefingService
     /**
      * @param list<array{id: int, kind: string, label: string, href: ?string, notice_text: ?string}> $dashboardPins
      * @return array{
-     *   next_op: ?array{title: string, starts_at: string, list_href: string, rsvp_label: ?string},
+     *   next_op: ?array{title: string, starts_at: string, list_href: string, rsvp_label: ?string, summary?: string},
+     *   upcoming_ops: list<array{title: string, starts_at: string, list_href: string, rsvp_label: ?string, summary: string}>,
      *   trainings: list<array{title: string, href: string, subtitle: string, urgent: bool, progress_pct: int}>,
      *   modpack: ?array{title: string, detail_href: string, has_pack: bool},
      *   consigne_excerpt: ?string,
@@ -39,22 +40,30 @@ final class MemberMissionBriefingService
         bool $trainingFeatureEnabled,
     ): array {
         $nextOp = null;
+        $upcomingOps = [];
         if ($this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
-            $rows = $this->events->upcomingForTenantWithUserRsvp($tenantId, $userId, 1);
-            if ($rows !== []) {
-                $ev = $rows[0];
+            $rows = $this->events->upcomingForTenantWithUserRsvp($tenantId, $userId, 5);
+            foreach ($rows as $ev) {
                 $title = trim((string) ($ev['title'] ?? ''));
                 if ($title === '') {
                     $title = 'Opération à venir';
                 }
                 $starts = (string) ($ev['starts_at'] ?? '');
                 $rsvp = isset($ev['rsvp_status']) ? (string) $ev['rsvp_status'] : '';
-                $nextOp = [
+                $item = [
                     'title' => $title,
                     'starts_at' => $starts,
                     'list_href' => url('evenements'),
                     'rsvp_label' => self::rsvpLabel($rsvp),
+                    'summary' => trim(preg_replace('/\s+/', ' ', strip_tags((string) ($ev['description'] ?? ''))) ?? ''),
                 ];
+                if (mb_strlen($item['summary']) > 120) {
+                    $item['summary'] = mb_substr($item['summary'], 0, 117) . '…';
+                }
+                $upcomingOps[] = $item;
+            }
+            if ($upcomingOps !== []) {
+                $nextOp = $upcomingOps[0];
             }
         }
 
@@ -152,6 +161,7 @@ final class MemberMissionBriefingService
 
         return [
             'next_op' => $nextOp,
+            'upcoming_ops' => $upcomingOps,
             'trainings' => $trainings,
             'modpack' => $modpackBlock,
             'consigne_excerpt' => $consigneExcerpt,

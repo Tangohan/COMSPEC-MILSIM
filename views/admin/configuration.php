@@ -67,18 +67,19 @@ $card = static function (string $href, string $title, string $desc, string $acce
     ?>
     <?php if ($appDebug): ?>
     <section class="mb-10 rounded-2xl border border-amber-400/80 bg-amber-50/95 p-6 shadow-sm">
-        <h2 class="text-sm font-black uppercase tracking-widest text-amber-950">Debug tenant (APP_DEBUG)</h2>
+        <h2 class="text-sm font-black uppercase tracking-widest text-amber-950">Outil de développement</h2>
         <p class="mt-2 text-sm text-amber-950/90 leading-relaxed">
-            Synchronise les comptes liés aux <strong>candidatures acceptées</strong> (<code class="rounded bg-amber-100/80 px-1 text-xs">submitter_user_id</code>) :
-            passage en <strong>membre actif</strong>, e-mail considéré comme vérifié, rôle <strong>« Période d’essai » (probation)</strong> — sinon <strong>Visiteur (invite)</strong> — sinon <strong>Opérateur (member)</strong>,
-            et affectation <strong>Recrue</strong> sur la <strong>première unité</strong> de l’ORBAT (si une unité existe).
+            Met à jour les comptes liés aux <strong>candidatures acceptées</strong> :
+            statut <strong>membre actif</strong>, e-mail considéré comme vérifié,
+            rôle <strong>Période d’essai</strong> (ou Visiteur, sinon Opérateur),
+            et affectation comme <strong>Recrue</strong> sur la <strong>première unité</strong> de l’organigramme, s’il en existe une.
         </p>
         <form method="post" action="<?= htmlspecialchars(url('back-office/configuration/debug-recruit-sync'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 flex flex-wrap items-center gap-3">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
             <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-amber-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-amber-950">
-                Forcer synchro recrues / affectations
+                Relancer la mise à jour des recrues
             </button>
-            <span class="text-xs text-amber-900/80">Réservé au développement — ne pas activer APP_DEBUG en production.</span>
+            <span class="text-xs text-amber-900/80">Réservé au développement — à ne pas utiliser en production.</span>
         </form>
     </section>
     <?php endif; ?>

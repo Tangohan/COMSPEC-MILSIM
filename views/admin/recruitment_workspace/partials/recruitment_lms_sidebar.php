@@ -130,6 +130,11 @@ $navClass = static function (string $id) use ($active): string {
             <p class="text-[11px] text-white/35 mt-2">Sur <?= $nTotal ?> dossier<?= $nTotal > 1 ? 's' : '' ?> enregistré<?= $nTotal > 1 ? 's' : '' ?>.</p>
         </div>
         <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
+            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Formation</p>
+            <a href="<?= htmlspecialchars(url('formations/parcours-bureau-recrutement'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-black uppercase tracking-[0.14em] text-emerald-300 hover:text-white transition-colors">Bureau recrutement</a>
+            <p class="text-[11px] text-white/35 mt-2">Parcours certifiant pour instruire une candidature de bout en bout.</p>
+        </div>
+        <div class="rounded-2xl bg-white/[0.03] border border-white/5 p-4">
             <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Portail</p>
             <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-black uppercase tracking-[0.14em] text-sky-300 hover:text-white transition-colors">Retour back-office</a>
             <p class="text-[11px] text-white/35 mt-2">Menu communauté, modules et administration générale.</p>

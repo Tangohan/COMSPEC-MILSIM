@@ -128,7 +128,7 @@
         '@[id|class|colspan|rowspan],a[href|title|rel],p,br,h2,h3,h4,ul,ol,li,strong/b,em/i,blockquote,table,thead,tbody,tr,th,td,div,span',
       invalid_elements: 'script,iframe,object,embed,form,input,button,textarea,select,option,style',
       content_style:
-        'body{font-family:"Source Serif 4",Georgia,serif;font-size:17px;line-height:1.65;color:#0f172a;padding:8px 12px;max-width:42rem;margin:0 auto;}',
+        'body{font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.65;color:#0f172a;padding:8px 12px;max-width:42rem;margin:0 auto;}',
       setup: function (ed) {
         ed.on('change keyup undo redo', function () {
           ed.save();

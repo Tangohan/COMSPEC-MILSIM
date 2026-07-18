@@ -54,6 +54,17 @@ $roleplayFollowupConfig = is_array($roleplayFollowupConfig ?? null) ? $roleplayF
 $roleplayEligibility = is_array($roleplayEligibility ?? null) ? $roleplayEligibility : ['eligible' => false, 'checks' => []];
 $rpTutorLabel = isset($rpTutorLabel) && is_string($rpTutorLabel) ? trim($rpTutorLabel) : null;
 $roleplayTimelineEvents = is_array($roleplayTimelineEvents ?? null) ? $roleplayTimelineEvents : [];
+$canViewBilans = !empty($canViewBilans ?? false);
+$canCreateBilans = !empty($canCreateBilans ?? false);
+$personnelStageBilans = is_array($personnelStageBilans ?? null) ? $personnelStageBilans : [];
+$personnelRecruitmentBilans = is_array($personnelRecruitmentBilans ?? null) ? $personnelRecruitmentBilans : [];
+$bilanStageOptions = is_array($bilanStageOptions ?? null) ? $bilanStageOptions : [];
+$personnelStageBilansSchemaReady = !empty($personnelStageBilansSchemaReady ?? false);
+$personnelFileInitialTab = trim((string) ($_GET['tab'] ?? ''));
+$personnelFileAllowedTabs = ['resume', 'seniorite', 'ops', 'formation', 'logistique', 'historique', 'bilans', 'administratif', 'tableau'];
+if (!in_array($personnelFileInitialTab, $personnelFileAllowedTabs, true)) {
+    $personnelFileInitialTab = 'resume';
+}
 
 $lmsEnrollmentStatusFr = static function (string $s): string {
     return match ($s) {
@@ -458,6 +469,34 @@ if (!function_exists('personnel_file_render_admin_value')) {
         require base_path('views/partials/personnel/operator_tabs.php');
         ?>
     </div>
+    <?php
+    $canAccessRhView = !empty($canAccessRhView ?? false);
+    $personnelViewMode = isset($personnelViewMode) && in_array($personnelViewMode, ['public', 'rh'], true) ? $personnelViewMode : '';
+    $personnelFileSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
+    $personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (string) ($targetUser['id'] ?? '');
+    $personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
+    if ($canAccessRhView && $personnelViewMode === '') {
+        require base_path('views/partials/personnel/file_view_gate.php');
+        echo '</main>';
+        return;
+    }
+    if ($canAccessRhView && $personnelViewMode === 'rh') {
+        require base_path('views/partials/personnel/file_rh_view.php');
+        echo '</main>';
+        return;
+    }
+    ?>
+    <?php if ($canAccessRhView): ?>
+    <div class="max-w-7xl mx-auto px-6 md:px-8">
+        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-2.5">
+            <p class="text-xs font-semibold text-violet-900">Vous consultez la vue publique de ce dossier.</p>
+            <a href="<?= htmlspecialchars($personnelFileBaseUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-violet-700 hover:text-violet-900">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>
+                Choisir la vue RH
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
     <!-- Hero -->
     <section class="w-full bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/30 border-b border-slate-700/50">
         <div class="max-w-7xl mx-auto px-6 md:px-8 py-12 md:py-16">
@@ -579,9 +618,9 @@ if (!function_exists('personnel_file_render_admin_value')) {
     </section>
 
     <!-- Récap -->
-    <section class="w-full border-b border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto px-6 md:px-8 py-6">
-            <div class="flex flex-wrap gap-6 md:gap-10">
+    <section class="w-full border-b border-slate-200 bg-gradient-to-r from-white via-emerald-50/40 to-white">
+        <div class="max-w-7xl mx-auto px-6 md:px-8 py-4 md:py-5">
+            <div class="flex flex-wrap gap-5 md:gap-8">
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Rang</p>
                     <p class="text-sm font-black text-slate-900 italic"><?= $effectiveRankDisplay !== '' ? htmlspecialchars($effectiveRankDisplay) : '—' ?></p>
@@ -592,7 +631,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Habilitation</p>
-                    <p class="text-sm font-black text-emerald-600 italic"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
+                    <p class="text-sm font-black text-[#059669] italic"><?= $clearanceLevel ? htmlspecialchars($clearanceLevel) : '—' ?></p>
                 </div>
                 <div>
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Préparation</p>
@@ -621,11 +660,19 @@ if (!function_exists('personnel_file_render_admin_value')) {
         </div>
     </section>
 
-    <div class="max-w-7xl mx-auto px-6 md:px-8 py-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <!-- Sidebar -->
-            <aside class="lg:col-span-3 lg:sticky lg:top-32 h-fit order-2 lg:order-1 space-y-6">
-                <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+    <style>
+        /* Pleine largeur onglet tableau : lg:col-span-12 n’est pas dans le CSS Tailwind compilé */
+        @media (min-width: 1024px) {
+            .personnel-file-main.personnel-file-main--full {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+    <div class="max-w-7xl mx-auto px-6 md:px-8 py-8 md:py-10" x-data="{ tab: '<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>' }">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+            <!-- Sidebar (masquée sur l’onglet tableau pour libérer toute la largeur) -->
+            <aside class="lg:col-span-3 lg:sticky lg:top-32 h-fit order-2 lg:order-1 space-y-5" x-show="tab !== 'tableau'" <?= $personnelFileInitialTab === 'tableau' ? 'style="display: none"' : '' ?>>
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm ring-1 ring-emerald-900/[0.03]">
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Photo de compte</p>
                     <div class="aspect-square max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
                         <?php if ($avatarUrl): ?>
@@ -675,7 +722,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 </div>
                 <?php if ($canEditProfile): ?>
                 <div class="flex flex-col gap-2">
-                    <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>" class="text-[9px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700">Éditer le dossier</a>
+                    <a href="<?= url('personnel/' . (int)$targetUser['id'] . '/edit') ?>" class="text-[9px] font-black uppercase tracking-widest text-[#059669] hover:text-emerald-800">Éditer le dossier</a>
                     <a href="<?= url('account/image') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">Photo de compte</a>
                     <a href="<?= url('account/portrait') ?>" class="text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-900">Portrait opérateur</a>
                 </div>
@@ -690,17 +737,21 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 <a href="<?= url('dashboard') ?>" class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 inline-flex items-center gap-3"><span class="h-[1px] w-5 bg-slate-200"></span>Dashboard</a>
             </aside>
 
-            <div class="lg:col-span-9 order-1 lg:order-2 space-y-6" x-data="{ tab: 'resume' }">
-                <nav class="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm" aria-label="Sections du dossier personnel">
-                    <button type="button" @click="tab = 'resume'" :class="tab === 'resume' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Vue d’ensemble</button>
+            <div class="personnel-file-main order-1 lg:order-2 min-w-0 space-y-5 lg:col-span-9" :class="{ 'personnel-file-main--full': tab === 'tableau' }">
+                <nav class="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50/90 p-1.5 shadow-sm" aria-label="Sections du dossier personnel">
+                    <button type="button" @click="tab = 'resume'" :class="tab === 'resume' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Vue d’ensemble</button>
                     <?php if ($seniorityDetailLines !== []): ?>
-                    <button type="button" @click="tab = 'seniorite'" :class="tab === 'seniorite' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Ancienneté</button>
+                    <button type="button" @click="tab = 'seniorite'" :class="tab === 'seniorite' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Ancienneté</button>
                     <?php endif; ?>
-                    <button type="button" @click="tab = 'ops'" :class="tab === 'ops' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Poste & affectations</button>
-                    <button type="button" @click="tab = 'formation'" :class="tab === 'formation' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Habilitations & parcours</button>
-                    <button type="button" @click="tab = 'logistique'" :class="tab === 'logistique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Dotation & préparation</button>
-                    <button type="button" @click="tab = 'historique'" :class="tab === 'historique' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Historique & notes</button>
-                    <button type="button" @click="tab = 'administratif'" :class="tab === 'administratif' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80' : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Coordonnées & dossier</button>
+                    <button type="button" @click="tab = 'ops'" :class="tab === 'ops' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Poste & affectations</button>
+                    <button type="button" @click="tab = 'formation'" :class="tab === 'formation' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Habilitations & parcours</button>
+                    <button type="button" @click="tab = 'logistique'" :class="tab === 'logistique' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Dotation & préparation</button>
+                    <button type="button" @click="tab = 'historique'" :class="tab === 'historique' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Historique & notes</button>
+                    <?php if ($canViewBilans): ?>
+                    <button type="button" @click="tab = 'bilans'" :class="tab === 'bilans' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Bilans</button>
+                    <?php endif; ?>
+                    <button type="button" @click="tab = 'administratif'" :class="tab === 'administratif' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Coordonnées & dossier</button>
+                    <button type="button" @click="tab = 'tableau'" :class="tab === 'tableau' ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-emerald-200/90' : 'text-slate-600 hover:bg-white/70 hover:text-slate-900'" class="rounded-xl px-3 py-2 text-left text-[11px] font-bold transition min-w-[8.5rem] sm:min-w-0">Tableau administratif</button>
                 </nav>
 
                 <?php if ($seniorityDetailLines !== []): ?>
@@ -1488,11 +1539,17 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 </section>
                 </div>
 
-                <div class="space-y-8" x-show="tab === 'historique'" x-cloak>
+                <div class="space-y-5" x-show="tab === 'historique'" x-cloak>
+                <?php if ($canViewBilans): ?>
+                <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3">
+                    <p class="text-sm text-emerald-950"><span class="font-bold">Bilans</span> — consultez ou créez les bilans d’étape et de recrutement.</p>
+                    <button type="button" @click="tab = 'bilans'" class="inline-flex min-h-[2rem] items-center rounded-lg bg-[#059669] px-3 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700">Ouvrir les bilans</button>
+                </div>
+                <?php endif; ?>
                 <?php if ($personnelOrgHistorySection): ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-2">Journal du dossier</h2>
-                    <p class="text-[10px] text-slate-500 mb-6 leading-relaxed">Modifications enregistrées par l’organisation (grade, rôles, statut du compte, coordonnées visibles sur la fiche, etc.).</p>
+                    <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">Modifications enregistrées par l’organisation (grade, rôles, statut du compte, coordonnées visibles sur la fiche, etc.).</p>
                     <?php if ($personnelOrgHistorySchemaReady && $personnelOrgHistory !== []): ?>
                     <div class="space-y-3">
                         <?php foreach ($personnelOrgHistory as $oh):
@@ -1512,7 +1569,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                         <?php endforeach; ?>
                     </div>
                     <?php else: ?>
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+                    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
                         <?php if (!$personnelOrgHistorySchemaReady): ?>
                         Le journal du dossier sera disponible après l’initialisation de l’historique de l’organisation.
                         <?php else: ?>
@@ -1524,8 +1581,8 @@ if (!function_exists('personnel_file_render_admin_value')) {
                 <?php endif; ?>
 
                 <!-- Historique de service -->
-                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Historique de service</h2>
+                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Historique de service</h2>
                     <?php if (!empty($serviceHistory)): ?>
                     <div class="space-y-4">
                         <?php foreach ($serviceHistory as $event):
@@ -1544,7 +1601,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                         <?php endforeach; ?>
                     </div>
                     <?php else: ?>
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
+                    <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-600">
                         Aucun événement d’ancienneté ou de carrière n’est encore enregistré dans ce dossier.
                     </div>
                     <?php endif; ?>
@@ -1552,16 +1609,16 @@ if (!function_exists('personnel_file_render_admin_value')) {
 
                 <!-- Notes de commandement -->
                 <?php if ($canViewCommandNotes): ?>
-                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6 flex items-center gap-3">
+                <section class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4 flex items-center gap-3">
                         <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
                         Notes de commandement <?= $canEditNotes ? '(éditable)' : '' ?>
                     </h2>
                     <?php if ($canEditNotes): ?>
-                    <form method="post" action="<?= url('personnel/' . (int)$targetUser['id'] . '/notes') ?>" class="space-y-4">
+                    <form method="post" action="<?= url('personnel/' . (int)$targetUser['id'] . '/notes') ?>" class="space-y-3">
                         <?= \App\Core\Csrf::field() ?>
-                        <textarea name="admin_notes" rows="4" class="w-full text-xs text-slate-700 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" placeholder="Notes internes (visible par vous et les admins)"><?= $adminNotes ? htmlspecialchars($adminNotes) : '' ?></textarea>
-                        <button type="submit" class="text-[9px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700 border border-emerald-500/50 rounded-lg px-4 py-2">Enregistrer</button>
+                        <textarea name="admin_notes" rows="4" class="w-full text-sm text-slate-700 border border-slate-200 rounded-xl p-3.5 focus:ring-2 focus:ring-emerald-500/30 focus:border-[#059669]" placeholder="Notes internes (visible par vous et les admins)"><?= $adminNotes ? htmlspecialchars($adminNotes) : '' ?></textarea>
+                        <button type="submit" class="inline-flex min-h-[2.25rem] items-center rounded-lg bg-[#059669] px-4 text-[10px] font-black uppercase tracking-widest text-white hover:bg-emerald-700">Enregistrer</button>
                     </form>
                     <?php else: ?>
                     <p class="text-xs text-slate-500 font-medium leading-relaxed italic"><?= $adminNotes ? nl2br(htmlspecialchars($adminNotes)) : '— Aucune note enregistrée.' ?></p>
@@ -1690,7 +1747,14 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <?php endif; ?>
                 </section>
                 <?php endforeach; ?>
+                <div class="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-sm text-emerald-950">Besoin d’une vue dense façon tableur ?</p>
+                    <button type="button" @click="tab = 'tableau'" class="inline-flex min-h-[2rem] items-center rounded-lg bg-[#059669] px-3 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700">Tableau administratif</button>
                 </div>
+                </div>
+
+                <?php require base_path('views/partials/personnel/file_bilans_tab.php'); ?>
+                <?php require base_path('views/partials/personnel/file_tableau_admin_tab.php'); ?>
             </div>
         </div>
     </div>

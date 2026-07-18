@@ -35,8 +35,12 @@ final class TrainingFormationCustomPageRenderer
         return self::ensureUniqueSlugs($out);
     }
 
-    /** @param array<string, mixed> $row */
-    public static function render(array $row, string $assetsBaseUrl): string
+    /**
+     * @param array<string, mixed> $row
+     * @param string|null $chrome Bandeau HTML optionnel injecté en tête de page (réservé au studio interne :
+     *                             ne jamais le passer depuis une route publique).
+     */
+    public static function render(array $row, string $assetsBaseUrl, ?string $chrome = null): string
     {
         $title = trim((string) ($row['title'] ?? 'Documentation'));
         $subtitle = trim((string) ($row['subtitle'] ?? ''));
@@ -50,18 +54,23 @@ final class TrainingFormationCustomPageRenderer
         if (!preg_match('/^#[0-9a-fA-F]{6}$/', $accent)) {
             $accent = '#0f766e';
         }
+        $readTime = max(1, (int) ($row['estimated_read_time'] ?? 1));
+        $showProgress = !empty($row['show_reading_progress']);
 
         if ($sections !== []) {
-            return self::renderHandbook($titleEsc, $subtitle, $summary, $intro, $sections, $cssHref, $accent, !empty($row['show_toc']));
+            $body = self::renderHandbook($titleEsc, $subtitle, $summary, $intro, $sections, $accent, !empty($row['show_toc']), $readTime, count($sections));
+        } else {
+            $body = self::renderSingleFragment($titleEsc, $subtitle, $summary, $intro, $accent, $readTime);
         }
 
-        return self::renderSingleFragment($titleEsc, $subtitle, $summary, $intro, $cssHref, $accent);
+        return self::wrapShell($titleEsc, $cssHref, $body, $chrome, $showProgress);
     }
 
-    private static function renderSingleFragment(string $titleEsc, string $subtitle, string $summary, string $innerHtml, string $cssHref, string $accent): string
+    private static function renderSingleFragment(string $titleEsc, string $subtitle, string $summary, string $innerHtml, string $accent, int $readTime): string
     {
-        $headMeta = self::headerMeta($subtitle, $summary);
-        $body = '<div class="formation-doc-shell formation-doc-shell--single" style="--doc-accent:' . htmlspecialchars($accent, ENT_QUOTES, 'UTF-8') . '">'
+        $headMeta = self::headerMeta($subtitle, $summary, $readTime, null);
+
+        return '<div class="formation-doc-shell formation-doc-shell--single" style="--doc-accent:' . htmlspecialchars($accent, ENT_QUOTES, 'UTF-8') . '">'
             . '<header class="formation-doc-header"><div class="formation-doc-header__inner">'
             . '<p class="formation-doc-kicker">Document officiel</p>'
             . '<h1 class="formation-doc-title">' . $titleEsc . '</h1>'
@@ -69,16 +78,14 @@ final class TrainingFormationCustomPageRenderer
             . '</div></header>'
             . '<main class="formation-doc-main"><article class="formation-doc-prose">' . $innerHtml . '</article></main>'
             . '</div>';
-
-        return self::wrapShell($titleEsc, $cssHref, $body);
     }
 
     /** @param list<array{title:string,slug:string,html:string}> $sections */
-    private static function renderHandbook(string $titleEsc, string $subtitle, string $summary, string $introHtml, array $sections, string $cssHref, string $accent, bool $showToc): string
+    private static function renderHandbook(string $titleEsc, string $subtitle, string $summary, string $introHtml, array $sections, string $accent, bool $showToc, int $readTime, int $chapterCount): string
     {
         $toc = '';
         if ($showToc) {
-            $toc = '<nav class="formation-doc-toc" aria-label="Sommaire"><p class="formation-doc-toc__label">Sommaire</p><ol class="formation-doc-toc__list">';
+            $toc = '<nav class="formation-doc-toc" aria-label="Sommaire"><p class="formation-doc-toc__label">Sommaire · ' . $chapterCount . ' chapitre' . ($chapterCount > 1 ? 's' : '') . '</p><ol class="formation-doc-toc__list">';
             foreach ($sections as $s) {
                 $slug = htmlspecialchars($s['slug'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
                 $t = htmlspecialchars($s['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -95,14 +102,15 @@ final class TrainingFormationCustomPageRenderer
             $slug = htmlspecialchars($s['slug'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $t = htmlspecialchars($s['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             $main .= '<article id="' . $slug . '" class="formation-doc-chapter">'
-                . '<h2 class="formation-doc-chapter__title"><span class="formation-doc-chapter__index">' . ($idx + 1) . '.</span> ' . $t . '</h2>'
+                . '<h2 class="formation-doc-chapter__title"><span class="formation-doc-chapter__index">' . ($idx + 1) . '</span> ' . $t . '</h2>'
                 . '<div class="formation-doc-prose">' . $s['html'] . '</div>'
                 . '</article>';
         }
         $main .= '</main>';
 
-        $headMeta = self::headerMeta($subtitle, $summary);
-        $body = '<div class="formation-doc-shell formation-doc-shell--book" style="--doc-accent:' . htmlspecialchars($accent, ENT_QUOTES, 'UTF-8') . '">'
+        $headMeta = self::headerMeta($subtitle, $summary, $readTime, $chapterCount);
+
+        return '<div class="formation-doc-shell formation-doc-shell--book" style="--doc-accent:' . htmlspecialchars($accent, ENT_QUOTES, 'UTF-8') . '">'
             . '<header class="formation-doc-header"><div class="formation-doc-header__inner">'
             . '<p class="formation-doc-kicker">Manuel opérationnel</p>'
             . '<h1 class="formation-doc-title">' . $titleEsc . '</h1>'
@@ -110,11 +118,9 @@ final class TrainingFormationCustomPageRenderer
             . '</div></header>'
             . '<div class="formation-doc-layout">' . $toc . $main . '</div>'
             . '</div>';
-
-        return self::wrapShell($titleEsc, $cssHref, $body);
     }
 
-    private static function headerMeta(string $subtitle, string $summary): string
+    private static function headerMeta(string $subtitle, string $summary, int $readTime, ?int $chapterCount): string
     {
         $out = '';
         if ($subtitle !== '') {
@@ -124,12 +130,24 @@ final class TrainingFormationCustomPageRenderer
             $out .= '<p class="formation-doc-summary">' . htmlspecialchars($summary, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
         }
 
+        $metaBits = [$readTime . ' min de lecture'];
+        if ($chapterCount !== null) {
+            $metaBits[] = $chapterCount . ' chapitre' . ($chapterCount > 1 ? 's' : '');
+        }
+        $out .= '<p class="formation-doc-metarow">' . htmlspecialchars(implode(' · ', $metaBits), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p>';
+
         return $out;
     }
 
-    private static function wrapShell(string $titleEsc, string $cssHref, string $bodyInner): string
+    private static function wrapShell(string $titleEsc, string $cssHref, string $bodyInner, ?string $chrome, bool $showProgress): string
     {
-        return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . $titleEsc . '</title><link rel="stylesheet" href="' . htmlspecialchars($cssHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></head><body class="formation-doc-body">' . $bodyInner . '</body></html>';
+        $progressBar = $showProgress
+            ? '<div class="formation-doc-progress" aria-hidden="true"><div class="formation-doc-progress__bar" id="formationDocProgressBar"></div></div>'
+            . '<script>(function(){var b=document.getElementById("formationDocProgressBar");if(!b)return;function u(){var h=document.documentElement,max=(h.scrollHeight-h.clientHeight)||1;var p=Math.min(100,Math.max(0,(window.scrollY/max)*100));b.style.width=p+"%";}document.addEventListener("scroll",u,{passive:true});window.addEventListener("resize",u);u();})();</script>'
+            : '';
+        $chromeHtml = $chrome ?? '';
+
+        return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . $titleEsc . '</title><link rel="stylesheet" href="' . htmlspecialchars($cssHref, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"></head><body class="formation-doc-body">' . $progressBar . $chromeHtml . $bodyInner . '</body></html>';
     }
 
     private static function normalizeAnchorSlug(string $rawSlug, string $title, int $index): string

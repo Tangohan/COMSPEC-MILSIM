@@ -14,7 +14,7 @@ $dropdownId = isset($portal_alerts_dropdown_id) && is_string($portal_alerts_drop
 ?>
 <div class="relative" data-portal-alerts-wrap>
     <button type="button"
-            class="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/65 transition hover:bg-white/[0.08] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+            class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
             data-portal-alerts-trigger
             aria-expanded="false"
             aria-controls="<?= htmlspecialchars($dropdownId, ENT_QUOTES, 'UTF-8') ?>"
@@ -43,14 +43,26 @@ $dropdownId = isset($portal_alerts_dropdown_id) && is_string($portal_alerts_drop
                     continue;
                 } ?>
                 <div class="portal-alerts-panel__item px-4 py-3">
-                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400"><?= htmlspecialchars((string) ($a['scope'] ?? '')) ?> · <?= htmlspecialchars((string) ($a['kind'] ?? '')) ?></p>
-                    <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($a['title'] ?? '')) ?></p>
+                    <?php
+                    $aScope = (string) ($a['scope'] ?? '');
+                    $aKind = (string) ($a['kind'] ?? '');
+                    $aKindLabel = match ($aKind) {
+                        'urgent' => 'Urgent',
+                        'discount' => 'Offre',
+                        'novelty' => 'Nouveauté',
+                        'rappel' => 'Rappel',
+                        'info' => 'Info',
+                        default => $aKind !== '' ? $aKind : 'Info',
+                    };
+                    ?>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400"><?= htmlspecialchars($aScope !== '' ? $aScope . ' · ' . $aKindLabel : $aKindLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($a['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                     <?php if (trim((string) ($a['body'] ?? '')) !== ''): ?>
-                        <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) $a['body']) ?></p>
+                        <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) $a['body'], ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endif; ?>
                     <?php if (!empty($a['cta_label']) && !empty($a['cta_url'])): ?>
-                        <a href="<?= htmlspecialchars((string) $a['cta_url']) ?>" class="mt-2 inline-flex text-xs font-bold text-sky-700 hover:underline">
-                            <?= htmlspecialchars((string) $a['cta_label']) ?>
+                        <a href="<?= htmlspecialchars((string) $a['cta_url'], ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-flex text-xs font-bold text-emerald-700 hover:underline">
+                            <?= htmlspecialchars((string) $a['cta_label'], ENT_QUOTES, 'UTF-8') ?>
                         </a>
                     <?php endif; ?>
                 </div>

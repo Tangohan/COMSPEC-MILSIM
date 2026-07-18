@@ -79,7 +79,7 @@ $qid = 'lms-quiz-' . bin2hex(random_bytes(4));
       res.classList.toggle('text-rose-600', pct < passing);
     }
     if (pct >= passing && window.LmsLessonProgress && typeof window.LmsLessonProgress.signalComplete === 'function') {
-      window.LmsLessonProgress.signalComplete();
+      window.LmsLessonProgress.signalComplete(true);
     }
   });
 })();

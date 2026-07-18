@@ -47,6 +47,7 @@ Routes de l’application, statut et écarts connus. **Référence code** : [`ro
 | GET/POST | `/account/preferences` | AccountController::preferences | ✅ | |
 | GET/POST | `/account/mail` | AccountController::mail | ✅ | |
 | GET/POST | `/account/image` | AccountController::image | ✅ | Avatar |
+| GET/POST | `/account/banner` | AccountController::banner | ✅ | Couverture menu session |
 | GET/POST | `/account/portrait` | AccountController::portrait | ✅ | Portrait |
 | GET/POST | `/account/password` | AccountController::password | ✅ | |
 

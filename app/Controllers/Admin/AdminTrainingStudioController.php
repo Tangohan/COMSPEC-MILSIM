@@ -552,6 +552,51 @@ class AdminTrainingStudioController
         ]);
     }
 
+    /** Fichier d’une ressource de leçon (aperçu studio, hors inscription apprenant). */
+    public function resourceFile(Request $request, array $params = []): Response
+    {
+        $denied = $this->assertTrainingFeatureAndAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $courseId = (int) ($params['id'] ?? 0);
+        $resourceId = (int) ($params['resourceId'] ?? 0);
+        $course = $this->courseRepository->findById($courseId, $tenantId);
+        if (!$course || $resourceId < 1) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $res = $this->resourceRepository->findById($resourceId);
+        if (!$res || empty($res['file_path']) || (string) ($res['resource_type'] ?? '') === 'library_document') {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $lesson = $this->lessonRepository->findById((int) ($res['lesson_id'] ?? 0));
+        if (!$lesson || !$this->assertLessonInTenantCourse($lesson, $courseId, $tenantId)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Ressource introuvable.');
+        }
+        $path = (string) $res['file_path'];
+        if (!str_starts_with($path, '/') && !preg_match('#^[A-Za-z]:#', $path)) {
+            $path = base_path($path);
+        }
+        if (!is_file($path) || !is_readable($path)) {
+            return (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=utf-8')->setBody('Fichier indisponible.');
+        }
+        $mime = trim((string) ($res['mime_type'] ?? ''));
+        if ($mime === '') {
+            $mime = 'application/octet-stream';
+        }
+        $safeName = preg_replace('/[^a-zA-Z0-9._-]+/', '_', basename($path)) ?: 'fichier';
+        $inline = trim((string) $request->query('inline', '')) === '1';
+        $response = new Response();
+        $response->header('Content-Type', $mime);
+        $response->header('Content-Disposition', ($inline ? 'inline' : 'attachment') . '; filename="' . $safeName . '"');
+        $response->setBodyStream(static function () use ($path): void {
+            readfile($path);
+        });
+
+        return $response;
+    }
+
     public function handle(Request $request, array $params = []): Response
     {
         $denied = $this->assertTrainingFeatureAndAccess();
@@ -1093,7 +1138,7 @@ class AdminTrainingStudioController
         }
         $hash = '#lesson-res-' . $lessonId;
         $mode = (string) $request->input('resource_add_mode', 'link');
-        if (!in_array($mode, ['link', 'file', 'library', 'library_upload'], true)) {
+        if (!in_array($mode, ['link', 'file', 'image', 'library', 'library_upload'], true)) {
             $mode = 'link';
         }
         if ($mode === 'library_upload') {
@@ -1196,14 +1241,11 @@ class AdminTrainingStudioController
             return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
 
-        if ($mode === 'file') {
+        if ($mode === 'image' || $mode === 'file') {
             $title = trim((string) $request->input('resource_title', ''));
-            if ($title === '') {
-                Session::flash('error', 'Indiquez un titre pour la ressource.');
-
-                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
-            }
-            $type = trim((string) $request->input('resource_type', 'attachment'));
+            $type = $mode === 'image'
+                ? 'image'
+                : trim((string) $request->input('resource_type', 'attachment'));
             $fileTypes = ['pdf', 'image', 'video', 'audio', 'zip', 'attachment'];
             if (!in_array($type, $fileTypes, true)) {
                 $type = 'attachment';
@@ -1213,22 +1255,45 @@ class AdminTrainingStudioController
             $mime = null;
             $size = null;
             if ($file !== null && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                if ($mode === 'image') {
+                    $ext = strtolower((string) pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+                    if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+                        Session::flash('error', 'Choisissez une image au format JPG, PNG ou WebP.');
+
+                        return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+                    }
+                }
                 try {
                     $stored = $this->lessonResourceStorageService->storeUpload($tenantId, $file);
                     $filePath = $stored['path'];
                     $mime = $stored['mime'];
                     $size = $stored['size'];
+                    if ($title === '') {
+                        $rawName = (string) ($file['name'] ?? '');
+                        $fromName = trim((string) pathinfo($rawName, PATHINFO_FILENAME));
+                        $title = $fromName !== '' ? $fromName : ($mode === 'image' ? 'Image' : 'Fichier');
+                    }
+                    if ($mode === 'image' || str_starts_with((string) $mime, 'image/')) {
+                        $type = 'image';
+                    }
                 } catch (\Throwable $e) {
                     Session::flash('error', $e->getMessage());
 
                     return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
                 }
-            } else {
+            } elseif ($mode !== 'image') {
                 $manual = trim((string) $request->input('resource_file_path', ''));
                 $filePath = $manual === '' ? null : substr($manual, 0, 255);
             }
+            if ($title === '') {
+                Session::flash('error', 'Indiquez un titre pour la ressource.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
             if ($filePath === null) {
-                Session::flash('error', 'Envoyez un fichier ou renseignez l’emplacement en mode avancé.');
+                Session::flash('error', $mode === 'image'
+                    ? 'Choisissez une image à envoyer.'
+                    : 'Envoyez un fichier ou renseignez l’emplacement en mode avancé.');
 
                 return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
             }
@@ -1241,7 +1306,9 @@ class AdminTrainingStudioController
                 'file_size' => $size,
             ]);
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
-            Session::flash('success', 'Ressource ajoutée à la leçon.');
+            Session::flash('success', $type === 'image'
+                ? 'Image ajoutée à la leçon.'
+                : 'Ressource ajoutée à la leçon.');
 
             return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }

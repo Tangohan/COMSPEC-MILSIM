@@ -13,12 +13,26 @@ if (!$user) {
 }
 $uid = (int) $user['id'];
 $personnelEditUrl = url('personnel/' . $uid . '/edit');
+$displayName = trim((string) ($user['display_name'] ?? ''));
+$email = (string) ($user['email'] ?? '');
+$avatarSrc = function_exists('user_media_public_url')
+    ? user_media_public_url($user['avatar_url'] ?? null)
+    : null;
+$initialsSource = $displayName !== '' ? $displayName : $email;
+$initials = function_exists('user_display_initials')
+    ? user_display_initials($initialsSource, 2)
+    : mb_strtoupper(mb_substr($initialsSource, 0, 2, 'UTF-8'), 'UTF-8');
 $ust = (string) ($user['status'] ?? '');
 $statusLabel = match ($ust) {
-    'active' => 'Actif',
-    'inactive' => 'Inactif',
+    'active' => 'Compte actif',
+    'inactive' => 'Compte inactif',
     'pending_verification' => 'En attente de vérification de l’e-mail',
     default => $ust !== '' ? 'Statut à clarifier' : '—',
+};
+$statusBadgeClass = match ($ust) {
+    'active' => 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+    'inactive' => 'bg-slate-100 text-slate-700 ring-slate-200',
+    default => 'bg-amber-50 text-amber-900 ring-amber-200',
 };
 
 $levelBadge = static function (string $level): array {
@@ -44,38 +58,62 @@ $levelBadge = static function (string $level): array {
 ?>
 <div class="bg-slate-50 min-h-[calc(100vh-3.5rem)]">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
-        <header class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Back-office communauté</p>
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div class="min-w-0">
-                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Fiche membre</h1>
-                    <p class="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
-                        Vue réservée aux personnes habilitées de votre unité : compte de connexion et dossier opérationnel sont distincts.
-                    </p>
-                </div>
-                <div class="flex flex-col sm:flex-row flex-wrap gap-2 shrink-0">
+        <header class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-5 py-6 sm:px-8 sm:py-8">
+                <p class="mb-4 text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/90">Back-office communauté</p>
+                <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex min-w-0 items-start gap-4">
+                        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-500/20 text-lg font-black text-white ring-2 ring-white/15 sm:h-20 sm:w-20 sm:text-xl" aria-hidden="true">
+                            <?php if ($avatarSrc): ?>
+                                <img src="<?= htmlspecialchars($avatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-cover">
+                            <?php else: ?>
+                                <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="min-w-0">
+                            <h1 class="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                                <?= htmlspecialchars($displayName !== '' ? $displayName : 'Fiche membre', ENT_QUOTES, 'UTF-8') ?>
+                            </h1>
+                            <p class="mt-1 truncate text-sm text-slate-300"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></p>
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset <?= htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php if ($isServiceAccount): ?>
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">Compte technique</span>
+                                <?php endif; ?>
+                            </div>
+                            <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
+                                Compte de connexion et dossier opérationnel sont distincts.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 flex-col flex-wrap gap-2 sm:flex-row">
                     <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>"
-                       class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-900 hover:bg-blue-100 transition-colors">
+                       class="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15">
                         Fiche personnelle
                     </a>
                     <a href="<?= url('back-office/users/' . $uid . '/edit') ?>"
-                       class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition-colors">
+                       class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:bg-emerald-400">
                         Réglages du compte
                     </a>
-                    <?php if (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
-                    <form method="post" action="<?= url('back-office/users/' . $uid . '/deactivate') ?>" class="inline space-y-2" onsubmit="return confirm('Désactiver l’accès de ce membre ?');">
-                        <?= \App\Core\Csrf::field() ?>
-                        <label class="flex items-start gap-2 text-xs text-slate-600 max-w-xs">
-                            <input type="checkbox" name="block_email_rejoin" value="1" class="mt-0.5 rounded border-slate-300">
-                            <span>Empêcher aussi toute nouvelle inscription ou candidature avec la même adresse e-mail dans cette communauté.</span>
-                        </label>
-                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-800 hover:bg-rose-50 transition-colors">
-                            Désactiver l’accès
-                        </button>
-                    </form>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
+            <?php if (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
+            <div class="border-t border-slate-100 bg-white px-5 py-4 sm:px-8">
+                <form method="post" action="<?= url('back-office/users/' . $uid . '/deactivate') ?>" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" onsubmit="return confirm('Désactiver l’accès de ce membre ?');">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label class="flex max-w-xl items-start gap-2 text-xs text-slate-600">
+                        <input type="checkbox" name="block_email_rejoin" value="1" class="mt-0.5 rounded border-slate-300">
+                        <span>Empêcher aussi toute nouvelle inscription ou candidature avec la même adresse e-mail dans cette communauté.</span>
+                    </label>
+                    <button type="submit" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-800 transition hover:bg-rose-50">
+                        Désactiver l’accès
+                    </button>
+                </form>
+            </div>
+            <?php endif; ?>
         </header>
 
         <?php $flashOk = \App\Core\Session::getFlash('success'); $flashErr = \App\Core\Session::getFlash('error'); $flashWarn = \App\Core\Session::getFlash('warning'); ?>

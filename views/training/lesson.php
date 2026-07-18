@@ -70,6 +70,53 @@ foreach (($progress['progress'] ?? []) as $p) {
 }
 $lessonAlreadyCompleted = ($lessonProgressStatus === 'completed');
 
+/* Repères de progression humaine (ce qui reste à faire) */
+$orderedLessonsForMeta = function_exists('training_lms_ordered_lessons')
+    ? training_lms_ordered_lessons(is_array($course) ? $course : [])
+    : [];
+$completedLessonIds = [];
+foreach (($progress['progress'] ?? []) as $pRow) {
+    if ((string) ($pRow['status'] ?? '') === 'completed') {
+        $cid = (int) ($pRow['lesson_id'] ?? 0);
+        if ($cid > 0) {
+            $completedLessonIds[$cid] = true;
+        }
+    }
+}
+$lessonsTotalCount = 0;
+$lessonsDoneCount = 0;
+$remainingLessonsList = [];
+foreach ($orderedLessonsForMeta as $olMeta) {
+    $olid = (int) ($olMeta['id'] ?? 0);
+    if ($olid < 1) {
+        continue;
+    }
+    $lessonsTotalCount++;
+    if (isset($completedLessonIds[$olid])) {
+        $lessonsDoneCount++;
+    } else {
+        $remainingLessonsList[] = $olMeta;
+    }
+}
+$lessonsLeftCount = count($remainingLessonsList);
+$remainingLessonsPreview = array_slice($remainingLessonsList, 0, 3);
+$nextStepHumanLabel = '';
+if (is_array($footerNext ?? null)) {
+    $fnKind = (string) ($footerNext['kind'] ?? '');
+    if ($fnKind === 'lesson' && !empty($footerNext['lesson']) && is_array($footerNext['lesson'])) {
+        $nextStepHumanLabel = trim((string) ($footerNext['lesson']['title'] ?? ''));
+    } elseif ($fnKind === 'quiz' && !empty($footerNext['quiz']) && is_array($footerNext['quiz'])) {
+        $qTitle = trim((string) ($footerNext['quiz']['title'] ?? ''));
+        $nextStepHumanLabel = $qTitle !== '' ? 'Évaluation — ' . $qTitle : 'Évaluation suivante';
+    } elseif ($fnKind === 'echanges') {
+        $nextStepHumanLabel = 'Avis et échanges de fin de parcours';
+    }
+}
+if ($nextStepHumanLabel === '' && is_array($nextLesson ?? null)) {
+    $nextStepHumanLabel = trim((string) ($nextLesson['title'] ?? ''));
+}
+$progressPctDisplay = (int) round((float) ($progress['percent'] ?? 0));
+
 $quizData = null;
 $modalsDeck = null;
 $showDeck = null;
@@ -155,31 +202,70 @@ $headHtml = ob_get_clean();
         <?php
         $lmsBase = $base;
         $progressPercent = (float) ($progress['percent'] ?? 0);
+        $lmsSequenceContext = 'lesson';
+        $lmsCompletedLessonIds = $completedLessonIds;
+        $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : [];
         require base_path('views/training/partials/lms_course_sidebar.php');
         ?>
 
         <div class="flex min-h-0 min-w-0 flex-1 flex-col">
             <header class="topbar sticky top-0 z-50">
-                <div class="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-                    <a href="<?= url('formations/' . ($enrollment['course_slug'] ?? '')) ?>" class="flex items-center gap-3 group">
-                        <div class="brand-mark"><span>L</span></div>
-                        <div>
+                <div class="lms-lesson-topbar-inner px-4 sm:px-6 h-14 flex items-center justify-between gap-4 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+                    <a href="<?= url('formations/' . ($enrollment['course_slug'] ?? '')) ?>" class="flex items-center gap-3 group min-w-0">
+                        <div class="brand-mark shrink-0"><span>L</span></div>
+                        <div class="min-w-0">
                             <strong class="text-xs font-black uppercase tracking-wide text-slate-900 block">Leçon</strong>
                             <span class="text-[10px] text-slate-500 uppercase tracking-wider">Retour au parcours</span>
                         </div>
                     </a>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                        <button type="button" data-lms-reperes-open class="lms-topbar-reperes-btn" aria-haspopup="dialog" aria-controls="lms-reperes-modal">
+                            Repères
+                        </button>
                         <span class="text-xs font-bold text-slate-500"><span data-lms-header-pct><?= (float)($progress['percent'] ?? 0) ?></span> %</span>
-                        <div class="w-28 h-1.5 bg-slate-200 rounded-full overflow-hidden lms-progress-bar">
+                        <div class="w-20 sm:w-28 h-1.5 bg-slate-200 rounded-full overflow-hidden lms-progress-bar">
                             <span data-lms-header-progress style="width: <?= (float)($progress['percent'] ?? 0) ?>%"></span>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <main class="section flex-1 min-w-0 overflow-x-hidden py-8 px-4 sm:px-8">
+            <main class="section lms-lesson-main flex-1 min-w-0 overflow-x-hidden py-4 px-3 sm:px-5 lg:px-6 pb-24">
+                <?php
+                $seqRibbonSteps = function_exists('training_lms_build_guided_sequence')
+                    ? training_lms_build_guided_sequence(is_array($course) ? $course : [])
+                    : [];
+                $seqRibbonPos = function_exists('training_lms_sequence_position')
+                    ? training_lms_sequence_position($seqRibbonSteps, 'lesson', $currentLessonId, null)
+                    : null;
+                $seqRibbonCurrent = is_array($seqRibbonPos['current'] ?? null) ? $seqRibbonPos['current'] : null;
+                $seqRibbonNext = is_array($seqRibbonPos['next'] ?? null) ? $seqRibbonPos['next'] : null;
+                $seqRibbonCurrentLabel = function_exists('training_lms_sequence_step_human_label')
+                    ? training_lms_sequence_step_human_label($seqRibbonCurrent)
+                    : (string) ($lesson['title'] ?? '');
+                $seqRibbonNextLabel = function_exists('training_lms_sequence_step_human_label')
+                    ? training_lms_sequence_step_human_label($seqRibbonNext)
+                    : $nextStepHumanLabel;
+                if ($seqRibbonCurrentLabel !== '' || $seqRibbonNextLabel !== ''):
+                ?>
+                <div class="lms-seq-ribbon mb-3">
+                    <div>
+                        <span class="lms-seq-ribbon__k">Étape actuelle<?= isset($seqRibbonPos['index']) ? ' · ' . ((int) $seqRibbonPos['index'] + 1) . '/' . (int) ($seqRibbonPos['total'] ?? 0) : '' ?></span>
+                        <span class="lms-seq-ribbon__v"><?= htmlspecialchars($seqRibbonCurrentLabel !== '' ? $seqRibbonCurrentLabel : (string) ($lesson['title'] ?? '')) ?></span>
+                        <?php if (!empty($seqRibbonCurrent['phase'])): ?>
+                        <span class="mt-0.5 block text-[11px] text-slate-500"><?= htmlspecialchars((string) $seqRibbonCurrent['phase']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($seqRibbonNextLabel !== ''): ?>
+                    <div class="lms-seq-ribbon__next">
+                        <span class="lms-seq-ribbon__k">Ensuite</span>
+                        <span class="lms-seq-ribbon__v"><?= htmlspecialchars($seqRibbonNextLabel) ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
                 <?php if ($lessonType === 'canvas' && $canvasDeck && !empty($canvasDeck['slides'])): ?>
-                <div class="mx-auto max-w-6xl space-y-6">
+                <div class="lms-lesson-stage space-y-4">
                     <?php require base_path('views/training/partials/lms_canvas_mission_hero.php'); ?>
                     <?php if ($moduleLessonStep !== null && (int) $moduleLessonStep['total'] > 0): ?>
                     <?php
@@ -187,24 +273,23 @@ $headHtml = ob_get_clean();
                     $mtot = (int) $moduleLessonStep['total'];
                     $mPct = $mtot > 0 ? (int) round(100 * $mcur / $mtot) : 0;
                     ?>
-                    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                        <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                             <p class="lms-canvas-label">Progression dans le module</p>
                             <p class="text-sm font-bold text-slate-900">Leçon <?= $mcur ?> sur <?= $mtot ?></p>
                         </div>
-                        <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                             <div class="h-full rounded-full bg-emerald-500 transition-all duration-300" style="width: <?= $mPct ?>%"></div>
                         </div>
                     </div>
                     <?php endif; ?>
-                    <div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1fr_minmax(260px,320px)]">
-                        <div class="min-w-0 space-y-6">
-                            <?php if ($lessonStep): ?>
-                            <p class="text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?> sur l’ensemble du parcours</p>
-                            <?php endif; ?>
-                            <section class="mb-10">
-                                <p class="lms-lesson-content-eyebrow mb-3">Parcours interactif</p>
-                                <article class="module-panel p-6 sm:p-8 lms-lesson-content-panel">
+                    <div class="min-w-0 space-y-3">
+                        <?php if ($lessonStep): ?>
+                        <p class="text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?> sur l’ensemble du parcours</p>
+                        <?php endif; ?>
+                        <section class="mb-0">
+                            <p class="lms-lesson-content-eyebrow mb-2">Parcours interactif</p>
+                            <article class="module-panel p-4 sm:p-5 lg:p-6 lms-lesson-content-panel">
                 <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
                 <?php
                 $deck = $canvasDeck;
@@ -213,56 +298,12 @@ $headHtml = ob_get_clean();
                 <?php
                 require base_path('views/training/partials/lms_lesson_common_footer.php');
                 ?>
-                                </article>
-                            </section>
-                        </div>
-                        <aside class="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:self-start" aria-label="Repères de la leçon">
-                            <h3 class="lms-sidebar-heading">Repères</h3>
-                            <?php if ($moduleObjectives !== []): ?>
-                            <div>
-                                <p class="mb-2 lms-sidebar-sublabel">Objectifs du module</p>
-                                <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-700">
-                                    <?php foreach ($moduleObjectives as $mo): ?>
-                                    <li><?= htmlspecialchars($mo) ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($lessonObjectives !== []): ?>
-                            <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                                <p class="mb-2 lms-sidebar-sublabel text-emerald-800">À l’issue de cette leçon</p>
-                                <ul class="list-inside list-disc space-y-1 text-sm text-slate-800">
-                                    <?php foreach ($lessonObjectives as $lo): ?>
-                                    <li><?= htmlspecialchars($lo) ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                            <?php elseif ($lessonSummary !== ''): ?>
-                            <div>
-                                <p class="mb-2 lms-sidebar-sublabel">Résumé</p>
-                                <p class="text-sm leading-relaxed text-slate-700"><?= htmlspecialchars($lessonSummary) ?></p>
-                            </div>
-                            <?php endif; ?>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 lms-sidebar-sublabel">Durée indicative</p>
-                                <p class="text-sm font-bold text-slate-900"><?= !empty($lesson['duration_minutes']) ? (int) $lesson['duration_minutes'] . ' min' : '—' ?></p>
-                                <?php if ($currentModule && (int) ($currentModule['estimated_minutes'] ?? 0) > 0): ?>
-                                <p class="mt-2 text-xs text-slate-500">Module (estimation) : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
-                                <?php endif; ?>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 lms-sidebar-sublabel">État</p>
-                                <p class="text-sm font-bold <?= $lessonAlreadyCompleted ? 'text-emerald-700' : 'text-amber-800' ?>"><?= $lessonAlreadyCompleted ? 'Terminée' : 'En cours' ?></p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="mb-2 lms-sidebar-sublabel">Avancement du parcours</p>
-                                <p class="lms-stat-number text-2xl font-semibold text-slate-900"><?= (int) round((float) ($progress['percent'] ?? 0)) ?> %</p>
-                            </div>
-                        </aside>
+                            </article>
+                        </section>
                     </div>
                 </div>
                 <?php else: ?>
-                <div class="mx-auto max-w-4xl">
+                <div class="lms-lesson-stage">
                     <?php if ($currentModule): ?>
                     <p class="lms-module-crumb mb-1"><?= htmlspecialchars((string) ($currentModule['title'] ?? '')) ?></p>
                     <?php if (!empty($currentModule['subtitle'])): ?>
@@ -281,29 +322,7 @@ $headHtml = ob_get_clean();
                     <p class="section-copy mb-8 text-sm text-slate-500">Progression liée à votre inscription au parcours.</p>
                     <?php endif; ?>
 
-                    <?php if ($moduleObjectives !== []): ?>
-                    <div class="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <p class="mb-2 lms-sidebar-sublabel">Objectifs du module</p>
-                        <ul class="list-inside list-disc space-y-1 text-sm text-slate-700">
-                            <?php foreach ($moduleObjectives as $mo): ?>
-                            <li><?= htmlspecialchars($mo) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if ($lessonObjectives !== []): ?>
-                    <div class="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
-                        <p class="mb-2 lms-sidebar-sublabel text-emerald-900">À l’issue de cette leçon</p>
-                        <ul class="list-inside list-disc space-y-1.5 text-sm text-slate-800">
-                            <?php foreach ($lessonObjectives as $lo): ?>
-                            <li><?= htmlspecialchars($lo) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                    <?php endif; ?>
-
-                    <div class="lms-lesson-meta-board mb-10">
+                    <div class="lms-lesson-meta-board mb-5">
                         <div class="lms-lesson-meta-cell">
                             <h2 class="lms-lesson-meta-cell__title">Fiche leçon</h2>
                             <ul class="lms-lesson-meta-list">
@@ -319,27 +338,59 @@ $headHtml = ob_get_clean();
                             <p class="lms-lesson-meta-module-hint">Durée indicative du module : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
                             <?php endif; ?>
                             <p class="lms-lesson-meta-progress-label">Avancement du parcours</p>
-                            <div class="lms-lesson-progress-track">
-                                <span class="lms-lesson-progress-fill" style="width:<?= min(100, (float) ($progress['percent'] ?? 0)) ?>%"></span>
+                            <div class="lms-lesson-progress-track" role="progressbar" aria-valuenow="<?= $progressPctDisplay ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement du parcours">
+                                <span class="lms-lesson-progress-fill" style="width:<?= min(100, $progressPctDisplay) ?>%"></span>
                             </div>
                         </div>
                         <div class="lms-lesson-meta-cell lms-lesson-meta-cell--stat">
                             <h2 class="lms-lesson-meta-cell__title">Progression</h2>
-                            <p class="lms-lesson-meta-stat"><?= htmlspecialchars((string) round((float) ($progress['percent'] ?? 0), 1)) ?><span class="lms-lesson-meta-stat__unit">%</span></p>
+                            <p class="lms-lesson-meta-stat"><?= $progressPctDisplay ?><span class="lms-lesson-meta-stat__unit">%</span></p>
+                            <?php if ($lessonsTotalCount > 0): ?>
+                            <p class="lms-lesson-meta-stat-caption">
+                                <?= $lessonsDoneCount ?> leçon<?= $lessonsDoneCount > 1 ? 's' : '' ?> terminée<?= $lessonsDoneCount > 1 ? 's' : '' ?> sur <?= $lessonsTotalCount ?>
+                            </p>
+                            <?php if ($lessonsLeftCount === 0): ?>
+                            <p class="lms-lesson-meta-remain lms-lesson-meta-remain--done">Parcours terminé — plus rien à valider.</p>
+                            <?php else: ?>
+                            <p class="lms-lesson-meta-remain">Il vous reste <?= $lessonsLeftCount ?> leçon<?= $lessonsLeftCount > 1 ? 's' : '' ?>.</p>
+                            <?php if ($remainingLessonsPreview !== []): ?>
+                            <ul class="lms-lesson-meta-remain-list">
+                                <?php foreach ($remainingLessonsPreview as $remL): ?>
+                                <li><?= htmlspecialchars((string) ($remL['title'] ?? 'Leçon')) ?></li>
+                                <?php endforeach; ?>
+                                <?php if ($lessonsLeftCount > count($remainingLessonsPreview)): ?>
+                                <li class="lms-lesson-meta-remain-list__more">… et <?= $lessonsLeftCount - count($remainingLessonsPreview) ?> autre<?= ($lessonsLeftCount - count($remainingLessonsPreview)) > 1 ? 's' : '' ?></li>
+                                <?php endif; ?>
+                            </ul>
+                            <?php endif; ?>
+                            <?php endif; ?>
+                            <?php else: ?>
                             <p class="lms-lesson-meta-stat-caption">du parcours complété</p>
+                            <?php endif; ?>
                         </div>
                         <div class="lms-lesson-meta-cell" id="parcours-sequence">
                             <h2 class="lms-lesson-meta-cell__title">Séquence</h2>
+                            <?php if ($nextStepHumanLabel !== '' && $lessonsLeftCount > 0): ?>
+                            <p class="lms-lesson-meta-next-step">
+                                <span class="lms-lesson-meta-next-step__label">Prochaine étape</span>
+                                <span class="lms-lesson-meta-next-step__value"><?= htmlspecialchars($nextStepHumanLabel) ?></span>
+                            </p>
+                            <?php elseif ($lessonsLeftCount === 0 && $lessonsTotalCount > 0): ?>
+                            <p class="lms-lesson-meta-next-step lms-lesson-meta-next-step--done">
+                                <span class="lms-lesson-meta-next-step__label">Statut</span>
+                                <span class="lms-lesson-meta-next-step__value">Toutes les leçons sont validées</span>
+                            </p>
+                            <?php endif; ?>
                             <p class="lms-lesson-meta-sequence-copy"><?= $autoLessonComplete
-                                ? 'Chaque étape doit rester affichée un court instant, le bas du texte être visible assez longtemps en ayant fait défiler la page, ou les médias être lus sur presque toute leur durée — sans cela la leçon ne se valide pas automatiquement. Les quiz se valident sur une note suffisante.'
+                                ? 'Parcourez le contenu jusqu’au bout, puis validez avec « Terminer la leçon ». Pour une évaluation, une note suffisante est requise.'
                                 : 'Lisez le contenu, puis indiquez que la leçon est terminée lorsque c’est pertinent pour vous.' ?></p>
                         </div>
                     </div>
 
-                    <section class="mb-10">
-                        <p class="lms-lesson-content-eyebrow mb-3">Contenu à parcourir</p>
+                    <section class="mb-5">
+                        <p class="lms-lesson-content-eyebrow mb-2">Contenu à parcourir</p>
 
-                        <article class="module-panel p-6 sm:p-8 lms-lesson-content-panel">
+                        <article class="module-panel p-4 sm:p-5 lms-lesson-content-panel">
                 <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
                 <?php
                 $embedSrc = ($lessonType === 'video_embed' && !empty($lesson['external_url']) && function_exists('training_video_embed_iframe_src'))
@@ -404,6 +455,65 @@ $headHtml = ob_get_clean();
         </div>
     </div>
 
+<?php
+$lmsStickyNext = is_array($lmsStickyNext ?? null) ? $lmsStickyNext : null;
+if ($lmsStickyNext !== null):
+    $snUrl = (string) ($lmsStickyNext['nextUrl'] ?? '');
+    $snTitle = (string) ($lmsStickyNext['footerNextLessonTitle'] ?? '');
+    $snQuiz = is_array($lmsStickyNext['footerQuiz'] ?? null) ? $lmsStickyNext['footerQuiz'] : null;
+    $snFin = !empty($lmsStickyNext['showFinParcours']);
+    $snEch = (string) ($lmsStickyNext['echangesUrl'] ?? '');
+    $snFinUrl = trim((string) ($lmsStickyNext['finParcoursUrl'] ?? ''));
+    if ($snFinUrl === '') {
+        $snFinUrl = $snEch;
+    }
+    $snFinLabel = trim((string) ($lmsStickyNext['finParcoursLabel'] ?? ''));
+    if ($snFinLabel === '') {
+        $snFinLabel = 'Fin du parcours';
+    }
+    $snFinTitle = trim((string) ($lmsStickyNext['finParcoursTitle'] ?? ''));
+    if ($snFinTitle === '') {
+        $snFinTitle = 'Avis & échanges';
+    }
+    $snEnr = (int) ($lmsStickyNext['enrId'] ?? 0);
+    $lmsNextArrowSvg = '<svg class="lms-module-next-sticky__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
+    if ($snUrl !== ''):
+?>
+<a href="<?= htmlspecialchars($snUrl) ?>" title="<?= htmlspecialchars($snTitle) ?>" class="lms-module-next-sticky" data-lms-module-next>
+    <span class="lms-module-next-sticky__text">
+        <span class="lms-module-next-sticky__label">Module suivant</span>
+        <?php if ($snTitle !== ''): ?>
+        <span class="lms-module-next-sticky__title"><?= htmlspecialchars($snTitle) ?></span>
+        <?php endif; ?>
+    </span>
+    <?= $lmsNextArrowSvg ?>
+</a>
+<?php elseif ($snQuiz !== null && (int) ($snQuiz['id'] ?? 0) > 0): ?>
+<form method="post" action="<?= url('formations/quiz/start') ?>" class="lms-module-next-sticky lms-module-next-sticky--form" data-lms-module-next>
+    <?= \App\Core\Csrf::field() ?>
+    <input type="hidden" name="quiz_id" value="<?= (int) $snQuiz['id'] ?>">
+    <input type="hidden" name="enrollment_id" value="<?= $snEnr ?>">
+    <button type="submit" class="lms-module-next-sticky__btn">
+        <span class="lms-module-next-sticky__text">
+            <span class="lms-module-next-sticky__label">Évaluation suivante</span>
+            <span class="lms-module-next-sticky__title"><?= htmlspecialchars((string) ($snQuiz['title'] ?? 'Évaluation')) ?></span>
+        </span>
+        <?= $lmsNextArrowSvg ?>
+    </button>
+</form>
+<?php elseif ($snFin && $snFinUrl !== ''): ?>
+<a href="<?= htmlspecialchars($snFinUrl) ?>" class="lms-module-next-sticky" data-lms-module-next>
+    <span class="lms-module-next-sticky__text">
+        <span class="lms-module-next-sticky__label"><?= htmlspecialchars($snFinLabel) ?></span>
+        <span class="lms-module-next-sticky__title"><?= htmlspecialchars($snFinTitle) ?></span>
+    </span>
+    <?= $lmsNextArrowSvg ?>
+</a>
+<?php
+    endif;
+endif;
+?>
+
 <?php if (in_array($lessonType, ['video', 'video_integrated', 'audio'], true)): ?>
 <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.min.js"></script>
 <script>
@@ -458,10 +568,11 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
     'lessonId' => (int) $lesson['id'],
     'courseUrl' => url('formations/' . rawurlencode((string) ($enrollment['course_slug'] ?? ''))),
     'alreadyCompleted' => $lessonAlreadyCompleted,
+    'hasFeedback' => is_array($lessonFeedback ?? null),
     'auto' => $autoLessonComplete,
     'lessonType' => $lessonType,
     'strict' => [
-        'slideDwellMs' => 2600,
+        'slideDwellMs' => 1800,
         'richtextSentinelMs' => 2800,
         'richtextScrollRatio' => 0.86,
         'mediaPlayedMinRatio' => 0.88,
@@ -471,6 +582,8 @@ window.__LMS_LESSON_PROGRESS__ = <?= json_encode([
 </script>
 <script src="<?= htmlspecialchars($base) ?>/assets/js/lms_training_toast.js"></script>
 <script src="<?= htmlspecialchars($base) ?>/assets/js/training_lesson_progress.js" defer></script>
+<?php require base_path('views/training/partials/lms_lesson_reperes_modal.php'); ?>
+<?php require base_path('views/training/partials/lms_lesson_feedback_modal.php'); ?>
 <?php require base_path('views/partials/cookie_banner.php'); ?>
 </body>
 </html>

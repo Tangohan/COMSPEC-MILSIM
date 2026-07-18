@@ -1,5 +1,5 @@
 /* Athena PWA — cache shell uniquement (jamais les pages HTML dynamiques). */
-const CACHE_NAME = 'athena-shell-v2';
+const CACHE_NAME = 'athena-shell-v4';
 const SHELL = [
   './manifest.webmanifest',
   './assets/css/design-system.css',
@@ -24,7 +24,10 @@ self.addEventListener('activate', function (event) {
     caches.keys().then(function (keys) {
       return Promise.all(
         keys.map(function (k) {
-          return caches.delete(k);
+          if (k !== CACHE_NAME) {
+            return caches.delete(k);
+          }
+          return undefined;
         })
       );
     }).then(function () {
@@ -33,17 +36,28 @@ self.addEventListener('activate', function (event) {
   );
 });
 
-function isHtmlRequest(request) {
+function isNavigationRequest(request) {
+  if (request.mode === 'navigate') {
+    return true;
+  }
   var accept = request.headers.get('accept') || '';
-  if (accept.indexOf('text/html') !== -1) {
-    return true;
+  return accept.indexOf('text/html') !== -1;
+}
+
+function isCacheableAssetResponse(request, response) {
+  if (!response || !response.ok) {
+    return false;
   }
-  try {
-    var path = new URL(request.url).pathname;
-    return !/\.(css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|webmanifest|json)$/i.test(path);
-  } catch (e) {
-    return true;
+  // Ne jamais mettre en cache une page HTML sous une URL d’asset (cause classique MIME text/html sur CSS/JS).
+  var ct = (response.headers.get('content-type') || '').toLowerCase();
+  if (ct.indexOf('text/html') !== -1) {
+    return false;
   }
+  var url = request.url || '';
+  if (url.indexOf('/assets/') === -1 && url.indexOf('/sw.js') === -1 && url.indexOf('manifest.webmanifest') === -1) {
+    return false;
+  }
+  return url.indexOf('http') === 0;
 }
 
 self.addEventListener('fetch', function (event) {
@@ -51,32 +65,18 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Pages HTML : réseau uniquement (évite de resservir « Indisponible » en cache)
-  if (isHtmlRequest(event.request)) {
-    event.respondWith(
-      fetch(event.request).catch(function () {
-        return new Response(
-          '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hors ligne — Athena</title></head><body style="font-family:system-ui,sans-serif;background:#050505;color:#f4f4f0;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:1.5rem;text-align:center"><div><h1 style="font-size:1.5rem;margin:0 0 .75rem">Connexion indisponible</h1><p style="margin:0;color:#94a3b8;max-w:28rem">Athena ne peut pas charger cette page pour le moment. Vérifiez votre connexion, puis réessayez.</p></div></body></html>',
-          {
-            status: 503,
-            statusText: 'Offline',
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-          }
-        );
-      })
-    );
+  // Navigations HTML : réseau strict, sans faux 503 (laisse le navigateur gérer les erreurs réelles).
+  if (isNavigationRequest(event.request)) {
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then(function (response) {
-        if (response && response.ok) {
+        if (isCacheableAssetResponse(event.request, response)) {
           var copy = response.clone();
           caches.open(CACHE_NAME).then(function (cache) {
-            if (event.request.url.indexOf('http') === 0) {
-              cache.put(event.request, copy).catch(function () {});
-            }
+            cache.put(event.request, copy).catch(function () {});
           });
         }
         return response;

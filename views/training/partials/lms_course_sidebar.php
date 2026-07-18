@@ -5,6 +5,8 @@ declare(strict_types=1);
 /** @var float|int $progressPercent */
 /** @var int|null $currentLessonId */
 /** @var string $lmsBase */
+/** @var string|null $lmsSequenceContext preamble|lesson|quiz|echanges */
+/** @var int|null $lmsSequenceQuizId */
 $lmsBase = $lmsBase ?? url('');
 $course = $course ?? [];
 $enrollment = $enrollment ?? null;
@@ -12,95 +14,171 @@ $progressPercent = (float) ($progressPercent ?? 0);
 $currentLessonId = isset($currentLessonId) ? (int) $currentLessonId : null;
 $lmsHideEchangesSidebarLink = !empty($lmsHideEchangesSidebarLink);
 $canWithdrawEnrollment = !empty($canWithdrawEnrollment);
-/** Ressources de la leçon courante (vue leçon uniquement ; sinon tableau vide). */
+/** @var array<int, true> $lmsCompletedLessonIds */
+$lmsCompletedLessonIds = is_array($lmsCompletedLessonIds ?? null) ? $lmsCompletedLessonIds : [];
+/** @var array<int, true> $lmsPassedQuizIds */
+$lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : [];
 if (!isset($lessonResources)) {
     $lessonResources = (isset($resources) && is_array($resources)) ? $resources : [];
 }
-$modules = $course['modules'] ?? [];
 $courseSlug = (string) ($course['slug'] ?? '');
 $code = (string) ($course['course_code'] ?? '');
 if ($code === '') {
     $code = 'F-' . (int) ($course['id'] ?? 0);
 }
+$courseUrl = $courseSlug !== ''
+    ? htmlspecialchars($lmsBase) . '/formations/' . rawurlencode($courseSlug)
+    : htmlspecialchars($lmsBase) . '/formations';
+
+$seqSteps = function_exists('training_lms_build_guided_sequence')
+    ? training_lms_build_guided_sequence($course)
+    : [];
+$seqContext = (string) ($lmsSequenceContext ?? 'preamble');
+$seqQuizId = isset($lmsSequenceQuizId) ? (int) $lmsSequenceQuizId : null;
+
+// Sur la fiche parcours : si une leçon reste à faire, la position courante = cette leçon (pas le préambule).
+if ($seqContext === 'preamble' && $enrollment && $currentLessonId === null) {
+    $continueId = 0;
+    if (isset($continueLesson) && is_array($continueLesson)) {
+        $continueId = (int) ($continueLesson['id'] ?? 0);
+    }
+    if ($continueId < 1 && function_exists('training_lms_next_incomplete_lesson') && function_exists('training_lms_ordered_lessons')) {
+        $ordered = training_lms_ordered_lessons($course);
+        $progressRows = [];
+        foreach ($lmsCompletedLessonIds as $cid => $_) {
+            $progressRows[] = ['lesson_id' => (int) $cid, 'status' => 'completed'];
+        }
+        $nextInc = training_lms_next_incomplete_lesson($ordered, $progressRows);
+        $continueId = (int) ($nextInc['id'] ?? 0);
+    }
+    if ($continueId > 0 && $lmsCompletedLessonIds !== []) {
+        $seqContext = 'lesson';
+        $currentLessonId = $continueId;
+    } elseif ($continueId > 0 && $lmsCompletedLessonIds === [] && !empty($lmsSequenceSkipPreamble)) {
+        $seqContext = 'lesson';
+        $currentLessonId = $continueId;
+    }
+}
+
+$seqPos = function_exists('training_lms_sequence_position')
+    ? training_lms_sequence_position($seqSteps, $seqContext, $currentLessonId, $seqQuizId)
+    : ['index' => 0, 'total' => count($seqSteps), 'current' => $seqSteps[0] ?? null, 'next' => $seqSteps[1] ?? null, 'previous' => null];
+$seqIndex = (int) ($seqPos['index'] ?? 0);
+$seqNext = is_array($seqPos['next'] ?? null) ? $seqPos['next'] : null;
+$seqNextLabel = function_exists('training_lms_sequence_step_human_label')
+    ? training_lms_sequence_step_human_label($seqNext)
+    : '';
 ?>
-<aside class="lms-dark-panel w-full min-w-0 shrink-0 text-white p-6 lg:p-8 flex flex-col lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-hidden">
-    <div class="shrink-0 pb-6 border-b border-white/10">
+<aside class="lms-dark-panel lms-course-aside w-full min-w-0 shrink-0 text-white flex flex-col lg:sticky lg:top-0 lg:self-start lg:overflow-hidden">
+    <div class="lms-course-aside__head shrink-0 px-4 lg:px-5 pt-4 lg:pt-5 pb-4 border-b border-white/10">
         <a href="<?= htmlspecialchars($lmsBase) ?>/formations" class="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-white">← Catalogue</a>
-        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-white/40 mt-4 mb-1">Parcours</p>
-        <h1 class="text-lg font-black tracking-tight uppercase leading-tight"><?= htmlspecialchars((string) ($course['title'] ?? '')) ?></h1>
-        <p class="text-[10px] font-mono text-emerald-400/90 mt-2"><?= htmlspecialchars($code) ?></p>
+        <h1 class="mt-3 text-base font-black tracking-tight uppercase leading-tight"><?= htmlspecialchars((string) ($course['title'] ?? '')) ?></h1>
+        <p class="text-[10px] font-mono text-emerald-400/90 mt-1.5"><?= htmlspecialchars($code) ?></p>
         <?php if ($enrollment): ?>
-        <div class="mt-4">
+        <div class="mt-3">
             <div class="flex justify-between text-[10px] font-black uppercase text-white/50 mb-1">
                 <span>Progression</span>
-                <span><?= (int) round($progressPercent) ?> %</span>
+                <span class="tabular-nums"><?= (int) round($progressPercent) ?> %</span>
             </div>
-            <div class="lms-progress-bar h-2 bg-white/10 rounded-full overflow-hidden">
+            <div class="lms-progress-bar h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <span style="width: <?= min(100, max(0, $progressPercent)) ?>%"></span>
             </div>
         </div>
+        <?php if ($seqNextLabel !== ''): ?>
+        <p class="mt-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-2 text-[10px] leading-snug text-emerald-100/95">
+            <span class="font-black uppercase tracking-wider text-emerald-300/90">Prochaine étape</span><br>
+            <?= htmlspecialchars($seqNextLabel) ?>
+        </p>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 
-    <nav class="lms-sidebar-scroll min-h-0 flex-1 overscroll-contain pt-6 space-y-6" aria-label="Modules et leçons du parcours">
-        <?php foreach ($modules as $mod):
-            $lessons = $mod['lessons'] ?? [];
-            $quizzes = $mod['quizzes'] ?? [];
-        ?>
-        <div>
-            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2"><?= htmlspecialchars((string) ($mod['title'] ?? 'Module')) ?></p>
-            <?php if (!empty($mod['subtitle'])): ?>
-            <p class="text-[9px] text-white/45 font-medium normal-case mb-2 leading-snug -mt-1"><?= htmlspecialchars((string) $mod['subtitle']) ?></p>
+    <nav class="lms-sidebar-scroll lms-course-aside__nav min-h-0 flex-1 overscroll-contain px-4 lg:px-5 py-3 space-y-1" aria-label="Déroulement du parcours">
+        <?php
+        $lastPhase = null;
+        foreach ($seqSteps as $si => $step):
+            if (!is_array($step)) {
+                continue;
+            }
+            $kind = (string) ($step['kind'] ?? '');
+            $phase = (string) ($step['phase'] ?? '');
+            $label = (string) ($step['label'] ?? '');
+            $isCurrent = $si === $seqIndex;
+            $isPast = $si < $seqIndex;
+            $stepNum = $si + 1;
+
+            if ($phase !== '' && $phase !== $lastPhase):
+                $lastPhase = $phase;
+                ?>
+        <p class="pt-3 first:pt-0 text-[8px] font-black tracking-[0.28em] uppercase text-white/35 mb-1.5"><?= htmlspecialchars($phase) ?></p>
             <?php endif; ?>
-            <ul class="space-y-1">
-                <?php foreach ($lessons as $les):
-                    $lid = (int) ($les['id'] ?? 0);
-                    $isCurrent = $currentLessonId !== null && $lid === $currentLessonId;
-                    $href = $enrollment
-                        ? htmlspecialchars($lmsBase) . '/formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']
-                        : '#';
-                    $lesSum = trim((string) ($les['summary'] ?? ''));
+
+            <?php if ($kind === 'preamble'): ?>
+        <a href="<?= $courseUrl ?>#lms-parcours-debut" class="lms-seq-item <?= $isCurrent ? 'lms-seq-item--current' : ($isPast ? 'lms-seq-item--done' : 'lms-seq-item--todo') ?>">
+            <span class="lms-seq-item__num" aria-hidden="true"><?= $isPast ? '✓' : $stepNum ?></span>
+            <span class="lms-seq-item__body">
+                <span class="lms-seq-item__title"><?= htmlspecialchars($label) ?></span>
+                <span class="lms-seq-item__hint">Cadre et démarrage du parcours</span>
+            </span>
+        </a>
+            <?php elseif ($kind === 'lesson'):
+                $lid = (int) ($step['lesson']['id'] ?? 0);
+                $lesSum = trim((string) ($step['lesson']['summary'] ?? ''));
+                $href = ($enrollment && $lid > 0)
+                    ? htmlspecialchars($lmsBase) . '/formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']
+                    : $courseUrl . '#lms-parcours-debut';
+                $doneByProgress = isset($lmsCompletedLessonIds[$lid]);
                 ?>
-                <li>
-                    <?php if ($enrollment): ?>
-                    <a href="<?= $href ?>" title="<?= $lesSum !== '' ? htmlspecialchars($lesSum) : '' ?>" class="block rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wide border <?= $isCurrent ? 'lms-active-nav border' : 'border-transparent text-white/70 hover:bg-white/5' ?>">
-                        <span class="block leading-snug"><?= htmlspecialchars((string) ($les['title'] ?? '')) ?></span>
-                        <?php if ($lesSum !== ''): ?>
-                        <span class="block mt-0.5 text-[9px] font-normal normal-case text-white/45 leading-tight line-clamp-2"><?= htmlspecialchars($lesSum) ?></span>
-                        <?php endif; ?>
-                    </a>
-                    <?php else: ?>
-                    <span class="block text-[11px] text-white/35 px-3 py-2"><?= htmlspecialchars((string) ($les['title'] ?? '')) ?></span>
-                    <?php endif; ?>
-                </li>
-                <?php endforeach; ?>
-                <?php foreach ($quizzes as $qz):
-                    $qid = (int) ($qz['id'] ?? 0);
-                    $qtitle = (string) ($qz['title'] ?? 'Quiz');
+        <a href="<?= $href ?>" title="<?= $lesSum !== '' ? htmlspecialchars($lesSum) : '' ?>" class="lms-seq-item <?= $isCurrent ? 'lms-seq-item--current' : (($isPast || $doneByProgress) ? 'lms-seq-item--done' : 'lms-seq-item--todo') ?>">
+            <span class="lms-seq-item__num" aria-hidden="true"><?= ($isPast || $doneByProgress) && !$isCurrent ? '✓' : $stepNum ?></span>
+            <span class="lms-seq-item__body">
+                <span class="lms-seq-item__title"><?= htmlspecialchars($label) ?></span>
+                <?php if ($lesSum !== ''): ?>
+                <span class="lms-seq-item__hint"><?= htmlspecialchars($lesSum) ?></span>
+                <?php elseif ($isCurrent): ?>
+                <span class="lms-seq-item__hint">Étape en cours</span>
+                <?php endif; ?>
+            </span>
+        </a>
+            <?php elseif ($kind === 'quiz'):
+                $qid = (int) ($step['quiz']['id'] ?? 0);
+                $passed = isset($lmsPassedQuizIds[$qid]);
                 ?>
-                <li>
-                    <?php if ($enrollment && $qid > 0): ?>
-                    <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/quiz/start" class="inline">
-                        <?= \App\Core\Csrf::field() ?>
-                        <input type="hidden" name="quiz_id" value="<?= $qid ?>">
-                        <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
-                        <button type="submit" class="w-full text-left rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wide border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10">
-                            <?= htmlspecialchars($qtitle) ?>
-                        </button>
-                    </form>
-                    <?php else: ?>
-                    <span class="block text-[11px] text-white/35 px-3 py-2"><?= htmlspecialchars($qtitle) ?></span>
-                    <?php endif; ?>
-                </li>
-                <?php endforeach; ?>
-            </ul>
+                <?php if ($enrollment && $qid > 0): ?>
+        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/quiz/start" class="block">
+            <?= \App\Core\Csrf::field() ?>
+            <input type="hidden" name="quiz_id" value="<?= $qid ?>">
+            <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
+            <button type="submit" class="lms-seq-item w-full text-left <?= $isCurrent ? 'lms-seq-item--current' : (($isPast || $passed) ? 'lms-seq-item--done' : 'lms-seq-item--todo') ?>">
+                <span class="lms-seq-item__num" aria-hidden="true"><?= ($isPast || $passed) && !$isCurrent ? '✓' : $stepNum ?></span>
+                <span class="lms-seq-item__body">
+                    <span class="lms-seq-item__title"><?= htmlspecialchars($label) ?></span>
+                    <span class="lms-seq-item__hint"><?= !empty($step['quiz']['is_final']) ? 'Après les modules' : 'Après les leçons du module' ?></span>
+                </span>
+            </button>
+        </form>
+                <?php else: ?>
+        <div class="lms-seq-item lms-seq-item--todo opacity-60">
+            <span class="lms-seq-item__num"><?= $stepNum ?></span>
+            <span class="lms-seq-item__body">
+                <span class="lms-seq-item__title"><?= htmlspecialchars($label) ?></span>
+            </span>
         </div>
+                <?php endif; ?>
+            <?php elseif ($kind === 'echanges' && !$lmsHideEchangesSidebarLink): ?>
+        <a href="<?= $courseSlug !== '' ? htmlspecialchars($lmsBase) . '/formations/' . rawurlencode($courseSlug) . '/echanges' : '#' ?>" class="lms-seq-item <?= $isCurrent ? 'lms-seq-item--current' : ($isPast ? 'lms-seq-item--done' : 'lms-seq-item--todo') ?>">
+            <span class="lms-seq-item__num" aria-hidden="true"><?= $isPast ? '✓' : $stepNum ?></span>
+            <span class="lms-seq-item__body">
+                <span class="lms-seq-item__title"><?= htmlspecialchars($label) ?></span>
+                <span class="lms-seq-item__hint">À la fin du parcours</span>
+            </span>
+        </a>
+            <?php endif; ?>
         <?php endforeach; ?>
 
         <?php if (!empty($lessonResources)): ?>
-        <div class="pt-2 border-t border-white/10" aria-label="Ressources de la leçon">
-            <p class="text-[8px] font-black tracking-[0.3em] uppercase text-white/30 mb-2">Ressources</p>
-            <p class="text-[9px] text-white/45 font-medium normal-case mb-2 leading-snug -mt-1">Documents et liens utiles pour cette leçon</p>
+        <div class="pt-3 mt-2 border-t border-white/10" aria-label="Ressources de la leçon">
+            <p class="text-[8px] font-black tracking-[0.28em] uppercase text-white/30 mb-1.5">Ressources</p>
             <ul class="space-y-1">
                 <?php foreach ($lessonResources as $r):
                     $resId = (int) ($r['id'] ?? 0);
@@ -116,23 +194,19 @@ if ($code === '') {
                         $resHref = url('api/training/resource/' . $resId . '/download');
                     } elseif (!empty($r['external_url'])) {
                         $extH = training_lms_resource_external_href((string) $r['external_url']);
-                        if ($extH !== null) {
-                            $resHref = $extH;
-                            $openBlank = true;
-                        } else {
-                            $resHref = '';
-                        }
+                        $resHref = $extH ?? '';
+                        $openBlank = $extH !== null;
                     } else {
                         $resHref = '';
                     }
                 ?>
                 <li>
                     <?php if ($resHref !== ''): ?>
-                    <a href="<?= htmlspecialchars($resHref, ENT_QUOTES, 'UTF-8') ?>"<?= $openBlank ? ' target="_blank" rel="noopener noreferrer"' : '' ?> class="block rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-wide border border-emerald-500/30 text-emerald-200/95 hover:bg-emerald-500/10 leading-snug">
+                    <a href="<?= htmlspecialchars($resHref, ENT_QUOTES, 'UTF-8') ?>"<?= $openBlank ? ' target="_blank" rel="noopener noreferrer"' : '' ?> class="block rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-emerald-200/95 border border-emerald-500/25 hover:bg-emerald-500/10 leading-snug">
                         <?= htmlspecialchars($resTitle) ?>
                     </a>
                     <?php else: ?>
-                    <span class="block rounded-xl px-3 py-2 text-[11px] text-white/45 leading-snug"><?= htmlspecialchars($resTitle) ?></span>
+                    <span class="block rounded-lg px-2.5 py-1.5 text-[11px] text-white/45 leading-snug"><?= htmlspecialchars($resTitle) ?></span>
                     <?php endif; ?>
                 </li>
                 <?php endforeach; ?>
@@ -141,29 +215,20 @@ if ($code === '') {
         <?php endif; ?>
     </nav>
 
-    <div class="shrink-0 space-y-6 border-t border-white/10 pt-6 mt-6">
-    <?php if ($enrollment && $courseSlug !== '' && !$lmsHideEchangesSidebarLink): ?>
-    <div>
-        <a href="<?= htmlspecialchars($lmsBase) ?>/formations/<?= rawurlencode($courseSlug) ?>/echanges" class="block rounded-xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-emerald-300/95 border border-emerald-500/25 hover:bg-emerald-500/10">Avis &amp; échanges</a>
-        <p class="text-[9px] text-white/35 mt-2 leading-snug">Note, questions et commentaires — fin de parcours</p>
-    </div>
-    <?php endif; ?>
-
+    <div class="lms-course-aside__foot shrink-0">
     <?php if ($enrollment && $canWithdrawEnrollment && $courseSlug !== ''): ?>
-    <div>
-        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="space-y-2" data-ui-confirm="1" data-ui-confirm-title="Annuler l’inscription" data-ui-confirm-body="Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.">
+        <form method="post" action="<?= htmlspecialchars($lmsBase) ?>/formations/inscription/annuler" class="lms-course-aside__withdraw" data-ui-confirm="1" data-ui-confirm-title="Annuler l’inscription" data-ui-confirm-body="Annuler votre inscription à ce parcours ? Vous pourrez vous réinscrire depuis le catalogue si les conditions le permettent.">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
             <input type="hidden" name="return_path" value="<?= htmlspecialchars('formations/' . $courseSlug, ENT_QUOTES, 'UTF-8') ?>">
-            <button type="submit" class="w-full rounded-xl border border-rose-500/35 bg-rose-500/10 px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-rose-200 hover:bg-rose-500/20">
+            <button type="submit" class="lms-course-aside__withdraw-btn">
                 Annuler mon inscription
             </button>
         </form>
-    </div>
     <?php endif; ?>
-
-    <div class="pt-2 border-t border-white/10">
-        <a href="<?= htmlspecialchars($lmsBase) ?>/dashboard" class="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">Dashboard</a>
-    </div>
+        <a href="<?= htmlspecialchars($lmsBase) ?>/dashboard" class="lms-course-aside__dash">
+            <span class="lms-course-aside__dash-label">Tableau de bord</span>
+            <span class="lms-course-aside__dash-hint" aria-hidden="true">←</span>
+        </a>
     </div>
 </aside>

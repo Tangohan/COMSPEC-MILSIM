@@ -61,13 +61,7 @@ class ReplayController
         $aar = $this->replayService->buildAfterActionReview($missionId, $from ?: null, $to ?: null);
 
         return TrainingCertificatePdfEngine::suppressTcpdfPhpDeprecationsWhile(function () use ($missionId, $aar): Response {
-            if (!class_exists(\TCPDF::class, false)) {
-                $path = base_path('tcpdf/tcpdf.php');
-                if (is_file($path)) {
-                    require_once $path;
-                }
-            }
-            if (!class_exists(\TCPDF::class, false)) {
+            if (!TrainingCertificatePdfEngine::ensureTcpdfLoaded()) {
                 return Response::json(['error' => 'pdf_engine_unavailable'], 503);
             }
 

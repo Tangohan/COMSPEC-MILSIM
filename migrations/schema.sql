@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `athena_identifier` char(9) DEFAULT NULL,
   `steam_id` varchar(20) DEFAULT NULL,
   `avatar_url` varchar(500) DEFAULT NULL,
+  `profile_banner_url` varchar(500) DEFAULT NULL,
   `role_id` int unsigned DEFAULT NULL,
   `grade_id` int unsigned DEFAULT NULL,
   `status` varchar(50) DEFAULT 'pending',

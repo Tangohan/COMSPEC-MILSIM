@@ -34,23 +34,23 @@ class GradeValidationService
         $isMilitary = $categoryCode !== null && in_array($categoryCode, self::MILITARY_CATEGORIES, true);
 
         if ($isMilitary && empty($gradeId)) {
-            $issues[] = ['type' => 'warning', 'message' => 'Utilisateur militaire sans grade renseigné.'];
+            $issues[] = ['type' => 'warning', 'message' => 'Profil militaire sans grade renseigné.'];
         }
 
         if (!empty($gradeId)) {
             $grade = $this->gradeRepository->findById((int) $gradeId);
             if (!$grade) {
-                $issues[] = ['type' => 'error', 'message' => 'Grade sélectionné introuvable.'];
+                $issues[] = ['type' => 'error', 'message' => 'Le grade sélectionné n’existe plus dans le référentiel.'];
             } else {
                 if ($categoryCode !== null && ($grade['category_code'] ?? '') !== $categoryCode) {
-                    $issues[] = ['type' => 'warning', 'message' => 'La catégorie de personnel ne correspond pas à la catégorie du grade.'];
+                    $issues[] = ['type' => 'warning', 'message' => 'La catégorie de personnel ne correspond pas à celle du grade choisi.'];
                 }
                 if ($preferredFormat === 'otan' && empty($grade['label_otan'])) {
-                    $issues[] = ['type' => 'warning', 'message' => 'Format d\'affichage OTAN sélectionné mais le grade n\'a pas de code OTAN défini.'];
+                    $issues[] = ['type' => 'warning', 'message' => 'Affichage OTAN demandé, mais ce grade n’a pas de libellé OTAN défini.'];
                 }
                 $gradeCountry = $grade['country_code'] ?? null;
                 if ($nationalityCode !== null && $gradeCountry !== null && $gradeCountry !== $nationalityCode) {
-                    $issues[] = ['type' => 'warning', 'message' => 'Incohérence nation : grade ' . $gradeCountry . ' avec nationalité ' . $nationalityCode . '.'];
+                    $issues[] = ['type' => 'warning', 'message' => 'Incohérence de nation : le grade et la nationalité du profil ne correspondent pas.'];
                 }
             }
         } elseif ($categoryCode !== null && in_array($categoryCode, self::MILITARY_CATEGORIES, true)) {

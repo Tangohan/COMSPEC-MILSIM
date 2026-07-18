@@ -31,6 +31,51 @@ class TenantBrandingRepository
     }
 
     /**
+     * Crée ou met à jour la ligne de marque (logo/bannière/favicon/couleurs) d’un tenant.
+     * Seules les clés fournies dans $fields sont modifiées (les autres colonnes sont préservées).
+     *
+     * @param array<string, string|null> $fields clés autorisées : logo_url, banner_url, favicon_url, primary_color, accent_color, public_home_hero_json
+     */
+    public function upsert(int $tenantId, array $fields): void
+    {
+        $allowed = ['logo_url', 'banner_url', 'favicon_url', 'primary_color', 'accent_color', 'public_home_hero_json'];
+        $fields = array_intersect_key($fields, array_flip($allowed));
+        if ($fields === []) {
+            return;
+        }
+        $existing = $this->findByTenantId($tenantId);
+        $merged = array_merge([
+            'logo_url' => $existing['logo_url'] ?? null,
+            'banner_url' => $existing['banner_url'] ?? null,
+            'favicon_url' => $existing['favicon_url'] ?? null,
+            'primary_color' => $existing['primary_color'] ?? null,
+            'accent_color' => $existing['accent_color'] ?? null,
+            'public_home_hero_json' => $existing['public_home_hero_json'] ?? null,
+        ], $fields);
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO tenant_branding (tenant_id, logo_url, banner_url, favicon_url, primary_color, accent_color, public_home_hero_json, updated_at)
+             VALUES (:tenant_id, :logo_url, :banner_url, :favicon_url, :primary_color, :accent_color, :public_home_hero_json, NOW())
+             ON DUPLICATE KEY UPDATE
+                logo_url = VALUES(logo_url),
+                banner_url = VALUES(banner_url),
+                favicon_url = VALUES(favicon_url),
+                primary_color = VALUES(primary_color),
+                accent_color = VALUES(accent_color),
+                public_home_hero_json = VALUES(public_home_hero_json),
+                updated_at = NOW()'
+        );
+        $stmt->execute([
+            'tenant_id' => $tenantId,
+            'logo_url' => $merged['logo_url'],
+            'banner_url' => $merged['banner_url'],
+            'favicon_url' => $merged['favicon_url'],
+            'primary_color' => $merged['primary_color'],
+            'accent_color' => $merged['accent_color'],
+            'public_home_hero_json' => $merged['public_home_hero_json'],
+        ]);
+    }
+
+    /**
      * @param array<string, mixed>|null $tenantRow ligne `tenants` (logo_url, …)
      * @return array{logo_url: ?string, banner_url: ?string, primary_color: ?string, accent_color: ?string, favicon_url: ?string, public_home_hero_json: mixed}
      */

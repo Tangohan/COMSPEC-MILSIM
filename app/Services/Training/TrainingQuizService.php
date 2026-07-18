@@ -37,6 +37,18 @@ class TrainingQuizService
             throw new \InvalidArgumentException('Ce questionnaire ne fait pas partie de cette formation.');
         }
 
+        $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
+        $passedAttempt = $this->findPassingAttemptRow($attempts);
+        if ($passedAttempt !== null) {
+            // Quiz déjà réussi : ne pas rouvrir une session « à compléter ».
+            $inProgressDone = $this->quizRepository->getInProgressAttempt($enrollmentId, $quizId);
+            if ($inProgressDone) {
+                $this->quizRepository->updateAttempt((int) $inProgressDone['id'], ['status' => 'expired']);
+            }
+
+            return $passedAttempt;
+        }
+
         $inProgress = $this->quizRepository->getInProgressAttempt($enrollmentId, $quizId);
         if ($inProgress) {
             $quizForLimit = $this->quizRepository->findQuizById($quizId);
@@ -46,7 +58,6 @@ class TrainingQuizService
                 return $inProgress;
             }
         }
-        $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
         $submitted = 0;
         foreach ($attempts as $a) {
             if (in_array($a['status'], ['submitted', 'graded'], true)) {
@@ -59,6 +70,40 @@ class TrainingQuizService
         }
         $attemptId = $this->quizRepository->createAttempt($quizId, $enrollmentId);
         return $this->quizRepository->findAttemptById($attemptId);
+    }
+
+    /**
+     * Dernière tentative réussie (notée) pour une inscription / quiz, ou null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findPassingAttempt(int $enrollmentId, int $quizId): ?array
+    {
+        $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId);
+
+        return $this->findPassingAttemptRow($attempts);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $attempts
+     * @return array<string, mixed>|null
+     */
+    private function findPassingAttemptRow(array $attempts): ?array
+    {
+        $best = null;
+        foreach ($attempts as $a) {
+            if ((int) ($a['passed'] ?? 0) !== 1) {
+                continue;
+            }
+            if (!in_array((string) ($a['status'] ?? ''), ['submitted', 'graded'], true)) {
+                continue;
+            }
+            if ($best === null || (int) ($a['id'] ?? 0) > (int) ($best['id'] ?? 0)) {
+                $best = $a;
+            }
+        }
+
+        return $best;
     }
 
     /** Soumet la tentative et corrige (auto pour choix / vrai-faux). */

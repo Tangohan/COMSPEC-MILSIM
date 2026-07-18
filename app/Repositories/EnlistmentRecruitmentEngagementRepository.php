@@ -16,6 +16,22 @@ final class EnlistmentRecruitmentEngagementRepository
 
     public const SCOPE_CANDIDATE_RETURN = 'candidate_return';
 
+    /**
+     * Statuts pour lesquels le bilan après 30 jours n’est ni proposé ni exigé
+     * (dossier clos sans admission : non admis / refusée).
+     *
+     * @return list<string>
+     */
+    public static function retroExcludedStatuses(): array
+    {
+        return ['blocked', 'rejected'];
+    }
+
+    public static function isRetroExcludedStatus(string $status): bool
+    {
+        return in_array($status, self::retroExcludedStatuses(), true);
+    }
+
     private PDO $pdo;
 
     private static ?bool $picksTable = null;
@@ -156,5 +172,221 @@ final class EnlistmentRecruitmentEngagementRepository
         );
 
         return $stmt->execute([$tenantId, $enlistmentId, self::SCOPE_CANDIDATE_RETURN, $rating, $comment]);
+    }
+
+    /**
+     * Dossiers reçus depuis ≥ 30 jours sans bilan équipe.
+     *
+     * @return list<array{id: int, first_name: string, last_name: string, status: string, created_at: string, age_days: int}>
+     */
+    public function listStaffRetrosDue(int $tenantId, int $limit = 8): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(25, $limit));
+        $excluded = self::retroExcludedStatuses();
+        $exclPlaceholders = implode(',', array_fill(0, count($excluded), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id, e.first_name, e.last_name, e.status, e.created_at,
+                    TIMESTAMPDIFF(DAY, e.created_at, NOW()) AS age_days
+             FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND (
+                    r.feedback_scope = ?
+                    OR r.feedback_scope = 'staff'
+                    OR r.feedback_scope LIKE 'staff\\_%' ESCAPE '\\\\'
+              )
+             WHERE e.tenant_id = ?
+               AND e.status NOT IN ({$exclPlaceholders})
+               AND e.created_at IS NOT NULL
+               AND e.created_at <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+               AND r.id IS NULL
+             ORDER BY e.created_at ASC
+             LIMIT {$lim}"
+        );
+        $stmt->execute(array_merge([self::SCOPE_STAFF_ONE_MONTH, $tenantId], $excluded));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($r['id'] ?? 0),
+                'first_name' => (string) ($r['first_name'] ?? ''),
+                'last_name' => (string) ($r['last_name'] ?? ''),
+                'status' => (string) ($r['status'] ?? ''),
+                'created_at' => (string) ($r['created_at'] ?? ''),
+                'age_days' => max(30, (int) ($r['age_days'] ?? 30)),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Dossiers du déposant reçus depuis ≥ 30 jours sans retour candidat.
+     *
+     * @return list<array{id: int, first_name: string, last_name: string, created_at: string, age_days: int}>
+     */
+    public function listCandidateRetrosDueForSubmitter(int $tenantId, int $submitterUserId, int $limit = 5): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1 || $submitterUserId < 1) {
+            return [];
+        }
+        $lim = max(1, min(15, $limit));
+        $excluded = self::retroExcludedStatuses();
+        $exclPlaceholders = implode(',', array_fill(0, count($excluded), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id, e.first_name, e.last_name, e.created_at,
+                    TIMESTAMPDIFF(DAY, e.created_at, NOW()) AS age_days
+             FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND r.feedback_scope = ?
+             WHERE e.tenant_id = ?
+               AND e.submitter_user_id = ?
+               AND e.status NOT IN ({$exclPlaceholders})
+               AND e.created_at IS NOT NULL
+               AND e.created_at <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+               AND r.id IS NULL
+             ORDER BY e.created_at ASC
+             LIMIT {$lim}"
+        );
+        $stmt->execute(array_merge([self::SCOPE_CANDIDATE_RETURN, $tenantId, $submitterUserId], $excluded));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($r['id'] ?? 0),
+                'first_name' => (string) ($r['first_name'] ?? ''),
+                'last_name' => (string) ($r['last_name'] ?? ''),
+                'created_at' => (string) ($r['created_at'] ?? ''),
+                'age_days' => max(30, (int) ($r['age_days'] ?? 30)),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Dossiers du tenant reçus depuis ≥ 30 jours sans retour candidat (e-mail présent).
+     *
+     * @return list<array{id: int, first_name: string, last_name: string, email: string, created_at: string, age_days: int}>
+     */
+    public function listCandidateRetrosDueForTenant(int $tenantId, int $limit = 25): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $lim = max(1, min(50, $limit));
+        $excluded = self::retroExcludedStatuses();
+        $exclPlaceholders = implode(',', array_fill(0, count($excluded), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id, e.first_name, e.last_name, e.email, e.created_at,
+                    TIMESTAMPDIFF(DAY, e.created_at, NOW()) AS age_days
+             FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND r.feedback_scope = ?
+             WHERE e.tenant_id = ?
+               AND e.status NOT IN ({$exclPlaceholders})
+               AND e.created_at IS NOT NULL
+               AND e.created_at <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+               AND r.id IS NULL
+               AND e.email IS NOT NULL AND e.email <> ''
+             ORDER BY e.created_at ASC
+             LIMIT {$lim}"
+        );
+        $stmt->execute(array_merge([self::SCOPE_CANDIDATE_RETURN, $tenantId], $excluded));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $out[] = [
+                'id' => (int) ($r['id'] ?? 0),
+                'first_name' => (string) ($r['first_name'] ?? ''),
+                'last_name' => (string) ($r['last_name'] ?? ''),
+                'email' => (string) ($r['email'] ?? ''),
+                'created_at' => (string) ($r['created_at'] ?? ''),
+                'age_days' => max(30, (int) ($r['age_days'] ?? 30)),
+            ];
+        }
+
+        return $out;
+    }
+
+    public function countStaffRetrosDue(int $tenantId): int
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return 0;
+        }
+        $excluded = self::retroExcludedStatuses();
+        $exclPlaceholders = implode(',', array_fill(0, count($excluded), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM enlistments e
+             LEFT JOIN enlistment_retro_feedbacks r
+               ON r.tenant_id = e.tenant_id
+              AND r.enlistment_id = e.id
+              AND (
+                    r.feedback_scope = ?
+                    OR r.feedback_scope = 'staff'
+                    OR r.feedback_scope LIKE 'staff\\_%' ESCAPE '\\\\'
+              )
+             WHERE e.tenant_id = ?
+               AND e.status NOT IN ({$exclPlaceholders})
+               AND e.created_at IS NOT NULL
+               AND e.created_at <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+               AND r.id IS NULL"
+        );
+        $stmt->execute(array_merge([self::SCOPE_STAFF_ONE_MONTH, $tenantId], $excluded));
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Dossiers ayant déjà un bilan équipe.
+     * Clé = id dossier ; valeur = date d’enregistrement (created_at / updated_at) ou chaîne vide.
+     *
+     * @param list<int> $enlistmentIds
+     * @return array<int, string> map id => date SQL ou ''
+     */
+    public function mapStaffRetroDoneIds(int $tenantId, array $enlistmentIds): array
+    {
+        if (!$this->retroTableExists() || $tenantId < 1) {
+            return [];
+        }
+        $ids = [];
+        foreach ($enlistmentIds as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        // Inclut les scopes historiques éventuels (staff / staff_*) en plus de staff_one_month.
+        $stmt = $this->pdo->prepare(
+            "SELECT enlistment_id,
+                    COALESCE(updated_at, created_at) AS done_at
+             FROM enlistment_retro_feedbacks
+             WHERE tenant_id = ?
+               AND enlistment_id IN ({$placeholders})
+               AND (
+                    feedback_scope = ?
+                    OR feedback_scope = 'staff'
+                    OR feedback_scope LIKE 'staff\\_%' ESCAPE '\\\\'
+               )"
+        );
+        $stmt->execute(array_merge([$tenantId], array_values($ids), [self::SCOPE_STAFF_ONE_MONTH]));
+        $out = [];
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $eid = (int) ($r['enlistment_id'] ?? 0);
+            if ($eid > 0) {
+                $out[$eid] = trim((string) ($r['done_at'] ?? ''));
+            }
+        }
+
+        return $out;
     }
 }

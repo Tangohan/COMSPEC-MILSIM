@@ -186,8 +186,62 @@ final class AdminTrainingCustomPageController
         }
 
         return (new Response())->header('Content-Type', 'text/html; charset=utf-8')->setBody(
-            TrainingFormationCustomPageRenderer::render($row, rtrim(url(''), '/'))
+            TrainingFormationCustomPageRenderer::render($row, rtrim(url(''), '/'), $this->previewChrome($row))
         );
+    }
+
+    /**
+     * Bandeau studio affiché uniquement sur l'aperçu interne (jamais sur la route publique
+     * /formations/page/{slug}, qui appelle le renderer sans ce paramètre).
+     *
+     * @param array<string,mixed> $row
+     */
+    private function previewChrome(array $row): string
+    {
+        $id = (int) ($row['id'] ?? 0);
+        $backUrl = training_lms_admin_url('pages-html');
+        $editUrl = training_lms_admin_url('pages-html/' . $id . '/modifier');
+        [$label, $tone] = $this->statusMeta((string) ($row['status'] ?? 'draft'));
+        $isPublished = !empty($row['is_published']);
+        $slug = (string) ($row['slug'] ?? '');
+        $publicUrl = ($isPublished && $slug !== '') ? rtrim(url(''), '/') . '/formations/page/' . rawurlencode($slug) : null;
+
+        $actions = '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($backUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">'
+            . '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M12.5 4.5 6.5 10l6 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            . 'Retour au pilotage</a>';
+        if ($this->canEdit()) {
+            $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--solid" href="' . htmlspecialchars($editUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">Modifier le document</a>';
+        }
+        if ($publicUrl !== null) {
+            $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($publicUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">Voir la fiche publique</a>';
+        }
+
+        $note = $isPublished
+            ? ''
+            : '<p class="formation-doc-adminbar__note">Aperçu interne : ce document n\'est pas encore visible des apprenants.</p>';
+
+        return '<div class="formation-doc-adminbar">'
+            . '<div class="formation-doc-adminbar__row">'
+            . '<div class="formation-doc-adminbar__identity">'
+            . '<span class="formation-doc-adminbar__kicker">Aperçu studio</span>'
+            . '<span class="formation-doc-adminbar__status formation-doc-adminbar__status--' . $tone . '">' . htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</span>'
+            . '</div>'
+            . '<div class="formation-doc-adminbar__actions">' . $actions . '</div>'
+            . '</div>'
+            . $note
+            . '</div>';
+    }
+
+    /** @return array{0:string,1:string} */
+    private function statusMeta(string $status): array
+    {
+        return match ($status) {
+            'review' => ['En révision', 'review'],
+            'scheduled' => ['Programmé', 'scheduled'],
+            'published' => ['Publié', 'published'],
+            'archived' => ['Archivé', 'archived'],
+            default => ['Brouillon', 'draft'],
+        };
     }
 
     public function duplicate(Request $request, array $params = []): Response

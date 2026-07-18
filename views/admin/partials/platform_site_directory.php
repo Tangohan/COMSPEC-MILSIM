@@ -39,7 +39,7 @@ if (!$gate->allows('admin.system')) {
         </div>
         <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-4 md:col-span-2 xl:col-span-1">
             <h3 class="text-sm font-bold text-slate-900">Accès payant et parrainage</h3>
-            <p class="mt-1 text-xs text-slate-600">Les formules affichées côté site sont récapitulées dans l’annuaire complet.</p>
+            <p class="mt-1 text-xs text-slate-600">Attribuez une formule à chaque communauté depuis l’annuaire complet (« Changer la formule »).</p>
             <ul class="mt-3 space-y-2 text-sm font-semibold">
                 <li><a href="<?= htmlspecialchars(url('platform/upgrade'), ENT_QUOTES, 'UTF-8') ?>" class="text-indigo-800 hover:text-indigo-950 underline decoration-indigo-200">Mise à niveau du service</a></li>
                 <li><a href="<?= htmlspecialchars(url('platform/invite-unit'), ENT_QUOTES, 'UTF-8') ?>" class="text-indigo-800 hover:text-indigo-950 underline decoration-indigo-200">Invitations structurantes</a></li>

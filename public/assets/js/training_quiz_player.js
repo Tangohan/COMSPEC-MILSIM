@@ -158,7 +158,8 @@
     root.appendChild(box);
   }
 
-  function showResult(root, attempt) {
+  function showResult(root, attempt, navExtras) {
+    navExtras = navExtras || {};
     var st = attempt.status || '';
     if (st === 'expired') {
       showAttemptClosed(
@@ -169,11 +170,75 @@
     }
     var passed = attempt.passed == 1 || attempt.passed === true;
     var score = attempt.score != null ? attempt.score : '—';
-    var back =
+    var courseUrl =
+      navExtras.course_url ||
+      attempt.course_url ||
       root.getAttribute('data-course-url') ||
       root.getAttribute('data-formations-url') ||
       '/formations';
+    var echangesUrl =
+      navExtras.echanges_url || attempt.echanges_url || root.getAttribute('data-echanges-url') || '';
+    var certificateUrl =
+      navExtras.certificate_url ||
+      attempt.certificate_url ||
+      root.getAttribute('data-certificate-url') ||
+      '';
+    var successUrl =
+      navExtras.success_url ||
+      attempt.success_url ||
+      certificateUrl ||
+      courseUrl;
+    var courseCompleted =
+      navExtras.course_completed === true ||
+      attempt.course_completed === true ||
+      root.getAttribute('data-course-completed') === '1';
+    var isCertifying =
+      navExtras.is_certifying === true ||
+      attempt.is_certifying === true ||
+      root.getAttribute('data-is-certifying') === '1';
+
     root.innerHTML = '';
+    var actionsHtml = '';
+    if (passed && courseCompleted) {
+      var primaryLabel = isCertifying || certificateUrl
+        ? 'Voir ma réussite et mon attestation'
+        : 'Voir ma réussite du parcours';
+      actionsHtml +=
+        '<a href="' +
+        escapeHtml(successUrl) +
+        '" class="inline-flex mt-8 px-8 py-3.5 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">' +
+        escapeHtml(primaryLabel) +
+        '</a>';
+      if (echangesUrl) {
+        actionsHtml +=
+          '<a href="' +
+          escapeHtml(echangesUrl) +
+          '" class="inline-flex mt-3 px-8 py-3 border border-slate-200 text-slate-700 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Avis et échanges de fin de parcours</a>';
+      }
+      if (certificateUrl && successUrl !== certificateUrl) {
+        actionsHtml +=
+          '<a href="' +
+          escapeHtml(certificateUrl) +
+          '" class="inline-flex mt-3 text-sm font-semibold text-emerald-800 underline">Ouvrir l’attestation</a>';
+      }
+    } else if (passed) {
+      actionsHtml +=
+        '<a href="' +
+        escapeHtml(courseUrl) +
+        '" class="inline-flex mt-8 px-8 py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">Continuer le parcours</a>';
+      if (echangesUrl) {
+        actionsHtml +=
+          '<a href="' +
+          escapeHtml(echangesUrl) +
+          '" class="inline-flex mt-3 px-8 py-3 border border-slate-200 text-slate-700 text-xs font-bold uppercase rounded-xl hover:bg-slate-50">Avis et échanges</a>';
+      }
+    } else {
+      actionsHtml +=
+        '<a href="' +
+        escapeHtml(courseUrl) +
+        '" class="inline-flex mt-8 px-8 py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">Retour à la formation</a>';
+    }
+
     var box = el(
       '<div class="lms-panel rounded-[2rem] p-8 md:p-10 max-w-lg mx-auto text-center relative overflow-hidden">' +
         '<div class="absolute top-0 left-0 right-0 h-1 ' +
@@ -182,16 +247,20 @@
         '<p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Résultat</p>' +
         '<h2 class="text-2xl font-black text-slate-900 mb-2">Votre score</h2>' +
         '<p class="text-4xl font-black text-slate-900 mb-3">' +
-        score +
+        escapeHtml(String(score)) +
         ' %</p>' +
         '<p class="text-sm font-bold ' +
         (passed ? 'text-emerald-700' : 'text-rose-700') +
         '">' +
-        (passed ? 'Parcours validé pour cette évaluation' : 'Seuil non atteint — vous pourrez réessayer selon les règles du parcours') +
+        (passed
+          ? courseCompleted
+            ? 'Parcours terminé — félicitations'
+            : 'Évaluation validée — vous pouvez poursuivre'
+          : 'Seuil non atteint — vous pourrez réessayer selon les règles du parcours') +
         '</p>' +
-        '<a href="' +
-        back +
-        '" class="inline-flex mt-8 px-8 py-3 bg-emerald-600 text-white text-xs font-black uppercase rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-600/20">Continuer</a>' +
+        '<div class="flex flex-col items-center">' +
+        actionsHtml +
+        '</div>' +
         '</div>'
     );
     root.appendChild(box);
@@ -455,7 +524,15 @@
         })
         .then(function (out) {
           clearQuizTimer(timerState);
-          showResult(root, out.attempt || out);
+          var attemptPayload = out.attempt || out;
+          showResult(root, attemptPayload, {
+            course_completed: out.course_completed === true || attemptPayload.course_completed === true,
+            course_url: out.course_url || attemptPayload.course_url,
+            echanges_url: out.echanges_url || attemptPayload.echanges_url,
+            certificate_url: out.certificate_url || attemptPayload.certificate_url,
+            success_url: out.success_url || attemptPayload.success_url,
+            is_certifying: out.is_certifying === true || attemptPayload.is_certifying === true,
+          });
         })
         .catch(function (err) {
           showGlobalAlert(root, 'error', 'Envoi refusé', [err.message || 'Une erreur est survenue. Vous pouvez réessayer.']);

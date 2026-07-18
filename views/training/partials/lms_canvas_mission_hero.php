@@ -34,45 +34,44 @@ if (!is_array($stats) || $stats === []) {
         ['label' => 'Durée', 'value' => $durLabel],
         ['label' => 'Niveau', 'value' => $levelLabel],
         ['label' => 'Format', 'value' => 'Parcours visuel'],
-        ['label' => 'Validation', 'value' => $autoLessonComplete ? 'Automatique' : 'Manuelle', 'emphasis' => $autoLessonComplete],
+        ['label' => 'Validation', 'value' => $autoLessonComplete ? 'Bouton Terminer' : 'Manuelle', 'emphasis' => $autoLessonComplete],
+    ];
+}
+$metaRows = [];
+foreach ($stats as $row) {
+    if (!is_array($row)) {
+        continue;
+    }
+    $slab = trim((string) ($row['label'] ?? ''));
+    $sval = trim((string) ($row['value'] ?? ''));
+    if ($slab === '' && $sval === '') {
+        continue;
+    }
+    $metaRows[] = [
+        'label' => $slab !== '' ? $slab : '—',
+        'value' => $sval !== '' ? $sval : '—',
+        'emphasis' => !empty($row['emphasis']),
     ];
 }
 ?>
 <div class="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 text-white md:p-10">
     <div class="pointer-events-none absolute inset-0 opacity-[0.06] lms-canvas-hero-grid"></div>
-    <div class="relative z-10 grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+    <div class="relative z-10 grid items-end gap-8 lg:grid-cols-[1.35fr_0.65fr]">
         <div>
             <p class="mb-3 text-xs font-semibold tracking-wide text-emerald-200/90"><?= htmlspecialchars($eyebrow) ?></p>
             <h1 class="text-3xl font-semibold leading-tight tracking-tight md:text-5xl"><?= htmlspecialchars($heroTitle) ?></h1>
             <div class="my-6 h-px w-24 bg-white/20"></div>
             <p class="max-w-2xl text-sm leading-relaxed text-white/75 md:text-base"><?= htmlspecialchars($heroLead) ?></p>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-            <?php
-            $si = 0;
-            foreach ($stats as $row):
-                if (!is_array($row)) {
-                    continue;
-                }
-                $slab = trim((string) ($row['label'] ?? ''));
-                $sval = trim((string) ($row['value'] ?? ''));
-                if ($slab === '' && $sval === '') {
-                    continue;
-                }
-                $emph = !empty($row['emphasis']);
-                $cellClass = $emph
-                    ? 'rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4'
-                    : 'rounded-2xl border border-white/10 bg-white/[0.05] p-4';
-                $valClass = $emph ? 'text-lg font-semibold text-emerald-100' : 'text-lg font-semibold text-white';
-                ?>
-            <div class="<?= htmlspecialchars($cellClass) ?>">
-                <p class="mb-2 text-[10px] font-semibold tracking-wide <?= $emph ? 'text-emerald-200/90' : 'text-white/40' ?>"><?= htmlspecialchars($slab !== '' ? $slab : '—') ?></p>
-                <p class="<?= htmlspecialchars($valClass) ?>"><?= htmlspecialchars($sval !== '' ? $sval : '—') ?></p>
+        <?php if ($metaRows !== []): ?>
+        <dl class="lms-canvas-hero-meta">
+            <?php foreach ($metaRows as $meta): ?>
+            <div class="lms-canvas-hero-meta__row<?= !empty($meta['emphasis']) ? ' lms-canvas-hero-meta__row--emphasis' : '' ?>">
+                <dt><?= htmlspecialchars((string) $meta['label']) ?></dt>
+                <dd><?= htmlspecialchars((string) $meta['value']) ?></dd>
             </div>
-                <?php
-                $si++;
-            endforeach;
-            ?>
-        </div>
+            <?php endforeach; ?>
+        </dl>
+        <?php endif; ?>
     </div>
 </div>

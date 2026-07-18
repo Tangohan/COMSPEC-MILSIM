@@ -106,6 +106,15 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
         $lmsOpeningLessonUrl = url('formations/lesson/' . (int) $firstLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']);
     }
 }
+$lmsOpeningCtaLabel = ($enrollment && $canAccessLearning)
+    ? ($hasCompletedAnyLesson ? 'Continuer' : 'Continuer vers le module')
+    : 'Commencer';
+$lmsCompletedLessonIds = [];
+foreach ($lessonDone as $doneId => $_) {
+    $lmsCompletedLessonIds[(int) $doneId] = true;
+}
+$lmsSequenceContext = 'preamble';
+$lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : [];
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -250,20 +259,22 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                 </header>
 
                 <?php if ($enrollment && $canAccessLearning && $firstLesson): ?>
-                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/40">
+                <section id="lms-parcours-debut" class="lms-panel scroll-mt-24 rounded-[1.5rem] p-5 md:p-6 border border-emerald-200/80 bg-gradient-to-br from-white to-emerald-50/40">
                     <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
                         <div>
-                            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-emerald-700/80 mb-2">Parcours</p>
-                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Votre progression</h2>
-                            <p class="text-sm text-slate-600 mt-1 max-w-xl">Chaque leçon s’ouvre sur une page dédiée. Utilisez le bouton principal pour enchaîner dans l’ordre du parcours.</p>
+                            <p class="text-[9px] font-black tracking-[0.35em] uppercase text-emerald-700/80 mb-2">Préambule · suite</p>
+                            <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Enchaînement du parcours</h2>
+                            <p class="text-sm text-slate-600 mt-1 max-w-xl">Le préambule pose le cadre. Ensuite viennent les leçons du module, puis l’évaluation du module, puis le module suivant — une étape après l’autre.</p>
                         </div>
                         <div class="flex flex-col sm:items-end gap-2 shrink-0">
                             <?php if ($continueLesson): ?>
                             <?php
-                            $ctaPrimary = $hasCompletedAnyLesson ? 'Continuer la formation' : 'Commencer le parcours';
+                            $ctaPrimary = $hasCompletedAnyLesson ? 'Continuer la formation' : 'Continuer vers le module';
+                            $nextHuman = 'Leçon — ' . (string) ($continueLesson['title'] ?? '');
+                            // Si la prochaine étape logique est un quiz après la leçon courante… on reste sur continueLesson pour démarrer.
                             ?>
                             <a href="<?= url('formations/lesson/' . (int) $continueLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center justify-center px-8 py-3.5 bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-emerald-700 shadow-sm text-center"><?= htmlspecialchars($ctaPrimary) ?></a>
-                            <p class="text-[11px] text-slate-500 text-center sm:text-right">Prochaine étape : <strong class="text-slate-800"><?= htmlspecialchars((string) ($continueLesson['title'] ?? '')) ?></strong></p>
+                            <p class="text-[11px] text-slate-500 text-center sm:text-right">Prochaine étape : <strong class="text-slate-800"><?= htmlspecialchars($nextHuman) ?></strong></p>
                             <?php else: ?>
                             <p class="text-sm font-bold text-emerald-800">Toutes les leçons du parcours sont terminées.</p>
                             <a href="<?= url('formations/lesson/' . (int) $firstLesson['id'] . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center justify-center px-6 py-2.5 border border-emerald-300 text-emerald-900 text-xs font-bold uppercase rounded-xl hover:bg-emerald-50">Revoir depuis le début</a>
@@ -487,102 +498,136 @@ if ($enrollment && $canAccessLearning && $firstLesson) {
                 </section>
                 <?php endif; ?>
 
-                <section class="grid grid-cols-1 gap-6">
-                    <?php foreach ($modules as $mod):
-                        $mLessons = $mod['lessons'] ?? [];
-                        $mQuizzes = $mod['quizzes'] ?? [];
-                    ?>
-                    <div class="lms-panel rounded-[2rem] p-6 border border-slate-200/80">
-                        <h2 class="text-lg font-black uppercase text-slate-900 mb-1"><?= htmlspecialchars((string) ($mod['title'] ?? '')) ?></h2>
-                        <?php if (!empty($mod['subtitle'])): ?>
-                        <p class="text-sm font-semibold text-slate-700 mb-2"><?= htmlspecialchars((string) $mod['subtitle']) ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($mod['description'])): ?>
-                        <p class="text-sm text-slate-600 mb-3"><?= htmlspecialchars((string) $mod['description']) ?></p>
-                        <?php endif; ?>
-                        <?php
-                        $modObjs = function_exists('training_lms_learning_objectives')
-                            ? training_lms_learning_objectives(['learning_objectives' => $mod['learning_objectives'] ?? ''])
-                            : [];
-                        ?>
-                        <?php if ($modObjs !== []): ?>
-                        <ul class="text-xs text-slate-600 mb-4 space-y-1 list-disc list-inside">
-                            <?php foreach (array_slice($modObjs, 0, 4) as $mo): ?>
-                            <li><?= htmlspecialchars($mo) ?></li>
-                            <?php endforeach; ?>
-                            <?php if (count($modObjs) > 4): ?>
-                            <li class="list-none text-slate-400">…</li>
-                            <?php endif; ?>
-                        </ul>
-                        <?php endif; ?>
-                        <?php if ((int) ($mod['estimated_minutes'] ?? 0) > 0): ?>
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">≈ <?= (int) $mod['estimated_minutes'] ?> min (module)</p>
-                        <?php endif; ?>
-                        <ul class="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
-                            <?php foreach ($mLessons as $lesson): ?>
-                            <li class="flex items-center justify-between gap-2 px-4 py-3 bg-white">
-                                <span class="min-w-0">
-                                    <span class="block text-sm text-slate-800 font-medium"><?= htmlspecialchars((string) ($lesson['title'] ?? '')) ?></span>
-                                    <?php if (!empty($lesson['summary'])): ?>
-                                    <span class="block text-xs text-slate-500 mt-0.5 line-clamp-2"><?= htmlspecialchars((string) $lesson['summary']) ?></span>
-                                    <?php endif; ?>
-                                </span>
-                                <?php if ($enrollment && $canAccessLearning):
-                                    $lid = (int) ($lesson['id'] ?? 0);
-                                    $isDone = !empty($lessonDone[$lid]);
-                                    $isNext = $continueLesson && (int) ($continueLesson['id'] ?? 0) === $lid;
-                                    if ($isNext && !$isDone) {
-                                        $lessonLinkLabel = $hasCompletedAnyLesson ? 'Continuer' : 'Commencer';
-                                        $lessonLinkClass = 'text-xs font-black uppercase tracking-wide text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg shrink-0';
-                                    } elseif ($isDone) {
-                                        $lessonLinkLabel = 'Revoir';
-                                        $lessonLinkClass = 'text-xs font-bold text-slate-600 hover:underline shrink-0';
-                                    } else {
-                                        $lessonLinkLabel = 'Ouvrir';
-                                        $lessonLinkClass = 'text-xs font-bold text-emerald-600 hover:underline shrink-0';
-                                    }
-                                ?>
-                                <a href="<?= url('formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="<?= htmlspecialchars($lessonLinkClass) ?>"><?= htmlspecialchars($lessonLinkLabel) ?></a>
-                                <?php elseif ($enrollment && !$canAccessLearning): ?>
-                                <span class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0">Accès après validation</span>
-                                <?php elseif ($viewerLoggedIn): ?>
-                                <a href="#lms-inscription" class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0 hover:bg-amber-50">Inscription requise</a>
-                                <?php else: ?>
-                                <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline shrink-0">Connexion</a>
-                                <?php endif; ?>
-                            </li>
-                            <?php endforeach; ?>
-                            <?php foreach ($mQuizzes as $qz): ?>
-                            <li class="flex items-center justify-between gap-2 px-4 py-3 bg-slate-50">
-                                <span class="text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($qz['title'] ?? 'Quiz')) ?></span>
-                                <?php if ($enrollment && $canAccessLearning && (int) ($qz['id'] ?? 0) > 0): ?>
-                                <form method="post" action="<?= url('formations/quiz/start') ?>" class="inline">
-                                    <?= \App\Core\Csrf::field() ?>
-                                    <input type="hidden" name="quiz_id" value="<?= (int) $qz['id'] ?>">
-                                    <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
-                                    <button type="submit" class="text-xs font-bold text-violet-700 hover:underline">Démarrer</button>
-                                </form>
-                                <?php elseif ($enrollment && !$canAccessLearning): ?>
-                                <span class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0">Accès après validation</span>
-                                <?php elseif ($viewerLoggedIn): ?>
-                                <a href="#lms-inscription" class="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg shrink-0 hover:bg-amber-50">Inscription requise</a>
-                                <?php else: ?>
-                                <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline shrink-0">Connexion</a>
-                                <?php endif; ?>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
+                <section id="lms-deroulement" class="space-y-4" aria-label="Déroulement du parcours">
+                    <div class="lms-panel rounded-[1.5rem] p-5 md:p-6 border border-slate-200/90">
+                        <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Déroulement</p>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-slate-900">Préambule → module → évaluation → suite</h2>
+                        <p class="mt-1.5 text-sm text-slate-600 max-w-2xl">Chaque bloc suit le précédent. L’étape en cours est mise en avant ; les suivantes restent accessibles sans tout mélanger sur un seul écran de contenu.</p>
                     </div>
-                    <?php endforeach; ?>
-                </section>
 
-                <section class="lms-panel rounded-[2rem] p-6 md:p-8 border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white">
-                    <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-2">Après le parcours</p>
-                    <h2 class="text-lg font-black uppercase tracking-tight text-slate-900 mb-2">Avis, questions et commentaires</h2>
-                    <p class="text-sm text-slate-600 max-w-2xl mb-4"><?= $lmsCommentsEnabled
-                        ? 'La note, les questions au staff et les commentaires sont regroupés sur une page dédiée, à la fin du parcours — pas sur chaque leçon ni en bas de cette fiche.'
-                        : 'Les avis et les questions au staff restent disponibles sur la page dédiée ; les commentaires libres entre participants sont désactivés pour cette formation.' ?></p>
-                    <a href="<?= url('formations/' . rawurlencode($slugForForms) . '/echanges') ?>" class="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-slate-800">Ouvrir la page « Avis &amp; échanges »</a>
+                    <?php
+                    $guidedSteps = function_exists('training_lms_build_guided_sequence')
+                        ? training_lms_build_guided_sequence($course)
+                        : [];
+                    $continueLid = $continueLesson ? (int) ($continueLesson['id'] ?? 0) : 0;
+                    $focusIndex = 0;
+                    if ($continueLid > 0) {
+                        foreach ($guidedSteps as $gi => $gs) {
+                            if (($gs['kind'] ?? '') === 'lesson' && (int) (($gs['lesson']['id'] ?? 0)) === $continueLid) {
+                                $focusIndex = (int) $gi;
+                                break;
+                            }
+                        }
+                    } elseif ($hasCompletedAnyLesson) {
+                        foreach ($guidedSteps as $gi => $gs) {
+                            if (($gs['kind'] ?? '') === 'echanges') {
+                                $focusIndex = (int) $gi;
+                                break;
+                            }
+                        }
+                    }
+                    $lastPhaseShown = null;
+                    foreach ($guidedSteps as $gi => $gs):
+                        if (!is_array($gs)) {
+                            continue;
+                        }
+                        $gKind = (string) ($gs['kind'] ?? '');
+                        $gPhase = (string) ($gs['phase'] ?? '');
+                        $gLabel = (string) ($gs['label'] ?? '');
+                        $isFocus = $gi === $focusIndex;
+                        $isPast = $gi < $focusIndex;
+                        if ($gPhase !== '' && $gPhase !== $lastPhaseShown):
+                            $lastPhaseShown = $gPhase;
+                            ?>
+                    <p class="pt-2 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400"><?= htmlspecialchars($gPhase) ?></p>
+                        <?php endif; ?>
+
+                        <?php if ($gKind === 'preamble'): ?>
+                    <article class="rounded-xl border px-4 py-3 <?= $isFocus ? 'border-emerald-400 bg-emerald-50/70 shadow-sm' : ($isPast ? 'border-slate-100 bg-slate-50/80 opacity-80' : 'border-slate-200 bg-white') ?>">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-wider <?= $isFocus ? 'text-emerald-700' : 'text-slate-400' ?>">Étape <?= $gi + 1 ?> · Préambule</p>
+                                <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($gLabel) ?></h3>
+                                <p class="text-xs text-slate-600 mt-0.5">Cadre du parcours, puis démarrage du premier module.</p>
+                            </div>
+                            <?php if ($enrollment && $canAccessLearning && $firstLesson && $isFocus): ?>
+                            <a href="<?= url('formations/lesson/' . (int) ($continueLesson['id'] ?? $firstLesson['id']) . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white hover:bg-emerald-700">Continuer</a>
+                            <?php elseif ($isPast): ?>
+                            <span class="text-[11px] font-semibold text-emerald-700">Fait</span>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                        <?php elseif ($gKind === 'lesson'):
+                            $lid = (int) ($gs['lesson']['id'] ?? 0);
+                            $isDone = !empty($lessonDone[$lid]);
+                            $sum = trim((string) ($gs['lesson']['summary'] ?? ''));
+                            ?>
+                    <article class="rounded-xl border px-4 py-3 <?= $isFocus ? 'border-emerald-400 bg-emerald-50/70 shadow-sm' : ($isPast || $isDone ? 'border-slate-100 bg-slate-50/80' : 'border-slate-200 bg-white') ?>">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-wider <?= $isFocus ? 'text-emerald-700' : 'text-slate-400' ?>">Étape <?= $gi + 1 ?> · Leçon</p>
+                                <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($gLabel) ?></h3>
+                                <?php if ($sum !== ''): ?>
+                                <p class="text-xs text-slate-600 mt-0.5 line-clamp-2"><?= htmlspecialchars($sum) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($enrollment && $canAccessLearning && $lid > 0): ?>
+                                <?php if ($isFocus && !$isDone): ?>
+                            <a href="<?= url('formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white hover:bg-emerald-700"><?= $hasCompletedAnyLesson ? 'Continuer' : 'Commencer' ?></a>
+                                <?php elseif ($isDone): ?>
+                            <a href="<?= url('formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="text-xs font-bold text-slate-600 hover:underline">Revoir</a>
+                                <?php else: ?>
+                            <a href="<?= url('formations/lesson/' . $lid . '?enrollment_id=' . (int) $enrollment['id']) ?>" class="text-xs font-bold text-emerald-700 hover:underline">Ouvrir</a>
+                                <?php endif; ?>
+                            <?php elseif ($enrollment && !$canAccessLearning): ?>
+                            <span class="text-[10px] font-bold uppercase text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg">Après validation</span>
+                            <?php elseif ($viewerLoggedIn): ?>
+                            <a href="#lms-inscription" class="text-[10px] font-bold uppercase text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg">Inscription</a>
+                            <?php else: ?>
+                            <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline">Connexion</a>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                        <?php elseif ($gKind === 'quiz'):
+                            $qid = (int) ($gs['quiz']['id'] ?? 0);
+                            $isFinalQ = !empty($gs['quiz']['is_final']);
+                            ?>
+                    <article class="rounded-xl border px-4 py-3 <?= $isFocus ? 'border-violet-300 bg-violet-50/60 shadow-sm' : ($isPast ? 'border-slate-100 bg-slate-50/80' : 'border-violet-100 bg-violet-50/30') ?>">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-wider <?= $isFocus ? 'text-violet-800' : 'text-violet-500/80' ?>">Étape <?= $gi + 1 ?> · <?= $isFinalQ ? 'Évaluation finale' : 'Évaluation' ?></p>
+                                <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($gLabel) ?></h3>
+                                <p class="text-xs text-slate-600 mt-0.5"><?= $isFinalQ ? 'Après l’ensemble des modules.' : 'Après les leçons de ce module — avant le module suivant.' ?></p>
+                            </div>
+                            <?php if ($enrollment && $canAccessLearning && $qid > 0): ?>
+                            <form method="post" action="<?= url('formations/quiz/start') ?>" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="quiz_id" value="<?= $qid ?>">
+                                <input type="hidden" name="enrollment_id" value="<?= (int) $enrollment['id'] ?>">
+                                <button type="submit" class="<?= $isFocus ? 'inline-flex items-center rounded-lg bg-violet-700 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white hover:bg-violet-800' : 'text-xs font-bold text-violet-700 hover:underline' ?>"><?= $isFocus ? 'Passer l’évaluation' : 'Démarrer' ?></button>
+                            </form>
+                            <?php elseif ($enrollment && !$canAccessLearning): ?>
+                            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg">Après validation</span>
+                            <?php elseif ($viewerLoggedIn): ?>
+                            <a href="#lms-inscription" class="text-[10px] font-bold uppercase text-amber-800 bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg">Inscription</a>
+                            <?php else: ?>
+                            <a href="<?= url('login') ?>" class="text-xs font-semibold text-emerald-700 hover:underline">Connexion</a>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                        <?php elseif ($gKind === 'echanges'): ?>
+                    <article class="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-4 py-3 <?= $isFocus ? 'ring-2 ring-slate-300' : '' ?>">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Étape <?= $gi + 1 ?> · Fin de parcours</p>
+                                <h3 class="text-sm font-bold text-slate-900"><?= htmlspecialchars($gLabel) ?></h3>
+                                <p class="text-xs text-slate-600 mt-0.5">Note, questions et commentaires — après les modules et évaluations.</p>
+                            </div>
+                            <a href="<?= url('formations/' . rawurlencode($slugForForms) . '/echanges') ?>" class="inline-flex items-center rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-white hover:bg-slate-800">Ouvrir</a>
+                        </div>
+                    </article>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                 </section>
 
                 <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

@@ -577,6 +577,31 @@ body.layout-light {
   background: #f8fafc !important; /* slate-50 */
   color: #0f172a; /* slate-900 */
   font-family: 'Inter', system-ui, sans-serif;
+  /*
+   * styles.css :root impose un registre sombre (--bg/#06080a, --text clair, etc.).
+   * design-system mappe --ds-color-* via ces mêmes noms → sans reset, le portail
+   * clair (dashboard, admin…) hérite d’un fond void et de textes illisibles.
+   */
+  --bg: #f8fafc;
+  --bg-soft: #f1f5f9;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #059669;
+  --primary-strong: #065f46;
+  --primary-soft: #ecfdf5;
+  --accent: #34d399;
+  --accent-strong: #6ee7b7;
+  --danger: #b91c1c;
+  --warn: #b45309;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 body.layout-light::before {
   display: none !important;

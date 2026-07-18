@@ -28,6 +28,24 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="<?= htmlspecialchars($baseUrl) ?>/assets/icons/athena-192.png">
 <?php
+    $tenantFaviconUrl = null;
+    try {
+        $tidHead = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        if ($tidHead > 1) {
+            $brandingHead = \App\Core\Container::get(\App\Repositories\TenantBrandingRepository::class)->findByTenantId($tidHead);
+            $favRaw = trim((string) ($brandingHead['favicon_url'] ?? ''));
+            if ($favRaw !== '') {
+                $tenantFaviconUrl = $favRaw;
+            }
+        }
+    } catch (\Throwable) {
+        $tenantFaviconUrl = null;
+    }
+?>
+<?php if ($tenantFaviconUrl !== null): ?>
+    <link rel="icon" href="<?= htmlspecialchars($tenantFaviconUrl, ENT_QUOTES, 'UTF-8') ?>">
+<?php endif; ?>
+<?php
     $tailwindBaseUrl = $baseUrl;
     require base_path('views/partials/tailwind_cdn_or_build.php');
 ?>
@@ -68,6 +86,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/portal-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if ((!empty($siteDocsPage) || !empty($siteDocsRefsPage)) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/site-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -95,6 +116,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if (!empty($usesAdminSidebarShell)): ?>
     <style>[x-cloak]{display:none!important}</style>
     <?php endif; ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-rail.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
 </head>
 <?php
 $showBottomNav = (bool) \App\Core\Session::get('user_id')
@@ -114,6 +138,12 @@ if ($showBottomNav) {
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal_command_palette.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/app-version-check.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
+    <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
@@ -153,7 +183,7 @@ if ($showBottomNav) {
             ></div>
 
             <aside
-                class="fixed inset-y-0 left-0 z-[210] w-[min(100%,288px)] max-w-full border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-64 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none xl:w-72"
+                class="fixed inset-y-0 left-0 z-[210] w-[min(100%,320px)] max-w-full border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none xl:w-80"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"

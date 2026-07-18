@@ -47,6 +47,7 @@ $navSettings = $p === 'admin/settings';
 $navBlocklist = str_starts_with($p, 'admin/system/blocklist');
 $navSanctions = str_starts_with($p, 'admin/system/member-sanctions');
 $navBrief = str_starts_with($p, 'admin/system/brief');
+$navCron = str_starts_with($p, 'admin/system/cron');
 $navDeployment = str_starts_with($p, 'admin/system/deployment');
 $navUpdates = str_starts_with($p, 'admin/system/updates');
 $navAlerts = str_starts_with($p, 'admin/system/alerts');
@@ -85,6 +86,7 @@ $alertsOpen = $navAlerts;
             <?php $paSection('Configuration'); ?>
             <?php $paLink('admin/settings', 'Paramètres système', $navSettings); ?>
             <?php $paLink('admin/system/brief', 'Brief (accès membres)', $navBrief); ?>
+            <?php $paLink('admin/system/cron', 'Tâches automatiques', $navCron); ?>
 
             <?php $paSection('Déploiement et préqualification'); ?>
             <?php $paLink('admin/system/updates', 'Mises à jour plateforme', $navUpdates); ?>

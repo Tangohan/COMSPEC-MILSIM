@@ -5,6 +5,11 @@ $messages = is_array($messages ?? null) ? $messages : [];
 $tenant = is_array($tenant ?? null) ? $tenant : [];
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
 $status = (string) ($enlistment['status'] ?? 'submitted');
+$dossierRejected = $status === 'rejected';
+$dossierBlocked = $status === 'blocked';
+$dossierMemberLinked = $status === 'reviewed' && (int) ($enlistment['submitter_user_id'] ?? 0) > 0;
+$dossierMessagingClosed = $dossierRejected || $dossierBlocked || $dossierMemberLinked;
+$dossierJourneyClosedNegative = $dossierRejected || $dossierBlocked;
 $dossierStatusLabel = [
     'submitted' => 'En cours d’instruction',
     'reviewed' => 'Accepté',
@@ -18,6 +23,24 @@ $dossierStatusBand = match ($status) {
     'blocked' => 'bg-slate-700',
     default => 'bg-slate-500',
 };
+$portalSteps = is_array($portalSteps ?? null) ? $portalSteps : [];
+$portalPauseKind = '';
+$portalCurrentNote = '';
+foreach ($portalSteps as $stEarly) {
+    if (!is_array($stEarly) || (($stEarly['state'] ?? '') !== 'current')) {
+        continue;
+    }
+    $portalPauseKind = trim((string) ($stEarly['pause_kind'] ?? ''));
+    $portalCurrentNote = trim((string) ($stEarly['current_note'] ?? ''));
+    break;
+}
+if ($status === 'submitted' && $portalPauseKind === 'pending') {
+    $dossierStatusLabel = 'Mis en attente';
+    $dossierStatusBand = 'bg-sky-500';
+} elseif ($status === 'submitted' && $portalPauseKind === 'interview') {
+    $dossierStatusLabel = 'Entretien proposé';
+    $dossierStatusBand = 'bg-violet-500';
+}
 $first = trim((string) ($enlistment['first_name'] ?? ''));
 $last = trim((string) ($enlistment['last_name'] ?? ''));
 $callsign = trim((string) ($enlistment['callsign'] ?? ''));
@@ -55,7 +78,7 @@ foreach ($attachments as $a) {
 $portalUploadsReady = !empty($portalUploadsReady);
 $allowPortalFiles = !empty($allowPortalFiles);
 $allowPortalAudio = !empty($allowPortalAudio);
-$canUploadSomething = $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
+$canUploadSomething = !$dossierMessagingClosed && $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
 $attachmentCount = count($attachments);
 $fmtBytes = static function (int $b): string {
     if ($b >= 1048576) {
@@ -101,9 +124,16 @@ if ($updatedAt !== '' && ($lastActivity === '' || strtotime($updatedAt) > strtot
     $lastActivity = $updatedAt;
 }
 $lastActivityFmt = $lastActivity !== '' ? date('d/m/Y à H:i', strtotime($lastActivity) ?: time()) : '—';
-$portalSteps = is_array($portalSteps ?? null) ? $portalSteps : [];
 $portalReferentLabel = trim((string) ($portalReferentLabel ?? ''));
-$portalRecruitmentSlaHours = max(1, (int) ($portalRecruitmentSlaHours ?? 72));
+$portalRecruitmentSlaHours = max(1, (int) ($portalRecruitmentSlaHours ?? \App\Services\Recruitment\TenantRecruitmentSettings::defaultEnlistmentSlaHours()));
+$portalSubmittedAgeHours = isset($portalSubmittedAgeHours) ? (int) $portalSubmittedAgeHours : null;
+if ($portalSubmittedAgeHours === null && $createdAt !== '') {
+    $portalSubmittedAgeHours = \App\Services\Recruitment\TenantRecruitmentSettings::hoursElapsedSince($createdAt);
+}
+$portalSlaBreached = !empty($portalSlaBreached);
+if (!$portalSlaBreached && $status === 'submitted' && $portalSubmittedAgeHours !== null) {
+    $portalSlaBreached = $portalSubmittedAgeHours > $portalRecruitmentSlaHours;
+}
 $portalStatusMode = strtolower(trim((string) ($enlistment['candidate_portal_status_mode'] ?? 'steps')));
 if ($portalStatusMode !== 'manual') {
     $portalStatusMode = 'steps';
@@ -128,22 +158,42 @@ foreach ($portalSteps as $st) {
     }
 }
 $useManualPortalStatus = $portalStatusMode === 'manual' && $manualPortalStatus !== '';
-if ($useManualPortalStatus) {
+if ($dossierRejected) {
+    $portalCardTitle = 'Candidature refusée';
+    $portalCardSubtitle = 'Le dossier est clos. Les échanges et l’envoi de pièces sont désactivés.';
+    $portalCardBand = 'bg-rose-600';
+} elseif ($dossierBlocked) {
+    // Non admis : pas de bandeau « Décision » en tête — statut neutre + fil clos (détail dans les étapes compactes).
+    $portalCardTitle = 'Dossier clos';
+    $portalCardSubtitle = 'Cette candidature n’a pas été retenue. Les échanges et l’envoi de pièces sont désactivés.';
+    $portalCardBand = 'bg-slate-600';
+} elseif ($dossierMemberLinked) {
+    $portalCardTitle = 'Candidature acceptée';
+    $portalCardSubtitle = 'Rattachement au compte membre effectué. Le dossier est clos.';
+    $portalCardBand = 'bg-emerald-600';
+} elseif ($useManualPortalStatus) {
     $portalCardTitle = $manualPortalStatus;
     $portalCardSubtitle = '';
     $portalCardBand = $manualBandClasses[$manualPortalBandKey];
+} elseif ($portalPauseKind === 'pending') {
+    $portalCardTitle = 'Dossier mis en attente';
+    $portalCardSubtitle = 'Le traitement est temporairement suspendu. Consultez le fil ci-dessous pour le détail.';
+    $portalCardBand = 'bg-sky-500';
+} elseif ($portalPauseKind === 'interview') {
+    $portalCardTitle = 'Entretien proposé';
+    $portalCardSubtitle = 'L’équipe souhaite échanger avec vous. Suivez les consignes sur le fil.';
+    $portalCardBand = 'bg-violet-500';
 } else {
     $portalCardTitle = $currentPortalStepLabel !== '' ? $currentPortalStepLabel : $dossierStatusLabel;
     $portalCardSubtitle = $currentPortalStepLabel !== '' ? ('Statut dossier : ' . $dossierStatusLabel) : '';
     $portalCardBand = $dossierStatusBand;
 }
-$slaHuman = '';
-$h = $portalRecruitmentSlaHours;
-if ($h % 24 === 0) {
-    $d = intdiv($h, 24);
-    $slaHuman = $d === 1 ? '24 h (environ 1 jour)' : $h . ' h (environ ' . $d . ' jours)';
-} else {
-    $slaHuman = 'environ ' . $h . ' h';
+$slaHuman = \App\Services\Recruitment\TenantRecruitmentSettings::formatSlaHoursLabel($portalRecruitmentSlaHours);
+$slaElapsedHuman = null;
+if ($portalSubmittedAgeHours !== null) {
+    $slaElapsedHuman = $portalSubmittedAgeHours < 1
+        ? 'moins d’une heure'
+        : \App\Services\Recruitment\TenantRecruitmentSettings::formatSlaHoursLabel($portalSubmittedAgeHours);
 }
 $initials = '';
 if ($fullName !== '') {
@@ -266,7 +316,18 @@ $tailwindHead = (string) ob_get_clean();
                     </div>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Délai de réponse visé</dt>
-                        <dd class="max-w-[58%] text-right text-xs text-slate-700"><?= htmlspecialchars($slaHuman, ENT_QUOTES, 'UTF-8') ?> (réglage de la communauté, indicatif).</dd>
+                        <dd class="max-w-[58%] text-right text-xs text-slate-700">
+                            <span class="font-medium text-slate-800"><?= htmlspecialchars($slaHuman, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="mt-0.5 block text-[11px] leading-snug text-slate-500">Fixé par <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if ($slaElapsedHuman !== null): ?>
+                                <span class="mt-1.5 block text-[11px] leading-snug text-slate-600">Écoulé depuis le dépôt : <?= htmlspecialchars($slaElapsedHuman, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                            <?php if ($status === 'submitted' && $portalSubmittedAgeHours !== null): ?>
+                                <span class="mt-1.5 inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide <?= $portalSlaBreached ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-sky-200 bg-sky-50 text-sky-900' ?>">
+                                    <?= $portalSlaBreached ? 'Délai dépassé' : 'Dans le délai' ?>
+                                </span>
+                            <?php endif; ?>
+                        </dd>
                     </div>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Référence</dt>
@@ -344,28 +405,49 @@ $tailwindHead = (string) ob_get_clean();
                         $stState = (string) ($st['state'] ?? 'upcoming');
                         $isDone = $stState === 'done';
                         $isCurrent = $stState === 'current';
-                        $dotClass = $isDone
+                        $isCancelled = $stState === 'cancelled' || ($dossierJourneyClosedNegative && !$isDone);
+                        $stepPause = trim((string) ($st['pause_kind'] ?? ''));
+                        $dotClass = $isCancelled
+                            ? 'border-slate-300 bg-slate-100 text-slate-400'
+                            : ($isDone
                             ? 'border-emerald-600 bg-emerald-500 text-white'
-                            : ($isCurrent ? 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200' : 'border-slate-200 bg-white text-slate-300');
-                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone ? 'bg-emerald-200' : 'bg-slate-200') : '';
+                            : ($isCurrent
+                                ? ($stepPause === 'pending'
+                                    ? 'border-sky-500 bg-sky-500 text-white ring-4 ring-sky-200'
+                                    : ($stepPause === 'interview'
+                                        ? 'border-violet-500 bg-violet-500 text-white ring-4 ring-violet-200'
+                                        : 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200'))
+                                : 'border-slate-200 bg-white text-slate-300'));
+                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone && !$isCancelled ? 'bg-emerald-200' : 'bg-slate-200') : '';
                         ?>
                         <?php
                         $stepTooltip = trim((string) ($st['tooltip'] ?? ''));
+                        $stepCompact = $dossierJourneyClosedNegative || ($dossierMemberLinked && (string) ($st['id'] ?? '') === 'adhesion');
+                        $hideDecisionHint = $dossierBlocked && (string) ($st['id'] ?? '') === 'decision';
                         ?>
-                        <li class="relative flex gap-4 pb-8 last:pb-0<?= $stepTooltip !== '' ? ' cursor-help' : '' ?>"<?= $isCurrent ? ' aria-current="step"' : '' ?><?= $stepTooltip !== '' ? ' title="' . htmlspecialchars($stepTooltip, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+                        <li class="relative flex gap-4 <?= $stepCompact ? 'pb-4' : 'pb-8' ?> last:pb-0<?= $stepTooltip !== '' ? ' cursor-help' : '' ?><?= $isCancelled || $dossierJourneyClosedNegative ? ' opacity-70' : '' ?>"<?= $isCurrent ? ' aria-current="step"' : '' ?><?= $stepTooltip !== '' ? ' title="' . htmlspecialchars($stepTooltip, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
                             <?php if ($si < count($portalSteps) - 1): ?>
                                 <span class="absolute left-[0.65rem] top-8 bottom-0 w-0.5 <?= htmlspecialchars($lineClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone ? '✓' : (string) ($si + 1) ?></span>
+                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone && !$isCancelled ? '✓' : (string) ($si + 1) ?></span>
                             <div class="min-w-0 pt-0.5">
-                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold text-slate-900">
+                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold text-slate-900<?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-400' : '' ?>">
                                     <span><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($stepTooltip !== ''): ?>
+                                    <?php if ($isCurrent && $stepPause === 'pending'): ?>
+                                        <span class="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-900">Mis en attente</span>
+                                    <?php elseif ($isCurrent && $stepPause === 'interview'): ?>
+                                        <span class="inline-flex items-center rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">Entretien</span>
+                                    <?php endif; ?>
+                                    <?php if ($stepTooltip !== '' && !$dossierJourneyClosedNegative): ?>
                                         <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[10px] font-black leading-none text-slate-500" title="<?= htmlspecialchars($stepTooltip, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">i</span>
                                     <?php endif; ?>
                                 </p>
-                                <p class="mt-1 text-xs leading-relaxed text-slate-600"><?= htmlspecialchars((string) ($st['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if ($isCurrent && (string) ($st['id'] ?? '') === 'instruction'): ?>
+                                <?php if (!$hideDecisionHint && (!$stepCompact || trim((string) ($st['hint'] ?? '')) !== '')): ?>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-600<?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-300' : '' ?>"><?= htmlspecialchars((string) ($st['hint'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                                <?php if ($isCurrent && $portalCurrentNote !== ''): ?>
+                                    <p class="mt-2 text-[11px] font-semibold <?= $portalPauseKind === 'pending' ? 'text-sky-800' : ($portalPauseKind === 'interview' ? 'text-violet-800' : 'text-amber-800') ?>"><?= htmlspecialchars($portalCurrentNote, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php elseif ($isCurrent && (string) ($st['id'] ?? '') === 'instruction'): ?>
                                     <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — l’équipe étudie votre dossier. Les premières réponses apparaîtront dans le fil de messages.</p>
                                 <?php elseif ($isCurrent && (string) ($st['id'] ?? '') === 'suivi'): ?>
                                     <p class="mt-2 text-[11px] font-semibold text-amber-800">Étape en cours — poursuivez l’échange sur le fil ci-dessous si vous avez des pièces ou des questions.</p>
@@ -441,10 +523,10 @@ $tailwindHead = (string) ob_get_clean();
                     <?php if ($candidateRetroFeedback): ?>
                         <p class="text-sm font-semibold text-slate-900">Merci : votre retour a bien été enregistré.</p>
                         <p class="text-sm text-slate-700">Note laissée : <span class="font-bold"><?= (int) ($candidateRetroFeedback['rating'] ?? 0) ?> / 5</span> — <?= htmlspecialchars($candidateRetroLabels[(int) ($candidateRetroFeedback['rating'] ?? 0)] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if (trim((string) ($candidateRetroFeedback['comment'] ?? '')) !== ''): ?>
                         <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 whitespace-pre-wrap"><?= htmlspecialchars((string) ($candidateRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                        <p class="text-xs text-slate-500">Vous pouvez renvoyer le formulaire ci-dessous pour mettre à jour votre message.</p>
-                    <?php endif; ?>
-                    <?php if ($portalRetroEligible && !$portalRetroTableReady): ?>
+                        <?php endif; ?>
+                    <?php elseif ($portalRetroEligible && !$portalRetroTableReady): ?>
                         <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Cette communauté n’a pas encore activé le formulaire de bilan sur son installation.</p>
                     <?php elseif ($portalRetroEligible && $portalRetroTableReady): ?>
                         <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode($token) . '/bilan-candidat'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-4">
@@ -471,7 +553,9 @@ $tailwindHead = (string) ob_get_clean();
             <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
                 <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
                     <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
-                    <p class="mt-1 text-sm text-slate-300"><?php if ($viewerIsCandidateParty): ?>
+                    <p class="mt-1 text-sm text-slate-300"><?php if ($dossierMessagingClosed): ?>
+                        Historique en lecture seule — les envois sont désactivés pour ce dossier.
+                    <?php elseif ($viewerIsCandidateParty): ?>
                         Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
                     <?php elseif ($pvMode === 'staff'): ?>
                         Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
@@ -488,7 +572,11 @@ $tailwindHead = (string) ob_get_clean();
                 <div class="max-h-[min(28rem,70vh)] space-y-4 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6">
                     <?php if ($messages === []): ?>
                         <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                            Aucun message pour l’instant. Lorsque l’équipe mettra à jour votre dossier, la réponse apparaîtra ici et un e-mail vous sera envoyé si votre adresse est valide.
+                            <?php if ($dossierMessagingClosed): ?>
+                                Aucun message sur ce fil. Le dossier est clos<?= $dossierMemberLinked ? ' — rattachement effectué' : ($dossierRejected ? ' — candidature refusée' : ($dossierBlocked ? ' — candidature non admise' : '')) ?>.
+                            <?php else: ?>
+                                Aucun message pour l’instant. Lorsque l’équipe mettra à jour votre dossier, la réponse apparaîtra ici et un e-mail vous sera envoyé si votre adresse est valide.
+                            <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <?php foreach ($messages as $i => $m): ?>
@@ -616,6 +704,31 @@ $tailwindHead = (string) ob_get_clean();
                     <?php endif; ?>
 
                     <div class="border-t border-slate-200 pt-4">
+                        <?php if ($dossierMessagingClosed): ?>
+                            <?php
+                            $closedBoxBorder = $dossierRejected
+                                ? 'border-rose-200 bg-rose-50'
+                                : ($dossierBlocked ? 'border-slate-300 bg-slate-50' : 'border-emerald-200 bg-emerald-50');
+                            $closedBoxTitle = $dossierRejected
+                                ? 'text-rose-900'
+                                : ($dossierBlocked ? 'text-slate-800' : 'text-emerald-900');
+                            $closedBoxBody = $dossierRejected
+                                ? 'text-rose-950/90'
+                                : ($dossierBlocked ? 'text-slate-800/90' : 'text-emerald-950/90');
+                            ?>
+                            <div class="rounded-xl border <?= $closedBoxBorder ?> px-4 py-4" role="status">
+                                <p class="text-xs font-black uppercase tracking-wider <?= $closedBoxTitle ?>">Dossier clos</p>
+                                <p class="mt-1.5 text-sm leading-relaxed <?= $closedBoxBody ?>">
+                                    <?php if ($dossierRejected): ?>
+                                        Candidature refusée — les messages sont désactivés. Vous pouvez encore consulter l’historique ci-dessus.
+                                    <?php elseif ($dossierBlocked): ?>
+                                        Candidature non admise — les messages sont désactivés. Vous pouvez encore consulter l’historique ci-dessus.
+                                    <?php else: ?>
+                                        Rattachement effectué — les messages sont désactivés. Vous pouvez encore consulter l’historique ci-dessus.
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                        <?php else: ?>
                         <h3 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700"><?= $pvMode === 'staff' ? 'Message recrutement (visible du candidat)' : 'Écrire à l’équipe' ?></h3>
                         <p class="mt-1 text-sm text-slate-500"><?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
                             Vous répondez en tant que <span class="font-semibold text-slate-800"><?= htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') ?></span> : le message apparaît sur ce fil comme un message de l’équipe (pas une alerte « candidat » aux autres recruteurs).
@@ -634,6 +747,7 @@ $tailwindHead = (string) ob_get_clean();
                                 <p class="text-[11px] text-slate-500">Un e-mail d’alerte est envoyé aux personnes habilitées au recrutement.</p>
                             </div>
                         </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </section>
@@ -682,7 +796,7 @@ $tailwindHead = (string) ob_get_clean();
                     <p class="text-[11px] text-slate-500">Un e-mail d’alerte est envoyé à l’équipe recrutement, comme pour un message texte.</p>
                 </form>
             </section>
-            <?php elseif ($portalUploadsReady): ?>
+            <?php elseif ($portalUploadsReady && !$dossierMessagingClosed): ?>
             <section class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
                 L’équipe n’a pas activé l’envoi de pièces jointes pour votre dossier. Si vous devez transmettre un document ou un audio, indiquez-le dans le bloc <span class="font-semibold text-slate-800">Écrire à l’équipe</span> en bas du fil de messages : l’équipe pourra vous répondre ou activer l’envoi ici.
             </section>

@@ -39,6 +39,9 @@ use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
+use App\Repositories\PersonnelStageBilanRepository;
+use App\Repositories\EnlistmentRecruitmentEngagementRepository;
+use App\Repositories\BadgeRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
@@ -202,6 +205,9 @@ class PersonnelController
         private PersonnelOrgHistoryRepository $personnelOrgHistoryRepository,
         private PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository,
         private RoleplayFollowupNotificationService $roleplayFollowupNotificationService,
+        private PersonnelStageBilanRepository $personnelStageBilanRepository,
+        private EnlistmentRecruitmentEngagementRepository $enlistmentRecruitmentEngagementRepository,
+        private BadgeRepository $badgeRepository,
     ) {}
 
     private function formatArmaPlaytimeFrench(int $seconds): string
@@ -261,15 +267,33 @@ class PersonnelController
         }
 
         $query = trim((string) $request->query('q', ''));
-        $results = $query !== ''
-            ? $this->userRepository->searchForPortal($tenantId, $query, 120)
-            : $this->userRepository->listForPersonnelDirectory($tenantId, 120);
+        $results = $this->userRepository->listPersonnelDirectoryRich($tenantId, $query, 150);
+
+        $userIds = [];
+        $legacyRoleIdByUserId = [];
+        foreach ($results as $row) {
+            $uid = (int) ($row['id'] ?? 0);
+            if ($uid < 1) {
+                continue;
+            }
+            $userIds[] = $uid;
+            $legacyRoleIdByUserId[$uid] = !empty($row['role_id']) ? (int) $row['role_id'] : null;
+        }
+
+        $rolesByUserId = $userIds !== []
+            ? $this->roleRepository->listOrganizationRolesForUsers($tenantId, $userIds, $legacyRoleIdByUserId)
+            : [];
+        $badgesByUserId = $userIds !== []
+            ? $this->badgeRepository->listForUsers($tenantId, $userIds)
+            : [];
 
         return Response::view('layout.main', [
             'content' => 'personnel.directory',
             'title' => 'Annuaire des profils',
             'query' => $query,
             'results' => $results,
+            'rolesByUserId' => $rolesByUserId,
+            'badgesByUserId' => $badgesByUserId,
         ]);
     }
 
@@ -408,7 +432,13 @@ class PersonnelController
 
             return strcmp((string) ($b['assigned_at'] ?? ''), (string) ($a['assigned_at'] ?? ''));
         });
-        $completeness = $this->completenessService->getScore($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
+        $completeness = $this->completenessService->getScoreWithMissingLabels($uid, $target, $mergedProfileForScore, $extras, (int) $tenantId);
+        $gradeValidationIssues = [];
+        try {
+            $gradeValidationIssues = Container::get(\App\Services\GradeValidationService::class)->validateUserProfile($target);
+        } catch (\Throwable) {
+            $gradeValidationIssues = [];
+        }
         $roleplayFollowupConfig = $this->roleplayFollowupConfig((int) $tenantId);
         $roleplayEligibility = $this->roleplayFollowupEligibility(
             $roleplayFollowupConfig,
@@ -446,6 +476,12 @@ class PersonnelController
             $roleplayTimelineEvents = $this->personnelRoleplayTimelineRepository->listForUser((int) $tenantId, $uid, 80);
         }
         $isForumMod = function_exists('forum_viewer_is_moderator') && forum_viewer_is_moderator();
+        /** Droits RH minimum : accès à la vue RH (gate + tableau administratif pleine page). */
+        $canAccessRhView = $canStaffView || $canStaffEdit || $canSensitive;
+        $personnelViewMode = trim((string) ($request->query('view', '') ?? ''));
+        if (!in_array($personnelViewMode, ['public', 'rh'], true)) {
+            $personnelViewMode = '';
+        }
         /** Lecture identité civile, état civil, dossier recrutement détaillé : titulaire + staff / RH habilités (pas les autres membres). */
         $privatePersonnelIdentity = $isSelf || $canStaffView || $canStaffEdit || $canSensitive;
         $canEditNotes = $isSelf || $canStaffEdit;
@@ -568,6 +604,53 @@ class PersonnelController
             }
         }
 
+        $canViewBilans = $isSelf || $canStaffView || $canStaffEdit;
+        $canCreateBilans = $canStaffEdit;
+        $personnelStageBilans = [];
+        $personnelRecruitmentBilans = [];
+        $bilanStageOptions = [];
+        if ($canViewBilans) {
+            if ($this->personnelStageBilanRepository->tableExists()) {
+                $personnelStageBilans = $this->personnelStageBilanRepository->listForUser((int) $tenantId, $uid, 60);
+            }
+            if ($this->enlistmentRecruitmentEngagementRepository->retroTableExists() && is_array($latestEnlistment) && $latestEnlistment !== []) {
+                $enlistmentId = (int) ($latestEnlistment['id'] ?? 0);
+                if ($enlistmentId > 0) {
+                    $staffRetro = $this->enlistmentRecruitmentEngagementRepository->findRetro(
+                        (int) $tenantId,
+                        $enlistmentId,
+                        EnlistmentRecruitmentEngagementRepository::SCOPE_STAFF_ONE_MONTH
+                    );
+                    $candidateRetro = $this->enlistmentRecruitmentEngagementRepository->findRetro(
+                        (int) $tenantId,
+                        $enlistmentId,
+                        EnlistmentRecruitmentEngagementRepository::SCOPE_CANDIDATE_RETURN
+                    );
+                    if ($staffRetro !== null) {
+                        $personnelRecruitmentBilans[] = array_merge($staffRetro, [
+                            'source_label' => 'Bilan équipe (recrutement)',
+                            'enlistment_id' => $enlistmentId,
+                        ]);
+                    }
+                    if ($candidateRetro !== null) {
+                        $personnelRecruitmentBilans[] = array_merge($candidateRetro, [
+                            'source_label' => 'Retour candidat (recrutement)',
+                            'enlistment_id' => $enlistmentId,
+                        ]);
+                    }
+                }
+            }
+            $bilanStageOptions = $roleplayFollowupConfig['stages'] ?? [];
+            if (!is_array($bilanStageOptions) || $bilanStageOptions === []) {
+                $bilanStageOptions = ['Pré-qualification', 'Tutorat', 'Validation', 'Intégration active'];
+            }
+            foreach (['Suivi périodique', 'Fin de période d’essai', 'Bilan annuel', 'Autre'] as $extraStage) {
+                if (!in_array($extraStage, $bilanStageOptions, true)) {
+                    $bilanStageOptions[] = $extraStage;
+                }
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'personnel.file',
             'title' => 'Fiche personnel',
@@ -596,6 +679,7 @@ class PersonnelController
             'trainingCertificates' => $trainingCertificates,
             'lmsEnrollmentsForPersonnel' => $lmsEnrollmentsForPersonnel,
             'completeness' => $completeness,
+            'gradeValidationIssues' => $gradeValidationIssues,
             'adminPanels' => $adminPanels,
             'adminDataByPanel' => $adminDataByPanel,
             'canEditNotes' => $canEditNotes,
@@ -624,6 +708,14 @@ class PersonnelController
             'roleplayEligibility' => $roleplayEligibility,
             'rpTutorLabel' => $rpTutorLabel,
             'roleplayTimelineEvents' => $roleplayTimelineEvents,
+            'canViewBilans' => $canViewBilans,
+            'canCreateBilans' => $canCreateBilans,
+            'personnelStageBilans' => $personnelStageBilans,
+            'personnelRecruitmentBilans' => $personnelRecruitmentBilans,
+            'bilanStageOptions' => $bilanStageOptions,
+            'personnelStageBilansSchemaReady' => $this->personnelStageBilanRepository->tableExists(),
+            'canAccessRhView' => $canAccessRhView,
+            'personnelViewMode' => $personnelViewMode,
         ]);
     }
 
@@ -676,6 +768,86 @@ class PersonnelController
         $this->personnelProfileRepository->updateCommandNotes((int) $target['id'], $notes);
         $redirect = $isSelf ? url('personnel/me') : url('personnel/' . $this->personPathSegment($target));
         return Response::redirect($redirect);
+    }
+
+    public function storeStageBilan(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $raw = (string) ($params['id'] ?? '');
+        $target = $this->resolvePersonnelTarget($raw, $tenantId);
+        if (!$target) {
+            return (new Response())->setStatusCode(404)->setBody('Utilisateur non trouvé.');
+        }
+        if (!$this->canStaffEditPersonnel()) {
+            Session::flash('error', 'Vous n’êtes pas autorisé à enregistrer un bilan sur ce dossier.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+        if (!$this->personnelStageBilanRepository->tableExists()) {
+            Session::flash('error', 'Les bilans d’étape ne sont pas encore disponibles sur cette installation.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+        }
+
+        $kind = trim((string) $request->input('bilan_kind', PersonnelStageBilanRepository::KIND_RH));
+        if (!in_array($kind, PersonnelStageBilanRepository::KINDS, true)) {
+            $kind = PersonnelStageBilanRepository::KIND_RH;
+        }
+        $stage = trim((string) $request->input('stage_label', ''));
+        $stageCustom = trim((string) $request->input('stage_label_custom', ''));
+        if ($stage === 'Autre' && $stageCustom !== '') {
+            $stage = $stageCustom;
+        }
+        $title = trim((string) $request->input('title', ''));
+        $body = trim((string) $request->input('body', ''));
+        $eventDate = trim((string) $request->input('event_date', ''));
+        $ratingRaw = $request->input('rating');
+        $rating = ($ratingRaw !== null && $ratingRaw !== '') ? (int) $ratingRaw : null;
+        if ($rating !== null && ($rating < 1 || $rating > 5)) {
+            $rating = null;
+        }
+
+        if ($stage === '' || $title === '' || $body === '') {
+            Session::flash('error', 'Merci de renseigner l’étape, le titre et le contenu du bilan.');
+
+            return Response::redirect(url('personnel/' . $this->personPathSegment($target)) . '?tab=bilans#bilans');
+        }
+
+        $id = $this->personnelStageBilanRepository->create(
+            $tenantId,
+            (int) $target['id'],
+            $kind,
+            $stage,
+            $title,
+            $body,
+            $eventDate !== '' ? $eventDate : date('Y-m-d'),
+            $rating,
+            (int) Session::get('user_id') ?: null
+        );
+        if ($id === null) {
+            Session::flash('error', 'Impossible d’enregistrer le bilan pour le moment.');
+        } else {
+            Session::flash('success', 'Bilan d’étape enregistré.');
+            if ($this->personnelRoleplayTimelineRepository->tableExists()) {
+                $this->personnelRoleplayTimelineRepository->addEvent(
+                    $tenantId,
+                    (int) $target['id'],
+                    'bilan',
+                    $title,
+                    'Étape « ' . $stage . ' » — ' . mb_substr($body, 0, 400),
+                    $eventDate !== '' ? $eventDate : date('Y-m-d'),
+                    null,
+                    'completed',
+                    null,
+                    (int) Session::get('user_id') ?: null
+                );
+            }
+        }
+
+        return Response::redirect(url('personnel/' . $this->personPathSegment($target)) . '?tab=bilans#bilans');
     }
 
     public function orbat(Request $request, array $params = []): Response

@@ -738,6 +738,21 @@ function training_lms_studio_resource_kind_label_fr(array $row): string
 }
 
 /**
+ * Indique si une ressource de leçon doit s’afficher comme image (aperçu / inline).
+ *
+ * @param array<string, mixed> $row
+ */
+function training_lms_resource_is_image(array $row): bool
+{
+    if ((string) ($row['resource_type'] ?? '') === 'image') {
+        return true;
+    }
+    $mime = strtolower(trim((string) ($row['mime_type'] ?? '')));
+
+    return $mime !== '' && str_starts_with($mime, 'image/');
+}
+
+/**
  * @return array<string, string>
  */
 function training_lms_document_status_labels_fr(): array
@@ -809,3 +824,256 @@ function training_lms_resource_external_href(string $rawUrl): ?string
 
     return $svc->buildSignedLeaveUrl($clean);
 }
+
+/**
+ * Parcours guidé plat : Préambule → leçons du module → évaluation(s) du module → module suivant → examens finaux → avis.
+ * Ne crée aucune fausse leçon : uniquement la structure déjà en base.
+ *
+ * @return list<array{
+ *   kind: 'preamble'|'lesson'|'quiz'|'echanges',
+ *   key: string,
+ *   label: string,
+ *   phase: string,
+ *   module_id?: int,
+ *   module_title?: string,
+ *   lesson?: array<string, mixed>,
+ *   quiz?: array{id: int, title: string, is_final: bool}
+ * }>
+ */
+function training_lms_build_guided_sequence(array $course): array
+{
+    $steps = [];
+    $steps[] = [
+        'kind' => 'preamble',
+        'key' => 'preamble',
+        'label' => 'Préambule',
+        'phase' => 'Avant de commencer',
+    ];
+
+    $modules = $course['modules'] ?? [];
+    if (!is_array($modules)) {
+        $modules = [];
+    }
+
+    $moduleIndex = 0;
+    foreach ($modules as $mod) {
+        if (!is_array($mod)) {
+            continue;
+        }
+        $moduleIndex++;
+        $modId = (int) ($mod['id'] ?? 0);
+        $modTitle = trim((string) ($mod['title'] ?? ''));
+        if ($modTitle === '') {
+            $modTitle = 'Module ' . $moduleIndex;
+        }
+        $phase = 'Module ' . $moduleIndex . ' — ' . $modTitle;
+
+        $lessons = is_array($mod['lessons'] ?? null) ? $mod['lessons'] : [];
+        $lessonOrdinal = 0;
+        foreach ($lessons as $les) {
+            if (!is_array($les)) {
+                continue;
+            }
+            $lid = (int) ($les['id'] ?? 0);
+            if ($lid < 1) {
+                continue;
+            }
+            $lessonOrdinal++;
+            $ltitle = trim((string) ($les['title'] ?? ''));
+            if ($ltitle === '') {
+                $ltitle = 'Leçon ' . $lessonOrdinal;
+            }
+            $steps[] = [
+                'kind' => 'lesson',
+                'key' => 'lesson:' . $lid,
+                'label' => $ltitle,
+                'phase' => $phase,
+                'module_id' => $modId,
+                'module_title' => $modTitle,
+                'lesson' => $les,
+            ];
+        }
+
+        $quizzes = is_array($mod['quizzes'] ?? null) ? $mod['quizzes'] : [];
+        foreach ($quizzes as $qz) {
+            if (!is_array($qz)) {
+                continue;
+            }
+            if ((int) ($qz['is_final_exam'] ?? 0) === 1) {
+                continue;
+            }
+            $qid = (int) ($qz['id'] ?? 0);
+            if ($qid < 1) {
+                continue;
+            }
+            $qtitle = trim((string) ($qz['title'] ?? ''));
+            if ($qtitle === '') {
+                $qtitle = 'Évaluation du module';
+            }
+            $steps[] = [
+                'kind' => 'quiz',
+                'key' => 'quiz:' . $qid,
+                'label' => $qtitle,
+                'phase' => $phase . ' — évaluation',
+                'module_id' => $modId,
+                'module_title' => $modTitle,
+                'quiz' => [
+                    'id' => $qid,
+                    'title' => $qtitle,
+                    'is_final' => false,
+                ],
+            ];
+        }
+    }
+
+    foreach ($modules as $mod) {
+        if (!is_array($mod)) {
+            continue;
+        }
+        $quizzes = is_array($mod['quizzes'] ?? null) ? $mod['quizzes'] : [];
+        foreach ($quizzes as $qz) {
+            if (!is_array($qz) || (int) ($qz['is_final_exam'] ?? 0) !== 1) {
+                continue;
+            }
+            $qid = (int) ($qz['id'] ?? 0);
+            if ($qid < 1) {
+                continue;
+            }
+            $qtitle = trim((string) ($qz['title'] ?? ''));
+            if ($qtitle === '') {
+                $qtitle = 'Évaluation finale';
+            }
+            $steps[] = [
+                'kind' => 'quiz',
+                'key' => 'quiz:' . $qid,
+                'label' => $qtitle,
+                'phase' => 'Évaluation finale',
+                'quiz' => [
+                    'id' => $qid,
+                    'title' => $qtitle,
+                    'is_final' => true,
+                ],
+            ];
+        }
+    }
+
+    $steps[] = [
+        'kind' => 'echanges',
+        'key' => 'echanges',
+        'label' => 'Avis & échanges',
+        'phase' => 'Fin de parcours',
+    ];
+
+    return $steps;
+}
+
+/**
+ * Position dans la séquence guidée (étape courante + suivante).
+ *
+ * @param list<array<string, mixed>> $steps
+ * @param 'preamble'|'lesson'|'quiz'|'echanges' $context
+ * @return array{
+ *   index: int,
+ *   total: int,
+ *   current: array<string, mixed>|null,
+ *   next: array<string, mixed>|null,
+ *   previous: array<string, mixed>|null
+ * }
+ */
+function training_lms_sequence_position(
+    array $steps,
+    string $context,
+    ?int $lessonId = null,
+    ?int $quizId = null
+): array {
+    $total = count($steps);
+    $index = 0;
+    if ($context === 'lesson' && $lessonId !== null && $lessonId > 0) {
+        foreach ($steps as $i => $s) {
+            if (($s['kind'] ?? '') === 'lesson' && (int) (($s['lesson']['id'] ?? 0)) === $lessonId) {
+                $index = (int) $i;
+                break;
+            }
+        }
+    } elseif ($context === 'quiz' && $quizId !== null && $quizId > 0) {
+        foreach ($steps as $i => $s) {
+            if (($s['kind'] ?? '') === 'quiz' && (int) (($s['quiz']['id'] ?? 0)) === $quizId) {
+                $index = (int) $i;
+                break;
+            }
+        }
+    } elseif ($context === 'echanges') {
+        foreach ($steps as $i => $s) {
+            if (($s['kind'] ?? '') === 'echanges') {
+                $index = (int) $i;
+                break;
+            }
+        }
+    } else {
+        // preamble / fiche parcours
+        $index = 0;
+    }
+
+    $current = $steps[$index] ?? null;
+    $next = ($index + 1 < $total) ? $steps[$index + 1] : null;
+    $previous = ($index > 0) ? $steps[$index - 1] : null;
+
+    return [
+        'index' => $index,
+        'total' => $total,
+        'current' => is_array($current) ? $current : null,
+        'next' => is_array($next) ? $next : null,
+        'previous' => is_array($previous) ? $previous : null,
+    ];
+}
+
+/**
+ * Libellé humain pour une étape de séquence (CTA / bandeau).
+ *
+ * @param array<string, mixed>|null $step
+ */
+function training_lms_sequence_step_human_label(?array $step): string
+{
+    if ($step === null) {
+        return '';
+    }
+    $kind = (string) ($step['kind'] ?? '');
+    $label = trim((string) ($step['label'] ?? ''));
+    return match ($kind) {
+        'preamble' => 'Préambule du parcours',
+        'lesson' => $label !== '' ? 'Leçon — ' . $label : 'Leçon suivante',
+        'quiz' => $label !== ''
+            ? ((stripos($label, 'évaluation') !== false || stripos($label, 'quiz') !== false) ? $label : 'Évaluation — ' . $label)
+            : 'Évaluation',
+        'echanges' => 'Avis et échanges de fin de parcours',
+        default => $label,
+    };
+}
+
+/**
+ * Indique si une étape leçon est terminée d’après la progression.
+ *
+ * @param array<int, true> $completedLessonIds
+ * @param array<int, true> $passedQuizIds
+ */
+function training_lms_sequence_step_done(array $step, array $completedLessonIds, array $passedQuizIds): bool
+{
+    $kind = (string) ($step['kind'] ?? '');
+    if ($kind === 'preamble') {
+        // Le préambule est « passé » dès qu’au moins une leçon est terminée ou démarrée via continue.
+        return $completedLessonIds !== [];
+    }
+    if ($kind === 'lesson') {
+        $lid = (int) ($step['lesson']['id'] ?? 0);
+
+        return $lid > 0 && isset($completedLessonIds[$lid]);
+    }
+    if ($kind === 'quiz') {
+        $qid = (int) ($step['quiz']['id'] ?? 0);
+
+        return $qid > 0 && isset($passedQuizIds[$qid]);
+    }
+
+    return false;
+}
+

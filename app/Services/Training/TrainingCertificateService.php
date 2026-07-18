@@ -138,22 +138,43 @@ class TrainingCertificateService
     }
 
     /**
-     * Régénère les PDF manquants pour le tenant (ordre chronologique, plafonné).
-     *
-     * @return int nombre de PDF effectivement créés
+     * Compte les attestations valides sans document PDF disponible sur le disque, pour un tenant.
      */
-    public function backfillPendingPdfDocuments(int $tenantId, int $max = 50): int
+    public function countPendingPdfDocuments(int $tenantId, int $scanLimit = 300): int
     {
+        $pending = 0;
+        foreach ($this->certificateRepository->listForTenantAdmin($tenantId, $scanLimit) as $row) {
+            if (($row['status'] ?? '') !== 'valid') {
+                continue;
+            }
+            $rel = trim((string) ($row['pdf_path'] ?? ''));
+            if ($rel === '' || !is_file(base_path($rel))) {
+                $pending++;
+            }
+        }
+
+        return $pending;
+    }
+
+    /**
+     * Régénère les PDF manquants pour le tenant (ordre chronologique, plafonné).
+     * Ne s’arrête jamais silencieusement sur un échec isolé : chaque échec est journalisé
+     * et compté, pour un retour précis côté interface (succès / échecs).
+     *
+     * @return array{generated: int, failed: int, remaining: int, failed_ids: list<int>}
+     */
+    public function backfillPendingPdfDocuments(int $tenantId, int $max = 50): array
+    {
+        $result = ['generated' => 0, 'failed' => 0, 'remaining' => 0, 'failed_ids' => []];
         if (!TrainingCertificatePdfEngine::isAvailable()) {
-            return 0;
+            $result['remaining'] = $this->countPendingPdfDocuments($tenantId);
+
+            return $result;
         }
         $max = max(1, min(100, $max));
         $rows = $this->certificateRepository->listForTenantAdmin($tenantId, 300);
-        $done = 0;
+        $processed = 0;
         foreach ($rows as $row) {
-            if ($done >= $max) {
-                break;
-            }
             if (($row['status'] ?? '') !== 'valid') {
                 continue;
             }
@@ -161,12 +182,25 @@ class TrainingCertificateService
             if ($rel !== '' && is_file(base_path($rel))) {
                 continue;
             }
-            if ($this->pdfService->generateAndStore((int) $row['id'], $tenantId) !== null) {
-                $done++;
+            if ($processed >= $max) {
+                $result['remaining']++;
+                continue;
+            }
+            $processed++;
+            $certId = (int) $row['id'];
+            if ($this->pdfService->generateAndStore($certId, $tenantId) !== null) {
+                $result['generated']++;
+            } else {
+                $result['failed']++;
+                $result['failed_ids'][] = $certId;
+                error_log(
+                    '[training_certificate] Échec génération PDF en masse (certificat id=' . $certId
+                    . ', tenant=' . $tenantId . ').'
+                );
             }
         }
 
-        return $done;
+        return $result;
     }
 
     private function generatePdfOrLogFailure(int $certificateId, int $tenantId): void

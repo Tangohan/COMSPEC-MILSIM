@@ -25,7 +25,7 @@
 
 .training-cmd-toolbar-wrap {
   flex-shrink: 0;
-  padding: 0.85rem 1rem 1rem;
+  padding: 0.75rem 1rem 0.85rem;
   background: rgba(255, 255, 255, 0.97);
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 1rem 1rem 0 0;
@@ -33,8 +33,16 @@
 
 @media (min-width: 768px) {
   .training-cmd-toolbar-wrap {
-    padding: 1rem 1.5rem 1.1rem;
+    padding: 0.85rem 1.35rem 1rem;
   }
+}
+
+.training-cmd-toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
 }
 
 .training-cmd-toolbar-eyebrow {
@@ -43,29 +51,67 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: #64748b;
-  margin: 0 0 0.65rem;
+  margin: 0;
 }
 
 .training-cmd-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0.65rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.training-cmd-toolbar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  padding-right: 0.65rem;
+  border-right: 1px solid #e2e8f0;
+}
+
+.training-cmd-toolbar__group:last-child {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.training-cmd-toolbar__group-label {
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.training-cmd-toolbar__links {
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.4rem 0.35rem;
+  gap: 0.3rem;
 }
 
 .training-cmd-toolbar a {
   display: inline-flex;
   align-items: center;
-  padding: 0.45rem 0.75rem;
-  border-radius: 999px;
+  padding: 0.38rem 0.65rem;
+  border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: #475569;
   text-decoration: none;
+  white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
@@ -76,27 +122,37 @@
 }
 
 .training-cmd-toolbar a.is-active {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
-  border-color: rgba(16, 185, 129, 0.45);
-  color: #065f46;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.14), rgba(16, 185, 129, 0.06));
+  border-color: rgba(5, 150, 105, 0.45);
+  color: #047857;
+  box-shadow: inset 0 -2px 0 #059669;
 }
 
 .training-cmd-toolbar__ext {
-  margin-left: auto;
-  border-style: dashed !important;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.5rem;
+  border: 1px dashed #a7f3d0;
+  background: #ecfdf5;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
   color: #059669 !important;
+  flex-shrink: 0;
 }
 
 .training-cmd-toolbar__ext:hover {
   border-color: #10b981 !important;
   color: #047857 !important;
+  background: #d1fae5;
 }
 
 @media (max-width: 640px) {
-  .training-cmd-toolbar__ext {
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
+  .training-cmd-toolbar-top {
+    flex-wrap: wrap;
   }
 }
 
@@ -416,4 +472,623 @@
 .tc-course-actions__form {
   margin: 0;
   display: block;
+}
+
+/* Charte RH — édition dense (pilotage) */
+.tc-charter-admin {
+  padding: 1.15rem 1.15rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .tc-charter-admin {
+    padding: 1.35rem 1.5rem 1.5rem;
+  }
+}
+
+.tc-charter-admin__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tc-charter-admin__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  border: 1px solid #d1fae5;
+  background: linear-gradient(145deg, #ecfdf5, #f8fafc);
+  min-width: 11rem;
+}
+
+.tc-charter-admin__member-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+  text-decoration: none;
+}
+
+.tc-charter-admin__member-link:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+
+.tc-charter-admin__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tc-charter-admin__field {
+  max-width: 36rem;
+}
+
+.tc-charter-admin__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.tc-charter-admin__input {
+  width: 100%;
+  border-radius: 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tc-charter-admin__input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.tc-charter-admin__workspace {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .tc-charter-admin__workspace {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 1rem;
+    align-items: stretch;
+  }
+}
+
+.tc-charter-admin__editor,
+.tc-charter-admin__preview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.75rem;
+}
+
+.tc-charter-admin__editor-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tc-charter-admin__textarea {
+  width: 100%;
+  min-height: 18rem;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #0f172a;
+  resize: vertical;
+}
+
+.tc-charter-admin__preview {
+  flex: 1;
+  min-height: 18rem;
+  max-height: min(28rem, 55vh);
+  overflow: auto;
+  border-radius: 0.65rem;
+  border: 1px solid #d1fae5;
+  background: linear-gradient(180deg, #f0fdf4 0%, #fff 28%);
+  padding: 0.9rem 1rem;
+}
+
+.tc-charter-admin__preview :where(h2, h3, h4) {
+  color: #0f172a;
+  font-weight: 800;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.tc-charter-admin__preview :where(p, ul, ol) {
+  margin-bottom: 0.55rem;
+}
+
+.tc-charter-admin__preview a {
+  color: #059669;
+  font-weight: 600;
+}
+
+.tc-charter-admin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 0.15rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid #d1fae5;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.08), rgba(255, 255, 255, 0.95));
+  position: sticky;
+  bottom: 0.75rem;
+  z-index: 5;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.tc-charter-admin .tox-tinymce {
+  border-radius: 0.65rem !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Gabarit attestations PDF */
+.tc-gabarit-hero__grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem 1.75rem;
+}
+
+.tc-gabarit-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.tc-gabarit-status {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.tc-gabarit-status--ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #a7f3d0;
+  background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+  color: #064e3b;
+}
+
+.tc-gabarit-status__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #059669;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}
+
+.tc-gabarit-status--warn {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.tc-gabarit-status--danger {
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.tc-gabarit-layout {
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 1280px) {
+  .tc-gabarit-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+    gap: 2.25rem;
+    align-items: start;
+  }
+}
+
+.tc-gabarit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.tc-gabarit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tc-gabarit-section:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.tc-gabarit-section__title {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.tc-gabarit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tc-gabarit-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tc-gabarit-help {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.tc-gabarit-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tc-gabarit-input:focus {
+  outline: none;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.tc-gabarit-input--area {
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.tc-gabarit-checks {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc, #fff);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tc-gabarit-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  font-size: 0.875rem;
+  color: #334155;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.tc-gabarit-check input {
+  margin-top: 0.15rem;
+  accent-color: #059669;
+  flex-shrink: 0;
+}
+
+.tc-gabarit-check--inline {
+  align-items: center;
+}
+
+.tc-gabarit-colors {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .tc-gabarit-colors {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.tc-gabarit-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tc-gabarit-color {
+  width: 3.25rem;
+  height: 2.5rem;
+  padding: 0.15rem;
+  border-radius: 0.55rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+}
+
+.tc-gabarit-color-swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.08);
+}
+
+.tc-gabarit-file {
+  display: block;
+  width: 100%;
+  font-size: 0.8125rem;
+  color: #475569;
+}
+
+.tc-gabarit-asset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1.15rem;
+}
+
+.tc-gabarit-asset__thumb {
+  border-radius: 0.55rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  object-fit: contain;
+}
+
+.tc-gabarit-asset__thumb--logo {
+  max-height: 3.5rem;
+  max-width: 11rem;
+  padding: 0.25rem;
+}
+
+.tc-gabarit-asset__thumb--bg {
+  height: 4.5rem;
+  width: 7.5rem;
+  object-fit: cover;
+}
+
+.tc-gabarit-asset__missing {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #be123c;
+  max-width: 22rem;
+  line-height: 1.4;
+}
+
+.tc-gabarit-note {
+  padding: 1rem 1.1rem;
+  border-radius: 0.9rem;
+  border: 1px solid #d1fae5;
+  background: linear-gradient(145deg, rgba(5, 150, 105, 0.06), #f8fafc);
+}
+
+.tc-gabarit-note__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tc-gabarit-note__body {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.tc-gabarit-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+}
+
+.tc-gabarit-preview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .tc-gabarit-preview-pane {
+    position: sticky;
+    top: 1.25rem;
+  }
+}
+
+.tc-gabarit-preview-pane__kicker {
+  margin: 0;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.tc-gabarit-preview-pane__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.tc-gabarit-preview-frame {
+  padding: 0.75rem;
+  border-radius: 1.15rem;
+  border: 1px solid #e2e8f0;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(52, 211, 153, 0.12), transparent 55%),
+    linear-gradient(165deg, #f1f5f9 0%, #e2e8f0 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.tc-gabarit-preview-sheet {
+  position: relative;
+  overflow: hidden;
+  min-height: 17.5rem;
+  border-radius: 0.75rem;
+  border-width: 3px;
+  border-style: solid;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
+  background: #fff;
+}
+
+.tc-gabarit-preview-sheet__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.tc-gabarit-preview-sheet__veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.tc-gabarit-preview-sheet__plain {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+}
+
+.tc-gabarit-preview-sheet__body {
+  position: relative;
+  padding: 1.15rem 1.25rem 1.25rem;
+  text-align: left;
+}
+
+.tc-gabarit-preview-logo {
+  display: block;
+  margin-bottom: 0.75rem;
+  max-height: 3.25rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.tc-gabarit-preview-logo-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  height: 2.25rem;
+  width: 5.5rem;
+  border-radius: 0.4rem;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tc-gabarit-preview-headline {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.tc-gabarit-preview-sub {
+  margin: 0 0 1rem;
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.tc-gabarit-preview-learner {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.tc-gabarit-preview-course {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.tc-gabarit-preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.tc-gabarit-preview-meta p {
+  margin: 0;
+}
+
+.tc-gabarit-preview-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
+.tc-gabarit-preview-empty {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

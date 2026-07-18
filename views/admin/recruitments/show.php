@@ -14,6 +14,26 @@ $statusLabels = [
     'blocked' => 'Non admis',
 ];
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
+// Dossier clos = décision rendue (acceptée, refusée ou non admis) : plus d’instruction à mener, UI allégée.
+$dossierClosedStatuses = ['reviewed', 'rejected', 'blocked'];
+$isDossierClos = in_array($statusRaw, $dossierClosedStatuses, true);
+$portalJourneyStepsForNotes = is_array($portalJourneyStepsForNotes ?? null) ? $portalJourneyStepsForNotes : [];
+$instructionFollowup = '';
+foreach ($portalJourneyStepsForNotes as $stFollow) {
+    if (!is_array($stFollow)) {
+        continue;
+    }
+    $pk = trim((string) ($stFollow['pause_kind'] ?? ''));
+    if ($pk === 'pending' || $pk === 'interview') {
+        $instructionFollowup = $pk;
+        break;
+    }
+}
+if ($statusRaw === 'submitted' && $instructionFollowup === 'pending') {
+    $statusLabel = 'À traiter · Mis en attente';
+} elseif ($statusRaw === 'submitted' && $instructionFollowup === 'interview') {
+    $statusLabel = 'À traiter · Entretien proposé';
+}
 $reviewedById = (int) ($e['reviewed_by'] ?? 0);
 $assigneeLabel = trim((string) ($assigneeDisplayName ?? ''));
 if ($assigneeLabel === '') {
@@ -24,6 +44,7 @@ $userHasRecruiterPick = !empty($userHasRecruiterPick);
 $currentStaffUserId = (int) ($currentStaffUserId ?? 0);
 $enlistmentAgeDays = isset($enlistmentAgeDays) ? (int) $enlistmentAgeDays : null;
 $retroWindowEligible = !empty($retroWindowEligible);
+$retroNotApplicable = !empty($retroNotApplicable);
 $enlistmentEngagementTablesReady = !empty($enlistmentEngagementTablesReady);
 $recruiterPicksTableReady = !empty($recruiterPicksTableReady);
 $staffRetroFeedback = is_array($staffRetroFeedback ?? null) ? $staffRetroFeedback : null;
@@ -90,9 +111,20 @@ $analyticsGroupByDayOrder = static function (array $mergedRows): array {
     return [$dayOrder, $byDay];
 };
 $membershipRepairHint = $membershipRepairHint ?? null;
-$enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
-$submittedAgeHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
-$submittedSlaBreached = !empty($e['submitted_sla_breached']);
+$enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? \App\Services\Recruitment\TenantRecruitmentSettings::defaultEnlistmentSlaHours()));
+$submissionAgeHours = \App\Services\Recruitment\TenantRecruitmentSettings::hoursElapsedSince(
+    trim((string) ($e['created_at'] ?? '')) !== '' ? (string) $e['created_at'] : null
+);
+$slaTargetHuman = \App\Services\Recruitment\TenantRecruitmentSettings::formatSlaHoursLabel($enlistmentSlaHours);
+$submissionAgeHuman = null;
+if ($submissionAgeHours !== null) {
+    $submissionAgeHuman = $submissionAgeHours < 1
+        ? 'moins d’une heure'
+        : \App\Services\Recruitment\TenantRecruitmentSettings::formatSlaHoursLabel($submissionAgeHours);
+}
+$submissionSlaBreached = ((string) ($e['status'] ?? '')) === 'submitted'
+    && $submissionAgeHours !== null
+    && $submissionAgeHours > $enlistmentSlaHours;
 
 $enlistmentTimeline = is_array($enlistmentTimeline ?? null) ? $enlistmentTimeline : [];
 $timelineActorLabels = is_array($enlistmentTimelineActorLabels ?? null) ? $enlistmentTimelineActorLabels : [];
@@ -190,7 +222,9 @@ if ($sharedFields !== []) {
 }
 
 $statusBand = match ($statusRaw) {
-    'submitted' => 'from-amber-500 to-amber-600',
+    'submitted' => $instructionFollowup === 'pending'
+        ? 'from-sky-500 to-sky-600'
+        : ($instructionFollowup === 'interview' ? 'from-violet-500 to-violet-600' : 'from-amber-500 to-amber-600'),
     'reviewed' => 'from-emerald-600 to-emerald-700',
     'rejected' => 'from-rose-500 to-rose-600',
     'blocked' => 'from-slate-600 to-slate-800',
@@ -198,13 +232,29 @@ $statusBand = match ($statusRaw) {
 };
 
 $recapMeta = match ($statusRaw) {
-    'submitted' => [
-        'step' => 'Étape 2 sur 3',
-        'title' => 'En cours de traitement',
-        'bar' => 'w-2/3',
-        'barColor' => 'bg-amber-400',
-        'hint' => 'Étape suivante : décision finale et notification candidat.',
-    ],
+    'submitted' => $instructionFollowup === 'pending'
+        ? [
+            'step' => 'Étape 2 sur 3',
+            'title' => 'Dossier mis en attente',
+            'bar' => 'w-2/3',
+            'barColor' => 'bg-sky-400',
+            'hint' => 'Le traitement est temporairement suspendu. Le candidat a été informé ; vous pouvez reprendre l’instruction quand vous voulez.',
+        ]
+        : ($instructionFollowup === 'interview'
+            ? [
+                'step' => 'Étape 2 sur 3',
+                'title' => 'Entretien proposé',
+                'bar' => 'w-2/3',
+                'barColor' => 'bg-violet-400',
+                'hint' => 'Un entretien a été proposé au candidat. La décision finale reste à rendre après l’échange.',
+            ]
+            : [
+                'step' => 'Étape 2 sur 3',
+                'title' => 'En cours de traitement',
+                'bar' => 'w-2/3',
+                'barColor' => 'bg-amber-400',
+                'hint' => 'Étape suivante : décision finale et notification candidat.',
+            ]),
     'reviewed' => [
         'step' => 'Étape 3 sur 3',
         'title' => 'Candidature acceptée',
@@ -234,6 +284,21 @@ $recapMeta = match ($statusRaw) {
         'hint' => 'Statut à préciser côté instruction.',
     ],
 };
+
+$showRetroBlockNav = $retroWindowEligible || $retroNotApplicable || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
+$dossierNavItems = [
+    ['id' => 'recap-dossier', 'label' => 'Récapitulatif', 'num' => '01', 'show' => true],
+    ['id' => 'coordination-dossier', 'label' => 'Coordination', 'num' => '02', 'show' => !$isDossierClos],
+    ['id' => 'bilan-recrutement', 'label' => 'Bilan 30 jours', 'num' => '03', 'show' => $showRetroBlockNav && !$isDossierClos],
+    ['id' => 'activite-dossier', 'label' => 'Activité récente', 'num' => '04', 'show' => $analyticsMergedRows !== [] && !$isDossierClos],
+    ['id' => 'couverture-dossier', 'label' => 'En-tête candidat', 'num' => '05', 'show' => true],
+    ['id' => 'portail-candidat', 'label' => 'Portail candidat', 'num' => '06', 'show' => !$isDossierClos],
+    ['id' => 'identite-reception', 'label' => 'Identité & réception', 'num' => '07', 'show' => true],
+    ['id' => 'rattachement-membre', 'label' => 'Rattachement', 'num' => '08', 'show' => $statusRaw === 'reviewed' && !$isDossierClos],
+    ['id' => 'instruction-dossier', 'label' => 'Décision', 'num' => '09', 'show' => $statusRaw === 'submitted' && !$isDossierClos],
+    ['id' => 'journal-dossier', 'label' => 'Journal', 'num' => '10', 'show' => !$isDossierClos],
+];
+$bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
 ?>
 <div class="recruitment-bureau space-y-6 max-w-[94rem] mx-auto w-full">
 
@@ -246,36 +311,48 @@ $recapMeta = match ($statusRaw) {
             </div>
         </nav>
 
-        <div class="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)]">
-            <aside class="w-full min-w-0">
-                <div class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm lg:shadow-md">
-                    <div class="border-b border-stone-200 bg-stone-50 px-4 py-3">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Dans ce dossier</p>
-                    </div>
-                    <nav class="space-y-2 p-3" aria-label="Sections du dossier">
-                        <a href="#recap-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Récapitulatif</span>
-                            <span class="text-[10px] font-black text-slate-500">01</span>
-                        </a>
-                        <?php if ($statusRaw === 'submitted'): ?>
-                        <a href="#instruction-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Décision</span>
-                            <span class="text-[10px] font-black text-slate-500">02</span>
-                        </a>
-                        <?php endif; ?>
-                        <a href="#journal-dossier" class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left text-xs font-bold text-slate-900 shadow-sm transition hover:border-emerald-300/60 hover:bg-emerald-50/50">
-                            <span>Journal</span>
-                            <span class="text-[10px] font-black text-slate-500">03</span>
-                        </a>
-                    </nav>
-                    <div class="border-t border-stone-200 bg-stone-50 px-4 py-3 text-[11px] text-stone-600 space-y-1.5">
-                        <p><span class="font-bold text-stone-800">Statut</span> — <?= htmlspecialchars($statusLabel ?: '—') ?></p>
-                        <p><span class="font-bold text-stone-800">Attribué</span> — <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                </div>
-            </aside>
+        <?php
+        $dossierSideNavMode = 'mobile';
+        require base_path('views/admin/recruitments/partials/dossier_side_nav.php');
+        ?>
 
-            <div class="space-y-6 min-w-0">
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem] xl:grid-cols-[minmax(0,1fr)_17rem]">
+            <div class="space-y-6 min-w-0 order-1">
+                <?php if ($isDossierClos): ?>
+                <section class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-gradient-to-br <?= htmlspecialchars($statusBand, ENT_QUOTES, 'UTF-8') ?> px-6 py-5 text-white shadow-sm sm:px-8">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white">Dossier clos</span>
+                        <span class="text-sm font-bold text-white"><?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
+                        La décision est rendue et a été transmise au candidat. Pour l’alléger, cette fiche n’affiche plus que l’essentiel : identité, dates, décision et lien de suivi.
+                    </p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-white/70">Dossier reçu le</p>
+                            <p class="mt-1 text-sm font-semibold text-white"><?= !empty($e['created_at']) ? htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $e['created_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></p>
+                        </div>
+                        <div class="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-white/70">Décidé le</p>
+                            <p class="mt-1 text-sm font-semibold text-white"><?= !empty($e['reviewed_at']) ? htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $e['reviewed_at'])), ENT_QUOTES, 'UTF-8') : '—' ?></p>
+                        </div>
+                        <div class="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-white/70">Décidé par</p>
+                            <p class="mt-1 text-sm font-semibold text-white"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </div>
+                    <?php if (!empty($e['reviewer_comment'])): ?>
+                        <div class="mt-4 rounded-xl border border-white/20 bg-white/10 px-4 py-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-white/70">Message transmis au candidat</p>
+                            <p class="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-white/90"><?= htmlspecialchars(str_replace(['[MISE EN ATTENTE]', '[DEMANDE ENTRETIEN]'], ['Mise en attente', 'Demande d’entretien'], (string) $e['reviewer_comment']), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    <?php endif; ?>
+                    <?php if ($candidatePortalSuiviUrl !== null): ?>
+                        <a href="<?= htmlspecialchars($candidatePortalSuiviUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-white/40 bg-white/10 px-4 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-white/20">Voir le suivi candidat (portail)</a>
+                    <?php endif; ?>
+                </section>
+                <?php endif; ?>
+
                 <section id="recap-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500"><?= htmlspecialchars($recapMeta['step'], ENT_QUOTES, 'UTF-8') ?></p>
@@ -293,111 +370,204 @@ $recapMeta = match ($statusRaw) {
                     </div>
                 </section>
 
-                <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
-                    <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Coordinateur</p>
-                        <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Qui suit ce dossier ?</h2>
-                        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-stone-600">Le référent correspond à la personne qui a mené l’instruction ou la dernière action enregistrée. Les volontaires permettent à l’équipe de se synchroniser sans attendre une affectation formelle.</p>
+                <?php if (!$isDossierClos): ?>
+                <section id="coordination-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
+                    <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-5 text-white sm:px-8">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">Coordination</p>
+                        <h2 class="mt-1 text-xl font-black tracking-tight text-white">Qui suit ce dossier<span class="text-emerald-400">?</span></h2>
+                        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">
+                            Le référent pilote l’instruction. Les volontaires indiquent qui souhaite aider, sans attendre qu’une personne soit déjà désignée.
+                        </p>
                     </div>
-                    <div class="space-y-6 px-6 py-6 sm:px-8">
-                        <div class="rounded-xl border border-stone-200 bg-[#faf8f3] p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Référent enregistré</p>
-                            <p class="mt-2 text-lg font-semibold text-stone-900"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="grid gap-4 p-5 sm:grid-cols-2 sm:gap-5 sm:p-6">
+                        <?php
+                        $hasAssignee = $assigneeLabel !== 'Pas encore de référent indiqué';
+                        $assigneeInitials = '—';
+                        if ($hasAssignee) {
+                            $parts = preg_split('/\s+/', $assigneeLabel) ?: [];
+                            $letters = '';
+                            foreach (array_slice($parts, 0, 2) as $p) {
+                                $letters .= mb_strtoupper(mb_substr((string) $p, 0, 1, 'UTF-8'), 'UTF-8');
+                            }
+                            $assigneeInitials = $letters !== '' ? $letters : mb_strtoupper(mb_substr($assigneeLabel, 0, 2, 'UTF-8'), 'UTF-8');
+                        }
+                        ?>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Référent</p>
+                                <?php if ($hasAssignee): ?>
+                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">Actif</span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">À désigner</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="mt-4 flex items-center gap-3">
+                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full <?= $hasAssignee ? 'bg-slate-900 text-emerald-300' : 'bg-slate-200 text-slate-500' ?> text-sm font-black" aria-hidden="true"><?= htmlspecialchars($assigneeInitials, ENT_QUOTES, 'UTF-8') ?></span>
+                                <div class="min-w-0">
+                                    <p class="truncate text-base font-bold text-slate-900"><?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="mt-0.5 text-xs text-slate-500"><?= $hasAssignee ? 'Mène l’instruction du dossier' : 'Personne n’est encore en charge' ?></p>
+                                </div>
+                            </div>
                         </div>
-                        <?php if ($recruiterPicksDisplay !== []): ?>
-                        <div>
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Volontaires</p>
-                            <ul class="mt-3 divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white">
-                                <?php foreach ($recruiterPicksDisplay as $pk): ?>
-                                    <?php
-                                    $pkc = trim((string) ($pk['created_at'] ?? ''));
-                                    $pkcFmt = $pkc !== '' ? date('d/m/Y H:i', strtotime($pkc) ?: time()) : '—';
-                                    ?>
-                                    <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
-                                        <span class="font-semibold text-stone-900"><?= htmlspecialchars((string) ($pk['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                        <span class="text-xs text-stone-500 tabular-nums"><?= htmlspecialchars($pkcFmt, ENT_QUOTES, 'UTF-8') ?></span>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                        <?php endif; ?>
-                        <?php if ($statusRaw === 'submitted' && $currentStaffUserId > 0): ?>
-                            <?php if (!$recruiterPicksTableReady): ?>
-                                <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le volontariat sera disponible après la prochaine mise à jour de la base (migration à exécuter côté hébergement).</p>
-                            <?php elseif ($userHasRecruiterPick): ?>
-                                <p class="text-sm font-semibold text-emerald-800">Vous avez déjà signalé votre intérêt pour ce dossier.</p>
+
+                        <div class="rounded-xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Volontaires</p>
+                                <span class="inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black tabular-nums text-slate-700"><?= count($recruiterPicksDisplay) ?></span>
+                            </div>
+                            <?php if ($recruiterPicksDisplay === []): ?>
+                                <p class="mt-4 text-sm text-slate-500">Aucun volontaire pour l’instant.</p>
                             <?php else: ?>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/recruteur-volontariat'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
+                                <ul class="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1">
+                                    <?php foreach ($recruiterPicksDisplay as $pk): ?>
+                                        <?php
+                                        $pkLabel = trim((string) ($pk['label'] ?? ''));
+                                        $pkc = trim((string) ($pk['created_at'] ?? ''));
+                                        $pkcFmt = $pkc !== '' ? date('d/m/Y · H:i', strtotime($pkc) ?: time()) : '—';
+                                        $pkParts = preg_split('/\s+/', $pkLabel) ?: [];
+                                        $pkInit = '';
+                                        foreach (array_slice($pkParts, 0, 2) as $p) {
+                                            $pkInit .= mb_strtoupper(mb_substr((string) $p, 0, 1, 'UTF-8'), 'UTF-8');
+                                        }
+                                        if ($pkInit === '' && $pkLabel !== '') {
+                                            $pkInit = mb_strtoupper(mb_substr($pkLabel, 0, 2, 'UTF-8'), 'UTF-8');
+                                        }
+                                        ?>
+                                        <li class="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[11px] font-black text-emerald-900" aria-hidden="true"><?= htmlspecialchars($pkInit !== '' ? $pkInit : '?', ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900"><?= htmlspecialchars($pkLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="shrink-0 text-[11px] tabular-nums text-slate-400"><?= htmlspecialchars($pkcFmt, ENT_QUOTES, 'UTF-8') ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if ($statusRaw === 'submitted' && $currentStaffUserId > 0): ?>
+                        <div class="border-t border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-6">
+                            <?php if (!$recruiterPicksTableReady): ?>
+                                <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le volontariat sera disponible après la prochaine mise à jour technique côté hébergement.</p>
+                            <?php elseif ($userHasRecruiterPick): ?>
+                                <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                    <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white" aria-hidden="true">
+                                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    </span>
+                                    <div>
+                                        <p class="text-sm font-bold text-emerald-950">Intérêt déjà enregistré</p>
+                                        <p class="mt-0.5 text-xs text-emerald-900/75">Vous figurez parmi les volontaires de ce dossier.</p>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/recruteur-volontariat'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <?= \App\Core\Csrf::field() ?>
-                                    <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition">Me porter volontaire</button>
+                                    <p class="text-sm text-slate-600">Vous pouvez indiquer que vous êtes disponible pour suivre ce dossier.</p>
+                                    <button type="submit" class="inline-flex min-h-[2.75rem] shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                                        Me porter volontaire
+                                    </button>
                                 </form>
                             <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php endif; ?>
                 </section>
+                <?php endif; ?>
 
                 <?php
-                $showRetroBlock = $retroWindowEligible || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
+                $showRetroBlock = $retroWindowEligible || $retroNotApplicable || $staffRetroFeedback !== null || $candidateRetroFeedback !== null;
                 $retroLabels = [5 => 'Très satisfaisant', 4 => 'Bon', 3 => 'Correct', 2 => 'En-dessous des attentes', 1 => 'À améliorer'];
+                $retroNotApplicableMessage = $statusRaw === 'blocked'
+                    ? 'Pas de bilan pour une candidature non admise.'
+                    : 'Pas de bilan pour une candidature refusée.';
                 ?>
-                <?php if ($showRetroBlock): ?>
-                <section class="overflow-hidden rounded-2xl border border-sky-200/90 bg-white shadow-sm">
-                    <div class="border-b border-sky-100 bg-sky-50 px-6 py-4">
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-sky-800/80">Après 30 jours</p>
-                        <h2 class="mt-1 text-base font-black tracking-tight text-sky-950">Bilan du recrutement</h2>
-                        <p class="mt-2 max-w-3xl text-sm leading-relaxed text-sky-950/90">Une fois le dossier reçu depuis au moins 30&nbsp;jours, l’équipe et le candidat peuvent laisser une note courte pour améliorer le processus.</p>
+                <?php if ($showRetroBlock && !$isDossierClos): ?>
+                <section id="bilan-recrutement" class="scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
+                    <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-5 text-white sm:px-8">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">Après 30 jours</p>
+                            <?php if ($retroNotApplicable && !$staffRetroFeedback && !$candidateRetroFeedback): ?>
+                                <span class="rounded-full bg-stone-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-200">Non concerné</span>
+                            <?php elseif ($retroWindowEligible && !$staffRetroFeedback): ?>
+                                <span class="rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200">Bilan attendu</span>
+                            <?php elseif ($staffRetroFeedback): ?>
+                                <span class="rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">Bilan enregistré</span>
+                            <?php endif; ?>
+                        </div>
+                        <h2 class="mt-1 text-xl font-black tracking-tight text-white">Bilan du recrutement<span class="text-emerald-400">.</span></h2>
+                        <?php if ($retroNotApplicable && !$staffRetroFeedback && !$candidateRetroFeedback): ?>
+                            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65"><?= htmlspecialchars($retroNotApplicableMessage, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php else: ?>
+                            <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">Après un mois, l’équipe et le candidat peuvent laisser une courte note pour améliorer l’accueil et le suivi.</p>
+                        <?php endif; ?>
                     </div>
-                    <div class="space-y-8 px-6 py-6 sm:px-8">
+                    <div class="space-y-6 p-5 sm:p-6">
+                        <?php if ($retroNotApplicable && !$staffRetroFeedback && !$candidateRetroFeedback): ?>
+                        <p class="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800"><?= htmlspecialchars($retroNotApplicableMessage, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php else: ?>
                         <?php if ($candidateRetroFeedback): ?>
-                        <div class="rounded-xl border border-stone-200 bg-white p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Retour candidat</p>
-                            <p class="mt-2 text-sm font-semibold text-stone-900">Note : <?= (int) ($candidateRetroFeedback['rating'] ?? 0) ?> / 5</p>
-                            <div class="mt-3 whitespace-pre-wrap text-sm text-stone-800"><?= htmlspecialchars((string) ($candidateRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Retour candidat</p>
+                            <p class="mt-2 text-sm font-bold text-slate-900">
+                                Note <?= (int) ($candidateRetroFeedback['rating'] ?? 0) ?> / 5
+                                <?php $cr = (int) ($candidateRetroFeedback['rating'] ?? 0); if (isset($retroLabels[$cr])): ?>
+                                    <span class="font-semibold text-slate-500">— <?= htmlspecialchars($retroLabels[$cr], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </p>
+                            <div class="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700"><?= htmlspecialchars((string) ($candidateRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
                             <?php
                             $cup = trim((string) ($candidateRetroFeedback['updated_at'] ?? ''));
                             $cad = trim((string) ($candidateRetroFeedback['created_at'] ?? ''));
                             $cd = $cup !== '' ? $cup : $cad;
                             ?>
                             <?php if ($cd !== ''): ?>
-                                <p class="mt-3 text-xs text-stone-500">Enregistré le <?= htmlspecialchars(date('d/m/Y H:i', strtotime($cd) ?: time()), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-3 text-xs text-slate-500">Enregistré le <?= htmlspecialchars(date('d/m/Y H:i', strtotime($cd) ?: time()), ENT_QUOTES, 'UTF-8') ?></p>
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
                         <?php if ($retroWindowEligible): ?>
                             <?php if (!$enlistmentEngagementTablesReady): ?>
-                                <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le formulaire de bilan sera disponible après la prochaine mise à jour de la base (migration à exécuter).</p>
+                                <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Le formulaire de bilan sera disponible après la prochaine mise à jour technique côté hébergement.</p>
                             <?php else: ?>
                                 <?php if ($staffRetroFeedback): ?>
-                                <div class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-emerald-900">Bilan équipe déjà enregistré</p>
-                                    <p class="mt-2 text-sm font-semibold text-stone-900">Note : <?= (int) ($staffRetroFeedback['rating'] ?? 0) ?> / 5</p>
-                                    <div class="mt-3 whitespace-pre-wrap text-sm text-stone-800"><?= htmlspecialchars((string) ($staffRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
-                                    <p class="mt-3 text-xs text-stone-600">Vous pouvez renvoyer le formulaire pour mettre à jour ce bilan.</p>
+                                <div class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800">Bilan équipe déjà enregistré</p>
+                                    <p class="mt-2 text-sm font-bold text-slate-900">
+                                        Note <?= (int) ($staffRetroFeedback['rating'] ?? 0) ?> / 5
+                                        <?php $sr = (int) ($staffRetroFeedback['rating'] ?? 0); if (isset($retroLabels[$sr])): ?>
+                                            <span class="font-semibold text-slate-500">— <?= htmlspecialchars($retroLabels[$sr], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                    </p>
+                                    <?php if (trim((string) ($staffRetroFeedback['comment'] ?? '')) !== ''): ?>
+                                    <div class="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700"><?= htmlspecialchars((string) ($staffRetroFeedback['comment'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
                                 </div>
-                                <?php endif; ?>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/bilan-equipe'), ENT_QUOTES, 'UTF-8') ?>" class="max-w-xl space-y-4">
+                                <?php else: ?>
+                                <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/bilan-equipe'), ENT_QUOTES, 'UTF-8') ?>" class="max-w-xl space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
                                     <?= \App\Core\Csrf::field() ?>
                                     <div>
-                                        <label for="retro_staff_rating" class="text-xs font-bold text-stone-800">Note sur le déroulé</label>
-                                        <select id="retro_staff_rating" name="retro_staff_rating" class="mt-2 block w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm font-semibold text-stone-900">
+                                        <label for="retro_staff_rating" class="text-xs font-bold text-slate-800">Note sur le déroulé</label>
+                                        <select id="retro_staff_rating" name="retro_staff_rating" class="mt-2 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
                                             <?php foreach ([5, 4, 3, 2, 1] as $ri): ?>
                                                 <option value="<?= $ri ?>"><?= $ri ?> — <?= htmlspecialchars($retroLabels[$ri] ?? (string) $ri, ENT_QUOTES, 'UTF-8') ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="retro_staff_comment" class="text-xs font-bold text-stone-800">Commentaire (obligatoire)</label>
-                                        <textarea id="retro_staff_comment" name="retro_staff_comment" rows="4" required class="mt-2 w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900" placeholder="Exemples : délais vécus par le candidat, clarté des échanges, friction sur le portail…"></textarea>
+                                        <label for="retro_staff_comment" class="text-xs font-bold text-slate-800">Commentaire (obligatoire)</label>
+                                        <textarea id="retro_staff_comment" name="retro_staff_comment" rows="4" required class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" placeholder="Exemples : délais vécus par le candidat, clarté des échanges, points à améliorer…"></textarea>
                                     </div>
-                                    <button type="submit" class="recruitment-lms-submit-sky inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition">Enregistrer le bilan</button>
+                                    <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                                        Enregistrer le bilan
+                                    </button>
                                 </form>
+                                <?php endif; ?>
                             <?php endif; ?>
+                        <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </section>
                 <?php endif; ?>
 
-                <?php if ($analyticsMergedRows !== []): ?>
+                <?php if ($analyticsMergedRows !== [] && !$isDossierClos): ?>
                 <?php
                 $renderAnalyticsDayBlocks = static function (array $mergedRows) use ($analyticsGroupByDayOrder, $analyticsFrenchDayHeader): void {
                     if ($mergedRows === []) {
@@ -435,7 +605,7 @@ $recapMeta = match ($statusRaw) {
                     }
                 };
                 ?>
-                <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+                <section id="activite-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                     <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Indicateurs</p>
                         <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Activité récente sur cette fiche</h2>
@@ -463,7 +633,7 @@ $recapMeta = match ($statusRaw) {
                 <?php endif; ?>
 
         <!-- Couverture dossier -->
-        <header class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+        <header id="couverture-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
             <div class="h-1.5 bg-gradient-to-r <?= htmlspecialchars($statusBand) ?>" aria-hidden="true"></div>
             <div class="flex flex-col gap-5 border-b border-stone-100 bg-white px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-7">
                 <div>
@@ -486,10 +656,25 @@ $recapMeta = match ($statusRaw) {
                     <span class="inline-flex items-center rounded-xl border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-bold text-stone-900">
                         <?= htmlspecialchars($statusLabel ?: '—') ?>
                     </span>
-                    <?php if ($statusRaw === 'submitted' && $submittedAgeHours !== null): ?>
-                        <span class="inline-flex items-center rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wide <?= $submittedSlaBreached ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-sky-200 bg-sky-50 text-sky-900' ?>">
-                            <?= $submittedSlaBreached ? 'Délai dépassé' : 'Dans le délai' ?> · <?= $submittedAgeHours ?> h / <?= $enlistmentSlaHours ?> h
-                        </span>
+                    <?php if ($statusRaw === 'submitted' && $instructionFollowup === 'pending'): ?>
+                        <span class="inline-flex items-center rounded-lg border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-950">Mise en attente active</span>
+                    <?php elseif ($statusRaw === 'submitted' && $instructionFollowup === 'interview'): ?>
+                        <span class="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-950">Entretien proposé</span>
+                    <?php endif; ?>
+                    <?php if (!$isDossierClos): ?>
+                    <div class="max-w-[18rem] rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-right sm:text-right">
+                        <p class="text-[10px] font-bold uppercase tracking-wide text-stone-500">Délai de réponse visé</p>
+                        <p class="mt-1 text-sm font-semibold tabular-nums text-stone-900"><?= htmlspecialchars($slaTargetHuman, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if ($submissionAgeHuman !== null): ?>
+                            <p class="mt-1 text-[11px] leading-snug text-stone-600">Écoulé depuis le dépôt : <?= htmlspecialchars($submissionAgeHuman, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <?php if ($statusRaw === 'submitted' && $submissionAgeHours !== null): ?>
+                            <p class="mt-1.5 inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide <?= $submissionSlaBreached ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-emerald-200 bg-emerald-50 text-emerald-900' ?>">
+                                <?= $submissionSlaBreached ? 'Hors délai' : 'Dans le délai' ?>
+                            </p>
+                        <?php endif; ?>
+                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-[10px] font-bold uppercase tracking-wide text-sky-800 underline decoration-sky-300 underline-offset-2 hover:text-sky-950">Modifier le délai communauté</a>
+                    </div>
                     <?php endif; ?>
                     <?php if ($candidatePortalSuiviUrl !== null): ?>
                         <a href="<?= htmlspecialchars($candidatePortalSuiviUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-sky-300 bg-sky-50 px-4 text-xs font-black uppercase tracking-wide text-sky-950 shadow-sm transition hover:border-sky-400 hover:bg-sky-100">Voir le suivi candidat (portail)</a>
@@ -506,7 +691,8 @@ $recapMeta = match ($statusRaw) {
 
         <div class="mt-8 space-y-6">
 
-            <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
+            <?php if (!$isDossierClos): ?>
+            <section id="portail-candidat" class="scroll-mt-28 overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Suivi en ligne</p>
                     <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Portail candidat</h2>
@@ -560,58 +746,111 @@ $recapMeta = match ($statusRaw) {
                                 </label>
                             </div>
                             <?php if ($portalStatusDisplayReady): ?>
-                                <div class="rounded-xl border border-stone-200 bg-white p-4 sm:p-5">
+                                <?php
+                                $bandOpts = [
+                                    'amber' => [
+                                        'label' => 'Ambre',
+                                        'hint' => 'En cours ou attention modérée',
+                                        'swatch' => '#f59e0b',
+                                        'ring' => 'rgba(245, 158, 11, 0.35)',
+                                    ],
+                                    'emerald' => [
+                                        'label' => 'Vert',
+                                        'hint' => 'Message plutôt positif',
+                                        'swatch' => '#10b981',
+                                        'ring' => 'rgba(16, 185, 129, 0.35)',
+                                    ],
+                                    'rose' => [
+                                        'label' => 'Rose',
+                                        'hint' => 'Refus ou point bloquant',
+                                        'swatch' => '#f43f5e',
+                                        'ring' => 'rgba(244, 63, 94, 0.3)',
+                                    ],
+                                    'slate' => [
+                                        'label' => 'Gris',
+                                        'hint' => 'Neutre',
+                                        'swatch' => '#64748b',
+                                        'ring' => 'rgba(100, 116, 139, 0.35)',
+                                    ],
+                                    'sky' => [
+                                        'label' => 'Bleu ciel',
+                                        'hint' => 'Information',
+                                        'swatch' => '#0ea5e9',
+                                        'ring' => 'rgba(14, 165, 233, 0.35)',
+                                    ],
+                                ];
+                                ?>
+                                <div class="rounded-xl border border-stone-200 bg-gradient-to-b from-stone-50/80 to-white p-4 sm:p-5">
                                     <p class="text-sm font-bold text-stone-900">Statut visible sur le portail candidat</p>
                                     <p class="mt-2 text-xs leading-relaxed text-stone-600">Choisissez si le bandeau reprend automatiquement l’étape du parcours (colonne de gauche du suivi) ou un libellé fixe de votre choix. Le référent du dossier et le délai de réponse visé s’affichent aussi côté candidat.</p>
-                                    <div class="mt-4 space-y-3">
-                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-[#faf8f3] p-3 transition hover:border-stone-300">
-                                            <input type="radio" name="candidate_portal_status_mode" value="steps" class="mt-1 h-4 w-4 border-stone-400 text-[#1c2d41]" <?= $portalStatusModeForm === 'steps' ? 'checked' : '' ?>>
+                                    <fieldset class="mt-5 space-y-3">
+                                        <legend class="sr-only">Mode d’affichage du statut</legend>
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-3.5 shadow-sm transition hover:border-stone-300">
+                                            <input type="radio" name="candidate_portal_status_mode" value="steps" class="mt-1 h-4 w-4 border-stone-400 text-emerald-700" <?= $portalStatusModeForm === 'steps' ? 'checked' : '' ?>>
                                             <span>
                                                 <span class="block text-sm font-bold text-stone-900">Aligné sur les étapes</span>
                                                 <span class="mt-0.5 block text-xs leading-relaxed text-stone-600">Le titre principal reprend l’étape en cours ; le statut métier du dossier apparaît en sous-texte.</span>
                                             </span>
                                         </label>
-                                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-[#faf8f3] p-3 transition hover:border-stone-300">
-                                            <input type="radio" name="candidate_portal_status_mode" value="manual" class="mt-1 h-4 w-4 border-stone-400 text-[#1c2d41]" <?= $portalStatusModeForm === 'manual' ? 'checked' : '' ?>>
+                                        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-white p-3.5 shadow-sm transition hover:border-stone-300">
+                                            <input type="radio" name="candidate_portal_status_mode" value="manual" class="mt-1 h-4 w-4 border-stone-400 text-emerald-700" <?= $portalStatusModeForm === 'manual' ? 'checked' : '' ?>>
                                             <span>
                                                 <span class="block text-sm font-bold text-stone-900">Libellé personnalisé</span>
                                                 <span class="mt-0.5 block text-xs leading-relaxed text-stone-600">Vous rédigez le message principal et choisissez la couleur du bandeau (utile pour une consigne locale).</span>
                                             </span>
                                         </label>
-                                    </div>
-                                    <div class="mt-4 space-y-2">
-                                        <label for="candidate_portal_status_manual_text" class="block text-[11px] font-bold uppercase tracking-wide text-stone-500">Texte affiché (mode personnalisé)</label>
-                                        <textarea id="candidate_portal_status_manual_text" name="candidate_portal_status_manual_text" rows="2" maxlength="280" class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"><?= htmlspecialchars($portalStatusManualText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                        <p class="text-[11px] text-stone-500">Obligatoire uniquement si « Libellé personnalisé » est coché. 280 caractères maximum.</p>
-                                    </div>
-                                    <div class="mt-4">
-                                        <label for="candidate_portal_status_manual_band" class="block text-[11px] font-bold uppercase tracking-wide text-stone-500">Couleur du bandeau</label>
-                                        <select id="candidate_portal_status_manual_band" name="candidate_portal_status_manual_band" class="mt-1 w-full max-w-md rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
-                                            <?php
-                                            $bandOpts = [
-                                                'amber' => 'Ambre — en cours / attention modérée',
-                                                'emerald' => 'Vert — message plutôt positif',
-                                                'rose' => 'Rose — refus ou point bloquant',
-                                                'slate' => 'Gris — neutre',
-                                                'sky' => 'Bleu ciel — information',
-                                            ];
-                                            foreach ($bandOpts as $val => $lab):
-                                                ?>
-                                            <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $portalStatusManualBandForm === $val ? 'selected' : '' ?>><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                    </fieldset>
+
+                                    <div class="mt-5 rounded-xl border border-emerald-200/70 bg-emerald-50/40 p-4 sm:p-5">
+                                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-900/70">Réglages du libellé personnalisé</p>
+                                        <p class="mt-1.5 text-xs leading-relaxed text-stone-600">Ces champs s’appliquent uniquement lorsque « Libellé personnalisé » est sélectionné ci-dessus.</p>
+
+                                        <div class="mt-4 space-y-2">
+                                            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                                                <label for="candidate_portal_status_manual_text" class="block text-[11px] font-bold uppercase tracking-wide text-stone-600">Texte affiché</label>
+                                                <span class="text-[11px] font-medium text-stone-500" id="candidate_portal_status_manual_text_hint_len">280 caractères maximum</span>
+                                            </div>
+                                            <textarea id="candidate_portal_status_manual_text" name="candidate_portal_status_manual_text" rows="2" maxlength="280" aria-describedby="candidate_portal_status_manual_text_hint candidate_portal_status_manual_text_hint_len" class="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm text-stone-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"><?= htmlspecialchars($portalStatusManualText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                            <p id="candidate_portal_status_manual_text_hint" class="text-[11px] leading-relaxed text-stone-500">Obligatoire uniquement si le mode libellé personnalisé est actif. Ce texte apparaît en titre principal sur le bandeau du candidat.</p>
+                                        </div>
+
+                                        <fieldset class="mt-5">
+                                            <legend class="block text-[11px] font-bold uppercase tracking-wide text-stone-600">Couleur du bandeau</legend>
+                                            <p id="candidate_portal_status_manual_band_hint" class="mt-1 text-[11px] leading-relaxed text-stone-500">Pastille colorée en haut de la carte statut côté candidat. Sans effet en mode « Aligné sur les étapes ».</p>
+                                            <div class="portal-band-picker mt-3" role="radiogroup" aria-describedby="candidate_portal_status_manual_band_hint">
+                                                <?php foreach ($bandOpts as $val => $meta): ?>
+                                                    <?php
+                                                    $bandId = 'candidate_portal_status_manual_band_' . $val;
+                                                    $isBandChecked = $portalStatusManualBandForm === $val;
+                                                    ?>
+                                                    <label class="portal-band-option" for="<?= htmlspecialchars($bandId, ENT_QUOTES, 'UTF-8') ?>" style="--band-swatch: <?= htmlspecialchars($meta['swatch'], ENT_QUOTES, 'UTF-8') ?>; --band-ring: <?= htmlspecialchars($meta['ring'], ENT_QUOTES, 'UTF-8') ?>;">
+                                                        <input type="radio" id="<?= htmlspecialchars($bandId, ENT_QUOTES, 'UTF-8') ?>" name="candidate_portal_status_manual_band" value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" class="portal-band-option__input" <?= $isBandChecked ? 'checked' : '' ?>>
+                                                        <span class="portal-band-option__swatch" aria-hidden="true"></span>
+                                                        <span class="portal-band-option__copy">
+                                                            <span class="portal-band-option__label"><?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                            <span class="portal-band-option__hint"><?= htmlspecialchars($meta['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        </span>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </fieldset>
                                     </div>
                                 </div>
                             <?php else: ?>
-                                <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Le choix entre statut automatique et libellé personnalisé n’est pas encore disponible sur cette installation. Une mise à jour technique côté serveur est nécessaire.</p>
+                                <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Le choix entre statut automatique et libellé personnalisé n’est pas encore disponible sur cette installation. Une mise à jour côté serveur est nécessaire.</p>
                             <?php endif; ?>
                             <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 text-sm font-bold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-2">Enregistrer les options</button>
                         </form>
                     <?php endif; ?>
                     <?php if ($candidatePortalUploadsReady && $candidatePortalAttachments !== []): ?>
                         <div class="mt-8 border-t border-stone-200 pt-6">
-                            <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Pièces reçues via le portail</h3>
-                            <ul class="mt-3 divide-y divide-stone-100 rounded-xl border border-stone-200 bg-white">
+                            <div class="flex flex-wrap items-end justify-between gap-2">
+                                <div>
+                                    <h3 class="text-xs font-bold uppercase tracking-[0.2em] text-stone-500">Pièces reçues via le portail</h3>
+                                    <p class="mt-1 text-xs text-stone-600"><?= count($candidatePortalAttachments) ?> élément<?= count($candidatePortalAttachments) > 1 ? 's' : '' ?> transmis par le candidat depuis le lien de suivi.</p>
+                                </div>
+                            </div>
+                            <ul class="mt-4 grid gap-3">
                                 <?php foreach ($candidatePortalAttachments as $att): ?>
                                     <?php
                                     $aid = (int) ($att['id'] ?? 0);
@@ -621,19 +860,29 @@ $recapMeta = match ($statusRaw) {
                                     $hum = $sz >= 1048576 ? round($sz / 1048576, 1) . ' Mo' : ($sz >= 1024 ? round($sz / 1024, 1) . ' ko' : (string) max(0, $sz) . ' o');
                                     $when = trim((string) ($att['created_at'] ?? ''));
                                     $whenFmt = $when !== '' ? date('d/m/Y H:i', strtotime($when) ?: time()) : '—';
+                                    $isAudio = $k === 'audio';
                                     ?>
-                                    <li class="flex flex-col gap-3 px-4 py-3 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                                        <div class="min-w-0 flex-1">
-                                            <p class="font-semibold text-stone-900"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <p class="mt-0.5 text-xs text-stone-500"><?= $k === 'audio' ? 'Audio' : 'Document' ?> · <?= htmlspecialchars($hum, ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php if ($k === 'audio'): ?>
-                                                <div class="mt-3 max-w-md rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-fuchsia-50 p-3">
-                                                    <p class="text-[10px] font-black uppercase tracking-wider text-violet-900/80">Lecture</p>
-                                                    <audio controls preload="metadata" src="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
-                                                </div>
-                                            <?php endif; ?>
+                                    <li class="portal-attachment-card flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between">
+                                        <div class="flex min-w-0 flex-1 gap-3">
+                                            <span class="portal-attachment-card__icon<?= $isAudio ? ' portal-attachment-card__icon--audio' : '' ?>" aria-hidden="true">
+                                                <?php if ($isAudio): ?>
+                                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10.5a3 3 0 1 1-2-2.83V7l8-2v6.5a3 3 0 1 1-2-2.83V5.2L12 6.2V3z"/></svg>
+                                                <?php else: ?>
+                                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+                                                <?php endif; ?>
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate font-semibold text-stone-900" title="<?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($fn, ENT_QUOTES, 'UTF-8') ?></p>
+                                                <p class="mt-0.5 text-xs text-stone-500"><?= $isAudio ? 'Enregistrement audio' : 'Document' ?> · <?= htmlspecialchars($hum, ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($whenFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                                                <?php if ($isAudio): ?>
+                                                    <div class="mt-3 max-w-md rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50 to-slate-50 p-3">
+                                                        <p class="text-[10px] font-black uppercase tracking-wider text-emerald-900/75">Lecture</p>
+                                                        <audio controls preload="metadata" src="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/piece/' . $aid . '?inline=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-full rounded-lg"></audio>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/piece/' . $aid), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0 self-start rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-900 transition hover:bg-slate-200"><?= $k === 'audio' ? 'Télécharger l’audio' : 'Télécharger' ?></a>
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/piece/' . $aid), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 self-start items-center justify-center rounded-lg border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-900 transition hover:border-slate-400 hover:bg-white"><?= $isAudio ? 'Télécharger l’audio' : 'Télécharger' ?></a>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
@@ -641,104 +890,273 @@ $recapMeta = match ($statusRaw) {
                     <?php endif; ?>
                 </div>
             </section>
+            <?php endif; ?>
 
-            <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
-                <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
-                    <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Rubrique 1</p>
-                    <h2 class="mt-1 text-base font-black tracking-tight text-stone-900">Identité &amp; réception</h2>
+            <?php
+            $identityFullName = trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? ''));
+            if ($identityFullName === '') {
+                $identityFullName = '—';
+            }
+            $submittedViaRaw = strtolower(trim((string) ($e['submitted_via'] ?? '')));
+            $submittedViaHuman = match ($submittedViaRaw) {
+                'guest' => 'Invité',
+                'account' => 'Compte connecté',
+                'preset' => 'Profil enregistré',
+                '' => '—',
+                default => 'Autre canal',
+            };
+            $identityInstrItems = [];
+            foreach ($enlistmentTimeline as $instrEv) {
+                if (!is_array($instrEv)) {
+                    continue;
+                }
+                $instrMeta = is_array($instrEv['metadata'] ?? null) ? $instrEv['metadata'] : [];
+                $followupAct = (string) ($instrMeta['followup_action'] ?? '');
+                $toStatus = (string) ($instrMeta['to_status'] ?? '');
+                $stepCode = (string) ($instrEv['step_code'] ?? '');
+                $kind = '';
+                $label = '';
+                $pill = 'dossier-instr-pill--note';
+                if ($followupAct === 'interview') {
+                    $kind = 'interview';
+                    $label = 'Demande d’entretien';
+                    $pill = 'dossier-instr-pill--interview';
+                } elseif ($followupAct === 'pending') {
+                    $kind = 'pending';
+                    $label = 'Mise en attente';
+                    $pill = 'dossier-instr-pill--pending';
+                } elseif ($stepCode === 'decision' || $toStatus !== '') {
+                    $kind = 'decision';
+                    $st = $toStatus !== '' ? $toStatus : $statusRaw;
+                    $label = match ($st) {
+                        'reviewed' => 'Candidature acceptée',
+                        'rejected' => 'Candidature refusée',
+                        'blocked' => 'Non admis',
+                        default => 'Décision enregistrée',
+                    };
+                    $pill = match ($st) {
+                        'reviewed' => 'dossier-instr-pill--accept',
+                        'rejected' => 'dossier-instr-pill--reject',
+                        'blocked' => 'dossier-instr-pill--block',
+                        default => 'dossier-instr-pill--note',
+                    };
+                } else {
+                    continue;
+                }
+                $actorIdEv = (int) ($instrEv['actor_user_id'] ?? 0);
+                $actorNameEv = $actorIdEv > 0
+                    ? ($timelineActorLabels[$actorIdEv] ?? null)
+                    : null;
+                $createdEv = trim((string) ($instrEv['created_at'] ?? ''));
+                $identityInstrItems[] = [
+                    'kind' => $kind,
+                    'label' => $label,
+                    'pill' => $pill,
+                    'body' => trim((string) ($instrEv['body'] ?? '')),
+                    'at' => $createdEv !== '' ? date('d/m/Y à H:i', strtotime($createdEv) ?: time()) : null,
+                    'actor' => $actorNameEv,
+                ];
+            }
+            if ($identityInstrItems === []) {
+                $rawInstrComment = trim((string) ($e['reviewer_comment'] ?? ''));
+                if ($rawInstrComment !== '') {
+                    $instrChunks = preg_split("/\n{2,}/u", $rawInstrComment) ?: [];
+                    foreach ($instrChunks as $chunk) {
+                        $chunk = trim((string) $chunk);
+                        if ($chunk === '') {
+                            continue;
+                        }
+                        $kind = 'note';
+                        $label = 'Note d’instruction';
+                        $pill = 'dossier-instr-pill--note';
+                        $body = $chunk;
+                        if (preg_match('/^\[DEMANDE ENTRETIEN\]\s*/u', $chunk) === 1) {
+                            $kind = 'interview';
+                            $label = 'Demande d’entretien';
+                            $pill = 'dossier-instr-pill--interview';
+                            $body = trim((string) preg_replace('/^\[DEMANDE ENTRETIEN\]\s*/u', '', $chunk));
+                        } elseif (preg_match('/^\[MISE EN ATTENTE\]\s*/u', $chunk) === 1) {
+                            $kind = 'pending';
+                            $label = 'Mise en attente';
+                            $pill = 'dossier-instr-pill--pending';
+                            $body = trim((string) preg_replace('/^\[MISE EN ATTENTE\]\s*/u', '', $chunk));
+                        } elseif (in_array($statusRaw, ['reviewed', 'rejected', 'blocked'], true)) {
+                            $kind = 'decision';
+                            $label = match ($statusRaw) {
+                                'reviewed' => 'Candidature acceptée',
+                                'rejected' => 'Candidature refusée',
+                                'blocked' => 'Non admis',
+                                default => 'Décision enregistrée',
+                            };
+                            $pill = match ($statusRaw) {
+                                'reviewed' => 'dossier-instr-pill--accept',
+                                'rejected' => 'dossier-instr-pill--reject',
+                                'blocked' => 'dossier-instr-pill--block',
+                                default => 'dossier-instr-pill--note',
+                            };
+                        }
+                        $identityInstrItems[] = [
+                            'kind' => $kind,
+                            'label' => $label,
+                            'pill' => $pill,
+                            'body' => $body,
+                            'at' => null,
+                            'actor' => null,
+                        ];
+                    }
+                }
+            }
+            $showIdentityInstruction = $identityInstrItems !== []
+                || !empty($e['reviewed_at'])
+                || !empty($e['reviewed_by'])
+                || !empty($e['reviewer_comment']);
+            $cslug = trim((string) ($communitySlug ?? ''));
+            $avisSlug = $linkedRo ? trim((string) ($linkedRo['public_page_slug'] ?? '')) : '';
+            ?>
+            <section id="identite-reception" class="dossier-identity scroll-mt-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40">
+                <div class="border-b border-slate-100 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 px-6 py-5 text-white sm:px-8">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300/90">Rubrique 1</p>
+                    <h2 class="mt-1 text-xl font-black tracking-tight text-white">Identité &amp; réception</h2>
+                    <p class="mt-2 max-w-2xl text-sm leading-relaxed text-white/65">Coordonnées du candidat et historique des actions d’instruction visibles sur ce dossier.</p>
                 </div>
-                <div class="divide-y divide-stone-100">
+
+                <div class="space-y-6 p-5 sm:p-6 sm:px-8">
                     <?php if ($isInternalOpeningApplication): ?>
-                    <div class="px-6 py-4 bg-violet-50/90 border-b border-violet-100">
-                        <p class="text-xs font-bold uppercase tracking-wide text-violet-900">Candidature interne ciblée</p>
+                    <div class="dossier-identity__banner rounded-xl border border-violet-200 bg-violet-50 px-4 py-3">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-800">Candidature interne ciblée</p>
                         <p class="mt-1 text-sm leading-relaxed text-violet-950">Membre déjà rattaché à cette communauté, dossier positionné sur un avis de poste publié ici.</p>
                     </div>
                     <?php endif; ?>
-                    <div class="px-6 py-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Nom complet</p>
-                        <p class="mt-1 text-lg font-semibold text-stone-900"><?= htmlspecialchars(trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: '—') ?></p>
-                    </div>
-                    <div class="grid gap-0 sm:grid-cols-2 sm:divide-x sm:divide-stone-100">
-                        <div class="px-6 py-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Courriel</p>
-                            <p class="mt-1 break-all text-stone-800"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
+
+                    <div class="dossier-identity__grid grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div class="dossier-identity__field rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                            <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Nom complet</p>
+                            <p class="mt-2 text-base font-bold leading-snug text-slate-900"><?= htmlspecialchars($identityFullName, ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
-                        <div class="px-6 py-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Indicatif</p>
-                            <p class="mt-1 text-stone-800"><?= htmlspecialchars((string) ($e['callsign'] ?? '—')) ?></p>
+                        <div class="dossier-identity__field rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                            <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Courriel</p>
+                            <p class="mt-2 break-all text-sm font-semibold leading-snug text-slate-800"><?= htmlspecialchars((string) ($e['email'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
-                    </div>
-                    <div class="px-6 py-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Compte portail</p>
-                        <div class="mt-1">
-                            <?php if ($submitterId > 0): ?>
-                                <a href="<?= htmlspecialchars(url('personnel/' . $submitterId)) ?>" class="font-semibold text-[#1c4d6e] underline decoration-[#1c4d6e]/30 underline-offset-2 hover:decoration-[#1c4d6e]">Ouvrir la fiche membre liée</a>
-                                <?php if ($isInternalOpeningApplication): ?>
-                                    <p class="mt-2 text-sm text-stone-700 leading-relaxed">Compte membre de la communauté — candidature associée à un avis interne (voir ci-dessous).</p>
+                        <div class="dossier-identity__field rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                            <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Indicatif</p>
+                            <p class="mt-2 text-sm font-semibold leading-snug text-slate-800"><?= htmlspecialchars((string) ($e['callsign'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <div class="dossier-identity__field dossier-identity__field--portal rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-4 sm:col-span-2 xl:col-span-1">
+                            <p class="dossier-identity__label text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-800/80">Compte portail</p>
+                            <div class="mt-2 space-y-2">
+                                <?php if ($submitterId > 0): ?>
+                                    <a href="<?= htmlspecialchars(url('personnel/' . $submitterId), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex text-sm font-bold text-emerald-900 underline decoration-emerald-700/30 underline-offset-2 transition hover:decoration-emerald-800">Ouvrir la fiche membre liée</a>
+                                    <?php if ($isInternalOpeningApplication): ?>
+                                        <p class="text-xs leading-relaxed text-slate-700">Compte membre de la communauté — candidature associée à un avis interne.</p>
+                                    <?php else: ?>
+                                        <p class="text-xs leading-relaxed text-slate-600">Soumission avec compte — aucun avis de poste précis au dépôt.</p>
+                                    <?php endif; ?>
+                                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">Canal : <?= htmlspecialchars($submittedViaHuman, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php elseif ($linkedRo !== null): ?>
+                                    <p class="text-sm leading-relaxed text-slate-700">Candidature reçue sans compte au moment du dépôt — dossier relié à un avis de poste.</p>
                                 <?php else: ?>
-                                    <p class="mt-2 text-sm text-stone-600 leading-relaxed">Soumission avec compte — aucun avis de poste précis au dépôt.</p>
+                                    <p class="text-sm text-slate-500">Candidature invitée (sans compte au dépôt)</p>
                                 <?php endif; ?>
-                                <span class="mt-2 block text-xs text-stone-500">Canal de soumission : <?= htmlspecialchars((string) ($e['submitted_via'] ?? '—')) ?></span>
-                            <?php elseif ($linkedRo !== null): ?>
-                                <span class="text-stone-700">Candidature reçue sans compte au moment du dépôt — dossier relié à un avis de poste.</span>
-                            <?php else: ?>
-                                <span class="text-stone-500">Candidature invitée (sans compte au dépôt)</span>
-                            <?php endif; ?>
+                            </div>
                         </div>
                     </div>
+
                     <?php if ($transmissionLines !== []): ?>
-                    <div class="px-6 py-4 bg-[#faf8f3]">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-600">Éléments transmis par le candidat</p>
-                        <ul class="mt-2 list-disc pl-5 text-sm text-stone-800 space-y-1">
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Éléments transmis par le candidat</p>
+                        <ul class="mt-3 space-y-2">
                             <?php foreach ($transmissionLines as $line): ?>
-                                <li><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></li>
+                                <li class="flex gap-2 text-sm text-slate-800">
+                                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                                    <span><?= htmlspecialchars($line, ENT_QUOTES, 'UTF-8') ?></span>
+                                </li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
                     <?php endif; ?>
-                    <?php if (!empty($e['reviewed_at']) || !empty($e['reviewer_comment']) || !empty($e['reviewed_by'])): ?>
-                    <div class="border-t border-stone-200 bg-[#faf8f3]/60 px-6 py-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Instruction du dossier</p>
-                        <div class="mt-2 text-sm text-stone-800">
-                            <?php if (!empty($e['reviewed_at'])): ?>
-                                <p class="tabular-nums font-medium"><?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $e['reviewed_at']))) ?></p>
+
+                    <?php if ($showIdentityInstruction): ?>
+                    <div class="dossier-instr rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4 sm:p-5">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Instruction du dossier</p>
+                                <p class="mt-1 text-sm text-slate-600">Actions et messages consignés pendant l’instruction.</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <?php if (!empty($e['reviewed_at'])): ?>
+                                    <span class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-medium tabular-nums text-slate-700"><?= htmlspecialchars(date('d/m/Y à H:i', strtotime((string) $e['reviewed_at'])), ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                                <?php if (!empty($e['reviewed_by'])): ?>
+                                    <span class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-600">Dernière action : <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <?php if ($identityInstrItems !== []): ?>
+                        <ol class="dossier-instr__timeline mt-5 space-y-0">
+                            <?php foreach ($identityInstrItems as $instrItem): ?>
+                                <li class="dossier-instr__item relative flex gap-3 pb-5 last:pb-0">
+                                    <span class="dossier-instr__rail absolute bottom-0 left-[0.55rem] top-3 w-px bg-slate-200" aria-hidden="true"></span>
+                                    <span class="dossier-instr__dot relative z-[1] mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500 ring-4 ring-slate-50" aria-hidden="true"></span>
+                                    <div class="min-w-0 flex-1 rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <span class="dossier-instr-pill <?= htmlspecialchars((string) $instrItem['pill'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $instrItem['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if (!empty($instrItem['at'])): ?>
+                                                <span class="text-[11px] font-medium tabular-nums text-slate-500"><?= htmlspecialchars((string) $instrItem['at'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($instrItem['actor'])): ?>
+                                                <span class="text-[11px] text-slate-500">· <?= htmlspecialchars((string) $instrItem['actor'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (trim((string) ($instrItem['body'] ?? '')) !== ''): ?>
+                                            <p class="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800"><?= htmlspecialchars((string) $instrItem['body'], ENT_QUOTES, 'UTF-8') ?></p>
+                                        <?php endif; ?>
+                                    </div>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
+                        <?php elseif (!empty($e['reviewer_comment'])): ?>
+                            <?php
+                            $instrFallback = str_replace(
+                                ['[MISE EN ATTENTE]', '[DEMANDE ENTRETIEN]'],
+                                ['Mise en attente', 'Demande d’entretien'],
+                                (string) $e['reviewer_comment']
+                            );
+                            ?>
+                            <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-800 shadow-inner whitespace-pre-wrap"><?= htmlspecialchars($instrFallback, ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php else: ?>
+                            <p class="mt-4 text-sm text-slate-500">Aucune note d’instruction pour le moment.</p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($e['recruitment_preset_id']) || $linkedRo !== null): ?>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <?php if (!empty($e['recruitment_preset_id'])): ?>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Modèle de formulaire utilisé</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-800">Formulaire type n°<?= (int) $e['recruitment_preset_id'] ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($linkedRo !== null): ?>
+                        <div class="rounded-xl border border-sky-200/80 bg-sky-50/60 p-4 <?= empty($e['recruitment_preset_id']) ? 'sm:col-span-2' : '' ?>">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-800/80">Avis de poste associé</p>
+                            <p class="mt-2 font-semibold text-slate-900"><?= htmlspecialchars((string) ($linkedRo['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php if (trim((string) ($linkedRo['reference_public'] ?? '')) !== ''): ?>
+                                <p class="mt-1 text-sm text-slate-600">Référence affichée : <?= htmlspecialchars((string) $linkedRo['reference_public'], ENT_QUOTES, 'UTF-8') ?></p>
                             <?php endif; ?>
-                            <?php if (!empty($e['reviewed_by'])): ?>
-                                <p class="mt-1 text-xs text-stone-500">Référent ou dernière action : <?= htmlspecialchars($assigneeLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php endif; ?>
-                            <?php if (!empty($e['reviewer_comment'])): ?>
-                                <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4 text-stone-800 shadow-inner whitespace-pre-wrap"><?= htmlspecialchars((string) $e['reviewer_comment']) ?></div>
+                            <?php if ($cslug !== '' && $avisSlug !== ''): ?>
+                                <a href="<?= htmlspecialchars(url('c/' . rawurlencode($cslug) . '/avis/' . rawurlencode($avisSlug)), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-sm font-semibold text-sky-800 underline hover:text-sky-950" target="_blank" rel="noopener">Ouvrir la fiche publique</a>
                             <?php endif; ?>
                         </div>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (!empty($e['recruitment_preset_id'])): ?>
-                    <div class="px-6 py-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Modèle de formulaire utilisé</p>
-                        <p class="mt-1 text-stone-700">Référence interne n°<?= (int) $e['recruitment_preset_id'] ?></p>
-                    </div>
-                    <?php endif; ?>
-                    <?php
-                    $cslug = trim((string) ($communitySlug ?? ''));
-                    $avisSlug = $linkedRo ? trim((string) ($linkedRo['public_page_slug'] ?? '')) : '';
-                    ?>
-                    <?php if ($linkedRo !== null): ?>
-                    <div class="px-6 py-4 bg-sky-50/50">
-                        <p class="text-xs font-bold uppercase tracking-wide text-stone-500">Avis de poste associé</p>
-                        <p class="mt-1 font-semibold text-stone-900"><?= htmlspecialchars((string) ($linkedRo['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php if (trim((string) ($linkedRo['reference_public'] ?? '')) !== ''): ?>
-                            <p class="mt-1 text-sm text-stone-600">Référence affichée : <?= htmlspecialchars((string) $linkedRo['reference_public'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                        <?php if ($cslug !== '' && $avisSlug !== ''): ?>
-                            <a href="<?= htmlspecialchars(url('c/' . rawurlencode($cslug) . '/avis/' . rawurlencode($avisSlug)), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 inline-block text-sm font-semibold text-sky-800 underline hover:text-sky-950" target="_blank" rel="noopener">Ouvrir la fiche publique</a>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>
             </section>
 
-            <?php if ($statusRaw === 'reviewed'): ?>
-            <section class="overflow-hidden rounded-2xl border border-sky-200/90 bg-white shadow-sm">
+            <?php if ($statusRaw === 'reviewed' && !$isDossierClos): ?>
+            <section id="rattachement-membre" class="scroll-mt-28 overflow-hidden rounded-2xl border border-sky-200/90 bg-white shadow-sm">
                 <div class="border-b border-sky-100 bg-sky-50/90 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-sky-800/80">Après décision</p>
                     <h2 class="mt-1 text-base font-black tracking-tight text-sky-950">Rattachement au compte membre</h2>
@@ -764,46 +1182,133 @@ $recapMeta = match ($statusRaw) {
 
             <?php if ($statusRaw === 'submitted'): ?>
             <?php
+            $decisionPreselect = ($instructionFollowup === 'pending' || $instructionFollowup === 'interview')
+                ? $instructionFollowup
+                : 'accept';
             $decisionChoices = [
-                ['value' => 'accept', 'title' => 'Accepter', 'hint' => 'La candidature est retenue ; le candidat reçoit une confirmation.', 'card' => 'enlist-decision-card enlist-decision-card--accept'],
-                ['value' => 'pending', 'title' => 'Mettre en attente', 'hint' => 'Le dossier reste à traiter ; le candidat est informé du délai.', 'card' => 'enlist-decision-card enlist-decision-card--pending'],
-                ['value' => 'interview', 'title' => 'Demander un entretien', 'hint' => 'Proposer un échange ; vous pouvez indiquer un créneau ci-dessous.', 'card' => 'enlist-decision-card enlist-decision-card--interview'],
-                ['value' => 'reject', 'title' => 'Refuser', 'hint' => 'Décision négative avec courriel au candidat.', 'card' => 'enlist-decision-card enlist-decision-card--reject'],
-                ['value' => 'block', 'title' => 'Marquer non admis', 'hint' => 'Clôt définitivement cette candidature pour l’organisation.', 'card' => 'enlist-decision-card enlist-decision-card--block'],
+                [
+                    'value' => 'accept',
+                    'title' => 'Accepter',
+                    'hint' => 'La candidature est retenue.',
+                    'effect' => 'Le dossier passe en accepté. Le candidat reçoit une confirmation et le lien de suivi.',
+                    'tone' => 'Ton chaleureux : bienvenue, prochaines étapes.',
+                    'btn' => 'Accepter et prévenir',
+                    'icon' => 'check',
+                    'card' => 'enlist-decision-card enlist-decision-card--accept',
+                ],
+                [
+                    'value' => 'pending',
+                    'title' => 'Mettre en attente',
+                    'hint' => 'Le dossier reste ouvert.',
+                    'effect' => 'Le dossier reste dans la file. Le candidat est informé qu’une suite arrivera.',
+                    'tone' => 'Ton rassurant : délai, ce qui se passe ensuite.',
+                    'btn' => 'Mettre en attente et prévenir',
+                    'icon' => 'pause',
+                    'card' => 'enlist-decision-card enlist-decision-card--pending',
+                ],
+                [
+                    'value' => 'interview',
+                    'title' => 'Demander un entretien',
+                    'hint' => 'Proposer un échange.',
+                    'effect' => 'Le dossier reste à traiter. Vous pouvez indiquer un créneau dans le courriel.',
+                    'tone' => 'Ton professionnel : invitation, modalités, créneau.',
+                    'btn' => 'Proposer l’entretien et prévenir',
+                    'icon' => 'chat',
+                    'card' => 'enlist-decision-card enlist-decision-card--interview',
+                ],
+                [
+                    'value' => 'reject',
+                    'title' => 'Refuser',
+                    'hint' => 'Décision négative.',
+                    'effect' => 'Le dossier est clos en refus. Le candidat reçoit le courriel et le suivi.',
+                    'tone' => 'Ton clair et respectueux : motif si utile, sans brusquer.',
+                    'btn' => 'Refuser et prévenir',
+                    'icon' => 'x',
+                    'card' => 'enlist-decision-card enlist-decision-card--reject',
+                ],
+                [
+                    'value' => 'block',
+                    'title' => 'Non admis',
+                    'hint' => 'Clôture définitive.',
+                    'effect' => 'Cette candidature est clôturée pour l’organisation. Le candidat en est informé.',
+                    'tone' => 'Ton ferme et factuel : décision définitive.',
+                    'btn' => 'Marquer non admis et prévenir',
+                    'icon' => 'ban',
+                    'card' => 'enlist-decision-card enlist-decision-card--block',
+                ],
+            ];
+            $decisionBtnLabels = [];
+            $decisionToneHints = [];
+            foreach ($decisionChoices as $chRow) {
+                $decisionBtnLabels[$chRow['value']] = $chRow['btn'];
+                $decisionToneHints[$chRow['value']] = $chRow['tone'];
+            }
+            $decisionIcons = [
+                'check' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9.2 16.6 4.9 12.3l1.4-1.4 2.9 2.9 7.5-7.5 1.4 1.4z"/></svg>',
+                'pause' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>',
+                'chat' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>',
+                'x' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6z"/></svg>',
+                'ban' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 0 1 6.3 12.9L7.1 5.7A7.9 7.9 0 0 1 12 4zM5.7 7.1 18.9 20.3A8 8 0 0 1 5.7 7.1z"/></svg>',
             ];
             ?>
-            <section id="instruction-dossier" class="scroll-mt-28 overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm">
-                <div class="border-b border-amber-100 bg-amber-50 px-6 py-4 sm:px-8">
+            <section id="instruction-dossier" class="enlist-decision-panel scroll-mt-28 overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm">
+                <div class="enlist-decision-panel__head border-b border-amber-100 bg-amber-50 px-5 py-4 sm:px-6">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-900/70">Instruction</p>
                     <h2 class="mt-1 text-lg font-black tracking-tight text-amber-950 sm:text-xl">Décision à enregistrer</h2>
-                    <p class="mt-2 max-w-3xl text-sm leading-relaxed text-amber-950/85">Choisissez l’issue, rédigez si besoin le texte du courriel, puis validez. Chaque validation envoie un message au candidat avec le lien de suivi.</p>
+                    <p class="mt-1.5 max-w-3xl text-sm leading-relaxed text-amber-950/85">Choisissez l’issue, ajoutez un message si besoin, puis validez. Chaque validation envoie un courriel au candidat avec le lien de suivi.</p>
                 </div>
-                <div class="p-6 sm:p-8">
-                    <form id="instruction-dossier-form" method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/decision')) ?>" class="space-y-8">
+                <div class="enlist-decision-panel__body p-5 sm:p-6">
+                    <?php if ($instructionFollowup === 'pending'): ?>
+                        <div class="enlist-decision-status-banner enlist-decision-status-banner--pending" role="status">
+                            <span class="enlist-decision-status-banner__mark" aria-hidden="true"></span>
+                            <div>
+                                <p class="enlist-decision-status-banner__title">Dossier actuellement en attente</p>
+                                <p class="enlist-decision-status-banner__text">Une mise en attente a déjà été envoyée. Vous pouvez la confirmer, passer à un entretien, ou conclure (accepter / refuser / non admis).</p>
+                            </div>
+                        </div>
+                    <?php elseif ($instructionFollowup === 'interview'): ?>
+                        <div class="enlist-decision-status-banner enlist-decision-status-banner--interview" role="status">
+                            <span class="enlist-decision-status-banner__mark" aria-hidden="true"></span>
+                            <div>
+                                <p class="enlist-decision-status-banner__title">Entretien déjà proposé</p>
+                                <p class="enlist-decision-status-banner__text">Une demande d’entretien est active. Vous pouvez renvoyer un créneau, remettre en attente, ou conclure la candidature.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <form id="instruction-dossier-form" method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/decision')) ?>" class="enlist-decision-form space-y-5">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
 
-                        <div class="space-y-4">
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-900/60">Étape 1</p>
-                                <h3 class="mt-1 text-base font-black text-amber-950">Choisir l’issue</h3>
-                                <p class="mt-1 max-w-2xl text-sm text-amber-950/80">Une seule issue à la fois. Relisez le libellé avant d’envoyer : le candidat le voit dans son courriel.</p>
+                        <div class="enlist-decision-step">
+                            <div class="enlist-decision-step__head">
+                                <p class="enlist-decision-step__num">Étape 1</p>
+                                <h3 class="enlist-decision-step__title">Choisir l’issue</h3>
+                                <p class="enlist-decision-step__lead">Une seule issue à la fois. Le libellé choisi apparaît dans le courriel au candidat.</p>
                             </div>
-                            <fieldset>
+                            <fieldset class="enlist-decision-fieldset">
                                 <legend class="sr-only">Issue pour cette candidature</legend>
-                                <div class="grid gap-3 sm:grid-cols-2 enlist-decision-choice-grid" role="radiogroup" aria-label="Issue pour cette candidature">
-                                    <?php foreach ($decisionChoices as $idx => $ch): ?>
+                                <div class="enlist-decision-choice-grid" role="radiogroup" aria-label="Issue pour cette candidature">
+                                    <?php foreach ($decisionChoices as $ch): ?>
+                                        <?php
+                                        $isChecked = $ch['value'] === $decisionPreselect;
+                                        $iconHtml = $decisionIcons[$ch['icon']] ?? '';
+                                        ?>
                                         <label class="<?= htmlspecialchars($ch['card'], ENT_QUOTES, 'UTF-8') ?>">
-                                            <span class="flex items-start gap-3">
+                                            <span class="enlist-decision-card__row">
                                                 <input
                                                     type="radio"
                                                     name="decision"
                                                     value="<?= htmlspecialchars($ch['value'], ENT_QUOTES, 'UTF-8') ?>"
-                                                    class="enlist-decision-choice mt-1 h-4 w-4 shrink-0 border-stone-300 text-amber-700 focus:ring-amber-500/40"
-                                                    <?= $idx === 0 ? 'checked' : '' ?>
+                                                    class="enlist-decision-choice"
+                                                    data-btn-label="<?= htmlspecialchars($ch['btn'], ENT_QUOTES, 'UTF-8') ?>"
+                                                    data-tone="<?= htmlspecialchars($ch['tone'], ENT_QUOTES, 'UTF-8') ?>"
+                                                    <?= $isChecked ? 'checked' : '' ?>
                                                 >
-                                                <span class="min-w-0">
-                                                    <span class="block text-sm font-black text-stone-900"><?= htmlspecialchars($ch['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                    <span class="mt-1 block text-xs leading-relaxed text-stone-600"><?= htmlspecialchars($ch['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                <span class="enlist-decision-card__icon" aria-hidden="true"><?= $iconHtml ?></span>
+                                                <span class="enlist-decision-card__copy">
+                                                    <span class="enlist-decision-card__title"><?= htmlspecialchars($ch['title'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span class="enlist-decision-card__hint"><?= htmlspecialchars($ch['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <span class="enlist-decision-card__effect"><?= htmlspecialchars($ch['effect'], ENT_QUOTES, 'UTF-8') ?></span>
                                                 </span>
                                             </span>
                                         </label>
@@ -812,28 +1317,31 @@ $recapMeta = match ($statusRaw) {
                             </fieldset>
                         </div>
 
-                        <div id="interview-slot-wrap" class="hidden rounded-xl border border-violet-200 bg-violet-50/70 p-4 sm:p-5">
-                            <label for="interview_slot" class="block text-xs font-bold uppercase tracking-wide text-violet-900">Créneau d’entretien proposé (facultatif)</label>
-                            <p class="mt-1 text-xs text-violet-900/85">Indiquez une date et une heure si vous souhaitez proposer un rendez-vous directement dans le courriel.</p>
-                            <input type="datetime-local" id="interview_slot" name="interview_slot" class="mt-3 w-full max-w-md rounded-lg border border-violet-300 bg-white px-3 py-2.5 text-sm text-violet-950 shadow-inner">
+                        <div id="interview-slot-wrap" class="enlist-interview-slot<?= $decisionPreselect === 'interview' ? ' is-open' : '' ?>" aria-hidden="<?= $decisionPreselect === 'interview' ? 'false' : 'true' ?>">
+                            <div class="enlist-interview-slot__inner">
+                                <p class="enlist-interview-slot__badge">Entretien</p>
+                                <label for="interview_slot" class="enlist-interview-slot__label">Créneau proposé <span class="enlist-optional-pill">facultatif</span></label>
+                                <p class="enlist-interview-slot__help">Date et heure reprises dans le courriel si vous les renseignez.</p>
+                                <input type="datetime-local" id="interview_slot" name="interview_slot" class="enlist-interview-slot__input"<?= $decisionPreselect === 'interview' ? '' : ' tabindex="-1"' ?>>
+                            </div>
                         </div>
 
-                        <div class="space-y-4 border-t border-amber-100/80 pt-8">
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-900/60">Étape 2</p>
-                                <h3 class="mt-1 text-base font-black text-amber-950">Texte du courriel au candidat</h3>
-                                <p class="mt-1 max-w-2xl text-sm text-amber-950/80">Facultatif : précisions, ton, consignes. Le candidat le reçoit avec le lien de suivi.</p>
+                        <div class="enlist-decision-step enlist-decision-step--message">
+                            <div class="enlist-decision-step__head">
+                                <p class="enlist-decision-step__num">Étape 2</p>
+                                <h3 class="enlist-decision-step__title">Message au candidat <span class="enlist-optional-pill">facultatif</span></h3>
+                                <p class="enlist-decision-step__lead">Précisions, ton, consignes. Le texte est repris tel quel dans le courriel.</p>
                             </div>
-                            <div class="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-xs leading-relaxed text-stone-700">
-                                Vérifiez le texte avant validation : il est repris tel quel dans le courriel envoyé au candidat.
-                            </div>
-                            <div>
-                                <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                                    <label for="reviewer_comment" class="text-xs font-bold text-amber-950">Message (facultatif)</label>
-                                    <div class="flex flex-wrap items-center gap-2">
+                            <p id="enlist-decision-tone" class="enlist-decision-tone" data-default="<?= htmlspecialchars($decisionToneHints[$decisionPreselect] ?? $decisionToneHints['accept'], ENT_QUOTES, 'UTF-8') ?>">
+                                <?= htmlspecialchars($decisionToneHints[$decisionPreselect] ?? $decisionToneHints['accept'], ENT_QUOTES, 'UTF-8') ?>
+                            </p>
+                            <div class="enlist-decision-message-box">
+                                <div class="enlist-decision-message-box__toolbar">
+                                    <label for="reviewer_comment" class="enlist-decision-message-box__label">Votre texte</label>
+                                    <div class="enlist-decision-message-box__tools">
                                         <?php if (!empty($enlistmentCannedMessages)): ?>
                                         <label for="canned-msg-select" class="sr-only">Modèle de texte</label>
-                                        <select id="canned-msg-select" class="<?= htmlspecialchars(bo_select_class('max-w-[min(100%,18rem)] border-amber-300 text-xs font-semibold text-amber-950 focus:border-amber-500 focus:ring-amber-500/25'), ENT_QUOTES, 'UTF-8') ?>">
+                                        <select id="canned-msg-select" class="enlist-decision-canned-select <?= htmlspecialchars(bo_select_class('border-amber-300 text-xs font-semibold text-amber-950 focus:border-amber-500 focus:ring-amber-500/25'), ENT_QUOTES, 'UTF-8') ?>">
                                             <option value="">— Insérer un modèle —</option>
                                             <?php foreach ($enlistmentCannedMessages as $cm): ?>
                                             <?php $ctx = (string) ($cm['context'] ?? 'generic'); ?>
@@ -843,20 +1351,25 @@ $recapMeta = match ($statusRaw) {
                                             <?php endforeach; ?>
                                         </select>
                                         <?php endif; ?>
-                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="text-xs font-bold text-[#1c4d6e] underline underline-offset-2 hover:text-[#0c3d5c]">Gérer les modèles</a>
+                                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="enlist-decision-models-link">Gérer les modèles</a>
                                     </div>
                                 </div>
-                                <textarea id="reviewer_comment" name="reviewer_comment" rows="5" class="w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-stone-900 shadow-inner placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20" placeholder="Exemples : bienvenue, motif du refus, invitation à se manifester…"></textarea>
+                                <textarea id="reviewer_comment" name="reviewer_comment" rows="4" class="enlist-decision-textarea" placeholder="Exemples : bienvenue, motif du refus, invitation à se manifester…"></textarea>
                             </div>
                             <?php if (!empty($enlistmentCannedMessages)): ?>
                             <script type="application/json" id="enlistment-canned-json"><?= json_encode($enlistmentCannedMessages, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?></script>
                             <?php endif; ?>
                         </div>
 
-                        <div class="flex flex-col gap-4 border-t border-amber-100/80 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                            <p class="max-w-xl text-xs leading-relaxed text-amber-950/85"><strong>En attente</strong> et <strong>demande d’entretien</strong> laissent le dossier dans la file avec un courriel au candidat. <strong>Non admis</strong> clôt la candidature pour votre organisation.</p>
-                            <button type="submit" class="recruitment-lms-submit-primary inline-flex min-h-[3rem] w-full shrink-0 items-center justify-center rounded-2xl px-8 py-3 text-sm font-black shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:w-auto">
-                                Enregistrer la décision et prévenir le candidat
+                        <div class="enlist-decision-submit-row">
+                            <p class="enlist-decision-submit-hint"><strong>En attente</strong> et <strong>entretien</strong> laissent le dossier dans la file. <strong>Accepter</strong>, <strong>refuser</strong> ou <strong>non admis</strong> concluent l’instruction.</p>
+                            <button
+                                type="submit"
+                                id="enlist-decision-submit"
+                                class="recruitment-lms-submit-primary enlist-decision-submit enlist-decision-submit--<?= htmlspecialchars($decisionPreselect, ENT_QUOTES, 'UTF-8') ?>"
+                                data-labels="<?= htmlspecialchars(json_encode($decisionBtnLabels, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"
+                            >
+                                <?= htmlspecialchars($decisionBtnLabels[$decisionPreselect] ?? 'Enregistrer et prévenir le candidat', ENT_QUOTES, 'UTF-8') ?>
                             </button>
                         </div>
                     </form>
@@ -910,7 +1423,7 @@ $recapMeta = match ($statusRaw) {
                 }
             }
             ?>
-            <?php if ($hasOlympus): ?>
+            <?php if ($hasOlympus && !$isDossierClos): ?>
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Rubrique 2</p>
@@ -929,7 +1442,7 @@ $recapMeta = match ($statusRaw) {
             </section>
             <?php endif; ?>
 
-            <?php if (!empty($e['notes'])): ?>
+            <?php if (!empty($e['notes']) && !$isDossierClos): ?>
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-stone-50/40 shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Synthèse</p>
@@ -939,7 +1452,7 @@ $recapMeta = match ($statusRaw) {
             </section>
             <?php endif; ?>
 
-            <?php if ($rpSnap): ?>
+            <?php if ($rpSnap && !$isDossierClos): ?>
             <section class="overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm">
                 <div class="border-b border-emerald-100 bg-emerald-50/80 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-800/80">Profil RP</p>
@@ -1018,6 +1531,7 @@ $recapMeta = match ($statusRaw) {
             </section>
             <?php endif; ?>
 
+        <?php if (!$isDossierClos): ?>
         <section id="journal-dossier" class="scroll-mt-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm" aria-labelledby="journal-dossier-heading">
             <div class="border-b border-slate-200 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800 px-6 py-6 text-white sm:px-8">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -1204,21 +1718,39 @@ $recapMeta = match ($statusRaw) {
                 <?php endif; ?>
             </div>
         </section>
+        <?php endif; ?>
+
+                </div>
 
                 <p class="mt-10 text-center">
                     <a href="<?= htmlspecialchars(url('back-office/recruitments')) ?>" class="text-sm font-semibold text-stone-600 underline decoration-stone-300 underline-offset-4 transition hover:text-emerald-800">← Retour aux dossiers</a>
                 </p>
             </div>
-            </div>
+            <?php
+            $dossierSideNavMode = 'desktop';
+            require base_path('views/admin/recruitments/partials/dossier_side_nav.php');
+            ?>
         </div>
 </div>
+<script src="<?= htmlspecialchars(url('assets/js/recruitment-dossier-tour.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 <?php if ($statusRaw === 'submitted'): ?>
 <script>
 (function () {
     var form = document.getElementById('instruction-dossier-form');
     if (!form) return;
     var wrap = document.getElementById('interview-slot-wrap');
+    var submitBtn = document.getElementById('enlist-decision-submit');
+    var toneEl = document.getElementById('enlist-decision-tone');
     var radios = form.querySelectorAll('input.enlist-decision-choice[name="decision"]');
+    var submitVariants = ['accept', 'pending', 'interview', 'reject', 'block'];
+    var btnLabels = {};
+    if (submitBtn) {
+        try {
+            btnLabels = JSON.parse(submitBtn.getAttribute('data-labels') || '{}') || {};
+        } catch (e) {
+            btnLabels = {};
+        }
+    }
     var currentDecision = function () {
         var v = 'accept';
         radios.forEach(function (r) { if (r.checked) v = r.value || v; });
@@ -1226,7 +1758,36 @@ $recapMeta = match ($statusRaw) {
     };
     var syncInterview = function () {
         if (!wrap) return;
-        wrap.classList.toggle('hidden', currentDecision() !== 'interview');
+        var open = currentDecision() === 'interview';
+        wrap.classList.toggle('is-open', open);
+        wrap.setAttribute('aria-hidden', open ? 'false' : 'true');
+        var slotInput = document.getElementById('interview_slot');
+        if (slotInput) {
+            if (open) {
+                slotInput.removeAttribute('tabindex');
+            } else {
+                slotInput.setAttribute('tabindex', '-1');
+            }
+        }
+    };
+    var syncSubmit = function () {
+        if (!submitBtn) return;
+        var d = currentDecision();
+        var label = btnLabels[d] || 'Enregistrer et prévenir le candidat';
+        var checked = form.querySelector('input.enlist-decision-choice[name="decision"]:checked');
+        if (checked && checked.getAttribute('data-btn-label')) {
+            label = checked.getAttribute('data-btn-label') || label;
+        }
+        submitBtn.textContent = label;
+        submitVariants.forEach(function (v) {
+            submitBtn.classList.toggle('enlist-decision-submit--' + v, v === d);
+        });
+    };
+    var syncTone = function () {
+        if (!toneEl) return;
+        var checked = form.querySelector('input.enlist-decision-choice[name="decision"]:checked');
+        var tone = (checked && checked.getAttribute('data-tone')) || toneEl.getAttribute('data-default') || '';
+        toneEl.textContent = tone;
     };
     var sel = document.getElementById('canned-msg-select');
     var raw = document.getElementById('enlistment-canned-json');
@@ -1260,8 +1821,14 @@ $recapMeta = match ($statusRaw) {
         });
         sel.selectedIndex = 0;
     };
+    var syncAll = function () {
+        syncInterview();
+        syncSubmit();
+        syncTone();
+        updateCannedFilter();
+    };
     radios.forEach(function (r) {
-        r.addEventListener('change', function () { syncInterview(); updateCannedFilter(); });
+        r.addEventListener('change', syncAll);
     });
     if (sel && ta) {
         sel.addEventListener('change', function () {
@@ -1274,8 +1841,7 @@ $recapMeta = match ($statusRaw) {
             ta.focus();
         });
     }
-    updateCannedFilter();
-    syncInterview();
+    syncAll();
 })();
 </script>
 <?php endif; ?>

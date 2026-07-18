@@ -16,6 +16,7 @@ $activity_unread_counts = $activity_unread_counts ?? [
 $uForum = (int) ($activity_unread_counts['forum_unread'] ?? 0);
 $uCourrier = (int) ($activity_unread_counts['courrier_unread'] ?? 0);
 $uMsgs = (int) ($activity_unread_counts['tenant_messages_unread'] ?? 0);
+$totalUnread = $uForum + $uCourrier + $uMsgs;
 $formatActivityAt = static function (string $at): ?string {
     if ($at === '') {
         return null;
@@ -24,138 +25,151 @@ $formatActivityAt = static function (string $at): ?string {
 
     return $t !== false ? date('d/m/Y H:i', $t) : null;
 };
+$fmtCount = static function (int $n): string {
+    return $n > 99 ? '99+' : (string) $n;
+};
+$renderItems = static function (array $items) use ($formatActivityAt): void {
+    echo '<ul class="act-hub__list">';
+    foreach ($items as $it) {
+        $atLabel = $formatActivityAt((string) ($it['at'] ?? ''));
+        echo '<li class="act-hub__item">';
+        echo '<a class="act-hub__row" href="' . htmlspecialchars((string) ($it['href'] ?? '#'), ENT_QUOTES, 'UTF-8') . '">';
+        echo '<div class="act-hub__row-top">';
+        echo '<span class="act-hub__row-title">' . htmlspecialchars((string) ($it['title'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
+        if (!empty($it['unread'])) {
+            echo '<span class="act-hub__badge">Nouveau</span>';
+        }
+        echo '</div>';
+        echo '<p class="act-hub__row-detail">' . htmlspecialchars((string) ($it['detail'] ?? ''), ENT_QUOTES, 'UTF-8') . '</p>';
+        if ($atLabel !== null) {
+            echo '<p class="act-hub__row-time">' . htmlspecialchars($atLabel, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
+        echo '</a></li>';
+    }
+    echo '</ul>';
+};
 ?>
-<div class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-    <h1 class="text-2xl font-black uppercase italic tracking-tight text-slate-900">Mon activité</h1>
-    <p class="mt-2 text-sm text-slate-600">Résumé des alertes (forum, suivi roleplay, etc.), courrier interne et messagerie pour votre espace.</p>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<link href="<?= htmlspecialchars(asset_url('assets/css/activity_hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
-    <div class="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-slate-700">
-        <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">
-            Forum&nbsp;: <?= $uForum > 99 ? '99+' : (string) $uForum ?>
-        </span>
-        <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">
-            Courrier&nbsp;: <?= $uCourrier > 99 ? '99+' : (string) $uCourrier ?>
-        </span>
-        <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 shadow-sm">
-            Messagerie&nbsp;: <?= $uMsgs > 99 ? '99+' : (string) $uMsgs ?>
-        </span>
+<div class="act-hub">
+    <div class="act-hub__frame">
+        <header class="act-hub__hero">
+            <div class="act-hub__hero-inner">
+                <p class="act-hub__brand">Athena</p>
+                <h1 class="act-hub__title">Votre activité</h1>
+                <p class="act-hub__lead">
+                    Tout ce qui demande votre attention — <strong>alertes</strong>, <strong>courrier</strong> et <strong>messagerie</strong> —
+                    au même endroit, pour ne rien laisser passer dans votre communauté.
+                    <?php if ($totalUnread > 0): ?>
+                    <strong><?= (int) $totalUnread ?> élément<?= $totalUnread > 1 ? 's' : '' ?> à traiter</strong> en ce moment.
+                    <?php else: ?>
+                    <strong>Rien en attente</strong> pour l’instant.
+                    <?php endif; ?>
+                </p>
+            </div>
+        </header>
+
+        <div class="act-hub__metrics" aria-label="Résumé des éléments non lus">
+            <div class="act-hub__metric">
+                <span class="act-hub__metric-label">Alertes</span>
+                <span class="act-hub__metric-value<?= $uForum > 0 ? ' act-hub__metric-value--hot' : '' ?>"><?= htmlspecialchars($fmtCount($uForum), ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="act-hub__metric-hint"><?= $activity_forum_available ? 'Forum, suivis et signalements' : 'Canal temporairement indisponible' ?></span>
+            </div>
+            <div class="act-hub__metric">
+                <span class="act-hub__metric-label">Courrier</span>
+                <span class="act-hub__metric-value<?= $uCourrier > 0 ? ' act-hub__metric-value--hot' : '' ?>"><?= htmlspecialchars($fmtCount($uCourrier), ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="act-hub__metric-hint"><?= $activity_courrier_available ? 'Documents et notes internes' : 'Accès non disponible pour votre profil' ?></span>
+            </div>
+            <div class="act-hub__metric">
+                <span class="act-hub__metric-label">Messagerie</span>
+                <span class="act-hub__metric-value<?= $uMsgs > 0 ? ' act-hub__metric-value--hot' : '' ?>"><?= htmlspecialchars($fmtCount($uMsgs), ENT_QUOTES, 'UTF-8') ?></span>
+                <span class="act-hub__metric-hint">Échanges avec l’encadrement</span>
+            </div>
+        </div>
+
+        <div class="act-hub__grid">
+            <section class="act-hub__panel" aria-labelledby="act-hub-forum-title">
+                <div class="act-hub__panel-head">
+                    <div>
+                        <p class="act-hub__panel-kicker">Canal 01</p>
+                        <h2 id="act-hub-forum-title" class="act-hub__panel-title">Alertes</h2>
+                        <p class="act-hub__panel-desc">Réponses, citations, suivis roleplay et autres notifications liées à votre espace.</p>
+                    </div>
+                    <?php if ($activity_forum_available && $activity_forum_items !== []): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('activite/forum/lu'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <button type="submit" class="act-hub__mark-read">Tout marquer comme lu</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <div class="act-hub__panel-body">
+                    <?php if (!$activity_forum_available): ?>
+                        <p class="act-hub__restricted">Le forum n’est pas accessible pour le moment ; les alertes liées au forum ne s’affichent pas ici.</p>
+                    <?php elseif ($activity_forum_items === []): ?>
+                        <div class="act-hub__empty">
+                            <p>Aucune alerte récente. Votre fil est à jour.</p>
+                            <a class="act-hub__empty-link" href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le forum</a>
+                        </div>
+                    <?php else: ?>
+                        <?php $renderItems($activity_forum_items); ?>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <section class="act-hub__panel" aria-labelledby="act-hub-courrier-title">
+                <div class="act-hub__panel-head">
+                    <div>
+                        <p class="act-hub__panel-kicker">Canal 02</p>
+                        <h2 id="act-hub-courrier-title" class="act-hub__panel-title">Courrier</h2>
+                        <p class="act-hub__panel-desc">Pièces et notes transmises via le courrier interne de la communauté.</p>
+                    </div>
+                    <?php if ($activity_courrier_available && $activity_courrier_items !== []): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('activite/courrier/lu'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <button type="submit" class="act-hub__mark-read">Tout marquer comme lu</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <div class="act-hub__panel-body">
+                    <?php if (!$activity_courrier_available): ?>
+                        <p class="act-hub__restricted">Vous n’avez pas accès au courrier interne dans votre espace, ou celui-ci vous est temporairement restreint. Les notifications correspondantes ne s’affichent pas ici.</p>
+                    <?php elseif ($activity_courrier_items === []): ?>
+                        <div class="act-hub__empty">
+                            <p>Aucune notification récente de courrier.</p>
+                            <a class="act-hub__empty-link" href="<?= htmlspecialchars(url('courrier'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir le bureau courrier</a>
+                        </div>
+                    <?php else: ?>
+                        <?php $renderItems($activity_courrier_items); ?>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <section class="act-hub__panel" aria-labelledby="act-hub-messages-title">
+                <div class="act-hub__panel-head">
+                    <div>
+                        <p class="act-hub__panel-kicker">Canal 03</p>
+                        <h2 id="act-hub-messages-title" class="act-hub__panel-title">Messagerie</h2>
+                        <p class="act-hub__panel-desc">Conversations avec l’encadrement et les rôles habilités de votre communauté.</p>
+                    </div>
+                    <?php if ($activity_message_items !== []): ?>
+                    <form method="post" action="<?= htmlspecialchars(url('activite/messages/lu'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?= \App\Core\Csrf::field() ?>
+                        <button type="submit" class="act-hub__mark-read">Tout marquer comme lu</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+                <div class="act-hub__panel-body">
+                    <?php if ($activity_message_items === []): ?>
+                        <div class="act-hub__empty">
+                            <p>Aucune conversation récente pour le moment.</p>
+                            <a class="act-hub__empty-link" href="<?= htmlspecialchars(url('messages'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la messagerie</a>
+                        </div>
+                    <?php else: ?>
+                        <?php $renderItems($activity_message_items); ?>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
     </div>
-
-    <section class="mt-10 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Alertes et notifications</h2>
-            <?php if ($activity_forum_available && $activity_forum_items !== []): ?>
-            <form method="post" action="<?= htmlspecialchars(url('activite/forum/lu'), ENT_QUOTES, 'UTF-8') ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="text-xs font-bold uppercase tracking-wider text-emerald-700 hover:text-slate-900">Tout marquer comme lu</button>
-            </form>
-            <?php endif; ?>
-        </div>
-        <?php if (!$activity_forum_available): ?>
-            <p class="mt-4 text-sm text-slate-600">Le forum n’est pas accessible pour le moment ; les alertes liées au forum ne s’affichent pas ici.</p>
-        <?php elseif ($activity_forum_items === []): ?>
-            <p class="mt-4 text-sm text-slate-500">Aucune alerte récente.</p>
-            <p class="mt-3 text-sm"><a href="<?= htmlspecialchars(url('forum'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:text-slate-900">Ouvrir le forum</a></p>
-        <?php else: ?>
-            <ul class="mt-4 divide-y divide-slate-100">
-                <?php foreach ($activity_forum_items as $it): ?>
-                <li class="py-3 first:pt-0">
-                    <a href="<?= htmlspecialchars($it['href'], ENT_QUOTES, 'UTF-8') ?>" class="block rounded-lg px-1 py-1 transition hover:bg-slate-50">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-sm font-bold text-slate-900"><?= htmlspecialchars($it['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if (!empty($it['unread'])): ?>
-                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">Nouveau</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="mt-0.5 text-sm text-slate-600"><?= htmlspecialchars($it['detail'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php
-                        $atLabel = $formatActivityAt((string) ($it['at'] ?? ''));
-                        if ($atLabel !== null):
-                        ?>
-                        <p class="mt-1 text-xs text-slate-400"><?= htmlspecialchars($atLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                    </a>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </section>
-
-    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Courrier interne</h2>
-            <?php if ($activity_courrier_available && $activity_courrier_items !== []): ?>
-            <form method="post" action="<?= htmlspecialchars(url('activite/courrier/lu'), ENT_QUOTES, 'UTF-8') ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="text-xs font-bold uppercase tracking-wider text-emerald-700 hover:text-slate-900">Tout marquer comme lu</button>
-            </form>
-            <?php endif; ?>
-        </div>
-        <?php if (!$activity_courrier_available): ?>
-            <p class="mt-4 text-sm text-slate-600">Vous n’avez pas accès au courrier interne dans votre espace, ou celui-ci vous est temporairement restreint. Les notifications correspondantes ne s’affichent pas ici.</p>
-        <?php elseif ($activity_courrier_items === []): ?>
-            <p class="mt-4 text-sm text-slate-500">Aucune notification récente.</p>
-            <p class="mt-3 text-sm"><a href="<?= htmlspecialchars(url('courrier'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:text-slate-900">Ouvrir le bureau courrier</a></p>
-        <?php else: ?>
-            <ul class="mt-4 divide-y divide-slate-100">
-                <?php foreach ($activity_courrier_items as $it): ?>
-                <li class="py-3 first:pt-0">
-                    <a href="<?= htmlspecialchars($it['href'], ENT_QUOTES, 'UTF-8') ?>" class="block rounded-lg px-1 py-1 transition hover:bg-slate-50">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-sm font-bold text-slate-900"><?= htmlspecialchars($it['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if (!empty($it['unread'])): ?>
-                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">Nouveau</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="mt-0.5 text-sm text-slate-600"><?= htmlspecialchars($it['detail'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php
-                        $atLabel = $formatActivityAt((string) ($it['at'] ?? ''));
-                        if ($atLabel !== null):
-                        ?>
-                        <p class="mt-1 text-xs text-slate-400"><?= htmlspecialchars($atLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                    </a>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </section>
-
-    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-800">Messagerie interne</h2>
-            <?php if ($activity_message_items !== []): ?>
-            <form method="post" action="<?= htmlspecialchars(url('activite/messages/lu'), ENT_QUOTES, 'UTF-8') ?>">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="text-xs font-bold uppercase tracking-wider text-emerald-700 hover:text-slate-900">Tout marquer comme lu</button>
-            </form>
-            <?php endif; ?>
-        </div>
-        <?php if ($activity_message_items === []): ?>
-            <p class="mt-4 text-sm text-slate-500">Aucune conversation récente.</p>
-            <p class="mt-3 text-sm"><a href="<?= htmlspecialchars(url('messages'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-700 hover:text-slate-900">Ouvrir la messagerie</a></p>
-        <?php else: ?>
-            <ul class="mt-4 divide-y divide-slate-100">
-                <?php foreach ($activity_message_items as $it): ?>
-                <li class="py-3 first:pt-0">
-                    <a href="<?= htmlspecialchars($it['href'], ENT_QUOTES, 'UTF-8') ?>" class="block rounded-lg px-1 py-1 transition hover:bg-slate-50">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="text-sm font-bold text-slate-900"><?= htmlspecialchars($it['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if (!empty($it['unread'])): ?>
-                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-800">Nouveau</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="mt-0.5 text-sm text-slate-600"><?= htmlspecialchars($it['detail'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php
-                        $atLabel = $formatActivityAt((string) ($it['at'] ?? ''));
-                        if ($atLabel !== null):
-                        ?>
-                        <p class="mt-1 text-xs text-slate-400"><?= htmlspecialchars($atLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                    </a>
-                </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-    </section>
 </div>

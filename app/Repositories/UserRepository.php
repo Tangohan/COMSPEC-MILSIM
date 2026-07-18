@@ -26,6 +26,8 @@ class UserRepository
 
     private static ?bool $hasEmailLoginOtpEnabledColumn = null;
 
+    private static ?bool $hasProfileBannerUrlColumn = null;
+
     /** @var array{join: string, grade_short: string, order_grade: string}|null */
     private static ?array $gradesConfigPublicRoster = null;
 
@@ -75,6 +77,16 @@ class UserRepository
         }
 
         return self::$hasEmailLoginOtpEnabledColumn;
+    }
+
+    public function hasProfileBannerUrlColumn(): bool
+    {
+        if (self::$hasProfileBannerUrlColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_banner_url' LIMIT 1");
+            self::$hasProfileBannerUrlColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasProfileBannerUrlColumn;
     }
 
     private function generateAthenaIdentifier(): string
@@ -791,6 +803,101 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    private static ?array $gradesConfigDirectory = null;
+
+    /**
+     * Jointure / colonnes grades pour l’annuaire : référentiel (label_short/label_long) ou ancienne table
+     * tenant (short_name/name). Même logique de détection que {@see getGradesConfigForPublicRoster()}.
+     *
+     * @return array{join: string, select: string}
+     */
+    private function getGradesConfigForDirectory(): array
+    {
+        if (self::$gradesConfigDirectory !== null) {
+            return self::$gradesConfigDirectory;
+        }
+        $stmt = $this->pdo->query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'grades' AND COLUMN_NAME IN ('name', 'label_long', 'tenant_id')"
+        );
+        $columns = $stmt ? array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'COLUMN_NAME') : [];
+        $hasLabelLong = in_array('label_long', $columns, true);
+        $hasTenantId = in_array('tenant_id', $columns, true);
+        if ($hasLabelLong) {
+            self::$gradesConfigDirectory = [
+                'select' => 'g.label_short AS grade_short, g.label_long AS grade_long',
+                'join' => $hasTenantId
+                    ? 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id'
+                    : 'LEFT JOIN grades g ON g.id = u.grade_id',
+            ];
+        } else {
+            self::$gradesConfigDirectory = [
+                'select' => 'g.short_name AS grade_short, g.name AS grade_long',
+                'join' => 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id',
+            ];
+        }
+
+        return self::$gradesConfigDirectory;
+    }
+
+    /**
+     * Annuaire personnel enrichi : grade, affectation principale, matricule, ancienneté, rôle métier —
+     * en une seule requête (jointures), sans boucle N+1. Recherche optionnelle (nom, indicatif, slug,
+     * identifiant Athena, nom de personnage).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPersonnelDirectoryRich(int $tenantId, string $query, int $limit = 150): array
+    {
+        $limit = max(10, min(300, $limit));
+        $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $athenaSelect = $hasAthenaIdentifier ? 'u.athena_identifier' : "'' AS athena_identifier";
+        $gc = $this->getGradesConfigForDirectory();
+
+        $where = ['u.tenant_id = ?', $pack['sql']];
+        $params = array_merge([$tenantId], $pack['params']);
+
+        $q = trim($query);
+        if ($q !== '') {
+            $term = '%' . $q . '%';
+            $athenaFilter = $hasAthenaIdentifier
+                ? " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
+                : '';
+            $where[] = '(u.display_name LIKE ?
+                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
+                 OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
+                 OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . ')';
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+            if ($hasAthenaIdentifier) {
+                $params[] = $term;
+            }
+        }
+
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
+                       ' . $gc['select'] . ',
+                       un.name AS unit_name, un.code AS unit_code,
+                       pp.character_name, pp.matricule_internal, pp.enlistment_date, pp.primary_role, pp.secondary_role,
+                       pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, pp.deployable,
+                       pex.service_number, pex.date_of_enlistment
+                FROM users u
+                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                LEFT JOIN personnel_extras pex ON pex.user_id = u.id
+                ' . $gc['join'] . '
+                LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = u.tenant_id
+                WHERE ' . implode(' AND ', $where) . '
+                ORDER BY u.display_name ASC
+                LIMIT ?';
+        $params[] = $limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function updateLastLogin(int $userId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
@@ -801,7 +908,10 @@ class UserRepository
     {
         $pack = $this->technicalAccountExclusionPredicate('u');
         $stmt = $this->pdo->prepare(
-            'SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON r.id = u.role_id
+            'SELECT u.*, r.name as role_name, up.first_name, up.last_name
+             FROM users u
+             LEFT JOIN roles r ON r.id = u.role_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
              WHERE u.tenant_id = ? AND ' . $pack['sql'] . ' ORDER BY u.email ASC'
         );
         $stmt->execute(array_merge([$tenantId], $pack['params']));
@@ -942,6 +1052,9 @@ class UserRepository
         }
         if ($this->hasEmailLoginOtpEnabledColumn()) {
             $allowed[] = 'email_login_otp_enabled';
+        }
+        if ($this->hasProfileBannerUrlColumn()) {
+            $allowed[] = 'profile_banner_url';
         }
         $set = [];
         $params = [];

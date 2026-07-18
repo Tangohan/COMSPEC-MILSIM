@@ -179,6 +179,13 @@ class TenantRepository
         $stmt->execute([$url, $tenantId]);
     }
 
+    /** Retire explicitement le logo (contrairement à updateLogoUrl(), qui ignore les valeurs vides). */
+    public function clearLogoUrl(int $tenantId): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE tenants SET logo_url = NULL, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$tenantId]);
+    }
+
     /** @return int id du tenant créé */
     public function create(string $name, string $slug, string $planSlug = 'free'): int
     {
@@ -299,9 +306,19 @@ class TenantRepository
 
     /**
      * Annuaire opérateur : toutes les communautés « réelles » (hors tenant technique id = 1),
-     * avec effectif des comptes rattachés.
+     * avec effectif des comptes rattachés et formule d’accès.
      *
-     * @return list<array{id: int, name: string, slug: string, created_at: string|null, user_count: int}>
+     * @return list<array{
+     *   id: int,
+     *   name: string,
+     *   slug: string,
+     *   created_at: string|null,
+     *   user_count: int,
+     *   plan_slug: string,
+     *   subscription_status: string,
+     *   subscription_current_period_end: string|null,
+     *   stripe_subscription_id: string|null
+     * }>
      */
     public function listOverviewForPlatform(): array
     {
@@ -311,6 +328,10 @@ SELECT t.id,
        t.name,
        t.slug,
        t.created_at AS created_at,
+       t.plan_slug,
+       t.subscription_status,
+       t.subscription_current_period_end,
+       t.stripe_subscription_id,
        (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count
 FROM tenants t
 WHERE t.id > 1
@@ -326,6 +347,7 @@ SQL;
         }
         $out = [];
         foreach ($rows as $row) {
+            $stripeSub = isset($row['stripe_subscription_id']) ? trim((string) $row['stripe_subscription_id']) : '';
             $out[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
@@ -334,9 +356,31 @@ SQL;
                     ? (string) $row['created_at']
                     : null,
                 'user_count' => (int) ($row['user_count'] ?? 0),
+                'plan_slug' => (string) ($row['plan_slug'] ?? 'free'),
+                'subscription_status' => (string) ($row['subscription_status'] ?? 'none'),
+                'subscription_current_period_end' => isset($row['subscription_current_period_end']) && $row['subscription_current_period_end'] !== null && $row['subscription_current_period_end'] !== ''
+                    ? (string) $row['subscription_current_period_end']
+                    : null,
+                'stripe_subscription_id' => $stripeSub !== '' ? $stripeSub : null,
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * Affectation manuelle d’une formule (opérateur plateforme).
+     * Ne touche pas aux identifiants de paiement : un webhook peut toujours écraser le statut.
+     */
+    public function updatePlanAssignment(int $tenantId, string $planSlug, string $subscriptionStatus): bool
+    {
+        if ($tenantId < 2) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE tenants SET plan_slug = ?, subscription_status = ?, updated_at = NOW() WHERE id = ?'
+        );
+
+        return $stmt->execute([$planSlug, $subscriptionStatus, $tenantId]);
     }
 }

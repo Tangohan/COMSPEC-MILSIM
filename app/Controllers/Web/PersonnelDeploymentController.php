@@ -115,6 +115,31 @@ final class PersonnelDeploymentController
         }
 
         $profile = $this->profileRepository->getByUserId($targetUserId) ?? [];
+        $missing = [];
+        if ((int) ($profile['deployable'] ?? 1) !== 1) {
+            $missing[] = 'profil marqué non déployable';
+        }
+        if (trim((string) ($profile['primary_role'] ?? '')) === '') {
+            $missing[] = 'rôle principal';
+        }
+        if ((int) ($profile['primary_unit_id'] ?? 0) < 1) {
+            $missing[] = 'unité principale';
+        }
+        if (trim((string) ($profile['matricule_internal'] ?? '')) === '') {
+            $missing[] = 'matricule';
+        }
+        if (trim((string) ($profile['blood_type'] ?? '')) === '') {
+            $missing[] = 'groupe sanguin';
+        }
+        if ($missing !== []) {
+            Session::flash(
+                'error',
+                'Déploiement impossible — complètez d’abord : ' . implode(', ', $missing) . '. Ouvrez le dossier pour corriger.'
+            );
+
+            return Response::redirect(url('deploiement'));
+        }
+
         $unit = (int) ($profile['primary_unit_id'] ?? 0) > 0 ? $this->unitRepository->findById((int) $profile['primary_unit_id'], $tenantId) : null;
 
         $this->deploymentRepository->upsertDeployment($tenantId, $targetUserId, (int) $user['id'], [
