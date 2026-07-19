@@ -32,6 +32,7 @@ final class TenantPermissionCatalog
         return array_merge(
             self::adminDefinitions(),
             self::operationalBoardDefinitions(),
+            self::transmissionDefinitions(),
             self::operationsDomainDefinitions(),
             self::dashboardDefinitions(),
             self::forumDefinitions(),
@@ -103,6 +104,21 @@ final class TenantPermissionCatalog
         return [
             ['slug' => 'operational.board.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter le tableau opérationnel (portail)'],
             ['slug' => 'operational.board.edit', 'module' => 'operations', 'action' => 'manage', 'name' => 'Créer et modifier les entrées du tableau opérationnel'],
+        ];
+    }
+
+    /**
+     * Transmission de renseignement (reconnaissance → mini-PV) et synthèse en Plan d’Exécution (PoE).
+     *
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function transmissionDefinitions(): array
+    {
+        return [
+            ['slug' => 'intel.transmission.view', 'module' => 'intel', 'action' => 'view', 'name' => 'Consulter les sessions de transmission de renseignement'],
+            ['slug' => 'intel.transmission.manage', 'module' => 'intel', 'action' => 'manage', 'name' => 'Ouvrir / fermer une session de transmission'],
+            ['slug' => 'intel.transmission.contribute', 'module' => 'intel', 'action' => 'create', 'name' => 'Publier des mini-PV de reconnaissance (texte + captures)'],
+            ['slug' => 'intel.poe.manage', 'module' => 'intel', 'action' => 'manage', 'name' => 'Rédiger et publier le Plan d’Exécution (PoE)'],
         ];
     }
 
