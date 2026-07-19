@@ -255,6 +255,47 @@ public static class Extension
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                 return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
             }
+            // Diapositives de briefing tactique (tableau/écran Eden Editor, ou dialog de briefing).
+            // Format simplifié tabulation/retour-ligne (même convention que GetMarkers/GetUnits) :
+            // pas de parseur JSON natif en SQF, donc une ligne par diapositive : id\ttitle\tsortOrder\timageUrl
+            if (function == "GetBriefingSlides")
+            {
+                var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
+                var url = _baseUrl + "/api/atak/briefing-slides";
+                if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
+                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                resp.EnsureSuccessStatusCode();
+                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var simplified = SimplifyBriefingSlidesJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Télécharge une diapositive (image_url renvoyée par GetBriefingSlides) et la met en cache local ;
+            // retourne le chemin de fichier local à passer à setObjectTexture / ctrlSetText côté SQF.
+            if (function == "DownloadBriefingSlideImage" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
+            {
+                var imageUrl = args[0]!;
+                var cacheKeyRaw = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]! : "slide";
+                var safeKey = new string(cacheKeyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+                if (safeKey.Length == 0) safeKey = "slide";
+                var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
+
+                var bytes = HttpClient.GetByteArrayAsync(imageUrl, token).GetAwaiter().GetResult();
+
+                var cacheDir = GetWritableCacheDir();
+                if (cacheDir == null) return "ERR|no_writable_cache_dir";
+
+                var destPath = Path.Combine(cacheDir, "briefing_" + safeKey + ext);
+                try
+                {
+                    File.WriteAllBytes(destPath, bytes);
+                }
+                catch (Exception ex)
+                {
+                    return "ERR|write_failed_" + ex.GetType().Name;
+                }
+
+                return "OK|" + destPath;
+            }
         }
         catch (OperationCanceledException)
         {
@@ -268,6 +309,36 @@ public static class Extension
         {
             return "ERR|invalid";
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Dossier de cache local pour les diapositives téléchargées : à côté de la DLL en priorité
+    /// (dossier du mod, généralement accessible en écriture), sinon dossier temporaire système.
+    /// </summary>
+    private static string? GetWritableCacheDir()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "comspec_cache", "briefing"),
+            Path.Combine(Path.GetTempPath(), "comspec_cache", "briefing"),
+        };
+        foreach (var dir in candidates)
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+                var probe = Path.Combine(dir, ".write_test");
+                File.WriteAllText(probe, "ok");
+                File.Delete(probe);
+                return dir;
+            }
+            catch
+            {
+                // Essaie le prochain dossier candidat.
+            }
+        }
+
         return null;
     }
 
@@ -327,6 +398,28 @@ public static class Extension
                 sb.Append("U\t").Append(callSign.Replace("\t", " ")).Append("\t")
                     .Append(gx.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\t")
                     .Append(gy.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append("\n");
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyBriefingSlidesJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("slides", out var slides)) return "";
+            foreach (var el in slides.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? i.GetInt32() : 0;
+                var title = el.TryGetProperty("title", out var t) ? (t.GetString() ?? "") : "";
+                var sortOrder = el.TryGetProperty("sort_order", out var s) ? s.GetInt32() : 0;
+                var imageUrl = el.TryGetProperty("image_url", out var u) ? (u.GetString() ?? "") : "";
+                if (imageUrl.Length == 0) continue;
+                title = title.Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\n');
             }
             return sb.ToString();
         }

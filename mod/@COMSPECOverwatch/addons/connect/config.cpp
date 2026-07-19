@@ -55,6 +55,14 @@ class CfgFunctions {
         class issueOrder { file = "functions\fn_issueOrder.sqf"; };
         class updateOrderStatus { file = "functions\fn_updateOrderStatus.sqf"; };
         class formatCommsMessage { file = "functions\fn_formatCommsMessage.sqf"; };
+
+        // Tableau de briefing tactique (diapositives gérées depuis le back-office)
+        class getBriefingSlides { file = "functions\fn_getBriefingSlides.sqf"; };
+        class downloadBriefingSlide { file = "functions\fn_downloadBriefingSlide.sqf"; };
+        class openBriefingBoard { file = "functions\fn_openBriefingBoard.sqf"; };
+        class briefingBoardShow { file = "functions\fn_briefingBoardShow.sqf"; };
+        class briefingBoardStep { file = "functions\fn_briefingBoardStep.sqf"; };
+        class refreshBriefingSlides { file = "functions\fn_refreshBriefingSlides.sqf"; };
     };
 };
 
@@ -62,4 +70,5 @@ class CfgFunctions {
 #include "display.hpp"
 #include "display_cas.hpp"
 #include "display_flight_manifest.hpp"
+#include "display_briefing.hpp"
 #include "CfgEventHandlers.hpp"

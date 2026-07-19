@@ -16,6 +16,7 @@ use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ArmaPlaytimeRepository;
+use App\Repositories\TacticalBriefingSlideRepository;
 
 class AtakApiController
 {
@@ -33,7 +34,39 @@ class AtakApiController
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
         private ArmaPlaytimeRepository $armaPlaytimeRepository,
+        private ?TacticalBriefingSlideRepository $briefingSlideRepository = null,
     ) {
+        $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
+    }
+
+    /**
+     * Diapositives de briefing actives (image + titre + ordre), consommées par l’extension Arma
+     * (fonction native GetBriefingSlides) pour affichage in-game (tableau Eden ou dialog de briefing).
+     */
+    public function briefingSlidesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $rows = $this->briefingSlideRepository->listActiveForTenant($tenantId);
+        $out = [];
+        foreach ($rows as $row) {
+            $imagePath = trim((string) ($row['image_path'] ?? ''));
+            if ($imagePath === '') {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'title' => trim((string) ($row['title'] ?? '')),
+                'sort_order' => (int) ($row['sort_order'] ?? 0),
+                'image_url' => url($imagePath),
+                'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
+            ];
+        }
+
+        return Response::json(['slides' => $out]);
     }
 
     /**

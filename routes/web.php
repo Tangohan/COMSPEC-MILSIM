@@ -53,6 +53,7 @@ use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
+use App\Controllers\Admin\AdminBriefingSlidesController;
 use App\Controllers\Admin\AdminAtakModController;
 use App\Controllers\Admin\AdminConfigurationController;
 use App\Controllers\Admin\AdminRecruitmentsController;
@@ -811,6 +812,10 @@ return function (Router $router) {
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1157,6 +1162,7 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
