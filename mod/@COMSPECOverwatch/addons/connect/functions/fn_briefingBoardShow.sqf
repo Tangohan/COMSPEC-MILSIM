@@ -25,7 +25,6 @@ private _ctrlIndex = _display displayCtrl 9003;
 if (!isNull _ctrlIndex) then { _ctrlIndex ctrlSetText format ["%1 / %2", _index + 1, count _slides]; };
 
 private _ctrlPic = _display displayCtrl 9001;
-if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText "a3\ui_f\data\gui\rsc\rscdisplayload\loading_ca.paa"; };
 
 // Appel bloquant : téléchargement + écriture en cache côté extension. Attendu à quelques centaines
 // de ms selon la connexion — acceptable pour une action volontaire (pas un handler par frame).
