@@ -223,6 +223,7 @@ return function (Router $router) {
     $router->get('/c/{slug}/avis/{avis}', [CommunityController::class, 'recruitmentOpeningShow']);
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
     $router->get('/c/{slug}/unite/{unitSlug}', [CommunityController::class, 'showUnit']);
+    $router->get('/c/{slug}/medias', [CommunityController::class, 'mediaFeed']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
     $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);

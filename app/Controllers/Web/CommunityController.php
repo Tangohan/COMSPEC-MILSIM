@@ -215,7 +215,6 @@ class CommunityController
         ]);
     }
 
-    /** Fiche publique « avis de vacance ». */
     /** Mini-site public d’une unité : landing, bio, chef d’unité, sous-unités, effectif, roster. */
     public function showUnit(Request $request, array $params = []): Response
     {
@@ -294,6 +293,37 @@ class CommunityController
         ]);
     }
 
+    /** Feed média plein écran (façon TikTok/Instagram) — images et vidéos publiées de la communauté. */
+    public function mediaFeed(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
+        }
+        $tid = (int) ($tenant['id'] ?? 0);
+        $items = $this->communityMediaRepository->listPublicPageItems($tid);
+
+        $this->analyticsEventService->record(
+            $tid,
+            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            AnalyticsEventCategory::TENANT_PUBLIC,
+            AnalyticsEventName::TENANT_PUBLIC_VIEW,
+            AnalyticsSubjectType::TENANT,
+            $tid,
+            null,
+            ['media_feed' => true]
+        );
+
+        return Response::view('layout.main', [
+            'title' => 'Médias — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'content' => 'community.media_feed',
+            'tenant' => $tenant,
+            'mediaFeedItems' => $items,
+        ]);
+    }
+
+    /** Fiche publique « avis de vacance ». */
     public function recruitmentOpeningShow(Request $request, array $params = []): Response
     {
         $slug = (string) ($params['slug'] ?? '');

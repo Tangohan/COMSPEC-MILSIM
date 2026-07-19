@@ -281,6 +281,9 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
             </div>
             <?php endif; ?>
           </div>
+          <?php if ($publicMediaItems !== []): ?>
+          <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/medias'), ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost" style="align-self:flex-start">Mode plein écran →</a>
+          <?php endif; ?>
           <?php if ($galleryLayout === 'carousel'): ?>
           <div class="community-landing__media-controls" data-media-controls>
             <button type="button" class="community-landing__media-btn" data-media-prev aria-label="Médias précédents">
