@@ -186,6 +186,42 @@ class ForumCategoryRepository
         $stmt->execute([$userId, $categoryId]);
     }
 
+    /**
+     * Salons (catégories) suivis par l’utilisateur pour ce tenant — dernier sujet + compteur non-lu,
+     * pour le widget « Mes salons suivis » du tableau de bord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listSubscribedForUser(int $userId, int $tenantId): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT fc.id, fc.name, fc.slug, fc.icon, fc.color_theme,
+                        (SELECT ft.id FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                            ORDER BY COALESCE(ft.updated_at, ft.created_at) DESC LIMIT 1) AS last_topic_id,
+                        (SELECT ft.title FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                            ORDER BY COALESCE(ft.updated_at, ft.created_at) DESC LIMIT 1) AS last_topic_title,
+                        (SELECT MAX(COALESCE(ft.updated_at, ft.created_at)) FROM forum_topics ft
+                            WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS last_activity_at,
+                        (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                            AND NOT EXISTS (SELECT 1 FROM forum_read fr WHERE fr.user_id = ? AND fr.topic_id = ft.id)) AS unread_count
+                 FROM forum_category_subscriptions fcs
+                 INNER JOIN forum_categories fc ON fc.id = fcs.category_id
+                 WHERE fcs.user_id = ?
+                   AND (fc.tenant_id = ? OR (COALESCE(fc.scope, 'tenant') = 'global' AND fc.tenant_id IS NULL))
+                 ORDER BY last_activity_at DESC, fc.display_order ASC"
+            );
+            $stmt->execute([$userId, $userId, $tenantId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
     public function countChildren(int $categoryId, int $tenantId): int
     {
         $stmt = $this->pdo->prepare(

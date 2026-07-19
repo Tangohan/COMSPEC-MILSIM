@@ -16,6 +16,7 @@ final class AlertDisplayStyle
     public const MINI_DANGER = 'mini_danger';
     public const BREAKING = 'breaking';
     public const IMPORTANT = 'important';
+    public const POPUP = 'popup';
 
     /** @var list<string> */
     private const PLATFORM_STYLES = [
@@ -25,12 +26,14 @@ final class AlertDisplayStyle
         self::MINI_WARNING,
         self::MINI_DANGER,
         self::BREAKING,
+        self::POPUP,
     ];
 
     /** @var list<string> */
     private const TENANT_STYLES = [
         self::CLASSIC,
         self::IMPORTANT,
+        self::POPUP,
     ];
 
     /** @var list<string> */
@@ -55,6 +58,7 @@ final class AlertDisplayStyle
             self::MINI_WARNING => 'Barre sous le menu — Attention',
             self::MINI_DANGER => 'Barre sous le menu — Critique',
             self::BREAKING => 'Bandeau Breaking (défilement — maj / maintenance)',
+            self::POPUP => 'Pop-up éphémère (fenêtre à l’arrivée sur le tableau de bord)',
         ];
     }
 
@@ -66,6 +70,7 @@ final class AlertDisplayStyle
         return [
             self::CLASSIC => 'Bandeau classique',
             self::IMPORTANT => 'Annonce importante (barre jaune sous le menu)',
+            self::POPUP => 'Pop-up éphémère (fenêtre à l’arrivée sur le tableau de bord)',
         ];
     }
 
@@ -101,9 +106,14 @@ final class AlertDisplayStyle
         return in_array(self::normalize($style), self::NAVBAR_STYLES, true);
     }
 
+    public static function isPopupStyle(string $style): bool
+    {
+        return self::normalize($style) === self::POPUP;
+    }
+
     public static function isClassicStyle(string $style): bool
     {
-        return !self::isNavbarStyle($style);
+        return !self::isNavbarStyle($style) && !self::isPopupStyle($style);
     }
 
     public static function label(string $style): string

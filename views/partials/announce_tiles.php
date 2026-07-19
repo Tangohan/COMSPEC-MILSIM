@@ -34,6 +34,20 @@ $kindLabelFr = static function (string $kind): string {
     };
 };
 
+$announcePriority = static function (array $item): int {
+    return match (strtolower(trim((string) ($item['kind'] ?? 'info')))) {
+        'urgent' => 0,
+        'forum_pin' => 1,
+        'notice' => 2,
+        'novelty' => 3,
+        'discount' => 4,
+        default => 5,
+    };
+};
+usort($announceItems, static function (array $a, array $b) use ($announcePriority): int {
+    return $announcePriority($a) <=> $announcePriority($b);
+});
+
 $count = count($announceItems);
 $statusLine = $count === 0
     ? 'Aucune transmission en cours'
@@ -83,6 +97,10 @@ $panelId = $announceId . '-panel';
                 <?php foreach ($announceItems as $item): ?>
                     <?php
                     $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
+                    $isPinned = in_array($kind, ['forum_pin', 'notice'], true);
+                    if ($kind === 'forum_pin') {
+                        $kind = 'notice';
+                    }
                     if (!in_array($kind, ['info', 'urgent', 'novelty', 'discount', 'notice'], true)) {
                         $kind = 'info';
                     }
@@ -116,7 +134,10 @@ $panelId = $announceId . '-panel';
                         </div>
                         <div class="dash-announce-tile__panel">
                             <div class="dash-announce-tile__meta">
-                                <p class="dash-announce-tile__kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="dash-announce-tile__kind">
+                                    <?php if ($isPinned): ?><span aria-hidden="true">📌</span> <?php endif; ?>
+                                    <?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?>
+                                </p>
                                 <?php if ($isPlatform): ?>
                                 <span class="dash-announce-tile__verified" title="Annonce officielle du site Athena">
                                     <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>

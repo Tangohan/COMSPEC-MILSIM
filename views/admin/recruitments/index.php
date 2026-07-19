@@ -2,6 +2,10 @@
 declare(strict_types=1);
 $enlistments = $enlistments ?? [];
 $statusFilter = $statusFilter ?? null;
+$stageFilter = $stageFilter ?? null;
+$stageCounts = is_array($stageCounts ?? null) ? $stageCounts : [];
+$nInterview = (int) ($stageCounts['interview_scheduled'] ?? 0);
+$nOnHold = (int) ($stageCounts['on_hold'] ?? 0);
 $counts = is_array($enlistmentCounts ?? null) ? $enlistmentCounts : [];
 $nSubmitted = (int) ($counts['submitted'] ?? 0);
 $nReviewed = (int) ($counts['reviewed'] ?? 0);
@@ -53,6 +57,25 @@ $statusMeta = static function (string $st): array {
     };
 };
 
+// Étape de pipeline (affinage visuel de l'État) : distingue « Entretien proposé » / « Mise en attente »
+// d'un simple « À traiter », sans changer le statut réel du dossier (toujours `submitted` en base).
+$stageMeta = static function (string $stage) use ($statusMeta): array {
+    return match ($stage) {
+        'interview_scheduled' => [
+            'class' => 'bg-sky-50 text-sky-950 ring-sky-200/80 border-sky-200',
+            'bar' => 'bg-sky-500',
+            'label' => 'Entretien proposé',
+        ],
+        'on_hold' => [
+            'class' => 'bg-orange-50 text-orange-950 ring-orange-200/80 border-orange-200',
+            'bar' => 'bg-orange-500',
+            'label' => 'Mise en attente',
+        ],
+        'accepted' => $statusMeta('reviewed'),
+        default => $statusMeta($stage),
+    };
+};
+
 $filterLink = static function (?string $key, ?string $current, string $label, int $count, string $baseUrl): string {
     $active = ($key === null && $current === null) || ($key !== null && $current === $key);
     $href = $key === null ? $baseUrl : $baseUrl . '?status=' . rawurlencode($key);
@@ -67,6 +90,24 @@ $filterLink = static function (?string $key, ?string $current, string $label, in
         htmlspecialchars($label, ENT_QUOTES, 'UTF-8'),
         $count > 0
             ? '<span class="' . ($active ? 'bg-white/15 text-white' : 'bg-slate-200 text-slate-900') . ' min-w-[1.35rem] rounded-md px-1.5 py-0.5 text-center text-[10px] font-black tabular-nums">' . $count . '</span>'
+            : ''
+    );
+};
+
+$stageFilterLink = static function (string $key, ?string $current, string $label, int $count, string $baseUrl): string {
+    $active = $current === $key;
+    $href = $baseUrl . '?stage=' . rawurlencode($key);
+    $cls = $active
+        ? 'border-sky-900 bg-sky-900 text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2'
+        : 'border-sky-300 bg-sky-50 text-sky-900 hover:border-sky-400 hover:bg-sky-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2';
+
+    return sprintf(
+        '<a href="%s" class="inline-flex min-h-[2.25rem] items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition %s">%s%s</a>',
+        htmlspecialchars($href, ENT_QUOTES, 'UTF-8'),
+        $cls,
+        htmlspecialchars($label, ENT_QUOTES, 'UTF-8'),
+        $count > 0
+            ? '<span class="' . ($active ? 'bg-white/15 text-white' : 'bg-sky-200 text-sky-900') . ' min-w-[1.35rem] rounded-md px-1.5 py-0.5 text-center text-[10px] font-black tabular-nums">' . $count . '</span>'
             : ''
     );
 };
@@ -332,12 +373,15 @@ $formatHoursShort = static function (?int $hours): string {
                 </div>
 
                 <div class="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-stone-200/80 pt-4">
+                    <?php $statusCurrentForPills = $stageFilter === null ? $statusFilter : '__stage_active__'; ?>
                     <div class="flex flex-wrap gap-2">
-                        <?= $filterLink(null, $statusFilter, 'Tous', $nTotal, $baseList) ?>
-                        <?= $filterLink('submitted', $statusFilter, 'À traiter', $nSubmitted, $baseList) ?>
-                        <?= $filterLink('reviewed', $statusFilter, 'Acceptées', $nReviewed, $baseList) ?>
-                        <?= $filterLink('rejected', $statusFilter, 'Refusées', $nRejected, $baseList) ?>
-                        <?= $filterLink('blocked', $statusFilter, 'Non admis', $nBlocked, $baseList) ?>
+                        <?= $filterLink(null, $statusCurrentForPills, 'Tous', $nTotal, $baseList) ?>
+                        <?= $filterLink('submitted', $statusCurrentForPills, 'À traiter', $nSubmitted, $baseList) ?>
+                        <?= $stageFilterLink('interview_scheduled', $stageFilter, 'Entretien', $nInterview, $baseList) ?>
+                        <?= $stageFilterLink('on_hold', $stageFilter, 'En attente', $nOnHold, $baseList) ?>
+                        <?= $filterLink('reviewed', $statusCurrentForPills, 'Acceptées', $nReviewed, $baseList) ?>
+                        <?= $filterLink('rejected', $statusCurrentForPills, 'Refusées', $nRejected, $baseList) ?>
+                        <?= $filterLink('blocked', $statusCurrentForPills, 'Non admis', $nBlocked, $baseList) ?>
                     </div>
 
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50/90 px-3 py-2">
@@ -394,7 +438,8 @@ $formatHoursShort = static function (?int $hours): string {
                                 <?php foreach ($enlistments as $e): ?>
                                     <?php
                                     $st = (string) ($e['status'] ?? '');
-                                    $meta = $statusMeta($st);
+                                    $stage = \App\Repositories\EnlistmentRepository::effectivePipelineStage($e);
+                                    $meta = $stageMeta($stage);
                                     $fid = (int) ($e['id'] ?? 0);
                                     $fn = (string) ($e['first_name'] ?? '');
                                     $ln = (string) ($e['last_name'] ?? '');
@@ -563,7 +608,8 @@ $formatHoursShort = static function (?int $hours): string {
                         <?php foreach ($enlistments as $e): ?>
                             <?php
                             $st = (string) ($e['status'] ?? '');
-                            $meta = $statusMeta($st);
+                            $stage = \App\Repositories\EnlistmentRepository::effectivePipelineStage($e);
+                            $meta = $stageMeta($stage);
                             $fid = (int) ($e['id'] ?? 0);
                             $fn = (string) ($e['first_name'] ?? '');
                             $ln = (string) ($e['last_name'] ?? '');

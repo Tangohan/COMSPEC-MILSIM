@@ -51,9 +51,11 @@ final class MemberMissionBriefingService
                 $starts = (string) ($ev['starts_at'] ?? '');
                 $rsvp = isset($ev['rsvp_status']) ? (string) $ev['rsvp_status'] : '';
                 $item = [
+                    'id' => (int) ($ev['id'] ?? 0),
                     'title' => $title,
                     'starts_at' => $starts,
                     'list_href' => url('evenements'),
+                    'rsvp_status' => $rsvp,
                     'rsvp_label' => self::rsvpLabel($rsvp),
                     'summary' => trim(preg_replace('/\s+/', ' ', strip_tags((string) ($ev['description'] ?? ''))) ?? ''),
                 ];

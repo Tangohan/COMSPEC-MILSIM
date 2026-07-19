@@ -23,6 +23,14 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
         <p class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
+    <a href="<?= htmlspecialchars(url('back-office/atak/briefing-slides'), ENT_QUOTES, 'UTF-8') ?>" class="mb-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40">
+        <span>
+            <span class="block text-sm font-bold text-slate-900">Diapositives de briefing tactique</span>
+            <span class="block text-xs text-slate-500">Images consultables in-game (tableau/écran Eden Editor) — gérées côté back-office.</span>
+        </span>
+        <span class="text-sm font-bold text-emerald-700">Ouvrir →</span>
+    </a>
+
     <div class="grid lg:grid-cols-12 gap-8 items-start">
         <div class="lg:col-span-8">
             <form action="<?= $baseUrl ?>/admin/atak-config" method="post" class="space-y-6">

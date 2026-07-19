@@ -24,6 +24,8 @@ class EnlistmentRepository
 
     private static ?bool $hasPortalMessageActorColumn = null;
 
+    private static ?bool $hasPipelineStageColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
@@ -37,6 +39,16 @@ class EnlistmentRepository
         }
 
         return self::$hasAccountColumns;
+    }
+
+    private function hasPipelineStageColumn(): bool
+    {
+        if (self::$hasPipelineStageColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'pipeline_stage' LIMIT 1");
+            self::$hasPipelineStageColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasPipelineStageColumn;
     }
 
     private function hasRecruitmentOpeningIdColumn(): bool
@@ -492,6 +504,46 @@ class EnlistmentRepository
         $stmt->execute([$newStatus, $reviewerUserId, $reviewerComment, $tenantId, $id]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /** @var list<string> */
+    private const PIPELINE_STAGES = ['submitted', 'interview_scheduled', 'on_hold', 'accepted', 'rejected', 'blocked'];
+
+    /**
+     * Étape de pipeline explicite (visibilité recrutement), en complément de `status`.
+     * Sans effet si la colonne n'existe pas encore (déploiement pas encore migré).
+     */
+    public function updatePipelineStage(int $tenantId, int $id, string $stage): bool
+    {
+        if (!in_array($stage, self::PIPELINE_STAGES, true) || !$this->hasPipelineStageColumn()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET pipeline_stage = ? WHERE tenant_id = ? AND id = ?'
+        );
+        $stmt->execute([$stage, $tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Étape de pipeline effective pour affichage (retombe sur le statut si jamais fixée explicitement).
+     *
+     * @param array<string, mixed> $row
+     */
+    public static function effectivePipelineStage(array $row): string
+    {
+        $stage = trim((string) ($row['pipeline_stage'] ?? ''));
+        if ($stage !== '' && in_array($stage, self::PIPELINE_STAGES, true)) {
+            return $stage;
+        }
+
+        return match ((string) ($row['status'] ?? 'submitted')) {
+            'reviewed' => 'accepted',
+            'rejected' => 'rejected',
+            'blocked' => 'blocked',
+            default => 'submitted',
+        };
     }
 
     /**

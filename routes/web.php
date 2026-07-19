@@ -53,6 +53,7 @@ use App\Controllers\Web\AnalyticsBeaconController;
 use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
+use App\Controllers\Admin\AdminBriefingSlidesController;
 use App\Controllers\Admin\AdminAtakModController;
 use App\Controllers\Admin\AdminConfigurationController;
 use App\Controllers\Admin\AdminRecruitmentsController;
@@ -221,6 +222,8 @@ return function (Router $router) {
     // Communautés multi-tenant (slug) + Stripe (sans auth)
     $router->get('/c/{slug}/avis/{avis}', [CommunityController::class, 'recruitmentOpeningShow']);
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
+    $router->get('/c/{slug}/unite/{unitSlug}', [CommunityController::class, 'showUnit']);
+    $router->get('/c/{slug}/medias', [CommunityController::class, 'mediaFeed']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
     $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
@@ -264,6 +267,7 @@ return function (Router $router) {
     $router->post('/reset-password', [AuthController::class, 'processResetPassword'], [GuestMiddleware::class]);
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
@@ -334,6 +338,7 @@ return function (Router $router) {
     $router->get('/federation', [FederationController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
@@ -730,6 +735,8 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/elevations', [EffectifsWorkspaceController::class, 'elevationRequests'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/elevations/{id}/statut', [EffectifsWorkspaceController::class, 'updateElevationRequestStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWall'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWallPost'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -806,6 +813,10 @@ return function (Router $router) {
     $router->post('/admin/modpacks/{id}/delete', [AdminModpackController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config', [AdminAtakConfigController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1152,6 +1163,7 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);

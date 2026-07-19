@@ -54,8 +54,29 @@ class AdminRecruitmentsController
             return Response::redirect(url('login'));
         }
         $statusFilter = $request->query('status');
-        $enlistments = $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
+        $stageFilter = trim((string) $request->query('stage', ''));
+        $stageFilterActive = in_array($stageFilter, ['interview_scheduled', 'on_hold'], true);
+        $enlistments = $stageFilterActive
+            ? $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted')
+            : $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
+
+        $stageCounts = ['interview_scheduled' => 0, 'on_hold' => 0];
+        if (($enlistmentCounts['submitted'] ?? 0) > 0) {
+            $submittedRows = $stageFilterActive ? $enlistments : $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
+            foreach ($submittedRows as $sr) {
+                $stg = EnlistmentRepository::effectivePipelineStage($sr);
+                if (isset($stageCounts[$stg])) {
+                    $stageCounts[$stg]++;
+                }
+            }
+        }
+        if ($stageFilterActive) {
+            $enlistments = array_values(array_filter(
+                $enlistments,
+                static fn (array $row): bool => EnlistmentRepository::effectivePipelineStage($row) === $stageFilter
+            ));
+        }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
         $submittedOlderThanSla = 0;
@@ -214,6 +235,8 @@ class AdminRecruitmentsController
             'recruitmentLmsTitle' => 'File des candidatures',
             'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
+            'stageFilter' => $stageFilterActive ? $stageFilter : null,
+            'stageCounts' => $stageCounts,
             'enlistmentCounts' => $enlistmentCounts,
             'recruitmentSidebarCounts' => $enlistmentCounts,
             'enlistmentSlaHours' => $slaHours,
@@ -1260,6 +1283,11 @@ class AdminRecruitmentsController
 
                 return Response::redirect($this->recruitmentDossierShowUrl($id));
             }
+            $this->enlistmentRepository->updatePipelineStage(
+                (int) $tenantId,
+                $id,
+                $action === 'interview' ? 'interview_scheduled' : 'on_hold'
+            );
 
             $summary = $action === 'interview'
                 ? 'Demande d’entretien consignée'
@@ -1311,6 +1339,11 @@ class AdminRecruitmentsController
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
+        $this->enlistmentRepository->updatePipelineStage(
+            (int) $tenantId,
+            $id,
+            $map[$action] === 'reviewed' ? 'accepted' : $map[$action]
+        );
         $messages = [
             'reviewed' => 'Candidature acceptée.',
             'rejected' => 'Candidature refusée.',

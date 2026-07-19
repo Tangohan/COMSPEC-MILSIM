@@ -1254,4 +1254,42 @@ CREATE TABLE IF NOT EXISTS `forum_blacklisted_domains` (
   CONSTRAINT `forum_blacklisted_domains_tenant_id_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Demandes d'élévation (grade / rôle / droits) — machine à états consultable par le demandeur et la cible.
+CREATE TABLE IF NOT EXISTS `elevation_requests` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `target_user_id` int unsigned NOT NULL,
+  `requested_by` int unsigned NOT NULL,
+  `kind` varchar(32) NOT NULL DEFAULT 'general',
+  `note` text,
+  `status` enum('pending','in_review','approved','rejected') NOT NULL DEFAULT 'pending',
+  `resolution_note` text,
+  `resolved_by` int unsigned DEFAULT NULL,
+  `resolved_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_elevation_requests_tenant_status` (`tenant_id`,`status`),
+  KEY `idx_elevation_requests_target` (`target_user_id`),
+  KEY `idx_elevation_requests_requester` (`requested_by`),
+  CONSTRAINT `elevation_requests_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `elevation_requests_target_fk` FOREIGN KEY (`target_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `elevation_requests_requester_fk` FOREIGN KEY (`requested_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Diapositives de briefing tactique (consommées in-game via l'extension Arma : /api/atak/briefing-slides).
+CREATE TABLE IF NOT EXISTS `tactical_briefing_slides` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `title` varchar(160) NOT NULL DEFAULT '',
+  `image_path` varchar(512) NOT NULL,
+  `sort_order` int NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tbs_tenant_active_sort` (`tenant_id`,`is_active`,`sort_order`),
+  CONSTRAINT `tactical_briefing_slides_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -215,6 +215,114 @@ class CommunityController
         ]);
     }
 
+    /** Mini-site public d’une unité : landing, bio, chef d’unité, sous-unités, effectif, roster. */
+    public function showUnit(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $unitSlug = (string) ($params['unitSlug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
+        }
+        $tid = (int) ($tenant['id'] ?? 0);
+        $unit = $this->unitRepository->findBySlugForTenant($tid, $unitSlug);
+        if (!$unit) {
+            return Response::view('errors.404', ['title' => 'Unité introuvable'])->setStatusCode(404);
+        }
+
+        $isStaffViewer = $this->authService->check()
+            && (int) Session::get('tenant_id') === $tid
+            && (\App\Core\Gate::getInstance()->allows('admin.organization') || \App\Core\Gate::getInstance()->allows('admin.access'));
+        if (empty($unit['show_on_public_page']) && !$isStaffViewer) {
+            return Response::view('errors.404', ['title' => 'Unité introuvable'])->setStatusCode(404);
+        }
+
+        $uid = (int) ($unit['id'] ?? 0);
+        $memberCounts = $this->unitRepository->countActiveMembersByUnitForTenant($tid);
+        $memberCount = (int) ($memberCounts[$uid] ?? 0);
+        $rosterByUnit = $this->unitRepository->rosterMembersByUnitForTenant($tid, 60);
+        $roster = $rosterByUnit[$uid] ?? [];
+
+        $commanderName = null;
+        $cmdId = (int) ($unit['commander_user_id'] ?? 0);
+        if ($cmdId > 0) {
+            $cu = $this->userRepository->findById($cmdId, $tid);
+            $commanderName = $cu ? (trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: null) : null;
+        }
+
+        $children = $this->unitRepository->childrenForTenant($tid, $uid);
+        $childrenCounts = [];
+        foreach ($children as $c) {
+            $cid = (int) ($c['id'] ?? 0);
+            $childrenCounts[$cid] = (int) ($memberCounts[$cid] ?? 0);
+        }
+
+        $parentUnit = null;
+        $parentId = (int) ($unit['parent_id'] ?? 0);
+        if ($parentId > 0) {
+            $parentUnit = $this->unitRepository->findById($parentId, $tid);
+        }
+
+        $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
+        $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
+
+        $this->analyticsEventService->record(
+            $tid,
+            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            AnalyticsEventCategory::TENANT_PUBLIC,
+            AnalyticsEventName::TENANT_PUBLIC_VIEW,
+            AnalyticsSubjectType::TENANT,
+            $tid,
+            null,
+            ['unit_id' => $uid]
+        );
+
+        return Response::view('layout.main', [
+            'title' => trim((string) ($unit['name'] ?? 'Unité')) . ' — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'content' => 'community.unit_show',
+            'tenant' => $tenant,
+            'unit' => $unit,
+            'unitMemberCount' => $memberCount,
+            'unitRoster' => $roster,
+            'unitCommanderName' => $commanderName,
+            'unitChildren' => $children,
+            'unitChildrenCounts' => $childrenCounts,
+            'unitParent' => $parentUnit,
+            'tenantBranding' => $tenantBranding,
+            'unitIsPreview' => empty($unit['show_on_public_page']) && $isStaffViewer,
+        ]);
+    }
+
+    /** Feed média plein écran (façon TikTok/Instagram) — images et vidéos publiées de la communauté. */
+    public function mediaFeed(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
+        }
+        $tid = (int) ($tenant['id'] ?? 0);
+        $items = $this->communityMediaRepository->listPublicPageItems($tid);
+
+        $this->analyticsEventService->record(
+            $tid,
+            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            AnalyticsEventCategory::TENANT_PUBLIC,
+            AnalyticsEventName::TENANT_PUBLIC_VIEW,
+            AnalyticsSubjectType::TENANT,
+            $tid,
+            null,
+            ['media_feed' => true]
+        );
+
+        return Response::view('layout.main', [
+            'title' => 'Médias — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'content' => 'community.media_feed',
+            'tenant' => $tenant,
+            'mediaFeedItems' => $items,
+        ]);
+    }
+
     /** Fiche publique « avis de vacance ». */
     public function recruitmentOpeningShow(Request $request, array $params = []): Response
     {
