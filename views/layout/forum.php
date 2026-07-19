@@ -52,17 +52,20 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
-    <main class="min-h-[80vh] bg-[#f8fafc]">
-        <?php
-        $contentPath = str_replace('.', '/', $content);
-        $innerPath = base_path('views/' . $contentPath . '.php');
-        if (is_file($innerPath)) {
-            require $innerPath;
-        } else {
-            echo '<div class="w-full px-4 sm:px-6 lg:px-8 py-12 text-neutral-400"><p>Vue non trouvée.</p></div>';
-        }
-        ?>
-    </main>
+    <div style="display:flex;align-items:flex-start;min-height:80vh">
+        <?php require base_path('views/partials/forum_channel_rail.php'); ?>
+        <main class="min-h-[80vh] bg-[#f8fafc]" style="flex:1;min-width:0">
+            <?php
+            $contentPath = str_replace('.', '/', $content);
+            $innerPath = base_path('views/' . $contentPath . '.php');
+            if (is_file($innerPath)) {
+                require $innerPath;
+            } else {
+                echo '<div class="w-full px-4 sm:px-6 lg:px-8 py-12 text-neutral-400"><p>Vue non trouvée.</p></div>';
+            }
+            ?>
+        </main>
+    </div>
     <footer class="border-t border-slate-200 py-6 mt-12 bg-slate-50">
         <div class="w-full px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
             <span><?= htmlspecialchars($forumConfig['name'] ?? 'Forum') ?> — <?= htmlspecialchars($forumConfig['subtitle'] ?? 'Athena') ?></span>
