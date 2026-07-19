@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Effectifs;
 
+use App\Repositories\ElevationRequestRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TrainingStaffPingRepository;
@@ -51,7 +52,10 @@ class EffectifsStaffAlertService
         private UserRepository $userRepository,
         private TenantRepository $tenantRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
-    ) {}
+        private ?ElevationRequestRepository $elevationRequestRepository = null,
+    ) {
+        $this->elevationRequestRepository ??= new ElevationRequestRepository();
+    }
 
     /** Null = une demande peut être envoyée ; sinon secondes restantes. */
     public function secondsBeforeNextElevationRequest(int $targetUserId, int $requesterUserId): ?int
@@ -227,6 +231,15 @@ class EffectifsStaffAlertService
                 $requesterUserId
             );
             $this->pingRepository->log($tenantId, $targetId, $requesterUserId, self::ELEVATION_PING_KIND);
+
+            try {
+                $existingRequest = $this->elevationRequestRepository->findOpenForRequesterTarget($tenantId, $requesterUserId, $targetId);
+                if ($existingRequest === null) {
+                    $this->elevationRequestRepository->create($tenantId, $targetId, $requesterUserId, $kind, $note);
+                }
+            } catch (\Throwable) {
+                // Le suivi d’état est un complément : une communauté pas encore migrée garde le comportement historique (ping + e-mail).
+            }
 
             if ($sent === 0) {
                 return [

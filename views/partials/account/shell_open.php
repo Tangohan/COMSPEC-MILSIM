@@ -110,6 +110,12 @@ $navGroups = [
                 'hint' => 'Personnage, unité, qualifications',
             ],
             [
+                'key' => 'access',
+                'href' => url('account/acces'),
+                'label' => 'Mes accès & rôle',
+                'hint' => 'Rôle, droits, demandes en cours',
+            ],
+            [
                 'key' => 'recruitment',
                 'href' => url('account/recruitment-presets'),
                 'label' => 'Profils de candidature',

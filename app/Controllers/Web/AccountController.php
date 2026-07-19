@@ -93,6 +93,66 @@ class AccountController
     }
 
     /**
+     * Écran self-service « Mes accès » : rôle/grade en clair + suivi des demandes d’élévation
+     * (comme demandeur et comme personne concernée), pour éviter de laisser l’utilisateur dans le flou.
+     */
+    public function access(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $uid = (int) $user['id'];
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+
+        $roleLabel = '';
+        try {
+            $ctx = function_exists('portal_header_context') ? portal_header_context() : [];
+            $roleLabel = trim((string) ($ctx['role_label'] ?? ''));
+        } catch (\Throwable) {
+            $roleLabel = '';
+        }
+
+        $grade = null;
+        if ($tenantId > 0 && !empty($user['grade_id'])) {
+            try {
+                $grade = \App\Core\Container::get(\App\Repositories\GradeRepository::class)
+                    ->findById((int) $user['grade_id'], $tenantId);
+            } catch (\Throwable) {
+                $grade = null;
+            }
+        }
+
+        $requestedByMe = [];
+        $requestedAboutMe = [];
+        $openElevationCount = 0;
+        if ($tenantId > 0) {
+            try {
+                $elevationRepo = \App\Core\Container::get(\App\Repositories\ElevationRequestRepository::class);
+                $requestedByMe = $elevationRepo->listForRequester($tenantId, $uid, 15);
+                $requestedAboutMe = $elevationRepo->listForTarget($tenantId, $uid, 15);
+                foreach (array_merge($requestedByMe, $requestedAboutMe) as $r) {
+                    if (in_array((string) ($r['status'] ?? ''), ['pending', 'in_review'], true)) {
+                        $openElevationCount++;
+                    }
+                }
+            } catch (\Throwable) {
+                $requestedByMe = [];
+                $requestedAboutMe = [];
+            }
+        }
+
+        return $this->accountView('account.access', 'Mes accès', [
+            'accountRoleLabel' => $roleLabel,
+            'accountGrade' => $grade,
+            'elevationRequestedByMe' => $requestedByMe,
+            'elevationRequestedAboutMe' => $requestedAboutMe,
+            'elevationOpenCount' => $openElevationCount,
+            'elevationKindLabels' => \App\Services\Effectifs\EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
+        ]);
+    }
+
+    /**
      * État de santé : connexion base, API ATAK (sans détail des tables).
      */
     private function getSystemHealth(int $tenantId): array
