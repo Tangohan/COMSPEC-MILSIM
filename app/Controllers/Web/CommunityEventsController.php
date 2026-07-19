@@ -135,4 +135,43 @@ final class CommunityEventsController
 
         return Response::redirect(url('evenements'));
     }
+
+    /**
+     * RSVP rapide (dashboard, sans rechargement de page) — même logique que rsvp(), réponse JSON.
+     */
+    public function rsvpApi(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée, rechargez la page.'], 403);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::json(['ok' => false, 'error' => 'Module événements indisponible.'], 403);
+        }
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::json(['ok' => false, 'error' => 'Authentification requise.'], 401);
+        }
+        $eventId = (int) ($params['id'] ?? 0);
+        $status = trim((string) $request->input('status', 'yes'));
+        if (!in_array($status, ['yes', 'no', 'maybe'], true)) {
+            $status = 'yes';
+        }
+        if ($eventId < 1 || !$this->events->belongsToTenant($eventId, $tenantId)) {
+            return Response::json(['ok' => false, 'error' => 'Événement introuvable.'], 404);
+        }
+        $result = $this->attendance->setRsvpWithNotifications(
+            $eventId,
+            (int) $user['id'],
+            $tenantId,
+            $status,
+            trim((string) $request->input('absence_reason', '')) ?: null,
+            trim((string) $request->input('absence_note', '')) ?: null
+        );
+        if (!($result['ok'] ?? false)) {
+            return Response::json(['ok' => false, 'error' => $result['error'] ?? 'Impossible d’enregistrer.'], 422);
+        }
+
+        return Response::json(['ok' => true, 'status' => $status]);
+    }
 }

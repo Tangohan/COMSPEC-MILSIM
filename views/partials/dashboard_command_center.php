@@ -308,6 +308,29 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
+        <?php if (is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0): ?>
+        <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
+            <div class="dash-rsvp-quick__shell">
+                <div class="dash-rsvp-quick__info">
+                    <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
+                    <h2 id="dash-rsvp-quick-heading" class="dash-rsvp-quick__title">
+                        <?= htmlspecialchars((string) ($mbOp['title'] ?? 'Prochaine manœuvre'), ENT_QUOTES, 'UTF-8') ?>
+                    </h2>
+                    <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
+                    <p class="dash-rsvp-quick__meta">
+                        <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
+                    </p>
+                </div>
+                <?php
+                $rsvpEventId = (int) $mbOp['id'];
+                $rsvpCurrentStatus = (string) ($mbOp['rsvp_status'] ?? '');
+                $rsvpCompact = false;
+                require base_path('views/partials/dashboard_rsvp_buttons.php');
+                ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <?php
         $announce_items = is_array($dashboard_announce_items ?? null) ? $dashboard_announce_items : [];
         $announce_heading = 'Alertes & annonces';
@@ -320,6 +343,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             ? url('back-office/alerts')
             : null;
         require base_path('views/partials/announce_tiles.php');
+        require base_path('views/partials/dashboard_popup_modal.php');
         ?>
 
         <?php if (!empty($showcase_training_feature)): ?>
@@ -559,6 +583,42 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <?php endif; ?>
 
         <div class="cc-shell space-y-10 py-8 md:py-10">
+            <?php $followedChannels = is_array($followed_channels ?? null) ? $followed_channels : []; ?>
+            <?php if ($followedChannels !== []): ?>
+            <section class="cc-card overflow-hidden" aria-labelledby="dash-channels-heading">
+                <div class="cc-card__head">
+                    <div>
+                        <p class="cc-kicker cc-kicker--primary">Salons</p>
+                        <h2 id="dash-channels-heading" class="cc-card__title">Mes salons suivis</h2>
+                    </div>
+                    <a href="<?= url('forum') ?>" class="cc-card__link">Ouvrir le forum</a>
+                </div>
+                <ul class="dash-channels-list">
+                    <?php foreach ($followedChannels as $ch): ?>
+                        <?php
+                        $chUnread = (int) ($ch['unread_count'] ?? 0);
+                        $chHref = $chUnread > 0 && !empty($ch['last_topic_href']) ? (string) $ch['last_topic_href'] : (string) ($ch['href'] ?? '#');
+                        $chLast = trim((string) ($ch['last_topic_title'] ?? ''));
+                        ?>
+                        <li>
+                            <a href="<?= htmlspecialchars($chHref, ENT_QUOTES, 'UTF-8') ?>" class="dash-channels-item">
+                                <span class="dash-channels-item__hash" aria-hidden="true">#</span>
+                                <span class="dash-channels-item__body">
+                                    <span class="dash-channels-item__name"><?= htmlspecialchars((string) ($ch['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($chLast !== ''): ?>
+                                        <span class="dash-channels-item__last"><?= htmlspecialchars($chLast, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </span>
+                                <?php if ($chUnread > 0): ?>
+                                    <span class="dash-channels-item__badge"><?= $chUnread > 99 ? '99+' : $chUnread ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+            <?php endif; ?>
+
             <?php
             $linkPins = [];
             foreach ($pins as $pin) {
@@ -741,6 +801,12 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                         <?php if ($summary !== ''): ?>
                                             <p class="mt-1 text-sm text-slate-600 line-clamp-2"><?= htmlspecialchars($summary, ENT_QUOTES, 'UTF-8') ?></p>
                                         <?php endif; ?>
+                                        <?php
+                                        $rsvpEventId = (int) ($op['id'] ?? 0);
+                                        $rsvpCurrentStatus = (string) ($op['rsvp_status'] ?? '');
+                                        $rsvpCompact = true;
+                                        require base_path('views/partials/dashboard_rsvp_buttons.php');
+                                        ?>
                                     </div>
                                     <a href="<?= htmlspecialchars($listHref, ENT_QUOTES, 'UTF-8') ?>" class="das-btn shrink-0">Ouvrir</a>
                                 </li>
@@ -931,4 +997,140 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 }
 
 [x-cloak] { display: none !important; }
+
+.dash-rsvp-quick {
+    width: 100%;
+    padding: 0 1.25rem;
+    margin: 1.25rem 0 0;
+}
+@media (min-width: 768px) { .dash-rsvp-quick { padding: 0 2rem; } }
+.dash-rsvp-quick__shell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid #d1fae5;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
+}
+.dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.0625rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; }
+.dash-rsvp-quick__meta { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; }
+
+.dash-rsvp { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.dash-rsvp--compact { margin-top: 0.6rem; }
+.dash-rsvp__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.6rem;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.dash-rsvp__btn:hover { background: #f8fafc; }
+.dash-rsvp__btn[disabled] { opacity: 0.55; cursor: wait; }
+.dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes,
+.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe,
+.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no {
+    color: #fff;
+    border-color: transparent;
+}
+.dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes { background: #059669; }
+.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe { background: #d97706; }
+.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no { background: #dc2626; }
+.dash-rsvp__status { font-size: 0.6875rem; font-weight: 700; color: #059669; min-height: 1em; }
+
+.dash-channels-list { list-style: none; margin: 0; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.dash-channels-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.65rem;
+    border-radius: 0.65rem;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+.dash-channels-item:hover { background: #f0fdf4; }
+.dash-channels-item__hash {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    background: #f1f5f9;
+    color: #64748b;
+    font-weight: 900;
+    font-size: 0.9375rem;
+}
+.dash-channels-item__body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.dash-channels-item__name { font-size: 0.8125rem; font-weight: 800; color: #0f172a; }
+.dash-channels-item__last { font-size: 0.6875rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-channels-item__badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: #059669;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 900;
+}
 </style>
+<script>
+(function () {
+    var csrfToken = <?= json_encode(\App\Core\Csrf::token(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    var endpointBase = <?= json_encode(url('api/events/'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    var statusLabels = { yes: 'Réponse enregistrée : présent(e)', maybe: 'Réponse enregistrée : peut-être', no: 'Réponse enregistrée : absent(e)' };
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-rsvp-choice]');
+        if (!btn) return;
+        var group = btn.closest('[data-rsvp-group]');
+        if (!group) return;
+        var eventId = parseInt(group.getAttribute('data-event-id') || '0', 10);
+        var choice = btn.getAttribute('data-rsvp-choice');
+        if (!eventId || !choice) return;
+
+        var buttons = group.querySelectorAll('[data-rsvp-choice]');
+        buttons.forEach(function (b) { b.disabled = true; });
+
+        var fd = new FormData();
+        fd.append('_csrf_token', csrfToken);
+        fd.append('status', choice);
+
+        fetch(endpointBase + eventId + '/rsvp', { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
+            .then(function (data) {
+                buttons.forEach(function (b) { b.disabled = false; });
+                if (data && data.ok) {
+                    document.querySelectorAll('[data-rsvp-group][data-event-id="' + eventId + '"]').forEach(function (g) {
+                        g.setAttribute('data-rsvp-current', choice);
+                        var lbl = g.querySelector('[data-rsvp-status-label]');
+                        if (lbl) lbl.textContent = statusLabels[choice] || '';
+                    });
+                } else {
+                    window.alert((data && data.error) || 'Impossible d’enregistrer votre réponse pour le moment.');
+                }
+            })
+            .catch(function () {
+                buttons.forEach(function (b) { b.disabled = false; });
+                window.alert('Connexion impossible. Réessayez.');
+            });
+    });
+})();
+</script>

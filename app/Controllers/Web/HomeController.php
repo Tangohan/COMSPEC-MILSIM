@@ -170,6 +170,8 @@ class HomeController
         $showStaffEnlistments = false;
         $dashboardPins = [];
         $dashboardAnnounceItems = [];
+        $dashboardPopupItems = [];
+        $followedChannels = [];
         $missionBriefing = null;
         $dashboardTesterProgram = null;
         $candidateEnlistmentTracking = [];
@@ -307,11 +309,48 @@ class HomeController
                 }
 
                 try {
+                    $followedChannelsRows = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
+                        ->listSubscribedForUser($uid, $tid);
+                    foreach ($followedChannelsRows as $fc) {
+                        $lastTopicId = (int) ($fc['last_topic_id'] ?? 0);
+                        $followedChannels[] = [
+                            'name' => (string) ($fc['name'] ?? ''),
+                            'slug' => (string) ($fc['slug'] ?? ''),
+                            'href' => url('forum/category/' . rawurlencode((string) ($fc['slug'] ?? ''))),
+                            'icon' => (string) ($fc['icon'] ?? ''),
+                            'unread_count' => (int) ($fc['unread_count'] ?? 0),
+                            'last_topic_title' => trim((string) ($fc['last_topic_title'] ?? '')),
+                            'last_topic_href' => $lastTopicId > 0 ? url('forum/topic/' . $lastTopicId) : null,
+                            'last_activity_at' => $fc['last_activity_at'] ?? null,
+                        ];
+                    }
+                } catch (\Throwable) {
+                    $followedChannels = [];
+                }
+
+                try {
                     $alertRows = \App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
                         ->forCurrentRequest();
                     foreach ($alertRows as $alert) {
                         $style = (string) ($alert['display_style'] ?? 'classic');
                         if (\App\Support\AlertDisplayStyle::isNavbarStyle($style)) {
+                            continue;
+                        }
+                        if (\App\Support\AlertDisplayStyle::isPopupStyle($style)) {
+                            $dashboardPopupItems[] = [
+                                'scope' => (string) ($alert['scope'] ?? 'tenant'),
+                                'id' => (int) ($alert['id'] ?? 0),
+                                'kind' => (string) ($alert['kind'] ?? 'info'),
+                                'title' => (string) ($alert['title'] ?? ''),
+                                'body' => (string) ($alert['body'] ?? ''),
+                                'cta_label' => $alert['cta_label'] ?? null,
+                                'cta_url' => $alert['cta_url'] ?? null,
+                                'accent_color' => $alert['accent_color'] ?? null,
+                                'image_url' => $alert['image_url'] ?? null,
+                                'banner_url' => $alert['banner_url'] ?? null,
+                                'dismissible' => !array_key_exists('dismissible', $alert) || (bool) $alert['dismissible'],
+                            ];
+
                             continue;
                         }
                         $dashboardAnnounceItems[] = [
@@ -428,6 +467,8 @@ class HomeController
             'show_staff_enlistments' => $showStaffEnlistments,
             'dashboard_pins' => $dashboardPins,
             'dashboard_announce_items' => $dashboardAnnounceItems,
+            'dashboard_popup_items' => $dashboardPopupItems,
+            'followed_channels' => $followedChannels,
             'mission_briefing' => $missionBriefing,
             'dashboard_tester_program' => $dashboardTesterProgram,
             'dashboard_next_steps' => $dashboardNextSteps,

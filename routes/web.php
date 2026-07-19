@@ -264,6 +264,7 @@ return function (Router $router) {
     $router->post('/reset-password', [AuthController::class, 'processResetPassword'], [GuestMiddleware::class]);
     $router->get('/evenements', [CommunityEventsController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
