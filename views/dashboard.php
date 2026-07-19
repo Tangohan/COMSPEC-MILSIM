@@ -116,14 +116,14 @@ require base_path('views/partials/alert_banners.php');
                         ou utilisez un code d’invitation pour rejoindre votre unité.
                     </p>
                     <div class="flex flex-col flex-wrap gap-4 sm:flex-row">
-                        <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#022c22] shadow-lg shadow-black/20 transition-colors hover:bg-emerald-400">
-                            Ouvrir le registre des unités
+                        <a href="<?= url('forum') ?>" class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-[#022c22] shadow-lg shadow-black/20 transition-colors hover:bg-emerald-400">
+                            Forum
                         </a>
                         <a href="<?= url('join') ?>" class="inline-flex items-center justify-center rounded-xl border-2 border-white/25 px-8 py-4 text-xs font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-white/10">
-                            Rejoindre avec un code
+                            Rejoindre une communauté
                         </a>
-                        <a href="<?= url('communities/create') ?>" class="inline-flex items-center justify-center px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-emerald-200/90 underline decoration-emerald-500/50 underline-offset-4 hover:text-white">
-                            Créer une communauté
+                        <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-emerald-200/90 underline decoration-emerald-500/50 underline-offset-4 hover:text-white">
+                            Parcourir le registre des unités
                         </a>
                     </div>
                 </div>

@@ -57,13 +57,14 @@
   };
 
   var ROOT_CLASS =
-    'fixed z-[250] top-4 right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:top-6 sm:right-6';
+    'fixed top-4 right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:top-6 sm:right-6';
 
   function injectKeyframesOnce() {
     if (document.getElementById('lms-training-toast-keyframes')) return;
     var s = document.createElement('style');
     s.id = 'lms-training-toast-keyframes';
     s.textContent =
+      '#lms-training-toast-root{position:fixed;z-index:180}' +
       '@keyframes lmsTrainingToastIn{from{opacity:0;transform:translateX(0.75rem) scale(0.98)}to{opacity:1;transform:translateX(0) scale(1)}}@media (prefers-reduced-motion:reduce){.lms-training-toast-item{animation:none!important}}';
     document.head.appendChild(s);
   }

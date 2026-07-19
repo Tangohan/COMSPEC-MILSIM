@@ -161,6 +161,7 @@ if ($atakMapConfig) {
     <aside class="atak-panel-left" id="atak-panel-left">
       <div class="atak-tabs-headers">
         <button type="button" class="atak-tab active" data-tab="cams">Cams</button>
+        <button type="button" class="atak-tab" data-tab="markers">Marqueurs</button>
         <button type="button" class="atak-tab" data-tab="chat">Tchat</button>
         <button type="button" class="atak-tab" data-tab="pings">Pings</button>
         <button type="button" class="atak-tab" data-tab="jtac">JTAC</button>
@@ -171,6 +172,11 @@ if ($atakMapConfig) {
           <p class="atak-muted" style="padding: 0.5rem; font-size: 0.8rem;">Aucun flux. Les photos CTAB envoyées depuis Arma apparaîtront ici.</p>
         </div>
         <div id="atak-intel-photos"></div>
+      </div>
+      <div class="atak-tabs-content" id="tab-markers">
+        <div class="atak-markers-list" id="atak-markers-list">
+          <p class="atak-muted" style="padding: 0.5rem; font-size: 0.8rem;">Aucun marqueur. Clic droit sur la carte → Placer un marqueur.</p>
+        </div>
       </div>
       <div class="atak-tabs-content" id="tab-chat">
         <div class="atak-chat-messages" id="atak-chat-messages"></div>
@@ -349,9 +355,13 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-markers.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-map-shapes.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-context-menu.js"></script>
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script>
     (function () {
       window.ATAKShowError = function (msg) {
@@ -478,6 +488,7 @@ if ($atakMapConfig) {
         if (window.ATAKMapShapes) ATAKMapShapes.fetchShapes();
         if (window.ATAKLaserCodes) ATAKLaserCodes.fetchLaserCodes();
         if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
+        else if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) window.ATAKMarkers.renderFromMap();
       }
       atakPoll();
       setInterval(atakPoll, 3000);

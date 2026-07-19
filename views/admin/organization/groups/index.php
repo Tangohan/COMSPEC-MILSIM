@@ -11,7 +11,7 @@ $error = \App\Core\Session::get('error');
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Organigramme</p>
                 <h1 class="mt-2 text-2xl font-black text-slate-900">Groupes opérationnels</h1>
-                <p class="mt-2 text-sm text-slate-600">Vue consolidée des groupes (unités type ORBAT), avec accès rapide aux fiches détaillées.</p>
+                <p class="mt-2 text-sm text-slate-600">Vue consolidée des groupes, avec accès rapide aux fiches et à la publication sur la page publique.</p>
             </div>
             <a href="<?= url('back-office/groups/create') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Créer un groupe</a>
         </div>
@@ -40,16 +40,28 @@ $error = \App\Core\Session::get('error');
                         <tr>
                             <th class="px-4 py-3 text-left">Groupe</th>
                             <th class="px-4 py-3 text-left">Code</th>
-                            <th class="px-4 py-3 text-left">Slug</th>
+                            <th class="px-4 py-3 text-left">Page publique</th>
                             <th class="px-4 py-3 text-left">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <?php foreach ($groups as $g): ?>
+                            <?php
+                            $isPublic = !array_key_exists('show_on_public_page', $g) || (int) ($g['show_on_public_page'] ?? 0) === 1;
+                            $hasBlurb = trim((string) ($g['public_blurb'] ?? '')) !== '';
+                            ?>
                             <tr class="hover:bg-slate-50">
                                 <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) ($g['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string) ($g['code'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-3 font-mono text-xs text-slate-600"><?= htmlspecialchars((string) ($g['slug'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                                <td class="px-4 py-3 text-slate-700">
+                                    <?php if ($isPublic && $hasBlurb): ?>
+                                        <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">Visible · présentation renseignée</span>
+                                    <?php elseif ($isPublic): ?>
+                                        <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">Visible · présentation à compléter</span>
+                                    <?php else: ?>
+                                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">Masquée</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-4 py-3">
                                     <div class="flex flex-wrap gap-2">
                                         <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= url('back-office/groups/' . (int) ($g['id'] ?? 0)) ?>">Voir</a>

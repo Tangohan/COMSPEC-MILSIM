@@ -99,6 +99,16 @@ class Container
                 self::get(UserRepository::class),
                 self::get(AuthService::class),
             ),
+            \App\Services\Community\LeaveCommunityService::class => new \App\Services\Community\LeaveCommunityService(
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\TenantCommunityFeedRepository::class),
+                self::get(\App\Services\Admin\AdminAuditService::class),
+            ),
             \App\Controllers\Web\CommunityController::class => new \App\Controllers\Web\CommunityController(
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
@@ -453,7 +463,8 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Services\Profile\UserUiPreferencesValidationService::class),
                 self::get(\App\Services\Steam\SteamWebApiService::class),
-                self::get(\App\Services\Auth\LoginSecurityOtpService::class)
+                self::get(\App\Services\Auth\LoginSecurityOtpService::class),
+                self::get(\App\Services\Community\LeaveCommunityService::class),
             ),
             \App\Controllers\Web\HrCharterController::class => new \App\Controllers\Web\HrCharterController(
                 self::get(AuthService::class),
@@ -961,8 +972,20 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(UserRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\ElevationRequestRepository::class),
+                self::get(\App\Services\Effectifs\ElevationApprovalService::class),
             ),
+            \App\Services\Effectifs\ElevationApprovalService::class => new \App\Services\Effectifs\ElevationApprovalService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Services\Rbac\RbacService::class),
+            ),
+            \App\Repositories\ElevationRequestRepository::class => new \App\Repositories\ElevationRequestRepository(),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),
             \App\Repositories\TrainingLessonFeedbackRepository::class => new \App\Repositories\TrainingLessonFeedbackRepository(),
             \App\Services\Training\TrainingAssignmentService::class => new \App\Services\Training\TrainingAssignmentService(
@@ -1184,6 +1207,9 @@ class Container
                 self::get(\App\Services\Admin\AdminAuditService::class),
                 self::get(\App\Services\Effectifs\EffectifsStaffAlertService::class),
                 self::get(TenantRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Services\Effectifs\ElevationApprovalService::class),
+                self::get(\App\Repositories\ElevationRequestRepository::class),
             ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
                 self::get(AuthService::class),

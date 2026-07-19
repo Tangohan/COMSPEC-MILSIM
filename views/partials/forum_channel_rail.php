@@ -11,7 +11,11 @@ declare(strict_types=1);
  * $topic (page sujet, contient category_id).
  */
 
-$forumRailTenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+$sessionTenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+$forumRailTenantId = (int) ($forumContextTenantId ?? 0);
+if ($forumRailTenantId < 1) {
+    $forumRailTenantId = $sessionTenantId;
+}
 if ($forumRailTenantId < 1) {
     return;
 }
@@ -23,10 +27,14 @@ if (isset($category) && is_array($category)) {
     $forumRailActiveCategoryId = (int) ($topic['category_id'] ?? 0);
 }
 
+$forumRailUserId = (int) (\App\Core\Session::get('user_id') ?? 0);
 $forumRailRoots = [];
 try {
     $forumRailRoots = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
         ->listForTenantWithChildren($forumRailTenantId);
+    if ($forumRailUserId > 0 && function_exists('forum_filter_category_tree_for_user')) {
+        $forumRailRoots = forum_filter_category_tree_for_user($forumRailRoots, $forumRailUserId);
+    }
 } catch (\Throwable) {
     $forumRailRoots = [];
 }
@@ -35,6 +43,9 @@ if ($forumRailRoots === []) {
 }
 
 $forumRailQuery = is_array($forumTenantQuery ?? null) ? $forumTenantQuery : [];
+if ($forumRailQuery === [] && $forumRailTenantId !== $sessionTenantId && $forumRailTenantId > 1) {
+    $forumRailQuery = ['forum_tenant' => $forumRailTenantId];
+}
 $forumRailUrl = static function (string $slug) use ($forumRailQuery): string {
     return function_exists('forum_build_category_url')
         ? forum_build_category_url($slug, $forumRailQuery)
@@ -42,6 +53,7 @@ $forumRailUrl = static function (string $slug) use ($forumRailQuery): string {
 };
 
 ?>
+<div class="forum-rail-shell">
 <button type="button" class="forum-rail-toggle" data-forum-rail-toggle aria-expanded="false" aria-controls="forum-rail">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
     <span>Salons</span>
@@ -93,7 +105,9 @@ $forumRailUrl = static function (string $slug) use ($forumRailQuery): string {
         <?php endforeach; ?>
     </nav>
 </aside>
+</div>
 <style>
+/* Layout shell / colonne : voir public/assets/css/forum.css (.forum-layout, .forum-rail-shell) */
 .forum-rail-toggle {
     display: none;
     position: fixed;
@@ -119,18 +133,6 @@ $forumRailUrl = static function (string $slug) use ($forumRailQuery): string {
     inset: 0;
     z-index: 39;
     background: rgba(2, 6, 23, 0.5);
-}
-.forum-rail {
-    position: sticky;
-    top: 0;
-    align-self: flex-start;
-    width: 15.5rem;
-    flex-shrink: 0;
-    max-height: 100vh;
-    overflow-y: auto;
-    border-right: 1px solid #e2e8f0;
-    background: #f8fafc;
-    padding: 1rem 0.75rem 2rem;
 }
 .forum-rail__head { padding: 0 0.25rem 0.75rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
 .forum-rail__home {
@@ -194,6 +196,9 @@ $forumRailUrl = static function (string $slug) use ($forumRailQuery): string {
         left: 0;
         bottom: 0;
         z-index: 40;
+        max-height: none;
+        border-right: 1px solid #e2e8f0;
+        background: #f8fafc;
         transform: translateX(-100%);
         transition: transform 0.2s ease;
         box-shadow: 0 0 0 1px rgba(0,0,0,0.02);

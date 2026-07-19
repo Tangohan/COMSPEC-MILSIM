@@ -150,8 +150,12 @@ class TeamAdminController
         }
         $slug = trim((string) $request->input('slug')) ?: $this->slugify(trim((string) $request->input('name')));
         if ($slug && $this->unitRepository->slugExists($tenantId, $slug, $id)) {
-            Session::flash('error', 'Ce slug existe déjà.');
+            Session::flash('error', 'Cette adresse courte est déjà utilisée.');
             return Response::redirect(url('back-office/teams/' . $id . '/edit'));
+        }
+        $showPublic = $request->input('show_on_public_page') ? 1 : 0;
+        if ($showPublic === 1 && $slug === '') {
+            $slug = $this->unitRepository->uniqueSlugForTenant($tenantId, trim((string) $request->input('name')));
         }
         $this->unitRepository->update($id, $tenantId, [
             'name' => $request->input('name'),
@@ -163,7 +167,7 @@ class TeamAdminController
             'display_order' => (int) ($request->input('display_order') ?? 0),
             'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
             'public_tags' => $request->input('public_tags', ''),
-            'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
+            'show_on_public_page' => $showPublic,
         ]);
         Session::flash('success', 'Équipe mise à jour.');
         return Response::redirect(url('back-office/teams/' . $id));

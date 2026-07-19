@@ -19,15 +19,18 @@ window.ATAKSocket = (function () {
   function connect(options) {
     options = options || {};
     mapId = options.mapId != null ? options.mapId : 1;
+    // Mode PHP : pas de WebSocket — on signale quand même « prêt » pour démarrer le polling.
     if (options.onConnect) options.onConnect();
     return null;
   }
 
-  function emit(event, data) {
+  function emit(/* event, data */) {
+    // Pas de bus temps réel en mode PHP ; les modules passent par l’API HTTP.
   }
 
   function isConnected() {
-    return true;
+    // false → les modules (ping, tchat…) utilisent POST/fetch au lieu d’emit (no-op).
+    return false;
   }
 
   function getMapId() { return mapId; }

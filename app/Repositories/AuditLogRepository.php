@@ -232,6 +232,7 @@ final class AuditLogRepository
             'user_created',
             'user_updated',
             'user_deactivated',
+            'user_left_community',
             'role_assigned',
             'role.permissions_updated',
             'group_member_added',

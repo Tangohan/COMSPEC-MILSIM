@@ -13,6 +13,7 @@ $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? ($m['community_name'] ?? 'Communauté')));
+$elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 
 $status = (string) ($m['status'] ?? '');
 $display = trim((string) ($m['display_name'] ?? ''));
@@ -178,18 +179,17 @@ $statusLabel = static function (string $raw): string {
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Gérer les rôles</a>
 
             <?php if ($canRequestElevation): ?>
-                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>">
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form eff-member-elevate">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="return_to" value="member">
-                    <label for="eff-member-elev-kind" style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,244,243,.4)">Demander une élévation</label>
-                    <select id="eff-member-elev-kind" name="elevation_kind" style="width:100%;border:1px solid rgba(242,244,243,.12);background:#0a0d0c;color:#e8eeec;padding:.7rem;min-height:2.75rem">
-                        <option value="grade">Grade</option>
-                        <option value="role">Rôle</option>
-                        <option value="droits">Droits d’accès</option>
-                        <option value="general">Situation RH</option>
-                    </select>
-                    <textarea name="elevation_note" rows="2" maxlength="500" placeholder="Précisez le besoin…" style="width:100%;box-sizing:border-box;border:1px solid rgba(242,244,243,.12);background:#0a0d0c;color:#e8eeec;padding:.7rem;font-family:inherit;resize:vertical"></textarea>
-                    <button type="submit" class="eff-btn eff-btn--ghost">Envoyer la demande</button>
+                    <p class="eff-member-elevate__title">Demander une élévation</p>
+                    <?php
+                    $fieldIdPrefix = 'eff-member-elev';
+                    $selectedKind = 'grade';
+                    $includeUnit = true;
+                    require base_path('views/admin/effectifs_workspace/partials/elevation_request_fields.php');
+                    ?>
+                    <button type="submit" class="eff-btn eff-btn--warn">Envoyer la demande</button>
                 </form>
             <?php endif; ?>
 

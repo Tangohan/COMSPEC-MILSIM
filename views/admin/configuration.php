@@ -177,7 +177,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
         <section>
             <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Structure, grades &amp; personnel</h2>
             <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                <?php $card(url('back-office/groups'), 'Unités & ORBAT', 'Hiérarchie, groupes, sections, équipes.'); ?>
+                <?php $card(url('back-office/groups'), 'Unités & groupes', 'Hiérarchie, publication sur la page publique, fiches unités.'); ?>
                 <?php $card(url('back-office/teams'), 'Équipes', 'Équipes tactiques et composition.'); ?>
                 <?php $card(url('back-office/referentiels/grades'), 'Référentiel grades', 'Rangs, codes OTAN, libellés pour les fiches.'); ?>
                 <?php $card(url('back-office/personnel-job-roles'), 'Rôles métier & fiches', 'Rôles de poste, affectations et champs dossier.'); ?>

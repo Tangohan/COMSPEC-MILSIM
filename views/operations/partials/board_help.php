@@ -16,18 +16,19 @@ $refUrl = url('documentation/fichier/tableau-operationnel');
     <div class="border-t border-slate-100 px-4 py-4 text-sm text-slate-700 space-y-3 leading-relaxed">
         <?php if ($boardHelpIsPilotage): ?>
             <p>
-                Cet écran est le <strong>pilotage</strong> : vous créez des fiches en brouillon, les validez, les mettez sur le mur, suivez le statut, puis clôturez ou retirez.
-                La <strong>vue membres</strong> (mur) ne montre que les fiches déjà publiées.
+                Cet écran est le <strong>pilotage</strong>. La page est organisée en étapes :
+                <strong>consulter</strong> le tableau, <strong>créer une fiche</strong>, gérer les <strong>modèles</strong>, puis partager le <strong>lien public</strong> (lecture seule).
+                La <strong>vue membres</strong> ne montre que les fiches déjà publiées.
             </p>
             <ol class="list-decimal pl-5 space-y-1.5">
-                <li><strong>Nouvelle entrée</strong> (ou modèle / publication depuis un événement) → brouillon.</li>
+                <li><strong>Création rapide</strong> ou éditeur complet (ou modèle) → brouillon.</li>
                 <li>Compléter public, sensibilité, dates, priorité → <strong>Enregistrer</strong>.</li>
                 <li><strong>Approuver</strong> ou <strong>Mettre en ligne</strong> pour diffuser sur le mur.</li>
                 <li>Suivre Planifié / En cours ; cocher les <strong>points de contrôle</strong> ; <strong>Clôturer</strong>.</li>
                 <li>Au besoin : <strong>Mise à jour opérationnelle</strong>, <strong>Copier en brouillon</strong>, ou <strong>Retirer du mur</strong>.</li>
             </ol>
             <p>
-                La <strong>posture</strong> (Normale · Vigilance · Alerte · Crise) s’applique ici et s’affiche aussi sur le mur.
+                La <strong>posture</strong> (Normale · Vigilance · Alerte · Crise) s’applique ici et s’affiche aussi sur le mur et la page publiée.
                 Utilisez les filtres Publication / période / type et les modes <strong>synthèse crise</strong> ou <strong>briefing</strong> pour cadrer l’affichage.
             </p>
         <?php else: ?>

@@ -52,7 +52,7 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                     <p class="account-hub__stat-label">Votre compte</p>
                     <p class="account-hub__stat-value">Identité civile</p>
                     <p class="account-hub__stat-meta">
-                        Adresse e-mail, mot de passe, apparence du portail. Un compte appartient à une seule communauté à la fois.
+                        Adresse e-mail, mot de passe, apparence du portail. Vous pouvez appartenir à plusieurs communautés ; chacune a ses propres accès.
                         <br><a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>">Vue d’ensemble →</a>
                     </p>
                 </div>
@@ -112,7 +112,26 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                                 $resNote = trim((string) ($r['resolution_note'] ?? ''));
                                 ?>
                             <tr>
-                                <td><?= htmlspecialchars($kindLabels[$kind] ?? 'Situation RH', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <?= htmlspecialchars($kindLabels[$kind] ?? 'Situation RH', ENT_QUOTES, 'UTF-8') ?>
+                                    <?php
+                                    $propBits = [];
+                                    if (!empty($r['proposed_grade_id'])) {
+                                        $propBits[] = 'grade';
+                                    }
+                                    if (!empty($r['proposed_role_id'])) {
+                                        $propBits[] = 'rôle';
+                                    }
+                                    if (!empty($r['proposed_job_role_id'])) {
+                                        $propBits[] = 'fonction';
+                                    }
+                                    if (!empty($r['proposed_unit_id'])) {
+                                        $propBits[] = 'affectation';
+                                    }
+                                    if ($propBits !== []): ?>
+                                        <br><small>Proposition : <?= htmlspecialchars(implode(', ', $propBits), ENT_QUOTES, 'UTF-8') ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($requesterName, ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
@@ -144,7 +163,26 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                                 $resNote = trim((string) ($r['resolution_note'] ?? ''));
                                 ?>
                             <tr>
-                                <td><?= htmlspecialchars($kindLabels[$kind] ?? 'Situation RH', ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <?= htmlspecialchars($kindLabels[$kind] ?? 'Situation RH', ENT_QUOTES, 'UTF-8') ?>
+                                    <?php
+                                    $propBits = [];
+                                    if (!empty($r['proposed_grade_id'])) {
+                                        $propBits[] = 'grade';
+                                    }
+                                    if (!empty($r['proposed_role_id'])) {
+                                        $propBits[] = 'rôle';
+                                    }
+                                    if (!empty($r['proposed_job_role_id'])) {
+                                        $propBits[] = 'fonction';
+                                    }
+                                    if (!empty($r['proposed_unit_id'])) {
+                                        $propBits[] = 'affectation';
+                                    }
+                                    if ($propBits !== []): ?>
+                                        <br><small>Proposition : <?= htmlspecialchars(implode(', ', $propBits), ENT_QUOTES, 'UTF-8') ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?= htmlspecialchars($targetName, ENT_QUOTES, 'UTF-8') ?></td>
                                 <td><?= htmlspecialchars($createdFmt, ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
@@ -158,6 +196,52 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
                 </div>
                 <?php endif; ?>
 
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <?php
+    $canLeave = !empty($canLeaveCommunity);
+    $leaveName = trim((string) ($leaveCommunityName ?? ''));
+    $leaveBlocked = trim((string) ($leaveCommunityBlockedReason ?? ''));
+    $confirmBody = $leaveName !== ''
+        ? 'Vous allez quitter « ' . $leaveName . ' ». Votre accès à cette communauté prendra fin immédiatement. Votre compte Athena et vos éventuelles autres communautés ne sont pas concernés. Cette action est définitive pour cette communauté.'
+        : 'Vous allez quitter cette communauté. Votre accès y prendra fin immédiatement. Votre compte Athena et vos éventuelles autres communautés ne sont pas concernés. Cette action est définitive pour cette communauté.';
+    ?>
+    <section class="account-hub__panel" id="quitter" aria-labelledby="access-leave-heading">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Départ</p>
+            <h2 id="access-leave-heading" class="account-hub__panel-title">Quitter la communauté</h2>
+            <p class="account-hub__panel-desc">
+                Si vous ne souhaitez plus faire partie de <?= $leaveName !== '' ? '« ' . htmlspecialchars($leaveName, ENT_QUOTES, 'UTF-8') . ' »' : 'cette communauté' ?>,
+                vous pouvez mettre fin à votre accès ici. Cela ne supprime pas votre compte Athena.
+            </p>
+        </div>
+        <div class="account-hub__panel-body">
+            <?php if ($leaveBlocked !== ''): ?>
+            <p class="account-hub__stat-meta" style="color:#92400e;font-weight:600"><?= htmlspecialchars($leaveBlocked, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php elseif ($canLeave): ?>
+            <p class="account-hub__stat-meta" style="margin-bottom:1rem">
+                Après votre départ, vous n’aurez plus accès aux espaces de cette communauté.
+                Les responsables en seront informés.
+            </p>
+            <form
+                method="post"
+                action="<?= htmlspecialchars(url('account/quitter-communaute'), ENT_QUOTES, 'UTF-8') ?>"
+                data-ui-confirm="1"
+                data-ui-confirm-title="Quitter la communauté ?"
+                data-ui-confirm-body="<?= htmlspecialchars($confirmBody, ENT_QUOTES, 'UTF-8') ?>"
+            >
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="account-hub__btn" style="background:#fff;color:#be123c;border:1px solid #fecdd3;font-weight:800">
+                    Quitter <?= $leaveName !== '' ? '« ' . htmlspecialchars($leaveName, ENT_QUOTES, 'UTF-8') . ' »' : 'cette communauté' ?>
+                </button>
+            </form>
+            <?php else: ?>
+            <p class="account-hub__stat-meta">
+                Vous n’êtes rattaché à aucune communauté pour l’instant.
+                <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>">Rejoindre une communauté</a>
+            </p>
             <?php endif; ?>
         </div>
     </section>

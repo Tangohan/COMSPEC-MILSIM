@@ -175,8 +175,14 @@ class CommunityController
             'primary_color' => null,
             'accent_color' => null,
         ];
+        $mediaViewerUserId = $this->authService->check() && Session::get('user_id')
+            ? (int) Session::get('user_id')
+            : null;
         if ($publicLayout === 'showcase') {
-            $publicMediaItems = $this->communityMediaRepository->listPublicPageItems($tid);
+            $publicMediaItems = $this->communityMediaRepository->attachLikeState(
+                $this->communityMediaRepository->listPublicPageItems($tid),
+                $mediaViewerUserId
+            );
             $publicMediaCollections = $this->communityMediaRepository->listPublicCollections($tid);
             $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
             $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
@@ -204,6 +210,8 @@ class CommunityController
             'recruitmentListUpdatedAt' => $recruitmentListUpdatedAt,
             'publicMediaItems' => $publicMediaItems,
             'publicMediaCollections' => $publicMediaCollections,
+            'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
+            'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,
             'analyticsBeacon' => [
                 'tenantId' => $tid,
@@ -293,7 +301,7 @@ class CommunityController
         ]);
     }
 
-    /** Feed média plein écran (façon TikTok/Instagram) — images et vidéos publiées de la communauté. */
+    /** Galerie médias publique — grille / masonry avec lightbox au clic. */
     public function mediaFeed(Request $request, array $params = []): Response
     {
         $slug = (string) ($params['slug'] ?? '');
@@ -302,11 +310,19 @@ class CommunityController
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
         $tid = (int) ($tenant['id'] ?? 0);
-        $items = $this->communityMediaRepository->listPublicPageItems($tid);
+        $viewerUserId = $this->authService->check() && Session::get('user_id')
+            ? (int) Session::get('user_id')
+            : null;
+        $items = $this->communityMediaRepository->attachLikeState(
+            $this->communityMediaRepository->listPublicPageItems($tid),
+            $viewerUserId
+        );
+        $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
+        $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
 
         $this->analyticsEventService->record(
             $tid,
-            $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
+            $viewerUserId,
             AnalyticsEventCategory::TENANT_PUBLIC,
             AnalyticsEventName::TENANT_PUBLIC_VIEW,
             AnalyticsSubjectType::TENANT,
@@ -320,7 +336,92 @@ class CommunityController
             'content' => 'community.media_feed',
             'tenant' => $tenant,
             'mediaFeedItems' => $items,
+            'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
+            'mediaViewerCanLike' => $viewerUserId !== null && $viewerUserId > 0,
+            'tenantBranding' => $tenantBranding,
         ]);
+    }
+
+    /**
+     * Toggle « J’aime » sur un média public publié (utilisateurs connectés uniquement).
+     * Réponse JSON pour la lightbox / la grille.
+     */
+    public function toggleMediaLike(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $mediaId = (int) ($params['id'] ?? 0);
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Cette communauté est introuvable.',
+            ], 404);
+        }
+        if (!$this->communityMediaRepository->likesTableExists()) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Les « J’aime » ne sont pas encore disponibles pour cette galerie.',
+            ], 503);
+        }
+
+        $userId = $this->authService->check() && Session::get('user_id')
+            ? (int) Session::get('user_id')
+            : 0;
+        if ($userId < 1) {
+            return Response::json([
+                'success' => false,
+                'needs_login' => true,
+                'message' => 'Connectez-vous pour aimer ce média.',
+                'login_url' => url('login'),
+            ], 401);
+        }
+
+        $input = $this->readJsonOrFormInput($request);
+        $csrf = (string) ($input['csrf_token'] ?? $input['_csrf_token'] ?? $request->input('_csrf_token', ''));
+        if (!Csrf::validate($csrf)) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Votre session a expiré. Rechargez la page puis réessayez.',
+            ], 403);
+        }
+
+        $tid = (int) ($tenant['id'] ?? 0);
+        $item = $this->communityMediaRepository->findPublishedPublicItem($mediaId, $tid);
+        if ($item === null) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Ce média n’est plus disponible.',
+            ], 404);
+        }
+
+        $wantLike = array_key_exists('like', $input)
+            ? ((int) $input['like'] === 1 || $input['like'] === true || $input['like'] === '1')
+            : !$this->communityMediaRepository->isLiked($userId, $mediaId);
+
+        $this->communityMediaRepository->setLike($tid, $userId, $mediaId, $wantLike);
+        $liked = $this->communityMediaRepository->isLiked($userId, $mediaId);
+        $count = $this->communityMediaRepository->countLikes($mediaId);
+
+        return Response::json([
+            'success' => true,
+            'liked' => $liked,
+            'likes_count' => $count,
+            'message' => $liked ? 'Merci pour votre soutien.' : '« J’aime » retiré.',
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function readJsonOrFormInput(Request $request): array
+    {
+        $raw = $request->method() === 'POST' ? (string) file_get_contents('php://input') : '';
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return $request->all();
     }
 
     /** Fiche publique « avis de vacance ». */

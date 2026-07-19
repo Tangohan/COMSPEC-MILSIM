@@ -102,6 +102,33 @@ class TenantAlertRepository
         }
     }
 
+    /**
+     * Annonces communautaires dont la fenêtre de diffusion est terminée.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentlyEndedForTenant(int $tenantId, int $limit = 40): array
+    {
+        $limit = max(1, min(100, $limit));
+        try {
+            $now = date('Y-m-d H:i:s');
+            $sql = 'SELECT * FROM tenant_alerts WHERE tenant_id = ?
+                AND ends_at IS NOT NULL AND ends_at < ?
+                AND (starts_at IS NULL OR starts_at <= ends_at)
+                ORDER BY ends_at DESC, id DESC
+                LIMIT ' . $limit;
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, $now]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
     /** @param array<string, mixed> $data */
     public function insert(int $tenantId, array $data): int
     {

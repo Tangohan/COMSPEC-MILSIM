@@ -417,6 +417,52 @@ final class EmailService
         );
     }
 
+    public function sendMemberLeftCommunityStaff(
+        string $to,
+        string $tenantName,
+        string $memberDisplayName,
+        string $memberEmail,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::MEMBER_LEFT_COMMUNITY_STAFF,
+            'member_left_community_staff',
+            $to,
+            'Départ d’un membre — ' . $tenantName,
+            [
+                'tenantName' => $tenantName,
+                'memberDisplayName' => $memberDisplayName,
+                'memberEmail' => $memberEmail,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'staff_notify']
+        );
+    }
+
+    public function sendMemberLeftCommunityConfirmation(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        ?int $tenantId = null
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::MEMBER_LEFT_COMMUNITY_CONFIRMATION,
+            'member_left_community_confirmation',
+            $to,
+            'Vous avez quitté « ' . $tenantName . ' »',
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'joinUrl' => url('join'),
+                'dashboardUrl' => url('dashboard'),
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'member_notify']
+        );
+    }
+
     /**
      * Notification recrutement / fondateur / RH : nouvelle candidature enregistrée.
      */

@@ -130,6 +130,9 @@ window.ATAKMap = (function () {
     });
 
     window.ATAKMap._map = map;
+    try {
+      window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map, mapId: mapId } }));
+    } catch (e) {}
     return map;
   }
 
@@ -151,6 +154,61 @@ window.ATAKMap = (function () {
     return layerGroups[layerId];
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function markerSizePx(size) {
+    if (size === 'sm' || size === 'small') return 10;
+    if (size === 'lg' || size === 'large') return 18;
+    if (typeof size === 'number' && size > 0) return size;
+    return 14;
+  }
+
+  function buildManualMarkerIcon(data) {
+    var color = data.color || '#34d399';
+    var kind = data.icon || data.symbol || 'dot';
+    var px = markerSizePx(data.size);
+    var html;
+    if (kind === 'pin') {
+      html = '<span class="atak-micon atak-micon--pin" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+    } else if (kind === 'flag') {
+      html = '<span class="atak-micon atak-micon--flag" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+    } else if (kind === 'warning') {
+      html = '<span class="atak-micon atak-micon--warning" style="--m-color:' + color + ';--m-size:' + px + 'px">!</span>';
+    } else if (kind === 'target') {
+      html = '<span class="atak-micon atak-micon--target" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+    } else {
+      html = '<span class="atak-micon atak-micon--dot" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+    }
+    var box = Math.max(px + 8, 22);
+    return L.divIcon({
+      className: 'atak-marker-icon',
+      html: html,
+      iconSize: [box, box],
+      iconAnchor: [box / 2, box / 2]
+    });
+  }
+
+  function markerPopupHtml(data, lng, lat) {
+    var label = data.label || data.text || data.message || data.name || 'Marqueur';
+    var author = data.author || data.createdBy || '';
+    var desc = data.description || data.desc || '';
+    var gx = Math.round(Number(lng));
+    var gy = Math.round(Number(lat));
+    var html = '<div class="atak-marker-popup">';
+    html += '<strong>' + escapeHtml(label) + '</strong>';
+    html += '<div class="atak-marker-popup__coords">Grille ' + gx + ' / ' + gy + '</div>';
+    if (desc) html += '<p class="atak-marker-popup__desc">' + escapeHtml(desc) + '</p>';
+    if (author) html += '<span class="atak-marker-popup__author">' + escapeHtml(author) + '</span>';
+    html += '</div>';
+    return html;
+  }
+
   function addOrUpdateMarker(payload) {
     var id = payload.id;
     var layerId = payload.layerId;
@@ -168,36 +226,93 @@ window.ATAKMap = (function () {
     if (lat == null || lng == null) return;
     var applied = applyOffset(lat, lng);
     var latlng = L.latLng(applied[0], applied[1]);
+    var popupHtml = markerPopupHtml(data, lng, lat);
+    var isManual = (data.type === 'manual') || data.color || data.icon || data.size || data.description;
 
     if (markersById[id]) {
       markersById[id].setLatLng(latlng);
+      markersById[id]._atakData = data;
+      markersById[id]._atakGrid = { lng: lng, lat: lat };
+      if (isManual) {
+        try { markersById[id].setIcon(buildManualMarkerIcon(data)); } catch (e) {}
+      }
+      if (markersById[id].getPopup && markersById[id].getPopup()) {
+        markersById[id].setPopupContent(popupHtml);
+      } else {
+        markersById[id].bindPopup(popupHtml);
+      }
       return;
     }
     var layer = ensureLayer(layerId);
-    var nato = window.NatoSidcIcons;
     var icon;
-    if (nato && nato.leafletDivIcon) {
-      icon = nato.leafletDivIcon(L, {
-        affiliation: 'friend',
-        role: 'point',
-        roleKey: 'recon',
-        callSign: '',
-        showLabel: false,
-        size: 28,
-      });
+    if (isManual) {
+      icon = buildManualMarkerIcon(data);
     } else {
-      icon = L.divIcon({
-        className: 'atak-marker-icon',
-        html: '<span style="width:12px;height:12px;border-radius:50%;background:#34d399;border:2px solid #0a0a0f;"></span>',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      });
+      var nato = window.NatoSidcIcons;
+      var label = data.label || data.text || data.message || data.name || '';
+      if (nato && nato.leafletDivIcon) {
+        icon = nato.leafletDivIcon(L, {
+          affiliation: 'friend',
+          role: 'point',
+          roleKey: 'recon',
+          callSign: label ? String(label).substring(0, 12) : '',
+          showLabel: !!label,
+          size: 28,
+        });
+      } else {
+        icon = buildManualMarkerIcon(data);
+      }
     }
     var marker = L.marker(latlng, { icon: icon });
     marker._atakId = id;
     marker._atakLayerId = layerId;
+    marker._atakData = data;
+    marker._atakGrid = { lng: lng, lat: lat };
+    marker.bindPopup(popupHtml);
     marker.addTo(layer);
     markersById[id] = marker;
+  }
+
+  function listMarkers() {
+    return Object.keys(markersById).map(function (k) {
+      var m = markersById[k];
+      var data = m._atakData || {};
+      var grid = m._atakGrid || {};
+      var ll = m.getLatLng ? m.getLatLng() : null;
+      return {
+        id: k,
+        layerId: m._atakLayerId,
+        data: data,
+        gridLng: grid.lng != null ? grid.lng : (ll ? ll.lng : null),
+        gridLat: grid.lat != null ? grid.lat : (ll ? ll.lat : null)
+      };
+    });
+  }
+
+  function focusMarker(id) {
+    var m = markersById[id];
+    if (!m || !map) return;
+    var ll = m.getLatLng();
+    if (ll) {
+      map.setView(ll, Math.max(map.getZoom(), 4));
+      if (m.openPopup) m.openPopup();
+    }
+  }
+
+  function deleteMarkerById(id) {
+    var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+    if (!base || String(id).indexOf('local_') === 0) {
+      removeMarker({ id: id });
+      return Promise.resolve(true);
+    }
+    return fetch(base + '/api/markers/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      credentials: 'include'
+    }).then(function (r) {
+      if (!r.ok && r.status !== 204) throw new Error('delete');
+      removeMarker({ id: id });
+      return true;
+    });
   }
 
   function removeMarker(payload) {
@@ -343,7 +458,7 @@ window.ATAKMap = (function () {
     var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
     var mapId = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
     var url = (base || '') + '/api/atak/markers?mapId=' + mapId;
-    fetch(url).then(function (r) { return r.json(); }).then(function (list) {
+    fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (list) {
       if (!map || !Array.isArray(list)) return;
       var seen = {};
       list.forEach(function (m) {
@@ -354,8 +469,11 @@ window.ATAKMap = (function () {
         addOrUpdateMarker({ id: id, layerId: m.layerId != null ? m.layerId : 0, data: data });
       });
       Object.keys(markersById).forEach(function (k) {
-        if (!seen[k]) removeMarker({ id: k });
+        if (!seen[k] && String(k).indexOf('local_') !== 0) removeMarker({ id: k });
       });
+      if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) {
+        window.ATAKMarkers.renderFromMap();
+      }
     }).catch(function () {});
   }
 
@@ -532,6 +650,9 @@ window.ATAKMap = (function () {
     addOrUpdateDesignator: addOrUpdateDesignator,
     refreshSigintZones: refreshSigintZones,
     pollMarkers: pollMarkers,
+    listMarkers: listMarkers,
+    focusMarker: focusMarker,
+    deleteMarkerById: deleteMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
     removeMarker: removeMarker,

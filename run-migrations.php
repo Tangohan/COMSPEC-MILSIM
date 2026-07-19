@@ -1917,6 +1917,13 @@ try {
 $personnelJobRolesMigrate = require $root . '/bootstrap/personnel_job_roles_migration.php';
 $personnelJobRolesMigrate($pdo);
 
+$elevationRequestsProposalMigrate = require $root . '/bootstrap/elevation_requests_proposal_migration.php';
+try {
+    $elevationRequestsProposalMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
+}
+
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
 $enlistmentCannedMessagesMigrate($pdo);
 
@@ -1960,6 +1967,13 @@ try {
     $demoNdaGateMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] demo_nda_gate : ' . $e->getMessage() . "\n";
+}
+
+$operationalBoardShareMigrate = require $root . '/bootstrap/operational_board_share_migration.php';
+try {
+    $operationalBoardShareMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] operational_board_share : ' . $e->getMessage() . "\n";
 }
 
 $cronSystemMigrate = require $root . '/bootstrap/cron_system_migration.php';

@@ -37,6 +37,23 @@
             <label for="display_order" class="block text-sm font-medium text-slate-700">Ordre</label>
             <input type="number" id="display_order" name="display_order" value="0" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm">
         </div>
+        <div class="border-t border-slate-200 pt-4 space-y-3">
+            <p class="text-xs font-bold text-slate-800">Fiche publique</p>
+            <p class="text-xs text-slate-500">Ces informations apparaissent sur la page publique de la communauté et sur la fiche dédiée de l’unité.</p>
+            <label class="flex items-start gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="show_on_public_page" value="1" class="mt-0.5" checked>
+                <span>Afficher cette unité sur la page publique de la communauté</span>
+            </label>
+            <div>
+                <label for="public_blurb" class="block text-sm font-medium text-slate-700">Présentation publique</label>
+                <p class="mt-0.5 text-xs text-slate-500">Texte court visible sur la vitrine et la fiche de l’unité.</p>
+                <textarea id="public_blurb" name="public_blurb" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"></textarea>
+            </div>
+            <div>
+                <label for="public_tags" class="block text-sm font-medium text-slate-700">Mots-clés affichés (un par ligne)</label>
+                <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"></textarea>
+            </div>
+        </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer</button>
             <a href="<?= url('back-office/groups') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>

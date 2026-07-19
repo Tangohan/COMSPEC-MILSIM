@@ -21,6 +21,14 @@ final class ContainerIntegrations
                 Container::get(\App\Repositories\TenantMessageRepository::class),
                 Container::get(\App\Services\Notifications\ActivityHubPresentationService::class),
             ),
+            \App\Services\Alerts\MemberAlertsPageService::class => new \App\Services\Alerts\MemberAlertsPageService(
+                Container::get(\App\Services\Alerts\AlertPresentationService::class),
+                Container::get(\App\Services\Dashboard\TenantDashboardPinService::class),
+                Container::get(\App\Repositories\ForumTopicRepository::class),
+            ),
+            \App\Controllers\Web\MemberAlertsController::class => new \App\Controllers\Web\MemberAlertsController(
+                Container::get(\App\Services\Alerts\MemberAlertsPageService::class),
+            ),
             \App\Controllers\Web\CommunityCalendarFeedController::class => new \App\Controllers\Web\CommunityCalendarFeedController(
                 Container::get(\App\Repositories\CommunityEventRepository::class),
                 Container::get(\App\Services\Platform\FeatureGateService::class),

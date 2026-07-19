@@ -10,6 +10,10 @@ final class EmailEvents
     public const REGISTER_SECURITY_COMPANION = 'REGISTER_SECURITY_COMPANION';
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
+    /** Membre a quitté la communauté — notification aux responsables. */
+    public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';
+    /** Confirmation au membre qui a quitté la communauté. */
+    public const MEMBER_LEFT_COMMUNITY_CONFIRMATION = 'MEMBER_LEFT_COMMUNITY_CONFIRMATION';
     public const SECURITY_ALERT = 'SECURITY_ALERT';
     public const NEW_DEVICE_LOGIN = 'NEW_DEVICE_LOGIN';
     public const MULTIPLE_LOGIN_ATTEMPTS = 'MULTIPLE_LOGIN_ATTEMPTS';
@@ -128,6 +132,8 @@ final class EmailEvents
         self::REGISTER_SECURITY_COMPANION,
         self::COMMUNITY_CREATION_CHECKLIST,
         self::NEW_COMMUNITY_MEMBER,
+        self::MEMBER_LEFT_COMMUNITY_STAFF,
+        self::MEMBER_LEFT_COMMUNITY_CONFIRMATION,
         self::SECURITY_ALERT,
         self::NEW_DEVICE_LOGIN,
         self::MULTIPLE_LOGIN_ATTEMPTS,

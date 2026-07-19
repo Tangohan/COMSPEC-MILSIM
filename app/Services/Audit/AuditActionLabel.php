@@ -40,6 +40,7 @@ final class AuditActionLabel
         'user_created' => 'Utilisateur créé',
         'user_updated' => 'Utilisateur modifié',
         'user_deactivated' => 'Utilisateur désactivé',
+        'user_left_community' => 'Départ volontaire d’une communauté',
         'role_assigned' => 'Rôle attribué',
         'group_member_added' => 'Membre ajouté au groupe',
         'group_member_removed' => 'Membre retiré du groupe',

@@ -6,6 +6,7 @@ declare(strict_types=1);
  *
  * @var list<array{scope?:string,kind?:string,category?:string,title?:string,body?:string,cta_label?:?string,cta_url?:?string}> $announce_items
  * @var string|null $announce_manage_url
+ * @var string|null $announce_list_url
  * @var string $announce_heading
  * @var string $announce_kicker
  * @var string $announce_empty
@@ -16,6 +17,9 @@ declare(strict_types=1);
 $announceItems = is_array($announce_items ?? null) ? $announce_items : [];
 $announceManageUrl = isset($announce_manage_url) && is_string($announce_manage_url) && $announce_manage_url !== ''
     ? $announce_manage_url
+    : null;
+$announceListUrl = isset($announce_list_url) && is_string($announce_list_url) && $announce_list_url !== ''
+    ? $announce_list_url
     : null;
 $announceHeading = (string) ($announce_heading ?? 'Alertes & annonces');
 $announceKicker = (string) ($announce_kicker ?? 'Transmission');
@@ -55,30 +59,51 @@ $statusLine = $count === 0
         ? '1 message actif'
         : $count . ' messages actifs');
 $panelId = $announceId . '-panel';
+$titleId = $announceId . '-title';
 ?>
 <section
     id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
     class="dash-announce scroll-mt-24<?= $announceStartOpen ? ' is-open' : '' ?>"
-    aria-labelledby="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>-title"
+    aria-labelledby="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>"
     data-announce-collapse
     data-announce-persist="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
     data-announce-default="<?= $announceStartOpen ? 'open' : 'closed' ?>"
 >
     <div class="dash-announce__brief">
-        <button
-            type="button"
-            class="dash-announce__toggle"
-            data-announce-toggle
-            aria-expanded="<?= $announceStartOpen ? 'true' : 'false' ?>"
-            aria-controls="<?= htmlspecialchars($panelId, ENT_QUOTES, 'UTF-8') ?>"
-        >
-            <span class="dash-announce__brief-label">
-                <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
-                <h2 id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>-title" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
-            </span>
-            <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
-            <i class="dash-announce__meta" data-announce-meta aria-hidden="true"><?= $announceStartOpen ? '−' : '—' ?></i>
-        </button>
+        <div class="dash-announce__brief-main">
+            <?php if ($announceListUrl !== null): ?>
+                <a
+                    href="<?= htmlspecialchars($announceListUrl, ENT_QUOTES, 'UTF-8') ?>"
+                    class="dash-announce__brief-goto"
+                    data-announce-list-link
+                >
+                    <span class="dash-announce__brief-label">
+                        <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
+                        <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
+                    </span>
+                    <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
+                    <span class="dash-announce__brief-hint">Voir tout →</span>
+                </a>
+            <?php else: ?>
+                <div class="dash-announce__brief-goto dash-announce__brief-goto--static">
+                    <span class="dash-announce__brief-label">
+                        <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
+                        <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
+                    </span>
+                    <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+            <?php endif; ?>
+            <button
+                type="button"
+                class="dash-announce__toggle"
+                data-announce-toggle
+                aria-expanded="<?= $announceStartOpen ? 'true' : 'false' ?>"
+                aria-controls="<?= htmlspecialchars($panelId, ENT_QUOTES, 'UTF-8') ?>"
+                aria-label="<?= $announceStartOpen ? 'Replier les messages' : 'Déplier les messages' ?>"
+            >
+                <i class="dash-announce__meta" data-announce-meta aria-hidden="true"><?= $announceStartOpen ? '−' : '+' ?></i>
+            </button>
+        </div>
         <?php if ($announceManageUrl !== null): ?>
             <a href="<?= htmlspecialchars($announceManageUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-link">Gérer →</a>
         <?php endif; ?>
@@ -159,6 +184,11 @@ $panelId = $announceId . '-panel';
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        <?php if ($announceListUrl !== null): ?>
+            <p class="dash-announce__footer">
+                <a href="<?= htmlspecialchars($announceListUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__footer-link">Ouvrir la page complète des alertes →</a>
+            </p>
+        <?php endif; ?>
     </div>
 </section>
 <script>
@@ -178,12 +208,13 @@ $panelId = $announceId . '-panel';
   function apply(open) {
     root.classList.toggle('is-open', open);
     toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.setAttribute('aria-label', open ? 'Replier les messages' : 'Déplier les messages');
     if (open) {
       panel.removeAttribute('hidden');
     } else {
       panel.setAttribute('hidden', '');
     }
-    if (meta) meta.textContent = open ? '−' : '—';
+    if (meta) meta.textContent = open ? '−' : '+';
     try { localStorage.setItem(persistKey, open ? '1' : '0'); } catch (e) {}
   }
 
@@ -193,7 +224,9 @@ $panelId = $announceId . '-panel';
   else if (stored === '0') apply(false);
   else apply(defOpen);
 
-  toggle.addEventListener('click', function () {
+  toggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
     apply(toggle.getAttribute('aria-expanded') !== 'true');
   });
 })();

@@ -42,7 +42,7 @@ final class OrganizationSeniorityAdminController
         $stats = $this->buildDefinitionStats($definitions);
 
         return Response::view('layout.main', [
-            'title' => 'Indicateurs d’ancienneté',
+            'title' => 'Ancienneté',
             'content' => 'admin.organization.seniority',
             'senioritySchemaReady' => $schemaReady,
             'seniorityDefinitions' => $definitions,
@@ -66,7 +66,7 @@ final class OrganizationSeniorityAdminController
             return Response::redirect(url('dashboard'));
         }
         if (!$this->seniorityRepository->schemaReady()) {
-            Session::flash('error', 'Le référentiel d’ancienneté n’est pas encore disponible sur cette installation.');
+            Session::flash('error', 'Le module d’ancienneté n’est pas encore disponible sur cette communauté.');
 
             return Response::redirect(url('back-office/organisation/anciennete'));
         }
@@ -101,7 +101,7 @@ final class OrganizationSeniorityAdminController
             return Response::redirect(url('dashboard'));
         }
         if (!$this->seniorityRepository->schemaReady()) {
-            Session::flash('error', 'Le référentiel d’ancienneté n’est pas encore disponible sur cette installation.');
+            Session::flash('error', 'Le module d’ancienneté n’est pas encore disponible sur cette communauté.');
 
             return Response::redirect(url('back-office/organisation/anciennete'));
         }
@@ -143,7 +143,7 @@ final class OrganizationSeniorityAdminController
             return Response::redirect(url('dashboard'));
         }
         if (!$this->seniorityRepository->schemaReady()) {
-            Session::flash('error', 'Le référentiel d’ancienneté n’est pas encore disponible sur cette installation.');
+            Session::flash('error', 'Le module d’ancienneté n’est pas encore disponible sur cette communauté.');
 
             return Response::redirect(url('back-office/organisation/anciennete'));
         }
@@ -188,14 +188,14 @@ final class OrganizationSeniorityAdminController
             return Response::redirect(url('dashboard'));
         }
         if (!$this->seniorityRepository->schemaReady()) {
-            Session::flash('error', 'Le référentiel d’ancienneté n’est pas encore disponible sur cette installation.');
+            Session::flash('error', 'Le module d’ancienneté n’est pas encore disponible sur cette communauté.');
 
             return Response::redirect(url('back-office/organisation/anciennete'));
         }
 
         $rows = $request->input('rows');
         if (!is_array($rows)) {
-            Session::flash('error', 'Données invalides.');
+            Session::flash('error', 'Impossible d’enregistrer : le formulaire est incomplet. Réessayez depuis la page.');
 
             return Response::redirect(url('back-office/organisation/anciennete'));
         }

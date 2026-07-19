@@ -563,6 +563,57 @@ class UnitRepository
     }
 
     /**
+     * Métadonnées hiérarchiques d’affectation : chemin lisible + clé d’ordre de commandement.
+     *
+     * @return array<int, array{path: string, command_key: string, depth: int}>
+     */
+    public function hierarchyMetaByUnitId(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $all = $this->allForTenant($tenantId);
+        $byId = [];
+        foreach ($all as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $byId[$id] = $u;
+        }
+        $meta = [];
+        foreach ($byId as $id => $unit) {
+            $names = [];
+            $orderParts = [];
+            $guard = 0;
+            $cur = $unit;
+            $curId = $id;
+            while ($cur !== null && $guard < 32) {
+                $guard++;
+                $name = trim((string) ($cur['name'] ?? ''));
+                if ($name !== '') {
+                    array_unshift($names, $name);
+                }
+                $order = (int) ($cur['display_order'] ?? 0);
+                array_unshift($orderParts, str_pad((string) $order, 5, '0', STR_PAD_LEFT) . ':' . str_pad((string) $curId, 8, '0', STR_PAD_LEFT));
+                $pid = (int) ($cur['parent_id'] ?? 0);
+                if ($pid < 1 || !isset($byId[$pid])) {
+                    break;
+                }
+                $curId = $pid;
+                $cur = $byId[$pid];
+            }
+            $meta[$id] = [
+                'path' => $names !== [] ? implode(' / ', $names) : '',
+                'command_key' => $orderParts !== [] ? implode('/', $orderParts) : 'zzzzz',
+                'depth' => count($names),
+            ];
+        }
+
+        return $meta;
+    }
+
+    /**
      * Nombre d’unités ayant cette unité comme parent direct.
      */
     public function countUnitsWithOrbatDisplayType(int $tenantId, string $displaySlug): int

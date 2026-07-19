@@ -60,26 +60,24 @@ window.ATAKChat = (function () {
     var body = input && input.value && input.value.trim();
     if (!body) return;
     var author = getAuthor();
-    if (window.ATAKSocket && window.ATAKSocket.isConnected()) {
-      window.ATAKSocket.emit('Chat', { author: author, body: body });
-    } else if (!isNodeConfigured()) {
-      if (window.ATAKShowError) window.ATAKShowError('Configurez l\'URL du nœud ATAK dans Admin → Configuration ATAK.');
-    } else {
-      fetch(getApiBase() + '/api/chat', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mapId: getMapId(), author: author, body: body })
-      }).then(function (r) {
-        if (!r.ok) {
-          if (window.ATAKShowError) window.ATAKShowError('Envoi tchat: ' + r.status);
-          return;
-        }
-        fetchMessages();
-      }).catch(function () {
-        if (window.ATAKShowError) window.ATAKShowError('Impossible d\'envoyer le message.');
-      });
+    if (!isNodeConfigured()) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible pour envoyer un message.');
+      return;
     }
+    fetch(getApiBase() + '/api/chat', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mapId: getMapId(), author: author, body: body })
+    }).then(function (r) {
+      if (!r.ok) {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le message.');
+        return;
+      }
+      fetchMessages();
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le message.');
+    });
     input.value = '';
   }
 

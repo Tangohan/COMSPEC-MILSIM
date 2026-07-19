@@ -30,6 +30,19 @@ final class CommunityMediaRepository
         }
     }
 
+    public function likesTableExists(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_media_likes' LIMIT 1"
+            );
+
+            return (bool) $st?->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** @return list<array<string, mixed>> */
     public function listCollections(int $tenantId): array
     {
@@ -169,6 +182,157 @@ final class CommunityMediaRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Médias publics enrichis avec compteurs et état « j’aime » (si table présente).
+     *
+     * @param list<array<string, mixed>> $items
+     * @return list<array<string, mixed>>
+     */
+    public function attachLikeState(array $items, ?int $userId = null): array
+    {
+        if ($items === []) {
+            return [];
+        }
+        $ids = [];
+        foreach ($items as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $counts = $this->countLikesByItemIds($ids);
+        $liked = $userId !== null && $userId > 0
+            ? $this->likedItemIdsForUser($userId, $ids)
+            : [];
+
+        foreach ($items as &$row) {
+            $id = (int) ($row['id'] ?? 0);
+            $row['likes_count'] = (int) ($counts[$id] ?? 0);
+            $row['liked_by_viewer'] = isset($liked[$id]);
+        }
+        unset($row);
+
+        return $items;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findPublishedPublicItem(int $id, int $tenantId): ?array
+    {
+        if (!$this->tablesExist() || $id < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM community_media_items
+             WHERE id = ? AND tenant_id = ?
+               AND show_on_public_page = 1
+               AND status = ?
+             LIMIT 1'
+        );
+        $st->execute([$id, $tenantId, CommunityMediaDetails::STATUS_PUBLISHED]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * @param list<int> $itemIds
+     * @return array<int, int> media_item_id => count
+     */
+    public function countLikesByItemIds(array $itemIds): array
+    {
+        if (!$this->likesTableExists() || $itemIds === []) {
+            return [];
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $itemIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT media_item_id, COUNT(*) AS c
+             FROM community_media_likes
+             WHERE media_item_id IN ({$placeholders})
+             GROUP BY media_item_id"
+        );
+        $st->execute($ids);
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) $row['media_item_id']] = (int) $row['c'];
+        }
+
+        return $out;
+    }
+
+    public function countLikes(int $mediaItemId): int
+    {
+        if (!$this->likesTableExists() || $mediaItemId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->prepare('SELECT COUNT(*) FROM community_media_likes WHERE media_item_id = ?');
+        $st->execute([$mediaItemId]);
+
+        return (int) $st->fetchColumn();
+    }
+
+    /**
+     * @param list<int> $itemIds
+     * @return array<int, true> media_item_id => true
+     */
+    public function likedItemIdsForUser(int $userId, array $itemIds): array
+    {
+        if (!$this->likesTableExists() || $userId < 1 || $itemIds === []) {
+            return [];
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $itemIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_merge([$userId], $ids);
+        $st = $this->pdo->prepare(
+            "SELECT media_item_id FROM community_media_likes
+             WHERE user_id = ? AND media_item_id IN ({$placeholders})"
+        );
+        $st->execute($params);
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $out[(int) $row['media_item_id']] = true;
+        }
+
+        return $out;
+    }
+
+    public function isLiked(int $userId, int $mediaItemId): bool
+    {
+        if (!$this->likesTableExists() || $userId < 1 || $mediaItemId < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT 1 FROM community_media_likes WHERE user_id = ? AND media_item_id = ? LIMIT 1'
+        );
+        $st->execute([$userId, $mediaItemId]);
+
+        return (bool) $st->fetchColumn();
+    }
+
+    public function setLike(int $tenantId, int $userId, int $mediaItemId, bool $on): void
+    {
+        if (!$this->likesTableExists() || $tenantId < 1 || $userId < 1 || $mediaItemId < 1) {
+            return;
+        }
+        if ($on) {
+            $st = $this->pdo->prepare(
+                'INSERT IGNORE INTO community_media_likes (tenant_id, media_item_id, user_id) VALUES (?, ?, ?)'
+            );
+            $st->execute([$tenantId, $mediaItemId, $userId]);
+        } else {
+            $st = $this->pdo->prepare(
+                'DELETE FROM community_media_likes WHERE user_id = ? AND media_item_id = ?'
+            );
+            $st->execute([$userId, $mediaItemId]);
+        }
+    }
+
     /** @return array<string, mixed>|null */
     public function findItem(int $id, int $tenantId): ?array
     {
@@ -269,6 +433,12 @@ final class CommunityMediaRepository
             return null;
         }
         $path = isset($item['storage_path']) ? (string) $item['storage_path'] : null;
+        if ($this->likesTableExists()) {
+            $delLikes = $this->pdo->prepare(
+                'DELETE FROM community_media_likes WHERE media_item_id = ? AND tenant_id = ?'
+            );
+            $delLikes->execute([$id, $tenantId]);
+        }
         $st = $this->pdo->prepare('DELETE FROM community_media_items WHERE id = ? AND tenant_id = ?');
         $st->execute([$id, $tenantId]);
 

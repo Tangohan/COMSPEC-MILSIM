@@ -176,6 +176,7 @@ use App\Middleware\EnlistmentModuleSanctionMiddleware;
 use App\Middleware\AtakModuleSanctionMiddleware;
 use App\Middleware\CourrierModuleSanctionMiddleware;
 use App\Controllers\Web\ActivityHubController;
+use App\Controllers\Web\MemberAlertsController;
 use App\Controllers\Web\CommunityCalendarFeedController;
 use App\Controllers\Web\OperateurTerrainController;
 use App\Controllers\Api\IntegrationsPublicEventsController;
@@ -224,6 +225,7 @@ return function (Router $router) {
     $router->get('/c/{slug}', [CommunityController::class, 'show']);
     $router->get('/c/{slug}/unite/{unitSlug}', [CommunityController::class, 'showUnit']);
     $router->get('/c/{slug}/medias', [CommunityController::class, 'mediaFeed']);
+    $router->post('/c/{slug}/medias/{id}/like', [CommunityController::class, 'toggleMediaLike']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
     $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
@@ -269,6 +271,7 @@ return function (Router $router) {
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
+    $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/checkup', [PersonnelDeploymentController::class, 'saveCheckup'], [AuthMiddleware::class]);
@@ -280,6 +283,7 @@ return function (Router $router) {
     $router->get('/calendrier/abonnement/{token}', [CommunityCalendarFeedController::class, 'ics']);
     $router->get('/operateur/terrain', [OperateurTerrainController::class, 'index'], [AuthMiddleware::class]);
     $mwOperationalBoardEdit = [AuthMiddleware::class, OperationalBoardEditMiddleware::class];
+    $router->get('/tableau-operationnel/p/{token}', [OperationalBoardController::class, 'publicWall']);
     $router->get('/tableau-operationnel', [OperationalBoardController::class, 'portalIndex'], [AuthMiddleware::class, OperationalBoardViewMiddleware::class]);
     $router->get('/back-office/tableau-operationnel/stream', [OperationalBoardController::class, 'stream'], $mwOperationalBoardEdit);
     $router->get('/back-office/tableau-operationnel/fiche/nouvelle/{entryType}', [OperationalBoardController::class, 'formNewTyped'], $mwOperationalBoardEdit);
@@ -295,6 +299,9 @@ return function (Router $router) {
     $router->post('/back-office/tableau-operationnel/posture', [OperationalBoardController::class, 'setPosture'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/modele', [OperationalBoardController::class, 'storePlanningTemplate'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/template', [OperationalBoardController::class, 'createFromTemplate'], $mwOperationalBoardEdit);
+    $router->post('/back-office/tableau-operationnel/lien-public', [OperationalBoardController::class, 'ensurePublicShare'], $mwOperationalBoardEdit);
+    $router->post('/back-office/tableau-operationnel/lien-public/renouveler', [OperationalBoardController::class, 'regeneratePublicShare'], $mwOperationalBoardEdit);
+    $router->post('/back-office/tableau-operationnel/lien-public/desactiver', [OperationalBoardController::class, 'deactivatePublicShare'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/validation', [OperationalBoardController::class, 'transitionValidation'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/status', [OperationalBoardController::class, 'transitionOperationalStatus'], $mwOperationalBoardEdit);
     $router->post('/back-office/tableau-operationnel/{id}/frago', [OperationalBoardController::class, 'createFrago'], $mwOperationalBoardEdit);
@@ -339,6 +346,7 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
@@ -688,6 +696,13 @@ return function (Router $router) {
     $router->get('/back-office/groups/{id}/edit', [GroupAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/{id}/update', [GroupAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/groups/{id}/delete', [GroupAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Unités (toutes, pas seulement type « groupe ») — fiche publique / ORBAT
+    $router->get('/back-office/units', [AdminUnitsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/create', [AdminUnitsController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/units/store', [AdminUnitsController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/units/{id}/edit', [AdminUnitsController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/units/{id}/update', [AdminUnitsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/units/{id}/delete', [AdminUnitsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/communications', [TenantCommunicationsController::class, 'compose'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/communications/send', [TenantCommunicationsController::class, 'send'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/communications/preview', [TenantCommunicationsController::class, 'preview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

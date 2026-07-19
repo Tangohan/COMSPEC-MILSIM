@@ -492,14 +492,15 @@ body.atak-page {
 }
 
 .atak-tab {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.7rem;
+  padding: 0.45rem 0.45rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   background: transparent;
   border: none;
   color: var(--atak-muted);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .atak-tab:hover { color: var(--atak-text); }
@@ -854,4 +855,442 @@ body.atak-page {
   font-size: 0.75rem;
   line-height: 1.45;
   color: var(--atak-muted);
+}
+
+/* Menu contextuel carte (clic droit) */
+.atak-ctx-menu {
+  position: fixed;
+  z-index: 10050;
+  min-width: 220px;
+  padding: 0.35rem;
+  border-radius: 6px;
+  border: 1px solid var(--atak-border);
+  background: var(--atak-panel);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  color: var(--atak-text);
+}
+.atak-ctx-menu[hidden] { display: none !important; }
+.atak-ctx-menu__coords {
+  padding: 0.35rem 0.65rem 0.45rem;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--atak-muted);
+  border-bottom: 1px solid var(--atak-border);
+  margin-bottom: 0.25rem;
+}
+.atak-ctx-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--atak-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.atak-ctx-menu__item:hover,
+.atak-ctx-menu__item:focus-visible {
+  outline: none;
+  background: var(--atak-accent-dim);
+  color: var(--atak-accent);
+}
+.atak-ctx-menu__item--muted {
+  font-weight: 500;
+  color: var(--atak-muted);
+  font-size: 0.75rem;
+}
+.atak-ctx-menu__sep {
+  height: 1px;
+  margin: 0.25rem 0.35rem;
+  background: var(--atak-border);
+}
+
+/* Saisie (ping / libellé) — thème sombre ATAK */
+.atak-input-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.atak-input-modal[hidden] { display: none !important; }
+.atak-input-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.72);
+}
+.atak-input-modal__box {
+  position: relative;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 1.1rem 1.15rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--atak-border);
+  background: var(--atak-panel);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.atak-input-modal__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--atak-text);
+}
+.atak-input-modal__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--atak-muted);
+}
+.atak-input-modal__field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  background: var(--atak-bg);
+  color: var(--atak-text);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.atak-input-modal__field:focus {
+  outline: none;
+  border-color: var(--atak-accent);
+}
+.atak-input-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+.atak-input-modal__btn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.atak-input-modal__btn--ghost {
+  background: transparent;
+  color: var(--atak-muted);
+}
+.atak-input-modal__btn--ghost:hover {
+  color: var(--atak-text);
+  background: var(--atak-panel-alt);
+}
+.atak-input-modal__btn--primary {
+  background: var(--atak-accent);
+  border-color: var(--atak-accent);
+  color: #0a0a0f;
+}
+.atak-input-modal__btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+/* Mode dessin (trait / zone) */
+.atak-draw-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 10040;
+  max-width: min(40rem, calc(100vw - 2rem));
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--atak-border);
+  background: rgba(18, 18, 26, 0.97);
+  color: var(--atak-text);
+  font-size: 0.8rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+.atak-draw-hint[hidden] { display: none !important; }
+.atak-draw-hint__text {
+  line-height: 1.4;
+  color: var(--atak-text);
+}
+.atak-draw-hint__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.atak-draw-hint__actions[hidden] { display: none !important; }
+.atak-draw-hint__btn {
+  border: 1px solid var(--atak-border);
+  background: transparent;
+  color: var(--atak-text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.atak-draw-hint__btn:hover:not(:disabled) {
+  background: var(--atak-accent-dim);
+  color: var(--atak-accent);
+}
+.atak-draw-hint__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.atak-draw-hint__btn--primary {
+  background: var(--atak-accent);
+  border-color: var(--atak-accent);
+  color: #0a0a0f;
+}
+.atak-draw-hint__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  color: #0a0a0f;
+}
+
+/* Formulaire marqueur */
+.atak-marker-form {
+  width: min(26rem, calc(100vw - 2rem)) !important;
+  max-height: min(90vh, 40rem);
+  overflow-y: auto;
+}
+.atak-marker-form__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--atak-muted);
+}
+.atak-marker-form__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  background: #0a0a0f;
+  color: var(--atak-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+.atak-marker-form__fieldset {
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem 0.65rem;
+  margin: 0 0 0.75rem;
+}
+.atak-marker-form__fieldset legend {
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--atak-muted);
+}
+.atak-marker-form__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.atak-marker-form__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: var(--atak-text);
+}
+.atak-marker-form__choice:has(input:checked) {
+  border-color: var(--atak-accent);
+  background: var(--atak-accent-dim);
+}
+.atak-marker-form__choice input {
+  margin: 0;
+}
+.atak-marker-form__swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+/* Icônes marqueurs carte */
+.atak-micon {
+  display: block;
+  width: var(--m-size, 14px);
+  height: var(--m-size, 14px);
+  box-sizing: border-box;
+}
+.atak-micon--dot {
+  border-radius: 50%;
+  background: var(--m-color, #34d399);
+  border: 2px solid #0a0a0f;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+}
+.atak-micon--pin {
+  width: calc(var(--m-size, 14px) * 0.7);
+  height: var(--m-size, 14px);
+  background: var(--m-color, #34d399);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #0a0a0f;
+  margin: 0 auto;
+}
+.atak-micon--flag {
+  width: var(--m-size, 14px);
+  height: var(--m-size, 14px);
+  background:
+    linear-gradient(var(--m-color, #34d399), var(--m-color, #34d399)) left / 2px 100% no-repeat,
+    linear-gradient(var(--m-color, #34d399), var(--m-color, #34d399)) top left / 70% 55% no-repeat;
+  border: none;
+}
+.atak-micon--warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--m-size, 14px);
+  height: var(--m-size, 14px);
+  background: var(--m-color, #eab308);
+  color: #0a0a0f;
+  font-weight: 800;
+  font-size: calc(var(--m-size, 14px) * 0.65);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  line-height: 1;
+}
+.atak-micon--target {
+  border-radius: 50%;
+  border: 2px solid var(--m-color, #ef4444);
+  box-shadow: inset 0 0 0 3px #0a0a0f, inset 0 0 0 5px var(--m-color, #ef4444);
+  background: transparent;
+}
+
+.atak-marker-popup__coords {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--atak-muted, #94a3b8);
+}
+.atak-marker-popup__desc {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.atak-marker-popup__author {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--atak-muted, #94a3b8);
+}
+
+/* Liste marqueurs panneau */
+.atak-markers-list {
+  padding: 0.4rem;
+  max-height: calc(100% - 0.5rem);
+  overflow-y: auto;
+}
+.atak-marker-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
+  margin-bottom: 0.3rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.atak-marker-item:hover {
+  border-color: var(--atak-border);
+  background: rgba(255,255,255,0.03);
+}
+.atak-marker-item__main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  text-align: left;
+  padding: 0.45rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.atak-marker-item__swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.atak-marker-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.atak-marker-item__body strong {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atak-marker-item__meta {
+  font-size: 0.68rem;
+  color: var(--atak-muted);
+  font-variant-numeric: tabular-nums;
+}
+.atak-marker-item__desc {
+  font-size: 0.68rem;
+  color: var(--atak-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atak-marker-item__del {
+  border: none;
+  background: transparent;
+  color: var(--atak-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.atak-marker-item__del:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.atak-shape-comment__pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: #1e3a5f;
+  border: 1px solid #60a5fa;
+  color: #93c5fd;
+  font-size: 12px;
+  line-height: 1;
+}
+.atak-shape-point__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid #0a0a0f;
 }

@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\GradeCategoryRepository;
 use App\Repositories\GradeRepository;
+use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -473,15 +474,48 @@ class OrganizationDashboardController
      */
     public function effectifsHub(Request $request, array $params = []): Response
     {
-        if (!(int) Session::get('tenant_id')) {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
             return Response::redirect(url('login'));
         }
         $gate = Gate::getInstance();
+
+        $hubStats = [
+            'members_active' => 0,
+            'groups' => 0,
+            'teams' => 0,
+            'roles' => 0,
+            'grades' => 0,
+            'job_roles' => 0,
+        ];
+        try {
+            $hubStats['members_active'] = (new UserRepository())->countActiveForTenant($tenantId);
+            $unitRepository = new UnitRepository();
+            $hubStats['groups'] = count($unitRepository->getGroups($tenantId));
+            $hubStats['teams'] = count($unitRepository->getTeams($tenantId));
+            $hubStats['roles'] = count((new RoleRepository())->forTenantOrganization($tenantId));
+            $hubStats['grades'] = count((new GradeRepository())->listForTenant($tenantId));
+            $hubStats['job_roles'] = count((new PersonnelJobRoleRepository())->listRolesWithCategory($tenantId));
+        } catch (\Throwable) {
+            // Indicateurs optionnels : la page reste utilisable sans volumes.
+        }
+
+        $tenantName = '';
+        try {
+            $tenantRow = (new TenantRepository())->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+            $tenantName = '';
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.effectifs_hub',
             'title' => 'Organisation des effectifs',
             'isBackOfficeShell' => true,
+            'hubStats' => $hubStats,
+            'communityName' => $tenantName !== '' ? $tenantName : 'Communauté',
             'canRolesList' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
             'canRolesCanvas' => $gate->allows('admin.organization') || $gate->allows('admin.roles.manage') || $gate->allows('admin.permissions.manage'),
             'canPresets' => $gate->allows('admin.organization') || $gate->allows('admin.roles.manage') || $gate->allows('admin.permissions.manage'),

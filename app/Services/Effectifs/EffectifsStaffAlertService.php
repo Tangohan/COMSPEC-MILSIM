@@ -53,6 +53,7 @@ class EffectifsStaffAlertService
         private TenantRepository $tenantRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
+        private ?ElevationApprovalService $elevationApprovalService = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
     }
@@ -126,6 +127,12 @@ class EffectifsStaffAlertService
 
     /**
      * @param array<string, mixed> $targetUser
+     * @param array{
+     *   grade_id?: int|null,
+     *   role_id?: int|null,
+     *   job_role_id?: int|null,
+     *   unit_id?: int|null
+     * } $proposal
      * @return array{ok: bool, message: string, recipient_names: list<string>}
      */
     public function requestElevation(
@@ -133,7 +140,8 @@ class EffectifsStaffAlertService
         int $requesterUserId,
         array $targetUser,
         string $kind,
-        string $note = ''
+        string $note = '',
+        array $proposal = []
     ): array {
         $targetId = (int) ($targetUser['id'] ?? 0);
         $kind = array_key_exists($kind, self::ELEVATION_KIND_LABELS) ? $kind : 'general';
@@ -142,6 +150,13 @@ class EffectifsStaffAlertService
         if (mb_strlen($note) > 500) {
             $note = mb_substr($note, 0, 500);
         }
+        $proposal = [
+            'grade_id' => (int) ($proposal['grade_id'] ?? 0) ?: null,
+            'role_id' => (int) ($proposal['role_id'] ?? 0) ?: null,
+            'job_role_id' => (int) ($proposal['job_role_id'] ?? 0) ?: null,
+            'unit_id' => (int) ($proposal['unit_id'] ?? 0) ?: null,
+        ];
+        $proposalSummary = $this->formatProposalSummary($tenantId, $proposal);
 
         if ($tenantId < 1 || $requesterUserId < 1 || $targetId < 1) {
             return [
@@ -204,7 +219,9 @@ class EffectifsStaffAlertService
                     $tenantName,
                     $targetName,
                     $kindLabel,
-                    $note,
+                    $proposalSummary !== ''
+                        ? ($note !== '' ? $note . "\n\nProposition : " . $proposalSummary : 'Proposition : ' . $proposalSummary)
+                        : $note,
                     $memberUrl,
                     $editUrl,
                     $tenantId
@@ -218,6 +235,9 @@ class EffectifsStaffAlertService
                 $nameList .= '…';
             }
             $body = $requesterName . ' demande une élévation (« ' . $kindLabel . ' ») pour ' . $targetName . '.';
+            if ($proposalSummary !== '') {
+                $body .= ' Proposition : ' . $proposalSummary . '.';
+            }
             if ($note !== '') {
                 $body .= ' Message : ' . $note;
             }
@@ -235,7 +255,14 @@ class EffectifsStaffAlertService
             try {
                 $existingRequest = $this->elevationRequestRepository->findOpenForRequesterTarget($tenantId, $requesterUserId, $targetId);
                 if ($existingRequest === null) {
-                    $this->elevationRequestRepository->create($tenantId, $targetId, $requesterUserId, $kind, $note);
+                    $this->elevationRequestRepository->create(
+                        $tenantId,
+                        $targetId,
+                        $requesterUserId,
+                        $kind,
+                        $note,
+                        $proposal
+                    );
                 }
             } catch (\Throwable) {
                 // Le suivi d’état est un complément : une communauté pas encore migrée garde le comportement historique (ping + e-mail).
@@ -282,5 +309,40 @@ class EffectifsStaffAlertService
         $email = trim((string) ($user['email'] ?? ''));
 
         return $email !== '' ? $email : 'Membre';
+    }
+
+    /**
+     * @param array{
+     *   grade_id?: int|null,
+     *   role_id?: int|null,
+     *   job_role_id?: int|null,
+     *   unit_id?: int|null
+     * } $proposal
+     */
+    private function formatProposalSummary(int $tenantId, array $proposal): string
+    {
+        if ($this->elevationApprovalService === null) {
+            return '';
+        }
+        try {
+            $labels = $this->elevationApprovalService->proposalLabels($tenantId, $proposal);
+        } catch (\Throwable) {
+            return '';
+        }
+        $parts = [];
+        if (!empty($labels['grade'])) {
+            $parts[] = 'grade ' . $labels['grade'];
+        }
+        if (!empty($labels['role'])) {
+            $parts[] = 'rôle ' . $labels['role'];
+        }
+        if (!empty($labels['job_role'])) {
+            $parts[] = 'fonction ' . $labels['job_role'];
+        }
+        if (!empty($labels['unit'])) {
+            $parts[] = 'affectation ' . $labels['unit'];
+        }
+
+        return implode(', ', $parts);
     }
 }

@@ -13,8 +13,63 @@
 }
 
 body.forum-mode-day {
-  background-color: var(--forum-bg) !important;
+  /* Remplace le shorthand sombre de styles.css (gradients), pas seulement background-color */
+  background: var(--forum-bg) !important;
   color: var(--forum-text) !important;
+  --bg: var(--forum-bg);
+  --bg-soft: #f1f5f9;
+  --text: var(--forum-text);
+  --muted: var(--forum-muted);
+  --panel: var(--forum-card);
+  --panel-strong: var(--forum-card);
+  --line: var(--forum-border);
+  --line-strong: #cbd5e1;
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+/* Scanlines / grille fixe de styles.css — même traitement que layout-light */
+body.forum-mode-day::before {
+  display: none !important;
+}
+
+/* Colonne forum : rail + contenu, sans trou sous le rail */
+.forum-layout {
+  display: flex;
+  align-items: stretch;
+  min-height: 80vh;
+  background: var(--forum-bg);
+}
+.forum-layout > main {
+  flex: 1;
+  min-width: 0;
+  min-height: 80vh;
+  background: var(--forum-bg);
+}
+
+/* Shell : fond + bordure sur toute la hauteur de la colonne (le aside sticky ne remplit pas le flex) */
+.forum-rail-shell {
+  flex-shrink: 0;
+  position: relative;
+  align-self: stretch;
+  background: var(--forum-bg);
+  border-right: 1px solid var(--forum-border);
+}
+.forum-rail {
+  position: sticky;
+  top: 0;
+  width: 15.5rem;
+  flex-shrink: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  background: var(--forum-bg);
+  padding: 1rem 0.75rem 2rem;
+}
+@media (max-width: 900px) {
+  .forum-rail-shell {
+    width: 0;
+    border-right: none;
+    background: transparent;
+    overflow: visible;
+  }
 }
 
 /* Surcharges si d’anciennes classes « sombre » traînent dans les vues */

@@ -325,7 +325,7 @@ final class OrganizationCommunityController
                 $this->tenantRepository->mergeSettings($tenantId, [
                     'onboarding_wizard_version' => 2,
                 ]);
-                $applied[] = 'Parcours de création enregistré pour la communauté.';
+                $applied[] = 'Parcours de création finalisé pour la communauté.';
             }
 
             if ($applied === []) {

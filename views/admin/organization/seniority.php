@@ -3,241 +3,415 @@ declare(strict_types=1);
 
 $schemaReady = !empty($senioritySchemaReady);
 $definitions = is_array($seniorityDefinitions ?? null) ? $seniorityDefinitions : [];
-$stats = is_array($seniorityDefinitionStats ?? null) ? $seniorityDefinitionStats : ['total' => 0, 'active' => 0, 'visible' => 0, 'inactive' => 0, 'hidden' => 0];
+$stats = is_array($seniorityDefinitionStats ?? null)
+    ? $seniorityDefinitionStats
+    : ['total' => 0, 'active' => 0, 'visible' => 0, 'inactive' => 0, 'hidden' => 0];
 $csrf = htmlspecialchars((string) ($seniorityCsrf ?? ''), ENT_QUOTES, 'UTF-8');
 $flashErr = \App\Core\Session::getFlash('error');
 $flashOk = \App\Core\Session::getFlash('success');
 
-$scopeLabel = static function (string $scope): string {
+$scopeMeta = static function (string $scope): array {
     return match ($scope) {
-        'tenant' => 'Communauté',
-        'global' => 'Global',
-        'org' => 'Organisation',
-        default => ucfirst(str_replace('_', ' ', $scope)),
+        'user' => ['label' => 'Membre', 'class' => 'bo-seniority__badge--scope'],
+        'tenant' => ['label' => 'Communauté', 'class' => 'bo-seniority__badge--scope'],
+        'unit' => ['label' => 'Unité', 'class' => 'bo-seniority__badge--scope'],
+        'group' => ['label' => 'Groupe', 'class' => 'bo-seniority__badge--scope'],
+        'mission' => ['label' => 'Mission', 'class' => 'bo-seniority__badge--scope'],
+        'qualification' => ['label' => 'Formation', 'class' => 'bo-seniority__badge--scope'],
+        'grade' => ['label' => 'Grade', 'class' => 'bo-seniority__badge--scope'],
+        'role' => ['label' => 'Rôle', 'class' => 'bo-seniority__badge--scope'],
+        'campaign' => ['label' => 'Campagne', 'class' => 'bo-seniority__badge--scope'],
+        'custom' => ['label' => 'Personnalisé', 'class' => 'bo-seniority__badge--scope'],
+        'org' => ['label' => 'Organisation', 'class' => 'bo-seniority__badge--scope'],
+        'global' => ['label' => 'Transverse', 'class' => 'bo-seniority__badge--scope'],
+        default => ['label' => 'Autre', 'class' => 'bo-seniority__badge--scope'],
     };
 };
-$calcModeLabel = static function (string $mode): string {
+
+$calcMeta = static function (string $mode): array {
     return match ($mode) {
-        'from_start' => 'Depuis première date',
-        'sum_periods' => 'Somme des périodes',
-        'active_only' => 'Périodes actives',
-        'custom_rule' => 'Règle avancée',
-        default => ucfirst(str_replace('_', ' ', $mode)),
+        'from_start' => ['label' => 'Depuis la première date', 'short' => 'Première date'],
+        'sum_periods' => ['label' => 'Somme des périodes', 'short' => 'Périodes cumulées'],
+        'active_only' => ['label' => 'Périodes en cours seulement', 'short' => 'En cours'],
+        'custom_rule' => ['label' => 'Règle personnalisée', 'short' => 'Personnalisé'],
+        default => ['label' => 'Calcul standard', 'short' => 'Standard'],
     };
 };
+
+$sourceLabel = static function (string $raw): string {
+    return match ($raw) {
+        'manual' => 'Saisie sur le dossier',
+        'inferred', 'dossier', 'auto_dossier' => 'Complété depuis le dossier',
+        'auto', 'system' => 'Calcul automatique',
+        default => 'Saisie sur le dossier',
+    };
+};
+
+$scopeOptions = [];
+$calcOptions = [];
+foreach ($definitions as $def) {
+    $s = (string) ($def['scope'] ?? '');
+    $c = (string) ($def['calc_mode'] ?? '');
+    if ($s !== '' && !isset($scopeOptions[$s])) {
+        $scopeOptions[$s] = $scopeMeta($s)['label'];
+    }
+    if ($c !== '' && !isset($calcOptions[$c])) {
+        $calcOptions[$c] = $calcMeta($c)['short'];
+    }
+}
+asort($scopeOptions, SORT_NATURAL | SORT_FLAG_CASE);
+asort($calcOptions, SORT_NATURAL | SORT_FLAG_CASE);
+
+$rowsForJs = [];
+foreach ($definitions as $def) {
+    $id = (int) ($def['id'] ?? 0);
+    if ($id < 1) {
+        continue;
+    }
+    $label = (string) ($def['label'] ?? 'Indicateur');
+    $scope = (string) ($def['scope'] ?? '');
+    $calc = (string) ($def['calc_mode'] ?? '');
+    $source = (string) ($def['source_type'] ?? 'manual');
+    $scopeInfo = $scopeMeta($scope);
+    $calcInfo = $calcMeta($calc);
+    $sourceTxt = $sourceLabel($source);
+    $hay = function_exists('mb_strtolower')
+        ? mb_strtolower($label . ' ' . $scopeInfo['label'] . ' ' . $calcInfo['label'] . ' ' . $sourceTxt, 'UTF-8')
+        : strtolower($label . ' ' . $scopeInfo['label'] . ' ' . $calcInfo['label'] . ' ' . $sourceTxt);
+    $rowsForJs[] = [
+        'id' => $id,
+        'label' => $label,
+        'scope' => $scope,
+        'scopeLabel' => $scopeInfo['label'],
+        'calc' => $calc,
+        'calcLabel' => $calcInfo['short'],
+        'calcTitle' => $calcInfo['label'],
+        'sourceLabel' => $sourceTxt,
+        'active' => !empty($def['is_active']),
+        'visible' => !empty($def['is_visible']),
+        'sort' => (int) ($def['sort_order'] ?? 0),
+        'hay' => $hay,
+    ];
+}
+
+$total = (int) ($stats['total'] ?? 0);
+$active = (int) ($stats['active'] ?? 0);
+$visible = (int) ($stats['visible'] ?? 0);
+$inactive = (int) ($stats['inactive'] ?? 0);
+$hidden = (int) ($stats['hidden'] ?? 0);
 ?>
-<div class="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
-    <header class="space-y-3">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Back-office communauté</p>
-        <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Indicateurs d’ancienneté</h1>
-        <p class="max-w-2xl text-sm leading-relaxed text-slate-600">
-            Choisissez quels indicateurs apparaissent sur les fiches personnel et dans l’espace RH des membres. Après activation, les durées se calculent à partir des périodes saisies sur chaque dossier (dates de début et fin).
-        </p>
-        <p>
-            <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900">Retour à l’organisation des effectifs</a>
-            <span class="text-slate-300" aria-hidden="true"> · </span>
-            <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm font-semibold text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900">Centre de pilotage</a>
-        </p>
+<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-seniority.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<?php
+$rowsJson = json_encode(
+    $rowsForJs,
+    JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
+);
+if ($rowsJson === false) {
+    $rowsJson = '[]';
+}
+?>
+<div class="bo-seniority" x-data="boSeniorityFilters(<?= $rowsJson ?>)">
+    <header class="bo-seniority__hero">
+        <div class="bo-seniority__hero-inner">
+            <div>
+                <p class="bo-seniority__eyebrow">Communauté · Effectifs & RH</p>
+                <h1 class="bo-seniority__title">Ancienneté</h1>
+                <p class="bo-seniority__lead">
+                    Choisissez les indicateurs affichés sur les fiches personnel et dans l’espace RH.
+                    Les durées se calculent à partir des périodes enregistrées sur chaque dossier.
+                </p>
+            </div>
+            <div class="bo-seniority__hero-actions">
+                <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="bo-seniority__btn bo-seniority__btn--ghost">Organisation des effectifs</a>
+                <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="bo-seniority__btn bo-seniority__btn--solid">Centre de pilotage</a>
+            </div>
+        </div>
     </header>
 
-    <?php if ($flashErr): ?>
-        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900" role="alert"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
-    <?php if ($flashOk): ?>
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950" role="status"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
+    <div class="bo-seniority__deck">
+        <?php if ($flashOk): ?>
+            <div class="bo-seniority__flash bo-seniority__flash--ok" role="status"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($flashErr): ?>
+            <div class="bo-seniority__flash bo-seniority__flash--err" role="alert"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
 
-    <?php if (!$schemaReady): ?>
-        <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-6 text-sm leading-relaxed text-amber-950">
-            Le référentiel d’ancienneté n’est pas encore déployé sur cette installation technique. Une fois la base à jour, cette page permettra de publier les indicateurs pour votre communauté.
-        </div>
-    <?php else: ?>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs uppercase tracking-widest text-slate-500">Total</p><p class="mt-1 text-2xl font-black text-slate-900"><?= (int) ($stats['total'] ?? 0) ?></p></div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-sm"><p class="text-xs uppercase tracking-widest text-emerald-700">Actifs</p><p class="mt-1 text-2xl font-black text-emerald-900"><?= (int) ($stats['active'] ?? 0) ?></p></div>
-            <div class="rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 shadow-sm"><p class="text-xs uppercase tracking-widest text-indigo-700">Visibles</p><p class="mt-1 text-2xl font-black text-indigo-900"><?= (int) ($stats['visible'] ?? 0) ?></p></div>
-            <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm"><p class="text-xs uppercase tracking-widest text-amber-700">Inactifs</p><p class="mt-1 text-2xl font-black text-amber-900"><?= (int) ($stats['inactive'] ?? 0) ?></p></div>
-            <div class="rounded-xl border border-slate-200 bg-slate-100/80 p-4 shadow-sm"><p class="text-xs uppercase tracking-widest text-slate-600">Masqués</p><p class="mt-1 text-2xl font-black text-slate-900"><?= (int) ($stats['hidden'] ?? 0) ?></p></div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <h2 class="text-lg font-bold text-slate-900">Démarrage rapide</h2>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                Si rien n’est encore configuré, utilisez le bouton ci-dessous pour installer un <span class="font-semibold text-slate-800">catalogue d’indicateurs</span> prêts à l’emploi : ancienneté dans la communauté, service cumulé, affectation, engagements, formation, qualifications, grade, rôles, campagne, réserve, encadrement, reconnaissance interne, etc. Seuls les plus courants sont affichés sur les fiches au départ ; vous choisissez ensuite ce qui est visible, l’ordre et l’activation de chaque ligne.
-            </p>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete/initialiser'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
-                    Installer ou compléter les indicateurs standards
-                </button>
-            </form>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <h2 class="text-lg font-bold text-slate-900">Synchroniser tout le personnel</h2>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                Pour chaque <span class="font-semibold text-slate-800">membre actif</span> de la communauté, recalcule l’indicateur
-                <span class="font-semibold text-slate-800">« Ancienneté dans la communauté »</span> à partir des dates présentes sur le dossier
-                (incorporation, enrôlement, candidature acceptée, ou date de création du compte). Les autres indicateurs
-                (service cumulé, affectation, etc.) ne sont pas modifiés ici : ils restent pilotés par les périodes saisies sur chaque fiche.
-            </p>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete/synchroniser-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6" onsubmit="return confirm('Lancer la synchronisation pour tous les membres actifs ? Cela peut prendre quelques secondes sur une grande communauté.');">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
-                    Mettre à jour tout le personnel
-                </button>
-            </form>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <h2 class="text-lg font-bold text-slate-900">Compléter depuis le dossier</h2>
-            <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                Pour les indicateurs concernant l’<span class="font-semibold text-slate-800">unité d’emploi</span>, un
-                <span class="font-semibold text-slate-800">groupe fonctionnel</span>, le
-                <span class="font-semibold text-slate-800">rôle communauté</span> ou le
-                <span class="font-semibold text-slate-800">grade actuel</span>, lorsqu’aucune période n’a été saisie par l’encadrement,
-                le portail peut <span class="font-semibold text-slate-800">proposer une date de départ</span> à partir des affectations,
-                de l’historique du dossier et des traces d’organisation déjà enregistrées. Les saisies manuelles restent prioritaires et ne sont pas écrasées.
-            </p>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete/completer-depuis-dossier'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6" onsubmit="return confirm('Lancer le complément pour tous les membres actifs ? Cela peut prendre quelques secondes sur une grande communauté.');">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2">
-                    Compléter les indicateurs à partir du dossier
-                </button>
-            </form>
-        </div>
-
-        <?php if ($definitions === []): ?>
-            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-8 text-center text-sm text-slate-600">
-                Aucun indicateur n’est encore défini pour cette communauté. Utilisez le démarrage rapide ci-dessus pour en ajouter.
+        <?php if (!$schemaReady): ?>
+            <div class="bo-seniority__warn" role="status">
+                Le module d’ancienneté n’est pas encore disponible sur cette communauté.
+                Une mise à jour de la plateforme est nécessaire avant de publier les indicateurs.
             </div>
         <?php else: ?>
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <h2 class="text-base font-bold text-slate-900">Recherche & tri rapide des indicateurs</h2>
-                <p class="mt-1 text-xs text-slate-500">Filtrage local sans rechargement pour auditer rapidement les catégories (systèmes, services, RH).</p>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <input id="senioritySearch" type="text" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Rechercher un code/libellé…">
-                    <select id="seniorityScopeFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                        <option value="">Tous les périmètres</option>
-                        <option value="tenant">Communauté</option>
-                        <option value="global">Global</option>
-                        <option value="org">Organisation</option>
-                    </select>
-                    <select id="seniorityStatusFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                        <option value="">Tous les statuts</option>
-                        <option value="active">Actifs</option>
-                        <option value="inactive">Inactifs</option>
-                        <option value="visible">Visibles</option>
-                        <option value="hidden">Masqués</option>
-                    </select>
-                    <select id="seniorityCalcFilter" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                        <option value="">Tous les calculs</option>
-                        <option value="from_start">Depuis première date</option>
-                        <option value="sum_periods">Somme des périodes</option>
-                        <option value="active_only">Périodes actives</option>
-                        <option value="custom_rule">Règle avancée</option>
-                    </select>
+            <div class="bo-seniority__kpi-grid" aria-label="Synthèse des indicateurs">
+                <div class="bo-seniority__kpi">
+                    <p class="bo-seniority__kpi-label">Indicateurs</p>
+                    <p class="bo-seniority__kpi-value"><?= $total ?></p>
+                    <p class="bo-seniority__kpi-meta">Catalogue de la communauté</p>
+                </div>
+                <div class="bo-seniority__kpi">
+                    <p class="bo-seniority__kpi-label">Actifs</p>
+                    <p class="bo-seniority__kpi-value"><?= $active ?></p>
+                    <p class="bo-seniority__kpi-meta"><?= $inactive ?> inactif<?= $inactive > 1 ? 's' : '' ?></p>
+                </div>
+                <div class="bo-seniority__kpi">
+                    <p class="bo-seniority__kpi-label">Visibles</p>
+                    <p class="bo-seniority__kpi-value"><?= $visible ?></p>
+                    <p class="bo-seniority__kpi-meta">Affichés sur les fiches</p>
+                </div>
+                <div class="bo-seniority__kpi">
+                    <p class="bo-seniority__kpi-label">Masqués</p>
+                    <p class="bo-seniority__kpi-value"><?= $hidden ?></p>
+                    <p class="bo-seniority__kpi-meta">Prêts, non publiés</p>
                 </div>
             </div>
-            <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-6">
-                <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <div class="border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
-                        <h2 class="text-lg font-bold text-slate-900">Indicateurs publiés</h2>
-                        <p class="mt-1 text-xs text-slate-500">Cochez « afficher sur les fiches » pour que les membres voient la ligne correspondante. Désactivez un indicateur pour le retirer du calcul sans supprimer l’historique.</p>
+
+            <section class="bo-seniority__panel" aria-labelledby="bo-seniority-tools-title">
+                <div class="bo-seniority__panel-head">
+                    <h2 id="bo-seniority-tools-title">Actions RH</h2>
+                    <p>
+                        Installez le catalogue standard, alignez l’ancienneté dans la communauté pour tous les membres actifs,
+                        ou proposez des dates de départ à partir des informations déjà présentes sur les dossiers.
+                    </p>
+                </div>
+                <div class="bo-seniority__tools">
+                    <div class="bo-seniority__tool">
+                        <div class="bo-seniority__tool-body">
+                            <p class="bo-seniority__tool-title">Installer les indicateurs standards</p>
+                            <p class="bo-seniority__tool-desc">
+                                Ajoute le catalogue prêt à l’emploi (communauté, service, unité, grade, rôles, etc.).
+                                Les indicateurs déjà présents ne sont pas dupliqués.
+                            </p>
+                        </div>
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete/initialiser'), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                            <button type="submit" class="bo-seniority__btn bo-seniority__btn--indigo">Installer ou compléter</button>
+                        </form>
                     </div>
-                    <ul class="divide-y divide-slate-100">
-                        <?php foreach ($definitions as $def): ?>
-                            <?php
-                            $id = (int) ($def['id'] ?? 0);
-                            if ($id < 1) {
-                                continue;
-                            }
-                            $label = (string) ($def['label'] ?? 'Indicateur');
-                            $active = !empty($def['is_active']);
-                            $visible = !empty($def['is_visible']);
-                            $sort = (int) ($def['sort_order'] ?? 0);
-                            $labelIndex = function_exists('mb_strtolower') ? mb_strtolower($label, 'UTF-8') : strtolower($label);
-                            $codeIndexRaw = (string) ($def['code'] ?? '');
-                            $codeIndex = function_exists('mb_strtolower') ? mb_strtolower($codeIndexRaw, 'UTF-8') : strtolower($codeIndexRaw);
-                            ?>
-                            <li class="px-5 py-5 sm:px-6 js-seniority-row"
-                                data-label="<?= htmlspecialchars($labelIndex, ENT_QUOTES, 'UTF-8') ?>"
-                                data-code="<?= htmlspecialchars($codeIndex, ENT_QUOTES, 'UTF-8') ?>"
-                                data-scope="<?= htmlspecialchars((string) ($def['scope'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                data-calc="<?= htmlspecialchars((string) ($def['calc_mode'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                data-active="<?= $active ? '1' : '0' ?>"
-                                data-visible="<?= $visible ? '1' : '0' ?>">
-                                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                    <div class="min-w-0">
-                                        <p class="font-semibold text-slate-900"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></p>
-                                        <p class="mt-2 flex flex-wrap gap-2 text-[11px]">
-                                            <span class="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 font-semibold text-slate-700"><?= htmlspecialchars($scopeLabel((string) ($def['scope'] ?? 'tenant')), ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 font-semibold text-blue-700"><?= htmlspecialchars($calcModeLabel((string) ($def['calc_mode'] ?? 'sum_periods')), ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 font-semibold text-violet-700"><?= htmlspecialchars((string) ($def['source_type'] ?? 'manual'), ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="rounded-full border border-slate-300 bg-white px-2 py-0.5 font-mono text-slate-600"><?= htmlspecialchars((string) ($def['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                        </p>
-                                        <p class="mt-1 text-xs text-slate-500">Ordre d’affichage (plus petit = en premier)</p>
-                                        <input type="number" name="rows[<?= $id ?>][sort]" value="<?= $sort ?>" min="0" max="9999" class="mt-2 w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm tabular-nums">
-                                    </div>
-                                    <div class="flex flex-col gap-3 sm:items-end">
-                                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                                            <input type="checkbox" name="rows[<?= $id ?>][active]" value="1" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" <?= $active ? 'checked' : '' ?>>
-                                            Indicateur actif
-                                        </label>
-                                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                                            <input type="checkbox" name="rows[<?= $id ?>][visible]" value="1" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" <?= $visible ? 'checked' : '' ?>>
-                                            Afficher sur les fiches et l’espace RH
-                                        </label>
-                                    </div>
+                    <div class="bo-seniority__tool">
+                        <div class="bo-seniority__tool-body">
+                            <p class="bo-seniority__tool-title">Mettre à jour tout le personnel</p>
+                            <p class="bo-seniority__tool-desc">
+                                Recalcule « Ancienneté dans la communauté » pour chaque membre actif, à partir des dates
+                                d’incorporation, d’enrôlement ou d’entrée présentes sur le dossier.
+                            </p>
+                        </div>
+                        <form
+                            method="post"
+                            action="<?= htmlspecialchars(url('back-office/organisation/anciennete/synchroniser-effectifs'), ENT_QUOTES, 'UTF-8') ?>"
+                            onsubmit="return confirm('Lancer la mise à jour pour tous les membres actifs ? Cela peut prendre quelques secondes sur une grande communauté.');"
+                        >
+                            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                            <button type="submit" class="bo-seniority__btn bo-seniority__btn--primary">Mettre à jour le personnel</button>
+                        </form>
+                    </div>
+                    <div class="bo-seniority__tool">
+                        <div class="bo-seniority__tool-body">
+                            <p class="bo-seniority__tool-title">Compléter depuis le dossier</p>
+                            <p class="bo-seniority__tool-desc">
+                                Propose une date de départ pour l’unité, le groupe, le rôle ou le grade lorsqu’aucune période
+                                n’a encore été saisie. Les saisies manuelles de l’encadrement restent prioritaires.
+                            </p>
+                        </div>
+                        <form
+                            method="post"
+                            action="<?= htmlspecialchars(url('back-office/organisation/anciennete/completer-depuis-dossier'), ENT_QUOTES, 'UTF-8') ?>"
+                            onsubmit="return confirm('Lancer le complément pour tous les membres actifs ? Cela peut prendre quelques secondes sur une grande communauté.');"
+                        >
+                            <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                            <button type="submit" class="bo-seniority__btn bo-seniority__btn--quiet">Compléter depuis le dossier</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <?php if ($definitions === []): ?>
+                <section class="bo-seniority__panel" aria-labelledby="bo-seniority-empty-title">
+                    <div class="bo-seniority__empty">
+                        <div class="bo-seniority__empty-icon" aria-hidden="true">∅</div>
+                        <p id="bo-seniority-empty-title">Aucun indicateur pour l’instant</p>
+                        <span>Utilisez « Installer ou compléter » ci-dessus pour ajouter le catalogue standard de votre communauté.</span>
+                    </div>
+                </section>
+            <?php else: ?>
+                <form method="post" action="<?= htmlspecialchars(url('back-office/organisation/anciennete'), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= $csrf ?>">
+                    <section class="bo-seniority__panel" aria-labelledby="bo-seniority-sheet-title">
+                        <div class="bo-seniority__panel-head">
+                            <h2 id="bo-seniority-sheet-title">Table des indicateurs</h2>
+                            <p>
+                                Cochez « Afficher » pour que les membres voient la ligne sur leur fiche.
+                                Décochez « Actif » pour retirer un indicateur du calcul sans effacer l’historique.
+                            </p>
+                        </div>
+
+                        <div class="bo-seniority__toolbar">
+                            <div class="bo-seniority__filters">
+                                <div class="bo-seniority__filter-row">
+                                    <span class="bo-seniority__filter-label">Statut</span>
+                                    <button type="button" class="bo-seniority__chip" :class="status === '' ? 'is-active' : ''" @click="status = ''">Tous</button>
+                                    <button type="button" class="bo-seniority__chip" :class="status === 'active' ? 'is-active-soft' : ''" @click="status = 'active'">Actifs</button>
+                                    <button type="button" class="bo-seniority__chip" :class="status === 'inactive' ? 'is-active-soft' : ''" @click="status = 'inactive'">Inactifs</button>
+                                    <button type="button" class="bo-seniority__chip" :class="status === 'visible' ? 'is-active-soft' : ''" @click="status = 'visible'">Visibles</button>
+                                    <button type="button" class="bo-seniority__chip" :class="status === 'hidden' ? 'is-active-soft' : ''" @click="status = 'hidden'">Masqués</button>
                                 </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <div class="flex flex-wrap gap-3">
-                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
-                        Enregistrer les réglages
-                    </button>
-                </div>
-            </form>
+                            </div>
+                            <div class="bo-seniority__toolbar-side">
+                                <?php if ($scopeOptions !== []): ?>
+                                <div class="bo-seniority__select-wrap">
+                                    <label for="bo-seniority-scope">Domaine</label>
+                                    <select id="bo-seniority-scope" x-model="scope">
+                                        <option value="">Tous les domaines</option>
+                                        <?php foreach ($scopeOptions as $scopeVal => $scopeLab): ?>
+                                        <option value="<?= htmlspecialchars($scopeVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($scopeLab, ENT_QUOTES, 'UTF-8') ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($calcOptions !== []): ?>
+                                <div class="bo-seniority__select-wrap">
+                                    <label for="bo-seniority-calc">Calcul</label>
+                                    <select id="bo-seniority-calc" x-model="calc">
+                                        <option value="">Tous les calculs</option>
+                                        <?php foreach ($calcOptions as $calcVal => $calcLab): ?>
+                                        <option value="<?= htmlspecialchars($calcVal, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($calcLab, ENT_QUOTES, 'UTF-8') ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <?php endif; ?>
+                                <div class="bo-seniority__search">
+                                    <label for="bo-seniority-search">Rechercher</label>
+                                    <input
+                                        id="bo-seniority-search"
+                                        type="search"
+                                        x-model="q"
+                                        placeholder="Nom, domaine, calcul…"
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bo-seniority__empty"
+                            x-show="visibleCount === 0"
+                            x-cloak
+                        >
+                            <div class="bo-seniority__empty-icon" aria-hidden="true">∅</div>
+                            <p>Aucun indicateur ne correspond à ces filtres</p>
+                            <span>Élargissez le statut, le domaine ou la recherche.</span>
+                        </div>
+
+                        <div
+                            class="bo-seniority__sheet-wrap"
+                            x-show="visibleCount > 0"
+                        >
+                            <table class="bo-seniority__sheet">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Indicateur</th>
+                                        <th scope="col">Domaine</th>
+                                        <th scope="col">Calcul</th>
+                                        <th scope="col" class="bo-seniority__col-num">Ordre</th>
+                                        <th scope="col" class="bo-seniority__col-check">Actif</th>
+                                        <th scope="col" class="bo-seniority__col-check">Afficher</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($rowsForJs as $row):
+                                        $id = (int) $row['id'];
+                                    ?>
+                                    <tr
+                                        class="<?= $row['active'] ? '' : 'is-inactive' ?>"
+                                        x-show="matchById(<?= $id ?>)"
+                                    >
+                                        <td class="bo-seniority__col-name" data-label="Indicateur">
+                                            <span class="bo-seniority__name"><?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="bo-seniority__meta"><?= htmlspecialchars($row['sourceLabel'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td data-label="Domaine">
+                                            <span class="bo-seniority__badge bo-seniority__badge--scope"><?= htmlspecialchars($row['scopeLabel'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td data-label="Calcul">
+                                            <span class="bo-seniority__badge bo-seniority__badge--calc" title="<?= htmlspecialchars($row['calcTitle'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['calcLabel'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td class="bo-seniority__col-num" data-label="Ordre">
+                                            <input
+                                                type="number"
+                                                name="rows[<?= $id ?>][sort]"
+                                                value="<?= (int) $row['sort'] ?>"
+                                                min="0"
+                                                max="9999"
+                                                class="bo-seniority__sort"
+                                                aria-label="Ordre d’affichage pour <?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?>"
+                                            >
+                                        </td>
+                                        <td class="bo-seniority__col-check" data-label="Actif">
+                                            <label class="bo-seniority__check">
+                                                <input type="checkbox" name="rows[<?= $id ?>][active]" value="1" <?= $row['active'] ? 'checked' : '' ?>>
+                                                <span>Actif</span>
+                                            </label>
+                                        </td>
+                                        <td class="bo-seniority__col-check" data-label="Afficher">
+                                            <label class="bo-seniority__check">
+                                                <input type="checkbox" name="rows[<?= $id ?>][visible]" value="1" <?= $row['visible'] ? 'checked' : '' ?>>
+                                                <span>Afficher</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="bo-seniority__footer">
+                            <p class="bo-seniority__footer-hint">
+                                Plus l’ordre est petit, plus l’indicateur apparaît en haut de la fiche.
+                                Les indicateurs masqués restent disponibles pour un affichage ultérieur.
+                            </p>
+                            <button type="submit" class="bo-seniority__btn bo-seniority__btn--ink">Enregistrer les réglages</button>
+                        </div>
+                    </section>
+                </form>
+            <?php endif; ?>
+
+            <p class="bo-seniority__hint">
+                Les périodes détaillées se gèrent sur chaque
+                <a href="<?= htmlspecialchars(url('personnel'), ENT_QUOTES, 'UTF-8') ?>">fiche personnel</a>.
+                Revenez à l’
+                <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>">organisation des effectifs</a>
+                pour les autres réglages RH.
+            </p>
         <?php endif; ?>
-    <?php endif; ?>
+    </div>
 </div>
 <script>
-(() => {
-    const search = document.getElementById('senioritySearch');
-    const scope = document.getElementById('seniorityScopeFilter');
-    const status = document.getElementById('seniorityStatusFilter');
-    const calc = document.getElementById('seniorityCalcFilter');
-    const rows = Array.from(document.querySelectorAll('.js-seniority-row'));
-    if (!search || !scope || !status || !calc || rows.length === 0) return;
-
-    const apply = () => {
-        const q = (search.value || '').trim().toLowerCase();
-        const scopeValue = scope.value;
-        const statusValue = status.value;
-        const calcValue = calc.value;
-        rows.forEach((row) => {
-            const label = row.dataset.label || '';
-            const code = row.dataset.code || '';
-            const rowScope = row.dataset.scope || '';
-            const rowCalc = row.dataset.calc || '';
-            const active = row.dataset.active === '1';
-            const visible = row.dataset.visible === '1';
-            const statusMatch = statusValue === ''
-                || (statusValue === 'active' && active)
-                || (statusValue === 'inactive' && !active)
-                || (statusValue === 'visible' && visible)
-                || (statusValue === 'hidden' && !visible);
-            const ok = (q === '' || label.includes(q) || code.includes(q))
-                && (scopeValue === '' || rowScope === scopeValue)
-                && (calcValue === '' || rowCalc === calcValue)
-                && statusMatch;
-            row.style.display = ok ? '' : 'none';
-        });
+function boSeniorityFilters(rows) {
+    return {
+        q: '',
+        status: '',
+        scope: '',
+        calc: '',
+        rows: Array.isArray(rows) ? rows : [],
+        match: function (row) {
+            var needle = (this.q || '').trim().toLowerCase();
+            if (needle && !(row.hay || '').includes(needle)) return false;
+            if (this.scope && row.scope !== this.scope) return false;
+            if (this.calc && row.calc !== this.calc) return false;
+            if (this.status === 'active' && !row.active) return false;
+            if (this.status === 'inactive' && row.active) return false;
+            if (this.status === 'visible' && !row.visible) return false;
+            if (this.status === 'hidden' && row.visible) return false;
+            return true;
+        },
+        matchById: function (id) {
+            var row = this.rows.find(function (r) { return r.id === id; });
+            return row ? this.match(row) : false;
+        },
+        get visibleCount() {
+            var self = this;
+            return this.rows.filter(function (r) { return self.match(r); }).length;
+        }
     };
-    [search, scope, status, calc].forEach((el) => el.addEventListener('input', apply));
-    [scope, status, calc].forEach((el) => el.addEventListener('change', apply));
-})();
+}
 </script>

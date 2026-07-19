@@ -5,27 +5,6 @@ $kpis = $adminKpis ?? [];
 $blockError = $adminKpiBlockError ?? null;
 $tenantName = isset($tenantName) ? (string) $tenantName : '';
 
-$byId = [];
-foreach ($kpis as $k) {
-    if (!empty($k['id'])) {
-        $byId[(string) $k['id']] = $k;
-    }
-}
-$primaryIds = ['members_active', 'active_30d'];
-$primaryKpis = [];
-foreach ($primaryIds as $pid) {
-    if (isset($byId[$pid])) {
-        $primaryKpis[] = $byId[$pid];
-    }
-}
-$secondaryKpis = [];
-foreach ($kpis as $k) {
-    $id = (string) ($k['id'] ?? '');
-    if ($id !== '' && !in_array($id, $primaryIds, true)) {
-        $secondaryKpis[] = $k;
-    }
-}
-
 $gate = \App\Core\Gate::getInstance();
 $canInv = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
 $canMemberModeration = $gate->allows('admin.members.moderate');
@@ -43,43 +22,79 @@ $orgFormatDt = static function (?string $raw): string {
     return $t ? date('d/m/Y H:i', $t) : htmlspecialchars($raw, ENT_QUOTES, 'UTF-8');
 };
 
-$kpiCardClass = static function (array $k, bool $large = false): string {
-    $id = (string) ($k['id'] ?? '');
-    $valStr = $k['value'] ?? null;
-    $n = is_numeric($valStr) ? (int) $valStr : null;
-    $base = 'org-dash__kpi' . ($large ? ' org-dash__kpi--lg' : '');
-    switch ($id) {
-        case 'invites_expired':
-            return $base . ' org-dash__kpi--amber';
-        case 'invites_pending':
-            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--amber' : ' org-dash__kpi--slate');
-        case 'profiles_incomplete':
-            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--amber' : ' org-dash__kpi--slate');
-        case 'members_no_unit':
-            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--violet' : ' org-dash__kpi--slate');
-        case 'members_no_role':
-            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--orange' : ' org-dash__kpi--slate');
-        case 'training_expiring':
-            return $base . ' org-dash__kpi--sky';
-        case 'moderation_open':
-            if (!empty($k['error'])) {
-                return $base . ' org-dash__kpi--slate';
-            }
+/** Libellés métier pour le tableur d’indicateurs (sans jargon technique). */
+$kpiLabelFr = static function (string $id, string $fallback): string {
+    return match ($id) {
+        'members_active' => 'Membres actifs',
+        'members_inactive' => 'Autres statuts',
+        'invites_pending' => 'Invitations en attente',
+        'invites_expired' => 'Invitations expirées',
+        'profiles_incomplete' => 'Profils à compléter',
+        'members_no_unit' => 'Sans unité',
+        'members_no_role' => 'Sans rôle communautaire',
+        'active_30d' => 'Actifs sur 30 jours',
+        'training_expiring' => 'Formations à échéance (30 j.)',
+        'moderation_open' => 'Signalements forum à traiter',
+        default => $fallback !== '' ? $fallback : 'Indicateur',
+    };
+};
 
-            return $base . (($n !== null && $n > 0) ? ' org-dash__kpi--rose' : ' org-dash__kpi--mint');
-        case 'members_inactive':
-            return $base . ' org-dash__kpi--slate';
-        case 'members_active':
-        case 'active_30d':
-            return $base . ' org-dash__kpi--accent';
-        default:
-            return $base;
+$kpiFamilyFr = static function (string $id): string {
+    return match ($id) {
+        'members_active', 'members_inactive', 'profiles_incomplete', 'members_no_unit', 'members_no_role' => 'Effectifs',
+        'active_30d' => 'Activité',
+        'invites_pending', 'invites_expired' => 'Accès',
+        'training_expiring' => 'Formation',
+        'moderation_open' => 'Modération',
+        default => 'Synthèse',
+    };
+};
+
+$kpiStatus = static function (array $k): array {
+    $id = (string) ($k['id'] ?? '');
+    if (!empty($k['error'])) {
+        return ['Indisponible', 'bg-slate-100 text-slate-700 ring-slate-200'];
     }
+    $n = is_numeric($k['value'] ?? null) ? (int) $k['value'] : null;
+    return match ($id) {
+        'invites_expired' => $n !== null && $n > 0
+            ? ['À traiter', 'bg-amber-50 text-amber-900 ring-amber-200']
+            : ['Rien en attente', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+        'invites_pending' => $n !== null && $n > 0
+            ? ['En cours', 'bg-amber-50 text-amber-900 ring-amber-200']
+            : ['Rien en attente', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+        'profiles_incomplete', 'members_no_unit', 'members_no_role' => $n !== null && $n > 0
+            ? ['À corriger', 'bg-amber-50 text-amber-900 ring-amber-200']
+            : ['À jour', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+        'training_expiring' => $n !== null && $n > 0
+            ? ['À surveiller', 'bg-sky-50 text-sky-900 ring-sky-200']
+            : ['Rien à signaler', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+        'moderation_open' => $n !== null && $n > 0
+            ? ['À traiter', 'bg-rose-50 text-rose-900 ring-rose-200']
+            : ['Rien à signaler', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
+        'members_active', 'active_30d' => ['Synthèse', 'bg-blue-50 text-blue-900 ring-blue-200'],
+        'members_inactive' => ['Contexte', 'bg-slate-100 text-slate-700 ring-slate-200'],
+        default => ['—', 'bg-slate-100 text-slate-700 ring-slate-200'],
+    };
 };
 
 $rows = $adminRecentActivity ?? [];
 $activityError = $adminRecentActivityError ?? null;
 $moreUrl = $adminRecentActivityMoreUrl ?? url('back-office/audit');
+
+$kpiHref = static function (string $id) use ($moreUrl): array {
+    return match ($id) {
+        'members_active', 'members_inactive' => [url('back-office/users'), 'Voir'],
+        'active_30d' => [$moreUrl, 'Journal'],
+        'invites_pending', 'invites_expired' => [url('back-office/invitations'), 'Gérer'],
+        'profiles_incomplete' => [url('back-office/users') . '?filter_incomplete=1', 'Corriger'],
+        'members_no_unit' => [url('back-office/users') . '?filter_no_unit=1', 'Corriger'],
+        'members_no_role' => [url('back-office/users') . '?filter_no_role=1', 'Corriger'],
+        'training_expiring' => [training_lms_admin_url(), 'Ouvrir'],
+        'moderation_open' => [url('back-office/forum-moderation'), 'Traiter'],
+        default => ['', ''],
+    };
+};
 
 $wq = $orgWorkQueue ?? [
     'expired_invitations' => [],
@@ -212,7 +227,7 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
                         <?php else: ?>
                             <strong>votre communauté</strong>.
                         <?php endif; ?>
-                        Passez d’une synthèse claire aux tableurs RH et surveillance.
+                        Consultez les indicateurs, les alertes formation, puis les tableurs RH et surveillance.
                     </p>
                     <dl class="org-dash__hero-meta">
                         <div class="org-dash__meta-pill">
@@ -235,14 +250,7 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
                     <a href="<?= htmlspecialchars($moreUrl, ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--ghost">Journal d’audit</a>
                 </div>
             </div>
-            <nav class="org-dash__tabs" aria-label="Sections du tableau de bord">
-                <button type="button" class="org-dash__tab" :class="tab === 'overview' && 'is-active'" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }">Synthèse</button>
-                <button type="button" class="org-dash__tab" :class="tab === 'rh' && 'is-active'" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }">RH &amp; recrutement</button>
-                <button type="button" class="org-dash__tab" :class="tab === 'watch' && 'is-active'" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }">Surveillance</button>
-            </nav>
         </header>
-
-        <div x-show="tab === 'overview'">
 
         <?php
         $announce_items = is_array($orgAnnounceItems ?? null) ? $orgAnnounceItems : [];
@@ -250,68 +258,295 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         $announce_kicker = 'Transmission';
         $announce_empty = 'Aucune alerte ni annonce publiée — créez-en depuis la gestion des messages.';
         $announce_id = 'org-announce';
+        $announce_list_url = url('alertes');
         $announce_manage_url = url('back-office/alerts');
         require base_path('views/partials/announce_tiles.php');
         ?>
 
+        <nav class="org-dash__tabs" aria-label="Sections du tableau de bord">
+            <button type="button" class="org-dash__tab" :class="tab === 'overview' && 'is-active'" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }">Synthèse</button>
+            <button type="button" class="org-dash__tab" :class="tab === 'rh' && 'is-active'" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }">RH &amp; recrutement</button>
+            <button type="button" class="org-dash__tab" :class="tab === 'watch' && 'is-active'" @click="tab = 'watch'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#watch'); }">Surveillance</button>
+        </nav>
+
+        <div x-show="tab === 'overview'">
+
         <div class="org-dash__deck">
+
+        <?php
+        $orgTrainingFeed = $orgTrainingFeed ?? [];
+        $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
+        $orgTrainingFeedCompletionAnalytics = $orgTrainingFeedCompletionAnalytics ?? [];
+        $trainingFeedBadge = static function (string $cat): array {
+            return match ($cat) {
+                'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
+                'training_course_completed' => ['Réussite', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
+                'training_module_blocked' => ['Accompagnement', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
+                default => ['Formation', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
+            };
+        };
+        $trainingFeedCount = is_array($orgTrainingFeed) ? count($orgTrainingFeed) : 0;
+        $kpiRowCount = is_array($kpis) ? count($kpis) : 0;
+        ?>
+
+        <section
+            class="org-dash__intro"
+            id="org-dash-intro"
+            data-org-intro
+            data-org-intro-persist="pilotage"
+            data-org-intro-default="open"
+            aria-labelledby="org-dash-intro-heading"
+        >
+            <div class="org-dash__intro-bar">
+                <div class="org-dash__intro-copy">
+                    <p class="org-dash__kicker">Mode d’emploi</p>
+                    <h2 id="org-dash-intro-heading" class="org-dash__section-title">Comment utiliser ce centre de pilotage</h2>
+                </div>
+                <button
+                    type="button"
+                    class="org-dash__intro-toggle"
+                    data-org-intro-toggle
+                    aria-expanded="true"
+                    aria-controls="org-dash-intro-panel"
+                >
+                    <span data-org-intro-label>Masquer</span>
+                    <i data-org-intro-meta aria-hidden="true">−</i>
+                </button>
+            </div>
+            <div id="org-dash-intro-panel" class="org-dash__intro-panel" data-org-intro-panel>
+                <div class="org-dash__intro-body">
+                    <p>
+                        Cette page regroupe l’essentiel pour piloter
+                        <?php if ($tenantName !== ''): ?>
+                            <strong><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong>
+                        <?php else: ?>
+                            <strong>votre communauté</strong>
+                        <?php endif; ?>
+                        : effectifs, invitations, formations, recrutement et modération.
+                        Les chiffres et listes ci-dessous sont des instantanés ; pour agir, utilisez les raccourcis ou les onglets dédiés.
+                    </p>
+                    <ul>
+                        <li><strong>Synthèse</strong> — indicateurs chiffrés, alertes formation et accès rapides aux tâches fréquentes.</li>
+                        <li><strong>RH &amp; recrutement</strong> — candidatures, mouvements d’affectation et profils à compléter, en vue tableur.</li>
+                        <li><strong>Surveillance</strong> — invitations expirées, formations à échéance, mesures de modération et journal d’activité.</li>
+                    </ul>
+                    <p class="org-dash__intro-note">
+                        Astuce : le menu latéral liste toutes les rubriques ; cette page sert de tableau de bord, pas de remplacement des écrans métier.
+                    </p>
+                </div>
+            </div>
+        </section>
+        <script>
+        (function () {
+          var root = document.getElementById('org-dash-intro');
+          if (!root || root.getAttribute('data-org-intro-bound') === '1') return;
+          root.setAttribute('data-org-intro-bound', '1');
+
+          var toggle = root.querySelector('[data-org-intro-toggle]');
+          var panel = root.querySelector('[data-org-intro-panel]');
+          var meta = root.querySelector('[data-org-intro-meta]');
+          var label = root.querySelector('[data-org-intro-label]');
+          if (!toggle || !panel) return;
+
+          var persistKey = 'athena_org_dash_intro_open_' + (root.getAttribute('data-org-intro-persist') || 'default');
+          var defOpen = root.getAttribute('data-org-intro-default') !== 'closed';
+
+          function apply(open) {
+            root.classList.toggle('is-open', open);
+            root.classList.toggle('is-collapsed', !open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+              panel.removeAttribute('hidden');
+            } else {
+              panel.setAttribute('hidden', '');
+            }
+            if (meta) meta.textContent = open ? '−' : '+';
+            if (label) label.textContent = open ? 'Masquer' : 'Afficher';
+            try { localStorage.setItem(persistKey, open ? '1' : '0'); } catch (e) {}
+          }
+
+          var stored = null;
+          try { stored = localStorage.getItem(persistKey); } catch (e) {}
+          if (stored === '1') apply(true);
+          else if (stored === '0') apply(false);
+          else apply(defOpen);
+
+          toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            apply(toggle.getAttribute('aria-expanded') !== 'true');
+          });
+        })();
+        </script>
 
         <section class="org-dash__section" aria-labelledby="org-kpi-heading">
             <div class="org-dash__section-head">
                 <div>
                     <p class="org-dash__kicker">Section 01</p>
                     <h2 id="org-kpi-heading" class="org-dash__section-title">Indicateurs stratégiques</h2>
-                    <p class="org-dash__section-lead">Synthèse opérationnelle et signaux de charge sur votre communauté.</p>
+                    <p class="org-dash__section-lead">Vue tableur des effectifs, accès, formations et modération — chaque ligne mène vers l’écran utile.</p>
                 </div>
             </div>
 
             <?php if ($blockError): ?>
                 <div class="org-dash__alert"><?= htmlspecialchars($blockError, ENT_QUOTES, 'UTF-8') ?></div>
-            <?php elseif (!empty($kpis)): ?>
-                <div class="org-dash__stack">
-                    <?php if (!empty($primaryKpis)): ?>
-                    <div class="org-dash__grid org-dash__grid--kpi-primary">
-                        <?php foreach ($primaryKpis as $k): ?>
-                            <article class="<?= htmlspecialchars($kpiCardClass($k, true), ENT_QUOTES, 'UTF-8') ?>">
-                                <p class="org-dash__kpi-label"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if (!empty($k['error'])): ?>
-                                    <p class="org-dash__kpi-error"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php else: ?>
-                                    <p class="org-dash__kpi-value"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php endif; ?>
-                                <?php if (!empty($k['hint'])): ?>
-                                    <p class="org-dash__kpi-hint"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php endif; ?>
-                            </article>
-                        <?php endforeach; ?>
+            <?php else: ?>
+            <div class="bo-sheet-panel">
+                <div class="bo-sheet-toolbar">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Tableau de bord chiffré</h3>
+                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $kpiRowCount ?> indicateur(s) · actualisé à l’ouverture de la page.</p>
                     </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($secondaryKpis)): ?>
-                    <div class="org-dash__grid org-dash__grid--kpi-secondary">
-                        <?php foreach ($secondaryKpis as $k): ?>
-                            <article class="<?= htmlspecialchars($kpiCardClass($k, false), ENT_QUOTES, 'UTF-8') ?>">
-                                <p class="org-dash__kpi-label"><?= htmlspecialchars((string) ($k['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php if (!empty($k['error'])): ?>
-                                    <p class="org-dash__kpi-error"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php else: ?>
-                                    <p class="org-dash__kpi-value"><?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php endif; ?>
-                                <?php if (!empty($k['hint'])): ?>
-                                    <p class="org-dash__kpi-hint"><?= htmlspecialchars((string) $k['hint'], ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php endif; ?>
-                            </article>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
+                    <a href="<?= url('back-office/users') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Effectifs</a>
                 </div>
+                <div class="bo-sheet-wrap" style="max-height:min(50vh,28rem)">
+                    <table class="bo-sheet min-w-[44rem]">
+                        <thead>
+                            <tr>
+                                <th style="width:2.5rem">#</th>
+                                <th>Famille</th>
+                                <th>Indicateur</th>
+                                <th class="num">Valeur</th>
+                                <th>Situation</th>
+                                <th class="num">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if (empty($kpis)): ?>
+                            <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucun indicateur disponible pour le moment.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($kpis as $i => $k):
+                                $kid = (string) ($k['id'] ?? '');
+                                $lab = $kpiLabelFr($kid, (string) ($k['label'] ?? ''));
+                                [$stLab, $stClass] = $kpiStatus($k);
+                                [$href, $actLab] = $kpiHref($kid);
+                                ?>
+                                <tr>
+                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                    <td class="text-slate-500"><?= htmlspecialchars($kpiFamilyFr($kid), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="font-semibold"><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="num">
+                                        <?php if (!empty($k['error'])): ?>
+                                            <span class="text-rose-600"><?= htmlspecialchars((string) $k['error'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars((string) ($k['value'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($stLab, ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    </td>
+                                    <td class="num">
+                                        <?php if ($href !== '' && $actLab !== ''): ?>
+                                            <a href="<?= htmlspecialchars($href, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"><?= htmlspecialchars($actLab, ENT_QUOTES, 'UTF-8') ?></a>
+                                        <?php else: ?>
+                                            <span class="text-slate-400">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <?php endif; ?>
         </section>
+
+        <?php if ($canTraining): ?>
+        <section class="org-dash__section" aria-labelledby="org-training-feed-heading">
+            <div class="org-dash__section-head">
+                <div>
+                    <p class="org-dash__kicker">Section 02</p>
+                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Formations — alertes récentes</h2>
+                    <p class="org-dash__section-lead">Inscriptions à valider, parcours terminés et demandes d’aide sur un module — à traiter juste après les indicateurs.</p>
+                </div>
+                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Assignations →</a>
+            </div>
+            <div class="bo-sheet-panel">
+                <div class="bo-sheet-toolbar">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Fil formation</h3>
+                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $trainingFeedCount ?> alerte(s) récente(s).</p>
+                    </div>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url(), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Espace formation</a>
+                </div>
+                <?php if ($orgTrainingFeedErr): ?>
+                    <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
+                <div class="bo-sheet-wrap" style="max-height:min(50vh,28rem)">
+                    <table class="bo-sheet min-w-[52rem]">
+                        <thead>
+                            <tr>
+                                <th style="width:2.5rem">#</th>
+                                <th>Type</th>
+                                <th>Titre</th>
+                                <th>Détail</th>
+                                <th>Date</th>
+                                <th class="num">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if ($orgTrainingFeedErr): ?>
+                            <tr><td colspan="6" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Alertes formation temporairement indisponibles.</td></tr>
+                        <?php elseif ($orgTrainingFeed === []): ?>
+                            <tr><td colspan="6" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune alerte récente liée aux formations.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($orgTrainingFeed as $i => $frow):
+                                $cat = (string) ($frow['category'] ?? '');
+                                [$catLab, $catClass] = $trainingFeedBadge($cat);
+                                $fLink = trim((string) ($frow['link_url'] ?? ''));
+                                $fb = trim((string) ($frow['body'] ?? ''));
+                                $feedRowId = (int) ($frow['id'] ?? 0);
+                                $analyticsBlock = $feedRowId > 0 ? ($orgTrainingFeedCompletionAnalytics[$feedRowId] ?? null) : null;
+                                $analyticsLines = is_array($analyticsBlock) ? ($analyticsBlock['lines'] ?? []) : [];
+                                $detailParts = [];
+                                if ($fb !== '') {
+                                    $detailParts[] = $fb;
+                                }
+                                if ($cat === 'training_course_completed' && $analyticsLines !== []) {
+                                    foreach ($analyticsLines as $aline) {
+                                        $aline = trim((string) $aline);
+                                        if ($aline !== '') {
+                                            $detailParts[] = $aline;
+                                        }
+                                    }
+                                }
+                                $detail = $detailParts !== [] ? implode(' · ', $detailParts) : '—';
+                                ?>
+                                <tr>
+                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                    <td>
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($catClass, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($catLab, ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    </td>
+                                    <td class="font-semibold"><?= htmlspecialchars((string) ($frow['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-slate-600 max-w-[18rem]" title="<?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?>">
+                                        <span class="line-clamp-2"><?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?></span>
+                                    </td>
+                                    <td class="mono text-slate-500 whitespace-nowrap"><?= htmlspecialchars($orgFormatDt(isset($frow['created_at']) ? (string) $frow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="num">
+                                        <?php if ($fLink !== ''): ?>
+                                            <a href="<?= htmlspecialchars($fLink, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Ouvrir</a>
+                                        <?php else: ?>
+                                            <span class="text-slate-400">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
             <div class="org-dash__section-head">
                 <div>
-                    <p class="org-dash__kicker">Section 02</p>
+                    <p class="org-dash__kicker">Section 03</p>
                     <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Raccourcis</h2>
                     <p class="org-dash__section-lead">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
                 </div>
@@ -452,79 +687,6 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
                 <?php endif; ?>
             </div>
         </section>
-
-        <?php
-        $orgTrainingFeed = $orgTrainingFeed ?? [];
-        $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
-        $orgTrainingFeedCompletionAnalytics = $orgTrainingFeedCompletionAnalytics ?? [];
-        $trainingFeedBadge = static function (string $cat): array {
-            return match ($cat) {
-                'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
-                'training_course_completed' => ['Réussite', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
-                'training_module_blocked' => ['Accompagnement', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
-                default => ['Formation', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
-            };
-        };
-        ?>
-        <?php if ($canTraining): ?>
-        <section class="org-dash__section" aria-labelledby="org-training-feed-heading">
-            <div class="org-dash__section-head">
-                <div>
-                    <p class="org-dash__kicker">Section 03</p>
-                    <h2 id="org-training-feed-heading" class="org-dash__section-title">Formations — alertes récentes</h2>
-                    <p class="org-dash__section-lead">Inscriptions à valider, parcours terminés et demandes d’aide sur un module.</p>
-                </div>
-                <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Assignations →</a>
-            </div>
-            <div class="org-dash__panel org-dash__panel--mint">
-                <?php if ($orgTrainingFeedErr): ?>
-                    <div class="org-dash__empty" style="color:#e11d48"><?= htmlspecialchars($orgTrainingFeedErr, ENT_QUOTES, 'UTF-8') ?></div>
-                <?php elseif ($orgTrainingFeed === []): ?>
-                    <div class="org-dash__empty">Aucune alerte récente liée aux formations.</div>
-                <?php else: ?>
-                    <ul class="org-dash__feed">
-                        <?php foreach ($orgTrainingFeed as $frow): ?>
-                            <?php
-                            $cat = (string) ($frow['category'] ?? '');
-                            [$catLab, $catClass] = $trainingFeedBadge($cat);
-                            $fLink = trim((string) ($frow['link_url'] ?? ''));
-                            ?>
-                            <li class="org-dash__feed-item">
-                                <div class="flex flex-wrap items-start gap-3">
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 <?= htmlspecialchars($catClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($catLab, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($frow['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                                        <?php $fb = trim((string) ($frow['body'] ?? '')); ?>
-                                        <?php if ($fb !== ''): ?>
-                                        <p class="text-sm text-slate-600 mt-1"><?= htmlspecialchars($fb, ENT_QUOTES, 'UTF-8') ?></p>
-                                        <?php endif; ?>
-                                        <?php
-                                        $feedRowId = (int) ($frow['id'] ?? 0);
-                                        $analyticsBlock = $feedRowId > 0 ? ($orgTrainingFeedCompletionAnalytics[$feedRowId] ?? null) : null;
-                                        $analyticsLines = is_array($analyticsBlock) ? ($analyticsBlock['lines'] ?? []) : [];
-                                        ?>
-                                        <?php if ($cat === 'training_course_completed' && $analyticsLines !== []): ?>
-                                        <div class="mt-2 space-y-1 text-xs text-slate-600 leading-relaxed">
-                                            <?php foreach ($analyticsLines as $aline): ?>
-                                            <p><?= htmlspecialchars((string) $aline, ENT_QUOTES, 'UTF-8') ?></p>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        <?php endif; ?>
-                                        <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                                            <span class="tabular-nums"><?= htmlspecialchars($orgFormatDt(isset($frow['created_at']) ? (string) $frow['created_at'] : null), ENT_QUOTES, 'UTF-8') ?></span>
-                                            <?php if ($fLink !== ''): ?>
-                                            <a href="<?= htmlspecialchars($fLink, ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 hover:underline">Ouvrir</a>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        </section>
-        <?php endif; ?>
 
         </div><!-- /.org-dash__deck -->
 

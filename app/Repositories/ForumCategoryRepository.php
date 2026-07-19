@@ -18,6 +18,19 @@ class ForumCategoryRepository
 
     public function listForTenant(int $tenantId): array
     {
+        return $this->dedupeRootsBySlug($this->fetchRootCategoriesForTenant($tenantId), $tenantId);
+    }
+
+    /**
+     * Racines visibles pour un tenant (locales + globales), sans déduplication.
+     * Après migration « canaux publics globaux », plusieurs tenants ont pu laisser
+     * des racines scope=global / tenant_id NULL avec le même slug (MySQL autorise
+     * plusieurs NULL dans UNIQUE(tenant_id, slug)) — d’où des doublons en UI.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fetchRootCategoriesForTenant(int $tenantId): array
+    {
         $stmt = $this->pdo->prepare(
             'SELECT fc.*,
                     (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count,
@@ -30,7 +43,64 @@ class ForumCategoryRepository
              ORDER BY fc.display_order ASC, fc.id ASC'
         );
         $stmt->execute([$tenantId]);
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Une entrée par slug : préfère la racine du tenant courant, sinon la plus active, sinon le plus petit id.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function dedupeRootsBySlug(array $rows, int $tenantId): array
+    {
+        $groups = [];
+        foreach ($rows as $row) {
+            $slug = trim((string) ($row['slug'] ?? ''));
+            $key = $slug !== '' ? 's:' . $slug : 'i:' . (int) ($row['id'] ?? 0);
+            $groups[$key][] = $row;
+        }
+        $out = [];
+        foreach ($groups as $group) {
+            $out[] = $this->preferRootCandidate($group, $tenantId);
+        }
+        usort(
+            $out,
+            static function (array $a, array $b): int {
+                $ord = ((int) ($a['display_order'] ?? 0)) <=> ((int) ($b['display_order'] ?? 0));
+
+                return $ord !== 0 ? $ord : (((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0)));
+            }
+        );
+
+        return $out;
+    }
+
+    /**
+     * @param non-empty-list<array<string, mixed>> $group
+     * @return array<string, mixed>
+     */
+    private function preferRootCandidate(array $group, int $tenantId): array
+    {
+        usort(
+            $group,
+            static function (array $a, array $b) use ($tenantId): int {
+                $aLocal = isset($a['tenant_id']) && (int) $a['tenant_id'] === $tenantId ? 0 : 1;
+                $bLocal = isset($b['tenant_id']) && (int) $b['tenant_id'] === $tenantId ? 0 : 1;
+                if ($aLocal !== $bLocal) {
+                    return $aLocal <=> $bLocal;
+                }
+                $byTopics = ((int) ($b['topic_count'] ?? 0)) <=> ((int) ($a['topic_count'] ?? 0));
+                if ($byTopics !== 0) {
+                    return $byTopics;
+                }
+
+                return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+            }
+        );
+
+        return $group[0];
     }
 
     public function findBySlug(string $slug, int $tenantId): ?array
@@ -50,9 +120,10 @@ class ForumCategoryRepository
              FROM forum_categories fc
              WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, \'tenant\') = \'global\' AND fc.tenant_id IS NULL))
                AND fc.slug = ?
+             ORDER BY (fc.tenant_id = ?) DESC, fc.id ASC
              LIMIT 1'
         );
-        $stmt->execute([$tenantId, $slug]);
+        $stmt->execute([$tenantId, $slug, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
@@ -79,9 +150,11 @@ class ForumCategoryRepository
         $stmt = $this->pdo->prepare(
             "SELECT * FROM forum_categories
              WHERE (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
-               AND parent_id IS NULL AND slug = ? LIMIT 1"
+               AND parent_id IS NULL AND slug = ?
+             ORDER BY (tenant_id = ?) DESC, id ASC
+             LIMIT 1"
         );
-        $stmt->execute([$tenantId, $slug]);
+        $stmt->execute([$tenantId, $slug, $tenantId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
@@ -156,15 +229,61 @@ class ForumCategoryRepository
     }
 
     /**
-     * Liste des catégories racine avec sous-catégories (pour dropdown new-topic).
+     * Liste des catégories racine avec sous-catégories (pour dropdown new-topic / rail).
+     * Fusionne les sous-salons des racines globales dupliquées (même slug).
+     *
+     * @return list<array<string, mixed>>
      */
     public function listForTenantWithChildren(int $tenantId): array
     {
-        $roots = $this->listForTenant($tenantId);
-        foreach ($roots as &$root) {
-            $root['children'] = $this->getSubcategories((int) $root['id'], $tenantId);
+        $roots = $this->fetchRootCategoriesForTenant($tenantId);
+        $groups = [];
+        foreach ($roots as $root) {
+            $slug = trim((string) ($root['slug'] ?? ''));
+            $key = $slug !== '' ? 's:' . $slug : 'i:' . (int) ($root['id'] ?? 0);
+            $groups[$key][] = $root;
         }
-        return $roots;
+
+        $out = [];
+        foreach ($groups as $group) {
+            $chosen = $this->preferRootCandidate($group, $tenantId);
+            $childrenByKey = [];
+            foreach ($group as $r) {
+                foreach ($this->getSubcategories((int) ($r['id'] ?? 0), $tenantId) as $ch) {
+                    $cs = trim((string) ($ch['slug'] ?? ''));
+                    $ck = $cs !== '' ? 's:' . $cs : 'i:' . (int) ($ch['id'] ?? 0);
+                    if (!isset($childrenByKey[$ck])) {
+                        $childrenByKey[$ck] = $ch;
+                        continue;
+                    }
+                    if ((int) ($ch['topic_count'] ?? 0) > (int) ($childrenByKey[$ck]['topic_count'] ?? 0)) {
+                        $childrenByKey[$ck] = $ch;
+                    }
+                }
+            }
+            $kids = array_values($childrenByKey);
+            usort(
+                $kids,
+                static function (array $a, array $b): int {
+                    $ord = ((int) ($a['display_order'] ?? 0)) <=> ((int) ($b['display_order'] ?? 0));
+
+                    return $ord !== 0 ? $ord : (((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0)));
+                }
+            );
+            $chosen['children'] = $kids;
+            $out[] = $chosen;
+        }
+
+        usort(
+            $out,
+            static function (array $a, array $b): int {
+                $ord = ((int) ($a['display_order'] ?? 0)) <=> ((int) ($b['display_order'] ?? 0));
+
+                return $ord !== 0 ? $ord : (((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0)));
+            }
+        );
+
+        return $out;
     }
 
     public function isSubscribedCategory(int $userId, int $categoryId): bool

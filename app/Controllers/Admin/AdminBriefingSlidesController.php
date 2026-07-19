@@ -33,11 +33,27 @@ final class AdminBriefingSlidesController
             return Response::redirect(url('dashboard'));
         }
 
+        $slides = $this->slides->allForTenant($tenantId);
+        $activeCount = 0;
+        foreach ($slides as $row) {
+            if (!empty($row['is_active'])) {
+                $activeCount++;
+            }
+        }
+
+        $feedUrl = url('api/atak/briefing-slides') . '?tenant_id=' . $tenantId;
+
         return Response::view('layout.main', [
             'content' => 'admin.briefing_slides.index',
             'title' => 'Diapositives de briefing tactique',
-            'briefingSlides' => $this->slides->allForTenant($tenantId),
-            'briefingSlidesApiUrl' => url('api/atak/briefing-slides'),
+            'briefingSlides' => $slides,
+            'briefingSlidesFeedUrl' => $feedUrl,
+            'briefingSlidesTenantId' => $tenantId,
+            'briefingSlidesStats' => [
+                'total' => count($slides),
+                'active' => $activeCount,
+                'inactive' => count($slides) - $activeCount,
+            ],
         ]);
     }
 
@@ -72,7 +88,7 @@ final class AdminBriefingSlidesController
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
         ]);
-        Session::flash('success', 'Diapositive ajoutée. Elle sera disponible côté Arma après actualisation dans le jeu.');
+        Session::flash('success', 'Diapositive ajoutée. Si elle est « Visible en jeu », le mod la proposera après actualisation dans Arma (extension à jour requise).');
 
         return Response::redirect(url('back-office/atak/briefing-slides'));
     }

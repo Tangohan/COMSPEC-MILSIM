@@ -349,3 +349,433 @@
   border-color: #fdba74;
   color: #9a3412;
 }
+
+/* —— Zones admin (hiérarchie consultation / création / modèles / publication) —— */
+.ops-board__map {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .ops-board__map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1100px) {
+  .ops-board__map { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.ops-board__map-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.ops-board__map-item:hover {
+  border-color: #a7f3d0;
+  box-shadow: 0 8px 20px -16px rgba(15, 23, 42, 0.35);
+}
+
+.ops-board__map-item--primary {
+  border-color: #a7f3d0;
+  background: linear-gradient(180deg, #ecfdf5, #fff);
+}
+
+.ops-board__map-step {
+  display: inline-flex;
+  width: 1.65rem;
+  height: 1.65rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 900;
+}
+
+.ops-board__map-item strong {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.ops-board__map-item em {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: #64748b;
+}
+
+.ops-board__zone {
+  margin: 0 0 2.25rem;
+  scroll-margin-top: 1.25rem;
+}
+
+.ops-board__zone-head {
+  margin-bottom: 1rem;
+}
+
+.ops-board__zone-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.ops-board__zone-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.ops-board__zone-head p {
+  margin: 0.4rem 0 0;
+  max-width: 42rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.ops-board__toolbar-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--ops-ink);
+}
+
+.ops-board__quick {
+  border: 1px solid #a7f3d0;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #ecfdf5 0%, #fff 55%);
+  padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.ops-board__quick-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.75rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.ops-board__quick-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ops-board__quick-grid a {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.65rem;
+  border: 1px solid #a7f3d0;
+  background: #fff;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #064e3b;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.ops-board__quick-grid a:hover { background: #f0fdf4; }
+
+.ops-board__quick-footer {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #d1fae5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  align-items: center;
+}
+
+.ops-board__quick-footer p {
+  margin: 0;
+  flex: 1 1 14rem;
+  font-size: 0.6875rem;
+  color: #64748b;
+}
+
+.ops-board__templates-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .ops-board__templates-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.ops-board__tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 1rem;
+  font-size: 0.75rem;
+}
+
+.ops-board__tpl-card--new {
+  border-color: #a7f3d0;
+  background: linear-gradient(180deg, #ecfdf5 0%, #fff 40%);
+}
+
+.ops-board__tpl-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.ops-board__tpl-card--new .ops-board__tpl-label { color: #047857; }
+
+.ops-board__publish-box {
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 1.15rem 1.25rem;
+}
+
+.ops-board__publish-box > p {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.ops-board__journal summary::-webkit-details-marker { display: none; }
+
+/* —— Mur public lecture seule —— */
+.ops-pub {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 320px at 12% 0%, rgba(5, 150, 105, 0.1), transparent 55%),
+    linear-gradient(180deg, #050505 0 11.5rem, #f1f5f9 11.5rem, #eef2f7 100%);
+  color: #0f172a;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.ops-pub__loader-note {
+  position: relative;
+  z-index: 1;
+  margin: 0.85rem 0 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.75);
+  text-align: center;
+}
+
+.ops-pub__top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050505;
+  color: #f8fafc;
+}
+
+.ops-pub__top-inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ops-pub__brand {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+}
+
+.ops-pub__readonly {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a3a3a3;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+
+.ops-pub__main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 3rem;
+}
+
+.ops-pub__hero {
+  color: #f8fafc;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.25rem;
+}
+
+.ops-pub__eyebrow {
+  margin: 0 0 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+}
+
+.ops-pub__title {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.ops-pub__lead {
+  margin: 0.65rem 0 0;
+  max-width: 36rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #a3a3a3;
+}
+
+.ops-pub__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.ops-pub__pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e5e5;
+}
+
+.ops-pub__pill--ok {
+  border-color: rgba(52, 211, 153, 0.35);
+  background: rgba(16, 185, 129, 0.15);
+  color: #a7f3d0;
+}
+
+.ops-pub__pill--warn {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+}
+
+.ops-pub__pill--danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+}
+
+.ops-pub__banner {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1.5rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid #d1fae5;
+  background: #fff;
+  box-shadow: 0 10px 30px -22px rgba(15, 23, 42, 0.35);
+}
+
+@media (min-width: 900px) {
+  .ops-pub__banner { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.ops-pub__banner-kicker {
+  margin: 0 0 0.3rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #059669;
+}
+
+.ops-pub__banner-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.ops-pub__sheet {
+  border-radius: 1.15rem;
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1.15rem 1.15rem 1.5rem;
+  box-shadow: 0 16px 40px -28px rgba(15, 23, 42, 0.4);
+}
+
+.ops-pub__sheet-head {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ops-pub__sheet-head h2 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.ops-pub__sheet-head p {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.ops-pub__columns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ops-pub__foot {
+  text-align: center;
+  padding: 0 1rem 2.5rem;
+}
+
+.ops-pub__foot p {
+  margin: 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.ops-pub--missing {
+  background: linear-gradient(180deg, #050505 0 8rem, #f8fafc 8rem);
+}

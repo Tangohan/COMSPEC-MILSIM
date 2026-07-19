@@ -77,4 +77,24 @@ return static function (PDO $pdo): void {
             echo '  [ATTENTION] community_media_items : ' . $e->getMessage() . "\n";
         }
     }
+
+    if (!$hasTable($pdo, 'community_media_likes')) {
+        try {
+            $pdo->exec(
+                "CREATE TABLE community_media_likes (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    tenant_id INT UNSIGNED NOT NULL,
+                    media_item_id BIGINT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_cml_user_item (user_id, media_item_id),
+                    INDEX idx_cml_tenant_item (tenant_id, media_item_id),
+                    INDEX idx_cml_item (media_item_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+            echo "  [OK] community_media_likes\n";
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] community_media_likes : ' . $e->getMessage() . "\n";
+        }
+    }
 };

@@ -62,6 +62,17 @@ class AdminAuditService
         );
     }
 
+    public function logUserLeftCommunity(int $tenantId, int $actorUserId, int $targetUserId): void
+    {
+        $this->auditService->log(
+            'user_left_community',
+            $tenantId,
+            $actorUserId,
+            'user',
+            $targetUserId
+        );
+    }
+
     public function logGroupMemberAdded(int $tenantId, int $actorUserId, int $targetUserId, int $unitId): void
     {
         $this->auditService->log(

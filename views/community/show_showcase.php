@@ -263,8 +263,24 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
     } elseif ($mediaCount >= 2) {
         $galleryLayout = 'cluster';
     }
+    $mediaLikesEnabled = !empty($mediaLikesEnabled);
+    $mediaViewerCanLike = !empty($mediaViewerCanLike);
+    $mediaLikeCsrf = \App\Core\Csrf::token();
+    $mediaLoginUrl = url('login');
   ?>
-  <section id="medias" class="community-landing__media" aria-labelledby="medias-title" data-media-count="<?= (int) $mediaCount ?>" data-media-layout="<?= htmlspecialchars($galleryLayout, ENT_QUOTES, 'UTF-8') ?>">
+  <section
+    id="medias"
+    class="community-landing__media"
+    aria-labelledby="medias-title"
+    data-media-count="<?= (int) $mediaCount ?>"
+    data-media-layout="<?= htmlspecialchars($galleryLayout, ENT_QUOTES, 'UTF-8') ?>"
+    <?php if ($mediaLikesEnabled): ?>
+    data-media-likes="1"
+    data-media-likes-csrf="<?= htmlspecialchars($mediaLikeCsrf, ENT_QUOTES, 'UTF-8') ?>"
+    data-media-likes-auth="<?= $mediaViewerCanLike ? '1' : '0' ?>"
+    data-media-likes-login="<?= htmlspecialchars($mediaLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
+    <?php endif; ?>
+  >
     <div class="community-landing__media-shell">
       <div class="community-landing__media-inner">
         <div class="community-landing__media-head">
@@ -282,7 +298,7 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
             <?php endif; ?>
           </div>
           <?php if ($publicMediaItems !== []): ?>
-          <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/medias'), ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost" style="align-self:flex-start">Mode plein écran →</a>
+          <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/medias'), ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost" style="align-self:flex-start">Voir toute la galerie →</a>
           <?php endif; ?>
           <?php if ($galleryLayout === 'carousel'): ?>
           <div class="community-landing__media-controls" data-media-controls>
@@ -322,6 +338,12 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
               $canLightbox = ($mk === 'image' && $murl) || ($mk === 'short_video' && $murl) || ($mk === 'long_video' && $membed);
               $lightboxAlt = $mtitle !== '' ? $mtitle : ($mk === 'image' ? 'Image de la communauté' : 'Vidéo de la communauté');
               $lightboxAria = 'Agrandir' . ($mtitle !== '' ? ' : ' . $mtitle : ' le média');
+              $mediaItemId = (int) ($mi['id'] ?? 0);
+              $likesCount = (int) ($mi['likes_count'] ?? 0);
+              $likedByViewer = !empty($mi['liked_by_viewer']);
+              $likeUrl = $mediaItemId > 0
+                  ? url('c/' . rawurlencode((string) $slug) . '/medias/' . $mediaItemId . '/like')
+                  : '';
             ?>
             <article
               class="<?= htmlspecialchars($itemClass, ENT_QUOTES, 'UTF-8') ?>"
@@ -337,6 +359,12 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
               role="button"
               aria-haspopup="dialog"
               aria-label="<?= htmlspecialchars($lightboxAria, ENT_QUOTES, 'UTF-8') ?>"
+              <?php endif; ?>
+              <?php if ($mediaLikesEnabled && $mediaItemId > 0): ?>
+              data-media-id="<?= $mediaItemId ?>"
+              data-like-count="<?= $likesCount ?>"
+              data-liked="<?= $likedByViewer ? '1' : '0' ?>"
+              data-like-url="<?= htmlspecialchars($likeUrl, ENT_QUOTES, 'UTF-8') ?>"
               <?php endif; ?>
             >
               <div class="community-landing__gallery-frame">
@@ -361,6 +389,18 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
                   <div class="community-landing__gallery-placeholder" aria-hidden="true"></div>
                 <?php endif; ?>
                 <span class="community-landing__gallery-kind"><?= htmlspecialchars($kindLabel) ?></span>
+                <?php if ($mediaLikesEnabled && $mediaItemId > 0): ?>
+                <button
+                  type="button"
+                  class="community-landing__like-btn<?= $likedByViewer ? ' is-liked' : '' ?>"
+                  data-media-like
+                  aria-pressed="<?= $likedByViewer ? 'true' : 'false' ?>"
+                  aria-label="<?= $likedByViewer ? 'Retirer mon j’aime' : 'J’aime ce média' ?>"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.6-8.4C.6 9.3 2.1 5.7 5.7 5.1c1.95-.3 3.75.6 4.8 2.1 1.05-1.5 2.85-2.4 4.8-2.1 3.6.6 5.1 4.2 3.3 7.5C19.2 16.65 12 21 12 21z" fill="currentColor"/></svg>
+                  <span class="community-landing__like-count" data-like-count-label><?= $likesCount > 0 ? (int) $likesCount : '' ?></span>
+                </button>
+                <?php endif; ?>
               </div>
               <?php if ($mtitle !== '' || $mcap !== ''): ?>
               <div class="community-landing__caption">
@@ -588,7 +628,7 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
       </div>
 
       <?php if ($publicUnits === []): ?>
-        <p class="mt-8 text-sm text-slate-600">Aucune unité publique pour l’instant. Complétez l’ORBAT dans le back-office.</p>
+        <p class="mt-8 text-sm text-slate-600">Aucune unité publique pour l’instant. Complétez la structure des unités dans le back-office (Groupes ou organigramme).</p>
       <?php else: ?>
       <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($publicUnits as $unit): ?>

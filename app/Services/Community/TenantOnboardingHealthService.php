@@ -62,8 +62,8 @@ final class TenantOnboardingHealthService
         $checklist = [
             $this->checklistItem(
                 'wizard',
-                'Parcours de création enregistré',
-                'Votre communauté a été créée avant le parcours guidé actuel ou celui-ci n’a pas encore été finalisé.',
+                'Parcours de création finalisé',
+                'Votre communauté a été créée avant le parcours guidé actuel, ou celui-ci n’a pas encore été terminé.',
                 $ver >= 2,
                 true,
                 'back-office/configuration-initiale',
@@ -81,7 +81,7 @@ final class TenantOnboardingHealthService
             $this->checklistItem(
                 'orbat',
                 'Structure des effectifs',
-                'Il manque une unité racine dans l’organigramme (ORBAT).',
+                'Il manque une unité de tête dans l’organigramme (groupe, compagnie ou équivalent).',
                 $roots >= 1,
                 true,
                 'back-office/organisation-effectifs',
@@ -89,8 +89,8 @@ final class TenantOnboardingHealthService
             ),
             $this->checklistItem(
                 'admin_access',
-                'Accès administration',
-                'Aucun rôle ne permet encore de gérer le back-office de la communauté.',
+                'Accès à l’administration',
+                'Aucun rôle ne permet encore de gérer l’espace d’administration de la communauté.',
                 $hasAdminRole,
                 false,
                 'back-office/roles',
@@ -125,7 +125,7 @@ final class TenantOnboardingHealthService
                 'percent' => $total > 0 ? (int) round(($doneCount / $total) * 100) : 100,
             ],
             'can_auto_apply' => $canAutoApply,
-            'auto_apply_summary' => 'Applique le référentiel français, une structure d’exemple (État-major → section → équipe) uniquement s’il n’existe aucune unité racine, et enregistre le parcours de création. Les données déjà présentes ne sont pas supprimées.',
+            'auto_apply_summary' => 'Associe le référentiel de grades français, crée une structure d’exemple (État-major → section → équipe) seulement s’il n’existe encore aucune unité de tête, et marque le parcours de création comme finalisé. Les données déjà présentes ne sont pas supprimées.',
         ];
     }
 

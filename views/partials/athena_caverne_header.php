@@ -13,7 +13,7 @@ declare(strict_types=1);
  * @var array<string,mixed>|null $personnelProfile Dossier (fonction, unité d’affectation, rôle)
  * @var bool|null $show_staff_enlistments
  * @var string|null $athena_header_section  Sous-ligne brand (ex. Tableau de bord)
- * @var string|null $athena_header_current Clé lien actif (dashboard|hub|forum|…)
+ * @var string|null $athena_header_current Clé lien actif (dashboard|hub|forum|formations|effectifs|recrutement|admin|…)
  */
 
 $h = static function (string $value): string {
@@ -50,6 +50,12 @@ if ($currentKey === '') {
         $currentKey = 'formations';
     } elseif (str_starts_with($currentPath, 'personnel') || str_starts_with($currentPath, 'orbat')) {
         $currentKey = 'effectifs';
+    } elseif (
+        str_starts_with($currentPath, 'back-office/ressources/recrutement')
+        || str_starts_with($currentPath, 'back-office/recruitments')
+        || str_starts_with($currentPath, 'back-office/recruitment')
+    ) {
+        $currentKey = 'recrutement';
     } elseif (str_starts_with($currentPath, 'back-office') || str_starts_with($currentPath, 'admin')) {
         $currentKey = 'admin';
     } elseif (str_starts_with($currentPath, 'evenements')) {
@@ -62,6 +68,7 @@ $sectionLabelByKey = [
     'forum' => 'Forum',
     'formations' => 'Formations',
     'effectifs' => 'Effectifs',
+    'recrutement' => 'Recrutement',
     'admin' => 'Administration',
     'events' => 'Manœuvres',
 ];
@@ -69,8 +76,12 @@ $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$current
 
 $canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
 $showStaff = !empty($show_staff_enlistments) || $canAdmin;
+$canRecruit = $showStaff || (function_exists('can') && can('organization.recruitment.manage'));
 $canDocsMenu = !function_exists('can') || can('documents.view');
 $canInvitationsMenu = $canAdmin || (function_exists('can') && can('invitations.send'));
+$recruitmentHref = function_exists('recruitment_workspace_url')
+    ? recruitment_workspace_url()
+    : url('back-office/ressources/recrutement');
 
 $navItems = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard')],
@@ -79,6 +90,9 @@ $navItems = [
     ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations')],
     ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel')],
 ];
+if ($canRecruit) {
+    $navItems[] = ['key' => 'recrutement', 'label' => 'Recrutement', 'href' => $recruitmentHref];
+}
 if ($canAdmin) {
     $navItems[] = ['key' => 'admin', 'label' => 'Administration', 'href' => url('back-office')];
 }
@@ -94,12 +108,12 @@ $espaceLinks = [
     ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak')],
     ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations')],
 ];
-if ($showStaff) {
+if ($canRecruit) {
     $espaceLinks[] = [
         'abbr' => 'REC',
         'label' => 'Recrutement',
         'desc' => 'Dossiers et offres',
-        'href' => url('back-office/recruitments'),
+        'href' => $recruitmentHref,
     ];
 }
 if ($canAdmin) {
@@ -123,6 +137,9 @@ $quickLinks = [
     ['label' => 'Ma fiche', 'href' => url('personnel/me')],
     ['label' => 'Compte', 'href' => url('account')],
 ];
+if ($canRecruit) {
+    $quickLinks[] = ['label' => 'Recrutement', 'href' => $recruitmentHref];
+}
 if ($canAdmin) {
     $quickLinks[] = ['label' => 'Administration', 'href' => url('back-office')];
 }

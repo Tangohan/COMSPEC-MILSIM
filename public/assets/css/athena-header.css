@@ -6,9 +6,10 @@
  * Empilement (stacking) :
  *   alertes navbar / tuiles TRANSMISSION = 94–95
  *   header Athena (+ menus / panels)     = 96  ← au-dessus des alertes
- *   rail dashboard fixed                 = 100
+ *   rail dashboard / BO fixed            = 100
  *   drawer / overlay portail (invités)   = 110–120
- *   toasts                               = 250
+ *   rail bureau effectifs                = 120
+ *   toasts flash (#flash-toast-root)     = 180
  *
  * Isolation : body.layout-light / .dash-cc imposent color #0f172a et fond clair —
  * la barre doit rester void sombre (sinon sous-ligne grise illisible + liens « bleus »).

@@ -116,6 +116,12 @@ $navGroups = [
                 'hint' => 'Rôle, droits, demandes en cours',
             ],
             [
+                'key' => 'leave',
+                'href' => url('account/acces') . '#quitter',
+                'label' => 'Quitter',
+                'hint' => 'Quitter la communauté actuelle',
+            ],
+            [
                 'key' => 'recruitment',
                 'href' => url('account/recruitment-presets'),
                 'label' => 'Profils de candidature',

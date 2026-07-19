@@ -15,7 +15,7 @@ window.ATAKPings = (function () {
   function getAuthor() {
     var u = window.ATAK_USER;
     if (u && (u.callsign || u.displayName)) return u.callsign || u.displayName;
-    return 'User';
+    return 'Opérateur';
   }
 
   function fetchPings() {
@@ -34,8 +34,14 @@ window.ATAKPings = (function () {
       .then(function (data) {
         var list = Array.isArray(data) ? data : [];
         var el = document.getElementById('atak-pings-list');
-        if (el) el.innerHTML = list.map(formatPing).join('');
-        bindPingClicks();
+        if (el) {
+          if (list.length === 0) {
+            el.innerHTML = '<p class="atak-muted" style="padding:0.5rem;font-size:0.8rem;">Aucun ping pour le moment. Clic droit sur la carte → Envoyer un ping.</p>';
+          } else {
+            el.innerHTML = list.map(formatPing).join('');
+            bindPingClicks();
+          }
+        }
         if (window.ATAKLastPingsError) window.ATAKLastPingsError(null);
       })
       .catch(function (err) {
@@ -45,14 +51,27 @@ window.ATAKPings = (function () {
 
   function formatPing(p) {
     var time = p.created_at ? p.created_at.replace('T', ' ').substring(11, 19) : '';
+    var gx = p.pos_x != null ? Math.round(Number(p.pos_x)) : '—';
+    var gy = p.pos_y != null ? Math.round(Number(p.pos_y)) : '—';
     return '<div class="atak-ping-item" data-x="' + (p.pos_x || '') + '" data-y="' + (p.pos_y || '') + '">' +
-      '<strong>' + (p.author || '') + '</strong> ' + (p.message || '') + ' <span style="color:var(--atak-muted)">' + time + '</span></div>';
+      '<strong>' + escapeHtml(p.author || '') + '</strong> ' + escapeHtml(p.message || '') +
+      ' <span style="color:var(--atak-muted)">' + time + ' · grille ' + gx + ' / ' + gy + '</span></div>';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function appendPing(ping) {
     var el = document.getElementById('atak-pings-list');
     if (el) {
-      el.insertAdjacentHTML('beforeend', formatPing(ping));
+      var empty = el.querySelector('.atak-muted');
+      if (empty) empty.remove();
+      el.insertAdjacentHTML('afterbegin', formatPing(ping));
       bindPingClicks();
     }
     if (ping.pos_x != null && ping.pos_y != null && window.ATAKMap && window.ATAKMap.addTemporaryPingMarker) {
@@ -76,15 +95,13 @@ window.ATAKPings = (function () {
 
   function createPingAt(posX, posY, message) {
     if (!isNodeConfigured()) {
-      if (window.ATAKShowError) window.ATAKShowError('Configurez l\'URL du nœud ATAK dans Admin → Configuration ATAK.');
+      if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible pour envoyer un ping.');
       return;
     }
     var author = getAuthor();
     var payload = { mapId: getMapId(), author: author, pos_x: posX, pos_y: posY, message: message || '' };
-    if (window.ATAKSocket && window.ATAKSocket.isConnected()) {
-      window.ATAKSocket.emit('Ping', payload);
-      return;
-    }
+
+    // Toujours passer par l’API HTTP (mode PHP : pas de bus temps réel).
     fetch(getApiBase() + '/api/pings', {
       method: 'POST',
       credentials: 'include',
@@ -92,34 +109,31 @@ window.ATAKPings = (function () {
       body: JSON.stringify(payload)
     }).then(function (r) {
       if (!r.ok) {
-        if (window.ATAKShowError) window.ATAKShowError('Envoi ping: ' + r.status);
-        return;
+        if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le ping.');
+        return null;
       }
-      fetchPings();
+      return r.json().catch(function () { return null; });
+    }).then(function (row) {
+      if (row && row.pos_x != null) {
+        appendPing(row);
+      } else {
+        // Affichage immédiat même si la réponse est minimale
+        appendPing({
+          author: author,
+          message: message || '',
+          pos_x: posX,
+          pos_y: posY,
+          created_at: new Date().toISOString()
+        });
+        fetchPings();
+      }
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping envoyé.');
     }).catch(function () {
-      if (window.ATAKShowError) window.ATAKShowError('Impossible d\'envoyer le ping.');
+      if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le ping.');
     });
   }
 
-  function initMapPing() {
-    var map = window.ATAKMap && window.ATAKMap.getMap && window.ATAKMap.getMap();
-    if (!map) return;
-    map.on('contextmenu', function (e) {
-      e.originalEvent.preventDefault();
-      var latlng = e.latlng;
-      var lat = latlng.lat;
-      var lng = latlng.lng;
-      var msg = window.prompt('Message du ping (optionnel)', '');
-      if (msg === null) return;
-      createPingAt(lng, lat, msg || '');
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(initMapPing, 500); });
-  } else {
-    setTimeout(initMapPing, 500);
-  }
+  // Le clic droit est géré par ATAKContextMenu (menu marqueur / ping / trait / commentaire).
 
   return { appendPing: appendPing, fetchPings: fetchPings, createPingAt: createPingAt };
 })();

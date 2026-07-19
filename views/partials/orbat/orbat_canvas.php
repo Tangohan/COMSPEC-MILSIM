@@ -314,9 +314,17 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                             <select id="orbat-ed-type" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></select>
                             <button type="button" id="orbat-btn-new-chart-type" class="mt-2 w-full rounded-xl border border-emerald-300 bg-white py-2 text-[10px] font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-50">Nouveau type sur l’organigramme…</button>
                         </div>
-                        <div>
-                            <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Mission ou description courte</label>
-                            <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
+                        <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-3">
+                            <p class="text-[9px] font-black uppercase tracking-wider text-slate-500">Fiche publique</p>
+                            <label class="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+                                <input type="checkbox" id="orbat-ed-show-public" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                <span>Afficher cette unité sur la page publique de la communauté</span>
+                            </label>
+                            <div>
+                                <label for="orbat-ed-mission" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Présentation publique</label>
+                                <p class="mb-2 text-[10px] text-slate-500 leading-snug">Texte visible sur la vitrine et la fiche publique de l’unité (mission, rôle, ambiance).</p>
+                                <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
+                            </div>
                         </div>
                         <div id="orbat-ed-details-block">
                             <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
@@ -540,7 +548,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     function bindEditors() {
         if (!showOrbatEditTools || editorsBound) return;
         editorsBound = true;
-        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander"].forEach(function(id) {
+        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander", "orbat-ed-show-public"].forEach(function(id) {
             const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener("input", scheduleSave);
@@ -565,6 +573,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const missionEl = document.getElementById("orbat-ed-mission");
         const detailsEl = document.getElementById("orbat-ed-details");
         const cmdEl = document.getElementById("orbat-ed-commander");
+        const showPublicEl = document.getElementById("orbat-ed-show-public");
         const name = nameEl ? nameEl.value.trim() : "";
         if (!name) {
             if (statusEl) { statusEl.textContent = "Le nom affiché est obligatoire."; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-red-600"; }
@@ -578,6 +587,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         body.append("name", name);
         body.append("code", codeEl ? codeEl.value.trim() : "");
         body.append("public_blurb", missionEl ? missionEl.value.trim() : "");
+        body.append("show_on_public_page", showPublicEl && showPublicEl.checked ? "1" : "0");
         body.append("orbat_type", typeEl ? typeEl.value : "command");
         body.append("orbat_details", detailsEl ? detailsEl.value.trim() : "");
         body.append("commander_user_id", cmdEl && cmdEl.value ? cmdEl.value : "");
@@ -612,6 +622,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const mission = document.getElementById("orbat-ed-mission");
         const details = document.getElementById("orbat-ed-details");
         const cmd = document.getElementById("orbat-ed-commander");
+        const showPublic = document.getElementById("orbat-ed-show-public");
         refreshOrbatTypeSelect();
         if (name) name.value = node.label || "";
         if (code) code.value = (node.role && node.role !== "Unité") ? node.role : "";
@@ -623,6 +634,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         if (mission) mission.value = (node.mission && node.mission !== "—") ? node.mission : "";
         if (details) details.value = node.orbatDetails || "";
         if (cmd) cmd.value = (node.commanderUserId && node.commanderUserId > 0) ? String(node.commanderUserId) : "";
+        if (showPublic) showPublic.checked = node.showOnPublicPage !== false;
         isHydratingForm = false;
         bindEditors();
     }
@@ -1035,6 +1047,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
             return {
                 id: node.id, unitId: node.unitId, label: node.label, role: node.role, type: node.type, status: node.status,
                 strength: node.strength, leader: node.leader, mission: node.mission, commanderUserId: node.commanderUserId || 0,
+                showOnPublicPage: node.showOnPublicPage !== false,
                 structType: node.structType, maskMode: node.maskMode, staffMaskActive: node.staffMaskActive,
                 maskHintLabel: node.maskHintLabel,
                 orbatDetails: node.orbatDetails, chartIconUrl: node.chartIconUrl, chartImageUrl: node.chartImageUrl,

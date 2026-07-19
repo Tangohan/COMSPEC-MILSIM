@@ -173,9 +173,12 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
           max-width: 20rem;
         }
       }
-      /* Hover-rail : largeurs forcées ci-dessus annulées sur desktop (voir back-office-rail.css) */
+      /* Hover-rail : réserve + largeurs (détail dans back-office-rail.css) */
       <?php if (!empty($backOfficeHoverRail)): ?>
       @media (min-width: 1024px) {
+        body.bo-shell--hover-rail .bo-shell-row--hover-rail {
+          padding-left: 4.5rem;
+        }
         body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail {
           width: 4.5rem;
           min-width: 4.5rem;
@@ -240,7 +243,7 @@ if (!empty($backOfficeHoverRail)) {
         <div
             x-data="{ navOpen: false }"
             @keydown.escape.window="navOpen = false"
-            class="relative z-[1] isolate flex min-h-[inherit] flex-col bg-slate-50 lg:flex-row"
+            class="bo-shell-row relative z-[1] isolate flex min-h-[inherit] flex-col bg-slate-50 lg:flex-row<?= !empty($backOfficeHoverRail) ? ' bo-shell-row--hover-rail' : '' ?>"
         >
             <div class="sticky top-0 z-[90] flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5 shadow-sm lg:hidden">
                 <button

@@ -128,6 +128,24 @@ $contactHref = $backHref . '#actions-contact';
     </section>
     <?php endif; ?>
 
+    <section id="command" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
+      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Commandement</p>
+      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Chef d’unité</h2>
+      <div class="mt-6 flex flex-wrap items-center gap-4">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-lg font-black text-emerald-800 ring-1 ring-emerald-200">
+          <?= htmlspecialchars($commanderName !== '' ? mb_strtoupper(mb_substr($commanderName, 0, 1)) : '?', ENT_QUOTES, 'UTF-8') ?>
+        </div>
+        <div>
+          <p class="text-lg font-black tracking-tight text-slate-950"><?= htmlspecialchars($commanderName !== '' ? $commanderName : 'Non désigné', ENT_QUOTES, 'UTF-8') ?></p>
+          <?php if ($parentUnit): ?>
+          <p class="mt-1 text-sm text-slate-500">Unité rattachée à <?= htmlspecialchars((string) ($parentUnit['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+          <?php else: ?>
+          <p class="mt-1 text-sm text-slate-500">Responsable de cette unité au sein de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></p>
+          <?php endif; ?>
+        </div>
+      </div>
+    </section>
+
     <?php if ($children !== []): ?>
     <section id="sub-units" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
       <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Structure</p>
@@ -159,8 +177,8 @@ $contactHref = $backHref . '#actions-contact';
     <?php endif; ?>
 
     <section id="roster" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Tableur</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Effectifs de l’unité</h2>
+      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Effectifs</p>
+      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Tableau des effectifs</h2>
       <?php if ($roster === []): ?>
       <p class="mt-6 text-sm text-slate-600">Aucun membre listé pour l’instant.</p>
       <?php else: ?>
@@ -192,7 +210,7 @@ $contactHref = $backHref . '#actions-contact';
       <h2 class="mt-2 text-2xl font-black tracking-tight text-white">Intéressé par cette unité ?</h2>
       <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Le contact et la candidature se font au niveau de la communauté <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>, qui orientera votre demande vers cette unité.</p>
       <div class="mt-5 flex flex-wrap gap-3">
-        <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--primary">Ouvrir la fiche communauté</a>
+        <a href="<?= htmlspecialchars($backHref . '#actions-contact', ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--primary">Contacter la communauté</a>
         <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment'), ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost">Candidater</a>
       </div>
     </section>

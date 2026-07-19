@@ -52,9 +52,9 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
-    <div style="display:flex;align-items:flex-start;min-height:80vh">
+    <div class="forum-layout">
         <?php require base_path('views/partials/forum_channel_rail.php'); ?>
-        <main class="min-h-[80vh] bg-[#f8fafc]" style="flex:1;min-width:0">
+        <main>
             <?php
             $contentPath = str_replace('.', '/', $content);
             $innerPath = base_path('views/' . $contentPath . '.php');

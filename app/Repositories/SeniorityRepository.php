@@ -169,6 +169,39 @@ class SeniorityRepository
         return $out;
     }
 
+    /**
+     * Première date de début par membre pour un indicateur d’ancienneté (tri tableur).
+     *
+     * @param list<int> $userIds
+     * @return array<int, string> user_id => Y-m-d
+     */
+    public function earliestStartByUsersForDefinition(int $definitionId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $x): bool => $x > 0)));
+        if (!$this->schemaReady() || $definitionId < 1 || $userIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+        $st = $this->pdo()->prepare(
+            'SELECT user_id, MIN(start_date) AS earliest_start
+             FROM seniority_periods
+             WHERE definition_id = ? AND user_id IN (' . $ph . ')
+               AND start_date IS NOT NULL AND start_date <> \'\'
+             GROUP BY user_id'
+        );
+        $st->execute(array_merge([$definitionId], $userIds));
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            $start = trim((string) ($row['earliest_start'] ?? ''));
+            if ($uid > 0 && $start !== '') {
+                $out[$uid] = $start;
+            }
+        }
+
+        return $out;
+    }
+
     public function findPeriodIdByRelatedType(int $tenantId, int $userId, int $definitionId, string $relatedEntityType): ?int
     {
         if (!$this->schemaReady() || $tenantId < 1 || $userId < 1 || $definitionId < 1 || trim($relatedEntityType) === '') {

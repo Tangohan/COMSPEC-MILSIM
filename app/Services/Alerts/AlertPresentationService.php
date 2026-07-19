@@ -79,6 +79,58 @@ final class AlertPresentationService
         return $out;
     }
 
+    /**
+     * Annonces dont la diffusion est terminée (historique membre), filtrées par audience.
+     *
+     * @return list<array{scope: string, id: int, kind: string, title: string, body: string, cta_label: ?string, cta_url: ?string, coupon_code: ?string, accent_color: ?string, icon_key: ?string, image_url: ?string, banner_url: ?string, ended_at: ?string}>
+     */
+    public function recentlyEndedForCurrentRequest(int $limit = 40): array
+    {
+        $userId = Session::get('user_id') ? (int) Session::get('user_id') : 0;
+        $tenantId = Session::get('tenant_id') ? (int) Session::get('tenant_id') : 0;
+
+        $hasPaid = false;
+        if ($tenantId > 0) {
+            $row = $this->tenants->findById($tenantId);
+            if ($row) {
+                $st = (string) ($row['subscription_status'] ?? 'none');
+                $hasPaid = in_array($st, ['active', 'trialing'], true);
+            }
+        }
+
+        $platformRows = $this->platformAlerts->listRecentlyEnded($limit);
+        $platformRows = array_values(array_filter(
+            $platformRows,
+            fn (array $r) => $this->matchesAudience($r, $userId > 0, $tenantId, $hasPaid)
+        ));
+
+        $tenantRows = [];
+        if ($userId > 0 && $tenantId > 0) {
+            $tenantRows = $this->tenantAlerts->listRecentlyEndedForTenant($tenantId, $limit);
+        }
+
+        $out = [];
+        foreach ($platformRows as $r) {
+            $item = $this->normalizeRow('platform', $r);
+            $item['ended_at'] = isset($r['ends_at']) && $r['ends_at'] !== '' ? (string) $r['ends_at'] : null;
+            $out[] = $item;
+        }
+        foreach ($tenantRows as $r) {
+            $item = $this->normalizeRow('tenant', $r);
+            $item['ended_at'] = isset($r['ends_at']) && $r['ends_at'] !== '' ? (string) $r['ends_at'] : null;
+            $out[] = $item;
+        }
+
+        usort($out, static function (array $a, array $b): int {
+            $ta = strtotime((string) ($a['ended_at'] ?? '')) ?: 0;
+            $tb = strtotime((string) ($b['ended_at'] ?? '')) ?: 0;
+
+            return $tb <=> $ta;
+        });
+
+        return array_slice($out, 0, $limit);
+    }
+
     /** @param array<string, mixed> $row */
     private function normalizeRow(string $scope, array $row): array
     {

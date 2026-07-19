@@ -54,18 +54,20 @@ $sop = array_key_exists('show_on_public_page', $team) ? (int) $team['show_on_pub
             <input type="number" id="display_order" name="display_order" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm" value="<?= (int) ($team['display_order'] ?? 0) ?>">
         </div>
         <div class="border-t border-slate-200 pt-4 space-y-3">
-            <p class="text-xs font-bold text-slate-800">Fiche publique vitrine</p>
-            <label class="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" name="show_on_public_page" value="1" <?= $sop ? 'checked' : '' ?>>
-                Inclure cette unité sur la page publique (ORBAT / unités)
+            <p class="text-xs font-bold text-slate-800">Fiche publique</p>
+            <p class="text-xs text-slate-500">Ces informations apparaissent sur la page publique de la communauté et sur la fiche dédiée de l’unité.</p>
+            <label class="flex items-start gap-2 text-sm text-slate-700">
+                <input type="checkbox" name="show_on_public_page" value="1" class="mt-0.5" <?= $sop ? 'checked' : '' ?>>
+                <span>Afficher cette unité sur la page publique de la communauté</span>
             </label>
             <div>
-                <label for="public_blurb" class="block text-sm font-medium text-slate-700">Description publique</label>
+                <label for="public_blurb" class="block text-sm font-medium text-slate-700">Présentation publique</label>
+                <p class="mt-0.5 text-xs text-slate-500">Texte court visible sur la vitrine et la fiche de l’unité.</p>
                 <textarea id="public_blurb" name="public_blurb" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"><?= htmlspecialchars((string) ($team['public_blurb'] ?? '')) ?></textarea>
             </div>
             <div>
-                <label for="public_tags" class="block text-sm font-medium text-slate-700">Tags (un par ligne)</label>
-                <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-mono"><?= htmlspecialchars($publicTagsLines) ?></textarea>
+                <label for="public_tags" class="block text-sm font-medium text-slate-700">Mots-clés affichés (un par ligne)</label>
+                <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"><?= htmlspecialchars($publicTagsLines) ?></textarea>
             </div>
         </div>
         <div class="flex gap-3 pt-4">

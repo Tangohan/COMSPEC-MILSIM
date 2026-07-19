@@ -824,14 +824,14 @@ class UserRepository
         $hasTenantId = in_array('tenant_id', $columns, true);
         if ($hasLabelLong) {
             self::$gradesConfigDirectory = [
-                'select' => 'g.label_short AS grade_short, g.label_long AS grade_long',
+                'select' => 'g.label_short AS grade_short, g.label_long AS grade_long, COALESCE(g.sort_order, 999) AS grade_sort_order',
                 'join' => $hasTenantId
                     ? 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id'
                     : 'LEFT JOIN grades g ON g.id = u.grade_id',
             ];
         } else {
             self::$gradesConfigDirectory = [
-                'select' => 'g.short_name AS grade_short, g.name AS grade_long',
+                'select' => 'g.short_name AS grade_short, g.name AS grade_long, COALESCE(g.rank_order, 999) AS grade_sort_order',
                 'join' => 'LEFT JOIN grades g ON g.id = u.grade_id AND g.tenant_id = u.tenant_id',
             ];
         }
@@ -949,16 +949,31 @@ class UserRepository
             $idParts[] = 'un_uu.id';
         }
         $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
-        $sql = 'SELECT u.id, u.tenant_id,
+        $profileExtras = 'pp.character_name, pp.matricule_internal, pp.primary_role, pp.role_sub_label,
+                       pp.enlistment_date, pp.readiness_score, pp.clearance_level, pp.clearance_reviewed_at';
+        if ($this->personnelProfilesHasColumn('deployable')) {
+            $profileExtras .= ', pp.deployable';
+        } else {
+            $profileExtras .= ', NULL AS deployable';
+        }
+        $extrasJoin = '';
+        $extrasSelect = ', NULL AS date_of_enlistment, NULL AS service_number';
+        $stmtEx = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' LIMIT 1");
+        if ($stmtEx && $stmtEx->fetchColumn()) {
+            $extrasJoin = 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id';
+            $extrasSelect = ', pex.date_of_enlistment, pex.service_number';
+        }
+        $sql = 'SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.avatar_url, u.created_at,
                        t.name AS tenant_name,
                        t.slug AS tenant_slug,
                        ' . $gc['select'] . ',
                        ' . $unitSelect . ',
-                       pp.character_name, pp.matricule_internal, pp.primary_role, pp.role_sub_label,
-                       ' . $jobRoleSelect . '
+                       ' . $profileExtras . ',
+                       ' . $jobRoleSelect . $extrasSelect . '
                 FROM users u
                 LEFT JOIN tenants t ON t.id = u.tenant_id
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $extrasJoin . '
                 ' . $jobRoleJoin . '
                 ' . $gc['join'] . '
                 LEFT JOIN units un_pp ON un_pp.id = pp.primary_unit_id AND un_pp.tenant_id = u.tenant_id
@@ -981,10 +996,35 @@ class UserRepository
             if (trim((string) ($row['community_name'] ?? '')) === '') {
                 $row['community_name'] = 'Communauté';
             }
+            $row['grade_sort_order'] = (int) ($row['grade_sort_order'] ?? 999);
+            $enlist = trim((string) ($row['enlistment_date'] ?? ''));
+            if ($enlist === '') {
+                $enlist = trim((string) ($row['date_of_enlistment'] ?? ''));
+            }
+            $row['enlistment_date_resolved'] = $enlist !== '' ? $enlist : null;
         }
         unset($row);
 
         return $rows;
+    }
+
+    private function personnelProfilesHasColumn(string $column): bool
+    {
+        static $cache = [];
+        $column = trim($column);
+        if ($column === '') {
+            return false;
+        }
+        if (array_key_exists($column, $cache)) {
+            return $cache[$column];
+        }
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = ? LIMIT 1"
+        );
+        $stmt->execute([$column]);
+        $cache[$column] = (bool) $stmt->fetchColumn();
+
+        return $cache[$column];
     }
 
     public function updateLastLogin(int $userId): void

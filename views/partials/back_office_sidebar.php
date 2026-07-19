@@ -315,7 +315,7 @@ $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions',
 
 $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiels', 'default', null, $links([
     ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur et pilotage RH', 'active' => $boNavEffWorkspace],
-    ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Arborescence ORBAT', 'active' => $boNavEff],
+    ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Organigramme et outils RH', 'active' => $boNavEff],
     $canStructureRecruitmentHub
         ? ['label' => 'Structure & recrutement', 'href' => url('back-office/organisation/structure'), 'hint' => 'Liens recrutement / postes', 'active' => $boNavStructureHub]
         : null,
@@ -574,17 +574,23 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
     role="navigation"
 >
     <div class="dash-rail__inner">
-        <div class="dash-rail__compact" aria-hidden="true">
-            <div class="bo-rail__compact-stack">
+        <div class="dash-rail__compact" data-bo-rail-compact>
+            <div class="bo-rail__compact-stack" role="list" aria-label="Rubriques (vue compacte)">
                 <?php
                 $compactTiles = array_merge($coreTiles, $opsTiles, $resourceTiles, $adminTiles);
                 foreach ($compactTiles as $ct):
                     if (!is_array($ct)) {
                         continue;
                     }
+                    $ctId = (string) ($ct['id'] ?? '');
+                    $ctLabel = (string) ($ct['label'] ?? '');
+                    $ctHint = (string) ($ct['hint'] ?? '');
                     $ctIcon = $icon((string) ($ct['icon'] ?? ''));
-                    if ($ctIcon === '') {
+                    if ($ctId === '' || $ctLabel === '') {
                         continue;
+                    }
+                    if ($ctIcon === '') {
+                        $ctIcon = '<span class="bo-rail__compact-fallback" aria-hidden="true">' . $h(mb_strtoupper(mb_substr($ctLabel, 0, 1, 'UTF-8'), 'UTF-8')) . '</span>';
                     }
                     $ctActive = !empty($ct['active']);
                     $ctVariant = (string) ($ct['variant'] ?? 'default');
@@ -597,8 +603,26 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                     } elseif ($ctVariant === 'admin') {
                         $ctCls .= ' bo-rail__compact-ico--admin';
                     }
+                    $ctTitle = $ctHint !== '' ? ($ctLabel . ' — ' . $ctHint) : $ctLabel;
+                    $ctShort = $ctLabel;
+                    if (function_exists('mb_strlen') && mb_strlen($ctShort, 'UTF-8') > 8) {
+                        $ctShort = mb_substr($ctShort, 0, 7, 'UTF-8') . '…';
+                    } elseif (strlen($ctShort) > 8) {
+                        $ctShort = substr($ctShort, 0, 7) . '…';
+                    }
                     ?>
-                    <span class="<?= $h($ctCls) ?>"><?= $ctIcon ?></span>
+                    <button
+                        type="button"
+                        class="<?= $h($ctCls) ?>"
+                        data-dash-rail-open="<?= $h($ctId) ?>"
+                        title="<?= $h($ctTitle) ?>"
+                        aria-label="<?= $h($ctTitle) ?>"
+                        aria-expanded="false"
+                        role="listitem"
+                    >
+                        <span class="bo-rail__compact-glyph" aria-hidden="true"><?= $ctIcon ?></span>
+                        <span class="bo-rail__compact-label"><?= $h($ctShort) ?></span>
+                    </button>
                 <?php endforeach; ?>
             </div>
         </div>

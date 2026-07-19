@@ -55,10 +55,18 @@ final class OperationalBoardController
         $panels = $this->partitionBoardPanels($entries);
         $memberOptions = $this->memberSelectOptions($tenantId);
 
+        $shareRow = $this->planningEntries->findActiveBoardShareByTenant($tenantId);
+        $shareToken = $shareRow !== null ? (string) ($shareRow['share_token'] ?? '') : '';
+        $publicWallUrl = $shareToken !== ''
+            ? url('tableau-operationnel/p/' . rawurlencode($shareToken))
+            : '';
+
         return Response::view('layout.main', [
             'title' => 'Tableau opérationnel',
             'content' => 'operations/board',
             'boardSchemaReady' => $this->planningEntries->isOperationalBoardSchemaReady(),
+            'boardShareSchemaReady' => $this->planningEntries->isBoardShareSchemaReady(),
+            'boardPublicWallUrl' => $publicWallUrl,
             'boardFilters' => $filters,
             'boardPanels' => $panels,
             'boardCategories' => $this->planningEntries->listCategories($tenantId),
@@ -72,6 +80,132 @@ final class OperationalBoardController
             'boardMemberOptions' => $memberOptions,
             'boardToday' => date('Y-m-d'),
             'boardEntryCount' => count($entries),
+        ]);
+    }
+
+    /** Active ou récupère le lien public lecture seule du mur. */
+    public function ensurePublicShare(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!$this->planningEntries->isBoardShareSchemaReady()) {
+            Session::flash('error', 'Le lien public n’est pas encore disponible sur cet environnement. Demandez une mise à jour technique, puis réessayez.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        $result = $this->planningEntries->ensureBoardShareToken($tenantId, $userId);
+        if ($result === null) {
+            Session::flash('error', 'Impossible de préparer le lien public pour le moment.');
+
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        Session::flash(
+            'success',
+            !empty($result['created'])
+                ? 'Lien public prêt : vous pouvez le partager. La page est en lecture seule.'
+                : 'Lien public déjà actif : ouvrez-le ou copiez-le depuis la zone Publication.'
+        );
+
+        return Response::redirect(url('back-office/tableau-operationnel') . '#ops-zone-publish');
+    }
+
+    /** Régénère le jeton (l’ancien lien cesse de fonctionner). */
+    public function regeneratePublicShare(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $token = $this->planningEntries->regenerateBoardShareToken($tenantId, $userId);
+        Session::flash(
+            $token === null ? 'error' : 'success',
+            $token === null
+                ? 'Impossible de renouveler le lien public.'
+                : 'Nouveau lien public généré. L’ancien lien ne fonctionne plus.'
+        );
+
+        return Response::redirect(url('back-office/tableau-operationnel') . '#ops-zone-publish');
+    }
+
+    /** Désactive le lien public. */
+    public function deactivatePublicShare(Request $request, array $params = []): Response
+    {
+        if (!$this->validateCsrf()) {
+            return Response::redirect(url('back-office/tableau-operationnel'));
+        }
+        [$tenantId, $userId] = $this->tenantAndUser();
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $ok = $this->planningEntries->deactivateBoardShare($tenantId);
+        Session::flash($ok ? 'success' : 'error', $ok ? 'Lien public désactivé.' : 'Impossible de désactiver le lien public.');
+
+        return Response::redirect(url('back-office/tableau-operationnel') . '#ops-zone-publish');
+    }
+
+    /** Mur public lecture seule (jeton opaque, sans droit d’édition). */
+    public function publicWall(Request $request, array $params = []): Response
+    {
+        $token = strtolower(trim((string) ($params['token'] ?? '')));
+        $share = $this->planningEntries->findActiveBoardShareByToken($token);
+        if ($share === null) {
+            return Response::view('operations.board_public_missing', [
+                'title' => 'Mur introuvable',
+            ]);
+        }
+
+        $tenantId = (int) ($share['tenant_id'] ?? 0);
+        if ($tenantId < 1 || !$this->planningEntries->isOperationalBoardSchemaReady()) {
+            return Response::view('operations.board_public_missing', [
+                'title' => 'Mur indisponible',
+            ]);
+        }
+
+        $filters = [
+            'status' => 'active',
+            'period_start' => date('Y-m-d', strtotime('-7 days')),
+            'period_end' => date('Y-m-d', strtotime('+30 days')),
+        ];
+        $entries = $this->planningEntries->listForBoard($tenantId, $filters);
+        $panels = $this->partitionBoardPanels($entries);
+        $identities = $this->planningEntries->collectBoardIdentities($tenantId, $entries);
+        $posture = $this->planningEntries->getPosture($tenantId) ?? ['posture_level' => 'NORMAL'];
+
+        $viewerLabel = null;
+        $viewerUserId = (int) (Session::get('user_id') ?? 0);
+        if ($viewerUserId > 0) {
+            $u = $this->users->findById($viewerUserId);
+            if (is_array($u)) {
+                $viewerLabel = trim((string) ($u['display_name'] ?? ''));
+                if ($viewerLabel === '') {
+                    $viewerLabel = trim((string) ($u['callsign'] ?? ''));
+                }
+                if ($viewerLabel === '') {
+                    $viewerLabel = trim((string) ($u['email'] ?? ''));
+                }
+            }
+        }
+
+        return Response::view('operations.board_public', [
+            'title' => 'Mur opérationnel',
+            'boardTenantName' => $this->planningEntries->tenantDisplayName($tenantId),
+            'boardPanels' => $panels,
+            'boardPosture' => $posture,
+            'boardToday' => date('Y-m-d'),
+            'boardEntryCount' => count($entries),
+            'boardFilters' => $filters,
+            'boardAuthors' => $identities['authors'],
+            'boardPresent' => $identities['present'],
+            'boardViewerLabel' => $viewerLabel,
+            'boardPortalReadOnly' => true,
         ]);
     }
 

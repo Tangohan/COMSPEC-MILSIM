@@ -1,7 +1,173 @@
 /**
- * Carousel horizontal + lightbox de la galerie médias (landing communauté).
+ * Carousel horizontal + lightbox + « J’aime » de la galerie médias (landing communauté).
  */
 (function () {
+  function parseCount(value) {
+    var n = parseInt(value, 10);
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  function formatCount(n) {
+    return n > 0 ? String(n) : '';
+  }
+
+  function findLikesSection(fromEl) {
+    if (!fromEl || !fromEl.closest) {
+      return document.querySelector('.community-landing__media[data-media-likes]');
+    }
+    return fromEl.closest('.community-landing__media[data-media-likes]')
+      || document.querySelector('.community-landing__media[data-media-likes]');
+  }
+
+  function applyLikeState(item, liked, count) {
+    if (!item) {
+      return;
+    }
+    item.setAttribute('data-liked', liked ? '1' : '0');
+    item.setAttribute('data-like-count', String(count));
+    item.querySelectorAll('[data-media-like]').forEach(function (btn) {
+      btn.classList.toggle('is-liked', !!liked);
+      btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+      btn.setAttribute('aria-label', liked ? 'Retirer mon j’aime' : 'J’aime ce média');
+      var label = btn.querySelector('[data-like-count-label]');
+      if (label) {
+        label.textContent = formatCount(count);
+      }
+    });
+  }
+
+  function showLikeNotice(section, message, loginUrl) {
+    if (!section) {
+      return;
+    }
+    var existing = section.querySelector('[data-media-like-notice]');
+    if (existing) {
+      existing.remove();
+    }
+    var notice = document.createElement('p');
+    notice.className = 'community-landing__like-notice';
+    notice.setAttribute('data-media-like-notice', '');
+    notice.setAttribute('role', 'status');
+    if (loginUrl) {
+      notice.innerHTML =
+        '<span>' +
+        String(message || 'Connectez-vous pour aimer ce média.') +
+        '</span> <a href="' +
+        String(loginUrl).replace(/"/g, '&quot;') +
+        '">Se connecter</a>';
+    } else {
+      notice.textContent = message || 'Action impossible pour le moment.';
+    }
+    var head = section.querySelector('.community-landing__media-intro')
+      || section.querySelector('.community-landing__media-inner')
+      || section;
+    head.appendChild(notice);
+    window.setTimeout(function () {
+      if (notice.parentNode) {
+        notice.remove();
+      }
+    }, 8000);
+  }
+
+  function toggleLike(item, section, onState, onSettled) {
+    if (!item || !section) {
+      if (typeof onSettled === 'function') {
+        onSettled();
+      }
+      return;
+    }
+    var url = item.getAttribute('data-like-url') || '';
+    if (!url) {
+      if (typeof onSettled === 'function') {
+        onSettled();
+      }
+      return;
+    }
+    var csrf = section.getAttribute('data-media-likes-csrf') || '';
+    var canAuth = section.getAttribute('data-media-likes-auth') === '1';
+    var loginUrl = section.getAttribute('data-media-likes-login') || '';
+    if (!canAuth) {
+      showLikeNotice(section, 'Connectez-vous pour aimer ce média.', loginUrl);
+      if (typeof onSettled === 'function') {
+        onSettled();
+      }
+      return;
+    }
+
+    var liked = item.getAttribute('data-liked') === '1';
+    var count = parseCount(item.getAttribute('data-like-count'));
+    var nextLiked = !liked;
+    var nextCount = Math.max(0, count + (nextLiked ? 1 : -1));
+    applyLikeState(item, nextLiked, nextCount);
+    if (typeof onState === 'function') {
+      onState(nextLiked, nextCount);
+    }
+
+    var busyBtns = [];
+    item.querySelectorAll('[data-media-like]').forEach(function (btn) {
+      busyBtns.push(btn);
+      btn.disabled = true;
+    });
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        csrf_token: csrf,
+        like: nextLiked ? 1 : 0,
+      }),
+    })
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { ok: r.ok, status: r.status, data: d || {} };
+        });
+      })
+      .then(function (res) {
+        var d = res.data;
+        if (d.success) {
+          var finalLiked = !!d.liked;
+          var finalCount = parseCount(d.likes_count);
+          applyLikeState(item, finalLiked, finalCount);
+          if (typeof onState === 'function') {
+            onState(finalLiked, finalCount);
+          }
+          return;
+        }
+        applyLikeState(item, liked, count);
+        if (typeof onState === 'function') {
+          onState(liked, count);
+        }
+        if (d.needs_login || res.status === 401) {
+          showLikeNotice(
+            section,
+            d.message || 'Connectez-vous pour aimer ce média.',
+            d.login_url || loginUrl
+          );
+          return;
+        }
+        showLikeNotice(section, d.message || 'Impossible d’enregistrer votre avis pour le moment.');
+      })
+      .catch(function () {
+        applyLikeState(item, liked, count);
+        if (typeof onState === 'function') {
+          onState(liked, count);
+        }
+        showLikeNotice(section, 'Connexion interrompue. Réessayez dans un instant.');
+      })
+      .finally(function () {
+        busyBtns.forEach(function (btn) {
+          btn.disabled = false;
+        });
+        if (typeof onSettled === 'function') {
+          onSettled();
+        }
+      });
+  }
+
   function initGallery(section) {
     if (!section || section.getAttribute('data-media-layout') !== 'carousel') {
       return;
@@ -45,6 +211,26 @@
     updateControls();
   }
 
+  function initGridLikes() {
+    document.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-media-like]');
+      if (!btn) {
+        return;
+      }
+      if (btn.closest('.community-landing__lightbox')) {
+        return;
+      }
+      ev.preventDefault();
+      ev.stopPropagation();
+      var item = btn.closest('[data-media-id]');
+      var section = findLikesSection(btn);
+      if (!item || !section) {
+        return;
+      }
+      toggleLike(item, section, null);
+    });
+  }
+
   function initLightbox() {
     var triggers = Array.prototype.slice.call(
       document.querySelectorAll('[data-lightbox-trigger]')
@@ -75,6 +261,11 @@
       '  <div class="community-landing__lightbox-meta">' +
       '    <p class="community-landing__lightbox-title" data-lightbox-title hidden></p>' +
       '    <p class="community-landing__lightbox-caption" data-lightbox-caption hidden></p>' +
+      '    <button type="button" class="community-landing__like-btn community-landing__like-btn--lightbox" data-lightbox-like hidden aria-pressed="false" aria-label="J’aime ce média">' +
+      '      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.35-9.6-8.4C.6 9.3 2.1 5.7 5.7 5.1c1.95-.3 3.75.6 4.8 2.1 1.05-1.5 2.85-2.4 4.8-2.1 3.6.6 5.1 4.2 3.3 7.5C19.2 16.65 12 21 12 21z" fill="currentColor"/></svg>' +
+      '      <span class="community-landing__like-count" data-lightbox-like-count></span>' +
+      '      <span class="community-landing__like-label" data-lightbox-like-label>J’aime</span>' +
+      '    </button>' +
       '    <p class="community-landing__lightbox-counter" data-lightbox-counter hidden></p>' +
       '  </div>' +
       '</div>';
@@ -84,6 +275,9 @@
     var titleEl = root.querySelector('[data-lightbox-title]');
     var captionEl = root.querySelector('[data-lightbox-caption]');
     var counterEl = root.querySelector('[data-lightbox-counter]');
+    var likeBtn = root.querySelector('[data-lightbox-like]');
+    var likeCountEl = root.querySelector('[data-lightbox-like-count]');
+    var likeLabelEl = root.querySelector('[data-lightbox-like-label]');
     var prevBtn = root.querySelector('[data-lightbox-prev]');
     var nextBtn = root.querySelector('[data-lightbox-next]');
     var closeBtn = root.querySelector('.community-landing__lightbox-close');
@@ -94,11 +288,26 @@
     function focusables() {
       return Array.prototype.slice.call(
         root.querySelectorAll(
-          'button:not([disabled]), [href], input, select, textarea, video[controls], iframe, [tabindex]:not([tabindex="-1"])'
+          'button:not([disabled]):not([hidden]), [href], input, select, textarea, video[controls], iframe, [tabindex]:not([tabindex="-1"])'
         )
       ).filter(function (el) {
         return el.offsetParent !== null || el === closeBtn;
       });
+    }
+
+    function syncLightboxLike(liked, count) {
+      if (!likeBtn) {
+        return;
+      }
+      likeBtn.classList.toggle('is-liked', !!liked);
+      likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+      likeBtn.setAttribute('aria-label', liked ? 'Retirer mon j’aime' : 'J’aime ce média');
+      if (likeCountEl) {
+        likeCountEl.textContent = formatCount(count);
+      }
+      if (likeLabelEl) {
+        likeLabelEl.textContent = liked ? 'Aimé' : 'J’aime';
+      }
     }
 
     function setMeta(item) {
@@ -119,6 +328,17 @@
       nextBtn.hidden = !many;
       prevBtn.disabled = !many;
       nextBtn.disabled = !many;
+
+      var canLike = !!(item.getAttribute('data-like-url') && findLikesSection(item));
+      if (likeBtn) {
+        likeBtn.hidden = !canLike;
+        if (canLike) {
+          syncLightboxLike(
+            item.getAttribute('data-liked') === '1',
+            parseCount(item.getAttribute('data-like-count'))
+          );
+        }
+      }
     }
 
     function render() {
@@ -217,11 +437,17 @@
 
     triggers.forEach(function (el, i) {
       el.addEventListener('click', function (ev) {
+        if (ev.target.closest('[data-media-like]')) {
+          return;
+        }
         ev.preventDefault();
         openAt(i, el);
       });
       el.addEventListener('keydown', function (ev) {
         if (ev.key === 'Enter' || ev.key === ' ') {
+          if (ev.target.closest('[data-media-like]')) {
+            return;
+          }
           ev.preventDefault();
           openAt(i, el);
         }
@@ -233,6 +459,37 @@
         closeLightbox();
       }
     });
+
+    if (likeBtn) {
+      likeBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var item = triggers[index];
+        var section = findLikesSection(item);
+        if (!item || !section) {
+          return;
+        }
+        if (section.getAttribute('data-media-likes-auth') !== '1') {
+          showLikeNotice(
+            section,
+            'Connectez-vous pour aimer ce média.',
+            section.getAttribute('data-media-likes-login') || ''
+          );
+          return;
+        }
+        likeBtn.disabled = true;
+        toggleLike(
+          item,
+          section,
+          function (liked, count) {
+            syncLightboxLike(liked, count);
+          },
+          function () {
+            likeBtn.disabled = false;
+          }
+        );
+      });
+    }
 
     prevBtn.addEventListener('click', function () {
       showAt(index - 1);
@@ -280,5 +537,6 @@
   }
 
   document.querySelectorAll('.community-landing__media').forEach(initGallery);
+  initGridLikes();
   initLightbox();
 })();

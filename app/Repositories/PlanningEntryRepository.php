@@ -1357,4 +1357,259 @@ final class PlanningEntryRepository
         $stmt = $this->pdo->prepare('INSERT INTO planning_entry_logs (planning_entry_id, actor_user_id, action_type, summary) VALUES (?, ?, ?, ?)');
         $stmt->execute([$entryId, $actorUserId, $actionType, $summary]);
     }
+
+    public function isBoardShareSchemaReady(): bool
+    {
+        return $this->hasTable('operational_board_shares');
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findActiveBoardShareByTenant(int $tenantId): ?array
+    {
+        if (!$this->isBoardShareSchemaReady() || $tenantId < 1) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM operational_board_shares WHERE tenant_id = ? AND is_active = 1 LIMIT 1'
+            );
+            $stmt->execute([$tenantId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findActiveBoardShareByToken(string $token): ?array
+    {
+        $token = strtolower(trim($token));
+        if (!$this->isBoardShareSchemaReady() || !preg_match('/^[a-f0-9]{64}$/', $token)) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM operational_board_shares WHERE share_token = ? AND is_active = 1 LIMIT 1'
+            );
+            $stmt->execute([$token]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    /**
+     * Crée ou renvoie le jeton public actif de la communauté.
+     *
+     * @return array{token: string, created: bool}|null
+     */
+    public function ensureBoardShareToken(int $tenantId, int $actorUserId): ?array
+    {
+        if (!$this->isBoardShareSchemaReady() || $tenantId < 1) {
+            return null;
+        }
+        $existing = $this->findActiveBoardShareByTenant($tenantId);
+        if ($existing !== null) {
+            $tok = (string) ($existing['share_token'] ?? '');
+
+            return $tok !== '' ? ['token' => $tok, 'created' => false] : null;
+        }
+        $token = bin2hex(random_bytes(32));
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO operational_board_shares (tenant_id, share_token, is_active, created_by)
+                 VALUES (?, ?, 1, ?)
+                 ON DUPLICATE KEY UPDATE
+                    share_token = IF(is_active = 1, share_token, VALUES(share_token)),
+                    is_active = 1,
+                    created_by = VALUES(created_by),
+                    updated_at = CURRENT_TIMESTAMP'
+            );
+            $stmt->execute([$tenantId, $token, $actorUserId > 0 ? $actorUserId : null]);
+            $again = $this->findActiveBoardShareByTenant($tenantId);
+            $tok = (string) ($again['share_token'] ?? $token);
+
+            return ['token' => $tok, 'created' => true];
+        } catch (\PDOException $e) {
+            error_log('[PlanningEntryRepository::ensureBoardShareToken] ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Régénère le jeton (invalide l’ancien lien).
+     *
+     * @return string|null nouveau jeton
+     */
+    public function regenerateBoardShareToken(int $tenantId, int $actorUserId): ?string
+    {
+        if (!$this->isBoardShareSchemaReady() || $tenantId < 1) {
+            return null;
+        }
+        $token = bin2hex(random_bytes(32));
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO operational_board_shares (tenant_id, share_token, is_active, created_by)
+                 VALUES (?, ?, 1, ?)
+                 ON DUPLICATE KEY UPDATE
+                    share_token = VALUES(share_token),
+                    is_active = 1,
+                    created_by = VALUES(created_by),
+                    updated_at = CURRENT_TIMESTAMP'
+            );
+            $stmt->execute([$tenantId, $token, $actorUserId > 0 ? $actorUserId : null]);
+
+            return $token;
+        } catch (\PDOException $e) {
+            error_log('[PlanningEntryRepository::regenerateBoardShareToken] ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    public function deactivateBoardShare(int $tenantId): bool
+    {
+        if (!$this->isBoardShareSchemaReady() || $tenantId < 1) {
+            return false;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE operational_board_shares SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ?'
+            );
+
+            return $stmt->execute([$tenantId]);
+        } catch (\PDOException) {
+            return false;
+        }
+    }
+
+    /**
+     * Identités présentes sur les fiches actives (rédacteurs + commandement + affectés).
+     *
+     * @param list<array<string, mixed>> $entries
+     * @return array{authors: list<string>, present: list<string>}
+     */
+    public function collectBoardIdentities(int $tenantId, array $entries): array
+    {
+        $authors = [];
+        $present = [];
+        $authorIds = [];
+        $presentIds = [];
+
+        foreach ($entries as $e) {
+            $cid = (int) ($e['created_by'] ?? 0);
+            if ($cid > 0) {
+                $authorIds[$cid] = true;
+            }
+            foreach (['chief_name', 'deputy_name', 'replacement_name'] as $k) {
+                $lbl = trim((string) ($e[$k] ?? ''));
+                if ($lbl !== '' && $lbl !== '—') {
+                    $present[$lbl] = true;
+                }
+            }
+            foreach (['chief_user_id', 'deputy_user_id', 'replacement_user_id'] as $uk) {
+                $uid = (int) ($e[$uk] ?? 0);
+                if ($uid > 0) {
+                    $presentIds[$uid] = true;
+                }
+            }
+        }
+
+        $label = $this->sqlUserDisplayLabel('u');
+        if ($authorIds !== []) {
+            $ids = array_keys($authorIds);
+            $in = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT {$label} AS lbl FROM users u WHERE u.tenant_id = ? AND u.id IN ({$in}) ORDER BY lbl ASC"
+                );
+                $stmt->execute(array_merge([$tenantId], $ids));
+                foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: [] as $name) {
+                    $name = trim((string) $name);
+                    if ($name !== '') {
+                        $authors[$name] = true;
+                    }
+                }
+            } catch (\PDOException) {
+                // ignore
+            }
+        }
+
+        if ($this->hasTable('planning_entry_personnel') && $entries !== []) {
+            $entryIds = [];
+            foreach ($entries as $e) {
+                $eid = (int) ($e['id'] ?? 0);
+                if ($eid > 0) {
+                    $entryIds[] = $eid;
+                }
+            }
+            if ($entryIds !== []) {
+                $in = implode(',', array_fill(0, count($entryIds), '?'));
+                try {
+                    $stmt = $this->pdo->prepare(
+                        "SELECT DISTINCT {$label} AS lbl
+                         FROM planning_entry_personnel p
+                         INNER JOIN users u ON u.id = p.user_id
+                         WHERE p.planning_entry_id IN ({$in})
+                         ORDER BY lbl ASC"
+                    );
+                    $stmt->execute($entryIds);
+                    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: [] as $name) {
+                        $name = trim((string) $name);
+                        if ($name !== '') {
+                            $present[$name] = true;
+                        }
+                    }
+                } catch (\PDOException) {
+                    // ignore
+                }
+            }
+        }
+
+        if ($presentIds !== [] && $present === []) {
+            $ids = array_keys($presentIds);
+            $in = implode(',', array_fill(0, count($ids), '?'));
+            try {
+                $stmt = $this->pdo->prepare(
+                    "SELECT {$label} AS lbl FROM users u WHERE u.tenant_id = ? AND u.id IN ({$in}) ORDER BY lbl ASC"
+                );
+                $stmt->execute(array_merge([$tenantId], $ids));
+                foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: [] as $name) {
+                    $name = trim((string) $name);
+                    if ($name !== '') {
+                        $present[$name] = true;
+                    }
+                }
+            } catch (\PDOException) {
+                // ignore
+            }
+        }
+
+        return [
+            'authors' => array_keys($authors),
+            'present' => array_keys($present),
+        ];
+    }
+
+    /** Nom de communauté pour affichage public. */
+    public function tenantDisplayName(int $tenantId): string
+    {
+        if ($tenantId < 1) {
+            return 'Communauté';
+        }
+        try {
+            $stmt = $this->pdo->prepare('SELECT name FROM tenants WHERE id = ? LIMIT 1');
+            $stmt->execute([$tenantId]);
+            $name = trim((string) ($stmt->fetchColumn() ?: ''));
+
+            return $name !== '' ? $name : 'Communauté';
+        } catch (\PDOException) {
+            return 'Communauté';
+        }
+    }
 }

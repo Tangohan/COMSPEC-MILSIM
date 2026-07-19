@@ -25,6 +25,7 @@ use App\Services\Profile\UserUiPreferencesValidationService;
 use App\Services\User\UserProfileSlugService;
 use App\Services\Steam\SteamWebApiService;
 use App\Services\Community\MemberOnboardingService;
+use App\Services\Community\LeaveCommunityService;
 use App\Services\Auth\LoginSecurityOtpService;
 use PDO;
 
@@ -43,6 +44,7 @@ class AccountController
         private UserUiPreferencesValidationService $userUiPreferencesValidationService,
         private SteamWebApiService $steamWebApiService,
         private LoginSecurityOtpService $loginSecurityOtpService,
+        private LeaveCommunityService $leaveCommunityService,
     ) {}
 
     /**
@@ -142,6 +144,28 @@ class AccountController
             }
         }
 
+        $canLeaveCommunity = false;
+        $leaveCommunityName = '';
+        $leaveCommunityBlockedReason = '';
+        try {
+            $tenant = $this->authService->tenant();
+            if ($tenant && !$this->isLeavePlaceholderTenant($tenant)) {
+                $canLeaveCommunity = true;
+                $leaveCommunityName = trim((string) ($tenant['name'] ?? ''));
+                $ownerRoleId = \App\Core\Container::get(\App\Repositories\RoleRepository::class)
+                    ->getIdBySlug($tenantId, 'community_owner');
+                if ($ownerRoleId !== null && $this->userRepository->userHasTenantRole($uid, $ownerRoleId)) {
+                    $ownerCount = $this->userRepository->countUsersWithRole($ownerRoleId);
+                    if ($ownerCount <= 1) {
+                        $canLeaveCommunity = false;
+                        $leaveCommunityBlockedReason = 'Vous êtes le dernier propriétaire de cette communauté. Transférez ce rôle à un autre membre avant de pouvoir partir.';
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $canLeaveCommunity = false;
+        }
+
         return $this->accountView('account.access', 'Mes accès', [
             'accountRoleLabel' => $roleLabel,
             'accountGrade' => $grade,
@@ -149,7 +173,60 @@ class AccountController
             'elevationRequestedAboutMe' => $requestedAboutMe,
             'elevationOpenCount' => $openElevationCount,
             'elevationKindLabels' => \App\Services\Effectifs\EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
+            'canLeaveCommunity' => $canLeaveCommunity,
+            'leaveCommunityName' => $leaveCommunityName,
+            'leaveCommunityBlockedReason' => $leaveCommunityBlockedReason,
         ]);
+    }
+
+    /**
+     * Départ volontaire de la communauté courante (self-service).
+     */
+    public function leaveCommunity(Request $request, array $params = []): Response
+    {
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('account/acces'));
+        }
+
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+
+        $uid = (int) ($user['id'] ?? 0);
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        $result = $this->leaveCommunityService->leave($uid, $tenantId);
+
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Impossible de quitter la communauté pour le moment.'));
+
+            return Response::redirect(url('account/acces'));
+        }
+
+        Session::flash('success', 'Vous avez quitté la communauté. Votre accès y est terminé.');
+
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+
+        return Response::redirect(url('dashboard'));
+    }
+
+    /** @param array<string, mixed> $tenant */
+    private function isLeavePlaceholderTenant(array $tenant): bool
+    {
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        if ($slug === '' || $slug === 'default') {
+            return true;
+        }
+        $name = mb_strtolower(trim((string) ($tenant['name'] ?? '')));
+        if ($name === 'aucune organisation' || str_contains($name, 'aucune organisation') || str_contains($name, "pas d'organisation") || str_contains($name, 'pas d’organisation')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -641,6 +718,20 @@ class AccountController
             'key' => EmailEvents::NEW_COMMUNITY_MEMBER,
             'label' => 'Nouveaux membres (équipe)',
             'hint' => 'Résumé pour les responsables lorsqu’un membre rejoint la communauté ou confirme son inscription.',
+            'group' => 'Communauté',
+        ];
+
+        $items[] = [
+            'key' => EmailEvents::MEMBER_LEFT_COMMUNITY_STAFF,
+            'label' => 'Départ d’un membre (équipe)',
+            'hint' => 'Lorsqu’un membre quitte volontairement la communauté.',
+            'group' => 'Communauté',
+        ];
+
+        $items[] = [
+            'key' => EmailEvents::MEMBER_LEFT_COMMUNITY_CONFIRMATION,
+            'label' => 'Confirmation de départ',
+            'hint' => 'Message de confirmation lorsque vous quittez une communauté.',
             'group' => 'Communauté',
         ];
 

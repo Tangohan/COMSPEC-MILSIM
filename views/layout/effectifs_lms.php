@@ -24,6 +24,11 @@ require base_path('views/training/partials/lms_page_boot_overlay.php');
 ?>
 
 <?php require base_path('views/admin/effectifs_workspace/partials/effectifs_lms_rail.php'); ?>
+<?php
+// Hors .eff-shell / .eff-main : ces blocs créent des stacking contexts (z 10 / z 1)
+// qui piégent les toasts sous .eff-topnav (z 90).
+require base_path('views/partials/layout_flash_toasts.php');
+?>
 
 <div class="eff-shell">
     <header class="eff-topnav">
@@ -47,7 +52,6 @@ require base_path('views/training/partials/lms_page_boot_overlay.php');
     </div>
 
     <main class="eff-main">
-        <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php
         $contentPath = str_replace('.', '/', (string) $content);
         $innerPath = base_path('views/' . $contentPath . '.php');

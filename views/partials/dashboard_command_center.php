@@ -308,6 +308,101 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
+        <?php
+        $announce_items = is_array($dashboard_announce_items ?? null) ? $dashboard_announce_items : [];
+        $announce_heading = 'Alertes & annonces';
+        $announce_kicker = 'Transmission';
+        $announce_empty = 'Aucune alerte ni annonce pour le moment.';
+        $announce_id = 'dashboard-announce';
+        $announce_list_url = url('alertes');
+        $announce_manage_url = \App\Core\Gate::getInstance()->allows('dashboard.pins.manage')
+            || \App\Core\Gate::getInstance()->allows('admin.organization')
+            || \App\Core\Gate::getInstance()->allows('admin.access')
+            ? url('back-office/alerts')
+            : null;
+        require base_path('views/partials/announce_tiles.php');
+        require base_path('views/partials/dashboard_popup_modal.php');
+        ?>
+
+        <section class="dash-idstrip" aria-label="Identité opérationnelle">
+            <div class="dash-idstrip__shell">
+                <div class="dash-idstrip__facts">
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Communauté</span>
+                        <span class="dash-idstrip__value"><?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Grade</span>
+                        <span class="dash-idstrip__value"><?= htmlspecialchars($roleHint, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Matricule</span>
+                        <span class="dash-idstrip__value"><?= htmlspecialchars($matricule ? (string) $matricule : 'Non attribué', ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <?php if ($platformRole !== ''): ?>
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Rôle</span>
+                        <span class="dash-idstrip__value"><?= htmlspecialchars($platformRole, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Statut</span>
+                        <span class="dash-idstrip__value dash-idstrip__value--status"><?= htmlspecialchars($statutLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <div class="dash-idstrip__fact">
+                        <span class="dash-idstrip__label">Date</span>
+                        <span class="dash-idstrip__value"><?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                </div>
+                <div class="dash-idstrip__actions" role="group" aria-label="Raccourcis opérationnels">
+                    <button type="button" class="dash-idstrip__icon-btn" @click="tacticalOpen = true" aria-haspopup="dialog" aria-label="Ouvrir la situation tactique">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/>
+                            <circle cx="12" cy="10" r="2.5"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="dash-idstrip__icon-btn" @click="calendarOpen = true" aria-haspopup="dialog" aria-label="Ouvrir le calendrier des manœuvres">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
+                        </svg>
+                    </button>
+                        <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
+                        <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
+                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
+                </div>
+                <?php
+                $dashShowCommunitySwitch = $dashCtxCommunity && count($communityMemberships ?? []) > 1;
+                if ($dashShowCommunitySwitch || $dashCtxTrial):
+                ?>
+                <div class="dash-idstrip__aside">
+                    <?php if ($dashShowCommunitySwitch): ?>
+                    <div class="dash-idstrip__switch">
+                        <span class="dash-idstrip__label">Autres communautés</span>
+                        <div class="dash-idstrip__chips">
+                            <?php foreach ($communityMemberships as $m): ?>
+                                <?php if ((int) ($m['tenant_id'] ?? 0) === $currentTid) {
+                                    continue;
+                                } ?>
+                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='…';}">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
+                                    <button type="submit" class="dash-idstrip__chip"><?= htmlspecialchars(community_display_name($m), ENT_QUOTES, 'UTF-8') ?></button>
+                                </form>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($dashCtxTrial): ?>
+                        <a href="<?= url('platform/upgrade') ?>" class="dash-idstrip__trial">
+                            Essai fondateur jusqu’au <?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt)), ENT_QUOTES, 'UTF-8') ?> →
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
         <?php if (is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0): ?>
         <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
             <div class="dash-rsvp-quick__shell">
@@ -330,21 +425,6 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
         <?php endif; ?>
-
-        <?php
-        $announce_items = is_array($dashboard_announce_items ?? null) ? $dashboard_announce_items : [];
-        $announce_heading = 'Alertes & annonces';
-        $announce_kicker = 'Transmission';
-        $announce_empty = 'Aucune alerte ni annonce pour le moment.';
-        $announce_id = 'dashboard-announce';
-        $announce_manage_url = \App\Core\Gate::getInstance()->allows('dashboard.pins.manage')
-            || \App\Core\Gate::getInstance()->allows('admin.organization')
-            || \App\Core\Gate::getInstance()->allows('admin.access')
-            ? url('back-office/alerts')
-            : null;
-        require base_path('views/partials/announce_tiles.php');
-        require base_path('views/partials/dashboard_popup_modal.php');
-        ?>
 
         <?php if (!empty($showcase_training_feature)): ?>
         <section class="dash-showcase" aria-labelledby="dash-showcase-heading" <?php if (!empty($showcase_items)): ?>x-data="trainingShowcase"<?php endif; ?>>
@@ -412,78 +492,6 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <?php endif; ?>
         </section>
         <?php endif; ?>
-
-        <section class="dash-idstrip" aria-label="Identité opérationnelle">
-            <div class="dash-idstrip__shell">
-                <div class="dash-idstrip__facts">
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Communauté</span>
-                        <span class="dash-idstrip__value"><?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Grade</span>
-                        <span class="dash-idstrip__value"><?= htmlspecialchars($roleHint, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Matricule</span>
-                        <span class="dash-idstrip__value"><?= htmlspecialchars($matricule ? (string) $matricule : 'Non attribué', ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <?php if ($platformRole !== ''): ?>
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Rôle</span>
-                        <span class="dash-idstrip__value"><?= htmlspecialchars($platformRole, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Statut</span>
-                        <span class="dash-idstrip__value dash-idstrip__value--status"><?= htmlspecialchars($statutLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <div class="dash-idstrip__fact">
-                        <span class="dash-idstrip__label">Date</span>
-                        <span class="dash-idstrip__value"><?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                </div>
-                <div class="dash-idstrip__actions" role="group" aria-label="Raccourcis opérationnels">
-                    <button type="button" class="dash-idstrip__icon-btn" @click="tacticalOpen = true" aria-haspopup="dialog" aria-label="Ouvrir la situation tactique">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/>
-                            <circle cx="12" cy="10" r="2.5"/>
-                        </svg>
-                    </button>
-                    <button type="button" class="dash-idstrip__icon-btn" @click="calendarOpen = true" aria-haspopup="dialog" aria-label="Ouvrir le calendrier des manœuvres">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <rect x="3" y="5" width="18" height="16" rx="2"/>
-                            <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
-                        </svg>
-                    </button>
-                        <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
-                        <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
-                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
-                </div>
-                <?php if ($dashCtxCommunity && count($communityMemberships ?? []) > 1): ?>
-                <div class="dash-idstrip__switch">
-                    <span class="dash-idstrip__label">Autres communautés</span>
-                    <div class="dash-idstrip__chips">
-                        <?php foreach ($communityMemberships as $m): ?>
-                            <?php if ((int) ($m['tenant_id'] ?? 0) === $currentTid) {
-                                continue;
-                            } ?>
-                            <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='…';}">
-                                <?= \App\Core\Csrf::field() ?>
-                                <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
-                                <button type="submit" class="dash-idstrip__chip"><?= htmlspecialchars(community_display_name($m), ENT_QUOTES, 'UTF-8') ?></button>
-                            </form>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                <?php if ($dashCtxTrial): ?>
-                    <a href="<?= url('platform/upgrade') ?>" class="dash-idstrip__trial">
-                        Essai fondateur jusqu’au <?= htmlspecialchars(date('d/m/Y', strtotime($founderTrialEndsAt)), ENT_QUOTES, 'UTF-8') ?> →
-                    </a>
-                <?php endif; ?>
-            </div>
-        </section>
 
         <?php if ($mbExcerpt !== null && $mbExcerpt !== ''): ?>
         <div class="border-b border-amber-200/80 bg-amber-50">

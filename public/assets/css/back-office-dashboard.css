@@ -16,7 +16,7 @@
   flex: 1 1 auto;
   overflow-x: hidden;
   color: var(--org-ink);
-  /* Fond noir sous le bloc haut ; le panneau clair prend le relais sous les alertes */
+  /* Fond noir sous le bloc haut ; le panneau clair prend le relais sous les onglets */
   background: var(--org-void);
 }
 
@@ -139,7 +139,7 @@
   position: relative;
   overflow: hidden;
   margin: 0 -1rem 0;
-  padding: 2rem 1rem 0;
+  padding: 2rem 1rem 1.5rem;
   background: var(--org-void);
   color: #f8fafc;
   animation: org-dash-hero-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -153,12 +153,12 @@
 }
 
 @media (min-width: 640px) {
-  .org-dash__hero { margin-left: -1.5rem; margin-right: -1.5rem; padding: 2.35rem 1.5rem 0; }
+  .org-dash__hero { margin-left: -1.5rem; margin-right: -1.5rem; padding: 2.35rem 1.5rem 1.65rem; }
   .org-dash__hero--after-setup { padding-top: 1.5rem; }
 }
 
 @media (min-width: 1024px) {
-  .org-dash__hero { margin-left: -2rem; margin-right: -2rem; padding: 2.75rem 2rem 0; }
+  .org-dash__hero { margin-left: -2rem; margin-right: -2rem; padding: 2.75rem 2rem 1.85rem; }
   .org-dash__hero--after-setup { padding-top: 1.65rem; }
 }
 
@@ -327,10 +327,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  margin: 0;
-  padding: 0.35rem 0 0;
+  margin: 0 -1rem;
+  padding: 0.35rem 1rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(2, 6, 23, 0.25);
+  background: rgba(2, 6, 23, 0.55);
+}
+
+@media (min-width: 640px) {
+  .org-dash__tabs { margin-left: -1.5rem; margin-right: -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .org-dash__tabs { margin-left: -2rem; margin-right: -2rem; padding-left: 2rem; padding-right: 2rem; }
+}
+
+@media (min-width: 1280px) {
+  .org-dash__tabs { margin-left: -2.5rem; margin-right: -2.5rem; padding-left: 2.5rem; padding-right: 2.5rem; }
 }
 
 .org-dash__tab {
@@ -389,8 +401,116 @@
   animation: org-dash-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.org-dash__deck > .org-dash__section:first-child {
+.org-dash__deck > .org-dash__section:first-child,
+.org-dash__deck > .org-dash__intro:first-child {
   margin-top: 0;
+}
+
+/* ——— Mode d’emploi (masquable, localStorage) ——— */
+.org-dash__intro {
+  margin-top: 0;
+  border: 1px solid var(--org-line);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  animation: org-dash-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.org-dash__intro-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.15rem;
+}
+
+.org-dash__intro.is-collapsed .org-dash__intro-bar {
+  padding-bottom: 1rem;
+}
+
+.org-dash__intro-copy {
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+
+.org-dash__intro-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.org-dash__intro-toggle:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.org-dash__intro-toggle i {
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.org-dash__intro-panel {
+  border-top: 1px solid #e2e8f0;
+  padding: 0 1.15rem 1.15rem;
+}
+
+.org-dash__intro-body {
+  max-width: 46rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.org-dash__intro-body p {
+  margin: 0.85rem 0 0;
+}
+
+.org-dash__intro-body p:first-child {
+  margin-top: 0.85rem;
+}
+
+.org-dash__intro-body ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.org-dash__intro-body li {
+  padding-left: 0.15rem;
+}
+
+.org-dash__intro-body strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.org-dash__intro-note {
+  margin-top: 0.9rem !important;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.65rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 0.8125rem;
+  color: #64748b;
 }
 
 .org-dash__section:nth-of-type(2) { animation-delay: 0.06s; }

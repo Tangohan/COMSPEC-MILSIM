@@ -540,6 +540,20 @@ final class OrbatApiController
             $data['public_blurb'] = $blurb === '' ? null : mb_substr($blurb, 0, 8000);
         }
 
+        if ($request->input('show_on_public_page') !== null) {
+            $data['show_on_public_page'] = $request->input('show_on_public_page') ? 1 : 0;
+            // Fiche publique : garantir une adresse courte si l’unité n’en a pas encore.
+            if ((int) $data['show_on_public_page'] === 1) {
+                $currentSlug = trim((string) ($unit['slug'] ?? ''));
+                if ($currentSlug === '') {
+                    $data['slug'] = $this->unitRepository->uniqueSlugForTenant(
+                        $tenantId,
+                        (string) ($data['name'] ?? $unit['name'] ?? 'unite')
+                    );
+                }
+            }
+        }
+
         if ($request->input('orbat_type') !== null) {
             $t = strtolower(trim((string) $request->input('orbat_type', '')));
             if (!$this->isAllowedChartDisplaySlug($tenantId, $t)) {

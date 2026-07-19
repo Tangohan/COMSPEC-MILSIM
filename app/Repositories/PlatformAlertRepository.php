@@ -99,6 +99,33 @@ class PlatformAlertRepository
         }
     }
 
+    /**
+     * Annonces plateforme dont la fenêtre de diffusion est terminée.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRecentlyEnded(int $limit = 40): array
+    {
+        $limit = max(1, min(100, $limit));
+        try {
+            $now = date('Y-m-d H:i:s');
+            $sql = 'SELECT * FROM platform_alerts
+                WHERE ends_at IS NOT NULL AND ends_at < ?
+                AND (starts_at IS NULL OR starts_at <= ends_at)
+                ORDER BY ends_at DESC, id DESC
+                LIMIT ' . $limit;
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$now]);
+
+            return array_map([$this, 'normalizeRowDefaults'], $stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
     /** @param array<string, mixed> $data */
     public function insert(array $data): int
     {

@@ -10,16 +10,21 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\ElevationRequestRepository;
+use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
+use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
+use App\Services\Effectifs\ElevationApprovalService;
 use App\Support\EffectifsLmsAccess;
+use App\Support\OrganizationRoleLabels;
+use DateTimeImmutable;
 
 /**
  * Bureau LMS de pilotage des effectifs (outil RH) — shell type mes-formations / recrutement.
@@ -36,6 +41,8 @@ class EffectifsWorkspaceController
         private AdminAuditService $adminAuditService,
         private EffectifsStaffAlertService $effectifsStaffAlertService,
         private TenantRepository $tenantRepository,
+        private GradeRepository $gradeRepository,
+        private ElevationApprovalService $elevationApprovalService,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
@@ -59,6 +66,11 @@ class EffectifsWorkspaceController
         $onlyNoRole = $request->query('sans_role') === '1';
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 80;
+        $sort = trim((string) $request->query('tri', 'nom'));
+        $allowedSorts = ['nom', 'commandement', 'grade', 'anciennete', 'disponibilite', 'presence', 'completion'];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'nom';
+        }
 
         $statusFilter = $status !== '' ? $status : null;
         $roleFilter = $roleId > 0 ? $roleId : null;
@@ -75,22 +87,54 @@ class EffectifsWorkspaceController
             $onlyWithoutUnit,
             $onlyWithoutRole
         );
-        $baseUsers = $this->userRepository->listForTenant(
-            $tenantId,
-            $searchFilter,
-            $statusFilter,
-            $roleFilter,
-            $perPage,
-            ($page - 1) * $perPage,
-            true,
-            $onlyWithoutUnit,
-            $onlyWithoutRole
-        );
-        $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+
+        $needsFullLoad = $sort !== 'nom';
+        if ($needsFullLoad) {
+            $fetchLimit = min(2000, max($total, 1));
+            $baseUsers = $this->userRepository->listForTenant(
+                $tenantId,
+                $searchFilter,
+                $statusFilter,
+                $roleFilter,
+                $fetchLimit,
+                0,
+                true,
+                $onlyWithoutUnit,
+                $onlyWithoutRole
+            );
+            $allRows = $this->enrichRosterRows($tenantId, $baseUsers);
+            $allRows = $this->sortRosterRows($allRows, $sort);
+            $offset = ($page - 1) * $perPage;
+            $rows = array_slice($allRows, $offset, $perPage);
+        } else {
+            $baseUsers = $this->userRepository->listForTenant(
+                $tenantId,
+                $searchFilter,
+                $statusFilter,
+                $roleFilter,
+                $perPage,
+                ($page - 1) * $perPage,
+                true,
+                $onlyWithoutUnit,
+                $onlyWithoutRole
+            );
+            $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+        }
 
         $counts = $this->rosterCounts($tenantId);
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
-        $units = $this->unitRepository->allForTenant($tenantId);
+        $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
+        $unitsRaw = $this->unitRepository->allForTenant($tenantId);
+        $units = [];
+        foreach ($unitsRaw as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $path = trim((string) ($unitMeta[$uid]['path'] ?? ''));
+            $u['assignment_path'] = $path !== '' ? $path : trim((string) ($u['name'] ?? ''));
+            $units[] = $u;
+        }
+        usort($units, static function (array $a, array $b): int {
+            return strcasecmp((string) ($a['assignment_path'] ?? ''), (string) ($b['assignment_path'] ?? ''));
+        });
         $gate = Gate::getInstance();
         $communityName = $this->communityNameForTenant($tenantId);
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients(
@@ -112,6 +156,16 @@ class EffectifsWorkspaceController
                 'role_id' => $roleId,
                 'sans_affectation' => $onlyNoUnit,
                 'sans_role' => $onlyNoRole,
+                'tri' => $sort,
+            ],
+            'rosterSortOptions' => [
+                'nom' => 'Nom',
+                'commandement' => 'Ordre de commandement',
+                'grade' => 'Ordre de grade',
+                'anciennete' => 'Ordre d’ancienneté',
+                'disponibilite' => 'Ordre de disponibilité',
+                'presence' => 'Ordre de présence',
+                'completion' => 'Ordre de complétion du dossier',
             ],
             'rosterCounts' => $counts,
             'orgRoles' => $roles,
@@ -124,6 +178,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
+            'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -189,6 +244,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
+            'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -358,6 +414,7 @@ class EffectifsWorkspaceController
         $id = (int) ($params['id'] ?? 0);
         $kind = trim((string) $request->input('elevation_kind', 'general'));
         $note = trim((string) $request->input('elevation_note', ''));
+        $proposal = $this->readElevationProposalFromRequest($request);
         if ($id < 1) {
             Session::flash('error', 'Membre introuvable.');
 
@@ -370,12 +427,24 @@ class EffectifsWorkspaceController
             return Response::redirect(effectifs_workspace_url());
         }
 
+        $validated = $this->validateElevationProposal($tenantId, $proposal);
+        if ($validated['error'] !== null) {
+            Session::flash('error', $validated['error']);
+
+            return Response::redirect(
+                $request->input('return_to') === 'member'
+                    ? effectifs_workspace_url('membres/' . $id)
+                    : $this->redirectBackToRoster($request)
+            );
+        }
+
         $result = $this->effectifsStaffAlertService->requestElevation(
             $tenantId,
             (int) Session::get('user_id'),
             $user,
             $kind,
-            $note
+            $note,
+            $validated['proposal']
         );
         Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
 
@@ -488,12 +557,48 @@ class EffectifsWorkspaceController
             ? $this->elevationRequestRepository->listRecentForTenant($tenantId, 300)
             : $this->elevationRequestRepository->listOpenForTenant($tenantId, 300);
 
+        $catalog = $this->elevationCatalogForTenant($tenantId);
+        $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
+        $targetRoleIds = [];
+        foreach ($requests as $r) {
+            $tid = (int) ($r['target_user_id'] ?? 0);
+            if ($tid > 0 && !isset($targetRoleIds[$tid])) {
+                $targetRoleIds[$tid] = $this->elevationApprovalService->currentOrganizationRoleIds($tid);
+            }
+        }
+
+        $enrichedRequests = [];
+        foreach ($requests as $r) {
+            $targetId = (int) ($r['target_user_id'] ?? 0);
+            $currentRoles = $targetRoleIds[$targetId] ?? [];
+            $proposedRoleId = (int) ($r['proposed_role_id'] ?? 0) ?: null;
+            $diff = $this->elevationApprovalService->permissionDiffForRoleChange(
+                $tenantId,
+                $currentRoles,
+                $proposedRoleId
+            );
+            $proposalLabels = $this->elevationApprovalService->proposalLabels($tenantId, [
+                'grade_id' => (int) ($r['proposed_grade_id'] ?? 0) ?: null,
+                'role_id' => $proposedRoleId,
+                'job_role_id' => (int) ($r['proposed_job_role_id'] ?? 0) ?: null,
+                'unit_id' => (int) ($r['proposed_unit_id'] ?? 0) ?: null,
+            ]);
+            $r['_current_role_ids'] = $currentRoles;
+            $r['_permission_diff'] = $diff;
+            $r['_proposal_labels'] = $proposalLabels;
+            $enrichedRequests[] = $r;
+        }
+
         return $this->shell('admin.effectifs_workspace.elevation_requests', [
             'title' => 'Demandes d’élévation',
             'effectifsNav' => 'elevations',
-            'elevationRequests' => $requests,
+            'elevationRequests' => $enrichedRequests,
             'elevationShowAll' => $showAll,
             'elevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
+            'elevationCatalog' => $catalog,
+            'elevationRoleMatrix' => $roleMatrix,
+            'organizationRoleLabelMode' => OrganizationRoleLabels::MODE_FR,
+            'csrfToken' => Csrf::token(),
         ]);
     }
 
@@ -527,6 +632,64 @@ class EffectifsWorkspaceController
 
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }
+        if (!in_array($status, ElevationRequestRepository::STATUSES, true)) {
+            Session::flash('error', 'Statut non reconnu.');
+
+            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        }
+
+        $proposal = $this->readElevationProposalFromRequest($request);
+        $validated = $this->validateElevationProposal($tenantId, $proposal);
+        if ($validated['error'] !== null) {
+            Session::flash('error', $validated['error']);
+
+            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        }
+        $proposal = $validated['proposal'];
+
+        if ($status === 'approved') {
+            if ($request->input('confirm_apply') !== '1') {
+                Session::flash('error', 'Confirmez l’application des changements avant d’accepter la demande.');
+
+                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            }
+            $apply = $this->elevationApprovalService->applyApprovedChanges(
+                $tenantId,
+                (int) ($existing['target_user_id'] ?? 0),
+                $proposal,
+                (int) Session::get('user_id')
+            );
+            if (!$apply['ok']) {
+                Session::flash('error', $apply['message']);
+
+                return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+            }
+            try {
+                $this->elevationRequestRepository->saveProposalChoices($id, $tenantId, $proposal);
+            } catch (\Throwable) {
+            }
+            $ok = $this->elevationRequestRepository->updateStatus(
+                $id,
+                $tenantId,
+                $status,
+                (int) Session::get('user_id'),
+                $note
+            );
+            Session::flash(
+                $ok ? 'success' : 'error',
+                $ok ? $apply['message'] : 'Statut invalide ou mise à jour impossible.'
+            );
+
+            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        }
+
+        if (in_array($status, ['pending', 'in_review'], true)) {
+            try {
+                $this->elevationRequestRepository->saveProposalChoices($id, $tenantId, $proposal);
+            } catch (\Throwable) {
+            }
+        }
+
         $ok = $this->elevationRequestRepository->updateStatus(
             $id,
             $tenantId,
@@ -607,6 +770,105 @@ class EffectifsWorkspaceController
         return $name !== '' ? $name : 'Communauté';
     }
 
+    /**
+     * Catalogues pour formulaires de demande / traitement d’élévation.
+     *
+     * @return array{
+     *   grades: list<array<string,mixed>>,
+     *   roles: list<array<string,mixed>>,
+     *   job_roles: list<array{id:int,label:string}>,
+     *   units: list<array<string,mixed>>
+     * }
+     */
+    private function elevationCatalogForTenant(int $tenantId): array
+    {
+        $grades = $this->gradeRepository->listForTenant($tenantId);
+        $roles = $this->roleRepository->forTenantOrganization($tenantId);
+        $jobRoles = [];
+        if ($this->personnelJobRoleRepository->tablesExist()) {
+            $jobRoles = $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId);
+        }
+        $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
+        $unitsRaw = $this->unitRepository->allForTenant($tenantId);
+        $units = [];
+        foreach ($unitsRaw as $u) {
+            $uid = (int) ($u['id'] ?? 0);
+            $path = trim((string) ($unitMeta[$uid]['path'] ?? ''));
+            $u['assignment_path'] = $path !== '' ? $path : trim((string) ($u['name'] ?? ''));
+            $units[] = $u;
+        }
+        usort($units, static function (array $a, array $b): int {
+            return strcasecmp((string) ($a['assignment_path'] ?? ''), (string) ($b['assignment_path'] ?? ''));
+        });
+
+        return [
+            'grades' => $grades,
+            'roles' => $roles,
+            'job_roles' => $jobRoles,
+            'units' => $units,
+        ];
+    }
+
+    /**
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}
+     */
+    private function readElevationProposalFromRequest(Request $request): array
+    {
+        $intOrNull = static function (mixed $raw): ?int {
+            if ($raw === null || $raw === '') {
+                return null;
+            }
+            $id = (int) $raw;
+
+            return $id > 0 ? $id : null;
+        };
+
+        return [
+            'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
+            'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
+            'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
+            'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
+        ];
+    }
+
+    /**
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}, error:?string}
+     */
+    private function validateElevationProposal(int $tenantId, array $proposal): array
+    {
+        $gradeId = $proposal['grade_id'] ?? null;
+        if ($gradeId !== null) {
+            $allowed = array_map(
+                static fn (array $g): int => (int) ($g['id'] ?? 0),
+                $this->gradeRepository->listForTenant($tenantId)
+            );
+            if (!in_array($gradeId, $allowed, true)) {
+                return ['proposal' => $proposal, 'error' => 'Le grade sélectionné n’est pas disponible pour cette communauté.'];
+            }
+        }
+
+        $roleId = $proposal['role_id'] ?? null;
+        if ($roleId !== null && !$this->roleRepository->canAssignInTenantAdminContext($roleId, $tenantId)) {
+            return ['proposal' => $proposal, 'error' => 'Ce rôle ne peut pas être demandé dans cette communauté.'];
+        }
+
+        $jobRoleId = $proposal['job_role_id'] ?? null;
+        if ($jobRoleId !== null) {
+            if (!$this->personnelJobRoleRepository->tablesExist()
+                || !$this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId)) {
+                return ['proposal' => $proposal, 'error' => 'La fonction sélectionnée est introuvable.'];
+            }
+        }
+
+        $unitId = $proposal['unit_id'] ?? null;
+        if ($unitId !== null && !$this->unitRepository->findById($unitId, $tenantId)) {
+            return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
+        }
+
+        return ['proposal' => $proposal, 'error' => null];
+    }
+
     private function redirectBackToRoster(Request $request): string
     {
         $returnUrl = trim((string) $request->input('return_url', ''));
@@ -618,7 +880,7 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * Enrichit les lignes utilisateurs avec grade, unité, communauté, fonction métier.
+     * Enrichit les lignes utilisateurs avec grade, affectation hiérarchique et indicateurs RH.
      *
      * @param list<array<string, mixed>> $users
      * @return list<array<string, mixed>>
@@ -636,17 +898,45 @@ class EffectifsWorkspaceController
                 $richById[(int) ($rich['id'] ?? 0)] = $rich;
             }
         }
+        $unitMeta = $this->unitRepository->hierarchyMetaByUnitId($tenantId);
+        $readinessByUser = $ids !== []
+            ? $this->unitRepository->readinessByUsersForTenant($tenantId, $ids)
+            : [];
+        $seniorityDaysByUser = $this->rosterSeniorityDaysByUser($tenantId, $ids, $richById);
         $communityFallback = $this->communityNameForTenant($tenantId);
         $out = [];
         foreach ($users as $u) {
             $id = (int) ($u['id'] ?? 0);
             $rich = $richById[$id] ?? [];
+            $unitId = isset($rich['unit_id']) ? (int) $rich['unit_id'] : 0;
+            $unitName = trim((string) ($rich['unit_name'] ?? ''));
+            $path = trim((string) ($unitMeta[$unitId]['path'] ?? ''));
+            if ($path === '' && $unitName !== '') {
+                $path = $unitName;
+            }
+            $commandKey = (string) ($unitMeta[$unitId]['command_key'] ?? 'zzzzz');
+            if ($unitId < 1) {
+                $commandKey = 'zzzzz/' . str_pad((string) $id, 8, '0', STR_PAD_LEFT);
+            }
+            $readinessPack = $readinessByUser[$id] ?? null;
+            $components = is_array($readinessPack['components'] ?? null) ? $readinessPack['components'] : [];
+            $presenceScore = (int) ($components['presence'] ?? 50);
+            $availabilityScore = (int) ($components['availability'] ?? 50);
+            $readinessScoreProfile = (int) ($rich['readiness_score'] ?? 0);
+            if ($readinessScoreProfile > 0) {
+                $availabilityScore = max($availabilityScore, $readinessScoreProfile);
+            }
+            $seniorityDays = (int) ($seniorityDaysByUser[$id] ?? 0);
+            $completionScore = $this->rosterCompletionScore($u, $rich, $path !== '');
             $out[] = array_merge($u, [
                 'grade_short' => $rich['grade_short'] ?? null,
                 'grade_long' => $rich['grade_long'] ?? null,
-                'unit_name' => $rich['unit_name'] ?? null,
+                'grade_sort_order' => (int) ($rich['grade_sort_order'] ?? 999),
+                'unit_name' => $unitName !== '' ? $unitName : null,
                 'unit_code' => $rich['unit_code'] ?? null,
-                'unit_id' => isset($rich['unit_id']) ? (int) $rich['unit_id'] : null,
+                'unit_id' => $unitId > 0 ? $unitId : null,
+                'assignment_path' => $path !== '' ? $path : null,
+                'command_sort_key' => $commandKey,
                 'community_name' => trim((string) ($rich['community_name'] ?? '')) !== ''
                     ? (string) $rich['community_name']
                     : $communityFallback,
@@ -655,11 +945,155 @@ class EffectifsWorkspaceController
                 'role_sub_label' => $rich['role_sub_label'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
+                'enlistment_date_resolved' => $rich['enlistment_date_resolved'] ?? null,
+                'seniority_days' => $seniorityDays,
+                'seniority_label' => $this->formatSeniorityDays($seniorityDays),
+                'availability_score' => $availabilityScore,
+                'presence_score' => $presenceScore,
+                'completion_score' => $completionScore,
                 'roles_display' => $u['roles_display'] ?? ($u['role_name'] ?? null),
             ]);
         }
 
         return $out;
     }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function sortRosterRows(array $rows, string $sort): array
+    {
+        $nameKey = static function (array $row): string {
+            $display = trim((string) ($row['display_name'] ?? ''));
+            if ($display !== '') {
+                return mb_strtolower($display, 'UTF-8');
+            }
+            $callsign = trim((string) ($row['callsign'] ?? ''));
+            if ($callsign !== '') {
+                return mb_strtolower($callsign, 'UTF-8');
+            }
+
+            return mb_strtolower((string) ($row['email'] ?? ''), 'UTF-8');
+        };
+        usort($rows, static function (array $a, array $b) use ($sort, $nameKey): int {
+            $cmp = 0;
+            switch ($sort) {
+                case 'commandement':
+                    $cmp = strcmp((string) ($a['command_sort_key'] ?? 'zzzzz'), (string) ($b['command_sort_key'] ?? 'zzzzz'));
+                    break;
+                case 'grade':
+                    $cmp = ((int) ($a['grade_sort_order'] ?? 999)) <=> ((int) ($b['grade_sort_order'] ?? 999));
+                    break;
+                case 'anciennete':
+                    $cmp = ((int) ($b['seniority_days'] ?? 0)) <=> ((int) ($a['seniority_days'] ?? 0));
+                    break;
+                case 'disponibilite':
+                    $cmp = ((int) ($b['availability_score'] ?? 0)) <=> ((int) ($a['availability_score'] ?? 0));
+                    break;
+                case 'presence':
+                    $cmp = ((int) ($b['presence_score'] ?? 0)) <=> ((int) ($a['presence_score'] ?? 0));
+                    break;
+                case 'completion':
+                    $cmp = ((int) ($b['completion_score'] ?? 0)) <=> ((int) ($a['completion_score'] ?? 0));
+                    break;
+                default:
+                    $cmp = strcmp($nameKey($a), $nameKey($b));
+                    break;
+            }
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcmp($nameKey($a), $nameKey($b));
+        });
+
+        return $rows;
+    }
+
+    /**
+     * @param list<int> $userIds
+     * @param array<int, array<string, mixed>> $richById
+     * @return array<int, int>
+     */
+    private function rosterSeniorityDaysByUser(int $tenantId, array $userIds, array $richById): array
+    {
+        $out = [];
+        $today = new DateTimeImmutable('today');
+        $seniorityRepo = new SeniorityRepository();
+        $defId = $seniorityRepo->findDefinitionIdByTenantAndCode($tenantId, 'tenure_community');
+        $fromModule = $defId !== null
+            ? $seniorityRepo->earliestStartByUsersForDefinition($defId, $userIds)
+            : [];
+        foreach ($userIds as $uid) {
+            $start = trim((string) ($fromModule[$uid] ?? ''));
+            if ($start === '') {
+                $start = trim((string) ($richById[$uid]['enlistment_date_resolved'] ?? ''));
+            }
+            if ($start === '') {
+                $out[$uid] = 0;
+                continue;
+            }
+            try {
+                $startDt = new DateTimeImmutable($start);
+                $out[$uid] = max(0, (int) $startDt->diff($today)->days);
+            } catch (\Throwable) {
+                $out[$uid] = 0;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Score de complétion dossier / profil à partir des champs déjà chargés (pas de métrique inventée).
+     *
+     * @param array<string, mixed> $user
+     * @param array<string, mixed> $rich
+     */
+    private function rosterCompletionScore(array $user, array $rich, bool $hasAssignment): int
+    {
+        $checks = [
+            trim((string) ($user['display_name'] ?? $rich['character_name'] ?? '')) !== '',
+            trim((string) ($user['callsign'] ?? '')) !== '',
+            trim((string) ($rich['matricule_internal'] ?? $rich['service_number'] ?? '')) !== '',
+            trim((string) ($rich['grade_short'] ?? $rich['grade_long'] ?? '')) !== '',
+            $hasAssignment,
+            trim((string) ($rich['personnel_job_role_name'] ?? $rich['primary_role'] ?? $rich['role_sub_label'] ?? '')) !== '',
+            trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
+            trim((string) ($rich['clearance_level'] ?? '')) !== '',
+            !empty($rich['clearance_reviewed_at']),
+            (int) ($rich['readiness_score'] ?? 0) > 0,
+            trim((string) ($user['email'] ?? '')) !== '',
+        ];
+        $total = count($checks);
+        if ($total < 1) {
+            return 0;
+        }
+        $filled = count(array_filter($checks));
+
+        return (int) round(($filled / $total) * 100);
+    }
+
+    private function formatSeniorityDays(int $days): string
+    {
+        if ($days < 1) {
+            return '—';
+        }
+        if ($days < 30) {
+            return $days . ' j';
+        }
+        $months = intdiv($days, 30);
+        if ($months < 24) {
+            return $months . ' mois';
+        }
+        $years = intdiv($days, 365);
+        $remMonths = intdiv($days % 365, 30);
+        if ($remMonths > 0) {
+            return $years . ' an' . ($years > 1 ? 's' : '') . ' ' . $remMonths . ' mois';
+        }
+
+        return $years . ' an' . ($years > 1 ? 's' : '');
+    }
 }
-
+

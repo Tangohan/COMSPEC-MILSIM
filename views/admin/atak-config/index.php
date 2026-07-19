@@ -26,7 +26,7 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
     <a href="<?= htmlspecialchars(url('back-office/atak/briefing-slides'), ENT_QUOTES, 'UTF-8') ?>" class="mb-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40">
         <span>
             <span class="block text-sm font-bold text-slate-900">Diapositives de briefing tactique</span>
-            <span class="block text-xs text-slate-500">Images consultables in-game (tableau/écran Eden Editor) — gérées côté back-office.</span>
+            <span class="block text-xs text-slate-500">Publier les images du briefing pour Arma (« Tableau de briefing » ou écran Eden) — ordre, aperçu et aides d’intégration.</span>
         </span>
         <span class="text-sm font-bold text-emerald-700">Ouvrir →</span>
     </a>

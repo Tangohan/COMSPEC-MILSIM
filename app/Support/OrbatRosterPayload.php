@@ -87,6 +87,8 @@ final class OrbatRosterPayload
             'chartIconUrl' => $iconPath !== null && $iconPath !== '' ? $iconPath : null,
             'chartImageUrl' => $imagePath !== null && $imagePath !== '' ? $imagePath : null,
             'commanderUserId' => (int) ($u['commander_user_id'] ?? 0),
+            'showOnPublicPage' => !array_key_exists('show_on_public_page', $u)
+                || (int) ($u['show_on_public_page'] ?? 0) === 1,
             'members' => $unitRosterByUnit[$uid] ?? [],
             'children' => $children,
         ];

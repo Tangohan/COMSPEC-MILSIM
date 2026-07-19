@@ -76,7 +76,7 @@ $eyebrowFor = static function (string $variant, string $message): string {
 };
 ?>
 <div id="flash-toast-root"
-     class="fixed z-[250] right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:right-6"
+     class="flash-toast-root fixed right-4 flex max-h-[calc(100vh-2rem)] w-[min(100vw-2rem,22rem)] sm:w-[min(100vw-3rem,26rem)] flex-col gap-2 overflow-y-auto pointer-events-none sm:right-6"
      style="top:calc(var(--flash-toast-top-offset, 1rem));">
     <?php foreach ($items as $idx => $item): ?>
         <?php
@@ -136,6 +136,12 @@ $eyebrowFor = static function (string $variant, string $message): string {
     <?php endforeach; ?>
 </div>
 <style>
+/* z-index hors Tailwind (z-[250] souvent absente du build purge) :
+   header Athena / dash 96 · rail BO 100 · rail effectifs 120 · toasts 180 */
+#flash-toast-root.flash-toast-root {
+  position: fixed;
+  z-index: 180;
+}
 @keyframes flashToastIn {
   from { opacity: 0; transform: translateX(0.75rem) scale(0.98); }
   to { opacity: 1; transform: translateX(0) scale(1); }
@@ -149,7 +155,11 @@ $eyebrowFor = static function (string $variant, string $message): string {
   function updateToastOffset() {
     var root = document.getElementById('flash-toast-root');
     if (!root) return;
-    var nav = document.querySelector('[data-portal-nav]') || document.querySelector('[data-athena-header]') || document.querySelector('.dash-topnav');
+    var nav = document.querySelector('[data-portal-nav]')
+      || document.querySelector('[data-athena-header]')
+      || document.querySelector('.athena-header')
+      || document.querySelector('.dash-topnav')
+      || document.querySelector('.eff-topnav');
     var safeTop = 16; // 1rem fallback
     if (nav && typeof nav.getBoundingClientRect === 'function') {
       var rect = nav.getBoundingClientRect();
