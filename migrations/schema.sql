@@ -1296,4 +1296,77 @@ CREATE TABLE IF NOT EXISTS `tactical_briefing_slides` (
   CONSTRAINT `tactical_briefing_slides_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Transmission de renseignement → PoE : sessions ouvertes par mission/événement, fil de mini-PV
+-- de reconnaissance (texte + captures d'écran), synthétisés par le Mission Maker en Plan d'Exécution.
+CREATE TABLE IF NOT EXISTS `recon_transmission_sessions` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `community_event_id` int unsigned DEFAULT NULL,
+  `title` varchar(200) NOT NULL,
+  `status` enum('open','closed') NOT NULL DEFAULT 'open',
+  `opened_by` int unsigned NOT NULL,
+  `closed_by` int unsigned DEFAULT NULL,
+  `closed_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_rts_tenant_status` (`tenant_id`,`status`,`created_at`),
+  KEY `idx_rts_event` (`community_event_id`),
+  CONSTRAINT `recon_transmission_sessions_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_transmission_sessions_event_fk` FOREIGN KEY (`community_event_id`) REFERENCES `community_events` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `recon_transmission_sessions_opened_by_fk` FOREIGN KEY (`opened_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `recon_pv_entries` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `session_id` int unsigned NOT NULL,
+  `author_user_id` int unsigned NOT NULL,
+  `body` text NOT NULL,
+  `grid_ref` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_rpe_session_created` (`session_id`,`created_at`),
+  KEY `idx_rpe_tenant` (`tenant_id`),
+  CONSTRAINT `recon_pv_entries_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_pv_entries_session_fk` FOREIGN KEY (`session_id`) REFERENCES `recon_transmission_sessions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_pv_entries_author_fk` FOREIGN KEY (`author_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `recon_pv_attachments` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `pv_entry_id` bigint unsigned NOT NULL,
+  `tenant_id` int unsigned NOT NULL,
+  `storage_path` varchar(512) NOT NULL,
+  `caption` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_rpa_entry` (`pv_entry_id`),
+  CONSTRAINT `recon_pv_attachments_entry_fk` FOREIGN KEY (`pv_entry_id`) REFERENCES `recon_pv_entries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_pv_attachments_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `recon_poe_documents` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `session_id` int unsigned NOT NULL,
+  `title` varchar(200) NOT NULL DEFAULT 'Plan d’exécution',
+  `section_situation` text,
+  `section_mission` text,
+  `section_execution` text,
+  `section_soutien` text,
+  `section_commandement` text,
+  `status` enum('draft','published') NOT NULL DEFAULT 'draft',
+  `created_by` int unsigned NOT NULL,
+  `updated_by` int unsigned DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_rpd_session` (`session_id`),
+  KEY `idx_rpd_tenant` (`tenant_id`),
+  CONSTRAINT `recon_poe_documents_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_poe_documents_session_fk` FOREIGN KEY (`session_id`) REFERENCES `recon_transmission_sessions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `recon_poe_documents_created_by_fk` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 SET FOREIGN_KEY_CHECKS = 1;

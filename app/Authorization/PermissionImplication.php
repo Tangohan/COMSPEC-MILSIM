@@ -187,6 +187,9 @@ final class PermissionImplication
         if (str_starts_with($permission, 'operational.board.')) {
             return true;
         }
+        if (str_starts_with($permission, 'intel.')) {
+            return true;
+        }
         if (str_starts_with($permission, 'organization.orbat.')) {
             return true;
         }

@@ -159,26 +159,36 @@ class HubController
             'entries' => $personnelEntries,
         ];
 
+        $terrainEntries = [
+            [
+                'label' => 'Carte tactique',
+                'url' => url('atak'),
+                'description' => 'Carte, marqueurs et outils de coordination sur le terrain.',
+                'icon' => 'atak',
+                'accent' => 'orange',
+            ],
+            [
+                'label' => 'Équipement',
+                'url' => url('equipment'),
+                'description' => 'Classes d’équipement et fiches matériel.',
+                'icon' => 'equipment',
+                'accent' => 'stone',
+            ],
+        ];
+        if ($gate->allows('intel.transmission.view')) {
+            $terrainEntries[] = [
+                'label' => 'Transmission de reconnaissance',
+                'url' => url('transmission'),
+                'description' => 'Comptes-rendus de reconnaissance en fil, synthétisés en Plan d’Exécution (PoE).',
+                'icon' => 'atak',
+                'accent' => 'emerald',
+            ];
+        }
         $sections[] = [
             'id' => 'terrain',
             'title' => 'Terrain et matériel',
             'subtitle' => 'Carte tactique et référentiels d’équipement.',
-            'entries' => [
-                [
-                    'label' => 'Carte tactique',
-                    'url' => url('atak'),
-                    'description' => 'Carte, marqueurs et outils de coordination sur le terrain.',
-                    'icon' => 'atak',
-                    'accent' => 'orange',
-                ],
-                [
-                    'label' => 'Équipement',
-                    'url' => url('equipment'),
-                    'description' => 'Classes d’équipement et fiches matériel.',
-                    'icon' => 'equipment',
-                    'accent' => 'stone',
-                ],
-            ],
+            'entries' => $terrainEntries,
         ];
 
         $docsTrain = [
