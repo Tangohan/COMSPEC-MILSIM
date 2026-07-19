@@ -26,6 +26,69 @@ $resolveLogo = static function (string $logo) use ($base): string {
 
     return rtrim($base, '/') . '/' . ltrim($logo, '/');
 };
+
+/**
+ * Clips hero (rotation muted) :
+ *   hero-athena(.webm|.mp4)  — alias historique hero-athena-1
+ *   hero-athena-2(.webm|.mp4)
+ *   hero-athena-3(.webm|.mp4)
+ * Les chemins sont toujours branchés ; seuls les fichiers présents partent en preload.
+ */
+$heroVideoDir = base_path('public/assets/video');
+$heroVideoUrlBase = rtrim($base, '/') . '/assets/video';
+$heroPosterUrl = rtrim($base, '/') . '/assets/images/fog-team.jpg';
+$heroClipGroups = [
+    ['hero-athena', 'hero-athena-1'],
+    ['hero-athena-2'],
+    ['hero-athena-3'],
+];
+$heroVideoClips = [];
+foreach ($heroClipGroups as $candidates) {
+    $resolvedStem = null;
+    $hasMp4 = false;
+    $hasWebm = false;
+    foreach ($candidates as $stem) {
+        $stemHasMp4 = is_file($heroVideoDir . DIRECTORY_SEPARATOR . $stem . '.mp4');
+        $stemHasWebm = is_file($heroVideoDir . DIRECTORY_SEPARATOR . $stem . '.webm');
+        if ($stemHasMp4 || $stemHasWebm) {
+            $resolvedStem = $stem;
+            $hasMp4 = $stemHasMp4;
+            $hasWebm = $stemHasWebm;
+            break;
+        }
+    }
+
+    $present = $resolvedStem !== null;
+    $slotStem = $resolvedStem ?? $candidates[0];
+    $sources = [];
+    if ($present) {
+        if ($hasWebm) {
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($slotStem) . '.webm', 'type' => 'video/webm'];
+        }
+        if ($hasMp4) {
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($slotStem) . '.mp4', 'type' => 'video/mp4'];
+        }
+    } else {
+        // Chemins attendus : actifs dès dépôt des fichiers (le JS sonde aussi côté client).
+        foreach ($candidates as $stem) {
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($stem) . '.webm', 'type' => 'video/webm'];
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($stem) . '.mp4', 'type' => 'video/mp4'];
+        }
+    }
+
+    $heroVideoClips[] = [
+        'stem' => $slotStem,
+        'present' => $present,
+        'sources' => $sources,
+    ];
+}
+$heroPresentClipCount = 0;
+foreach ($heroVideoClips as $clip) {
+    if (!empty($clip['present'])) {
+        $heroPresentClipCount++;
+    }
+}
+$heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
@@ -122,24 +185,40 @@ $resolveLogo = static function (string $logo) use ($base): string {
 
     <main>
         <!-- Un seul hero : fond immersif + marque Athena + accès -->
-        <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero" aria-labelledby="hero-title">
+        <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero" aria-labelledby="hero-title" data-hero-videos-ready="<?= $heroVideosPresentOnDisk ? '1' : '0' ?>">
             <div class="pointer-events-none absolute inset-0" id="heroSlider">
-                <div class="slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out">
-                    <img id="hero-poster" src="<?= $base ?>/assets/images/fog-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
+                <div id="heroImageSlides" class="absolute inset-0">
+                    <div class="slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out">
+                        <img id="hero-poster" src="<?= htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
+                    </div>
+                    <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
+                        <img src="<?= $base ?>/assets/images/fog-banner.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    </div>
+                    <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
+                        <img src="<?= $base ?>/assets/images/hero-explosion.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    </div>
+                    <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
+                        <img src="<?= $base ?>/assets/images/night-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                    </div>
                 </div>
-                <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/fog-banner.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
+                <div id="heroVideoSlides" class="hi-hero-videos absolute inset-0 hi-hero-videos--idle" data-hero-video-count="<?= count($heroVideoClips) ?>" aria-hidden="true">
+                    <?php foreach ($heroVideoClips as $clipIndex => $clip): ?>
+                    <div class="hi-hero-vslide<?= $clipIndex === 0 ? ' is-active' : '' ?>" data-hero-video-slide data-stem="<?= htmlspecialchars((string) $clip['stem'], ENT_QUOTES, 'UTF-8') ?>" data-present="<?= !empty($clip['present']) ? '1' : '0' ?>">
+                        <video
+                            class="hi-hero-vslide__video"
+                            playsinline
+                            muted
+                            preload="<?= (!empty($clip['present']) && $clipIndex === 0) ? 'metadata' : 'none' ?>"
+                            poster="<?= htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') ?>"
+                            data-hero-video
+                        >
+                            <?php foreach ($clip['sources'] as $source): ?>
+                            <source src="<?= htmlspecialchars((string) $source['url'], ENT_QUOTES, 'UTF-8') ?>" type="<?= htmlspecialchars((string) $source['type'], ENT_QUOTES, 'UTF-8') ?>">
+                            <?php endforeach; ?>
+                        </video>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
-                <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/hero-explosion.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
-                </div>
-                <div class="slide absolute inset-0 opacity-0 transition-opacity duration-1000 ease-in-out">
-                    <img src="<?= $base ?>/assets/images/night-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
-                </div>
-                <video id="hero-video" class="absolute inset-0 hidden h-full w-full object-cover opacity-60" playsinline loop muted preload="none" poster="<?= $base ?>/assets/images/fog-team.jpg">
-                    <source data-src="<?= $base ?>/assets/video/hero-athena.webm" type="video/webm">
-                    <source data-src="<?= $base ?>/assets/video/hero-athena.mp4" type="video/mp4">
-                </video>
                 <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/30"></div>
             </div>
 
@@ -161,7 +240,7 @@ $resolveLogo = static function (string $logo) use ($base): string {
                         <a href="<?= url('dashboard') ?>" class="hi-cta hi-cta-ghost">Briefing personnel</a>
                     <?php endif; ?>
                     <button type="button" id="btn-enable-immersive" class="hi-body-sm hidden text-left text-emerald-400/80 underline decoration-emerald-500/30 underline-offset-4 hover:text-emerald-300">
-                        Activer l’expérience immersive
+                        Activer le son de la vidéo
                     </button>
                 </div>
             </div>
@@ -174,17 +253,19 @@ $resolveLogo = static function (string $logo) use ($base): string {
                         <span>COMSPEC ATAK</span>
                     </div>
                     <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2" aria-label="Diaporama">
-                            <button type="button" onclick="prevSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="Image précédente">
+                        <div class="flex items-center gap-2" aria-label="Diaporama" data-hero-pager>
+                            <button type="button" onclick="prevSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="Média précédent">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/></svg>
                             </button>
-                            <div class="flex gap-2">
-                                <span class="dot h-1 w-1 rounded-full bg-white transition-all"></span>
-                                <span class="dot h-1 w-1 rounded-full bg-white/25 transition-all"></span>
-                                <span class="dot h-1 w-1 rounded-full bg-white/25 transition-all"></span>
-                                <span class="dot h-1 w-1 rounded-full bg-white/25 transition-all"></span>
+                            <div class="flex gap-2" id="hero-dots" role="tablist" aria-label="Indicateurs du diaporama">
+                                <?php
+                                $heroDotSlots = max(4, count($heroVideoClips));
+                                for ($dotIndex = 0; $dotIndex < $heroDotSlots; $dotIndex++):
+                                ?>
+                                <span class="dot h-1 w-1 rounded-full <?= $dotIndex === 0 ? 'bg-white' : 'bg-white/25' ?> transition-all" data-hero-dot="<?= $dotIndex ?>"<?= $dotIndex >= 4 ? ' hidden' : '' ?>></span>
+                                <?php endfor; ?>
                             </div>
-                            <button type="button" onclick="nextSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="Image suivante">
+                            <button type="button" onclick="nextSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="Média suivant">
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/></svg>
                             </button>
                         </div>
@@ -617,8 +698,8 @@ $resolveLogo = static function (string $logo) use ($base): string {
     <dialog id="immersive-consent" class="max-w-md rounded-2xl border border-white/10 bg-[#0a0a0a] p-0 text-white shadow-2xl backdrop:bg-black/70">
         <div class="p-6 sm:p-8">
             <p class="hi-kicker text-emerald-400/80">Expérience</p>
-            <h2 class="mt-3 text-2xl font-black italic uppercase tracking-tight">Souhaitez-vous activer l’expérience immersive&nbsp;?</h2>
-            <p class="hi-body mt-4 text-sm text-white/60">Vidéo en arrière-plan, son et animation d’introduction. Votre choix est mémorisé sur cet appareil. Vous pourrez le modifier plus tard.</p>
+            <h2 class="mt-3 text-2xl font-black italic uppercase tracking-tight">Souhaitez-vous activer le son&nbsp;?</h2>
+            <p class="hi-body mt-4 text-sm text-white/60">Les vidéos du bandeau peuvent tourner en silence. Activez le son si vous le souhaitez — votre choix est mémorisé sur cet appareil.</p>
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button type="button" id="immersive-yes" class="hi-cta hi-cta-solid flex-1">Oui</button>
                 <button type="button" id="immersive-no" class="hi-cta hi-cta-ghost flex-1">Non</button>
@@ -663,50 +744,20 @@ $resolveLogo = static function (string $logo) use ($base): string {
         tickClocks();
         setInterval(tickClocks, 1000);
 
-        var slides = document.querySelectorAll('#heroSlider .slide');
-        var dots = document.querySelectorAll('.dot');
-        var current = 0;
-        var slideTimer = null;
-
-        function updateSlide(index) {
-            if (!slides.length) return;
-            var img = slides[current].querySelector('img');
-            if (img) img.style.transform = 'scale(1)';
-            slides[current].classList.replace('opacity-100', 'opacity-0');
-            if (dots[current]) {
-                dots[current].classList.remove('bg-white');
-                dots[current].classList.add('bg-white/25');
-            }
-            current = (index + slides.length) % slides.length;
-            slides[current].classList.replace('opacity-0', 'opacity-100');
-            img = slides[current].querySelector('img');
-            if (img) img.style.transform = 'scale(1.08)';
-            if (dots[current]) {
-                dots[current].classList.remove('bg-white/25');
-                dots[current].classList.add('bg-white');
-            }
-        }
-        function nextSlide() { updateSlide(current + 1); }
-        function prevSlide() { updateSlide(current - 1); }
-        function startSlider() {
-            if (slideTimer) clearInterval(slideTimer);
-            slideTimer = setInterval(nextSlide, 6000);
-        }
-        function stopSlider() {
-            if (slideTimer) clearInterval(slideTimer);
-            slideTimer = null;
-        }
-        if (slides.length) {
-            updateSlide(0);
-            startSlider();
-        }
-
-        (function immersiveExperience() {
+        (function heroMedia() {
             var KEY = 'athena_immersive_v1';
             var VOL_KEY = 'athena_immersive_vol';
+            var IMAGE_INTERVAL_MS = 6000;
+            var VIDEO_MAX_MS = 18000;
+            var PROBE_TIMEOUT_MS = 4500;
             var dlg = document.getElementById('immersive-consent');
-            var video = document.getElementById('hero-video');
             var btnLater = document.getElementById('btn-enable-immersive');
+            var imageRoot = document.getElementById('heroImageSlides');
+            var videoRoot = document.getElementById('heroVideoSlides');
+            var imageSlides = imageRoot ? imageRoot.querySelectorAll('.slide') : [];
+            var candidateSlides = videoRoot ? Array.prototype.slice.call(videoRoot.querySelectorAll('[data-hero-video-slide]')) : [];
+            var videoSlides = [];
+            var dots = document.querySelectorAll('#hero-dots .dot');
             var toggleBtn = document.getElementById('hero-av-toggle');
             var muteBtn = document.getElementById('hero-av-mute');
             var volInput = document.getElementById('hero-av-volume');
@@ -714,36 +765,122 @@ $resolveLogo = static function (string $logo) use ($base): string {
             var iconStop = toggleBtn ? toggleBtn.querySelector('.hi-av__icon--stop') : null;
             var iconSpeaker = muteBtn ? muteBtn.querySelector('.hi-av__icon--speaker') : null;
             var iconMuted = muteBtn ? muteBtn.querySelector('.hi-av__icon--muted') : null;
+            var reducedMotion = false;
+            try {
+                reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            } catch (e) {}
+            var mode = 'images';
+            var current = 0;
+            var imageTimer = null;
+            var videoSafetyTimer = null;
+            var rotationPaused = false;
             var lastVol = 0.55;
             var saved = null;
+            var withSound = false;
+
             try { saved = localStorage.getItem(KEY); } catch (e) {}
+            // Ancien « off » = refus du son immersif, pas refus des vidéos muted.
+            if (saved === 'off') {
+                saved = 'silent';
+                try { localStorage.setItem(KEY, 'silent'); } catch (e) {}
+            }
             try {
                 var storedVol = localStorage.getItem(VOL_KEY);
                 if (storedVol !== null) lastVol = Math.min(1, Math.max(0, parseFloat(storedVol) || 0));
             } catch (e) {}
 
-            function loadSources() {
-                if (!video) return;
-                var sources = video.querySelectorAll('source[data-src]');
-                sources.forEach(function (s) {
-                    if (!s.getAttribute('src')) s.setAttribute('src', s.getAttribute('data-src'));
-                });
-                video.load();
+            function activeVideo() {
+                if (!videoSlides.length) return null;
+                var slide = videoSlides[current] || videoSlides[0];
+                return slide ? slide.querySelector('[data-hero-video]') : null;
             }
 
-            function isVideoActive() {
-                return !!(video && !video.classList.contains('hidden') && !video.paused);
+            function syncDots() {
+                var count = mode === 'videos' ? videoSlides.length : imageSlides.length;
+                for (var i = 0; i < dots.length; i++) {
+                    var on = i === current && i < count;
+                    dots[i].classList.toggle('bg-white', on);
+                    dots[i].classList.toggle('bg-white/25', !on);
+                    dots[i].hidden = i >= count;
+                }
+            }
+
+            function updateImageSlide(index) {
+                if (!imageSlides.length) return;
+                var img = imageSlides[current] ? imageSlides[current].querySelector('img') : null;
+                if (img) img.style.transform = 'scale(1)';
+                if (imageSlides[current]) {
+                    imageSlides[current].classList.replace('opacity-100', 'opacity-0');
+                }
+                current = (index + imageSlides.length) % imageSlides.length;
+                if (imageSlides[current]) {
+                    imageSlides[current].classList.replace('opacity-0', 'opacity-100');
+                }
+                img = imageSlides[current] ? imageSlides[current].querySelector('img') : null;
+                if (img) img.style.transform = 'scale(1.08)';
+                syncDots();
+            }
+
+            function clearVideoSafety() {
+                if (videoSafetyTimer) {
+                    clearTimeout(videoSafetyTimer);
+                    videoSafetyTimer = null;
+                }
+            }
+
+            function stopImageSlider() {
+                if (imageTimer) {
+                    clearInterval(imageTimer);
+                    imageTimer = null;
+                }
+            }
+
+            function startImageSlider() {
+                stopImageSlider();
+                if (reducedMotion || imageSlides.length < 2) return;
+                imageTimer = setInterval(function () {
+                    updateImageSlide(current + 1);
+                }, IMAGE_INTERVAL_MS);
+            }
+
+            function setImageStandby(standby) {
+                if (!imageRoot) return;
+                imageRoot.classList.toggle('hi-hero-images--standby', !!standby);
+                if (standby) {
+                    imageSlides.forEach(function (s) {
+                        s.classList.add('opacity-0');
+                        s.classList.remove('opacity-100');
+                    });
+                }
+            }
+
+            function applyAudioToAll(muted, volume) {
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (!v) return;
+                    v.muted = muted;
+                    v.volume = volume;
+                });
             }
 
             function syncAvUi() {
-                var playing = isVideoActive();
+                var video = activeVideo();
+                var playing = !!(mode === 'videos' && video && !video.paused);
                 if (toggleBtn) {
                     toggleBtn.setAttribute('data-state', playing ? 'playing' : 'stopped');
-                    toggleBtn.setAttribute('aria-label', playing ? 'Arrêter la vidéo' : 'Lancer la vidéo');
+                    toggleBtn.setAttribute('aria-label', playing ? 'Mettre la vidéo en pause' : 'Lancer la vidéo');
                     if (iconPlay) iconPlay.hidden = playing;
                     if (iconStop) iconStop.hidden = !playing;
                 }
-                if (!video) return;
+                if (!video) {
+                    if (muteBtn) {
+                        muteBtn.setAttribute('aria-pressed', 'true');
+                        muteBtn.setAttribute('aria-label', 'Activer le son');
+                        if (iconSpeaker) iconSpeaker.hidden = true;
+                        if (iconMuted) iconMuted.hidden = false;
+                    }
+                    return;
+                }
                 var muted = video.muted || video.volume === 0;
                 var vol = muted ? 0 : video.volume;
                 if (volInput) {
@@ -764,121 +901,322 @@ $resolveLogo = static function (string $logo) use ($base): string {
             }
 
             function applyVolume(vol, unmute) {
-                if (!video) return;
                 vol = Math.min(1, Math.max(0, vol));
                 if (vol > 0) lastVol = vol;
-                video.volume = vol;
-                if (unmute) video.muted = vol === 0;
-                else if (vol > 0) video.muted = false;
-                else video.muted = true;
+                withSound = unmute ? vol > 0 : vol > 0;
+                var muted = !withSound || vol === 0;
+                applyAudioToAll(muted, muted ? 0 : vol);
                 persistVol(vol > 0 ? vol : lastVol);
                 try {
-                    localStorage.setItem(KEY, video.muted || vol === 0 ? 'silent' : 'full');
+                    localStorage.setItem(KEY, muted ? 'silent' : 'full');
                 } catch (e) {}
                 syncAvUi();
             }
 
-            function enableImmersive(withSound) {
-                try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
-                stopSlider();
-                if (!video) return;
-                loadSources();
-                video.classList.remove('hidden');
-                slides.forEach(function (s) { s.classList.add('opacity-0'); s.classList.remove('opacity-100'); });
+            function playVideoAt(index, opts) {
+                opts = opts || {};
+                if (!videoSlides.length) return;
+                clearVideoSafety();
+                var next = (index + videoSlides.length) % videoSlides.length;
+                var prevSlide = videoSlides[current];
+                var nextSlide = videoSlides[next];
+                var prevVideo = prevSlide ? prevSlide.querySelector('[data-hero-video]') : null;
+                var nextVideo = nextSlide ? nextSlide.querySelector('[data-hero-video]') : null;
+
+                if (prevVideo && prevVideo !== nextVideo) {
+                    prevVideo.pause();
+                    try { prevVideo.currentTime = 0; } catch (e) {}
+                }
+                if (prevSlide) prevSlide.classList.remove('is-active');
+                current = next;
+                if (nextSlide) nextSlide.classList.add('is-active');
+                syncDots();
+
+                if (!nextVideo) return;
+
                 if (withSound) {
-                    video.muted = false;
-                    video.volume = lastVol > 0 ? lastVol : 0.55;
+                    nextVideo.muted = false;
+                    nextVideo.volume = lastVol > 0 ? lastVol : 0.55;
                 } else {
-                    video.muted = true;
-                    video.volume = 0;
+                    nextVideo.muted = true;
+                    nextVideo.volume = 0;
                 }
-                var playPromise = video.play();
-                if (playPromise && playPromise.catch) playPromise.catch(function () {
-                    video.muted = true;
-                    video.volume = 0;
-                    video.play().catch(function () {});
+
+                if (opts.reset !== false) {
+                    try { nextVideo.currentTime = 0; } catch (e) {}
+                }
+
+                if (rotationPaused) {
                     syncAvUi();
+                    return;
+                }
+
+                var playPromise = nextVideo.play();
+                if (playPromise && playPromise.catch) {
+                    playPromise.catch(function () {
+                        nextVideo.muted = true;
+                        nextVideo.volume = 0;
+                        withSound = false;
+                        nextVideo.play().catch(function () {});
+                        syncAvUi();
+                    });
+                }
+
+                if (videoSlides.length > 1) {
+                    videoSafetyTimer = setTimeout(function () {
+                        if (!rotationPaused && mode === 'videos') {
+                            playVideoAt(current + 1);
+                        }
+                    }, VIDEO_MAX_MS);
+                }
+                syncAvUi();
+            }
+
+            function onVideoEnded(event) {
+                if (mode !== 'videos' || rotationPaused || videoSlides.length < 2) return;
+                if (event && event.target !== activeVideo()) return;
+                playVideoAt(current + 1);
+            }
+
+            function enableVideoMode(soundOn) {
+                if (!videoSlides.length || reducedMotion) {
+                    enableImageMode();
+                    return;
+                }
+                withSound = !!soundOn;
+                try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
+                mode = 'videos';
+                stopImageSlider();
+                setImageStandby(true);
+                if (videoRoot) {
+                    videoRoot.classList.remove('hi-hero-videos--idle');
+                    videoRoot.setAttribute('aria-hidden', 'false');
+                }
+                rotationPaused = false;
+                if (videoSlides.length === 1) {
+                    var only = videoSlides[0].querySelector('[data-hero-video]');
+                    if (only) only.loop = true;
+                } else {
+                    videoSlides.forEach(function (slide) {
+                        var v = slide.querySelector('[data-hero-video]');
+                        if (v) v.loop = false;
+                    });
+                }
+                current = 0;
+                playVideoAt(0, { reset: true });
+                if (btnLater) {
+                    if (withSound) btnLater.classList.add('hidden');
+                    else btnLater.classList.remove('hidden');
+                }
+                syncAvUi();
+            }
+
+            function enableImageMode() {
+                mode = 'images';
+                clearVideoSafety();
+                rotationPaused = false;
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (v) {
+                        v.pause();
+                        try { v.currentTime = 0; } catch (e) {}
+                    }
+                    slide.classList.remove('is-active');
                 });
-                if (btnLater) btnLater.classList.add('hidden');
-                syncAvUi();
-            }
-
-            function disableImmersive() {
-                try { localStorage.setItem(KEY, 'off'); } catch (e) {}
-                if (video) {
-                    video.pause();
-                    video.classList.add('hidden');
+                if (videoRoot) {
+                    videoRoot.classList.add('hi-hero-videos--idle');
+                    videoRoot.setAttribute('aria-hidden', 'true');
                 }
-                if (slides.length) {
-                    updateSlide(current);
-                    startSlider();
-                }
-                if (btnLater) btnLater.classList.remove('hidden');
-                syncAvUi();
-            }
-
-            function stopVideoKeepLayer() {
-                if (!video) return;
-                video.pause();
-                video.currentTime = 0;
+                setImageStandby(false);
+                current = 0;
+                updateImageSlide(0);
+                startImageSlider();
                 syncAvUi();
             }
 
             function togglePlayback() {
-                if (!video) return;
-                if (video.classList.contains('hidden')) {
-                    enableImmersive(lastVol > 0);
+                if (!videoSlides.length) return;
+                if (mode !== 'videos') {
+                    enableVideoMode(saved === 'full');
                     return;
                 }
+                var video = activeVideo();
+                if (!video) return;
                 if (video.paused) {
+                    rotationPaused = false;
                     var playPromise = video.play();
                     if (playPromise && playPromise.catch) playPromise.catch(function () {});
-                    stopSlider();
+                    if (videoSlides.length > 1) {
+                        clearVideoSafety();
+                        videoSafetyTimer = setTimeout(function () {
+                            if (!rotationPaused && mode === 'videos') playVideoAt(current + 1);
+                        }, Math.max(2000, VIDEO_MAX_MS - (video.currentTime * 1000 || 0)));
+                    }
                     syncAvUi();
                     return;
                 }
-                stopVideoKeepLayer();
+                rotationPaused = true;
+                clearVideoSafety();
+                video.pause();
+                syncAvUi();
             }
 
-            if (saved === 'full') enableImmersive(true);
-            else if (saved === 'silent') enableImmersive(false);
-            else if (saved === 'off') {
-                if (btnLater) btnLater.classList.remove('hidden');
-            } else if (dlg && typeof dlg.showModal === 'function') {
-                window.setTimeout(function () { dlg.showModal(); }, 400);
+            window.nextSlide = function () {
+                if (mode === 'videos' && videoSlides.length) {
+                    playVideoAt(current + 1);
+                    return;
+                }
+                updateImageSlide(current + 1);
+            };
+            window.prevSlide = function () {
+                if (mode === 'videos' && videoSlides.length) {
+                    playVideoAt(current - 1);
+                    return;
+                }
+                updateImageSlide(current - 1);
+            };
+
+            function probeSlide(slide) {
+                return new Promise(function (resolve) {
+                    var video = slide.querySelector('[data-hero-video]');
+                    if (!video || !video.querySelector('source')) {
+                        resolve(false);
+                        return;
+                    }
+                    var settled = false;
+                    function finish(ok) {
+                        if (settled) return;
+                        settled = true;
+                        resolve(!!ok);
+                    }
+                    var onReady = function () { finish(true); };
+                    var onFail = function () { finish(false); };
+                    video.addEventListener('loadeddata', onReady, { once: true });
+                    video.addEventListener('canplay', onReady, { once: true });
+                    video.addEventListener('error', onFail, { once: true });
+                    Array.prototype.forEach.call(video.querySelectorAll('source'), function (source) {
+                        source.addEventListener('error', function () {
+                            // Un source en 404 n'est fatal que si tous échouent → on attend error vidéo / timeout.
+                        }, { once: true });
+                    });
+                    window.setTimeout(function () {
+                        finish(video.readyState >= 2);
+                    }, PROBE_TIMEOUT_MS);
+                    try {
+                        video.muted = true;
+                        video.load();
+                    } catch (e) {
+                        finish(false);
+                    }
+                });
             }
 
-            var yes = document.getElementById('immersive-yes');
-            var no = document.getElementById('immersive-no');
-            if (yes) yes.addEventListener('click', function () { enableImmersive(true); if (dlg) dlg.close(); });
-            if (no) no.addEventListener('click', function () { disableImmersive(); if (dlg) dlg.close(); });
-            if (btnLater) btnLater.addEventListener('click', function () { enableImmersive(true); });
+            function bindVideoEvents() {
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (!v) return;
+                    v.addEventListener('ended', onVideoEnded);
+                    v.addEventListener('play', syncAvUi);
+                    v.addEventListener('pause', syncAvUi);
+                    v.addEventListener('volumechange', syncAvUi);
+                });
+            }
+
+            function startHero() {
+                if (reducedMotion || !videoSlides.length) {
+                    enableImageMode();
+                    if (btnLater && videoSlides.length) btnLater.classList.remove('hidden');
+                    return;
+                }
+                enableVideoMode(saved === 'full');
+                // Dialogue = opt-in son uniquement (vidéos muted déjà actives).
+                if (saved !== 'silent' && saved !== 'full' && dlg && typeof dlg.showModal === 'function') {
+                    window.setTimeout(function () { dlg.showModal(); }, 900);
+                }
+            }
 
             if (toggleBtn) toggleBtn.addEventListener('click', togglePlayback);
             if (muteBtn) muteBtn.addEventListener('click', function () {
-                if (!video) return;
-                if (video.classList.contains('hidden')) {
-                    enableImmersive(true);
+                if (mode !== 'videos') {
+                    enableVideoMode(true);
                     return;
                 }
+                var video = activeVideo();
+                if (!video) return;
                 if (video.muted || video.volume === 0) applyVolume(lastVol > 0 ? lastVol : 0.55, true);
                 else applyVolume(0, true);
             });
             if (volInput) {
                 volInput.addEventListener('input', function () {
                     var v = parseFloat(volInput.value) || 0;
-                    if (video && video.classList.contains('hidden') && v > 0) {
-                        enableImmersive(true);
-                    }
+                    if (mode !== 'videos' && v > 0) enableVideoMode(true);
                     applyVolume(v, true);
                 });
             }
-            if (video) {
-                video.addEventListener('play', syncAvUi);
-                video.addEventListener('pause', syncAvUi);
-                video.addEventListener('volumechange', syncAvUi);
+
+            var yes = document.getElementById('immersive-yes');
+            var no = document.getElementById('immersive-no');
+            if (yes) yes.addEventListener('click', function () { enableVideoMode(true); if (dlg) dlg.close(); });
+            if (no) no.addEventListener('click', function () {
+                enableVideoMode(false);
+                if (dlg) dlg.close();
+            });
+            if (btnLater) btnLater.addEventListener('click', function () { enableVideoMode(true); });
+
+            // Affiche le poster pendant le sondage des clips.
+            if (!reducedMotion && candidateSlides.length) {
+                setImageStandby(false);
+                if (imageSlides.length) {
+                    imageSlides[0].classList.add('opacity-100');
+                    imageSlides[0].classList.remove('opacity-0');
+                }
+
+                var knownPresent = candidateSlides.filter(function (slide) {
+                    return slide.getAttribute('data-present') === '1';
+                });
+
+                var afterResolve = function (slides) {
+                    videoSlides = slides;
+                    candidateSlides.forEach(function (slide) {
+                        var ok = videoSlides.indexOf(slide) !== -1;
+                        slide.hidden = !ok;
+                        slide.setAttribute('data-present', ok ? '1' : '0');
+                    });
+                    bindVideoEvents();
+                    startHero();
+                };
+
+                if (knownPresent.length) {
+                    afterResolve(knownPresent);
+                } else {
+                    // Pas de fichier détecté côté serveur : images tout de suite, upgrade si un clip charge.
+                    enableImageMode();
+                    Promise.all(candidateSlides.map(probeSlide)).then(function (results) {
+                        var ok = candidateSlides.filter(function (_slide, index) {
+                            return !!results[index];
+                        });
+                        if (ok.length) afterResolve(ok);
+                    });
+                }
+            } else {
+                videoSlides = [];
+                bindVideoEvents();
+                startHero();
             }
-            syncAvUi();
+
+            try {
+                var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+                var onMotionChange = function (event) {
+                    reducedMotion = !!event.matches;
+                    if (event.matches) {
+                        enableImageMode();
+                    } else if (videoSlides.length) {
+                        enableVideoMode(saved === 'full');
+                    }
+                };
+                if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotionChange);
+                else if (motionQuery.addListener) motionQuery.addListener(onMotionChange);
+            } catch (e) {}
         })();
 
         (function newsletterForm() {
@@ -930,5 +1268,6 @@ $resolveLogo = static function (string $logo) use ($base): string {
             });
         })();
     </script>
+    <?php require base_path('views/partials/mirror_trap_link.php'); ?>
 </body>
 </html>

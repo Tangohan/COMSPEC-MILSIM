@@ -14,9 +14,9 @@ use App\Core\Session;
 final class DocumentationController
 {
     /** Révision affichée sur le guide intégré (incrémenter lors d’une mise à jour de fond). */
-    public const SITE_DOCS_REVISION_NUMBER = 6;
+    public const SITE_DOCS_REVISION_NUMBER = 7;
 
-    public const SITE_DOCS_REVISION_DATE_LABEL = '18 avril 2026';
+    public const SITE_DOCS_REVISION_DATE_LABEL = '19 juillet 2026';
 
     /** @var array<string, array{rel: string, title: string, section: string}> */
     private const ENTRIES = [
@@ -24,6 +24,7 @@ final class DocumentationController
         'inventaire' => ['rel' => 'INVENTAIRE-FONCTIONNALITES.md', 'title' => 'Inventaire fonctionnalités', 'section' => 'Technique'],
         'navigation' => ['rel' => 'utilisateur/tableau-de-bord-et-navigation.md', 'title' => 'Tableau de bord & navigation', 'section' => 'Utilisateur'],
         'back-office' => ['rel' => 'utilisateur/back-office-organisation.md', 'title' => 'Back-office organisation', 'section' => 'Utilisateur'],
+        'tableau-operationnel' => ['rel' => 'utilisateur/tableau-operationnel.md', 'title' => 'Mur & tableau opérationnel', 'section' => 'Utilisateur'],
         'premiers-pas' => ['rel' => 'utilisateur/premiers-pas.md', 'title' => 'Premiers pas', 'section' => 'Utilisateur'],
         'connexion-compte' => ['rel' => 'utilisateur/connexion-et-compte.md', 'title' => 'Connexion et compte', 'section' => 'Utilisateur'],
         'faq' => ['rel' => 'utilisateur/faq.md', 'title' => 'FAQ utilisateur', 'section' => 'Utilisateur'],

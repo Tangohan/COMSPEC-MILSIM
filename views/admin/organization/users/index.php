@@ -327,7 +327,7 @@ $truncateRole = static function (string $label, int $max = 22): string {
                                     <div class="flex items-start gap-4">
                                         <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-sm font-black <?= $avatarBg ?>">
                                             <?php if ($rowAvatarSrc): ?>
-                                                <img src="<?= htmlspecialchars($rowAvatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-cover">
+                                                <img src="<?= htmlspecialchars($rowAvatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte de <?= htmlspecialchars($display !== '' ? $display : 'membre', ENT_QUOTES, 'UTF-8') ?>" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible">
                                             <?php else: ?>
                                                 <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
                                             <?php endif; ?>

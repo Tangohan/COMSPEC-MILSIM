@@ -43,7 +43,11 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <?php if ($showcase_training_feature && !empty($showcase_items)): ?>
+    <?php
+    $loadAlpineDashboard = (!empty($showcase_training_feature) && !empty($showcase_items))
+        || (int) (\App\Core\Session::get('tenant_id') ?? 0) > 1;
+    ?>
+    <?php if (!empty($showcase_training_feature) && !empty($showcase_items)): ?>
     <script>
         window.__dashboardShowcaseCourses = <?= $showcase_json ?>;
         document.addEventListener('alpine:init', function () {
@@ -65,6 +69,8 @@ if (!is_string($showcase_json) || $showcase_json === '') {
             });
         });
     </script>
+    <?php endif; ?>
+    <?php if ($loadAlpineDashboard): ?>
     <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
     <?php endif; ?>
 </head>
@@ -197,5 +203,9 @@ require base_path('views/partials/alert_banners.php');
         <?php endif; ?>
     </main>
     </div>
+    <?php
+    $lmsModuleEntryAuto = null;
+    require base_path('views/partials/lms_module_entry_modal.php');
+    ?>
 </body>
 </html>

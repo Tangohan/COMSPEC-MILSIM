@@ -347,6 +347,63 @@ if (!function_exists('url')) {
     }
 }
 
+if (!function_exists('atak_tile_cdn_base')) {
+    /**
+     * Base CDN des tuiles Arma (sans slash final).
+     * Défaut : GitHub Pages jetelain/Arma3Map (CORS OK).
+     * OVH plan-ops : ATAK_MAP_TILES_CDN=https://mapsdata.plan-ops.fr
+     */
+    function atak_tile_cdn_base(): string
+    {
+        $raw = trim((string) env('ATAK_MAP_TILES_CDN', 'https://jetelain.github.io/Arma3Map'));
+
+        return rtrim($raw !== '' ? $raw : 'https://jetelain.github.io/Arma3Map', '/');
+    }
+}
+
+if (!function_exists('atak_resolve_tile_pattern')) {
+    /**
+     * Résout un motif de tuiles Leaflet ({z}/{x}/{y}) en URL absolue.
+     * - http(s) : inchangé
+     * - /assets/maps/{slug}/… ou maps/{slug}/… : CDN (évite le 404 sous /public)
+     * - autre chemin relatif : préfixé avec APP_URL + APP_BASE_PATH
+     */
+    function atak_resolve_tile_pattern(?string $pattern, ?string $mapSlug = null): string
+    {
+        $pattern = trim((string) $pattern);
+        $slug = strtolower(trim((string) ($mapSlug ?? '')));
+        if ($slug === '') {
+            $slug = 'altis';
+        }
+
+        if ($pattern === '') {
+            return atak_tile_cdn_base() . '/maps/' . rawurlencode($slug) . '/{z}/{x}/{y}.png';
+        }
+
+        if (preg_match('#^https?://#i', $pattern) === 1) {
+            return $pattern;
+        }
+
+        $normalized = str_replace('\\', '/', $pattern);
+        // Anciens motifs locaux → CDN
+        if (
+            preg_match('#^(?:/)?(?:assets/)?maps/([a-z0-9_-]+)/\{z\}/\{x\}/\{y\}\.png$#i', $normalized, $m) === 1
+            || preg_match('#ressources/MapViewers/maps/([a-z0-9_-]+)/\{z\}/\{x\}/\{y\}\.png$#i', $normalized, $m) === 1
+        ) {
+            $fromPath = strtolower((string) ($m[1] ?? $slug));
+
+            return atak_tile_cdn_base() . '/maps/' . rawurlencode($fromPath !== '' ? $fromPath : $slug) . '/{z}/{x}/{y}.png';
+        }
+
+        $base = rtrim(url(''), '/');
+        if (str_starts_with($normalized, '/')) {
+            return $base . $normalized;
+        }
+
+        return $base . '/' . ltrim($normalized, '/');
+    }
+}
+
 if (!function_exists('atak_client_base_url')) {
     /**
      * Adresse de base à communiquer au mod Arma / aux écrans ATAK : portail courant,
@@ -401,8 +458,12 @@ if (!function_exists('is_back_office_request')) {
     function is_back_office_request(): bool
     {
         $p = back_office_path_suffix();
+        if ($p === 'back-office' || str_starts_with($p, 'back-office/')) {
+            return true;
+        }
 
-        return $p === 'back-office' || str_starts_with($p, 'back-office/');
+        // Filet : préfixe /public/ non retiré (APP_BASE_PATH incohérent).
+        return $p === 'public/back-office' || str_starts_with($p, 'public/back-office/');
     }
 }
 
@@ -712,6 +773,34 @@ if (!function_exists('recruitment_workspace_url')) {
     function recruitment_workspace_url(string $suffix = ''): string
     {
         $base = recruitment_workspace_path();
+        if ($suffix === '') {
+            return url($base);
+        }
+        $suffix = trim($suffix, '/');
+
+        return $suffix === '' ? url($base) : url($base . '/' . $suffix);
+    }
+}
+
+if (!function_exists('effectifs_workspace_path')) {
+    /**
+     * Chemin URL canonique du bureau LMS effectifs (outil RH), sans slash initial.
+     */
+    function effectifs_workspace_path(): string
+    {
+        return 'back-office/ressources/effectifs';
+    }
+}
+
+if (!function_exists('effectifs_workspace_url')) {
+    /**
+     * Lien vers le bureau effectifs ou une sous-section (ex. « roles », « membres/12 »).
+     *
+     * @param string $suffix ex. '', 'roles', 'membres/12'
+     */
+    function effectifs_workspace_url(string $suffix = ''): string
+    {
+        $base = effectifs_workspace_path();
         if ($suffix === '') {
             return url($base);
         }

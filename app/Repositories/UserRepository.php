@@ -898,6 +898,95 @@ class UserRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Enrichissement RH pour le tableur effectifs : grade, unité principale, fonction métier.
+     *
+     * @param list<int> $userIds
+     * @return list<array<string, mixed>>
+     */
+    public function listEffectifsRosterByIds(int $tenantId, array $userIds): array
+    {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn (int $x): bool => $x > 0)));
+        if ($tenantId < 1 || $userIds === []) {
+            return [];
+        }
+        $gc = $this->getGradesConfigForDirectory();
+        $ph = implode(',', array_fill(0, count($userIds), '?'));
+        $jobRoleJoin = '';
+        $jobRoleSelect = 'NULL AS personnel_job_role_name';
+        $stmtJr = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' LIMIT 1");
+        if ($stmtJr && $stmtJr->fetchColumn()) {
+            $jobRoleJoin = 'LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
+            $jobRoleSelect = 'pjr.name AS personnel_job_role_name';
+        }
+        $hasPa = false;
+        $stmtPa = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments' LIMIT 1");
+        if ($stmtPa && $stmtPa->fetchColumn()) {
+            $hasPa = true;
+        }
+        $hasUu = $this->hasUserUnitsTable();
+        $unitParts = [];
+        $codeParts = [];
+        $idParts = [];
+        $extraJoins = '';
+        if ($hasPa) {
+            $extraJoins .= 'LEFT JOIN personnel_assignments pa ON pa.user_id = u.id AND pa.is_primary = 1
+                    AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
+                LEFT JOIN units un_pa ON un_pa.id = pa.unit_id AND un_pa.tenant_id = u.tenant_id ';
+            $unitParts[] = 'un_pa.name';
+            $codeParts[] = 'un_pa.code';
+            $idParts[] = 'un_pa.id';
+        }
+        $unitParts[] = 'un_pp.name';
+        $codeParts[] = 'un_pp.code';
+        $idParts[] = 'un_pp.id';
+        if ($hasUu) {
+            $extraJoins .= 'LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
+                    AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+                LEFT JOIN units un_uu ON un_uu.id = uu.unit_id AND un_uu.tenant_id = u.tenant_id ';
+            $unitParts[] = 'un_uu.name';
+            $codeParts[] = 'un_uu.code';
+            $idParts[] = 'un_uu.id';
+        }
+        $unitSelect = 'COALESCE(' . implode(', ', $unitParts) . ') AS unit_name, COALESCE(' . implode(', ', $codeParts) . ') AS unit_code, COALESCE(' . implode(', ', $idParts) . ') AS unit_id';
+        $sql = 'SELECT u.id, u.tenant_id,
+                       t.name AS tenant_name,
+                       t.slug AS tenant_slug,
+                       ' . $gc['select'] . ',
+                       ' . $unitSelect . ',
+                       pp.character_name, pp.matricule_internal, pp.primary_role, pp.role_sub_label,
+                       ' . $jobRoleSelect . '
+                FROM users u
+                LEFT JOIN tenants t ON t.id = u.tenant_id
+                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $jobRoleJoin . '
+                ' . $gc['join'] . '
+                LEFT JOIN units un_pp ON un_pp.id = pp.primary_unit_id AND un_pp.tenant_id = u.tenant_id
+                ' . $extraJoins . '
+                WHERE u.tenant_id = ? AND u.id IN (' . $ph . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $userIds));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            $tenantLabel = trim((string) ($row['tenant_name'] ?? ''));
+            if (function_exists('community_display_name')) {
+                $row['community_name'] = community_display_name([
+                    'name' => $tenantLabel,
+                    'slug' => (string) ($row['tenant_slug'] ?? ''),
+                    'id' => (int) ($row['tenant_id'] ?? 0),
+                ]);
+            } else {
+                $row['community_name'] = $tenantLabel;
+            }
+            if (trim((string) ($row['community_name'] ?? '')) === '') {
+                $row['community_name'] = 'Communauté';
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
     public function updateLastLogin(int $userId): void
     {
         $stmt = $this->pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?');
@@ -1014,7 +1103,11 @@ class UserRepository
         }
         if ($onlyWithoutUnit === true) {
             if ($this->hasUserUnitsTable()) {
-                $parts[] = 'NOT EXISTS (SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW()))';
+                $parts[] = 'NOT EXISTS (
+                    SELECT 1 FROM user_units uu
+                    INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
+                    WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+                )';
             } else {
                 $parts[] = '1=0';
             }
@@ -1213,6 +1306,67 @@ class UserRepository
         $stmt->execute(array_merge([$term, $term, $term], $pack['params']));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Annuaire plateforme : comptes toutes communautés.
+     *
+     * @return array{rows: list<array<string, mixed>>, total: int}
+     */
+    public function listAccountsForPlatformDirectory(
+        ?string $search = null,
+        ?string $status = null,
+        ?int $tenantId = null,
+        int $page = 1,
+        int $perPage = 50
+    ): array {
+        $page = max(1, $page);
+        $perPage = max(10, min(100, $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $parts = [$pack['sql']];
+        $params = $pack['params'];
+
+        $search = $search !== null ? trim($search) : '';
+        if ($search !== '') {
+            $term = '%' . (function_exists('mb_substr') ? mb_substr($search, 0, 120) : substr($search, 0, 120)) . '%';
+            $parts[] = '(u.email LIKE ? OR u.display_name LIKE ? OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?))';
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
+        }
+        if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
+            $parts[] = 'u.status = ?';
+            $params[] = $status;
+        }
+        if ($tenantId !== null && $tenantId > 0) {
+            $parts[] = 'u.tenant_id = ?';
+            $params[] = $tenantId;
+        }
+
+        $where = implode(' AND ', $parts);
+        $countStmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users u INNER JOIN tenants t ON t.id = u.tenant_id WHERE {$where}"
+        );
+        $countStmt->execute($params);
+        $total = (int) $countStmt->fetchColumn();
+
+        $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
+                       t.name AS tenant_name, t.slug AS tenant_slug,
+                       r.name AS role_name
+                FROM users u
+                INNER JOIN tenants t ON t.id = u.tenant_id
+                LEFT JOIN roles r ON r.id = u.role_id
+                WHERE {$where}
+                ORDER BY u.updated_at DESC, u.id DESC
+                LIMIT {$perPage} OFFSET {$offset}";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return [
+            'rows' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+        ];
     }
 
     /** @return list<int> User IDs ayant le rôle donné (pour assignation formation par rôle). */
@@ -1956,7 +2110,14 @@ class UserRepository
     }
 
     /**
-     * Membres actifs ayant au moins une des permissions listées (rôle principal et rôles additionnels).
+     * Membres actifs de **cette communauté uniquement** ayant au moins une des permissions listées
+     * (rôle principal et rôles additionnels communauté / intra).
+     *
+     * Ne jamais utiliser pour des alertes communauté : {@see listActiveEmailsHavingPermissionGlobally}
+     * (escale plateforme volontairement cross-tenant).
+     *
+     * Filtre strict : `users`, `roles`, `permissions` et `tenant_user_roles` sont tous liés au
+     * `$tenantId` passé en paramètre (pas de permissions site `tenant_id IS NULL`).
      *
      * @param list<string> $permissionSlugs
      * @return list<int>
@@ -1972,12 +2133,14 @@ class UserRepository
         }
         $placeholders = implode(',', array_fill(0, count($permissionSlugs), '?'));
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $params = array_merge([$tenantId], $pack['params'], $permissionSlugs);
+        // Ordre des ? (dans l’ordre d’apparition SQL) : roles.tenant_id, permissions.tenant_id,
+        // users.tenant_id, exclusion technique, puis slugs. Jamais de permission site (tenant_id NULL).
+        $params = array_merge([$tenantId, $tenantId, $tenantId], $pack['params'], $permissionSlugs);
         $ids = [];
         $sql = "SELECT DISTINCT u.id FROM users u
-            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = u.tenant_id
+            INNER JOIN roles r ON r.id = u.role_id AND r.tenant_id = ?
             INNER JOIN role_permissions rp ON rp.role_id = r.id
-            INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+            INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
             WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -1989,15 +2152,17 @@ class UserRepository
             return [];
         }
         if ($this->hasTenantUserRolesTable()) {
+            // Ordre : tur.tenant_id, roles.tenant_id, permissions.tenant_id, users.tenant_id, exclusion, slugs
+            $params2 = array_merge([$tenantId, $tenantId, $tenantId, $tenantId], $pack['params'], $permissionSlugs);
             $sql2 = "SELECT DISTINCT u.id FROM users u
-                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = u.tenant_id
-                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = u.tenant_id
+                INNER JOIN tenant_user_roles tur ON tur.user_id = u.id AND tur.tenant_id = ?
+                INNER JOIN roles r ON r.id = tur.role_id AND r.tenant_id = ?
                 INNER JOIN role_permissions rp ON rp.role_id = r.id
-                INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = u.tenant_id
+                INNER JOIN permissions p ON p.id = rp.permission_id AND p.tenant_id = ?
                 WHERE u.tenant_id = ? AND u.status = 'active' AND {$pack['sql']} AND p.slug IN ({$placeholders})";
             try {
                 $st = $this->pdo->prepare($sql2);
-                $st->execute($params);
+                $st->execute($params2);
                 while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                     $ids[] = (int) ($row['id'] ?? 0);
                 }
@@ -2010,6 +2175,10 @@ class UserRepository
 
     /**
      * Courriels des comptes actifs disposant d’une permission donnée sur au moins une communauté (ex. escale vers l’équipe site).
+     *
+     * ATTENTION : volontairement cross-tenant. Réservé aux escalades plateforme (ex. recrutement site).
+     * Pour les alertes d’une communauté (élévation RH, publication formation, etc.), utiliser
+     * {@see listActiveUserIdsWithAnyPermissionSlug} avec le tenant courant.
      *
      * @return list<string>
      */

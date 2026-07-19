@@ -110,8 +110,8 @@ class AdminTrainingController
     public function courseUnpublish(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining('courses')) {
+            return $denied;
         }
         if (!$request->isPost()) {
             return Response::redirect(training_lms_admin_url('courses'));
@@ -230,15 +230,51 @@ class AdminTrainingController
 
     public function enrollments(Request $request, array $params = []): Response
     {
+        $tenantId = (int) Session::get('tenant_id');
         $courseId = (int) ($params['id'] ?? $request->query('course_id') ?? 0);
+        $filterExpiring = (int) $request->query('expiring', 0) === 1;
+        $filterStatus = trim((string) $request->query('status', ''));
+        if ($filterStatus !== 'pending_approval') {
+            $filterStatus = '';
+        }
         if (!$this->userCanViewEnrollmentsScreen($courseId)) {
             throw new \RuntimeException('Accès refusé.', 403);
         }
+
         $enrollments = [];
-        if ($courseId) {
+        if ($courseId > 0) {
             $enrollments = $this->enrollmentRepository->listByCourseId($courseId);
+            if ($filterExpiring) {
+                $limitTs = time() + (30 * 86400);
+                $enrollments = array_values(array_filter(
+                    $enrollments,
+                    static function (array $e) use ($limitTs): bool {
+                        $st = (string) ($e['status'] ?? '');
+                        if (!in_array($st, ['assigned', 'in_progress'], true)) {
+                            return false;
+                        }
+                        $exp = (string) ($e['expires_at'] ?? '');
+                        if ($exp === '') {
+                            return false;
+                        }
+                        $ts = strtotime($exp);
+
+                        return $ts !== false && $ts <= $limitTs;
+                    }
+                ));
+            } elseif ($filterStatus === 'pending_approval') {
+                $enrollments = array_values(array_filter(
+                    $enrollments,
+                    static fn (array $e): bool => ($e['status'] ?? '') === 'pending_approval'
+                ));
+            }
+        } elseif ($filterExpiring) {
+            $enrollments = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
+        } elseif ($filterStatus === 'pending_approval') {
+            $enrollments = $this->enrollmentRepository->listPendingApproval($tenantId);
         }
-        $courses = $this->courseRepository->listForTenant((int) Session::get('tenant_id'), null);
+
+        $courses = $this->courseRepository->listForTenant($tenantId, null);
         $actorId = (int) Session::get('user_id');
         $courseById = [];
         foreach ($courses as $c) {
@@ -251,6 +287,9 @@ class AdminTrainingController
             $approvalRights[$eid] = $this->canActorManagePendingEnrollment($courseById[$cid] ?? [], $actorId);
         }
 
+        $expiringPreview = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
+        $pendingPreview = $this->enrollmentRepository->listPendingApproval($tenantId);
+
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.enrollments',
             'title' => 'Assignations',
@@ -260,6 +299,10 @@ class AdminTrainingController
             'courses' => $courses,
             'selectedCourseId' => $courseId,
             'trainingEnrollmentApprovalRights' => $approvalRights,
+            'enrollmentFilterExpiring' => $filterExpiring,
+            'enrollmentFilterStatus' => $filterStatus,
+            'enrollmentExpiringCount' => count($expiringPreview),
+            'enrollmentPendingCount' => count($pendingPreview),
         ]);
     }
 
@@ -519,11 +562,9 @@ class AdminTrainingController
         }
         $relExisting = trim((string) ($cert['pdf_path'] ?? ''));
         if ($relExisting !== '' && is_file(base_path($relExisting))) {
-            Session::flash('success', 'Le document de « ' . (string) ($cert['certificate_number'] ?? $certId) . ' » est déjà disponible.');
-
-            return $redirect;
+            @unlink(base_path($relExisting));
         }
-        $path = $this->certificatePdfService->generateAndStore($certId, $tenantId);
+        $path = $this->certificateService->generatePdfDocument($certId, $tenantId);
         if ($path !== null && is_file(base_path($path))) {
             Session::flash('success', 'Le document de « ' . (string) ($cert['certificate_number'] ?? $certId) . ' » a été généré.');
         } else {
@@ -541,8 +582,8 @@ class AdminTrainingController
     public function certificateGabarit(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining()) {
+            return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
         if ($this->pruneBrokenCertificateTemplateAssets($tenantId)) {
@@ -576,8 +617,8 @@ class AdminTrainingController
     public function certificateGabaritSave(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining()) {
+            return $denied;
         }
         $redirect = Response::redirect(training_lms_admin_url('certificates/gabarit'));
         if ($request->method() !== 'POST') {
@@ -653,8 +694,8 @@ class AdminTrainingController
     public function certificateGabaritExamplePdf(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining()) {
+            return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
         if (!TrainingCertificatePdfEngine::isAvailable()) {
@@ -685,8 +726,8 @@ class AdminTrainingController
     public function certificateGabaritFile(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining()) {
+            return $denied;
         }
         $type = (string) $request->query('type', '');
         if ($type !== 'logo' && $type !== 'fond') {
@@ -748,8 +789,8 @@ class AdminTrainingController
     public function courseShowcase(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
-        if (!$this->userCanManageTrainingCourseEditorially()) {
-            throw new \RuntimeException('Accès refusé.', 403);
+        if ($denied = $this->denyUnlessEditorialTraining('courses')) {
+            return $denied;
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
@@ -868,7 +909,7 @@ class AdminTrainingController
     {
         $gate = Gate::getInstance();
 
-        return $gate->allows('admin.access') || $gate->allows('training.manage')
+        return $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('training.manage')
             || $gate->allows('training.create') || $gate->allows('training.update');
     }
 
@@ -876,7 +917,7 @@ class AdminTrainingController
     {
         $gate = Gate::getInstance();
 
-        return $gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.delete');
+        return $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('training.manage') || $gate->allows('training.delete');
     }
 
     /** Nombre de parcours tenant pour la sidebar du shell LMS (aligné sur le tableau de bord /formation). */
@@ -904,9 +945,24 @@ class AdminTrainingController
     {
         $gate = Gate::getInstance();
 
-        return $gate->allows('admin.access') || $gate->allows('training.manage')
+        return $gate->allows('admin.organization') || $gate->allows('admin.access')
+            || $gate->allows('training.manage')
             || $gate->allows('training.create') || $gate->allows('training.update')
             || $gate->allows('training.delete') || $gate->allows('training.publish');
+    }
+
+    /** Refus éditorial : redirection métier (évite une page d’erreur technique). */
+    private function denyUnlessEditorialTraining(string $redirectPath = 'certificates'): ?Response
+    {
+        if ($this->userCanManageTrainingCourseEditorially()) {
+            return null;
+        }
+        Session::flash(
+            'error',
+            'Cette action est réservée aux administrateurs de la communauté ou aux responsables du contenu formation.'
+        );
+
+        return Response::redirect(training_lms_admin_url($redirectPath));
     }
 
     /** Liste des inscriptions : staff formation, ou formateur habilité pour la formation déjà sélectionnée. */

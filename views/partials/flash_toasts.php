@@ -89,12 +89,13 @@ $eyebrowFor = static function (string $variant, string $message): string {
         $msg = $item['message'];
         $eyebrow = $eyebrowFor($item['variant'], $msg);
         $dismissMs = $variant === 'error' ? 9000 : 5500;
-        $role = $variant === 'error' ? 'alert' : 'status';
+        // Ne pas utiliser $role : collision avec les vues métier (rôle communauté / système).
+        $ariaRole = $variant === 'error' ? 'alert' : 'status';
         $live = $variant === 'error' ? 'assertive' : 'polite';
         ?>
     <div data-flash-toast data-dismiss-ms="<?= (int) $dismissMs ?>"
          class="flash-toast-item pointer-events-auto overflow-hidden rounded-2xl border <?= htmlspecialchars($t['wrap'], ENT_QUOTES, 'UTF-8') ?> transition-all duration-200 ease-out motion-safe:animate-[flashToastIn_0.38s_ease-out]"
-         role="<?= htmlspecialchars($role, ENT_QUOTES, 'UTF-8') ?>"
+         role="<?= htmlspecialchars($ariaRole, ENT_QUOTES, 'UTF-8') ?>"
          aria-live="<?= htmlspecialchars($live, ENT_QUOTES, 'UTF-8') ?>">
         <div class="flex items-start gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-3.5">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl <?= htmlspecialchars($t['iconWrap'], ENT_QUOTES, 'UTF-8') ?>">

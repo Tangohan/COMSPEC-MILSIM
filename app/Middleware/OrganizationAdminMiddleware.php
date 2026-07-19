@@ -32,6 +32,15 @@ class OrganizationAdminMiddleware
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/organisation-effectifs') && $gate->allows('organization.effectifs.hub.view')) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/ressources/effectifs') && (
+                $gate->allows('organization.effectifs.hub.view')
+                || $gate->allows('personnel.profile.view')
+                || $gate->allows('personnel.profile.update')
+                || $gate->allows('personnel.assignments.manage')
+                || $gate->allows('personnel.grades.manage')
+                || $gate->allows('personnel.status.manage')
+            )) {
+                $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/positions') && $gate->allows('organization.job_roles.referential.manage')) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/communications') && (
@@ -47,6 +56,14 @@ class OrganizationAdminMiddleware
             } elseif (str_starts_with($path, '/back-office/security-indicators') && (
                 $gate->allows('organization.recruitment.manage')
                 || $gate->allows('admin.members.moderate')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/media') && (
+                $gate->allows('media.view')
+                || $gate->allows('media.upload')
+                || $gate->allows('media.collections.manage')
+                || $gate->allows('media.publish')
+                || $gate->allows('media.manage')
             )) {
                 $scopedOrgAccess = true;
             }

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 use App\Services\Admin\TenantRolePermissionPresetService;
 
-$role = $role ?? null;
-$rolePermissions = $rolePermissions ?? [];
-if (!$role) {
+$role = is_array($role ?? null) ? $role : null;
+$rolePermissions = is_array($rolePermissions ?? null) ? $rolePermissions : [];
+if (!is_array($role)) {
     echo '<div class="mx-auto max-w-lg px-6 py-16 text-center">';
     echo '<p class="text-lg font-semibold text-slate-800">Ce rôle est introuvable ou n’appartient pas à votre communauté.</p>';
     echo '<a href="' . htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') . '" class="mt-6 inline-flex rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800">Retour à la liste des rôles</a>';
@@ -13,7 +13,7 @@ if (!$role) {
 
     return;
 }
-$rid = (int) $role['id'];
+$rid = (int) ($role['id'] ?? 0);
 $__g = \App\Core\Gate::getInstance();
 $roleLocked = (int) ($role['is_locked'] ?? 0) !== 0;
 $canEditPermissions = ($__g->allows('admin.organization') || $__g->allows('admin.roles.manage') || $__g->allows('admin.permissions.manage')) && !$roleLocked;
@@ -41,6 +41,9 @@ $tierChip = match ($tier) {
 $moduleLabels = TenantRolePermissionPresetService::permissionModuleLabelsFr();
 $byModule = [];
 foreach ($rolePermissions as $p) {
+    if (!is_array($p)) {
+        continue;
+    }
     $m = trim((string) ($p['module'] ?? ''));
     if ($m === '') {
         $m = 'autre';
@@ -201,6 +204,9 @@ $desc = trim((string) ($role['description'] ?? ''));
                                     </h3>
                                     <ul class="space-y-1.5">
                                         <?php foreach ($perms as $p): ?>
+                                            <?php if (!is_array($p)) {
+                                                continue;
+                                            } ?>
                                             <li>
                                                 <span class="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5 text-sm text-slate-800 transition hover:border-slate-200 hover:bg-white">
                                                     <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700" aria-hidden="true">

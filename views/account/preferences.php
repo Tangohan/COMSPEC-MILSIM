@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 $user = $user ?? [];
 $profile = $profile ?? null;
 $errors = $errors ?? [];
@@ -15,64 +17,55 @@ $loginOtpMandatory = !empty($loginOtpMandatory ?? false);
 $loginOtpVoluntaryActive = !empty($loginOtpVoluntaryActive ?? false);
 $loginOtpTtlMinutes = isset($loginOtpTtlMinutes) ? (int) $loginOtpTtlMinutes : 10;
 
-$quickLinks = [
-    ['href' => url('account'), 'label' => 'Vue d’ensemble compte', 'sub' => 'Tableau des réglages'],
-    ['href' => url('account/mail'), 'label' => 'Adresse e-mail', 'sub' => 'Connexion & notifications'],
-    ['href' => url('account/password'), 'label' => 'Mot de passe', 'sub' => 'Secret d’accès'],
-    ['href' => url('account/preferences') . '#connexion-verification', 'label' => 'Code après connexion', 'sub' => 'Double vérification & test d’e-mail'],
-    ['href' => url('account/image'), 'label' => 'Photo de compte', 'sub' => 'Avatar'],
-    ['href' => url('account/portrait'), 'label' => 'Portrait opérateur', 'sub' => 'ORBAT & briefings'],
-    ['href' => url('account/recruitment-presets'), 'label' => 'Profils de candidature', 'sub' => 'Enrôlement'],
-];
-
 $notifByGroup = [];
 foreach ($notifEmailCatalog as $item) {
     $g = $item['group'] ?? 'Autres';
     $notifByGroup[$g][] = $item;
 }
+
+$accountNavKey = 'preferences';
+$accountTitle = 'Profil & préférences';
+$accountLead = 'Identité civile, affichage sur le portail, fuseau horaire et notifications — séparés du dossier opérationnel (personnage).';
+$accountUser = $user;
+require base_path('views/partials/account/shell_open.php');
 ?>
-<div class="relative mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-    <div class="mb-8">
-        <p class="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-700/90">Compte</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Préférences</h1>
-        <p class="mt-2 max-w-2xl text-slate-600">
-            Données légales (identité civile), données de profil opérationnel et préférences d’interface sont séparées pour limiter l’exposition des informations sensibles.
-        </p>
-    </div>
 
-    <?php if ($success): ?>
-    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900"><?= htmlspecialchars($success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
+<nav class="account-hub__subnav" aria-label="Sections des préférences">
+    <a href="#section-profil">Profil portail</a>
+    <a href="#section-civil">Identité civile</a>
+    <a href="#section-locale">Fuseau &amp; langue</a>
+    <a href="#section-interface">Interface</a>
+    <a href="#connexion-verification">Code de sécurité</a>
+    <a href="#notifications-email">Notifications</a>
+</nav>
 
-    <?php if ($steamSyncReport !== null): ?>
-    <div class="mb-6 rounded-2xl border <?= !empty($steamSyncReport['ok']) ? 'border-emerald-200 bg-emerald-50/90' : 'border-amber-200 bg-amber-50/90' ?> p-5 shadow-sm sm:p-6" role="region" aria-label="Détail de la synchronisation Steam">
-        <div class="flex flex-wrap items-start justify-between gap-3">
+<?php if ($steamSyncReport !== null): ?>
+<div class="account-hub__panel" style="margin-bottom:1.25rem;border-color:<?= !empty($steamSyncReport['ok']) ? '#a7f3d0' : '#fde68a' ?>" role="region" aria-label="Détail de la synchronisation Steam">
+    <div class="account-hub__panel-body">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:.75rem">
             <div>
-                <h2 class="text-sm font-black text-slate-900"><?= !empty($steamSyncReport['ok']) ? 'Synchronisation terminée' : 'Synchronisation interrompue' ?></h2>
+                <h2 class="account-hub__panel-title" style="font-size:1rem"><?= !empty($steamSyncReport['ok']) ? 'Synchronisation terminée' : 'Synchronisation interrompue' ?></h2>
                 <?php if (!empty($steamSyncReport['finished_at'])): ?>
-                <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) $steamSyncReport['finished_at'], ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="account-hub__hint"><?= htmlspecialchars((string) $steamSyncReport['finished_at'], ENT_QUOTES, 'UTF-8') ?></p>
                 <?php endif; ?>
             </div>
-            <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold <?= !empty($steamSyncReport['ok']) ? 'bg-emerald-600 text-white' : 'bg-amber-700 text-white' ?>">
+            <span class="account-hub__badge <?= !empty($steamSyncReport['ok']) ? 'account-hub__badge--ok' : 'account-hub__badge--warn' ?>">
                 <?= !empty($steamSyncReport['ok']) ? 'Réussi' : 'À vérifier' ?>
             </span>
         </div>
         <?php $steps = isset($steamSyncReport['steps']) && is_array($steamSyncReport['steps']) ? $steamSyncReport['steps'] : []; ?>
         <?php if ($steps !== []): ?>
-        <ol class="mt-5 space-y-3">
+        <ol style="margin:1rem 0 0;padding:0;list-style:none;display:grid;gap:.65rem">
             <?php foreach ($steps as $idx => $st):
                 $ok = !empty($st['ok']);
-                $label = htmlspecialchars((string) ($st['label'] ?? 'Étape'), ENT_QUOTES, 'UTF-8');
-                $detail = htmlspecialchars((string) ($st['detail'] ?? ''), ENT_QUOTES, 'UTF-8');
                 ?>
-            <li class="flex gap-3 rounded-xl border border-white/60 bg-white/70 px-4 py-3">
-                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black <?= $ok ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white' ?>" aria-hidden="true"><?= (int) $idx + 1 ?></span>
-                <div class="min-w-0">
-                    <p class="text-sm font-bold text-slate-900"><?= $label ?></p>
-                    <?php if ($detail !== ''): ?><p class="mt-0.5 text-xs leading-relaxed text-slate-600"><?= $detail ?></p><?php endif; ?>
+            <li class="account-hub__check" style="background:#fff">
+                <span class="account-hub__badge <?= $ok ? 'account-hub__badge--ok' : 'account-hub__badge--warn' ?>" aria-hidden="true"><?= (int) $idx + 1 ?></span>
+                <div>
+                    <p style="margin:0;font-size:.875rem;font-weight:800"><?= htmlspecialchars((string) ($st['label'] ?? 'Étape'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php if (!empty($st['detail'])): ?>
+                    <p class="account-hub__hint"><?= htmlspecialchars((string) $st['detail'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
                 </div>
             </li>
             <?php endforeach; ?>
@@ -84,310 +77,301 @@ foreach ($notifEmailCatalog as $item) {
         $sidShow = isset($sd['steam_id']) ? trim((string) $sd['steam_id']) : '';
         ?>
         <?php if ($pseudo !== '' || $sidShow !== '' || !empty($sd['avatar_updated']) || !empty($sd['display_name_updated'])): ?>
-        <div class="mt-5 rounded-xl border border-slate-200/80 bg-white/90 px-4 py-4">
-            <h3 class="text-[11px] font-black uppercase tracking-wider text-slate-500">Données lues sur le profil public</h3>
-            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+        <div style="margin-top:1rem;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#f8fafc">
+            <p class="account-hub__stat-label">Données lues sur le profil public</p>
+            <dl class="account-hub__form-grid account-hub__form-grid--2" style="margin-top:.75rem">
                 <?php if ($pseudo !== ''): ?>
-                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Pseudo affiché côté Steam</dt><dd class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($pseudo, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                <div><dt class="account-hub__hint" style="margin:0">Pseudo affiché côté Steam</dt><dd style="margin:.2rem 0 0;font-weight:700"><?= htmlspecialchars($pseudo, ENT_QUOTES, 'UTF-8') ?></dd></div>
                 <?php endif; ?>
                 <?php if ($sidShow !== ''): ?>
-                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Identifiant numérique confirmé</dt><dd class="text-sm font-mono font-semibold text-slate-900"><?= htmlspecialchars($sidShow, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                <div><dt class="account-hub__hint" style="margin:0">Identifiant numérique confirmé</dt><dd style="margin:.2rem 0 0;font-family:ui-monospace,monospace;font-weight:700"><?= htmlspecialchars($sidShow, ENT_QUOTES, 'UTF-8') ?></dd></div>
                 <?php endif; ?>
-                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Photo du compte</dt><dd class="text-sm text-slate-800"><?= !empty($sd['avatar_updated']) ? 'Mise à jour enregistrée' : 'Inchangée sur cette passe' ?></dd></div>
-                <div><dt class="text-[10px] font-bold uppercase text-slate-400">Nom d’affichage sur le portail</dt><dd class="text-sm text-slate-800"><?= !empty($sd['display_name_updated']) ? 'Aligné sur le pseudo Steam (option cochée)' : 'Inchangé sur cette passe' ?></dd></div>
+                <div><dt class="account-hub__hint" style="margin:0">Photo du compte</dt><dd style="margin:.2rem 0 0"><?= !empty($sd['avatar_updated']) ? 'Mise à jour enregistrée' : 'Inchangée sur cette passe' ?></dd></div>
+                <div><dt class="account-hub__hint" style="margin:0">Nom d’affichage</dt><dd style="margin:.2rem 0 0"><?= !empty($sd['display_name_updated']) ? 'Aligné sur le pseudo Steam' : 'Inchangé sur cette passe' ?></dd></div>
             </dl>
         </div>
         <?php endif; ?>
     </div>
-    <?php endif; ?>
+</div>
+<?php endif; ?>
 
-    <!-- Accès rapide -->
-    <section class="mb-8 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm ring-1 ring-slate-900/[0.04] sm:p-6">
-        <h2 class="text-xs font-black uppercase tracking-wider text-slate-500">Accès rapide</h2>
-        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <?php foreach ($quickLinks as $ql): ?>
-            <a href="<?= htmlspecialchars($ql['href']) ?>" class="group flex flex-col rounded-xl border border-slate-200/80 bg-white px-4 py-3 transition hover:border-emerald-300 hover:shadow-md">
-                <span class="text-sm font-bold text-slate-900 group-hover:text-emerald-900"><?= htmlspecialchars($ql['label']) ?></span>
-                <span class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars($ql['sub']) ?></span>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </section>
-
-    <!-- Résumé compte -->
-    <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 class="text-xs font-black uppercase tracking-wider text-slate-500">Résumé du compte</h2>
-        <dl class="mt-4 grid gap-4 sm:grid-cols-3">
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">E-mail (masqué)</dt>
-                <dd class="mt-1 font-mono text-sm text-slate-900"><?= htmlspecialchars($accountSnapshot['email_masked']) ?></dd>
-                <dd class="mt-2">
-                    <a href="<?= url('account/mail') ?>" class="text-xs font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-950">Modifier l’adresse</a>
-                </dd>
+<section class="account-hub__panel" style="margin-bottom:1.25rem">
+    <div class="account-hub__panel-head">
+        <p class="account-hub__panel-kicker">Résumé</p>
+        <h2 class="account-hub__panel-title">Compte actuel</h2>
+    </div>
+    <div class="account-hub__panel-body">
+        <div class="account-hub__stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))">
+            <div class="account-hub__stat">
+                <p class="account-hub__stat-label">E-mail</p>
+                <p class="account-hub__stat-value" style="font-family:ui-monospace,monospace;font-size:.85rem"><?= htmlspecialchars((string) $accountSnapshot['email_masked'], ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="account-hub__stat-meta"><a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Modifier l’adresse</a></p>
             </div>
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Vérification</dt>
-                <dd class="mt-1">
+            <div class="account-hub__stat">
+                <p class="account-hub__stat-label">Vérification</p>
+                <p class="account-hub__stat-meta" style="margin-top:.45rem">
                     <?php if (!empty($accountSnapshot['email_verified'])): ?>
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-900">
-                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                        Adresse confirmée
-                    </span>
+                    <span class="account-hub__badge account-hub__badge--ok">Adresse confirmée</span>
                     <?php else: ?>
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-900">
-                        En attente de confirmation
-                    </span>
+                    <span class="account-hub__badge account-hub__badge--warn">En attente de confirmation</span>
                     <?php endif; ?>
-                </dd>
+                </p>
             </div>
-            <div>
-                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Dernière connexion</dt>
-                <dd class="mt-1 text-sm text-slate-800"><?= $accountSnapshot['last_login_label'] !== null ? htmlspecialchars($accountSnapshot['last_login_label']) : '— (première session ou non enregistrée)' ?></dd>
-            </div>
-        </dl>
-    </section>
-
-    <!-- Double vérification (code par e-mail) -->
-    <section id="connexion-verification" class="mb-10 scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="login-otp-title">
-        <div class="border-l-4 border-l-emerald-600">
-            <div class="border-b border-slate-100 bg-gradient-to-br from-emerald-50/70 via-white to-white px-5 py-6 sm:px-8 sm:py-7">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0 flex-1 space-y-3">
-                        <div>
-                            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/85">Connexion</p>
-                            <h2 id="login-otp-title" class="mt-1.5 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Code de sécurité par e-mail</h2>
-                        </div>
-                        <?php if ($loginOtpMandatory): ?>
-                        <p class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-100/90 px-3 py-1.5 text-xs font-bold text-emerald-950">
-                            <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden="true"></span>
-                            Double vérification imposée pour votre rôle
-                        </p>
-                        <?php elseif ($loginOtpVoluntaryActive): ?>
-                        <p class="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-900">
-                            <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true"></span>
-                            Double vérification activée par vous
-                        </p>
-                        <?php else: ?>
-                        <p class="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-xs font-bold text-slate-800">
-                            <span class="h-2 w-2 shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
-                            Non activée (connexion par mot de passe seul)
-                        </p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <div class="mt-6 rounded-2xl border border-slate-200/80 bg-white/95 p-4 shadow-sm sm:mt-8 sm:p-5">
-                    <?php if ($loginOtpMandatory): ?>
-                    <p class="text-sm leading-relaxed text-slate-800">
-                        Compte tenu de vos <strong>responsabilités</strong>, après le mot de passe le portail envoie un <strong>code à six chiffres</strong> sur votre <strong>adresse de connexion</strong>. Cela réduit le risque si quelqu’un connaît votre mot de passe.
-                    </p>
-                    <p class="mt-3 text-xs leading-relaxed text-slate-600">
-                        Le code reste valable environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Si rien n’arrive, regardez aussi les courriers indésirables. Le bouton ci-dessous envoie un <strong>message d’essai</strong> (indépendant d’une connexion en cours).
-                    </p>
-                    <?php elseif ($loginOtpVoluntaryActive): ?>
-                    <p class="text-sm leading-relaxed text-slate-800">
-                        Vous avez choisi d’ajouter une <strong>étape de sécurité</strong> : après le mot de passe, un <strong>code à six chiffres</strong> est envoyé sur votre adresse de connexion. Vous pouvez modifier ce réglage dans <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2">Adresse e-mail</a>.
-                    </p>
-                    <p class="mt-3 text-xs leading-relaxed text-slate-600">
-                        Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Le bouton ci-dessous sert à un <strong>envoi d’essai</strong> pour vérifier votre boîte de réception.
-                    </p>
-                    <?php else: ?>
-                    <p class="text-sm leading-relaxed text-slate-800">
-                        Vous pouvez activer une double vérification sur la page <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2">Adresse e-mail</a>. Sinon, demandez un <strong>envoi d’essai</strong> ci-dessous pour confirmer que nos messages arrivent bien (filtre anti-spam, etc.).
-                    </p>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <div class="px-5 py-5 sm:px-8 sm:py-6">
-                <form method="post" action="<?= htmlspecialchars(url('account/preferences/login-otp-mailbox-test'), ENT_QUOTES, 'UTF-8') ?>" class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6">
-                    <?= \App\Core\Csrf::field() ?>
-                    <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                        <button type="submit" class="inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 sm:w-auto sm:px-6">
-                            Envoyer un code d’essai
-                        </button>
-                        <p class="text-xs leading-relaxed text-slate-500 sm:max-w-sm">
-                            Au plus <strong>un envoi par minute</strong>, pour limiter les envois répétés.
-                        </p>
-                    </div>
-                </form>
+            <div class="account-hub__stat">
+                <p class="account-hub__stat-label">Dernière connexion</p>
+                <p class="account-hub__stat-value" style="font-size:.875rem"><?= $accountSnapshot['last_login_label'] !== null ? htmlspecialchars((string) $accountSnapshot['last_login_label'], ENT_QUOTES, 'UTF-8') : 'Non enregistrée' ?></p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <form method="post" action="<?= url('account/preferences') ?>" class="space-y-8">
-        <?= \App\Core\Csrf::field() ?>
+<section id="connexion-verification" class="account-hub__panel account-hub__section-anchor" style="margin-bottom:1.25rem" aria-labelledby="login-otp-title">
+    <div class="account-hub__panel-head">
+        <p class="account-hub__panel-kicker">Connexion</p>
+        <h2 id="login-otp-title" class="account-hub__panel-title">Code de sécurité par e-mail</h2>
+        <p class="account-hub__panel-desc">Après le mot de passe, un code à six chiffres peut être demandé sur votre adresse de connexion.</p>
+        <p style="margin:.85rem 0 0">
+            <?php if ($loginOtpMandatory): ?>
+            <span class="account-hub__badge account-hub__badge--ok">Imposée pour votre rôle</span>
+            <?php elseif ($loginOtpVoluntaryActive): ?>
+            <span class="account-hub__badge account-hub__badge--ok">Activée par vous</span>
+            <?php else: ?>
+            <span class="account-hub__badge account-hub__badge--off">Non activée (mot de passe seul)</span>
+            <?php endif; ?>
+        </p>
+    </div>
+    <div class="account-hub__panel-body">
+        <?php if ($loginOtpMandatory): ?>
+        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
+            Compte tenu de vos responsabilités, le portail envoie un code après le mot de passe. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Pensez aux courriers indésirables si rien n’arrive.
+        </p>
+        <?php elseif ($loginOtpVoluntaryActive): ?>
+        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
+            Vous avez ajouté cette étape. Vous pouvez la modifier sur <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Adresse e-mail</a>. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>.
+        </p>
+        <?php else: ?>
+        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
+            Activez la double vérification sur <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Adresse e-mail</a>, ou demandez un envoi d’essai ci-dessous pour vérifier votre boîte de réception.
+        </p>
+        <?php endif; ?>
+        <form method="post" action="<?= htmlspecialchars(url('account/preferences/login-otp-mailbox-test'), ENT_QUOTES, 'UTF-8') ?>" style="margin-top:1.15rem;display:flex;flex-wrap:wrap;align-items:center;gap:.85rem">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="account-hub__btn account-hub__btn--primary">Envoyer un code d’essai</button>
+            <p class="account-hub__hint" style="margin:0;max-width:18rem">Au plus un envoi par minute, pour limiter les envois répétés.</p>
+        </form>
+    </div>
+</section>
 
-        <!-- Identité -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 class="text-lg font-black text-slate-900">Profil portail & contact opérationnel</h2>
-            <p class="mt-1 text-sm text-slate-600">Nom affiché, indicatif et liens techniques pour le portail. L’identité légale est gérée séparément ci-dessous.</p>
-            <div class="mt-6 space-y-4">
+<form method="post" action="<?= htmlspecialchars(url('account/preferences'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__stack">
+    <?= \App\Core\Csrf::field() ?>
+
+    <section id="section-profil" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Profil</p>
+            <h2 class="account-hub__panel-title">Profil portail &amp; liaisons</h2>
+            <p class="account-hub__panel-desc">Nom affiché, indicatif et liens utiles. L’identité civile est gérée juste en dessous.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <div class="account-hub__form-grid">
                 <div>
-                    <label for="display_name" class="block text-sm font-medium text-slate-700 mb-1">Nom d'affichage</label>
-                    <input type="text" name="display_name" id="display_name" value="<?= htmlspecialchars($user['display_name'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="100">
+                    <label class="account-hub__label" for="display_name">Nom d’affichage</label>
+                    <input type="text" name="display_name" id="display_name" value="<?= htmlspecialchars((string) ($user['display_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
                     <?php if (!empty($errors['display_name'])): foreach ($errors['display_name'] as $e): ?>
-                    <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <label for="callsign" class="block text-sm font-medium text-slate-700 mb-1">Indicatif (plateforme, outil cartographique)</label>
-                    <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($user['callsign'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="50">
-                    <p class="mt-1 text-xs text-slate-500">Même valeur partout sur le portail et pour les intégrations cartographiques.</p>
+                    <label class="account-hub__label" for="callsign">Indicatif</label>
+                    <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars((string) ($user['callsign'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="50">
+                    <p class="account-hub__hint">Utilisé sur le portail et pour les outils cartographiques.</p>
                     <?php if (!empty($errors['callsign'])): foreach ($errors['callsign'] as $e): ?>
-                    <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
                 <div>
-                    <label for="profile_slug" class="block text-sm font-medium text-slate-700 mb-1">Adresse courte de votre fiche (optionnel)</label>
-                    <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars($user['profile_slug'] ?? '') ?>" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono lowercase focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="40" placeholder="ex. jean-dupont" autocomplete="username">
-                    <p class="mt-1 text-xs text-slate-500">Lettres minuscules, chiffres et tirets uniquement ; commence et finit par une lettre ou un chiffre. Laissez vide pour revenir à l’adresse par défaut.</p>
+                    <label class="account-hub__label" for="profile_slug">Adresse courte de votre fiche (optionnel)</label>
+                    <input type="text" name="profile_slug" id="profile_slug" value="<?= htmlspecialchars((string) ($user['profile_slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="40" placeholder="ex. jean-dupont" autocomplete="username" style="font-family:ui-monospace,monospace;text-transform:lowercase">
+                    <p class="account-hub__hint">Lettres minuscules, chiffres et tirets uniquement. Laissez vide pour l’adresse par défaut.</p>
                     <?php if (!empty($errors['profile_slug'])): foreach ($errors['profile_slug'] as $e): ?>
-                    <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
                 </div>
-                <div class="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 sm:p-5">
-                    <label for="steam_id" class="block text-sm font-medium text-slate-700 mb-1">Lien avec Steam (jeu et cartographie)</label>
-                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars($user['steam_id'] ?? '') ?>" placeholder="Numéro à 17 chiffres ou adresse de votre profil public" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 bg-white" maxlength="512" autocomplete="off">
-                    <p class="mt-2 text-xs text-slate-600 leading-relaxed">Vous pouvez coller le <strong>numéro</strong> affiché dans le jeu, une adresse du type <span class="whitespace-nowrap font-mono text-[11px] text-slate-700">…/profiles/76561198…</span><?php if ($steamWebConfigured): ?> ou une adresse <span class="whitespace-nowrap font-mono text-[11px] text-slate-700">…/id/votre-pseudo</span><?php endif; ?>. La synchronisation enregistre aussi l’identifiant si vous venez de le coller.</p>
+
+                <div style="padding:1rem;border-radius:.85rem;border:1px solid #e2e8f0;background:#f8fafc">
+                    <label class="account-hub__label" for="steam_id">Liaison Steam (jeu et cartographie)</label>
+                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars((string) ($user['steam_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Numéro à 17 chiffres ou adresse de votre profil public" maxlength="512" autocomplete="off">
+                    <p class="account-hub__hint">Collez le numéro affiché dans le jeu, ou une adresse de profil public<?php if ($steamWebConfigured): ?> (y compris un lien avec votre pseudo)<?php endif; ?>.</p>
                     <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
-                    <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
+                    <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>
 
                     <?php if ($steamWebConfigured): ?>
-                    <div class="mt-5 space-y-4 rounded-xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5">
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-wider text-slate-500">Synchronisation du profil public</p>
-                            <p class="mt-1 text-xs text-slate-600 leading-relaxed">Cochez l’option souhaitée puis lancez la lecture du profil public (photo et éventuellement nom d’affichage). Les autres réglages de la page ne sont pas enregistrés tant que vous n’utilisez pas « Enregistrer tout ».</p>
-                        </div>
-                        <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3 text-xs text-slate-800">
-                            <input type="checkbox" name="apply_steam_display_name" value="1" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-                            <span><strong>Aligner le nom d’affichage</strong> sur le pseudo public Steam (en plus de la photo).</span>
+                    <div style="margin-top:1rem;padding:1rem;border-radius:.75rem;border:1px solid #e2e8f0;background:#fff">
+                        <p class="account-hub__stat-label">Synchronisation du profil public</p>
+                        <p class="account-hub__hint">Met à jour la photo (et éventuellement le nom d’affichage). Les autres champs de cette page ne sont enregistrés qu’avec « Enregistrer tout ».</p>
+                        <label class="account-hub__check" style="margin-top:.85rem;cursor:pointer">
+                            <input type="checkbox" name="apply_steam_display_name" value="1">
+                            <span style="font-size:.8125rem;line-height:1.45"><strong>Aligner le nom d’affichage</strong> sur le pseudo public Steam.</span>
                         </label>
-                        <button type="submit" formaction="<?= htmlspecialchars(url('account/steam-sync'), ENT_QUOTES, 'UTF-8') ?>" formmethod="post" formnovalidate class="inline-flex w-full sm:w-auto items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2">
+                        <button type="submit" formaction="<?= htmlspecialchars(url('account/steam-sync'), ENT_QUOTES, 'UTF-8') ?>" formmethod="post" formnovalidate class="account-hub__btn account-hub__btn--ink" style="margin-top:.85rem">
                             Synchroniser photo &amp; profil Steam
                         </button>
-                        <p class="text-[11px] text-slate-500">Un récapitulatif (étapes, état, détails) s’affiche après la synchronisation.</p>
                     </div>
                     <?php else: ?>
-                    <p class="mt-3 text-xs text-slate-600">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro à 17 chiffres ou une adresse se terminant par <span class="font-mono">…/profiles/…</span> pour les outils qui en ont besoin.</p>
+                    <p class="account-hub__hint">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro ou une adresse de profil.</p>
                     <?php endif; ?>
-                </div>
-                <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
-                    <h3 class="text-sm font-black text-amber-900">Identité légale (isolée)</h3>
-                    <p class="mt-1 text-xs text-amber-900/80">Ces champs sont stockés dans un espace de données séparé de votre profil opérationnel.</p>
-                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="first_name" class="block text-sm font-medium text-slate-700 mb-1">Prénom</label>
-                            <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars($profile['first_name'] ?? '') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-slate-900" maxlength="100">
-                        </div>
-                        <div>
-                            <label for="last_name" class="block text-sm font-medium text-slate-700 mb-1">Nom</label>
-                            <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars($profile['last_name'] ?? '') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-slate-900" maxlength="100">
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Téléphone</label>
-                        <input type="text" name="phone" id="phone" value="<?= htmlspecialchars($profile['phone'] ?? '') ?>" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-slate-900" maxlength="50">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="timezone" class="block text-sm font-medium text-slate-700 mb-1">Fuseau horaire</label>
-                        <input type="text" name="timezone" id="timezone" value="<?= htmlspecialchars($profile['timezone'] ?? 'Europe/Paris') ?>" placeholder="Europe/Paris" list="tz-suggestions" autocomplete="off" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-slate-900" maxlength="50">
-                        <datalist id="tz-suggestions">
-                            <?php foreach ($timezoneSuggestions as $tz): ?>
-                            <option value="<?= htmlspecialchars($tz) ?>"></option>
-                            <?php endforeach; ?>
-                        </datalist>
-                        <p class="mt-1 text-xs text-slate-500">Saisie libre (IANA), ou choix dans la liste.</p>
-                    </div>
-                    <div>
-                        <label for="language" class="block text-sm font-medium text-slate-700 mb-1">Langue</label>
-                        <select name="language" id="language" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900">
-                            <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>>Français</option>
-                            <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>>English</option>
-                        </select>
-                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Interface -->
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 class="text-lg font-black text-slate-900">Interface</h2>
-            <p class="mt-1 text-sm text-slate-600">Thème et densité sont enregistrés pour votre compte et réutilisés sur tout le portail.</p>
-            <div class="mt-6 grid gap-6 sm:grid-cols-2">
+    <section id="section-civil" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Données sensibles</p>
+            <h2 class="account-hub__panel-title">Identité civile</h2>
+            <p class="account-hub__panel-desc">Ces informations sont stockées à part du profil opérationnel.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <div class="account-hub__legal-box" style="margin-bottom:1rem">
+                <h3>Espace isolé</h3>
+                <p>Prénom, nom et téléphone ne sont pas mélangés avec le personnage ou l’affectation d’unité.</p>
+            </div>
+            <div class="account-hub__form-grid account-hub__form-grid--2">
                 <div>
-                    <label for="ui_theme" class="block text-sm font-medium text-slate-700 mb-1">Thème</label>
-                    <select name="ui_theme" id="ui_theme" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900">
-                        <option value="system" <?= ($uiPrefs['theme'] ?? '') === 'system' ? 'selected' : '' ?>>Système (auto)</option>
+                    <label class="account-hub__label" for="first_name">Prénom</label>
+                    <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
+                </div>
+                <div>
+                    <label class="account-hub__label" for="last_name">Nom</label>
+                    <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
+                </div>
+            </div>
+            <div style="margin-top:1rem">
+                <label class="account-hub__label" for="phone">Téléphone</label>
+                <input type="text" name="phone" id="phone" value="<?= htmlspecialchars((string) ($profile['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="50">
+            </div>
+        </div>
+    </section>
+
+    <section id="section-locale" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Locale</p>
+            <h2 class="account-hub__panel-title">Fuseau horaire &amp; langue</h2>
+        </div>
+        <div class="account-hub__panel-body">
+            <div class="account-hub__form-grid account-hub__form-grid--2">
+                <div>
+                    <label class="account-hub__label" for="timezone">Fuseau horaire</label>
+                    <input type="text" name="timezone" id="timezone" value="<?= htmlspecialchars((string) ($profile['timezone'] ?? 'Europe/Paris'), ENT_QUOTES, 'UTF-8') ?>" placeholder="Europe/Paris" list="tz-suggestions" autocomplete="off" maxlength="50">
+                    <datalist id="tz-suggestions">
+                        <?php foreach ($timezoneSuggestions as $tz): ?>
+                        <option value="<?= htmlspecialchars((string) $tz, ENT_QUOTES, 'UTF-8') ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                    <p class="account-hub__hint">Choisissez dans la liste proposée, ou saisissez un fuseau standard (ex. Europe/Paris).</p>
+                </div>
+                <div>
+                    <label class="account-hub__label" for="language">Langue</label>
+                    <select name="language" id="language">
+                        <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>>Français</option>
+                        <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>>English</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-interface" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Affichage</p>
+            <h2 class="account-hub__panel-title">Interface</h2>
+            <p class="account-hub__panel-desc">Thème et densité enregistrés pour votre compte sur tout le portail.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <div class="account-hub__form-grid account-hub__form-grid--2">
+                <div>
+                    <label class="account-hub__label" for="ui_theme">Thème</label>
+                    <select name="ui_theme" id="ui_theme">
+                        <option value="system" <?= ($uiPrefs['theme'] ?? '') === 'system' ? 'selected' : '' ?>>Système (automatique)</option>
                         <option value="light" <?= ($uiPrefs['theme'] ?? '') === 'light' ? 'selected' : '' ?>>Clair</option>
                         <option value="dark" <?= ($uiPrefs['theme'] ?? '') === 'dark' ? 'selected' : '' ?>>Sombre</option>
                         <option value="tenant" <?= ($uiPrefs['theme'] ?? '') === 'tenant' ? 'selected' : '' ?>>Communauté (marque)</option>
                     </select>
                 </div>
                 <div>
-                    <label for="ui_density" class="block text-sm font-medium text-slate-700 mb-1">Densité des listes</label>
-                    <select name="ui_density" id="ui_density" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900">
+                    <label class="account-hub__label" for="ui_density">Densité des listes</label>
+                    <select name="ui_density" id="ui_density">
                         <option value="comfortable" <?= ($uiPrefs['density'] ?? '') === 'comfortable' ? 'selected' : '' ?>>Confortable</option>
                         <option value="compact" <?= ($uiPrefs['density'] ?? '') === 'compact' ? 'selected' : '' ?>>Compact</option>
                     </select>
                 </div>
             </div>
-            <div class="mt-5 flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-                <input type="checkbox" name="ui_sidebar_collapsed" id="ui_sidebar_collapsed" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" <?= !empty($uiPrefs['sidebar_collapsed']) ? 'checked' : '' ?>>
-                <div>
-                    <label for="ui_sidebar_collapsed" class="text-sm font-semibold text-slate-900">Barre latérale repliée par défaut</label>
-                    <p class="mt-0.5 text-xs text-slate-600">Utile sur petit écran ou pour un focus sur le contenu central.</p>
-                </div>
-            </div>
+            <label class="account-hub__check" style="margin-top:1rem;cursor:pointer">
+                <input type="checkbox" name="ui_sidebar_collapsed" id="ui_sidebar_collapsed" value="1" <?= !empty($uiPrefs['sidebar_collapsed']) ? 'checked' : '' ?>>
+                <span>
+                    <strong style="font-size:.875rem">Barre latérale repliée par défaut</strong>
+                    <span class="account-hub__hint" style="display:block">Utile sur petit écran ou pour se concentrer sur le contenu.</span>
+                </span>
+            </label>
         </div>
+    </section>
 
-        <!-- Notifications e-mail -->
-        <div id="notifications-email" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 scroll-mt-24">
-            <h2 class="text-lg font-black text-slate-900">Notifications par e-mail</h2>
-            <p class="mt-1 text-sm text-slate-600">
-                Décochez les types de messages que vous ne souhaitez plus recevoir. Les e-mails indispensables (réinitialisation de mot de passe, vérification d’adresse, liens à usage unique) peuvent toujours être envoyés.
-                Les thèmes ci-dessous couvrent la sécurité du compte, les événements, les formations, le recrutement et les alertes utiles à l’équipe (modération, nouveaux membres).
+    <section id="notifications-email" class="account-hub__panel account-hub__section-anchor">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Courriels</p>
+            <h2 class="account-hub__panel-title">Notifications par e-mail</h2>
+            <p class="account-hub__panel-desc">
+                Décochez les messages que vous ne souhaitez plus recevoir. Les e-mails indispensables (réinitialisation de mot de passe, vérification d’adresse, liens à usage unique) peuvent toujours être envoyés.
             </p>
-            <div class="mt-4 grid gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                <label class="block">
-                    <span class="sr-only">Filtrer les notifications</span>
-                    <input type="search" id="notif-search" placeholder="Filtrer (ex. sécurité, formation, recrutement…)" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900">
-                </label>
-                <div class="flex flex-wrap gap-2 sm:justify-end">
-                    <button type="button" id="notif-enable-all" class="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-emerald-900 hover:bg-emerald-100">Tout activer</button>
-                    <button type="button" id="notif-disable-all" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-amber-900 hover:bg-amber-100">Tout désactiver</button>
-                    <button type="button" id="notif-reset-filter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Réinitialiser filtre</button>
+        </div>
+        <div class="account-hub__panel-body">
+            <?php if ($notifByGroup === []): ?>
+            <div class="account-hub__empty">
+                <p class="account-hub__empty-title">Aucune préférence disponible</p>
+                <p class="account-hub__empty-desc">Les types de messages seront proposés ici dès qu’ils seront activés pour votre communauté.</p>
+            </div>
+            <?php else: ?>
+            <div style="display:grid;gap:.75rem;margin-bottom:1rem">
+                <div style="display:grid;gap:.65rem">
+                    <label class="account-hub__label" for="notif-search">Filtrer les notifications</label>
+                    <input type="search" id="notif-search" placeholder="Ex. sécurité, formation, recrutement…">
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:.4rem;align-items:center">
+                    <span id="notif-stats" class="account-hub__badge account-hub__badge--off">0 / 0 actives</span>
+                    <button type="button" id="notif-enable-all" class="account-hub__btn account-hub__btn--soft" style="padding:.45rem .7rem;font-size:.6875rem">Tout activer</button>
+                    <button type="button" id="notif-disable-all" class="account-hub__btn" style="padding:.45rem .7rem;font-size:.6875rem;background:#fffbeb;color:#92400e;border:1px solid #fde68a">Tout désactiver</button>
+                    <button type="button" id="notif-reset-filter" class="account-hub__btn" style="padding:.45rem .7rem;font-size:.6875rem;background:#fff;color:#475569;border:1px solid #e2e8f0">Réinitialiser le filtre</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+                    <button type="button" data-notif-preset="minimum" class="account-hub__btn" style="padding:.45rem .7rem;font-size:.6875rem;background:#fff;color:#334155;border:1px solid #e2e8f0">Essentiel (sécurité)</button>
+                    <button type="button" data-notif-preset="standard" class="account-hub__btn" style="padding:.45rem .7rem;font-size:.6875rem;background:#fff;color:#334155;border:1px solid #e2e8f0">Usage courant</button>
+                    <button type="button" data-notif-preset="ops" class="account-hub__btn" style="padding:.45rem .7rem;font-size:.6875rem;background:#fff;color:#334155;border:1px solid #e2e8f0">Tout activer (complet)</button>
                 </div>
             </div>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
-                <span id="notif-stats" class="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white">0 / 0 actives</span>
-                <button type="button" data-notif-preset="minimum" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset minimum</button>
-                <button type="button" data-notif-preset="standard" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset standard</button>
-                <button type="button" data-notif-preset="ops" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Preset ops</button>
-            </div>
-            <div class="mt-6 space-y-8">
+
+            <div style="display:grid;gap:1.5rem">
                 <?php foreach ($notifByGroup as $groupName => $items): ?>
-                <div data-notif-group="<?= htmlspecialchars(strtolower($groupName), ENT_QUOTES, 'UTF-8') ?>">
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars($groupName) ?></h3>
-                        <div class="flex gap-2">
-                            <button type="button" data-group-toggle="1" class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Activer groupe</button>
-                            <button type="button" data-group-toggle="0" class="rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100">Désactiver groupe</button>
+                <div data-notif-group="<?= htmlspecialchars(strtolower((string) $groupName), ENT_QUOTES, 'UTF-8') ?>">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid #f1f5f9;padding-bottom:.5rem">
+                        <h3 class="account-hub__stat-label" style="margin:0"><?= htmlspecialchars((string) $groupName, ENT_QUOTES, 'UTF-8') ?></h3>
+                        <div style="display:flex;gap:.35rem">
+                            <button type="button" data-group-toggle="1" class="account-hub__btn" style="padding:.3rem .55rem;font-size:.625rem;background:#fff;color:#475569;border:1px solid #e2e8f0">Activer le groupe</button>
+                            <button type="button" data-group-toggle="0" class="account-hub__btn" style="padding:.3rem .55rem;font-size:.625rem;background:#fff;color:#475569;border:1px solid #e2e8f0">Désactiver le groupe</button>
                         </div>
                     </div>
-                    <ul class="mt-4 space-y-3">
+                    <ul style="list-style:none;margin:.75rem 0 0;padding:0;display:grid;gap:.55rem">
                         <?php foreach ($items as $item): ?>
                         <?php
                             $key = $item['key'];
                             $checked = !empty($notifEmailState[$key]);
                             $searchBlob = strtolower(($item['label'] ?? '') . ' ' . ($item['hint'] ?? '') . ' ' . $groupName);
+                            $idSafe = preg_replace('/[^a-zA-Z0-9_]/', '_', (string) $key);
                         ?>
-                        <li class="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3" data-notif-item="<?= htmlspecialchars($searchBlob, ENT_QUOTES, 'UTF-8') ?>">
-                            <input type="checkbox" name="notif_email[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>]" id="notif_<?= htmlspecialchars(preg_replace('/[^a-zA-Z0-9_]/', '_', $key)) ?>" value="1" class="notif-email-toggle mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" <?= $checked ? 'checked' : '' ?>>
-                            <div class="min-w-0 flex-1">
-                                <label for="notif_<?= htmlspecialchars(preg_replace('/[^a-zA-Z0-9_]/', '_', $key)) ?>" class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($item['label']) ?></label>
-                                <p class="mt-0.5 text-xs text-slate-600"><?= htmlspecialchars($item['hint']) ?></p>
+                        <li class="account-hub__check" data-notif-item="<?= htmlspecialchars($searchBlob, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="checkbox" class="notif-email-toggle" name="notif_email[<?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') ?>]" id="notif_<?= htmlspecialchars((string) $idSafe, ENT_QUOTES, 'UTF-8') ?>" value="1" <?= $checked ? 'checked' : '' ?>>
+                            <div>
+                                <label for="notif_<?= htmlspecialchars((string) $idSafe, ENT_QUOTES, 'UTF-8') ?>" style="font-size:.875rem;font-weight:700;color:#0f172a;cursor:pointer"><?= htmlspecialchars((string) $item['label'], ENT_QUOTES, 'UTF-8') ?></label>
+                                <p class="account-hub__hint"><?= htmlspecialchars((string) $item['hint'], ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                         </li>
                         <?php endforeach; ?>
@@ -395,14 +379,17 @@ foreach ($notifEmailCatalog as $item) {
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </div>
+    </section>
 
-        <div class="flex flex-wrap items-center gap-4">
-            <button type="submit" class="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">Enregistrer tout</button>
-            <a href="<?= url('account') ?>" class="text-sm font-semibold text-slate-600 underline decoration-slate-300 underline-offset-2 hover:text-slate-900">Retour aux paramètres</a>
-        </div>
-    </form>
-</div>
+    <div class="account-hub__sticky-bar">
+        <button type="submit" class="account-hub__btn account-hub__btn--ink">Enregistrer tout</button>
+        <a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn" style="background:#fff;color:#475569;border:1px solid #e2e8f0">Retour à la vue d’ensemble</a>
+        <p class="account-hub__hint" style="margin:0">Les modifications de cette page sont enregistrées ensemble.</p>
+    </div>
+</form>
+
 <script>
 (function () {
     var search = document.getElementById('notif-search');
@@ -514,3 +501,5 @@ foreach ($notifEmailCatalog as $item) {
     updateStats();
 })();
 </script>
+
+<?php require base_path('views/partials/account/shell_close.php'); ?>

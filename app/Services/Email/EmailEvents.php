@@ -49,6 +49,8 @@ final class EmailEvents
     public const TRAINING_ENROLLMENT_ASSIGNED = 'TRAINING_ENROLLMENT_ASSIGNED';
     /** Parcours formation entièrement validé par l’apprenant. */
     public const TRAINING_COURSE_COMPLETED = 'TRAINING_COURSE_COMPLETED';
+    /** Attestation / certificat PDF prêt à télécharger pour l’apprenant. */
+    public const TRAINING_CERTIFICATE_AVAILABLE = 'TRAINING_CERTIFICATE_AVAILABLE';
     /** Demande d’auto-inscription à valider — notification formateurs. */
     public const TRAINING_ENROLLMENT_PENDING_APPROVAL = 'TRAINING_ENROLLMENT_PENDING_APPROVAL';
     /** Auto-inscription validée — message à l’apprenant. */
@@ -59,6 +61,10 @@ final class EmailEvents
     public const TRAINING_MODULE_BLOCKED_STAFF = 'TRAINING_MODULE_BLOCKED_STAFF';
     /** Nouveau créneau (session) sur une formation — apprenants inscrits dont le parcours n’est pas terminé. */
     public const TRAINING_COURSE_SESSION_SCHEDULED_LEARNER = 'TRAINING_COURSE_SESSION_SCHEDULED_LEARNER';
+    /** Demande d’élévation pour publier une fiche Studio — notification aux personnes habilitées. */
+    public const TRAINING_PUBLISH_ELEVATION_REQUEST = 'TRAINING_PUBLISH_ELEVATION_REQUEST';
+    /** Demande d’élévation RH (grade / rôle / droits) depuis le bureau effectifs. */
+    public const EFFECTIFS_ELEVATION_REQUEST = 'EFFECTIFS_ELEVATION_REQUEST';
 
     /** Accusé de réception — signalement transmis (signaleur). */
     public const COMMUNITY_REPORT_RECEIPT = 'COMMUNITY_REPORT_RECEIPT';
@@ -146,11 +152,14 @@ final class EmailEvents
         self::ENLISTMENT_RETRO_CANDIDATE_REMINDER,
         self::TRAINING_ENROLLMENT_ASSIGNED,
         self::TRAINING_COURSE_COMPLETED,
+        self::TRAINING_CERTIFICATE_AVAILABLE,
         self::TRAINING_ENROLLMENT_PENDING_APPROVAL,
         self::TRAINING_SELF_ENROLL_APPROVED,
         self::TRAINING_SELF_ENROLL_DECLINED,
         self::TRAINING_MODULE_BLOCKED_STAFF,
         self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
+        self::TRAINING_PUBLISH_ELEVATION_REQUEST,
+        self::EFFECTIFS_ELEVATION_REQUEST,
         self::COMMUNITY_REPORT_RECEIPT,
         self::COMMUNITY_REPORT_HANDLED,
         self::COMMUNITY_REPORT_NEW_STAFF,

@@ -42,6 +42,7 @@ Dans `Application::run()`, une chaîne enveloppe le dispatch avec (dans l’ordr
 
 - `ComspecTacticalApiMiddleware` — règles spécifiques aux routes API tactiques / clé.
 - `SecurityHeadersMiddleware` — en-têtes HTTP de sécurité.
+- `AntiScraperMiddleware` — frein anti-miroir (User-Agent / honeypot).
 - `RateLimitMiddleware` — limitation de débit.
 
 Les routes peuvent ajouter d’autres middlewares (authentification, rôles).

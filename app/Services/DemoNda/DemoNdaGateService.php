@@ -38,11 +38,37 @@ final class DemoNdaGateService
         return $this->peekAccessCode() !== '';
     }
 
-    public function ttlHours(): int
+    /**
+     * Durée d’accès au site après validation du code (heures).
+     * DEMO_NDA_GATE_SESSION_HOURS prioritaire, sinon DEMO_NDA_GATE_TTL_HOURS (rétrocompat).
+     */
+    public function sessionHours(): int
     {
-        $h = (int) env('DEMO_NDA_GATE_TTL_HOURS', 3);
+        $raw = env('DEMO_NDA_GATE_SESSION_HOURS', null);
+        if ($raw === null || $raw === '') {
+            $raw = env('DEMO_NDA_GATE_TTL_HOURS', 1);
+        }
+        $h = (int) $raw;
 
         return max(1, min(168, $h));
+    }
+
+    /**
+     * @deprecated Utiliser sessionHours() — conservé pour les vues / admin existants.
+     */
+    public function ttlHours(): int
+    {
+        return $this->sessionHours();
+    }
+
+    /**
+     * Délai max pour saisir le code après la première visite (minutes).
+     */
+    public function claimMinutes(): int
+    {
+        $m = (int) env('DEMO_NDA_GATE_CLAIM_MINUTES', 25);
+
+        return max(1, min(24 * 60, $m));
     }
 
     public function clientIp(): string
@@ -292,7 +318,7 @@ final class DemoNdaGateService
         }
 
         $now = new DateTimeImmutable('now');
-        $claimExpires = $now->modify('+' . $this->ttlHours() . ' hours');
+        $claimExpires = $now->modify('+' . $this->claimMinutes() . ' minutes');
 
         return $this->visits->createPending(
             $ip,
@@ -399,7 +425,7 @@ final class DemoNdaGateService
         }
 
         $now = new DateTimeImmutable('now');
-        $sessionExpires = $now->modify('+' . $this->ttlHours() . ' hours');
+        $sessionExpires = $now->modify('+' . $this->sessionHours() . ' hours');
         $token = bin2hex(random_bytes(32));
         $hash = hash('sha256', $token);
 
@@ -508,7 +534,7 @@ final class DemoNdaGateService
             return false;
         }
         $now = new DateTimeImmutable('now');
-        $claimExpires = $now->modify('+' . $this->ttlHours() . ' hours');
+        $claimExpires = $now->modify('+' . $this->claimMinutes() . ' minutes');
         $this->visits->resetToPending(
             $id,
             $now->format('Y-m-d H:i:s'),

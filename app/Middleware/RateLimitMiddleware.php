@@ -12,6 +12,7 @@ use App\Services\Security\FileRateLimiter;
 /**
  * Throttling par IP (invité) ou par compte connecté (uid) sur routes sensibles :
  * authentification, recrutement public, forum, hub « Mon activité », modération auto recrutement.
+ * Inclut un plafond GET anonyme pour freiner le scraping / mirroring massif.
  */
 final class RateLimitMiddleware
 {
@@ -51,12 +52,17 @@ final class RateLimitMiddleware
      */
     private function ruleFor(string $path, string $method, string $ip): ?array
     {
+        $uid = (int) (Session::get('user_id') ?? 0);
+        $actorKey = $uid > 0 ? ('uid:' . $uid) : ('ip:' . $ip);
+
+        // Scraping / mirroring massif (GET) — invités uniquement ; bots SEO exemptés.
+        if ($method === 'GET' && $uid <= 0 && !$this->isExemptGetPath($path) && !$this->isSearchEngineUa()) {
+            return [120, 60, 'rl:get_scrape:' . $actorKey];
+        }
+
         if (!in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE'], true)) {
             return null;
         }
-
-        $uid = (int) (Session::get('user_id') ?? 0);
-        $actorKey = $uid > 0 ? ('uid:' . $uid) : ('ip:' . $ip);
 
         if ($path === '/back-office/ressources/recrutement/automod/restore-access') {
             return [25, 600, 'rl:rw_automod_restore:' . $actorKey];
@@ -110,6 +116,42 @@ final class RateLimitMiddleware
         }
 
         return null;
+    }
+
+    private function isExemptGetPath(string $path): bool
+    {
+        $exact = [
+            '/robots.txt',
+            '/sitemap.xml',
+            '/api/health',
+            '/cron/run',
+            '/favicon.ico',
+            '/sw.js',
+            '/manifest.webmanifest',
+        ];
+        if (in_array($path, $exact, true)) {
+            return true;
+        }
+        if (str_starts_with($path, '/api/stripe/')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function isSearchEngineUa(): bool
+    {
+        $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        if ($ua === '') {
+            return false;
+        }
+        foreach (['Googlebot', 'Google-InspectionTool', 'bingbot', 'BingPreview', 'Slurp', 'DuckDuckBot', 'Applebot'] as $needle) {
+            if (stripos($ua, $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function clientIp(): string

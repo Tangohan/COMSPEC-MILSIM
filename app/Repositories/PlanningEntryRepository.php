@@ -22,7 +22,62 @@ final class PlanningEntryRepository
     /** Indique si les tables du tableau opérationnel (extensions DDL pipeline) sont présentes. */
     public function isOperationalBoardSchemaReady(): bool
     {
-        return $this->hasTable('planning_entries');
+        if (!$this->hasTable('planning_entries')) {
+            return false;
+        }
+        // Colonnes minimales pour les listes / publication
+        foreach (['operational_status', 'validation_status', 'chief_user_id', 'priority', 'entry_type', 'status'] as $col) {
+            if (!$this->columnExists('planning_entries', $col)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** Expression SQL : libellé membre (display_name → indicatif → e-mail). */
+    private function sqlUserDisplayLabel(string $alias): string
+    {
+        return "COALESCE(NULLIF(TRIM({$alias}.display_name), ''), NULLIF(TRIM({$alias}.callsign), ''), {$alias}.email)";
+    }
+
+    /**
+     * Fragments SELECT partagés board / portail.
+     *
+     * @return array{0:string,1:string} [select extras, joins]
+     */
+    private function boardListSelectFragments(): array
+    {
+        $chief = $this->sqlUserDisplayLabel('chief');
+        $deputy = $this->sqlUserDisplayLabel('deputy');
+        $repl = $this->sqlUserDisplayLabel('repl');
+        $tags = $this->hasTable('planning_entry_tags')
+            ? '(SELECT GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag SEPARATOR ", ") FROM planning_entry_tags t WHERE t.planning_entry_id = e.id) AS tags_list'
+            : 'NULL AS tags_list';
+        $clReq = $this->hasTable('planning_entry_checklists')
+            ? '(SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1) AS checklist_required'
+            : '0 AS checklist_required';
+        $clDone = $this->hasTable('planning_entry_checklists')
+            ? '(SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1 AND cl.is_done = 1) AS checklist_done'
+            : '0 AS checklist_done';
+        $catJoin = $this->hasTable('planning_categories')
+            ? 'LEFT JOIN planning_categories c ON c.id = e.category_id'
+            : '';
+        $catCols = $this->hasTable('planning_categories')
+            ? 'c.name AS category_name, c.color AS category_color'
+            : 'NULL AS category_name, NULL AS category_color';
+
+        $select = "{$catCols},
+                {$chief} AS chief_name, {$deputy} AS deputy_name, {$repl} AS replacement_name,
+                {$tags},
+                {$clReq},
+                {$clDone}";
+        $joins = trim("{$catJoin}
+            LEFT JOIN users chief ON chief.id = e.chief_user_id
+            LEFT JOIN users deputy ON deputy.id = e.deputy_user_id
+            LEFT JOIN users repl ON repl.id = e.replacement_user_id");
+
+        return [$select, $joins];
     }
 
     private function hasTable(string $table): bool
@@ -88,17 +143,11 @@ final class PlanningEntryRepository
             $params['period_end'] = $periodEnd;
         }
 
-        $query = 'SELECT e.*, c.name AS category_name, c.color AS category_color,
-                chief.name AS chief_name, deputy.name AS deputy_name, repl.name AS replacement_name,
-                (SELECT GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag SEPARATOR ", ") FROM planning_entry_tags t WHERE t.planning_entry_id = e.id) AS tags_list,
-                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1) AS checklist_required,
-                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1 AND cl.is_done = 1) AS checklist_done
+        [$selectExtras, $joins] = $this->boardListSelectFragments();
+        $query = "SELECT e.*, {$selectExtras}
             FROM planning_entries e
-            LEFT JOIN planning_categories c ON c.id = e.category_id
-            LEFT JOIN users chief ON chief.id = e.chief_user_id
-            LEFT JOIN users deputy ON deputy.id = e.deputy_user_id
-            LEFT JOIN users repl ON repl.id = e.replacement_user_id
-            WHERE ' . implode(' AND ', $where) . '
+            {$joins}
+            WHERE " . implode(' AND ', $where) . '
             ORDER BY FIELD(e.priority, "critical", "high", "normal", "low"), e.display_order ASC, COALESCE(e.start_date, e.created_at) ASC, e.id DESC';
 
         try {
@@ -106,7 +155,9 @@ final class PlanningEntryRepository
             $stmt->execute($params);
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\PDOException) {
+        } catch (\PDOException $e) {
+            error_log('[PlanningEntryRepository::listForBoard] ' . $e->getMessage());
+
             return [];
         }
     }
@@ -896,24 +947,20 @@ final class PlanningEntryRepository
             $params['period_end'] = $periodEnd;
         }
 
-        $query = 'SELECT e.*, c.name AS category_name, c.color AS category_color,
-                chief.name AS chief_name, deputy.name AS deputy_name, repl.name AS replacement_name,
-                (SELECT GROUP_CONCAT(DISTINCT t.tag ORDER BY t.tag SEPARATOR ", ") FROM planning_entry_tags t WHERE t.planning_entry_id = e.id) AS tags_list,
-                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1) AS checklist_required,
-                (SELECT COUNT(*) FROM planning_entry_checklists cl WHERE cl.planning_entry_id = e.id AND cl.is_required = 1 AND cl.is_done = 1) AS checklist_done
+        [$selectExtras, $joins] = $this->boardListSelectFragments();
+        $query = "SELECT e.*, {$selectExtras}
             FROM planning_entries e
-            LEFT JOIN planning_categories c ON c.id = e.category_id
-            LEFT JOIN users chief ON chief.id = e.chief_user_id
-            LEFT JOIN users deputy ON deputy.id = e.deputy_user_id
-            LEFT JOIN users repl ON repl.id = e.replacement_user_id
-            WHERE ' . implode(' AND ', $where) . '
+            {$joins}
+            WHERE " . implode(' AND ', $where) . '
             ORDER BY FIELD(e.priority, "critical", "high", "normal", "low"), e.display_order ASC, COALESCE(e.start_date, e.created_at) ASC, e.id DESC';
 
         try {
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } catch (\PDOException) {
+        } catch (\PDOException $e) {
+            error_log('[PlanningEntryRepository::listForPortal] ' . $e->getMessage());
+
             return [];
         }
 

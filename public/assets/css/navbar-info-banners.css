@@ -1,4 +1,5 @@
-/* Barres d’info pleine largeur sous la navbar (plateforme + annonces importantes communauté) */
+/* Barres d’info pleine largeur sous la navbar (plateforme + annonces importantes communauté).
+ * z-index 94 : sous le header Athena (96) pour ne pas masquer menus / dropdowns. */
 
 .navbar-info-banners {
   position: relative;

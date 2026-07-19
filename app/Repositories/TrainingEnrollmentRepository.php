@@ -217,6 +217,26 @@ class TrainingEnrollmentRepository
     }
 
     /**
+     * Demandes d’inscription en attente de validation (toutes formations du tenant).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPendingApproval(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT e.*, c.title AS course_title, u.email, u.display_name
+             FROM training_enrollments e
+             JOIN training_courses c ON c.id = e.course_id
+             JOIN users u ON u.id = e.user_id
+             WHERE e.tenant_id = ? AND e.status = \'pending_approval\'
+             ORDER BY e.assigned_at DESC'
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Inscriptions terminées pour export conformité (jointure certificat si présent).
      *
      * @return list<array<string, mixed>>

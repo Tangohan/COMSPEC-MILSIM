@@ -46,6 +46,7 @@ use App\Services\Personnel\RoleplayFollowupNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
+use App\Support\EffectifsLmsAccess;
 use App\Support\OrbatRosterPayload;
 use App\Support\Profile\PublicFlagCountryCatalog;
 
@@ -287,6 +288,9 @@ class PersonnelController
             ? $this->badgeRepository->listForUsers($tenantId, $userIds)
             : [];
 
+        $tenantName = trim((string) (Session::get('tenant_name') ?? ''));
+        $canAccessEffectifsLms = EffectifsLmsAccess::allows(Gate::getInstance());
+
         return Response::view('layout.main', [
             'content' => 'personnel.directory',
             'title' => 'Annuaire des profils',
@@ -296,6 +300,8 @@ class PersonnelController
             'badgesByUserId' => $badgesByUserId,
             'canEditPersonnel' => $this->canStaffEditPersonnel(),
             'currentUserId' => (int) ($user['id'] ?? 0),
+            'tenantName' => $tenantName,
+            'canAccessEffectifsLms' => $canAccessEffectifsLms,
         ]);
     }
 

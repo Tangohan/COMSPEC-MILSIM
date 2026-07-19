@@ -2,6 +2,11 @@
 
 Le **guide du portail** (page « Guide du portail », connecté) est la référence principale pour les membres. Ce fichier trace les **révisions** du contenu et les grands thèmes couverts ; le détail à jour est toujours dans l’interface.
 
+## Révision 7 — 2026-07-19
+
+- **Mur & tableau opérationnel** : documentation complète (deux écrans, posture, types de fiches, cycle brouillon → publication → clôture / retrait, mise à jour opérationnelle, points de contrôle, modèles, publication liée, filtres, parcours membre / état-major).
+- Chapitre Markdown dédié [tableau-opérationnel](tableau-operationnel.md) exposé dans les références projet ; liens d’aide depuis le pilotage et le mur.
+
 ## Révision 4 — 2026-04-06
 
 - **Formations (guide intégré + Markdown)** : catalogue pouvant mêler parcours **communauté** et **toute la plateforme** ; filtres par **origine** ; pastilles sur les parcours globaux ; rôle des **administrateurs de la plateforme** pour la **portée catalogue** dans le Studio et unicité des adresses courtes à l’échelle du site.

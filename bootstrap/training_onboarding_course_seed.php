@@ -323,7 +323,10 @@ function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $c
 {
     $now = date('Y-m-d H:i:s');
     $specs = training_onboarding_portal_module_specs();
-    $pdo->beginTransaction();
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) {
+        $pdo->beginTransaction();
+    }
     try {
         $pdo->prepare('UPDATE training_modules SET position = position + 1, updated_at = ? WHERE course_id = ? AND position >= 4')
             ->execute([$now, $courseId]);
@@ -430,11 +433,19 @@ function training_onboarding_upgrade_portal_legacy_five_modules(PDO $pdo, int $c
         $pdo->prepare('UPDATE training_courses SET estimated_minutes = ?, updated_at = ? WHERE id = ?')
             ->execute([$totalMin, $now, $courseId]);
 
-        $pdo->commit();
+        if ($ownsTx) {
+            $pdo->commit();
+        }
         echo "  training_onboarding_course : course_id {$courseId} — parcours portail étendu (bilan mi-parcours + synthèses).\n";
     } catch (\Throwable $e) {
-        $pdo->rollBack();
-        echo '  [ATTENTION] training_onboarding_course extension : ' . $e->getMessage() . "\n";
+        if ($ownsTx && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($ownsTx) {
+            echo '  [ATTENTION] training_onboarding_course extension : ' . $e->getMessage() . "\n";
+        } else {
+            throw $e;
+        }
     }
 }
 
@@ -1352,7 +1363,10 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
         $totalMinutes += (int) $s['minutes'];
     }
 
-    $pdo->beginTransaction();
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) {
+        $pdo->beginTransaction();
+    }
     try {
         $ins = $pdo->prepare(
             'INSERT INTO training_courses (
@@ -1515,11 +1529,19 @@ function training_onboarding_seed_one_tenant(PDO $pdo, int $tenantId, int $autho
             training_onboarding_seed_quiz_questions_for_module($pdo, $finalQz, training_onboarding_quiz_questions(), $now);
         }
 
-        $pdo->commit();
+        if ($ownsTx) {
+            $pdo->commit();
+        }
         echo "  training_onboarding_course : tenant {$tenantId} — formation « Parcours portail » créée (course_id={$courseId}).\n";
     } catch (\Throwable $e) {
-        $pdo->rollBack();
-        echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
+        if ($ownsTx && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($ownsTx) {
+            echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
+        } else {
+            throw $e;
+        }
     }
 }
 

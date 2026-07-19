@@ -22,6 +22,7 @@ if (!$gate->allows('admin.system')) {
             <p class="mt-1 text-xs text-slate-600">Liste opérateur, annuaire public et mise en ligne contrôlée.</p>
             <ul class="mt-3 space-y-2 text-sm font-semibold">
                 <li><a href="<?= htmlspecialchars(url('admin/tenants'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Annuaire des communautés</a></li>
+                <li><a href="<?= htmlspecialchars(url('admin/users'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Comptes utilisateurs (toutes communautés)</a></li>
                 <li><a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Annuaire public</a></li>
                 <li><a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="text-emerald-800 hover:text-emerald-950 underline decoration-emerald-200">Créer une communauté</a></li>
                 <li><a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="text-amber-800 hover:text-amber-950 underline decoration-amber-200">Publications et préqualification</a></li>

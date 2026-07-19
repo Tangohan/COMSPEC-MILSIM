@@ -1,2 +1,26 @@
-# Placez ici hero-athena.webm et hero-athena.mp4 (codecs modernes, version courte mobile).
-# La landing charge ces sources uniquement après consentement immersif.
+# Vidéos hero — page d’accueil Athena
+#
+# Rotation automatique (muted). Son uniquement via les contrôles / consentement.
+# Déposer webm et/ou mp4 (codecs modernes, clips courts recommandés).
+#
+# Clip 1 (équivalents) :
+#   public/assets/video/hero-athena.webm
+#   public/assets/video/hero-athena.mp4
+#   — ou —
+#   public/assets/video/hero-athena-1.webm
+#   public/assets/video/hero-athena-1.mp4
+#
+# Clip 2 :
+#   public/assets/video/hero-athena-2.webm
+#   public/assets/video/hero-athena-2.mp4
+#
+# Clip 3 :
+#   public/assets/video/hero-athena-3.webm
+#   public/assets/video/hero-athena-3.mp4
+#
+# Inventaire actuel du dépôt : aucun fichier binaire (ce dossier ne contient
+# que la documentation). La landing sonde les chemins au chargement et fait
+# tourner les clips disponibles (crossfade). Sans fichier lisible :
+# diaporama images de secours (fog-team, etc.).
+#
+# Après dépôt : rafraîchir `/` (ou `/public/` selon le vhost).

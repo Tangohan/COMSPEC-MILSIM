@@ -6,6 +6,12 @@
     RewriteEngine On
     RewriteBase /
 
+    # ——— Anti-miroir (HTTrack et outils similaires) ———
+    # Complément Apache ; le middleware PHP AntiScraperMiddleware applique la même logique.
+    # Limite : un User-Agent peut être usurpée — frein pragmatique, pas une protection absolue.
+    RewriteCond %{HTTP_USER_AGENT} (HTTrack|Offline[\ ]?Explorer|SiteSucker|WebCopier|WebStripper|WebZIP|WebReaper|WebWhacker|Teleport|Xaldon|EmailWolf|WWWOFFLE|Mass[\ ]Downloader|WebSucker|libwww-perl|Wget/|wget/) [NC]
+    RewriteRule .* - [F,L]
+
     # ——— Redirections 301 (anciennes URLs → URLs propres) ———
     RewriteRule ^index\.html$ / [R=301,L]
     RewriteRule ^dashboard\.html$ /dashboard [R=301,L]

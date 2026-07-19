@@ -3,9 +3,13 @@
 /** @var int|null $currentUserId */
 /** @var array<string, mixed>|null $eventsQuota */
 /** @var array<int, bool> $eventsCheckInFlags */
+/** @var array<int, array{yes:list<array{display_name:string,callsign:string}>,maybe:list<array{display_name:string,callsign:string}>,no:list<array{display_name:string,callsign:string}>}> $eventsRsvpSummaries */
+
+use App\Support\CommunityEventDetails;
 
 $eventsQuota = $eventsQuota ?? null;
 $eventsCheckInFlags = $eventsCheckInFlags ?? [];
+$eventsRsvpSummaries = $eventsRsvpSummaries ?? [];
 $canPublishOperationalBoard = !empty($canPublishOperationalBoard);
 
 $typeMeta = [
@@ -216,6 +220,161 @@ $eventCount = count($events);
     }
     .events-sheets__chip:hover { background: #f8fafc; }
     .events-sheets__chip.is-active { border-color: #059669; background: #059669; color: #fff; }
+    .events-sheets__detail-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.45rem;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        font-size: 0.6875rem;
+        font-weight: 800;
+        color: #047857;
+        cursor: pointer;
+    }
+    .events-sheets__detail-btn:hover { text-decoration: underline; }
+    .events-sheets__detail-row td {
+        background: #f8fafc !important;
+        padding: 0 !important;
+        border-bottom: 1px solid #cbd5e1;
+    }
+    .events-detail {
+        display: grid;
+        gap: 1rem;
+        padding: 1rem 1.1rem 1.25rem;
+    }
+    @media (min-width: 900px) {
+        .events-detail { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    }
+    .events-detail__cover {
+        width: 100%;
+        max-height: 14rem;
+        object-fit: cover;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+    }
+    .events-detail__section h3 {
+        margin: 0 0 0.45rem;
+        font-size: 0.6875rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+    .events-detail__body {
+        margin: 0;
+        font-size: 0.8125rem;
+        line-height: 1.55;
+        color: #334155;
+        white-space: pre-wrap;
+    }
+    .events-detail__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin: 0 0 0.75rem;
+    }
+    .events-detail__tag {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid #bbf7d0;
+        background: #ecfdf5;
+        color: #065f46;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.6875rem;
+        font-weight: 800;
+    }
+    .events-detail__timeline {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+    .events-detail__phase {
+        display: grid;
+        grid-template-columns: 0.65rem minmax(0, 1fr) auto;
+        gap: 0.55rem;
+        align-items: start;
+        border-radius: 0.55rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: 0.5rem 0.65rem;
+    }
+    .events-detail__dot {
+        width: 0.65rem;
+        height: 0.65rem;
+        border-radius: 999px;
+        margin-top: 0.3rem;
+        background: #94a3b8;
+    }
+    .events-detail__dot.is-red { background: #ef4444; }
+    .events-detail__dot.is-orange { background: #f97316; }
+    .events-detail__dot.is-yellow { background: #eab308; }
+    .events-detail__dot.is-green { background: #22c55e; }
+    .events-detail__dot.is-black { background: #0f172a; }
+    .events-detail__dot.is-white { background: #f8fafc; box-shadow: inset 0 0 0 1px #94a3b8; }
+    .events-detail__dot.is-gray { background: #94a3b8; }
+    .events-detail__phase-label {
+        margin: 0;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    .events-detail__phase-time {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #047857;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .events-detail__section-title {
+        margin: 0.55rem 0 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #475569;
+        border-top: 1px dashed #cbd5e1;
+        padding-top: 0.55rem;
+    }
+    .events-detail__rsvp {
+        display: grid;
+        gap: 0.65rem;
+    }
+    @media (min-width: 640px) {
+        .events-detail__rsvp { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .events-detail__rsvp-col {
+        border-radius: 0.65rem;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        padding: 0.65rem 0.75rem;
+    }
+    .events-detail__rsvp-col h4 {
+        margin: 0 0 0.4rem;
+        font-size: 0.6875rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .events-detail__rsvp-col.is-yes h4 { color: #065f46; }
+    .events-detail__rsvp-col.is-maybe h4 { color: #92400e; }
+    .events-detail__rsvp-col.is-no h4 { color: #9f1239; }
+    .events-detail__rsvp-col ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .events-detail__rsvp-col li {
+        font-size: 0.75rem;
+        color: #334155;
+    }
+    .events-detail__rsvp-col .muted { color: #94a3b8; font-size: 0.75rem; }
 </style>
 <div class="bg-slate-50 pb-16 sm:pb-24">
     <div class="relative overflow-hidden border-b border-slate-800/80 bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white">
@@ -305,14 +464,34 @@ $eventCount = count($events);
                             $descPreview = $desc !== '' ? (mb_strlen($desc) > 110 ? mb_substr($desc, 0, 110) . '…' : $desc) : '';
                             $when = $dayBadge(is_string($ev['starts_at'] ?? null) ? $ev['starts_at'] : null);
                             $rsvpBadge = $rsvpMetaFor($cur);
-                            $searchHay = mb_strtolower($title . ' ' . $location);
+                            $tags = CommunityEventDetails::decodeTags($ev['tags_json'] ?? null);
+                            $schedule = CommunityEventDetails::decodeSchedule($ev['schedule_json'] ?? null);
+                            $cg = trim((string) ($ev['conditions_general'] ?? ''));
+                            $cs = trim((string) ($ev['conditions_special'] ?? ''));
+                            $coverUrl = CommunityEventDetails::publicCoverUrl(isset($ev['cover_image_path']) ? (string) $ev['cover_image_path'] : null);
+                            $summary = $eventsRsvpSummaries[$eid] ?? ['yes' => [], 'maybe' => [], 'no' => []];
+                            $hasDetails = $desc !== '' || $cg !== '' || $cs !== '' || $schedule !== [] || $tags !== [] || $coverUrl !== null
+                                || $summary['yes'] !== [] || $summary['maybe'] !== [] || $summary['no'] !== [];
+                            $searchHay = mb_strtolower($title . ' ' . $location . ' ' . implode(' ', array_map([CommunityEventDetails::class, 'tagLabel'], $tags)));
                             ?>
-                        <tr data-event-row data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>">
+                        <tr data-event-row data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>" data-event-id="<?= $eid ?>">
                             <td class="max-w-sm">
                                 <span class="events-sheets__badge <?= $tMeta['badge'] ?>"><?= htmlspecialchars($tMeta['label']) ?></span>
                                 <div class="mt-1 font-semibold text-slate-900"><?= htmlspecialchars($title) ?></div>
+                                <?php if ($tags !== []): ?>
+                                <div class="mt-1 flex flex-wrap gap-1">
+                                    <?php foreach ($tags as $tagCode): ?>
+                                        <span class="events-sheets__badge is-ok"><?= htmlspecialchars(CommunityEventDetails::tagLabel($tagCode)) ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
                                 <?php if ($descPreview !== ''): ?>
-                                <div class="mt-0.5 text-xs text-slate-500" title="<?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($descPreview) ?></div>
+                                <div class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars($descPreview) ?></div>
+                                <?php endif; ?>
+                                <?php if ($hasDetails): ?>
+                                <button type="button" class="events-sheets__detail-btn" data-events-toggle-detail="<?= $eid ?>" aria-expanded="false">
+                                    Voir le détail
+                                </button>
                                 <?php endif; ?>
                             </td>
                             <td class="whitespace-nowrap">
@@ -374,6 +553,102 @@ $eventCount = count($events);
                                 </div>
                             </td>
                         </tr>
+                        <?php if ($hasDetails): ?>
+                        <tr class="events-sheets__detail-row hidden" data-event-detail="<?= $eid ?>" data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>">
+                            <td colspan="5">
+                                <div class="events-detail">
+                                    <div>
+                                        <?php if ($coverUrl): ?>
+                                            <img class="events-detail__cover" src="<?= htmlspecialchars($coverUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                        <?php endif; ?>
+                                        <?php if ($tags !== []): ?>
+                                            <div class="events-detail__tags" <?= $coverUrl ? 'style="margin-top:0.75rem"' : '' ?>>
+                                                <?php foreach ($tags as $tagCode): ?>
+                                                    <span class="events-detail__tag"><?= htmlspecialchars(CommunityEventDetails::tagLabel($tagCode)) ?></span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($desc !== ''): ?>
+                                            <div class="events-detail__section">
+                                                <h3>Description</h3>
+                                                <p class="events-detail__body"><?= htmlspecialchars($desc) ?></p>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($cg !== ''): ?>
+                                            <div class="events-detail__section" style="margin-top:0.85rem">
+                                                <h3>Conditions générales</h3>
+                                                <p class="events-detail__body"><?= htmlspecialchars($cg) ?></p>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($cs !== ''): ?>
+                                            <div class="events-detail__section" style="margin-top:0.85rem">
+                                                <h3>Conditions particulières</h3>
+                                                <p class="events-detail__body"><?= htmlspecialchars($cs) ?></p>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div>
+                                        <?php if ($schedule !== []): ?>
+                                            <div class="events-detail__section">
+                                                <h3>Déroulement</h3>
+                                                <ul class="events-detail__timeline">
+                                                    <?php foreach ($schedule as $phase): ?>
+                                                        <?php if ($phase['type'] === 'section'): ?>
+                                                            <li class="events-detail__section-title"><?= htmlspecialchars($phase['label']) ?></li>
+                                                        <?php else: ?>
+                                                            <li class="events-detail__phase">
+                                                                <span class="events-detail__dot is-<?= htmlspecialchars((string) $phase['tone']) ?>" aria-hidden="true"></span>
+                                                                <p class="events-detail__phase-label"><?= htmlspecialchars($phase['label']) ?></p>
+                                                                <?php if (!empty($phase['time'])): ?>
+                                                                    <p class="events-detail__phase-time"><?= htmlspecialchars((string) $phase['time']) ?></p>
+                                                                <?php else: ?>
+                                                                    <span></span>
+                                                                <?php endif; ?>
+                                                            </li>
+                                                        <?php endif; ?>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="events-detail__section" style="<?= $schedule !== [] ? 'margin-top:1rem' : '' ?>">
+                                            <h3>Participations</h3>
+                                            <div class="events-detail__rsvp">
+                                                <?php
+                                                $rsvpCols = [
+                                                    'yes' => ['Présents', 'is-yes'],
+                                                    'maybe' => ['Peut-être', 'is-maybe'],
+                                                    'no' => ['Absents', 'is-no'],
+                                                ];
+                                                foreach ($rsvpCols as $stKey => [$stLab, $stClass]):
+                                                    $people = $summary[$stKey] ?? [];
+                                                    ?>
+                                                    <div class="events-detail__rsvp-col <?= $stClass ?>">
+                                                        <h4><?= htmlspecialchars($stLab) ?> (<?= count($people) ?>)</h4>
+                                                        <?php if ($people === []): ?>
+                                                            <p class="muted">Personne pour l’instant</p>
+                                                        <?php else: ?>
+                                                            <ul>
+                                                                <?php foreach ($people as $p):
+                                                                    $dn = trim((string) ($p['display_name'] ?? ''));
+                                                                    $csign = trim((string) ($p['callsign'] ?? ''));
+                                                                    $line = $csign !== '' ? ($csign . ($dn !== '' ? ' · ' . $dn : '')) : $dn;
+                                                                    if ($line === '') {
+                                                                        continue;
+                                                                    }
+                                                                    ?>
+                                                                    <li><?= htmlspecialchars($line) ?></li>
+                                                                <?php endforeach; ?>
+                                                            </ul>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
@@ -393,11 +668,13 @@ $eventCount = count($events);
         return;
     }
     var rows = Array.prototype.slice.call(root.querySelectorAll('[data-event-row]'));
+    var detailRows = Array.prototype.slice.call(root.querySelectorAll('[data-event-detail]'));
     var searchInput = root.querySelector('[data-events-search]');
     var typeChips = Array.prototype.slice.call(root.querySelectorAll('[data-events-type-filter]'));
     var emptyFiltered = root.querySelector('[data-events-empty-filtered]');
     var resetBtn = root.querySelector('[data-events-reset]');
     var activeType = 'all';
+    var openDetails = {};
 
     function applyFilters() {
         var q = (searchInput ? searchInput.value : '').trim().toLowerCase();
@@ -411,11 +688,28 @@ $eventCount = count($events);
             if (show) {
                 visible += 1;
             }
+            var id = row.getAttribute('data-event-id');
+            var detail = id ? root.querySelector('[data-event-detail="' + id + '"]') : null;
+            if (detail) {
+                var detailOpen = !!openDetails[id];
+                detail.classList.toggle('hidden', !(show && detailOpen));
+            }
         });
         if (emptyFiltered) {
             emptyFiltered.classList.toggle('hidden', visible !== 0);
         }
     }
+
+    root.querySelectorAll('[data-events-toggle-detail]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-events-toggle-detail');
+            if (!id) return;
+            openDetails[id] = !openDetails[id];
+            btn.setAttribute('aria-expanded', openDetails[id] ? 'true' : 'false');
+            btn.textContent = openDetails[id] ? 'Masquer le détail' : 'Voir le détail';
+            applyFilters();
+        });
+    });
 
     typeChips.forEach(function (chip) {
         chip.addEventListener('click', function () {

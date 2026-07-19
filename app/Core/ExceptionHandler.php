@@ -13,6 +13,20 @@ class ExceptionHandler
     {
         set_exception_handler([self::class, 'handle']);
         set_error_handler(function (int $severity, string $message, string $file, int $line) {
+            // PHP 8+ invoque toujours le handler même avec @ ; error_reporting() vaut alors 0.
+            // Sans ce garde-fou, un @unlink TCPDF (fichier déjà purgé) devient une ErrorException fatale.
+            if (!(error_reporting() & $severity)) {
+                return false;
+            }
+            // TCPDF : Close() → _destroy(false) unset les props, puis __destruct → _destroy(true)
+            // lit $imagekeys (et parfois d’autres) déjà absentes → Warning PHP 8.2+ hors bloc @.
+            if (
+                ($severity === E_WARNING || $severity === E_NOTICE || $severity === E_USER_WARNING || $severity === E_USER_NOTICE)
+                && str_contains($message, 'TCPDF::$')
+                && str_contains(str_replace('\\', '/', $file), '/tcpdf.php')
+            ) {
+                return true;
+            }
             throw new \ErrorException($message, 0, $severity, $file, $line);
         });
     }

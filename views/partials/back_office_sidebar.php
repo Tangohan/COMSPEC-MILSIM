@@ -65,7 +65,9 @@ $lmsResPath = function_exists('training_lms_admin_path') ? training_lms_admin_pa
 
 $boNavHome = $p === 'back-office';
 $boNavUsers = $p === 'back-office/users' || str_starts_with($p, 'back-office/users/');
-$boNavInv = str_starts_with($p, 'back-office/invitations');
+$boNavInv = $p === 'back-office/invitations' || str_starts_with($p, 'back-office/invitations/');
+$boNavInvCompose = $p === 'back-office/invitations';
+$boNavInvSent = str_starts_with($p, 'back-office/invitations/envoyees');
 $boNavRec = str_starts_with($p, 'back-office/recruitments');
 $boNavRecWorkspaceDash = $p === $rwPath;
 $boNavRecWorkspaceAnalytics = $p === $rwPath . '/analyses';
@@ -82,6 +84,8 @@ $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
 $boNavPersonnelDeployment = str_starts_with($p, 'deploiement');
 $boNavRoleplayFollowup = str_starts_with($p, 'back-office/roleplay-followup');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
+$ewPath = function_exists('effectifs_workspace_path') ? effectifs_workspace_path() : 'back-office/ressources/effectifs';
+$boNavEffWorkspace = $p === $ewPath || str_starts_with($p, $ewPath . '/');
 $boNavStructureHub = str_starts_with($p, 'back-office/organisation/structure');
 $boNavGroups = str_starts_with($p, 'back-office/groups');
 $boNavCommunications = str_starts_with($p, 'back-office/communications');
@@ -102,6 +106,8 @@ $boNavSeniority = str_starts_with($p, 'back-office/organisation/anciennete');
 $boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';
 $boNavInitialSetup = $p === 'back-office/configuration-initiale' || str_starts_with($p, 'back-office/configuration-initiale/');
 $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
+$boNavMedia = $p === 'back-office/media' || str_starts_with($p, 'back-office/media/');
+$canMediaBo = \App\Support\CommunityMediaStaffAccess::allows($gate);
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');
 $boNavConfig = $p === 'back-office/configuration' || str_starts_with($p, 'back-office/configuration/');
@@ -252,11 +258,15 @@ $coreTiles[] = $tile('overview', 'Vue d’ensemble', 'Accueil de l’administrat
 ]), 'overview', $boNavHome, 'pilotage centre dashboard synthèse indicateurs kpi home accueil');
 
 $coreTiles[] = $tile('members', 'Membres', 'Comptes et invitations', 'default', null, $links([
+    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur RH dédié', 'active' => $boNavEffWorkspace],
     ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté', 'active' => $boNavUsers],
     $canInv
-        ? ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'hint' => 'Codes d’accès', 'active' => $boNavInv]
+        ? ['label' => 'Nouvelle invitation', 'href' => url('back-office/invitations'), 'hint' => 'Envoyer un accès', 'active' => $boNavInvCompose]
         : null,
-]), 'users', $boNavUsers || $boNavInv, 'utilisateurs comptes membres invitation code accès join');
+    $canInv
+        ? ['label' => 'Invitations envoyées', 'href' => url('back-office/invitations/envoyees'), 'hint' => 'Suivi tableur', 'active' => $boNavInvSent]
+        : null,
+]), 'users', $boNavUsers || $boNavInv || $boNavEffWorkspace, 'utilisateurs comptes membres invitation code accès join effectifs rh bureau');
 
 $coreTiles[] = $tile(
     'recruitment',
@@ -291,7 +301,7 @@ $coreTiles[] = $tile(
 $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions', 'default', null, $links([
     ['label' => 'Rôles communautaires', 'href' => url('back-office/roles'), 'hint' => 'Profils de droits', 'active' => $boNavRoles],
     $canAccessManagementBo
-        ? ['label' => 'Gestion des accès', 'href' => url('back-office/access-management'), 'hint' => 'Permissions avancées', 'active' => $boNavAccessMgmt]
+        ? ['label' => 'Gestion des accès', 'href' => url('back-office/access-management'), 'hint' => 'Règles et tests d’accès', 'active' => $boNavAccessMgmt]
         : null,
     ['label' => 'Profils & kits de rôles', 'href' => url('back-office/roles/presets'), 'hint' => 'Modèles prêts à l’emploi', 'active' => $boNavRolesPresets],
     ['label' => 'Doctrine des fonctions', 'href' => url('back-office/roles-functions'), 'hint' => 'Cellule S1', 'active' => $boNavRolesFx],
@@ -304,6 +314,7 @@ $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions',
 ]), 'access', $boNavRoles || $boNavAccessMgmt || $boNavRolesPresets || $boNavRolesFx || ($boNavPjr && !$boNavPjrAssignments) || $boNavPjrAssignments || $boNavPersonnelDeployment || $boNavRoleplayFollowup, 'rôles permissions droits s1 emplois missions affectation grade doctrine');
 
 $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiels', 'default', null, $links([
+    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur et pilotage RH', 'active' => $boNavEffWorkspace],
     ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Arborescence ORBAT', 'active' => $boNavEff],
     $canStructureRecruitmentHub
         ? ['label' => 'Structure & recrutement', 'href' => url('back-office/organisation/structure'), 'hint' => 'Liens recrutement / postes', 'active' => $boNavStructureHub]
@@ -318,7 +329,7 @@ $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiel
     ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'))
         ? ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'hint' => 'Fiches et RH', 'active' => $boNavSeniority]
         : null,
-]), 'structure', $boNavEff || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority, 'orbat effectifs structure équipes groupes grades postes ancienneté organigramme');
+]), 'structure', $boNavEff || $boNavEffWorkspace || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority, 'orbat effectifs structure équipes groupes grades postes ancienneté organigramme bureau rh');
 
 if ($canCommsSection) {
     $coreTiles[] = $tile('comms', 'Communications', 'Messages et diffusion', 'default', null, $links([
@@ -333,6 +344,9 @@ $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'defaul
     ['label' => 'Configuration initiale', 'href' => url('back-office/configuration-initiale'), 'hint' => 'Assistant de démarrage', 'active' => $boNavInitialSetup],
     ['label' => 'Paramètres de la communauté', 'href' => url('back-office/community'), 'hint' => 'Identité et options', 'active' => $boNavOrgSettings],
     ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'hint' => 'Vitrine publique', 'active' => $boNavCommPres],
+    $canMediaBo
+        ? ['label' => 'Médias de la communauté', 'href' => url('back-office/media'), 'hint' => 'Images et vidéos', 'active' => $boNavMedia]
+        : null,
     ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'hint' => 'Messages portail', 'active' => $boNavAlerts],
     ['label' => 'Paramètres avancés', 'href' => url('back-office/configuration'), 'hint' => 'Réglages fins', 'active' => $boNavConfig],
     $canIntegrationsBo
@@ -343,7 +357,7 @@ $coreTiles[] = $tile('community', 'Communauté', 'Identité et portail', 'defaul
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'hint' => 'Épingles tableau de bord', 'active' => $boNavPins],
     ['label' => 'Onboarding membres', 'href' => url('back-office/onboarding-members'), 'hint' => 'Parcours d’accueil', 'active' => $boNavOnbMembers],
     ['label' => 'Aide après inscription', 'href' => url('back-office/onboarding-recovery'), 'hint' => 'Relances et assistance', 'active' => $boNavOnb],
-]), 'community', $boNavInitialSetup || $boNavOrgSettings || $boNavCommPres || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb, 'communauté paramètres branding logo alerte annonce bannière setup configuration onboarding analytics épingles');
+]), 'community', $boNavInitialSetup || $boNavOrgSettings || $boNavCommPres || $boNavMedia || $boNavAlerts || $boNavConfig || $boNavInteg || $boNavAnalytics || $boNavAnalyticsConversion || $boNavPins || $boNavOnbMembers || $boNavOnb, 'communauté paramètres branding logo alerte annonce bannière setup configuration onboarding analytics épingles médias photos vidéos bibliothèque');
 
 $opsTiles[] = $tile('pilotage', 'Pilotage', 'Opérations et conformité', 'default', null, $links([
     $canMurOperationnel
@@ -560,6 +574,34 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
     role="navigation"
 >
     <div class="dash-rail__inner">
+        <div class="dash-rail__compact" aria-hidden="true">
+            <div class="bo-rail__compact-stack">
+                <?php
+                $compactTiles = array_merge($coreTiles, $opsTiles, $resourceTiles, $adminTiles);
+                foreach ($compactTiles as $ct):
+                    if (!is_array($ct)) {
+                        continue;
+                    }
+                    $ctIcon = $icon((string) ($ct['icon'] ?? ''));
+                    if ($ctIcon === '') {
+                        continue;
+                    }
+                    $ctActive = !empty($ct['active']);
+                    $ctVariant = (string) ($ct['variant'] ?? 'default');
+                    $ctCls = 'bo-rail__compact-ico';
+                    if ($ctActive) {
+                        $ctCls .= ' is-active';
+                    }
+                    if ($ctVariant === 'bo') {
+                        $ctCls .= ' bo-rail__compact-ico--bo';
+                    } elseif ($ctVariant === 'admin') {
+                        $ctCls .= ' bo-rail__compact-ico--admin';
+                    }
+                    ?>
+                    <span class="<?= $h($ctCls) ?>"><?= $ctIcon ?></span>
+                <?php endforeach; ?>
+            </div>
+        </div>
         <div class="dash-rail__panel">
             <div class="dash-rail__view dash-rail__view--root" data-dash-rail-root>
                 <div class="dash-rail__brand">

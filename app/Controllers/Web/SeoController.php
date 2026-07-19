@@ -12,11 +12,31 @@ final class SeoController
     public function robots(Request $request, array $params = []): Response
     {
         $base = rtrim((string) url(''), '/');
-        $body = "User-agent: *\n"
+        // Bots de mirroring : Disallow total (complément ; non contraignant pour les scrapers malhonnêtes).
+        $mirrorAgents = [
+            'HTTrack',
+            'OfflineExplorer',
+            'SiteSucker',
+            'WebCopier',
+            'WebZIP',
+            'WebReaper',
+            'Teleport',
+            'Xaldon',
+            'wget',
+            'libwww-perl',
+        ];
+        $mirrorBlock = '';
+        foreach ($mirrorAgents as $agent) {
+            $mirrorBlock .= "User-agent: {$agent}\nDisallow: /\n\n";
+        }
+
+        $body = $mirrorBlock
+            . "User-agent: *\n"
             . "Allow: /\n"
             . "Disallow: /back-office/\n"
             . "Disallow: /api/\n"
             . "Disallow: /account/\n"
+            . "Disallow: /offline-archive/\n"
             . "Sitemap: {$base}/sitemap.xml\n";
 
         return (new Response())

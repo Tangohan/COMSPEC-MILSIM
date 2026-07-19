@@ -1028,44 +1028,57 @@ if ($stmt && !$stmt->fetch()) {
 
 // Seed atak_maps (Altis) si table vide
 $stmt = $pdo->query("SELECT 1 FROM atak_maps LIMIT 1");
+// CRS aligné sur jetelain/Arma3Map (altis.js CDN)
+$altisFactorX = 0.006839;
+$altisFactorY = 0.006836;
+$altisTileCdn = rtrim((string) (getenv('ATAK_MAP_TILES_CDN') ?: 'https://jetelain.github.io/Arma3Map'), '/');
+$altisTilePattern = $altisTileCdn . '/maps/altis/{z}/{x}/{y}.png';
+$configAltisPayload = [
+    'center' => [15000, 15000],
+    'defaultZoom' => 3,
+    'minZoom' => 0,
+    'maxZoom' => 6,
+    'tileSize' => 212,
+    'worldSize' => 30720,
+    'bounds' => [[0, 0], [30720, 30720]],
+    'crs' => ['factorx' => $altisFactorX, 'factory' => $altisFactorY, 'tileWidth' => 212],
+    'attribution' => '&copy; Bohemia Interactive',
+    'title' => 'Altis',
+];
 if ($stmt && !$stmt->fetch()) {
-    echo "Seed atak_maps (Altis)...\n";
-    // Altis: 30720 x 30720 m. CRS: 1 unit = 1 m, 1 tile (212px) = 30720 m à zoom 0.
-    $factor = 212 / 30720; // ~0.006901
-    $config = json_encode([
-        'center' => [15360, 15360],
-        'defaultZoom' => 3,
-        'minZoom' => 0,
-        'maxZoom' => 6,
-        'tileSize' => 212,
-        'worldSize' => 30720,
-        'bounds' => [[0, 0], [30720, 30720]],
-        'crs' => ['factorx' => $factor, 'factory' => $factor, 'tileWidth' => 212],
-        'attribution' => '&copy; Bohemia Interactive',
-        'title' => 'Altis',
-    ]);
+    echo "Seed atak_maps (Altis CDN)...\n";
+    $config = json_encode($configAltisPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $ins = $pdo->prepare("INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES ('altis', 'Altis', 'altis', ?, ?, 0)");
-    $ins->execute(['/assets/maps/altis/{z}/{x}/{y}.png', $config]);
+    $ins->execute([$altisTilePattern, $config]);
     echo "atak_maps seed OK.\n";
 } else {
-    // Mise à jour config Altis existante (CRS et bounds corrects pour rayons/distances en m)
-    $factor = 212 / 30720;
-    $configAltis = json_encode([
-        'center' => [15360, 15360],
-        'defaultZoom' => 3,
-        'minZoom' => 0,
-        'maxZoom' => 6,
-        'tileSize' => 212,
-        'worldSize' => 30720,
-        'bounds' => [[0, 0], [30720, 30720]],
-        'crs' => ['factorx' => $factor, 'factory' => $factor, 'tileWidth' => 212],
-        'attribution' => '&copy; Bohemia Interactive',
-        'title' => 'Altis',
-    ]);
+    // Mise à jour config + bascule motifs locaux → CDN
+    $configAltis = json_encode($configAltisPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $upd = $pdo->prepare("UPDATE atak_maps SET config = ? WHERE slug = 'altis'");
     $upd->execute([$configAltis]);
     if ($upd->rowCount() > 0) {
         echo "atak_maps config Altis mise à jour (CRS/bounds).\n";
+    }
+    try {
+        $updTiles = $pdo->prepare(
+            "UPDATE atak_maps
+             SET tile_pattern = ?
+             WHERE slug = 'altis'
+               AND (
+                    tile_pattern IS NULL
+                    OR tile_pattern = ''
+                    OR tile_pattern LIKE '/assets/maps/%'
+                    OR tile_pattern LIKE 'assets/maps/%'
+                    OR tile_pattern LIKE '%/assets/maps/%'
+                    OR tile_pattern LIKE 'ressources/MapViewers/%'
+               )"
+        );
+        $updTiles->execute([$altisTilePattern]);
+        if ($updTiles->rowCount() > 0) {
+            echo "atak_maps tile_pattern Altis → CDN ({$altisTileCdn}).\n";
+        }
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] atak_maps tile CDN : ' . $e->getMessage() . "\n";
     }
 }
 
@@ -1828,6 +1841,30 @@ try {
     echo '  [ATTENTION] alert_display_style : ' . $e->getMessage() . "\n";
 }
 
+$communityEventsDetailsMigrate = require $root . '/bootstrap/community_events_details_migration.php';
+try {
+    echo "Migration community_events (détails / image / conditions)...\n";
+    $communityEventsDetailsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_events_details : ' . $e->getMessage() . "\n";
+}
+
+$communityMediaMigrate = require $root . '/bootstrap/community_media_migration.php';
+try {
+    echo "Migration community_media (collections / items)...\n";
+    $communityMediaMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_media : ' . $e->getMessage() . "\n";
+}
+
+$communityEventRsvpHistoryMigrate = require $root . '/bootstrap/community_event_rsvp_history_migration.php';
+try {
+    echo "Migration community_event_rsvp_history...\n";
+    $communityEventRsvpHistoryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_event_rsvp_history : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);
@@ -1899,6 +1936,13 @@ try {
     $tenantDashboardPinsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
+}
+
+$forumTopicPinOnDashboardMigrate = require $root . '/bootstrap/forum_topic_pin_on_dashboard_migration.php';
+try {
+    $forumTopicPinOnDashboardMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] forum_topic_pin_on_dashboard : ' . $e->getMessage() . "\n";
 }
 
 $demoNdaGateMigrate = require $root . '/bootstrap/demo_nda_gate_migration.php';

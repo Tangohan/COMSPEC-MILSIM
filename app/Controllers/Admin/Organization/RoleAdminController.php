@@ -61,10 +61,12 @@ class RoleAdminController
             ));
         }
 
-        $permissionCounts = [];
-        foreach ($roles as $r) {
-            $permissionCounts[(int) $r['id']] = count($this->rolePermissionService->getPermissionIdsForRole((int) $r['id']));
-        }
+        $roleIds = array_values(array_filter(
+            array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $roles),
+            static fn (int $id): bool => $id > 0
+        ));
+        $permissionCounts = $this->roleRepository->countPermissionsByRoleIds($roleIds);
+        $memberCounts = $this->roleRepository->countMembersByRoleIds($tenantId, $roleIds);
 
         $roleViewSections = $this->buildRoleViewSections($roles);
 
@@ -73,6 +75,7 @@ class RoleAdminController
             'title' => 'Rôles communauté',
             'roles' => $roles,
             'permissionCounts' => $permissionCounts,
+            'memberCounts' => $memberCounts,
             'roleLayerFilter' => $layer,
             'roleTierFilter' => $tierFilter,
             'roleViewSections' => $roleViewSections,
@@ -138,19 +141,25 @@ class RoleAdminController
         $roles = $this->rolePermissionService->listOrganizationRoles($tenantId);
         $role = null;
         foreach ($roles as $r) {
-            if ((int) $r['id'] === $id) {
+            if (!is_array($r)) {
+                continue;
+            }
+            if ((int) ($r['id'] ?? 0) === $id) {
                 $role = $r;
                 break;
             }
         }
-        if (!$role) {
+        if (!is_array($role)) {
             Session::flash('error', 'Rôle introuvable.');
 
             return Response::redirect(url('back-office/roles'));
         }
         $permissionIds = $this->rolePermissionService->getPermissionIdsForRole($id);
         $allPermissions = $this->permissionRepository->allForTenant($tenantId);
-        $rolePermissions = array_filter($allPermissions, fn ($p) => in_array((int) $p['id'], $permissionIds, true));
+        $rolePermissions = array_values(array_filter(
+            $allPermissions,
+            static fn ($p): bool => is_array($p) && in_array((int) ($p['id'] ?? 0), $permissionIds, true)
+        ));
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles.show',

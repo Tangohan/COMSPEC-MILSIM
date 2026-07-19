@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Services\DemoNda\DemoNdaGateService;
 use App\Services\EmailService;
+use App\Support\DemoPortalAccounts;
 
 final class DemoNdaController
 {
@@ -59,7 +60,9 @@ final class DemoNdaController
 
         return Response::view('demo_nda.gate', [
             'title' => 'Engagement de confidentialité',
-            'ttlHours' => $this->gate->ttlHours(),
+            'ttlHours' => $this->gate->sessionHours(),
+            'sessionHours' => $this->gate->sessionHours(),
+            'claimMinutes' => $this->gate->claimMinutes(),
             'claimExpiresAt' => $claimExpiresAt,
             'error' => is_string($error) ? $error : null,
             'observedIp' => $ip,
@@ -113,8 +116,20 @@ final class DemoNdaController
         }
 
         $intended = $this->gate->consumeIntendedPath();
+        $continuePath = ltrim($intended, '/');
 
-        return Response::redirect(url(ltrim($intended, '/')));
+        return Response::view('demo_nda.welcome', [
+            'title' => 'Bienvenue dans la démonstration',
+            'ttlHours' => $this->gate->sessionHours(),
+            'sessionHours' => $this->gate->sessionHours(),
+            'claimMinutes' => $this->gate->claimMinutes(),
+            'continueUrl' => url($continuePath),
+            'loginUrl' => url('login'),
+            'communityUrl' => url('c/' . DemoPortalAccounts::TENANT_SLUG),
+            'accounts' => DemoPortalAccounts::announcedAccounts(),
+            'sharedPassword' => DemoPortalAccounts::SHARED_PASSWORD,
+            'tenantName' => DemoPortalAccounts::TENANT_NAME,
+        ]);
     }
 
     public function feedbackForm(Request $request, array $params = []): Response

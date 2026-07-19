@@ -32,6 +32,17 @@ Le forum est un espace de **publication** structurée par sujets ; les **message
 **Ma candidature reste « soumise ».**  
 Le staff n’a pas encore statué ou un complément est attendu ; contactez-les via le canal prévu par votre unité.
 
+## Mur opérationnel
+
+**Je vois le mur mais pas le bouton pour créer une fiche.**  
+La consultation et le pilotage sont deux droits distincts. Demandez à un administrateur de votre communauté l’habilitation à **créer et modifier** les entrées du tableau.
+
+**Ma fiche n’apparaît pas pour les membres.**  
+Vérifiez qu’elle n’est plus en **brouillon**, qu’elle a bien été **approuvée** ou **mise en ligne**, et que le public / la sensibilité correspondent aux destinataires.
+
+**Je ne peux pas clôturer une fiche.**  
+Des **points de contrôle obligatoires** sont peut-être encore ouverts : validez-les sur la fiche, puis réessayez.
+
 ## Technique (sans jargon)
 
 **Le site affiche une erreur ou une page de maintenance.**  
@@ -40,3 +51,4 @@ En période de maintenance, un message générique peut s’afficher ; réessaye
 ## Voir aussi
 
 - [Guide utilisateur — Sommaire](README.md).
+- [Mur & tableau opérationnel](tableau-operationnel.md).

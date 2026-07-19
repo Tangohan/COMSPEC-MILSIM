@@ -115,6 +115,8 @@ class Container
                 self::get(\App\Repositories\RecruitmentOpeningRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
+                self::get(\App\Repositories\CommunityMediaRepository::class),
+                self::get(\App\Repositories\TenantBrandingRepository::class),
             ),
             \App\Controllers\Web\AnalyticsBeaconController::class => new \App\Controllers\Web\AnalyticsBeaconController(
                 self::get(\App\Services\Analytics\AnalyticsEventService::class)
@@ -276,6 +278,13 @@ class Container
             ),
             \App\Repositories\TenantAnalyticsRepository::class => new \App\Repositories\TenantAnalyticsRepository(),
             \App\Repositories\CommunityEventRepository::class => new \App\Repositories\CommunityEventRepository(),
+            \App\Repositories\CommunityMediaRepository::class => new \App\Repositories\CommunityMediaRepository(),
+            \App\Services\Community\CommunityMediaUploadService::class => new \App\Services\Community\CommunityMediaUploadService(),
+            \App\Controllers\Admin\Organization\CommunityMediaAdminController::class => new \App\Controllers\Admin\Organization\CommunityMediaAdminController(
+                self::get(\App\Repositories\CommunityMediaRepository::class),
+                self::get(\App\Services\Community\CommunityMediaUploadService::class),
+                self::get(AuthService::class),
+            ),
             \App\Controllers\Web\InvitationAcceptController::class => new \App\Controllers\Web\InvitationAcceptController(
                 self::get(\App\Repositories\CommunityInvitationRepository::class),
                 self::get(TenantRepository::class),
@@ -612,6 +621,7 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\TenantBrandingRepository::class),
             ),
             \App\Repositories\DocumentRepository::class => new \App\Repositories\DocumentRepository(),
             \App\Repositories\DocumentVersionRepository::class => new \App\Repositories\DocumentVersionRepository(),
@@ -925,6 +935,10 @@ class Container
                 self::get(\App\Services\Training\TrainingProgressService::class),
                 self::get(\App\Services\Training\TrainingAuditService::class),
                 self::get(\App\Services\Training\TrainingCertificatePdfService::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
             ),
             \App\Services\Training\TrainingEnrollmentPolicyService::class => new \App\Services\Training\TrainingEnrollmentPolicyService(
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),
@@ -939,6 +953,14 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Training\TrainingEnrollmentPolicyService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
+            \App\Services\Effectifs\EffectifsStaffAlertService::class => new \App\Services\Effectifs\EffectifsStaffAlertService(
+                self::get(\App\Repositories\TenantCommunityFeedRepository::class),
+                self::get(\App\Repositories\TrainingStaffPingRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),
@@ -1152,6 +1174,17 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(UserRepository::class)
             ),
+            \App\Controllers\Admin\EffectifsWorkspaceController::class => new \App\Controllers\Admin\EffectifsWorkspaceController(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Services\Admin\AdminAuditService::class),
+                self::get(\App\Services\Effectifs\EffectifsStaffAlertService::class),
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
@@ -1183,6 +1216,10 @@ class Container
                 self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
                 self::get(\App\Services\Training\TrainingCourseMediaUploadService::class),
             ),
+            \App\Services\Training\TrainingPublicSiteImageCatalog::class => new \App\Services\Training\TrainingPublicSiteImageCatalog(),
+            \App\Services\Training\TrainingPresentationKitService::class => new \App\Services\Training\TrainingPresentationKitService(
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\AdminTrainingStudioController::class => new \App\Controllers\Admin\AdminTrainingStudioController(
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Repositories\TrainingModuleRepository::class),
@@ -1203,6 +1240,10 @@ class Container
                 self::get(\App\Services\Training\TrainingCoursePublicationGuard::class),
                 self::get(\App\Services\Training\TrainingSessionInstructorGuard::class),
                 self::get(\App\Repositories\PedagogyRepository::class),
+                self::get(\App\Services\Training\TrainingCourseMediaUploadService::class),
+                self::get(\App\Services\Training\TrainingPublicSiteImageCatalog::class),
+                self::get(\App\Services\Training\TrainingPresentationKitService::class),
+                self::get(\App\Services\Training\TrainingStaffAlertService::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioExchangeController::class => new \App\Controllers\Admin\AdminTrainingStudioExchangeController(
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),

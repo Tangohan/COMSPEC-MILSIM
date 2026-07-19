@@ -34,7 +34,16 @@ final class TrainingCertificatePdfEngine
 
     public static function prefersTcpdf(): bool
     {
-        return self::ensureTcpdfLoaded() && self::tcpdfCertificateFontsReady();
+        // Dompdf est plus stable sur ce flux (gabarits HTML, pas de _destroy fragile).
+        // TCPDF reste disponible en secours si Dompdf n’est pas installé.
+        if (class_exists(\Dompdf\Dompdf::class)) {
+            return false;
+        }
+
+        // Sans cache inscriptible, TCPDF plante sur les PNG alpha (masques temporaires).
+        return self::ensureTcpdfLoaded()
+            && self::tcpdfCertificateFontsReady()
+            && self::isCacheWritable();
     }
 
     /**
@@ -208,6 +217,13 @@ final class TrainingCertificatePdfEngine
         if (!is_dir($dir) || !is_writable($dir)) {
             return;
         }
+        // Sonde d’écriture réelle (is_writable peut mentir sur certains NFS / droits ACL).
+        $probe = $dir . DIRECTORY_SEPARATOR . '.write_probe_' . bin2hex(random_bytes(4));
+        if (@file_put_contents($probe, '1') === false) {
+            return;
+        }
+        @unlink($probe);
+
         $normalized = str_replace('\\', '/', $dir);
         define('K_PATH_CACHE', rtrim($normalized, '/') . '/');
     }
@@ -272,8 +288,11 @@ final class TrainingCertificatePdfEngine
     }
 
     /**
-     * Exécute du code qui utilise TCPDF sans laisser les avertissements E_DEPRECATED
-     * polluer la sortie (PHP 8+ : anciennes signatures TCPDF 6.3 si le déploiement n’a pas les fichiers corrigés).
+     * Exécute du code TCPDF en ignorant les bruits non fatals du moteur :
+     * - E_DEPRECATED (signatures PHP 8+ / TCPDF 6.3)
+     * - E_WARNING / E_NOTICE (unlink de cache image déjà purgé, fichiers temporaires absents)
+     *
+     * Les erreurs fatales et exceptions restent propagées.
      *
      * @template T
      * @param callable(): T $callback
@@ -281,8 +300,9 @@ final class TrainingCertificatePdfEngine
      */
     public static function suppressTcpdfPhpDeprecationsWhile(callable $callback): mixed
     {
+        self::ensureWritableCacheDefined();
         $level = error_reporting();
-        error_reporting($level & ~E_DEPRECATED);
+        error_reporting($level & ~(E_DEPRECATED | E_WARNING | E_NOTICE | E_USER_WARNING | E_USER_NOTICE));
         try {
             return $callback();
         } finally {

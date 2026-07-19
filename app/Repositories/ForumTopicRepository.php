@@ -9,6 +9,8 @@ use PDO;
 
 class ForumTopicRepository
 {
+    public const MAX_DASHBOARD_PINS = 6;
+
     private PDO $pdo;
     /** @var array<string, true>|null */
     private ?array $topicColumnMap = null;
@@ -215,14 +217,19 @@ class ForumTopicRepository
 
     public function update(int $id, int $tenantId, array $data): bool
     {
-        $allowed = ['title', 'is_pinned', 'is_locked', 'is_archived', 'is_hidden', 'is_official', 'suppress_auto_lock'];
+        $allowed = ['title', 'is_pinned', 'pin_on_dashboard', 'is_locked', 'is_archived', 'is_hidden', 'is_official', 'suppress_auto_lock'];
+        $cols = $this->topicColumns();
         $set = [];
         $params = [];
         foreach ($allowed as $key) {
-            if (array_key_exists($key, $data)) {
-                $set[] = "`$key` = ?";
-                $params[] = $data[$key];
+            if (!array_key_exists($key, $data)) {
+                continue;
             }
+            if ($key === 'pin_on_dashboard' && !isset($cols['pin_on_dashboard'])) {
+                continue;
+            }
+            $set[] = "`$key` = ?";
+            $params[] = $data[$key];
         }
         if (empty($set)) {
             return true;
@@ -367,6 +374,51 @@ class ForumTopicRepository
         );
         $stmt->execute([$categoryId, $tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Sujets épinglés sur le tableau de bord (communication communauté).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listPinnedOnDashboardForTenant(int $tenantId, int $limit = 8): array
+    {
+        if ($tenantId < 1 || !isset($this->topicColumns()['pin_on_dashboard'])) {
+            return [];
+        }
+        $limit = max(1, min(20, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT ft.id, ft.title, ft.slug, ft.updated_at, ft.created_at,
+                    fc.name AS category_name, fc.slug AS category_slug,
+                    COALESCE(fc.scope, \'general\') AS category_scope,
+                    u.display_name AS author_name,
+                    (SELECT fp.body FROM forum_posts fp WHERE fp.topic_id = ft.id ORDER BY fp.created_at ASC LIMIT 1) AS first_post_body
+             FROM forum_topics ft
+             JOIN forum_categories fc ON fc.id = ft.category_id
+             LEFT JOIN users u ON u.id = ft.user_id
+             WHERE ft.tenant_id = ?
+               AND ft.pin_on_dashboard = 1
+               AND ft.is_hidden = 0
+             ORDER BY ft.updated_at DESC
+             LIMIT ' . $limit
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function countPinnedOnDashboardForTenant(int $tenantId): int
+    {
+        if ($tenantId < 1 || !isset($this->topicColumns()['pin_on_dashboard'])) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM forum_topics
+             WHERE tenant_id = ? AND pin_on_dashboard = 1 AND is_hidden = 0'
+        );
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     public function getRecentForIndex(int $tenantId, int $limit = 10): array

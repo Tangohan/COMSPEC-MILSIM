@@ -661,7 +661,10 @@ function training_bureau_recrutement_seed_one_tenant(PDO $pdo, int $tenantId, in
         $totalMinutes += (int) $s['minutes'];
     }
 
-    $pdo->beginTransaction();
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) {
+        $pdo->beginTransaction();
+    }
     try {
         $ins = $pdo->prepare(
             'INSERT INTO training_courses (
@@ -808,10 +811,18 @@ function training_bureau_recrutement_seed_one_tenant(PDO $pdo, int $tenantId, in
             training_bureau_recrutement_seed_quiz_questions_for_module($pdo, $finalQz, training_bureau_recrutement_final_quiz_questions(), $now);
         }
 
-        $pdo->commit();
+        if ($ownsTx) {
+            $pdo->commit();
+        }
         echo "  training_bureau_recrutement_course : tenant {$tenantId} — formation « Bureau recrutement » créée (course_id={$courseId}).\n";
     } catch (\Throwable $e) {
-        $pdo->rollBack();
-        echo '  [ATTENTION] training_bureau_recrutement_course : ' . $e->getMessage() . "\n";
+        if ($ownsTx && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($ownsTx) {
+            echo '  [ATTENTION] training_bureau_recrutement_course : ' . $e->getMessage() . "\n";
+        } else {
+            throw $e;
+        }
     }
 }

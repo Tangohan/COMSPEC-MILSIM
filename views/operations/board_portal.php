@@ -12,13 +12,15 @@ $boardPanels = array_merge([
 $boardPosture = $boardPosture ?? ['posture_level' => 'NORMAL'];
 $boardSchemaReady = $boardSchemaReady ?? true;
 $boardToday = $boardToday ?? date('Y-m-d');
+$boardEntryCount = (int) ($boardEntryCount ?? 0);
+$boardCanEdit = !empty($boardCanEdit);
 
 $posture = (string) ($boardPosture['posture_level'] ?? 'NORMAL');
 $posturePresentation = [
-    'NORMAL' => ['label' => 'Normale', 'badge' => 'border-emerald-300 bg-emerald-50 text-emerald-900 ring-emerald-200'],
-    'VIGILANCE' => ['label' => 'Vigilance', 'badge' => 'border-amber-300 bg-amber-50 text-amber-900 ring-amber-200'],
-    'ALERTE' => ['label' => 'Alerte', 'badge' => 'border-orange-300 bg-orange-50 text-orange-950 ring-orange-200'],
-    'CRISE' => ['label' => 'Crise', 'badge' => 'border-rose-300 bg-rose-50 text-rose-950 ring-rose-200'],
+    'NORMAL' => ['label' => 'Normale', 'pill' => 'ops-board__pill--ok'],
+    'VIGILANCE' => ['label' => 'Vigilance', 'pill' => 'ops-board__pill--warn'],
+    'ALERTE' => ['label' => 'Alerte', 'pill' => 'ops-board__pill--warn'],
+    'CRISE' => ['label' => 'Crise', 'pill' => 'ops-board__pill--danger'],
 ];
 $postureUi = $posturePresentation[$posture] ?? $posturePresentation['NORMAL'];
 
@@ -71,96 +73,122 @@ $renderBoardCard = static function (array $entry) use ($priorityClass, $priority
     $showAdminActions = false;
     require __DIR__ . '/board_card.php';
 };
+
+$sections = [
+    ['key' => 'permanences', 'title' => 'Permanences', 'flash' => false],
+    ['key' => 'infos', 'title' => 'Informations pratiques', 'flash' => false],
+    ['key' => 'manifestations', 'title' => 'Manifestations', 'flash' => false],
+    ['key' => 'activites', 'title' => 'Missions et activités', 'flash' => false],
+    ['key' => 'flash', 'title' => 'Flash infos', 'flash' => true],
+];
 ?>
-<div class="mx-auto max-w-[1700px] space-y-4 pb-8 px-4">
-    <?php if (!$boardSchemaReady): ?>
-        <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
+<link href="<?= htmlspecialchars(asset_url('assets/css/operational-board.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<div class="ops-board">
+    <header class="ops-board__hero">
+        <div class="ops-board__hero-inner">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Diffusion</p>
-                <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Mur opérationnel</h1>
-                <p class="mt-1 text-sm text-slate-600">Synthèse à destination des membres autorisés.</p>
-            </div>
-        </header>
-        <div class="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/40 to-white px-6 py-12 shadow-sm sm:px-10" role="status">
-            <div class="mx-auto max-w-xl text-center">
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-900">Indisponible pour le moment</p>
-                <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900 sm:text-xl">Le mur opérationnel n’est pas encore activé ici</h2>
-                <p class="mt-4 text-sm leading-relaxed text-slate-600">
-                    L’équipe en charge de l’hébergement doit encore finaliser une étape d’installation prévue avec la version déployée. Revenez plus tard ou actualisez cette page après la mise en service.
+                <p class="ops-board__eyebrow">État-major · Diffusion</p>
+                <h1 class="ops-board__title">Mur opérationnel</h1>
+                <p class="ops-board__lead">
+                    Permanences, consignes et activités publiées pour la période affichée.
+                    <?php if ($boardCanEdit): ?>
+                        <a href="<?= url('back-office/tableau-operationnel') ?>" class="font-semibold text-emerald-300 underline-offset-2 hover:underline">Ouvrir le pilotage</a>
+                    <?php endif; ?>
                 </p>
-                <button type="button" class="mt-8 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2" onclick="location.reload()">
-                    Actualiser la page
-                </button>
+            </div>
+            <div class="ops-board__hero-meta">
+                <span class="ops-board__pill <?= htmlspecialchars($postureUi['pill'], ENT_QUOTES, 'UTF-8') ?>">
+                    Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?>
+                </span>
+                <span class="ops-board__pill">
+                    <?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                    →
+                    <?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                </span>
+                <span class="ops-board__pill"><?= (int) $boardEntryCount ?> fiche<?= $boardEntryCount > 1 ? 's' : '' ?></span>
+                <a href="<?= htmlspecialchars(url('documentation') . '#mur-operationnel', ENT_QUOTES, 'UTF-8') ?>" class="ops-board__pill hover:underline">Documentation</a>
             </div>
         </div>
-    <?php else: ?>
-    <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Diffusion</p>
-                <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Mur opérationnel</h1>
-                <p class="mt-1 text-sm text-slate-600">Synthèse à destination des membres autorisés.</p>
-            </div>
-            <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 <?= htmlspecialchars($postureUi['badge'], ENT_QUOTES, 'UTF-8') ?>">
-                Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?>
-            </span>
-        </div>
-        <p class="mt-3 text-sm text-slate-600">Période affichée : <?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
     </header>
 
-    <div class="space-y-3">
-        <details class="rounded-2xl border border-slate-200 bg-white shadow-sm" open>
-            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">A. Permanences <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-[10px]"><?= count($boardPanels['permanences']) ?></span></summary>
-            <div class="p-3">
-                <div class="mb-3 grid gap-2 md:grid-cols-3">
-                    <?php foreach (['aujourdhui' => 'Aujourd’hui', 'en_cours' => 'En cours', 'a_venir' => 'À venir'] as $bk => $bl): ?>
-                        <div class="rounded-xl border border-slate-100 bg-slate-50/80 p-2">
-                            <p class="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500"><?= htmlspecialchars($bl, ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="space-y-2">
-                                <?php foreach ($boardPanels['permanences'] as $entry) {
-                                    if ($temporalBucket($entry, $boardToday) !== $bk) {
+    <div class="ops-board__deck">
+        <?php
+        $boardHelpIsPilotage = false;
+        require base_path('views/operations/partials/board_help.php');
+        ?>
+        <?php if (!$boardSchemaReady): ?>
+            <div class="ops-board__empty" role="status">
+                <p>Le mur n’est pas encore activé ici</p>
+                <span>L’équipe d’hébergement doit finaliser l’installation. Actualisez la page une fois ce sera fait.</span>
+                <div class="ops-board__actions" style="justify-content:center;margin-top:1rem">
+                    <button type="button" class="ops-board__btn ops-board__btn--solid" onclick="location.reload()">Actualiser</button>
+                </div>
+            </div>
+        <?php elseif ($boardEntryCount < 1): ?>
+            <div class="ops-board__empty" role="status">
+                <p>Aucune fiche publiée sur cette période</p>
+                <span>Les permanences et consignes actives apparaîtront ici dès qu’elles seront mises en ligne par l’état-major.</span>
+                <?php if ($boardCanEdit): ?>
+                    <div class="ops-board__actions" style="justify-content:center;margin-top:1rem">
+                        <a href="<?= url('back-office/tableau-operationnel') ?>" class="ops-board__btn ops-board__btn--solid">Publier une fiche</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <?php foreach ($sections as $sec):
+                $items = $boardPanels[$sec['key']] ?? [];
+                $n = count($items);
+                ?>
+                <details class="ops-board__panel<?= !empty($sec['flash']) ? ' ops-board__flash-panel' : '' ?>" <?= $n > 0 ? 'open' : '' ?>>
+                    <summary class="ops-board__panel-summary">
+                        <h2><?= htmlspecialchars($sec['title'], ENT_QUOTES, 'UTF-8') ?></h2>
+                        <span class="ops-board__count"><?= $n ?></span>
+                    </summary>
+                    <div class="ops-board__panel-body">
+                        <?php if ($n < 1): ?>
+                            <p class="text-sm text-slate-500">Rien à afficher dans cette rubrique.</p>
+                        <?php elseif ($sec['key'] === 'permanences'): ?>
+                            <div class="ops-board__bucket-grid">
+                                <?php foreach (['aujourdhui' => 'Aujourd’hui', 'en_cours' => 'En cours', 'a_venir' => 'À venir'] as $bk => $bl): ?>
+                                    <div class="ops-board__bucket">
+                                        <p class="ops-board__bucket-title"><?= htmlspecialchars($bl, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <div class="ops-board__stack">
+                                            <?php
+                                            $shown = 0;
+                                            foreach ($items as $entry) {
+                                                if ($temporalBucket($entry, $boardToday) !== $bk) {
+                                                    continue;
+                                                }
+                                                $renderBoardCard($entry);
+                                                $shown++;
+                                            }
+                                            if ($shown === 0) {
+                                                echo '<p class="text-xs text-slate-400">—</p>';
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="ops-board__stack">
+                                <?php foreach ($items as $entry) {
+                                    if (in_array($temporalBucket($entry, $boardToday), ['aujourdhui', 'en_cours', 'a_venir'], true)) {
                                         continue;
                                     }
                                     $renderBoardCard($entry);
                                 } ?>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <div class="space-y-2">
-                    <?php foreach ($boardPanels['permanences'] as $entry) {
-                        if (in_array($temporalBucket($entry, $boardToday), ['aujourdhui', 'en_cours', 'a_venir'], true)) {
-                            continue;
-                        }
-                        $renderBoardCard($entry);
-                    } ?>
-                </div>
-            </div>
-        </details>
-        <details class="rounded-2xl border border-slate-200 bg-white shadow-sm" open>
-            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">B. Infos pratiques <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-[10px]"><?= count($boardPanels['infos']) ?></span></summary>
-            <div class="space-y-2 p-3"><?php foreach ($boardPanels['infos'] as $entry) {
-                $renderBoardCard($entry);
-            } ?></div>
-        </details>
-        <details class="rounded-2xl border border-slate-200 bg-white shadow-sm" open>
-            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">C. Manifestations <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-[10px]"><?= count($boardPanels['manifestations']) ?></span></summary>
-            <div class="space-y-2 p-3"><?php foreach ($boardPanels['manifestations'] as $entry) {
-                $renderBoardCard($entry);
-            } ?></div>
-        </details>
-        <details class="rounded-2xl border border-slate-200 bg-white shadow-sm" open>
-            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-800">D. Missions et activités <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-[10px]"><?= count($boardPanels['activites']) ?></span></summary>
-            <div class="space-y-2 p-3"><?php foreach ($boardPanels['activites'] as $entry) {
-                $renderBoardCard($entry);
-            } ?></div>
-        </details>
-        <details class="rounded-2xl border border-amber-100 bg-amber-50/40 shadow-sm" open>
-            <summary class="cursor-pointer list-none rounded-t-2xl border-b border-amber-200 bg-amber-100/60 px-4 py-3 text-xs font-bold uppercase tracking-wider text-amber-950">Flash infos <span class="ml-1 rounded-full bg-white px-2 py-0.5 text-[10px]"><?= count($boardPanels['flash']) ?></span></summary>
-            <div class="space-y-3 p-4"><?php foreach ($boardPanels['flash'] as $entry) {
-                $renderBoardCard($entry);
-            } ?></div>
-        </details>
+                        <?php else: ?>
+                            <div class="ops-board__stack">
+                                <?php foreach ($items as $entry) {
+                                    $renderBoardCard($entry);
+                                } ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </details>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 </div>

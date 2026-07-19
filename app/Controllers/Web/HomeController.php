@@ -348,6 +348,32 @@ class HomeController
                 }
 
                 try {
+                    /** @var \App\Repositories\ForumTopicRepository $forumTopicRepo */
+                    $forumTopicRepo = \App\Core\Container::get(\App\Repositories\ForumTopicRepository::class);
+                    $forumDashPins = $forumTopicRepo->listPinnedOnDashboardForTenant($tid, 8);
+                    foreach ($forumDashPins as $ftPin) {
+                        $title = trim((string) ($ftPin['title'] ?? ''));
+                        if ($title === '') {
+                            continue;
+                        }
+                        $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
+                        $excerpt = self::plainTextExcerpt($rawBody, 220);
+                        $topicId = (int) ($ftPin['id'] ?? 0);
+                        $dashboardAnnounceItems[] = [
+                            'kind' => 'forum_pin',
+                            'category' => 'Message épinglé',
+                            'title' => $title,
+                            'body' => $excerpt,
+                            'cta_label' => 'Ouvrir le message',
+                            'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
+                            'scope' => 'tenant',
+                        ];
+                    }
+                } catch (\Throwable) {
+                    // Optionnel si le schéma forum n’est pas prêt.
+                }
+
+                try {
                     $missionBriefing = \App\Core\Container::get(\App\Services\Dashboard\MemberMissionBriefingService::class)
                         ->buildForViewer($tid, $uid, $modpack, $dashboardPins, $showcaseTrainingFeature);
                 } catch (\Throwable) {
@@ -413,6 +439,32 @@ class HomeController
             'pending_invitations_count' => $pendingInvitationsCount,
             'email_alerts_disabled_count' => $emailAlertsDisabledCount,
         ]);
+    }
+
+    /**
+     * Extrait texte brut pour tuiles dashboard (messages forum épinglés).
+     */
+    private static function plainTextExcerpt(string $raw, int $maxLen = 220): string
+    {
+        $text = trim(strip_tags($raw));
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        $text = trim($text);
+        if ($text === '') {
+            return '';
+        }
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            if (mb_strlen($text) > $maxLen) {
+                return rtrim(mb_substr($text, 0, $maxLen - 1)) . '…';
+            }
+
+            return $text;
+        }
+        if (strlen($text) > $maxLen) {
+            return rtrim(substr($text, 0, $maxLen - 1)) . '…';
+        }
+
+        return $text;
     }
 
     /**

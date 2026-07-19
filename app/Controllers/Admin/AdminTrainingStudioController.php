@@ -25,9 +25,13 @@ use App\Repositories\PedagogyRepository;
 use App\Services\Training\TrainingAuditService;
 use App\Services\Training\TrainingCoursePublicationGuard;
 use App\Services\Training\TrainingCourseSessionNotificationService;
+use App\Services\Training\TrainingCourseMediaUploadService;
 use App\Services\Training\TrainingLessonResourceStorageService;
+use App\Services\Training\TrainingPresentationKitService;
+use App\Services\Training\TrainingPublicSiteImageCatalog;
 use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingSessionInstructorGuard;
+use App\Services\Training\TrainingStaffAlertService;
 use App\Support\TrainingLmsStaffAccess;
 
 class AdminTrainingStudioController
@@ -195,6 +199,10 @@ class AdminTrainingStudioController
         private TrainingCoursePublicationGuard $coursePublicationGuard,
         private TrainingSessionInstructorGuard $sessionInstructorGuard,
         private PedagogyRepository $pedagogyRepository,
+        private TrainingCourseMediaUploadService $courseMediaUploadService,
+        private TrainingPublicSiteImageCatalog $publicSiteImageCatalog,
+        private TrainingPresentationKitService $presentationKitService,
+        private TrainingStaffAlertService $staffAlertService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -459,6 +467,14 @@ class AdminTrainingStudioController
         $sessions = $this->lmsSocialRepository->listSessionsForCourse($id);
         $pendingQuestions = $this->lmsSocialRepository->listQuestionsForCourse($id, 200);
         $staffPickUsers = $this->userRepository->listForTenant($tenantId, null, 'active', null, 500, 0, true, null, null);
+        $canPublish = $this->canPublish();
+        $publishElevationRecipients = [];
+        $publishElevationCooldownSec = null;
+        if (!$canPublish) {
+            $viewerId = (int) Session::get('user_id');
+            $publishElevationRecipients = $this->staffAlertService->listPublishElevationRecipients($tenantId, $viewerId);
+            $publishElevationCooldownSec = $this->staffAlertService->secondsBeforeNextPublishElevationRequest($id, $viewerId);
+        }
 
         $sectionTitles = [
             'fiche' => 'Données & inscription',
@@ -474,7 +490,9 @@ class AdminTrainingStudioController
             'lessonTypes' => self::LESSON_TYPES,
             'visibilityOptions' => self::VISIBILITY,
             'levelOptions' => self::LEVELS,
-            'canPublish' => $this->canPublish(),
+            'canPublish' => $canPublish,
+            'publishElevationRecipients' => $publishElevationRecipients,
+            'publishElevationCooldownSec' => $publishElevationCooldownSec,
             'trainingStudioMode' => 'edit',
             'trainingStudioCourseCount' => count($allCourses),
             'trainingStudioSection' => $section,
@@ -509,6 +527,12 @@ class AdminTrainingStudioController
                 null,
                 'title_asc'
             ),
+            'studioPresentationKits' => $section === 'presentation'
+                ? $this->presentationKitService->listKits($tenantId)
+                : [],
+            'studioSiteImages' => $section === 'presentation'
+                ? $this->publicSiteImageCatalog->listImages()
+                : [],
         ]);
     }
 
@@ -638,8 +662,34 @@ class AdminTrainingStudioController
             'add_lesson_resource' => $this->addLessonResource($request, $courseId, $tenantId),
             'delete_lesson_resource' => $this->deleteLessonResource($request, $courseId, $tenantId),
             'regenerate_enrollment_share_code' => $this->regenerateEnrollmentShareCode($request, $courseId, $tenantId, $userId),
+            'save_presentation_kit' => $this->savePresentationKit($request, $course, $tenantId),
+            'apply_presentation_kit' => $this->applyPresentationKit($request, $course, $tenantId, $userId),
+            'delete_presentation_kit' => $this->deletePresentationKit($request, $courseId, $tenantId),
+            'request_publish_elevation' => $this->requestPublishElevation($course, $tenantId, $userId),
             default => $this->badAction($courseId),
         };
+    }
+
+    /**
+     * @param array<string, mixed> $course
+     */
+    private function requestPublishElevation(array $course, int $tenantId, int $userId): Response
+    {
+        $courseId = (int) ($course['id'] ?? 0);
+        if ($this->canPublish()) {
+            Session::flash('error', 'Vous disposez déjà du droit de publier cette formation.');
+
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
+        }
+
+        $result = $this->staffAlertService->requestPublishElevation($tenantId, $userId, $course);
+        if (!empty($result['ok'])) {
+            Session::flash('success', (string) ($result['message'] ?? 'Demande envoyée.'));
+        } else {
+            Session::flash('error', (string) ($result['message'] ?? 'Impossible d’envoyer la demande.'));
+        }
+
+        return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
     }
 
     private function saveCourse(Request $request, array $course, int $tenantId, int $userId): Response
@@ -776,16 +826,63 @@ class AdminTrainingStudioController
     private function saveCoursePresentation(Request $request, array $course, int $tenantId, int $userId): Response
     {
         $courseId = (int) $course['id'];
-        $themeJson = $this->buildThemeJsonFromRequest($request, (string) ($course['theme_json'] ?? ''));
-        $audioUrl = trim((string) $request->input('instruction_audio_url', ''));
-        $audioUrl = $audioUrl === '' ? null : substr($audioUrl, 0, 512);
+
+        try {
+            $thumbnailPath = $this->resolvePresentationImagePath(
+                $tenantId,
+                (string) ($course['thumbnail_path'] ?? ''),
+                $_FILES['thumbnail_upload'] ?? null,
+                trim((string) $request->input('thumbnail_path', '')),
+                $request->input('thumbnail_remove', '') === '1',
+                'thumbnail'
+            );
+            $bannerPath = $this->resolvePresentationImagePath(
+                $tenantId,
+                (string) ($course['banner_path'] ?? ''),
+                $_FILES['banner_upload'] ?? null,
+                trim((string) $request->input('banner_path', '')),
+                $request->input('banner_remove', '') === '1',
+                'banner'
+            );
+
+            $prevTheme = function_exists('training_lms_parse_theme')
+                ? training_lms_parse_theme((string) ($course['theme_json'] ?? ''))
+                : [];
+            $prevLoader = trim((string) ($prevTheme['openingLoaderImage'] ?? ''));
+            $loaderPath = $this->resolvePresentationImagePath(
+                $tenantId,
+                $prevLoader,
+                $_FILES['lms_opening_loader_image_upload'] ?? null,
+                trim((string) $request->input('lms_opening_loader_image', '')),
+                $request->input('lms_opening_loader_image_remove', '') === '1',
+                'loader'
+            );
+
+            $audioUrl = $this->resolvePresentationAudioPath(
+                $tenantId,
+                (string) ($course['instruction_audio_url'] ?? ''),
+                $_FILES['instruction_audio_upload'] ?? null,
+                trim((string) $request->input('instruction_audio_url', '')),
+                $request->input('instruction_audio_remove', '') === '1'
+            );
+        } catch (\InvalidArgumentException|\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($this->studioEditUrl($courseId, 'presentation'));
+        }
+
+        $themeJson = $this->buildThemeJsonFromRequest(
+            $request,
+            (string) ($course['theme_json'] ?? ''),
+            $loaderPath
+        );
         $audioNotes = trim((string) $request->input('instruction_audio_notes', ''));
         $audioNotes = $audioNotes === '' ? null : substr($audioNotes, 0, 500);
 
         $patch = [
             'theme_json' => $themeJson,
-            'thumbnail_path' => trim((string) $request->input('thumbnail_path', '')) ?: null,
-            'banner_path' => trim((string) $request->input('banner_path', '')) ?: null,
+            'thumbnail_path' => $thumbnailPath,
+            'banner_path' => $bannerPath,
             'instruction_audio_url' => $audioUrl,
             'instruction_audio_instructor_optional' => $request->input('instruction_audio_instructor_optional') ? 1 : 0,
             'instruction_audio_notes' => $audioNotes,
@@ -799,6 +896,230 @@ class AdminTrainingStudioController
         Session::flash('success', 'Présentation enregistrée.');
 
         return Response::redirect($this->studioEditUrl($courseId, 'presentation'));
+    }
+
+    /**
+     * Résout miniature / bannière / image loader : retrait, upload, sélection bibliothèque site, ou conservation.
+     *
+     * @param array{name?: string, type?: string, tmp_name?: string, error?: int, size?: int}|null $file
+     */
+    private function resolvePresentationImagePath(
+        int $tenantId,
+        string $currentPath,
+        ?array $file,
+        string $postedPath,
+        bool $remove,
+        string $prefix
+    ): ?string {
+        $current = trim($currentPath) ?: null;
+
+        $uploaded = $this->courseMediaUploadService->storeUpload($tenantId, $file, $prefix);
+        if ($uploaded !== null) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return $uploaded;
+        }
+
+        if ($remove) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return null;
+        }
+
+        $posted = trim($postedPath);
+        if ($posted === '') {
+            return $current;
+        }
+
+        $sitePick = $this->publicSiteImageCatalog->normalizePickedPath($posted);
+        if ($sitePick !== null) {
+            if ($current !== null && $current !== $sitePick) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return $sitePick;
+        }
+
+        // Conserve un chemin déjà enregistré (upload géré ou URL externe historique).
+        if ($current !== null && $posted === $current) {
+            return $current;
+        }
+
+        // Chemin déjà sous le dossier uploads géré (réutilisation / kit).
+        $sanitized = str_replace(['\\', '..'], ['/', ''], $posted);
+        if (str_starts_with($sanitized, 'uploads/training-course-media/')) {
+            if ($current !== null && $current !== $sanitized) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return substr($sanitized, 0, 255);
+        }
+
+        if (preg_match('#^https?://#i', $posted) === 1) {
+            return substr($posted, 0, 255);
+        }
+
+        // Repli : si la valeur postée est invalide, on garde l’existant.
+        return $current;
+    }
+
+    /**
+     * @param array{name?: string, type?: string, tmp_name?: string, error?: int, size?: int}|null $file
+     */
+    private function resolvePresentationAudioPath(
+        int $tenantId,
+        string $currentPath,
+        ?array $file,
+        string $postedPath,
+        bool $remove
+    ): ?string {
+        $current = trim($currentPath) ?: null;
+
+        $uploaded = $this->courseMediaUploadService->storeAudioUpload($tenantId, $file, 'audio');
+        if ($uploaded !== null) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return $uploaded;
+        }
+
+        if ($remove) {
+            if ($current !== null) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return null;
+        }
+
+        $posted = trim($postedPath);
+        if ($posted === '') {
+            return $current;
+        }
+        if ($current !== null && $posted === $current) {
+            return $current;
+        }
+        $sanitized = str_replace(['\\', '..'], ['/', ''], $posted);
+        if (str_starts_with($sanitized, 'uploads/training-course-media/')) {
+            if ($current !== null && $current !== $sanitized) {
+                $this->courseMediaUploadService->deleteManagedRelative($current);
+            }
+
+            return substr($sanitized, 0, 512);
+        }
+        if (preg_match('#^https?://#i', $posted) === 1) {
+            return substr($posted, 0, 512);
+        }
+
+        return $current;
+    }
+
+    private function savePresentationKit(Request $request, array $course, int $tenantId): Response
+    {
+        $courseId = (int) $course['id'];
+        $name = trim((string) $request->input('kit_name', ''));
+        $theme = function_exists('training_lms_parse_theme')
+            ? training_lms_parse_theme((string) ($course['theme_json'] ?? ''))
+            : [];
+        $tjRaw = trim((string) ($course['theme_json'] ?? ''));
+        $payload = [
+            'theme_enable' => $tjRaw !== '' && $tjRaw !== '{}',
+            'accent' => (string) ($theme['accent'] ?? '#10b981'),
+            'font_key' => function_exists('training_lms_theme_font_key_from_css')
+                ? training_lms_theme_font_key_from_css($theme['font'] ?? null)
+                : 'inter',
+            'radius_key' => function_exists('training_lms_theme_radius_key_from_value')
+                ? training_lms_theme_radius_key_from_value($theme['radius'] ?? null)
+                : 'generous',
+            'variant' => (string) ($theme['variant'] ?? 'default'),
+            'opening_loader_image' => $theme['openingLoaderImage'] ?? null,
+            'opening_loader_title' => $theme['openingLoaderTitle'] ?? null,
+            'opening_loader_body' => $theme['openingLoaderBody'] ?? null,
+            'thumbnail_path' => $course['thumbnail_path'] ?? null,
+            'banner_path' => $course['banner_path'] ?? null,
+            'instruction_audio_url' => $course['instruction_audio_url'] ?? null,
+            'instruction_audio_instructor_optional' => (int) ($course['instruction_audio_instructor_optional'] ?? 1) === 1,
+            'instruction_audio_notes' => $course['instruction_audio_notes'] ?? null,
+        ];
+        try {
+            $this->presentationKitService->saveKit($tenantId, $name, $payload);
+        } catch (\InvalidArgumentException $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($this->studioEditUrl($courseId, 'presentation') . '#studio-presentation-kits');
+        }
+        Session::flash('success', 'Kit de présentation enregistré pour votre communauté.');
+
+        return Response::redirect($this->studioEditUrl($courseId, 'presentation') . '#studio-presentation-kits');
+    }
+
+    private function applyPresentationKit(Request $request, array $course, int $tenantId, int $userId): Response
+    {
+        $courseId = (int) $course['id'];
+        $kitId = trim((string) $request->input('kit_id', ''));
+        $kit = $this->presentationKitService->findKit($tenantId, $kitId);
+        if ($kit === null) {
+            Session::flash('error', 'Ce kit de présentation est introuvable.');
+
+            return Response::redirect($this->studioEditUrl($courseId, 'presentation') . '#studio-presentation-kits');
+        }
+        $payload = is_array($kit['payload'] ?? null) ? $kit['payload'] : [];
+        $payload = $this->presentationKitService->normalizePayload($payload);
+
+        $themeJson = null;
+        if (!empty($payload['theme_enable'])) {
+            $fonts = function_exists('training_lms_theme_font_presets') ? training_lms_theme_font_presets() : [];
+            $radii = function_exists('training_lms_theme_radius_presets') ? training_lms_theme_radius_presets() : [];
+            $fontKey = (string) ($payload['font_key'] ?? 'inter');
+            $radiusKey = (string) ($payload['radius_key'] ?? 'generous');
+            $accent = (string) ($payload['accent'] ?? '#10b981');
+            $themeJson = json_encode([
+                'accent' => $accent,
+                'accentRgb' => function_exists('training_lms_hex_to_rgb_csv')
+                    ? training_lms_hex_to_rgb_csv($accent)
+                    : '16, 185, 129',
+                'font' => $fonts[$fontKey] ?? ($fonts['inter'] ?? 'Inter, system-ui, sans-serif'),
+                'radius' => $radii[$radiusKey] ?? ($radii['generous'] ?? '2rem'),
+                'variant' => (string) ($payload['variant'] ?? 'default'),
+                'openingLoaderImage' => (string) ($payload['opening_loader_image'] ?? ''),
+                'openingLoaderTitle' => (string) ($payload['opening_loader_title'] ?? ''),
+                'openingLoaderBody' => (string) ($payload['opening_loader_body'] ?? ''),
+            ], JSON_UNESCAPED_UNICODE);
+        }
+
+        $patch = [
+            'theme_json' => $themeJson,
+            'thumbnail_path' => $payload['thumbnail_path'] ?? null,
+            'banner_path' => $payload['banner_path'] ?? null,
+            'instruction_audio_url' => $payload['instruction_audio_url'] ?? null,
+            'instruction_audio_instructor_optional' => !empty($payload['instruction_audio_instructor_optional']) ? 1 : 0,
+            'instruction_audio_notes' => $payload['instruction_audio_notes'] ?? null,
+            'updated_by' => $userId,
+        ];
+        if (function_exists('lms_platform_version')) {
+            $patch['lms_last_saved_with_version'] = lms_platform_version();
+        }
+        $this->courseRepository->update($courseId, $patch);
+        $this->markCourseSavedWithCurrentStudioVersion($courseId);
+        Session::flash('success', 'Kit « ' . (string) ($kit['name'] ?? '') . ' » appliqué à cette formation.');
+
+        return Response::redirect($this->studioEditUrl($courseId, 'presentation'));
+    }
+
+    private function deletePresentationKit(Request $request, int $courseId, int $tenantId): Response
+    {
+        $kitId = trim((string) $request->input('kit_id', ''));
+        if (!$this->presentationKitService->deleteKit($tenantId, $kitId)) {
+            Session::flash('error', 'Impossible de supprimer ce kit.');
+        } else {
+            Session::flash('success', 'Kit de présentation supprimé.');
+        }
+
+        return Response::redirect($this->studioEditUrl($courseId, 'presentation') . '#studio-presentation-kits');
     }
 
     private function regenerateEnrollmentShareCode(Request $request, int $courseId, int $tenantId, int $userId): Response
@@ -1420,8 +1741,10 @@ class AdminTrainingStudioController
     /**
      * Thème apprenant : formulaire visuel studio, ou null si désactivé.
      * Les clés non gérées par le formulaire sont conservées si le thème précédent était un objet JSON valide.
+     *
+     * @param string|null $loaderImageOverride Chemin loader déjà résolu (upload / bibliothèque), prioritaire sur le POST.
      */
-    private function buildThemeJsonFromRequest(Request $request, string $previousThemeJson = ''): ?string
+    private function buildThemeJsonFromRequest(Request $request, string $previousThemeJson = '', ?string $loaderImageOverride = null): ?string
     {
         if ((int) $request->input('lms_theme_enable', 0) !== 1) {
             return null;
@@ -1448,7 +1771,11 @@ class AdminTrainingStudioController
         $variantKey = trim((string) $request->input('lms_theme_variant', 'default'));
         $variants = array_keys(function_exists('training_lms_theme_variant_labels_fr') ? training_lms_theme_variant_labels_fr() : []);
         $variant = in_array($variantKey, $variants, true) ? $variantKey : 'default';
-        $loaderImage = trim((string) $request->input('lms_opening_loader_image', ''));
+        if ($loaderImageOverride !== null) {
+            $loaderImage = trim($loaderImageOverride);
+        } else {
+            $loaderImage = trim((string) $request->input('lms_opening_loader_image', ''));
+        }
         if ($loaderImage !== '') {
             $loaderImage = substr($loaderImage, 0, 255);
         }
@@ -1481,8 +1808,25 @@ class AdminTrainingStudioController
         $prereq = array_values(array_unique(array_filter($prereq, static fn (int $x): bool => $x > 0 && $x !== $currentCourseId)));
         $reqCerts = array_map('intval', (array) $request->input('policy_certificate_course_ids', []));
         $reqCerts = array_values(array_unique(array_filter($reqCerts, static fn (int $x): bool => $x > 0 && $x !== $currentCourseId)));
-        $roleIds = array_map('intval', (array) $request->input('policy_required_role_ids', []));
-        $roleIds = array_values(array_unique(array_filter($roleIds, static fn (int $x): bool => $x > 0)));
+        // Audience rôles : « all » / sentinel UI (__all__, *) = aucune contrainte (liste vide). Pas de faux rôle en BDD.
+        $roleAudience = trim((string) $request->input('policy_role_audience', ''));
+        $rawRoleIds = (array) $request->input('policy_required_role_ids', []);
+        $wantsAllRoles = $roleAudience === 'all';
+        foreach ($rawRoleIds as $raw) {
+            $s = trim((string) $raw);
+            if ($s === '__all__' || $s === '*') {
+                $wantsAllRoles = true;
+                break;
+            }
+        }
+        if ($wantsAllRoles) {
+            $roleIds = [];
+        } else {
+            $roleIds = array_values(array_unique(array_filter(
+                array_map('intval', $rawRoleIds),
+                static fn (int $x): bool => $x > 0
+            )));
+        }
         $gradeIds = array_map('intval', (array) $request->input('policy_required_grade_ids', []));
         $gradeIds = array_values(array_unique(array_filter($gradeIds, static fn (int $x): bool => $x > 0)));
         $statuses = [];

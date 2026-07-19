@@ -190,8 +190,11 @@ final class MilitaryRoleCatalogSyncService
                 $pdo->prepare($sql)->execute($upParams);
             }
 
-            if ($isInsert && $roleId > 0) {
-                self::copyPermissionsFromBaseline($pdo, $tenantId, $roleId, $entry['permission_baseline']);
+            if ($roleId > 0 && (int) ($entry['is_visual_only'] ?? 0) === 0) {
+                // INSERT IGNORE : complète les rôles catalogue encore vides (ex. créés par migration organique sans droits).
+                if ($isInsert || self::rolePermissionCount($pdo, $roleId) === 0) {
+                    self::copyPermissionsFromBaseline($pdo, $tenantId, $roleId, $entry['permission_baseline']);
+                }
             }
 
             if ($hasPjr && $roleId) {
@@ -304,6 +307,14 @@ final class MilitaryRoleCatalogSyncService
                 $link->execute([$newRoleId, $pid]);
             }
         }
+    }
+
+    private static function rolePermissionCount(PDO $pdo, int $roleId): int
+    {
+        $st = $pdo->prepare('SELECT COUNT(*) FROM role_permissions WHERE role_id = ?');
+        $st->execute([$roleId]);
+
+        return (int) $st->fetchColumn();
     }
 
     private static function upsertPersonnelJobRole(

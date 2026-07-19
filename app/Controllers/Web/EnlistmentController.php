@@ -15,6 +15,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentPresetRepository;
+use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
@@ -52,6 +53,7 @@ class EnlistmentController
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private UnitRepository $unitRepository,
+        private TenantBrandingRepository $tenantBrandingRepository,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -124,6 +126,12 @@ class EnlistmentController
             $selectedRecruitmentOpening
         );
 
+        $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo(
+            $tenant,
+            $this->tenantBrandingRepository->findByTenantId($targetTenantId)
+        );
+        $publishedOpenings = $this->recruitmentOpeningRepository->listPublishedForTenant($targetTenantId);
+
         $viewData = [
             'tenant' => $tenant,
             'communityConfig' => $communityConfig,
@@ -131,6 +139,8 @@ class EnlistmentController
             'enlistmentContext' => $enlistmentContext,
             'selectedRecruitmentOpening' => $selectedRecruitmentOpening,
             'enlistmentMemberOpeningInsight' => $enlistmentMemberOpeningInsight,
+            'tenantBranding' => $tenantBranding,
+            'publishedOpenings' => $publishedOpenings,
             'analyticsBeacon' => $beacon,
         ];
 

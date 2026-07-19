@@ -81,16 +81,13 @@ class AtakController
         }
 
         $atakMapsConfigs = [];
-        $baseUrl = rtrim(url(''), '/');
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
-            $tp = $m['tile_pattern'] ?? '/assets/maps/altis/{z}/{x}/{y}.png';
-            if ($tp !== '' && $tp[0] !== '/') {
-                $tp = '/' . $tp;
-            }
-            $atakMapsConfigs[$m['slug'] ?? ''] = [
-                'slug' => $m['slug'] ?? 'altis',
-                'tilePattern' => $baseUrl . $tp,
+            $slug = (string) ($m['slug'] ?? 'altis');
+            $tp = (string) ($m['tile_pattern'] ?? '');
+            $atakMapsConfigs[$slug] = [
+                'slug' => $slug,
+                'tilePattern' => atak_resolve_tile_pattern($tp, $slug),
                 'center' => $c['center'] ?? [15000, 15000],
                 'defaultZoom' => (int) ($c['defaultZoom'] ?? 3),
                 'minZoom' => (int) ($c['minZoom'] ?? 0),

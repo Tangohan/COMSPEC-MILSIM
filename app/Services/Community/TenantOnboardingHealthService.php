@@ -21,27 +21,33 @@ final class TenantOnboardingHealthService
     }
 
     /**
-     * @return array{gaps: list<string>, needs_recovery: bool}
+     * @return array{
+     *     gaps: list<string>,
+     *     needs_recovery: bool,
+     *     checklist: list<array{
+     *         id: string,
+     *         label: string,
+     *         detail: string,
+     *         done: bool,
+     *         auto_fixable: bool,
+     *         action_href: string,
+     *         action_label: string
+     *     }>,
+     *     progress: array{done: int, total: int, percent: int},
+     *     can_auto_apply: bool,
+     *     auto_apply_summary: string
+     * }
      */
     public function analyze(int $tenantId): array
     {
-        $gaps = [];
         $settings = $this->tenantRepository->getSettings($tenantId);
         $ver = (int) ($settings['onboarding_wizard_version'] ?? 0);
-        if ($ver < 2) {
-            $gaps[] = 'L’assistant d’onboarding complet (version 2) n’a pas été enregistré pour cette communauté.';
-        }
-        if (trim((string) ($settings['grade_system_code'] ?? '')) === '') {
-            $gaps[] = 'Aucun référentiel de grades n’est associé à la communauté (paramètre manquant).';
-        }
+        $gradeSystem = trim((string) ($settings['grade_system_code'] ?? ''));
 
         $pdo = Database::getPdo();
         $st = $pdo->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ? AND parent_id IS NULL');
         $st->execute([$tenantId]);
         $roots = (int) $st->fetchColumn();
-        if ($roots < 1) {
-            $gaps[] = 'Aucune unité racine dans l’ORBAT.';
-        }
 
         $chk = $pdo->prepare(
             'SELECT 1 FROM roles r
@@ -51,33 +57,99 @@ final class TenantOnboardingHealthService
              LIMIT 1'
         );
         $chk->execute([$tenantId]);
-        if (!$chk->fetchColumn()) {
-            $gaps[] = 'Aucun rôle ne dispose d’un accès d’administration (permissions manquantes).';
+        $hasAdminRole = (bool) $chk->fetchColumn();
+
+        $checklist = [
+            $this->checklistItem(
+                'wizard',
+                'Parcours de création enregistré',
+                'Votre communauté a été créée avant le parcours guidé actuel ou celui-ci n’a pas encore été finalisé.',
+                $ver >= 2,
+                true,
+                'back-office/configuration-initiale',
+                'Ouvrir l’assistant de démarrage'
+            ),
+            $this->checklistItem(
+                'grades',
+                'Référentiel de grades',
+                'Aucun référentiel de grades n’est encore associé à votre communauté.',
+                $gradeSystem !== '',
+                true,
+                'back-office/referentiels/grades',
+                'Consulter le référentiel des grades'
+            ),
+            $this->checklistItem(
+                'orbat',
+                'Structure des effectifs',
+                'Il manque une unité racine dans l’organigramme (ORBAT).',
+                $roots >= 1,
+                true,
+                'back-office/organisation-effectifs',
+                'Ouvrir la structure des effectifs'
+            ),
+            $this->checklistItem(
+                'admin_access',
+                'Accès administration',
+                'Aucun rôle ne permet encore de gérer le back-office de la communauté.',
+                $hasAdminRole,
+                false,
+                'back-office/roles',
+                'Gérer les rôles communautaires'
+            ),
+        ];
+
+        $gaps = [];
+        foreach ($checklist as $item) {
+            if (!$item['done']) {
+                $gaps[] = $item['detail'];
+            }
+        }
+
+        $doneCount = count(array_filter($checklist, static fn (array $i): bool => $i['done']));
+        $total = count($checklist);
+        $canAutoApply = false;
+        foreach ($checklist as $item) {
+            if (!$item['done'] && $item['auto_fixable']) {
+                $canAutoApply = true;
+                break;
+            }
         }
 
         return [
             'gaps' => $gaps,
             'needs_recovery' => $gaps !== [],
+            'checklist' => $checklist,
+            'progress' => [
+                'done' => $doneCount,
+                'total' => $total,
+                'percent' => $total > 0 ? (int) round(($doneCount / $total) * 100) : 100,
+            ],
+            'can_auto_apply' => $canAutoApply,
+            'auto_apply_summary' => 'Applique le référentiel français, une structure d’exemple (État-major → section → équipe) uniquement s’il n’existe aucune unité racine, et enregistre le parcours de création. Les données déjà présentes ne sont pas supprimées.',
         ];
     }
 
     /**
      * Applique des valeurs par défaut non destructives : grade FR + arbre ORBAT minimal si besoin.
+     *
+     * @return list<string> Résumé lisible des actions effectuées
      */
-    public function applyFrDefaults(int $tenantId): void
+    public function applyFrDefaults(int $tenantId): array
     {
+        $applied = [];
         $settings = $this->tenantRepository->getSettings($tenantId);
         if (trim((string) ($settings['grade_system_code'] ?? '')) === '') {
             $this->tenantRepository->mergeSettings($tenantId, [
                 'grade_system_code' => 'FR_CLASSIC',
             ]);
+            $applied[] = 'Référentiel de grades français associé à la communauté.';
         }
 
         $pdo = Database::getPdo();
         $st = $pdo->prepare('SELECT COUNT(*) FROM units WHERE tenant_id = ? AND parent_id IS NULL');
         $st->execute([$tenantId]);
         if ((int) $st->fetchColumn() > 0) {
-            return;
+            return $applied;
         }
 
         $units = [
@@ -86,6 +158,40 @@ final class TenantOnboardingHealthService
             ['key' => 't1', 'parent_key' => 's1', 'name' => '1re équipe', 'slug' => '1re-equipe', 'type' => 'team', 'display_order' => 0],
         ];
         $this->insertUnitsTree($pdo, $tenantId, $units);
+        $applied[] = 'Structure d’exemple créée (État-major, 1re section, 1re équipe).';
+
+        return $applied;
+    }
+
+    /**
+     * @return array{
+     *     id: string,
+     *     label: string,
+     *     detail: string,
+     *     done: bool,
+     *     auto_fixable: bool,
+     *     action_href: string,
+     *     action_label: string
+     * }
+     */
+    private function checklistItem(
+        string $id,
+        string $label,
+        string $detail,
+        bool $done,
+        bool $autoFixable,
+        string $actionPath,
+        string $actionLabel
+    ): array {
+        return [
+            'id' => $id,
+            'label' => $label,
+            'detail' => $detail,
+            'done' => $done,
+            'auto_fixable' => $autoFixable,
+            'action_href' => url($actionPath),
+            'action_label' => $actionLabel,
+        ];
     }
 
     /** @param list<array{key: string, parent_key: string, name: string, slug: string, type: string, display_order: int}> $units */
@@ -117,7 +223,7 @@ final class TenantOnboardingHealthService
                 $progress = true;
             }
             if (!$progress && $next !== []) {
-                throw new \RuntimeException('Hiérarchie d’unités invalide.');
+                throw new \RuntimeException('Impossible de créer la structure d’unités : hiérarchie incohérente.');
             }
             $remaining = $next;
         }

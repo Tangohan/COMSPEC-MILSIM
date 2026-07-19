@@ -121,6 +121,39 @@ $validityDaysField = $course['validity_days'] ?? null;
                 </div>
             </div>
             <?php endif; ?>
+            <?php if (!$canPublish): ?>
+            <div class="md:col-span-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-3">
+                <p class="text-xs font-bold text-amber-950 uppercase tracking-wide m-0">Publication — élévation de droits</p>
+                <p class="text-sm text-amber-950/90 m-0">Vous ne pouvez pas mettre cette formation en « Publié ». Ce droit est réservé aux administrateurs de la communauté et aux personnes autorisées à publier les formations. Le responsable pédagogique ou le validateur final n’accordent ce droit que s’ils disposent eux-mêmes de cette habilitation.</p>
+                <?php if ($publishElevationRecipients !== []): ?>
+                <div>
+                    <p class="text-xs font-semibold text-amber-950 m-0 mb-1">Personnes qui peuvent publier ou vous attribuer ce droit :</p>
+                    <ul class="m-0 pl-5 text-sm text-amber-950/90 space-y-0.5">
+                        <?php foreach ($publishElevationRecipients as $elevRec): ?>
+                        <li><?= htmlspecialchars((string) ($elevRec['name'] ?? 'Membre')) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php if ($publishElevationCooldownSec !== null): ?>
+                <p class="text-sm text-amber-900 m-0">Une demande est déjà en cours pour cette fiche. Vous pourrez renvoyer un rappel dans environ <?= max(1, (int) ceil((int) $publishElevationCooldownSec / 3600)) ?> heure<?= ((int) ceil((int) $publishElevationCooldownSec / 3600)) > 1 ? 's' : '' ?>.</p>
+                <?php else: ?>
+                <?php
+                    $elevNames = array_map(static fn ($r) => (string) ($r['name'] ?? ''), $publishElevationRecipients);
+                    $elevConfirm = 'Envoyer une demande à ' . implode(', ', $elevNames)
+                        . ' ? Elles recevront une alerte et un e-mail avec un lien vers cette fiche.';
+                ?>
+                <form method="post" action="<?= training_studio_url($cid) ?>" class="inline-flex flex-wrap items-center gap-3"
+                      onsubmit="return confirm(<?= htmlspecialchars(json_encode($elevConfirm, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>);">
+                    <?= \App\Core\Csrf::field() ?>
+                    <input type="hidden" name="_action" value="request_publish_elevation">
+                    <button type="submit" class="px-4 py-2.5 bg-amber-700 text-white text-xs font-black uppercase tracking-wide rounded-xl hover:bg-amber-800 shadow-sm">Demander une élévation de droits</button>
+                </form>
+                <?php endif; ?>
+                <?php else: ?>
+                <p class="text-sm text-amber-900 m-0">Aucune personne habilitée à publier n’est joignable dans cette communauté. Contactez un administrateur autrement.</p>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -212,31 +245,42 @@ $validityDaysField = $course['validity_days'] ?? null;
         <div class="ts-fiche-block__head">
             <div>
                 <h2>Inscription &amp; consignes</h2>
-                <p>Conditions pour l’inscription libre (les assignations manuelles par le staff restent possibles).</p>
+                <p>Définissez qui peut s’inscrire librement depuis le catalogue, sous quelles conditions, et comment les formateurs sont prévenus. Les inscriptions manuelles par le staff restent toujours possibles, même si l’inscription libre est fermée.</p>
             </div>
         </div>
         <div class="space-y-5">
-            <div class="ts-check-row">
-                <label class="ts-check">
-                    <input type="checkbox" name="policy_enrollments_blocked" value="1" <?= !empty($policy['enrollments_blocked']) ? 'checked' : '' ?>>
-                    <span>Bloquer toutes les nouvelles inscriptions</span>
-                </label>
-                <label class="ts-check">
-                    <input type="checkbox" name="policy_self_enroll_disabled" value="1" <?= isset($policy['self_enroll_allowed']) && $policy['self_enroll_allowed'] === false ? 'checked' : '' ?>>
-                    <span>Désactiver l’inscription libre</span>
-                </label>
+            <div>
+                <p class="text-xs font-bold text-slate-600 mb-2 m-0">Accès à l’inscription</p>
+                <div class="ts-check-row">
+                    <label class="ts-check">
+                        <input type="checkbox" name="policy_enrollments_blocked" value="1" <?= !empty($policy['enrollments_blocked']) ? 'checked' : '' ?>>
+                        <span>Bloquer toutes les nouvelles inscriptions</span>
+                    </label>
+                    <label class="ts-check">
+                        <input type="checkbox" name="policy_self_enroll_disabled" value="1" <?= isset($policy['self_enroll_allowed']) && $policy['self_enroll_allowed'] === false ? 'checked' : '' ?>>
+                        <span>Désactiver l’inscription libre</span>
+                    </label>
+                </div>
+                <p class="ts-field__hint mt-2 mb-0">« Bloquer toutes les nouvelles inscriptions » ferme complètement l’entrée (libre ou nouvelle demande) : utile pour une session pleine ou une formation archivée côté catalogue. « Désactiver l’inscription libre » laisse le parcours visible, mais l’apprenant doit être inscrit par un formateur ou un gestionnaire. Si aucune case n’est cochée, l’inscription libre reste ouverte dans le respect des règles ci-dessous.</p>
             </div>
-            <input type="hidden" name="policy_self_enroll_requires_approval" value="0">
-            <label class="ts-check">
-                <input type="checkbox" name="policy_self_enroll_requires_approval" value="1" <?= !empty($policy['self_enroll_requires_approval']) ? 'checked' : '' ?>>
-                <span>Exiger une validation par un formateur après chaque inscription libre</span>
-            </label>
-            <p class="ts-field__hint m-0">Sans effet si l’inscription libre est désactivée. Les personnes choisies ci-dessous (et l’auteur de la fiche) reçoivent une alerte par e-mail.</p>
-            <input type="hidden" name="policy_comments_enabled" value="0">
-            <label class="ts-check">
-                <input type="checkbox" name="policy_comments_enabled" value="1" <?= function_exists('training_lms_policy_comments_enabled') ? (training_lms_policy_comments_enabled($policy) ? 'checked' : '') : 'checked' ?>>
-                <span>Autoriser les commentaires sur la page « Avis &amp; échanges »</span>
-            </label>
+
+            <div>
+                <input type="hidden" name="policy_self_enroll_requires_approval" value="0">
+                <label class="ts-check">
+                    <input type="checkbox" name="policy_self_enroll_requires_approval" value="1" <?= !empty($policy['self_enroll_requires_approval']) ? 'checked' : '' ?>>
+                    <span>Exiger une validation par un formateur après chaque inscription libre</span>
+                </label>
+                <p class="ts-field__hint mt-2 mb-0">Quand cette option est active, la demande reste en attente jusqu’à acceptation ou refus. Sans effet si l’inscription libre est désactivée ou si toutes les inscriptions sont bloquées. Les personnes choisies ci-dessous (et l’auteur de la fiche) reçoivent une alerte par e-mail à chaque demande.</p>
+            </div>
+
+            <div>
+                <input type="hidden" name="policy_comments_enabled" value="0">
+                <label class="ts-check">
+                    <input type="checkbox" name="policy_comments_enabled" value="1" <?= function_exists('training_lms_policy_comments_enabled') ? (training_lms_policy_comments_enabled($policy) ? 'checked' : '') : 'checked' ?>>
+                    <span>Autoriser les commentaires sur la page « Avis &amp; échanges »</span>
+                </label>
+                <p class="ts-field__hint mt-2 mb-0">Cochez pour laisser les inscrits publier un avis ou un commentaire sur la page d’échanges du parcours. Décochez pour ne garder que la consultation, sans nouveau message public.</p>
+            </div>
 
             <div class="ts-field">
                 <label for="fiche-approvers">Formateurs notifiés pour valider les inscriptions</label>
@@ -254,7 +298,7 @@ $validityDaysField = $course['validity_days'] ?? null;
                     <option value="<?= $suid ?>" <?= in_array($suid, $policyApproverIds, true) ? 'selected' : '' ?>><?= htmlspecialchars($slab) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <p class="ts-field__hint">Vide = seul l’auteur de la fiche formation est prévenu (en plus des gestionnaires disposant déjà des droits d’assignation). Vous pouvez en sélectionner plusieurs.</p>
+                <p class="ts-field__hint">Choisissez qui reçoit l’alerte lorsqu’une inscription libre attend une validation. Si la liste reste vide, seul l’auteur de la fiche est prévenu (en plus des personnes qui ont déjà le droit d’assigner des apprenants). Vous pouvez en sélectionner plusieurs.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -269,7 +313,7 @@ $validityDaysField = $course['validity_days'] ?? null;
                         <option value="<?= $oid ?>" <?= in_array($oid, $policyPrereq, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($oc['title'] ?? '')) ?><?= $ocVisLab !== '' ? ' (' . htmlspecialchars($ocVisLab) . ')' : '' ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="ts-field__hint">Formations que l’apprenant doit avoir validées. Vous pouvez en sélectionner plusieurs.</p>
+                    <p class="ts-field__hint">Listez les parcours que l’apprenant doit avoir terminés avec succès avant de s’inscrire librement ici. Liste vide = aucun prérequis de formation. Plusieurs choix possibles ; chacun est vérifié au moment de l’inscription.</p>
                 </div>
                 <div class="ts-field">
                     <label for="fiche-certs">Attestations requises (autres formations)</label>
@@ -280,10 +324,22 @@ $validityDaysField = $course['validity_days'] ?? null;
                         <option value="<?= $oid ?>" <?= in_array($oid, $policyCerts, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($oc['title'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="ts-field__hint">Vous pouvez en sélectionner plusieurs.</p>
+                    <p class="ts-field__hint">Exigez qu’une autre formation ait déjà été validée (attestation ou réussite enregistrée) avant l’inscription libre. Liste vide = aucune attestation demandée. Utile pour enchaîner un module avancé après un socle commun.</p>
                 </div>
-                <div class="ts-field">
-                    <label for="fiche-roles">Rôles autorisés (au moins un)</label>
+                <div class="ts-field" id="fiche-roles-field">
+                    <span>Rôles autorisés</span>
+                    <?php $policyRolesAll = $policyRoles === []; ?>
+                    <div class="ts-check-row flex-col items-stretch gap-2 mb-2">
+                        <label class="ts-check">
+                            <input type="radio" name="policy_role_audience" value="all" <?= $policyRolesAll ? 'checked' : '' ?> data-fiche-roles-audience>
+                            <span>Tout le monde de la communauté</span>
+                        </label>
+                        <label class="ts-check">
+                            <input type="radio" name="policy_role_audience" value="roles" <?= !$policyRolesAll ? 'checked' : '' ?> data-fiche-roles-audience>
+                            <span>Uniquement certains rôles (au moins un)</span>
+                        </label>
+                    </div>
+                    <label for="fiche-roles" class="sr-only">Liste des rôles autorisés</label>
                     <select id="fiche-roles" name="policy_required_role_ids[]" multiple size="6">
                         <?php foreach ($studioRoles as $r):
                             $rid = (int) ($r['id'] ?? 0);
@@ -291,7 +347,26 @@ $validityDaysField = $course['validity_days'] ?? null;
                         <option value="<?= $rid ?>" <?= in_array($rid, $policyRoles, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($r['name'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="ts-field__hint">Vide = aucune contrainte de rôle. Vous pouvez en sélectionner plusieurs.</p>
+                    <p class="ts-field__hint">« Tout le monde de la communauté » n’applique aucun filtre sur le rôle : tout membre éligible par ailleurs peut s’inscrire librement. Si vous choisissez « Uniquement certains rôles », sélectionnez au moins un rôle dans la liste : l’apprenant doit en posséder au moins un. Sans rôle sélectionné dans ce mode, aucune contrainte de rôle n’est enregistrée.</p>
+                    <script>
+                    (function () {
+                        var root = document.getElementById('fiche-roles-field');
+                        if (!root) return;
+                        var select = root.querySelector('#fiche-roles');
+                        var radios = root.querySelectorAll('[data-fiche-roles-audience]');
+                        if (!select || !radios.length) return;
+                        function sync() {
+                            var all = false;
+                            radios.forEach(function (r) {
+                                if (r.checked && r.value === 'all') all = true;
+                            });
+                            select.disabled = all;
+                            select.setAttribute('aria-disabled', all ? 'true' : 'false');
+                        }
+                        radios.forEach(function (r) { r.addEventListener('change', sync); });
+                        sync();
+                    })();
+                    </script>
                 </div>
                 <div class="ts-field">
                     <label for="fiche-grades">Grades autorisés</label>
@@ -302,13 +377,13 @@ $validityDaysField = $course['validity_days'] ?? null;
                         <option value="<?= $gid ?>" <?= in_array($gid, $policyGrades, true) ? 'selected' : '' ?>><?= htmlspecialchars((string) ($g['label_short'] ?? $g['code'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="ts-field__hint">Vous pouvez en sélectionner plusieurs.</p>
+                    <p class="ts-field__hint">Restreignez l’inscription libre aux grades sélectionnés. Liste vide = tous les grades sont acceptés. Si des grades sont choisis, le grade du compte doit figurer parmi eux.</p>
                 </div>
             </div>
 
             <div>
                 <p class="text-xs font-bold text-slate-600 mb-2 m-0">Statuts de compte autorisés pour l’inscription libre</p>
-                <p class="ts-field__hint mb-2">Laissez tout décoché pour n’imposer aucune contrainte sur le statut. Sinon, l’apprenant doit correspondre à <strong>au moins une</strong> des cases cochées.</p>
+                <p class="ts-field__hint mb-2">Filtrez selon l’état du compte membre (par exemple compte déjà actif). Laissez toutes les cases décochées pour n’imposer aucune contrainte de statut. Si au moins une case est cochée, l’apprenant doit correspondre à <strong>au moins une</strong> d’entre elles pour s’inscrire librement.</p>
                 <div class="ts-check-row">
                     <?php foreach ($policyUserStatusLabels as $stVal => $stLabel): ?>
                     <label class="ts-check">
@@ -320,14 +395,15 @@ $validityDaysField = $course['validity_days'] ?? null;
             </div>
 
             <div class="border-t border-slate-100 pt-5" id="studio-engagement-share">
-                <h3 class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 mb-2">Repérer la formation ailleurs</h3>
-                <p class="ts-field__hint mb-3 max-w-3xl">Code court unique : les membres connectés à <strong>cette</strong> communauté peuvent le saisir sur la page dédiée pour ouvrir directement la fiche. Si la formation appartient à une autre communauté, le portail l’indique clairement sans mélanger les espaces.</p>
+                <h3 class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 mb-2">Code de repérage / page apprenant</h3>
+                <p class="ts-field__hint mb-3 max-w-3xl">Ce code court permet aux membres connectés à <strong>cette</strong> communauté d’ouvrir directement la fiche depuis la page de saisie dédiée (pratique pour un affichage en salle, un message d’annonce ou un document papier). Enregistrez la fiche une première fois pour générer le code s’il n’apparaît pas encore. Si quelqu’un saisit un code d’une autre communauté, le portail l’indique clairement sans mélanger les espaces. Pour invalider un code déjà diffusé, utilisez « Régénérer le code » plus bas.</p>
                 <div class="ts-share-panel">
                     <div class="ts-field">
                         <label for="fiche-share-code">Code actuel</label>
                         <input id="fiche-share-code" type="text" readonly class="ts-share-code" value="<?= $shareCodeDisplay !== '' ? htmlspecialchars($shareCodeDisplay) : '— (enregistrez la fiche pour en générer un)' ?>">
+                        <p class="ts-field__hint">Affichage seul : le code se crée à l’enregistrement et se renouvelle uniquement via le bouton de régénération.</p>
                     </div>
-                    <p class="text-xs text-slate-600 pb-2 m-0">Page apprenant : <a href="<?= url('formations/code-acces') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950" target="_blank" rel="noopener">Ouvrir la saisie du code</a></p>
+                    <p class="text-xs text-slate-600 pb-2 m-0">Page apprenant : <a href="<?= url('formations/code-acces') ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950" target="_blank" rel="noopener">Ouvrir la saisie du code</a> — à partager avec les membres qui doivent retrouver ce parcours rapidement.</p>
                 </div>
             </div>
         </div>
@@ -342,8 +418,8 @@ $validityDaysField = $course['validity_days'] ?? null;
 <div class="ts-fiche-block mb-10 border-dashed">
     <div class="ts-fiche-block__head">
         <div>
-            <h2>Code de partage</h2>
-            <p>Générez un nouveau code si l’ancien a été partagé trop largement. Les liens déjà envoyés avec l’ancien code ne fonctionneront plus.</p>
+            <h2>Régénérer le code de repérage</h2>
+            <p>Utilisez cette action seulement si l’ancien code a circulé trop largement. Un nouveau code remplace immédiatement l’ancien : les membres devront utiliser le nouveau pour ouvrir la fiche depuis la page de saisie.</p>
         </div>
     </div>
     <form method="post" action="<?= training_studio_url($cid) ?>" class="inline-flex">

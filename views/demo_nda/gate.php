@@ -2,12 +2,13 @@
 declare(strict_types=1);
 
 $title = $title ?? 'Engagement de confidentialité';
-$ttlHours = (int) ($ttlHours ?? 3);
+$ttlHours = (int) ($ttlHours ?? ($sessionHours ?? 1));
+$sessionHours = (int) ($sessionHours ?? $ttlHours);
+$claimMinutes = (int) ($claimMinutes ?? 25);
 $claimExpiresAt = (string) ($claimExpiresAt ?? '');
 $error = $error ?? null;
 $observedIp = is_string($observedIp ?? null) ? $observedIp : '';
 $showObservedIp = !empty($showObservedIp);
-$baseUrl = url('');
 $brand = email_brand_name();
 $claimLabel = '';
 if ($claimExpiresAt !== '') {
@@ -221,7 +222,7 @@ if ($claimExpiresAt !== '') {
             >
             <p class="hint">Code communiqué par TTRD.FR</p>
             <?php if ($claimLabel !== ''): ?>
-                <p class="meta">Ouvert jusqu’au <?= htmlspecialchars($claimLabel, ENT_QUOTES, 'UTF-8') ?> · <?= (int) $ttlHours ?> h d’accès après validation</p>
+                <p class="meta">Saisie du code jusqu’au <?= htmlspecialchars($claimLabel, ENT_QUOTES, 'UTF-8') ?> · puis <?= (int) $sessionHours ?> h d’accès</p>
             <?php endif; ?>
             <?php if ($showObservedIp && $observedIp !== ''): ?>
                 <p class="hint">Adresse observée : <?= htmlspecialchars($observedIp, ENT_QUOTES, 'UTF-8') ?></p>
@@ -241,8 +242,8 @@ if ($claimExpiresAt !== '') {
             </p>
             <p>
                 L’accès est <strong>personnel et temporaire</strong> :
-                <?= (int) $ttlHours ?> h pour saisir le code après la première visite,
-                puis <?= (int) $ttlHours ?> h d’accès après validation, ensuite fermeture définitive pour cette connexion.
+                <?= (int) $claimMinutes ?> minutes pour saisir le code après la première visite,
+                puis <?= (int) $sessionHours ?> h d’accès après validation, ensuite fermeture définitive pour cette connexion.
             </p>
         </section>
 

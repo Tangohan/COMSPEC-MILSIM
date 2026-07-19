@@ -1113,6 +1113,44 @@ if (!function_exists('forum_filter_category_tree_for_user')) {
     }
 }
 
+if (!function_exists('forum_category_scope_label')) {
+    /**
+     * Libellé métier du périmètre d’un secteur Agora (pas de jargon technique).
+     */
+    function forum_category_scope_label(?string $scope): string
+    {
+        $s = strtolower(trim((string) $scope));
+
+        return match ($s) {
+            'organization', 'tenant' => 'Communauté',
+            'mission' => 'Unité',
+            'moderation' => 'Privé (modération)',
+            'platform', 'global' => 'Plateforme',
+            'general' => 'Ouvert',
+            default => 'Ouvert',
+        };
+    }
+}
+
+if (!function_exists('forum_category_scope_hint')) {
+    /**
+     * Phrase d’aide courte pour le périmètre choisi.
+     */
+    function forum_category_scope_hint(?string $scope): string
+    {
+        $s = strtolower(trim((string) $scope));
+
+        return match ($s) {
+            'organization', 'tenant' => 'Visible par les membres de votre communauté.',
+            'mission' => 'Réservé au cercle de l’unité / mission concernée.',
+            'moderation' => 'Réservé aux personnes habilitées à la modération.',
+            'platform', 'global' => 'Visible sur l’ensemble de la plateforme.',
+            'general' => 'Canal ouvert aux membres autorisés de ce forum.',
+            default => 'Choisissez le secteur pour connaître qui pourra lire ce message.',
+        };
+    }
+}
+
 if (!function_exists('forum_topic_trend_level')) {
     /**
      * @return 'hot'|'active'|null

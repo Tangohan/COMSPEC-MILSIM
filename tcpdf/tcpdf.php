@@ -6903,7 +6903,9 @@ class TCPDF {
 			unset($imgdata);
 			$imsize = @getimagesize($file);
 			if ($imsize === FALSE) {
-				unlink($file);
+				if (@is_file($file)) {
+					@unlink($file);
+				}
 				$file = $original_file;
 			}
 		}
@@ -7138,7 +7140,9 @@ class TCPDF {
 					$tempname = TCPDF_STATIC::getObjFilename('img', $this->file_id);
 					$img->writeImage($tempname);
 					$info = TCPDF_IMAGES::_parsejpeg($tempname);
-					unlink($tempname);
+					if (@is_file($tempname)) {
+						@unlink($tempname);
+					}
 					$img->destroy();
 				} catch(Exception $e) {
 					$info = false;
@@ -7782,15 +7786,19 @@ class TCPDF {
 		if (isset($this->internal_encoding) AND !empty($this->internal_encoding)) {
 			mb_internal_encoding($this->internal_encoding);
 		}
-		if (isset(self::$cleaned_ids[$this->file_id])) {
+		// Close() appelle _destroy(false) qui unset imagekeys sans marquer cleaned_ids ;
+		// __destruct rappelle ensuite _destroy(true) → Undefined property PHP 8.2+.
+		if (isset($this->file_id) AND isset(self::$cleaned_ids[$this->file_id])) {
 			$destroyall = false;
 		}
 		if ($destroyall AND !$preserve_objcopy) {
-			self::$cleaned_ids[$this->file_id] = true;
+			if (isset($this->file_id)) {
+				self::$cleaned_ids[$this->file_id] = true;
+			}
 			// remove all temporary files
-			if ($handle = opendir(K_PATH_CACHE)) {
+			if (defined('K_PATH_CACHE') AND is_dir(K_PATH_CACHE) AND ($handle = @opendir(K_PATH_CACHE))) {
 				while ( false !== ( $file_name = readdir( $handle ) ) ) {
-					if (strpos($file_name, '__tcpdf_'.$this->file_id.'_') === 0) {
+					if (isset($this->file_id) AND strpos($file_name, '__tcpdf_'.$this->file_id.'_') === 0) {
 						$cachepath = K_PATH_CACHE.$file_name;
 						if (is_file($cachepath)) {
 							@unlink($cachepath);
@@ -7799,9 +7807,12 @@ class TCPDF {
 				}
 				closedir($handle);
 			}
-			foreach($this->imagekeys as $file) {
-				if (is_file($file)) {
-					@unlink($file);
+			// imagekeys peut déjà avoir été unset par un _destroy(false) préalable (Close).
+			if (isset($this->imagekeys) AND is_array($this->imagekeys)) {
+				foreach($this->imagekeys as $file) {
+					if (is_file($file)) {
+						@unlink($file);
+					}
 				}
 			}
 		}

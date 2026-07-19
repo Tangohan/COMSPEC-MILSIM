@@ -10,6 +10,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
+use App\Repositories\CommunityMediaRepository;
+use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
@@ -51,6 +53,8 @@ class CommunityController
         private RecruitmentOpeningRepository $recruitmentOpeningRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private AnalyticsEventService $analyticsEventService,
+        private CommunityMediaRepository $communityMediaRepository,
+        private TenantBrandingRepository $tenantBrandingRepository,
     ) {}
 
     /** Registre des unités / communautés (hors tenant placeholder). */
@@ -163,6 +167,21 @@ class CommunityController
             $fromRegistry ? ['from_registry' => true] : null
         );
 
+        $publicMediaItems = [];
+        $publicMediaCollections = [];
+        $tenantBranding = [
+            'logo_url' => null,
+            'banner_url' => null,
+            'primary_color' => null,
+            'accent_color' => null,
+        ];
+        if ($publicLayout === 'showcase') {
+            $publicMediaItems = $this->communityMediaRepository->listPublicPageItems($tid);
+            $publicMediaCollections = $this->communityMediaRepository->listPublicCollections($tid);
+            $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
+            $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
+        }
+
         return Response::view('layout.main', [
             'title' => trim((string) ($tenant['name'] ?? 'Communauté')) . ' — Fiche publique',
             'content' => 'community.show',
@@ -183,6 +202,9 @@ class CommunityController
             'recruitmentPublishedOpenings' => $recruitmentPublishedOpenings,
             'recruitmentProspectionRef' => $recruitmentProspectionRef,
             'recruitmentListUpdatedAt' => $recruitmentListUpdatedAt,
+            'publicMediaItems' => $publicMediaItems,
+            'publicMediaCollections' => $publicMediaCollections,
+            'tenantBranding' => $tenantBranding,
             'analyticsBeacon' => [
                 'tenantId' => $tid,
                 'category' => AnalyticsEventCategory::TENANT_PUBLIC,

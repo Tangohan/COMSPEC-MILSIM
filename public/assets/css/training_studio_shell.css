@@ -1593,3 +1593,20 @@
     min-width: 0;
   }
 }
+
+/* Présentation apprenant — bibliothèque & aperçu */
+.ts-pres-dialog {
+  margin: auto;
+  max-height: min(92vh, 52rem);
+}
+.ts-pres-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.5);
+}
+.ts-pres-lib-item img {
+  display: block;
+}
+.ts-pres-preview-loader {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(16, 185, 129, 0.18), transparent 55%),
+    #020617;
+}

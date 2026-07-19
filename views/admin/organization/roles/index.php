@@ -1,29 +1,49 @@
 <?php
-$roles = $roles ?? [];
-if (!is_array($roles)) {
-    $roles = [];
-}
-$roleViewSections = $roleViewSections ?? [];
-if (!is_array($roleViewSections)) {
-    $roleViewSections = [];
-}
-$permissionCounts = $permissionCounts ?? [];
-$roleLayerFilter = $roleLayerFilter ?? '';
-$roleTierFilter = $roleTierFilter ?? '';
+declare(strict_types=1);
+
+$roles = is_array($roles ?? null) ? $roles : [];
+$roleViewSections = is_array($roleViewSections ?? null) ? $roleViewSections : [];
+$permissionCounts = is_array($permissionCounts ?? null) ? $permissionCounts : [];
+$memberCounts = is_array($memberCounts ?? null) ? $memberCounts : [];
+$roleLayerFilter = (string) ($roleLayerFilter ?? '');
+$roleTierFilter = (string) ($roleTierFilter ?? '');
 $base = url('back-office/roles');
 $__g = \App\Core\Gate::getInstance();
 $canPresets = $__g->allows('admin.organization') || $__g->allows('admin.roles.manage') || $__g->allows('admin.permissions.manage');
 
-$tierChip = static function (string $t): array {
+$successFlash = \App\Core\Session::getFlash('success');
+$errorFlash = \App\Core\Session::getFlash('error');
+
+$tierMeta = static function (string $t): array {
     return match ($t) {
-        'authority' => ['Commandement', 'bg-rose-100 text-rose-900 ring-rose-200'],
-        'function' => ['Emploi', 'bg-sky-100 text-sky-900 ring-sky-200'],
-        'liaison' => ['Liaison', 'bg-amber-100 text-amber-950 ring-amber-200'],
-        'support' => ['Soutien', 'bg-teal-100 text-teal-900 ring-teal-200'],
-        'specialty' => ['Spécialité', 'bg-violet-100 text-violet-900 ring-violet-200'],
-        'status' => ['Statut affiché', 'bg-slate-200 text-slate-800 ring-slate-300'],
-        default => ['Emploi', 'bg-sky-100 text-sky-900 ring-sky-200'],
+        'authority' => ['label' => 'Commandement', 'class' => 'bo-roles__badge--tier-authority'],
+        'function' => ['label' => 'Emploi', 'class' => 'bo-roles__badge--tier-function'],
+        'liaison' => ['label' => 'Liaison', 'class' => 'bo-roles__badge--tier-liaison'],
+        'support' => ['label' => 'Soutien', 'class' => 'bo-roles__badge--tier-support'],
+        'specialty' => ['label' => 'Spécialité', 'class' => 'bo-roles__badge--tier-specialty'],
+        'status' => ['label' => 'Statut affiché', 'class' => 'bo-roles__badge--tier-status'],
+        default => ['label' => 'Emploi', 'class' => 'bo-roles__badge--tier-function'],
     };
+};
+
+$scopeMeta = static function (string $layer): array {
+    return $layer === 'community'
+        ? ['label' => 'Gouvernance communauté', 'class' => 'bo-roles__badge--scope-community', 'short' => 'Communauté']
+        : ['label' => 'Rôle opérationnel', 'class' => 'bo-roles__badge--scope-unit', 'short' => 'Unité'];
+};
+
+$rightsBadgeClass = static function (int $count): string {
+    if ($count <= 0) {
+        return 'bo-roles__badge--rights-empty';
+    }
+    if ($count <= 5) {
+        return 'bo-roles__badge--rights-low';
+    }
+    if ($count <= 20) {
+        return 'bo-roles__badge--rights-mid';
+    }
+
+    return 'bo-roles__badge--rights-high';
 };
 
 $appendQuery = static function (string $baseUrl, array $params): string {
@@ -31,123 +51,281 @@ $appendQuery = static function (string $baseUrl, array $params): string {
 
     return $q === '' ? $baseUrl : $baseUrl . '?' . $q;
 };
-?>
-<div class="max-w-5xl mx-auto px-6 py-12">
-    <div class="mb-6 rounded-lg border border-blue-100 bg-blue-50/90 px-4 py-3 text-sm text-slate-800">
-        Vous gérez ici les rôles propres à <strong class="font-semibold">votre communauté</strong> (gouvernance et rôles opérationnels).
-        Les habilitations réservées à l’ensemble du site sont gérées par l’administration plateforme.
-    </div>
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Rôles communauté</h1>
-        <div class="flex flex-wrap gap-2">
-            <?php if ($canPresets): ?>
-            <a href="<?= url('back-office/roles/presets') ?>" class="inline-flex items-center rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white hover:bg-blue-800">Profils de permissions</a>
-            <a href="<?= url('back-office/positions') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Postes organisationnels</a>
-            <?php endif; ?>
-            <a href="<?= url('back-office') ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Back-office</a>
-        </div>
-    </div>
-    <p class="text-slate-600 text-sm mb-2">Liste structurée par famille opérationnelle (catégorie et sous-ensemble), puis par type de rôle. L’ordre reflète une hiérarchie d’emplois, pas un grade automatique.</p>
-    <p class="text-slate-500 text-xs mb-4">Le <strong class="font-semibold text-slate-700">nombre de droits</strong> indique combien d’habilitations sont actives pour ce rôle. Utilisez <a href="<?= url('back-office/roles/presets') ?>" class="font-semibold text-blue-700 underline">Profils de permissions</a> pour harmoniser les jeux de droits<?php if ($canPresets): ?>, ou ouvrez un rôle puis <strong class="font-semibold text-slate-700">Modifier les habilitations</strong> pour un réglage précis<?php endif; ?>.</p>
-    <?php
-    $layerTousParams = [];
-    if ($roleTierFilter !== '') {
-        $layerTousParams['tier'] = $roleTierFilter;
+
+$rolesCount = count($roles);
+$withRights = 0;
+$withMembers = 0;
+$totalRights = 0;
+$totalMembers = 0;
+foreach ($roles as $r) {
+    $rid = (int) ($r['id'] ?? 0);
+    $pc = (int) ($permissionCounts[$rid] ?? 0);
+    $mc = (int) ($memberCounts[$rid] ?? 0);
+    $totalRights += $pc;
+    $totalMembers += $mc;
+    if ($pc > 0) {
+        $withRights++;
     }
-    ?>
-    <div class="flex flex-wrap gap-2 mb-3 text-sm">
-        <a href="<?= htmlspecialchars($appendQuery($base, $layerTousParams)) ?>" class="px-3 py-1 rounded border <?= $roleLayerFilter === '' ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-700 hover:bg-slate-50' ?>">Tous</a>
-        <a href="<?= htmlspecialchars($appendQuery($base, ['layer' => 'community', 'tier' => $roleTierFilter === '' ? null : $roleTierFilter])) ?>" class="px-3 py-1 rounded border <?= $roleLayerFilter === 'community' ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-700 hover:bg-slate-50' ?>">Gouvernance communauté</a>
-        <a href="<?= htmlspecialchars($appendQuery($base, ['layer' => 'intra', 'tier' => $roleTierFilter === '' ? null : $roleTierFilter])) ?>" class="px-3 py-1 rounded border <?= $roleLayerFilter === 'intra' ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 text-slate-700 hover:bg-slate-50' ?>">Rôles opérationnels</a>
-    </div>
-    <p class="text-xs font-semibold text-slate-600 mb-1">Filtrer par type de rôle</p>
-    <div class="flex flex-wrap gap-2 mb-6 text-sm">
-        <?php
-        $tierLinks = [
-            '' => 'Tous les types',
-            'authority' => 'Commandement',
-            'function' => 'Emploi',
-            'liaison' => 'Liaison',
-            'support' => 'Soutien',
-            'specialty' => 'Spécialité',
-            'status' => 'Statut affiché',
-        ];
-        foreach ($tierLinks as $tv => $tlab):
-            $active = $roleTierFilter === $tv;
-            $params = ['tier' => $tv === '' ? null : $tv];
-            if ($roleLayerFilter !== '') {
-                $params['layer'] = $roleLayerFilter;
-            }
-        ?>
-        <a href="<?= htmlspecialchars($appendQuery($base, $params)) ?>" class="px-3 py-1 rounded border <?= $active ? 'bg-indigo-900 text-white border-indigo-900' : 'border-slate-300 text-slate-700 hover:bg-slate-50' ?>"><?= htmlspecialchars($tlab) ?></a>
-        <?php endforeach; ?>
-    </div>
-    <?php if (empty($roles)): ?>
-    <p class="text-slate-500">Aucun rôle ne correspond à ces filtres.</p>
-    <?php else: ?>
-    <?php foreach ($roleViewSections as $section): ?>
-    <?php
-        $secRoles = $section['roles'] ?? [];
-        if (!is_array($secRoles) || $secRoles === []) {
-            continue;
+    if ($mc > 0) {
+        $withMembers++;
+    }
+}
+
+$layerTousParams = [];
+if ($roleTierFilter !== '') {
+    $layerTousParams['tier'] = $roleTierFilter;
+}
+
+$tierLinks = [
+    '' => 'Tous les types',
+    'authority' => 'Commandement',
+    'function' => 'Emploi',
+    'liaison' => 'Liaison',
+    'support' => 'Soutien',
+    'specialty' => 'Spécialité',
+    'status' => 'Statut affiché',
+];
+?>
+<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-roles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<div
+    class="bo-roles"
+    x-data="{
+        q: '',
+        match(hay) {
+            const needle = (this.q || '').trim().toLowerCase();
+            if (!needle) return true;
+            return (hay || '').toLowerCase().includes(needle);
         }
-        $secTitle = (string) ($section['title'] ?? '');
-    ?>
-    <div class="mb-8">
-        <p class="text-xs font-black uppercase tracking-widest text-slate-600 mb-3"><?= htmlspecialchars($secTitle) ?></p>
-        <table class="w-full border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <thead class="bg-slate-100 border-b border-slate-200">
-                <tr>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Rôle</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Type</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Référence interne</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Périmètre</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase" title="Nombre de droits accordés à ce rôle">Droits</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($secRoles as $r):
-                    $rid = (int) $r['id'];
-                    $count = $permissionCounts[$rid] ?? 0;
-                    $layer = (string) ($r['role_layer'] ?? 'community');
-                    $stier = (string) ($r['semantic_tier'] ?? 'function');
-                    [$tLab, $tClass] = $tierChip($stier);
-                    $rowLocked = (int) ($r['is_locked'] ?? 0) !== 0;
+    }"
+>
+    <header class="bo-roles__hero">
+        <div class="bo-roles__hero-inner">
+            <div>
+                <p class="bo-roles__eyebrow">Communauté · Habilitations</p>
+                <h1 class="bo-roles__title">Rôles communauté</h1>
+                <p class="bo-roles__lead">
+                    Table des rôles de votre communauté : type, périmètre, droits accordés et membres concernés.
+                    Les habilitations réservées à l’ensemble du site restent gérées par l’administration plateforme.
+                </p>
+            </div>
+            <div class="bo-roles__hero-actions">
+                <?php if ($canPresets): ?>
+                <a href="<?= htmlspecialchars(url('back-office/roles/presets'), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--ghost">Profils prêts</a>
+                <a href="<?= htmlspecialchars(url('back-office/positions'), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--ghost">Postes organisationnels</a>
+                <?php endif; ?>
+                <a href="<?= htmlspecialchars(url('back-office/access-management'), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--ghost">Gestion des accès</a>
+                <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--solid">Centre de pilotage</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="bo-roles__deck">
+        <?php if ($successFlash): ?>
+            <div class="bo-roles__flash bo-roles__flash--ok" role="status"><?= htmlspecialchars((string) $successFlash, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($errorFlash): ?>
+            <div class="bo-roles__flash bo-roles__flash--err" role="alert"><?= htmlspecialchars((string) $errorFlash, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+
+        <div class="bo-roles__kpi-grid" aria-label="Synthèse des rôles">
+            <div class="bo-roles__kpi">
+                <p class="bo-roles__kpi-label">Rôles affichés</p>
+                <p class="bo-roles__kpi-value"><?= $rolesCount ?></p>
+                <p class="bo-roles__kpi-meta">Selon les filtres actifs</p>
+            </div>
+            <div class="bo-roles__kpi">
+                <p class="bo-roles__kpi-label">Avec droits</p>
+                <p class="bo-roles__kpi-value"><?= $withRights ?></p>
+                <p class="bo-roles__kpi-meta"><?= $totalRights ?> habilitation<?= $totalRights > 1 ? 's' : '' ?> au total</p>
+            </div>
+            <div class="bo-roles__kpi">
+                <p class="bo-roles__kpi-label">Avec membres</p>
+                <p class="bo-roles__kpi-value"><?= $withMembers ?></p>
+                <p class="bo-roles__kpi-meta"><?= $totalMembers ?> affectation<?= $totalMembers > 1 ? 's' : '' ?> (cumul)</p>
+            </div>
+            <div class="bo-roles__kpi">
+                <p class="bo-roles__kpi-label">Périmètre</p>
+                <p class="bo-roles__kpi-value" style="font-size:1.05rem;line-height:1.35;margin-top:0.55rem;">
+                    <?php
+                    $scopeLabel = match ($roleLayerFilter) {
+                        'community' => 'Gouvernance',
+                        'intra' => 'Opérationnel',
+                        default => 'Tous',
+                    };
+                    echo htmlspecialchars($scopeLabel, ENT_QUOTES, 'UTF-8');
                     ?>
-                <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors <?= $layer === 'community' ? 'bg-white' : 'bg-slate-50/40' ?>">
-                    <td class="p-3">
-                        <span class="font-semibold text-slate-900"><?= htmlspecialchars($r['name']) ?></span>
-                        <?php if (!empty($r['label_en'])): ?>
-                        <span class="block text-[11px] text-slate-500 mt-0.5"><?= htmlspecialchars((string) $r['label_en']) ?></span>
-                        <?php endif; ?>
-                        <?php if (!empty($r['description'])): ?>
-                        <span class="block text-[11px] text-slate-500 mt-1 leading-snug max-w-md"><?= htmlspecialchars((string) $r['description']) ?></span>
-                        <?php endif; ?>
-                    </td>
-                    <td class="p-3 align-top">
-                        <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ring-inset <?= htmlspecialchars($tClass) ?>"><?= htmlspecialchars($tLab) ?></span>
-                    </td>
-                    <td class="p-3 text-slate-600 font-mono text-xs align-top"><?= htmlspecialchars($r['slug']) ?></td>
-                    <td class="p-3 text-xs align-top">
-                        <span class="inline-flex rounded-full px-2 py-0.5 font-semibold <?= $layer === 'community' ? 'bg-indigo-100 text-indigo-900' : 'bg-emerald-100 text-emerald-900' ?>">
-                            <?= $layer === 'community' ? 'Communauté' : 'Unité' ?>
-                        </span>
-                    </td>
-                    <td class="p-3 align-top tabular-nums text-slate-800"><?= $count ?></td>
-                    <td class="p-3 align-top">
-                        <div class="flex flex-col gap-1">
-                            <a href="<?= url('back-office/roles/' . $rid) ?>" class="text-blue-800 hover:underline text-sm font-semibold">Fiche</a>
-                            <?php if ($canPresets && !$rowLocked): ?>
-                            <a href="<?= url('back-office/roles/' . $rid . '/permissions') ?>" class="text-emerald-800 hover:underline text-xs font-semibold">Habilitations</a>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </p>
+                <p class="bo-roles__kpi-meta">
+                    <?php
+                    $tierLabel = $tierLinks[$roleTierFilter] ?? 'Tous les types';
+                    echo htmlspecialchars($tierLabel, ENT_QUOTES, 'UTF-8');
+                    ?>
+                </p>
+            </div>
+        </div>
+
+        <section class="bo-roles__panel" aria-labelledby="bo-roles-sheet-title">
+            <div class="bo-roles__panel-head">
+                <h2 id="bo-roles-sheet-title">Table des rôles</h2>
+                <p>
+                    Liste structurée par famille opérationnelle. Le nombre de droits indique combien d’habilitations sont actives pour chaque rôle.
+                    <?php if ($canPresets): ?>
+                    Utilisez <a href="<?= htmlspecialchars(url('back-office/roles/presets'), ENT_QUOTES, 'UTF-8') ?>">Profils prêts</a> pour harmoniser, ou ouvrez un rôle pour un réglage précis.
+                    <?php endif; ?>
+                </p>
+            </div>
+
+            <div class="bo-roles__toolbar">
+                <div class="bo-roles__filters">
+                    <div class="bo-roles__filter-row">
+                        <span class="bo-roles__filter-label">Périmètre</span>
+                        <a href="<?= htmlspecialchars($appendQuery($base, $layerTousParams), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__chip<?= $roleLayerFilter === '' ? ' is-active' : '' ?>">Tous</a>
+                        <a href="<?= htmlspecialchars($appendQuery($base, ['layer' => 'community', 'tier' => $roleTierFilter === '' ? null : $roleTierFilter]), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__chip<?= $roleLayerFilter === 'community' ? ' is-active' : '' ?>">Gouvernance communauté</a>
+                        <a href="<?= htmlspecialchars($appendQuery($base, ['layer' => 'intra', 'tier' => $roleTierFilter === '' ? null : $roleTierFilter]), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__chip<?= $roleLayerFilter === 'intra' ? ' is-active' : '' ?>">Rôles opérationnels</a>
+                    </div>
+                    <div class="bo-roles__filter-row">
+                        <span class="bo-roles__filter-label">Type</span>
+                        <?php foreach ($tierLinks as $tv => $tlab):
+                            $active = $roleTierFilter === $tv;
+                            $params = ['tier' => $tv === '' ? null : $tv];
+                            if ($roleLayerFilter !== '') {
+                                $params['layer'] = $roleLayerFilter;
+                            }
+                        ?>
+                        <a href="<?= htmlspecialchars($appendQuery($base, $params), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__chip<?= $active ? ' is-active-soft' : '' ?>"><?= htmlspecialchars($tlab, ENT_QUOTES, 'UTF-8') ?></a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="bo-roles__search">
+                    <label for="bo-roles-search">Rechercher</label>
+                    <input
+                        id="bo-roles-search"
+                        type="search"
+                        x-model="q"
+                        placeholder="Nom, type, périmètre…"
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+
+            <?php if ($roles === []): ?>
+                <div class="bo-roles__empty">
+                    <div class="bo-roles__empty-icon" aria-hidden="true">∅</div>
+                    <p>Aucun rôle ne correspond à ces filtres</p>
+                    <span>Élargissez le périmètre ou le type, ou créez un rôle depuis la gestion des accès.</span>
+                </div>
+            <?php else: ?>
+                <div class="bo-roles__sheet-wrap">
+                    <table class="bo-roles__sheet">
+                        <thead>
+                            <tr>
+                                <th scope="col">Rôle</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Périmètre</th>
+                                <th scope="col" class="bo-roles__col-num">Droits</th>
+                                <th scope="col" class="bo-roles__col-num">Membres</th>
+                                <th scope="col" class="bo-roles__col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($roleViewSections as $section):
+                                $secRoles = $section['roles'] ?? [];
+                                if (!is_array($secRoles) || $secRoles === []) {
+                                    continue;
+                                }
+                                $secTitle = (string) ($section['title'] ?? '');
+                                $secCount = count($secRoles);
+                                $sectionHay = $secTitle;
+                                foreach ($secRoles as $sr) {
+                                    $stier = (string) ($sr['semantic_tier'] ?? 'function');
+                                    $slayer = (string) ($sr['role_layer'] ?? 'community');
+                                    $sectionHay .= ' ' . (string) ($sr['name'] ?? '')
+                                        . ' ' . (string) ($sr['description'] ?? '')
+                                        . ' ' . (string) ($sr['label_en'] ?? '')
+                                        . ' ' . $tierMeta($stier)['label']
+                                        . ' ' . $scopeMeta($slayer)['label']
+                                        . ' ' . $scopeMeta($slayer)['short'];
+                                }
+                            ?>
+                            <tr class="bo-roles__group-row" x-show="match(<?= htmlspecialchars(json_encode($sectionHay, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>)">
+                                <td colspan="6">
+                                    <p class="bo-roles__group-title"><?= htmlspecialchars($secTitle, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="bo-roles__group-meta"><?= $secCount ?> rôle<?= $secCount > 1 ? 's' : '' ?> dans cette famille</p>
+                                </td>
+                            </tr>
+                            <?php foreach ($secRoles as $r):
+                                $rid = (int) ($r['id'] ?? 0);
+                                $count = (int) ($permissionCounts[$rid] ?? 0);
+                                $members = (int) ($memberCounts[$rid] ?? 0);
+                                $layer = (string) ($r['role_layer'] ?? 'community');
+                                $stier = (string) ($r['semantic_tier'] ?? 'function');
+                                $tier = $tierMeta($stier);
+                                $scope = $scopeMeta($layer);
+                                $rowLocked = (int) ($r['is_locked'] ?? 0) !== 0;
+                                $name = (string) ($r['name'] ?? '');
+                                $desc = trim((string) ($r['description'] ?? ''));
+                                $labelEn = trim((string) ($r['label_en'] ?? ''));
+                                $hay = $name . ' ' . $desc . ' ' . $labelEn . ' ' . $tier['label'] . ' ' . $scope['label'] . ' ' . $scope['short'] . ' ' . $secTitle;
+                                $hayJson = htmlspecialchars(json_encode($hay, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+                            ?>
+                            <tr class="<?= $rowLocked ? 'is-locked' : '' ?>" x-show="match(<?= $hayJson ?>)">
+                                <td class="bo-roles__col-role" data-label="Rôle">
+                                    <span class="bo-roles__role-name"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($labelEn !== ''): ?>
+                                    <span class="bo-roles__role-desc"><?= htmlspecialchars($labelEn, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($desc !== ''): ?>
+                                    <span class="bo-roles__role-desc"><?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($rowLocked): ?>
+                                    <div class="bo-roles__role-tags">
+                                        <span class="bo-roles__badge bo-roles__badge--locked">Verrouillé</span>
+                                    </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td data-label="Type">
+                                    <span class="bo-roles__badge <?= htmlspecialchars($tier['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($tier['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </td>
+                                <td data-label="Périmètre">
+                                    <span class="bo-roles__badge <?= htmlspecialchars($scope['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($scope['short'], ENT_QUOTES, 'UTF-8') ?></span>
+                                </td>
+                                <td class="bo-roles__col-num" data-label="Droits">
+                                    <?php if ($count <= 0): ?>
+                                    <span class="bo-roles__badge <?= $rightsBadgeClass(0) ?>">Aucun droit</span>
+                                    <?php else: ?>
+                                    <div class="bo-roles__metric">
+                                        <span class="bo-roles__metric-value"><?= $count ?></span>
+                                        <span class="bo-roles__badge <?= $rightsBadgeClass($count) ?>"><?= $count === 1 ? 'droit actif' : 'droits actifs' ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="bo-roles__col-num" data-label="Membres">
+                                    <div class="bo-roles__metric">
+                                        <span class="bo-roles__metric-value"><?= $members ?></span>
+                                        <span class="bo-roles__metric-label"><?= $members === 1 ? 'membre' : 'membres' ?></span>
+                                    </div>
+                                </td>
+                                <td class="bo-roles__col-actions" data-label="Actions">
+                                    <div class="bo-roles__actions">
+                                        <a href="<?= htmlspecialchars(url('back-office/roles/' . $rid), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--link">Fiche</a>
+                                        <?php if ($canPresets && !$rowLocked): ?>
+                                        <a href="<?= htmlspecialchars(url('back-office/roles/' . $rid . '/permissions'), ENT_QUOTES, 'UTF-8') ?>" class="bo-roles__btn bo-roles__btn--link">Habilitations</a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+
+        <p class="bo-roles__hint">
+            L’ordre reflète une hiérarchie d’emplois, pas un grade automatique.
+            Pour créer un nouveau rôle, passez par la <a href="<?= htmlspecialchars(url('back-office/access-management?tab=roles'), ENT_QUOTES, 'UTF-8') ?>">gestion des accès</a>.
+        </p>
     </div>
-    <?php endforeach; ?>
-    <?php endif; ?>
 </div>

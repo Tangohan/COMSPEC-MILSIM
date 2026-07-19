@@ -5,6 +5,8 @@ $lessonTypes = $lessonTypes ?? [];
 $visibilityOptions = $visibilityOptions ?? [];
 $levelOptions = $levelOptions ?? [];
 $canPublish = $canPublish ?? false;
+$publishElevationRecipients = $publishElevationRecipients ?? [];
+$publishElevationCooldownSec = $publishElevationCooldownSec ?? null;
 $studioCanSetPlatformScope = $studioCanSetPlatformScope ?? false;
 $curLmsScope = (string) ($course['lms_scope'] ?? 'tenant');
 if ($curLmsScope !== 'platform' && $curLmsScope !== 'tenant') {
@@ -371,95 +373,202 @@ $defaultCanvasJson = json_encode([
         </ul>
     </section>
 
-    <form method="post" action="<?= training_studio_url($cid) ?>" class="space-y-8 mb-12" id="studio-presentation-form">
+    <form method="post" action="<?= training_studio_url($cid) ?>" enctype="multipart/form-data" class="space-y-8 mb-12" id="studio-presentation-form"
+          data-pres-course-title="<?= htmlspecialchars((string) ($course['title'] ?? 'Formation')) ?>"
+          data-pres-media-base="<?= htmlspecialchars(rtrim(url(''), '/')) ?>">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="_action" value="save_course">
         <input type="hidden" name="_studio_section" value="presentation">
 
         <section id="studio-presentation" class="training-studio-panel scroll-mt-28 p-6 md:p-8 space-y-6 shadow-sm">
-            <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Présentation côté apprenant</h2>
-            <p class="text-xs text-slate-500 max-w-3xl">Apparence du parcours, visuels de couverture et consignes audio. Les textes, visibilité et règles d’inscription se gèrent dans l’onglet <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Données &amp; inscription</a>. Les ressources téléchargeables ou liens par leçon se gèrent dans <a href="<?= htmlspecialchars($studioU('structure')) ?>#studio-ressources-aide" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Modules, leçons &amp; ressources</a>.</p>
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-[0.2em] text-slate-500">Présentation côté apprenant</h2>
+                    <p class="text-xs text-slate-500 max-w-3xl mt-2">Apparence du parcours, visuels de couverture et consignes audio. Les textes, visibilité et règles d’inscription se gèrent dans l’onglet <a href="<?= htmlspecialchars($studioU('fiche')) ?>" class="font-semibold text-emerald-800 underline decoration-emerald-200 hover:text-emerald-950">Données &amp; inscription</a>.</p>
+                </div>
+                <button type="button" id="studio-pres-preview-open" class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-emerald-900 hover:bg-emerald-100">
+                    Aperçu apprenant
+                </button>
+            </div>
+
+            <?php
+            $studioPresentationKits = is_array($studioPresentationKits ?? null) ? $studioPresentationKits : [];
+            $studioSiteImages = is_array($studioSiteImages ?? null) ? $studioSiteImages : [];
+            $thumbPath = trim((string) ($course['thumbnail_path'] ?? ''));
+            $bannerPath = trim((string) ($course['banner_path'] ?? ''));
+            $audioPath = trim((string) ($course['instruction_audio_url'] ?? ''));
+            $thumbPreview = $thumbPath !== '' ? training_media_url($thumbPath) : null;
+            $bannerPreview = $bannerPath !== '' ? training_media_url($bannerPath) : null;
+            $loaderPreview = $themeOpeningLoaderImage !== '' ? training_media_url($themeOpeningLoaderImage) : null;
+            $audioPreview = $audioPath !== '' ? training_media_url($audioPath) : null;
+            ?>
+
+            <div id="studio-presentation-kits" class="rounded-xl border border-violet-200 bg-violet-50/50 p-4 space-y-3 scroll-mt-28">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-xs font-black uppercase tracking-wide text-violet-900">Kits de présentation</h3>
+                        <p class="text-[11px] text-violet-900/80 mt-1 max-w-2xl">Enregistrez le jeu de réglages actuellement <strong>sauvegardé</strong> sur cette formation pour le réappliquer plus tard sur d’autres parcours de votre communauté.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 items-end">
+                    <div class="min-w-[12rem] flex-1">
+                        <label class="block text-[11px] font-bold text-violet-900 mb-1" for="kit_name">Nom du kit</label>
+                        <input form="studio-kit-save-form" type="text" name="kit_name" id="kit_name" maxlength="80" class="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm bg-white" placeholder="Ex. Ambiance opérationnelle">
+                    </div>
+                    <button form="studio-kit-save-form" type="submit" class="rounded-xl bg-violet-800 px-4 py-2.5 text-xs font-bold text-white hover:bg-violet-700">Enregistrer comme kit</button>
+                </div>
+                <?php if ($studioPresentationKits !== []): ?>
+                <ul class="space-y-2 pt-1">
+                    <?php foreach ($studioPresentationKits as $kitRow):
+                        $kitId = (string) ($kitRow['id'] ?? '');
+                        $kitName = (string) ($kitRow['name'] ?? 'Sans nom');
+                        if ($kitId === '') {
+                            continue;
+                        }
+                        ?>
+                    <li class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-200/80 bg-white px-3 py-2">
+                        <span class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($kitName) ?></span>
+                        <span class="flex flex-wrap gap-2">
+                            <form method="post" action="<?= training_studio_url($cid) ?>" class="inline">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="_action" value="apply_presentation_kit">
+                                <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kitId) ?>">
+                                <button type="submit" class="text-xs font-bold text-emerald-800 hover:underline">Appliquer</button>
+                            </form>
+                            <form method="post" action="<?= training_studio_url($cid) ?>" class="inline" onsubmit="return confirm('Supprimer ce kit de présentation ?');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <input type="hidden" name="_action" value="delete_presentation_kit">
+                                <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kitId) ?>">
+                                <button type="submit" class="text-xs font-bold text-rose-700 hover:underline">Supprimer</button>
+                            </form>
+                        </span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php else: ?>
+                <p class="text-[11px] text-violet-900/70">Aucun kit enregistré pour le moment.</p>
+                <?php endif; ?>
+            </div>
 
             <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
                 <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-800">
-                    <input type="checkbox" name="lms_theme_enable" value="1" <?= $themeEnable ? 'checked' : '' ?>>
+                    <input type="checkbox" name="lms_theme_enable" value="1" <?= $themeEnable ? 'checked' : '' ?> data-pres-theme-enable>
                     Personnaliser l’apparence du parcours pour cette formation
                 </label>
                 <p class="text-[11px] text-slate-600">Couleurs, typographie et forme des blocs visibles par les apprenants sur cette formation.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Couleur d’accent</label>
-                        <input type="color" name="lms_theme_accent" value="<?= htmlspecialchars($themeAccent) ?>" class="h-10 w-full max-w-[8rem] cursor-pointer rounded-lg border border-slate-200 bg-white p-1">
+                        <input type="color" name="lms_theme_accent" value="<?= htmlspecialchars($themeAccent) ?>" class="h-10 w-full max-w-[8rem] cursor-pointer rounded-lg border border-slate-200 bg-white p-1" data-pres-accent>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Typographie</label>
-                        <select name="lms_theme_font" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <select name="lms_theme_font" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-pres-font>
                             <?php foreach ($themeFontPresets as $fk => $_css): ?>
-                            <option value="<?= htmlspecialchars($fk) ?>" <?= $themeFontKey === $fk ? 'selected' : '' ?>><?= htmlspecialchars($themeFontLabels[$fk] ?? $fk) ?></option>
+                            <option value="<?= htmlspecialchars($fk) ?>" <?= $themeFontKey === $fk ? 'selected' : '' ?> data-font-css="<?= htmlspecialchars((string) $_css) ?>"><?= htmlspecialchars($themeFontLabels[$fk] ?? $fk) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Arrondi des blocs</label>
-                        <select name="lms_theme_radius" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <select name="lms_theme_radius" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-pres-radius>
                             <?php foreach ($themeRadiusPresets as $rk => $_rv): ?>
-                            <option value="<?= htmlspecialchars($rk) ?>" <?= $themeRadiusKey === $rk ? 'selected' : '' ?>><?= htmlspecialchars($themeRadiusLabels[$rk] ?? $rk) ?></option>
+                            <option value="<?= htmlspecialchars($rk) ?>" <?= $themeRadiusKey === $rk ? 'selected' : '' ?> data-radius-css="<?= htmlspecialchars((string) $_rv) ?>"><?= htmlspecialchars($themeRadiusLabels[$rk] ?? $rk) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Ambiance</label>
-                        <select name="lms_theme_variant" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                        <select name="lms_theme_variant" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" data-pres-variant>
                             <?php foreach ($themeVariantLabels as $vk => $vlab): ?>
                             <option value="<?= htmlspecialchars($vk) ?>" <?= $themeVariant === $vk ? 'selected' : '' ?>><?= htmlspecialchars($vlab) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-slate-200/70 pt-3">
-                    <div class="md:col-span-2">
+                <div class="space-y-3 border-t border-slate-200/70 pt-3">
+                    <div>
                         <p class="text-[11px] font-bold uppercase tracking-wide text-slate-600">Loader d’ouverture (slide)</p>
                         <p class="text-[11px] text-slate-500">Pendant « Préparation du parcours… », vous pouvez afficher une image et un texte de contexte.</p>
                     </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Image du loader</label>
-                        <input type="text" name="lms_opening_loader_image" value="<?= htmlspecialchars($themeOpeningLoaderImage) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono" placeholder="uploads/formation-loader.webp">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Titre du slide loader</label>
-                        <input type="text" name="lms_opening_loader_title" maxlength="120" value="<?= htmlspecialchars($themeOpeningLoaderTitle) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Mise en place du module">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Texte du slide loader</label>
-                        <textarea name="lms_opening_loader_body" rows="2" maxlength="320" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Objectifs, consignes, ambiance..."><?= htmlspecialchars($themeOpeningLoaderBody) ?></textarea>
+                    <?php
+                    $mediaKey = 'loader';
+                    $mediaKind = 'image';
+                    $mediaLabel = 'Image du loader';
+                    $mediaHelp = 'Image affichée pendant la préparation du parcours.';
+                    $mediaPathValue = $themeOpeningLoaderImage;
+                    $mediaPathName = 'lms_opening_loader_image';
+                    $mediaUploadName = 'lms_opening_loader_image_upload';
+                    $mediaRemoveName = 'lms_opening_loader_image_remove';
+                    $mediaAccept = 'image/jpeg,image/png,image/webp,image/gif';
+                    $mediaRatio = 'aspect-[16/10]';
+                    $mediaPreviewUrl = $loaderPreview;
+                    require base_path('views/admin/training/partials/studio_presentation_media_field.php');
+                    ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Titre du slide loader</label>
+                            <input type="text" name="lms_opening_loader_title" maxlength="120" value="<?= htmlspecialchars($themeOpeningLoaderTitle) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Mise en place du module" data-pres-loader-title>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Texte du slide loader</label>
+                            <textarea name="lms_opening_loader_body" rows="2" maxlength="320" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Objectifs, consignes, ambiance..." data-pres-loader-body><?= htmlspecialchars($themeOpeningLoaderBody) ?></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Miniature (chemin ou emplacement du fichier)</label>
-                    <input type="text" name="thumbnail_path" value="<?= htmlspecialchars((string) ($course['thumbnail_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs" placeholder="uploads/…">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Bannière (chemin ou emplacement du fichier)</label>
-                    <input type="text" name="banner_path" value="<?= htmlspecialchars((string) ($course['banner_path'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-xs">
-                </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <?php
+                $mediaKey = 'thumbnail';
+                $mediaKind = 'image';
+                $mediaLabel = 'Miniature';
+                $mediaHelp = 'Affichée sur la carte de la formation dans le catalogue.';
+                $mediaPathValue = $thumbPath;
+                $mediaPathName = 'thumbnail_path';
+                $mediaUploadName = 'thumbnail_upload';
+                $mediaRemoveName = 'thumbnail_remove';
+                $mediaAccept = 'image/jpeg,image/png,image/webp,image/gif';
+                $mediaRatio = 'aspect-[4/3]';
+                $mediaPreviewUrl = $thumbPreview;
+                require base_path('views/admin/training/partials/studio_presentation_media_field.php');
+
+                $mediaKey = 'banner';
+                $mediaKind = 'image';
+                $mediaLabel = 'Bannière';
+                $mediaHelp = 'Grande image d’ouverture du parcours côté apprenant.';
+                $mediaPathValue = $bannerPath;
+                $mediaPathName = 'banner_path';
+                $mediaUploadName = 'banner_upload';
+                $mediaRemoveName = 'banner_remove';
+                $mediaAccept = 'image/jpeg,image/png,image/webp,image/gif';
+                $mediaRatio = 'aspect-[16/6]';
+                $mediaPreviewUrl = $bannerPreview;
+                require base_path('views/admin/training/partials/studio_presentation_media_field.php');
+                ?>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 pt-6">
-                <div class="md:col-span-2">
-                    <h3 class="text-xs font-black uppercase text-slate-500 mb-2">Consignes audio (optionnel)</h3>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Adresse du fichier ou du flux audio</label>
-                    <input type="url" name="instruction_audio_url" value="<?= htmlspecialchars((string) ($course['instruction_audio_url'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://…">
-                </div>
+            <div class="border-t border-slate-100 pt-6 space-y-4">
+                <h3 class="text-xs font-black uppercase text-slate-500">Consignes audio (optionnel)</h3>
+                <?php
+                $mediaKey = 'audio';
+                $mediaKind = 'audio';
+                $mediaLabel = 'Fichier de consignes';
+                $mediaHelp = 'Joignez un enregistrement depuis votre poste. Les adresses externes déjà enregistrées restent prises en charge.';
+                $mediaPathValue = $audioPath;
+                $mediaPathName = 'instruction_audio_url';
+                $mediaUploadName = 'instruction_audio_upload';
+                $mediaRemoveName = 'instruction_audio_remove';
+                $mediaAccept = 'audio/mpeg,audio/mp3,audio/ogg,audio/wav,audio/mp4,.mp3,.ogg,.wav,.m4a';
+                $mediaRatio = '';
+                $mediaPreviewUrl = $audioPreview;
+                require base_path('views/admin/training/partials/studio_presentation_media_field.php');
+                ?>
                 <label class="inline-flex items-center gap-2 text-sm text-slate-700">
                     <input type="checkbox" name="instruction_audio_instructor_optional" value="1" <?= (($course['instruction_audio_instructor_optional'] ?? 1) == 1) ? 'checked' : '' ?>>
                     Écoute possible sans instructeur présent
                 </label>
-                <div class="md:col-span-2">
+                <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Notes</label>
                     <input type="text" name="instruction_audio_notes" maxlength="500" value="<?= htmlspecialchars((string) ($course['instruction_audio_notes'] ?? '')) ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Contexte, consignes de sécurité…">
                 </div>
@@ -468,9 +577,97 @@ $defaultCanvasJson = json_encode([
             <div class="flex flex-wrap gap-3 pt-2">
                 <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-black rounded-xl hover:bg-slate-800 shadow-md">Enregistrer la présentation</button>
                 <a href="<?= htmlspecialchars($studioU('structure')) ?>" class="inline-flex items-center px-4 py-3 border border-slate-200 bg-white text-slate-800 text-sm font-bold rounded-xl hover:bg-slate-50">Aller aux modules &amp; leçons</a>
+                <a href="<?= training_studio_url($cid . '/preview') ?>" class="inline-flex items-center px-4 py-3 border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm font-bold rounded-xl hover:bg-emerald-100">Aperçu caviardé du parcours</a>
             </div>
         </section>
     </form>
+
+    <form id="studio-kit-save-form" method="post" action="<?= training_studio_url($cid) ?>" class="hidden">
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="_action" value="save_presentation_kit">
+    </form>
+
+    <dialog id="studio-pres-library" class="ts-pres-dialog w-full max-w-4xl rounded-2xl border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/50">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-wide text-slate-900">Images du site</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">Choisissez une image publique déjà présente sur le portail.</p>
+            </div>
+            <button type="button" class="text-xs font-bold text-slate-600 hover:text-slate-900" data-pres-library-close>Fermer</button>
+        </div>
+        <div class="px-5 py-3 border-b border-slate-100">
+            <label class="sr-only" for="studio-pres-library-search">Filtrer les images</label>
+            <input type="search" id="studio-pres-library-search" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm" placeholder="Rechercher par nom…" autocomplete="off">
+        </div>
+        <div class="max-h-[min(60vh,28rem)] overflow-y-auto p-4">
+            <?php if ($studioSiteImages === []): ?>
+            <p class="text-sm text-slate-600 px-1">Aucune image publique n’a été trouvée sur le site.</p>
+            <?php else: ?>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="studio-pres-library-grid">
+                <?php foreach ($studioSiteImages as $siteImg):
+                    $sip = (string) ($siteImg['path'] ?? '');
+                    $sil = (string) ($siteImg['label'] ?? $sip);
+                    $siu = (string) ($siteImg['url'] ?? '');
+                    if ($sip === '' || $siu === '') {
+                        continue;
+                    }
+                    ?>
+                <button type="button"
+                        class="ts-pres-lib-item group text-left rounded-xl border border-slate-200 bg-white overflow-hidden hover:border-emerald-400 hover:shadow-sm transition"
+                        data-pres-lib-path="<?= htmlspecialchars($sip) ?>"
+                        data-pres-lib-url="<?= htmlspecialchars($siu) ?>"
+                        data-pres-lib-label="<?= htmlspecialchars(mb_strtolower($sil)) ?>">
+                    <span class="block aspect-[4/3] bg-slate-100 overflow-hidden">
+                        <img src="<?= htmlspecialchars($siu) ?>" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-[1.03] transition duration-300">
+                    </span>
+                    <span class="block px-2 py-1.5 text-[10px] font-semibold text-slate-700 leading-snug line-clamp-2"><?= htmlspecialchars($sil) ?></span>
+                </button>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+    </dialog>
+
+    <dialog id="studio-pres-preview" class="ts-pres-dialog w-full max-w-3xl rounded-2xl border border-slate-200 p-0 shadow-2xl backdrop:bg-slate-950/55">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+                <h3 class="text-sm font-black uppercase tracking-wide text-slate-900">Aperçu côté apprenant</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">Simulation locale à partir des réglages du formulaire (sans enregistrement).</p>
+            </div>
+            <button type="button" class="text-xs font-bold text-slate-600 hover:text-slate-900" data-pres-preview-close>Fermer</button>
+        </div>
+        <div class="p-5 space-y-4" id="studio-pres-preview-body">
+            <div class="ts-pres-preview-loader rounded-2xl border border-slate-800 bg-slate-950 text-white p-6 text-center space-y-3">
+                <div class="mx-auto max-w-xs overflow-hidden rounded-xl border border-white/10 bg-slate-900 aspect-[16/10] flex items-center justify-center">
+                    <img src="" alt="" class="hidden w-full h-full object-cover" data-prev-loader-img>
+                    <span class="text-[11px] text-slate-500 px-3" data-prev-loader-empty>Sans image de loader</span>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Préparation du parcours…</p>
+                <p class="text-base font-bold" data-prev-loader-title>Mise en place</p>
+                <p class="text-sm text-slate-300 leading-relaxed max-w-md mx-auto" data-prev-loader-body></p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 overflow-hidden bg-white" data-prev-theme-card style="--lms-accent:#10b981;font-family:Inter,system-ui,sans-serif;border-radius:1.25rem">
+                <div class="aspect-[16/6] bg-slate-200 relative overflow-hidden">
+                    <img src="" alt="" class="hidden absolute inset-0 w-full h-full object-cover" data-prev-banner-img>
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 to-transparent"></div>
+                    <div class="absolute bottom-3 left-4 right-4 text-white">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Préambule</p>
+                        <p class="text-lg font-black leading-tight" data-prev-course-title>Formation</p>
+                    </div>
+                </div>
+                <div class="p-4 flex gap-4 items-start">
+                    <div class="w-20 aspect-[4/3] rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center">
+                        <img src="" alt="" class="hidden w-full h-full object-cover" data-prev-thumb-img>
+                        <span class="text-[9px] text-slate-400 px-1 text-center" data-prev-thumb-empty>Miniature</span>
+                    </div>
+                    <div class="min-w-0 space-y-2">
+                        <p class="text-sm text-slate-600 leading-relaxed">Exemple de bloc avec la couleur d’accent et la typographie choisies.</p>
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold text-white" style="background:var(--lms-accent)" data-prev-accent-chip>Accent</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dialog>
 
     <?php else: ?>
     <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 md:p-5">
@@ -1047,6 +1244,9 @@ $defaultCanvasJson = json_encode([
 
     <?php endif; ?>
 
+    <?php if ($trainingStudioSection === 'presentation'): ?>
+    <script src="<?= url('assets/js/training_studio_presentation.js') ?>" defer></script>
+    <?php endif; ?>
     <?php if (in_array($trainingStudioSection, ['fiche', 'structure'], true)): ?>
     <script src="<?= url('assets/js/training_studio_objectives.js') ?>" defer></script>
     <?php endif; ?>

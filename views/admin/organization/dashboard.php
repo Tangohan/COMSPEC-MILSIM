@@ -117,8 +117,6 @@ $modActionLabelFr = static function (string $t): string {
     };
 };
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-dashboard.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<link href="<?= htmlspecialchars(asset_url('assets/css/announce-tiles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <style>
     .bo-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
     .bo-sheet thead th {
@@ -169,6 +167,7 @@ $modActionLabelFr = static function (string $t): string {
 <?php
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
 ?>
+<div class="min-h-0 flex-1 flex flex-col">
 <div
     class="org-dash"
     x-data="{ tab: 'overview' }"
@@ -177,26 +176,31 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
     <div class="org-dash__frame">
 
         <?php if ($setupBanner !== null): ?>
-        <div class="mb-5 rounded-2xl border border-emerald-300/80 bg-gradient-to-br from-emerald-50 via-white to-slate-50 px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div class="min-w-0">
-                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800/90">Configuration initiale</p>
-                <p class="mt-1 text-sm font-semibold text-slate-900">
-                    Finalisez les réglages essentiels de votre communauté
-                    <span class="tabular-nums text-emerald-800">(<?= (int) ($setupBanner['percent'] ?? 0) ?> %)</span>
-                </p>
-                <p class="mt-0.5 text-xs text-slate-600">Logo, contact, inscription, modules publics — vous pouvez reporter à tout moment.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
-                <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800">Continuer</a>
-                <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
-                    <?= \App\Core\Csrf::field() ?>
-                    <button type="submit" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Plus tard</button>
-                </form>
+        <div class="org-dash__setup">
+            <div class="org-dash__setup-inner">
+                <div class="org-dash__setup-copy">
+                    <p class="org-dash__setup-kicker">Configuration initiale</p>
+                    <p class="org-dash__setup-title">
+                        Finalisez les réglages essentiels
+                        <span class="org-dash__setup-pct"><?= (int) ($setupBanner['percent'] ?? 0) ?>&nbsp;%</span>
+                    </p>
+                    <p class="org-dash__setup-lead">Logo, contact, inscription, modules publics — reportable à tout moment.</p>
+                    <div class="org-dash__setup-bar" role="progressbar" aria-valuenow="<?= (int) ($setupBanner['percent'] ?? 0) ?>" aria-valuemin="0" aria-valuemax="100">
+                        <span style="width:<?= max(0, min(100, (int) ($setupBanner['percent'] ?? 0))) ?>%"></span>
+                    </div>
+                </div>
+                <div class="org-dash__setup-actions">
+                    <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Continuer</a>
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
+                        <?= \App\Core\Csrf::field() ?>
+                        <button type="submit" class="org-dash__btn org-dash__btn--ghost">Plus tard</button>
+                    </form>
+                </div>
             </div>
         </div>
         <?php endif; ?>
 
-        <header class="org-dash__hero">
+        <header class="org-dash__hero<?= $setupBanner !== null ? ' org-dash__hero--after-setup' : '' ?>">
             <div class="org-dash__hero-inner">
                 <div>
                     <p class="org-dash__brand">Athena · État-major</p>
@@ -249,6 +253,8 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         $announce_manage_url = url('back-office/alerts');
         require base_path('views/partials/announce_tiles.php');
         ?>
+
+        <div class="org-dash__deck">
 
         <section class="org-dash__section" aria-labelledby="org-kpi-heading">
             <div class="org-dash__section-head">
@@ -378,7 +384,17 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
                         </div>
                         <h3 class="org-dash__action-title">Ops admin</h3>
                         <p class="org-dash__action-text">File actionnable, playbooks incidents, audit et objectifs.</p>
-                        <p class="org-dash__action-text" style="margin-top:0.5rem"><a href="<?= url('back-office/tableau-operationnel') ?>" class="org-dash__section-link">Tableau opérationnel</a></p>
+                    </div>
+                    <span class="org-dash__action-foot">Ouvrir →</span>
+                </a>
+                <a href="<?= url('back-office/tableau-operationnel') ?>" class="org-dash__action">
+                    <div>
+                        <div class="org-dash__action-top">
+                            <span class="org-dash__action-mark org-dash__action-mark--blue" aria-hidden="true">▣</span>
+                            <span class="org-dash__action-tag">Opérations</span>
+                        </div>
+                        <h3 class="org-dash__action-title">Tableau opérationnel</h3>
+                        <p class="org-dash__action-text">Vue consolidée des fiches, readiness et planning.</p>
                     </div>
                     <span class="org-dash__action-foot">Ouvrir →</span>
                 </a>
@@ -510,6 +526,8 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         </section>
         <?php endif; ?>
 
+        </div><!-- /.org-dash__deck -->
+
         </div>
 
         <?php
@@ -557,13 +575,16 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         $rhJournalCount = is_array($rhRows) ? count($rhRows) : 0;
         $rhEnlistCount = is_array($orgEnlistmentRecent) ? count($orgEnlistmentRecent) : 0;
         ?>
-        <div x-show="tab === 'rh'" x-cloak class="space-y-8 lg:space-y-10" id="rh">
+        <div x-show="tab === 'rh'" x-cloak class="org-dash__deck space-y-8 lg:space-y-10" id="rh">
 
         <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-[11px] font-black uppercase tracking-[0.28em] text-blue-700">RH &amp; recrutement</p>
                 <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Tableur RH</h2>
                 <p class="mt-1 max-w-2xl text-sm text-slate-600">Candidatures, mouvements RH et alertes effectifs en vue tableur — pleine largeur.</p>
+                <p class="mt-3">
+                    <a href="<?= htmlspecialchars(function_exists('effectifs_workspace_url') ? effectifs_workspace_url() : url('back-office/ressources/effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Ouvrir le bureau effectifs →</a>
+                </p>
             </div>
             <dl class="flex flex-wrap gap-3 text-xs">
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm">
@@ -727,7 +748,14 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
             <div class="bo-sheet-toolbar">
                 <div>
                     <h3 id="org-rh-alerts-heading" class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Alertes effectifs</h3>
-                    <p class="mt-0.5 text-xs text-slate-500">Profils incomplets, sans unité ou sans rôle communautaire.</p>
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        Profils incomplets, sans unité ou sans rôle communautaire
+                        <?php if ($tenantName !== ''): ?>
+                            — communauté <strong class="font-semibold text-slate-700"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></strong> uniquement
+                        <?php else: ?>
+                            — communauté active uniquement
+                        <?php endif; ?>.
+                    </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-1.5">
                     <?php
@@ -805,7 +833,7 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
 
         </div>
 
-        <div x-show="tab === 'watch'" x-cloak class="space-y-8 lg:space-y-10" id="watch">
+        <div x-show="tab === 'watch'" x-cloak class="org-dash__deck space-y-8 lg:space-y-10" id="watch">
         <?php
         $watchSheetRows = [];
         $expErr = $wq['error_invitations'] ?? null;
@@ -1023,4 +1051,5 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         </div>
 
     </div>
+</div>
 </div>

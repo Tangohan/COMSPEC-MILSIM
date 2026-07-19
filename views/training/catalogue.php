@@ -87,7 +87,7 @@ $headHtml = ob_get_clean();
                     <span class="lms-infobanner__icon" aria-hidden="true">
                         <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </span>
-                    <p><strong>Repère.</strong> Catalogue mêlant les parcours de votre communauté et, le cas échéant, des parcours proposés sur l’ensemble du site — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>. Pour signaler un problème sur un parcours, ouvrez sa fiche puis utilisez le lien en bas de page.<?php if (\App\Support\TrainingLmsStaffAccess::allows(\App\Core\Gate::getInstance())): ?> <strong>Encadrement :</strong> accès directs au pilotage (studio, inscriptions, rapports, compétences…) dans la section <a href="#pilotage" class="text-emerald-700 font-semibold hover:underline">Pilotage de la communauté</a> ou via le menu sombre à gauche.<?php endif; ?></p>
+                    <p><strong>Repère.</strong> Catalogue mêlant les parcours de votre communauté et, le cas échéant, des parcours proposés sur l’ensemble du site — recherche et filtres ci-dessous. Pour reprendre un parcours déjà commencé ou vos attestations, ouvrez <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-emerald-700 font-semibold hover:underline">Mes formations</a>. Sessions planifiées, préparation et qualifications : <a href="<?= htmlspecialchars($base) ?>/formations/sessions" class="text-emerald-700 font-semibold hover:underline">Sessions &amp; suivi</a>. Pour signaler un problème sur un parcours, ouvrez sa fiche puis utilisez le lien en bas de page.<?php if (\App\Support\TrainingLmsStaffAccess::allows(\App\Core\Gate::getInstance())): ?> <strong>Encadrement :</strong> accès directs au pilotage (studio, inscriptions, rapports, compétences…) dans la section <a href="#pilotage" class="text-emerald-700 font-semibold hover:underline">Pilotage de la communauté</a> ou via le menu sombre à gauche.<?php endif; ?></p>
                 </div>
 
                 <header id="overview" class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
@@ -100,7 +100,7 @@ $headHtml = ob_get_clean();
                             </h2>
                             <div class="h-[1px] w-20 bg-slate-900/10 mb-4"></div>
                             <p class="text-slate-600 text-sm font-medium leading-relaxed max-w-2xl">
-                                Catalogue centralisé, parcours publiés par votre communauté, suivi des inscriptions et état de qualification.
+                                Catalogue centralisé et parcours publiés par votre communauté. Le suivi des sessions, de la préparation et des qualifications se trouve sur la page dédiée.
                             </p>
                         </div>
                         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 min-w-full xl:min-w-[560px]">
@@ -452,38 +452,17 @@ $headHtml = ob_get_clean();
                     </div>
                 </section>
 
-                <section id="sessions" class="lms-panel rounded-[2rem] p-6 md:p-8">
-                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
-                        <div>
-                            <p class="lms-catalogue-kicker mb-1.5">Sessions</p>
-                            <h3 class="lms-catalogue-title text-2xl">Créneaux &amp; fenêtres</h3>
+                <section class="lms-panel rounded-[2rem] p-6 md:p-8" aria-labelledby="cta-sessions-title">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div class="max-w-2xl">
+                            <p class="lms-catalogue-kicker mb-1.5">Sessions &amp; suivi</p>
+                            <h3 id="cta-sessions-title" class="lms-catalogue-title text-xl mb-2">Créneaux, préparation et qualifications</h3>
+                            <p class="text-sm text-slate-600 font-medium leading-relaxed">
+                                Consultez les sessions annoncées par le commandement, votre état de préparation et la progression des qualifications sur une page dédiée.
+                            </p>
                         </div>
-                        <p class="text-xs font-medium text-slate-500">Annonces du commandement</p>
-                    </div>
-                    <div class="lms-catalogue-empty">
-                        <span class="lms-catalogue-empty__icon" aria-hidden="true">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                        </span>
-                        <p class="text-sm font-semibold text-slate-700">Aucune session planifiée</p>
-                        <p class="text-sm text-slate-500 max-w-md">Les créneaux apparaîtront ici lorsqu’ils seront annoncés. En attendant, surveillez le forum et le tableau de bord.</p>
-                    </div>
-                </section>
-
-                <section id="qualifications" class="grid xl:grid-cols-2 gap-6">
-                    <div class="lms-panel rounded-[2rem] p-6 md:p-8 flex flex-col">
-                        <p class="lms-catalogue-kicker mb-1.5">Préparation</p>
-                        <h3 class="lms-catalogue-title text-xl mb-3">État de préparation</h3>
-                        <p class="text-slate-600 text-sm mb-5 flex-1">Synthèse de votre avancement sur les parcours inscrits. Retrouvez le détail, la reprise et les attestations dans Mes formations.</p>
-                        <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="lms-catalogue-btn lms-catalogue-btn--void w-fit">
-                            Voir Mes formations
-                        </a>
-                    </div>
-                    <div class="lms-panel rounded-[2rem] p-6 md:p-8 flex flex-col">
-                        <p class="lms-catalogue-kicker mb-1.5">Qualifications</p>
-                        <h3 class="lms-catalogue-title text-xl mb-3">Progression &amp; attestations</h3>
-                        <p class="text-slate-600 text-sm mb-5 flex-1">Les parcours validés et les attestations disponibles sont regroupés dans votre suivi personnel.</p>
-                        <a href="<?= htmlspecialchars($base) ?>/formations/mes-formations" class="text-sm font-semibold text-emerald-700 hover:text-emerald-900 hover:underline w-fit">
-                            Consulter le détail →
+                        <a href="<?= htmlspecialchars($base) ?>/formations/sessions" class="lms-catalogue-btn lms-catalogue-btn--void w-full sm:w-auto shrink-0">
+                            Ouvrir Sessions &amp; suivi
                         </a>
                     </div>
                 </section>
@@ -493,5 +472,9 @@ $headHtml = ob_get_clean();
     </div>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php
+    $lmsModuleEntryAuto = 'formation';
+    require base_path('views/partials/lms_module_entry_modal.php');
+    ?>
 </body>
 </html>

@@ -1003,6 +1003,34 @@ final class EmailService
         );
     }
 
+    public function sendTrainingCertificateAvailable(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $courseTitle,
+        string $certificateUrl,
+        string $myTrainingUrl,
+        int $tenantId,
+        int $certificateId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_CERTIFICATE_AVAILABLE,
+            'training_certificate_available',
+            $to,
+            'Votre attestation est disponible — ' . $courseTitle,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'certificateUrl' => $certificateUrl,
+                'myTrainingUrl' => $myTrainingUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_certificate_available', 'certificate_id' => $certificateId, 'course_title' => $courseTitle]
+        );
+    }
+
     public function sendTrainingEnrollmentPendingApproval(
         string $to,
         string $staffDisplayName,
@@ -1118,6 +1146,72 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'training_module_blocked', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingPublishElevationRequest(
+        string $to,
+        string $staffDisplayName,
+        string $requesterDisplayName,
+        string $requesterEmail,
+        string $tenantName,
+        string $courseTitle,
+        string $studioFicheUrl,
+        string $requesterMemberUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_PUBLISH_ELEVATION_REQUEST,
+            'training_publish_elevation_request',
+            $to,
+            'Publication demandée — ' . $courseTitle,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'requesterDisplayName' => $requesterDisplayName,
+                'requesterEmail' => $requesterEmail,
+                'tenantName' => $tenantName,
+                'courseTitle' => $courseTitle,
+                'studioFicheUrl' => $studioFicheUrl,
+                'requesterMemberUrl' => $requesterMemberUrl,
+            ],
+            $tenantId,
+            $requesterEmail !== '' ? $requesterEmail : null,
+            ['purpose' => 'training_publish_elevation', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendEffectifsElevationRequest(
+        string $to,
+        string $staffDisplayName,
+        string $requesterDisplayName,
+        string $requesterEmail,
+        string $tenantName,
+        string $targetDisplayName,
+        string $elevationKindLabel,
+        string $note,
+        string $memberUrl,
+        string $editUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::EFFECTIFS_ELEVATION_REQUEST,
+            'effectifs_elevation_request',
+            $to,
+            'Élévation demandée — ' . $targetDisplayName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'requesterDisplayName' => $requesterDisplayName,
+                'requesterEmail' => $requesterEmail,
+                'tenantName' => $tenantName,
+                'targetDisplayName' => $targetDisplayName,
+                'elevationKindLabel' => $elevationKindLabel,
+                'note' => $note,
+                'memberUrl' => $memberUrl,
+                'editUrl' => $editUrl,
+            ],
+            $tenantId,
+            $requesterEmail !== '' ? $requesterEmail : null,
+            ['purpose' => 'effectifs_elevation', 'target_name' => $targetDisplayName]
         );
     }
 

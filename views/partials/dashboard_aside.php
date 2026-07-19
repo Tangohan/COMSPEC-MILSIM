@@ -164,27 +164,27 @@ $navTiles[] = $tile(
     'default',
     $trainCount > 0 ? (string) $trainCount : null,
     $links([
-        ['label' => 'Catalogue', 'href' => url('formations'), 'hint' => 'Parcours disponibles'],
-        ['label' => 'Mes formations', 'href' => url('formations/mes-formations'), 'hint' => 'Inscriptions en cours'],
-        ['label' => 'Compétences', 'href' => url('formations/competences'), 'hint' => 'Progression'],
-        ['label' => 'Code d’accès', 'href' => url('formations/code-acces'), 'hint' => 'Rejoindre un parcours'],
+        ['label' => 'Catalogue', 'href' => url('formations'), 'hint' => 'Parcours disponibles', 'lms_module' => 'formation'],
+        ['label' => 'Mes formations', 'href' => url('formations/mes-formations'), 'hint' => 'Inscriptions en cours', 'lms_module' => 'formation'],
+        ['label' => 'Compétences', 'href' => url('formations/competences'), 'hint' => 'Progression', 'lms_module' => 'formation'],
+        ['label' => 'Code d’accès', 'href' => url('formations/code-acces'), 'hint' => 'Rejoindre un parcours', 'lms_module' => 'formation'],
         $canTrainingManage
-            ? ['label' => 'Pilotage des formations', 'href' => url('formation'), 'hint' => 'Espace instructeurs']
+            ? ['label' => 'Pilotage des formations', 'href' => url('formation'), 'hint' => 'Espace instructeurs', 'lms_module' => 'formation']
             : null,
         $canTrainingManage
-            ? ['label' => 'Créer un entraînement', 'href' => url('formations/creer'), 'hint' => 'Publication']
+            ? ['label' => 'Créer un entraînement', 'href' => url('formations/creer'), 'hint' => 'Publication', 'lms_module' => 'formation']
             : null,
     ])
 );
 
 $navTiles[] = $tile('effectifs', 'Effectifs', 'Annuaire et structure', 'default', null, $links([
-    ['label' => 'Annuaire', 'href' => url('personnel'), 'hint' => 'Rechercher un membre'],
+    ['label' => 'Annuaire', 'href' => url('personnel'), 'hint' => 'Rechercher un membre', 'lms_module' => 'effectifs'],
     $canOrbat
-        ? ['label' => 'Organisation (ORBAT)', 'href' => url('orbat'), 'hint' => 'Vue hiérarchique']
+        ? ['label' => 'Organisation (ORBAT)', 'href' => url('orbat'), 'hint' => 'Vue hiérarchique', 'lms_module' => 'effectifs']
         : null,
-    ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade'],
-    ['label' => 'Espace RH', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Dossier administratif'],
-    ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances'],
+    ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'hint' => 'Identité et grade', 'lms_module' => 'effectifs'],
+    ['label' => 'Espace RH', 'href' => url('personnel/mon-espace-rh'), 'hint' => 'Dossier administratif', 'lms_module' => 'effectifs'],
+    ['label' => 'Distinctions', 'href' => url('distinctions'), 'hint' => 'Reconnaissances', 'lms_module' => 'effectifs'],
 ]));
 
 $navTiles[] = $tile(
@@ -231,10 +231,10 @@ if ($canRecruit) {
         'default',
         $staffCount > 0 ? (string) $staffCount : null,
         $links([
-            ['label' => 'File des dossiers', 'href' => url('back-office/recruitments') . '?status=submitted', 'hint' => 'À instruire'],
-            ['label' => 'Offres', 'href' => url('back-office/recruitment/offers'), 'hint' => 'Avis d’ouverture'],
-            ['label' => 'Espace recrutement', 'href' => url('back-office/ressources/recrutement'), 'hint' => 'Pilotage'],
-            ['label' => 'Mur équipe', 'href' => url('back-office/recruitments/equipe'), 'hint' => 'Coordination'],
+            ['label' => 'File des dossiers', 'href' => url('back-office/recruitments') . '?status=submitted', 'hint' => 'À instruire', 'lms_module' => 'recrutement'],
+            ['label' => 'Offres', 'href' => url('back-office/recruitment/offers'), 'hint' => 'Avis d’ouverture', 'lms_module' => 'recrutement'],
+            ['label' => 'Espace recrutement', 'href' => url('back-office/ressources/recrutement'), 'hint' => 'Pilotage', 'lms_module' => 'recrutement'],
+            ['label' => 'Mur équipe', 'href' => url('back-office/recruitments/equipe'), 'hint' => 'Coordination', 'lms_module' => 'recrutement'],
             ['label' => 'Page publique', 'href' => url('recrutement'), 'hint' => 'Vitrine candidats'],
         ]),
         'recruitment'
@@ -251,7 +251,7 @@ if ($canInvitationsTile) {
         'bo',
         $pendingInvitationsForTile > 0 ? (string) $pendingInvitationsForTile : null,
         $links([
-            ['label' => 'File des invitations', 'href' => url('back-office/invitations'), 'hint' => 'En attente de réponse'],
+            ['label' => 'File des invitations', 'href' => url('back-office/invitations/envoyees'), 'hint' => 'En attente de réponse'],
             ['label' => 'Envoyer une invitation', 'href' => url('back-office/invitations'), 'hint' => 'Nouveau code d’accès'],
         ]),
         'invitations'
@@ -282,7 +282,7 @@ $acctInitials = function_exists('user_display_initials') ? user_display_initials
 <div class="dash-rail__identity">
     <span class="dash-rail__identity-avatar<?= $acctAvatarSrc ? ' dash-rail__identity-avatar--photo' : '' ?>">
         <?php if ($acctAvatarSrc): ?>
-            <img src="<?= $h((string) $acctAvatarSrc) ?>" alt="" class="dash-rail__identity-avatar-img" loading="lazy">
+            <img src="<?= $h((string) $acctAvatarSrc) ?>" alt="Photo de compte" class="dash-rail__identity-avatar-img" loading="lazy" data-img-fallback="avatar" data-img-initials="<?= $h($acctInitials) ?>" data-img-label="Photo de compte indisponible">
         <?php else: ?>
             <?= $h($acctInitials) ?>
         <?php endif; ?>
@@ -360,8 +360,15 @@ $renderLinks = static function (array $item) use ($h): void {
     ?>
     <ul class="dash-rail__links" role="list">
         <?php foreach ($item['links'] as $link): ?>
+            <?php
+            $lmsModule = isset($link['lms_module']) ? trim((string) $link['lms_module']) : '';
+            ?>
             <li>
-                <a class="dash-rail__link" href="<?= $h((string) $link['href']) ?>">
+                <a
+                    class="dash-rail__link"
+                    href="<?= $h((string) $link['href']) ?>"
+                    <?php if ($lmsModule !== ''): ?>data-lms-module-entry="<?= $h($lmsModule) ?>"<?php endif; ?>
+                >
                     <span class="dash-rail__link-label"><?= $h((string) $link['label']) ?></span>
                     <?php if (!empty($link['hint'])): ?>
                         <span class="dash-rail__link-hint"><?= $h((string) $link['hint']) ?></span>

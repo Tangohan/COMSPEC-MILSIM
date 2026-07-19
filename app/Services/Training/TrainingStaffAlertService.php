@@ -20,6 +20,23 @@ class TrainingStaffAlertService
 {
     private const MODULE_PING_COOLDOWN_SEC = 86400;
 
+    private const PUBLISH_ELEVATION_COOLDOWN_SEC = 86400;
+
+    private const PUBLISH_ELEVATION_PING_KIND = 'publish_elevation';
+
+    /**
+     * Droits communauté permettant de publier ou d’attribuer le droit (alignés Gate / implications).
+     * Pas de admin.system (permission site) — les destinataires restent bornés au tenant courant.
+     *
+     * @var list<string>
+     */
+    private const PUBLISH_ELEVATION_PERMISSION_SLUGS = [
+        'admin.access',
+        'admin.organization',
+        'training.manage',
+        'training.publish',
+    ];
+
     /** Null = une alerte peut être envoyée ; sinon secondes restantes avant le prochain envoi possible. */
     public function secondsBeforeNextModuleNotify(int $enrollmentId, int $moduleId): ?int
     {
@@ -32,6 +49,190 @@ class TrainingStaffAlertService
         }
 
         return self::MODULE_PING_COOLDOWN_SEC - $since;
+    }
+
+    /** Null = une demande peut être envoyée ; sinon secondes restantes (anti-doublon fiche / demandeur). */
+    public function secondsBeforeNextPublishElevationRequest(int $courseId, int $requesterUserId): ?int
+    {
+        if ($courseId < 1 || $requesterUserId < 1) {
+            return null;
+        }
+        $since = $this->pingRepository->secondsSinceLastPing(
+            $courseId,
+            $requesterUserId,
+            self::PUBLISH_ELEVATION_PING_KIND
+        );
+        if ($since === null) {
+            return null;
+        }
+        if ($since >= self::PUBLISH_ELEVATION_COOLDOWN_SEC) {
+            return null;
+        }
+
+        return self::PUBLISH_ELEVATION_COOLDOWN_SEC - $since;
+    }
+
+    /**
+     * Personnes pouvant publier ou attribuer le droit de publication (hors demandeur).
+     * Strictement limitées au `$tenantId` (fil + e-mails) — pas de liste globale.
+     *
+     * @return list<array{user_id: int, name: string, email: string}>
+     */
+    public function listPublishElevationRecipients(int $tenantId, ?int $excludeUserId = null): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $ids = $this->userRepository->listActiveUserIdsWithAnyPermissionSlug(
+            $tenantId,
+            self::PUBLISH_ELEVATION_PERMISSION_SLUGS
+        );
+        if ($excludeUserId !== null && $excludeUserId > 0) {
+            $ids = array_values(array_filter($ids, static fn (int $id): bool => $id !== $excludeUserId));
+        }
+        if ($ids === []) {
+            return [];
+        }
+        $users = $this->userRepository->findByIdsForTenant($tenantId, $ids);
+        $out = [];
+        $seenEmails = [];
+        foreach ($ids as $uid) {
+            $user = $users[$uid] ?? null;
+            if (!$user || (int) ($user['tenant_id'] ?? 0) !== $tenantId) {
+                continue;
+            }
+            $email = strtolower(trim((string) ($user['email'] ?? '')));
+            if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || isset($seenEmails[$email])) {
+                continue;
+            }
+            $seenEmails[$email] = true;
+            $out[] = [
+                'user_id' => $uid,
+                'name' => $this->displayNameForUser($user),
+                'email' => $email,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Alerte fil + e-mails aux personnes habilitées à publier / accorder le droit.
+     *
+     * @param array<string, mixed> $course
+     * @return array{ok: bool, message: string, recipient_names: list<string>}
+     */
+    public function requestPublishElevation(int $tenantId, int $requesterUserId, array $course): array
+    {
+        $courseId = (int) ($course['id'] ?? 0);
+        $courseTitle = trim((string) ($course['title'] ?? 'Formation'));
+        if ($courseTitle === '') {
+            $courseTitle = 'Formation';
+        }
+
+        if ($tenantId < 1 || $requesterUserId < 1 || $courseId < 1) {
+            return [
+                'ok' => false,
+                'message' => 'Impossible d’envoyer la demande pour le moment.',
+                'recipient_names' => [],
+            ];
+        }
+
+        $wait = $this->secondsBeforeNextPublishElevationRequest($courseId, $requesterUserId);
+        if ($wait !== null) {
+            $hours = max(1, (int) ceil($wait / 3600));
+
+            return [
+                'ok' => false,
+                'message' => 'Une demande est déjà en cours pour cette fiche. Vous pourrez renvoyer un rappel dans environ '
+                    . $hours . ' heure' . ($hours > 1 ? 's' : '') . '.',
+                'recipient_names' => [],
+            ];
+        }
+
+        $recipients = $this->listPublishElevationRecipients($tenantId, $requesterUserId);
+        if ($recipients === []) {
+            return [
+                'ok' => false,
+                'message' => 'Aucune personne habilitée à publier n’est joignable dans cette communauté. Contactez un administrateur autrement.',
+                'recipient_names' => [],
+            ];
+        }
+
+        $requester = $this->userRepository->findById($requesterUserId, $tenantId);
+        $requesterName = $this->displayNameForUser($requester);
+        $requesterEmail = $requester ? strtolower(trim((string) ($requester['email'] ?? ''))) : '';
+        $tenant = $this->tenantRepository->findById($tenantId);
+        $tenantName = 'Communauté';
+        if ($tenant) {
+            $tenantName = function_exists('community_display_name')
+                ? community_display_name($tenant)
+                : (string) ($tenant['name'] ?? 'Communauté');
+        }
+
+        $studioFicheUrl = \training_studio_url($courseId . '/fiche');
+        $requesterMemberUrl = \url('back-office/users/' . $requesterUserId . '/edit');
+        $names = [];
+        $sent = 0;
+
+        try {
+            foreach ($recipients as $r) {
+                $names[] = $r['name'];
+                $sid = (int) ($r['user_id'] ?? 0);
+                if ($sid < 1 || !$this->notificationPreferencesRepository->isEmailEventEnabled($sid, EmailEvents::TRAINING_PUBLISH_ELEVATION_REQUEST)) {
+                    continue;
+                }
+                if ($this->emailService->sendTrainingPublishElevationRequest(
+                    $r['email'],
+                    $r['name'],
+                    $requesterName,
+                    $requesterEmail,
+                    $tenantName,
+                    $courseTitle,
+                    $studioFicheUrl,
+                    $requesterMemberUrl,
+                    $tenantId
+                )) {
+                    $sent++;
+                }
+            }
+
+            $nameList = implode(', ', array_slice($names, 0, 8));
+            if (count($names) > 8) {
+                $nameList .= '…';
+            }
+            $this->feedRepository->insert(
+                $tenantId,
+                'training_publish_elevation',
+                'Publication demandée — ' . $courseTitle,
+                $requesterName . ' demande le droit de publier cette formation. Personnes prévenues : ' . $nameList . '.',
+                $studioFicheUrl,
+                $requesterUserId
+            );
+            $this->pingRepository->log($tenantId, $courseId, $requesterUserId, self::PUBLISH_ELEVATION_PING_KIND);
+
+            if ($sent === 0) {
+                return [
+                    'ok' => true,
+                    'message' => 'L’alerte a été déposée sur le tableau de bord. Aucun e-mail n’a pu être envoyé (préférences ou problème d’envoi) — les personnes listées restent prévenues via le fil communauté.',
+                    'recipient_names' => $names,
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Demande envoyée à ' . count($names) . ' personne'
+                    . (count($names) > 1 ? 's' : '')
+                    . ' : ' . implode(', ', $names) . '.',
+                'recipient_names' => $names,
+            ];
+        } catch (\Throwable) {
+            return [
+                'ok' => false,
+                'message' => 'L’envoi de la demande a échoué. Réessayez plus tard ou contactez un administrateur.',
+                'recipient_names' => [],
+            ];
+        }
     }
 
     public function __construct(

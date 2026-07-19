@@ -19,7 +19,8 @@ if (!$gate->allows('admin.system')) {
             <h3 class="text-base font-bold text-slate-900">Identité globale</h3>
             <p class="text-xs text-slate-500 mt-1 mb-4 flex-1">Rôles applicatifs et habilitations au niveau du site (pas les rôles communautaires).</p>
             <div class="flex flex-col gap-2">
-                <a href="<?= url('admin/roles') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Rôles système</a>
+                <a href="<?= url('admin/users') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800">Comptes utilisateurs</a>
+                <a href="<?= url('admin/roles') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Rôles système</a>
                 <a href="<?= url('admin/site-roles') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Affectations rôles site</a>
                 <a href="<?= url('admin/system/blocklist') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50/80 px-3 py-2.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">Liste de restriction (site entier)</a>
                 <a href="<?= url('admin/system/member-sanctions') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-xs font-semibold text-rose-900 hover:bg-rose-50">Sanctions à l’échelle du site</a>

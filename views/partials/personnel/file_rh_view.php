@@ -1,9 +1,10 @@
 <?php
 /**
- * Vue RH du dossier personnel : petit hero d’identification + tableau
- * administratif en pleine page (accès personnel RH minimum requis).
+ * Vue RH du dossier personnel : hero d’identification + tableau
+ * administratif en plein largeur (shell sans max-w-7xl).
  *
  * Variables attendues depuis file.php (déjà résolues).
+ * Optionnel : $personnelFileShell (classes conteneur plein largeur).
  */
 $rhGateUrl = $personnelFileBaseUrl;
 $rhPublicUrl = $personnelFileBaseUrl . '?view=public';
@@ -94,8 +95,27 @@ foreach ($rhProfileAlerts as $a) {
     }
 }
 ?>
-<div class="max-w-7xl mx-auto px-6 md:px-8 pt-2">
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+<?php
+$rhShell = isset($personnelFileShell) && is_string($personnelFileShell) && $personnelFileShell !== ''
+    ? $personnelFileShell
+    : 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12';
+?>
+<style>
+/* Vue RH : plein largeur dans le main, tableau qui exploite la hauteur viewport */
+.personnel-file--rh-full .personnel-sheets {
+    max-height: min(calc(100dvh - 18rem), 72rem);
+}
+.personnel-file--rh-full .personnel-sheets__table th:nth-child(3),
+.personnel-file--rh-full .personnel-sheets__table td:nth-child(3) {
+    min-width: 16rem;
+}
+.personnel-file--rh-full .personnel-sheets__table th:nth-child(4),
+.personnel-file--rh-full .personnel-sheets__table td:nth-child(4) {
+    min-width: 12rem;
+}
+</style>
+<div class="<?= htmlspecialchars($rhShell, ENT_QUOTES, 'UTF-8') ?> space-y-6 pt-2 pb-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
         <a href="<?= htmlspecialchars($rhGateUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:text-slate-800">
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
             Changer de vue
@@ -105,14 +125,14 @@ foreach ($rhProfileAlerts as $a) {
         </a>
     </div>
 
-    <!-- Petit hero RH -->
+    <!-- Hero RH (bandeau identification) -->
     <section class="w-full rounded-2xl bg-slate-900 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950/40 border border-slate-700/50 shadow-sm overflow-hidden">
-        <div class="px-5 md:px-7 py-5 md:py-6">
-            <div class="flex flex-wrap items-center gap-5">
+        <div class="px-5 py-5 md:px-8 md:py-7 lg:px-10">
+            <div class="flex flex-wrap items-center gap-5 lg:gap-8">
                 <div class="flex shrink-0 items-center gap-3">
                     <div class="relative h-16 w-16 md:h-[4.5rem] md:w-[4.5rem] shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Photo de compte">
                         <?php if (!empty($avatarUrl)): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Avatar" loading="eager" decoding="async" class="h-full w-full object-cover" />
+                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte" loading="eager" decoding="async" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
                         <?php else: ?>
                         <div class="flex h-full w-full items-center justify-center text-slate-500">
                             <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -121,13 +141,13 @@ foreach ($rhProfileAlerts as $a) {
                     </div>
                     <?php if (!empty($portraitUrl)): ?>
                     <div class="relative hidden sm:block h-16 w-12 md:h-[4.5rem] md:w-[3.4rem] shrink-0 overflow-hidden rounded-xl border-2 border-slate-600/50 bg-slate-950" title="Portrait opérateur">
-                        <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" class="h-full w-full object-cover object-top" />
+                        <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" class="h-full w-full object-cover object-top" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
                     </div>
                     <?php endif; ?>
                 </div>
                 <div class="min-w-0 grow">
                     <p class="text-[9px] font-black uppercase tracking-[0.35em] text-emerald-400/90 italic mb-1">Vue RH — dossier personnel</p>
-                    <h1 class="text-xl md:text-2xl font-black uppercase tracking-tight text-white italic truncate">
+                    <h1 class="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-white italic truncate">
                         <?= htmlspecialchars((string) $displayName, ENT_QUOTES, 'UTF-8') ?>
                     </h1>
                     <div class="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -156,7 +176,7 @@ foreach ($rhProfileAlerts as $a) {
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="mt-5 grid grid-cols-2 gap-4 border-t border-white/10 pt-4 sm:grid-cols-3 md:grid-cols-6">
+            <div class="mt-5 grid grid-cols-2 gap-4 border-t border-white/10 pt-4 sm:grid-cols-3 md:grid-cols-6 lg:gap-6">
                 <?php if (!empty($matricule) && !empty($showMatriculePublic)): ?>
                 <div>
                     <p class="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Matricule</p>
@@ -190,7 +210,7 @@ foreach ($rhProfileAlerts as $a) {
     </section>
 
     <?php if ($rhProfileAlerts !== []): ?>
-    <section class="mt-5 rounded-2xl border <?= $rhAlertErrorCount > 0 ? 'border-rose-200 bg-rose-50/80' : 'border-amber-200 bg-amber-50/80' ?> p-5 shadow-sm" aria-labelledby="rh-profile-alerts-title" role="region">
+    <section class="rounded-2xl border <?= $rhAlertErrorCount > 0 ? 'border-rose-200 bg-rose-50/80' : 'border-amber-200 bg-amber-50/80' ?> p-5 md:p-6 shadow-sm" aria-labelledby="rh-profile-alerts-title" role="region">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-[10px] font-black uppercase tracking-[0.22em] <?= $rhAlertErrorCount > 0 ? 'text-rose-800' : 'text-amber-900' ?>">Suivi dossier</p>
@@ -212,7 +232,7 @@ foreach ($rhProfileAlerts as $a) {
             </a>
             <?php endif; ?>
         </div>
-        <ul class="mt-4 space-y-2.5">
+        <ul class="mt-4 grid gap-2.5 lg:grid-cols-2">
             <?php foreach ($rhProfileAlerts as $alert):
                 $lvl = (string) ($alert['level'] ?? 'info');
                 $rowCls = match ($lvl) {
@@ -242,14 +262,14 @@ foreach ($rhProfileAlerts as $a) {
         </ul>
     </section>
     <?php else: ?>
-    <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-950 shadow-sm" role="status">
+    <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-950 shadow-sm" role="status">
         <span class="font-semibold">Aucune alerte dossier</span>
         <span class="text-emerald-900/80"> — les points de contrôle principaux sont en ordre sur ce profil.</span>
     </div>
     <?php endif; ?>
 
     <!-- Tableau administratif pleine page -->
-    <div class="mt-6 pb-6">
+    <div>
         <?php $tableauAdminStandalone = true; ?>
         <?php require base_path('views/partials/personnel/file_tableau_admin_tab.php'); ?>
     </div>

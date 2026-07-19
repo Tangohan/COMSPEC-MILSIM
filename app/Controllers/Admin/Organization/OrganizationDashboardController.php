@@ -188,6 +188,8 @@ class OrganizationDashboardController
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Administration organisationnelle',
+            'isBackOfficeShell' => true,
+            'backOfficePageCss' => ['back-office-dashboard.css', 'announce-tiles.css'],
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],
             'adminRecentActivity' => $recent,
@@ -442,6 +444,7 @@ class OrganizationDashboardController
         return Response::view('layout.main', [
             'content' => 'admin.organization.operations_center',
             'title' => 'Centre des opérations',
+            'isBackOfficeShell' => true,
             'operationsProfile' => $profile,
             'operationsProfiles' => $allowedProfiles,
             'operationsModerationOpen' => $moderationOpen,
@@ -478,6 +481,7 @@ class OrganizationDashboardController
         return Response::view('layout.main', [
             'content' => 'admin.organization.effectifs_hub',
             'title' => 'Organisation des effectifs',
+            'isBackOfficeShell' => true,
             'canRolesList' => $gate->allows('admin.organization') || $gate->allows('admin.access'),
             'canRolesCanvas' => $gate->allows('admin.organization') || $gate->allows('admin.roles.manage') || $gate->allows('admin.permissions.manage'),
             'canPresets' => $gate->allows('admin.organization') || $gate->allows('admin.roles.manage') || $gate->allows('admin.permissions.manage'),
@@ -554,6 +558,7 @@ class OrganizationDashboardController
         return Response::view('layout.main', [
             'content' => 'admin.organization.structure_hub',
             'title' => 'Structure & recrutement',
+            'isBackOfficeShell' => true,
             'orbatRosterData' => $rosterData,
             'orbatCanManage' => $orbatCanManage,
             'orbatCommanderOptions' => $orbatCommanderOptions,

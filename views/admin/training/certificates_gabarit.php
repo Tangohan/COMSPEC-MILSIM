@@ -159,6 +159,7 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                                 <div class="tc-gabarit-field">
                                     <label class="tc-gabarit-label" for="fld-bg">Image de fond (optionnel)</label>
                                     <input type="file" name="background" id="fld-bg" accept="image/jpeg,image/png,image/webp" class="tc-gabarit-file">
+                                    <p class="tc-gabarit-help">Affichée en filigrane à l’intérieur du cadre du diplôme uniquement (pas sur les marges de la page).</p>
                                     <?php if ($hasFondPath): ?>
                                     <div class="tc-gabarit-asset mt-3">
                                         <?php if ($hasBg): ?>
@@ -177,10 +178,10 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                             <aside class="tc-gabarit-note" aria-label="Informations automatiques">
                                 <p class="tc-gabarit-note__title">Contenu inséré automatiquement</p>
                                 <p class="tc-gabarit-note__body">
-                                    Sur chaque attestation réelle, le système ajoute le nom (ou l’identifiant affiché) de l’apprenant,
-                                    l’intitulé du parcours, une référence unique, la date de délivrance, et selon le parcours
-                                    la date limite de validité et le score final. Ces éléments ne se configurent pas ici :
-                                    ils proviennent de la formation et du dossier de la personne.
+                                    Sur chaque attestation, le document rappelle formellement que la personne a suivi
+                                    le parcours avec succès, affiche son nom, l’intitulé de la formation, une référence,
+                                    la date de délivrance, deux zones de signature (responsable pédagogique et direction),
+                                    et selon le parcours la validité et le résultat. Ces éléments ne se configurent pas ici.
                                 </p>
                             </aside>
 
@@ -206,23 +207,38 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
                                     <?php else: ?>
                                     <div class="tc-gabarit-preview-sheet__plain"></div>
                                     <?php endif; ?>
+                                    <div class="tc-gabarit-preview-sheet__inner-rule" style="border-color: <?= htmlspecialchars($accentSafe) ?>;" aria-hidden="true"></div>
                                     <div class="tc-gabarit-preview-sheet__body">
-                                        <?php if ($hasLogo): ?>
-                                        <img src="<?= htmlspecialchars($fichierLogoUrl) ?>" alt="" class="tc-gabarit-preview-logo" id="cert-preview-logo" data-has-logo="1">
-                                        <?php else: ?>
-                                        <div class="tc-gabarit-preview-logo-ph" id="cert-preview-logo-placeholder">Logo</div>
-                                        <?php endif; ?>
+                                        <div class="tc-gabarit-preview-brand">
+                                            <?php if ($hasLogo): ?>
+                                            <img src="<?= htmlspecialchars($fichierLogoUrl) ?>" alt="" class="tc-gabarit-preview-logo" id="cert-preview-logo" data-has-logo="1">
+                                            <?php else: ?>
+                                            <div class="tc-gabarit-preview-logo-ph" id="cert-preview-logo-placeholder">Logo</div>
+                                            <?php endif; ?>
+                                        </div>
                                         <h2 class="tc-gabarit-preview-headline" id="cert-preview-headline" style="color: <?= htmlspecialchars($primarySafe) ?>;"><?= htmlspecialchars($headline) ?></h2>
                                         <p class="tc-gabarit-preview-sub <?= $subtitle === '' ? 'hidden' : '' ?>" id="cert-preview-sub"><?= htmlspecialchars($subtitle) ?></p>
+                                        <p class="tc-gabarit-preview-lead">La direction atteste par la présente que</p>
                                         <p class="tc-gabarit-preview-learner" id="cert-preview-learner-row" style="color: <?= htmlspecialchars($primarySafe) ?>;">
-                                            <span class="font-normal">Décernée à </span><strong id="cert-preview-learner">Exemple de participant</strong>
+                                            <strong id="cert-preview-learner">Exemple de participant</strong>
                                         </p>
+                                        <p class="tc-gabarit-preview-mid">a suivi avec succès le parcours de formation intitulé</p>
                                         <p class="tc-gabarit-preview-course" id="cert-preview-course" style="color: <?= htmlspecialchars($accentSafe) ?>;">Exemple de parcours certifiant</p>
+                                        <p class="tc-gabarit-preview-close">et en a satisfait l’ensemble des exigences pédagogiques.</p>
+                                        <div class="tc-gabarit-preview-sigs" aria-hidden="true">
+                                            <div class="tc-gabarit-preview-sig">
+                                                <svg class="tc-gabarit-preview-sig__art" viewBox="0 0 150 36" xmlns="http://www.w3.org/2000/svg"><path d="M8 26 C 22 10, 38 8, 52 22 S 82 42, 102 18 S 128 8, 146 24" fill="none" stroke="<?= htmlspecialchars($primarySafe) ?>" stroke-width="2.1" stroke-linecap="round"/></svg>
+                                                <span class="tc-gabarit-preview-sig__line"></span>
+                                                <span class="tc-gabarit-preview-sig__role" style="color: <?= htmlspecialchars($primarySafe) ?>;">Responsable pédagogique</span>
+                                            </div>
+                                            <div class="tc-gabarit-preview-sig">
+                                                <svg class="tc-gabarit-preview-sig__art" viewBox="0 0 150 36" xmlns="http://www.w3.org/2000/svg"><path d="M6 28 C 18 6, 34 6, 48 24 S 78 40, 96 16 S 124 4, 148 22" fill="none" stroke="<?= htmlspecialchars($accentSafe) ?>" stroke-width="2.1" stroke-linecap="round"/></svg>
+                                                <span class="tc-gabarit-preview-sig__line"></span>
+                                                <span class="tc-gabarit-preview-sig__role" id="cert-preview-sig-dir-role" style="color: <?= htmlspecialchars($accentSafe) ?>;">Direction</span>
+                                            </div>
+                                        </div>
                                         <div class="tc-gabarit-preview-meta">
-                                            <p>Référence : DEMO-0001</p>
-                                            <p>Délivrée le <?= htmlspecialchars(date('d/m/Y')) ?></p>
-                                            <p id="cert-preview-expires" class="<?= $certLayoutShowValidUntil ? '' : 'hidden' ?>">Valide jusqu’au <?= htmlspecialchars(date('d/m/Y', strtotime('+1 year'))) ?></p>
-                                            <p id="cert-preview-score" class="<?= $certLayoutShowFinalScore ? '' : 'hidden' ?>">Score final : 88,5 %</p>
+                                            <p>Référence : DEMO-0001 · Délivrée le <?= htmlspecialchars(date('d/m/Y')) ?><span id="cert-preview-expires" class="<?= $certLayoutShowValidUntil ? '' : 'hidden' ?>"> · Valide jusqu’au <?= htmlspecialchars(date('d/m/Y', strtotime('+1 year'))) ?></span><span id="cert-preview-score" class="<?= $certLayoutShowFinalScore ? '' : 'hidden' ?>"> · Résultat : 88,5 %</span></p>
                                         </div>
                                         <div class="tc-gabarit-preview-footer <?= $footer === '' ? 'hidden' : '' ?>" id="cert-preview-footer"><?= nl2br(htmlspecialchars($footer)) ?></div>
                                     </div>
@@ -274,8 +290,19 @@ $fichierFondUrl = training_lms_admin_url('certificates/gabarit/fichier') . '?typ
     if (primary && learnerRow) learnerRow.style.color = primary.value;
     if (primary && swP) swP.style.background = primary.value;
     if (accent && wrap) wrap.style.borderColor = accent.value;
+    var innerRule = wrap ? wrap.querySelector('.tc-gabarit-preview-sheet__inner-rule') : null;
+    if (accent && innerRule) innerRule.style.borderColor = accent.value;
     if (accent && courseEl) courseEl.style.color = accent.value;
     if (accent && swA) swA.style.background = accent.value;
+    var sigDir = document.getElementById('cert-preview-sig-dir-role');
+    if (accent && sigDir) sigDir.style.color = accent.value;
+    var sigArts = wrap ? wrap.querySelectorAll('.tc-gabarit-preview-sig__art path') : [];
+    if (sigArts && sigArts.length >= 2) {
+      if (primary) sigArts[0].setAttribute('stroke', primary.value);
+      if (accent) sigArts[1].setAttribute('stroke', accent.value);
+    }
+    var sigRoles = wrap ? wrap.querySelectorAll('.tc-gabarit-preview-sig__role') : [];
+    if (sigRoles && sigRoles.length >= 1 && primary) sigRoles[0].style.color = primary.value;
     if (expEl && chkExp) expEl.classList.toggle('hidden', !chkExp.checked);
     if (scoreEl && chkScore) scoreEl.classList.toggle('hidden', !chkScore.checked);
   }

@@ -285,6 +285,468 @@
   background: rgba(248, 250, 252, 0.9);
 }
 
+/* Inscriptions / assignations — composition pilotage dense */
+.tc-enroll {
+  padding: 1.35rem 1.25rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .tc-enroll {
+    padding: 1.6rem 1.75rem 1.75rem;
+  }
+}
+
+.tc-enroll__head {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 960px) {
+  .tc-enroll__head {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.75rem;
+  }
+}
+
+.tc-enroll__head-copy {
+  max-width: 40rem;
+  min-width: 0;
+}
+
+.tc-enroll__lead {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #475569;
+  font-weight: 500;
+}
+
+.tc-enroll__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  min-width: min(100%, 22rem);
+  flex-shrink: 0;
+}
+
+.tc-enroll__metric {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.85rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tc-enroll__metric--link {
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tc-enroll__metric--link:hover {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.tc-enroll__metric--link.is-active {
+  border-color: rgba(5, 150, 105, 0.45);
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(16, 185, 129, 0.05));
+  box-shadow: inset 0 -2px 0 #059669;
+}
+
+.tc-enroll__metric--link.is-active.is-amber {
+  border-color: rgba(217, 119, 6, 0.4);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(254, 243, 199, 0.35));
+  box-shadow: inset 0 -2px 0 #d97706;
+}
+
+.tc-enroll__metric-k {
+  margin: 0 0 0.2rem;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.tc-enroll__metric-v {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.tc-enroll__toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.95rem 1rem;
+  margin-bottom: 1.15rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+@media (min-width: 900px) {
+  .tc-enroll__toolbar {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+}
+
+.tc-enroll__picker {
+  flex: 1 1 18rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.tc-enroll__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.tc-enroll__picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.tc-enroll__combobox {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.tc-enroll__search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.tc-enroll__search:focus {
+  outline: none;
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
+.tc-enroll__options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  max-height: 16rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.3rem;
+  list-style: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.tc-enroll__option {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.tc-enroll__option:hover,
+.tc-enroll__option:focus {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.tc-enroll__option.is-selected {
+  background: rgba(5, 150, 105, 0.1);
+  color: #047857;
+}
+
+.tc-enroll__submit {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tc-enroll__submit:hover {
+  background: #1e293b;
+}
+
+.tc-enroll__select-fallback {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.tc-enroll__select-fallback--enhanced {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tc-enroll__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.tc-enroll__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.tc-enroll__chip:hover {
+  border-color: #a7f3d0;
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.tc-enroll__chip.is-active {
+  border-color: rgba(5, 150, 105, 0.5);
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.14), rgba(16, 185, 129, 0.06));
+  color: #047857;
+  box-shadow: inset 0 -2px 0 #059669;
+}
+
+.tc-enroll__chip--amber.is-active {
+  border-color: rgba(217, 119, 6, 0.45);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(254, 243, 199, 0.4));
+  color: #92400e;
+  box-shadow: inset 0 -2px 0 #d97706;
+}
+
+.tc-enroll__chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-enroll__chip.is-active .tc-enroll__chip-count {
+  background: #047857;
+  color: #fff;
+}
+
+.tc-enroll__chip--amber.is-active .tc-enroll__chip-count {
+  background: #92400e;
+  color: #fff;
+}
+
+.tc-enroll__empty {
+  text-align: center;
+  padding: 2.25rem 1.25rem 2rem;
+  border-radius: 1rem;
+  border: 1px dashed #cbd5e1;
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+}
+
+.tc-enroll__empty--compact {
+  padding: 1.75rem 1.25rem;
+}
+
+.tc-enroll__empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.85rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.tc-enroll__empty-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.tc-enroll__empty-text {
+  margin: 0 auto;
+  max-width: 32rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.tc-enroll__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.15rem;
+}
+
+.tc-enroll__list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.tc-enroll__list-count {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.tc-enroll__list-count strong {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.tc-enroll__table {
+  margin: 0;
+}
+
+.tc-enroll__course-link {
+  color: #047857;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tc-enroll__course-link:hover {
+  text-decoration: underline;
+}
+
+.tc-enroll__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tc-enroll__badge--ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tc-enroll__badge--muted {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.tc-enroll__badge--pending {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.tc-enroll__badge--progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tc-enroll__act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.tc-enroll__act--ok {
+  background: #059669;
+  color: #fff;
+}
+
+.tc-enroll__act--ok:hover {
+  background: #047857;
+}
+
+.tc-enroll__act--ghost {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.tc-enroll__act--ghost:hover {
+  background: #f8fafc;
+}
+
 .tc-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -969,8 +1431,8 @@
 .tc-gabarit-preview-sheet {
   position: relative;
   overflow: hidden;
-  min-height: 17.5rem;
-  border-radius: 0.75rem;
+  min-height: 20rem;
+  border-radius: 0.35rem;
   border-width: 3px;
   border-style: solid;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
@@ -982,12 +1444,13 @@
   inset: 0;
   background-size: cover;
   background-position: center;
+  opacity: 0.32;
 }
 
 .tc-gabarit-preview-sheet__veil {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.42);
 }
 
 .tc-gabarit-preview-sheet__plain {
@@ -996,69 +1459,126 @@
   background: #fff;
 }
 
+.tc-gabarit-preview-sheet__inner-rule {
+  position: absolute;
+  inset: 0.45rem;
+  border: 1px solid;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .tc-gabarit-preview-sheet__body {
   position: relative;
-  padding: 1.15rem 1.25rem 1.25rem;
+  z-index: 2;
+  padding: 1rem 1.15rem 1.1rem;
+  text-align: center;
+}
+
+.tc-gabarit-preview-brand {
   text-align: left;
+  min-height: 2.1rem;
+  margin-bottom: 0.55rem;
 }
 
 .tc-gabarit-preview-logo {
   display: block;
-  margin-bottom: 0.75rem;
-  max-height: 3.25rem;
+  max-height: 2.5rem;
   width: auto;
   object-fit: contain;
 }
 
 .tc-gabarit-preview-logo-ph {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.75rem;
-  height: 2.25rem;
-  width: 5.5rem;
-  border-radius: 0.4rem;
+  height: 1.85rem;
+  width: 4.5rem;
+  border-radius: 0.3rem;
   background: #e2e8f0;
   color: #64748b;
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .tc-gabarit-preview-headline {
-  margin: 0 0 0.35rem;
-  font-size: 1.05rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .tc-gabarit-preview-sub {
-  margin: 0 0 1rem;
-  font-size: 0.75rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.7rem;
   color: #475569;
+  line-height: 1.35;
+  font-style: italic;
+}
+
+.tc-gabarit-preview-lead,
+.tc-gabarit-preview-mid,
+.tc-gabarit-preview-close {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  color: #334155;
   line-height: 1.4;
 }
 
 .tc-gabarit-preview-learner {
-  margin: 0 0 0.75rem;
-  font-size: 0.875rem;
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .tc-gabarit-preview-course {
-  margin: 0 0 0.85rem;
-  font-size: 1rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.3;
 }
 
-.tc-gabarit-preview-meta {
+.tc-gabarit-preview-sigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0.65rem;
+}
+
+.tc-gabarit-preview-sig {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.75rem;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.tc-gabarit-preview-sig__art {
+  width: 5.5rem;
+  height: 1.35rem;
+}
+
+.tc-gabarit-preview-sig__line {
+  display: block;
+  width: 5.5rem;
+  border-top: 1px solid #94a3b8;
+}
+
+.tc-gabarit-preview-sig__role {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tc-gabarit-preview-meta {
+  font-size: 0.65rem;
   color: #64748b;
+  line-height: 1.4;
 }
 
 .tc-gabarit-preview-meta p {
@@ -1066,10 +1586,10 @@
 }
 
 .tc-gabarit-preview-footer {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
   border-top: 1px solid #e2e8f0;
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   line-height: 1.4;
   color: #94a3b8;
 }

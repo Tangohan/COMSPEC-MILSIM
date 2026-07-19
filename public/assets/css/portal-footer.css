@@ -1,0 +1,288 @@
+/* Pied de page portail — bandeau sombre Athena, colonnes sobres */
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+
+.portal-footer {
+  --pf-bg: #050505;
+  --pf-muted: #a3a3a3;
+  --pf-text: #e5e5e5;
+  --pf-accent: #34d399;
+  --pf-line: rgba(255, 255, 255, 0.08);
+  margin-top: 3.5rem;
+  background:
+    radial-gradient(ellipse 70% 50% at 8% 0%, rgba(16, 185, 129, 0.1), transparent 50%),
+    linear-gradient(180deg, #0a0a0a 0%, var(--pf-bg) 45%);
+  color: var(--pf-text);
+  border-top: 1px solid rgba(52, 211, 153, 0.22);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+}
+
+.portal-footer__inner {
+  display: grid;
+  gap: 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.25rem 1.25rem 1.75rem;
+}
+
+@media (min-width: 900px) {
+  .portal-footer__inner {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.35fr);
+    gap: 2.5rem 3.5rem;
+    padding: 3rem 1.5rem 2.25rem;
+    align-items: start;
+  }
+}
+
+.portal-footer__mark {
+  margin: 0;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(2.75rem, 8vw, 4.25rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.portal-footer__mark-dot {
+  color: #4ade80; /* point marque ATHENA. */
+}
+
+.portal-footer__lead {
+  margin: 0.85rem 0 0;
+  max-width: 26rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--pf-muted);
+}
+
+.portal-footer__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.portal-footer__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 0.4rem;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.portal-footer__btn--solid {
+  background: var(--pf-accent);
+  color: #022c22;
+  border: 1px solid transparent;
+}
+
+.portal-footer__btn--solid:hover {
+  background: #6ee7b7;
+}
+
+.portal-footer__btn--ghost {
+  background: transparent;
+  color: #f5f5f5;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.portal-footer__btn--ghost:hover {
+  border-color: rgba(52, 211, 153, 0.5);
+  color: var(--pf-accent);
+}
+
+.portal-footer__nav {
+  display: grid;
+  gap: 0;
+}
+
+@media (min-width: 768px) {
+  .portal-footer__nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem 2rem;
+    padding-top: 0.25rem;
+  }
+}
+
+.portal-footer__group {
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* Mobile : séparateurs fins entre rubriques */
+@media (max-width: 767px) {
+  .portal-footer__group {
+    border-bottom: 1px solid var(--pf-line);
+  }
+
+  .portal-footer__group:first-child {
+    border-top: 1px solid var(--pf-line);
+  }
+}
+
+.portal-footer__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.95rem 0;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.portal-footer__summary::-webkit-details-marker {
+  display: none;
+}
+
+.portal-footer__summary::marker {
+  content: "";
+}
+
+.portal-footer__summary:focus-visible {
+  outline: 2px solid var(--pf-accent);
+  outline-offset: 2px;
+  border-radius: 0.2rem;
+}
+
+@media (min-width: 768px) {
+  .portal-footer:not(.is-mobile) .portal-footer__summary {
+    cursor: default;
+    padding: 0 0 0.85rem;
+    pointer-events: none;
+  }
+
+  .portal-footer:not(.is-mobile) .portal-footer__chevron {
+    display: none;
+  }
+}
+
+.portal-footer__heading {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.portal-footer__chevron {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid #737373;
+  border-bottom: 1.5px solid #737373;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.portal-footer__group[open] .portal-footer__chevron {
+  transform: rotate(225deg);
+  border-color: var(--pf-accent);
+}
+
+.portal-footer__list {
+  margin: 0;
+  padding: 0 0 1rem;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .portal-footer__list {
+    padding: 0;
+  }
+}
+
+.portal-footer__list a,
+.portal-footer__legal-link {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--pf-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.portal-footer__list a:hover,
+.portal-footer__legal-link:hover {
+  color: var(--pf-accent);
+}
+
+.portal-footer__list--legal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Plus de liens légaux : grille 2 cols pour équilibrer la hauteur */
+@media (min-width: 768px) {
+  .portal-footer__list--legal {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1rem;
+    row-gap: 0.45rem;
+  }
+}
+
+.portal-footer__legal-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.portal-footer__bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--pf-line);
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .portal-footer__bar {
+    flex-direction: row;
+    text-align: left;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.portal-footer__copy,
+.portal-footer__tag {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #737373;
+}
+
+.portal-footer__tag {
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-footer__btn,
+  .portal-footer__list a,
+  .portal-footer__legal-link,
+  .portal-footer__chevron {
+    transition: none;
+  }
+}

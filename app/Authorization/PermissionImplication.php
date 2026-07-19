@@ -66,6 +66,10 @@ final class PermissionImplication
             return true;
         }
 
+        if (in_array('media.manage', $granted, true) && self::impliedByMediaManage($permission)) {
+            return true;
+        }
+
         if (self::aliasMatch($granted, $permission)) {
             return true;
         }
@@ -152,6 +156,7 @@ final class PermissionImplication
     /**
      * Habilitations dérivées de « administration organisationnelle ».
      * Exclusions : droits sensibles à attribuer explicitement sur les rôles (ex. restrictions membres niveau org).
+     * Les droits plateforme (ex. admin.system) ne sont jamais dérivés : ils ne figurent pas au catalogue tenant.
      *
      * @var list<string>
      */
@@ -159,13 +164,22 @@ final class PermissionImplication
     {
         return [
             'admin.members.moderate',
+            'admin.system',
         ];
     }
 
     private static function impliedByAdminOrganization(string $permission): bool
     {
         if (str_starts_with($permission, 'admin.')) {
-            return !in_array($permission, self::adminOrganizationExcludedSlugs(), true);
+            if (in_array($permission, self::adminOrganizationExcludedSlugs(), true)) {
+                return false;
+            }
+            // Uniquement les droits admin du catalogue communauté — jamais le pilotage site.
+            return in_array($permission, self::tenantCatalogSlugs(), true);
+        }
+        // Pilotage LMS de la communauté (gabarit attestations, catalogue, etc.).
+        if (str_starts_with($permission, 'training.')) {
+            return true;
         }
         if (str_starts_with($permission, 'personnel.')) {
             return true;
@@ -174,6 +188,9 @@ final class PermissionImplication
             return true;
         }
         if (str_starts_with($permission, 'organization.orbat.')) {
+            return true;
+        }
+        if (str_starts_with($permission, 'media.')) {
             return true;
         }
 
@@ -215,6 +232,17 @@ final class PermissionImplication
         );
 
         return in_array($permission, $set, true);
+    }
+
+    private static function impliedByMediaManage(string $permission): bool
+    {
+        return in_array($permission, [
+            'media.view',
+            'media.upload',
+            'media.collections.manage',
+            'media.publish',
+            'media.manage',
+        ], true);
     }
 
     /**

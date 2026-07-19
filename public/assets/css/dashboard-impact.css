@@ -13,8 +13,8 @@
   --dash-topnav-pad: 1.25rem;
   position: sticky;
   top: 0;
-  /* Sous le rail (z 100) : ne jamais flotter au-dessus de l’aside ouvert */
-  z-index: 20;
+  /* Au-dessus des alertes (94–95), sous le rail (100) — aligné sur .athena-header */
+  z-index: 96;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1874,6 +1874,8 @@ body.dashboard-shell main {
 
 /* --------------------------------------------------------------------------
  * Bande identité opérationnelle (void / emerald) — remplace le badge plat
+ * Desktop : une ligne (métas + actions + switch), scroll horizontal si dense.
+ * Mobile : wrap acceptable.
  * -------------------------------------------------------------------------- */
 .dash-idstrip {
   background: #050505;
@@ -1884,31 +1886,68 @@ body.dashboard-shell main {
 .dash-idstrip__shell {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.25rem 1.75rem;
-  max-width: 72rem;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.85rem 1.1rem;
+  max-width: 80rem;
   margin: 0 auto;
-  padding: 1.15rem 1.25rem 1.35rem;
+  padding: 0.95rem 1.25rem 1.1rem;
 }
 
 @media (min-width: 768px) {
   .dash-idstrip__shell {
-    padding: 1.35rem 2rem 1.5rem;
+    padding: 1rem 1.75rem 1.15rem;
+    gap: 0.75rem 1.25rem;
+  }
+}
+
+/* Large écran : forcer une seule ligne + scroll discret si trop dense */
+@media (min-width: 1100px) {
+  .dash-idstrip__shell {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  }
+
+  .dash-idstrip__shell::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .dash-idstrip__shell::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+  }
+
+  .dash-idstrip__facts,
+  .dash-idstrip__actions,
+  .dash-idstrip__switch {
+    flex-shrink: 0;
   }
 }
 
 .dash-idstrip__facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem 1.75rem;
+  align-items: center;
+  gap: 0.75rem 1.15rem;
   min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .dash-idstrip__facts {
+    flex-wrap: nowrap;
+    gap: 0.65rem 1rem;
+  }
 }
 
 .dash-idstrip__fact {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.2rem;
   min-width: 0;
 }
 
@@ -1918,37 +1957,134 @@ body.dashboard-shell main {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.42);
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .dash-idstrip__value {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #f8fafc;
-  line-height: 1.25;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .dash-idstrip__value--status {
   color: #34d399;
 }
 
-.dash-idstrip__switch {
+.dash-idstrip__actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
   min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .dash-idstrip__actions {
+    flex-wrap: nowrap;
+    margin-left: 0.15rem;
+    padding-left: 0.85rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+.dash-idstrip__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.dash-idstrip__icon-btn:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #fff;
+}
+
+.dash-idstrip__icon-btn:active {
+  transform: scale(0.96);
+}
+
+.dash-idstrip__text-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 2.2rem;
+  padding: 0 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dash-idstrip__text-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.dash-idstrip__text-btn--accent {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #a7f3d0;
+}
+
+.dash-idstrip__text-btn--accent:hover {
+  background: rgba(16, 185, 129, 0.32);
+  color: #fff;
+}
+
+.dash-idstrip__switch {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  min-width: 0;
+  margin-left: auto;
+}
+
+@media (min-width: 1100px) {
+  .dash-idstrip__switch {
+    flex-wrap: nowrap;
+    padding-left: 0.85rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+  }
 }
 
 .dash-idstrip__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+@media (min-width: 1100px) {
+  .dash-idstrip__chips {
+    flex-wrap: nowrap;
+  }
 }
 
 .dash-idstrip__chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.65rem;
+  padding: 0.28rem 0.6rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.04);
@@ -1957,6 +2093,7 @@ body.dashboard-shell main {
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
+  white-space: nowrap;
   transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
 }
 
@@ -1972,10 +2109,13 @@ body.dashboard-shell main {
   font-weight: 700;
   color: #fbbf24;
   text-decoration: none;
+  white-space: nowrap;
+}
+
+.dash-idstrip__switch + .dash-idstrip__trial {
+  margin-left: 0;
 }
 
 .dash-idstrip__trial:hover {
   text-decoration: underline;
 }
-
-

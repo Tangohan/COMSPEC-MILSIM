@@ -88,13 +88,21 @@ $statusFr = static function (string $s): string {
                                 <td class="text-slate-600 text-sm"><?= !empty($c['issued_at']) ? date('d/m/Y', strtotime((string) $c['issued_at'])) : '—' ?></td>
                                 <td class="text-slate-600 text-sm"><?= !empty($c['expires_at']) ? date('d/m/Y', strtotime((string) $c['expires_at'])) : '—' ?></td>
                                 <td class="text-sm">
-                                    <?php if ($hasPdf): ?>
+                                    <?php if ($hasPdf && $st === 'valid' && $trainingCertificatesPdfReady): ?>
+                                    <div class="inline-flex flex-wrap items-center gap-2">
+                                        <span class="text-emerald-700 font-semibold">Disponible</span>
+                                        <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('certificates/' . (int) $c['id'] . '/generer-document')) ?>" class="inline">
+                                            <?= \App\Core\Csrf::field() ?>
+                                            <button type="submit" class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">Régénérer</button>
+                                        </form>
+                                    </div>
+                                    <?php elseif ($hasPdf): ?>
                                     <span class="text-emerald-700 font-semibold">Disponible</span>
                                     <?php elseif ($st === 'valid' && $trainingCertificatesPdfReady): ?>
                                     <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('certificates/' . (int) $c['id'] . '/generer-document')) ?>" class="inline-flex items-center gap-2">
                                         <?= \App\Core\Csrf::field() ?>
                                         <span class="text-slate-500">En attente</span>
-                                        <button type="submit" class="rounded-md border border-emerald-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">Régénérer</button>
+                                        <button type="submit" class="rounded-md border border-emerald-200 bg-white px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">Produire</button>
                                     </form>
                                     <?php elseif ($st === 'valid'): ?>
                                     <span class="text-slate-500">En attente</span>

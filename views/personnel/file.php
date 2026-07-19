@@ -248,6 +248,9 @@ $portraitUrl = null;
 if (!empty($personnelProfile['character_portrait_path'])) {
     $portraitUrl = $baseUrl . '/' . ltrim($personnelProfile['character_portrait_path'], '/');
 }
+$avatarInitials = function_exists('user_display_initials')
+    ? user_display_initials((string) $displayName, 2)
+    : mb_strtoupper(mb_substr(preg_replace('/\s+/u', '', (string) $displayName) ?: '?', 0, 2));
 
 $publicFlagCodeRaw = strtoupper(trim((string) ($userProfile['public_flag_country_code'] ?? '')));
 $publicFlagCode = ($publicFlagCodeRaw !== '' && \App\Support\Profile\PublicFlagCountryCatalog::isAllowed($publicFlagCodeRaw))
@@ -445,9 +448,21 @@ if (!function_exists('personnel_file_render_admin_value')) {
     }
 }
 ?>
-<main class="min-h-screen pt-20 pb-24">
+<?php
+$canAccessRhView = !empty($canAccessRhView ?? false);
+$personnelViewMode = isset($personnelViewMode) && in_array($personnelViewMode, ['public', 'rh'], true) ? $personnelViewMode : '';
+$personnelFileSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
+$personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (string) ($targetUser['id'] ?? '');
+$personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
+$personnelFileIsRhFull = $canAccessRhView && $personnelViewMode === 'rh';
+/** Conteneur page : vue RH en plein largeur ; sinon colonne classique max-w-7xl. */
+$personnelFileShell = $personnelFileIsRhFull
+    ? 'w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12'
+    : 'max-w-7xl mx-auto px-6 md:px-8';
+?>
+<main class="min-h-screen pt-20 pb-24<?= $personnelFileIsRhFull ? ' personnel-file--rh-full' : '' ?>">
     <?php if ($personnelModerationStaffLines !== []): ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm" role="region" aria-label="Restrictions d’accès">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Restrictions actuelles (vue encadrement)</p>
             <ul class="mt-2 list-disc pl-5 text-sm text-slate-800 space-y-1">
@@ -458,7 +473,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
         </div>
     </div>
     <?php elseif ($personnelModerationMemberBrief !== null): ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
             <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
         </div>
@@ -469,7 +484,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
     $personnelFlashError = \App\Core\Session::getFlash('error');
     ?>
     <?php if ($personnelFlashSuccess || $personnelFlashError): ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-4">
+    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-4">
         <?php if ($personnelFlashSuccess): ?>
         <div class="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900 shadow-sm" role="status"><?= htmlspecialchars((string) $personnelFlashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
@@ -478,7 +493,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
         <?php endif; ?>
     </div>
     <?php endif; ?>
-    <div class="max-w-7xl mx-auto px-6 md:px-8 pt-6">
+    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <?php
         $active_tab = 'identity';
         $base_path = 'personnel/me';
@@ -486,17 +501,12 @@ if (!function_exists('personnel_file_render_admin_value')) {
         ?>
     </div>
     <?php
-    $canAccessRhView = !empty($canAccessRhView ?? false);
-    $personnelViewMode = isset($personnelViewMode) && in_array($personnelViewMode, ['public', 'rh'], true) ? $personnelViewMode : '';
-    $personnelFileSegment = trim((string) ($targetUser['profile_slug'] ?? ''));
-    $personnelFileSegment = $personnelFileSegment !== '' ? $personnelFileSegment : (string) ($targetUser['id'] ?? '');
-    $personnelFileBaseUrl = url('personnel/' . $personnelFileSegment);
     if ($canAccessRhView && $personnelViewMode === '') {
         require base_path('views/partials/personnel/file_view_gate.php');
         echo '</main>';
         return;
     }
-    if ($canAccessRhView && $personnelViewMode === 'rh') {
+    if ($personnelFileIsRhFull) {
         require base_path('views/partials/personnel/file_rh_view.php');
         echo '</main>';
         return;
@@ -583,7 +593,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <div class="relative w-20 h-20 md:w-24 md:h-24 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800" title="Avatar compte" x-data="{ ready: false }">
                         <?php if ($avatarUrl): ?>
                         <div class="absolute inset-0 z-0 bg-slate-700 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" />
+                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" loading="eager" decoding="async" draggable="false" width="96" height="96" @load="ready = true" @error="ready = true" class="relative z-[1] h-full w-full object-cover transition-opacity duration-300" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
                         <?php else: ?>
                         <div class="flex h-full w-full items-center justify-center text-slate-500">
                             <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -604,7 +614,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                             <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" aria-hidden="true"></div>
                             <?php if ($portraitUrl): ?>
                             <div class="absolute inset-0 z-0 bg-slate-800 animate-pulse" x-show="!ready" x-transition.opacity.duration.200ms></div>
-                            <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" class="relative z-[1] h-full w-full object-contain object-bottom transition-opacity duration-300 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)]" :class="ready ? 'opacity-100' : 'opacity-0'" />
+                            <img src="<?= htmlspecialchars($portraitUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Portrait opérateur" loading="eager" decoding="async" draggable="false" width="280" height="420" @load="ready = true" @error="ready = true" class="relative z-[1] h-full w-full object-contain object-bottom transition-opacity duration-300 drop-shadow-[0_8px_24px_rgba(0,0,0,0.65)]" :class="ready ? 'opacity-100' : 'opacity-0'" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
                             <?php else: ?>
                             <div class="relative z-[1] flex h-full w-full items-center justify-center text-slate-500">
                                 <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -692,7 +702,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Photo de compte</p>
                     <div class="aspect-square max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
                         <?php if ($avatarUrl): ?>
-                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Photo de compte" class="w-full h-full object-cover" loading="lazy" decoding="async" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
                         <?php endif; ?>
@@ -700,7 +710,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Portrait opérateur</p>
                     <div class="aspect-[3/4] max-w-[140px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 mb-4">
                         <?php if ($portraitUrl): ?>
-                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait" class="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        <img src="<?= htmlspecialchars($portraitUrl) ?>" alt="Portrait opérateur" class="w-full h-full object-cover" loading="lazy" decoding="async" data-img-fallback="portrait" data-img-initials="<?= htmlspecialchars($avatarInitials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Portrait opérateur indisponible" />
                         <?php else: ?>
                         <div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
                         <?php endif; ?>
@@ -803,7 +813,7 @@ if (!function_exists('personnel_file_render_admin_value')) {
                     <?php endif; ?>
                     <?php if ($bannerUrl): ?>
                     <div class="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
-                        <img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-36 w-full object-cover sm:h-44 md:h-52" loading="lazy" decoding="async" />
+                        <img src="<?= htmlspecialchars($bannerUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Couverture du dossier" class="h-36 w-full object-cover sm:h-44 md:h-52" loading="lazy" decoding="async" data-img-fallback="cover" data-img-label="Couverture indisponible" />
                     </div>
                     <?php endif; ?>
                     <?php if (!empty($roleplayFollowupConfig['enabled'])): ?>

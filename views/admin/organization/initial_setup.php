@@ -29,32 +29,32 @@ $communityName = trim((string) ($tenant['name'] ?? ''));
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
 ?>
-<div class="min-h-0 flex-1 bg-slate-50">
+<div class="min-h-0 flex-1 bg-[#050505]">
 <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
-    <header class="relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
-        <div class="absolute inset-y-0 left-0 w-1 bg-emerald-600" aria-hidden="true"></div>
+    <header class="relative overflow-hidden border border-white/10 bg-[#0a0a0a] rounded-xl">
+        <div class="absolute inset-y-0 left-0 w-1 bg-emerald-500" aria-hidden="true"></div>
         <div class="relative px-4 sm:px-6 py-5 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
             <div class="min-w-0 flex-1">
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/90">Premiers pas</p>
-                <h1 class="mt-1.5 text-2xl font-black tracking-tight text-slate-900">
+                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400/90">Premiers pas</p>
+                <h1 class="mt-1.5 text-2xl font-black tracking-tight text-white">
                     <?php if ($completed): ?>
                         Configuration initiale
                     <?php else: ?>
                         Bienvenue<?= $communityName !== '' ? ' — ' . htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') : '' ?>
                     <?php endif; ?>
                 </h1>
-                <p class="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
+                <p class="mt-2 text-sm text-neutral-400 max-w-2xl leading-relaxed">
                     Votre communauté est déjà en place. Complétez les derniers réglages essentiels : logo, contact, inscription, modules visibles et rôle d’accueil.
                     Vous pouvez enregistrer, reporter ou terminer à tout moment.
                 </p>
             </div>
-            <div class="shrink-0 w-full sm:w-52 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Profil renseigné</p>
-                <p class="text-3xl font-black text-slate-900 tabular-nums"><?= $percent ?>%</p>
-                <p class="mt-1 text-xs text-slate-600"><?= $done ?>/<?= $total ?> éléments essentiels</p>
-                <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div class="h-full rounded-full bg-emerald-500 transition-all" style="width:<?= max(0, min(100, $percent)) ?>%"></div>
+            <div class="shrink-0 w-full sm:w-52 rounded-xl border border-white/10 bg-white/5 p-4">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-2">Profil renseigné</p>
+                <p class="text-3xl font-black text-white tabular-nums"><?= $percent ?>%</p>
+                <p class="mt-1 text-xs text-neutral-400"><?= $done ?>/<?= $total ?> éléments essentiels</p>
+                <div class="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-all" style="width:<?= max(0, min(100, $percent)) ?>%"></div>
                 </div>
             </div>
         </div>

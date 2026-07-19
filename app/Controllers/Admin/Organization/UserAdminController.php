@@ -473,7 +473,7 @@ class UserAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.edit',
-            'title' => 'Modifier l\'utilisateur',
+            'title' => 'Modifier le compte',
             'user' => $user,
             'userProfile' => $userProfile,
             'isServiceAccount' => $this->userRepository->isServiceAccount($id),
@@ -487,6 +487,7 @@ class UserAdminController
             'userActivePositions' => $userActivePositions,
             'roleSetsList' => $roleSets,
             'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
+            'backOfficePageCss' => ['back-office-users.css'],
         ]);
     }
 
@@ -495,36 +496,62 @@ class UserAdminController
         $tenantId = (int) Session::get('tenant_id');
         $actorUserId = (int) Session::get('user_id');
         $id = (int) ($params['id'] ?? 0);
+        $editUrl = url('back-office/users/' . $id . '/edit');
         if (!$tenantId || !$actorUserId || !$id) {
             return Response::redirect(url('back-office/users'));
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
-            Session::flash('error', 'Utilisateur introuvable.');
+            Session::flash('error', 'Membre introuvable.');
             return Response::redirect(url('back-office/users'));
         }
 
-        $rolesSynced = false;
-        /** @var list<int>|null */
-        $historyOldOrgRoleIds = null;
-        /** @var list<int>|null */
-        $historyNewOrgRoleIds = null;
         $data = [];
+        $syncRoles = $request->input('user_roles_form') === '1';
+        $roleIds = [];
+        $oldRoleIds = [];
+
         if ($request->input('display_name') !== null) {
-            $data['display_name'] = trim((string) $request->input('display_name'));
+            $displayName = trim((string) $request->input('display_name'));
+            if (function_exists('mb_substr')) {
+                $displayName = mb_substr($displayName, 0, 160);
+            } else {
+                $displayName = substr($displayName, 0, 160);
+            }
+            $data['display_name'] = $displayName !== '' ? $displayName : null;
         }
+
         if ($request->input('callsign') !== null) {
-            $data['callsign'] = trim((string) $request->input('callsign'));
+            $callsign = trim((string) $request->input('callsign'));
+            if (function_exists('mb_substr')) {
+                $callsign = mb_substr($callsign, 0, 80);
+            } else {
+                $callsign = substr($callsign, 0, 80);
+            }
+            if ($callsign !== '' && $this->userRepository->callsignExistsInTenant($tenantId, $callsign, $id)) {
+                Session::flash('error', 'Cet indicatif est déjà utilisé par un autre membre de la communauté.');
+
+                return Response::redirect($editUrl);
+            }
+            $data['callsign'] = $callsign !== '' ? $callsign : null;
         }
+
         if ($request->input('email') !== null) {
             $email = trim((string) $request->input('email'));
-            if ($email !== '' && $this->userRepository->emailExistsInTenant($tenantId, $email, $id)) {
-                Session::flash('error', 'Cet email est déjà utilisé.');
-                return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                Session::flash('error', 'Une adresse e-mail valide est requise.');
+
+                return Response::redirect($editUrl);
+            }
+            if ($this->userRepository->emailExistsInTenant($tenantId, $email, $id)) {
+                Session::flash('error', 'Cette adresse e-mail est déjà utilisée.');
+
+                return Response::redirect($editUrl);
             }
             $data['email'] = $email;
         }
-        if ($request->input('user_roles_form') === '1') {
+
+        if ($syncRoles) {
             $roleIds = $this->parseRoleIdsFromRequest($request);
             $oldRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
             if ($oldRoleIds === [] && !empty($user['role_id'])) {
@@ -534,7 +561,7 @@ class UserAdminController
                 if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
                     Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
 
-                    return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                    return Response::redirect($editUrl);
                 }
             }
             $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
@@ -546,61 +573,93 @@ class UserAdminController
                     if ($count <= 1) {
                         Session::flash('error', 'Impossible de retirer le rôle propriétaire communauté au dernier titulaire.');
 
-                        return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                        return Response::redirect($editUrl);
                     }
                 }
             }
-            try {
-                $this->userRepository->syncOrganizationRoles($id, $tenantId, $roleIds, $actorUserId);
-            } catch (\InvalidArgumentException $e) {
-                Session::flash('error', $e->getMessage());
+        }
 
-                return Response::redirect(url('back-office/users/' . $id . '/edit'));
-            }
-            $this->adminAuditService->logRoleAssigned(
-                $tenantId,
-                $actorUserId,
-                $id,
-                $oldRoleIds !== [] ? implode(',', $oldRoleIds) : null,
-                $roleIds !== [] ? implode(',', $roleIds) : null
-            );
-            $rolesSynced = true;
-            $historyOldOrgRoleIds = $oldRoleIds;
-            $userAfterRoles = $this->userRepository->findById($id, $tenantId) ?? [];
-            $historyNewOrgRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
-            if ($historyNewOrgRoleIds === [] && !empty($userAfterRoles['role_id'])) {
-                $historyNewOrgRoleIds = [(int) $userAfterRoles['role_id']];
-            }
-        }
         if ($request->input('grade_id') !== null) {
-            $data['grade_id'] = $request->input('grade_id') ? (int) $request->input('grade_id') : null;
+            $rawGrade = $request->input('grade_id');
+            $gradeId = $rawGrade !== '' && $rawGrade !== null ? (int) $rawGrade : null;
+            if ($gradeId !== null && $gradeId > 0) {
+                $allowedGradeIds = array_map(
+                    static fn (array $g): int => (int) ($g['id'] ?? 0),
+                    $this->gradeRepository->listForTenant($tenantId)
+                );
+                if (!in_array($gradeId, $allowedGradeIds, true)) {
+                    Session::flash('error', 'Le grade sélectionné n’est pas disponible pour cette communauté.');
+
+                    return Response::redirect($editUrl);
+                }
+                $data['grade_id'] = $gradeId;
+            } else {
+                $data['grade_id'] = null;
+            }
         }
+
         if ($request->input('status') !== null) {
             $st = trim((string) $request->input('status'));
             if ($st === 'pending') {
                 $st = 'pending_verification';
             }
-            if (in_array($st, ['active', 'inactive', 'pending_verification'], true)) {
-                $data['status'] = $st;
+            if (!in_array($st, ['active', 'inactive', 'pending_verification'], true)) {
+                Session::flash('error', 'Statut du compte non reconnu.');
+
+                return Response::redirect($editUrl);
             }
+            if ($st === 'inactive' && $id === $actorUserId) {
+                Session::flash('error', 'Vous ne pouvez pas désactiver votre propre compte.');
+
+                return Response::redirect($editUrl);
+            }
+            if ($st === 'inactive') {
+                $ownerRoleId = $this->roleRepository->getIdBySlug($tenantId, 'community_owner');
+                if ($ownerRoleId !== null && $this->userRepository->userHasTenantRole($id, $ownerRoleId)) {
+                    $count = $this->userRepository->countUsersWithRole($ownerRoleId);
+                    if ($count <= 1) {
+                        Session::flash('error', 'Impossible de désactiver le dernier propriétaire communauté.');
+
+                        return Response::redirect($editUrl);
+                    }
+                }
+            }
+            $data['status'] = $st;
         }
+
         if ($request->input('nationality_code') !== null) {
             $v = trim((string) $request->input('nationality_code'));
+            if ($v !== '' && !in_array($v, ['FR', 'US'], true)) {
+                Session::flash('error', 'La nationalité / doctrine choisie n’est pas reconnue.');
+
+                return Response::redirect($editUrl);
+            }
             $data['nationality_code'] = $v !== '' ? $v : null;
         }
+
         if ($request->input('preferred_grade_format') !== null) {
             $v = trim((string) $request->input('preferred_grade_format'));
             $data['preferred_grade_format'] = in_array($v, ['classic', 'otan', 'hybrid'], true) ? $v : 'classic';
         }
+
         if ($request->input('professional_category_code') !== null) {
             $v = trim((string) $request->input('professional_category_code'));
+            if ($v !== '' && $this->gradeCategoryRepository->findByCode($v) === null) {
+                Session::flash('error', 'La catégorie de personnel choisie n’est pas reconnue.');
+
+                return Response::redirect($editUrl);
+            }
             $data['professional_category_code'] = $v !== '' ? $v : null;
         }
+
         $password = $request->input('password');
         if ($password !== null && $password !== '') {
-            if (strlen($password) >= 6) {
-                $data['password_hash'] = password_hash($password, PASSWORD_ARGON2ID);
+            if (strlen((string) $password) < 6) {
+                Session::flash('error', 'Le nouveau mot de passe doit contenir au moins 6 caractères.');
+
+                return Response::redirect($editUrl);
             }
+            $data['password_hash'] = password_hash((string) $password, PASSWORD_ARGON2ID);
         }
 
         $updatedUser = array_merge($user, $data);
@@ -609,23 +668,70 @@ class UserAdminController
             foreach ($gradeValidationIssues as $i) {
                 if (($i['type'] ?? '') === 'error') {
                     Session::flash('error', $i['message']);
-                    return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                    return Response::redirect($editUrl);
                 }
             }
         }
 
+        $rolesSynced = false;
         $actorLabel = trim((string) Session::get('display_name'));
 
-        if ($rolesSynced && $historyOldOrgRoleIds !== null && $historyNewOrgRoleIds !== null) {
-            $this->personnelOrgHistoryRecorder->recordOrganizationRolesChange(
-                $tenantId,
-                $id,
-                $actorUserId,
-                $actorLabel,
-                $historyOldOrgRoleIds,
-                $historyNewOrgRoleIds
-            );
+        if ($syncRoles) {
+            $rolesChanged = count($roleIds) !== count($oldRoleIds)
+                || array_diff($roleIds, $oldRoleIds) !== []
+                || array_diff($oldRoleIds, $roleIds) !== [];
+            if ($rolesChanged) {
+                try {
+                    $this->userRepository->syncOrganizationRoles($id, $tenantId, $roleIds, $actorUserId);
+                } catch (\InvalidArgumentException $e) {
+                    Session::flash('error', $e->getMessage());
+
+                    return Response::redirect($editUrl);
+                }
+                $this->adminAuditService->logRoleAssigned(
+                    $tenantId,
+                    $actorUserId,
+                    $id,
+                    $oldRoleIds !== [] ? implode(',', $oldRoleIds) : null,
+                    $roleIds !== [] ? implode(',', $roleIds) : null
+                );
+                $rolesSynced = true;
+                $userAfterRoles = $this->userRepository->findById($id, $tenantId) ?? [];
+                $historyNewOrgRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);
+                if ($historyNewOrgRoleIds === [] && !empty($userAfterRoles['role_id'])) {
+                    $historyNewOrgRoleIds = [(int) $userAfterRoles['role_id']];
+                }
+                $this->personnelOrgHistoryRecorder->recordOrganizationRolesChange(
+                    $tenantId,
+                    $id,
+                    $actorUserId,
+                    $actorLabel,
+                    $oldRoleIds,
+                    $historyNewOrgRoleIds
+                );
+            }
         }
+
+        // Ne persister que les champs réellement modifiés
+        $changed = [];
+        foreach ($data as $key => $value) {
+            if ($key === 'password_hash') {
+                $changed[$key] = $value;
+                continue;
+            }
+            $before = $user[$key] ?? null;
+            if ($key === 'grade_id') {
+                $beforeNorm = $before !== null && $before !== '' ? (int) $before : null;
+                $afterNorm = $value !== null && $value !== '' ? (int) $value : null;
+            } else {
+                $beforeNorm = $before === null || $before === '' ? null : (string) $before;
+                $afterNorm = $value === null || $value === '' ? null : (string) $value;
+            }
+            if ($beforeNorm !== $afterNorm) {
+                $changed[$key] = $value;
+            }
+        }
+        $data = $changed;
 
         if (!empty($data)) {
             $auditKeys = ['email', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code', 'display_name', 'callsign', 'profile_slug'];
@@ -650,10 +756,16 @@ class UserAdminController
             }
         }
 
-        if (!empty($data)) {
-            Session::flash('success', 'Utilisateur mis à jour.');
+        if (!empty($data) && $rolesSynced) {
+            Session::flash('success', 'Compte et rôles enregistrés.');
+        } elseif (!empty($data)) {
+            Session::flash('success', 'Compte mis à jour.');
         } elseif ($rolesSynced) {
             Session::flash('success', 'Rôles mis à jour.');
+        } else {
+            Session::flash('warning', 'Aucun changement à enregistrer.');
+
+            return Response::redirect($editUrl);
         }
 
         return Response::redirect(url('back-office/users/' . $id));
@@ -664,19 +776,25 @@ class UserAdminController
         $tenantId = (int) Session::get('tenant_id');
         $actorUserId = (int) Session::get('user_id');
         $id = (int) ($params['id'] ?? 0);
+        $editUrl = url('back-office/users/' . $id . '/edit');
         if (!$tenantId || !$actorUserId || !$id) {
             return Response::redirect(url('back-office/users'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
-            Session::flash('error', 'Utilisateur introuvable.');
+            Session::flash('error', 'Membre introuvable.');
 
             return Response::redirect(url('back-office/users'));
+        }
+        if ($this->userRepository->isServiceAccount($id)) {
+            Session::flash('error', 'Les comptes techniques ne peuvent pas recevoir d’affectation de poste.');
+
+            return Response::redirect($editUrl);
         }
         $positionId = (int) $request->input('position_id', 0);
         $startsAt = trim((string) $request->input('starts_at', ''));
@@ -684,22 +802,36 @@ class UserAdminController
         if ($positionId < 1 || $startsAt === '') {
             Session::flash('error', 'Choisissez un poste et une date de début.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startsAt)) {
-            Session::flash('error', 'Date de début invalide.');
+            Session::flash('error', 'La date de début n’est pas valide.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         if ($endsAt !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endsAt)) {
-            Session::flash('error', 'Date de fin invalide.');
+            Session::flash('error', 'La date de fin n’est pas valide.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
+        }
+        if ($endsAt !== '' && $endsAt < $startsAt) {
+            Session::flash('error', 'La date de fin doit être postérieure ou égale à la date de début.');
+
+            return Response::redirect($editUrl);
+        }
+        $knownPositionIds = array_map(
+            static fn (array $p): int => (int) ($p['id'] ?? 0),
+            $this->positionRepository->listForTenant($tenantId)
+        );
+        if (!in_array($positionId, $knownPositionIds, true)) {
+            Session::flash('error', 'Ce poste n’appartient pas à votre communauté.');
+
+            return Response::redirect($editUrl);
         }
         $ok = $this->positionRepository->assignUser($tenantId, $id, $positionId, $startsAt, $endsAt !== '' ? $endsAt : null, $actorUserId);
         Session::flash($ok ? 'success' : 'error', $ok ? 'Affectation de poste enregistrée.' : 'Impossible d’enregistrer l’affectation.');
 
-        return Response::redirect(url('back-office/users/' . $id . '/edit'));
+        return Response::redirect($editUrl);
     }
 
     public function applyRoleSet(Request $request, array $params = []): Response
@@ -707,31 +839,37 @@ class UserAdminController
         $tenantId = (int) Session::get('tenant_id');
         $actorUserId = (int) Session::get('user_id');
         $id = (int) ($params['id'] ?? 0);
+        $editUrl = url('back-office/users/' . $id . '/edit');
         if (!$tenantId || !$actorUserId || !$id) {
             return Response::redirect(url('back-office/users'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         $user = $this->userRepository->findById($id, $tenantId);
         if (!$user) {
-            Session::flash('error', 'Utilisateur introuvable.');
+            Session::flash('error', 'Membre introuvable.');
 
             return Response::redirect(url('back-office/users'));
         }
+        if ($this->userRepository->isServiceAccount($id)) {
+            Session::flash('error', 'Les packs de rôles ne s’appliquent pas aux comptes techniques.');
+
+            return Response::redirect($editUrl);
+        }
         $setId = (int) $request->input('role_set_id', 0);
         if ($setId < 1) {
-            Session::flash('error', 'Choisissez un jeu de rôles.');
+            Session::flash('error', 'Choisissez un pack de rôles.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         $extraIds = $this->roleSetRepository->roleIdsForSet($tenantId, $setId);
         if ($extraIds === []) {
-            Session::flash('error', 'Ce jeu ne contient aucun rôle utilisable.');
+            Session::flash('error', 'Ce pack ne contient aucun rôle utilisable.');
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
         $current = $this->userRepository->listOrganizationRoleIdsForUser($id);
         if ($current === [] && !empty($user['role_id'])) {
@@ -739,9 +877,9 @@ class UserAdminController
         }
         foreach ($extraIds as $rid) {
             if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
-                Session::flash('error', 'Un rôle du jeu ne peut pas être attribué depuis l’administration communauté.');
+                Session::flash('error', 'Un rôle du pack ne peut pas être attribué depuis l’administration communauté.');
 
-                return Response::redirect(url('back-office/users/' . $id . '/edit'));
+                return Response::redirect($editUrl);
             }
         }
         $merged = array_values(array_unique(array_merge($current, $extraIds)));
@@ -750,11 +888,27 @@ class UserAdminController
         } catch (\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
 
-            return Response::redirect(url('back-office/users/' . $id . '/edit'));
+            return Response::redirect($editUrl);
         }
-        Session::flash('success', 'Rôles du jeu appliqués (sans retirer les rôles déjà présents).');
+        $this->adminAuditService->logRoleAssigned(
+            $tenantId,
+            $actorUserId,
+            $id,
+            $current !== [] ? implode(',', $current) : null,
+            $merged !== [] ? implode(',', $merged) : null
+        );
+        $actorLabel = trim((string) Session::get('display_name'));
+        $this->personnelOrgHistoryRecorder->recordOrganizationRolesChange(
+            $tenantId,
+            $id,
+            $actorUserId,
+            $actorLabel,
+            $current,
+            $merged
+        );
+        Session::flash('success', 'Pack de rôles appliqué (sans retirer les rôles déjà présents).');
 
-        return Response::redirect(url('back-office/users/' . $id . '/edit'));
+        return Response::redirect($editUrl);
     }
 
     public function deactivate(Request $request, array $params = []): Response

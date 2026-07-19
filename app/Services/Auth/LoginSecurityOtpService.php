@@ -11,6 +11,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
+use App\Support\DemoPortalAccounts;
 
 /**
  * OTP e-mail après mot de passe pour certains rôles, plus auto-test depuis les préférences.
@@ -33,6 +34,11 @@ final class LoginSecurityOtpService
         if ($userId < 1) {
             return false;
         }
+        $user = $this->userRepository->findById($userId, null);
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if (DemoPortalAccounts::isDemoEmail($email)) {
+            return false;
+        }
         $slug = strtolower(trim((string) $this->userRepository->getRoleSlugForUser($userId)));
 
         return in_array($slug, ['security_admin', 'security_officer', 'tenant_admin', 'community_owner'], true);
@@ -45,6 +51,14 @@ final class LoginSecurityOtpService
      */
     public function isLoginEmailOtpRequired(array $user): bool
     {
+        $email = strtolower(trim((string) ($user['email'] ?? '')));
+        if ($email === '' && (int) ($user['id'] ?? 0) > 0) {
+            $row = $this->userRepository->findById((int) $user['id'], null);
+            $email = strtolower(trim((string) ($row['email'] ?? '')));
+        }
+        if (DemoPortalAccounts::isDemoEmail($email)) {
+            return false;
+        }
         $uid = (int) ($user['id'] ?? 0);
         if ($this->isMandatoryForUserId($uid)) {
             return true;

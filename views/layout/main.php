@@ -17,6 +17,14 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     : (!empty($isPlatformAdminShell)
         ? 'Administration plateforme'
         : (!empty($isFormationWorkspace) ? 'Pilotage des formations' : ''));
+/**
+ * Aside BO dépliable (rail étroit ~4.5rem → expand au survol / focus).
+ * Activé sur tout le shell back-office / espace formation (réf. mes-formations / effectifs).
+ * Opt-out possible : $backOfficeHoverRail = false depuis un contrôleur.
+ * La largeur au repos reste stable ; le panneau s’ouvre en overlay sans écraser le contenu (min-w-0).
+ */
+$backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspace))
+    && (($backOfficeHoverRail ?? true) !== false);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -59,6 +67,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if (is_file(base_path('public/assets/css/design-system.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/design-system.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/img-fallback.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/img-fallback.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
 <?php
     $cdnPhase = 'head';
     $cdnPreset = 'portal';
@@ -67,6 +78,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
 ?>
     <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage): ?>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/community-landing.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/community-landing.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <style>
       .community-showcase-grain::before {
         content: "";
@@ -102,11 +116,17 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if ((!empty($siteDocsPage) || !empty($siteDocsRefsPage)) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/site-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (!empty($accountHubPage) && is_file(base_path('public/assets/css/account-hub.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/account-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php
     $alpineLocal = base_path('public/assets/js/alpine.min.js');
     $alpineSrc = is_file($alpineLocal) ? asset_url('assets/js/alpine.min.js') : 'https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js';
 ?>
     <script defer src="<?= htmlspecialchars($alpineSrc) ?>"></script>
+    <?php if (is_file(base_path('public/assets/js/img-fallback.js'))): ?>
+    <script src="<?= htmlspecialchars(asset_url('assets/js/img-fallback.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php endif; ?>
     <script>
       window.APP_VERSION = <?= json_encode(platform_app_version(), JSON_UNESCAPED_UNICODE) ?>;
       window.APP_BASE_URL = <?= json_encode(rtrim((string) url(''), '/'), JSON_UNESCAPED_UNICODE) ?>;
@@ -153,6 +173,17 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
           max-width: 20rem;
         }
       }
+      /* Hover-rail : largeurs forcées ci-dessus annulées sur desktop (voir back-office-rail.css) */
+      <?php if (!empty($backOfficeHoverRail)): ?>
+      @media (min-width: 1024px) {
+        body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail {
+          width: 4.5rem;
+          min-width: 4.5rem;
+          max-width: 4.5rem;
+          overflow: visible;
+        }
+      }
+      <?php endif; ?>
     </style>
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-rail.css'))): ?>
@@ -181,6 +212,9 @@ $showBottomNav = (bool) \App\Core\Session::get('user_id')
 $bodyClasses = 'layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen';
 if ($showBottomNav) {
     $bodyClasses .= ' athena-has-bottom-nav';
+}
+if (!empty($backOfficeHoverRail)) {
+    $bodyClasses .= ' bo-shell--hover-rail';
 }
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
@@ -237,7 +271,7 @@ if ($showBottomNav) {
             ></div>
 
             <aside
-                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-[#050505] text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?>"
+                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-[#050505] text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
@@ -318,5 +352,6 @@ if ($showBottomNav) {
         });
     }
     </script>
+    <?php require base_path('views/partials/mirror_trap_link.php'); ?>
 </body>
 </html>

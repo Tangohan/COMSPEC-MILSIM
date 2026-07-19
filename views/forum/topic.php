@@ -80,6 +80,9 @@ $isMandatoryRead = (int) ($topic['mandatory_read'] ?? 0) === 1;
       <?php if (!empty($topic['is_pinned'])): ?>
         <span class="inline-flex items-center rounded-full bg-emerald-600 text-white px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">À la une</span>
       <?php endif; ?>
+      <?php if (!empty($topic['pin_on_dashboard'])): ?>
+        <span class="inline-flex items-center rounded-full bg-sky-700 text-white px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">Épinglé au tableau de bord</span>
+      <?php endif; ?>
       <?php if (!empty($topic['is_locked'])): ?>
         <span class="inline-flex items-center rounded-full bg-amber-100 text-amber-900 border border-amber-300/80 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider">Clos</span>
       <?php endif; ?>
@@ -138,6 +141,19 @@ $isMandatoryRead = (int) ($topic['mandatory_read'] ?? 0) === 1;
               <button type="button" class="topic-modo-btn w-full text-left px-4 py-2 text-[11px] font-semibold text-slate-800 hover:bg-slate-50" data-action="<?= !empty($topic['is_pinned']) ? 'unpin_topic' : 'pin_topic' ?>"><?= !empty($topic['is_pinned']) ? 'Désépingler' : 'Épingler / à la une' ?></button>
               <button type="button" class="topic-modo-btn w-full text-left px-4 py-2 text-[11px] font-semibold text-indigo-800 hover:bg-indigo-50 border-t border-slate-50" data-action="toggle_official"><?= !empty($topic['is_official']) ? 'Retirer le badge officiel' : 'Marquer comme officiel' ?></button>
               <button type="button" class="topic-modo-btn w-full text-left px-4 py-2 text-[11px] font-semibold text-rose-800 hover:bg-rose-50 border-t border-slate-50" data-action="<?= !empty($topic['is_hidden']) ? 'unhide_topic' : 'hide_topic' ?>"><?= !empty($topic['is_hidden']) ? 'Restaurer le sujet' : 'Masquer le sujet' ?></button>
+            </div>
+            <?php endif; ?>
+            <?php
+            $canPinDash = !empty($canPinOnDashboard);
+            $catScopeRaw = strtolower(trim((string) ($categoryScope ?? $topic['category_scope'] ?? 'general')));
+            $dashPinAllowedScope = !in_array($catScopeRaw, ['platform', 'global'], true);
+            ?>
+            <?php if ($canPinDash && $dashPinAllowedScope): ?>
+            <div class="border-t border-slate-200 mt-1 pt-1">
+              <p class="px-4 py-1 text-[8px] font-black uppercase tracking-widest text-slate-400">Tableau de bord</p>
+              <button type="button" class="topic-modo-btn w-full text-left px-4 py-2 text-[11px] font-semibold text-sky-900 hover:bg-sky-50" data-action="<?= !empty($topic['pin_on_dashboard']) ? 'unpin_dashboard' : 'pin_dashboard' ?>">
+                <?= !empty($topic['pin_on_dashboard']) ? 'Retirer du tableau de bord' : 'Épingler au tableau de bord' ?>
+              </button>
             </div>
             <?php endif; ?>
           </div>

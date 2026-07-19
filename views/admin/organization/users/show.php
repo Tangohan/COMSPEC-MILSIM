@@ -65,7 +65,7 @@ $levelBadge = static function (string $level): array {
                     <div class="flex min-w-0 items-start gap-4">
                         <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-emerald-500/20 text-lg font-black text-white ring-2 ring-white/15 sm:h-20 sm:w-20 sm:text-xl" aria-hidden="true">
                             <?php if ($avatarSrc): ?>
-                                <img src="<?= htmlspecialchars($avatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-cover">
+                                <img src="<?= htmlspecialchars($avatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible">
                             <?php else: ?>
                                 <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
                             <?php endif; ?>

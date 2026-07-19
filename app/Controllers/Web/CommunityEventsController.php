@@ -71,6 +71,15 @@ final class CommunityEventsController
             || $gate->allows('admin.access')
             || $gate->allows('admin.system');
 
+        $eventIds = [];
+        foreach ($rows as $row) {
+            $eid = (int) ($row['id'] ?? 0);
+            if ($eid > 0) {
+                $eventIds[] = $eid;
+            }
+        }
+        $rsvpSummaries = $this->events->rsvpSummariesForEvents($eventIds);
+
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
             'content' => 'community.events',
@@ -80,6 +89,7 @@ final class CommunityEventsController
             'eventsCheckInFlags' => $checkInFlags,
             'calendar_subscription_url' => $calendarSubscriptionUrl,
             'canPublishOperationalBoard' => $canPublishOperationalBoard,
+            'eventsRsvpSummaries' => $rsvpSummaries,
         ]);
     }
 

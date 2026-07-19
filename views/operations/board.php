@@ -92,55 +92,80 @@ $tenantName = trim((string) (\App\Core\Session::get('tenant_name') ?? ''));
 if ($tenantName === '') {
     $tenantName = 'Votre communauté';
 }
+$boardEntryCount = (int) ($boardEntryCount ?? (
+    count($boardPanels['permanences']) + count($boardPanels['infos']) + count($boardPanels['manifestations'])
+    + count($boardPanels['flash']) + count($boardPanels['activites'])
+));
+$posturePill = match ($posture) {
+    'VIGILANCE', 'ALERTE' => 'ops-board__pill--warn',
+    'CRISE' => 'ops-board__pill--danger',
+    default => 'ops-board__pill--ok',
+};
 ?>
-<div class="mx-auto max-w-[1700px] space-y-4 pb-8">
-    <?php if (!$boardSchemaReady): ?>
-        <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
-            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Pilotage</p>
-            <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Tableau opérationnel</h1>
-            <p class="mt-1 text-sm text-slate-600">Vue consolidée des permanences, informations et missions pour la période sélectionnée.</p>
-        </header>
-        <div class="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50/40 to-white px-6 py-12 shadow-sm sm:px-10" role="status">
-            <div class="mx-auto max-w-xl text-center">
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-900">Activation en attente</p>
-                <h2 class="mt-2 text-lg font-black tracking-tight text-slate-900 sm:text-xl">Ce module n’est pas encore disponible sur cet environnement</h2>
-                <p class="mt-4 text-sm leading-relaxed text-slate-600">
-                    Merci d’en informer la personne ou l’équipe qui administre l’hébergement du site : une étape d’installation prévue avec la version déployée doit encore être réalisée par cette équipe. Lorsque ce sera fait, actualisez cette page pour retrouver le tableau.
+<link href="<?= htmlspecialchars(asset_url('assets/css/operational-board.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<div class="ops-board">
+    <header class="ops-board__hero">
+        <div class="ops-board__hero-inner">
+            <div>
+                <p class="ops-board__eyebrow">État-major · Pilotage</p>
+                <h1 class="ops-board__title">Tableau opérationnel</h1>
+                <p class="ops-board__lead">
+                    Publiez et suivez les permanences, informations et missions.
+                    Communauté : <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>.
                 </p>
-                <button type="button" class="mt-8 inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2" onclick="location.reload()">
-                    Actualiser la page
-                </button>
+            </div>
+            <div>
+                <div class="ops-board__hero-meta" style="margin-bottom:0.65rem;justify-content:flex-end">
+                    <span class="ops-board__pill <?= htmlspecialchars($posturePill, ENT_QUOTES, 'UTF-8') ?>">Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <span class="ops-board__pill"><?= (int) $boardEntryCount ?> fiche<?= $boardEntryCount > 1 ? 's' : '' ?></span>
+                </div>
+                <div class="ops-board__actions" style="justify-content:flex-end">
+                    <?php if ($boardSchemaReady): ?>
+                        <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="ops-board__btn ops-board__btn--solid">Nouvelle entrée</a>
+                        <?php
+                        $draftListUrl = url('back-office/tableau-operationnel') . '?' . http_build_query([
+                            'status' => 'draft',
+                            'period_start' => (string) ($boardFilters['period_start'] ?? ''),
+                            'period_end' => (string) ($boardFilters['period_end'] ?? ''),
+                            'entry_type' => (string) ($boardFilters['entry_type'] ?? ''),
+                            'operational_status' => (string) ($boardFilters['operational_status'] ?? ''),
+                            'tag' => (string) ($boardFilters['tag'] ?? ''),
+                            'mode' => (string) ($boardFilters['mode'] ?? 'standard'),
+                            'critical_only' => (int) ($boardFilters['critical_only'] ?? 0),
+                        ], '', '&', PHP_QUERY_RFC3986);
+                        ?>
+                        <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--amber">
+                            Brouillons<?= $boardDraftCount > 0 ? ' · ' . $boardDraftCount : '' ?>
+                        </a>
+                        <a href="<?= url('tableau-operationnel') ?>" class="ops-board__btn ops-board__btn--ghost">Vue membres</a>
+                        <a href="<?= htmlspecialchars(url('documentation') . '#mur-operationnel', ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--ghost">Documentation</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="ops-board__deck">
+    <?php
+    $boardHelpIsPilotage = true;
+    require base_path('views/operations/partials/board_help.php');
+    ?>
+    <?php if (!$boardSchemaReady): ?>
+        <div class="ops-board__empty" role="status">
+            <p>Ce module n’est pas encore disponible sur cet environnement</p>
+            <span>Informez l’équipe d’hébergement : une étape d’installation doit encore être réalisée. Actualisez ensuite cette page.</span>
+            <div class="ops-board__actions" style="justify-content:center;margin-top:1rem">
+                <button type="button" class="ops-board__btn ops-board__btn--solid" onclick="location.reload()">Actualiser la page</button>
             </div>
         </div>
     <?php else: ?>
-    <header class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="ops-board__toolbar">
+        <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">Pilotage</p>
-                <h1 class="mt-1 text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Tableau opérationnel</h1>
-                <p class="mt-1 text-sm text-slate-600">Vue consolidée des permanences, informations et missions pour la période sélectionnée.</p>
+                <h2>Période &amp; publication</h2>
+                <p><?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-800">Nouvelle entrée</a>
-                <?php
-                $draftListUrl = url('back-office/tableau-operationnel') . '?' . http_build_query([
-                    'status' => 'draft',
-                    'period_start' => (string) ($boardFilters['period_start'] ?? ''),
-                    'period_end' => (string) ($boardFilters['period_end'] ?? ''),
-                    'entry_type' => (string) ($boardFilters['entry_type'] ?? ''),
-                    'operational_status' => (string) ($boardFilters['operational_status'] ?? ''),
-                    'tag' => (string) ($boardFilters['tag'] ?? ''),
-                    'mode' => (string) ($boardFilters['mode'] ?? 'standard'),
-                    'critical_only' => (int) ($boardFilters['critical_only'] ?? 0),
-                ], '', '&', PHP_QUERY_RFC3986);
-                ?>
-                <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-950 shadow-sm hover:bg-amber-100" title="Afficher uniquement les fiches non publiées sur le tableau">
-                    Brouillons
-                    <?php if ($boardDraftCount > 0): ?>
-                        <span class="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-black text-amber-950"><?= $boardDraftCount ?></span>
-                    <?php endif; ?>
-                </a>
-                <a href="<?= url('tableau-operationnel') ?>" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100">Vue portail (lecture)</a>
                 <form method="get" action="<?= url('back-office/tableau-operationnel') ?>" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="period_start" value="<?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="period_end" value="<?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
@@ -164,49 +189,50 @@ if ($tenantName === '') {
                         <?php endforeach; ?>
                     </select>
                 </form>
-                <span class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 <?= htmlspecialchars($postureUi['badge'], ENT_QUOTES, 'UTF-8') ?>">
-                    Posture <?= htmlspecialchars($postureUi['label'], ENT_QUOTES, 'UTF-8') ?>
-                </span>
+                <form method="post" action="<?= url('back-office/tableau-operationnel/posture') ?>" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <label class="text-xs font-semibold text-slate-600" for="posture_level">Posture</label>
+                    <select id="posture_level" name="posture_level" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-900">
+                        <?php foreach (['NORMAL' => 'Normale', 'VIGILANCE' => 'Vigilance', 'ALERTE' => 'Alerte', 'CRISE' => 'Crise'] as $val => $lbl): ?>
+                            <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $posture === $val ? 'selected' : '' ?>><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800">Appliquer</button>
+                </form>
             </div>
         </div>
-        <div class="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-4 text-sm text-slate-600">
-            <div class="space-y-1">
-                <p><span class="font-semibold text-slate-800">Communauté :</span> <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></p>
-                <p><span class="font-semibold text-slate-800">Période :</span> <?= htmlspecialchars((string) ($boardFilters['period_start'] ?? ''), ENT_QUOTES, 'UTF-8') ?> → <?= htmlspecialchars((string) ($boardFilters['period_end'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-                <p><span class="font-semibold text-slate-800">Activités suivies :</span> <?= count($boardPanels['activites']) ?> · <span class="font-semibold text-slate-800">Priorité critique :</span> <?= count(array_filter($boardPanels['activites'], static fn ($e) => ($e['priority'] ?? '') === 'critical')) ?></p>
-            </div>
-            <form method="post" action="<?= url('back-office/tableau-operationnel/posture') ?>" class="flex flex-wrap items-center gap-2">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
-                <label class="text-xs font-semibold uppercase tracking-wide text-slate-500" for="posture_level">Niveau de posture</label>
-                <select id="posture_level" name="posture_level" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm">
-                    <?php foreach (['NORMAL' => 'Normale', 'VIGILANCE' => 'Vigilance', 'ALERTE' => 'Alerte', 'CRISE' => 'Crise'] as $val => $lbl): ?>
-                        <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $posture === $val ? 'selected' : '' ?>><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-emerald-800">Appliquer</button>
-            </form>
-        </div>
-    </header>
+    </div>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <?php if ($boardEntryCount < 1 && (string) ($boardFilters['status'] ?? 'active') === 'active'): ?>
+        <div class="ops-board__empty" role="status" style="margin-bottom:1rem">
+            <p>Aucune fiche publiée sur cette période</p>
+            <span>Créez une entrée puis validez-la pour qu’elle apparaisse ici et sur le mur des membres.</span>
+            <div class="ops-board__actions" style="justify-content:center;margin-top:1rem">
+                <a href="<?= url('back-office/tableau-operationnel/fiche/nouvelle') ?>" class="ops-board__btn ops-board__btn--solid">Créer une fiche</a>
+                <a href="<?= htmlspecialchars($draftListUrl, ENT_QUOTES, 'UTF-8') ?>" class="ops-board__btn ops-board__btn--amber">Voir les brouillons</a>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <section class="ops-board__toolbar">
+        <div class="mb-1 flex flex-wrap items-center justify-between gap-2">
             <div>
-                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Filtres rapides</h2>
-                <p class="text-xs text-slate-500">Affinez la vue pour ne garder que l’essentiel. Le compteur se met à jour automatiquement.</p>
+                <h2>Filtres rapides</h2>
+                <p>Affinez la vue : le compteur se met à jour automatiquement.</p>
             </div>
             <p id="filter-live-count" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700" aria-live="polite">
                 Affichage : —
             </p>
         </div>
-        <div id="js-filters" class="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-8">
-            <input type="search" data-filter="text" class="rounded-lg border border-slate-300 bg-white p-2 text-xs font-medium text-slate-800 md:col-span-2" aria-label="Recherche texte" placeholder="Recherche : titre, description, responsables, zone, tags…">
-            <select data-filter="entry_type" class="rounded-lg border border-slate-300 bg-white p-2 text-xs font-medium text-slate-800" aria-label="Filtrer par type">
+        <div id="js-filters" class="ops-board__filters">
+            <input type="search" data-filter="text" aria-label="Recherche texte" placeholder="Recherche : titre, description, responsables, zone…">
+            <select data-filter="entry_type" aria-label="Filtrer par type">
                 <option value="">Tous les types</option>
                 <?php foreach ($entryTypeLabels as $k => $lbl): ?>
                     <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
                 <?php endforeach; ?>
             </select>
-            <select data-filter="operational_status" class="rounded-lg border border-slate-300 bg-white p-2 text-xs font-medium text-slate-800" aria-label="Filtrer par statut opérationnel">
+            <select data-filter="operational_status" aria-label="Filtrer par statut opérationnel">
                 <option value="">Tous les statuts</option>
                 <?php foreach ($operationalLabels as $k => $lbl): ?>
                     <option value="<?= htmlspecialchars($k, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($lbl, ENT_QUOTES, 'UTF-8') ?></option>
@@ -447,7 +473,8 @@ if ($tenantName === '') {
         </div>
     </section>
     <?php endif; ?>
-</div>
+    </div><!-- .ops-board__deck -->
+</div><!-- .ops-board -->
 
 <?php if ($boardSchemaReady): ?>
 <script>

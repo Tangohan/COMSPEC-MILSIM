@@ -275,7 +275,7 @@ final class OrganizationCommunityController
         return $ok;
     }
 
-    /** Assistant de rattrapage onboarding (communautés créées avant le wizard v2). */
+    /** Assistant de rattrapage onboarding (communautés créées avant le parcours guidé complet). */
     public function onboardingRecovery(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
@@ -285,12 +285,14 @@ final class OrganizationCommunityController
         if (!$tenantId) {
             return Response::redirect(url('dashboard'));
         }
+        $tenant = $this->tenantRepository->findById($tenantId);
         $health = (new TenantOnboardingHealthService($this->tenantRepository))->analyze($tenantId);
 
         return Response::view('layout.main', [
-            'title' => 'Rattrapage configuration',
+            'title' => 'Aide après inscription',
             'content' => 'admin.organization.onboarding_recovery',
             'health' => $health,
+            'tenant' => is_array($tenant) ? $tenant : [],
         ]);
     }
 
@@ -300,7 +302,7 @@ final class OrganizationCommunityController
             return Response::redirect(url('login'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', 'Votre session a expiré. Rechargez la page et réessayez.');
 
             return Response::redirect(url('back-office/onboarding-recovery'));
         }
@@ -309,13 +311,30 @@ final class OrganizationCommunityController
             return Response::redirect(url('dashboard'));
         }
         try {
-            (new TenantOnboardingHealthService($this->tenantRepository))->applyFrDefaults($tenantId);
-            $this->tenantRepository->mergeSettings($tenantId, [
-                'onboarding_wizard_version' => 2,
-            ]);
-            Session::flash('success', 'Valeurs par défaut appliquées (référentiel FR, ORBAT minimal si vide). Les données existantes n’ont pas été supprimées.');
+            $service = new TenantOnboardingHealthService($this->tenantRepository);
+            $before = $service->analyze($tenantId);
+            if (!$before['can_auto_apply']) {
+                Session::flash('success', 'Aucune action automatique n’était nécessaire. Consultez la checklist pour les étapes restantes.');
+
+                return Response::redirect(url('back-office/onboarding-recovery'));
+            }
+
+            $applied = $service->applyFrDefaults($tenantId);
+            $settings = $this->tenantRepository->getSettings($tenantId);
+            if ((int) ($settings['onboarding_wizard_version'] ?? 0) < 2) {
+                $this->tenantRepository->mergeSettings($tenantId, [
+                    'onboarding_wizard_version' => 2,
+                ]);
+                $applied[] = 'Parcours de création enregistré pour la communauté.';
+            }
+
+            if ($applied === []) {
+                Session::flash('success', 'Rien à modifier : votre configuration est déjà à jour sur les points traités automatiquement.');
+            } else {
+                Session::flash('success', implode(' ', $applied) . ' Les éléments déjà en place n’ont pas été supprimés.');
+            }
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            Session::flash('error', 'La mise à jour automatique n’a pas abouti. Réessayez ou complétez les étapes manuellement depuis la checklist.');
         }
 
         return Response::redirect(url('back-office/onboarding-recovery'));

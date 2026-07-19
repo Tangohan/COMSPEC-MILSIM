@@ -39,12 +39,6 @@ final class InvitationAdminController
     {
         $tenantId = (int) Session::get('tenant_id');
         $this->invitations->expireStale();
-        $statusFilter = trim((string) $request->query('status', ''));
-        $allowedFilters = ['pending', 'accepted', 'revoked', 'expired'];
-        if ($statusFilter !== '' && !in_array($statusFilter, $allowedFilters, true)) {
-            $statusFilter = '';
-        }
-        $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
         $inviteStatusCounts = $this->invitations->countByStatus($tenantId);
         $rolesOrganization = $this->roleRepository->forTenantOrganization($tenantId);
         $units = $this->unitRepository->allForTenant($tenantId);
@@ -57,10 +51,41 @@ final class InvitationAdminController
             : [];
 
         return Response::view('layout.main', [
-            'title' => 'Invitations à rejoindre l’unité',
+            'title' => 'Nouvelle invitation',
             'content' => 'admin.organization.invitations',
-            'invitations' => $rows,
             'rolesOrganization' => $rolesOrganization,
+            'inviteUnits' => $units,
+            'inviteJobRoleOptions' => $jobRoleOptions,
+            'organizationRoleLabelMode' => $organizationRoleLabelMode,
+            'canAdd' => $this->featureGate->canAddMember($tenantId),
+            'inviteStatusCounts' => $inviteStatusCounts,
+        ]);
+    }
+
+    public function sent(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $this->invitations->expireStale();
+        $statusFilter = trim((string) $request->query('status', ''));
+        $allowedFilters = ['pending', 'accepted', 'revoked', 'expired'];
+        if ($statusFilter !== '' && !in_array($statusFilter, $allowedFilters, true)) {
+            $statusFilter = '';
+        }
+        $rows = $this->invitations->listForTenant($tenantId, $statusFilter !== '' ? $statusFilter : null);
+        $inviteStatusCounts = $this->invitations->countByStatus($tenantId);
+        $units = $this->unitRepository->allForTenant($tenantId);
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $tenantRow = $this->tenantRepository->findById($tenantId) ?: [];
+        $organizationRoleLabelMode = OrganizationRoleLabels::mode($community, $tenantRow);
+        $jobRoleOptions = $this->personnelJobRoleRepository->tablesExist()
+            ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId, false, true, $organizationRoleLabelMode)
+            : [];
+
+        return Response::view('layout.main', [
+            'title' => 'Invitations envoyées',
+            'content' => 'admin.organization.invitations_sent',
+            'invitations' => $rows,
             'inviteUnits' => $units,
             'inviteJobRoleOptions' => $jobRoleOptions,
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
@@ -68,6 +93,17 @@ final class InvitationAdminController
             'inviteFilterStatus' => $statusFilter,
             'inviteStatusCounts' => $inviteStatusCounts,
         ]);
+    }
+
+    private function sentListUrl(?string $status = null): string
+    {
+        $url = url('back-office/invitations/envoyees');
+        $status = $status !== null ? trim($status) : '';
+        if ($status !== '' && in_array($status, ['pending', 'accepted', 'revoked', 'expired'], true)) {
+            return $url . '?status=' . rawurlencode($status);
+        }
+
+        return $url;
     }
 
     public function store(Request $request, array $params = []): Response
@@ -157,7 +193,7 @@ final class InvitationAdminController
         $this->auditService->log(AuditAction::INVITATION_SENT, $tenantId, (int) $user['id'], 'invitation', null, null, $email);
         Session::flash('success', 'L’invitation a été envoyée. La personne recevra un message avec un lien pour rejoindre l’unité.');
 
-        return Response::redirect(url('back-office/invitations'));
+        return Response::redirect($this->sentListUrl('pending'));
     }
 
     public function revoke(Request $request, array $params = []): Response
@@ -165,14 +201,15 @@ final class InvitationAdminController
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('back-office/invitations'));
+            return Response::redirect($this->sentListUrl());
         }
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) $request->input('id');
+        $returnStatus = trim((string) $request->input('return_status', ''));
         $inv = $this->invitations->findByIdForTenant($id, $tenantId);
         if (!$inv) {
             Session::flash('error', 'Invitation introuvable.');
-            return Response::redirect(url('back-office/invitations'));
+            return Response::redirect($this->sentListUrl($returnStatus));
         }
         $actor = $this->authService->user();
         $gate = Gate::getInstance();
@@ -180,7 +217,7 @@ final class InvitationAdminController
         if (!$canAdmin && $gate->allows('invitations.send') && $actor) {
             if ((int) ($inv['invited_by_user_id'] ?? 0) !== (int) ($actor['id'] ?? 0)) {
                 Session::flash('error', 'Vous ne pouvez révoquer que les invitations que vous avez envoyées.');
-                return Response::redirect(url('back-office/invitations'));
+                return Response::redirect($this->sentListUrl($returnStatus));
             }
         }
         if ($this->invitations->markRevoked($id, $tenantId)) {
@@ -189,6 +226,6 @@ final class InvitationAdminController
             Session::flash('error', 'Impossible d’annuler cette invitation. Elle a peut-être déjà été utilisée ou retirée.');
         }
 
-        return Response::redirect(url('back-office/invitations'));
+        return Response::redirect($this->sentListUrl($returnStatus));
     }
 }

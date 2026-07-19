@@ -44,16 +44,19 @@ final class AccessManagementController
     public function saveRole(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', 'Session expirée. Rechargez la page et réessayez.');
 
             return Response::redirect(url('back-office/access-management?tab=roles'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $name = trim((string) $request->input('name'));
         $slug = trim((string) $request->input('slug'));
+        if ($slug === '') {
+            $slug = $this->slugify($name);
+        }
         $level = (int) $request->input('level', 0);
         if ($tenantId < 1 || $name === '' || $slug === '') {
-            Session::flash('error', 'Rôle invalide.');
+            Session::flash('error', 'Indiquez un nom de rôle valide.');
 
             return Response::redirect(url('back-office/access-management?tab=roles'));
         }
@@ -68,24 +71,50 @@ final class AccessManagementController
     public function saveRule(Request $request, array $params = []): Response
     {
         if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page et réessayez.');
+
             return Response::redirect(url('back-office/access-management?tab=rules'));
         }
         $tenantId = (int) Session::get('tenant_id');
         $name = trim((string) $request->input('name'));
         $targetType = strtoupper(trim((string) $request->input('target_type', 'ROLE')));
+        if (!in_array($targetType, ['ROLE', 'USER'], true)) {
+            $targetType = 'ROLE';
+        }
         $targetId = (int) $request->input('target_id', 0);
         $conditionType = strtoupper(trim((string) $request->input('condition_type', 'STATUS')));
         $effect = strtoupper(trim((string) $request->input('effect', 'ALLOW')));
+        if (!in_array($effect, ['ALLOW', 'DENY'], true)) {
+            $effect = 'ALLOW';
+        }
         $priority = (int) $request->input('priority', 100);
         $scopeType = strtoupper(trim((string) $request->input('scope_type', 'MODULE')));
         $scopeIdentifier = trim((string) $request->input('scope_identifier', '*'));
         $action = strtoupper(trim((string) $request->input('action', 'READ')));
 
+        if ($tenantId < 1 || $name === '' || $targetId < 1) {
+            Session::flash('error', 'Indiquez un nom et une cible (rôle ou membre) pour la règle.');
+
+            return Response::redirect(url('back-office/access-management?tab=rules'));
+        }
+
+        $statusesRaw = $request->input('statuses', ['active']);
+        if (is_string($statusesRaw)) {
+            $statuses = array_values(array_filter(array_map('trim', explode(',', $statusesRaw))));
+        } elseif (is_array($statusesRaw)) {
+            $statuses = array_values(array_filter(array_map(static fn ($v) => trim((string) $v), $statusesRaw)));
+        } else {
+            $statuses = ['active'];
+        }
+        if ($statuses === []) {
+            $statuses = ['active'];
+        }
+
         $conditionValue = [
             'days' => (int) $request->input('days', 0),
             'module_id' => (int) $request->input('module_id', 0),
             'unit_id' => (int) $request->input('unit_id', 0),
-            'accepted' => array_values(array_filter(array_map('trim', explode(',', (string) $request->input('statuses', 'active'))))),
+            'accepted' => $statuses,
             'field' => trim((string) $request->input('approval_field', 'access_manually_approved')),
         ];
 
@@ -188,5 +217,12 @@ final class AccessManagementController
     {
         $stmt = $this->pdo->prepare('INSERT INTO access_logs (tenant_id, user_id, resource, action, decision, reason, context_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
         $stmt->execute([$tenantId, $userId, $resource, 'WRITE', 'ALLOW', 'policy_change', json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+    }
+
+    private function slugify(string $name): string
+    {
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', trim($name)) ?? '';
+
+        return strtolower(trim($slug, '-') ?: 'role');
     }
 }

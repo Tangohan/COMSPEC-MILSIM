@@ -1,7 +1,14 @@
 /**
  * Navbar Athena (structure Caverne) — void #050505 · primary #059669 · mint #34d399.
  * Styles de layout auto-portés (ne pas dépendre des utilitaires Tailwind arbitraires
- * absents du build purge). Sur dashboard avec rail : z-index 20 (sous le rail fixed z-100).
+ * absents du build purge).
+ *
+ * Empilement (stacking) :
+ *   alertes navbar / tuiles TRANSMISSION = 94–95
+ *   header Athena (+ menus / panels)     = 96  ← au-dessus des alertes
+ *   rail dashboard fixed                 = 100
+ *   drawer / overlay portail (invités)   = 110–120
+ *   toasts                               = 250
  *
  * Isolation : body.layout-light / .dash-cc imposent color #0f172a et fond clair —
  * la barre doit rester void sombre (sinon sous-ligne grise illisible + liens « bleus »).
@@ -24,7 +31,7 @@ body.layout-light .athena-header,
 .dash-cc__main > .athena-header {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 96;
   box-sizing: border-box;
   height: var(--athena-header-h);
   min-height: var(--athena-header-h);

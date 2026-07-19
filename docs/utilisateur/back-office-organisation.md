@@ -53,6 +53,10 @@ Journal des actions sensibles réalisées dans la communauté (connexions admini
 
 Publication d’**alertes** ou bannières pour les membres de la communauté (distinctes des alertes globales plateforme).
 
+## Mur & tableau opérationnel
+
+Pour le **pilotage du mur** (permanences, consignes, missions, posture) : voir le chapitre dédié [Mur & tableau opérationnel](tableau-operationnel.md).
+
 ## Configuration avancée
 
 Selon les droits : **modules** techniques (forum, formations, documents), **épingles** du tableau de bord, **plans** ou offres.
@@ -60,4 +64,5 @@ Selon les droits : **modules** techniques (forum, formations, documents), **épi
 ## Voir aussi
 
 - [Communautés](communautes.md).
+- [Mur & tableau opérationnel](tableau-operationnel.md).
 - [Forum](forum.md), [Documents](documents.md), [Formations](formations.md) — côté usage membre.

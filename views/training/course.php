@@ -416,7 +416,7 @@ $lmsPassedQuizIds = is_array($lmsPassedQuizIds ?? null) ? $lmsPassedQuizIds : []
                 </section>
 
                 <?php if (!empty($course['instruction_audio_url'])):
-                    $au = (string) $course['instruction_audio_url'];
+                    $au = training_media_url((string) $course['instruction_audio_url']);
                 ?>
                 <section class="lms-panel rounded-[2rem] p-6 md:p-8">
                     <p class="text-[9px] font-black tracking-[0.35em] uppercase text-slate-400 mb-3">Consignes audio</p>

@@ -38,5 +38,9 @@ $headHtml = ob_get_clean();
             </main>
         </div>
     </div>
+    <?php
+    $lmsModuleEntryAuto = 'recrutement';
+    require base_path('views/partials/lms_module_entry_modal.php');
+    ?>
 </body>
 </html>

@@ -213,17 +213,17 @@ class RecruitmentOpeningRepository
             $userId,
             !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
             (string) $data['title'],
-            $data['summary'] !== null && $data['summary'] !== '' ? (string) $data['summary'] : null,
-            $data['description'] !== null && $data['description'] !== '' ? (string) $data['description'] : null,
+            $this->nullableString($data['summary'] ?? null),
+            $this->nullableString($data['description'] ?? null),
             $this->jsonOrNull($data['requirements_json'] ?? null),
-            $data['employment_contract_label'] !== null && $data['employment_contract_label'] !== '' ? (string) $data['employment_contract_label'] : null,
-            $data['employment_context_label'] !== null && $data['employment_context_label'] !== '' ? (string) $data['employment_context_label'] : null,
+            $this->nullableString($data['employment_contract_label'] ?? null),
+            $this->nullableString($data['employment_context_label'] ?? null),
             (string) ($data['personnel_category'] ?? 'other'),
             isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
             (string) ($data['clearance_level'] ?? 'none'),
             $this->jsonOrNull($data['candidate_profile_items'] ?? null),
-            $data['technical_notice'] !== null && $data['technical_notice'] !== '' ? (string) $data['technical_notice'] : null,
-            $data['mission_lead'] !== null && $data['mission_lead'] !== '' ? (string) $data['mission_lead'] : null,
+            $this->nullableString($data['technical_notice'] ?? null),
+            $this->nullableString($data['mission_lead'] ?? null),
             $this->jsonOrNull($data['responsibility_blocks'] ?? null),
         ]);
 
@@ -248,17 +248,17 @@ class RecruitmentOpeningRepository
             (int) $data['unit_id'],
             !empty($data['personnel_job_role_id']) ? (int) $data['personnel_job_role_id'] : null,
             (string) $data['title'],
-            $data['summary'] !== null && $data['summary'] !== '' ? (string) $data['summary'] : null,
-            $data['description'] !== null && $data['description'] !== '' ? (string) $data['description'] : null,
+            $this->nullableString($data['summary'] ?? null),
+            $this->nullableString($data['description'] ?? null),
             $this->jsonOrNull($data['requirements_json'] ?? null),
-            $data['employment_contract_label'] !== null && $data['employment_contract_label'] !== '' ? (string) $data['employment_contract_label'] : null,
-            $data['employment_context_label'] !== null && $data['employment_context_label'] !== '' ? (string) $data['employment_context_label'] : null,
+            $this->nullableString($data['employment_contract_label'] ?? null),
+            $this->nullableString($data['employment_context_label'] ?? null),
             (string) ($data['personnel_category'] ?? 'other'),
             isset($data['arm_domain']) && $data['arm_domain'] !== '' ? (string) $data['arm_domain'] : null,
             (string) ($data['clearance_level'] ?? 'none'),
             $this->jsonOrNull($data['candidate_profile_items'] ?? null),
-            $data['technical_notice'] !== null && $data['technical_notice'] !== '' ? (string) $data['technical_notice'] : null,
-            $data['mission_lead'] !== null && $data['mission_lead'] !== '' ? (string) $data['mission_lead'] : null,
+            $this->nullableString($data['technical_notice'] ?? null),
+            $this->nullableString($data['mission_lead'] ?? null),
             $this->jsonOrNull($data['responsibility_blocks'] ?? null),
             $id,
             $tenantId,
@@ -434,5 +434,15 @@ class RecruitmentOpeningRepository
         }
 
         return null;
+    }
+
+    private function nullableString(mixed $v): ?string
+    {
+        if ($v === null) {
+            return null;
+        }
+        $s = trim((string) $v);
+
+        return $s !== '' ? $s : null;
     }
 }

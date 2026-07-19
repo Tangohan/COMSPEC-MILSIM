@@ -291,7 +291,7 @@ if ($canDocsMenu) {
     $profileMenuItems[] = ['label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents')];
 }
 if ($canInvitationsMenu) {
-    $profileMenuItems[] = ['label' => 'Invitations', 'desc' => 'Codes d’accès à la communauté', 'href' => url('back-office/invitations')];
+    $profileMenuItems[] = ['label' => 'Invitations', 'desc' => 'Codes d’accès à la communauté', 'href' => url('back-office/invitations/envoyees')];
 }
 if ($canAdmin) {
     $profileMenuItems[] = ['label' => 'Commandement', 'desc' => 'Espace état-major', 'href' => url('back-office')];

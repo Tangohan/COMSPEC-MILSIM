@@ -740,7 +740,10 @@ function training_roles_org_seed_one_tenant(PDO $pdo, int $tenantId, int $author
         $totalMinutes += (int) $s['minutes'];
     }
 
-    $pdo->beginTransaction();
+    $ownsTx = !$pdo->inTransaction();
+    if ($ownsTx) {
+        $pdo->beginTransaction();
+    }
     try {
         $ins = $pdo->prepare(
             'INSERT INTO training_courses (
@@ -887,10 +890,18 @@ function training_roles_org_seed_one_tenant(PDO $pdo, int $tenantId, int $author
             training_roles_org_seed_quiz_questions_for_module($pdo, $finalQz, training_roles_org_final_quiz_questions(), $now);
         }
 
-        $pdo->commit();
+        if ($ownsTx) {
+            $pdo->commit();
+        }
         echo "  training_roles_org_course : tenant {$tenantId} — formation « Parcours postes » créée (course_id={$courseId}).\n";
     } catch (\Throwable $e) {
-        $pdo->rollBack();
-        echo '  [ATTENTION] training_roles_org_course : ' . $e->getMessage() . "\n";
+        if ($ownsTx && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($ownsTx) {
+            echo '  [ATTENTION] training_roles_org_course : ' . $e->getMessage() . "\n";
+        } else {
+            throw $e;
+        }
     }
 }

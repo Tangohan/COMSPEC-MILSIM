@@ -19,19 +19,19 @@ $label = (string) ($m['label'] ?? $fieldName);
 $ph = (string) ($m['placeholder'] ?? '');
 $pv = (string) ($prefill[$fieldName] ?? '');
 ?>
-<div class="space-y-2 <?= $fieldName === 'past_milsim_experience' ? '' : '' ?>">
-    <label class="text-[10px] font-black tracking-wider uppercase"><?= htmlspecialchars($label) ?></label>
+<div class="space-y-2">
+    <label class="ce-label"><?= htmlspecialchars($label) ?></label>
     <?php
     $taH = $fieldName === 'past_milsim_experience' ? 'h-32' : 'h-24';
     ?>
     <?php if ($widget === 'textarea'): ?>
-        <textarea name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>"></textarea>
+        <textarea name="<?= htmlspecialchars($fieldName) ?>" class="input-field <?= $taH ?> track-field" placeholder="<?= htmlspecialchars($ph) ?>" style="min-height:<?= $fieldName === 'past_milsim_experience' ? '8rem' : '6rem' ?>"><?= htmlspecialchars($pv) ?></textarea>
     <?php elseif ($widget === 'select' || $widget === 'yesno'): ?>
-        <select name="<?= htmlspecialchars($fieldName) ?>" class="input-field bg-white track-field">
+        <select name="<?= htmlspecialchars($fieldName) ?>" class="input-field track-field">
             <option value="">Sélectionner</option>
             <?php foreach ($opts as $opt): ?>
                 <?php if ($opt === '') { continue; } ?>
-                <option value="<?= htmlspecialchars($opt) ?>"><?= htmlspecialchars($opt) ?></option>
+                <option value="<?= htmlspecialchars($opt) ?>"<?= $pv === $opt ? ' selected' : '' ?>><?= htmlspecialchars($opt) ?></option>
             <?php endforeach; ?>
         </select>
     <?php elseif ($fieldName === 'age'): ?>

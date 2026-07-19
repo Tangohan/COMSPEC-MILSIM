@@ -58,7 +58,7 @@ final class AdminDashboardMetricsService
             return ['kpis' => [], 'blockError' => 'Tenant invalide.'];
         }
 
-        return $this->cached('org_metrics_v2_' . $tenantId, function () use ($tenantId): array {
+        return $this->cached('org_metrics_v3_' . $tenantId, function () use ($tenantId): array {
             $kpis = [];
             $kpis[] = $this->kpi('members_active', 'Membres actifs', fn () => $this->scalarInt(
                 "SELECT COUNT(*) FROM users WHERE tenant_id = ? AND status = 'active'",
@@ -198,15 +198,11 @@ final class AdminDashboardMetricsService
 
     private function countIncompleteProfiles(int $tenantId): int
     {
-        $sql = "SELECT COUNT(*) FROM users u
+        $sql = 'SELECT COUNT(*) FROM users u
              LEFT JOIN user_profiles up ON up.user_id = u.id
-             WHERE u.tenant_id = ? AND u.status = 'active'
-             AND (
-               up.user_id IS NULL
-               OR NULLIF(TRIM(up.first_name), '') IS NULL
-               OR NULLIF(TRIM(up.last_name), '') IS NULL
-               OR u.role_id IS NULL
-             )" . $this->sqlExcludeServiceAccounts('u');
+             WHERE u.tenant_id = ? AND u.status = \'active\'
+             AND (' . $this->sqlIncompleteProfilePredicate('u', 'up', $this->tenantRequiresCivilIdentity($tenantId)) . ')'
+             . $this->sqlExcludeNoiseAccounts('u');
 
         return $this->scalarInt($sql, [$tenantId]);
     }
@@ -219,8 +215,10 @@ final class AdminDashboardMetricsService
         $sql = "SELECT COUNT(*) FROM users u
              WHERE u.tenant_id = ? AND u.status = 'active'
              AND NOT EXISTS (
-               SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-             )" . $this->sqlExcludeServiceAccounts('u');
+               SELECT 1 FROM user_units uu
+               INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
+               WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+             )" . $this->sqlExcludeNoiseAccounts('u');
 
         return $this->scalarInt($sql, [$tenantId]);
     }
@@ -229,9 +227,56 @@ final class AdminDashboardMetricsService
     {
         $sql = "SELECT COUNT(*) FROM users u
              WHERE u.tenant_id = ? AND u.status = 'active' AND u.role_id IS NULL"
-             . $this->sqlExcludeServiceAccounts('u');
+             . $this->sqlExcludeNoiseAccounts('u');
 
         return $this->scalarInt($sql, [$tenantId]);
+    }
+
+    /** Inscription « simple » : identité civile attendue ; milsim : indicatif / nom affiché suffisent. */
+    private function tenantRequiresCivilIdentity(int $tenantId): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare('SELECT settings FROM tenants WHERE id = ? LIMIT 1');
+            $stmt->execute([$tenantId]);
+            $raw = $stmt->fetchColumn();
+            if (!is_string($raw) || $raw === '') {
+                return false;
+            }
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                return false;
+            }
+            $community = is_array($decoded['community'] ?? null) ? $decoded['community'] : [];
+            $mode = (string) ($community['registration_mode'] ?? $decoded['registration_mode'] ?? 'milsim');
+
+            return $mode === 'simple';
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Prédicat « profil incomplet » pour la file RH admin.
+     * Milsim : pas d’identité affichable (nom + indicatif vides).
+     * Simple : prénom/nom civil manquants.
+     */
+    private function sqlIncompleteProfilePredicate(string $userAlias, string $profileAlias, bool $requireCivil): string
+    {
+        if ($requireCivil) {
+            return "({$profileAlias}.user_id IS NULL
+                OR NULLIF(TRIM({$profileAlias}.first_name), '') IS NULL
+                OR NULLIF(TRIM({$profileAlias}.last_name), '') IS NULL)";
+        }
+
+        return "(NULLIF(TRIM(COALESCE({$userAlias}.display_name, '')), '') IS NULL
+            AND ({$userAlias}.callsign IS NULL OR NULLIF(TRIM({$userAlias}.callsign), '') IS NULL))";
+    }
+
+    /** Comptes techniques + comptes seed @demo.local (ne doivent pas polluer la file RH). */
+    private function sqlExcludeNoiseAccounts(string $alias = 'u'): string
+    {
+        return $this->sqlExcludeServiceAccounts($alias)
+            . " AND LOWER({$alias}.email) NOT LIKE '%@demo.local'";
     }
 
     /** Fragment SQL : exclure les comptes techniques si la colonne existe. */
@@ -327,7 +372,10 @@ final class AdminDashboardMetricsService
             ];
         }
 
-        return $this->cached('org_work_v2_' . $tenantId, function () use ($tenantId): array {
+        return $this->cached('org_work_v3_' . $tenantId, function () use ($tenantId): array {
+            $requireCivil = $this->tenantRequiresCivilIdentity($tenantId);
+            $noise = $this->sqlExcludeNoiseAccounts('u');
+
             $expired = [];
             $errInv = null;
             try {
@@ -349,7 +397,7 @@ final class AdminDashboardMetricsService
                     'SELECT e.id, e.expires_at, c.title AS course_title, u.email
                      FROM training_enrollments e
                      JOIN training_courses c ON c.id = e.course_id
-                     JOIN users u ON u.id = e.user_id
+                     JOIN users u ON u.id = e.user_id AND u.tenant_id = e.tenant_id
                      WHERE e.tenant_id = ? AND e.expires_at IS NOT NULL
                      AND e.expires_at <= DATE_ADD(NOW(), INTERVAL 30 DAY)
                      AND e.status IN (\'assigned\', \'in_progress\')
@@ -365,16 +413,12 @@ final class AdminDashboardMetricsService
             $incomplete = [];
             $errInc = null;
             try {
-                $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                $sql = 'SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), \'\'), u.email) AS display_name
                     FROM users u
                     LEFT JOIN user_profiles up ON up.user_id = u.id
-                    WHERE u.tenant_id = ? AND u.status = 'active'
-                    AND (
-                      up.user_id IS NULL
-                      OR NULLIF(TRIM(up.first_name), '') IS NULL
-                      OR NULLIF(TRIM(up.last_name), '') IS NULL
-                      OR u.role_id IS NULL
-                    )" . $this->sqlExcludeServiceAccounts('u') . '
+                    WHERE u.tenant_id = ? AND u.status = \'active\'
+                    AND (' . $this->sqlIncompleteProfilePredicate('u', 'up', $requireCivil) . ')'
+                    . $noise . '
                     ORDER BY u.email ASC LIMIT 8';
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute([$tenantId]);
@@ -387,12 +431,14 @@ final class AdminDashboardMetricsService
             $errNu = null;
             try {
                 if ($this->schemaHasUserUnitsTable()) {
-                    $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                    $sql = 'SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), \'\'), u.email) AS display_name
                         FROM users u
-                        WHERE u.tenant_id = ? AND u.status = 'active'
+                        WHERE u.tenant_id = ? AND u.status = \'active\'
                         AND NOT EXISTS (
-                          SELECT 1 FROM user_units uu WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
-                        )" . $this->sqlExcludeServiceAccounts('u') . '
+                          SELECT 1 FROM user_units uu
+                          INNER JOIN units un ON un.id = uu.unit_id AND un.tenant_id = u.tenant_id
+                          WHERE uu.user_id = u.id AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+                        )' . $noise . '
                         ORDER BY u.email ASC LIMIT 8';
                     $stmt = $this->pdo->prepare($sql);
                     $stmt->execute([$tenantId]);
@@ -405,10 +451,10 @@ final class AdminDashboardMetricsService
             $noRole = [];
             $errNr = null;
             try {
-                $sql = "SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), ''), u.email) AS display_name
+                $sql = 'SELECT u.id, u.email, COALESCE(NULLIF(TRIM(u.display_name), \'\'), u.email) AS display_name
                     FROM users u
-                    WHERE u.tenant_id = ? AND u.status = 'active' AND u.role_id IS NULL"
-                    . $this->sqlExcludeServiceAccounts('u') . '
+                    WHERE u.tenant_id = ? AND u.status = \'active\' AND u.role_id IS NULL'
+                    . $noise . '
                     ORDER BY u.email ASC LIMIT 8';
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute([$tenantId]);

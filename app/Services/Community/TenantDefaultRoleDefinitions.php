@@ -34,6 +34,98 @@ final class TenantDefaultRoleDefinitions
                 'is_system' => 1,
                 'is_locked' => 0,
             ],
+            [
+                'slug' => 'deputy_commander',
+                'name' => 'Chef adjoint d’organisation',
+                'description' => 'Adjoint à la direction : coordination et relais de gouvernance.',
+                'role_layer' => 'community',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'technical_admin',
+                'name' => 'Administrateur technique local',
+                'description' => 'Paramètres techniques et outils au sein de la communauté.',
+                'role_layer' => 'community',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+        ];
+    }
+
+    /**
+     * États-majors / emplois organiques (hors catalogue militaire MOS) à droits métier ciblés.
+     * Les badges de statut (élite, surveillance, fondateur…) restent sans permissions.
+     *
+     * @return list<array{slug: string, name: string, description: string, role_layer: string, is_system: int, is_locked: int}>
+     */
+    public static function organicStaffRoles(): array
+    {
+        return [
+            [
+                'slug' => 'operations_officer',
+                'name' => 'Officier opérations',
+                'description' => 'Planification et conduite des activités opérationnelles.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'training_officer',
+                'name' => 'Officier formation',
+                'description' => 'Pilotage des parcours, qualifications et exercices.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'intelligence_officer',
+                'name' => 'Officier renseignement',
+                'description' => 'Veille, synthèse et diffusion d’informations pertinentes.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'logistics_officer',
+                'name' => 'Officier logistique',
+                'description' => 'Soutien matériel, stocks et chaîne d’approvisionnement.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'discipline_officer',
+                'name' => 'Officier discipline',
+                'description' => 'Application du règlement intérieur et suivi des incidents.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'recruitment_officer',
+                'name' => 'Officier recrutement',
+                'description' => 'Pipeline des candidatures et intégration des nouveaux membres.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'security_officer',
+                'name' => 'Officier sécurité',
+                'description' => 'Sensibilisation, bonnes pratiques et coordination sécurité.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'auditor_internal',
+                'name' => 'Contrôleur interne',
+                'description' => 'Contrôles internes et recommandations d’amélioration.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
         ];
     }
 
@@ -165,16 +257,47 @@ final class TenantDefaultRoleDefinitions
                 'is_system' => 1,
                 'is_locked' => 0,
             ],
+            [
+                'slug' => 'video_creator',
+                'name' => 'Créateur de contenus vidéo',
+                'description' => 'Produit et dépose les images et vidéos de la communauté : tournages, montages courts et liens vers les vidéos longues.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
+            [
+                'slug' => 'media_manager',
+                'name' => 'Responsable des médias',
+                'description' => 'Pilote la bibliothèque médias : collections, floutage, publication sur la page publique et cohérence visuelle.',
+                'role_layer' => 'intra',
+                'is_system' => 1,
+                'is_locked' => 0,
+            ],
         ];
     }
 
     /**
-     * Permissions par défaut (slugs) pour rôles opérationnels — appliquées si la permission existe pour le tenant.
+     * Permissions par défaut (slugs) pour rôles opérationnels / organiques — appliquées si la permission existe pour le tenant.
+     * Les badges de statut (élite, surveillance, fondateur…) n’ont volontairement aucune entrée ici.
      *
      * @return array<string, list<string>>
      */
     public static function defaultPermissionSlugsForOperationalRoles(): array
     {
+        $officerCore = [
+            'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+            'documents.view', 'documents.download.standard', 'training.view',
+            'personnel.profile.view',
+            'operational.board.view',
+            'organization.orbat.view',
+            'dashboard.pins.manage',
+            'interteam.missions.respond',
+            'cooperation.missions.respond',
+            'cooperation.missions.view',
+            'cooperation.exchange.read',
+            'cooperation.exchange.write',
+        ];
+
         return [
             'member' => [
                 'operational.board.view',
@@ -259,18 +382,173 @@ final class TenantDefaultRoleDefinitions
             'probation' => [
                 'forum.view', 'forum.reply',
             ],
-            'officer' => [
-                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
-                'documents.view', 'documents.download.standard', 'training.view',
-                'personnel.profile.view',
+            'officer' => $officerCore,
+            'video_creator' => [
+                'media.view',
+                'media.upload',
+                'forum.view',
+                'forum.create_topic',
+                'forum.reply',
+                'documents.view',
+                'documents.upload',
                 'operational.board.view',
                 'organization.orbat.view',
+            ],
+            'media_manager' => [
+                'media.view',
+                'media.upload',
+                'media.collections.manage',
+                'media.publish',
+                'media.manage',
+                'admin.branding.manage',
+                'admin.backoffice.view',
+                'forum.view',
+                'forum.create_topic',
+                'forum.reply',
+                'forum.announcements.publish',
+                'comms.announcement.send',
+                'documents.view',
+                'documents.upload',
+                'operational.board.view',
+                'organization.orbat.view',
+            ],
+
+            // —— Gouvernance communauté (sous-ensemble, hors owner) ——
+            'technical_admin' => [
+                'admin.access',
+                'admin.backoffice.view',
+                'admin.settings.manage',
+                'admin.branding.manage',
+                'admin.integrations.manage',
+                'admin.audit.view',
+                'documents.view',
+                'documents.upload',
+                'documents.categories.manage',
+                'media.view',
+                'media.upload',
+                'media.collections.manage',
+                'forum.view',
+                'forum.categories.manage',
+                'forum.manage_categories',
+                'organization.orbat.view',
                 'dashboard.pins.manage',
+            ],
+            'deputy_commander' => [
+                'admin.access',
+                'admin.organization',
+                'admin.backoffice.view',
+                'admin.members.view',
+                'admin.members.manage',
+                'admin.members.moderate',
+                'admin.members.invite',
+                'admin.audit.view',
+                'invitations.send',
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own',
+                'forum.moderate_organization',
+                'forum.announcements.publish',
+                'documents.view', 'documents.upload', 'documents.download.standard',
+                'training.view',
+                'personnel.profile.view', 'personnel.profile.update', 'personnel.assignments.manage',
+                'organization.orbat.view', 'organization.orbat.manage',
+                'organization.effectifs.hub.view',
+                'operational.board.view', 'operational.board.edit',
+                'dashboard.pins.manage',
+                'comms.announcement.send',
+                'comms.tenant_messages.receive',
                 'interteam.missions.respond',
-                'cooperation.missions.respond',
-                'cooperation.missions.view',
-                'cooperation.exchange.read',
-                'cooperation.exchange.write',
+                'cooperation.missions.view', 'cooperation.missions.respond',
+                'cooperation.exchange.read', 'cooperation.exchange.write',
+            ],
+
+            // —— États-majors / emplois organiques ——
+            'operations_officer' => array_values(array_unique(array_merge($officerCore, [
+                'operational.board.edit',
+                'operations.missions.view', 'operations.missions.manage',
+                'operations.sitrep.view', 'operations.sitrep.create',
+                'operations.aar.view',
+                'operations.readiness.view', 'operations.readiness.manage',
+                'operations.doctrine.view',
+                'operations.comms.view',
+                'documents.upload',
+                'comms.email.send.mission',
+                'comms.email.send.activity',
+            ]))),
+            'training_officer' => [
+                'forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.delete_own',
+                'documents.view', 'documents.download.standard',
+                'training.view', 'training.assign', 'training.submissions.grade', 'training.results.view',
+                'training.certifications.manage', 'training.prerequisites.manage',
+                'personnel.profile.view',
+                'dashboard.pins.manage',
+                'operational.board.view',
+                'organization.orbat.view',
+                'admin.backoffice.view',
+                'organization.effectifs.hub.view',
+            ],
+            'intelligence_officer' => array_values(array_unique(array_merge($officerCore, [
+                'operations.sitrep.view', 'operations.sitrep.create',
+                'operations.doctrine.view',
+                'documents.upload',
+                'documents.sensitive.view',
+            ]))),
+            'logistics_officer' => array_values(array_unique(array_merge($officerCore, [
+                'operations.logistics.view', 'operations.logistics.manage',
+                'operations.readiness.view',
+                'documents.upload', 'documents.metadata.update',
+            ]))),
+            'discipline_officer' => [
+                'admin.backoffice.view',
+                'admin.members.view',
+                'admin.members.moderate',
+                'admin.audit.view',
+                'personnel.profile.view',
+                'personnel.status.manage',
+                'forum.view', 'forum.reply',
+                'forum.moderate_organization',
+                'forum.reports.manage',
+                'organization.effectifs.hub.view',
+                'organization.orbat.view',
+                'documents.view',
+            ],
+            'recruitment_officer' => [
+                'forum.view', 'forum.create_topic', 'forum.reply',
+                'invitations.send',
+                'admin.backoffice.view',
+                'admin.members.view',
+                'admin.members.invite',
+                'personnel.profile.view',
+                'organization.recruitment.manage',
+                'organization.recruitment.openings.manage',
+                'organization.effectifs.hub.view',
+                'organization.orbat.view',
+                'operational.board.view',
+                'documents.view',
+            ],
+            'security_officer' => [
+                'admin.backoffice.view',
+                'admin.audit.view',
+                'admin.members.view',
+                'admin.members.moderate',
+                'personnel.profile.view',
+                'forum.view',
+                'forum.moderate_organization',
+                'forum.reports.manage',
+                'documents.view',
+                'documents.sensitive.view',
+                'organization.orbat.view',
+                'organization.effectifs.hub.view',
+            ],
+            'auditor_internal' => [
+                'admin.backoffice.view',
+                'admin.audit.view',
+                'admin.compliance.export',
+                'admin.members.view',
+                'personnel.profile.view',
+                'training.view',
+                'training.results.view',
+                'documents.view',
+                'organization.orbat.view',
+                'organization.effectifs.hub.view',
             ],
         ];
     }
@@ -301,6 +579,8 @@ final class TenantDefaultRoleDefinitions
             'logistics' => 'Logistics',
             'rto' => 'RTO (communications)',
             'probation' => 'Probation',
+            'video_creator' => 'Video content creator',
+            'media_manager' => 'Media manager',
         ];
 
         $organic = [
@@ -385,7 +665,7 @@ final class TenantDefaultRoleDefinitions
             return;
         }
         $upd = $pdo->prepare('UPDATE roles SET name = ?, description = ? WHERE tenant_id = ? AND slug = ? AND is_system = 1');
-        foreach (array_merge(self::governanceRoles(), self::operationalRoles()) as $row) {
+        foreach (array_merge(self::governanceRoles(), self::operationalRoles(), self::organicStaffRoles()) as $row) {
             $upd->execute([
                 $row['name'],
                 $row['description'],
@@ -412,11 +692,21 @@ final class TenantDefaultRoleDefinitions
         $communitySlug = [
             'community_owner' => 10,
             'tenant_admin' => 20,
+            'deputy_commander' => 25,
+            'technical_admin' => 28,
             'recruiter' => 30,
         ];
         /** @var array<string, int> */
         $intraSlug = [
             'officer' => 10,
+            'operations_officer' => 12,
+            'training_officer' => 14,
+            'intelligence_officer' => 16,
+            'logistics_officer' => 18,
+            'discipline_officer' => 19,
+            'recruitment_officer' => 21,
+            'security_officer' => 22,
+            'auditor_internal' => 23,
             'instructor' => 20,
             'forum_moderator' => 30,
             'hr' => 40,

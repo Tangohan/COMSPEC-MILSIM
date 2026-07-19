@@ -35,9 +35,10 @@ Les droits visibles à l’écran peuvent varier : un même écran peut être **
 12. [Enrôlement et recrutement](enrolement-recrutement.md) — formulaires, statuts, suivi côté membre et côté staff.
 13. [Dossier opérateur](dossier-operateur.md) — vue synthèse admissibilité et qualifications.
 14. [Back-office organisation](back-office-organisation.md) — administration de la communauté (pour profils autorisés).
-15. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
-16. [FAQ](faq.md) — questions courantes.
-17. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
+15. [Mur & tableau opérationnel](tableau-operationnel.md) — consultation du mur, pilotage, posture, fiches, FRAGO, modèles.
+16. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
+17. [FAQ](faq.md) — questions courantes.
+18. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
 
 ## Convention de lecture
 

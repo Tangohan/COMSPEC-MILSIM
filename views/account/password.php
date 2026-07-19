@@ -1,41 +1,59 @@
 <?php
+declare(strict_types=1);
+
 $errors = $errors ?? [];
 $success = $success ?? null;
 $error = $error ?? null;
+
+$accountNavKey = 'password';
+$accountTitle = 'Mot de passe';
+$accountLead = 'Changez le secret utilisé pour vous connecter. Minimum 8 caractères.';
+require base_path('views/partials/account/shell_open.php');
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Mot de passe</h1>
-    <p class="text-slate-600 mb-6">Changer votre mot de passe. Minimum 8 caractères.</p>
-    <?php if ($success): ?>
-    <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded"><?= htmlspecialchars($success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    <form method="post" action="<?= url('account/password') ?>" class="space-y-4 bg-white border border-slate-200 rounded-lg p-6">
-        <?= \App\Core\Csrf::field() ?>
-        <div>
-            <label for="current_password" class="block text-sm font-medium text-slate-700 mb-1">Mot de passe actuel</label>
-            <input type="password" name="current_password" id="current_password" required class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" autocomplete="current-password">
-            <?php if (!empty($errors['current_password'])): foreach ($errors['current_password'] as $e): ?>
-            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-            <?php endforeach; endif; ?>
-        </div>
-        <div>
-            <label for="new_password" class="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe</label>
-            <input type="password" name="new_password" id="new_password" required minlength="8" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" autocomplete="new-password">
-            <?php if (!empty($errors['new_password'])): foreach ($errors['new_password'] as $e): ?>
-            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-            <?php endforeach; endif; ?>
-        </div>
-        <div>
-            <label for="new_password_confirmation" class="block text-sm font-medium text-slate-700 mb-1">Confirmer le nouveau mot de passe</label>
-            <input type="password" name="new_password_confirmation" id="new_password_confirmation" required minlength="8" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-slate-900" autocomplete="new-password">
-            <?php if (!empty($errors['new_password_confirmation'])): foreach ($errors['new_password_confirmation'] as $e): ?>
-            <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-            <?php endforeach; endif; ?>
-        </div>
-        <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Changer le mot de passe</button>
-    </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> · <a href="<?= url('forgot-password') ?>" class="underline">Mot de passe oublié ?</a></p>
-</div>
+
+<section class="account-hub__panel">
+    <div class="account-hub__panel-head">
+        <p class="account-hub__panel-kicker">Sécurité</p>
+        <h2 class="account-hub__panel-title">Changer le mot de passe</h2>
+        <p class="account-hub__panel-desc">Saisissez votre mot de passe actuel, puis le nouveau à deux reprises pour confirmer.</p>
+    </div>
+    <div class="account-hub__panel-body">
+        <form method="post" action="<?= htmlspecialchars(url('account/password'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__form-grid">
+            <?= \App\Core\Csrf::field() ?>
+            <div>
+                <label class="account-hub__label" for="current_password">Mot de passe actuel</label>
+                <input type="password" name="current_password" id="current_password" required autocomplete="current-password">
+                <?php if (!empty($errors['current_password'])): foreach ($errors['current_password'] as $e): ?>
+                <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endforeach; endif; ?>
+            </div>
+            <div>
+                <label class="account-hub__label" for="new_password">Nouveau mot de passe</label>
+                <input type="password" name="new_password" id="new_password" required minlength="8" autocomplete="new-password">
+                <p class="account-hub__hint">Au moins 8 caractères. Évitez de réutiliser un mot de passe déjà employé ailleurs.</p>
+                <?php if (!empty($errors['new_password'])): foreach ($errors['new_password'] as $e): ?>
+                <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endforeach; endif; ?>
+            </div>
+            <div>
+                <label class="account-hub__label" for="new_password_confirmation">Confirmer le nouveau mot de passe</label>
+                <input type="password" name="new_password_confirmation" id="new_password_confirmation" required minlength="8" autocomplete="new-password">
+                <?php if (!empty($errors['new_password_confirmation'])): foreach ($errors['new_password_confirmation'] as $e): ?>
+                <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endforeach; endif; ?>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:.25rem">
+                <button type="submit" class="account-hub__btn account-hub__btn--ink">Enregistrer le nouveau mot de passe</button>
+                <a href="<?= htmlspecialchars(url('forgot-password'), ENT_QUOTES, 'UTF-8') ?>" style="font-size:.8125rem;font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Mot de passe oublié ?</a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<p class="account-hub__footer-note">
+    <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>">Adresse e-mail</a>
+    ·
+    <a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>">Vue d’ensemble</a>
+</p>
+
+<?php require base_path('views/partials/account/shell_close.php'); ?>

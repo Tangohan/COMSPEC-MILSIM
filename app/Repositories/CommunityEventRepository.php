@@ -168,8 +168,129 @@ class CommunityEventRepository
         return (int) $this->pdo->lastInsertId();
     }
 
-    public function setRsvp(int $eventId, int $userId, string $status, ?string $absenceReason = null, ?string $absenceNote = null): void
+    /**
+     * Enrichit un créneau (image, conditions, déroulement, étiquettes).
+     *
+     * @param array{
+     *   cover_image_path?: ?string,
+     *   conditions_general?: ?string,
+     *   conditions_special?: ?string,
+     *   schedule_json?: ?string,
+     *   tags_json?: ?string,
+     *   description?: ?string,
+     *   location?: ?string,
+     *   title?: ?string
+     * } $data
+     */
+    public function updateDetails(int $eventId, int $tenantId, array $data): bool
     {
+        $sets = [];
+        $params = [];
+        $map = [
+            'title' => 'title',
+            'description' => 'description',
+            'location' => 'location',
+            'cover_image_path' => 'cover_image_path',
+            'conditions_general' => 'conditions_general',
+            'conditions_special' => 'conditions_special',
+            'schedule_json' => 'schedule_json',
+            'tags_json' => 'tags_json',
+        ];
+        foreach ($map as $key => $col) {
+            if (!array_key_exists($key, $data)) {
+                continue;
+            }
+            if (!$this->hasColumn($col)) {
+                continue;
+            }
+            $sets[] = "{$col} = ?";
+            $params[] = $data[$key];
+        }
+        if ($sets === []) {
+            return false;
+        }
+        $sets[] = 'updated_at = NOW()';
+        $params[] = $eventId;
+        $params[] = $tenantId;
+        $sql = 'UPDATE community_events SET ' . implode(', ', $sets) . ' WHERE id = ? AND tenant_id = ? AND cancelled_at IS NULL';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Synthèse des réponses pour plusieurs créneaux (affichage public).
+     *
+     * @param list<int> $eventIds
+     * @return array<int, array{yes:list<array{display_name:string,callsign:string}>,maybe:list<array{display_name:string,callsign:string}>,no:list<array{display_name:string,callsign:string}>}>
+     */
+    public function rsvpSummariesForEvents(array $eventIds): array
+    {
+        $eventIds = array_values(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0));
+        if ($eventIds === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($eventIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT r.event_id, r.status, u.display_name, u.callsign
+             FROM community_event_rsvps r
+             INNER JOIN users u ON u.id = r.user_id
+             WHERE r.event_id IN ({$placeholders})
+             ORDER BY u.display_name ASC"
+        );
+        $stmt->execute($eventIds);
+        $out = [];
+        foreach ($eventIds as $eid) {
+            $out[$eid] = ['yes' => [], 'maybe' => [], 'no' => []];
+        }
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $eid = (int) ($row['event_id'] ?? 0);
+            $st = (string) ($row['status'] ?? '');
+            if (!isset($out[$eid]) || !isset($out[$eid][$st])) {
+                continue;
+            }
+            $out[$eid][$st][] = [
+                'display_name' => (string) ($row['display_name'] ?? ''),
+                'callsign' => trim((string) ($row['callsign'] ?? '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    private function hasColumn(string $name): bool
+    {
+        static $cache = [];
+        if (array_key_exists($name, $cache)) {
+            return $cache[$name];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND COLUMN_NAME = ? LIMIT 1"
+            );
+            $st->execute([$name]);
+            $cache[$name] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$name] = false;
+        }
+
+        return $cache[$name];
+    }
+
+    public function setRsvp(
+        int $eventId,
+        int $userId,
+        string $status,
+        ?string $absenceReason = null,
+        ?string $absenceNote = null,
+        ?int $actorUserId = null
+    ): void {
+        $prev = $this->getRsvp($eventId, $userId);
+        $prevStatus = $prev !== null ? (string) ($prev['status'] ?? '') : null;
+        $prevReason = $prev !== null ? (isset($prev['absence_reason']) ? (string) $prev['absence_reason'] : null) : null;
+        $prevNote = $prev !== null ? (isset($prev['absence_note']) ? (string) $prev['absence_note'] : null) : null;
+
         $reason = $absenceReason !== null ? trim($absenceReason) : null;
         $note = $absenceNote !== null ? trim($absenceNote) : null;
         if ($status === 'no') {
@@ -184,6 +305,24 @@ class CommunityEventRepository
                  ON DUPLICATE KEY UPDATE status = VALUES(status), absence_reason = NULL, absence_note = NULL, updated_at = NOW()'
             );
             $stmt->execute([$eventId, $userId, $status]);
+            $reason = null;
+            $note = null;
+        }
+
+        $changed = $prevStatus !== $status
+            || ($status === 'no' && (($prevReason ?? '') !== ($reason ?? '') || ($prevNote ?? '') !== ($note ?? '')))
+            || $prev === null;
+        if ($changed) {
+            $this->appendRsvpHistory(
+                $eventId,
+                $userId,
+                $actorUserId ?? $userId,
+                'rsvp_set',
+                $prevStatus !== '' ? $prevStatus : null,
+                $status,
+                $reason,
+                $note !== null && $note !== '' ? $note : null
+            );
         }
     }
 
@@ -216,20 +355,46 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function deleteRsvp(int $eventId, int $userId): void
+    public function deleteRsvp(int $eventId, int $userId, ?int $actorUserId = null): void
     {
+        $prev = $this->getRsvp($eventId, $userId);
         $stmt = $this->pdo->prepare(
             'DELETE FROM community_event_rsvps WHERE event_id = ? AND user_id = ?'
         );
         $stmt->execute([$eventId, $userId]);
+        if ($prev !== null) {
+            $this->appendRsvpHistory(
+                $eventId,
+                $userId,
+                $actorUserId ?? $userId,
+                'rsvp_remove',
+                (string) ($prev['status'] ?? ''),
+                null,
+                isset($prev['absence_reason']) ? (string) $prev['absence_reason'] : null,
+                isset($prev['absence_note']) ? (string) $prev['absence_note'] : null
+            );
+        }
     }
 
-    public function clearCheckIn(int $eventId, int $userId): void
+    public function clearCheckIn(int $eventId, int $userId, ?int $actorUserId = null): void
     {
+        $prev = $this->getRsvp($eventId, $userId);
         $stmt = $this->pdo->prepare(
             'UPDATE community_event_rsvps SET checked_in_at = NULL, updated_at = NOW() WHERE event_id = ? AND user_id = ?'
         );
         $stmt->execute([$eventId, $userId]);
+        if ($prev !== null && !empty($prev['checked_in_at'])) {
+            $this->appendRsvpHistory(
+                $eventId,
+                $userId,
+                $actorUserId ?? $userId,
+                'check_in_clear',
+                (string) ($prev['status'] ?? ''),
+                (string) ($prev['status'] ?? ''),
+                null,
+                null
+            );
+        }
     }
 
     /**
@@ -253,12 +418,125 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function setCheckIn(int $eventId, int $userId, string $whenIso): void
+    public function setCheckIn(int $eventId, int $userId, string $whenIso, ?int $actorUserId = null): void
     {
+        $prev = $this->getRsvp($eventId, $userId);
         $stmt = $this->pdo->prepare(
             'UPDATE community_event_rsvps SET checked_in_at = ?, updated_at = NOW() WHERE event_id = ? AND user_id = ?'
         );
         $stmt->execute([$whenIso, $eventId, $userId]);
+        $this->appendRsvpHistory(
+            $eventId,
+            $userId,
+            $actorUserId ?? $userId,
+            'check_in',
+            $prev !== null ? (string) ($prev['status'] ?? '') : null,
+            $prev !== null ? (string) ($prev['status'] ?? '') : null,
+            null,
+            null
+        );
+    }
+
+    public function rsvpHistoryTableExists(): bool
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_event_rsvp_history' LIMIT 1"
+            );
+            $cache = $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache = false;
+        }
+
+        return $cache;
+    }
+
+    public function appendRsvpHistory(
+        int $eventId,
+        int $userId,
+        ?int $actorUserId,
+        string $action,
+        ?string $statusFrom,
+        ?string $statusTo,
+        ?string $absenceReason = null,
+        ?string $absenceNote = null
+    ): void {
+        if ($eventId < 1 || $userId < 1 || !$this->rsvpHistoryTableExists()) {
+            return;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO community_event_rsvp_history
+                    (event_id, user_id, actor_user_id, action, status_from, status_to, absence_reason, absence_note, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([
+                $eventId,
+                $userId,
+                $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null,
+                $action,
+                $statusFrom !== null && $statusFrom !== '' ? $statusFrom : null,
+                $statusTo !== null && $statusTo !== '' ? $statusTo : null,
+                $absenceReason !== null && $absenceReason !== '' ? $absenceReason : null,
+                $absenceNote !== null && $absenceNote !== '' ? mb_substr($absenceNote, 0, 500) : null,
+            ]);
+        } catch (\Throwable) {
+            // Ne jamais bloquer le flux métier si l’historique échoue.
+        }
+    }
+
+    /**
+     * Historique des changements pour un membre, groupé par événement.
+     *
+     * @param list<int> $eventIds
+     * @return array<int, list<array<string, mixed>>>
+     */
+    public function listRsvpHistoryForUserByEvents(int $userId, array $eventIds, int $perEvent = 12): array
+    {
+        $eventIds = array_values(array_unique(array_filter(array_map('intval', $eventIds), static fn (int $id): bool => $id > 0)));
+        if ($userId < 1 || $eventIds === [] || !$this->rsvpHistoryTableExists()) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($eventIds), '?'));
+        $limit = max(1, min(40, $perEvent)) * count($eventIds);
+        $limit = max(1, min(500, $limit));
+        $sql = "SELECT h.event_id, h.action, h.status_from, h.status_to, h.absence_reason, h.absence_note,
+                       h.actor_user_id, h.created_at,
+                       a.display_name AS actor_display_name, a.email AS actor_email
+                FROM community_event_rsvp_history h
+                LEFT JOIN users a ON a.id = h.actor_user_id
+                WHERE h.user_id = ? AND h.event_id IN ({$placeholders})
+                ORDER BY h.created_at DESC, h.id DESC
+                LIMIT {$limit}";
+        $params = array_merge([$userId], $eventIds);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $eid = (int) ($row['event_id'] ?? 0);
+            if ($eid < 1) {
+                continue;
+            }
+            if (!isset($out[$eid])) {
+                $out[$eid] = [];
+            }
+            if (count($out[$eid]) >= $perEvent) {
+                continue;
+            }
+            $out[$eid][] = $row;
+        }
+
+        return $out;
     }
 
     public function cancelEvent(int $eventId, int $tenantId, ?string $reason): bool

@@ -1,0 +1,18 @@
+/**
+ * Placeholders images (src cassé / vide) — complété par assets/js/img-fallback.js
+ */
+img.img-fallback-applied {
+  background-color: #0f172a;
+  object-fit: cover;
+}
+
+img.img-fallback-applied[data-img-fallback-kind='logo'],
+img.img-fallback-applied[data-img-fallback-kind='badge'] {
+  object-fit: contain;
+  background-color: #020617;
+}
+
+img.img-fallback-applied[data-img-fallback-kind='portrait'] {
+  object-fit: contain;
+  object-position: bottom center;
+}

@@ -225,6 +225,108 @@ class RoleRepository
     }
 
     /**
+     * Nombre de droits accordés par rôle (une requête pour N rôles).
+     *
+     * @param list<int> $roleIds
+     * @return array<int, int>
+     */
+    public function countPermissionsByRoleIds(array $roleIds): array
+    {
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
+        if ($roleIds === []) {
+            return [];
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT role_id, COUNT(*) AS cnt FROM role_permissions WHERE role_id IN ({$ph}) GROUP BY role_id"
+        );
+        $stmt->execute($roleIds);
+        $out = [];
+        foreach ($roleIds as $id) {
+            $out[$id] = 0;
+        }
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $rid = (int) ($row['role_id'] ?? 0);
+            if ($rid > 0) {
+                $out[$rid] = (int) ($row['cnt'] ?? 0);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Nombre de membres distincts par rôle dans une communauté
+     * (affectation principale, multi-rôles et affectations communauté).
+     *
+     * @param list<int> $roleIds
+     * @return array<int, int>
+     */
+    public function countMembersByRoleIds(int $tenantId, array $roleIds): array
+    {
+        $roleIds = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
+        $out = [];
+        foreach ($roleIds as $id) {
+            $out[$id] = 0;
+        }
+        if ($tenantId < 1 || $roleIds === []) {
+            return $out;
+        }
+        $ph = implode(',', array_fill(0, count($roleIds), '?'));
+        $parts = [];
+        $params = [];
+
+        $parts[] = "SELECT u.role_id AS role_id, u.id AS user_id
+                    FROM users u
+                    WHERE u.tenant_id = ? AND u.role_id IN ({$ph})";
+        $params = array_merge($params, [$tenantId], $roleIds);
+
+        try {
+            $chk = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_roles' LIMIT 1"
+            );
+            if ($chk && $chk->fetchColumn()) {
+                $parts[] = "SELECT ur.role_id AS role_id, ur.user_id AS user_id
+                            FROM user_roles ur
+                            INNER JOIN users u ON u.id = ur.user_id AND u.tenant_id = ?
+                            WHERE ur.role_id IN ({$ph})";
+                $params = array_merge($params, [$tenantId], $roleIds);
+            }
+        } catch (\Throwable) {
+        }
+
+        try {
+            $chk = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_user_roles' LIMIT 1"
+            );
+            if ($chk && $chk->fetchColumn()) {
+                $parts[] = "SELECT tur.role_id AS role_id, tur.user_id AS user_id
+                            FROM tenant_user_roles tur
+                            INNER JOIN users u ON u.id = tur.user_id AND u.tenant_id = tur.tenant_id
+                            WHERE tur.tenant_id = ? AND tur.role_id IN ({$ph})";
+                $params = array_merge($params, [$tenantId], $roleIds);
+            }
+        } catch (\Throwable) {
+        }
+
+        $sql = 'SELECT role_id, COUNT(DISTINCT user_id) AS cnt FROM (' . implode(' UNION ', $parts) . ') AS role_members GROUP BY role_id';
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $rid = (int) ($row['role_id'] ?? 0);
+                if ($rid > 0) {
+                    $out[$rid] = (int) ($row['cnt'] ?? 0);
+                }
+            }
+        } catch (\Throwable) {
+            // Repli silencieux : compteurs à 0
+        }
+
+        return $out;
+    }
+
+    /**
      * Matrice permissions × rôles organisation (pour UI admin).
      *
      * @return array{roles: list<array<string,mixed>>, permissions: list<array<string,mixed>>, byRole: array<int, array<int, true>>}

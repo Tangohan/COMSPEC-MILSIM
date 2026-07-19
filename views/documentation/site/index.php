@@ -11,7 +11,7 @@ $toc = [
     ['id' => 'roles-communaute-et-metiers', 'title' => 'Rôles communauté & métiers'],
     ['id' => 'navigation-et-recherche', 'title' => 'Navigation & recherche'],
     ['id' => 'tableau-de-bord', 'title' => 'Tableau de bord'],
-    ['id' => 'mur-operationnel', 'title' => 'Mur opérationnel'],
+    ['id' => 'mur-operationnel', 'title' => 'Mur & tableau opérationnel'],
     ['id' => 'personnel-et-orbat', 'title' => 'Personnel, ORBAT & profils métier'],
     ['id' => 'dossier-operateur', 'title' => 'Dossier opérateur'],
     ['id' => 'forum-et-briefings', 'title' => 'Forum & briefings'],

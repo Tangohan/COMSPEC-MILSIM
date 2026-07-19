@@ -32,6 +32,29 @@ $forumBackForumUrl = $baseUrl . '/forum';
 if ($forumNewTopicTenantContext > 1) {
     $forumBackForumUrl .= '?forum_tenant=' . $forumNewTopicTenantContext;
 }
+$preselectedScope = '';
+foreach ($categoriesWithChildren as $root) {
+    if ((int) $root['id'] === $preselectedCategoryId) {
+        $preselectedScope = (string) ($root['scope'] ?? 'general');
+        break;
+    }
+    foreach ($root['children'] ?? [] as $child) {
+        if ((int) $child['id'] === $preselectedCategoryId) {
+            $preselectedScope = (string) ($child['scope'] ?? $root['scope'] ?? 'general');
+            break 2;
+        }
+    }
+}
+$preselectedScopeLabel = function_exists('forum_category_scope_label')
+    ? forum_category_scope_label($preselectedScope !== '' ? $preselectedScope : null)
+    : 'Ouvert';
+$preselectedScopeHint = function_exists('forum_category_scope_hint')
+    ? forum_category_scope_hint($preselectedScope !== '' ? $preselectedScope : null)
+    : '';
+$cselTriggerLabel = '— Choisir un secteur —';
+if ($preselectedCategoryId && $preselectedName) {
+    $cselTriggerLabel = $preselectedName . ' · ' . $preselectedScopeLabel;
+}
 ?>
 <main class="w-full px-4 sm:px-6 lg:px-8 py-10 bg-[#f8fafc]">
   <div class="max-w-6xl mx-auto">
@@ -72,22 +95,54 @@ if ($forumNewTopicTenantContext > 1) {
         <div>
           <label class="block text-[10px] font-black uppercase tracking-wider text-neutral-500 mb-2">Secteur de diffusion *</label>
           <div class="csel-wrapper relative">
-            <button type="button" id="csel-trigger" class="w-full bg-slate-50 border border-slate-200 text-left px-4 py-3 text-slate-900 flex items-center justify-between focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition rounded-md" aria-haspopup="listbox" aria-expanded="false">
-              <span id="csel-label"><?= $preselectedCategoryId && $preselectedName ? htmlspecialchars($preselectedName) : '— Choisir un secteur —' ?></span>
-              <span class="csel-chevron transition-transform">▼</span>
+            <button type="button" id="csel-trigger" class="w-full bg-slate-50 border border-slate-200 text-left px-4 py-3 text-slate-900 flex items-center justify-between gap-3 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition rounded-md" aria-haspopup="listbox" aria-expanded="false" aria-describedby="csel-scope-hint">
+              <span class="min-w-0 flex-1">
+                <span id="csel-label" class="block text-sm font-semibold text-slate-900 truncate"><?= htmlspecialchars($cselTriggerLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                <span id="csel-scope-badge" class="mt-0.5 inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-800 border border-emerald-100<?= $preselectedCategoryId ? '' : ' hidden' ?>"><?= htmlspecialchars($preselectedScopeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+              </span>
+              <span class="csel-chevron shrink-0 text-slate-400 transition-transform">▼</span>
             </button>
             <input type="hidden" name="category_id" id="category_id" value="<?= $preselectedCategoryId ?>" required>
-            <div id="csel-dropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-10 hidden max-h-60 overflow-auto rounded-md">
-              <div role="option" class="csel-option px-4 py-2 text-slate-500 hover:bg-slate-50 cursor-pointer" data-value="">Choisir un secteur</div>
+            <div id="csel-dropdown" class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-lg z-10 hidden max-h-72 overflow-auto rounded-md" role="listbox">
+              <div role="option" class="csel-option px-4 py-2.5 text-slate-500 hover:bg-slate-50 cursor-pointer" data-value="" data-scope="" data-label="— Choisir un secteur —" data-scope-label="">
+                <span class="text-sm">Choisir un secteur</span>
+              </div>
               <?php foreach ($categoriesWithChildren as $root): ?>
-                <div class="px-3 py-1.5 text-[9px] font-black uppercase text-emerald-800"><?= !empty($root['icon']) ? $root['icon'] . ' ' : '' ?><?= htmlspecialchars($root['name']) ?></div>
-                <div role="option" class="csel-option px-4 py-2 pl-6 text-slate-900 hover:bg-slate-50 cursor-pointer" data-value="<?= (int) $root['id'] ?>"><?= htmlspecialchars($root['name']) ?></div>
+                <?php
+                $rootScope = (string) ($root['scope'] ?? 'general');
+                $rootScopeLabel = function_exists('forum_category_scope_label') ? forum_category_scope_label($rootScope) : 'Ouvert';
+                $rootName = (string) ($root['name'] ?? '');
+                ?>
+                <div class="px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50/60 border-y border-emerald-50 flex items-center justify-between gap-2">
+                  <span><?= !empty($root['icon']) ? $root['icon'] . ' ' : '' ?><?= htmlspecialchars($rootName) ?></span>
+                  <span class="rounded bg-white/80 px-1.5 py-0.5 text-[8px] font-bold text-emerald-900 border border-emerald-100"><?= htmlspecialchars($rootScopeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <div role="option" class="csel-option px-4 py-2.5 pl-5 text-slate-900 hover:bg-emerald-50/50 cursor-pointer flex items-start justify-between gap-3" data-value="<?= (int) $root['id'] ?>" data-scope="<?= htmlspecialchars($rootScope, ENT_QUOTES, 'UTF-8') ?>" data-label="<?= htmlspecialchars($rootName, ENT_QUOTES, 'UTF-8') ?>" data-scope-label="<?= htmlspecialchars($rootScopeLabel, ENT_QUOTES, 'UTF-8') ?>">
+                  <span class="text-sm font-medium"><?= htmlspecialchars($rootName) ?></span>
+                  <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-600"><?= htmlspecialchars($rootScopeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
                 <?php foreach ($root['children'] ?? [] as $child): ?>
-                  <div role="option" class="csel-option px-4 py-2 pl-8 text-slate-700 hover:bg-slate-50 cursor-pointer" data-value="<?= (int) $child['id'] ?>">↳ <?= htmlspecialchars($child['name']) ?></div>
+                  <?php
+                  $childScope = (string) ($child['scope'] ?? $rootScope);
+                  $childScopeLabel = function_exists('forum_category_scope_label') ? forum_category_scope_label($childScope) : 'Ouvert';
+                  $childName = (string) ($child['name'] ?? '');
+                  ?>
+                  <div role="option" class="csel-option px-4 py-2.5 pl-8 text-slate-700 hover:bg-emerald-50/50 cursor-pointer flex items-start justify-between gap-3 border-t border-slate-50" data-value="<?= (int) $child['id'] ?>" data-scope="<?= htmlspecialchars($childScope, ENT_QUOTES, 'UTF-8') ?>" data-label="<?= htmlspecialchars($childName, ENT_QUOTES, 'UTF-8') ?>" data-scope-label="<?= htmlspecialchars($childScopeLabel, ENT_QUOTES, 'UTF-8') ?>">
+                    <span class="text-sm"><span class="text-slate-400 mr-1">↳</span><?= htmlspecialchars($childName) ?></span>
+                    <span class="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-600"><?= htmlspecialchars($childScopeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                  </div>
                 <?php endforeach; ?>
               <?php endforeach; ?>
             </div>
           </div>
+          <p id="csel-scope-hint" class="mt-2 text-[11px] leading-relaxed text-slate-600" data-empty-hint="Indiquez le secteur : le périmètre (communauté, unité, privé…) s’affiche à côté de chaque option.">
+            <?php if ($preselectedCategoryId): ?>
+              <span class="font-semibold text-slate-800">Périmètre :</span> <?= htmlspecialchars($preselectedScopeLabel, ENT_QUOTES, 'UTF-8') ?>
+              — <?= htmlspecialchars($preselectedScopeHint, ENT_QUOTES, 'UTF-8') ?>
+            <?php else: ?>
+              Indiquez le secteur : le périmètre (communauté, unité, privé…) s’affiche à côté de chaque option.
+            <?php endif; ?>
+          </p>
         </div>
 
         <div>
@@ -259,8 +314,33 @@ if ($forumNewTopicTenantContext > 1) {
 
   var cselTrigger = document.getElementById('csel-trigger');
   var cselLabel = document.getElementById('csel-label');
+  var cselScopeBadge = document.getElementById('csel-scope-badge');
+  var cselScopeHint = document.getElementById('csel-scope-hint');
   var cselDropdown = document.getElementById('csel-dropdown');
   var categoryIdInput = document.getElementById('category_id');
+  var scopeHints = <?= json_encode([
+      'organization' => forum_category_scope_hint('organization'),
+      'tenant' => forum_category_scope_hint('tenant'),
+      'mission' => forum_category_scope_hint('mission'),
+      'moderation' => forum_category_scope_hint('moderation'),
+      'platform' => forum_category_scope_hint('platform'),
+      'global' => forum_category_scope_hint('global'),
+      'general' => forum_category_scope_hint('general'),
+  ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+
+  function updateScopeHint(scope, scopeLabel) {
+    if (!cselScopeHint) return;
+    var emptyHint = cselScopeHint.getAttribute('data-empty-hint') || '';
+    if (!scope) {
+      cselScopeHint.textContent = emptyHint;
+      return;
+    }
+    var hint = scopeHints[scope] || scopeHints.general || '';
+    cselScopeHint.innerHTML = '<span class="font-semibold text-slate-800">Périmètre :</span> '
+      + escapeHtml(scopeLabel || '')
+      + (hint ? ' — ' + escapeHtml(hint) : '');
+  }
+
   if (cselTrigger && cselDropdown) {
     cselTrigger.addEventListener('click', function() {
       var open = cselDropdown.classList.toggle('hidden');
@@ -271,9 +351,25 @@ if ($forumNewTopicTenantContext > 1) {
     });
     document.querySelectorAll('.csel-option').forEach(function(opt) {
       opt.addEventListener('click', function() {
-        var val = opt.getAttribute('data-value');
+        var val = opt.getAttribute('data-value') || '';
+        var label = opt.getAttribute('data-label') || opt.textContent.trim();
+        var scope = opt.getAttribute('data-scope') || '';
+        var scopeLabel = opt.getAttribute('data-scope-label') || '';
         categoryIdInput.value = val;
-        cselLabel.textContent = val ? opt.textContent.trim() : '— Choisir un secteur —';
+        if (val && scopeLabel) {
+          cselLabel.textContent = label + ' · ' + scopeLabel;
+        } else {
+          cselLabel.textContent = val ? label : '— Choisir un secteur —';
+        }
+        if (cselScopeBadge) {
+          if (val && scopeLabel) {
+            cselScopeBadge.textContent = scopeLabel;
+            cselScopeBadge.classList.remove('hidden');
+          } else {
+            cselScopeBadge.classList.add('hidden');
+          }
+        }
+        updateScopeHint(scope, scopeLabel);
         cselDropdown.classList.add('hidden');
         cselTrigger.setAttribute('aria-expanded', 'false');
         cselTrigger.classList.remove('border-emerald-500');

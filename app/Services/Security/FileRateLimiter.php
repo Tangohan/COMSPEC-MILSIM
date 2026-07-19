@@ -9,21 +9,45 @@ namespace App\Services\Security;
  */
 final class FileRateLimiter
 {
+    /**
+     * Incrémente le compteur et indique si le plafond est dépassé.
+     */
     public function tooManyAttempts(string $key, int $maxAttempts, int $decaySeconds): bool
+    {
+        return $this->hit($key, $decaySeconds) > $maxAttempts;
+    }
+
+    /**
+     * Enregistre une tentative et retourne le compteur courant dans la fenêtre.
+     */
+    public function hit(string $key, int $decaySeconds): int
+    {
+        return $this->mutate($key, $decaySeconds, true);
+    }
+
+    /**
+     * Compteur courant sans incrémenter (fenêtre expirée → 0).
+     */
+    public function attempts(string $key, int $decaySeconds): int
+    {
+        return $this->mutate($key, $decaySeconds, false);
+    }
+
+    private function mutate(string $key, int $decaySeconds, bool $increment): int
     {
         $dir = base_path('storage/cache/ratelimit');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
-            return false;
+            return 0;
         }
         $path = $dir . '/' . hash('sha256', $key) . '.json';
         $now = time();
         $fp = @fopen($path, 'c+');
         if ($fp === false) {
-            return false;
+            return 0;
         }
         try {
             if (!flock($fp, LOCK_EX)) {
-                return false;
+                return 0;
             }
             rewind($fp);
             $raw = stream_get_contents($fp);
@@ -37,16 +61,18 @@ final class FileRateLimiter
                 $start = $now;
                 $count = 0;
             }
-            $count++;
-            $payload = json_encode(['window_start' => $start, 'count' => $count], JSON_THROW_ON_ERROR);
-            ftruncate($fp, 0);
-            rewind($fp);
-            fwrite($fp, $payload);
-            fflush($fp);
+            if ($increment) {
+                $count++;
+                $payload = json_encode(['window_start' => $start, 'count' => $count], JSON_THROW_ON_ERROR);
+                ftruncate($fp, 0);
+                rewind($fp);
+                fwrite($fp, $payload);
+                fflush($fp);
+            }
 
-            return $count > $maxAttempts;
+            return $count;
         } catch (\Throwable) {
-            return false;
+            return 0;
         } finally {
             flock($fp, LOCK_UN);
             fclose($fp);

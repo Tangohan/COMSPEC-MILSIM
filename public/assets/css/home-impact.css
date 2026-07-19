@@ -719,3 +719,49 @@
     width: 3.25rem;
   }
 }
+
+/* Carousel vidéo hero (crossfade) */
+.home-impact .hi-hero-images--standby {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+.home-impact .hi-hero-videos {
+  z-index: 1;
+}
+
+.home-impact .hi-hero-videos--idle {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.home-impact .hi-hero-vslide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.home-impact .hi-hero-vslide.is-active {
+  opacity: 1;
+}
+
+.home-impact .hi-hero-vslide__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-impact .hi-hero-vslide {
+    transition: none;
+  }
+
+  .home-impact .hi-hero-images--standby {
+    transition: none;
+  }
+}

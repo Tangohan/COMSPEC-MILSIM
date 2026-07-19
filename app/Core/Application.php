@@ -31,6 +31,7 @@ class Application
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),
+            new \App\Middleware\AntiScraperMiddleware(),
             new \App\Middleware\RequestTelemetryMiddleware(),
             new \App\Middleware\ComspecTacticalApiMiddleware(),
             new \App\Middleware\SecurityHeadersMiddleware(),

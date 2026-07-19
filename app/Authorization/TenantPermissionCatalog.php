@@ -42,6 +42,7 @@ final class TenantPermissionCatalog
             self::personnelDefinitions(),
             self::organizationDefinitions(),
             self::commsDefinitions(),
+            self::mediaDefinitions(),
             self::courrierDefinitions(),
             self::legacyDefinitions(),
         );
@@ -325,6 +326,20 @@ final class TenantPermissionCatalog
             ['slug' => 'comms.notifications.history.view', 'module' => 'comms', 'action' => 'view', 'name' => 'Voir l’historique des notifications'],
             ['slug' => 'comms.alerts.manage', 'module' => 'comms', 'action' => 'manage', 'name' => 'Gérer les alertes automatiques'],
             ['slug' => 'comms.settings.advanced', 'module' => 'comms', 'action' => 'manage', 'name' => 'Paramétrage fin des communications'],
+        ];
+    }
+
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function mediaDefinitions(): array
+    {
+        return [
+            ['slug' => 'media.view', 'module' => 'media', 'action' => 'view', 'name' => 'Consulter la bibliothèque médias'],
+            ['slug' => 'media.upload', 'module' => 'media', 'action' => 'create', 'name' => 'Ajouter des images et vidéos courtes'],
+            ['slug' => 'media.collections.manage', 'module' => 'media', 'action' => 'manage', 'name' => 'Organiser les collections médias'],
+            ['slug' => 'media.publish', 'module' => 'media', 'action' => 'approve', 'name' => 'Publier des médias sur la page publique'],
+            ['slug' => 'media.manage', 'module' => 'media', 'action' => 'manage', 'name' => 'Piloter l’ensemble des médias de la communauté'],
         ];
     }
 

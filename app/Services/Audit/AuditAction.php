@@ -34,6 +34,9 @@ final class AuditAction
     public const SITE_ROLE_ASSIGNED = 'site_role.assigned';
     public const SITE_ROLE_REVOKED = 'site_role.revoked';
 
+    /** Changement de statut compte depuis l’annuaire plateforme. */
+    public const USER_STATUS_UPDATED = 'user.status_updated';
+
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 

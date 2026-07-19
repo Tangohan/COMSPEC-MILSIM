@@ -1,6 +1,10 @@
 /**
- * Aside back-office — pattern dash-rail (tuiles + panneau drill),
- * adapté au tiroir fixe (toujours ouvert, remplit l’aside).
+ * Aside back-office — pattern dash-rail (tuiles + panneau drill).
+ *
+ * Desktop (shell BO) : hover-rail — body.bo-shell--hover-rail + .bo-aside--hover-rail
+ *   Rail étroit au repos (~4.5rem), expansion au survol / focus (réf. dashboard /
+ *   mes-formations / effectifs). Largeur aside stable ; panneau en overlay.
+ * Mobile : tiroir plein (pas de compact).
  *
  * Largeur verrouillée ici : sans max/min explicites, le flex parent
  * (shell BO) peut laisser l’aside s’élargir au min-content et écraser
@@ -546,4 +550,176 @@
   font-size: 0.55rem;
   font-weight: 900;
   line-height: 1;
+}
+
+/**
+ * Mode aside dépliable (body.bo-shell--hover-rail + .bo-aside--hover-rail).
+ * Réf. dashboard dash-rail / mes-formations / effectifs_lms :
+ * rail étroit au repos, expansion au survol / focus clavier.
+ * Mobile : tiroir plein inchangé (règles sous min-width 1024px uniquement).
+ */
+@media (min-width: 1024px) {
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail,
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail.back-office-rail-aside {
+    --bo-hover-rail-w: 4.5rem;
+    --bo-hover-rail-open: min(20rem, 92vw);
+    position: relative;
+    z-index: 40;
+    width: var(--bo-hover-rail-w) !important;
+    min-width: var(--bo-hover-rail-w) !important;
+    max-width: var(--bo-hover-rail-w) !important;
+    overflow: visible !important;
+    align-self: stretch;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail > .flex {
+    position: relative;
+    height: 100%;
+    min-height: inherit;
+    overflow: visible;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--bo-hover-rail-w);
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .dash-rail__inner {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--bo-hover-rail-w);
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-left: 3px solid var(--dash-rail-accent, #059669);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #050505;
+    box-shadow: none;
+    transition: width 0.32s cubic-bezier(0.2, 1, 0.2, 1), box-shadow 0.25s ease;
+  }
+
+  /* Expansion uniquement au survol / focus clavier — pas via .is-expanded (reste plié par défaut) */
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:hover .dash-rail__inner,
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:focus-within .dash-rail__inner {
+    width: var(--bo-hover-rail-open);
+    box-shadow: 28px 0 80px rgba(0, 0, 0, 0.55);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .dash-rail__compact {
+    display: flex;
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--bo-hover-rail-w);
+    align-items: stretch;
+    justify-content: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    z-index: 2;
+    opacity: 1;
+    transition: opacity 0.22s ease;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.7rem;
+    width: 100%;
+    max-height: 100%;
+    padding: 1rem 0.35rem 1.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-stack::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.35rem;
+    height: 1.35rem;
+    color: rgba(148, 163, 184, 0.85);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico.is-active {
+    color: rgba(52, 211, 153, 0.95);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico--bo {
+    color: rgba(251, 146, 60, 0.75);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico--bo.is-active {
+    color: rgba(251, 146, 60, 0.95);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico--admin {
+    color: rgba(248, 113, 113, 0.8);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .bo-rail__compact-ico--admin.is-active {
+    color: rgba(248, 113, 113, 0.95);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:hover .dash-rail__compact,
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:focus-within .dash-rail__compact {
+    opacity: 0;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail .dash-rail__panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    padding: 0.85rem 0.75rem 0.9rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-8px);
+    transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s ease;
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:hover .dash-rail__panel,
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:focus-within .dash-rail__panel {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  /* Drill ouvert : panneau visible seulement pendant le survol (pas d’aside bloqué ouvert) */
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail.is-drill-open .dash-rail__panel {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateX(-8px);
+  }
+
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:hover.is-drill-open .dash-rail__panel,
+  body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail .bo-rail:focus-within.is-drill-open .dash-rail__panel {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
 }

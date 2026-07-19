@@ -15,7 +15,7 @@ $gateRhUrl = $personnelFileBaseUrl . '?view=rh';
         <div class="flex items-center justify-center gap-4">
             <div class="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border-2 border-slate-600/50 bg-slate-800">
                 <?php if (!empty($avatarUrl)): ?>
-                <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Avatar" loading="eager" decoding="async" class="h-full w-full object-cover" />
+                <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte" loading="eager" decoding="async" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars(function_exists('user_display_initials') ? user_display_initials((string) $displayName, 2) : '?', ENT_QUOTES, 'UTF-8') ?>" data-img-label="Photo de compte indisponible" />
                 <?php else: ?>
                 <div class="flex h-full w-full items-center justify-center text-slate-500">
                     <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>

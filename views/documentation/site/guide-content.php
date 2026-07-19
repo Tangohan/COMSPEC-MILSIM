@@ -162,42 +162,107 @@ declare(strict_types=1);
 </section>
 
 <section id="mur-operationnel" class="site-docs__section">
-    <h2>Mur opérationnel</h2>
+    <h2>Mur &amp; tableau opérationnel</h2>
     <p>
-        Le <strong>mur opérationnel</strong> centralise les fiches d’action à exécuter, en cours ou terminées (missions, activités d’entraînement, points de coordination).
-        Le module se compose en général de deux vues complémentaires :
+        Le <strong>mur opérationnel</strong> est le tableau de situation de votre communauté : permanences, consignes, flashs, missions, formations et tâches internes.
+        L’état-major y <strong>publie une situation claire</strong> ; les membres y voient <strong>quoi regarder</strong> sans fouiller forum ou messagerie.
     </p>
+    <h3>Deux écrans complémentaires</h3>
     <ul>
-        <li><strong>Portail de consultation</strong> — vue orientée lecture pour les membres autorisés à suivre l’activité et la posture en temps réel.</li>
-        <li><strong>Pilotage back-office</strong> — vue de gestion pour créer, modifier, valider, publier, dupliquer et clôturer les fiches.</li>
+        <li><strong>Mur opérationnel</strong> (menu · Mur opérationnel) — consultation pour les membres autorisés. Uniquement les fiches <strong>publiées</strong>.</li>
+        <li><strong>Tableau opérationnel</strong> (back-office · Pilotage du mur) — création, validation, publication, clôture, modèles et posture.</li>
     </ul>
+    <p>
+        Depuis le pilotage : bouton <strong>Vue membres</strong>. Depuis le mur (si vous êtes habilité) : <strong>Ouvrir le pilotage</strong> ou <strong>Publier une fiche</strong>.
+    </p>
+    <div class="site-docs__callout site-docs__callout--tip">
+        <strong>Droits.</strong> Deux habilitations distinctes : <strong>consulter</strong> le mur, et <strong>créer / modifier</strong> les entrées (pilotage).
+        Si vous voyez le mur sans boutons de gestion, votre rôle est en lecture seule — c’est normal.
+    </div>
+
+    <h3>Posture de la communauté</h3>
+    <p>Badge affiché en haut du mur et du tableau. Seul le <strong>pilotage</strong> peut le changer (liste + <strong>Appliquer</strong>).</p>
+    <ul>
+        <li><strong>Normale</strong> — fonctionnement courant</li>
+        <li><strong>Vigilance</strong> — attention renforcée, consignes prioritaires</li>
+        <li><strong>Alerte</strong> — situation dégradée, suivre flashs et missions actives</li>
+        <li><strong>Crise</strong> — mode dégradé : prioriser l’essentiel</li>
+    </ul>
+
+    <h3>Types de fiches</h3>
+    <ul>
+        <li><strong>Permanence</strong> — astreinte, veille, poste fixe (seau Aujourd’hui / En cours / À venir)</li>
+        <li><strong>Information pratique</strong> — horaires, contacts, consignes durables</li>
+        <li><strong>Manifestation</strong> — dispositif public ou événement structuré</li>
+        <li><strong>Mission</strong> — opération avec objectifs et moyens</li>
+        <li><strong>Tâche</strong> — action interne de coordination</li>
+        <li><strong>Formation</strong> — stage ou séance pédagogique cadrée</li>
+        <li><strong>Flash information</strong> — message court et urgent (bandeau dédié)</li>
+    </ul>
+
     <h3>Cycle de vie d’une fiche</h3>
     <ol>
-        <li><strong>Création</strong> de la fiche (titre, contexte, unité impliquée, créneau, priorité, catégorie, tags).</li>
-        <li><strong>Préparation</strong> du contenu opérationnel : objectifs, contraintes, points de synchronisation, ressources requises.</li>
-        <li><strong>Validation</strong> interne selon le workflow de l’unité (brouillon, validation, publication).</li>
-        <li><strong>Exécution</strong> avec suivi de statut (planifié, en cours, suspendu, terminé, annulé).</li>
-        <li><strong>Retrait / archivage</strong> pour conserver la traçabilité sans garder l’élément actif sur le tableau.</li>
+        <li><strong>Créer un brouillon</strong> — Nouvelle entrée, modèle, création rapide, ou bouton <strong>Publier au mur opérationnel</strong> depuis un événement, une formation ou une coopération. Les brouillons n’apparaissent <strong>pas</strong> sur le mur membres.</li>
+        <li><strong>Compléter</strong> — intitulé, rubrique, dates, priorité (Faible · Normale · Élevée · Critique), public (« Qui voit cette fiche sur le mur ? »), sensibilité, description, responsabilités, terrain, effectifs, moyens, points de contrôle. Puis <strong>Enregistrer</strong>.</li>
+        <li><strong>Publier</strong> — <strong>Approuver</strong> (valide et met sur le mur) ou <strong>Mettre en ligne</strong> ; <strong>Refuser</strong> annule la diffusion.</li>
+        <li><strong>Suivre</strong> — statuts Planifié · En cours · Suspendu · Terminé · Annulé ; phases 1 / 2 / 3. <strong>Clôturer</strong> passe à Terminé.</li>
+        <li><strong>Retirer du mur</strong> — la fiche disparaît du portail ; historique conservé en pilotage (filtre <strong>Retirées du mur</strong>). Motif optionnel pour le journal.</li>
+        <li><strong>Réutiliser</strong> — <strong>Copier en brouillon</strong>, <strong>Mise à jour opérationnelle</strong>, ou <strong>Enregistrer comme modèle</strong>.</li>
     </ol>
-    <h3>Fonctions clés à connaître</h3>
+
+    <h3>Mise à jour opérationnelle (FRAGO)</h3>
+    <p>
+        Le bouton <strong>Mise à jour opérationnelle</strong> crée une nouvelle fiche dérivée (titre du type « FRAGO »), avec contenu, effectifs, moyens et points de contrôle recopiés
+        (les contrôles sont remis à faire). Idéal pour un amendement sans perdre l’historique de la fiche d’origine.
+    </p>
+
+    <h3>Points de contrôle</h3>
+    <p>
+        Affichés sur la carte (<strong>Points de contrôle : X / Y</strong>). Sur la fiche : <strong>Valider</strong> / <strong>Annuler</strong>.
+        <strong>Impossible de clôturer</strong> tant qu’un point obligatoire reste ouvert.
+    </p>
+
+    <h3>Rubriques et modèles</h3>
     <ul>
-        <li><strong>FRAGO</strong> — création rapide d’un ordre fragmentaire dérivé d’une fiche existante.</li>
-        <li><strong>Modèles</strong> — réutilisation de structures types (checklists, blocs d’informations, dotations usuelles).</li>
-        <li><strong>Duplication</strong> — clonage d’une fiche passée pour gagner du temps lors d’un scénario récurrent.</li>
-        <li><strong>Publication liée</strong> — liaison contrôlée avec un événement, une formation ou une mission inter-unités pour éviter les doublons ouverts simultanément.</li>
-        <li><strong>Flux temps réel</strong> — rafraîchissement des éléments de situation sans rechargement complet de page.</li>
+        <li><strong>Rubriques</strong> — ajouter une rubrique de classement (nom + couleur), puis choisir la catégorie sur chaque fiche.</li>
+        <li><strong>Modèles</strong> — générer un brouillon depuis un modèle ; créer un squelette vide ; ou enregistrer une fiche existante comme modèle (sans dates ni rattachement métier).</li>
     </ul>
-    <h3>Bonnes pratiques de pilotage</h3>
+    <p>Si aucun modèle n’existe, des exemples sont proposés (permanence de formation, mission type, flash court).</p>
+
+    <h3>Publication liée (événement, formation, coopération)</h3>
+    <ol>
+        <li>Sur l’écran source, cliquez <strong>Publier au mur opérationnel</strong>.</li>
+        <li>Un brouillon prérempli et <strong>lié</strong> à la source est créé.</li>
+        <li>Complétez puis Approuver / Mettre en ligne.</li>
+    </ol>
+    <p>Si une fiche non annulée est déjà liée à la même source, le portail vous y renvoie plutôt que d’ouvrir un doublon. Après un retrait du mur, une nouvelle fiche liée peut être recréée.</p>
+
+    <h3>Filtres et modes (pilotage)</h3>
     <ul>
-        <li>Utilisez des titres <strong>actionnables</strong> (verbe + zone + échéance) plutôt que des libellés vagues.</li>
-        <li>Renseignez les <strong>catégories et tags</strong> dès la création pour faciliter le filtrage du mur.</li>
-        <li>Maintenez à jour le <strong>statut opérationnel</strong> pendant l’exécution, sinon la situation affichée devient trompeuse.</li>
-        <li>Évitez d’ouvrir plusieurs fiches concurrentes pour la même action ; utilisez la liaison ou la duplication.</li>
-        <li>Ajoutez un court <strong>retour de clôture</strong> avant archivage pour faciliter les futures préparations.</li>
+        <li><strong>Publication</strong> — Publiées · Brouillons · Retirées du mur · Toutes ; période ; type ; statut ; étiquette.</li>
+        <li><strong>Vue complète</strong> · <strong>Vue synthèse crise</strong> (critiques / en cours) · <strong>Vue briefing</strong> (cartes allégées).</li>
+        <li><strong>Journal récent</strong> et <strong>Activité temps réel</strong> (rafraîchissement automatique côté pilotage).</li>
     </ul>
+    <p>Sur le mur membres : pas de création ni de validation — consultation filtrée selon audience (communauté, unité, emplois) et sensibilité.</p>
+
+    <h3>Bonnes pratiques</h3>
+    <ul>
+        <li>Titres <strong>actionnables</strong> (verbe + objet + échéance).</li>
+        <li>Renseigner rubrique et mots-clés dès la création.</li>
+        <li>Maintenir le statut opérationnel à jour pendant l’exécution.</li>
+        <li>Une seule fiche ouverte par action ; sinon liaison ou duplication.</li>
+        <li>Valider les points de contrôle avant clôture ; retirer du mur ce qui n’est plus utile.</li>
+        <li>En crise : posture <strong>Crise</strong> + mode synthèse crise + flashs courts.</li>
+    </ul>
+
+    <h3>Parcours type</h3>
+    <p><strong>État-major :</strong> ouvrir le tableau → vérifier la posture → créer (libre, modèle ou depuis un événement) → définir public et sensibilité → publier → suivre / clôturer ou retirer.</p>
+    <p><strong>Membre :</strong> ouvrir le mur → lire la posture et les flashs → parcourir permanences du jour, infos et missions.</p>
+
     <div class="site-docs__callout">
-        <strong>À noter.</strong> L’accès au mur est généralement découpé en deux permissions : <strong>consulter</strong> et <strong>éditer/piloter</strong>.
-        Si vous voyez le portail mais pas les boutons de gestion, votre rôle est probablement en lecture seule.
+        <strong>Documentation détaillée.</strong>
+        Le chapitre complet (lexique, tableaux, cas limites) est aussi disponible dans les
+        <a href="<?= htmlspecialchars(url('documentation/fichier/tableau-operationnel'), ENT_QUOTES, 'UTF-8') ?>">références projet — Mur &amp; tableau opérationnel</a>.
     </div>
 </section>
 

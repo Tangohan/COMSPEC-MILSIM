@@ -1,0 +1,322 @@
+/* Modale d’entrée module LMS — Athena (emerald / sky / amber) */
+
+body.lms-entry-modal-open {
+  overflow: hidden;
+}
+
+.lms-entry-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.lms-entry-modal.hidden {
+  display: none;
+}
+
+.lms-entry-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(5, 150, 105, 0.18), transparent 70%),
+    rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.lms-entry-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 28.5rem;
+  max-height: min(90vh, 42rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.98) 0%, rgba(5, 8, 16, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 28px 64px rgba(2, 6, 23, 0.55),
+    0 0 0 1px rgba(5, 150, 105, 0.12);
+  color: #e2e8f0;
+}
+
+.lms-entry-modal__accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #059669, #34d399 55%, transparent);
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__accent,
+.lms-entry-modal__accent[data-accent="sky"] {
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8 55%, transparent);
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__accent,
+.lms-entry-modal__accent[data-accent="amber"] {
+  background: linear-gradient(90deg, #d97706, #fbbf24 55%, transparent);
+}
+
+.lms-entry-modal__panel[data-accent="sky"] {
+  box-shadow:
+    0 28px 64px rgba(2, 6, 23, 0.55),
+    0 0 0 1px rgba(14, 165, 233, 0.14);
+}
+
+.lms-entry-modal__panel[data-accent="amber"] {
+  box-shadow:
+    0 28px 64px rgba(2, 6, 23, 0.55),
+    0 0 0 1px rgba(217, 119, 6, 0.14);
+}
+
+.lms-entry-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.15rem 1.2rem 0.85rem;
+}
+
+.lms-entry-modal__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #6ee7b7;
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__kicker {
+  color: #7dd3fc;
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__kicker {
+  color: #fcd34d;
+}
+
+.lms-entry-modal__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+
+.lms-entry-modal__close {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+}
+
+.lms-entry-modal__close:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lms-entry-modal__body {
+  padding: 0 1.2rem 1rem;
+  overflow-y: auto;
+}
+
+.lms-entry-modal__lead {
+  margin: 0 0 1.1rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+.lms-entry-modal__section-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.lms-entry-modal__profile {
+  margin-bottom: 1rem;
+}
+
+.lms-entry-modal__profile-card {
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lms-entry-modal__profile-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.lms-entry-modal__profile-meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
+.lms-entry-modal__rights {
+  margin-bottom: 1rem;
+}
+
+.lms-entry-modal__rights-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lms-entry-modal__rights-list li {
+  position: relative;
+  padding: 0.45rem 0.65rem 0.45rem 1.55rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+  border-radius: 0.5rem;
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(5, 150, 105, 0.18);
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__rights-list li {
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__rights-list li {
+  background: rgba(217, 119, 6, 0.08);
+  border-color: rgba(217, 119, 6, 0.2);
+}
+
+.lms-entry-modal__rights-list li::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 0.7rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18);
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__rights-list li::before {
+  background: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__rights-list li::before {
+  background: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.lms-entry-modal__skip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lms-entry-modal__skip input {
+  width: 0.95rem;
+  height: 0.95rem;
+  accent-color: #059669;
+  cursor: pointer;
+}
+
+.lms-entry-modal__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding: 0.85rem 1.2rem 1.15rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.lms-entry-modal__btn {
+  appearance: none;
+  border-radius: 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.lms-entry-modal__btn--ghost {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.lms-entry-modal__btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+.lms-entry-modal__btn--primary {
+  border: 1px solid #047857;
+  background: #059669;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
+}
+
+.lms-entry-modal__btn--primary:hover {
+  background: #047857;
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__btn--primary {
+  border-color: #0284c7;
+  background: #0ea5e9;
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35);
+}
+
+.lms-entry-modal__panel[data-accent="sky"] .lms-entry-modal__btn--primary:hover {
+  background: #0284c7;
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__btn--primary {
+  border-color: #b45309;
+  background: #d97706;
+  box-shadow: 0 2px 10px rgba(217, 119, 6, 0.35);
+}
+
+.lms-entry-modal__panel[data-accent="amber"] .lms-entry-modal__btn--primary:hover {
+  background: #b45309;
+}
+
+@media (max-width: 420px) {
+  .lms-entry-modal__foot {
+    flex-direction: column-reverse;
+  }
+
+  .lms-entry-modal__btn {
+    width: 100%;
+    text-align: center;
+  }
+}

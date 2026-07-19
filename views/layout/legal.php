@@ -80,5 +80,6 @@ $legalActiveSection = $legalActiveSection ?? '';
       window.addEventListener('popstate', syncFromHash);
     })();
     </script>
+    <?php require base_path('views/partials/mirror_trap_link.php'); ?>
 </body>
 </html>

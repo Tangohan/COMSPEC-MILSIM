@@ -86,5 +86,6 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
     $cdnPreset = 'forum';
     require base_path('views/partials/cdn_media_libs.php');
 ?>
+    <?php require base_path('views/partials/mirror_trap_link.php'); ?>
 </body>
 </html>

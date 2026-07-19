@@ -4,6 +4,7 @@
 
 - La session est démarrée dans le flux `Application` / middlewares ; l’identité utilisateur courante sert aux contrôleurs et au **RBAC**.
 - Les routes sensibles passent par **`AuthMiddleware`** pour exiger une connexion ; **`GuestMiddleware`** force l’inverse (pages d’inscription / connexion).
+- Contenu métier (tableau de bord, forum, formation, ATAK, back-office, etc.) : **non public** sans session — un miroir HTTrack ne récupère que les pages publiques (accueil, légal, vitrines communautés).
 
 ## RBAC (rôles et permissions)
 
@@ -21,7 +22,9 @@
 ## En-têtes et limites
 
 - **`SecurityHeadersMiddleware`** renforce les en-têtes HTTP (politique de sécurité du navigateur selon configuration).
-- **`RateLimitMiddleware`** limite le débit des requêtes pour atténuer les abus (formulaires sensibles, forum, et par préfixes **`POST` / `PATCH` / `PUT` / `DELETE`** sur `/api/training/`, `/api/me/`, `/api/admin/`, `/api/back-office/`). Les dépassements sur les routes `/api/*` renvoient une réponse **JSON** 429.
+- **`AntiScraperMiddleware`** (tôt dans la pile) refuse les User-Agent connus de mirroring (HTTrack, Offline Explorer, SiteSucker, wget scripté, etc.) avec **403**, et piège les scrapers qui suivent un lien honeypot invisible (`/offline-archive/site-index`) : l’IP est alors refusée pendant 1 h. Googlebot / Bingbot et bots sociaux restent autorisés. **Limite** : un outil peut spoofter le User-Agent — frein pragmatique, pas un DRM.
+- Complément Apache dans `public/.htaccess` (mêmes User-Agent → **403**) et `robots.txt` (`Disallow: /` pour les agents de mirroring).
+- **`RateLimitMiddleware`** limite le débit des requêtes pour atténuer les abus (formulaires sensibles, forum, et par préfixes **`POST` / `PATCH` / `PUT` / `DELETE`** sur `/api/training/`, `/api/me/`, `/api/admin/`, `/api/back-office/`). Les dépassements sur les routes `/api/*` renvoient une réponse **JSON** 429. Les **GET** anonymes sont plafonnés (~120 / min / IP) pour freiner un miroir massif ; les comptes connectés et les robots de recherche connus ne sont pas soumis à ce plafond GET.
 
 ## Alertes erreurs (exploitation)
 

@@ -57,6 +57,7 @@ use App\Controllers\Admin\AdminAtakModController;
 use App\Controllers\Admin\AdminConfigurationController;
 use App\Controllers\Admin\AdminRecruitmentsController;
 use App\Controllers\Admin\RecruitmentWorkspaceController;
+use App\Controllers\Admin\EffectifsWorkspaceController;
 use App\Controllers\Admin\AdminDocumentsController;
 use App\Controllers\Admin\AdminTrainingController;
 use App\Controllers\Admin\AdminTrainingStudioController;
@@ -91,6 +92,7 @@ use App\Controllers\Admin\System\SystemSiteRoleAssignmentController;
 use App\Controllers\Admin\System\SystemMaintenanceController;
 use App\Controllers\Admin\System\SystemIndicatorBlocklistController;
 use App\Controllers\Admin\System\SystemMemberSanctionsController;
+use App\Controllers\Admin\System\SystemUsersController;
 use App\Controllers\Admin\System\SystemRecruitmentPortalToolsController;
 use App\Controllers\Admin\System\SystemUserLookupApiController;
 use App\Controllers\Admin\Organization\OrganizationDashboardController;
@@ -145,6 +147,7 @@ use App\Controllers\Admin\Organization\TenantInitialSetupController;
 use App\Controllers\Admin\Organization\OrganizationSeniorityAdminController;
 use App\Controllers\Admin\Organization\RoleplayFollowupAdminController;
 use App\Controllers\Admin\Organization\CommunityEventsAdminController;
+use App\Controllers\Admin\Organization\CommunityMediaAdminController;
 use App\Controllers\Api\TrainingApiController;
 use App\Core\Router;
 use App\Middleware\AuthMiddleware;
@@ -426,6 +429,8 @@ return function (Router $router) {
     $router->post('/formations/question', [TrainingController::class, 'postQuestion'], $mwTraining);
     $router->post('/formations/comment', [TrainingController::class, 'postComment'], $mwTraining);
     $router->get('/formations/mes-formations', [TrainingController::class, 'myTraining'], $mwTraining);
+    /** Avant /formations/{slug} : sessions, préparation et qualifications. */
+    $router->get('/formations/sessions', [TrainingController::class, 'sessions'], $mwTraining);
     $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
     /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
     $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
@@ -528,6 +533,8 @@ return function (Router $router) {
     $router->post('/admin/maintenance/{id}/notify', [SystemMaintenanceController::class, 'notifyMembers'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance', [SystemMaintenanceController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/api/admin/user-search', [SystemUserLookupApiController::class, 'search'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -556,6 +563,14 @@ return function (Router $router) {
     $router->post('/back-office/configuration-initiale/complete', [TenantInitialSetupController::class, 'complete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/community/presentation', [OrganizationCommunityController::class, 'presentationUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/media', [CommunityMediaAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media', [CommunityMediaAdminController::class, 'storeItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/media/{id}', [CommunityMediaAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/{id}', [CommunityMediaAdminController::class, 'updateItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/{id}/delete', [CommunityMediaAdminController::class, 'deleteItem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/collections', [CommunityMediaAdminController::class, 'storeCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/collections/{id}', [CommunityMediaAdminController::class, 'updateCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/media/collections/{id}/delete', [CommunityMediaAdminController::class, 'deleteCollection'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-recovery', [OrganizationCommunityController::class, 'onboardingRecovery'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/onboarding-members', [OrganizationCommunityController::class, 'onboardingMembers'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/onboarding-recovery/apply', [OrganizationCommunityController::class, 'onboardingRecoveryApply'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -569,6 +584,7 @@ return function (Router $router) {
     $router->post('/back-office/users/{id}/update', [UserAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/users/{id}/deactivate', [UserAdminController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/invitations', [InvitationAdminController::class, 'index'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
+    $router->get('/back-office/invitations/envoyees', [InvitationAdminController::class, 'sent'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations', [InvitationAdminController::class, 'store'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->post('/back-office/invitations/revoke', [InvitationAdminController::class, 'revoke'], [AuthMiddleware::class, InvitationSenderMiddleware::class]);
     $router->get('/back-office/dashboard-pins', [DashboardPinsAdminController::class, 'index'], [AuthMiddleware::class]);
@@ -603,6 +619,7 @@ return function (Router $router) {
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}/export-presences', [CommunityEventsAdminController::class, 'exportPresences'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/details', [CommunityEventsAdminController::class, 'updateDetails'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/rsvp', [CommunityEventsAdminController::class, 'updateParticipantRsvp'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/add', [CommunityEventsAdminController::class, 'addParticipant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -704,6 +721,15 @@ return function (Router $router) {
     $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs', [EffectifsWorkspaceController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWall'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/equipe', [AdminRecruitmentsController::class, 'teamWallPost'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

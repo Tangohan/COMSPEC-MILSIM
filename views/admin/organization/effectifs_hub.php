@@ -12,6 +12,12 @@ $canSeniorityAdmin = $canSeniorityAdmin ?? false;
 /** @var list<array{title: string, desc: string, href: string, ok: bool}> $hubCards */
 $hubCards = [
     [
+        'title' => 'Bureau effectifs (LMS)',
+        'desc' => 'Tableur des membres, fiches, rôles, droits, fonctions et affectations — écran dédié pour le quotidien RH.',
+        'href' => function_exists('effectifs_workspace_url') ? effectifs_workspace_url() : url('back-office/ressources/effectifs'),
+        'ok' => true,
+    ],
+    [
         'title' => 'Structure & recrutement',
         'desc' => 'Organigramme interactif, invitations de membres et création de regroupements ou d’équipes au même endroit.',
         'href' => url('back-office/organisation/structure'),

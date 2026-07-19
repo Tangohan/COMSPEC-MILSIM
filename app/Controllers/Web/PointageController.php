@@ -73,6 +73,15 @@ final class PointageController
             }
         }
 
+        $historyEventIds = [];
+        foreach (array_merge($today, $upcoming, $past) as $row) {
+            $eid = (int) ($row['id'] ?? 0);
+            if ($eid > 0) {
+                $historyEventIds[] = $eid;
+            }
+        }
+        $rsvpHistoryByEvent = $this->events->listRsvpHistoryForUserByEvents($userId, $historyEventIds, 10);
+
         return Response::view('layout.main', [
             'title' => 'Pointage & présence',
             'content' => 'pointage.index',
@@ -81,6 +90,7 @@ final class PointageController
             'pointagePast' => $past,
             'pointageCheckInFlags' => $checkInFlags,
             'pointageTypeFilter' => $filter,
+            'pointageRsvpHistoryByEvent' => $rsvpHistoryByEvent,
             'currentUserId' => $userId,
             'eventsQuota' => $this->featureGate->quotaStatusForFeature($tenantId, 'events'),
         ]);

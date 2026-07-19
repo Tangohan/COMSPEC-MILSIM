@@ -14,8 +14,7 @@ $activeNav = $activeNav ?? '';
 $lmsSidebarContext = 'staff';
 $lmsSidebarShowPilotageLinks = true;
 $lmsThemeVars = '';
-$lmsExtraHead = '<link rel="stylesheet" href="' . htmlspecialchars(url('assets/css/training_admin_command.css')) . '">';
-ob_start();
+$lmsExtraHead = '<link rel="stylesheet" href="' . htmlspecialchars(url('assets/css/training_admin_command.css')) . '">';ob_start();
 require base_path('views/training/partials/lms_head.php');
 $headHtml = ob_get_clean();
 ?>
@@ -59,5 +58,9 @@ $headHtml = ob_get_clean();
     </div>
     <?php require base_path('views/partials/community_report_modal.php'); ?>
     <?php require base_path('views/partials/cookie_banner.php'); ?>
+    <?php
+    $lmsModuleEntryAuto = 'formation';
+    require base_path('views/partials/lms_module_entry_modal.php');
+    ?>
 </body>
 </html>

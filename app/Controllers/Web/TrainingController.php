@@ -347,6 +347,39 @@ class TrainingController
         ]);
     }
 
+    /** Sessions planifiées, préparation et qualifications (hors catalogue). */
+    public function sessions(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::view('layout.main', [
+                'title' => 'Sessions & suivi',
+                'content' => 'platform.upgrade',
+                'feature' => 'training',
+                'planName' => 'standard',
+            ]);
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId ? (int) $userId : null);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
+
+        $courses = $this->trainingService->getCatalogue($tenantId, $userId ? (int) $userId : null, null, null);
+        $legacyEnabled = training_legacy_enabled();
+        $legacyModules = $legacyEnabled ? $this->trainingRepository->listPublishedForTenant($tenantId) : [];
+        $totalModules = count($courses) + ($legacyEnabled ? count($legacyModules) : 0);
+
+        return Response::view('training.sessions', [
+            'title' => 'Sessions & suivi',
+            'totalModules' => $totalModules,
+        ]);
+    }
+
     /** Mes formations (enrollments). */
     public function myTraining(Request $request, array $params = []): Response
     {

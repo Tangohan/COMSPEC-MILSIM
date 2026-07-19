@@ -45,6 +45,18 @@ class AccountController
         private LoginSecurityOtpService $loginSecurityOtpService,
     ) {}
 
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function accountView(string $content, string $title, array $data = []): Response
+    {
+        return Response::view('layout.main', array_merge([
+            'content' => $content,
+            'title' => $title,
+            'accountHubPage' => true,
+        ], $data));
+    }
+
     public function index(Request $request, array $params = []): Response
     {
         $user = $this->authService->user();
@@ -71,9 +83,7 @@ class AccountController
             (string) ($accountUser['created_at'] ?? '')
         );
 
-        return Response::view('layout.main', [
-            'content' => 'account.index',
-            'title' => 'Mon compte',
+        return $this->accountView('account.index', 'Mon compte', [
             'accountUser' => $accountUser,
             'accountProfile' => $accountProfile,
             'accountSnapshot' => $accountSnapshot,
@@ -212,15 +222,15 @@ class AccountController
                 } else {
                     $ps = strtolower($rawSlug);
                     if (!UserProfileSlugService::isValidFormat($ps)) {
-                        Session::flash('error', 'L’identifiant profil (slug) est invalide : lettres minuscules, chiffres, tirets, max. 40 caractères.');
+                        Session::flash('error', 'L’adresse courte de votre fiche est invalide : lettres minuscules, chiffres et tirets uniquement, 40 caractères maximum.');
                         return Response::redirect(url('account/preferences'));
                     }
                     if (UserProfileSlugService::isReserved($ps)) {
-                        Session::flash('error', 'Cet identifiant profil est réservé.');
+                        Session::flash('error', 'Cette adresse courte de fiche est réservée.');
                         return Response::redirect(url('account/preferences'));
                     }
                     if ($this->userRepository->isProfileSlugTaken($tenantId, $ps, $uid)) {
-                        Session::flash('error', 'Cet identifiant profil est déjà utilisé dans votre communauté.');
+                        Session::flash('error', 'Cette adresse courte de fiche est déjà utilisée dans votre communauté.');
                         return Response::redirect(url('account/preferences'));
                     }
                     $updateUser['profile_slug'] = $ps;
@@ -260,9 +270,7 @@ class AccountController
             && $freshForOtp !== null
             && (int) ($freshForOtp['email_login_otp_enabled'] ?? 0) === 1;
 
-        return Response::view('layout.main', [
-            'content' => 'account.preferences',
-            'title' => 'Préférences',
+        return $this->accountView('account.preferences', 'Préférences', [
             'user' => $user,
             'profile' => $profile,
             'uiPrefs' => $uiPrefs,
@@ -588,6 +596,11 @@ class AccountController
                 'hint' => 'Message de synthèse lorsque vous avez validé toutes les exigences d’un parcours.',
             ],
             [
+                'key' => EmailEvents::TRAINING_CERTIFICATE_AVAILABLE,
+                'label' => 'Attestation de formation disponible',
+                'hint' => 'Lorsque votre document d’attestation est prêt à être consulté ou téléchargé.',
+            ],
+            [
                 'key' => EmailEvents::TRAINING_ENROLLMENT_PENDING_APPROVAL,
                 'label' => 'Demandes d’inscription à valider (formateurs)',
                 'hint' => 'Lorsqu’un membre demande à rejoindre une formation soumise à validation.',
@@ -606,6 +619,16 @@ class AccountController
                 'key' => EmailEvents::TRAINING_MODULE_BLOCKED_STAFF,
                 'label' => 'Apprenant en difficulté sur un module (formateurs)',
                 'hint' => 'Lorsqu’un inscrit signale un blocage et qu’une aide peut être nécessaire.',
+            ],
+            [
+                'key' => EmailEvents::TRAINING_PUBLISH_ELEVATION_REQUEST,
+                'label' => 'Demande de droit de publication (Studio)',
+                'hint' => 'Lorsqu’un concepteur demande à pouvoir publier une fiche formation.',
+            ],
+            [
+                'key' => EmailEvents::EFFECTIFS_ELEVATION_REQUEST,
+                'label' => 'Demande d’élévation RH (effectifs)',
+                'hint' => 'Lorsqu’un membre du bureau effectifs demande une évolution de grade, de rôle ou de droits pour un autre membre.',
             ],
             [
                 'key' => EmailEvents::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
@@ -849,9 +872,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.mail',
-            'title' => 'Adresse e-mail',
+        return $this->accountView('account.mail', 'Adresse e-mail', [
             'user' => $user,
             'errors' => $errors,
             'otpErrors' => $otpErrors,
@@ -912,9 +933,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.image',
-            'title' => 'Photo de profil',
+        return $this->accountView('account.image', 'Photo de compte', [
             'user' => $user,
             'errors' => $errors,
             'success' => $success,
@@ -973,9 +992,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.portrait',
-            'title' => 'Portrait opérateur',
+        return $this->accountView('account.portrait', 'Portrait opérateur', [
             'user' => $user,
             'personnelProfile' => $personnelProfile,
             'errors' => $errors,
@@ -1049,9 +1066,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.banner',
-            'title' => 'Couverture du menu session',
+        return $this->accountView('account.banner', 'Couverture du menu session', [
             'user' => $accountUser,
             'errors' => $errors,
             'success' => $success,
@@ -1101,9 +1116,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.password',
-            'title' => 'Mot de passe',
+        return $this->accountView('account.password', 'Mot de passe', [
             'errors' => $errors,
             'success' => $success,
             'error' => $error,
@@ -1120,9 +1133,7 @@ class AccountController
         $success = Session::getFlash('success');
         $error = Session::getFlash('error');
 
-        return Response::view('layout.main', [
-            'content' => 'account.recruitment_presets',
-            'title' => 'Profils de candidature',
+        return $this->accountView('account.recruitment_presets', 'Profils de candidature', [
             'presets' => $presets,
             'success' => $success,
             'error' => $error,
@@ -1159,9 +1170,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.recruitment_presets_form',
-            'title' => 'Nouveau profil de candidature',
+        return $this->accountView('account.recruitment_presets_form', 'Nouveau profil de candidature', [
             'preset' => null,
             'formAction' => url('account/recruitment-presets/create'),
             'errors' => $errors,
@@ -1212,9 +1221,7 @@ class AccountController
             }
         }
 
-        return Response::view('layout.main', [
-            'content' => 'account.recruitment_presets_form',
-            'title' => 'Modifier le profil',
+        return $this->accountView('account.recruitment_presets_form', 'Modifier le profil', [
             'preset' => $row,
             'formAction' => url('account/recruitment-presets/' . $id . '/edit'),
             'errors' => $errors,

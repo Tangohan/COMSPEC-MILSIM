@@ -1,43 +1,67 @@
 <?php
+declare(strict_types=1);
+
 $user = $user ?? [];
 $errors = $errors ?? [];
 $success = $success ?? null;
 $error = $error ?? null;
 $avatarUrl = function_exists('user_media_public_url')
     ? user_media_public_url($user['avatar_url'] ?? null)
-    : (!empty($user['avatar_url']) ? (url('') . '/' . ltrim($user['avatar_url'], '/')) : null);
+    : (!empty($user['avatar_url']) ? (url('') . '/' . ltrim((string) $user['avatar_url'], '/')) : null);
+
+$accountNavKey = 'image';
+$accountTitle = 'Photo de compte';
+$accountLead = 'Visible dans la navigation, le menu session, le forum et les listes de membres. JPG, PNG ou WebP — 2 Mo maximum.';
+$accountUser = $user;
+require base_path('views/partials/account/shell_open.php');
 ?>
-<div class="max-w-2xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Photo de profil</h1>
-    <p class="text-slate-600 mb-6">JPG, PNG ou WebP — 2 Mo max.</p>
-    <?php if ($success): ?>
-    <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 text-sm rounded"><?= htmlspecialchars($success) ?></div>
-    <?php endif; ?>
-    <?php if ($error): ?>
-    <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 text-sm rounded"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    <div class="bg-white border border-slate-200 rounded-lg p-6 flex flex-col sm:flex-row gap-6 items-start">
-        <div class="shrink-0 space-y-2">
-            <?php if ($avatarUrl): ?>
-            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-slate-200">
-            <?php else: ?>
-            <div class="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-2xl font-bold"><?= strtoupper(mb_substr($user['display_name'] ?? $user['email'] ?? '?', 0, 1)) ?></div>
-            <?php endif; ?>
-            <?php if (!empty($user['id'])): ?>
-            <button type="button" data-community-report data-cr-type="profile_picture" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre photo de compte (avatar)." class="text-[10px] font-bold uppercase tracking-wide text-rose-700 hover:text-rose-900 border border-rose-200 rounded-lg px-2 py-1 w-full">Signaler cette photo</button>
-            <?php endif; ?>
-        </div>
-        <form method="post" action="<?= url('account/image') ?>" enctype="multipart/form-data" class="flex-1 space-y-4 w-full">
-            <?= \App\Core\Csrf::field() ?>
-            <div>
-                <label for="avatar" class="block text-sm font-medium text-slate-700 mb-1">Choisir une image</label>
-                <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/webp" class="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-100 file:font-semibold file:text-slate-900 hover:file:bg-slate-200">
-                <?php if (!empty($errors['avatar'])): foreach ($errors['avatar'] as $e): ?>
-                <p class="mt-1 text-sm text-red-600"><?= htmlspecialchars($e) ?></p>
-                <?php endforeach; endif; ?>
-            </div>
-            <button type="submit" class="py-2.5 px-4 bg-slate-900 text-white font-semibold rounded hover:bg-slate-800">Mettre à jour la photo</button>
-        </form>
+
+<section class="account-hub__panel">
+    <div class="account-hub__panel-head">
+        <p class="account-hub__panel-kicker">Apparence</p>
+        <h2 class="account-hub__panel-title">Mettre à jour la photo</h2>
+        <p class="account-hub__panel-desc">Cette photo représente votre compte civil sur le portail — distincte du portrait opérateur.</p>
     </div>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('account') ?>" class="underline">Retour à Paramètres</a> — <a href="<?= url('account/banner') ?>" class="underline">Couverture du menu session</a></p>
-</div>
+    <div class="account-hub__panel-body">
+        <div style="display:flex;flex-direction:column;gap:1.5rem">
+            <div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:flex-start">
+                <div style="display:grid;gap:.65rem;justify-items:center">
+                    <div class="account-hub__media-preview account-hub__media-preview--avatar">
+                        <?php if ($avatarUrl): ?>
+                        <img src="<?= htmlspecialchars($avatarUrl, ENT_QUOTES, 'UTF-8') ?>" alt="Photo de compte actuelle">
+                        <?php else: ?>
+                        <span style="font-size:1.75rem;font-weight:900;color:#fff"><?= htmlspecialchars(mb_strtoupper(mb_substr((string) ($user['display_name'] ?? $user['email'] ?? '?'), 0, 1)), ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (empty($avatarUrl)): ?>
+                    <p class="account-hub__hint" style="text-align:center;max-width:10rem">Aucune photo pour l’instant — l’initiale est affichée.</p>
+                    <?php endif; ?>
+                    <?php if (!empty($user['id'])): ?>
+                    <button type="button" data-community-report data-cr-type="profile_picture" data-cr-id="<?= (int) $user['id'] ?>" data-cr-summary="Signalement concernant votre photo de compte." class="account-hub__btn" style="padding:.4rem .65rem;font-size:.625rem;background:#fff;color:#be123c;border:1px solid #fecdd3">Signaler cette photo</button>
+                    <?php endif; ?>
+                </div>
+                <form method="post" action="<?= htmlspecialchars(url('account/image'), ENT_QUOTES, 'UTF-8') ?>" enctype="multipart/form-data" class="account-hub__form-grid" style="flex:1;min-width:min(100%,16rem)">
+                    <?= \App\Core\Csrf::field() ?>
+                    <div>
+                        <label class="account-hub__label" for="avatar">Choisir une image</label>
+                        <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/webp">
+                        <?php if (!empty($errors['avatar'])): foreach ($errors['avatar'] as $e): ?>
+                        <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endforeach; endif; ?>
+                    </div>
+                    <div>
+                        <button type="submit" class="account-hub__btn account-hub__btn--ink">Enregistrer la photo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<p class="account-hub__footer-note">
+    <a href="<?= htmlspecialchars(url('account/banner'), ENT_QUOTES, 'UTF-8') ?>">Couverture du menu</a>
+    ·
+    <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>">Portrait opérateur</a>
+</p>
+
+<?php require base_path('views/partials/account/shell_close.php'); ?>

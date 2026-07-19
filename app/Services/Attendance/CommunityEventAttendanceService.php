@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Attendance;
 
+use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\TenantRepository;
@@ -55,7 +56,7 @@ final class CommunityEventAttendanceService
         if (!$this->isWithinCheckInWindow($event, $now)) {
             return ['ok' => false, 'error' => 'La fenêtre de pointage n’est pas ouverte.'];
         }
-        $this->events->setCheckIn($eventId, $userId, $now->format('Y-m-d H:i:s'));
+        $this->events->setCheckIn($eventId, $userId, $now->format('Y-m-d H:i:s'), $this->currentActorId($userId));
 
         $tenant = $this->tenants->findById($tenantId);
         $tenantName = (string) ($tenant['name'] ?? 'Communauté');
@@ -175,7 +176,7 @@ final class CommunityEventAttendanceService
         $prev = $this->events->getRsvp($eventId, $userId);
         $previousStatus = $prev ? (string) ($prev['status'] ?? '') : null;
 
-        $this->events->setRsvp($eventId, $userId, $status, $normalizedReason, $normalizedNote);
+        $this->events->setRsvp($eventId, $userId, $status, $normalizedReason, $normalizedNote, $this->currentActorId($userId));
 
         if ($previousStatus === $status) {
             return ['ok' => true, 'previous' => $previousStatus];
@@ -304,11 +305,11 @@ final class CommunityEventAttendanceService
             return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
         }
         if ($status === 'remove') {
-            $this->events->deleteRsvp($eventId, $targetUserId);
+            $this->events->deleteRsvp($eventId, $targetUserId, $this->currentActorId($targetUserId));
 
             return ['ok' => true];
         }
-        $this->events->setRsvp($eventId, $targetUserId, $status);
+        $this->events->setRsvp($eventId, $targetUserId, $status, null, null, $this->currentActorId($targetUserId));
 
         return ['ok' => true];
     }
@@ -341,7 +342,7 @@ final class CommunityEventAttendanceService
             return ['ok' => false, 'error' => 'Membre introuvable dans cette communauté.'];
         }
         if ($status === 'remove') {
-            $this->events->deleteRsvp($eventId, $targetUserId);
+            $this->events->deleteRsvp($eventId, $targetUserId, $this->currentActorId($targetUserId));
 
             return ['ok' => true];
         }
@@ -351,7 +352,7 @@ final class CommunityEventAttendanceService
             $normalizedReason = 'autre';
         }
         $normalizedNote = trim((string) ($absenceNote ?? ''));
-        $this->events->setRsvp($eventId, $targetUserId, $status, $normalizedReason, $normalizedNote);
+        $this->events->setRsvp($eventId, $targetUserId, $status, $normalizedReason, $normalizedNote, $this->currentActorId($targetUserId));
 
         return ['ok' => true];
     }
@@ -381,7 +382,7 @@ final class CommunityEventAttendanceService
             return ['ok' => false, 'error' => 'La présence est déjà enregistrée pour ce membre.'];
         }
         $now = (new \DateTimeImmutable('now'))->format('Y-m-d H:i:s');
-        $this->events->setCheckIn($eventId, $targetUserId, $now);
+        $this->events->setCheckIn($eventId, $targetUserId, $now, $this->currentActorId($targetUserId));
 
         return ['ok' => true];
     }
@@ -408,9 +409,16 @@ final class CommunityEventAttendanceService
         if (empty($rsvp['checked_in_at'])) {
             return ['ok' => false, 'error' => 'Aucun pointage enregistré à effacer.'];
         }
-        $this->events->clearCheckIn($eventId, $targetUserId);
+        $this->events->clearCheckIn($eventId, $targetUserId, $this->currentActorId($targetUserId));
 
         return ['ok' => true];
+    }
+
+    private function currentActorId(int $fallbackUserId): int
+    {
+        $sid = (int) (Session::get('user_id') ?? 0);
+
+        return $sid > 0 ? $sid : max(0, $fallbackUserId);
     }
 
     private function normalizeAbsenceReason(?string $absenceReason): ?string

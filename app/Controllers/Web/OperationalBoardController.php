@@ -42,14 +42,11 @@ final class OperationalBoardController
             'entry_type' => (string) ($request->query('entry_type') ?? ''),
             'operational_status' => (string) ($request->query('operational_status') ?? ''),
             'tag' => (string) ($request->query('tag') ?? ''),
-            'period_start' => (string) ($request->query('period_start') ?? date('Y-m-d')),
-            'period_end' => (string) ($request->query('period_end') ?? date('Y-m-d', strtotime('+14 days'))),
+            'period_start' => (string) ($request->query('period_start') ?? date('Y-m-d', strtotime('-7 days'))),
+            'period_end' => (string) ($request->query('period_end') ?? date('Y-m-d', strtotime('+30 days'))),
             'mode' => (string) ($request->query('mode') ?? 'standard'),
             'critical_only' => (int) ($request->query('critical_only') ?? 0),
         ];
-        if (in_array((string) ($posture['posture_level'] ?? 'NORMAL'), ['ALERTE', 'CRISE'], true)) {
-            $filters['critical_only'] = 1;
-        }
 
         $userId = (int) (Session::get('user_id') ?? 0);
         $this->planningEntries->ensureDefaultPlanningTemplatesIfEmpty($tenantId, $userId);
@@ -74,6 +71,7 @@ final class OperationalBoardController
             'boardFireConflicts' => $this->planningEntries->findFireWindowConflicts($tenantId),
             'boardMemberOptions' => $memberOptions,
             'boardToday' => date('Y-m-d'),
+            'boardEntryCount' => count($entries),
         ]);
     }
 
@@ -94,8 +92,8 @@ final class OperationalBoardController
         $filters = [
             'entry_type' => (string) ($request->query('entry_type') ?? ''),
             'operational_status' => (string) ($request->query('operational_status') ?? ''),
-            'period_start' => (string) ($request->query('period_start') ?? date('Y-m-d')),
-            'period_end' => (string) ($request->query('period_end') ?? date('Y-m-d', strtotime('+14 days'))),
+            'period_start' => (string) ($request->query('period_start') ?? date('Y-m-d', strtotime('-7 days'))),
+            'period_end' => (string) ($request->query('period_end') ?? date('Y-m-d', strtotime('+30 days'))),
         ];
         $viewerUnitIds = $this->units->unitIdsForUser($tenantId, $userId);
         $viewerJobRoleIds = $this->jobRoles->assignedJobRoleIdsForUser($tenantId, $userId);
@@ -111,6 +109,8 @@ final class OperationalBoardController
             'boardPosture' => $this->planningEntries->getPosture($tenantId) ?? ['posture_level' => 'NORMAL'],
             'boardToday' => date('Y-m-d'),
             'boardPortalReadOnly' => true,
+            'boardEntryCount' => count($entries),
+            'boardCanEdit' => $canRestricted,
         ]);
     }
 

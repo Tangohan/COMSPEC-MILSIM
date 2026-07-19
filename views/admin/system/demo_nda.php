@@ -39,7 +39,7 @@ $accessCodeFromEnv = !empty($accessCodeFromEnv);
         <h2 class="text-sm font-bold text-slate-800">État du dispositif</h2>
         <?php if ($gateEnabled): ?>
             <p class="text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-                Actif (variable d’environnement). Durée : <strong><?= (int) $ttlHours ?> h</strong> pour saisir le code après la première visite, puis <strong><?= (int) $ttlHours ?> h</strong> d’accès après validation.
+                Actif (variable d’environnement). Saisie du code : <strong><?= (int) ($claimMinutes ?? 25) ?> min</strong> après la première visite, puis <strong><?= (int) ($sessionHours ?? $ttlHours) ?> h</strong> d’accès après validation.
             </p>
         <?php else: ?>
             <p class="text-sm text-amber-900 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">

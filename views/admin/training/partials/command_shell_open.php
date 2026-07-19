@@ -6,7 +6,7 @@ $is = fn (string $k): string => $active === $k ? ' is-active' : '';
 $coursesNavActive = ($active === 'courses' || $active === 'showcase') ? ' is-active' : '';
 $certNavActive = ($active === 'certificates') ? ' is-active' : '';
 $gateNav = \App\Core\Gate::getInstance();
-$trainingCmdCanEditContent = $gateNav->allows('admin.access') || $gateNav->allows('training.manage')
+$trainingCmdCanEditContent = $gateNav->allows('admin.organization') || $gateNav->allows('admin.access') || $gateNav->allows('training.manage')
     || $gateNav->allows('training.create') || $gateNav->allows('training.update')
     || $gateNav->allows('training.delete') || $gateNav->allows('training.publish');
 

@@ -262,12 +262,14 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                     <?php if ($heroHasImage): ?>
                         <img
                             src="<?= htmlspecialchars($heroImageUrl, ENT_QUOTES, 'UTF-8') ?>"
-                            alt=""
+                            alt="Visuel du tableau de bord"
                             class="dash-hero__img"
                             width="1600"
                             height="720"
                             decoding="async"
                             fetchpriority="high"
+                            data-img-fallback="hero"
+                            data-img-label="Visuel de présentation indisponible"
                         >
                     <?php endif; ?>
                     <div class="dash-hero__veil" aria-hidden="true"></div>
@@ -341,7 +343,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             <?php if (empty($showcase_items)): ?>
                 <div class="dash-showcase__empty">
                     <p>Aucune formation publiée pour le moment.</p>
-                    <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary">Ouvrir le catalogue</a>
+      <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary" data-lms-module-entry="formation">Ouvrir le catalogue</a>
                 </div>
             <?php else: ?>
                 <div x-ref="track" class="dash-showcase__track no-scrollbar">
@@ -416,23 +418,23 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <span class="dash-idstrip__label">Date</span>
                         <span class="dash-idstrip__value"><?= htmlspecialchars($todayLabel, ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
-                    <div class="dash-idstrip__actions" role="group" aria-label="Raccourcis opérationnels">
-                        <button type="button" class="dash-idstrip__icon-btn" @click="tacticalOpen = true" aria-haspopup="dialog" aria-label="Ouvrir la situation tactique">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/>
-                                <circle cx="12" cy="10" r="2.5"/>
-                            </svg>
-                        </button>
-                        <button type="button" class="dash-idstrip__icon-btn" @click="calendarOpen = true" aria-haspopup="dialog" aria-label="Ouvrir le calendrier des manœuvres">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <rect x="3" y="5" width="18" height="16" rx="2"/>
-                                <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
-                            </svg>
-                        </button>
+                </div>
+                <div class="dash-idstrip__actions" role="group" aria-label="Raccourcis opérationnels">
+                    <button type="button" class="dash-idstrip__icon-btn" @click="tacticalOpen = true" aria-haspopup="dialog" aria-label="Ouvrir la situation tactique">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7-4.5 7-11a7 7 0 10-14 0c0 6.5 7 11 7 11z"/>
+                            <circle cx="12" cy="10" r="2.5"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="dash-idstrip__icon-btn" @click="calendarOpen = true" aria-haspopup="dialog" aria-label="Ouvrir le calendrier des manœuvres">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"/>
+                            <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
+                        </svg>
+                    </button>
                         <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
                         <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
-                        <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">Nouvelle manœuvre</a>
-                    </div>
+                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
                 </div>
                 <?php if ($dashCtxCommunity && count($communityMemberships ?? []) > 1): ?>
                 <div class="dash-idstrip__switch">
@@ -476,12 +478,12 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <p class="cc-kicker cc-kicker--primary">Instruction</p>
                         <h2 class="cc-card__title">Formations prioritaires</h2>
                     </div>
-                    <a href="<?= url('formations/mes-formations') ?>" class="cc-card__link">Mes parcours</a>
+                    <a href="<?= url('formations/mes-formations') ?>" class="cc-card__link" data-lms-module-entry="formation">Mes parcours</a>
                 </div>
                 <?php if ($mbTrain === []): ?>
                     <div class="cc-empty m-3">
                         <p>Aucune formation en cours. Parcourez le catalogue pour démarrer un parcours.</p>
-                        <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary">Ouvrir le catalogue</a>
+          <a href="<?= url('formations') ?>" class="cc-btn cc-btn-primary" data-lms-module-entry="formation">Ouvrir le catalogue</a>
                     </div>
                 <?php else: ?>
                     <p class="dash-train-hint px-3 pt-2">Faites défiler horizontalement pour voir toutes les colonnes.</p>
@@ -764,69 +766,6 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-apps-full__label { padding: 0; }
 @media (min-width: 768px) {
     .dash-apps-full { padding: 2.25rem 2rem 2.75rem; }
-}
-
-.dash-idstrip__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin-left: 0.25rem;
-    padding-left: 0.75rem;
-    border-left: 1px solid rgba(255, 255, 255, 0.12);
-    align-self: center;
-}
-.dash-idstrip__icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.35rem;
-    height: 2.35rem;
-    border-radius: 0.65rem;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
-    cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
-}
-.dash-idstrip__icon-btn:hover {
-    background: rgba(16, 185, 129, 0.18);
-    border-color: rgba(52, 211, 153, 0.55);
-    color: #fff;
-}
-.dash-idstrip__icon-btn:active { transform: scale(0.96); }
-.dash-idstrip__text-btn {
-    display: inline-flex;
-    align-items: center;
-    height: 2.35rem;
-    padding: 0 0.75rem;
-    border-radius: 0.65rem;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.04);
-    color: #e2e8f0;
-    font-size: 0.625rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.dash-idstrip__text-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #fff;
-}
-.dash-idstrip__text-btn--accent {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: rgba(52, 211, 153, 0.45);
-    color: #a7f3d0;
-}
-.dash-idstrip__text-btn--accent:hover {
-    background: rgba(16, 185, 129, 0.32);
-    color: #fff;
-}
-@media (max-width: 900px) {
-    .dash-idstrip__actions { flex-wrap: wrap; border-left: none; padding-left: 0; margin-left: 0; }
 }
 
 .dash-train-hint {
