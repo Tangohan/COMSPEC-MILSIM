@@ -504,6 +504,29 @@ class UnitRepository
         return $row ?: null;
     }
 
+    /** @return list<array<string, mixed>> */
+    public function childrenForTenant(int $tenantId, int $parentId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM units WHERE tenant_id = ? AND parent_id = ? ORDER BY display_order ASC, name ASC'
+        );
+        $stmt->execute([$tenantId, $parentId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findBySlugForTenant(int $tenantId, string $slug): ?array
+    {
+        if ($slug === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM units WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $stmt->execute([$tenantId, $slug]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function getTree(int $tenantId): array
     {
         $all = $this->allForTenant($tenantId);

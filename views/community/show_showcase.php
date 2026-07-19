@@ -726,6 +726,10 @@ if ($brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent)) {
             <?php endforeach; ?>
           </div>
           <?php endif; ?>
+          <?php $unitSlugForLink = trim((string) ($unit['slug'] ?? '')); ?>
+          <?php if ($unitSlugForLink !== ''): ?>
+          <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/unite/' . rawurlencode($unitSlugForLink)), ENT_QUOTES, 'UTF-8') ?>" class="mt-5 inline-flex items-center text-xs font-black uppercase tracking-wide text-emerald-700 hover:text-emerald-900">Ouvrir la fiche de l’unité →</a>
+          <?php endif; ?>
         </article>
         <?php endforeach; ?>
       </div>
