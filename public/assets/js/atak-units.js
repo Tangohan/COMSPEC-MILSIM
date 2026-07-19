@@ -22,6 +22,9 @@ window.ATAKUnits = (function () {
     fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (data) {
       units = Array.isArray(data) ? data : (data.units || []);
       render();
+      if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
+        window.ATAKMap.setUnitsMarkers(units);
+      }
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible de charger les unités.');
       render();
@@ -31,6 +34,9 @@ window.ATAKUnits = (function () {
   function setUnits(list) {
     units = Array.isArray(list) ? list : [];
     render();
+    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
+      window.ATAKMap.setUnitsMarkers(units);
+    }
   }
 
   var emptyStateHtml = '<div class="atak-units-empty" id="atak-units-empty">' +
@@ -59,30 +65,44 @@ window.ATAKUnits = (function () {
       try { ex = typeof u.extra === 'string' ? JSON.parse(u.extra) : (u.extra || {}); } catch (e) {}
       var health = ex.health || u.health || 'ok';
       var statusClass = (u.status || 'linked').toLowerCase();
+      var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
+        ? window.ATAKUnitPopup.statusLabelFr(u.status || 'linked')
+        : (u.status || 'En liaison');
       var cardClass = 'atak-unit-card ' + (statusClass === 'delayed' ? 'delayed' : 'linked');
       if (health === 'wounded' || health === 'unconscious') cardClass += ' atak-unit-bft-wounded';
       var grid = u.grid_ref || '—';
       var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
       var roleText = u.role || ex.role || '—';
       var fuelAmmo = [];
-      if (ex.fuel !== undefined && ex.fuel !== '') fuelAmmo.push('Fuel ' + ex.fuel + '%');
+      if (ex.fuel !== undefined && ex.fuel !== '') fuelAmmo.push('Carburant ' + ex.fuel + '%');
       if (ex.ammo !== undefined && ex.ammo !== 'n/a') fuelAmmo.push(ex.ammo);
       if (ex.radio_freq !== undefined && ex.radio_freq !== '') fuelAmmo.push('Radio ' + ex.radio_freq);
-      var tooltip = (health !== 'ok' && health !== 'stable' ? 'Santé: ' + health + '. ' : '') + (fuelAmmo.length ? fuelAmmo.join(' · ') : '');
+      var healthLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr)
+        ? window.ATAKUnitPopup.healthLabelFr(health)
+        : health;
+      var tooltip = (health !== 'ok' && health !== 'stable' ? 'État : ' + healthLabel + '. ' : '') + (fuelAmmo.length ? fuelAmmo.join(' · ') : '');
       var callsignKey = (u.call_sign || '').toUpperCase().trim();
       var userLink = (window.ATAK_CALLSIGN_TO_USER && callsignKey && window.ATAK_CALLSIGN_TO_USER[callsignKey])
         ? '<a href="' + (window.ATAK_CALLSIGN_TO_USER[callsignKey].url || '') + '" class="atak-unit-fiche-link" onclick="event.stopPropagation();" title="Ouvrir la fiche personnel">Fiche</a>'
         : '';
+      var natoBadge = '';
+      if (window.NatoSidcIcons && window.NatoSidcIcons.listBadgeHtml) {
+        natoBadge = window.NatoSidcIcons.listBadgeHtml({
+          affiliation: ex.affiliation || ex.affil || u.affiliation || 'friend',
+          role: roleText,
+          size: 20,
+        });
+      }
       return '<div class="' + cardClass + '" data-unit-id="' + (u.id || '') + '" data-grid="' + (u.grid_ref || '') + '" data-x="' + (u.pos_x || '') + '" data-y="' + (u.pos_y || '') + '" title="' + (tooltip ? tooltip.replace(/"/g, '&quot;') : '') + '">' +
         '<div class="atak-unit-callsign-wrap">' +
-        '<div class="atak-unit-callsign">' + (u.call_sign || '—') + '</div>' +
+        '<div class="atak-unit-callsign">' + natoBadge + (u.call_sign || '—') + '</div>' +
         (userLink ? userLink : '') +
         '</div>' +
         '<div class="atak-unit-role">' + (roleText !== '—' ? roleText : '—') + '</div>' +
-        '<span class="atak-unit-status ' + statusClass + '">' + (u.status || 'Linked') + '</span>' +
+        '<span class="atak-unit-status ' + statusClass + '">' + statusLabel + '</span>' +
         (fuelAmmo.length ? '<div class="atak-unit-bft-meta">' + fuelAmmo.join(' · ') + '</div>' : '') +
-        '<div class="atak-unit-grid">Grid ' + grid + '</div>' +
-        '<div class="atak-unit-heading">Heading ' + heading + '</div>' +
+        '<div class="atak-unit-grid">Coord. ' + grid + '</div>' +
+        '<div class="atak-unit-heading">Cap ' + heading + '</div>' +
         '</div>';
     }).join('');
 

@@ -1,0 +1,171 @@
+/* Popups Leaflet — thème tactique sombre Athena (ATAK / Overwatch / TACMAP) */
+
+.leaflet-popup.atak-map-popup .leaflet-popup-content-wrapper {
+  background: #12121a;
+  color: #e8e8ed;
+  border: 1px solid #2a2a35;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(52, 211, 153, 0.08),
+    0 12px 28px rgba(0, 0, 0, 0.55);
+  padding: 0;
+}
+
+.leaflet-popup.atak-map-popup .leaflet-popup-content {
+  margin: 0;
+  min-width: 200px;
+  line-height: 1.35;
+  font-size: 12px;
+}
+
+.leaflet-popup.atak-map-popup .leaflet-popup-tip {
+  background: #12121a;
+  border: 1px solid #2a2a35;
+  box-shadow: none;
+}
+
+.leaflet-popup.atak-map-popup a.leaflet-popup-close-button {
+  color: #8a8a96;
+  width: 22px;
+  height: 22px;
+  padding: 4px 0 0;
+  font: 16px/1 system-ui, sans-serif;
+  top: 6px;
+  right: 6px;
+}
+
+.leaflet-popup.atak-map-popup a.leaflet-popup-close-button:hover {
+  color: #34d399;
+}
+
+.atak-unit-popup {
+  padding: 0.7rem 0.85rem 0.75rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.atak-unit-popup__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-bottom: 0.55rem;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid #2a2a35;
+  padding-right: 1.1rem;
+}
+
+.atak-unit-popup__head--ok {
+  border-bottom-color: rgba(34, 197, 94, 0.45);
+}
+
+.atak-unit-popup__head--warn {
+  border-bottom-color: rgba(234, 179, 8, 0.5);
+}
+
+.atak-unit-popup__head--danger {
+  border-bottom-color: rgba(239, 68, 68, 0.55);
+}
+
+.atak-unit-popup__title-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.atak-unit-popup__callsign {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #34d399;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.atak-unit-popup__subtitle {
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #c4c4ce;
+}
+
+.atak-unit-popup__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.atak-unit-popup__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.atak-unit-popup__k {
+  flex-shrink: 0;
+  color: #8a8a96;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.atak-unit-popup__v {
+  text-align: right;
+  color: #e8e8ed;
+  font-size: 0.78rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.atak-unit-popup__val--ok {
+  color: #22c55e;
+}
+
+.atak-unit-popup__val--warn {
+  color: #eab308;
+}
+
+.atak-unit-popup__val--danger {
+  color: #f87171;
+}
+
+.atak-unit-popup__notes {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px dashed #2a2a35;
+  font-size: 0.72rem;
+  color: #a8a8b4;
+  line-height: 1.4;
+}
+
+/* Labels d’unités sur la carte — contraste renforcé */
+.nato-sidc-label {
+  pointer-events: none;
+  display: inline-block;
+  margin-top: 1px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(10, 10, 15, 0.72);
+  border: 1px solid rgba(42, 42, 53, 0.9);
+  color: #f8fafc !important;
+  text-shadow: none !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .leaflet-popup.atak-map-popup .leaflet-popup-content {
+    min-width: 170px;
+  }
+  .atak-unit-popup {
+    padding: 0.6rem 0.7rem 0.65rem;
+  }
+  .atak-unit-popup__callsign {
+    font-size: 0.76rem;
+  }
+}

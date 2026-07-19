@@ -4,10 +4,13 @@ $content = $content ?? 'home';
 $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
 $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
-$isFormationWorkspace = function_exists('is_formation_workspace_request') && is_formation_workspace_request();
-$isBackOfficeShell = function_exists('is_back_office_request') && is_back_office_request();
-$isPlatformAdminShell = function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request();
 $hideAdminSidebar = !empty($hideAdminSidebar);
+$isBackOfficeShell = !empty($isBackOfficeShell)
+    || (function_exists('is_back_office_request') && is_back_office_request());
+$isPlatformAdminShell = !empty($isPlatformAdminShell)
+    || (function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request());
+$isFormationWorkspace = !empty($isFormationWorkspace)
+    || (function_exists('is_formation_workspace_request') && is_formation_workspace_request());
 $usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     ? 'Administration communauté'
@@ -87,6 +90,9 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     <?php if (is_file(base_path('public/assets/css/portal-nav.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/portal-nav.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/portal-footer.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/portal-footer.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -118,11 +124,54 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
       select.bo-select::-ms-expand { display: none; }
     </style>
     <?php if (!empty($usesAdminSidebarShell)): ?>
-    <style>[x-cloak]{display:none!important}</style>
+    <style>
+      [x-cloak]{display:none!important}
+      /* Shell admin : largeur aside bornée pour ne pas écraser la colonne contenu */
+      #back-office-sidebar,
+      #platform-admin-sidebar {
+        box-sizing: border-box;
+        flex-shrink: 0;
+        width: min(100%, 20rem);
+        max-width: min(100%, 20rem);
+        overflow-x: hidden;
+      }
+      @media (min-width: 1024px) {
+        #back-office-sidebar,
+        #platform-admin-sidebar {
+          position: static;
+          width: 18rem;
+          min-width: 18rem;
+          max-width: 18rem;
+          transform: none !important;
+        }
+      }
+      @media (min-width: 1280px) {
+        #back-office-sidebar,
+        #platform-admin-sidebar {
+          width: 20rem;
+          min-width: 20rem;
+          max-width: 20rem;
+        }
+      }
+    </style>
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-rail.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php
+    $backOfficePageCss = isset($backOfficePageCss) && is_array($backOfficePageCss) ? $backOfficePageCss : [];
+    foreach ($backOfficePageCss as $boCssRel):
+        $boCssRel = ltrim(str_replace('\\', '/', (string) $boCssRel), '/');
+        if ($boCssRel === '' || str_contains($boCssRel, '..')) {
+            continue;
+        }
+        $boCssPath = base_path('public/assets/css/' . $boCssRel);
+        if (!is_file($boCssPath)) {
+            continue;
+        }
+        ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boCssRel), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endforeach; ?>
 </head>
 <?php
 $showBottomNav = (bool) \App\Core\Session::get('user_id')
@@ -188,17 +237,17 @@ if ($showBottomNav) {
             ></div>
 
             <aside
-                class="fixed inset-y-0 left-0 z-[210] w-[min(100%,320px)] max-w-full border-r border-slate-800 bg-slate-950 shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none xl:w-80"
+                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-[#050505] text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?>"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
                 @click.capture="if ($event.target.closest('a')) navOpen = false"
             >
                 <div class="flex h-full max-h-screen min-h-0 flex-col lg:max-h-none lg:min-h-[inherit]">
-                    <div class="flex items-center justify-end border-b border-slate-800/80 px-3 py-2 lg:hidden">
+                    <div class="flex items-center justify-end border-b border-white/10 px-3 py-2 lg:hidden">
                         <button
                             type="button"
-                            class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white"
+                            class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-300 hover:bg-white/5 hover:text-white"
                             @click="navOpen = false"
                         >
                             Fermer
@@ -212,8 +261,8 @@ if ($showBottomNav) {
                 </div>
             </aside>
 
-            <div class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col bg-slate-50">
-                <div class="flex min-h-0 flex-1 flex-col">
+            <div class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden <?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? 'bg-[#050505]' : 'bg-slate-50' ?>">
+                <div class="flex min-h-0 min-w-0 flex-1 flex-col">
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');
@@ -247,64 +296,7 @@ if ($showBottomNav) {
         <?php endif; ?>
     </main>
     <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace)): ?>
-    <footer class="mt-14 border-t border-slate-200 bg-gradient-to-b from-white to-slate-50/80">
-        <div class="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-12 md:py-14">
-            <div class="md:col-span-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.32em] text-emerald-700">Athena Compsec</p>
-                <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-900">Le portail pro pour unités MILSIM Arma 3.</h2>
-                <p class="mt-4 max-w-md text-sm leading-relaxed text-slate-600">
-                    Centralisez le recrutement, la présence, les formations et la coordination opérationnelle dans une interface claire et fiable.
-                </p>
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="<?= url('register') ?>" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800">
-                        Créer un compte
-                    </a>
-                    <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-800 transition hover:border-slate-400 hover:bg-slate-100">
-                        Explorer les communautés
-                    </a>
-                </div>
-            </div>
-
-            <div class="grid gap-8 sm:grid-cols-3 md:col-span-7">
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Accès rapide</h3>
-                    <ul class="mt-3 space-y-2 text-sm">
-                        <li><a href="<?= url('home') ?>" class="text-slate-700 transition hover:text-emerald-700">Accueil</a></li>
-                        <li><a href="<?= url('documents') ?>" class="text-slate-700 transition hover:text-emerald-700">Documents</a></li>
-                        <li><a href="<?= url('formations') ?>" class="text-slate-700 transition hover:text-emerald-700">Formations</a></li>
-                        <li><a href="<?= url('atak') ?>" class="text-slate-700 transition hover:text-emerald-700">ATAK &amp; Cartographie</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Plateforme</h3>
-                    <ul class="mt-3 space-y-2 text-sm">
-                        <li><a href="<?= url('enlistment') ?>" class="text-slate-700 transition hover:text-emerald-700">Enrôlement</a></li>
-                        <li><a href="<?= url('overwatch') ?>" class="text-slate-700 transition hover:text-emerald-700">Overwatch</a></li>
-                        <li><a href="<?= url('tacmap') ?>" class="text-slate-700 transition hover:text-emerald-700">Tacmap</a></li>
-                        <li><a href="<?= url('equipment') ?>" class="text-slate-700 transition hover:text-emerald-700">Fiches matériel</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Légal</h3>
-                    <div class="mt-3 flex flex-col gap-2 text-sm">
-                        <?php
-                        $legal_link_class = 'text-slate-700 transition hover:text-emerald-700 font-medium';
-                        require base_path('views/partials/legal_site_links.php');
-                        ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="border-t border-slate-200/80 bg-white/80">
-            <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-4 text-center sm:flex-row sm:text-left">
-                <p class="text-xs text-slate-500">© <?= date('Y') ?> Athena Compsec. Tous droits réservés.</p>
-                <p class="text-[11px] font-semibold text-slate-500">SaaS RH tactique pour communautés MILSIM.</p>
-            </div>
-        </div>
-    </footer>
+        <?php require base_path('views/partials/portal_footer.php'); ?>
     <?php endif; ?>
     <?php if (!empty($showBottomNav)): ?>
         <?php require base_path('views/partials/bottom_nav.php'); ?>

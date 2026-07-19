@@ -35,7 +35,10 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <link rel="stylesheet" href="<?= htmlspecialchars($leafletCss, ENT_QUOTES, 'UTF-8') ?>" />
   <script src="<?= htmlspecialchars($leafletJs, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-map-crs.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/nato-sidc-icons.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <link href="<?= htmlspecialchars(asset_url('assets/css/atak-map-popups.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <style>
     html, body { height: 100%; }
     .panel-tab { display: none; }
@@ -44,15 +47,21 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       width: 100%;
       height: 100%;
       min-height: 420px;
-      background: #e2e8f0;
-      border-radius: 1rem;
+      background: #0b1220;
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
     }
-    .overwatch-shell { min-height: 100vh; }
+    .overwatch-shell {
+      min-height: 100vh;
+      background: #020617;
+      color: #e2e8f0;
+    }
     .overwatch-map-stage {
       position: relative;
       flex: 1 1 auto;
       min-height: 420px;
       height: min(62vh, 720px);
+      background: #020617;
     }
     @media (min-width: 1280px) {
       .overwatch-map-stage { height: calc(100vh - 14rem); min-height: 520px; }
@@ -60,26 +69,28 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
     .overwatch-map-status {
       position: absolute; inset: 0; z-index: 500;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(248, 250, 252, 0.92);
+      background: rgba(2, 6, 23, 0.88);
       pointer-events: none;
       transition: opacity .25s ease;
+      color: #cbd5e1;
     }
     .overwatch-map-status.is-hidden { opacity: 0; visibility: hidden; }
-    .leaflet-container { font: inherit; width: 100% !important; height: 100% !important; }
+    .leaflet-container { font: inherit; width: 100% !important; height: 100% !important; background: #0b1220; }
+    .nato-sidc-icon { background: transparent !important; border: none !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,.8)); }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased">
+<body class="bg-slate-950 text-slate-100 antialiased">
   <div class="overwatch-shell flex flex-col">
-    <header class="flex-shrink-0 border-b border-slate-200 bg-white">
-      <div class="h-1.5 bg-gradient-to-r from-emerald-700 via-teal-500 to-slate-800"></div>
+    <header class="flex-shrink-0 border-b border-slate-800 bg-slate-950">
+      <div class="h-1.5 bg-gradient-to-r from-emerald-600 via-cyan-500 to-slate-700"></div>
       <div class="px-4 md:px-6 py-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="min-w-0">
-          <p class="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400 mb-1">Supervision C2</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-400/80 mb-1">Système de combat connecté</p>
           <div class="flex flex-wrap items-center gap-3">
-            <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-slate-950">COMSPEC Overwatch</h1>
-            <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-slate-200 bg-slate-50 text-slate-600">En attente</span>
+            <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-white">COMSPEC Overwatch</h1>
+            <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-emerald-700/60 bg-emerald-950/50 text-emerald-300">En attente</span>
           </div>
-          <p class="mt-1 text-sm text-slate-500">Carte de commandement, appuis-feu, zones signalées et suivi des liaisons.</p>
+          <p class="mt-1 text-sm text-slate-400">Carte C2, symboles OTAN, appuis-feu et suivi des liaisons en temps réel.</p>
           <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
             <span class="text-xs text-slate-500" id="overwatch-theatre-label">—</span>
             <span class="text-xs text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
@@ -1031,10 +1042,15 @@ function setWorkspace(mapId) {
         if (!layerGroups.units || !map) return;
         layerGroups.units.clearLayers();
         overwatchLastUnits = [];
+        var nato = window.NatoSidcIcons;
         (units || []).forEach(function (u) {
           var gridRef = (u.grid_ref || '').trim().split(/\s+/);
           var x = parseFloat(gridRef[0]);
           var y = parseFloat(gridRef[1]);
+          if (isNaN(x) || isNaN(y)) {
+            x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
+            y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
+          }
           if (isNaN(x) || isNaN(y)) return;
           var latlng = L.latLng(y, x);
           var extra = {};
@@ -1043,18 +1059,27 @@ function setWorkspace(mapId) {
             else if (u.extra && typeof u.extra === 'object') extra = u.extra;
           } catch (e) {}
           var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
-          var color = affiliationColor(aff);
-          var heading = parseFloat(u.heading) || 0;
-          var rot = 'transform:rotate(' + heading + 'deg);';
-          var html = '<span style="display:inline-block;padding:2px 6px;background:' + color + ';color:#fff;font-size:10px;border-radius:2px;white-space:nowrap;border:1px solid rgba(0,0,0,0.2);' + rot + '">' + (u.call_sign || '?') + '</span>';
-          var icon = L.divIcon({
-            className: 'overwatch-unit-icon',
-            html: html,
-            iconSize: [80, 24],
-            iconAnchor: [40, 12]
-          });
-          var marker = L.marker(latlng, { icon: icon });
-          marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + (aff !== 'friend' ? '<br/><em>' + aff + '</em>' : ''));
+          var icon = nato && nato.leafletDivIcon
+            ? nato.leafletDivIcon(L, {
+                affiliation: aff,
+                role: u.role || extra.role || '',
+                callSign: u.call_sign || '',
+                heading: u.heading,
+                showLabel: true,
+                size: 34,
+              })
+            : L.divIcon({
+                className: 'overwatch-unit-icon',
+                html: '<span style="display:inline-block;padding:2px 6px;background:' + affiliationColor(aff) + ';color:#fff;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>',
+                iconSize: [80, 24],
+                iconAnchor: [40, 12]
+              });
+          var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
+          if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
+            window.ATAKUnitPopup.bindUnit(marker, u);
+          } else {
+            marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + (aff !== 'friend' ? '<br/><em>' + aff + '</em>' : ''));
+          }
           marker.addTo(layerGroups.units);
           overwatchLastUnits.push({ call_sign: (u.call_sign || '').toUpperCase(), lat: y, lng: x });
         });

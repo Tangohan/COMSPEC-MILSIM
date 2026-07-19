@@ -13,7 +13,11 @@ window.ATAKMap = (function () {
   var pingTempMarkersById = {};
   var airAssetsLayer = null;
   var airAssetsById = {};
+  var unitsLayer = null;
+  var unitsById = {};
   var config;
+  var baseTileLayer = null;
+  var tileFailCount = 0;
 
   function buildConfigFromAtakMapConfig(raw) {
     if (!raw || !raw.tilePattern) return null;
@@ -53,6 +57,10 @@ window.ATAKMap = (function () {
     pingTempMarkersById = {};
     airAssetsLayer = null;
     airAssetsById = {};
+    unitsLayer = null;
+    unitsById = {};
+    baseTileLayer = null;
+    tileFailCount = 0;
   }
 
   function init(mapId) {
@@ -79,32 +87,46 @@ window.ATAKMap = (function () {
 
     var tileLayer = L.tileLayer(config.tilePattern, {
       attribution: config.attribution,
-      tileSize: config.tileSize
+      tileSize: config.tileSize,
+      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
     });
+    tileFailCount = 0;
     tileLayer.on('tileerror', function () {
-      if (!window._atakTileErrorShown) {
+      tileFailCount += 1;
+      if (tileFailCount === 8 && !window._atakTileErrorShown) {
         window._atakTileErrorShown = true;
-        if (window.ATAKShowError) window.ATAKShowError('Certaines tuiles de la carte sont indisponibles.');
+        if (window.ATAKShowError) {
+          window.ATAKShowError('Fond de carte indisponible (tuiles). Vérifiez le CDN ou basculez de théâtre.');
+        }
       }
     });
+    tileLayer.on('load', function () {
+      tileFailCount = 0;
+    });
     tileLayer.addTo(map);
+    baseTileLayer = tileLayer;
 
     intelLayer = L.layerGroup().addTo(map);
     intelMarkersById = {};
     designatorLayer = L.layerGroup().addTo(map);
     designatorMarkersById = {};
+    unitsLayer = L.layerGroup().addTo(map);
+    unitsById = {};
+    airAssetsLayer = L.layerGroup().addTo(map);
+    airAssetsById = {};
 
     map.setView(config.center, config.defaultZoom);
     L.control.scale({ maxWidth: 200, imperial: false }).addTo(map);
 
-    var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition');
-    gridEl.style.cssText = 'position:absolute;top:10px;right:10px;padding:6px 8px;background:rgba(18,18,26,0.95);color:#e8e8ed;font-size:11px;border-radius:4px;z-index:1000;border:1px solid #2a2a35;';
-    gridEl.textContent = '0 - 0';
+    var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition atak-map-hud');
+    gridEl.innerHTML = '<div class="atak-map-hud__row"><span class="atak-map-hud__k">GRID</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
+      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">NET</span> <span class="atak-map-hud__v atak-map-hud__ok">LINK</span></div>';
     map.getContainer().appendChild(gridEl);
     map.on('mousemove', function (e) {
       var lat = Math.round(e.latlng.lat);
       var lng = Math.round(e.latlng.lng);
-      gridEl.textContent = lng + ' - ' + lat;
+      var v = gridEl.querySelector('[data-hud-grid]');
+      if (v) v.textContent = lng + ' ' + lat;
     });
 
     window.ATAKMap._map = map;
@@ -152,12 +174,25 @@ window.ATAKMap = (function () {
       return;
     }
     var layer = ensureLayer(layerId);
-    var icon = L.divIcon({
-      className: 'atak-marker-icon',
-      html: '<span style="width:12px;height:12px;border-radius:50%;background:#34d399;border:2px solid #0a0a0f;"></span>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
-    });
+    var nato = window.NatoSidcIcons;
+    var icon;
+    if (nato && nato.leafletDivIcon) {
+      icon = nato.leafletDivIcon(L, {
+        affiliation: 'friend',
+        role: 'point',
+        roleKey: 'recon',
+        callSign: '',
+        showLabel: false,
+        size: 28,
+      });
+    } else {
+      icon = L.divIcon({
+        className: 'atak-marker-icon',
+        html: '<span style="width:12px;height:12px;border-radius:50%;background:#34d399;border:2px solid #0a0a0f;"></span>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+    }
     var marker = L.marker(latlng, { icon: icon });
     marker._atakId = id;
     marker._atakLayerId = layerId;
@@ -361,9 +396,75 @@ window.ATAKMap = (function () {
     }).catch(function () {});
   }
 
+  function setUnitsMarkers(list) {
+    if (!map) return;
+    if (!unitsLayer) unitsLayer = L.layerGroup().addTo(map);
+    var nato = window.NatoSidcIcons;
+    var seen = {};
+    (Array.isArray(list) ? list : []).forEach(function (u) {
+      var id = 'unit_' + (u.id != null ? u.id : (u.call_sign || Math.random()));
+      seen[id] = true;
+      var x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
+      var y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
+      if (isNaN(x) || isNaN(y)) {
+        var gridRef = String(u.grid_ref || '').trim().split(/\s+/);
+        x = parseFloat(gridRef[0]);
+        y = parseFloat(gridRef[1]);
+      }
+      if (isNaN(x) || isNaN(y)) return;
+      var applied = applyOffset(y, x);
+      var latlng = L.latLng(applied[0], applied[1]);
+      var extra = {};
+      try {
+        if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
+        else if (u.extra && typeof u.extra === 'object') extra = u.extra;
+      } catch (e) {}
+      var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
+      var iconOpts = {
+        affiliation: aff,
+        role: u.role || extra.role || '',
+        callSign: u.call_sign || '',
+        heading: u.heading,
+        showLabel: true,
+        size: 34,
+      };
+      var icon = nato && nato.leafletDivIcon
+        ? nato.leafletDivIcon(L, iconOpts)
+        : L.divIcon({
+            className: 'atak-unit-fallback',
+            html: '<span style="background:#3b82f6;color:#fff;padding:2px 5px;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>',
+            iconSize: [70, 20],
+            iconAnchor: [35, 10],
+          });
+      if (!unitsById[id]) {
+        var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
+          window.ATAKUnitPopup.bindUnit(marker, u);
+        } else {
+          marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + '<br/>' + (u.grid_ref || ''));
+        }
+        marker.addTo(unitsLayer);
+        unitsById[id] = marker;
+      } else {
+        unitsById[id].setLatLng(latlng);
+        unitsById[id].setIcon(icon);
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
+          window.ATAKUnitPopup.bindUnit(unitsById[id], u);
+        }
+      }
+    });
+    Object.keys(unitsById).forEach(function (k) {
+      if (!seen[k]) {
+        unitsLayer.removeLayer(unitsById[k]);
+        delete unitsById[k];
+      }
+    });
+  }
+
   function setAirAssets(assets) {
     if (!map || !Array.isArray(assets)) return;
     if (!airAssetsLayer) airAssetsLayer = L.layerGroup().addTo(map);
+    var nato = window.NatoSidcIcons;
     var seen = {};
     assets.forEach(function (a) {
       var id = 'air_' + (a.callsign || '').replace(/\s/g, '_');
@@ -374,35 +475,40 @@ window.ATAKMap = (function () {
       var latlng = L.latLng(applied[0], applied[1]);
       var side = (a.side || 'WEST').toUpperCase();
       var status = (a.status || 'IN-FLIGHT').toUpperCase();
-      var color = '#3b82f6';
-      if (side === 'EAST') color = '#ef4444';
-      else if (side === 'GUER' || side === 'CIV' || status === 'SUSPECT') color = '#eab308';
-      if (status === 'SUSPECT') color = '#f97316';
-      var type = (a.aircraft_type || 'plane').toLowerCase();
-      var sym = '▲';
-      if (type === 'helicopter') sym = 'H';
-      if (type === 'uav') sym = '◆';
+      var aff = 'friend';
+      if (side === 'EAST') aff = 'hostile';
+      else if (side === 'GUER' || side === 'CIV' || status === 'SUSPECT') aff = 'unknown';
+      var icon = nato && nato.leafletDivIcon
+        ? nato.leafletDivIcon(L, {
+            affiliation: aff,
+            aircraftType: a.aircraft_type || 'plane',
+            role: a.model || a.aircraft_type || '',
+            callSign: a.callsign || '',
+            showLabel: true,
+            size: 36,
+          })
+        : L.divIcon({
+            className: 'atak-air-asset-marker',
+            html: '<span style="color:#3b82f6;font-size:16px;font-weight:bold;">▲</span>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
       if (!airAssetsById[id]) {
-        var icon = L.divIcon({
-          className: 'atak-air-asset-marker',
-          html: '<span style="color:' + color + ';font-size:16px;font-weight:bold;text-shadow:0 0 2px #000;">' + sym + '</span>',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
-        });
-        var marker = L.marker(latlng, { icon: icon });
+        var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
         marker._atakAirId = id;
         marker.addTo(airAssetsLayer);
-        marker.bindPopup('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>FREQ ' + (a.freq || '—') + ' LASER ' + (a.laser || '1688') + '<br/>' + status);
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindAir) {
+          window.ATAKUnitPopup.bindAir(marker, a);
+        } else {
+          marker.bindPopup('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>' + status);
+        }
         airAssetsById[id] = marker;
       } else {
         airAssetsById[id].setLatLng(latlng);
-        airAssetsById[id].setIcon(L.divIcon({
-          className: 'atak-air-asset-marker',
-          html: '<span style="color:' + color + ';font-size:16px;font-weight:bold;text-shadow:0 0 2px #000;">' + sym + '</span>',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
-        }));
-        airAssetsById[id].setPopupContent('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>FREQ ' + (a.freq || '—') + ' LASER ' + (a.laser || '1688') + '<br/>' + status);
+        airAssetsById[id].setIcon(icon);
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindAir) {
+          window.ATAKUnitPopup.bindAir(airAssetsById[id], a);
+        }
       }
     });
     Object.keys(airAssetsById).forEach(function (k) {
@@ -427,6 +533,7 @@ window.ATAKMap = (function () {
     refreshSigintZones: refreshSigintZones,
     pollMarkers: pollMarkers,
     setAirAssets: setAirAssets,
+    setUnitsMarkers: setUnitsMarkers,
     removeMarker: removeMarker,
     addOrUpdateLayer: addOrUpdateLayer,
     removeLayer: removeLayer,

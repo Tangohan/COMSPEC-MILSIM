@@ -832,12 +832,13 @@ class HomeController
         $overwatchMapsList = [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
+            $slug = (string) ($m['slug'] ?? '');
             $overwatchMapsList[] = [
                 'id' => (int) $m['id'],
-                'slug' => $m['slug'],
-                'label' => $m['label'] ?? $m['slug'],
+                'slug' => $slug,
+                'label' => $m['label'] ?? $slug,
                 'type' => 'arma',
-                'tilePattern' => $m['tile_pattern'] ?? '',
+                'tilePattern' => atak_resolve_tile_pattern((string) ($m['tile_pattern'] ?? ''), $slug !== '' ? $slug : 'altis'),
                 'hasCustomCrs' => ! empty($c['crs']),
             ];
         }
@@ -863,23 +864,21 @@ class HomeController
             ];
         }
 
-        $baseUrl = rtrim(url(''), '/');
         $overwatchMapsConfigs = [];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
+            $slug = (string) ($m['slug'] ?? '');
             $pattern = trim((string) ($m['tile_pattern'] ?? ''));
-            if ($pattern === '') {
+            if ($pattern === '' && $slug === '') {
                 continue;
             }
-            if (!preg_match('#^https?://#i', $pattern)) {
-                $pattern = $baseUrl . (str_starts_with($pattern, '/') ? $pattern : '/' . $pattern);
-            }
-            $overwatchMapsConfigs[$m['slug']] = [
+            $resolved = atak_resolve_tile_pattern($pattern, $slug !== '' ? $slug : 'altis');
+            $overwatchMapsConfigs[$slug !== '' ? $slug : 'altis'] = [
                 'mapId' => (int) $m['id'],
-                'slug' => $m['slug'],
-                'label' => $m['label'] ?? $m['slug'],
+                'slug' => $slug !== '' ? $slug : 'altis',
+                'label' => $m['label'] ?? $slug,
                 'type' => 'arma',
-                'tilePattern' => $pattern,
+                'tilePattern' => $resolved,
                 'center' => $c['center'] ?? [15000, 15000],
                 'defaultZoom' => (int) ($c['defaultZoom'] ?? 3),
                 'minZoom' => (int) ($c['minZoom'] ?? 0),
@@ -941,6 +940,7 @@ class HomeController
             $overwatchWorkspaces[] = ['mapId' => $defaultMapId, 'label' => $defaultMapLabel, 'slug' => $defaultMapSlug === 'world' ? 'altis' : $defaultMapSlug, 'isDefault' => true, 'type' => 'arma'];
         }
 
+        $baseUrl = rtrim(url(''), '/');
         $overwatchContext = [
             'tenantId' => $tenantId,
             'defaultMapId' => $defaultMapId,

@@ -25,8 +25,11 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/comspec-operational-map.js"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
   <style>
     body {
       background:

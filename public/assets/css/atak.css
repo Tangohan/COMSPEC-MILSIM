@@ -756,6 +756,43 @@ body.atak-page {
   border: 1px solid var(--atak-border);
 }
 
+/* HUD carte + symboles OTAN */
+.atak-map-hud {
+  position: absolute !important;
+  right: 12px !important;
+  bottom: 28px !important;
+  top: auto !important;
+  z-index: 1100 !important;
+  min-width: 9.5rem;
+  padding: 0.55rem 0.7rem !important;
+  background: rgba(8, 12, 18, 0.92) !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  border-radius: 2px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.atak-map-hud__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 10px;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+.atak-map-hud__k { color: #64748b; font-weight: 700; }
+.atak-map-hud__v { color: #e2e8f0; font-weight: 700; }
+.atak-map-hud__ok { color: #34d399 !important; }
+
+.nato-sidc-icon,
+.nato-sidc-badge {
+  background: transparent !important;
+  border: none !important;
+}
+.nato-sidc-icon { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75)); }
+.nato-sidc-stack { pointer-events: none; }
+.nato-sidc-label { pointer-events: none; }
+.atak-unit-callsign { display: flex; align-items: center; gap: 0.35rem; }
+
 /* Connection lost */
 .atak-connection-lost {
   position: fixed;

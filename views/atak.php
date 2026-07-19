@@ -20,7 +20,10 @@ if ($atakMapConfig) {
   $c = $atakMapConfig['config'] ?? [];
   $atakMapConfigForJs = [
     'slug' => $atakMapConfig['slug'] ?? 'altis',
-    'tilePattern' => $base . ($atakMapConfig['tile_pattern'] ?? '/assets/maps/altis/{z}/{x}/{y}.png'),
+    'tilePattern' => atak_resolve_tile_pattern(
+        (string) ($atakMapConfig['tile_pattern'] ?? ''),
+        (string) ($atakMapConfig['slug'] ?? 'altis')
+    ),
     'center' => $c['center'] ?? [15000, 15000],
     'defaultZoom' => (int)($c['defaultZoom'] ?? 3),
     'minZoom' => (int)($c['minZoom'] ?? 0),
@@ -41,6 +44,7 @@ if ($atakMapConfig) {
   <title>COMSPEC ATAK | Carte tactique Arma 3</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
@@ -338,6 +342,8 @@ if ($atakMapConfig) {
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
+  <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>

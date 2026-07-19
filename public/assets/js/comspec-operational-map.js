@@ -233,23 +233,36 @@
   function renderAirAssetsLayer(layerGroup, assets, isWorld) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
+    var nato = window.NatoSidcIcons;
     (assets || []).forEach(function (a) {
       if (a.pos_x == null || a.pos_y == null) return;
       var latlng = isWorld ? L.latLng(a.pos_x / WORLD_SCALE, a.pos_y / WORLD_SCALE) : L.latLng(a.pos_y, a.pos_x);
       var side = (a.side || 'WEST').toUpperCase();
-      var color = '#3b82f6';
-      if (side === 'EAST') color = '#ef4444';
-      else if (side === 'GUER' || side === 'CIV') color = '#eab308';
-      var sym = (a.aircraft_type || '').toLowerCase() === 'helicopter' ? 'H' : '▲';
-      var icon = L.divIcon({
-        className: 'comspec-air-marker',
-        html: '<span style="color:' + color + ';font-size:15px;font-weight:bold;">' + sym + '</span>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-      });
-      L.marker(latlng, { icon: icon })
-        .bindPopup('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>' + (a.status || ''))
-        .addTo(layerGroup);
+      var aff = 'friend';
+      if (side === 'EAST') aff = 'hostile';
+      else if (side === 'GUER' || side === 'CIV') aff = 'unknown';
+      var icon = nato && nato.leafletDivIcon
+        ? nato.leafletDivIcon(L, {
+            affiliation: aff,
+            aircraftType: a.aircraft_type || 'plane',
+            role: a.model || '',
+            callSign: a.callsign || '',
+            showLabel: true,
+            size: 34,
+          })
+        : L.divIcon({
+            className: 'comspec-air-marker',
+            html: '<span style="color:#3b82f6;font-size:15px;font-weight:bold;">▲</span>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          });
+      var airMarker = L.marker(latlng, { icon: icon });
+      if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindAir) {
+        window.ATAKUnitPopup.bindAir(airMarker, a);
+      } else {
+        airMarker.bindPopup('<strong>' + (a.callsign || '—') + '</strong><br/>' + (a.model || '') + '<br/>' + (a.status || ''));
+      }
+      airMarker.addTo(layerGroup);
     });
   }
 
@@ -486,6 +499,23 @@
       } catch (e) {}
       var aff = extra.affiliation || extra.affil || u.affiliation || '';
       var affLabel = aff ? affiliationLabelFr(aff) : '';
+      var healthRaw = extra.health != null ? extra.health : u.health;
+      var healthLabel = '';
+      if (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr) {
+        healthLabel = window.ATAKUnitPopup.healthLabelFr(healthRaw);
+      } else if (healthRaw) {
+        healthLabel = String(healthRaw);
+      }
+      var radio = extra.radio_freq != null && extra.radio_freq !== ''
+        ? String(extra.radio_freq)
+        : (extra.radio != null && extra.radio !== '' ? String(extra.radio) : '');
+      var fuel = extra.fuel !== undefined && extra.fuel !== null && extra.fuel !== ''
+        ? String(extra.fuel) + (String(extra.fuel).indexOf('%') >= 0 ? '' : ' %')
+        : '';
+      var ammo = extra.ammo != null && extra.ammo !== '' && String(extra.ammo).toLowerCase() !== 'n/a'
+        ? String(extra.ammo)
+        : '';
+      var parent = extra.parent || extra.parent_callsign || extra.group || extra.groupe || '';
       root.innerHTML =
         '<div class="space-y-4">' +
         '<div><p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Indicatif</p><p class="text-xl font-black text-slate-950">' + escapeHtml(u.call_sign || '—') + '</p></div>' +
@@ -494,8 +524,13 @@
         rowDl('Grille (approx.)', u.grid_ref || '—') +
         rowDl('Cap', u.heading != null ? String(u.heading) + '°' : '—') +
         rowDl('Liaison', statusLabelFr(u.status)) +
+        (healthLabel ? rowDl('État', healthLabel) : '') +
         rowDl('Dernière mise à jour', formatTimeAgo(u.updated_at)) +
         (affLabel ? rowDl('Affiliation', affLabel) : '') +
+        (parent ? rowDl('Groupe', parent) : '') +
+        (radio ? rowDl('Radio', radio) : '') +
+        (fuel ? rowDl('Carburant', fuel) : '') +
+        (ammo ? rowDl('Munitions', ammo) : '') +
         '</dl>' +
         (extra.notes ? '<p class="text-xs text-slate-600">' + escapeHtml(String(extra.notes)) + '</p>' : '') +
         '</div>';
@@ -583,10 +618,15 @@
     function renderUnitsOnMap(units) {
       if (!layerGroups.units || !map) return;
       layerGroups.units.clearLayers();
+      var nato = window.NatoSidcIcons;
       (units || []).forEach(function (u) {
         var gridRef = (u.grid_ref || '').trim().split(/\s+/);
         var x = parseFloat(gridRef[0]);
         var y = parseFloat(gridRef[1]);
+        if (isNaN(x) || isNaN(y)) {
+          x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
+          y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
+        }
         if (isNaN(x) || isNaN(y)) return;
         var latlng = L.latLng(y, x);
         var extra = {};
@@ -595,13 +635,27 @@
           else if (u.extra && typeof u.extra === 'object') extra = u.extra;
         } catch (e) {}
         var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
-        var color = affiliationColor(aff);
-        var heading = parseFloat(u.heading) || 0;
-        var rot = 'transform:rotate(' + heading + 'deg);';
-        var html = '<span style="display:inline-block;padding:2px 6px;background:' + color + ';color:#fff;font-size:10px;border-radius:2px;white-space:nowrap;border:1px solid rgba(0,0,0,0.2);' + rot + '">' + escapeHtml(u.call_sign || '?') + '</span>';
-        var icon = L.divIcon({ className: 'tacmap-unit-icon', html: html, iconSize: [80, 24], iconAnchor: [40, 12] });
-        var marker = L.marker(latlng, { icon: icon });
-        marker.bindPopup('<strong>' + escapeHtml(u.call_sign || '—') + '</strong><br/>' + escapeHtml(u.role || ''));
+        var icon = nato && nato.leafletDivIcon
+          ? nato.leafletDivIcon(L, {
+              affiliation: aff,
+              role: u.role || extra.role || '',
+              callSign: u.call_sign || '',
+              heading: u.heading,
+              showLabel: true,
+              size: 34,
+            })
+          : L.divIcon({
+              className: 'tacmap-unit-icon',
+              html: '<span style="display:inline-block;padding:2px 6px;background:' + affiliationColor(aff) + ';color:#fff;font-size:10px;">' + escapeHtml(u.call_sign || '?') + '</span>',
+              iconSize: [80, 24],
+              iconAnchor: [40, 12],
+            });
+        var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
+          window.ATAKUnitPopup.bindUnit(marker, u);
+        } else {
+          marker.bindPopup('<strong>' + escapeHtml(u.call_sign || '—') + '</strong><br/>' + escapeHtml(u.role || ''));
+        }
         marker.on('click', function () { selectUnit(u); });
         marker.addTo(layerGroups.units);
       });

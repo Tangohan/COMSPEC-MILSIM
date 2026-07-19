@@ -12,6 +12,13 @@ module.exports = {
     /* Tiroir navigation dashboard (évite double colonne si purge) */
     'w-[200%]',
     'w-[min(100%,340px)]',
+    /* Shell aside back-office / admin plateforme */
+    'w-[min(100%,320px)]',
+    'xl:w-80',
+    'lg:max-w-72',
+    'lg:min-w-72',
+    'lg:overflow-x-hidden',
+    'lg:translate-x-0',
     'ease-[cubic-bezier(0.33,1,0.68,1)]',
     'shadow-[8px_0_40px_-12px_rgba(15,23,42,0.35)]',
     /* Méga-menu : utilitaires arbitraires du header (filet de sécurité après build Tailwind) */
