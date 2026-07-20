@@ -1492,8 +1492,11 @@ class AdminTrainingStudioController
             ]);
             $this->markCourseSavedWithCurrentStudioVersion($courseId);
             $msg = 'Documentation liée à la leçon.';
+            $visLevel = (string) ($doc['visibility_level'] ?? 'tenant');
             if (($doc['status'] ?? '') !== 'published') {
                 $msg .= ' Ce document n’est pas encore publié : les apprenants ne verront le lien qu’après publication.';
+            } elseif (!in_array($visLevel, ['tenant', 'internal_link', ''], true)) {
+                $msg .= ' Attention : ce document a une visibilité restreinte (' . $visLevel . ') — seuls les apprenants autorisés pourront ouvrir le lien.';
             }
             Session::flash('success', $msg);
 

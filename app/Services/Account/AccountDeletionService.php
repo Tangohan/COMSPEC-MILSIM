@@ -41,22 +41,28 @@ final class AccountDeletionService
     {
         $due = $this->users->listDueForDeletionAnonymization();
         $count = 0;
+        $failed = 0;
         foreach ($due as $row) {
             $userId = (int) ($row['id'] ?? 0);
             $tenantId = (int) ($row['tenant_id'] ?? 0);
             if ($userId < 1 || $tenantId < 1) {
                 continue;
             }
-            $this->userProfiles->deleteByUserId($userId);
-            $this->userLegalIdentities->deleteByUserId($userId);
-            $this->users->anonymizeForDeletion($userId, $tenantId);
-            $count++;
+            try {
+                $this->userProfiles->deleteByUserId($userId);
+                $this->userLegalIdentities->deleteByUserId($userId);
+                $this->users->anonymizeForDeletion($userId, $tenantId);
+                $count++;
+            } catch (\Throwable $e) {
+                $failed++;
+                error_log('[account_deletion_anonymize] Échec anonymisation user #' . $userId . ' : ' . $e->getMessage());
+            }
         }
 
         return [
-            'ok' => true,
-            'summary' => "Comptes anonymisés : {$count}",
-            'details' => ['anonymized' => $count],
+            'ok' => $failed === 0,
+            'summary' => "Comptes anonymisés : {$count}" . ($failed > 0 ? " · Échecs : {$failed}" : ''),
+            'details' => ['anonymized' => $count, 'failed' => $failed],
         ];
     }
 }

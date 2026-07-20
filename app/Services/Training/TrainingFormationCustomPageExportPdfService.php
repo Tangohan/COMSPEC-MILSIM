@@ -54,7 +54,10 @@ final class TrainingFormationCustomPageExportPdfService
             }
         }
 
-        if (TrainingCertificatePdfEngine::ensureTcpdfLoaded() && TrainingCertificatePdfEngine::tcpdfCertificateFontsReady()) {
+        if (TrainingCertificatePdfEngine::ensureTcpdfLoaded()
+            && TrainingCertificatePdfEngine::tcpdfCertificateFontsReady()
+            && TrainingCertificatePdfEngine::isCacheWritable()
+        ) {
             $binary = $this->renderWithTcpdf($row);
             if ($binary !== null && $binary !== '') {
                 $this->lastFailureReason = null;
@@ -76,7 +79,7 @@ final class TrainingFormationCustomPageExportPdfService
         $title = trim((string) ($row['title'] ?? 'Documentation'));
         $subtitle = trim((string) ($row['subtitle'] ?? ''));
         $summary = trim((string) ($row['summary'] ?? ''));
-        $intro = trim((string) (($row['intro_html'] ?? '') ?: ($row['html_body'] ?? '')));
+        $intro = self::resolveIntroHtml($row);
         $sections = TrainingFormationCustomPageRenderer::decodeSections(
             isset($row['sections_json']) ? (string) $row['sections_json'] : null
         );
@@ -98,6 +101,14 @@ final class TrainingFormationCustomPageExportPdfService
 
         return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><style>' . $this->printCss() . '</style></head>'
             . '<body>' . $body . '</body></html>';
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function resolveIntroHtml(array $row): string
+    {
+        $introHtml = (string) ($row['intro_html'] ?? '');
+
+        return trim($introHtml !== '' ? $introHtml : (string) ($row['html_body'] ?? ''));
     }
 
     private function printCss(): string
@@ -141,7 +152,7 @@ final class TrainingFormationCustomPageExportPdfService
                 $sections = TrainingFormationCustomPageRenderer::decodeSections(
                     isset($row['sections_json']) ? (string) $row['sections_json'] : null
                 );
-                $intro = trim((string) (($row['intro_html'] ?? '') ?: ($row['html_body'] ?? '')));
+                $intro = self::resolveIntroHtml($row);
 
                 $pdf->SetFont($font, 'B', 18);
                 $pdf->MultiCell(0, 9, $title, 0, 'L', false, 1);

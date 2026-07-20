@@ -1100,6 +1100,10 @@ class TrainingController
         if (!$this->featureGate->allows($tenantId, 'training')) {
             return Response::redirect(url('formations'));
         }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
         $slug = trim(rawurldecode((string) ($params['slug'] ?? '')));
         $row = $slug !== '' ? $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug) : null;
         if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {

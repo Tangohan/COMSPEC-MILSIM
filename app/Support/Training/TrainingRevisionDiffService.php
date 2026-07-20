@@ -44,7 +44,8 @@ final class TrainingRevisionDiffService
         if ($summary !== '') {
             $lines[] = $summary;
         }
-        $intro = trim((string) (($snapshot['intro_html'] ?? '') ?: ($snapshot['html_body'] ?? '')));
+        $introHtml = (string) ($snapshot['intro_html'] ?? '');
+        $intro = trim($introHtml !== '' ? $introHtml : (string) ($snapshot['html_body'] ?? ''));
         if ($intro !== '') {
             array_push($lines, ...self::htmlToLines($intro));
         }
@@ -76,6 +77,41 @@ final class TrainingRevisionDiffService
      * @return list<array{type: string, text: string}>
      */
     private static function diffLines(array $a, array $b): array
+    {
+        // Rogne le préfixe/suffixe commun : évite de payer le O(n*m) complet quand deux
+        // révisions consécutives ne diffèrent que par une poignée de lignes au milieu.
+        $n = count($a);
+        $m = count($b);
+        $prefix = 0;
+        while ($prefix < $n && $prefix < $m && $a[$prefix] === $b[$prefix]) {
+            $prefix++;
+        }
+        $suffix = 0;
+        while ($suffix < $n - $prefix && $suffix < $m - $prefix && $a[$n - 1 - $suffix] === $b[$m - 1 - $suffix]) {
+            $suffix++;
+        }
+
+        $midA = array_slice($a, $prefix, $n - $prefix - $suffix);
+        $midB = array_slice($b, $prefix, $m - $prefix - $suffix);
+
+        $out = [];
+        for ($k = 0; $k < $prefix; $k++) {
+            $out[] = ['type' => 'same', 'text' => $a[$k]];
+        }
+        array_push($out, ...self::diffLinesCore($midA, $midB));
+        for ($k = 0; $k < $suffix; $k++) {
+            $out[] = ['type' => 'same', 'text' => $a[$n - $suffix + $k]];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param list<string> $a
+     * @param list<string> $b
+     * @return list<array{type: string, text: string}>
+     */
+    private static function diffLinesCore(array $a, array $b): array
     {
         $n = count($a);
         $m = count($b);
