@@ -20,6 +20,14 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
       <?php include __DIR__.'/partials/custom_page_publication_panel.php'; ?>
       <?php include __DIR__.'/partials/custom_page_theme_picker.php'; ?>
       <?php include __DIR__.'/partials/custom_page_visibility_selector.php'; ?>
+      <div class="cp-editor-card text-xs space-y-2"><div class="cp-editor-card__head"><p class="cp-editor-card__title">Tags</p></div>
+        <input name="tags" list="cp-tags-datalist" placeholder="Séparés par des virgules" value="<?= htmlspecialchars((string) ($customPageTags ?? '')) ?>" class="w-full rounded border px-2 py-2">
+        <datalist id="cp-tags-datalist">
+          <?php foreach (($customPageAllTags ?? []) as $tg): ?>
+          <option value="<?= htmlspecialchars((string) $tg['name']) ?>">
+          <?php endforeach; ?>
+        </datalist>
+      </div>
       <div class="cp-editor-card text-xs space-y-2"><div class="cp-editor-card__head"><p class="cp-editor-card__title">SEO / partage</p></div>
         <input name="canonical_url" placeholder="Canonical URL" value="<?= htmlspecialchars((string)($customPage['canonical_url'] ?? '')) ?>" class="w-full rounded border px-2 py-2">
         <input name="meta_title" placeholder="Meta title" value="<?= htmlspecialchars((string)($customPage['meta_title'] ?? '')) ?>" class="w-full rounded border px-2 py-2">

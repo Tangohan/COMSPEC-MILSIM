@@ -204,7 +204,10 @@ class AdminTrainingStudioController
         private TrainingPresentationKitService $presentationKitService,
         private TrainingStaffAlertService $staffAlertService,
         private \App\Repositories\TrainingFormationCustomPageRepository $formationCustomPageRepository,
+        private \App\Repositories\ContentTagRepository $tagRepository,
     ) {}
+
+    private const TAG_CONTENT_TYPE = 'course';
 
     public function index(Request $request, array $params = []): Response
     {
@@ -529,6 +532,9 @@ class AdminTrainingStudioController
                 'title_asc'
             ),
             'formationDocsForPicker' => $this->formationCustomPageRepository->listByTenant($tenantId, 200),
+            'studioCourseTags' => implode(', ', array_map(static fn (array $t): string => $t['name'], $this->tagRepository->listForContent($tenantId, self::TAG_CONTENT_TYPE, $id))),
+            'studioAllTags' => $this->tagRepository->listForTenant($tenantId),
+            'studioCategoriesForPicker' => $this->courseRepository->listDistinctCategoriesForTenant($tenantId),
             'studioPresentationKits' => $section === 'presentation'
                 ? $this->presentationKitService->listKits($tenantId)
                 : [],
@@ -811,6 +817,7 @@ class AdminTrainingStudioController
             'visibility' => $oldVis,
         ];
         $this->courseRepository->update($courseId, $patch);
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $courseId, (string) $request->input('tags', ''));
         $this->auditService->logCourseUpdated($tenantId, $userId, $courseId, $oldSnapshot, [
             'title' => $title,
             'slug' => $slug,

@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\ContentTagRepository;
 use App\Repositories\TrainingFormationCustomPageFeedbackRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
 use App\Services\Audit\AuditService;
@@ -29,7 +30,10 @@ final class AdminTrainingCustomPageController
         private TrainingFormationCustomPageExportPdfService $pdfExport,
         private AuditService $auditService,
         private TrainingFormationCustomPageFeedbackRepository $feedbackRepository,
+        private ContentTagRepository $tagRepository,
     ) {}
+
+    private const TAG_CONTENT_TYPE = 'formation_doc';
 
     public function index(Request $request, array $params = []): Response
     {
@@ -44,7 +48,11 @@ final class AdminTrainingCustomPageController
         $search = trim((string) $request->query('q', ''));
         $status = trim((string) $request->query('status', ''));
         $docStructure = trim((string) $request->query('doc_structure', ''));
+        $tagSlug = trim((string) $request->query('tag', ''));
         $filters = ['q' => $search, 'status' => $status, 'doc_structure' => $docStructure];
+        if ($tagSlug !== '') {
+            $filters['id_in'] = $this->tagRepository->listContentIdsForTagSlug($tenantId, self::TAG_CONTENT_TYPE, $tagSlug);
+        }
         $perPage = 50;
         $page = max(1, (int) $request->query('page', 1));
         $total = $this->pageRepository->countByTenant($tenantId, $filters);
@@ -52,6 +60,7 @@ final class AdminTrainingCustomPageController
         $page = min($page, $totalPages);
         $rows = $this->pageRepository->listByTenant($tenantId, $perPage, $filters, ($page - 1) * $perPage);
         $metrics = $this->pageRepository->dashboardMetrics($tenantId);
+        $tagsByPageId = $this->tagRepository->listForContentIds(self::TAG_CONTENT_TYPE, array_map(static fn (array $r): int => (int) $r['id'], $rows));
 
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.custom_pages',
@@ -63,6 +72,9 @@ final class AdminTrainingCustomPageController
             'customPagesSearch' => $search,
             'customPagesStatus' => $status,
             'customPagesDocStructure' => $docStructure,
+            'customPagesTagSlug' => $tagSlug,
+            'customPagesTagsByPageId' => $tagsByPageId,
+            'customPagesAllTags' => $this->tagRepository->listForTenant($tenantId),
             'customPagesTotal' => $total,
             'customPagesPage' => $page,
             'customPagesTotalPages' => $totalPages,
@@ -86,6 +98,7 @@ final class AdminTrainingCustomPageController
             'customPageRevisions' => [],
             'customPageActivity' => [],
             'customPagePolicy' => $this->policyMatrix(),
+            'customPageAllTags' => $this->tagRepository->listForTenant($this->tenantId()),
         ]);
     }
 
@@ -124,6 +137,7 @@ final class AdminTrainingCustomPageController
         }
         $this->pageRepository->addActivity($id, $tenantId, $userId ?: null, 'created', ['status' => $payload['data']['status']]);
         $this->auditService->log('formation_doc_created', $tenantId, $userId ?: null, 'formation_doc', $id, null, (string) $payload['data']['title']);
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Documentation créée.');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $id . '/modifier'));
@@ -155,6 +169,8 @@ final class AdminTrainingCustomPageController
             'customPagePolicy' => $this->policyMatrix(),
             'customPageFeedbackAgg' => $this->feedbackRepository->aggregateForPage($id, $tenantId),
             'customPageFeedbackRows' => $this->feedbackRepository->listRecentForPage($id, $tenantId, 20),
+            'customPageTags' => implode(', ', array_map(static fn (array $t): string => $t['name'], $this->tagRepository->listForContent($tenantId, self::TAG_CONTENT_TYPE, $id))),
+            'customPageAllTags' => $this->tagRepository->listForTenant($tenantId),
         ]);
     }
 
@@ -209,6 +225,7 @@ final class AdminTrainingCustomPageController
         } else {
             $this->auditService->log('formation_doc_updated', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
         }
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Modifications enregistrées.');
 
         return $redirect;

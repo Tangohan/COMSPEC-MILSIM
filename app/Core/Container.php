@@ -948,6 +948,7 @@ class Container
             \App\Repositories\TrainingCourseRepository::class => new \App\Repositories\TrainingCourseRepository(),
             \App\Repositories\TrainingFormationCustomPageRepository::class => new \App\Repositories\TrainingFormationCustomPageRepository(),
             \App\Repositories\TrainingFormationCustomPageFeedbackRepository::class => new \App\Repositories\TrainingFormationCustomPageFeedbackRepository(),
+            \App\Repositories\ContentTagRepository::class => new \App\Repositories\ContentTagRepository(),
             \App\Services\Training\TrainingHtmlPageService::class => new \App\Services\Training\TrainingHtmlPageService(
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
             ),
@@ -1320,6 +1321,7 @@ class Container
                 self::get(\App\Services\Training\TrainingCertificatePdfService::class),
                 self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
                 self::get(\App\Services\Training\TrainingCourseMediaUploadService::class),
+                self::get(\App\Repositories\ContentTagRepository::class),
             ),
             \App\Services\Training\TrainingPublicSiteImageCatalog::class => new \App\Services\Training\TrainingPublicSiteImageCatalog(),
             \App\Services\Training\TrainingPresentationKitService::class => new \App\Services\Training\TrainingPresentationKitService(
@@ -1350,6 +1352,7 @@ class Container
                 self::get(\App\Services\Training\TrainingPresentationKitService::class),
                 self::get(\App\Services\Training\TrainingStaffAlertService::class),
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
+                self::get(\App\Repositories\ContentTagRepository::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioExchangeController::class => new \App\Controllers\Admin\AdminTrainingStudioExchangeController(
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),
@@ -1396,6 +1399,7 @@ class Container
                 self::get(\App\Services\Training\TrainingFormationCustomPageExportPdfService::class),
                 self::get(\App\Services\Audit\AuditService::class),
                 self::get(\App\Repositories\TrainingFormationCustomPageFeedbackRepository::class),
+                self::get(\App\Repositories\ContentTagRepository::class),
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),

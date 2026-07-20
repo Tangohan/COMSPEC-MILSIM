@@ -20,6 +20,17 @@ class TrainingCourseRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** @return list<string> valeurs distinctes de category pour autocomplétion, sans catalogue dédié. */
+    public function listDistinctCategoriesForTenant(int $tenantId): array
+    {
+        $st = $this->pdo->prepare(
+            "SELECT DISTINCT category FROM training_courses WHERE tenant_id = ? AND category IS NOT NULL AND category != '' ORDER BY category ASC"
+        );
+        $st->execute([$tenantId]);
+
+        return array_map('strval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
     /**
      * @param bool $tenantCatalogOnly si vrai avec visibility published : exclut les parcours lms_scope=platform (réservés au catalogue fusionné)
      */

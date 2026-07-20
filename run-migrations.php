@@ -1895,6 +1895,14 @@ try {
     echo '  [ATTENTION] competency_grade_requirements : ' . $e->getMessage() . "\n";
 }
 
+$contentTagsMigrate = require $root . '/bootstrap/content_tags_migration.php';
+try {
+    echo "Migration content_tags (tags partagés formations/documentations)...\n";
+    $contentTagsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] content_tags : ' . $e->getMessage() . "\n";
+}
+
 $trainingFormationCustomPageFeedbackMigrate = require $root . '/bootstrap/training_formation_custom_page_feedback_migration.php';
 try {
     echo "Migration training_formation_custom_page_feedback (avis lecteurs Documentations)...\n";

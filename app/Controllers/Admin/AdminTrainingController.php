@@ -55,6 +55,7 @@ class AdminTrainingController
         private TrainingCertificatePdfService $certificatePdfService,
         private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
         private TrainingCourseMediaUploadService $courseMediaUploadService,
+        private \App\Repositories\ContentTagRepository $tagRepository,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -87,7 +88,14 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $search = trim((string) $request->query('q', ''));
+        $tagSlug = trim((string) $request->query('tag', ''));
         $courses = $this->courseRepository->listForTenant($tenantId, null, null, $search !== '' ? $search : null);
+        if ($tagSlug !== '') {
+            $matchingIds = $this->tagRepository->listContentIdsForTagSlug($tenantId, 'course', $tagSlug);
+            $courses = array_values(array_filter($courses, static fn (array $c): bool => in_array((int) ($c['id'] ?? 0), $matchingIds, true)));
+        }
+        $tagsByCourseId = $this->tagRepository->listForContentIds('course', array_map(static fn (array $c): int => (int) $c['id'], $courses));
+
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.courses',
             'title' => 'Formations',
@@ -95,6 +103,9 @@ class AdminTrainingController
             'totalModules' => count($courses),
             'courses' => $courses,
             'coursesSearch' => $search,
+            'coursesTagSlug' => $tagSlug,
+            'coursesTagsByCourseId' => $tagsByCourseId,
+            'coursesAllTags' => $this->tagRepository->listForTenant($tenantId),
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
             'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
             'trainingCanEditShowcaseOrCatalog' => $this->userCanManageTrainingCourseEditorially(),

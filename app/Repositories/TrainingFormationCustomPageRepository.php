@@ -43,6 +43,20 @@ final class TrainingFormationCustomPageRepository
             $params[] = $structure;
         }
 
+        $idIn = $filters['id_in'] ?? null;
+        if (is_array($idIn)) {
+            $idIn = array_values(array_unique(array_filter(array_map('intval', $idIn), static fn (int $v): bool => $v > 0)));
+            if ($idIn === []) {
+                // Filtre actif (ex. tag) sans résultat : ne rien retourner plutôt qu'ignorer le filtre.
+                $sql .= ' AND 1=0';
+            } else {
+                $sql .= ' AND p.id IN (' . implode(',', array_fill(0, count($idIn), '?')) . ')';
+                foreach ($idIn as $pid) {
+                    $params[] = $pid;
+                }
+            }
+        }
+
         return ['sql' => $sql, 'params' => $params];
     }
 

@@ -4,15 +4,18 @@ $metrics = is_array($customPagesMetrics ?? null) ? $customPagesMetrics : [];
 $cpSearch = trim((string) ($customPagesSearch ?? ''));
 $cpStatus = trim((string) ($customPagesStatus ?? ''));
 $cpDocStructure = trim((string) ($customPagesDocStructure ?? ''));
+$cpTag = trim((string) ($customPagesTagSlug ?? ''));
+$cpAllTags = is_array($customPagesAllTags ?? null) ? $customPagesAllTags : [];
+$cpTagsByPageId = is_array($customPagesTagsByPageId ?? null) ? $customPagesTagsByPageId : [];
 $cpBaseUrl = training_lms_admin_url('pages-html');
-$cpHasFilter = $cpSearch !== '' || $cpStatus !== '' || $cpDocStructure !== '';
+$cpHasFilter = $cpSearch !== '' || $cpStatus !== '' || $cpDocStructure !== '' || $cpTag !== '';
 $cpStatusOptions = ['draft' => 'Brouillon', 'review' => 'En révision', 'scheduled' => 'Programmé', 'published' => 'Publié', 'archived' => 'Archivé'];
 $cpStructureOptions = ['single' => 'Page unique', 'handbook' => 'Manuel (chapitres)'];
 $cpTotal = (int) ($customPagesTotal ?? count($rows));
 $cpPage = max(1, (int) ($customPagesPage ?? 1));
 $cpTotalPages = max(1, (int) ($customPagesTotalPages ?? 1));
-$cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cpDocStructure): string {
-    $q = array_filter(['q' => $cpSearch, 'status' => $cpStatus, 'doc_structure' => $cpDocStructure, 'page' => $p > 1 ? $p : null], static fn ($v) => $v !== null && $v !== '');
+$cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cpDocStructure, $cpTag): string {
+    $q = array_filter(['q' => $cpSearch, 'status' => $cpStatus, 'doc_structure' => $cpDocStructure, 'tag' => $cpTag, 'page' => $p > 1 ? $p : null], static fn ($v) => $v !== null && $v !== '');
     return $q === [] ? $cpBaseUrl : $cpBaseUrl . '?' . http_build_query($q);
 };
 ?>
@@ -39,6 +42,14 @@ $cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cp
         <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $cpDocStructure === $val ? 'selected' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
         <?php endforeach; ?>
       </select>
+      <?php if ($cpAllTags !== []): ?>
+      <select name="tag" class="h-9 rounded-lg border border-slate-300 px-2 text-sm">
+        <option value="">Tous tags</option>
+        <?php foreach ($cpAllTags as $tg): ?>
+        <option value="<?= htmlspecialchars((string) $tg['slug'], ENT_QUOTES, 'UTF-8') ?>" <?= $cpTag === $tg['slug'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tg['name'], ENT_QUOTES, 'UTF-8') ?></option>
+        <?php endforeach; ?>
+      </select>
+      <?php endif; ?>
       <button type="submit" class="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Filtrer</button>
       <?php if ($cpHasFilter): ?>
       <a href="<?= htmlspecialchars($cpBaseUrl, ENT_QUOTES, 'UTF-8') ?>" class="h-9 inline-flex items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-500 hover:bg-slate-50">Réinitialiser</a>
@@ -64,7 +75,15 @@ $cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cp
     <tbody>
     <?php foreach ($rows as $r): $id=(int)$r['id']; $isPub=!empty($r['is_published']); ?>
       <tr>
-        <td><p class="font-semibold text-slate-900"><?= htmlspecialchars((string)$r['title']) ?></p><code class="text-xs text-slate-500">/formations/page/<?= htmlspecialchars((string)$r['slug']) ?></code></td>
+        <td><p class="font-semibold text-slate-900"><?= htmlspecialchars((string)$r['title']) ?></p><code class="text-xs text-slate-500">/formations/page/<?= htmlspecialchars((string)$r['slug']) ?></code>
+          <?php $rowTags = $cpTagsByPageId[$id] ?? []; if ($rowTags !== []): ?>
+          <div class="mt-1 flex flex-wrap gap-1">
+            <?php foreach ($rowTags as $rt): ?>
+            <span class="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"><?= htmlspecialchars((string) $rt['name']) ?></span>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+        </td>
         <td class="text-xs text-slate-600"><?= htmlspecialchars($cpStructureOptions[(string)($r['doc_structure'] ?? 'single')] ?? (string)($r['doc_structure'] ?? 'single')) ?></td>
         <td><?php $status=(string)($r['status'] ?? 'draft'); include __DIR__.'/partials/custom_page_status_badge.php'; ?></td>
         <td class="text-xs text-slate-600"><?= htmlspecialchars((string)($r['visibility_level'] ?? 'tenant')) ?></td>

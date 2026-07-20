@@ -2,6 +2,9 @@
 declare(strict_types=1);
 $courses = $courses ?? [];
 $coursesSearch = trim((string) ($coursesSearch ?? ''));
+$coursesTagSlug = trim((string) ($coursesTagSlug ?? ''));
+$coursesAllTagsList = is_array($coursesAllTags ?? null) ? $coursesAllTags : [];
+$coursesTagsByCourseId = is_array($coursesTagsByCourseId ?? null) ? $coursesTagsByCourseId : [];
 $trainingCanExportFull = !empty($trainingCanExportFull);
 $trainingCanEditShowcaseOrCatalog = !empty($trainingCanEditShowcaseOrCatalog);
 $trainingCanDeleteCourse = !empty($trainingCanDeleteCourse);
@@ -35,10 +38,18 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                             <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="tc-btn-primary tc-btn-ghost">Vue d’ensemble</a>
                         </div>
                     </div>
-                    <form method="get" action="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 flex max-w-sm gap-1.5">
+                    <form method="get" action="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 flex max-w-xl flex-wrap gap-1.5">
                         <input type="search" name="q" value="<?= htmlspecialchars($coursesSearch, ENT_QUOTES, 'UTF-8') ?>" placeholder="Rechercher un titre ou une description…" class="h-9 flex-1 rounded-lg border border-slate-300 px-3 text-sm">
+                        <?php if ($coursesAllTagsList !== []): ?>
+                        <select name="tag" class="h-9 rounded-lg border border-slate-300 px-2 text-sm">
+                            <option value="">Tous tags</option>
+                            <?php foreach ($coursesAllTagsList as $tg): ?>
+                            <option value="<?= htmlspecialchars((string) $tg['slug'], ENT_QUOTES, 'UTF-8') ?>" <?= $coursesTagSlug === $tg['slug'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $tg['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php endif; ?>
                         <button type="submit" class="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Rechercher</button>
-                        <?php if ($coursesSearch !== ''): ?>
+                        <?php if ($coursesSearch !== '' || $coursesTagSlug !== ''): ?>
                         <a href="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="h-9 inline-flex items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-500 hover:bg-slate-50">Réinitialiser</a>
                         <?php endif; ?>
                     </form>
@@ -92,7 +103,16 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                             $slug = trim((string) ($c['slug'] ?? ''));
                             ?>
                             <tr>
-                                <td class="font-semibold text-slate-900"><?= htmlspecialchars((string) $c['title']) ?></td>
+                                <td class="font-semibold text-slate-900">
+                                    <?= htmlspecialchars((string) $c['title']) ?>
+                                    <?php $cTags = $coursesTagsByCourseId[$cid] ?? []; if ($cTags !== []): ?>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <?php foreach ($cTags as $ct): ?>
+                                        <span class="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"><?= htmlspecialchars((string) $ct['name']) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="whitespace-nowrap font-mono text-xs text-slate-700"><?= $code !== '' ? htmlspecialchars($code) : '—' ?></td>
                                 <td class="text-sm text-slate-700"><?= $theme !== '' ? htmlspecialchars($theme) : '—' ?></td>
                                 <td>
