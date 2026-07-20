@@ -29,6 +29,7 @@ use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingCertificatePdfService;
 use App\Services\Training\TrainingCertificateAssetStorageService;
 use App\Services\Training\TrainingCourseMediaUploadService;
+use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 use App\Support\TrainingCertificatePdfEngine;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -398,12 +399,41 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
+        $statsByCourse = $this->enrollmentRepository->complianceStatsByCourseForTenant($tenantId);
+
+        $expiringByCourse = [];
+        foreach ($this->assignmentService->listOverdueOrExpiring($tenantId, 30) as $row) {
+            $cid = (int) ($row['course_id'] ?? 0);
+            if ($cid > 0) {
+                $expiringByCourse[$cid] = ($expiringByCourse[$cid] ?? 0) + 1;
+            }
+        }
+
+        $courseReports = [];
+        foreach ($courses as $c) {
+            $courseId = (int) $c['id'];
+            $stats = $statsByCourse[$courseId] ?? ['total' => 0, 'completed' => 0, 'active' => 0, 'revoked' => 0, 'avg_completion_seconds' => null];
+            $total = $stats['total'];
+            $avgSeconds = $stats['avg_completion_seconds'];
+            $courseReports[] = [
+                'course' => $c,
+                'total' => $total,
+                'completed' => $stats['completed'],
+                'active' => $stats['active'],
+                'revoked' => $stats['revoked'],
+                'completion_rate' => $total > 0 ? round(100.0 * $stats['completed'] / $total, 1) : null,
+                'avg_completion_label' => $avgSeconds !== null ? TrainingEnrollmentCompletionAnalytics::formatDurationSeconds((int) round($avgSeconds)) : null,
+                'expiring_soon' => $expiringByCourse[$courseId] ?? 0,
+            ];
+        }
+
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.reports',
             'title' => 'Rapports',
             'trainingAdminNav' => 'reports',
             'totalModules' => count($courses),
             'courses' => $courses,
+            'courseReports' => $courseReports,
         ]);
     }
 
