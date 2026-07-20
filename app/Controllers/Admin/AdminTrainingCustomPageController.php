@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Services\Audit\AuditService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingFormationCustomPageExportPdfService;
 use App\Services\Training\TrainingHtmlPageService;
@@ -25,6 +26,7 @@ final class AdminTrainingCustomPageController
         private TrainingHtmlPageService $htmlPageService,
         private FeatureGateService $featureGate,
         private TrainingFormationCustomPageExportPdfService $pdfExport,
+        private AuditService $auditService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -119,6 +121,7 @@ final class AdminTrainingCustomPageController
             $this->htmlPageService->createRevision($id, $tenantId, $userId, 'create', $row, null);
         }
         $this->pageRepository->addActivity($id, $tenantId, $userId ?: null, 'created', ['status' => $payload['data']['status']]);
+        $this->auditService->log('formation_doc_created', $tenantId, $userId ?: null, 'formation_doc', $id, null, (string) $payload['data']['title']);
         Session::flash('success', 'Documentation créée.');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $id . '/modifier'));
@@ -195,6 +198,13 @@ final class AdminTrainingCustomPageController
             $this->htmlPageService->createRevision($id, $tenantId, $userId, 'update', $after, $before);
         }
         $this->pageRepository->addActivity($id, $tenantId, $userId ?: null, 'updated', ['status' => $payload['data']['status'] ?? null]);
+        if ($newStatus === 'published' && $previousStatus !== 'published') {
+            $this->auditService->log('formation_doc_published', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        } elseif ($newStatus === 'archived' && $previousStatus !== 'archived') {
+            $this->auditService->log('formation_doc_archived', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        } else {
+            $this->auditService->log('formation_doc_updated', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        }
         Session::flash('success', 'Modifications enregistrées.');
 
         return $redirect;
@@ -385,6 +395,7 @@ final class AdminTrainingCustomPageController
             'updated_by' => $userId ?: null,
         ]);
         $this->pageRepository->addActivity($newId, $tenantId, $userId ?: null, 'duplicated', ['source_id' => $id]);
+        $this->auditService->log('formation_doc_duplicated', $tenantId, $userId ?: null, 'formation_doc', $newId, (string) $id, (string) $row['title']);
         Session::flash('success', 'Copie créée.');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $newId . '/modifier'));
@@ -421,6 +432,7 @@ final class AdminTrainingCustomPageController
         $snapshot['updated_by'] = $userId ?: null;
         $this->pageRepository->update($pageId, $tenantId, $snapshot);
         $this->pageRepository->addActivity($pageId, $tenantId, $userId ?: null, 'restored_revision', ['revision_id' => $revId]);
+        $this->auditService->log('formation_doc_restored', $tenantId, $userId ?: null, 'formation_doc', $pageId, null, 'v' . $revId);
         $updated = $this->pageRepository->findById($pageId, $tenantId);
         if ($updated) {
             $this->htmlPageService->createRevision($pageId, $tenantId, $userId, 'restore', $updated, $current);
@@ -438,7 +450,10 @@ final class AdminTrainingCustomPageController
         $tenantId = $this->tenantId();
         $id = (int) ($params['id'] ?? 0);
         if ($id > 0) {
+            $row = $this->pageRepository->findById($id, $tenantId);
             $this->pageRepository->delete($id, $tenantId);
+            $userId = (int) (Session::get('user_id') ?? 0);
+            $this->auditService->log('formation_doc_deleted', $tenantId, $userId ?: null, 'formation_doc', $id, $row ? (string) $row['title'] : null, null);
         }
         Session::flash('success', 'Documentation supprimée.');
 

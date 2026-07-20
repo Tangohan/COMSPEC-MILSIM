@@ -58,6 +58,14 @@ final class AuditActionLabel
         'quiz_attempt_submitted' => 'Quiz soumis',
         'certificate_issued' => 'Certificat délivré',
         'certificate_revoked' => 'Certificat révoqué',
+        // Documentations HTML LMS
+        'formation_doc_created' => 'Documentation HTML créée',
+        'formation_doc_updated' => 'Documentation HTML modifiée',
+        'formation_doc_published' => 'Documentation HTML publiée',
+        'formation_doc_archived' => 'Documentation HTML archivée',
+        'formation_doc_deleted' => 'Documentation HTML supprimée',
+        'formation_doc_restored' => 'Documentation HTML — version restaurée',
+        'formation_doc_duplicated' => 'Documentation HTML dupliquée',
         // Plateforme — réglages et déploiement
         'platform.settings_updated' => 'Réglage plateforme (brief) mis à jour',
         'platform.subscription_plan_updated' => 'Formule d’accès (palier) modifiée',

@@ -1392,6 +1392,7 @@ class Container
                 self::get(\App\Services\Training\TrainingHtmlPageService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Services\Training\TrainingFormationCustomPageExportPdfService::class),
+                self::get(\App\Services\Audit\AuditService::class),
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),
