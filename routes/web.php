@@ -104,6 +104,7 @@ use App\Controllers\Admin\Organization\AccessManagementController;
 use App\Controllers\Admin\Organization\OrganizationPositionsController;
 use App\Controllers\Admin\Organization\RolesFunctionsAdminController;
 use App\Controllers\Admin\Organization\CategoryAdminController;
+use App\Controllers\Admin\Organization\CompetencyMatrixController;
 use App\Controllers\Admin\Organization\GradeReferentielController;
 use App\Controllers\Admin\Organization\PersonnelJobRoleAdminController;
 use App\Controllers\Admin\Organization\HrCharterDocumentAdminController;
@@ -692,6 +693,10 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences/{id}', [CompetencyMatrixController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences/{id}/supprimer', [CompetencyMatrixController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles', [PersonnelJobRoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments', [PersonnelJobRoleAdminController::class, 'assignments'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments/member-permissions', [PersonnelJobRoleAdminController::class, 'memberJobRolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

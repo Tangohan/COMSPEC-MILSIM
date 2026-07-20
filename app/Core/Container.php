@@ -770,6 +770,11 @@ class Container
                 self::get(\App\Repositories\GradeSystemRepository::class),
                 self::get(\App\Services\GradeDisplayService::class)
             ),
+            \App\Repositories\CompetencyGradeRequirementRepository::class => new \App\Repositories\CompetencyGradeRequirementRepository(),
+            \App\Controllers\Admin\Organization\CompetencyMatrixController::class => new \App\Controllers\Admin\Organization\CompetencyMatrixController(
+                self::get(\App\Repositories\CompetencyGradeRequirementRepository::class),
+                self::get(\App\Repositories\GradeRepository::class)
+            ),
             \App\Controllers\Admin\Organization\GroupAdminController::class => new \App\Controllers\Admin\Organization\GroupAdminController(
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class)

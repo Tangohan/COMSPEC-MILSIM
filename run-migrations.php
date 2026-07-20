@@ -1885,6 +1885,14 @@ try {
     echo '  [ATTENTION] community_event_slots : ' . $e->getMessage() . "\n";
 }
 
+$competencyGradeRequirementsMigrate = require $root . '/bootstrap/competency_grade_requirements_migration.php';
+try {
+    echo "Migration competency_grade_requirements (matrice compétences × grades)...\n";
+    $competencyGradeRequirementsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] competency_grade_requirements : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);
