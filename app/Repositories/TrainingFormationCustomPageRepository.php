@@ -285,4 +285,30 @@ final class TrainingFormationCustomPageRepository
 
         return $metrics;
     }
+
+    /** Brouillons/révisions non modifiés depuis {$days} jours. @return list<array<string,mixed>> */
+    public function listForgottenDrafts(int $tenantId, int $days = 30, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, title, status, updated_at FROM training_formation_custom_pages
+             WHERE tenant_id = ? AND status IN ('draft','review') AND updated_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+             ORDER BY updated_at ASC LIMIT " . max(1, min(50, $limit))
+        );
+        $stmt->execute([$tenantId, $days]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** Documents publiés jamais consultés. @return list<array<string,mixed>> */
+    public function listNeverViewed(int $tenantId, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, title, status, updated_at FROM training_formation_custom_pages
+             WHERE tenant_id = ? AND is_published = 1 AND view_count = 0
+             ORDER BY updated_at ASC LIMIT ' . max(1, min(50, $limit))
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

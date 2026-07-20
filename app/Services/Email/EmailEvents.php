@@ -71,6 +71,8 @@ final class EmailEvents
     public const EFFECTIFS_ELEVATION_REQUEST = 'EFFECTIFS_ELEVATION_REQUEST';
     /** Résumé hebdomadaire au staff RH : dossiers incomplets, sans unité/rôle, élévations en attente. */
     public const EFFECTIFS_HR_WEEKLY_DIGEST = 'EFFECTIFS_HR_WEEKLY_DIGEST';
+    /** Résumé hebdomadaire au staff LMS : brouillons oubliés, documents publiés jamais consultés. */
+    public const TRAINING_FORGOTTEN_DOCS_DIGEST = 'TRAINING_FORGOTTEN_DOCS_DIGEST';
 
     /** Accusé de réception — signalement transmis (signaleur). */
     public const COMMUNITY_REPORT_RECEIPT = 'COMMUNITY_REPORT_RECEIPT';
@@ -169,6 +171,7 @@ final class EmailEvents
         self::TRAINING_PUBLISH_ELEVATION_REQUEST,
         self::EFFECTIFS_ELEVATION_REQUEST,
         self::EFFECTIFS_HR_WEEKLY_DIGEST,
+        self::TRAINING_FORGOTTEN_DOCS_DIGEST,
         self::COMMUNITY_REPORT_RECEIPT,
         self::COMMUNITY_REPORT_HANDLED,
         self::COMMUNITY_REPORT_NEW_STAFF,

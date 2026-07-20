@@ -787,6 +787,11 @@ class AccountController
                 'hint' => 'Résumé hebdomadaire des dossiers incomplets, membres sans unité/rôle et élévations en attente.',
             ],
             [
+                'key' => EmailEvents::TRAINING_FORGOTTEN_DOCS_DIGEST,
+                'label' => 'Digest Documentations oubliées (Studio LMS)',
+                'hint' => 'Résumé hebdomadaire des brouillons sans modification depuis 30 jours et des documents publiés jamais consultés.',
+            ],
+            [
                 'key' => EmailEvents::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
                 'label' => 'Nouveau créneau sur une formation suivie',
                 'hint' => 'Lorsqu’une séance ou un créneau est ajouté sur un parcours auquel vous participez encore.',
