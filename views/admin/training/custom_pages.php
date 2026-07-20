@@ -72,6 +72,7 @@ $cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cp
         <td class="text-xs space-x-2 whitespace-nowrap">
           <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html/'.$id.'/modifier')) ?>" class="font-semibold text-slate-700">Éditer</a>
           <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html/'.$id.'/previsualiser')) ?>" target="_blank" class="font-semibold text-sky-700">Aperçu</a>
+          <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html/'.$id.'/pdf')) ?>" class="font-semibold text-slate-700">PDF</a>
           <?php if ($isPub): ?><a href="<?= htmlspecialchars(url('formations/page/'.rawurlencode((string)$r['slug']))) ?>" target="_blank" class="font-semibold text-emerald-700">Public</a><?php endif; ?>
           <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('pages-html/'.$id.'/dupliquer')) ?>" class="inline"><?= \App\Core\Csrf::field() ?><button class="text-indigo-700 font-semibold bg-transparent border-0 p-0">Dupliquer</button></form>
           <form method="post" action="<?= htmlspecialchars(training_lms_admin_url('pages-html/'.$id.'/supprimer')) ?>" class="inline" onsubmit="return confirm('Supprimer définitivement « <?= htmlspecialchars(addslashes((string)$r['title']), ENT_QUOTES, 'UTF-8') ?> » ? Cette action est irréversible.');"><?= \App\Core\Csrf::field() ?><button class="text-rose-700 font-semibold bg-transparent border-0 p-0">Supprimer</button></form>

@@ -183,6 +183,26 @@
   z-index: 1;
 }
 
+.formation-doc-pdf-link {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+}
+
+.formation-doc-pdf-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 .formation-doc-kicker {
   margin: 0 0 0.5rem;
   font-family: inherit;

@@ -72,6 +72,7 @@ class TrainingController
         private HrCharterRepository $hrCharterRepository,
         private TrainingFormationCustomPageRepository $formationCustomPageRepository,
         private RoleRepository $roleRepository,
+        private \App\Services\Training\TrainingFormationCustomPageExportPdfService $formationCustomPagePdfExport,
     ) {}
 
     /**
@@ -1079,11 +1080,43 @@ class TrainingController
         }
         $this->formationCustomPageRepository->incrementView((int) $row['id'], $tenantId, $userId);
         $base = rtrim(url(''), '/');
-        $full = TrainingFormationCustomPageRenderer::render($row, $base);
+        $pdfUrl = url('formations/page/' . rawurlencode($slug) . '/pdf');
+        $full = TrainingFormationCustomPageRenderer::render($row, $base, null, $pdfUrl);
 
         return (new Response())
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->setBody($full);
+    }
+
+    public function formationCustomPageExportPdf(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::redirect(url('formations'));
+        }
+        $slug = trim(rawurldecode((string) ($params['slug'] ?? '')));
+        $row = $slug !== '' ? $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug) : null;
+        if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $binary = $this->formationCustomPagePdfExport->generateBinary($row);
+        if ($binary === null) {
+            Session::flash('error', $this->formationCustomPagePdfExport->getLastFailureReason() ?? 'Impossible de générer le PDF.');
+
+            return Response::redirect(url('formations/page/' . rawurlencode($slug)));
+        }
+        $filename = 'documentation-' . $slug . '.pdf';
+
+        return (new Response())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary);
     }
 
     /**

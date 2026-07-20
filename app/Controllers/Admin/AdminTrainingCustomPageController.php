@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TrainingFormationCustomPageRepository;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Training\TrainingFormationCustomPageExportPdfService;
 use App\Services\Training\TrainingHtmlPageService;
 use App\Support\Training\TrainingHtmlPagePolicy;
 use App\Support\HtmlContentSanitizer;
@@ -23,6 +24,7 @@ final class AdminTrainingCustomPageController
         private TrainingFormationCustomPageRepository $pageRepository,
         private TrainingHtmlPageService $htmlPageService,
         private FeatureGateService $featureGate,
+        private TrainingFormationCustomPageExportPdfService $pdfExport,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -213,6 +215,29 @@ final class AdminTrainingCustomPageController
         );
     }
 
+    public function exportPdf(Request $request, array $params = []): Response
+    {
+        if (!$this->canView()) {
+            return Response::redirect(training_lms_admin_url('pages-html'));
+        }
+        $row = $this->pageRepository->findById((int) ($params['id'] ?? 0), $this->tenantId());
+        if (!$row) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $binary = $this->pdfExport->generateBinary($row);
+        if ($binary === null) {
+            Session::flash('error', $this->pdfExport->getLastFailureReason() ?? 'Impossible de générer le PDF.');
+
+            return Response::redirect(training_lms_admin_url('pages-html/' . $row['id'] . '/modifier'));
+        }
+        $filename = 'documentation-' . ($row['slug'] ?: $row['id']) . '.pdf';
+
+        return (new Response())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary);
+    }
+
     /**
      * Bandeau studio affiché uniquement sur l'aperçu interne (jamais sur la route publique
      * /formations/page/{slug}, qui appelle le renderer sans ce paramètre).
@@ -238,6 +263,8 @@ final class AdminTrainingCustomPageController
         if ($publicUrl !== null) {
             $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($publicUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">Voir la fiche publique</a>';
         }
+        $pdfUrl = training_lms_admin_url('pages-html/' . $id . '/pdf');
+        $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($pdfUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">Exporter en PDF</a>';
 
         $note = $isPublished
             ? ''

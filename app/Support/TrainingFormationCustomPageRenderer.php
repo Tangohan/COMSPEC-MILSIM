@@ -39,8 +39,9 @@ final class TrainingFormationCustomPageRenderer
      * @param array<string, mixed> $row
      * @param string|null $chrome Bandeau HTML optionnel injecté en tête de page (réservé au studio interne :
      *                             ne jamais le passer depuis une route publique).
+     * @param string|null $downloadPdfUrl URL d'export PDF, affichée en petit lien discret (public ou interne).
      */
-    public static function render(array $row, string $assetsBaseUrl, ?string $chrome = null): string
+    public static function render(array $row, string $assetsBaseUrl, ?string $chrome = null, ?string $downloadPdfUrl = null): string
     {
         $title = trim((string) ($row['title'] ?? 'Documentation'));
         $subtitle = trim((string) ($row['subtitle'] ?? ''));
@@ -61,6 +62,11 @@ final class TrainingFormationCustomPageRenderer
             $body = self::renderHandbook($titleEsc, $subtitle, $summary, $intro, $sections, $accent, !empty($row['show_toc']), $readTime, count($sections));
         } else {
             $body = self::renderSingleFragment($titleEsc, $subtitle, $summary, $intro, $accent, $readTime);
+        }
+
+        if ($downloadPdfUrl !== null && $downloadPdfUrl !== '') {
+            $pdfLink = '<a href="' . htmlspecialchars($downloadPdfUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" class="formation-doc-pdf-link">Télécharger en PDF</a>';
+            $body = str_replace('</header>', $pdfLink . '</header>', $body);
         }
 
         return self::wrapShell($titleEsc, $cssHref, $body, $chrome, $showProgress);

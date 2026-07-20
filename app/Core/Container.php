@@ -1142,6 +1142,7 @@ class Container
                 self::get(\App\Repositories\HrCharterRepository::class),
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Services\Training\TrainingFormationCustomPageExportPdfService::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
@@ -1384,10 +1385,12 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Services\TrainingPublication\TrainingPublicationService::class),
             ),
+            \App\Services\Training\TrainingFormationCustomPageExportPdfService::class => new \App\Services\Training\TrainingFormationCustomPageExportPdfService(),
             \App\Controllers\Admin\AdminTrainingCustomPageController::class => new \App\Controllers\Admin\AdminTrainingCustomPageController(
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
                 self::get(\App\Services\Training\TrainingHtmlPageService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Services\Training\TrainingFormationCustomPageExportPdfService::class),
             ),
             \App\Controllers\Api\TrainingApiController::class => new \App\Controllers\Api\TrainingApiController(
                 self::get(\App\Services\Training\TrainingService::class),

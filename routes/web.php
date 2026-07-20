@@ -464,6 +464,7 @@ return function (Router $router) {
     $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
     /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
     $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
+    $router->get('/formations/page/{slug}/pdf', [TrainingController::class, 'formationCustomPageExportPdf'], $mwTraining);
     $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
     /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */
@@ -1021,6 +1022,7 @@ return function (Router $router) {
     $router->get('/formation/pages-html/nouvelle', [AdminTrainingCustomPageController::class, 'create'], $trainingResMw);
     $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/previsualiser', [AdminTrainingCustomPageController::class, 'preview'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/pdf', [AdminTrainingCustomPageController::class, 'exportPdf'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
     $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/dupliquer', [AdminTrainingCustomPageController::class, 'duplicate'], $trainingResMw);
