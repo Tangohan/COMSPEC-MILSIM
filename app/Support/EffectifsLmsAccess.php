@@ -13,11 +13,14 @@ final class EffectifsLmsAccess
 {
     public static function allows(Gate $gate): bool
     {
+        // Volontairement sans personnel.profile.view : cette permission est accordée par défaut à de
+        // nombreux rôles opérationnels non-RH (instructeur, médecin, officier, recruteur...) pour la
+        // consultation d'une fiche membre isolée — elle ne doit pas ouvrir le tableur RH complet
+        // (e-mails, scores, historique) de toute la communauté.
         return $gate->allows('admin.organization')
             || $gate->allows('admin.access')
             || $gate->allows('site.support')
             || $gate->allows('organization.effectifs.hub.view')
-            || $gate->allows('personnel.profile.view')
             || $gate->allows('personnel.profile.update')
             || $gate->allows('personnel.assignments.manage')
             || $gate->allows('personnel.grades.manage')
