@@ -33,7 +33,9 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\HrCharterRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Repositories\RoleRepository;
 use App\Support\TrainingFormationCustomPageRenderer;
+use App\Support\TrainingLmsStaffAccess;
 use App\Core\Csrf;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -69,6 +71,7 @@ class TrainingController
         private AnalyticsEventService $analyticsEventService,
         private HrCharterRepository $hrCharterRepository,
         private TrainingFormationCustomPageRepository $formationCustomPageRepository,
+        private RoleRepository $roleRepository,
     ) {}
 
     /**
@@ -1068,7 +1071,7 @@ class TrainingController
             return Response::redirect(url('formations'));
         }
         $row = $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug);
-        if ($row === null) {
+        if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {
             return Response::view('training.formation_introuvable', [
                 'slug' => $slug,
                 'context' => 'documentation',
@@ -1081,6 +1084,68 @@ class TrainingController
         return (new Response())
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->setBody($full);
+    }
+
+    /**
+     * Applique visibility_level / allowed_roles_json d'une Documentation HTML.
+     * Le staff LMS (TrainingLmsStaffAccess) voit toujours tout, comme dans le studio d'édition.
+     *
+     * @param array<string,mixed> $row
+     */
+    private function canViewFormationCustomPage(array $row, int $tenantId, int $userId): bool
+    {
+        $level = (string) ($row['visibility_level'] ?? 'tenant');
+        if ($level === 'tenant' || $level === 'internal_link' || $level === '') {
+            return true;
+        }
+        if (TrainingLmsStaffAccess::allows(Gate::getInstance())) {
+            return true;
+        }
+        if ($level === 'staff_private') {
+            return false;
+        }
+        if ($level === 'role_based') {
+            $allowed = $this->allowedRoleTokensFromJson((string) ($row['allowed_roles_json'] ?? ''));
+            if ($allowed === []) {
+                // Niveau restreint choisi mais aucun rôle configuré : on ferme l'accès plutôt que
+                // de dégrader silencieusement vers un accès « tenant » non voulu par l'auteur.
+                return false;
+            }
+            $userRoles = $this->roleRepository->listOrganizationRolesForUsers($tenantId, [$userId])[$userId] ?? [];
+            foreach ($userRoles as $role) {
+                $slug = strtolower(trim((string) ($role['slug'] ?? '')));
+                $name = strtolower(trim((string) ($role['name'] ?? '')));
+                if (($slug !== '' && in_array($slug, $allowed, true)) || ($name !== '' && in_array($name, $allowed, true))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @return list<string> tokens en minuscule (slug ou nom de rôle attendu) */
+    private function allowedRoleTokensFromJson(string $json): array
+    {
+        $json = trim($json);
+        if ($json === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $v) {
+            $t = strtolower(trim((string) $v));
+            if ($t !== '') {
+                $out[] = $t;
+            }
+        }
+
+        return $out;
     }
 
     /** Lecture d'une leçon. */

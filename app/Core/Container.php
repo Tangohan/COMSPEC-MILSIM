@@ -1087,6 +1087,7 @@ class Container
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
                 self::get(\App\Repositories\HrCharterRepository::class),
                 self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
             ),
             \App\Controllers\Web\EquipmentController::class => new \App\Controllers\Web\EquipmentController(
                 self::get(\App\Repositories\EquipmentClassRepository::class),
