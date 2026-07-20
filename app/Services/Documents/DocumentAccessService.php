@@ -292,6 +292,25 @@ class DocumentAccessService
         return self::CLASSIFICATION_ORDER;
     }
 
+    /**
+     * Libellés FR des niveaux de classification, dans l’ordre croissant — source unique pour tout
+     * formulaire qui doit proposer/afficher le niveau d’habilitation d’un membre (personnel_profiles.clearance_level).
+     * Les valeurs (clés) doivent rester alignées avec normalizeClearanceLevel() ci-dessus.
+     *
+     * @return array<string,string>
+     */
+    public static function getClassificationLevelLabels(): array
+    {
+        return [
+            'public' => 'Public',
+            'interne' => 'Interne',
+            'restreint' => 'Restreint',
+            'sensible' => 'Sensible',
+            'confidentiel' => 'Confidentiel',
+            'operationnel' => 'Opérationnel (maximal)',
+        ];
+    }
+
     public static function getRoleClassificationMax(): array
     {
         return self::ROLE_CLASSIFICATION_MAX;

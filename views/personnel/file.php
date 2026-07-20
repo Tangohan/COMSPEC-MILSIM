@@ -238,7 +238,8 @@ $rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
 $readinessMerged = max($rScore, $rExtra);
 $readiness = $readinessMerged > 0 ? $readinessMerged : null;
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
-$clearanceLevel = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
+$clearanceLevelRaw = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
+$clearanceLevel = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels()[$clearanceLevelRaw] ?? $clearanceLevelRaw;
 
 $avatarUrl = !empty($targetUser['avatar_url']) ? $targetUser['avatar_url'] : null;
 if ($avatarUrl && strpos($avatarUrl, 'http') !== 0) {

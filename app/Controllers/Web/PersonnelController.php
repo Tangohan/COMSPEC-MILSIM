@@ -1045,6 +1045,7 @@ class PersonnelController
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
             'roleplayEventTypes' => $roleplayEventTypes,
+            'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
         ]);
     }
 

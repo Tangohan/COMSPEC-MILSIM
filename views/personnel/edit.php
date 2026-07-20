@@ -29,7 +29,7 @@ if (!$targetUser) {
 $p = $personnelProfile ?? [];
 $up = is_array($userProfile) ? $userProfile : [];
 $d = $displaySettings ?? [];
-$clearanceOptions = ['Non classifié', 'Restreint', 'Confidentiel', 'Secret', 'Très secret'];
+$clearanceOptions = is_array($clearanceLevelOptions ?? null) ? $clearanceLevelOptions : [];
 $currentClearance = trim((string) ($p['clearance_level'] ?? ''));
 $clearanceReviewedAt = '';
 if (!empty($p['clearance_reviewed_at'])) {
@@ -368,13 +368,16 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
               <label for="clearance_level" class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
               <select name="clearance_level" id="clearance_level" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
                 <option value="">— Non défini —</option>
-                <?php foreach ($clearanceOptions as $opt): ?>
-                <option value="<?= htmlspecialchars($opt) ?>" <?= $currentClearance === $opt ? 'selected' : '' ?>><?= htmlspecialchars($opt) ?></option>
+                <?php foreach ($clearanceOptions as $optValue => $optLabel): ?>
+                <option value="<?= htmlspecialchars($optValue) ?>" <?= $currentClearance === $optValue ? 'selected' : '' ?>><?= htmlspecialchars($optLabel) ?></option>
                 <?php endforeach; ?>
-                <?php if ($currentClearance !== '' && !in_array($currentClearance, $clearanceOptions, true)): ?>
-                <option value="<?= htmlspecialchars($currentClearance) ?>" selected><?= htmlspecialchars($currentClearance) ?></option>
+                <?php if ($currentClearance !== '' && !array_key_exists($currentClearance, $clearanceOptions)): ?>
+                <option value="<?= htmlspecialchars($currentClearance) ?>" selected><?= htmlspecialchars($currentClearance) ?> (valeur héritée)</option>
                 <?php endif; ?>
               </select>
+              <?php if ($currentClearance !== '' && !array_key_exists($currentClearance, $clearanceOptions)): ?>
+              <p class="mt-1 text-[11px] text-amber-700">Cette valeur ne correspond à aucun niveau reconnu par le contrôle d’accès aux documents — resélectionnez un niveau ci-dessus pour qu’il s’applique réellement.</p>
+              <?php endif; ?>
             </div>
             <div>
               <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>
