@@ -137,9 +137,12 @@ class EffectifsWorkspaceController
         });
         $gate = Gate::getInstance();
         $communityName = $this->communityNameForTenant($tenantId);
-        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients(
-            $tenantId,
-            (int) Session::get('user_id')
+        $viewerId = (int) Session::get('user_id');
+        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
+        $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
+            $rowIds,
+            $viewerId
         );
 
         return $this->shell('admin.effectifs_workspace.roster', [
@@ -172,6 +175,7 @@ class EffectifsWorkspaceController
             'orgUnits' => $units,
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
+            'elevationCooldownByUserId' => $elevationCooldownByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -222,10 +226,9 @@ class EffectifsWorkspaceController
         }
         $gate = Gate::getInstance();
         $units = $this->unitRepository->allForTenant($tenantId);
-        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients(
-            $tenantId,
-            (int) Session::get('user_id')
-        );
+        $viewerId = (int) Session::get('user_id');
+        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
+        $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -238,6 +241,7 @@ class EffectifsWorkspaceController
             'orgRoles' => $roles,
             'orgUnits' => $units,
             'communityName' => $this->communityNameForTenant($tenantId),
+            'elevationCooldownSeconds' => $elevationCooldownSeconds,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -553,12 +557,24 @@ class EffectifsWorkspaceController
         }
         $tenantId = (int) Session::get('tenant_id');
         $showAll = $request->query('all') === '1';
-        $requests = $showAll
-            ? $this->elevationRequestRepository->listRecentForTenant($tenantId, 300)
-            : $this->elevationRequestRepository->listOpenForTenant($tenantId, 300);
+        $elevationPerPage = 50;
+        $elevationPage = max(1, (int) $request->query('page', 1));
+        $elevationTotal = 0;
+        if ($showAll) {
+            $elevationTotal = $this->elevationRequestRepository->countRecentForTenant($tenantId);
+            $requests = $this->elevationRequestRepository->listRecentForTenant(
+                $tenantId,
+                $elevationPerPage,
+                ($elevationPage - 1) * $elevationPerPage
+            );
+        } else {
+            $requests = $this->elevationRequestRepository->listOpenForTenant($tenantId, 300);
+            $elevationTotal = count($requests);
+        }
 
         $catalog = $this->elevationCatalogForTenant($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
+        $labelMaps = $this->elevationApprovalService->buildLabelMapsFromCatalog($catalog);
         $targetRoleIds = [];
         foreach ($requests as $r) {
             $tid = (int) ($r['target_user_id'] ?? 0);
@@ -575,9 +591,10 @@ class EffectifsWorkspaceController
             $diff = $this->elevationApprovalService->permissionDiffForRoleChange(
                 $tenantId,
                 $currentRoles,
-                $proposedRoleId
+                $proposedRoleId,
+                $roleMatrix
             );
-            $proposalLabels = $this->elevationApprovalService->proposalLabels($tenantId, [
+            $proposalLabels = $this->elevationApprovalService->proposalLabelsFromMaps($labelMaps, [
                 'grade_id' => (int) ($r['proposed_grade_id'] ?? 0) ?: null,
                 'role_id' => $proposedRoleId,
                 'job_role_id' => (int) ($r['proposed_job_role_id'] ?? 0) ?: null,
@@ -594,6 +611,10 @@ class EffectifsWorkspaceController
             'effectifsNav' => 'elevations',
             'elevationRequests' => $enrichedRequests,
             'elevationShowAll' => $showAll,
+            'elevationPage' => $elevationPage,
+            'elevationPerPage' => $elevationPerPage,
+            'elevationTotal' => $elevationTotal,
+            'elevationTotalPages' => $showAll ? max(1, (int) ceil($elevationTotal / $elevationPerPage)) : 1,
             'elevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
             'elevationCatalog' => $catalog,
             'elevationRoleMatrix' => $roleMatrix,
@@ -634,6 +655,12 @@ class EffectifsWorkspaceController
         }
         if (!in_array($status, ElevationRequestRepository::STATUSES, true)) {
             Session::flash('error', 'Statut non reconnu.');
+
+            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        }
+        $currentStatus = (string) ($existing['status'] ?? 'pending');
+        if (in_array($currentStatus, ['approved', 'rejected'], true)) {
+            Session::flash('error', 'Cette demande a déjà été traitée (' . ($currentStatus === 'approved' ? 'acceptée' : 'refusée') . ') — action impossible.');
 
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }

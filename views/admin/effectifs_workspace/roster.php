@@ -17,6 +17,15 @@ $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? 'Communauté'));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
+$elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
+$cooldownLabel = static function (int $seconds): string {
+    $hours = max(1, (int) ceil($seconds / 3600));
+    if ($hours < 24) {
+        return $hours . ' h';
+    }
+
+    return max(1, (int) ceil($hours / 24)) . ' j';
+};
 
 $filterQuery = static function (array $overrides = []) use ($filters, $page): array {
     $q = [
@@ -350,6 +359,10 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                     <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>">Compte</a>
                                 <?php endif; ?>
                                 <?php if ($canRequestElevation): ?>
+                                    <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>
+                                    <?php if ($cooldownSec > 0): ?>
+                                        <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Une demande a déjà été envoyée récemment pour ce membre — patientez avant d’en renvoyer une.">Élévation (patientez <?= htmlspecialchars($cooldownLabel($cooldownSec), ENT_QUOTES, 'UTF-8') ?>)</span>
+                                    <?php else: ?>
                                     <details class="eff-sheets__pop eff-sheets__pop--end">
                                         <summary class="eff-sheets__chip">Élévation</summary>
                                         <div class="eff-sheets__pop-panel">
@@ -366,6 +379,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                             </form>
                                         </div>
                                     </details>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </td>

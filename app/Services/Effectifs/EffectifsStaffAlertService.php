@@ -80,6 +80,33 @@ class EffectifsStaffAlertService
     }
 
     /**
+     * Équivalent batché de secondsBeforeNextElevationRequest() pour une liste de cibles (ex. le tableur) —
+     * une seule requête au lieu d’une par ligne.
+     *
+     * @param list<int> $targetUserIds
+     * @return array<int, int> target_user_id => secondes restantes avant de pouvoir redemander
+     */
+    public function secondsBeforeNextElevationRequestBatch(array $targetUserIds, int $requesterUserId): array
+    {
+        if ($requesterUserId < 1 || $targetUserIds === []) {
+            return [];
+        }
+        $sinceByTarget = $this->pingRepository->secondsSinceLastPingBatch(
+            $targetUserIds,
+            $requesterUserId,
+            self::ELEVATION_PING_KIND
+        );
+        $out = [];
+        foreach ($sinceByTarget as $targetId => $since) {
+            if ($since < self::ELEVATION_COOLDOWN_SEC) {
+                $out[$targetId] = self::ELEVATION_COOLDOWN_SEC - $since;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Destinataires d’une demande d’élévation : uniquement les comptes actifs du tenant donné
      * (jamais la liste globale d’e-mails plateforme).
      *

@@ -7,6 +7,7 @@ $effectifsLmsTitle = $effectifsLmsTitle ?? $title;
 $viewerName = (string) ($viewerName ?? '');
 $rosterCounts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $effectifsNav = (string) ($effectifsNav ?? 'roster');
+$elevationOpenCount = (int) ($elevationOpenCount ?? 0);
 ob_start();
 require base_path('views/admin/effectifs_workspace/partials/effectifs_lms_head.php');
 $headHtml = ob_get_clean();
@@ -49,6 +50,7 @@ require base_path('views/partials/layout_flash_toasts.php');
         <a href="<?= htmlspecialchars(effectifs_workspace_url('droits'), ENT_QUOTES, 'UTF-8') ?>">Droits</a>
         <a href="<?= htmlspecialchars(effectifs_workspace_url('fonctions'), ENT_QUOTES, 'UTF-8') ?>">Fonctions</a>
         <a href="<?= htmlspecialchars(effectifs_workspace_url('affectations'), ENT_QUOTES, 'UTF-8') ?>">Affectations</a>
+        <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>">Élévations<?= $elevationOpenCount > 0 ? ' <i class="eff-nav-badge">' . $elevationOpenCount . '</i>' : '' ?></a>
     </div>
 
     <main class="eff-main">

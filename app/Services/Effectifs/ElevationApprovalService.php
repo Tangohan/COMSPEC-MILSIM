@@ -43,10 +43,12 @@ class ElevationApprovalService
      *   lost: list<array{id:int,name:string,slug:string,module:string}>,
      *   unchanged_count: int
      * }
+     * @param array{permissions?:list<array<string,mixed>>,byRole?:array<int,array<int,bool>>}|null $matrix
+     *   Matrice déjà chargée par l'appelant (évite de la recalculer à chaque ligne d'une liste).
      */
-    public function permissionDiffForRoleChange(int $tenantId, array $currentRoleIds, ?int $proposedRoleId): array
+    public function permissionDiffForRoleChange(int $tenantId, array $currentRoleIds, ?int $proposedRoleId, ?array $matrix = null): array
     {
-        $matrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
+        $matrix ??= $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $permById = [];
         foreach ($matrix['permissions'] as $p) {
             $pid = (int) ($p['id'] ?? 0);
@@ -175,6 +177,87 @@ class ElevationApprovalService
             'role' => $roleLabel,
             'job_role' => $jobLabel,
             'unit' => $unitLabel,
+        ];
+    }
+
+    /**
+     * Précalcule les maps id => libellé à partir d’un catalogue déjà chargé (grades/roles/job_roles/units),
+     * pour résoudre les libellés d’une liste de propositions sans requête SQL par ligne.
+     *
+     * @param array{
+     *   grades: list<array<string,mixed>>,
+     *   roles: list<array<string,mixed>>,
+     *   job_roles: list<array{id:int,label:string}>,
+     *   units: list<array<string,mixed>>
+     * } $catalog
+     * @return array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>}
+     */
+    public function buildLabelMapsFromCatalog(array $catalog): array
+    {
+        $grades = [];
+        foreach ($catalog['grades'] ?? [] as $g) {
+            $id = (int) ($g['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $short = trim((string) ($g['label_short'] ?? ''));
+            $long = trim((string) ($g['label_long'] ?? ''));
+            $label = $short !== '' ? $short : $long;
+            if ($label !== '') {
+                $grades[$id] = $label;
+            }
+        }
+
+        $roles = [];
+        foreach ($catalog['roles'] ?? [] as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $roles[$id] = OrganizationRoleLabels::displayName($r, OrganizationRoleLabels::MODE_FR);
+        }
+
+        $jobRoles = [];
+        foreach ($catalog['job_roles'] ?? [] as $jr) {
+            $id = (int) ($jr['id'] ?? 0);
+            $label = trim((string) ($jr['label'] ?? ''));
+            if ($id > 0 && $label !== '') {
+                $jobRoles[$id] = $label;
+            }
+        }
+
+        $units = [];
+        foreach ($catalog['units'] ?? [] as $u) {
+            $id = (int) ($u['id'] ?? 0);
+            $label = trim((string) ($u['name'] ?? ''));
+            if ($id > 0 && $label !== '') {
+                $units[$id] = $label;
+            }
+        }
+
+        return ['grades' => $grades, 'roles' => $roles, 'job_roles' => $jobRoles, 'units' => $units];
+    }
+
+    /**
+     * Équivalent de proposalLabels() mais résolu en mémoire à partir des maps de buildLabelMapsFromCatalog().
+     * Ne fait aucune requête SQL — à utiliser pour enrichir une liste de plusieurs demandes.
+     *
+     * @param array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>} $maps
+     * @param array{grade_id?:int|null,role_id?:int|null,job_role_id?:int|null,unit_id?:int|null} $proposal
+     * @return array{grade:?string,role:?string,job_role:?string,unit:?string}
+     */
+    public function proposalLabelsFromMaps(array $maps, array $proposal): array
+    {
+        $gradeId = (int) ($proposal['grade_id'] ?? 0);
+        $roleId = (int) ($proposal['role_id'] ?? 0);
+        $jobId = (int) ($proposal['job_role_id'] ?? 0);
+        $unitId = (int) ($proposal['unit_id'] ?? 0);
+
+        return [
+            'grade' => $gradeId > 0 ? ($maps['grades'][$gradeId] ?? null) : null,
+            'role' => $roleId > 0 ? ($maps['roles'][$roleId] ?? null) : null,
+            'job_role' => $jobId > 0 ? ($maps['job_roles'][$jobId] ?? null) : null,
+            'unit' => $unitId > 0 ? ($maps['units'][$unitId] ?? null) : null,
         ];
     }
 

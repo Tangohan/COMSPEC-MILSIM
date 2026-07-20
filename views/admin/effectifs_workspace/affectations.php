@@ -36,13 +36,24 @@ $canManageAssignments = (bool) ($canManageAssignments ?? false);
 <?php if ($units === []): ?>
     <div class="eff-empty"><p>Aucune unité n’est encore définie dans la structure.</p></div>
 <?php else: ?>
+    <div style="margin-bottom:.85rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+        <input
+            type="search"
+            placeholder="Rechercher une unité…"
+            aria-label="Rechercher une unité"
+            data-eff-search-table="eff-affectations-table"
+            data-eff-search-count="eff-affectations-count"
+            style="flex:1;min-width:14rem;border:1px solid rgba(242,244,243,.14);background:#0a0d0c;color:#e8eeec;padding:.55rem .8rem;border-radius:.5rem;font-size:13px"
+        >
+        <span style="font-size:11px;color:rgba(242,244,243,.5)"><span id="eff-affectations-count"><?= count($units) ?></span> / <?= count($units) ?></span>
+    </div>
     <div class="eff-table-wrap">
-        <table class="eff-table" style="min-width:520px">
+        <table class="eff-table" id="eff-affectations-table" data-eff-sortable style="min-width:520px">
             <thead>
                 <tr>
-                    <th>Unité</th>
-                    <th>Type</th>
-                    <th>Code</th>
+                    <th data-eff-sort>Unité</th>
+                    <th data-eff-sort>Type</th>
+                    <th data-eff-sort>Code</th>
                 </tr>
             </thead>
             <tbody>
@@ -58,14 +69,17 @@ $canManageAssignments = (bool) ($canManageAssignments ?? false);
                     'battalion', 'bataillon' => 'Bataillon',
                     default => $typeRaw !== '' ? $typeRaw : '—',
                 };
+                $unitName = (string) ($u['name'] ?? '');
+                $unitCode = trim((string) ($u['code'] ?? ''));
                 ?>
-                <tr>
-                    <td><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                <tr data-eff-search="<?= htmlspecialchars($unitName . ' ' . $typeLabel . ' ' . $unitCode, ENT_QUOTES, 'UTF-8') ?>">
+                    <td><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars($typeLabel, ENT_QUOTES, 'UTF-8') ?></td>
-                    <td><?= htmlspecialchars(trim((string) ($u['code'] ?? '')) ?: '—', ENT_QUOTES, 'UTF-8') ?></td>
+                    <td><?= htmlspecialchars($unitCode !== '' ? $unitCode : '—', ENT_QUOTES, 'UTF-8') ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 <?php endif; ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-table-filter.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

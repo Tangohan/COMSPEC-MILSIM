@@ -127,7 +127,7 @@ class ElevationRequestRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listRecentForTenant(int $tenantId, int $limit = 300): array
+    public function listRecentForTenant(int $tenantId, int $limit = 300, int $offset = 0): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT er.*,
@@ -139,11 +139,21 @@ class ElevationRequestRepository
              LEFT JOIN users r ON r.id = er.requested_by
              WHERE er.tenant_id = ?
              ORDER BY er.created_at DESC
-             LIMIT ' . max(1, min(500, $limit))
+             LIMIT ' . max(1, min(500, $limit)) . '
+             OFFSET ' . max(0, $offset)
         );
         $stmt->execute([$tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** Nombre total de demandes (tous statuts) pour la pagination de l'historique. */
+    public function countRecentForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM elevation_requests WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /** Évite les doublons : demande déjà ouverte (pending/in_review) du même demandeur pour la même cible. */

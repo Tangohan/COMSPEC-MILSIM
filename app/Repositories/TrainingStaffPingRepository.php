@@ -53,4 +53,45 @@ class TrainingStaffPingRepository
             throw $e;
         }
     }
+
+    /**
+     * Dernier ping (en secondes écoulées) pour un même module_id, groupé par enrollment_id — une seule requête
+     * pour un lot d'identifiants au lieu d'un appel à secondsSinceLastPing() par ligne.
+     *
+     * @param list<int> $enrollmentIds
+     * @return array<int, int> enrollment_id => secondes écoulées depuis le dernier ping
+     */
+    public function secondsSinceLastPingBatch(array $enrollmentIds, int $moduleId, string $kind = 'module_blocked'): array
+    {
+        $enrollmentIds = array_values(array_unique(array_filter(array_map('intval', $enrollmentIds), static fn (int $id): bool => $id > 0)));
+        if ($enrollmentIds === [] || $moduleId < 1) {
+            return [];
+        }
+        try {
+            $ph = implode(',', array_fill(0, count($enrollmentIds), '?'));
+            $stmt = $this->pdo->prepare(
+                "SELECT enrollment_id, MAX(created_at) AS last_ping
+                 FROM training_staff_ping_log
+                 WHERE enrollment_id IN ({$ph}) AND module_id = ? AND ping_kind = ?
+                 GROUP BY enrollment_id"
+            );
+            $stmt->execute([...$enrollmentIds, $moduleId, $kind]);
+            $out = [];
+            $now = time();
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $eid = (int) ($row['enrollment_id'] ?? 0);
+                $t = strtotime((string) ($row['last_ping'] ?? ''));
+                if ($eid > 0 && $t) {
+                    $out[$eid] = max(0, $now - $t);
+                }
+            }
+
+            return $out;
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
 }

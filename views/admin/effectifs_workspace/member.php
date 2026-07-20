@@ -14,6 +14,17 @@ $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? ($m['community_name'] ?? 'Communauté')));
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
+$elevationCooldownSeconds = (int) ($elevationCooldownSeconds ?? 0);
+$elevationCooldownLabel = static function (int $seconds): string {
+    $hours = max(1, (int) ceil($seconds / 3600));
+    if ($hours < 24) {
+        return $hours . ' heure' . ($hours > 1 ? 's' : '');
+    }
+
+    $days = max(1, (int) ceil($hours / 24));
+
+    return $days . ' jour' . ($days > 1 ? 's' : '');
+};
 
 $status = (string) ($m['status'] ?? '');
 $display = trim((string) ($m['display_name'] ?? ''));
@@ -178,7 +189,11 @@ $statusLabel = static function (string $raw): string {
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>">Gérer les emplois métier</a>
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Gérer les rôles</a>
 
-            <?php if ($canRequestElevation): ?>
+            <?php if ($canRequestElevation && $elevationCooldownSeconds > 0): ?>
+                <p class="eff-member-elevate__title" style="opacity:.6">
+                    Demande d’élévation déjà envoyée — patientez <?= htmlspecialchars($elevationCooldownLabel($elevationCooldownSeconds), ENT_QUOTES, 'UTF-8') ?> avant d’en renvoyer une.
+                </p>
+            <?php elseif ($canRequestElevation): ?>
                 <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form eff-member-elevate">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="return_to" value="member">

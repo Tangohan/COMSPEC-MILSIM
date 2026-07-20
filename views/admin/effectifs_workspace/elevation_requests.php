@@ -6,6 +6,10 @@ declare(strict_types=1);
  *
  * @var list<array<string,mixed>> $elevationRequests
  * @var bool $elevationShowAll
+ * @var int $elevationPage
+ * @var int $elevationPerPage
+ * @var int $elevationTotal
+ * @var int $elevationTotalPages
  * @var array<string,string> $elevationKindLabels
  * @var array{grades?:list,roles?:list,job_roles?:list,units?:list} $elevationCatalog
  * @var array{roles?:list,permissions?:list,byRole?:array} $elevationRoleMatrix
@@ -15,6 +19,17 @@ use App\Support\OrganizationRoleLabels;
 
 $requests = is_array($elevationRequests ?? null) ? $elevationRequests : [];
 $showAll = (bool) ($elevationShowAll ?? false);
+$elevPage = (int) ($elevationPage ?? 1);
+$elevTotalPages = (int) ($elevationTotalPages ?? 1);
+$elevTotal = (int) ($elevationTotal ?? count($requests));
+$elevPageUrl = static function (int $p) use ($showAll): string {
+    $q = http_build_query(array_filter([
+        'all' => $showAll ? '1' : null,
+        'page' => $p > 1 ? $p : null,
+    ], static fn ($v) => $v !== null));
+
+    return effectifs_workspace_url('elevations') . ($q !== '' ? '?' . $q : '');
+};
 $kindLabels = is_array($elevationKindLabels ?? null) ? $elevationKindLabels : [];
 $catalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $grades = is_array($catalog['grades'] ?? null) ? $catalog['grades'] : [];
@@ -253,6 +268,23 @@ $gradeOptionLabel = static function (array $g): string {
             </article>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($showAll && $elevTotalPages > 1): ?>
+        <div class="eff-catalog-foot">
+            <p style="margin:0">
+                <strong style="color:#0f172a"><?= $elevTotal ?></strong>
+                demande<?= $elevTotal > 1 ? 's' : '' ?> — page <?= $elevPage ?> / <?= $elevTotalPages ?>
+            </p>
+            <div class="eff-catalog-foot__links">
+                <?php if ($elevPage > 1): ?>
+                    <a class="eff-catalog__btn" href="<?= htmlspecialchars($elevPageUrl($elevPage - 1), ENT_QUOTES, 'UTF-8') ?>">Page précédente</a>
+                <?php endif; ?>
+                <?php if ($elevPage < $elevTotalPages): ?>
+                    <a class="eff-catalog__btn" href="<?= htmlspecialchars($elevPageUrl($elevPage + 1), ENT_QUOTES, 'UTF-8') ?>">Page suivante</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 

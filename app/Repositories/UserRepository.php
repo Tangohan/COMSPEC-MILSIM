@@ -145,6 +145,27 @@ class UserRepository
         return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];
     }
 
+    /** @var array<string,bool> */
+    private static array $tableExistsCache = [];
+
+    private function tableExists(string $table): bool
+    {
+        if (array_key_exists($table, self::$tableExistsCache)) {
+            return self::$tableExistsCache[$table];
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table]);
+            self::$tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            self::$tableExistsCache[$table] = false;
+        }
+
+        return self::$tableExistsCache[$table];
+    }
+
     private function hasUserUnitsTable(): bool
     {
         if (self::$hasUserUnitsTable === null) {
@@ -914,16 +935,11 @@ class UserRepository
         $ph = implode(',', array_fill(0, count($userIds), '?'));
         $jobRoleJoin = '';
         $jobRoleSelect = 'NULL AS personnel_job_role_name';
-        $stmtJr = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' LIMIT 1");
-        if ($stmtJr && $stmtJr->fetchColumn()) {
+        if ($this->tableExists('personnel_job_roles')) {
             $jobRoleJoin = 'LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
             $jobRoleSelect = 'pjr.name AS personnel_job_role_name';
         }
-        $hasPa = false;
-        $stmtPa = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments' LIMIT 1");
-        if ($stmtPa && $stmtPa->fetchColumn()) {
-            $hasPa = true;
-        }
+        $hasPa = $this->tableExists('personnel_assignments');
         $hasUu = $this->hasUserUnitsTable();
         $unitParts = [];
         $codeParts = [];
@@ -958,8 +974,7 @@ class UserRepository
         }
         $extrasJoin = '';
         $extrasSelect = ', NULL AS date_of_enlistment, NULL AS service_number';
-        $stmtEx = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' LIMIT 1");
-        if ($stmtEx && $stmtEx->fetchColumn()) {
+        if ($this->tableExists('personnel_extras')) {
             $extrasJoin = 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id';
             $extrasSelect = ', pex.date_of_enlistment, pex.service_number';
         }
