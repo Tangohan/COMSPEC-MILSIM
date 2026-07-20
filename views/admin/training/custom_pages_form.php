@@ -60,6 +60,27 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
         </div>
         <ul class="space-y-2 max-h-80 overflow-auto"><?php foreach (($customPageRevisions ?? []) as $rev) { include __DIR__.'/partials/custom_page_version_item.php'; } ?></ul>
       </div>
+      <?php if ($isEdit): ?>
+      <div class="cp-editor-card text-xs">
+        <div class="cp-editor-card__head"><p class="cp-editor-card__title">Avis lecteurs</p></div>
+        <?php $fbAgg = $customPageFeedbackAgg ?? ['count' => 0, 'avg_rating' => 0.0]; ?>
+        <?php if ((int) $fbAgg['count'] > 0): ?>
+        <p class="px-1 pb-2 text-slate-700"><strong><?= htmlspecialchars((string) $fbAgg['avg_rating']) ?>/5</strong> — <?= (int) $fbAgg['count'] ?> avis</p>
+        <ul class="space-y-2 max-h-64 overflow-auto">
+          <?php foreach (($customPageFeedbackRows ?? []) as $fb): ?>
+          <li class="rounded-lg border border-slate-200 px-3 py-2">
+            <div class="flex justify-between gap-2"><strong><?= (int) ($fb['rating'] ?? 0) ?>/5</strong><span class="text-slate-500"><?= htmlspecialchars((string) ($fb['reader_name'] ?? $fb['reader_email'] ?? '')) ?></span></div>
+            <?php if (!empty($fb['comment'])): ?>
+            <p class="text-slate-600 mt-1"><?= htmlspecialchars((string) $fb['comment']) ?></p>
+            <?php endif; ?>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+        <?php else: ?>
+        <p class="px-1 text-slate-500">Aucun avis pour l’instant.</p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
     </aside>
   </div>
 

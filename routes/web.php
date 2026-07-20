@@ -465,6 +465,7 @@ return function (Router $router) {
     /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
     $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
     $router->get('/formations/page/{slug}/pdf', [TrainingController::class, 'formationCustomPageExportPdf'], $mwTraining);
+    $router->post('/formations/page/{slug}/avis', [TrainingController::class, 'formationCustomPageSubmitFeedback'], $mwTraining);
     $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
     /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */

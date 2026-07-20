@@ -9,6 +9,7 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TrainingFormationCustomPageFeedbackRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
 use App\Services\Audit\AuditService;
 use App\Services\Platform\FeatureGateService;
@@ -27,6 +28,7 @@ final class AdminTrainingCustomPageController
         private FeatureGateService $featureGate,
         private TrainingFormationCustomPageExportPdfService $pdfExport,
         private AuditService $auditService,
+        private TrainingFormationCustomPageFeedbackRepository $feedbackRepository,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -151,6 +153,8 @@ final class AdminTrainingCustomPageController
             'customPageRevisions' => $this->pageRepository->listRevisions($id, $tenantId),
             'customPageActivity' => $this->pageRepository->listActivity($id, $tenantId),
             'customPagePolicy' => $this->policyMatrix(),
+            'customPageFeedbackAgg' => $this->feedbackRepository->aggregateForPage($id, $tenantId),
+            'customPageFeedbackRows' => $this->feedbackRepository->listRecentForPage($id, $tenantId, 20),
         ]);
     }
 
