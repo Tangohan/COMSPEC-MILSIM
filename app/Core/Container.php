@@ -1347,6 +1347,7 @@ class Container
                 self::get(\App\Services\Training\TrainingPublicSiteImageCatalog::class),
                 self::get(\App\Services\Training\TrainingPresentationKitService::class),
                 self::get(\App\Services\Training\TrainingStaffAlertService::class),
+                self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
             ),
             \App\Controllers\Admin\AdminTrainingStudioExchangeController::class => new \App\Controllers\Admin\AdminTrainingStudioExchangeController(
                 self::get(\App\Services\Training\TrainingCourseExchangeService::class),
