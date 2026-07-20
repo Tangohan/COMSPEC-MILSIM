@@ -1924,6 +1924,13 @@ try {
     echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
 }
 
+$memberDeparturesMigrate = require $root . '/bootstrap/member_departures_migration.php';
+try {
+    $memberDeparturesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] member_departures : ' . $e->getMessage() . "\n";
+}
+
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
 $enlistmentCannedMessagesMigrate($pdo);
 

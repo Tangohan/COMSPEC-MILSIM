@@ -19,9 +19,11 @@ use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\MemberDepartureRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
+use App\Services\Effectifs\MemberOffboardingService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
 use DateTimeImmutable;
@@ -43,6 +45,8 @@ class EffectifsWorkspaceController
         private TenantRepository $tenantRepository,
         private GradeRepository $gradeRepository,
         private ElevationApprovalService $elevationApprovalService,
+        private MemberOffboardingService $memberOffboardingService,
+        private MemberDepartureRepository $memberDepartureRepository,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
@@ -319,6 +323,7 @@ class EffectifsWorkspaceController
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
         $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
+        $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -333,6 +338,7 @@ class EffectifsWorkspaceController
             'communityName' => $this->communityNameForTenant($tenantId),
             'elevationCooldownSeconds' => $elevationCooldownSeconds,
             'elevationHistory' => $elevationHistory,
+            'latestDeparture' => $latestDeparture,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -497,6 +503,93 @@ class EffectifsWorkspaceController
         );
 
         return Response::redirect($this->redirectBackToRoster($request));
+    }
+
+    /** Enregistre un départ (offboarding structuré) — motif, date, et retrait d’accès optionnel. */
+    public function recordDeparture(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à enregistrer un départ.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $reason = trim((string) $request->input('reason', 'other'));
+        $reasonNote = trim((string) $request->input('reason_note', ''));
+        if (mb_strlen($reasonNote) > 500) {
+            $reasonNote = mb_substr($reasonNote, 0, 500);
+        }
+        $departedAt = trim((string) $request->input('departed_at', '')) ?: date('Y-m-d');
+        $requestRevoke = $request->input('revoke_access') === '1';
+        $revokeAccess = $requestRevoke && EffectifsLmsAccess::canManageRoles($gate);
+
+        $result = $this->memberOffboardingService->recordDeparture(
+            $tenantId,
+            $id,
+            (int) Session::get('user_id'),
+            $reason,
+            $reasonNote,
+            $departedAt,
+            $revokeAccess
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    /** Vue « anciens membres » — historique des départs, filtrable par motif. */
+    public function departures(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à consulter les départs.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $reasonFilter = trim((string) $request->query('motif', ''));
+        if (!in_array($reasonFilter, MemberDepartureRepository::REASONS, true)) {
+            $reasonFilter = null;
+        }
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 50;
+        $total = $this->memberDepartureRepository->countForTenant($tenantId, $reasonFilter);
+        $departures = $this->memberDepartureRepository->listForTenant(
+            $tenantId,
+            $reasonFilter,
+            $perPage,
+            ($page - 1) * $perPage
+        );
+
+        return $this->shell('admin.effectifs_workspace.departures', [
+            'title' => 'Anciens membres',
+            'effectifsNav' => 'departures',
+            'departures' => $departures,
+            'departureReasonFilter' => $reasonFilter,
+            'departureTotal' => $total,
+            'departurePage' => $page,
+            'departureTotalPages' => max(1, (int) ceil($total / $perPage)),
+        ]);
     }
 
     public function quickStatus(Request $request, array $params = []): Response

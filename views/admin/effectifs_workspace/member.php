@@ -10,6 +10,7 @@ $units = is_array($orgUnits ?? null) ? $orgUnits : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
+$canManageRoles = (bool) ($canManageRoles ?? false);
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? ($m['community_name'] ?? 'Communauté')));
@@ -27,6 +28,13 @@ $elevationCooldownLabel = static function (int $seconds): string {
 };
 
 $elevationHistory = is_array($elevationHistory ?? null) ? $elevationHistory : [];
+$latestDeparture = is_array($latestDeparture ?? null) ? $latestDeparture : null;
+$departureReasonLabels = [
+    'end_of_engagement' => 'Fin d’engagement',
+    'exclusion' => 'Exclusion',
+    'pause' => 'Pause',
+    'other' => 'Autre',
+];
 $elevStatusLabel = static function (string $status): string {
     return match ($status) {
         'pending' => 'En attente',
@@ -210,6 +218,20 @@ $statusLabel = static function (string $raw): string {
             </ul>
         <?php endif; ?>
 
+        <?php if ($latestDeparture !== null): ?>
+            <?php
+            $ldReason = (string) ($latestDeparture['reason'] ?? 'other');
+            $ldDate = (string) ($latestDeparture['departed_at'] ?? '');
+            $ldRevoked = !empty($latestDeparture['access_revoked']);
+            ?>
+            <p class="eff-section-label" style="margin-top:1.35rem">Dernier départ enregistré</p>
+            <p style="margin:.35rem 0 0;font-size:13px;color:rgba(242,244,243,.7)">
+                <?= $ldDate !== '' ? htmlspecialchars(date('d/m/Y', strtotime($ldDate)), ENT_QUOTES, 'UTF-8') : '—' ?>
+                — <?= htmlspecialchars($departureReasonLabels[$ldReason] ?? $ldReason, ENT_QUOTES, 'UTF-8') ?>
+                <?php if ($ldRevoked): ?><span class="eff-badge" style="margin-left:.35rem">Accès retirés</span><?php endif; ?>
+            </p>
+        <?php endif; ?>
+
         <?php if ($canManageAssignments): ?>
             <p class="eff-section-label" style="margin-top:1.35rem">Modifier l’unité</p>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form" style="margin-top:.65rem">
@@ -270,6 +292,33 @@ $statusLabel = static function (string $raw): string {
                     </select>
                     <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer le statut</button>
                 </form>
+            <?php endif; ?>
+
+            <?php if ($canManageStatus): ?>
+                <details class="eff-pop">
+                    <summary class="eff-btn eff-btn--ghost" style="cursor:pointer">Enregistrer un départ</summary>
+                    <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/depart'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form" style="margin-top:.65rem">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                        <label for="eff-depart-reason">Motif</label>
+                        <select id="eff-depart-reason" name="reason">
+                            <option value="end_of_engagement">Fin d’engagement</option>
+                            <option value="exclusion">Exclusion</option>
+                            <option value="pause">Pause</option>
+                            <option value="other">Autre</option>
+                        </select>
+                        <label for="eff-depart-date">Date du départ</label>
+                        <input type="date" id="eff-depart-date" name="departed_at" value="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>">
+                        <label for="eff-depart-note">Note (optionnel)</label>
+                        <textarea id="eff-depart-note" name="reason_note" rows="2" maxlength="500" placeholder="Contexte du départ…"></textarea>
+                        <?php if ($canManageRoles): ?>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;text-transform:none;letter-spacing:normal">
+                            <input type="checkbox" name="revoke_access" value="1" style="width:auto">
+                            Retirer immédiatement les rôles organisation et l’habilitation
+                        </label>
+                        <?php endif; ?>
+                        <button type="submit" class="eff-btn eff-btn--warn">Confirmer le départ</button>
+                    </form>
+                </details>
             <?php endif; ?>
         </div>
     </aside>

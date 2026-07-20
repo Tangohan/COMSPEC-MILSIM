@@ -773,6 +773,13 @@ class Container
             \App\Services\Admin\AdminAuditService::class => new \App\Services\Admin\AdminAuditService(
                 self::get(\App\Services\Audit\AuditService::class)
             ),
+            \App\Repositories\MemberDepartureRepository::class => new \App\Repositories\MemberDepartureRepository(),
+            \App\Services\Effectifs\MemberOffboardingService::class => new \App\Services\Effectifs\MemberOffboardingService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\MemberDepartureRepository::class),
+                self::get(\App\Services\Admin\AdminAuditService::class)
+            ),
             \App\Repositories\PersonnelOrgHistoryRepository::class => new \App\Repositories\PersonnelOrgHistoryRepository(),
             \App\Repositories\UserLegalIdentityRepository::class => new \App\Repositories\UserLegalIdentityRepository(),
             \App\Repositories\PersonnelRoleplayTimelineRepository::class => new \App\Repositories\PersonnelRoleplayTimelineRepository(),
@@ -1221,6 +1228,8 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Services\Effectifs\ElevationApprovalService::class),
+                self::get(\App\Services\Effectifs\MemberOffboardingService::class),
+                self::get(\App\Repositories\MemberDepartureRepository::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
             ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(
