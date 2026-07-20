@@ -101,6 +101,15 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || !empty($filters['sans_affectation'])
     || !empty($filters['sans_role'])
     || (($filters['tri'] ?? 'nom') !== 'nom');
+
+$exportQuery = array_filter([
+    'q' => $filters['q'] ?? null,
+    'status' => !empty($filters['status']) ? $filters['status'] : null,
+    'role_id' => !empty($filters['role_id']) ? (int) $filters['role_id'] : null,
+    'sans_affectation' => !empty($filters['sans_affectation']) ? '1' : null,
+    'sans_role' => !empty($filters['sans_role']) ? '1' : null,
+], static fn ($v) => $v !== null && $v !== '' && $v !== 0);
+$exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_build_query($exportQuery) : '');
 ?>
 <div class="eff-catalog">
     <div class="eff-catalog__head">
@@ -114,6 +123,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
         </div>
         <div class="eff-catalog__tools">
             <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Demandes d’élévation</a>
+            <a href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Exporter en CSV</a>
             <?php if ($hasActiveFilters): ?>
                 <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Réinitialiser</a>
             <?php endif; ?>
@@ -203,10 +213,26 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
             <?php endif; ?>
         </div>
     <?php else: ?>
+        <?php if ($canManageStatus): ?>
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" id="eff-bulk-form" data-eff-bulk-bar style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.6rem;background:#f8fafc">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <span data-eff-bulk-count style="font-size:12px;font-weight:700;color:#475569">0 sélectionné(s)</span>
+            <select name="status" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px">
+                <option value="active">Passer actif</option>
+                <option value="inactive">Passer inactif</option>
+                <option value="pending_verification">E-mail à vérifier</option>
+            </select>
+            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Appliquer</button>
+        </form>
+        <?php endif; ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des effectifs" tabindex="0">
             <table class="eff-sheets__table">
                 <thead>
                     <tr>
+                        <?php if ($canManageStatus): ?>
+                        <th style="width:2rem"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
+                        <?php endif; ?>
                         <th>Identité</th>
                         <th>Grade</th>
                         <th>Fonction</th>
@@ -260,6 +286,9 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                     $completionScore = (int) ($row['completion_score'] ?? 0);
                     ?>
                     <tr>
+                        <?php if ($canManageStatus): ?>
+                        <td><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
+                        <?php endif; ?>
                         <td>
                             <div class="eff-sheets__identity">
                                 <span class="eff-sheets__avatar" aria-hidden="true">
@@ -405,3 +434,6 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
         </div>
     <?php endif; ?>
 </div>
+<?php if ($canManageStatus && $rows !== []): ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-bulk-actions.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>

@@ -187,6 +187,95 @@ class EffectifsWorkspaceController
         ]);
     }
 
+    /** Export CSV du tableur, avec les mêmes filtres que roster() mais sans pagination (borné à 5000 lignes). */
+    public function exportCsv(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+
+        $search = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        if ($status === 'pending') {
+            $status = 'pending_verification';
+        }
+        $roleId = max(0, (int) $request->query('role_id', 0));
+        $onlyNoUnit = $request->query('sans_affectation') === '1';
+        $onlyNoRole = $request->query('sans_role') === '1';
+
+        $statusFilter = $status !== '' ? $status : null;
+        $roleFilter = $roleId > 0 ? $roleId : null;
+        $onlyWithoutUnit = $onlyNoUnit ? true : null;
+        $onlyWithoutRole = $onlyNoRole ? true : null;
+        $searchFilter = $search !== '' ? $search : null;
+
+        $total = $this->userRepository->countListForTenant(
+            $tenantId,
+            $searchFilter,
+            $statusFilter,
+            $roleFilter,
+            true,
+            $onlyWithoutUnit,
+            $onlyWithoutRole
+        );
+        $fetchLimit = min(5000, max($total, 1));
+        $baseUsers = $this->userRepository->listForTenant(
+            $tenantId,
+            $searchFilter,
+            $statusFilter,
+            $roleFilter,
+            $fetchLimit,
+            0,
+            true,
+            $onlyWithoutUnit,
+            $onlyWithoutRole
+        );
+        $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+        $rows = $this->sortRosterRows($rows, 'nom');
+
+        $statusLabels = [
+            'active' => 'Actif',
+            'inactive' => 'Inactif',
+            'pending_verification' => 'E-mail à vérifier',
+        ];
+
+        $fh = fopen('php://temp', 'r+');
+        $sep = ';';
+        fputcsv($fh, [
+            'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
+            'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
+        ], $sep);
+        foreach ($rows as $r) {
+            $rStatus = (string) ($r['status'] ?? '');
+            fputcsv($fh, [
+                (string) ($r['display_name'] ?? ''),
+                (string) ($r['callsign'] ?? ''),
+                (string) ($r['email'] ?? ''),
+                trim((string) ($r['grade_short'] ?? $r['grade_long'] ?? '')),
+                trim((string) ($r['personnel_job_role_name'] ?? $r['primary_role'] ?? '')),
+                trim((string) ($r['assignment_path'] ?? '')),
+                $statusLabels[$rStatus] ?? $rStatus,
+                (string) ($r['seniority_label'] ?? ''),
+                (string) ($r['availability_score'] ?? ''),
+                (string) ($r['presence_score'] ?? ''),
+                (string) ($r['completion_score'] ?? ''),
+            ], $sep);
+        }
+        rewind($fh);
+        $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
+        fclose($fh);
+
+        $filename = 'effectifs-' . date('Y-m-d') . '.csv';
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($csv);
+    }
+
     public function member(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();
@@ -253,6 +342,70 @@ class EffectifsWorkspaceController
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /** Changement de statut groupé depuis la sélection multiple du tableur (borné à 200 membres). */
+    public function bulkStatus(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier le statut des comptes.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $status = trim((string) $request->input('status', ''));
+        $allowed = ['active', 'inactive', 'pending_verification'];
+        $rawIds = $request->input('user_ids', []);
+        $ids = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        $ids = array_slice($ids, 0, 200);
+
+        if (!in_array($status, $allowed, true) || $ids === []) {
+            Session::flash('error', 'Sélectionnez au moins un membre et un statut valide.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $updated = 0;
+        foreach ($ids as $id) {
+            $user = $this->userRepository->findById($id, $tenantId);
+            if (!$user) {
+                continue;
+            }
+            $before = (string) ($user['status'] ?? '');
+            if ($before === $status) {
+                continue;
+            }
+            $this->userRepository->update($id, $tenantId, ['status' => $status]);
+            $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'status:' . $before, 'status:' . $status);
+            $updated++;
+        }
+
+        $label = match ($status) {
+            'active' => 'Compte actif',
+            'inactive' => 'Compte inactif',
+            'pending_verification' => 'En attente de vérification de l’e-mail',
+            default => $status,
+        };
+        Session::flash(
+            'success',
+            $updated > 0
+                ? ($updated . ' compte' . ($updated > 1 ? 's' : '') . ' mis à jour : ' . $label . '.')
+                : 'Aucun changement : les membres sélectionnés avaient déjà ce statut.'
+        );
+
+        return Response::redirect($this->redirectBackToRoster($request));
     }
 
     public function quickStatus(Request $request, array $params = []): Response
