@@ -1272,6 +1272,7 @@ final class EmailService
         int $withoutUnit,
         int $withoutRole,
         int $pendingElevations,
+        int $clearanceReviewDue,
         string $rosterUrl,
         int $tenantId
     ): bool {
@@ -1287,6 +1288,7 @@ final class EmailService
                 'withoutUnit' => $withoutUnit,
                 'withoutRole' => $withoutRole,
                 'pendingElevations' => $pendingElevations,
+                'clearanceReviewDue' => $clearanceReviewDue,
                 'rosterUrl' => $rosterUrl,
             ],
             $tenantId,

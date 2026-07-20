@@ -104,4 +104,22 @@ class PersonnelProfileRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Compte les comptes actifs ayant une habilitation accordée dont la revue est absente
+     * ou périmée (au-delà de $thresholdDays) — une seule requête, pas de N+1.
+     */
+    public function countOverdueClearanceReviewForTenant(int $tenantId, int $thresholdDays): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users u
+             INNER JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ? AND u.status = 'active'
+               AND TRIM(COALESCE(pp.clearance_level, '')) <> ''
+               AND (pp.clearance_reviewed_at IS NULL OR pp.clearance_reviewed_at < DATE_SUB(NOW(), INTERVAL ? DAY))"
+        );
+        $stmt->execute([$tenantId, $thresholdDays]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

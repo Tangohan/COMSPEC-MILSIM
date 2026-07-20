@@ -56,6 +56,7 @@ $clearanceRaw = trim((string) ($m['clearance_level'] ?? ''));
 $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
 $clearanceLabel = $clearanceRaw !== '' ? ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw) : '';
 $clearanceReviewedAt = trim((string) ($m['clearance_reviewed_at'] ?? ''));
+$clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue($clearanceRaw, $clearanceReviewedAt);
 
 $statusLabel = static function (string $raw): string {
     return match ($raw) {
@@ -120,6 +121,9 @@ $statusLabel = static function (string $raw): string {
                         <span class="eff-tag"><?= htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') ?></span>
                         <?php if ($clearanceReviewedAt !== ''): ?>
                             <span style="font-size:11px;color:rgba(242,244,243,.5);margin-left:.35rem">revue le <?= htmlspecialchars(date('d/m/Y', strtotime($clearanceReviewedAt)), ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                        <?php if ($clearanceOverdue): ?>
+                            <span class="eff-tag eff-tag--warn" style="margin-left:.35rem">À revoir</span>
                         <?php endif; ?>
                     <?php else: ?>
                         —

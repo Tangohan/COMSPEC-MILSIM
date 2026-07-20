@@ -119,6 +119,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
             <p class="eff-catalog__lead">
                 Vue opérationnelle des membres de <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
                 identité, grade, fonction, affectation, rôles et indicateurs. Affectez une unité ou demandez une élévation sans quitter le tableur.
+                Pour l’organigramme et les référentiels (non nominatif), voir <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="underline">Structure &amp; grades</a>.
             </p>
         </div>
         <div class="eff-catalog__tools">
@@ -130,7 +131,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
         </div>
     </div>
 
-    <div class="eff-catalog-filters" style="grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
+    <div class="eff-catalog-filters" style="grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Membres</p>
             <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['total'] ?? $total) ?></p>
@@ -146,6 +147,10 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Sans rôle</p>
             <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['no_role'] ?? 0) ?></p>
+        </div>
+        <div>
+            <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Habilitation à revoir</p>
+            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['clearance_review_due'] ?? 0) ?></p>
         </div>
     </div>
 
@@ -284,6 +289,10 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                     $availabilityScore = (int) ($row['availability_score'] ?? 0);
                     $presenceScore = (int) ($row['presence_score'] ?? 0);
                     $completionScore = (int) ($row['completion_score'] ?? 0);
+                    $clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue(
+                        $row['clearance_level'] ?? null,
+                        $row['clearance_reviewed_at'] ?? null
+                    );
                     ?>
                     <tr>
                         <?php if ($canManageStatus): ?>
@@ -373,6 +382,9 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                                 <span class="eff-sheets__metric" title="Disponibilité">Disp. <?= $availabilityScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Présence">Prés. <?= $presenceScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Complétion du dossier">Doss. <?= $completionScore ?>%</span>
+                                <?php if ($clearanceOverdue): ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch" title="Habilitation accordée sans revue récente (&gt; <?= \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS ?> jours)">Habilitation à revoir</span>
+                                <?php endif; ?>
                             </div>
                         </td>
                         <td>

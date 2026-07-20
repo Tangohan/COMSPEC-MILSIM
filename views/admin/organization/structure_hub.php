@@ -36,7 +36,7 @@ $hubFlashSuccess = \App\Core\Session::getFlash('success');
                 <button type="button" id="hub-btn-membre" class="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-slate-800">Inviter un membre</button>
                 <button type="button" id="hub-btn-groupe" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50">Nouveau regroupement</button>
                 <button type="button" id="hub-btn-equipe" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50">Nouvelle équipe</button>
-                <a href="<?= url('back-office/organisation-effectifs') ?>" class="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Organisation des effectifs</a>
+                <a href="<?= url('back-office/organisation-effectifs') ?>" class="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Structure &amp; grades</a>
             </div>
         </header>
 

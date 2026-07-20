@@ -8,6 +8,7 @@ declare(strict_types=1);
 /** @var int $withoutUnit */
 /** @var int $withoutRole */
 /** @var int $pendingElevations */
+/** @var int $clearanceReviewDue */
 /** @var string $rosterUrl */
 
 $staff = htmlspecialchars((string) $staffDisplayName, ENT_QUOTES, 'UTF-8');
@@ -18,6 +19,7 @@ $rows = [
     ['label' => 'Membres sans unité', 'count' => (int) $withoutUnit],
     ['label' => 'Membres sans rôle', 'count' => (int) $withoutRole],
     ['label' => 'Élévations en attente', 'count' => (int) $pendingElevations],
+    ['label' => 'Habilitations à revoir', 'count' => (int) $clearanceReviewDue],
 ];
 
 $listHtml = '<ul>';

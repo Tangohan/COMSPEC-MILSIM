@@ -937,6 +937,10 @@ class EffectifsWorkspaceController
             'pending' => $this->userRepository->countListForTenant($tenantId, null, 'pending_verification', null, true),
             'no_unit' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, true, null),
             'no_role' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, null, true),
+            'clearance_review_due' => $this->personnelProfileRepository->countOverdueClearanceReviewForTenant(
+                $tenantId,
+                \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS
+            ),
         ];
     }
 

@@ -512,7 +512,7 @@ class OrganizationDashboardController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.effectifs_hub',
-            'title' => 'Organisation des effectifs',
+            'title' => 'Structure & grades',
             'isBackOfficeShell' => true,
             'hubStats' => $hubStats,
             'communityName' => $tenantName !== '' ? $tenantName : 'Communauté',

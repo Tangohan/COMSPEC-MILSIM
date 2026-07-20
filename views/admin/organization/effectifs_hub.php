@@ -220,10 +220,11 @@ $toolsCount = count($visibleRows);
         <div class="bo-eff-hub__hero-inner">
             <div>
                 <p class="bo-eff-hub__eyebrow">Communauté · Effectifs &amp; RH</p>
-                <h1 class="bo-eff-hub__title">Organisation des effectifs</h1>
+                <h1 class="bo-eff-hub__title">Structure &amp; grades</h1>
                 <p class="bo-eff-hub__lead">
-                    Tableur des outils pour <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
+                    Vue d’ensemble non nominative pour <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
                     structure, rôles, référentiels et indicateurs utiles aux fiches personnel.
+                    Pour le tableur nominatif (profils, statuts, élévations), direction le Bureau effectifs ci-contre.
                 </p>
             </div>
             <div class="bo-eff-hub__hero-actions">

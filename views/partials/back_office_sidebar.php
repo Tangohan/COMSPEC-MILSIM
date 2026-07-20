@@ -258,7 +258,7 @@ $coreTiles[] = $tile('overview', 'Vue d’ensemble', 'Accueil de l’administrat
 ]), 'overview', $boNavHome, 'pilotage centre dashboard synthèse indicateurs kpi home accueil');
 
 $coreTiles[] = $tile('members', 'Membres', 'Comptes et invitations', 'default', null, $links([
-    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur RH dédié', 'active' => $boNavEffWorkspace],
+    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur RH nominatif', 'active' => $boNavEffWorkspace],
     ['label' => 'Utilisateurs', 'href' => url('back-office/users'), 'hint' => 'Comptes de la communauté', 'active' => $boNavUsers],
     $canInv
         ? ['label' => 'Nouvelle invitation', 'href' => url('back-office/invitations'), 'hint' => 'Envoyer un accès', 'active' => $boNavInvCompose]
@@ -314,8 +314,8 @@ $coreTiles[] = $tile('access', 'Droits & emplois', 'Rôles, accès et missions',
 ]), 'access', $boNavRoles || $boNavAccessMgmt || $boNavRolesPresets || $boNavRolesFx || ($boNavPjr && !$boNavPjrAssignments) || $boNavPjrAssignments || $boNavPersonnelDeployment || $boNavRoleplayFollowup, 'rôles permissions droits s1 emplois missions affectation grade doctrine');
 
 $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiels', 'default', null, $links([
-    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur et pilotage RH', 'active' => $boNavEffWorkspace],
-    ['label' => 'Structure des effectifs', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Organigramme et outils RH', 'active' => $boNavEff],
+    ['label' => 'Bureau effectifs', 'href' => url($ewPath), 'hint' => 'Tableur RH nominatif', 'active' => $boNavEffWorkspace],
+    ['label' => 'Structure & grades', 'href' => url('back-office/organisation-effectifs'), 'hint' => 'Organigramme, non nominatif', 'active' => $boNavEff],
     $canStructureRecruitmentHub
         ? ['label' => 'Structure & recrutement', 'href' => url('back-office/organisation/structure'), 'hint' => 'Liens recrutement / postes', 'active' => $boNavStructureHub]
         : null,
