@@ -13,6 +13,7 @@ use App\Repositories\TrainingFormationCustomPageRepository;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingHtmlPageService;
 use App\Support\Training\TrainingHtmlPagePolicy;
+use App\Support\HtmlContentSanitizer;
 use App\Support\TrainingFormationCustomPageRenderer;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -265,15 +266,17 @@ final class AdminTrainingCustomPageController
             ++$i;
         }
         $userId = (int) (Session::get('user_id') ?? 0);
+        // Re-sanitisé au cas où la source proviendrait d'une version antérieure au filtrage HTML.
+        $sanitizedSource = $this->sanitizeSnapshotHtml($row);
         $newId = $this->pageRepository->create($tenantId, [
             'slug' => $slug,
             'title' => (string) $row['title'] . ' (copie)',
             'subtitle' => $row['subtitle'] ?? null,
             'summary' => $row['summary'] ?? null,
             'doc_structure' => $row['doc_structure'] ?? 'single',
-            'intro_html' => $row['intro_html'] ?? null,
-            'html_body' => $row['html_body'] ?? '',
-            'sections_json' => $row['sections_json'] ?? null,
+            'intro_html' => $sanitizedSource['intro_html'] ?? null,
+            'html_body' => $sanitizedSource['html_body'] ?? '',
+            'sections_json' => $sanitizedSource['sections_json'] ?? null,
             'theme_id' => $row['theme_id'] ?? null,
             'icon' => $row['icon'] ?? null,
             'accent_color' => $row['accent_color'] ?? null,
@@ -315,6 +318,8 @@ final class AdminTrainingCustomPageController
             Session::flash('error', 'Snapshot de version invalide.');
             return Response::redirect(training_lms_admin_url('pages-html/' . $pageId . '/modifier'));
         }
+        // Re-sanitisé au cas où le snapshot provient d'une version antérieure au filtrage HTML.
+        $snapshot = $this->sanitizeSnapshotHtml($snapshot);
         $userId = (int) (Session::get('user_id') ?? 0);
         $snapshot['updated_by'] = $userId ?: null;
         $this->pageRepository->update($pageId, $tenantId, $snapshot);
@@ -405,7 +410,7 @@ final class AdminTrainingCustomPageController
         if ($sectionsRes['error'] !== null) {
             return ['error' => $sectionsRes['error'], 'data' => []];
         }
-        $body = (string) $request->input('html_body', '');
+        $body = HtmlContentSanitizer::sanitize((string) $request->input('html_body', ''));
         if ($title === '' || $slug === '') {
             return ['error' => 'Titre et slug sont requis.', 'data' => []];
         }
@@ -420,7 +425,7 @@ final class AdminTrainingCustomPageController
             'subtitle' => trim((string) $request->input('subtitle', '')) ?: null,
             'summary' => trim((string) $request->input('summary', '')) ?: null,
             'doc_structure' => in_array($structure, ['single', 'handbook'], true) ? $structure : 'single',
-            'intro_html' => (string) $request->input('intro_html', ''),
+            'intro_html' => HtmlContentSanitizer::sanitize((string) $request->input('intro_html', '')),
             'html_body' => $body,
             'sections_json' => $sectionsRes['sections_json'],
             'theme_id' => ($tid = (int) $request->input('theme_id', 0)) > 0 ? $tid : null,
@@ -450,6 +455,30 @@ final class AdminTrainingCustomPageController
         return ['error' => null, 'data' => $payload];
     }
 
+    /** @param array<string,mixed> $snapshot @return array<string,mixed> */
+    private function sanitizeSnapshotHtml(array $snapshot): array
+    {
+        if (isset($snapshot['html_body'])) {
+            $snapshot['html_body'] = HtmlContentSanitizer::sanitize((string) $snapshot['html_body']);
+        }
+        if (isset($snapshot['intro_html'])) {
+            $snapshot['intro_html'] = HtmlContentSanitizer::sanitize((string) $snapshot['intro_html']);
+        }
+        if (!empty($snapshot['sections_json']) && is_string($snapshot['sections_json'])) {
+            $decoded = json_decode($snapshot['sections_json'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $i => $section) {
+                    if (is_array($section) && isset($section['html'])) {
+                        $decoded[$i]['html'] = HtmlContentSanitizer::sanitize((string) $section['html']);
+                    }
+                }
+                $snapshot['sections_json'] = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+        }
+
+        return $snapshot;
+    }
+
     /** @return array{sections_json:?string,error:?string} */
     private function resolveSectionsPayload(Request $request, string $mode): array
     {
@@ -467,7 +496,7 @@ final class AdminTrainingCustomPageController
                 continue;
             }
             $title = trim((string) ($it['title'] ?? ''));
-            $html = (string) ($it['html'] ?? '');
+            $html = HtmlContentSanitizer::sanitize((string) ($it['html'] ?? ''));
             $slug = $this->normalizeSlug((string) ($it['slug'] ?? ''));
             if ($title === '' && trim(strip_tags($html)) === '') {
                 continue;
