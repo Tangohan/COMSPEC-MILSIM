@@ -61,17 +61,9 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
-        $totalEnrollments = 0;
-        $completed = 0;
-        foreach ($courses as $c) {
-            $list = $this->enrollmentRepository->listByCourseId((int) $c['id']);
-            $totalEnrollments += count($list);
-            foreach ($list as $e) {
-                if (($e['status'] ?? '') === 'completed') {
-                    $completed++;
-                }
-            }
-        }
+        $enrollmentCounts = $this->enrollmentRepository->countAndCompletedForTenantCourses($tenantId);
+        $totalEnrollments = $enrollmentCounts['total'];
+        $completed = $enrollmentCounts['completed'];
         $expiring = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.dashboard_body',

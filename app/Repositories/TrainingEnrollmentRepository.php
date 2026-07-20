@@ -37,6 +37,29 @@ class TrainingEnrollmentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Comptes agrégés (inscriptions totales / terminées) pour toutes les formations d’un tenant,
+     * en une seule requête (tableau de bord admin, évite une requête par formation).
+     *
+     * @return array{total: int, completed: int}
+     */
+    public function countAndCompletedForTenantCourses(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS total, SUM(CASE WHEN e.status = ? THEN 1 ELSE 0 END) AS completed
+             FROM training_enrollments e
+             INNER JOIN training_courses c ON c.id = e.course_id
+             WHERE c.tenant_id = ?'
+        );
+        $stmt->execute(['completed', $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'completed' => (int) ($row['completed'] ?? 0),
+        ];
+    }
+
     /** @return list<array<string, mixed>> */
     public function listByCourseId(int $courseId): array
     {

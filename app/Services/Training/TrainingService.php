@@ -39,8 +39,15 @@ class TrainingService
         if ($userId === null) {
             return $courses;
         }
+        $enrollmentsByCourseId = [];
+        foreach ($this->enrollmentRepository->listByUserId($userId, $tenantId) as $e) {
+            $cid = (int) $e['course_id'];
+            if (!isset($enrollmentsByCourseId[$cid])) {
+                $enrollmentsByCourseId[$cid] = $e;
+            }
+        }
         foreach ($courses as $i => $course) {
-            $enrollment = $this->enrollmentRepository->findByCourseAndUser((int) $course['id'], $userId);
+            $enrollment = $enrollmentsByCourseId[(int) $course['id']] ?? null;
             $courses[$i]['enrollment'] = $enrollment;
             $courses[$i]['progress_percent'] = $enrollment ? $this->getGlobalProgress($enrollment['id']) : 0;
         }
@@ -119,11 +126,22 @@ class TrainingService
         }
         $courseId = (int) $enrollment['course_id'];
         $modules = $this->moduleRepository->listByCourseId($courseId);
-        $progressRows = $this->progressRepository->listByEnrollmentId($enrollmentId);
+        $moduleIds = array_map(static fn (array $m): int => (int) $m['id'], $modules);
+
         $byLesson = [];
-        foreach ($progressRows as $p) {
+        foreach ($this->progressRepository->listByEnrollmentId($enrollmentId) as $p) {
             $byLesson[(int) $p['lesson_id']] = (string) ($p['status'] ?? '');
         }
+
+        $lessonsByModule = [];
+        foreach ($this->lessonRepository->listByModuleIds($moduleIds) as $l) {
+            $lessonsByModule[(int) $l['module_id']][] = $l;
+        }
+        $quizzesByModule = [];
+        foreach ($this->quizRepository->listQuizzesByModuleIds($moduleIds) as $q) {
+            $quizzesByModule[(int) $q['module_id']][] = $q;
+        }
+        $passedQuizIds = $this->passedQuizIdsForEnrollment($enrollmentId);
 
         $total = 0;
         $done = 0;
@@ -131,11 +149,11 @@ class TrainingService
 
         foreach ($modules as $mod) {
             $moduleId = (int) $mod['id'];
-            $moduleQuizzes = $this->quizRepository->listQuizzesByModuleId($moduleId);
+            $moduleQuizzes = $quizzesByModule[$moduleId] ?? [];
             $required = (int) ($mod['is_required'] ?? 1) === 1;
 
             if ($required) {
-                foreach ($this->lessonRepository->listByModuleId($moduleId) as $l) {
+                foreach ($lessonsByModule[$moduleId] ?? [] as $l) {
                     if ((int) ($l['is_required'] ?? 1) !== 1) {
                         continue;
                     }
@@ -156,7 +174,7 @@ class TrainingService
                     continue;
                 }
                 ++$total;
-                if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
+                if (isset($passedQuizIds[(int) $q['id']])) {
                     ++$done;
                 }
             }
@@ -164,7 +182,7 @@ class TrainingService
 
         foreach ($finalExamQuizzes as $q) {
             ++$total;
-            if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
+            if (isset($passedQuizIds[(int) $q['id']])) {
                 ++$done;
             }
         }
@@ -176,14 +194,20 @@ class TrainingService
         return round(100.0 * $done / $total, 2);
     }
 
-    private function quizHasPassedAttempt(int $enrollmentId, int $quizId): bool
+    /**
+     * Ids de quiz réussis (au moins une tentative passed=1) pour une inscription, en une seule requête.
+     *
+     * @return array<int, true>
+     */
+    private function passedQuizIdsForEnrollment(int $enrollmentId): array
     {
-        foreach ($this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, $quizId) as $a) {
-            if ((int) ($a['passed'] ?? 0) === 1) {
-                return true;
+        $passed = [];
+        foreach ($this->quizRepository->summarizeSubmittedAttemptsForEnrollment($enrollmentId) as $row) {
+            if ((int) ($row['passed_any'] ?? 0) === 1) {
+                $passed[(int) $row['quiz_id']] = true;
             }
         }
 
-        return false;
+        return $passed;
     }
 }
