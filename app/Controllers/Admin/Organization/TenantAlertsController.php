@@ -9,6 +9,8 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantAlertRepository;
+use App\Repositories\TenantRepository;
+use App\Services\Integrations\DiscordWebhookService;
 use App\Support\TenantAlertVisuals;
 
 final class TenantAlertsController
@@ -19,9 +21,13 @@ final class TenantAlertsController
     private const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
     public function __construct(
-        private ?TenantAlertRepository $alerts = null
+        private ?TenantAlertRepository $alerts = null,
+        private ?TenantRepository $tenants = null,
+        private ?DiscordWebhookService $discordWebhook = null
     ) {
         $this->alerts ??= new TenantAlertRepository();
+        $this->tenants ??= new TenantRepository();
+        $this->discordWebhook ??= new DiscordWebhookService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -74,9 +80,31 @@ final class TenantAlertsController
         }
         unset($data['_error']);
         $this->alerts->insert($tenantId, $data);
+        $this->notifyDiscord($tenantId, (string) $data['title'], (string) ($data['body'] ?? ''), isset($data['cta_url']) ? (string) $data['cta_url'] : null);
         Session::flash('success', 'L’annonce a été créée. Les membres la verront selon la période et l’activation choisies.');
 
         return Response::redirect(url('back-office/alerts'));
+    }
+
+    /** Relais best-effort vers le webhook Discord de la communauté, si configuré — n'échoue jamais la création de l'annonce. */
+    private function notifyDiscord(int $tenantId, string $title, string $body, ?string $ctaUrl): void
+    {
+        $webhookUrl = trim((string) ($this->tenants->getSettings($tenantId)['integrations']['discord_webhook_url'] ?? ''));
+        if ($webhookUrl === '') {
+            return;
+        }
+        $lines = ['📣 **' . $title . '**'];
+        if (trim($body) !== '') {
+            $lines[] = trim($body);
+        }
+        if ($ctaUrl !== null && trim($ctaUrl) !== '') {
+            $lines[] = trim($ctaUrl);
+        }
+        try {
+            $this->discordWebhook->send($webhookUrl, implode("\n", $lines));
+        } catch (\Throwable) {
+            // Best-effort : un webhook Discord en échec ne doit jamais bloquer la création de l'annonce.
+        }
     }
 
     public function edit(Request $request, array $params = []): Response

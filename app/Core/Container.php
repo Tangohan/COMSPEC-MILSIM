@@ -148,6 +148,7 @@ class Container
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
+                self::get(\App\Services\Integrations\DiscordWebhookService::class),
             ),
             \App\Services\Community\TenantInitialSetupService::class => new \App\Services\Community\TenantInitialSetupService(
                 self::get(TenantRepository::class),
@@ -1488,8 +1489,11 @@ class Container
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 new \App\Services\Audit\AuditService(),
             ),
+            \App\Services\Integrations\DiscordWebhookService::class => new \App\Services\Integrations\DiscordWebhookService(),
             \App\Controllers\Admin\Organization\TenantAlertsController::class => new \App\Controllers\Admin\Organization\TenantAlertsController(
                 self::get(\App\Repositories\TenantAlertRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Integrations\DiscordWebhookService::class),
             ),
             \App\Controllers\Api\AlertDismissController::class => new \App\Controllers\Api\AlertDismissController(
                 self::get(\App\Repositories\UserAlertDismissalRepository::class),

@@ -10,8 +10,10 @@ declare(strict_types=1);
 /** @var string|null $navOpsImageUrl */
 /** @var string|null $navResImageUrl */
 /** @var string $orgSettingsFormAction */
+/** @var array<string, mixed> $integrations */
 
 $c = $community ?? [];
+$i = $integrations ?? [];
 $b = $branding ?? [];
 $settingsRoot = is_array($orgSettings ?? null) ? $orgSettings : [];
 $formAction = (string) ($orgSettingsFormAction ?? url('back-office/community'));
@@ -365,6 +367,18 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
                     <input type="checkbox" name="contact_form_enabled" value="1" class="mt-1 rounded border-slate-300 text-emerald-700" <?= !empty($c['contact_form_enabled']) ? 'checked' : '' ?>>
                     <span class="text-sm text-slate-700 leading-relaxed">Activer le formulaire « nous écrire » sur la fiche publique (nécessite un e-mail valide)</span>
                 </label>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">
+                <div>
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Relais Discord</h2>
+                    <p class="mt-1 text-xs text-slate-500">Les annonces publiées depuis « Annonces &amp; alertes » sont relayées automatiquement vers ce salon, en plus d’apparaître sur Athena.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5" for="discord_webhook_url">URL du webhook Discord</label>
+                    <input id="discord_webhook_url" type="url" name="discord_webhook_url" value="<?= htmlspecialchars((string) ($i['discord_webhook_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="500" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="https://discord.com/api/webhooks/…">
+                    <p class="mt-1.5 text-xs text-slate-500">Dans Discord : Paramètres du salon → Intégrations → Webhooks → Nouveau webhook → Copier l’URL. Laissez vide pour désactiver le relais.</p>
+                </div>
             </section>
         </div>
 
