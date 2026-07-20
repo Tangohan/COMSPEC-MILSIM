@@ -1266,6 +1266,7 @@ CREATE TABLE IF NOT EXISTS `elevation_requests` (
   `proposed_role_id` int unsigned DEFAULT NULL,
   `proposed_job_role_id` int unsigned DEFAULT NULL,
   `proposed_unit_id` int unsigned DEFAULT NULL,
+  `proposed_clearance_level` varchar(50) DEFAULT NULL,
   `status` enum('pending','in_review','approved','rejected') NOT NULL DEFAULT 'pending',
   `resolution_note` text,
   `resolved_by` int unsigned DEFAULT NULL,

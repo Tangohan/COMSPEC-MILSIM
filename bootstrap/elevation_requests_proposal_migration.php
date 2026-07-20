@@ -41,6 +41,7 @@ return static function (PDO $pdo): void {
                   `proposed_role_id` int unsigned DEFAULT NULL,
                   `proposed_job_role_id` int unsigned DEFAULT NULL,
                   `proposed_unit_id` int unsigned DEFAULT NULL,
+                  `proposed_clearance_level` varchar(50) DEFAULT NULL,
                   `status` enum('pending','in_review','approved','rejected') NOT NULL DEFAULT 'pending',
                   `resolution_note` text,
                   `resolved_by` int unsigned DEFAULT NULL,
@@ -68,6 +69,7 @@ return static function (PDO $pdo): void {
         'proposed_role_id' => 'ADD COLUMN `proposed_role_id` int unsigned DEFAULT NULL AFTER `proposed_grade_id`',
         'proposed_job_role_id' => 'ADD COLUMN `proposed_job_role_id` int unsigned DEFAULT NULL AFTER `proposed_role_id`',
         'proposed_unit_id' => 'ADD COLUMN `proposed_unit_id` int unsigned DEFAULT NULL AFTER `proposed_job_role_id`',
+        'proposed_clearance_level' => 'ADD COLUMN `proposed_clearance_level` varchar(50) DEFAULT NULL AFTER `proposed_unit_id`',
     ];
 
     foreach ($columns as $col => $ddl) {

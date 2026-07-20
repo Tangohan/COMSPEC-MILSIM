@@ -52,6 +52,10 @@ if ($fonction === '') {
 }
 $unit = trim((string) ($m['unit_name'] ?? ''));
 $unitId = (int) ($m['unit_id'] ?? 0);
+$clearanceRaw = trim((string) ($m['clearance_level'] ?? ''));
+$clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
+$clearanceLabel = $clearanceRaw !== '' ? ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw) : '';
+$clearanceReviewedAt = trim((string) ($m['clearance_reviewed_at'] ?? ''));
 
 $statusLabel = static function (string $raw): string {
     return match ($raw) {
@@ -108,6 +112,20 @@ $statusLabel = static function (string $raw): string {
             <div>
                 <dt>Fonction</dt>
                 <dd><?= htmlspecialchars($fonction !== '' ? $fonction : '—', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <div>
+                <dt>Habilitation</dt>
+                <dd>
+                    <?php if ($clearanceLabel !== ''): ?>
+                        <span class="eff-tag"><?= htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php if ($clearanceReviewedAt !== ''): ?>
+                            <span style="font-size:11px;color:rgba(242,244,243,.5);margin-left:.35rem">revue le <?= htmlspecialchars(date('d/m/Y', strtotime($clearanceReviewedAt)), ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        —
+                    <?php endif; ?>
+                    <p style="margin:.35rem 0 0;font-size:11px;color:rgba(242,244,243,.5)">Se modifie via une demande d’élévation ci-contre.</p>
+                </dd>
             </div>
             <div>
                 <dt>Unité</dt>

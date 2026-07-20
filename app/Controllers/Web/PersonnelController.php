@@ -1129,7 +1129,9 @@ class PersonnelController
             'primary_role' => $primaryRoleStr,
             'secondary_role' => trim((string) $request->input('secondary_role')),
             'primary_unit_id' => $primaryUnitId,
-            'clearance_level' => trim((string) $request->input('clearance_level')),
+            // clearance_level volontairement absent : se modifie uniquement via une demande d'élévation
+            // (EffectifsWorkspaceController + ElevationApprovalService), pas par cette route directe,
+            // ce niveau conditionnant l'accès aux documents classifiés (DocumentAccessService).
             'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
             'enlistment_date' => trim((string) $request->input('enlistment_date')) ?: null,

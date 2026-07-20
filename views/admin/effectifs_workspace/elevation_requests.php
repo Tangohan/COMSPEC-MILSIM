@@ -11,7 +11,7 @@ declare(strict_types=1);
  * @var int $elevationTotal
  * @var int $elevationTotalPages
  * @var array<string,string> $elevationKindLabels
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list} $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>} $elevationCatalog
  * @var array{roles?:list,permissions?:list,byRole?:array} $elevationRoleMatrix
  */
 
@@ -36,6 +36,7 @@ $grades = is_array($catalog['grades'] ?? null) ? $catalog['grades'] : [];
 $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
+$clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
 $roleMatrix = is_array($elevationRoleMatrix ?? null) ? $elevationRoleMatrix : ['roles' => [], 'permissions' => [], 'byRole' => []];
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
 
@@ -116,6 +117,7 @@ $gradeOptionLabel = static function (array $g): string {
                 $proposedRoleId = (int) ($r['proposed_role_id'] ?? 0);
                 $proposedJobId = (int) ($r['proposed_job_role_id'] ?? 0);
                 $proposedUnitId = (int) ($r['proposed_unit_id'] ?? 0);
+                $proposedClearance = trim((string) ($r['proposed_clearance_level'] ?? ''));
                 $currentRoleIds = is_array($r['_current_role_ids'] ?? null) ? $r['_current_role_ids'] : [];
                 $diff = is_array($r['_permission_diff'] ?? null) ? $r['_permission_diff'] : ['gained' => [], 'lost' => [], 'unchanged_count' => 0];
                 $proposalLabels = is_array($r['_proposal_labels'] ?? null) ? $r['_proposal_labels'] : [];
@@ -152,6 +154,9 @@ $gradeOptionLabel = static function (array $g): string {
                         }
                         if (!empty($proposalLabels['unit'])) {
                             $bits[] = 'affectation « ' . $proposalLabels['unit'] . ' »';
+                        }
+                        if (!empty($proposalLabels['clearance'])) {
+                            $bits[] = 'habilitation « ' . $proposalLabels['clearance'] . ' »';
                         }
                         echo htmlspecialchars(implode(', ', $bits), ENT_QUOTES, 'UTF-8');
                         ?>
@@ -214,6 +219,15 @@ $gradeOptionLabel = static function (array $g): string {
                                 <?php foreach ($units as $u): ?>
                                     <?php $uid = (int) ($u['id'] ?? 0); if ($uid < 1) continue; ?>
                                     <option value="<?= $uid ?>" <?= $proposedUnitId === $uid ? 'selected' : '' ?>><?= htmlspecialchars((string) ($u['assignment_path'] ?? $u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="elev-clearance-<?= $id ?>">Habilitation à appliquer</label>
+                            <select id="elev-clearance-<?= $id ?>" name="proposed_clearance_level" class="eff-elev-select">
+                                <option value="">— Ne pas modifier l’habilitation —</option>
+                                <?php foreach ($clearanceLevels as $clValue => $clLabel): ?>
+                                    <option value="<?= htmlspecialchars((string) $clValue, ENT_QUOTES, 'UTF-8') ?>" <?= $proposedClearance === (string) $clValue ? 'selected' : '' ?>><?= htmlspecialchars((string) $clLabel, ENT_QUOTES, 'UTF-8') ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -407,6 +421,7 @@ $gradeOptionLabel = static function (array $g): string {
             var role = selectedLabel(form.querySelector('[name="proposed_role_id"]'));
             var job = selectedLabel(form.querySelector('[name="proposed_job_role_id"]'));
             var unit = selectedLabel(form.querySelector('[name="proposed_unit_id"]'));
+            var clearance = selectedLabel(form.querySelector('[name="proposed_clearance_level"]'));
             var card = form.closest('[data-elev-card]');
             var name = card ? (card.querySelector('.eff-elev-card__title') || {}).textContent || 'ce membre' : 'ce membre';
             var lines = ['<p><strong>Membre :</strong> ' + name.replace(/</g, '&lt;') + '</p>', '<ul>'];
@@ -414,8 +429,9 @@ $gradeOptionLabel = static function (array $g): string {
             if (role) lines.push('<li>Rôle → ' + role.replace(/</g, '&lt;') + ' <em>(remplace les rôles communauté actuels)</em></li>');
             if (job) lines.push('<li>Fonction → ' + job.replace(/</g, '&lt;') + '</li>');
             if (unit) lines.push('<li>Affectation → ' + unit.replace(/</g, '&lt;') + '</li>');
-            if (!grade && !role && !job && !unit) {
-                lines.push('<li>Aucun changement de grade, rôle, fonction ou affectation — seule l’acceptation sera enregistrée.</li>');
+            if (clearance) lines.push('<li>Habilitation → ' + clearance.replace(/</g, '&lt;') + ' <em>(conditionne l’accès aux documents classifiés)</em></li>');
+            if (!grade && !role && !job && !unit && !clearance) {
+                lines.push('<li>Aucun changement de grade, rôle, fonction, affectation ou habilitation — seule l’acceptation sera enregistrée.</li>');
             }
             lines.push('</ul>');
             var gainedCount = form.querySelector('[data-elev-gained-count]');

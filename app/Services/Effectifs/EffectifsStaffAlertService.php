@@ -158,7 +158,8 @@ class EffectifsStaffAlertService
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null
+     *   unit_id?: int|null,
+     *   clearance_level?: string|null
      * } $proposal
      * @return array{ok: bool, message: string, recipient_names: list<string>}
      */
@@ -177,11 +178,13 @@ class EffectifsStaffAlertService
         if (mb_strlen($note) > 500) {
             $note = mb_substr($note, 0, 500);
         }
+        $clearanceLevel = trim((string) ($proposal['clearance_level'] ?? ''));
         $proposal = [
             'grade_id' => (int) ($proposal['grade_id'] ?? 0) ?: null,
             'role_id' => (int) ($proposal['role_id'] ?? 0) ?: null,
             'job_role_id' => (int) ($proposal['job_role_id'] ?? 0) ?: null,
             'unit_id' => (int) ($proposal['unit_id'] ?? 0) ?: null,
+            'clearance_level' => $clearanceLevel !== '' ? $clearanceLevel : null,
         ];
         $proposalSummary = $this->formatProposalSummary($tenantId, $proposal);
 
@@ -343,7 +346,8 @@ class EffectifsStaffAlertService
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null
+     *   unit_id?: int|null,
+     *   clearance_level?: string|null
      * } $proposal
      */
     private function formatProposalSummary(int $tenantId, array $proposal): string
@@ -368,6 +372,9 @@ class EffectifsStaffAlertService
         }
         if (!empty($labels['unit'])) {
             $parts[] = 'affectation ' . $labels['unit'];
+        }
+        if (!empty($labels['clearance'])) {
+            $parts[] = 'habilitation ' . $labels['clearance'];
         }
 
         return implode(', ', $parts);

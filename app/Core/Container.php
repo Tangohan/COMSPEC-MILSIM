@@ -995,6 +995,7 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Services\Rbac\RbacService::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
             ),
             \App\Repositories\ElevationRequestRepository::class => new \App\Repositories\ElevationRequestRepository(),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),

@@ -7,9 +7,11 @@ namespace App\Services\Effectifs;
 use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Documents\DocumentAccessService;
 use App\Services\Rbac\RbacService;
 use App\Support\OrganizationRoleLabels;
 use InvalidArgumentException;
@@ -28,6 +30,7 @@ class ElevationApprovalService
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private UnitRepository $unitRepository,
         private RbacService $rbacService,
+        private PersonnelProfileRepository $personnelProfileRepository,
     ) {
     }
 
@@ -128,9 +131,10 @@ class ElevationApprovalService
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null
+     *   unit_id?: int|null,
+     *   clearance_level?: string|null
      * } $proposal
-     * @return array{grade:?string,role:?string,job_role:?string,unit:?string}
+     * @return array{grade:?string,role:?string,job_role:?string,unit:?string,clearance:?string}
      */
     public function proposalLabels(int $tenantId, array $proposal): array
     {
@@ -172,11 +176,18 @@ class ElevationApprovalService
             }
         }
 
+        $clearanceLabel = null;
+        $clearanceValue = trim((string) ($proposal['clearance_level'] ?? ''));
+        if ($clearanceValue !== '') {
+            $clearanceLabel = DocumentAccessService::getClassificationLevelLabels()[$clearanceValue] ?? null;
+        }
+
         return [
             'grade' => $gradeLabel,
             'role' => $roleLabel,
             'job_role' => $jobLabel,
             'unit' => $unitLabel,
+            'clearance' => $clearanceLabel,
         ];
     }
 
@@ -188,9 +199,10 @@ class ElevationApprovalService
      *   grades: list<array<string,mixed>>,
      *   roles: list<array<string,mixed>>,
      *   job_roles: list<array{id:int,label:string}>,
-     *   units: list<array<string,mixed>>
+     *   units: list<array<string,mixed>>,
+     *   clearance_levels?: array<string,string>
      * } $catalog
-     * @return array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>}
+     * @return array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>,clearance_levels:array<string,string>}
      */
     public function buildLabelMapsFromCatalog(array $catalog): array
     {
@@ -235,16 +247,20 @@ class ElevationApprovalService
             }
         }
 
-        return ['grades' => $grades, 'roles' => $roles, 'job_roles' => $jobRoles, 'units' => $units];
+        $clearanceLevels = is_array($catalog['clearance_levels'] ?? null)
+            ? $catalog['clearance_levels']
+            : DocumentAccessService::getClassificationLevelLabels();
+
+        return ['grades' => $grades, 'roles' => $roles, 'job_roles' => $jobRoles, 'units' => $units, 'clearance_levels' => $clearanceLevels];
     }
 
     /**
      * Équivalent de proposalLabels() mais résolu en mémoire à partir des maps de buildLabelMapsFromCatalog().
      * Ne fait aucune requête SQL — à utiliser pour enrichir une liste de plusieurs demandes.
      *
-     * @param array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>} $maps
-     * @param array{grade_id?:int|null,role_id?:int|null,job_role_id?:int|null,unit_id?:int|null} $proposal
-     * @return array{grade:?string,role:?string,job_role:?string,unit:?string}
+     * @param array{grades:array<int,string>,roles:array<int,string>,job_roles:array<int,string>,units:array<int,string>,clearance_levels?:array<string,string>} $maps
+     * @param array{grade_id?:int|null,role_id?:int|null,job_role_id?:int|null,unit_id?:int|null,clearance_level?:string|null} $proposal
+     * @return array{grade:?string,role:?string,job_role:?string,unit:?string,clearance:?string}
      */
     public function proposalLabelsFromMaps(array $maps, array $proposal): array
     {
@@ -252,12 +268,15 @@ class ElevationApprovalService
         $roleId = (int) ($proposal['role_id'] ?? 0);
         $jobId = (int) ($proposal['job_role_id'] ?? 0);
         $unitId = (int) ($proposal['unit_id'] ?? 0);
+        $clearanceValue = trim((string) ($proposal['clearance_level'] ?? ''));
+        $clearanceLevels = is_array($maps['clearance_levels'] ?? null) ? $maps['clearance_levels'] : [];
 
         return [
             'grade' => $gradeId > 0 ? ($maps['grades'][$gradeId] ?? null) : null,
             'role' => $roleId > 0 ? ($maps['roles'][$roleId] ?? null) : null,
             'job_role' => $jobId > 0 ? ($maps['job_roles'][$jobId] ?? null) : null,
             'unit' => $unitId > 0 ? ($maps['units'][$unitId] ?? null) : null,
+            'clearance' => $clearanceValue !== '' ? ($clearanceLevels[$clearanceValue] ?? null) : null,
         ];
     }
 
@@ -268,7 +287,8 @@ class ElevationApprovalService
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null
+     *   unit_id?: int|null,
+     *   clearance_level?: string|null
      * } $proposal
      * @return array{ok:bool,message:string,applied:list<string>}
      */
@@ -288,6 +308,7 @@ class ElevationApprovalService
         $roleId = (int) ($proposal['role_id'] ?? 0);
         $jobRoleId = (int) ($proposal['job_role_id'] ?? 0);
         $unitId = (int) ($proposal['unit_id'] ?? 0);
+        $clearanceLevel = trim((string) ($proposal['clearance_level'] ?? ''));
 
         try {
             if ($gradeId > 0) {
@@ -363,6 +384,22 @@ class ElevationApprovalService
                 );
                 $applied[] = 'unit';
             }
+
+            if ($clearanceLevel !== '') {
+                if (!array_key_exists($clearanceLevel, DocumentAccessService::getClassificationLevelLabels())) {
+                    return [
+                        'ok' => false,
+                        'message' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.',
+                        'applied' => $applied,
+                    ];
+                }
+                $this->personnelProfileRepository->ensureRecord($targetUserId);
+                $this->personnelProfileRepository->update($targetUserId, [
+                    'clearance_level' => $clearanceLevel,
+                    'clearance_reviewed_at' => date('Y-m-d H:i:s'),
+                ]);
+                $applied[] = 'clearance';
+            }
         } catch (InvalidArgumentException $e) {
             return ['ok' => false, 'message' => $e->getMessage(), 'applied' => $applied];
         } catch (Throwable) {
@@ -376,7 +413,7 @@ class ElevationApprovalService
         if ($applied === []) {
             return [
                 'ok' => true,
-                'message' => 'Demande acceptée. Aucun changement de grade, rôle, fonction ou affectation n’était sélectionné — seuls le statut et la note ont été enregistrés.',
+                'message' => 'Demande acceptée. Aucun changement de grade, rôle, fonction, affectation ou habilitation n’était sélectionné — seuls le statut et la note ont été enregistrés.',
                 'applied' => [],
             ];
         }
@@ -394,6 +431,9 @@ class ElevationApprovalService
         }
         if (in_array('unit', $applied, true) && $labels['unit']) {
             $parts[] = 'affectation « ' . $labels['unit'] . ' »';
+        }
+        if (in_array('clearance', $applied, true) && $labels['clearance']) {
+            $parts[] = 'habilitation « ' . $labels['clearance'] . ' »';
         }
 
         return [

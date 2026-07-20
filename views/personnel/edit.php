@@ -365,19 +365,16 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
-              <label for="clearance_level" class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
-              <select name="clearance_level" id="clearance_level" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <option value="">— Non défini —</option>
-                <?php foreach ($clearanceOptions as $optValue => $optLabel): ?>
-                <option value="<?= htmlspecialchars($optValue) ?>" <?= $currentClearance === $optValue ? 'selected' : '' ?>><?= htmlspecialchars($optLabel) ?></option>
-                <?php endforeach; ?>
-                <?php if ($currentClearance !== '' && !array_key_exists($currentClearance, $clearanceOptions)): ?>
-                <option value="<?= htmlspecialchars($currentClearance) ?>" selected><?= htmlspecialchars($currentClearance) ?> (valeur héritée)</option>
+              <label class="mb-1 block text-xs font-bold text-slate-600">Niveau de clearance</label>
+              <p class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                <?= $currentClearance !== '' ? htmlspecialchars($clearanceOptions[$currentClearance] ?? ($currentClearance . ' (valeur héritée)')) : '— Non défini —' ?>
+              </p>
+              <p class="mt-1 text-[11px] text-slate-500">
+                Se modifie via une demande d’élévation, examinée par une personne habilitée — pas directement ici, ce niveau conditionnant l’accès aux documents classifiés.
+                <?php if (!empty($targetUser['id'])): ?>
+                <a href="<?= htmlspecialchars(effectifs_workspace_url('membres/' . (int) $targetUser['id']), ENT_QUOTES, 'UTF-8') ?>" class="font-bold text-emerald-700 hover:underline">Ouvrir la fiche effectifs →</a>
                 <?php endif; ?>
-              </select>
-              <?php if ($currentClearance !== '' && !array_key_exists($currentClearance, $clearanceOptions)): ?>
-              <p class="mt-1 text-[11px] text-amber-700">Cette valeur ne correspond à aucun niveau reconnu par le contrôle d’accès aux documents — resélectionnez un niveau ci-dessus pour qu’il s’applique réellement.</p>
-              <?php endif; ?>
+              </p>
             </div>
             <div>
               <label for="enlistment_date" class="mb-1 block text-xs font-bold text-slate-600">Date d’incorporation</label>

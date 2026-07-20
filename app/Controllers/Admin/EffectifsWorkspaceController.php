@@ -754,6 +754,7 @@ class EffectifsWorkspaceController
                 'role_id' => $proposedRoleId,
                 'job_role_id' => (int) ($r['proposed_job_role_id'] ?? 0) ?: null,
                 'unit_id' => (int) ($r['proposed_unit_id'] ?? 0) ?: null,
+                'clearance_level' => trim((string) ($r['proposed_clearance_level'] ?? '')) ?: null,
             ]);
             $r['_current_role_ids'] = $currentRoles;
             $r['_permission_diff'] = $diff;
@@ -959,7 +960,8 @@ class EffectifsWorkspaceController
      *   grades: list<array<string,mixed>>,
      *   roles: list<array<string,mixed>>,
      *   job_roles: list<array{id:int,label:string}>,
-     *   units: list<array<string,mixed>>
+     *   units: list<array<string,mixed>>,
+     *   clearance_levels: array<string,string>
      * }
      */
     private function elevationCatalogForTenant(int $tenantId): array
@@ -988,11 +990,12 @@ class EffectifsWorkspaceController
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,
+            'clearance_levels' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
         ];
     }
 
     /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string}
      */
     private function readElevationProposalFromRequest(Request $request): array
     {
@@ -1004,21 +1007,25 @@ class EffectifsWorkspaceController
 
             return $id > 0 ? $id : null;
         };
+        $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
 
         return [
             'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
             'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
+            'clearance_level' => $clearance !== '' ? $clearance : null,
         ];
     }
 
     /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}, error:?string}
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string}, error:?string}
      */
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
+        $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
+
         $gradeId = $proposal['grade_id'] ?? null;
         if ($gradeId !== null) {
             $allowed = array_map(
@@ -1046,6 +1053,12 @@ class EffectifsWorkspaceController
         $unitId = $proposal['unit_id'] ?? null;
         if ($unitId !== null && !$this->unitRepository->findById($unitId, $tenantId)) {
             return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
+        }
+
+        $clearanceLevel = $proposal['clearance_level'] ?? null;
+        if ($clearanceLevel !== null
+            && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
+            return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
         }
 
         return ['proposal' => $proposal, 'error' => null];
@@ -1134,6 +1147,8 @@ class EffectifsWorkspaceController
                 'presence_score' => $presenceScore,
                 'completion_score' => $completionScore,
                 'roles_display' => $u['roles_display'] ?? ($u['role_name'] ?? null),
+                'clearance_level' => $rich['clearance_level'] ?? null,
+                'clearance_reviewed_at' => $rich['clearance_reviewed_at'] ?? null,
             ]);
         }
 
