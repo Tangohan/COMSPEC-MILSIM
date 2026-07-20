@@ -127,24 +127,32 @@ class TrainingService
 
         $total = 0;
         $done = 0;
+        $finalExamQuizzes = [];
 
         foreach ($modules as $mod) {
-            if ((int) ($mod['is_required'] ?? 1) !== 1) {
-                continue;
-            }
             $moduleId = (int) $mod['id'];
-            foreach ($this->lessonRepository->listByModuleId($moduleId) as $l) {
-                if ((int) ($l['is_required'] ?? 1) !== 1) {
+            $moduleQuizzes = $this->quizRepository->listQuizzesByModuleId($moduleId);
+            $required = (int) ($mod['is_required'] ?? 1) === 1;
+
+            if ($required) {
+                foreach ($this->lessonRepository->listByModuleId($moduleId) as $l) {
+                    if ((int) ($l['is_required'] ?? 1) !== 1) {
+                        continue;
+                    }
+                    ++$total;
+                    $lid = (int) $l['id'];
+                    if (($byLesson[$lid] ?? '') === 'completed') {
+                        ++$done;
+                    }
+                }
+            }
+
+            foreach ($moduleQuizzes as $q) {
+                if ((int) ($q['is_final_exam'] ?? 0) === 1) {
+                    $finalExamQuizzes[] = $q;
                     continue;
                 }
-                ++$total;
-                $lid = (int) $l['id'];
-                if (($byLesson[$lid] ?? '') === 'completed') {
-                    ++$done;
-                }
-            }
-            foreach ($this->quizRepository->listQuizzesByModuleId($moduleId) as $q) {
-                if ((int) ($q['is_final_exam'] ?? 0) === 1) {
+                if (!$required) {
                     continue;
                 }
                 ++$total;
@@ -154,15 +162,10 @@ class TrainingService
             }
         }
 
-        foreach ($modules as $mod) {
-            foreach ($this->quizRepository->listQuizzesByModuleId((int) $mod['id']) as $q) {
-                if ((int) ($q['is_final_exam'] ?? 0) !== 1) {
-                    continue;
-                }
-                ++$total;
-                if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
-                    ++$done;
-                }
+        foreach ($finalExamQuizzes as $q) {
+            ++$total;
+            if ($this->quizHasPassedAttempt($enrollmentId, (int) $q['id'])) {
+                ++$done;
             }
         }
 

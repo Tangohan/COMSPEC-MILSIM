@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 $courses = $courses ?? [];
+$coursesSearch = trim((string) ($coursesSearch ?? ''));
 $trainingCanExportFull = !empty($trainingCanExportFull);
 $trainingCanEditShowcaseOrCatalog = !empty($trainingCanEditShowcaseOrCatalog);
 $trainingCanDeleteCourse = !empty($trainingCanDeleteCourse);
@@ -166,9 +167,21 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                                 <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>" class="inline-flex h-8 items-center rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Vue d’ensemble</a>
                             </div>
                         </div>
+                        <form method="get" action="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2.5 flex max-w-sm gap-1.5">
+                            <input type="search" name="q" value="<?= htmlspecialchars($coursesSearch, ENT_QUOTES, 'UTF-8') ?>" placeholder="Rechercher un titre ou une description…" class="h-8 flex-1 rounded border border-slate-300 px-2.5 text-xs">
+                            <button type="submit" class="h-8 rounded border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Rechercher</button>
+                            <?php if ($coursesSearch !== ''): ?>
+                            <a href="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="h-8 inline-flex items-center rounded border border-slate-200 px-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Réinitialiser</a>
+                            <?php endif; ?>
+                        </form>
                     </div>
 
-                    <?php if ($courseCount === 0): ?>
+                    <?php if ($courseCount === 0 && $coursesSearch !== ''): ?>
+                    <div class="px-6 py-12 text-center">
+                        <p class="text-sm font-semibold text-slate-800">Aucune formation ne correspond à « <?= htmlspecialchars($coursesSearch, ENT_QUOTES, 'UTF-8') ?> ».</p>
+                        <a href="<?= htmlspecialchars(training_lms_admin_url('courses'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex h-9 items-center rounded border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 hover:bg-slate-50">Réinitialiser la recherche</a>
+                    </div>
+                    <?php elseif ($courseCount === 0): ?>
                     <div class="px-6 py-12 text-center">
                         <p class="text-sm font-semibold text-slate-800">Aucune formation pour cette communauté.</p>
                         <a href="<?= training_studio_url() ?>" class="mt-4 inline-flex h-9 items-center rounded border border-emerald-600 bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-500">Créer dans le studio</a>

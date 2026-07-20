@@ -93,13 +93,15 @@ class AdminTrainingController
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $courses = $this->courseRepository->listForTenant($tenantId, null);
+        $search = trim((string) $request->query('q', ''));
+        $courses = $this->courseRepository->listForTenant($tenantId, null, null, $search !== '' ? $search : null);
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.courses',
             'title' => 'Formations',
             'trainingAdminNav' => 'courses',
             'totalModules' => count($courses),
             'courses' => $courses,
+            'coursesSearch' => $search,
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
             'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
             'trainingCanEditShowcaseOrCatalog' => $this->userCanManageTrainingCourseEditorially(),
@@ -438,7 +440,8 @@ class AdminTrainingController
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200);
+        $search = trim((string) $request->query('q', ''));
+        $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200, $search !== '' ? $search : null);
         $pdfReady = TrainingCertificatePdfEngine::isAvailable();
         $pendingPdf = 0;
         foreach ($certificates as $c) {
@@ -457,6 +460,7 @@ class AdminTrainingController
             'trainingAdminNav' => 'certificates',
             'totalModules' => $this->trainingShellTotalModules($tenantId),
             'certificates' => $certificates,
+            'certificatesSearch' => $search,
             'trainingCertificatesPdfReady' => $pdfReady,
             'trainingCertificatesPendingPdf' => $pendingPdf,
         ]);

@@ -137,7 +137,7 @@ class TrainingCertificateRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listForTenantAdmin(int $tenantId, int $limit = 200): array
+    public function listForTenantAdmin(int $tenantId, int $limit = 200, ?string $search = null): array
     {
         $limit = max(1, min(500, $limit));
         $sql = 'SELECT c.*, cr.title AS course_title, cr.slug AS course_slug,
@@ -149,11 +149,17 @@ class TrainingCertificateRepository
                 JOIN training_courses cr ON cr.id = e.course_id
                 LEFT JOIN users lu ON lu.id = e.user_id
                 LEFT JOIN users iu ON iu.id = c.issued_by_user_id
-                WHERE c.tenant_id = ?
-                ORDER BY c.issued_at DESC
-                LIMIT ' . $limit;
+                WHERE c.tenant_id = ?';
+        $params = [$tenantId];
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $sql .= ' AND (cr.title LIKE ? OR lu.display_name LIKE ? OR lu.email LIKE ? OR c.certificate_number LIKE ?)';
+            $term = '%' . $search . '%';
+            array_push($params, $term, $term, $term, $term);
+        }
+        $sql .= ' ORDER BY c.issued_at DESC LIMIT ' . $limit;
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$tenantId]);
+        $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

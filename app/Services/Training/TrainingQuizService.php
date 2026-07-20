@@ -58,14 +58,17 @@ class TrainingQuizService
                 return $inProgress;
             }
         }
-        $submitted = 0;
+        $consumed = 0;
         foreach ($attempts as $a) {
-            if (in_array($a['status'], ['submitted', 'graded'], true)) {
-                $submitted++;
+            // Une tentative expirée (temps imparti dépassé sans envoi) consomme le quota au même
+            // titre qu'une tentative envoyée — sinon laisser expirer volontairement permettrait de
+            // rejouer le quiz indéfiniment sans jamais entamer max_attempts.
+            if (in_array($a['status'], ['submitted', 'graded', 'expired'], true)) {
+                $consumed++;
             }
         }
         $maxAttempts = (int) ($quiz['max_attempts'] ?? 3);
-        if ($submitted >= $maxAttempts) {
+        if ($consumed >= $maxAttempts) {
             throw new \RuntimeException('Nombre maximal de tentatives atteint pour ce questionnaire.');
         }
         $attemptId = $this->quizRepository->createAttempt($quizId, $enrollmentId);

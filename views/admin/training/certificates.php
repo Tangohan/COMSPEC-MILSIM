@@ -2,6 +2,7 @@
 $certificates = $certificates ?? [];
 $trainingCertificatesPdfReady = $trainingCertificatesPdfReady ?? \App\Support\TrainingCertificatePdfEngine::isAvailable();
 $trainingCertificatesPendingPdf = (int) ($trainingCertificatesPendingPdf ?? 0);
+$certificatesSearch = trim((string) ($certificatesSearch ?? ''));
 require base_path('views/admin/training/partials/command_shell_open.php');
 
 $statusFr = static function (string $s): string {
@@ -43,7 +44,17 @@ $statusFr = static function (string $s): string {
                     </div>
                 </header>
 
-                <?php if (empty($certificates)): ?>
+                <form method="get" action="<?= htmlspecialchars(training_lms_admin_url('certificates'), ENT_QUOTES, 'UTF-8') ?>" class="flex max-w-sm gap-1.5">
+                    <input type="search" name="q" value="<?= htmlspecialchars($certificatesSearch, ENT_QUOTES, 'UTF-8') ?>" placeholder="Formation, bénéficiaire, référence…" class="h-9 flex-1 rounded-lg border border-slate-300 px-3 text-sm">
+                    <button type="submit" class="h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Rechercher</button>
+                    <?php if ($certificatesSearch !== ''): ?>
+                    <a href="<?= htmlspecialchars(training_lms_admin_url('certificates'), ENT_QUOTES, 'UTF-8') ?>" class="h-9 inline-flex items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-500 hover:bg-slate-50">Réinitialiser</a>
+                    <?php endif; ?>
+                </form>
+
+                <?php if (empty($certificates) && $certificatesSearch !== ''): ?>
+                <div class="tc-panel p-10 text-center text-slate-600">Aucun certificat ne correspond à « <?= htmlspecialchars($certificatesSearch, ENT_QUOTES, 'UTF-8') ?> ».</div>
+                <?php elseif (empty($certificates)): ?>
                 <div class="tc-panel p-10 text-center text-slate-600">Aucun certificat délivré.</div>
                 <?php else: ?>
                 <div class="tc-table-wrap overflow-x-auto">

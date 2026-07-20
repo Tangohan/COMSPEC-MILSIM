@@ -57,7 +57,8 @@ class TrainingProgressService
 
     public function markLessonStarted(int $enrollmentId, int $lessonId, int $tenantId, int $userId, ?int $timeSpentSeconds = null): void
     {
-        $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $enrollment = $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $this->ensureLessonBelongsToCourse($lessonId, (int) $enrollment['course_id']);
         $this->progressRepository->upsert($enrollmentId, $lessonId, [
             'status' => 'in_progress',
             'viewed_at' => date('Y-m-d H:i:s'),
@@ -67,7 +68,8 @@ class TrainingProgressService
 
     public function markLessonCompleted(int $enrollmentId, int $lessonId, int $tenantId, int $userId, ?int $timeSpentSeconds = null): void
     {
-        $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $enrollment = $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $this->ensureLessonBelongsToCourse($lessonId, (int) $enrollment['course_id']);
         $this->progressRepository->upsert($enrollmentId, $lessonId, [
             'status' => 'completed',
             'progress_percent' => 100,
@@ -385,7 +387,8 @@ class TrainingProgressService
         return ['completed' => $completed, 'percent' => $percent];
     }
 
-    private function ensureEnrollmentAccess(int $enrollmentId, int $tenantId, int $userId): void
+    /** @return array<string, mixed> L’inscription, pour éviter un second aller-retour en base à l’appelant. */
+    private function ensureEnrollmentAccess(int $enrollmentId, int $tenantId, int $userId): array
     {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
@@ -393,6 +396,24 @@ class TrainingProgressService
         }
         if (in_array($enrollment['status'], ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
             throw new \InvalidArgumentException('Enrollment no longer active.');
+        }
+
+        return $enrollment;
+    }
+
+    /**
+     * Empêche de faire progresser une leçon qui n’appartient pas au cours de l’inscription
+     * (id de leçon forgé/copié depuis une autre formation) — protège l’intégrité de training_progress.
+     */
+    private function ensureLessonBelongsToCourse(int $lessonId, int $courseId): void
+    {
+        $lesson = $this->lessonRepository->findById($lessonId);
+        if (!$lesson) {
+            throw new \InvalidArgumentException('Lesson not found.');
+        }
+        $module = $this->moduleRepository->findById((int) ($lesson['module_id'] ?? 0));
+        if (!$module || (int) ($module['course_id'] ?? 0) !== $courseId) {
+            throw new \InvalidArgumentException('Lesson does not belong to this course.');
         }
     }
 }
