@@ -1261,6 +1261,40 @@ final class EmailService
         );
     }
 
+    /**
+     * Résumé hebdomadaire au staff RH : dossiers incomplets, membres sans unité/rôle, élévations en attente.
+     */
+    public function sendEffectifsHrWeeklyDigest(
+        string $to,
+        string $staffDisplayName,
+        string $tenantName,
+        int $incompleteProfiles,
+        int $withoutUnit,
+        int $withoutRole,
+        int $pendingElevations,
+        string $rosterUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::EFFECTIFS_HR_WEEKLY_DIGEST,
+            'effectifs_hr_weekly_digest',
+            $to,
+            'Digest RH hebdomadaire — ' . $tenantName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'tenantName' => $tenantName,
+                'incompleteProfiles' => $incompleteProfiles,
+                'withoutUnit' => $withoutUnit,
+                'withoutRole' => $withoutRole,
+                'pendingElevations' => $pendingElevations,
+                'rosterUrl' => $rosterUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'effectifs_hr_weekly_digest']
+        );
+    }
+
     public function sendTrainingCourseSessionScheduledLearner(
         string $to,
         string $displayName,

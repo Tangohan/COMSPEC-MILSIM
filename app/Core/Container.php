@@ -392,11 +392,22 @@ class Container
                 self::get(\App\Repositories\TenantCommunityFeedRepository::class),
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
+            \App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class => new \App\Services\Cron\Jobs\HrWeeklyDigestCronJob(
+                self::get(TenantRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\ElevationRequestRepository::class),
+                self::get(\App\Services\Effectifs\EffectifsStaffAlertService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\CronJobRunRepository::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ModerationQuarantineExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RecruitmentRetroRemindersCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

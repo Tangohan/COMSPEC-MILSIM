@@ -82,4 +82,26 @@ class PersonnelProfileRepository
     {
         return $this->update($userId, ['command_notes' => $notes]);
     }
+
+    /**
+     * Compte les comptes actifs dont le dossier personnel est manifestement incomplet
+     * (proxy léger sur 3 champs clés — pas la même heuristique à 11 critères que le
+     * tableur RH, juste un indicateur agrégé pour le digest hebdomadaire, une seule requête).
+     */
+    public function countIncompleteForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users u
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ? AND u.status = 'active' AND (
+                pp.user_id IS NULL
+                OR TRIM(COALESCE(pp.character_name, '')) = ''
+                OR TRIM(COALESCE(pp.matricule_internal, '')) = ''
+                OR pp.primary_unit_id IS NULL
+             )"
+        );
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
 }

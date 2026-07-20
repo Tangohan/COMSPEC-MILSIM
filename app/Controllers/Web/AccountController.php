@@ -782,6 +782,11 @@ class AccountController
                 'hint' => 'Lorsqu’un membre du bureau effectifs demande une évolution de grade, de rôle ou de droits pour un autre membre.',
             ],
             [
+                'key' => EmailEvents::EFFECTIFS_HR_WEEKLY_DIGEST,
+                'label' => 'Digest RH hebdomadaire (effectifs)',
+                'hint' => 'Résumé hebdomadaire des dossiers incomplets, membres sans unité/rôle et élévations en attente.',
+            ],
+            [
                 'key' => EmailEvents::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
                 'label' => 'Nouveau créneau sur une formation suivie',
                 'hint' => 'Lorsqu’une séance ou un créneau est ajouté sur un parcours auquel vous participez encore.',
