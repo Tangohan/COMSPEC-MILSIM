@@ -26,6 +26,17 @@ $elevationCooldownLabel = static function (int $seconds): string {
     return $days . ' jour' . ($days > 1 ? 's' : '');
 };
 
+$elevationHistory = is_array($elevationHistory ?? null) ? $elevationHistory : [];
+$elevStatusLabel = static function (string $status): string {
+    return match ($status) {
+        'pending' => 'En attente',
+        'in_review' => 'En cours d’examen',
+        'approved' => 'Acceptée',
+        'rejected' => 'Refusée',
+        default => $status,
+    };
+};
+
 $status = (string) ($m['status'] ?? '');
 $display = trim((string) ($m['display_name'] ?? ''));
 $callsign = trim((string) ($m['callsign'] ?? ''));
@@ -154,6 +165,24 @@ $statusLabel = static function (string $raw): string {
                         <?php if (!empty($a['is_primary'])): ?>
                             <span class="eff-badge eff-badge--active" style="margin-left:.35rem">Principale</span>
                         <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <?php if ($elevationHistory !== []): ?>
+            <p class="eff-section-label" style="margin-top:1.35rem">Historique des élévations</p>
+            <ul style="margin:0.5rem 0 0;padding-left:1.1rem;color:rgba(242,244,243,.7);font-size:13px;line-height:1.6">
+                <?php foreach ($elevationHistory as $eh): ?>
+                    <?php
+                    $ehStatus = (string) ($eh['status'] ?? 'pending');
+                    $ehRequester = trim((string) ($eh['requester_display_name'] ?? '')) ?: trim((string) ($eh['requester_email'] ?? '')) ?: 'Membre';
+                    $ehDate = (string) ($eh['created_at'] ?? '');
+                    $ehDateFmt = $ehDate !== '' ? date('d/m/Y', strtotime($ehDate)) : '—';
+                    ?>
+                    <li>
+                        <?= htmlspecialchars($ehDateFmt, ENT_QUOTES, 'UTF-8') ?> — demandée par <?= htmlspecialchars($ehRequester, ENT_QUOTES, 'UTF-8') ?>
+                        <span class="eff-badge <?= $ehStatus === 'approved' ? 'eff-badge--active' : '' ?>" style="margin-left:.35rem"><?= htmlspecialchars($elevStatusLabel($ehStatus), ENT_QUOTES, 'UTF-8') ?></span>
                     </li>
                 <?php endforeach; ?>
             </ul>

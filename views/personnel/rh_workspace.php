@@ -4,6 +4,9 @@ $trainingAllowed = !empty($rhTrainingAllowed);
 $charterReady = !empty($rhCharterReady);
 $charterAccepted = !empty($rhCharterAccepted);
 $seniorityLines = is_array($rhSeniorityLines ?? null) ? $rhSeniorityLines : [];
+$dossierCompleteness = is_array($rhDossierCompleteness ?? null) ? $rhDossierCompleteness : ['score' => 0, 'filled' => 0, 'total' => 0, 'missing' => []];
+$dossierScore = (int) ($dossierCompleteness['score'] ?? 0);
+$dossierMissing = is_array($dossierCompleteness['missing'] ?? null) ? $dossierCompleteness['missing'] : [];
 $testerCommunities = is_array($rhTesterCommunities ?? null) ? $rhTesterCommunities : [];
 $rolloutRows = is_array($rhRolloutRows ?? null) ? $rhRolloutRows : [];
 $greetingName = trim((string) ($rhGreetingName ?? ''));
@@ -38,6 +41,9 @@ if (!$trainingAllowed) {
 $statusSeniorityLabel = $seniorityLines === [] ? 'Aucun indicateur listé' : 'Synthèse disponible';
 $statusSeniorityTone = $seniorityLines === [] ? 'slate' : 'indigo';
 
+$statusDossierLabel = $dossierScore . ' % complet';
+$statusDossierTone = $dossierScore >= 80 ? 'emerald' : ($dossierScore >= 50 ? 'amber' : 'slate');
+
 $statusToneClasses = static function (string $tone): array {
     return match ($tone) {
         'violet' => ['ring' => 'ring-violet-200/80', 'bg' => 'bg-violet-50', 'dot' => 'bg-violet-500', 'text' => 'text-violet-900'],
@@ -50,6 +56,7 @@ $statusToneClasses = static function (string $tone): array {
 $cForm = $statusToneClasses($statusFormationsTone);
 $cChart = $statusToneClasses($statusCharterTone);
 $cSen = $statusToneClasses($statusSeniorityTone);
+$cDoss = $statusToneClasses($statusDossierTone);
 ?>
 <div class="bg-slate-50 pb-20">
     <header class="relative overflow-hidden border-b border-slate-800/80 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
@@ -86,7 +93,14 @@ $cSen = $statusToneClasses($statusSeniorityTone);
     <main id="contenu-espace-rh" class="mx-auto max-w-6xl space-y-10 px-4 pt-10 sm:px-6 sm:pt-12 lg:px-8" tabindex="-1">
         <section class="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="rh-status-heading">
             <h2 id="rh-status-heading" class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Où vous en êtes</h2>
-            <div class="mt-6 grid gap-4 sm:grid-cols-3 sm:gap-5">
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
+                <div class="flex gap-3 rounded-xl ring-1 <?= htmlspecialchars($cDoss['ring'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($cDoss['bg'], ENT_QUOTES, 'UTF-8') ?> p-4">
+                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full <?= htmlspecialchars($cDoss['dot'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Dossier personnel</p>
+                        <p class="mt-1 text-sm font-semibold <?= htmlspecialchars($cDoss['text'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusDossierLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                </div>
                 <div class="flex gap-3 rounded-xl ring-1 <?= htmlspecialchars($cForm['ring'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($cForm['bg'], ENT_QUOTES, 'UTF-8') ?> p-4">
                     <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full <?= htmlspecialchars($cForm['dot'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                     <div class="min-w-0">
@@ -110,6 +124,25 @@ $cSen = $statusToneClasses($statusSeniorityTone);
                 </div>
             </div>
         </section>
+
+        <?php if ($dossierMissing !== []): ?>
+        <section class="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-6 sm:p-8" aria-labelledby="rh-dossier-heading">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 id="rh-dossier-heading" class="text-sm font-bold text-amber-950">Compléter votre dossier personnel</h2>
+                    <p class="mt-1 text-sm text-amber-900/80">Il manque <?= count($dossierMissing) ?> élément<?= count($dossierMissing) > 1 ? 's' : '' ?> pour un dossier complet (<?= $dossierScore ?> %).</p>
+                </div>
+                <a href="<?= htmlspecialchars(url('personnel/me/edit'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex shrink-0 items-center justify-center rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+                    Compléter mon dossier
+                </a>
+            </div>
+            <ul class="mt-4 flex flex-wrap gap-2">
+                <?php foreach ($dossierMissing as $field): ?>
+                    <li class="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs font-medium text-amber-900"><?= htmlspecialchars((string) $field, ENT_QUOTES, 'UTF-8') ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
 
         <section aria-labelledby="rh-quick-heading">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

@@ -229,6 +229,7 @@ class EffectifsWorkspaceController
         $viewerId = (int) Session::get('user_id');
         $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
         $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
+        $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -242,6 +243,7 @@ class EffectifsWorkspaceController
             'orgUnits' => $units,
             'communityName' => $this->communityNameForTenant($tenantId),
             'elevationCooldownSeconds' => $elevationCooldownSeconds,
+            'elevationHistory' => $elevationHistory,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -1080,26 +1082,7 @@ class EffectifsWorkspaceController
      */
     private function rosterCompletionScore(array $user, array $rich, bool $hasAssignment): int
     {
-        $checks = [
-            trim((string) ($user['display_name'] ?? $rich['character_name'] ?? '')) !== '',
-            trim((string) ($user['callsign'] ?? '')) !== '',
-            trim((string) ($rich['matricule_internal'] ?? $rich['service_number'] ?? '')) !== '',
-            trim((string) ($rich['grade_short'] ?? $rich['grade_long'] ?? '')) !== '',
-            $hasAssignment,
-            trim((string) ($rich['personnel_job_role_name'] ?? $rich['primary_role'] ?? $rich['role_sub_label'] ?? '')) !== '',
-            trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
-            trim((string) ($rich['clearance_level'] ?? '')) !== '',
-            !empty($rich['clearance_reviewed_at']),
-            (int) ($rich['readiness_score'] ?? 0) > 0,
-            trim((string) ($user['email'] ?? '')) !== '',
-        ];
-        $total = count($checks);
-        if ($total < 1) {
-            return 0;
-        }
-        $filled = count(array_filter($checks));
-
-        return (int) round(($filled / $total) * 100);
+        return \App\Support\PersonnelDossierCompleteness::evaluate($user, $rich, $hasAssignment)['score'];
     }
 
     private function formatSeniorityDays(int $days): string

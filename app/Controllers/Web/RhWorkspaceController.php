@@ -11,11 +11,13 @@ use App\Core\Session;
 use App\Repositories\HrCharterRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
+use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Personnel\SeniorityDossierInferenceSyncService;
 use App\Services\Personnel\SeniorityEnrollmentBootstrapService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Platform\FeatureGateService;
+use App\Support\PersonnelDossierCompleteness;
 
 final class RhWorkspaceController
 {
@@ -28,6 +30,7 @@ final class RhWorkspaceController
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService,
         private SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService,
+        private UserRepository $userRepository,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -48,6 +51,14 @@ final class RhWorkspaceController
         }
 
         $seniorityLines = $this->senioritySummaryService->linesForPersonnelFile($tenantId, $userId);
+
+        $richRows = $this->userRepository->listEffectifsRosterByIds($tenantId, [$userId]);
+        $rich = $richRows[0] ?? [];
+        $dossierCompleteness = PersonnelDossierCompleteness::evaluate(
+            $user,
+            $rich,
+            !empty($rich['unit_id'])
+        );
 
         $testerCommunities = [];
         $rolloutRows = [];
@@ -83,6 +94,7 @@ final class RhWorkspaceController
             'rhCharterReady' => $charterReady,
             'rhCharterAccepted' => $charterAccepted,
             'rhSeniorityLines' => $seniorityLines,
+            'rhDossierCompleteness' => $dossierCompleteness,
             'rhTesterCommunities' => $testerCommunities,
             'rhRolloutRows' => $rolloutRows,
             'rhWorkspaceCsrf' => Csrf::token(),
