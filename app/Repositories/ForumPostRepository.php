@@ -91,6 +91,27 @@ class ForumPostRepository
         return $this->gradesConfig;
     }
 
+    /**
+     * Tous les messages d'un membre pour un tenant, avec le titre du sujet — pour l'export
+     * de données personnelles (RGPD).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listByUserId(int $userId, int $tenantId, int $limit = 2000): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT fp.id, fp.topic_id, ft.title AS topic_title, fp.body, fp.created_at
+             FROM forum_posts fp
+             INNER JOIN forum_topics ft ON ft.id = fp.topic_id AND ft.tenant_id = fp.tenant_id
+             WHERE fp.tenant_id = ? AND fp.user_id = ?
+             ORDER BY fp.created_at DESC
+             LIMIT ' . max(1, min(5000, $limit))
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function listByTopic(int $topicId): array
     {
         return $this->listByTopicPaginated($topicId, 1, 9999, true);

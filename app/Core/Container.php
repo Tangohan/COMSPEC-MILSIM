@@ -492,6 +492,21 @@ class Container
                 self::get(\App\Services\Auth\LoginSecurityOtpService::class),
                 self::get(\App\Services\Community\LeaveCommunityService::class),
             ),
+            \App\Services\Account\AccountDataExportService::class => new \App\Services\Account\AccountDataExportService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\TrainingEnrollmentRepository::class),
+                self::get(\App\Repositories\TrainingCertificateRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\ForumPostRepository::class),
+                self::get(\App\Repositories\TenantMessageRepository::class)
+            ),
+            \App\Controllers\Web\AccountPrivacyController::class => new \App\Controllers\Web\AccountPrivacyController(
+                self::get(AuthService::class),
+                self::get(\App\Services\Account\AccountDataExportService::class)
+            ),
             \App\Controllers\Web\HrCharterController::class => new \App\Controllers\Web\HrCharterController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),

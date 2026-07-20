@@ -13,6 +13,7 @@ use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
 use App\Controllers\Web\AccountController;
+use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
 use App\Controllers\Web\RhWorkspaceController;
 use App\Controllers\Admin\System\PlatformDeploymentAdminController;
@@ -359,6 +360,8 @@ return function (Router $router) {
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
+    $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);

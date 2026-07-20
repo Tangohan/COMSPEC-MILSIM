@@ -61,6 +61,17 @@ $navGroups = [
         ],
     ],
     [
+        'title' => 'Confidentialité',
+        'items' => [
+            [
+                'key' => 'donnees',
+                'href' => url('account/donnees'),
+                'label' => 'Mes données',
+                'hint' => 'Export RGPD de vos données',
+            ],
+        ],
+    ],
+    [
         'title' => 'Sécurité',
         'items' => [
             [

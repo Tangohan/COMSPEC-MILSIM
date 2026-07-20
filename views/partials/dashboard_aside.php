@@ -352,6 +352,7 @@ $accountTiles = [
         ['label' => 'Modifier le dossier', 'href' => url('personnel/me/edit'), 'hint' => 'Mise à jour'],
         ['label' => 'Compte', 'href' => url('account'), 'hint' => 'Sécurité et médias'],
         ['label' => 'Préférences', 'href' => url('account/preferences'), 'hint' => 'Langue, affichage et e-mail'],
+        ['label' => 'Mes données', 'href' => url('account/donnees'), 'hint' => 'Export RGPD'],
         ['label' => 'Tutoriels', 'href' => url('personnel/tutorials'), 'hint' => 'Guides'],
     ]), 'profile', $accountExtraHtml),
 ];
