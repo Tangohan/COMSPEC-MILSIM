@@ -49,7 +49,7 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
     <aside class="lg:col-span-3 space-y-4">
       <div class="cp-editor-card">
         <div class="cp-editor-card__head"><p class="cp-editor-card__title">Aperçu</p></div>
-        <iframe id="cp-preview-frame" class="w-full min-h-[420px] rounded-lg border border-slate-200" sandbox="allow-scripts allow-same-origin"></iframe>
+        <iframe id="cp-preview-frame" class="w-full min-h-[420px] rounded-lg border border-slate-200" sandbox="allow-scripts"></iframe>
       </div>
       <div class="cp-editor-card text-xs"><div class="cp-editor-card__head"><p class="cp-editor-card__title">Versions</p></div>
         <ul class="space-y-2 max-h-80 overflow-auto"><?php foreach (($customPageRevisions ?? []) as $rev) { include __DIR__.'/partials/custom_page_version_item.php'; } ?></ul>
