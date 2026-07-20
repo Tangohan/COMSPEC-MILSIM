@@ -38,11 +38,13 @@ final class AdminTrainingCustomPageController
         $search = trim((string) $request->query('q', ''));
         $status = trim((string) $request->query('status', ''));
         $docStructure = trim((string) $request->query('doc_structure', ''));
-        $rows = $this->pageRepository->listByTenant($tenantId, 250, [
-            'q' => $search,
-            'status' => $status,
-            'doc_structure' => $docStructure,
-        ]);
+        $filters = ['q' => $search, 'status' => $status, 'doc_structure' => $docStructure];
+        $perPage = 50;
+        $page = max(1, (int) $request->query('page', 1));
+        $total = $this->pageRepository->countByTenant($tenantId, $filters);
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $totalPages);
+        $rows = $this->pageRepository->listByTenant($tenantId, $perPage, $filters, ($page - 1) * $perPage);
         $metrics = $this->pageRepository->dashboardMetrics($tenantId);
 
         return Response::view('layout.training_lms_staff_shell', [
@@ -55,6 +57,9 @@ final class AdminTrainingCustomPageController
             'customPagesSearch' => $search,
             'customPagesStatus' => $status,
             'customPagesDocStructure' => $docStructure,
+            'customPagesTotal' => $total,
+            'customPagesPage' => $page,
+            'customPagesTotalPages' => $totalPages,
         ]);
     }
 
@@ -98,6 +103,11 @@ final class AdminTrainingCustomPageController
         }
         if ($this->pageRepository->slugExistsForTenant($tenantId, (string) $payload['data']['slug'])) {
             Session::flash('error', 'Slug déjà utilisé dans ce tenant.');
+            return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
+        }
+        $newStatus = (string) ($payload['data']['status'] ?? 'draft');
+        if (!$this->canSetStatus($newStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($newStatus));
             return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
         }
 
@@ -166,6 +176,12 @@ final class AdminTrainingCustomPageController
         $slug = (string) ($payload['data']['slug'] ?? '');
         if ($this->pageRepository->slugExistsForTenant($tenantId, $slug, $id)) {
             Session::flash('error', 'Slug déjà utilisé dans ce tenant.');
+            return $redirect;
+        }
+        $newStatus = (string) ($payload['data']['status'] ?? 'draft');
+        $previousStatus = (string) ($before['status'] ?? 'draft');
+        if ($newStatus !== $previousStatus && !$this->canSetStatus($newStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($newStatus));
             return $redirect;
         }
 
@@ -326,6 +342,12 @@ final class AdminTrainingCustomPageController
         }
         // Re-sanitisé au cas où le snapshot provient d'une version antérieure au filtrage HTML.
         $snapshot = $this->sanitizeSnapshotHtml($snapshot);
+        $restoredStatus = (string) ($snapshot['status'] ?? 'draft');
+        $currentStatus = (string) ($current['status'] ?? 'draft');
+        if ($restoredStatus !== $currentStatus && !$this->canSetStatus($restoredStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($restoredStatus));
+            return Response::redirect(training_lms_admin_url('pages-html/' . $pageId . '/modifier'));
+        }
         $userId = (int) (Session::get('user_id') ?? 0);
         $snapshot['updated_by'] = $userId ?: null;
         $this->pageRepository->update($pageId, $tenantId, $snapshot);
@@ -375,6 +397,37 @@ final class AdminTrainingCustomPageController
     private function canDuplicate(): bool
     {
         return TrainingLmsStaffAccess::allows(Gate::getInstance()) && TrainingHtmlPagePolicy::canDuplicate(Gate::getInstance());
+    }
+
+    /**
+     * Un simple droit d'édition (training.create/training.update) ne suffit pas à faire
+     * franchir au document une étape du circuit éditorial — mettre en revue, publier
+     * (y compris programmer) ou archiver sont des droits distincts (canReview/canPublish/
+     * canArchive), déjà calculés dans policyMatrix() mais jusqu'ici jamais vérifiés côté
+     * serveur : le formulaire les exposait sans que rien n'empêche un simple rédacteur de
+     * les déclencher directement.
+     */
+    private function canSetStatus(string $status): bool
+    {
+        $g = Gate::getInstance();
+
+        return match ($status) {
+            'review' => TrainingHtmlPagePolicy::canReview($g),
+            'scheduled', 'published' => TrainingHtmlPagePolicy::canPublish($g),
+            'archived' => TrainingHtmlPagePolicy::canArchive($g),
+            default => true,
+        };
+    }
+
+    private function statusPermissionErrorMessage(string $status): string
+    {
+        return match ($status) {
+            'review' => 'Vous n’avez pas les droits pour passer ce document en revue.',
+            'scheduled' => 'Vous n’avez pas les droits pour programmer la publication de ce document.',
+            'published' => 'Vous n’avez pas les droits pour publier ce document.',
+            'archived' => 'Vous n’avez pas les droits pour archiver ce document.',
+            default => 'Vous n’avez pas les droits pour ce changement de statut.',
+        };
     }
 
     /** @return array<string,bool> */

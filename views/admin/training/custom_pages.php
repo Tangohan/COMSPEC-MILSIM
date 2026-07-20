@@ -8,6 +8,13 @@ $cpBaseUrl = training_lms_admin_url('pages-html');
 $cpHasFilter = $cpSearch !== '' || $cpStatus !== '' || $cpDocStructure !== '';
 $cpStatusOptions = ['draft' => 'Brouillon', 'review' => 'En révision', 'scheduled' => 'Programmé', 'published' => 'Publié', 'archived' => 'Archivé'];
 $cpStructureOptions = ['single' => 'Page unique', 'handbook' => 'Manuel (chapitres)'];
+$cpTotal = (int) ($customPagesTotal ?? count($rows));
+$cpPage = max(1, (int) ($customPagesPage ?? 1));
+$cpTotalPages = max(1, (int) ($customPagesTotalPages ?? 1));
+$cpPageUrl = static function (int $p) use ($cpBaseUrl, $cpSearch, $cpStatus, $cpDocStructure): string {
+    $q = array_filter(['q' => $cpSearch, 'status' => $cpStatus, 'doc_structure' => $cpDocStructure, 'page' => $p > 1 ? $p : null], static fn ($v) => $v !== null && $v !== '');
+    return $q === [] ? $cpBaseUrl : $cpBaseUrl . '?' . http_build_query($q);
+};
 ?>
 <section class="tc-panel p-6 md:p-8 space-y-4">
   <p class="tc-kicker">Centre des opérations — DOC HTML</p>
@@ -74,4 +81,17 @@ $cpStructureOptions = ['single' => 'Page unique', 'handbook' => 'Manuel (chapitr
     </tbody>
   </table>
 </div>
+<?php if ($cpTotalPages > 1): ?>
+<div class="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+  <p><?= $cpTotal ?> document<?= $cpTotal > 1 ? 's' : '' ?> · page <?= $cpPage ?> / <?= $cpTotalPages ?></p>
+  <div class="flex gap-1.5">
+    <?php if ($cpPage > 1): ?>
+    <a href="<?= htmlspecialchars($cpPageUrl($cpPage - 1), ENT_QUOTES, 'UTF-8') ?>" class="h-8 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 font-semibold text-slate-700 hover:bg-slate-50">← Précédent</a>
+    <?php endif; ?>
+    <?php if ($cpPage < $cpTotalPages): ?>
+    <a href="<?= htmlspecialchars($cpPageUrl($cpPage + 1), ENT_QUOTES, 'UTF-8') ?>" class="h-8 inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 font-semibold text-slate-700 hover:bg-slate-50">Suivant →</a>
+    <?php endif; ?>
+  </div>
+</div>
+<?php endif; ?>
 <?php endif; ?>
