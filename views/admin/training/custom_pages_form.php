@@ -51,7 +51,13 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
         <div class="cp-editor-card__head"><p class="cp-editor-card__title">Aperçu</p></div>
         <iframe id="cp-preview-frame" class="w-full min-h-[420px] rounded-lg border border-slate-200" sandbox="allow-scripts"></iframe>
       </div>
-      <div class="cp-editor-card text-xs"><div class="cp-editor-card__head"><p class="cp-editor-card__title">Versions</p></div>
+      <div class="cp-editor-card text-xs">
+        <div class="cp-editor-card__head flex items-center justify-between gap-2">
+          <p class="cp-editor-card__title">Versions</p>
+          <?php if (!empty($customPage['id'])): ?>
+          <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html/' . (int) $customPage['id'] . '/versions/comparer')) ?>" class="text-indigo-700 font-semibold">Comparer</a>
+          <?php endif; ?>
+        </div>
         <ul class="space-y-2 max-h-80 overflow-auto"><?php foreach (($customPageRevisions ?? []) as $rev) { include __DIR__.'/partials/custom_page_version_item.php'; } ?></ul>
       </div>
     </aside>

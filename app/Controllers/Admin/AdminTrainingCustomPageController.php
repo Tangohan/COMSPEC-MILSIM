@@ -215,6 +215,48 @@ final class AdminTrainingCustomPageController
         );
     }
 
+    public function compareRevisions(Request $request, array $params = []): Response
+    {
+        if (!$this->canView()) {
+            return Response::redirect(training_lms_admin_url('pages-html'));
+        }
+        $pageId = (int) ($params['id'] ?? 0);
+        $tenantId = $this->tenantId();
+        $page = $this->pageRepository->findById($pageId, $tenantId);
+        if (!$page) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $revisions = $this->pageRepository->listRevisions($pageId, $tenantId, 100);
+        $revA = (int) $request->query('a', 0);
+        $revB = (int) $request->query('b', 0);
+        $diff = null;
+        $snapA = null;
+        $snapB = null;
+        if ($revA > 0 && $revB > 0) {
+            $rowA = $this->pageRepository->findRevision($pageId, $revA, $tenantId);
+            $rowB = $this->pageRepository->findRevision($pageId, $revB, $tenantId);
+            $snapA = $rowA ? json_decode((string) ($rowA['content_snapshot_json'] ?? ''), true) : null;
+            $snapB = $rowB ? json_decode((string) ($rowB['content_snapshot_json'] ?? ''), true) : null;
+            if (is_array($snapA) && is_array($snapB)) {
+                $diff = (new \App\Support\Training\TrainingRevisionDiffService())->diffSnapshots($snapA, $snapB);
+            }
+        }
+
+        return Response::view('layout.training_lms_staff_shell', [
+            'content' => 'admin.training.custom_page_diff',
+            'title' => 'Comparer des versions — ' . (string) ($page['title'] ?? ''),
+            'trainingAdminNav' => 'custom_pages',
+            'activeNav' => 'docs_html',
+            'customPage' => $page,
+            'customPageRevisions' => $revisions,
+            'diffRevA' => $revA,
+            'diffRevB' => $revB,
+            'diffRows' => $diff,
+            'diffSnapAFound' => $snapA !== null,
+            'diffSnapBFound' => $snapB !== null,
+        ]);
+    }
+
     public function exportPdf(Request $request, array $params = []): Response
     {
         if (!$this->canView()) {

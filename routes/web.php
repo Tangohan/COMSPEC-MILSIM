@@ -1023,6 +1023,7 @@ return function (Router $router) {
     $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/previsualiser', [AdminTrainingCustomPageController::class, 'preview'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/pdf', [AdminTrainingCustomPageController::class, 'exportPdf'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/versions/comparer', [AdminTrainingCustomPageController::class, 'compareRevisions'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
     $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/dupliquer', [AdminTrainingCustomPageController::class, 'duplicate'], $trainingResMw);
