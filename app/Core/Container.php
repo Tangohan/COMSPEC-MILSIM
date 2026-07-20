@@ -405,12 +405,16 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
+            \App\Services\Cron\Jobs\AccountDeletionAnonymizeCronJob::class => new \App\Services\Cron\Jobs\AccountDeletionAnonymizeCronJob(
+                self::get(\App\Services\Account\AccountDeletionService::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\ModerationQuarantineExpireCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RecruitmentRetroRemindersCronJob::class),
                     self::get(\App\Services\Cron\Jobs\HrWeeklyDigestCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AccountDeletionAnonymizeCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -503,9 +507,15 @@ class Container
                 self::get(\App\Repositories\ForumPostRepository::class),
                 self::get(\App\Repositories\TenantMessageRepository::class)
             ),
+            \App\Services\Account\AccountDeletionService::class => new \App\Services\Account\AccountDeletionService(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class)
+            ),
             \App\Controllers\Web\AccountPrivacyController::class => new \App\Controllers\Web\AccountPrivacyController(
                 self::get(AuthService::class),
-                self::get(\App\Services\Account\AccountDataExportService::class)
+                self::get(\App\Services\Account\AccountDataExportService::class),
+                self::get(\App\Services\Account\AccountDeletionService::class)
             ),
             \App\Controllers\Web\HrCharterController::class => new \App\Controllers\Web\HrCharterController(
                 self::get(AuthService::class),

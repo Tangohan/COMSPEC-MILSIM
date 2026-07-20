@@ -40,6 +40,16 @@ class UserLegalIdentityRepository
         return $row ?: null;
     }
 
+    /** RGPD : efface l’identité légale lors de l’anonymisation d’un compte. */
+    public function deleteByUserId(int $userId): void
+    {
+        if (!$this->tableExists()) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM user_legal_identities WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     public function upsert(int $userId, int $tenantId, array $data): void
     {
         if (!$this->tableExists()) {

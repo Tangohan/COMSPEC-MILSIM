@@ -610,6 +610,64 @@ class UserRepository
         return $out;
     }
 
+    /** RGPD : programme la suppression du compte (délai de rétractation). */
+    public function requestDeletion(int $userId, int $tenantId, string $requestedAt, string $scheduledAt): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET deletion_requested_at = ?, deletion_scheduled_at = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$requestedAt, $scheduledAt, $userId, $tenantId]);
+    }
+
+    /** RGPD : annule une suppression de compte programmée (reconnexion pendant le délai). */
+    public function cancelDeletion(int $userId, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET deletion_requested_at = NULL, deletion_scheduled_at = NULL, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$userId, $tenantId]);
+    }
+
+    /** RGPD : comptes dont le délai de rétractation est dépassé (à anonymiser). */
+    public function listDueForDeletionAnonymization(): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT id, tenant_id FROM users
+             WHERE deletion_requested_at IS NOT NULL AND deletion_scheduled_at IS NOT NULL
+               AND deletion_scheduled_at <= NOW() AND status != 'inactive'"
+        );
+
+        return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    }
+
+    /** RGPD : anonymise un compte après le délai de rétractation. */
+    public function anonymizeForDeletion(int $userId, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users SET
+                email = CONCAT('deleted-user-', id, '@deleted.invalid'),
+                password_hash = ?,
+                display_name = 'Compte supprimé',
+                callsign = NULL,
+                profile_slug = NULL,
+                athena_identifier = NULL,
+                steam_id = NULL,
+                avatar_url = NULL,
+                profile_banner_url = NULL,
+                status = 'inactive',
+                deletion_requested_at = NULL,
+                deletion_scheduled_at = NULL,
+                updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?"
+        );
+
+        return $stmt->execute([password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID), $userId, $tenantId]);
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT * FROM users WHERE id = ?';

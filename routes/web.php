@@ -362,6 +362,8 @@ return function (Router $router) {
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/supprimer', [AccountPrivacyController::class, 'requestDeletion'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/annuler-suppression', [AccountPrivacyController::class, 'cancelDeletion'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);

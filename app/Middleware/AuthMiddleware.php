@@ -71,6 +71,17 @@ class AuthMiddleware
             return Response::redirect(url('login'));
         }
 
+        // RGPD : suppression de compte en délai de rétractation — accès restreint à la page
+        // de gestion des données (annulation) et à la déconnexion, le temps du délai.
+        if (!empty($user['deletion_requested_at'])) {
+            $allowedPaths = ['/account/donnees', '/account/donnees/export', '/account/donnees/annuler-suppression', '/logout'];
+            if (!in_array($request->path(), $allowedPaths, true)) {
+                Session::flash('error', 'Votre compte est programmé pour suppression. Annulez la demande pour continuer à utiliser la plateforme.');
+
+                return Response::redirect(url('account/donnees'));
+            }
+        }
+
         return $next($request);
     }
 
