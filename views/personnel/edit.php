@@ -261,6 +261,41 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                 ?>
               </select>
             </div>
+            <div>
+              <label for="sex" class="mb-1 block text-xs font-bold text-slate-600">Sexe</label>
+              <select name="sex" id="sex" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                <?php
+                $sexCur = trim((string) ($p['sex'] ?? ''));
+                foreach (['' => '— Non renseigné —', 'Homme' => 'Homme', 'Femme' => 'Femme', 'Autre' => 'Autre'] as $sv => $sl) {
+                    $sel = ($sexCur === $sv) ? ' selected' : '';
+                    echo '<option value="' . htmlspecialchars($sv) . '"' . $sel . '>' . htmlspecialchars($sl) . '</option>';
+                }
+                if ($sexCur !== '' && !in_array($sexCur, ['Homme', 'Femme', 'Autre'], true)) {
+                    echo '<option value="' . htmlspecialchars($sexCur) . '" selected>' . htmlspecialchars($sexCur) . '</option>';
+                }
+                ?>
+              </select>
+            </div>
+            <div>
+              <label for="birth_place" class="mb-1 block text-xs font-bold text-slate-600">Lieu de naissance (RP)</label>
+              <input type="text" name="birth_place" id="birth_place" value="<?= htmlspecialchars((string) ($p['birth_place'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="150">
+            </div>
+            <div>
+              <label for="family_situation" class="mb-1 block text-xs font-bold text-slate-600">Situation familiale (RP)</label>
+              <input type="text" name="family_situation" id="family_situation" value="<?= htmlspecialchars((string) ($p['family_situation'] ?? '')) ?>" placeholder="Célibataire, marié(e)…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+            </div>
+            <div>
+              <label for="weight_kg" class="mb-1 block text-xs font-bold text-slate-600">Poids (kg, RP)</label>
+              <input type="number" name="weight_kg" id="weight_kg" value="<?= htmlspecialchars((string) ($p['weight_kg'] ?? '')) ?>" min="20" max="300" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+            </div>
+            <div>
+              <label for="operator_status" class="mb-1 block text-xs font-bold text-slate-600">Statut opérateur</label>
+              <input type="text" name="operator_status" id="operator_status" value="<?= htmlspecialchars((string) ($p['operator_status'] ?? '')) ?>" placeholder="Ex. Opérateur Leader // Senior Instructor" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="160">
+            </div>
+            <div class="md:col-span-2">
+              <label for="operator_tags" class="mb-1 block text-xs font-bold text-slate-600">Spécialités / tags (RP)</label>
+              <input type="text" name="operator_tags" id="operator_tags" value="<?= htmlspecialchars((string) ($p['operator_tags'] ?? '')) ?>" placeholder="Ex. Breacher / Team Lead / Squad Lead" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+            </div>
           </div>
         </section>
 

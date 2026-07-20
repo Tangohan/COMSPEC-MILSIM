@@ -116,6 +116,7 @@ $bootstrapFiles = [
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
     'personnel_profile_extended_details_migration.php',
+    'personnel_profile_rp_identity_migration.php',
     'hr_charter_lms_migration.php',
     'core_schema_extensions_migration.php',
     'forum_reporting_workflow_migration.php',
@@ -191,6 +192,7 @@ run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
+run_personnel_profile_rp_identity_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);

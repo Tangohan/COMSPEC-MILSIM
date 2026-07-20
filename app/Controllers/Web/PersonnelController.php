@@ -1147,7 +1147,14 @@ class PersonnelController
             'languages' => trim((string) $request->input('languages')) ?: null,
             'nationality' => trim((string) $request->input('nationality_rp')) ?: null,
             'blood_type' => trim((string) $request->input('blood_type')) ?: null,
+            'birth_place' => mb_substr(trim((string) $request->input('birth_place')), 0, 150) ?: null,
+            'sex' => mb_substr(trim((string) $request->input('sex')), 0, 20) ?: null,
+            'family_situation' => mb_substr(trim((string) $request->input('family_situation')), 0, 100) ?: null,
+            'operator_status' => mb_substr(trim((string) $request->input('operator_status')), 0, 160) ?: null,
+            'operator_tags' => mb_substr(trim((string) $request->input('operator_tags')), 0, 255) ?: null,
         ];
+        $weightRaw = $request->input('weight_kg');
+        $data['weight_kg'] = ($weightRaw === null || $weightRaw === '') ? null : max(20, min(300, (int) $weightRaw));
         if ($roleplayFollowupConfig['enabled']) {
             $stage = trim((string) $request->input('rp_followup_stage'));
             if ($stage !== '' && !in_array($stage, $roleplayFollowupConfig['stages'], true)) {
