@@ -234,7 +234,7 @@ require base_path('views/partials/account/shell_open.php');
         <div class="account-hub__panel-body">
             <div class="account-hub__legal-box" style="margin-bottom:1rem">
                 <h3>Espace isolé</h3>
-                <p>Prénom, nom et téléphone ne sont pas mélangés avec le personnage ou l’affectation d’unité.</p>
+                <p>Prénom et nom ne sont pas mélangés avec le personnage ou l’affectation d’unité.</p>
             </div>
             <div class="account-hub__form-grid account-hub__form-grid--2">
                 <div>
@@ -245,10 +245,6 @@ require base_path('views/partials/account/shell_open.php');
                     <label class="account-hub__label" for="last_name">Nom</label>
                     <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
                 </div>
-            </div>
-            <div style="margin-top:1rem">
-                <label class="account-hub__label" for="phone">Téléphone</label>
-                <input type="text" name="phone" id="phone" value="<?= htmlspecialchars((string) ($profile['phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="50">
             </div>
         </div>
     </section>

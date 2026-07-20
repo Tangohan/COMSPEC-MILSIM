@@ -38,7 +38,7 @@ if ($mediaCount >= 4) {
     $galleryLayout = 'cluster';
 }
 ?>
-<div class="community-landing community-media-page -mx-4 sm:-mx-6 lg:-mx-8"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+<div class="community-landing community-media-page"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
     <section
         id="medias"
         class="community-landing__media community-landing__media--page"
@@ -66,11 +66,18 @@ if ($mediaCount >= 4) {
                         <p class="community-landing__section-lead">
                             <?php if ($mediaCount === 0): ?>
                                 Aucun média publié pour le moment.
+                            <?php elseif ($mediaCount === 1): ?>
+                                Cliquez sur le média pour l’afficher en grand. Fermez avec la croix, Échap, ou un clic en dehors.
                             <?php else: ?>
-                                Cliquez sur un média pour l’afficher en grand. Fermez avec la croix, Échap, ou un clic en dehors.
+                                Cliquez sur un média pour l’afficher en grand. Naviguez avec les flèches ; fermez avec la croix, Échap, ou un clic en dehors.
                             <?php endif; ?>
                         </p>
                     </div>
+                    <?php if ($mediaCount > 0): ?>
+                    <p class="community-media-page__count" aria-live="polite">
+                        <?= $mediaCount === 1 ? '1 média' : $mediaCount . ' médias' ?>
+                    </p>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -182,44 +189,4 @@ if ($mediaCount >= 4) {
         </div>
     </section>
 </div>
-
-<style>
-.community-media-page__back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    margin: 0 0 1.5rem;
-    padding: 0.45rem 0.85rem 0.45rem 0.55rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition: background 180ms ease, border-color 180ms ease;
-}
-.community-media-page__back:hover {
-    background: color-mix(in srgb, var(--cl-primary, #10b981) 22%, rgba(255, 255, 255, 0.06));
-    border-color: color-mix(in srgb, var(--cl-primary, #10b981) 45%, rgba(255, 255, 255, 0.2));
-}
-.community-landing__media--page {
-    min-height: calc(100vh - 8rem);
-    padding-top: 2.5rem;
-    padding-bottom: 4rem;
-}
-.community-media-page__empty-link {
-    margin: 1rem 0 0;
-}
-.community-media-page__empty-link a {
-    color: var(--cl-accent, #34d399);
-    font-weight: 700;
-    text-decoration: none;
-}
-.community-media-page__empty-link a:hover {
-    text-decoration: underline;
-}
-</style>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/community-landing-media.js'), ENT_QUOTES, 'UTF-8') ?>"></script>

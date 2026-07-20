@@ -24,6 +24,7 @@ use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
 use DateTimeImmutable;
@@ -47,6 +48,7 @@ class EffectifsWorkspaceController
         private ElevationApprovalService $elevationApprovalService,
         private MemberOffboardingService $memberOffboardingService,
         private MemberDepartureRepository $memberDepartureRepository,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
@@ -689,6 +691,7 @@ class EffectifsWorkspaceController
         }
 
         try {
+            $beforeSnap = $this->structureChangeNotification->snapshot($tenantId, $id);
             $this->personnelProfileRepository->ensureRecord($id);
             $this->personnelProfileRepository->update($id, [
                 'primary_unit_id' => $unitId > 0 ? $unitId : null,
@@ -714,6 +717,16 @@ class EffectifsWorkspaceController
                 'affectation',
                 $unitId > 0 ? ('unit:' . $unitId) : 'unit:none'
             );
+            try {
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $id,
+                    $actorId > 0 ? $actorId : null,
+                    $beforeSnap,
+                    $this->structureChangeNotification->snapshot($tenantId, $id)
+                );
+            } catch (\Throwable) {
+            }
         } catch (\Throwable) {
             Session::flash('error', 'Impossible d’enregistrer l’affectation. Réessayez ou ouvrez le dossier personnel.');
 
@@ -931,6 +944,7 @@ class EffectifsWorkspaceController
                 $tenantId,
                 $currentRoles,
                 $proposedRoleId,
+                ElevationApprovalService::ROLE_APPLY_REPLACE,
                 $roleMatrix
             );
             $proposalLabels = $this->elevationApprovalService->proposalLabelsFromMaps($labelMaps, [
@@ -1183,7 +1197,7 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string}
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}
      */
     private function readElevationProposalFromRequest(Request $request): array
     {
@@ -1203,17 +1217,22 @@ class EffectifsWorkspaceController
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
             'clearance_level' => $clearance !== '' ? $clearance : null,
+            'role_apply_mode' => ElevationApprovalService::normalizeRoleApplyMode(
+                (string) $request->input('role_apply_mode', ElevationApprovalService::ROLE_APPLY_REPLACE)
+            ),
         ];
     }
 
     /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string}, error:?string}
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string,role_apply_mode?:string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}, error:?string}
      */
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
         $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
-
+        $proposal['role_apply_mode'] = ElevationApprovalService::normalizeRoleApplyMode(
+            isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : ElevationApprovalService::ROLE_APPLY_REPLACE
+        );
         $gradeId = $proposal['grade_id'] ?? null;
         if ($gradeId !== null) {
             $allowed = array_map(

@@ -98,12 +98,15 @@ foreach ($alertBanners as $a) {
     var btn = shell.querySelector('[data-alert-stack-toggle]');
     var panel = shell.querySelector('[data-alert-stack-panel]');
     var meta = shell.querySelector('[data-alert-stack-meta]');
-    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (btn) {
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? 'Replier les messages' : 'Déplier les messages');
+    }
     if (panel) {
       if (open) panel.removeAttribute('hidden');
       else panel.setAttribute('hidden', '');
     }
-    if (meta) meta.textContent = open ? '−' : '—';
+    if (meta) meta.textContent = open ? '−' : '+';
     try { localStorage.setItem(persistKey, open ? '1' : '0'); } catch (e) {}
   }
 
@@ -127,12 +130,11 @@ foreach ($alertBanners as $a) {
     var brief = document.createElement('div');
     brief.className = 'dash-announce__brief';
 
-    var toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'dash-announce__toggle';
-    toggle.setAttribute('data-alert-stack-toggle', '');
-    toggle.setAttribute('aria-controls', 'alert-banners-panel');
-    toggle.setAttribute('aria-expanded', 'false');
+    var main = document.createElement('div');
+    main.className = 'dash-announce__brief-main';
+
+    var goto = document.createElement('div');
+    goto.className = 'dash-announce__brief-goto dash-announce__brief-goto--static';
 
     var labelWrap = document.createElement('span');
     labelWrap.className = 'dash-announce__brief-label';
@@ -145,23 +147,36 @@ foreach ($alertBanners as $a) {
     title.textContent = 'Alertes & annonces';
     labelWrap.appendChild(kicker);
     labelWrap.appendChild(title);
+    goto.appendChild(labelWrap);
 
+    var aside = document.createElement('div');
+    aside.className = 'dash-announce__brief-aside';
     var status = document.createElement('p');
     status.className = 'dash-announce__brief-status';
     status.textContent = visible.length === 1
       ? '1 message actif'
       : visible.length + ' messages actifs';
+    aside.appendChild(status);
+
+    var toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'dash-announce__toggle';
+    toggle.setAttribute('data-alert-stack-toggle', '');
+    toggle.setAttribute('aria-controls', 'alert-banners-panel');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', 'Déplier les messages');
 
     var meta = document.createElement('i');
     meta.className = 'dash-announce__meta';
     meta.setAttribute('data-alert-stack-meta', '');
     meta.setAttribute('aria-hidden', 'true');
-    meta.textContent = '—';
-
-    toggle.appendChild(labelWrap);
-    toggle.appendChild(status);
+    meta.textContent = '+';
     toggle.appendChild(meta);
-    brief.appendChild(toggle);
+
+    main.appendChild(goto);
+    main.appendChild(aside);
+    main.appendChild(toggle);
+    brief.appendChild(main);
     shell.appendChild(brief);
 
     var panel = document.createElement('div');

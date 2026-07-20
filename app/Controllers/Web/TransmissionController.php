@@ -146,25 +146,73 @@ final class TransmissionController
 
         $body = trim((string) $request->input('body', ''));
         $gridRef = trim((string) $request->input('grid_ref', ''));
+        $terrain = trim((string) $request->input('terrain_text', ''));
+        $adversary = trim((string) $request->input('adversary_text', ''));
+        $mission = trim((string) $request->input('mission_text', ''));
+        $means = trim((string) $request->input('means_text', ''));
+        $engagement = trim((string) $request->input('engagement_frame_text', ''));
+        $urgencyRaw = trim((string) $request->input('urgency', ''));
+        $urgency = in_array($urgencyRaw, ReconPvEntryRepository::URGENCY_VALUES, true) ? $urgencyRaw : null;
+
+        $capturedRaw = trim((string) $request->input('captured_at', ''));
+        $capturedAt = $this->parseCapturedAt($capturedRaw);
+        if ($capturedAt === null) {
+            Session::flash('error', 'Indiquez l’heure de captation (date et heure de l’observation).');
+
+            return Response::redirect(url('transmission/' . $id));
+        }
+
         $uploads = $this->processAttachments($tenantId);
         if ($uploads['error'] !== null) {
             Session::flash('error', $uploads['error']);
 
             return Response::redirect(url('transmission/' . $id));
         }
-        if ($body === '' && $uploads['paths'] === []) {
-            Session::flash('error', 'Ajoutez un texte ou au moins une capture d’écran.');
+
+        $hasStructured = $terrain !== '' || $adversary !== '' || $mission !== '' || $means !== '' || $engagement !== '' || $urgency !== null;
+        if ($body === '' && !$hasStructured && $uploads['paths'] === []) {
+            Session::flash('error', 'Renseignez au moins une section d’analyse, une synthèse, ou une capture d’écran.');
 
             return Response::redirect(url('transmission/' . $id));
         }
 
-        $entryId = $this->entries->create($tenantId, $id, (int) $user['id'], $body, $gridRef !== '' ? $gridRef : null);
+        $entryId = $this->entries->create($tenantId, $id, (int) $user['id'], [
+            'body' => $body,
+            'grid_ref' => $gridRef !== '' ? $gridRef : null,
+            'captured_at' => $capturedAt,
+            'terrain_text' => $terrain !== '' ? $terrain : null,
+            'adversary_text' => $adversary !== '' ? $adversary : null,
+            'mission_text' => $mission !== '' ? $mission : null,
+            'means_text' => $means !== '' ? $means : null,
+            'urgency' => $urgency,
+            'engagement_frame_text' => $engagement !== '' ? $engagement : null,
+        ]);
         foreach ($uploads['paths'] as $path) {
             $this->entries->addAttachment($tenantId, $entryId, $path, null);
         }
         Session::flash('success', 'Compte-rendu ajouté au fil.');
 
         return Response::redirect(url('transmission/' . $id) . '#pv-' . $entryId);
+    }
+
+    /**
+     * Accepte datetime-local (YYYY-MM-DDTHH:MM) ou datetime SQL.
+     */
+    private function parseCapturedAt(string $raw): ?string
+    {
+        if ($raw === '') {
+            return null;
+        }
+        $normalized = str_replace('T', ' ', $raw);
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $normalized) === 1) {
+            $normalized .= ':00';
+        }
+        $ts = strtotime($normalized);
+        if ($ts === false) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', $ts);
     }
 
     public function close(Request $request, array $params = []): Response

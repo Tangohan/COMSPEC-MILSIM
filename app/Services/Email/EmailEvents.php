@@ -124,6 +124,11 @@ final class EmailEvents
     /** Notification envoyée à la validation complète du check-up de déploiement. */
     public const PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED = 'PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED';
 
+    /** Confirmation au membre — changement de grade, d’affectation ou de fonction. */
+    public const PERSONNEL_STRUCTURE_CHANGED = 'PERSONNEL_STRUCTURE_CHANGED';
+    /** Alerte RH / effectifs — grade, affectation ou fonction d’un membre modifié. */
+    public const PERSONNEL_STRUCTURE_CHANGED_STAFF = 'PERSONNEL_STRUCTURE_CHANGED_STAFF';
+
     /** Mise à jour du suivi roleplay / tutorat (membre ou tuteur). */
     public const ROLEPLAY_FOLLOWUP_UPDATED = 'ROLEPLAY_FOLLOWUP_UPDATED';
 
@@ -192,6 +197,8 @@ final class EmailEvents
         self::PLATFORM_ALERT_BROADCAST,
         self::PERSONNEL_DEPLOYMENT_ASSIGNED,
         self::PERSONNEL_DEPLOYMENT_CHECKUP_VALIDATED,
+        self::PERSONNEL_STRUCTURE_CHANGED,
+        self::PERSONNEL_STRUCTURE_CHANGED_STAFF,
         self::ROLEPLAY_FOLLOWUP_UPDATED,
         self::DEMO_NDA_FEEDBACK,
     ];

@@ -59,7 +59,7 @@
       '<h1 class="formation-doc-title">' +
       t +
       '</h1></div></header>' +
-      '<main class="formation-doc-main"><article class="formation-doc-prose">' +
+      '<main class="formation-doc-main"><article class="formation-doc-panel formation-doc-prose">' +
       innerHtml +
       '</article></main></div>'
     );
@@ -68,18 +68,16 @@
   function livretHeadInjection() {
     return (
       '<style id="cp-livret-styles">' +
-      'html,body{min-height:100%;margin:0;background:#e2e8f0;}' +
+      'html,body{min-height:100%;margin:0;background:#f8fafc;}' +
       '.cp-livret-stage{min-height:100vh;padding:1.25rem 1rem 2.5rem;box-sizing:border-box;}' +
-      '.cp-livret-sheet{max-width:52rem;margin:0 auto;background:#fff;border-radius:6px;' +
-      'box-shadow:0 12px 48px rgba(15,23,42,.14);overflow:hidden;position:relative;}' +
-      '.cp-livret-sheet::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.045;' +
-      'background-image:repeating-linear-gradient(-12deg,#64748b 0 1px,transparent 1px 14px);}' +
-      '.cp-livret-topbar{background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;padding:.65rem 1.25rem;' +
-      'font-size:10px;letter-spacing:.22em;text-transform:uppercase;font-weight:800;position:relative;z-index:2;}' +
+      '.cp-livret-sheet{max-width:52rem;margin:0 auto;background:#fff;border-radius:1.25rem;' +
+      'border:1px solid rgba(15,23,42,.08);box-shadow:0 8px 32px rgba(15,23,42,.05);overflow:hidden;position:relative;}' +
+      '.cp-livret-topbar{background:#fff;color:#64748b;padding:.75rem 1.25rem;border-bottom:1px solid rgba(15,23,42,.08);' +
+      'font-size:.8rem;letter-spacing:.01em;font-weight:600;position:relative;z-index:2;}' +
       '.cp-livret-body{padding:1.75rem 1.5rem 2rem;position:relative;z-index:2;}' +
       '.cp-livret-watermark{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-16deg);' +
-      'font-size:clamp(2.5rem,10vw,5.5rem);font-weight:900;color:#0f172a;opacity:.05;pointer-events:none;' +
-      'white-space:nowrap;z-index:1;font-family:system-ui,sans-serif;}' +
+      'font-size:clamp(2.5rem,10vw,5.5rem);font-weight:800;color:#0f172a;opacity:.04;pointer-events:none;' +
+      'white-space:nowrap;z-index:1;font-family:Inter,system-ui,sans-serif;}' +
       '</style>'
     );
   }
@@ -113,7 +111,7 @@
   function buildLivretPreviewHtml(source, title) {
     var inner = isFullDocument(source) ? extractBodyInner(source) : source;
     var innerThemed =
-      isFullDocument(source) ? inner : '<div class="formation-doc-prose">' + inner + '</div>';
+      isFullDocument(source) ? inner : '<div class="formation-doc-panel formation-doc-prose">' + inner + '</div>';
     var wrapped =
       '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">' +
       '<meta name="viewport" content="width=device-width, initial-scale=1">' +
@@ -125,7 +123,7 @@
       '</head><body>' +
       '<div class="cp-livret-watermark" aria-hidden="true">Aperçu</div>' +
       '<div class="cp-livret-stage"><div class="cp-livret-sheet">' +
-      '<div class="cp-livret-topbar">Documentation — lecture à l’écran</div>' +
+      '<div class="cp-livret-topbar">Aperçu — lecture à l’écran</div>' +
       '<div class="cp-livret-body">' +
       innerThemed +
       '</div></div></div></body></html>';

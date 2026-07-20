@@ -16,30 +16,28 @@
     encadre:
       '<blockquote><p><strong>Note.</strong> Texte de l’encadré : précisez le contexte ou la règle applicable.</p></blockquote>',
     alerte:
-      '<p class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950 text-sm"><strong>Attention.</strong> Point sensible ou limite opérationnelle.</p>',
+      '<p class="formation-doc-callout"><strong>Attention.</strong> Point sensible ou limite opérationnelle.</p>',
     deuxcolonnes:
-      '<div class="grid gap-4 md:grid-cols-2"><div class="formation-doc-prose"><p>Colonne A — détail.</p></div><div class="formation-doc-prose"><p>Colonne B — suite.</p></div></div>',
-    liste: '<ol class="list-decimal pl-5 space-y-1"><li>Premier point</li><li>Deuxième point</li></ol>',
+      '<div class="formation-doc-cols"><div class="formation-doc-block"><p>Colonne A — détail.</p></div><div class="formation-doc-block"><p>Colonne B — suite.</p></div></div>',
+    liste: '<ol><li>Premier point</li><li>Deuxième point</li></ol>',
     tableau:
-      '<table class="w-full text-sm border-collapse border border-slate-200"><thead><tr><th class="border border-slate-200 p-2 text-left">Critère</th><th class="border border-slate-200 p-2 text-left">Valeur</th></tr></thead><tbody><tr><td class="border border-slate-200 p-2">Exemple</td><td class="border border-slate-200 p-2">—</td></tr></tbody></table>',
+      '<table><thead><tr><th>Critère</th><th>Valeur</th></tr></thead><tbody><tr><td>Exemple</td><td>—</td></tr></tbody></table>',
     lien: '<p><a href="https://" rel="noopener noreferrer">Libellé du lien</a></p>'
   };
 
   var PRESETS = {
     page_theme:
-      '<div class="formation-doc-prose">' +
-      '<p class="text-slate-600 text-sm">Introduction courte (contexte, périmètre, lecteurs visés).</p>' +
+      '<p>Introduction courte (contexte, périmètre, lecteurs visés).</p>' +
       '<h2>Première partie</h2><p>Paragraphe de contenu…</p>' +
       '<h2>Deuxième partie</h2><p>Paragraphe de contenu…</p>' +
-      '<h2>Références</h2><ul><li>Document interne</li><li>Point de contact</li></ul></div>',
+      '<h2>Références</h2><ul><li>Document interne</li><li>Point de contact</li></ul>',
     chapitre_type:
-      '<div class="formation-doc-prose">' +
       '<h2>Titre du chapitre</h2><p>Objectifs de ce chapitre en une ou deux phrases.</p>' +
-      '<h3>Sous-partie</h3><p>Développement…</p></div>',
+      '<h3>Sous-partie</h3><p>Développement…</p>',
     sommaire_static:
       '<nav class="formation-doc-toc" aria-label="Sommaire interne"><p class="formation-doc-toc__label">Dans ce chapitre</p><ol class="formation-doc-toc__list">' +
       '<li><a href="#partie-a">Partie A</a></li><li><a href="#partie-b">Partie B</a></li></ol></nav>' +
-      '<div class="formation-doc-prose"><h2 id="partie-a">Partie A</h2><p>…</p><h2 id="partie-b">Partie B</h2><p>…</p></div>'
+      '<h2 id="partie-a">Partie A</h2><p>…</p><h2 id="partie-b">Partie B</h2><p>…</p>'
   };
 
   function isFullDocument(html) {
@@ -74,7 +72,7 @@
     var val = textarea.value;
     if (start === end) return;
     var sel = val.substring(start, end);
-    var wrapped = '<div class="formation-doc-prose">' + sel + '</div>';
+    var wrapped = '<div class="formation-doc-block">' + sel + '</div>';
     textarea.value = val.substring(0, start) + wrapped + val.substring(end);
     textarea.selectionStart = start;
     textarea.selectionEnd = start + wrapped.length;

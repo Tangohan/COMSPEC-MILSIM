@@ -4,6 +4,8 @@ window.ATAKContextMenu = (function () {
   var promptEl = null;
   var markerFormEl = null;
   var lastLatLng = null;
+  var activeFeature = null;
+  var suppressMapContextMenu = false;
   var boundMap = null;
   var drawMode = null;
   var drawPoints = [];
@@ -65,6 +67,17 @@ window.ATAKContextMenu = (function () {
     return Math.round(latlng.lng) + ' / ' + Math.round(latlng.lat);
   }
 
+  function featureTitle(feature) {
+    if (!feature) return '';
+    var t = feature.featureType;
+    if (t === 'marker') return 'Marqueur';
+    if (t === 'comment') return 'Commentaire';
+    if (t === 'line') return 'Trait';
+    if (t === 'zone') return 'Zone';
+    if (t === 'ping') return 'Ping';
+    return 'Élément';
+  }
+
   function ensureMenu() {
     if (menuEl) return menuEl;
     menuEl = document.createElement('div');
@@ -72,15 +85,7 @@ window.ATAKContextMenu = (function () {
     menuEl.className = 'atak-ctx-menu';
     menuEl.setAttribute('role', 'menu');
     menuEl.hidden = true;
-    menuEl.innerHTML =
-      '<div class="atak-ctx-menu__coords" id="atak-ctx-coords"></div>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="ping" role="menuitem">Envoyer un ping</button>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="line" role="menuitem">Tracer un trait</button>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="comment" role="menuitem">Ajouter un commentaire</button>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="zone" role="menuitem">Zone circulaire</button>' +
-      '<div class="atak-ctx-menu__sep" role="separator"></div>' +
-      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+    menuEl.innerHTML = '<div class="atak-ctx-menu__coords" id="atak-ctx-coords"></div><div id="atak-ctx-items"></div>';
     document.body.appendChild(menuEl);
     menuEl.addEventListener('click', function (e) {
       var btn = e.target.closest('[data-action]');
@@ -92,6 +97,44 @@ window.ATAKContextMenu = (function () {
       runAction(action);
     });
     return menuEl;
+  }
+
+  function renderCreateItems() {
+    return '' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="ping" role="menuitem">Envoyer un ping</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="line" role="menuitem">Tracer un trait</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="comment" role="menuitem">Ajouter un commentaire</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="zone" role="menuitem">Zone circulaire</button>' +
+      '<div class="atak-ctx-menu__sep" role="separator"></div>' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+  }
+
+  function renderFeatureItems(feature) {
+    var title = featureTitle(feature);
+    var name = (feature.label || '').trim();
+    var header = '<div class="atak-ctx-menu__feature">' + escapeHtml(title) +
+      (name ? ' · ' + escapeHtml(name.length > 40 ? name.slice(0, 40) + '…' : name) : '') +
+      '</div>';
+    if (feature.featureType === 'ping') {
+      return header +
+        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Retirer de la carte</button>' +
+        '<div class="atak-ctx-menu__sep" role="separator"></div>' +
+        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+    }
+    return header +
+      '<button type="button" class="atak-ctx-menu__item" data-action="feature-rename" role="menuitem">Renommer</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="feature-edit" role="menuitem">Modifier</button>' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Supprimer</button>' +
+      '<div class="atak-ctx-menu__sep" role="separator"></div>' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
+  }
+
+  function fillMenuContent(feature) {
+    ensureMenu();
+    var items = document.getElementById('atak-ctx-items');
+    if (!items) return;
+    items.innerHTML = feature ? renderFeatureItems(feature) : renderCreateItems();
   }
 
   function ensurePrompt() {
@@ -163,6 +206,61 @@ window.ATAKContextMenu = (function () {
     promptEl.setAttribute('aria-hidden', 'true');
     var cb = promptResolve;
     promptResolve = null;
+    if (cb) cb(value);
+  }
+
+  var colorPickEl = null;
+  var colorPickResolve = null;
+
+  function ensureColorPick() {
+    if (colorPickEl) return colorPickEl;
+    colorPickEl = document.createElement('div');
+    colorPickEl.id = 'atak-color-modal';
+    colorPickEl.className = 'atak-input-modal';
+    colorPickEl.hidden = true;
+    colorPickEl.setAttribute('aria-hidden', 'true');
+    colorPickEl.innerHTML =
+      '<div class="atak-input-modal__backdrop" data-atak-color-cancel></div>' +
+      '<div class="atak-input-modal__box atak-marker-form" role="dialog" aria-modal="true" aria-labelledby="atak-color-modal-title">' +
+      '<h3 class="atak-input-modal__title" id="atak-color-modal-title">Couleur</h3>' +
+      '<p class="atak-input-modal__hint">Choisissez la couleur affichée sur la carte.</p>' +
+      '<fieldset class="atak-marker-form__fieldset"><legend>Couleur</legend><div class="atak-marker-form__choices" id="atak-color-choices"></div></fieldset>' +
+      '<div class="atak-input-modal__actions">' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-color-cancel>Annuler</button>' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--primary" id="atak-color-ok">Valider</button>' +
+      '</div></div>';
+    document.body.appendChild(colorPickEl);
+    document.getElementById('atak-color-choices').innerHTML = optionButtons('pickcolor', MARKER_COLORS, '#34d399');
+    function cancel() { closeColorPick(null); }
+    colorPickEl.querySelectorAll('[data-atak-color-cancel]').forEach(function (el) {
+      el.addEventListener('click', cancel);
+    });
+    document.getElementById('atak-color-ok').addEventListener('click', function () {
+      var checked = colorPickEl.querySelector('input[name="pickcolor"]:checked');
+      closeColorPick(checked ? checked.value : '#34d399');
+    });
+    return colorPickEl;
+  }
+
+  function openColorPick(selected) {
+    ensureColorPick();
+    var val = selected || '#34d399';
+    var input = colorPickEl.querySelector('input[name="pickcolor"][value="' + val + '"]') ||
+      colorPickEl.querySelector('input[name="pickcolor"][value="#34d399"]');
+    if (input) input.checked = true;
+    colorPickEl.hidden = false;
+    colorPickEl.setAttribute('aria-hidden', 'false');
+    return new Promise(function (resolve) {
+      colorPickResolve = resolve;
+    });
+  }
+
+  function closeColorPick(value) {
+    if (!colorPickEl) return;
+    colorPickEl.hidden = true;
+    colorPickEl.setAttribute('aria-hidden', 'true');
+    var cb = colorPickResolve;
+    colorPickResolve = null;
     if (cb) cb(value);
   }
 
@@ -241,17 +339,29 @@ window.ATAKContextMenu = (function () {
     };
   }
 
-  function openMarkerForm(latlng) {
+  function openMarkerForm(latlng, defaults, mode) {
     ensureMarkerForm();
+    defaults = defaults || {};
+    mode = mode || 'create';
+    var titleEl = document.getElementById('atak-marker-modal-title');
+    var okBtn = document.getElementById('atak-marker-ok');
+    if (titleEl) titleEl.textContent = mode === 'edit' ? 'Modifier le marqueur' : 'Nouveau marqueur';
+    if (okBtn) okBtn.textContent = mode === 'edit' ? 'Enregistrer' : 'Placer';
     var coordsEl = document.getElementById('atak-marker-modal-coords');
     if (coordsEl) coordsEl.textContent = 'Position grille : ' + gridLabel(latlng);
     var labelEl = document.getElementById('atak-marker-label');
     var descEl = document.getElementById('atak-marker-desc');
-    if (labelEl) labelEl.value = 'Marqueur';
-    if (descEl) descEl.value = '';
-    var colorDef = markerFormEl.querySelector('input[name="color"][value="#34d399"]');
-    var iconDef = markerFormEl.querySelector('input[name="icon"][value="pin"]');
-    var sizeDef = markerFormEl.querySelector('input[name="size"][value="md"]');
+    if (labelEl) labelEl.value = defaults.label != null ? String(defaults.label) : 'Marqueur';
+    if (descEl) descEl.value = defaults.description != null ? String(defaults.description) : '';
+    var colorVal = defaults.color || '#34d399';
+    var iconVal = defaults.icon || 'pin';
+    var sizeVal = defaults.size || 'md';
+    var colorDef = markerFormEl.querySelector('input[name="color"][value="' + colorVal + '"]') ||
+      markerFormEl.querySelector('input[name="color"][value="#34d399"]');
+    var iconDef = markerFormEl.querySelector('input[name="icon"][value="' + iconVal + '"]') ||
+      markerFormEl.querySelector('input[name="icon"][value="pin"]');
+    var sizeDef = markerFormEl.querySelector('input[name="size"][value="' + sizeVal + '"]') ||
+      markerFormEl.querySelector('input[name="size"][value="md"]');
     if (colorDef) colorDef.checked = true;
     if (iconDef) iconDef.checked = true;
     if (sizeDef) sizeDef.checked = true;
@@ -347,13 +457,8 @@ window.ATAKContextMenu = (function () {
     menuEl.hidden = true;
   }
 
-  function showMenu(clientX, clientY, latlng) {
+  function positionMenu(clientX, clientY) {
     ensureMenu();
-    lastLatLng = latlng;
-    var coords = document.getElementById('atak-ctx-coords');
-    if (coords && latlng) {
-      coords.textContent = 'Grille ' + gridLabel(latlng);
-    }
     menuEl.hidden = false;
     var pad = 8;
     var mw = menuEl.offsetWidth || 220;
@@ -368,10 +473,47 @@ window.ATAKContextMenu = (function () {
     menuEl.style.top = y + 'px';
   }
 
+  function showMenu(clientX, clientY, latlng) {
+    activeFeature = null;
+    lastLatLng = latlng;
+    fillMenuContent(null);
+    var coords = document.getElementById('atak-ctx-coords');
+    if (coords && latlng) {
+      coords.textContent = 'Grille ' + gridLabel(latlng);
+    }
+    positionMenu(clientX, clientY);
+  }
+
+  function showFeatureMenu(detail) {
+    if (!detail) return;
+    activeFeature = detail;
+    lastLatLng = detail.latlng || lastLatLng;
+    fillMenuContent(detail);
+    var coords = document.getElementById('atak-ctx-coords');
+    if (coords) {
+      var name = (detail.label || '').trim();
+      coords.textContent = featureTitle(detail) + (name ? ' · ' + name : '') +
+        (detail.latlng ? ' — grille ' + gridLabel(detail.latlng) : '');
+    }
+    positionMenu(detail.clientX || 0, detail.clientY || 0);
+  }
+
+  function onFeatureContextMenu(ev) {
+    if (!ev || !ev.detail) return;
+    if (drawMode) {
+      cancelDraw();
+      return;
+    }
+    suppressMapContextMenu = true;
+    setTimeout(function () { suppressMapContextMenu = false; }, 50);
+    showFeatureMenu(ev.detail);
+  }
+
   function onContextMenu(e) {
     if (!e || !e.originalEvent) return;
     e.originalEvent.preventDefault();
     e.originalEvent.stopPropagation();
+    if (suppressMapContextMenu) return;
     if (drawMode === 'line') {
       if (drawPoints.length >= 2) {
         finishLine();
@@ -645,7 +787,183 @@ window.ATAKContextMenu = (function () {
     }
   }
 
+  function featureDoneMsg(feature, action) {
+    var t = feature && feature.featureType;
+    if (action === 'rename') {
+      if (t === 'zone') return 'Zone renommée.';
+      if (t === 'line') return 'Trait renommé.';
+      if (t === 'comment') return 'Commentaire renommé.';
+      return 'Élément renommé.';
+    }
+    if (t === 'zone') return 'Zone mise à jour.';
+    if (t === 'line') return 'Trait mis à jour.';
+    if (t === 'comment') return 'Commentaire mis à jour.';
+    return 'Élément mis à jour.';
+  }
+
+  function featureDeletedMsg(feature) {
+    var t = feature && feature.featureType;
+    if (t === 'zone') return 'Zone supprimée.';
+    if (t === 'line') return 'Trait supprimé.';
+    if (t === 'comment') return 'Commentaire supprimé.';
+    return 'Élément supprimé.';
+  }
+
+  function currentFeatureLabel(feature) {
+    if (!feature) return '';
+    if (feature.featureType === 'marker' && feature.data) {
+      return feature.data.label || feature.data.text || feature.data.name || feature.label || '';
+    }
+    if (feature.shape) return feature.shape.label || feature.label || '';
+    return feature.label || '';
+  }
+
+  function renameFeature(feature) {
+    var current = currentFeatureLabel(feature);
+    var title = 'Renommer — ' + featureTitle(feature);
+    openPrompt(title, 'Nouveau libellé affiché sur la carte.', 'Ex. point de ralliement', current).then(function (label) {
+      if (label === null) return;
+      var next = (label || '').trim();
+      if (!next) {
+        if (window.ATAKShowError) window.ATAKShowError('Saisissez un libellé.');
+        return;
+      }
+      if (feature.featureType === 'marker') {
+        if (!window.ATAKMap || !window.ATAKMap.updateMarkerById) return;
+        window.ATAKMap.updateMarkerById(feature.id, { label: next }).then(function () {
+          if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur renommé.');
+        }).catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible de renommer le marqueur.');
+        });
+        return;
+      }
+      if (window.ATAKMapShapes && window.ATAKMapShapes.updateShape) {
+        window.ATAKMapShapes.updateShape(feature.id, { label: next }).then(function (row) {
+          if (row && window.ATAKShowNotification) {
+            window.ATAKShowNotification(featureDoneMsg(feature, 'rename'));
+          }
+        });
+      }
+    });
+  }
+
+  function editFeature(feature) {
+    if (feature.featureType === 'marker') {
+      var data = feature.data || {};
+      var ll = lastLatLng;
+      if (!ll && data.pos) {
+        ll = L.latLng(data.pos[1], data.pos[0]);
+      }
+      openMarkerForm(ll || { lat: 0, lng: 0 }, {
+        label: data.label || 'Marqueur',
+        description: data.description || '',
+        color: data.color || '#34d399',
+        icon: data.icon || 'pin',
+        size: data.size || 'md'
+      }, 'edit').then(function (opts) {
+        if (!opts) return;
+        if (!window.ATAKMap || !window.ATAKMap.updateMarkerById) return;
+        window.ATAKMap.updateMarkerById(feature.id, {
+          label: (opts.label || '').trim() || 'Marqueur',
+          description: (opts.description || '').trim(),
+          color: opts.color,
+          icon: opts.icon,
+          size: opts.size
+        }).then(function () {
+          if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur mis à jour.');
+        }).catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible de modifier le marqueur.');
+        });
+      });
+      return;
+    }
+    if (feature.featureType === 'comment') {
+      var current = currentFeatureLabel(feature);
+      openPrompt('Modifier le commentaire', 'Texte visible sur la carte pour votre équipe.', 'Ex. couverture au nord', current).then(function (text) {
+        if (text === null) return;
+        var t = (text || '').trim();
+        if (!t) {
+          if (window.ATAKShowError) window.ATAKShowError('Saisissez un commentaire.');
+          return;
+        }
+        if (window.ATAKMapShapes && window.ATAKMapShapes.updateShape) {
+          window.ATAKMapShapes.updateShape(feature.id, { label: t }).then(function (row) {
+            if (row && window.ATAKShowNotification) window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
+          });
+        }
+      });
+      return;
+    }
+    // Trait / zone : libellé + couleur (choix nommés)
+    var shape = feature.shape || {};
+    var currentLabel = shape.label || feature.label || '';
+    var currentColor = shape.color || (feature.featureType === 'zone' ? '#eab308' : '#34d399');
+    openPrompt('Libellé — ' + featureTitle(feature), 'Modifiez le nom affiché.', 'Ex. axe d’approche', currentLabel).then(function (label) {
+      if (label === null) return;
+      var nextLabel = (label || '').trim() || featureTitle(feature);
+      openColorPick(currentColor).then(function (color) {
+        if (color === null) return;
+        if (window.ATAKMapShapes && window.ATAKMapShapes.updateShape) {
+          window.ATAKMapShapes.updateShape(feature.id, { label: nextLabel, color: color }).then(function (row) {
+            if (row && window.ATAKShowNotification) {
+              window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
+            }
+          });
+        }
+      });
+    });
+  }
+
+  function deleteConfirmLabel(feature) {
+    var t = feature && feature.featureType;
+    if (t === 'marker') return 'ce marqueur';
+    if (t === 'comment') return 'ce commentaire';
+    if (t === 'line') return 'ce trait';
+    if (t === 'zone') return 'cette zone';
+    return 'cet élément';
+  }
+
+  function deleteFeature(feature) {
+    if (feature.featureType === 'ping') {
+      if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
+        window.ATAKMap.removeTemporaryPingMarker(feature.id);
+      }
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping retiré de la carte.');
+      return;
+    }
+    if (!window.confirm('Supprimer ' + deleteConfirmLabel(feature) + ' ?')) return;
+    if (feature.featureType === 'marker') {
+      if (!window.ATAKMap || !window.ATAKMap.deleteMarkerById) return;
+      window.ATAKMap.deleteMarkerById(feature.id).then(function () {
+        if (window.ATAKMarkers && window.ATAKMarkers.refresh) window.ATAKMarkers.refresh();
+        if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur supprimé.');
+      }).catch(function () {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le marqueur.');
+      });
+      return;
+    }
+    if (window.ATAKMapShapes && window.ATAKMapShapes.deleteShape) {
+      window.ATAKMapShapes.deleteShape(feature.id).then(function (ok) {
+        if (ok && window.ATAKShowNotification) {
+          window.ATAKShowNotification(featureDeletedMsg(feature));
+        }
+      });
+    }
+  }
+
   function runAction(action) {
+    if (action === 'feature-rename') {
+      if (activeFeature) renameFeature(activeFeature);
+      return;
+    }
+    if (action === 'feature-edit') {
+      if (activeFeature) editFeature(activeFeature);
+      return;
+    }
+    if (action === 'feature-delete') {
+      if (activeFeature) deleteFeature(activeFeature);
+      return;
+    }
     if (!lastLatLng) return;
     var ll = lastLatLng;
     if (action === 'copy') {
@@ -707,6 +1025,10 @@ window.ATAKContextMenu = (function () {
 
   function onKeyDown(e) {
     if (e.key === 'Escape') {
+      if (colorPickEl && !colorPickEl.hidden) {
+        closeColorPick(null);
+        return;
+      }
       if (markerFormEl && !markerFormEl.hidden) {
         closeMarkerForm(null);
         return;
@@ -723,7 +1045,7 @@ window.ATAKContextMenu = (function () {
       hideMenu();
       return;
     }
-    if (e.key === 'Enter' && drawMode === 'line' && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden)) {
+    if (e.key === 'Enter' && drawMode === 'line' && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden) && !(colorPickEl && !colorPickEl.hidden)) {
       e.preventDefault();
       finishLine();
     }
@@ -743,6 +1065,7 @@ window.ATAKContextMenu = (function () {
     document.addEventListener('click', onDocClick);
     document.addEventListener('keydown', onKeyDown);
     window.addEventListener('atak:mapready', onMapReady);
+    window.addEventListener('atak:feature-contextmenu', onFeatureContextMenu);
     var tries = 0;
     (function retry() {
       var map = getMap();

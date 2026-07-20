@@ -222,13 +222,10 @@ final class MemberOnboardingService
         }
 
         if ($this->hasTable('user_profiles')) {
-            $st = $this->pdo->prepare('SELECT timezone, language, phone FROM user_profiles WHERE user_id = ? LIMIT 1');
+            $st = $this->pdo->prepare('SELECT timezone, language FROM user_profiles WHERE user_id = ? LIMIT 1');
             $st->execute([$userId]);
             $p = $st->fetch(PDO::FETCH_ASSOC) ?: [];
             if (trim((string) ($p['timezone'] ?? '')) !== '') {
-                $filled++;
-            }
-            if (trim((string) ($p['phone'] ?? '')) !== '') {
                 $filled++;
             }
             if (trim((string) ($p['language'] ?? '')) !== '') {

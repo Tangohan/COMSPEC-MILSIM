@@ -8,7 +8,7 @@ $overwatchContext = $overwatchContext ?? [
     'apiBase' => rtrim($base, '/') . '/api',
     'syncIntervalMs' => 8000,
 ];
-$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
+$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
 $overwatchWorkspaces = $overwatchWorkspaces ?? [['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis', 'isDefault' => true]];
 $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;

@@ -47,7 +47,7 @@ final class CooperationAnnouncementDispatcher
     ) {}
 
     /**
-     * @param array<string, mixed> $extra invited_tenant_id, partner_tenant_id (alias)
+     * @param array<string, mixed> $extra invited_tenant_id, partner_tenant_id, notify_user_ids, role_label, stage_label…
      */
     public function dispatch(string $eventKey, int $missionId, int $actorUserId, int $actorTenantId, array $extra = []): void
     {
@@ -64,7 +64,7 @@ final class CooperationAnnouncementDispatcher
         }
         $vars = $this->buildVars($mission, $actorUserId, $actorTenantId, $extra);
         foreach (['email', 'in_app', 'forum'] as $channel) {
-            $tpl = $this->templateRepository->findResolved($leadTid, $eventKey, $channel);
+            $tpl = $this->resolveTemplate($leadTid, $eventKey, $channel);
             if (!$tpl) {
                 continue;
             }
@@ -75,6 +75,41 @@ final class CooperationAnnouncementDispatcher
                 default => null,
             };
         }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolveTemplate(int $leadTid, string $eventKey, string $channel): ?array
+    {
+        $tpl = $this->templateRepository->findResolved($leadTid, $eventKey, $channel);
+        if ($tpl) {
+            return $tpl;
+        }
+        if ($channel === 'in_app') {
+            $builtin = CooperationAnnouncementEvents::builtinInApp($eventKey);
+            if ($builtin) {
+                return [
+                    'subject' => $builtin['subject'],
+                    'body' => $builtin['body'],
+                    'min_interval_hours' => 0,
+                    'is_active' => 1,
+                ];
+            }
+        }
+        if ($channel === 'email') {
+            $builtin = CooperationAnnouncementEvents::builtinEmail($eventKey);
+            if ($builtin) {
+                return [
+                    'subject' => $builtin['subject'],
+                    'body' => $builtin['body'],
+                    'min_interval_hours' => 24,
+                    'is_active' => 1,
+                ];
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $extra */
@@ -88,8 +123,7 @@ final class CooperationAnnouncementDispatcher
         if (trim($subject) === '') {
             $subject = 'Coopération inter-unités';
         }
-        $tenantIds = $this->targetTenantIds($eventKey, $mission, $extra);
-        $userIds = $this->collectNotifyUserIds($tenantIds);
+        $userIds = $this->resolveNotifyUserIds($eventKey, $mission, $extra);
         $html = '<p>' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</p>';
         foreach ($userIds as $uid) {
             if (!$this->notificationPreferencesRepository->isEmailEventEnabled($uid, self::EMAIL_PREF_KEY)) {
@@ -135,8 +169,7 @@ final class CooperationAnnouncementDispatcher
         }
         $detail = mb_strlen($raw) > 220 ? mb_substr($raw, 0, 217) . '…' : $raw;
         $href = (string) ($vars['lien_synthese'] ?? '');
-        $tenantIds = $this->targetTenantIds($eventKey, $mission, $extra);
-        $userIds = $this->collectNotifyUserIds($tenantIds);
+        $userIds = $this->resolveNotifyUserIds($eventKey, $mission, $extra);
         foreach ($userIds as $uid) {
             $u = $this->userRepository->findById($uid);
             if (!$u) {
@@ -190,12 +223,11 @@ final class CooperationAnnouncementDispatcher
             return;
         }
         $asDraft = !empty($settings['as_draft']);
-        $postTenantId = $leadTid;
         if ($actorUserId < 1) {
             return;
         }
         $this->forumPostRepository->create(
-            $postTenantId,
+            $leadTid,
             $topicId,
             $actorUserId,
             $body,
@@ -211,6 +243,7 @@ final class CooperationAnnouncementDispatcher
     }
 
     /** @param array<string, mixed> $mission */
+    /** @param array<string, mixed> $extra */
     private function buildVars(array $mission, int $actorUserId, int $actorTenantId, array $extra): array
     {
         $mid = (int) ($mission['id'] ?? 0);
@@ -226,6 +259,9 @@ final class CooperationAnnouncementDispatcher
                 $deadline = date('d/m/Y H:i', $ts);
             }
         }
+        $roleLabel = trim((string) ($extra['role_label'] ?? ''));
+        $stageLabel = trim((string) ($extra['stage_label'] ?? ''));
+        $memberName = trim((string) ($extra['member_display_name'] ?? ''));
 
         return [
             'titre_cooperation' => (string) ($mission['title'] ?? ''),
@@ -236,6 +272,9 @@ final class CooperationAnnouncementDispatcher
             'lien_proposition' => cooperation_mission_edit_url($mid),
             'lien_espace_commun' => cooperation_mission_exchange_url($mid),
             'lien_negociation' => cooperation_mission_negotiate_url($mid),
+            'role_attribue' => $roleLabel !== '' ? $roleLabel : 'un rôle',
+            'etape_conduite' => $stageLabel !== '' ? $stageLabel : 'mise à jour',
+            'membre_designe' => $memberName,
         ];
     }
 
@@ -249,6 +288,32 @@ final class CooperationAnnouncementDispatcher
         return trim((string) ($t['name'] ?? '')) !== '' ? trim((string) $t['name']) : ('Communauté #' . $tenantId);
     }
 
+    /**
+     * @param array<string, mixed> $mission
+     * @param array<string, mixed> $extra
+     * @return list<int>
+     */
+    private function resolveNotifyUserIds(string $eventKey, array $mission, array $extra): array
+    {
+        $fromTenants = $this->collectNotifyUserIds($this->targetTenantIds($eventKey, $mission, $extra));
+        $explicit = [];
+        $raw = $extra['notify_user_ids'] ?? null;
+        if (is_array($raw)) {
+            foreach ($raw as $id) {
+                $uid = (int) $id;
+                if ($uid > 0) {
+                    $explicit[] = $uid;
+                }
+            }
+        }
+        $single = (int) ($extra['notify_user_id'] ?? 0);
+        if ($single > 0) {
+            $explicit[] = $single;
+        }
+
+        return array_values(array_unique(array_merge($fromTenants, $explicit)));
+    }
+
     /** @param array<string, mixed> $mission */
     /** @param array<string, mixed> $extra */
     /** @return list<int> */
@@ -256,18 +321,22 @@ final class CooperationAnnouncementDispatcher
     {
         $lead = (int) ($mission['created_by_tenant_id'] ?? 0);
         $mid = (int) ($mission['id'] ?? 0);
-        return match ($eventKey) {
-            CooperationAnnouncementEvents::INVITATION_SENT => (static function () use ($extra): array {
-                $i = (int) ($extra['invited_tenant_id'] ?? $extra['partner_tenant_id'] ?? 0);
+        $partner = (int) ($extra['invited_tenant_id'] ?? $extra['partner_tenant_id'] ?? 0);
 
-                return $i > 0 ? [$i] : [];
-            })(),
+        return match ($eventKey) {
+            CooperationAnnouncementEvents::INVITATION_SENT => $partner > 0 ? [$partner] : [],
             CooperationAnnouncementEvents::PARTNER_ACCEPTED,
             CooperationAnnouncementEvents::PARTNER_DECLINED => $lead > 0 ? [$lead] : [],
             CooperationAnnouncementEvents::MISSION_CREATED,
             CooperationAnnouncementEvents::PROPOSAL_UPDATED => $lead > 0 ? [$lead] : [],
             CooperationAnnouncementEvents::MISSION_ACTIVATED => $this->participantTenantIds($mid, true),
             CooperationAnnouncementEvents::MISSION_CLOSED => $this->participantTenantIds($mid, false),
+            CooperationAnnouncementEvents::MEMBER_DESIGNATED => $lead > 0 ? [$lead] : [],
+            CooperationAnnouncementEvents::CO_LEAD_DESIGNATED => $partner > 0 ? [$partner] : [],
+            CooperationAnnouncementEvents::COUNTER_PROPOSAL_SUBMITTED => $lead > 0 ? [$lead] : [],
+            CooperationAnnouncementEvents::COUNTER_PROPOSAL_ACCEPTED,
+            CooperationAnnouncementEvents::COUNTER_PROPOSAL_DECLINED => $partner > 0 ? [$partner] : [],
+            CooperationAnnouncementEvents::OPERATIONAL_STAGE_UPDATED => $this->participantTenantIds($mid, true),
             default => [],
         };
     }

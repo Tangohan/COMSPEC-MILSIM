@@ -380,7 +380,6 @@ class AccountController
                 $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),
-                    'phone' => trim((string) $request->input('phone')),
                     'birth_date' => trim((string) ($profile['birth_date'] ?? '')),
                     'nationality' => trim((string) ($profile['nationality'] ?? '')),
                 ]);
@@ -852,6 +851,20 @@ class AccountController
             'label' => 'Mises à jour du suivi roleplay et du tutorat',
             'hint' => 'Lorsque votre dossier d’immersion est modifié par l’équipe, ou lorsque vous suivez un membre en tant que tuteur.',
             'group' => 'Immersion',
+        ];
+
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_STRUCTURE_CHANGED,
+            'label' => 'Changement de grade, d’affectation ou de fonction',
+            'hint' => 'Confirmation lorsque votre grade, votre unité d’affectation ou votre fonction est mis à jour.',
+            'group' => 'Dossier personnel',
+        ];
+
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_STRUCTURE_CHANGED_STAFF,
+            'label' => 'Mises à jour de dossiers (équipe RH / effectifs)',
+            'hint' => 'Lorsqu’un autre membre voit son grade, son affectation ou sa fonction modifié dans la communauté.',
+            'group' => 'Dossier personnel',
         ];
 
         $encadrement = 'Messages de l’encadrement';

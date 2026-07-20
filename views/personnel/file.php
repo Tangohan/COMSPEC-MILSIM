@@ -1730,9 +1730,6 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php if (!empty(trim((string) ($userProfile['nationality'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationalité (dossier)</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['nationality'])) ?></p></div>
                         <?php endif; ?>
-                        <?php if (!empty(trim((string) ($userProfile['phone'] ?? '')))): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Téléphone</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['phone'])) ?></p></div>
-                        <?php endif; ?>
                         <?php if (!empty(trim((string) ($userProfile['arma_callsign'] ?? '')))): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Indicatif Arma (préférences)</p><p class="text-sm text-slate-800"><?= htmlspecialchars(trim((string) $userProfile['arma_callsign'])) ?></p></div>
                         <?php endif; ?>

@@ -157,7 +157,7 @@
           ? introTa.value
           : '';
     var chapters = collectChapters();
-    var toc = '<nav class="formation-doc-toc" aria-label="Sommaire"><p class="formation-doc-toc__label">Sommaire</p><ol class="formation-doc-toc__list">';
+    var toc = '<nav class="formation-doc-toc" aria-label="Sommaire"><p class="formation-doc-toc__label">Sommaire</p><p class="formation-doc-toc__count">' + chapters.length + ' chapitre' + (chapters.length > 1 ? 's' : '') + '</p><ol class="formation-doc-toc__list">';
     var main = '<main class="formation-doc-main formation-doc-main--book">';
     chapters.forEach(function (ch, i) {
       var slug = 'chapitre-' + (i + 1);
@@ -166,7 +166,7 @@
     });
     toc += '</ol></nav>';
     if (intro.trim()) {
-      main += '<section class="formation-doc-prose formation-doc-intro">' + intro + '</section>';
+      main += '<section class="formation-doc-panel formation-doc-prose formation-doc-intro">' + intro + '</section>';
     }
     chapters.forEach(function (ch, i) {
       var slug = 'chapitre-' + (i + 1);
@@ -174,7 +174,9 @@
       main +=
         '<article id="' +
         slug +
-        '" class="formation-doc-chapter"><h2 class="formation-doc-chapter__title">' +
+        '" class="formation-doc-chapter formation-doc-panel"><h2 class="formation-doc-chapter__title"><span class="formation-doc-chapter__index">' +
+        (i + 1) +
+        '</span> ' +
         t +
         '</h2><div class="formation-doc-prose">' +
         (ch.html || '') +
@@ -184,7 +186,7 @@
     var body =
       '<div class="formation-doc-shell formation-doc-shell--book">' +
       '<header class="formation-doc-header"><div class="formation-doc-header__inner">' +
-      '<p class="formation-doc-kicker">Documentation (aperçu)</p>' +
+      '<p class="formation-doc-kicker">Manuel de formation</p>' +
       '<h1 class="formation-doc-title">' +
       escapeTitle(title) +
       '</h1></div></header>' +
@@ -199,6 +201,7 @@
       '<title>' +
       escapeTitle(title) +
       '</title>' +
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap">' +
       (cssHref
         ? '<link rel="stylesheet" href="' + cssHref + '">'
         : '') +

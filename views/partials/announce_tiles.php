@@ -81,8 +81,6 @@ $titleId = $announceId . '-title';
                         <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
                         <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
                     </span>
-                    <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
-                    <span class="dash-announce__brief-hint">Voir tout →</span>
                 </a>
             <?php else: ?>
                 <div class="dash-announce__brief-goto dash-announce__brief-goto--static">
@@ -90,9 +88,14 @@ $titleId = $announceId . '-title';
                         <p class="dash-announce__brief-kicker"><?= htmlspecialchars($announceKicker, ENT_QUOTES, 'UTF-8') ?></p>
                         <h2 id="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-title"><?= htmlspecialchars($announceHeading, ENT_QUOTES, 'UTF-8') ?></h2>
                     </span>
-                    <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
             <?php endif; ?>
+            <div class="dash-announce__brief-aside">
+                <p class="dash-announce__brief-status"><?= htmlspecialchars($statusLine, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if ($announceManageUrl !== null): ?>
+                    <a href="<?= htmlspecialchars($announceManageUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-link">Gérer →</a>
+                <?php endif; ?>
+            </div>
             <button
                 type="button"
                 class="dash-announce__toggle"
@@ -104,9 +107,6 @@ $titleId = $announceId . '-title';
                 <i class="dash-announce__meta" data-announce-meta aria-hidden="true"><?= $announceStartOpen ? '−' : '+' ?></i>
             </button>
         </div>
-        <?php if ($announceManageUrl !== null): ?>
-            <a href="<?= htmlspecialchars($announceManageUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__brief-link">Gérer →</a>
-        <?php endif; ?>
     </div>
 
     <div
@@ -183,11 +183,6 @@ $titleId = $announceId . '-title';
                     </<?= $tag ?>>
                 <?php endforeach; ?>
             </div>
-        <?php endif; ?>
-        <?php if ($announceListUrl !== null): ?>
-            <p class="dash-announce__footer">
-                <a href="<?= htmlspecialchars($announceListUrl, ENT_QUOTES, 'UTF-8') ?>" class="dash-announce__footer-link">Ouvrir la page complète des alertes →</a>
-            </p>
         <?php endif; ?>
     </div>
 </section>

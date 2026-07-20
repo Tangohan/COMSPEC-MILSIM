@@ -43,6 +43,7 @@ use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\BadgeRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
@@ -209,6 +210,7 @@ class PersonnelController
         private PersonnelStageBilanRepository $personnelStageBilanRepository,
         private EnlistmentRecruitmentEngagementRepository $enlistmentRecruitmentEngagementRepository,
         private BadgeRepository $badgeRepository,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
     ) {}
 
     private function formatArmaPlaytimeFrench(int $seconds): string
@@ -1216,6 +1218,7 @@ class PersonnelController
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
+        $structureBefore = $this->structureChangeNotification->snapshot($tenantId, (int) $target['id']);
         $this->personnelProfileRepository->update((int) $target['id'], $data);
         if ($roleplayFollowupConfig['enabled']) {
             $actorId = (int) Session::get('user_id');
@@ -1355,6 +1358,18 @@ class PersonnelController
             return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
         }
 
+        try {
+            $actorForMail = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                (int) $target['id'],
+                $actorForMail > 0 ? $actorForMail : null,
+                $structureBefore,
+                $this->structureChangeNotification->snapshot($tenantId, (int) $target['id'])
+            );
+        } catch (\Throwable) {
+        }
+
         if ($isSelf) {
             $this->userProfileRepository->ensureRow((int) $target['id']);
             $this->userProfileRepository->upsert((int) $target['id'], [
@@ -1365,7 +1380,6 @@ class PersonnelController
             $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
                 'first_name' => trim((string) $request->input('civil_first_name')),
                 'last_name' => trim((string) $request->input('civil_last_name')),
-                'phone' => trim((string) $request->input('civil_phone')) ?: null,
                 'nationality' => trim((string) $request->input('civil_nationality')) ?: null,
                 'birth_date' => trim((string) $request->input('civil_birth_date')) ?: null,
             ]);

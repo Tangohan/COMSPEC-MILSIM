@@ -209,6 +209,36 @@ window.ATAKMap = (function () {
     return html;
   }
 
+  function emitFeatureContextMenu(detail, e) {
+    if (!e || !e.originalEvent) return;
+    L.DomEvent.preventDefault(e);
+    L.DomEvent.stopPropagation(e);
+    try { e.originalEvent.stopImmediatePropagation(); } catch (err) {}
+    var oe = e.originalEvent;
+    window.dispatchEvent(new CustomEvent('atak:feature-contextmenu', {
+      detail: Object.assign({}, detail, {
+        latlng: e.latlng || null,
+        clientX: oe.clientX,
+        clientY: oe.clientY
+      })
+    }));
+  }
+
+  function bindMarkerContextMenu(marker, id) {
+    if (!marker || marker._atakCtxBound) return;
+    marker._atakCtxBound = true;
+    marker.on('contextmenu', function (e) {
+      var data = marker._atakData || {};
+      emitFeatureContextMenu({
+        featureType: 'marker',
+        id: id,
+        layerId: marker._atakLayerId,
+        data: data,
+        label: data.label || data.text || data.name || 'Marqueur'
+      }, e);
+    });
+  }
+
   function addOrUpdateMarker(payload) {
     var id = payload.id;
     var layerId = payload.layerId;
@@ -241,6 +271,7 @@ window.ATAKMap = (function () {
       } else {
         markersById[id].bindPopup(popupHtml);
       }
+      bindMarkerContextMenu(markersById[id], id);
       return;
     }
     var layer = ensureLayer(layerId);
@@ -269,8 +300,56 @@ window.ATAKMap = (function () {
     marker._atakData = data;
     marker._atakGrid = { lng: lng, lat: lat };
     marker.bindPopup(popupHtml);
+    bindMarkerContextMenu(marker, id);
     marker.addTo(layer);
     markersById[id] = marker;
+  }
+
+  function getMarkerById(id) {
+    var m = markersById[id];
+    if (!m) return null;
+    var data = m._atakData || {};
+    var grid = m._atakGrid || {};
+    return {
+      id: id,
+      layerId: m._atakLayerId,
+      data: data,
+      gridLng: grid.lng,
+      gridLat: grid.lat
+    };
+  }
+
+  function updateMarkerById(id, markerData, layerId) {
+    var base = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+    var existing = getMarkerById(id);
+    var data = Object.assign({}, (existing && existing.data) || {}, markerData || {});
+    var lid = layerId != null ? layerId : (existing ? existing.layerId : 1);
+    addOrUpdateMarker({ id: id, layerId: lid, data: data });
+    if (window.ATAKMarkers && window.ATAKMarkers.refresh) window.ATAKMarkers.refresh();
+    if (!base || String(id).indexOf('local_') === 0) {
+      return Promise.resolve({ id: id, layerId: lid, markerData: data });
+    }
+    return fetch(base + '/api/markers/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markerData: data, layerId: lid })
+    }).then(function (r) {
+      if (!r.ok) throw new Error('update');
+      return r.json();
+    }).then(function (row) {
+      if (!row) return null;
+      var parsed = typeof row.markerData === 'string'
+        ? (function () { try { return JSON.parse(row.markerData); } catch (e) { return data; } })()
+        : (row.markerData || data);
+      addOrUpdateMarker({
+        id: row.id,
+        layerId: row.layerId != null ? row.layerId : lid,
+        data: parsed
+      });
+      if (window.ATAKMarkers && window.ATAKMarkers.refresh) window.ATAKMarkers.refresh();
+      return row;
+    });
   }
 
   function listMarkers() {
@@ -443,6 +522,17 @@ window.ATAKMap = (function () {
     var marker = L.marker(latlng, { icon: icon });
     marker.bindPopup('<b>PING de ' + (author || '?') + '</b><br/>' + (message || '')).openPopup();
     marker._atakPingTempId = id;
+    if (!marker._atakCtxBound) {
+      marker._atakCtxBound = true;
+      marker.on('contextmenu', function (e) {
+        emitFeatureContextMenu({
+          featureType: 'ping',
+          id: id,
+          label: 'Ping',
+          data: { author: author, message: message || '' }
+        }, e);
+      });
+    }
     marker.addTo(pingTempLayer);
     pingTempMarkersById[id] = marker;
     setTimeout(function () {
@@ -451,6 +541,15 @@ window.ATAKMap = (function () {
         delete pingTempMarkersById[id];
       }
     }, 30000);
+  }
+
+  function removeTemporaryPingMarker(id) {
+    if (!id || !pingTempMarkersById[id]) return false;
+    if (pingTempLayer) {
+      try { pingTempLayer.removeLayer(pingTempMarkersById[id]); } catch (e) {}
+    }
+    delete pingTempMarkersById[id];
+    return true;
   }
 
   function pollMarkers() {
@@ -651,8 +750,10 @@ window.ATAKMap = (function () {
     refreshSigintZones: refreshSigintZones,
     pollMarkers: pollMarkers,
     listMarkers: listMarkers,
+    getMarkerById: getMarkerById,
     focusMarker: focusMarker,
     deleteMarkerById: deleteMarkerById,
+    updateMarkerById: updateMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
     removeMarker: removeMarker,
@@ -661,6 +762,7 @@ window.ATAKMap = (function () {
     pointMap: pointMap,
     endPointMap: endPointMap,
     centerOn: centerOn,
-    addTemporaryPingMarker: addTemporaryPingMarker
+    addTemporaryPingMarker: addTemporaryPingMarker,
+    removeTemporaryPingMarker: removeTemporaryPingMarker
   };
 })();

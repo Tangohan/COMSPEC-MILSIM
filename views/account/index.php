@@ -13,7 +13,6 @@ $prefUrl = url('account/preferences');
 $fn = trim((string) ($accountProfile['first_name'] ?? ''));
 $ln = trim((string) ($accountProfile['last_name'] ?? ''));
 $civilLine = trim($fn . ' ' . $ln);
-$phoneRaw = trim((string) ($accountProfile['phone'] ?? ''));
 $callsign = trim((string) ($accountUser['callsign'] ?? ''));
 $displayNameVal = trim((string) ($accountUser['display_name'] ?? ''));
 $tz = trim((string) ($accountProfile['timezone'] ?? ''));
@@ -123,10 +122,9 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
                 </p>
             </div>
             <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Contact &amp; locale</p>
-                <p class="account-hub__stat-value"><?= htmlspecialchars($phoneRaw !== '' ? $phoneRaw : 'Téléphone non renseigné', ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="account-hub__stat-label">Locale</p>
+                <p class="account-hub__stat-value"><?= htmlspecialchars($tz !== '' ? $tz : 'Europe/Paris', ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="account-hub__stat-meta">
-                    Fuseau : <?= htmlspecialchars($tz !== '' ? $tz : 'Europe/Paris', ENT_QUOTES, 'UTF-8') ?><br>
                     Langue : <?= htmlspecialchars($langLabel, ENT_QUOTES, 'UTF-8') ?>
                 </p>
             </div>

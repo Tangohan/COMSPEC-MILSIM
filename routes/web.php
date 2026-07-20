@@ -555,6 +555,8 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/audit', [SystemAuditController::class, 'index'], [AuthMiddleware::class, PlatformHubMiddleware::class]);
     $router->get('/admin/audit/{id}', [SystemAuditController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/audit/{id}/rollback', [SystemAuditController::class, 'rollback'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/audit/{id}/alert', [SystemAuditController::class, 'alert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/create', [SystemMaintenanceController::class, 'create'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/maintenance', [SystemMaintenanceController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/maintenance/{id}/audit', [SystemMaintenanceController::class, 'audit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1215,6 +1217,7 @@ return function (Router $router) {
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
+    $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);
     $router->delete('/api/markers/{id}', [AtakApiController::class, 'markersDelete']);
     $router->get('/api/atak/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/atak/marker', [AtakApiController::class, 'markerUpsert']);

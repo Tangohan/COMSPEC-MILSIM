@@ -77,6 +77,22 @@ class AtakDataRepository
         return $this->addMarker($tenantId, $mapId, $layerId, $markerData, $armaName);
     }
 
+    public function updateMarker(int $tenantId, int $id, string $markerData, ?int $layerId = null): ?array
+    {
+        $existing = $this->getMarkerById($tenantId, $id);
+        if ($existing === null) {
+            return null;
+        }
+        if ($layerId !== null) {
+            $stmt = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, layer_id = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $stmt->execute([$markerData, $layerId, $tenantId, $id]);
+        } else {
+            $stmt = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $stmt->execute([$markerData, $tenantId, $id]);
+        }
+        return $this->getMarkerById($tenantId, $id);
+    }
+
     public function deleteMarker(int $tenantId, int $id): bool
     {
         $stmt = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');

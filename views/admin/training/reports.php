@@ -1,6 +1,8 @@
 <?php
 $courses = $courses ?? [];
 $courseReports = $courseReports ?? [];
+$successRateTenant = is_array($successRateTenant ?? null) ? $successRateTenant : [];
+$successRatePlatform = is_array($successRatePlatform ?? null) ? $successRatePlatform : [];
 require base_path('views/admin/training/partials/command_shell_open.php');
 ?>
                 <header class="tc-panel p-6 md:p-8">
@@ -10,6 +12,11 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                         Suivez la conformité et l’avancement des parcours : taux de complétion, durée moyenne et échéances à venir, formation par formation.
                     </p>
                 </header>
+
+                <?php
+                $successRatePanelClass = 'tc-panel p-6 md:p-8';
+                require base_path('views/admin/training/partials/success_rate_panel.php');
+                ?>
 
                 <?php if (empty($courseReports)): ?>
                 <div class="tc-panel p-10 text-center text-slate-600">Aucune formation à afficher pour le moment.</div>

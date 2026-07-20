@@ -64,9 +64,9 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
-        $enrollmentCounts = $this->enrollmentRepository->countAndCompletedForTenantCourses($tenantId);
-        $totalEnrollments = $enrollmentCounts['total'];
-        $completed = $enrollmentCounts['completed'];
+        $totalEnrollments = $this->enrollmentRepository->countForTenant($tenantId);
+        $successRateTenant = $this->enrollmentRepository->aggregateSuccessRate($tenantId);
+        $successRatePlatform = $this->enrollmentRepository->aggregateSuccessRate(null);
         $expiring = $this->assignmentService->listOverdueOrExpiring($tenantId, 30);
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.dashboard_body',
@@ -76,9 +76,11 @@ class AdminTrainingController
             'stats' => [
                 'courses' => count($courses),
                 'enrollments' => $totalEnrollments,
-                'completed' => $totalEnrollments > 0 ? round(100.0 * $completed / $totalEnrollments, 1) : 0,
+                'completed' => $successRateTenant['rate_percent'] ?? 0,
                 'expiringCount' => count($expiring),
             ],
+            'successRateTenant' => $successRateTenant,
+            'successRatePlatform' => $successRatePlatform,
             'expiring' => $expiring,
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
         ]);
@@ -468,6 +470,8 @@ class AdminTrainingController
             ];
         }
 
+        $successRateTenant = $this->enrollmentRepository->aggregateSuccessRate($tenantId);
+        $successRatePlatform = $this->enrollmentRepository->aggregateSuccessRate(null);
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.reports',
             'title' => 'Rapports',
@@ -475,6 +479,8 @@ class AdminTrainingController
             'totalModules' => count($courses),
             'courses' => $courses,
             'courseReports' => $courseReports,
+            'successRateTenant' => $successRateTenant,
+            'successRatePlatform' => $successRatePlatform,
         ]);
     }
 

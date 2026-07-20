@@ -83,14 +83,28 @@ $sections = [
                     <?php
                     $authorName = trim((string) ($e['author_name'] ?? '')) ?: 'Membre';
                     $createdAt = trim((string) ($e['created_at'] ?? ''));
+                    $capturedAt = trim((string) ($e['captured_at'] ?? ''));
                     $body = trim((string) ($e['body'] ?? ''));
                     $bodyShort = mb_strlen($body) > 140 ? mb_substr($body, 0, 137) . '…' : $body;
                     $attCount = count(is_array($e['attachments'] ?? null) ? $e['attachments'] : []);
+                    $urgency = trim((string) ($e['urgency'] ?? ''));
+                    $hasTammuc = trim((string) ($e['terrain_text'] ?? '')) !== ''
+                        || trim((string) ($e['adversary_text'] ?? '')) !== ''
+                        || trim((string) ($e['mission_text'] ?? '')) !== ''
+                        || trim((string) ($e['means_text'] ?? '')) !== ''
+                        || trim((string) ($e['engagement_frame_text'] ?? '')) !== '';
                     ?>
                 <a href="<?= htmlspecialchars(url('transmission/' . $sid) . '#pv-' . (int) ($e['id'] ?? 0), ENT_QUOTES, 'UTF-8') ?>" class="block rounded-xl border border-slate-200 bg-white p-3 text-xs hover:border-emerald-300 hover:bg-emerald-50/30">
                     <p class="font-bold text-slate-800"><?= htmlspecialchars($authorName, ENT_QUOTES, 'UTF-8') ?> <span class="font-normal text-slate-400"><?= $createdAt !== '' ? date('d/m H:i', strtotime($createdAt)) : '' ?></span></p>
+                    <?php if ($capturedAt !== ''): ?>
+                    <p class="mt-0.5 text-[10px] font-semibold text-emerald-700">Captation <?= htmlspecialchars(date('d/m H:i', strtotime($capturedAt)), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
                     <?php if ($bodyShort !== ''): ?><p class="mt-1 text-slate-600"><?= htmlspecialchars($bodyShort, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                    <?php if ($attCount > 0): ?><p class="mt-1 text-[10px] font-bold uppercase text-emerald-700"><?= $attCount ?> capture<?= $attCount > 1 ? 's' : '' ?></p><?php endif; ?>
+                    <p class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                        <?php if ($hasTammuc): ?><span class="text-slate-700">MRT</span><?php endif; ?>
+                        <?php if ($urgency === 'immediate'): ?><span class="text-rose-700">Urgent</span><?php elseif ($urgency === 'deferred'): ?><span class="text-amber-700">Différé</span><?php endif; ?>
+                        <?php if ($attCount > 0): ?><span class="text-emerald-700"><?= $attCount ?> capture<?= $attCount > 1 ? 's' : '' ?></span><?php endif; ?>
+                    </p>
                 </a>
                 <?php endforeach; ?>
             </div>

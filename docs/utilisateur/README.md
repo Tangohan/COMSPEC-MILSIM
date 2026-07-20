@@ -1,6 +1,6 @@
 # Guide utilisateur Athena
 
-Bienvenue dans la documentation **fonctionnelle** du portail **Athena**. Elle décrit **ce que vous pouvez faire** dans l’interface, **dans quel ordre**, et **comment les modules s’articulent** — comme une documentation de bibliothèque ou d’API orientée usage, mais **sans termes techniques** réservés aux équipes informatiques.
+Bienvenue dans la documentation **fonctionnelle** du portail **Athena**. Le **guide intégré** (page « Guide du portail », connecté) est la référence principale pour les membres et l’encadrement : manuel métier exhaustif, chapitre par chapitre. Les fiches Markdown ci-dessous complètent ou détaillent certains modules pour l’équipe projet.
 
 ## À qui s’adresse ce guide ?
 

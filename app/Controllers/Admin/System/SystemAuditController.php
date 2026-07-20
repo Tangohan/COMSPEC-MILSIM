@@ -4,18 +4,26 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\System;
 
+use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AuditLogRepository;
 use App\Services\Audit\AuditActionLabel;
+use App\Services\Audit\AuditRollbackService;
 
 class SystemAuditController
 {
     public function __construct(
-        private ?AuditLogRepository $auditLogs = null
+        private ?AuditLogRepository $auditLogs = null,
+        private ?AuditRollbackService $rollbackService = null,
     ) {
         $this->auditLogs ??= new AuditLogRepository();
+    }
+
+    private function rollback(): AuditRollbackService
+    {
+        return $this->rollbackService ??= \App\Core\Container::get(AuditRollbackService::class);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -68,12 +76,65 @@ class SystemAuditController
             return Response::redirect(url('admin/audit'));
         }
 
+        $assessment = $this->rollback()->assess($row);
+
         return Response::view('layout.main', [
             'content' => 'admin.system.audit_show',
             'title' => 'Détail du journal',
             'auditDetailRow' => $row,
             'auditScope' => 'system',
+            'auditRollbackAssessment' => $assessment,
+            'auditCanManageActions' => true,
         ]);
+    }
+
+    public function rollback(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $detailUrl = url('admin/audit/' . max(0, $id));
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($id > 0 ? $detailUrl : url('admin/audit'));
+        }
+
+        $row = $this->auditLogs->findByIdForScope($id, null);
+        if ($row === null) {
+            Session::flash('error', 'Entrée introuvable.');
+
+            return Response::redirect(url('admin/audit'));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $result = $this->rollback()->rollback($row, $actorId);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect($detailUrl);
+    }
+
+    public function alert(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $detailUrl = url('admin/audit/' . max(0, $id));
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($id > 0 ? $detailUrl : url('admin/audit'));
+        }
+
+        $row = $this->auditLogs->findByIdForScope($id, null);
+        if ($row === null) {
+            Session::flash('error', 'Entrée introuvable.');
+
+            return Response::redirect(url('admin/audit'));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $note = trim((string) $request->input('alert_note', ''));
+        $result = $this->rollback()->alertStaff($row, $actorId, $note);
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect($detailUrl);
     }
 
     private function optionalString(mixed $v): ?string

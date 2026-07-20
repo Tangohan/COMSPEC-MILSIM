@@ -31,18 +31,19 @@ class ForumCategoryRepository
      */
     private function fetchRootCategoriesForTenant(int $tenantId): array
     {
+        // Compteurs alignés sur listByCategory : sujets visibles du tenant courant uniquement.
         $stmt = $this->pdo->prepare(
             'SELECT fc.*,
-                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count,
-                    (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS post_count,
-                    (SELECT MAX(fp.created_at) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id) AS last_post_at,
-                    (SELECT fp.user_id FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
+                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS topic_count,
+                    (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS post_count,
+                    (SELECT MAX(fp.created_at) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS last_post_at,
+                    (SELECT fp.user_id FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ? ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_categories fc
              WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, \'tenant\') = \'global\' AND fc.tenant_id IS NULL))
                AND fc.parent_id IS NULL
              ORDER BY fc.display_order ASC, fc.id ASC'
         );
-        $stmt->execute([$tenantId]);
+        $stmt->execute([$tenantId, $tenantId, $tenantId, $tenantId, $tenantId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -63,7 +64,7 @@ class ForumCategoryRepository
         }
         $out = [];
         foreach ($groups as $group) {
-            $out[] = $this->preferRootCandidate($group, $tenantId);
+            $out[] = $this->finalizePreferredCategory($group, $tenantId);
         }
         usort(
             $out,
@@ -103,6 +104,83 @@ class ForumCategoryRepository
         return $group[0];
     }
 
+    /**
+     * Choisit la même racine que l’index, agrège les stats du tenant sur les doublons de slug,
+     * et expose topic_category_ids pour lister tous les sujets visibles du canal.
+     *
+     * @param non-empty-list<array<string, mixed>> $group
+     * @return array<string, mixed>
+     */
+    private function finalizePreferredCategory(array $group, int $tenantId): array
+    {
+        $chosen = $this->preferRootCandidate($group, $tenantId);
+        $ids = [];
+        $topicCount = 0;
+        $postCount = 0;
+        $lastPostAt = null;
+        $lastPostUserId = null;
+        foreach ($group as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+            $topicCount += (int) ($row['topic_count'] ?? 0);
+            $postCount += (int) ($row['post_count'] ?? 0);
+            $rowLast = $row['last_post_at'] ?? null;
+            if ($rowLast !== null && $rowLast !== ''
+                && ($lastPostAt === null || (string) $rowLast > (string) $lastPostAt)) {
+                $lastPostAt = $rowLast;
+                $lastPostUserId = $row['last_post_user_id'] ?? null;
+            }
+        }
+        $ids = array_values(array_unique($ids));
+        sort($ids);
+        $chosen['topic_count'] = $topicCount;
+        $chosen['post_count'] = $postCount;
+        if (array_key_exists('last_post_at', $chosen) || $lastPostAt !== null) {
+            $chosen['last_post_at'] = $lastPostAt;
+            $chosen['last_post_user_id'] = $lastPostUserId;
+        }
+        $chosen['topic_category_ids'] = $ids !== [] ? $ids : [(int) ($chosen['id'] ?? 0)];
+
+        return $chosen;
+    }
+
+    /**
+     * IDs de catégories à interroger pour les sujets d’un canal (doublons de slug inclus).
+     *
+     * @param array<string, mixed> $category
+     * @return list<int>
+     */
+    public function topicCategoryIdsFor(array $category, int $tenantId): array
+    {
+        if (isset($category['topic_category_ids']) && is_array($category['topic_category_ids'])) {
+            $ids = array_values(array_unique(array_filter(
+                array_map(static fn ($v): int => (int) $v, $category['topic_category_ids']),
+                static fn (int $id): bool => $id > 0
+            )));
+            if ($ids !== []) {
+                return $ids;
+            }
+        }
+
+        $slug = trim((string) ($category['slug'] ?? ''));
+        if ($slug === '') {
+            $id = (int) ($category['id'] ?? 0);
+
+            return $id > 0 ? [$id] : [];
+        }
+
+        $rows = $this->fetchCategoriesBySlug($slug, $tenantId);
+        if ($rows === []) {
+            $id = (int) ($category['id'] ?? 0);
+
+            return $id > 0 ? [$id] : [];
+        }
+
+        return $this->finalizePreferredCategory($rows, $tenantId)['topic_category_ids'];
+    }
+
     public function findBySlug(string $slug, int $tenantId): ?array
     {
         return $this->findBySlugAny($slug, $tenantId);
@@ -110,22 +188,40 @@ class ForumCategoryRepository
 
     /**
      * Trouve une catégorie par slug (racine ou sous-catégorie).
+     * En cas de doublons (ex. canaux globaux issus d’anciennes copies par tenant),
+     * applique la même préférence que l’index forum.
      */
     public function findBySlugAny(string $slug, int $tenantId): ?array
     {
+        $rows = $this->fetchCategoriesBySlug($slug, $tenantId);
+        if ($rows === []) {
+            return null;
+        }
+
+        return $this->finalizePreferredCategory($rows, $tenantId);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function fetchCategoriesBySlug(string $slug, int $tenantId): array
+    {
+        if ($slug === '') {
+            return [];
+        }
         $stmt = $this->pdo->prepare(
             'SELECT fc.*,
-                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count,
-                    (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS post_count
+                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS topic_count,
+                    (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS post_count,
+                    (SELECT MAX(fp.created_at) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS last_post_at,
+                    (SELECT fp.user_id FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ? ORDER BY fp.created_at DESC LIMIT 1) AS last_post_user_id
              FROM forum_categories fc
              WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, \'tenant\') = \'global\' AND fc.tenant_id IS NULL))
-               AND fc.slug = ?
-             ORDER BY (fc.tenant_id = ?) DESC, fc.id ASC
-             LIMIT 1'
+               AND fc.slug = ?'
         );
-        $stmt->execute([$tenantId, $slug, $tenantId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        $stmt->execute([$tenantId, $tenantId, $tenantId, $tenantId, $tenantId, $slug]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function findById(int $id, int $tenantId): ?array
@@ -148,16 +244,20 @@ class ForumCategoryRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM forum_categories
-             WHERE (tenant_id = ? OR (COALESCE(scope, 'tenant') = 'global' AND tenant_id IS NULL))
-               AND parent_id IS NULL AND slug = ?
-             ORDER BY (tenant_id = ?) DESC, id ASC
-             LIMIT 1"
+            "SELECT fc.*,
+                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS topic_count,
+                    (SELECT COUNT(*) FROM forum_posts fp INNER JOIN forum_topics ft ON ft.id = fp.topic_id WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS post_count
+             FROM forum_categories fc
+             WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, 'tenant') = 'global' AND fc.tenant_id IS NULL))
+               AND fc.parent_id IS NULL AND fc.slug = ?"
         );
-        $stmt->execute([$tenantId, $slug, $tenantId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$tenantId, $tenantId, $tenantId, $slug]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        if ($rows === []) {
+            return null;
+        }
 
-        return $row ?: null;
+        return $this->finalizePreferredCategory($rows, $tenantId);
     }
 
     /**
@@ -218,13 +318,13 @@ class ForumCategoryRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT fc.*,
-                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS topic_count
+                    (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS topic_count
              FROM forum_categories fc
              WHERE (fc.tenant_id = ? OR (COALESCE(fc.scope, 'tenant') = 'global' AND fc.tenant_id IS NULL))
                AND fc.parent_id = ?
              ORDER BY fc.display_order ASC"
         );
-        $stmt->execute([$tenantId, $parentId]);
+        $stmt->execute([$tenantId, $tenantId, $parentId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -246,7 +346,7 @@ class ForumCategoryRepository
 
         $out = [];
         foreach ($groups as $group) {
-            $chosen = $this->preferRootCandidate($group, $tenantId);
+            $chosen = $this->finalizePreferredCategory($group, $tenantId);
             $childrenByKey = [];
             foreach ($group as $r) {
                 foreach ($this->getSubcategories((int) ($r['id'] ?? 0), $tenantId) as $ch) {
@@ -316,13 +416,13 @@ class ForumCategoryRepository
         try {
             $stmt = $this->pdo->prepare(
                 "SELECT fc.id, fc.name, fc.slug, fc.icon, fc.color_theme,
-                        (SELECT ft.id FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                        (SELECT ft.id FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?
                             ORDER BY COALESCE(ft.updated_at, ft.created_at) DESC LIMIT 1) AS last_topic_id,
-                        (SELECT ft.title FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                        (SELECT ft.title FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?
                             ORDER BY COALESCE(ft.updated_at, ft.created_at) DESC LIMIT 1) AS last_topic_title,
                         (SELECT MAX(COALESCE(ft.updated_at, ft.created_at)) FROM forum_topics ft
-                            WHERE ft.category_id = fc.id AND ft.is_hidden = 0) AS last_activity_at,
-                        (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0
+                            WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?) AS last_activity_at,
+                        (SELECT COUNT(*) FROM forum_topics ft WHERE ft.category_id = fc.id AND ft.is_hidden = 0 AND ft.tenant_id = ?
                             AND NOT EXISTS (SELECT 1 FROM forum_read fr WHERE fr.user_id = ? AND fr.topic_id = ft.id)) AS unread_count
                  FROM forum_category_subscriptions fcs
                  INNER JOIN forum_categories fc ON fc.id = fcs.category_id
@@ -330,7 +430,7 @@ class ForumCategoryRepository
                    AND (fc.tenant_id = ? OR (COALESCE(fc.scope, 'tenant') = 'global' AND fc.tenant_id IS NULL))
                  ORDER BY last_activity_at DESC, fc.display_order ASC"
             );
-            $stmt->execute([$userId, $userId, $tenantId]);
+            $stmt->execute([$tenantId, $tenantId, $tenantId, $tenantId, $userId, $userId, $tenantId]);
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\PDOException $e) {

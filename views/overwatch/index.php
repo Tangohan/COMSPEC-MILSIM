@@ -11,7 +11,7 @@ $overwatchContext = $overwatchContext ?? [
     'syncIntervalMs' => 8000,
     'assetBase' => $base,
 ];
-$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
+$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
 $overwatchWorkspaces = $overwatchWorkspaces ?? [['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis', 'isDefault' => true]];
 $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;
@@ -77,6 +77,23 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
     .overwatch-map-status.is-hidden { opacity: 0; visibility: hidden; }
     .leaflet-container { font: inherit; width: 100% !important; height: 100% !important; background: #0b1220; }
     .nato-sidc-icon { background: transparent !important; border: none !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,.8)); }
+    /* Header : contraste lisible sur fond sombre (évite text-slate-100 hérité sur fond blanc) */
+    .overwatch-header-select {
+      color: #0f172a;
+      background-color: #fff;
+      border-color: #94a3b8;
+    }
+    .overwatch-header-select option { color: #0f172a; background: #fff; }
+    .overwatch-header-nav a {
+      color: #ecfdf5;
+      background: rgba(6, 78, 59, 0.55);
+      border-color: rgba(52, 211, 153, 0.45);
+    }
+    .overwatch-header-nav a:hover {
+      background: rgba(6, 95, 70, 0.85);
+      border-color: rgba(110, 231, 183, 0.7);
+      color: #fff;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased">
@@ -85,44 +102,44 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       <div class="h-1.5 bg-gradient-to-r from-emerald-600 via-cyan-500 to-slate-700"></div>
       <div class="px-4 md:px-6 py-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="min-w-0">
-          <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-400/80 mb-1">Système de combat connecté</p>
+          <p class="text-xs font-bold uppercase tracking-[0.22em] text-emerald-300 mb-1">Système de combat connecté</p>
           <div class="flex flex-wrap items-center gap-3">
             <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-white">COMSPEC Overwatch</h1>
-            <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-emerald-700/60 bg-emerald-950/50 text-emerald-300">En attente</span>
+            <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wide border-emerald-500/50 bg-emerald-950 text-emerald-200">En attente</span>
           </div>
-          <p class="mt-1 text-sm text-slate-400">Carte C2, symboles OTAN, appuis-feu et suivi des liaisons en temps réel.</p>
-          <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
-            <span class="text-xs text-slate-500" id="overwatch-theatre-label">—</span>
-            <span class="text-xs text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
-            <span class="text-xs text-slate-400 font-mono" id="overwatch-zulu">—:—:— Z</span>
-            <span class="text-xs text-slate-400" id="overwatch-sync-indicator">—</span>
+          <p class="mt-1.5 text-sm text-slate-300">Carte de commandement, symboles OTAN, appuis-feu et suivi des liaisons en temps réel.</p>
+          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <span class="text-sm text-slate-200" id="overwatch-theatre-label">—</span>
+            <span class="text-sm text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
+            <span class="text-sm text-slate-300 font-mono" id="overwatch-zulu">—:—:— Z</span>
+            <span class="text-sm text-slate-300" id="overwatch-sync-indicator">—</span>
           </div>
         </div>
         <div class="flex flex-wrap items-end gap-3">
-          <label class="flex flex-col gap-1">
-            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Théâtre</span>
-            <select id="overwatch-workspace" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold min-w-[160px]">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-xs font-bold uppercase tracking-wide text-slate-200">Théâtre</span>
+            <select id="overwatch-workspace" class="overwatch-header-select rounded-xl border px-3 py-2 text-sm font-semibold min-w-[160px] shadow-sm">
               <?php foreach ($overwatchWorkspaces as $w): ?>
               <option value="<?= (int)($w['mapId'] ?? 1) ?>" <?= !empty($w['isDefault']) ? 'selected' : '' ?>><?= htmlspecialchars($w['label'] ?? '') ?></option>
               <?php endforeach; ?>
             </select>
           </label>
-          <label class="flex flex-col gap-1">
-            <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Fond de carte</span>
-            <select id="overwatch-map-select" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold min-w-[180px]">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-xs font-bold uppercase tracking-wide text-slate-200">Fond de carte</span>
+            <select id="overwatch-map-select" class="overwatch-header-select rounded-xl border px-3 py-2 text-sm font-semibold min-w-[180px] shadow-sm">
               <?php foreach ($overwatchMapsList as $m): ?>
               <option value="<?= htmlspecialchars($m['slug'] ?? 'world') ?>" data-type="<?= htmlspecialchars($m['type'] ?? 'arma') ?>" <?= ($m['slug'] ?? '') === ($overwatchDefaultMapSlug ?? 'world') ? 'selected' : '' ?>><?= htmlspecialchars($m['label'] ?? 'Carte') ?></option>
               <?php endforeach; ?>
             </select>
           </label>
           <?php if (!empty($overwatchCanCreateCustomMaps)): ?>
-          <button type="button" id="overwatch-custom-map-open" class="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-emerald-950 hover:bg-emerald-100">Nouvelle carte</button>
+          <button type="button" id="overwatch-custom-map-open" class="rounded-xl border border-emerald-400/70 bg-emerald-600 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-500">Nouvelle carte</button>
           <?php endif; ?>
-          <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-100">Demander l’accès</button>
-          <nav class="flex flex-wrap gap-2 text-sm font-semibold">
-            <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">ATAK</a>
-            <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">TACMAP</a>
-            <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-50">Tableau de bord</a>
+          <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-400/70 bg-amber-500 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-400">Demander l’accès</button>
+          <nav class="overwatch-header-nav flex flex-wrap gap-2 text-sm font-semibold">
+            <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">ATAK</a>
+            <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">TACMAP</a>
+            <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">Tableau de bord</a>
           </nav>
         </div>
       </div>
@@ -420,7 +437,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           var isImage = kind === 'image';
           var mapEl = document.getElementById('overwatch-map');
           if (!mapEl) return;
-          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Fond monde' : (isImage ? 'Fond image' : ('Carte ' + requested)));
+          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Vue du monde' : (isImage ? 'Carte image' : ('Carte ' + requested)));
 
           if (kind === 'arma') {
             var cfgProbe = overwatchMapsConfigs[requested] ? buildArmaConfig(overwatchMapsConfigs[requested]) : null;
@@ -431,7 +448,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               isImage = false;
               var sel = document.getElementById('overwatch-map-select');
               if (sel) sel.value = 'world';
-              setMapStatus(true, 'Basculement vers le fond monde', 'La carte mission demandée est indisponible.');
+              setMapStatus(true, 'Carte de mission indisponible', 'Affichage de la vue du monde à la place.');
             }
           } else if (kind === 'image') {
             var imgProbe = overwatchMapsConfigs[requested] ? buildImageConfig(overwatchMapsConfigs[requested]) : null;
@@ -442,6 +459,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               isImage = false;
               var sel2 = document.getElementById('overwatch-map-select');
               if (sel2) sel2.value = 'world';
+              setMapStatus(true, 'Carte image indisponible', 'Affichage de la vue du monde à la place.');
             }
           }
 
@@ -471,7 +489,8 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
                 minZoom: icfg.minZoom,
                 maxZoom: icfg.maxZoom,
                 crs: icfg.CRS,
-                zoomControl: true
+                zoomControl: true,
+                maxBoundsViscosity: 1.0
               });
               map.setView(icfg.center, icfg.defaultZoom);
             } else {
@@ -483,7 +502,8 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
                 minZoom: cfg.minZoom,
                 maxZoom: cfg.maxZoom,
                 crs: cfg.CRS,
-                zoomControl: true
+                zoomControl: true,
+                maxBoundsViscosity: 1.0
               });
               map.setView(cfg.center, cfg.defaultZoom);
               if (cfg.bounds && cfg.bounds.length === 2) {
@@ -536,22 +556,33 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             if (!cfg2) {
               return applyBaseLayer('world');
             }
+            // Ne jamais basculer vers la vue monde sur tileerror : au dézoom,
+            // des cases hors couverture Arma échouent souvent sans que la carte soit morte.
+            window.OverwatchState._armaTileWarnShown = false;
             currentBaseLayer = L.tileLayer(cfg2.tilePattern, {
               attribution: cfg2.attribution,
               tileSize: cfg2.tileSize,
               minZoom: cfg2.minZoom,
               maxZoom: cfg2.maxZoom,
               noWrap: true,
+              bounds: (cfg2.bounds && cfg2.bounds.length === 2)
+                ? L.latLngBounds(L.latLng(cfg2.bounds[0][0], cfg2.bounds[0][1]), L.latLng(cfg2.bounds[1][0], cfg2.bounds[1][1]))
+                : undefined,
               errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
             });
             var tileErrors = 0;
             currentBaseLayer.on('tileerror', function () {
               tileErrors++;
-              if (tileErrors > 8 && !window.OverwatchState._armaFallbackTried) {
-                window.OverwatchState._armaFallbackTried = true;
-                setMapStatus(true, 'Tuiles mission indisponibles', 'Passage au fond monde…');
-                applyBaseLayer('world');
+              if (tileErrors === 12 && !window.OverwatchState._armaTileWarnShown) {
+                window.OverwatchState._armaTileWarnShown = true;
+                var badgeWarn = document.getElementById('overwatch-sync-badge');
+                if (badgeWarn && window.OverwatchState.currentMapType === 'arma') {
+                  badgeWarn.title = 'Certaines zones de la carte n’ont pas de détail à ce niveau de zoom.';
+                }
               }
+            });
+            currentBaseLayer.on('load', function () {
+              tileErrors = 0;
             });
             currentBaseLayer.addTo(map);
             map.setView(cfg2.center, cfg2.defaultZoom);
@@ -589,17 +620,16 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           setMapStatus(false);
           var badge = document.getElementById('overwatch-sync-badge');
           if (badge) {
-            badge.textContent = isWorld ? 'Fond monde' : (isImage ? 'Fond image' : 'Carte mission');
-            badge.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.18em] border-emerald-200 bg-emerald-50 text-emerald-900';
+            badge.textContent = isWorld ? 'Vue du monde' : (isImage ? 'Carte image' : 'Carte de mission');
+            badge.className = 'px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wide border-emerald-500/50 bg-emerald-950 text-emerald-200';
+            badge.removeAttribute('title');
           }
         } catch (err) {
           if (typeof console !== 'undefined' && console.error) console.error('Overwatch applyBaseLayer:', err);
           window.OverwatchState.syncStatus = 'error';
           updateSyncIndicator('error', null);
-          setMapStatus(true, 'Erreur de carte', (err && err.message) ? err.message : 'Initialisation impossible');
-          if (slug !== 'world') {
-            try { applyBaseLayer('world'); } catch (e2) {}
-          }
+          setMapStatus(true, 'Erreur de carte', 'Impossible d’afficher cette carte. Réessayez ou choisissez un autre fond.');
+          // Pas de bascule auto vers la vue monde : laisse l’opérateur garder / choisir le fond.
         }
       }
 

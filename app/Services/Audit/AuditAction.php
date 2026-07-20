@@ -65,4 +65,10 @@ final class AuditAction
     public const APP_UPDATE_DEPLOYED = 'app_update.deployed';
     public const APP_UPDATE_FAILED = 'app_update.failed';
     public const APP_UPDATE_ROLLED_BACK = 'app_update.rolled_back';
+
+    /** Restauration d’état depuis le journal d’activité. */
+    public const AUDIT_ROLLBACK = 'audit.rollback';
+
+    /** Alerte staff envoyée depuis le détail d’un événement du journal. */
+    public const AUDIT_ROLLBACK_ALERT = 'audit.rollback_alert';
 }

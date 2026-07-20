@@ -916,13 +916,13 @@ class HomeController
         }
         if (!$hasUsableArma) {
             $defaultMapSlug = 'world';
-            $defaultMapLabel = 'Monde (OpenStreetMap)';
+            $defaultMapLabel = 'Vue du monde';
         } elseif ($defaultMap && trim((string) ($defaultMap['tile_pattern'] ?? '')) === '') {
             $defaultMapSlug = 'world';
-            $defaultMapLabel = 'Monde (OpenStreetMap)';
+            $defaultMapLabel = 'Vue du monde';
         }
 
-        $overwatchMapsList = [['slug' => 'world', 'label' => 'Monde (OpenStreetMap)', 'type' => 'world']];
+        $overwatchMapsList = [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
             $slug = (string) ($m['slug'] ?? '');

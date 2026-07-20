@@ -648,8 +648,11 @@ $familleModeleLabels = [
 </script>
 <style>
 .board-mode-briefing .entry-card > p,
+.board-mode-briefing .entry-card > .entry-card__body,
+.board-mode-briefing .entry-card > .entry-card__meta,
 .board-mode-briefing .entry-card .entry-card-actions { display: none !important; }
-.board-mode-briefing .entry-card > h3 { margin-bottom: 0; }
+.board-mode-briefing .entry-card > h3,
+.board-mode-briefing .entry-card .entry-card__title { margin-bottom: 0; }
 .board-mode-briefing .entry-card .entry-card-draft-open { display: block !important; }
 </style>
 <?php endif; ?>

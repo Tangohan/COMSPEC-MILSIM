@@ -57,6 +57,31 @@ final class AuditSnapshotPresenter
         'expires_at' => 'Fin prévue',
         'valeur' => 'Valeur',
         'title' => 'Titre',
+        'plan_slug' => 'Formule d’accès',
+        'subscription_status' => 'Statut d’abonnement',
+        'end_founder_trial' => 'Fin anticipée de la période fondateur',
+        'slug' => 'Identifiant court',
+        'sort_order' => 'Ordre d’affichage',
+        'features_json' => 'Fonctionnalités incluses',
+        'limits_json' => 'Limites associées',
+        'stripe_price_id_monthly' => 'Tarif mensuel (paiement)',
+        'stripe_price_id_yearly' => 'Tarif annuel (paiement)',
+        'platform_directory' => 'Depuis l’annuaire plateforme',
+        'source_action' => 'Événement d’origine',
+        'source_audit_id' => 'Référence journal d’origine',
+        'restored' => 'Valeurs restaurées',
+        'previous_state' => 'État juste avant restauration',
+        'result' => 'Résultat',
+        'note' => 'Message',
+        'account.lock' => 'Verrouillage du compte',
+        'account.lock_login' => 'Blocage de la connexion',
+        'forum.post' => 'Publication sur le forum',
+        'forum.reply' => 'Réponses sur le forum',
+        'join_blocked' => 'Blocage des nouvelles inscriptions (même e-mail)',
+        'restrictions.account.lock' => 'Verrouillage du compte',
+        'restrictions.forum.post' => 'Publication sur le forum',
+        'restrictions.forum.reply' => 'Réponses sur le forum',
+        'restrictions.join_blocked' => 'Blocage des nouvelles inscriptions (même e-mail)',
     ];
 
     /** @var array<string, string> */
@@ -297,6 +322,8 @@ final class AuditSnapshotPresenter
         if (!is_array($n)) {
             $n = [];
         }
+        $o = self::flattenAssociative($o);
+        $n = self::flattenAssociative($n);
         $keys = array_unique(array_merge(array_keys($o), array_keys($n)));
         sort($keys, SORT_STRING);
         $rows = [];
@@ -314,7 +341,63 @@ final class AuditSnapshotPresenter
 
     public static function fieldLabel(string $key): string
     {
-        return self::FIELD_LABELS[$key] ?? ucfirst(str_replace('_', ' ', $key));
+        if (isset(self::FIELD_LABELS[$key])) {
+            return self::FIELD_LABELS[$key];
+        }
+        $human = str_replace(['_', '-'], ' ', $key);
+        $human = str_replace('.', ' · ', $human);
+        if (function_exists('mb_convert_case')) {
+            return mb_convert_case($human, MB_CASE_TITLE, 'UTF-8');
+        }
+
+        return ucwords($human);
+    }
+
+    /**
+     * Affichage public d’une valeur scalaire / booléenne (sans dump JSON primaire).
+     */
+    public static function displayScalar(mixed $v, string $key = ''): string
+    {
+        return self::scalarToDisplay($v, $key);
+    }
+
+    /**
+     * Aplatit les objets imbriqués en clés pointées (ex. restrictions.account.lock).
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    public static function flattenAssociative(array $data, string $prefix = ''): array
+    {
+        $out = [];
+        foreach ($data as $k => $v) {
+            $key = $prefix === '' ? (string) $k : $prefix . '.' . (string) $k;
+            if (is_array($v) && $v !== [] && self::isAssociativeArray($v)) {
+                foreach (self::flattenAssociative($v, $key) as $fk => $fv) {
+                    $out[$fk] = $fv;
+                }
+                continue;
+            }
+            $out[$key] = $v;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<mixed, mixed> $arr
+     */
+    private static function isAssociativeArray(array $arr): bool
+    {
+        $i = 0;
+        foreach ($arr as $k => $_) {
+            if ($k !== $i) {
+                return true;
+            }
+            $i++;
+        }
+
+        return false;
     }
 
     /**
@@ -427,14 +510,53 @@ final class AuditSnapshotPresenter
             if ($s === '') {
                 return '—';
             }
-            if ($key === 'status' || $key === 'statut') {
+            if ($key === 'status' || $key === 'statut' || str_ends_with($key, '.status')) {
                 return self::STATUS_VALUE_LABELS[$s] ?? $s;
+            }
+            if ($key === 'subscription_status') {
+                return match ($s) {
+                    'none' => 'Sans abonnement payant',
+                    'active' => 'Abonnement actif',
+                    'trialing' => 'Période d’essai',
+                    'past_due' => 'Paiement en retard',
+                    'canceled' => 'Résilié',
+                    'unpaid' => 'Impayé',
+                    default => $s,
+                };
+            }
+            if ($key === 'result') {
+                return match ($s) {
+                    'restored' => 'Restauré',
+                    'alert_sent' => 'Alerte envoyée',
+                    default => $s,
+                };
+            }
+            if (($key === 'features_json' || $key === 'limits_json') && (str_starts_with($s, '{') || str_starts_with($s, '['))) {
+                return 'Contenu structuré (voir le détail technique)';
             }
 
             return $s;
         }
-        $enc = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (is_array($v)) {
+            if ($v === []) {
+                return '—';
+            }
+            $flat = self::isAssociativeArray($v) ? self::flattenAssociative($v) : $v;
+            $parts = [];
+            $n = 0;
+            foreach ($flat as $fk => $fv) {
+                if ($n >= 4) {
+                    $parts[] = '…';
+                    break;
+                }
+                $label = is_string($fk) ? self::fieldLabel($fk) : 'Élément';
+                $parts[] = $label . ' : ' . self::scalarToDisplay($fv, is_string($fk) ? $fk : $key);
+                $n++;
+            }
 
-        return $enc !== false ? $enc : '—';
+            return implode(' · ', $parts);
+        }
+
+        return '—';
     }
 }

@@ -55,14 +55,17 @@ class UserLegalIdentityRepository
         if (!$this->tableExists()) {
             return;
         }
+        $exists = $this->getByUserId($userId);
         $fields = [
             'first_name' => trim((string) ($data['first_name'] ?? '')),
             'last_name' => trim((string) ($data['last_name'] ?? '')),
-            'phone' => trim((string) ($data['phone'] ?? '')),
             'birth_date' => trim((string) ($data['birth_date'] ?? '')),
             'nationality' => trim((string) ($data['nationality'] ?? '')),
         ];
-        $exists = $this->getByUserId($userId);
+        // Conservé en base si non fourni (plus collecté dans les formulaires d’identité civile).
+        $phone = array_key_exists('phone', $data)
+            ? trim((string) $data['phone'])
+            : trim((string) ($exists['phone'] ?? ''));
         if ($exists) {
             $stmt = $this->pdo->prepare(
                 'UPDATE user_legal_identities
@@ -72,7 +75,7 @@ class UserLegalIdentityRepository
             $stmt->execute([
                 $fields['first_name'] !== '' ? $fields['first_name'] : null,
                 $fields['last_name'] !== '' ? $fields['last_name'] : null,
-                $fields['phone'] !== '' ? $fields['phone'] : null,
+                $phone !== '' ? $phone : null,
                 $fields['birth_date'] !== '' ? $fields['birth_date'] : null,
                 $fields['nationality'] !== '' ? $fields['nationality'] : null,
                 $userId,
@@ -90,7 +93,7 @@ class UserLegalIdentityRepository
             $userId,
             $fields['first_name'] !== '' ? $fields['first_name'] : null,
             $fields['last_name'] !== '' ? $fields['last_name'] : null,
-            $fields['phone'] !== '' ? $fields['phone'] : null,
+            $phone !== '' ? $phone : null,
             $fields['birth_date'] !== '' ? $fields['birth_date'] : null,
             $fields['nationality'] !== '' ? $fields['nationality'] : null,
         ]);

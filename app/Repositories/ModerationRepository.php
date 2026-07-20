@@ -52,11 +52,13 @@ class ModerationRepository
         } elseif ($sanctionScope === 'platform' && $this->hasSanctionScopeColumn()) {
             $scopeSql = " AND ma.sanction_scope = 'platform'";
         }
+        // Cible : même communauté que la mesure. Acteur : id global seulement —
+        // les sanctions « platform » sont souvent posées par un admin site d’un autre tenant.
         $stmt = $this->pdo->prepare(
             'SELECT ma.*, u.email AS target_email, a.email AS actor_email
              FROM moderation_actions ma
              INNER JOIN users u ON u.id = ma.target_user_id AND u.tenant_id = ma.tenant_id
-             INNER JOIN users a ON a.id = ma.actor_user_id AND a.tenant_id = ma.tenant_id
+             LEFT JOIN users a ON a.id = ma.actor_user_id
              WHERE ma.tenant_id = ?' . $scopeSql . '
              ORDER BY ma.created_at DESC
              LIMIT ' . $lim

@@ -195,13 +195,18 @@ $memberOptionLabel = static function (array $u): string {
             </tr>
         </thead>
         <tbody>
+            <?php if ($actions === []): ?>
+            <tr class="border-t border-slate-100">
+                <td class="p-4 text-sm text-slate-500" colspan="6">Aucune sanction site enregistrée pour cette communauté pour le moment.</td>
+            </tr>
+            <?php else: ?>
             <?php foreach ($actions as $a): ?>
             <tr class="border-t border-slate-100">
                 <td class="p-2"><?= htmlspecialchars((string) ($a['created_at'] ?? '')) ?></td>
                 <td class="p-2"><?= htmlspecialchars((string) ($a['target_email'] ?? '')) ?></td>
                 <td class="p-2"><?= htmlspecialchars($actionTypeLabel((string) ($a['action_type'] ?? ''))) ?></td>
                 <td class="p-2"><?= htmlspecialchars($forumLabel(isset($a['restrictions_json']) ? (is_string($a['restrictions_json']) ? $a['restrictions_json'] : null) : null)) ?></td>
-                <td class="p-2"><?= htmlspecialchars((string) ($a['actor_email'] ?? '')) ?></td>
+                <td class="p-2"><?= htmlspecialchars((string) ($a['actor_email'] ?? '—')) ?></td>
                 <td class="p-2">
                     <?php if (empty($a['revoked_at']) && in_array((string) ($a['action_type'] ?? ''), ['mute', 'suspend', 'ban'], true)): ?>
                     <form method="post" action="<?= url('admin/system/member-sanctions/revoke') ?>" class="inline">
@@ -218,6 +223,7 @@ $memberOptionLabel = static function (array $u): string {
                 </td>
             </tr>
             <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
     <?php elseif ($selectedTenantId > 0): ?>

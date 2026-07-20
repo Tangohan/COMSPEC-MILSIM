@@ -32,6 +32,9 @@ final class CooperationAnnouncementRenderer
             'lien_proposition',
             'lien_espace_commun',
             'lien_negociation',
+            'role_attribue',
+            'etape_conduite',
+            'membre_designe',
         ];
     }
 
@@ -47,6 +50,9 @@ final class CooperationAnnouncementRenderer
             'lien_proposition' => 'Lien vers la page « Proposition »',
             'lien_espace_commun' => 'Lien vers l’espace commun',
             'lien_negociation' => 'Lien vers la négociation',
+            'role_attribue' => 'Intitulé du rôle attribué à un membre',
+            'etape_conduite' => 'Étape de conduite affichée (libellé lisible)',
+            'membre_designe' => 'Nom du membre désigné',
         ];
     }
 }

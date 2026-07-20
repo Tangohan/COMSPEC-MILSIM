@@ -414,6 +414,13 @@ class InterteamMissionWebController
             return Response::redirect(cooperation_mission_negotiate_url($id));
         }
         $this->interteamRepository->saveCounterProposal($id, $tenantId, $userId, $parts);
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::COUNTER_PROPOSAL_SUBMITTED,
+            $id,
+            $userId,
+            $tenantId,
+            ['partner_tenant_id' => $tenantId]
+        );
         Session::flash('success', 'Contre-proposition transmise à l’unité support.');
 
         return Response::redirect(cooperation_mission_negotiate_url($id));
@@ -440,12 +447,28 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_negotiate_url($id));
         }
+        $missionBefore = $this->interteamRepository->findById($id);
+        $partnerTid = (int) ($missionBefore['counter_proposal_tenant_id'] ?? 0);
         $decision = (string) $request->input('decision', '');
         if ($decision === 'accept') {
             $this->interteamRepository->integrateCounterProposal($id, $tenantId, $userId);
+            $this->cooperationAnnouncementDispatcher->dispatch(
+                CooperationAnnouncementEvents::COUNTER_PROPOSAL_ACCEPTED,
+                $id,
+                $userId,
+                $tenantId,
+                ['partner_tenant_id' => $partnerTid]
+            );
             Session::flash('success', 'Contre-proposition prise en compte. Vous pouvez poursuivre la validation avec les unités partenaires.');
         } elseif ($decision === 'decline') {
             $this->interteamRepository->declineCounterProposal($id, $tenantId, $userId);
+            $this->cooperationAnnouncementDispatcher->dispatch(
+                CooperationAnnouncementEvents::COUNTER_PROPOSAL_DECLINED,
+                $id,
+                $userId,
+                $tenantId,
+                ['partner_tenant_id' => $partnerTid]
+            );
             Session::flash('success', 'Contre-proposition refusée. L’unité partenaire peut vous en adresser une nouvelle.');
         } else {
             Session::flash('error', 'Choix invalide.');
@@ -728,6 +751,10 @@ class InterteamMissionWebController
             'interteamOperationalStageChoices' => $this->operationalStageChoices(),
             'interteamOperationalStage' => $operationalStage,
             'interteamSitreps' => $this->interteamRepository->listSitreps($missionId, 40),
+            'interteamCorrectiveActionsText' => $this->notesJsonToText($mission['corrective_actions_json'] ?? null),
+            'interteamLinkedResourcesText' => $this->notesJsonToText($mission['linked_resources_json'] ?? null),
+            'interteamSimulatedLossesText' => $this->notesJsonToText($mission['simulated_losses_json'] ?? null),
+            'interteamLessonsLearnedText' => $this->notesJsonToText($mission['lessons_learned_json'] ?? null),
         ];
     }
 
@@ -737,10 +764,10 @@ class InterteamMissionWebController
     private function operationalStageChoices(): array
     {
         return [
-            'opord_draft' => '1) Brouillon OPORD',
-            'command_validation' => '2) Validation commandement',
-            'execution' => '3) Exécution (SITREP)',
-            'closed_aar' => '4) Clôture + AAR',
+            'opord_draft' => '1) Brouillon d’ordre d’opération',
+            'command_validation' => '2) Validation par le commandement',
+            'execution' => '3) Exécution (points de situation)',
+            'closed_aar' => '4) Clôture et bilan',
             'corrective_actions' => '5) Actions correctives',
         ];
     }
@@ -748,16 +775,63 @@ class InterteamMissionWebController
     private function operationalStageErrorLabel(string $error): string
     {
         return match ($error) {
-            'workflow_unavailable' => 'Workflow opérationnel non disponible (migration manquante).',
-            'invalid_stage' => 'Statut opérationnel invalide.',
-            'mission_not_found' => 'Mission introuvable.',
-            'backward_transition_forbidden' => 'Retour arrière interdit par la doctrine.',
-            'jump_transition_forbidden' => 'Transition impossible : respectez l’ordre des étapes.',
-            'opord_required' => 'OPORD requis avant validation commandement.',
-            'mission_must_be_active' => 'La mission doit être active pour passer en exécution.',
-            'aar_required' => 'AAR requis pour clôturer la mission.',
-            default => 'Impossible de mettre à jour le statut opérationnel.',
+            'workflow_unavailable' => 'Le suivi de conduite n’est pas encore disponible pour cette installation.',
+            'invalid_stage' => 'Étape de conduite non reconnue.',
+            'mission_not_found' => 'Dossier de coopération introuvable.',
+            'backward_transition_forbidden' => 'Retour en arrière non autorisé : respectez l’ordre des étapes.',
+            'jump_transition_forbidden' => 'Impossible de sauter une étape : avancez dans l’ordre prévu.',
+            'opord_required' => 'Rédigez l’ordre d’opération avant de demander la validation du commandement.',
+            'mission_must_be_active' => 'La coopération doit être lancée pour passer en exécution.',
+            'aar_required' => 'Rédigez le bilan avant de clôturer.',
+            default => 'Impossible de mettre à jour l’étape de conduite.',
         };
+    }
+
+    /**
+     * Texte libre → JSON notes (compatibilité colonnes JSON existantes).
+     */
+    private function notesTextToJson(?string $text): ?string
+    {
+        $text = trim((string) $text);
+        if ($text === '') {
+            return null;
+        }
+        if (strlen($text) > 20000) {
+            $text = mb_substr($text, 0, 20000);
+        }
+
+        return json_encode(['notes' => $text], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Extrait un texte affichable depuis une colonne JSON (notes ou chaîne brute).
+     */
+    private function notesJsonToText(mixed $raw): string
+    {
+        if ($raw === null || $raw === '') {
+            return '';
+        }
+        if (is_array($raw)) {
+            if (isset($raw['notes']) && is_string($raw['notes'])) {
+                return $raw['notes'];
+            }
+
+            return trim(implode("\n", array_map(static fn ($v): string => is_scalar($v) ? (string) $v : '', $raw)));
+        }
+        $s = trim((string) $raw);
+        if ($s === '') {
+            return '';
+        }
+        $decoded = json_decode($s, true);
+        if (is_array($decoded)) {
+            if (isset($decoded['notes']) && is_string($decoded['notes'])) {
+                return $decoded['notes'];
+            }
+
+            return $s;
+        }
+
+        return $s;
     }
 
     private function normalizeDateTimeInput(string $value): ?string
@@ -1031,19 +1105,19 @@ class InterteamMissionWebController
         $opord = trim((string) $request->input('opord_text', ''));
         $aar = trim((string) $request->input('aar_summary', ''));
         $validationNotes = trim((string) $request->input('command_validation_notes', ''));
-        $corrective = trim((string) $request->input('corrective_actions_json', ''));
-        $resources = trim((string) $request->input('linked_resources_json', ''));
-        $losses = trim((string) $request->input('simulated_losses_json', ''));
-        $lessons = trim((string) $request->input('lessons_learned_json', ''));
+        $corrective = trim((string) $request->input('corrective_actions_text', $request->input('corrective_actions_json', '')));
+        $resources = trim((string) $request->input('linked_resources_text', $request->input('linked_resources_json', '')));
+        $losses = trim((string) $request->input('simulated_losses_text', $request->input('simulated_losses_json', '')));
+        $lessons = trim((string) $request->input('lessons_learned_text', $request->input('lessons_learned_json', '')));
 
         $fields = [
             'opord_text' => $opord !== '' ? $opord : null,
             'aar_summary' => $aar !== '' ? $aar : null,
             'command_validation_notes' => $validationNotes !== '' ? $validationNotes : null,
-            'corrective_actions_json' => $this->normalizeJsonOrNull($corrective),
-            'linked_resources_json' => $this->normalizeJsonOrNull($resources),
-            'simulated_losses_json' => $this->normalizeJsonOrNull($losses),
-            'lessons_learned_json' => $this->normalizeJsonOrNull($lessons),
+            'corrective_actions_json' => $this->notesTextToJson($corrective) ?? $this->normalizeJsonOrNull($corrective),
+            'linked_resources_json' => $this->notesTextToJson($resources) ?? $this->normalizeJsonOrNull($resources),
+            'simulated_losses_json' => $this->notesTextToJson($losses) ?? $this->normalizeJsonOrNull($losses),
+            'lessons_learned_json' => $this->notesTextToJson($lessons) ?? $this->normalizeJsonOrNull($lessons),
         ];
 
         $result = $this->interteamRepository->updateOperationalStage($id, $stage, $fields);
@@ -1052,8 +1126,16 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
+        $choices = $this->operationalStageChoices();
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'operational_stage_updated', ['operational_stage' => $stage]);
-        Session::flash('success', 'Statut opérationnel mis à jour.');
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::OPERATIONAL_STAGE_UPDATED,
+            $id,
+            $userId,
+            $tenantId,
+            ['stage_label' => (string) ($choices[$stage] ?? $stage)]
+        );
+        Session::flash('success', 'Étape de conduite mise à jour.');
 
         return Response::redirect(cooperation_mission_show_url($id));
     }
@@ -1076,27 +1158,32 @@ class InterteamMissionWebController
         }
         $mission = $this->interteamRepository->findById($id);
         if (!$mission || (string) ($mission['operational_stage'] ?? '') !== 'execution') {
-            Session::flash('error', 'Les SITREP sont ouverts pendant la phase d’exécution.');
+            Session::flash('error', 'Les points de situation sont ouverts pendant la phase d’exécution.');
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
         $summary = trim((string) $request->input('sitrep_summary', ''));
         if ($summary === '') {
-            Session::flash('error', 'Le contenu SITREP est obligatoire.');
+            Session::flash('error', 'Le contenu du point de situation est obligatoire.');
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
         $occurredAt = trim((string) $request->input('sitrep_occurred_at', ''));
         $occurredAt = $this->normalizeDateTimeInput($occurredAt);
-        $payload = $this->normalizeJsonOrArray($request->input('sitrep_payload_json', ''));
+        $extraNotes = trim((string) $request->input('sitrep_notes', $request->input('sitrep_payload_json', '')));
+        $payload = null;
+        if ($extraNotes !== '') {
+            $asJson = $this->normalizeJsonOrArray($extraNotes);
+            $payload = $asJson ?? ['notes' => mb_substr($extraNotes, 0, 4000)];
+        }
         $ok = $this->interteamRepository->createSitrep($id, $userId, $tenantId, $summary, $occurredAt, $payload);
         if (!$ok) {
-            Session::flash('error', 'Impossible d’enregistrer le SITREP.');
+            Session::flash('error', 'Impossible d’enregistrer le point de situation.');
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
         $this->interteamRepository->logEvent($id, $userId, $tenantId, 'sitrep_logged', ['summary' => mb_substr($summary, 0, 220)]);
-        Session::flash('success', 'SITREP enregistré.');
+        Session::flash('success', 'Point de situation enregistré.');
 
         return Response::redirect(cooperation_mission_show_url($id));
     }
@@ -1291,6 +1378,13 @@ class InterteamMissionWebController
             return Response::redirect(cooperation_mission_show_url($id));
         }
         $this->interteamRepository->logEvent($id, (int) Session::get('user_id'), $tenantId, 'co_lead_promoted', ['tenant_id' => $partnerTid]);
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::CO_LEAD_DESIGNATED,
+            $id,
+            (int) Session::get('user_id'),
+            $tenantId,
+            ['partner_tenant_id' => $partnerTid, 'invited_tenant_id' => $partnerTid]
+        );
         Session::flash('success', 'Co-pilote désigné : cette unité peut désormais inviter et lancer la coopération avec vous.');
 
         return Response::redirect(cooperation_mission_show_url($id));
@@ -1391,8 +1485,25 @@ class InterteamMissionWebController
 
             return Response::redirect(cooperation_mission_show_url($id));
         }
+        $roleChoices = CooperationDictionary::missionMemberRoleChoices();
+        $roleLabel = $roleChoices[$roleSlug] ?? $roleSlug;
+        $displayName = trim((string) ($u['display_name'] ?? $u['name'] ?? $u['email'] ?? ''));
         $this->interteamRepository->assignMissionMember($id, $targetUserId, $tenantId, $roleSlug, $actorId);
-        $this->interteamRepository->logEvent($id, $actorId, $tenantId, 'mission_meta_updated', ['mission_member_role' => $roleSlug, 'user_id' => $targetUserId]);
+        $this->interteamRepository->logEvent($id, $actorId, $tenantId, 'mission_member_assigned', [
+            'mission_member_role' => $roleSlug,
+            'user_id' => $targetUserId,
+        ]);
+        $this->cooperationAnnouncementDispatcher->dispatch(
+            CooperationAnnouncementEvents::MEMBER_DESIGNATED,
+            $id,
+            $actorId,
+            $tenantId,
+            [
+                'notify_user_id' => $targetUserId,
+                'role_label' => $roleLabel,
+                'member_display_name' => $displayName,
+            ]
+        );
         Session::flash('success', 'Rôle de coopération enregistré pour ce membre.');
 
         return Response::redirect(cooperation_mission_show_url($id));

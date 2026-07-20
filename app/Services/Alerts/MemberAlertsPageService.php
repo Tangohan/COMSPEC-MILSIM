@@ -59,6 +59,7 @@ final class MemberAlertsPageService
                     }
                     $active[] = [
                         'scope' => 'tenant',
+                        'id' => 0,
                         'kind' => 'notice',
                         'category' => 'Annonce',
                         'title' => (string) ($pin['label'] ?? 'Annonce'),
@@ -67,6 +68,8 @@ final class MemberAlertsPageService
                         'cta_url' => null,
                         'status' => 'active',
                         'ended_at' => null,
+                        'dismissible' => false,
+                        'pinned' => true,
                     ];
                 }
             } catch (\Throwable) {
@@ -83,6 +86,7 @@ final class MemberAlertsPageService
                     $topicId = (int) ($ftPin['id'] ?? 0);
                     $active[] = [
                         'scope' => 'tenant',
+                        'id' => 0,
                         'kind' => 'forum_pin',
                         'category' => 'Message épinglé',
                         'title' => $title,
@@ -91,12 +95,19 @@ final class MemberAlertsPageService
                         'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
                         'status' => 'active',
                         'ended_at' => null,
+                        'dismissible' => false,
+                        'pinned' => true,
                     ];
                 }
             } catch (\Throwable) {
                 // Optionnel si le schéma forum n’est pas prêt.
             }
         }
+
+        usort($active, static function (array $a, array $b): int {
+            return self::priorityForKind((string) ($a['kind'] ?? 'info'))
+                <=> self::priorityForKind((string) ($b['kind'] ?? 'info'));
+        });
 
         $history = [];
         try {
@@ -132,10 +143,12 @@ final class MemberAlertsPageService
      */
     private function mapAlertRow(array $alert, bool $ended): array
     {
+        $kind = (string) ($alert['kind'] ?? 'info');
+
         return [
             'scope' => (string) ($alert['scope'] ?? 'tenant'),
             'id' => (int) ($alert['id'] ?? 0),
-            'kind' => (string) ($alert['kind'] ?? 'info'),
+            'kind' => $kind,
             'category' => null,
             'title' => (string) ($alert['title'] ?? ''),
             'body' => (string) ($alert['body'] ?? ''),
@@ -143,7 +156,21 @@ final class MemberAlertsPageService
             'cta_url' => $alert['cta_url'] ?? null,
             'status' => $ended ? 'ended' : 'active',
             'ended_at' => isset($alert['ended_at']) && is_string($alert['ended_at']) ? $alert['ended_at'] : null,
+            'dismissible' => !$ended && (!array_key_exists('dismissible', $alert) || (bool) $alert['dismissible']),
+            'pinned' => in_array(strtolower(trim($kind)), ['forum_pin', 'notice'], true),
         ];
+    }
+
+    private static function priorityForKind(string $kind): int
+    {
+        return match (strtolower(trim($kind))) {
+            'urgent' => 0,
+            'forum_pin' => 1,
+            'notice' => 2,
+            'novelty' => 3,
+            'discount' => 4,
+            default => 5,
+        };
     }
 
     /** @param array<string, mixed> $item */

@@ -11,6 +11,16 @@ $alertsManageUrl = isset($alerts_manage_url) && is_string($alerts_manage_url) &&
     ? $alerts_manage_url
     : null;
 
+$heroImageRel = null;
+foreach (['assets/images/fog-team.jpg', 'assets/images/night-team.jpg', 'assets/images/hero-explosion.jpg', 'assets/images/fog-banner.jpg'] as $candidate) {
+    if (is_file(base_path('public/' . $candidate))) {
+        $heroImageRel = $candidate;
+        break;
+    }
+}
+$heroHasImage = $heroImageRel !== null;
+$heroImageUrl = $heroHasImage ? asset_url($heroImageRel) : '';
+
 $kindLabelFr = static function (string $kind): string {
     return match (strtolower(trim($kind))) {
         'urgent' => 'Urgent',
@@ -19,6 +29,18 @@ $kindLabelFr = static function (string $kind): string {
         'notice' => 'Annonce',
         'forum_pin' => 'Message épinglé',
         default => 'Information',
+    };
+};
+
+$filterKeyForKind = static function (string $kind): string {
+    $kind = strtolower(trim($kind));
+
+    return match ($kind) {
+        'urgent' => 'urgent',
+        'novelty' => 'novelty',
+        'discount' => 'discount',
+        'notice', 'forum_pin' => 'notice',
+        default => 'info',
     };
 };
 
@@ -31,17 +53,44 @@ $formatEndedAt = static function (?string $raw): ?string {
     return $t !== false ? date('d/m/Y H:i', $t) : null;
 };
 
-$renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $formatEndedAt): void {
-    $kind = strtolower(trim((string) ($item['kind'] ?? 'info')));
-    if ($kind === 'forum_pin') {
-        $kind = 'notice';
+$activeCount = count($alertsActive);
+$historyCount = count($alertsHistory);
+$urgentCount = 0;
+$pinnedCount = 0;
+$filterKeysPresent = [];
+foreach ($alertsActive as $row) {
+    if (!is_array($row)) {
+        continue;
     }
-    if (!in_array($kind, ['info', 'urgent', 'novelty', 'discount', 'notice'], true)) {
-        $kind = 'info';
+    $k = strtolower(trim((string) ($row['kind'] ?? 'info')));
+    if ($k === 'urgent') {
+        $urgentCount++;
     }
+    if (!empty($row['pinned']) || in_array($k, ['forum_pin', 'notice'], true)) {
+        $pinnedCount++;
+    }
+    $filterKeysPresent[$filterKeyForKind($k)] = true;
+}
+
+$filterDefs = [
+    'all' => 'Tous',
+    'urgent' => 'Urgent',
+    'notice' => 'Annonces',
+    'novelty' => 'Nouveau',
+    'discount' => 'Promotion',
+    'info' => 'Information',
+];
+
+$csrfToken = \App\Core\Csrf::token();
+$dismissUrl = url('api/alerts/dismiss');
+
+$renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $filterKeyForKind, $formatEndedAt): void {
+    $rawKind = strtolower(trim((string) ($item['kind'] ?? 'info')));
+    $filterKey = $filterKeyForKind($rawKind);
+    $kind = $filterKey;
     $category = trim((string) ($item['category'] ?? ''));
     if ($category === '') {
-        $category = $kindLabelFr((string) ($item['kind'] ?? $kind));
+        $category = $kindLabelFr($rawKind);
     }
     $title = trim((string) ($item['title'] ?? ''));
     if ($title === '') {
@@ -55,246 +104,303 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
         ? (string) $item['cta_url']
         : null;
     $isPlatform = strtolower(trim((string) ($item['scope'] ?? ''))) === 'platform';
+    $scope = strtolower(trim((string) ($item['scope'] ?? 'tenant')));
+    $alertId = (int) ($item['id'] ?? 0);
+    $dismissible = !$archived
+        && $alertId > 0
+        && in_array($scope, ['platform', 'tenant'], true)
+        && (!array_key_exists('dismissible', $item) || (bool) $item['dismissible']);
+    $isPinned = !$archived && (
+        !empty($item['pinned'])
+        || in_array($rawKind, ['forum_pin', 'notice'], true)
+    );
     $endedLabel = $archived ? $formatEndedAt(isset($item['ended_at']) ? (string) $item['ended_at'] : null) : null;
-    $tag = ($ctaUrl !== null) ? 'a' : 'article';
-    $hrefAttr = $ctaUrl !== null ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
     $extraClass = $archived ? ' alerts-page__card--archived' : '';
+    $cardTag = ($ctaUrl !== null && !$dismissible) ? 'a' : 'article';
+    $hrefAttr = ($cardTag === 'a') ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
     ?>
-    <<?= $tag ?> class="alerts-page__card alerts-page__card--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?><?= $isPlatform ? ' alerts-page__card--verified' : '' ?><?= $extraClass ?>"<?= $hrefAttr ?>>
-        <div class="alerts-page__card-meta">
-            <span class="alerts-page__card-kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></span>
-            <?php if ($isPlatform): ?>
-                <span class="alerts-page__card-verified">Annonce officielle du site</span>
+    <<?= $cardTag ?>
+        class="alerts-page__card alerts-page__card--<?= htmlspecialchars($kind, ENT_QUOTES, 'UTF-8') ?><?= $isPlatform ? ' alerts-page__card--verified' : '' ?><?= $extraClass ?>"
+        data-alert-card
+        data-filter="<?= htmlspecialchars($filterKey, ENT_QUOTES, 'UTF-8') ?>"
+        <?= $hrefAttr ?>
+    >
+        <span class="alerts-page__card-rail" aria-hidden="true"></span>
+        <div class="alerts-page__card-main">
+            <div class="alerts-page__card-meta">
+                <p class="alerts-page__card-kind"><?= htmlspecialchars($category, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php if ($isPinned): ?>
+                    <span class="alerts-page__chip alerts-page__chip--pinned">Épinglé</span>
+                <?php endif; ?>
+                <?php if ($isPlatform): ?>
+                    <span class="alerts-page__chip alerts-page__chip--verified">Annonce officielle du site</span>
+                <?php endif; ?>
+                <?php if ($endedLabel !== null): ?>
+                    <span class="alerts-page__chip alerts-page__chip--ended">Diffusion terminée le <?= htmlspecialchars($endedLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                <?php endif; ?>
+            </div>
+            <h3 class="alerts-page__card-title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
+            <?php if ($body !== ''): ?>
+                <p class="alerts-page__card-body"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>
-            <?php if ($endedLabel !== null): ?>
-                <span class="alerts-page__card-ended">Diffusion terminée le <?= htmlspecialchars($endedLabel, ENT_QUOTES, 'UTF-8') ?></span>
-            <?php endif; ?>
+            <div class="alerts-page__card-foot">
+                <?php if ($ctaUrl !== null): ?>
+                    <?php if ($cardTag === 'a'): ?>
+                        <span class="alerts-page__card-cta"><?= htmlspecialchars($ctaLabel !== null ? $ctaLabel : 'Ouvrir', ENT_QUOTES, 'UTF-8') ?> →</span>
+                    <?php else: ?>
+                        <a class="alerts-page__card-cta" href="<?= htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($ctaLabel !== null ? $ctaLabel : 'Ouvrir', ENT_QUOTES, 'UTF-8') ?> →</a>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php if ($dismissible): ?>
+                    <button
+                        type="button"
+                        class="alerts-page__dismiss"
+                        data-alert-dismiss
+                        data-scope="<?= htmlspecialchars($scope, ENT_QUOTES, 'UTF-8') ?>"
+                        data-alert-id="<?= (int) $alertId ?>"
+                    >
+                        Masquer
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
-        <h3 class="alerts-page__card-title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
-        <?php if ($body !== ''): ?>
-            <p class="alerts-page__card-body"><?= htmlspecialchars($body, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-        <?php if ($ctaLabel !== null || $ctaUrl !== null): ?>
-            <span class="alerts-page__card-cta"><?= htmlspecialchars($ctaLabel !== null ? $ctaLabel : 'Ouvrir', ENT_QUOTES, 'UTF-8') ?> →</span>
-        <?php endif; ?>
-    </<?= $tag ?>>
+    </<?= $cardTag ?>>
     <?php
 };
 ?>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-<style>
-.alerts-page {
-  --ap-bg: #0a0a0a;
-  --ap-panel: #111;
-  --ap-line: rgba(255,255,255,.08);
-  --ap-muted: #a3a3a3;
-  --ap-accent: #34d399;
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
-  color: #f5f5f5;
-}
-@media (min-width: 768px) {
-  .alerts-page { padding: 2rem 1.5rem 3.5rem; }
-}
-.alerts-page__hero {
-  background: linear-gradient(160deg, #0a0a0a 0%, #111827 55%, #0a0a0a 100%);
-  border: 1px solid var(--ap-line);
-  border-radius: 1rem;
-  padding: 1.5rem 1.35rem 1.65rem;
-  margin-bottom: 2rem;
-}
-.alerts-page__kicker {
-  margin: 0;
-  font-size: .7rem;
-  font-weight: 800;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  color: #e5e5e5;
-}
-.alerts-page__title {
-  margin: .35rem 0 0;
-  font-family: Rajdhani, ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--ap-accent);
-  line-height: 1.1;
-}
-.alerts-page__lead {
-  margin: .85rem 0 0;
-  max-width: 38rem;
-  font-size: .95rem;
-  line-height: 1.55;
-  color: var(--ap-muted);
-}
-.alerts-page__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem 1rem;
-  margin-top: 1.25rem;
-}
-.alerts-page__link {
-  display: inline-flex;
-  align-items: center;
-  font-size: .75rem;
-  font-weight: 800;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ap-accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.alerts-page__link:hover { color: #6ee7b7; }
-.alerts-page__link--muted { color: #d4d4d4; }
-.alerts-page__section { margin-top: 2.25rem; }
-.alerts-page__section-title {
-  margin: 0;
-  font-family: Rajdhani, ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: #fff;
-}
-.alerts-page__section-lead {
-  margin: .4rem 0 0;
-  font-size: .875rem;
-  color: var(--ap-muted);
-}
-.alerts-page__stack {
-  display: grid;
-  gap: .85rem;
-  margin-top: 1.15rem;
-}
-.alerts-page__empty {
-  margin: 1.15rem 0 0;
-  padding: 1.15rem 1rem;
-  border: 1px dashed var(--ap-line);
-  border-radius: .85rem;
-  color: var(--ap-muted);
-  font-size: .9rem;
-  background: var(--ap-bg);
-}
-.alerts-page__card {
-  display: block;
-  background: var(--ap-panel);
-  border: 1px solid var(--ap-line);
-  border-radius: .85rem;
-  padding: 1.1rem 1.15rem 1.2rem;
-  color: inherit;
-  text-decoration: none;
-  transition: border-color .18s ease, background .18s ease;
-}
-a.alerts-page__card:hover {
-  border-color: rgba(52, 211, 153, .35);
-  background: #141414;
-}
-.alerts-page__card--urgent { border-left: 3px solid #f87171; }
-.alerts-page__card--novelty { border-left: 3px solid #60a5fa; }
-.alerts-page__card--discount { border-left: 3px solid #fbbf24; }
-.alerts-page__card--notice { border-left: 3px solid #a78bfa; }
-.alerts-page__card--info { border-left: 3px solid var(--ap-accent); }
-.alerts-page__card--archived { opacity: .82; }
-.alerts-page__card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .35rem .75rem;
-  align-items: center;
-  margin-bottom: .55rem;
-}
-.alerts-page__card-kind {
-  font-size: .65rem;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: #d4d4d4;
-}
-.alerts-page__card-verified {
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ap-accent);
-}
-.alerts-page__card-ended {
-  font-size: .75rem;
-  color: var(--ap-muted);
-}
-.alerts-page__card-title {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 800;
-  letter-spacing: .02em;
-  color: #fff;
-  line-height: 1.3;
-}
-.alerts-page__card-body {
-  margin: .55rem 0 0;
-  font-size: .9rem;
-  line-height: 1.55;
-  color: #d4d4d4;
-  white-space: pre-wrap;
-}
-.alerts-page__card-cta {
-  display: inline-block;
-  margin-top: .85rem;
-  font-size: .7rem;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--ap-accent);
-}
-</style>
+<link href="<?= htmlspecialchars(asset_url('assets/css/alerts-page.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
-<div class="alerts-page">
-    <header class="alerts-page__hero">
-        <p class="alerts-page__kicker">Transmission</p>
-        <h1 class="alerts-page__title">Alertes &amp; annonces</h1>
-        <p class="alerts-page__lead">
-            Retrouvez ici les messages officiels en cours pour votre communauté,
-            ainsi que les annonces dont la diffusion est terminée.
-        </p>
-        <div class="alerts-page__actions">
-            <a class="alerts-page__link alerts-page__link--muted" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">← Retour au tableau de bord</a>
-            <?php if ($alertsManageUrl !== null): ?>
-                <a class="alerts-page__link" href="<?= htmlspecialchars($alertsManageUrl, ENT_QUOTES, 'UTF-8') ?>">Gérer les annonces →</a>
+<div
+    class="alerts-page"
+    data-alerts-page
+    data-csrf="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>"
+    data-dismiss-url="<?= htmlspecialchars($dismissUrl, ENT_QUOTES, 'UTF-8') ?>"
+>
+    <div class="alerts-page__frame">
+        <header class="alerts-page__hero" aria-labelledby="alerts-page-title">
+            <?php if ($heroHasImage): ?>
+                <img
+                    class="alerts-page__hero-img"
+                    src="<?= htmlspecialchars($heroImageUrl, ENT_QUOTES, 'UTF-8') ?>"
+                    alt=""
+                    width="1600"
+                    height="720"
+                    decoding="async"
+                    fetchpriority="high"
+                >
             <?php endif; ?>
+            <div class="alerts-page__hero-veil" aria-hidden="true"></div>
+            <div class="alerts-page__hero-dots" aria-hidden="true"></div>
+            <div class="alerts-page__hero-inner">
+                <p class="alerts-page__brand">Athena · Transmission</p>
+                <h1 id="alerts-page-title" class="alerts-page__title">Alertes &amp; annonces</h1>
+                <p class="alerts-page__lead">
+                    Retrouvez les messages officiels en cours pour votre communauté,
+                    ainsi que les annonces dont la diffusion est terminée.
+                    <?php if ($activeCount > 0): ?>
+                        <strong><?= (int) $activeCount ?> message<?= $activeCount > 1 ? 's' : '' ?> actif<?= $activeCount > 1 ? 's' : '' ?></strong> pour le moment.
+                    <?php else: ?>
+                        <strong>Aucune transmission active</strong> pour l’instant.
+                    <?php endif; ?>
+                </p>
+                <div class="alerts-page__hero-actions">
+                    <a class="alerts-page__hero-link alerts-page__hero-link--muted" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">← Retour au tableau de bord</a>
+                    <?php if ($alertsManageUrl !== null): ?>
+                        <a class="alerts-page__hero-link" href="<?= htmlspecialchars($alertsManageUrl, ENT_QUOTES, 'UTF-8') ?>">Gérer les annonces →</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </header>
+
+        <div class="alerts-page__metrics" aria-label="Résumé des transmissions">
+            <div class="alerts-page__metric">
+                <span class="alerts-page__metric-label">En cours</span>
+                <span class="alerts-page__metric-value<?= $activeCount > 0 ? ' alerts-page__metric-value--accent' : '' ?>"><?= (int) $activeCount ?></span>
+                <span class="alerts-page__metric-hint"><?= $activeCount === 1 ? 'Message visible aujourd’hui' : 'Messages visibles aujourd’hui' ?></span>
+            </div>
+            <div class="alerts-page__metric">
+                <span class="alerts-page__metric-label">Urgents</span>
+                <span class="alerts-page__metric-value<?= $urgentCount > 0 ? ' alerts-page__metric-value--hot' : '' ?>"><?= (int) $urgentCount ?></span>
+                <span class="alerts-page__metric-hint">À traiter en priorité</span>
+            </div>
+            <div class="alerts-page__metric">
+                <span class="alerts-page__metric-label">Historique</span>
+                <span class="alerts-page__metric-value"><?= (int) $historyCount ?></span>
+                <span class="alerts-page__metric-hint"><?= $pinnedCount > 0
+                    ? ($pinnedCount === 1 ? 'Dont 1 message épinglé en cours' : 'Dont ' . $pinnedCount . ' messages épinglés en cours')
+                    : 'Diffusions déjà terminées' ?></span>
+            </div>
         </div>
-    </header>
 
-    <section class="alerts-page__section" aria-labelledby="alerts-active-heading">
-        <h2 id="alerts-active-heading" class="alerts-page__section-title">Messages en cours</h2>
-        <p class="alerts-page__section-lead">
-            <?= count($alertsActive) === 0
-                ? 'Aucune transmission active pour le moment.'
-                : (count($alertsActive) === 1
-                    ? '1 message actif.'
-                    : count($alertsActive) . ' messages actifs.') ?>
-        </p>
-        <?php if ($alertsActive === []): ?>
-            <p class="alerts-page__empty">Aucun message à afficher pour l’instant. Les nouvelles annonces apparaîtront ici dès leur publication.</p>
-        <?php else: ?>
-            <div class="alerts-page__stack">
-                <?php foreach ($alertsActive as $item): ?>
-                    <?php $renderCard($item, false); ?>
+        <?php if ($alertsActive !== [] && count($filterKeysPresent) > 1): ?>
+        <div class="alerts-page__toolbar" data-alerts-filters>
+            <p class="alerts-page__toolbar-label">Afficher</p>
+            <div class="alerts-page__filters" role="group" aria-label="Filtrer les messages en cours">
+                <?php foreach ($filterDefs as $key => $label): ?>
+                    <?php if ($key !== 'all' && !isset($filterKeysPresent[$key])) {
+                        continue;
+                    } ?>
+                    <button
+                        type="button"
+                        class="alerts-page__filter<?= $key === 'all' ? ' is-active' : '' ?>"
+                        data-filter-btn
+                        data-filter="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"
+                        aria-pressed="<?= $key === 'all' ? 'true' : 'false' ?>"
+                    >
+                        <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                    </button>
                 <?php endforeach; ?>
             </div>
+        </div>
         <?php endif; ?>
-    </section>
 
-    <section class="alerts-page__section" aria-labelledby="alerts-history-heading">
-        <h2 id="alerts-history-heading" class="alerts-page__section-title">Historique</h2>
-        <p class="alerts-page__section-lead">Annonces dont la période de diffusion est terminée.</p>
-        <?php if ($alertsHistory === []): ?>
-            <p class="alerts-page__empty">Pas encore d’historique à afficher.</p>
-        <?php else: ?>
-            <div class="alerts-page__stack">
-                <?php foreach ($alertsHistory as $item): ?>
-                    <?php $renderCard($item, true); ?>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </section>
+        <div class="alerts-page__sections">
+            <section class="alerts-page__section" aria-labelledby="alerts-active-heading" data-alerts-active-section>
+                <div class="alerts-page__section-head">
+                    <p class="alerts-page__section-kicker">Canal actif</p>
+                    <h2 id="alerts-active-heading" class="alerts-page__section-title">Messages en cours</h2>
+                    <p class="alerts-page__section-lead">
+                        <?= $activeCount === 0
+                            ? 'Aucune transmission active pour le moment.'
+                            : ($activeCount === 1
+                                ? '1 message actif pour votre communauté.'
+                                : $activeCount . ' messages actifs pour votre communauté.') ?>
+                    </p>
+                </div>
+                <div class="alerts-page__section-body">
+                    <?php if ($alertsActive === []): ?>
+                        <div class="alerts-page__empty">
+                            <p>Aucun message à afficher pour l’instant. Les nouvelles annonces apparaîtront ici dès leur publication.</p>
+                            <a class="alerts-page__empty-link" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">Retourner au tableau de bord</a>
+                        </div>
+                    <?php else: ?>
+                        <div class="alerts-page__stack alerts-page__stack--active" data-alerts-active-stack>
+                            <?php foreach ($alertsActive as $item): ?>
+                                <?php if (is_array($item)) {
+                                    $renderCard($item, false);
+                                } ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="alerts-page__filter-empty" data-filter-empty hidden>Aucun message ne correspond à ce filtre.</p>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <section class="alerts-page__section" aria-labelledby="alerts-history-heading">
+                <div class="alerts-page__section-head">
+                    <p class="alerts-page__section-kicker">Archives</p>
+                    <h2 id="alerts-history-heading" class="alerts-page__section-title">Historique</h2>
+                    <p class="alerts-page__section-lead">Annonces dont la période de diffusion est terminée.</p>
+                </div>
+                <div class="alerts-page__section-body">
+                    <?php if ($alertsHistory === []): ?>
+                        <div class="alerts-page__empty">
+                            <p>Pas encore d’historique à afficher. Les messages terminés apparaîtront ici.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="alerts-page__stack">
+                            <?php foreach ($alertsHistory as $item): ?>
+                                <?php if (is_array($item)) {
+                                    $renderCard($item, true);
+                                } ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
+
+<script>
+(function () {
+  var root = document.querySelector('[data-alerts-page]');
+  if (!root) return;
+
+  var csrf = root.getAttribute('data-csrf') || '';
+  var dismissUrl = root.getAttribute('data-dismiss-url') || '';
+  var LS = 'athena_alert_dismissed_';
+
+  function storageKey(scope, id) {
+    return LS + scope + '_' + id;
+  }
+
+  root.querySelectorAll('[data-alert-dismiss]').forEach(function (btn) {
+    var scope = btn.getAttribute('data-scope') || '';
+    var id = parseInt(btn.getAttribute('data-alert-id') || '0', 10);
+    if (!scope || id < 1) return;
+    try {
+      if (localStorage.getItem(storageKey(scope, id)) === '1') {
+        var card = btn.closest('[data-alert-card]');
+        if (card) card.remove();
+      }
+    } catch (e) {}
+  });
+
+  root.addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-alert-dismiss]') : null;
+    if (!btn || !root.contains(btn)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var scope = btn.getAttribute('data-scope') || '';
+    var id = parseInt(btn.getAttribute('data-alert-id') || '0', 10);
+    if (!scope || id < 1 || !dismissUrl) return;
+    btn.disabled = true;
+    var body = new URLSearchParams();
+    body.set('_csrf_token', csrf);
+    body.set('scope', scope);
+    body.set('alert_id', String(id));
+    fetch(dismissUrl, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: body,
+      credentials: 'same-origin'
+    }).then(function (res) {
+      return res.json().catch(function () { return { success: false }; }).then(function (data) {
+        if (!res.ok || !data || !data.success) {
+          btn.disabled = false;
+          return;
+        }
+        try { localStorage.setItem(storageKey(scope, id), '1'); } catch (e) {}
+        var card = btn.closest('[data-alert-card]');
+        if (card) card.remove();
+        refreshFilterEmpty();
+      });
+    }).catch(function () {
+      btn.disabled = false;
+    });
+  });
+
+  var filterBtns = root.querySelectorAll('[data-filter-btn]');
+  var cards = function () { return root.querySelectorAll('[data-alerts-active-stack] [data-alert-card]'); };
+  var emptyEl = root.querySelector('[data-filter-empty]');
+
+  function refreshFilterEmpty() {
+    if (!emptyEl) return;
+    var visible = 0;
+    cards().forEach(function (card) {
+      if (!card.classList.contains('is-hidden')) visible++;
+    });
+    var hasCards = cards().length > 0;
+    emptyEl.hidden = !(hasCards && visible === 0);
+  }
+
+  filterBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var key = btn.getAttribute('data-filter') || 'all';
+      filterBtns.forEach(function (b) {
+        var on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      cards().forEach(function (card) {
+        var fk = card.getAttribute('data-filter') || 'info';
+        var show = key === 'all' || fk === key;
+        card.classList.toggle('is-hidden', !show);
+      });
+      refreshFilterEmpty();
+    });
+  });
+})();
+</script>

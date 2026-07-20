@@ -43,7 +43,7 @@ $tenantLabel = static function (array $row): string {
         <p class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
             <a href="<?= htmlspecialchars($memberSanctionsSite, ENT_QUOTES, 'UTF-8') ?>" class="text-rose-800 hover:underline">Sanctions membres (site) →</a>
             <a href="<?= htmlspecialchars($blocklistSite, ENT_QUOTES, 'UTF-8') ?>" class="text-slate-700 hover:underline">Liste e-mail et réseau (site) →</a>
-            <a href="<?= htmlspecialchars($recruitmentPortalTools, ENT_QUOTES, 'UTF-8') ?>" class="text-sky-800 hover:underline">Portail recrutement (automod &amp; réouverture) →</a>
+            <a href="<?= htmlspecialchars($recruitmentPortalTools, ENT_QUOTES, 'UTF-8') ?>" class="text-sky-800 hover:underline">Suivi candidatures (filtre et accès) →</a>
         </p>
         <?php endif; ?>
     </div>

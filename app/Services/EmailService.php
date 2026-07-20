@@ -1542,6 +1542,72 @@ final class EmailService
     }
 
     /**
+     * Confirmation au membre : grade, affectation et/ou fonction mis à jour.
+     *
+     * @param list<string> $changeLines
+     */
+    public function sendPersonnelStructureChangedMember(
+        string $to,
+        string $displayName,
+        string $tenantName,
+        string $actorName,
+        array $changeLines,
+        string $dossierUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PERSONNEL_STRUCTURE_CHANGED,
+            'personnel_structure_changed',
+            $to,
+            'Mise à jour de votre dossier — ' . $tenantName,
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'actorName' => $actorName,
+                'changeLines' => $changeLines,
+                'dossierUrl' => $dossierUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'personnel_structure_changed']
+        );
+    }
+
+    /**
+     * Alerte RH / effectifs : dossier structurel d’un membre modifié.
+     *
+     * @param list<string> $changeLines
+     */
+    public function sendPersonnelStructureChangedStaff(
+        string $to,
+        string $staffDisplayName,
+        string $targetDisplayName,
+        string $tenantName,
+        string $actorName,
+        array $changeLines,
+        string $memberUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::PERSONNEL_STRUCTURE_CHANGED_STAFF,
+            'personnel_structure_changed_staff',
+            $to,
+            'Dossier mis à jour — ' . $targetDisplayName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'targetDisplayName' => $targetDisplayName,
+                'tenantName' => $tenantName,
+                'actorName' => $actorName,
+                'changeLines' => $changeLines,
+                'memberUrl' => $memberUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'personnel_structure_changed_staff', 'target_name' => $targetDisplayName]
+        );
+    }
+
+    /**
      * @param array<string, string> $answers Libellés de questions => réponses lisibles
      */
     public function sendDemoNdaFeedback(

@@ -63,7 +63,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
       <div>
         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Dossier opérationnel</p>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Éditer le dossier</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Identité RP, habilitations, équipement, visibilité forum et — pour votre compte — identité civile liée au profil.</p>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Chaque bloc a un rôle distinct : identité civile (vous, hors jeu), personnage (en mission), puis unité, habilitation et affichage sur le forum.</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-slate-300">← Fiche</a>
@@ -96,170 +96,240 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
     </div>
 
     <?php
-    $editNav = [
-        ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
-        ['id' => 'edit-identite-rp', 'label' => 'Identité RP', 'show' => true],
-        ['id' => 'edit-orbat', 'label' => 'Unité & ORBAT', 'show' => true],
-        ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
-        ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
-        ['id' => 'forum-community-settings', 'label' => 'Forum & fiche', 'show' => true],
-        ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
-        ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
+    $editNavGroups = [
+        [
+            'title' => 'Qui êtes-vous',
+            'items' => [
+                ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
+                ['id' => 'edit-identite-rp', 'label' => 'Personnage (RP)', 'show' => true],
+            ],
+        ],
+        [
+            'title' => 'Affectation',
+            'items' => [
+                ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
+                ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
+                ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
+            ],
+        ],
+        [
+            'title' => 'Affichage &amp; suite',
+            'items' => [
+                ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
+                ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
+                ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
+            ],
+        ],
     ];
+    $editNavFlat = [];
+    foreach ($editNavGroups as $grp) {
+        foreach ($grp['items'] as $ni) {
+            if (!empty($ni['show'])) {
+                $editNavFlat[] = $ni;
+            }
+        }
+    }
     $navLinkClass = 'block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
     $navPillClass = 'shrink-0 snap-start rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50';
     ?>
     <nav class="mb-8 lg:hidden" aria-label="Sommaire du formulaire">
       <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Aller à</p>
       <div class="-mx-1 flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
-        <?php foreach ($editNav as $ni): ?>
-          <?php if (empty($ni['show'])) { continue; } ?>
-          <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navPillClass ?>"><?= htmlspecialchars($ni['label'], ENT_QUOTES, 'UTF-8') ?></a>
+        <?php foreach ($editNavFlat as $ni): ?>
+          <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navPillClass ?>"><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></a>
         <?php endforeach; ?>
       </div>
     </nav>
 
-    <div class="lg:grid lg:grid-cols-[minmax(0,13.75rem)_1fr] lg:items-start lg:gap-10 xl:gap-12">
+    <div class="lg:grid lg:grid-cols-[minmax(0,14.5rem)_1fr] lg:items-start lg:gap-10 xl:gap-12">
       <aside class="hidden lg:block" aria-label="Navigation du formulaire">
         <div class="sticky top-24 space-y-3">
           <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sommaire</p>
-          <nav class="rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.03]" aria-label="Sections">
-            <?php foreach ($editNav as $ni): ?>
-              <?php if (empty($ni['show'])) { continue; } ?>
-              <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navLinkClass ?>"><?= htmlspecialchars($ni['label'], ENT_QUOTES, 'UTF-8') ?></a>
+          <nav class="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.03]" aria-label="Sections">
+            <?php foreach ($editNavGroups as $grp): ?>
+              <?php
+              $visibleItems = array_values(array_filter($grp['items'], static fn ($ni) => !empty($ni['show'])));
+              if ($visibleItems === []) {
+                  continue;
+              }
+              ?>
+              <div>
+                <p class="mb-1 px-3 text-[9px] font-black uppercase tracking-[0.18em] text-slate-400"><?= htmlspecialchars($grp['title'], ENT_QUOTES, 'UTF-8') ?></p>
+                <?php foreach ($visibleItems as $ni): ?>
+                <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navLinkClass ?>"><?= $ni['label'] ?></a>
+                <?php endforeach; ?>
+              </div>
             <?php endforeach; ?>
           </nav>
         </div>
       </aside>
 
-      <div class="min-w-0 space-y-8">
-    <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="space-y-8">
+      <div class="min-w-0 space-y-10">
+    <form method="post" action="<?= htmlspecialchars($formAction) ?>" class="space-y-10">
         <?= \App\Core\Csrf::field() ?>
 
         <?php if ($isMe): ?>
-        <section id="edit-civil" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-          <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-indigo-950">Identité civile &amp; contact (compte)</h2>
-            <p class="mt-1 text-xs text-indigo-900/80">Ces champs alimentent aussi la fiche « civile » et les exports ; le fuseau et la langue guident l’interface.</p>
+        <div class="space-y-6">
+          <div class="px-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-700">1 · Vous (hors jeu)</p>
+            <p class="mt-1 text-sm text-slate-600">Informations civiles du compte — distinctes du personnage.</p>
           </div>
-          <div class="grid gap-4 p-6 sm:grid-cols-2">
+        <section id="edit-civil" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-indigo-900/[0.06]">
+          <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-indigo-950">Identité civile</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-indigo-900/85">Prénom et nom réels, état civil et réglages du compte. Ces données ne remplacent pas le nom de personnage ni l’indicatif en mission.</p>
+          </div>
+          <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <label for="civil_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
-              <input type="text" name="civil_first_name" id="civil_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
+              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">État civil</h3>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="civil_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
+                  <input type="text" name="civil_first_name" id="civil_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
+                </div>
+                <div>
+                  <label for="civil_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
+                  <input type="text" name="civil_last_name" id="civil_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
+                </div>
+                <div>
+                  <label for="civil_birth_date" class="mb-1 block text-xs font-bold text-slate-600">Date de naissance</label>
+                  <input type="date" name="civil_birth_date" id="civil_birth_date" value="<?= htmlspecialchars($civilBirth) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                  <label for="civil_nationality" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (civile)</label>
+                  <input type="text" name="civil_nationality" id="civil_nationality" value="<?= htmlspecialchars((string) ($up['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                </div>
+              </div>
             </div>
             <div>
-              <label for="civil_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
-              <input type="text" name="civil_last_name" id="civil_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
+              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Compte &amp; interface</h3>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
+                  <input type="text" name="civil_timezone" id="civil_timezone" value="<?= htmlspecialchars((string) ($up['timezone'] ?? '')) ?>" placeholder="Europe/Paris" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
+                </div>
+                <div>
+                  <label for="civil_language" class="mb-1 block text-xs font-bold text-slate-600">Langue de l’interface</label>
+                  <input type="text" name="civil_language" id="civil_language" value="<?= htmlspecialchars((string) ($up['language'] ?? '')) ?>" placeholder="fr" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="10">
+                  <p class="mt-1 text-[11px] text-slate-500">Ex. fr ou en. Vous pouvez aussi le régler dans les préférences du compte.</p>
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="civil_bio" class="mb-1 block text-xs font-bold text-slate-600">Présentation courte (hors personnage)</label>
+                  <textarea name="civil_bio" id="civil_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Quelques mots sur vous, en dehors du jeu…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
+                </div>
+              </div>
             </div>
-            <div>
-              <label for="civil_phone" class="mb-1 block text-xs font-bold text-slate-600">Téléphone</label>
-              <input type="text" name="civil_phone" id="civil_phone" value="<?= htmlspecialchars((string) ($up['phone'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
-            </div>
-            <div>
-              <label for="civil_birth_date" class="mb-1 block text-xs font-bold text-slate-600">Date de naissance</label>
-              <input type="date" name="civil_birth_date" id="civil_birth_date" value="<?= htmlspecialchars($civilBirth) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-            </div>
-            <div>
-              <label for="civil_nationality" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (civile)</label>
-              <input type="text" name="civil_nationality" id="civil_nationality" value="<?= htmlspecialchars((string) ($up['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div>
-              <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
-              <input type="text" name="civil_timezone" id="civil_timezone" value="<?= htmlspecialchars((string) ($up['timezone'] ?? '')) ?>" placeholder="Europe/Paris" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
-            </div>
-            <div>
-              <label for="civil_language" class="mb-1 block text-xs font-bold text-slate-600">Langue (UI)</label>
-              <input type="text" name="civil_language" id="civil_language" value="<?= htmlspecialchars((string) ($up['language'] ?? '')) ?>" placeholder="fr" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="10">
-            </div>
-            <div class="sm:col-span-2 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
+            <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
               <label class="flex items-start gap-3 text-sm text-slate-800">
                 <input type="checkbox" name="hide_personal_info" value="1" class="mt-1 rounded border-slate-300 text-amber-900" <?= !empty($d['hide_personal_info']) ? 'checked' : '' ?>>
-                <span><strong>Masquer mes informations personnelles</strong> sur la fiche publique (prénom, nom, téléphone, date de naissance, nationalité civile, fuseau, langue, bio compte). Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter ; les autres membres ne verront que votre identité opérationnelle / RP (nom de personnage, indicatif, etc.).</span>
+                <span><strong>Masquer mes informations personnelles</strong> sur la fiche publique (prénom, nom, date de naissance, nationalité civile, fuseau, langue, présentation du compte). Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter ; les autres membres ne verront que votre personnage (nom, indicatif, etc.).</span>
               </label>
-            </div>
-            <div class="sm:col-span-2">
-              <label for="civil_bio" class="mb-1 block text-xs font-bold text-slate-600">Bio courte (compte)</label>
-              <textarea name="civil_bio" id="civil_bio" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Présentation courte hors RP…"><?= htmlspecialchars((string) ($up['bio'] ?? '')) ?></textarea>
             </div>
           </div>
         </section>
+        </div>
         <?php endif; ?>
 
-        <section id="edit-identite-rp" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Identité opérationnelle (RP)</h2>
-            <p class="mt-1 text-xs text-slate-600">Nom de personnage, indicatif et rôles tels qu’affichés en mission.</p>
+        <div class="space-y-6">
+          <div class="px-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700"><?= $isMe ? '2' : '1' ?> · En mission</p>
+            <p class="mt-1 text-sm text-slate-600">Identité du personnage — ce que les autres voient en opération et sur la fiche.</p>
           </div>
-          <div class="grid gap-4 p-6 md:grid-cols-2">
+        <section id="edit-identite-rp" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/80 bg-white shadow-sm ring-1 ring-emerald-900/[0.06]">
+          <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-emerald-950">Personnage (identité RP)</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-emerald-900/85">Nom de personnage, indicatif et détails de jeu. L’unité et le rôle métier se règlent dans le bloc suivant.</p>
+          </div>
+          <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom affiché dossier personnage</label>
-              <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? $targetUser['display_name'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/15" maxlength="150">
-            </div>
-            <div>
-              <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Callsign</label>
-              <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div>
-              <label for="rank_display" class="mb-1 block text-xs font-bold text-slate-600">Grade / titre affiché (RP, optionnel)</label>
-              <input type="text" name="rank_display" id="rank_display" value="<?= htmlspecialchars((string) ($p['rank_display'] ?? '')) ?>" placeholder="Sous-lieutenant, Chief…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-              <?php if ($gradeLabel !== ''): ?>
-              <p class="mt-1 text-[11px] text-slate-500">Grade communauté (ORBAT) : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
-              <?php endif; ?>
-            </div>
-            <div>
-              <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Surcharge libellé (optionnel)</label>
-              <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="Remplace le libellé court automatique" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div class="md:col-span-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] text-slate-600">
-              <strong class="text-slate-800">Fonction métier :</strong> <?= $jobRolesEnabled ? 'choisissez un <strong>rôle métier</strong> défini par la communauté (back-office) et optionnellement un <strong>sous-rôle</strong> libre. La section ORBAT ci-dessous synchronise la même ligne d’affectation.' : 'renseignez le <strong>rôle dans l’unité</strong> dans la section ORBAT ci-dessous.' ?>
-            </div>
-            <div>
-              <label for="secondary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle secondaire</label>
-              <input type="text" name="secondary_role" id="secondary_role" value="<?= htmlspecialchars($p['secondary_role'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div class="md:col-span-2">
-              <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise / motto</label>
-              <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+              <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Identité en jeu</h3>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label for="character_name" class="mb-1 block text-xs font-bold text-slate-600">Nom du personnage</label>
+                  <input type="text" name="character_name" id="character_name" value="<?= htmlspecialchars($p['character_name'] ?? $targetUser['display_name'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" maxlength="150">
+                  <p class="mt-1 text-[11px] text-slate-500">Nom affiché sur le dossier et, selon vos réglages, sur le forum.</p>
+                </div>
+                <div>
+                  <label for="callsign" class="mb-1 block text-xs font-bold text-slate-600">Indicatif</label>
+                  <input type="text" name="callsign" id="callsign" value="<?= htmlspecialchars($p['callsign'] ?? $targetUser['callsign'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                  <p class="mt-1 text-[11px] text-slate-500">Surnom radio / callsign utilisé en mission.</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise</label>
+                  <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                </div>
+              </div>
             </div>
             <div>
-              <label for="languages" class="mb-1 block text-xs font-bold text-slate-600">Langues (RP)</label>
-              <input type="text" name="languages" id="languages" value="<?= htmlspecialchars((string) ($p['languages'] ?? '')) ?>" placeholder="FR, EN…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+              <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Grades &amp; fonctions affichés</h3>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label for="rank_display" class="mb-1 block text-xs font-bold text-slate-600">Grade ou titre (optionnel)</label>
+                  <input type="text" name="rank_display" id="rank_display" value="<?= htmlspecialchars((string) ($p['rank_display'] ?? '')) ?>" placeholder="Sous-lieutenant, Chief…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                  <?php if ($gradeLabel !== ''): ?>
+                  <p class="mt-1 text-[11px] text-slate-500">Grade attribué par la communauté : <strong class="text-slate-700"><?= htmlspecialchars($gradeLabel) ?></strong></p>
+                  <?php endif; ?>
+                </div>
+                <div>
+                  <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé (optionnel)</label>
+                  <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="Remplace le libellé court automatique" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                </div>
+                <div>
+                  <label for="secondary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle secondaire</label>
+                  <input type="text" name="secondary_role" id="secondary_role" value="<?= htmlspecialchars($p['secondary_role'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                </div>
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90 md:col-span-1 flex items-center">
+                  <?= $jobRolesEnabled
+                    ? 'Le <strong>rôle métier</strong> principal (référentiel de la communauté) se choisit dans le bloc <a class="font-bold underline underline-offset-2" href="#edit-orbat">Unité &amp; rôle</a> ci-dessous.'
+                    : 'Le <strong>rôle dans l’unité</strong> se renseigne dans le bloc <a class="font-bold underline underline-offset-2" href="#edit-orbat">Unité &amp; rôle</a> ci-dessous.' ?>
+                </div>
+              </div>
             </div>
             <div>
-              <label for="nationality_rp" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (RP)</label>
-              <input type="text" name="nationality_rp" id="nationality_rp" value="<?= htmlspecialchars((string) ($p['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-            </div>
-            <div>
-              <label for="public_flag_country_code" class="mb-1 block text-xs font-bold text-slate-600">Pays affiché sur la fiche (drapeau)</label>
-              <select name="public_flag_country_code" id="public_flag_country_code" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <?php
-                $flagCur = strtoupper(trim((string) ($up['public_flag_country_code'] ?? '')));
-                foreach (\App\Support\Profile\PublicFlagCountryCatalog::optionsForSelect() as $code => $label) {
-                    $sel = ($flagCur === strtoupper((string) $code)) ? ' selected' : '';
-                    echo '<option value="' . htmlspecialchars((string) $code, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
-                }
-                if ($flagCur !== '' && !\App\Support\Profile\PublicFlagCountryCatalog::isAllowed($flagCur)) {
-                    echo '<option value="' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . '" selected>(code inconnu : ' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . ')</option>';
-                }
-                ?>
-              </select>
-              <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Optionnel : arrière-plan du bloc portrait en tête de fiche. Indépendant de la nationalité RP ou civile ; choisissez « Ne pas afficher » pour revenir au fond neutre.</p>
-            </div>
-            <div>
-              <label for="blood_type" class="mb-1 block text-xs font-bold text-slate-600">Groupe sanguin (RP)</label>
-              <select name="blood_type" id="blood_type" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                <?php
-                $bt = trim((string) ($p['blood_type'] ?? ''));
-                foreach ($bloodOptions as $bo) {
-                    $sel = ($bt === $bo || ($bo === '' && $bt === '')) ? ' selected' : '';
-                    $lab = $bo === '' ? '— Non renseigné —' : $bo;
-                    echo '<option value="' . htmlspecialchars($bo) . '"' . $sel . '>' . htmlspecialchars($lab) . '</option>';
-                }
-                if ($bt !== '' && !in_array($bt, $bloodOptions, true)) {
-                    echo '<option value="' . htmlspecialchars($bt) . '" selected>' . htmlspecialchars($bt) . '</option>';
-                }
-                ?>
-              </select>
+              <h3 class="mb-4 border-b border-emerald-100 pb-2 text-xs font-black uppercase tracking-wider text-emerald-900/70">Détails du personnage</h3>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label for="languages" class="mb-1 block text-xs font-bold text-slate-600">Langues (en jeu)</label>
+                  <input type="text" name="languages" id="languages" value="<?= htmlspecialchars((string) ($p['languages'] ?? '')) ?>" placeholder="FR, EN…" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                </div>
+                <div>
+                  <label for="nationality_rp" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (personnage)</label>
+                  <input type="text" name="nationality_rp" id="nationality_rp" value="<?= htmlspecialchars((string) ($p['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
+                  <p class="mt-1 text-[11px] text-slate-500">Indépendante de la nationalité civile ci-dessus.</p>
+                </div>
+                <div>
+                  <label for="public_flag_country_code" class="mb-1 block text-xs font-bold text-slate-600">Drapeau sur la fiche</label>
+                  <select name="public_flag_country_code" id="public_flag_country_code" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $flagCur = strtoupper(trim((string) ($up['public_flag_country_code'] ?? '')));
+                    foreach (\App\Support\Profile\PublicFlagCountryCatalog::optionsForSelect() as $code => $label) {
+                        $sel = ($flagCur === strtoupper((string) $code)) ? ' selected' : '';
+                        echo '<option value="' . htmlspecialchars((string) $code, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
+                    if ($flagCur !== '' && !\App\Support\Profile\PublicFlagCountryCatalog::isAllowed($flagCur)) {
+                        echo '<option value="' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . '" selected>(code inconnu : ' . htmlspecialchars($flagCur, ENT_QUOTES, 'UTF-8') . ')</option>';
+                    }
+                    ?>
+                  </select>
+                  <p class="mt-1 text-[11px] leading-relaxed text-slate-500">Optionnel : fond du portrait en tête de fiche. Choisissez « Ne pas afficher » pour un fond neutre.</p>
+                </div>
+                <div>
+                  <label for="blood_type" class="mb-1 block text-xs font-bold text-slate-600">Groupe sanguin (en jeu)</label>
+                  <select name="blood_type" id="blood_type" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                    <?php
+                    $bt = trim((string) ($p['blood_type'] ?? ''));
+                    foreach ($bloodOptions as $bo) {
+                        $sel = ($bt === $bo || ($bo === '' && $bt === '')) ? ' selected' : '';
+                        $lab = $bo === '' ? '— Non renseigné —' : $bo;
+                        echo '<option value="' . htmlspecialchars($bo) . '"' . $sel . '>' . htmlspecialchars($lab) . '</option>';
+                    }
+                    if ($bt !== '' && !in_array($bt, $bloodOptions, true)) {
+                        echo '<option value="' . htmlspecialchars($bt) . '" selected>' . htmlspecialchars($bt) . '</option>';
+                    }
+                    ?>
+                  </select>
+                </div>
+              </div>
             </div>
             <div>
               <label for="sex" class="mb-1 block text-xs font-bold text-slate-600">Sexe</label>
@@ -298,11 +368,17 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
             </div>
           </div>
         </section>
+        </div>
 
+        <div class="space-y-6">
+          <div class="px-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700"><?= $isMe ? '3' : '2' ?> · Affectation</p>
+            <p class="mt-1 text-sm text-slate-600">Unité, rôle dans l’organigramme, habilitation et suivi.</p>
+          </div>
         <section id="edit-orbat" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
-          <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-cyan-950">Unité &amp; affectation (ORBAT)</h2>
-            <p class="mt-1 text-xs text-cyan-900/85">Choisissez l’unité principale et le rôle dans cette unité : l’enregistrement met à jour le dossier <strong>et</strong> l’affectation ORBAT (fiche, forum, indicateurs admin « sans unité »).</p>
+          <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Unité principale et fonction dans l’organigramme. L’enregistrement met à jour le dossier et l’affectation visible sur la fiche et le forum.</p>
           </div>
           <div class="space-y-4 p-6">
             <?php if (!empty($personnelAssignments)): ?>
@@ -327,7 +403,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
               </table>
             </div>
             <?php else: ?>
-            <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune affectation active en base — après enregistrement avec une <strong>unité</strong> et un <strong>rôle dans l’unité</strong>, une ligne ORBAT sera créée.</p>
+            <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune affectation active — après enregistrement avec une <strong>unité</strong> et un <strong>rôle dans l’unité</strong>, une ligne sera créée dans l’organigramme.</p>
             <?php endif; ?>
 
             <div class="grid gap-4 md:grid-cols-2">
@@ -335,7 +411,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                 <label for="primary_unit_id" class="mb-1 block text-xs font-bold text-slate-600">Unité principale</label>
                 <?php if (empty($units)): ?>
                 <p class="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                  Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">ORBAT</a>.
+                  Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
                 </p>
                 <?php endif; ?>
                 <select name="primary_unit_id" id="primary_unit_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
@@ -363,13 +439,13 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                 <div>
                   <label for="role_sub_label" class="mb-1 block text-xs font-bold text-slate-600">Sous-rôle (libre)</label>
                   <input type="text" name="role_sub_label" id="role_sub_label" value="<?= htmlspecialchars($subLab) ?>" placeholder="Ex. Spécialité, détachement, matière enseignée…" class="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20" maxlength="150" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-600">Optionnel. Le libellé ORBAT / fiche est construit à partir du rôle métier + ce sous-rôle.</p>
+                  <p class="mt-1 text-[11px] text-slate-600">Optionnel. Le libellé sur la fiche et l’organigramme combine le rôle métier et ce sous-rôle.</p>
                 </div>
                 <?php else: ?>
                 <div>
-                  <label for="primary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle dans l’unité (affectation ORBAT)</label>
+                  <label for="primary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle dans l’unité</label>
                   <input type="text" name="primary_role" id="primary_role" value="<?= htmlspecialchars($p['primary_role'] ?? '') ?>" placeholder="Ex. Officier opérations, Chef de section, Fusilier…" class="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-600">Après migration des rôles métier, ce champ sera remplacé par la liste référentielle + sous-rôle.</p>
+                  <p class="mt-1 text-[11px] text-slate-600">Affiché sur la fiche et l’organigramme après enregistrement.</p>
                 </div>
                 <?php endif; ?>
               </div>
@@ -388,15 +464,16 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
             </div>
             <?php endif; ?>
             <p class="text-[11px] text-slate-500">
-              <a href="<?= htmlspecialchars(url('orbat')) ?>" class="font-semibold text-cyan-800 underline-offset-2 hover:underline">Voir l’ORBAT</a>
-              — Vue d’ensemble des unités ; les affectations détaillées peuvent aussi être gérées par le personnel habilité côté administration.
+              <a href="<?= htmlspecialchars(url('orbat')) ?>" class="font-semibold text-cyan-800 underline-offset-2 hover:underline">Voir l’organigramme</a>
+              — Vue d’ensemble des unités ; les affectations détaillées peuvent aussi être gérées par le personnel habilité.
             </p>
           </div>
         </section>
 
         <section id="edit-habilitation" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Habilitation &amp; disponibilité</h2>
+          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-slate-900">Habilitation &amp; disponibilité</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Niveau d’accès, dates et indicateur de disponibilité pour le dossier.</p>
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
@@ -416,7 +493,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
               <input type="date" name="enlistment_date" id="enlistment_date" value="<?= htmlspecialchars($enlistmentDateVal) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
             </div>
             <div>
-              <label for="clearance_reviewed_at" class="mb-1 block text-xs font-bold text-slate-600">Dernière revue clearance</label>
+              <label for="clearance_reviewed_at" class="mb-1 block text-xs font-bold text-slate-600">Dernière revue d’habilitation</label>
               <input type="date" name="clearance_reviewed_at" id="clearance_reviewed_at" value="<?= htmlspecialchars($clearanceReviewedAt) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
             </div>
             <div>
@@ -569,11 +646,17 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
           </div>
         </section>
         <?php endif; ?>
+        </div>
 
+        <div class="space-y-6">
+          <div class="px-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-700"><?= $isMe ? '4' : '3' ?> · Affichage &amp; suite</p>
+            <p class="mt-1 text-sm text-slate-600">Ce que les autres voient sur le forum et la fiche, équipement et notes.</p>
+          </div>
         <section id="forum-community-settings" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
-          <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-violet-950">Forum &amp; visibilité (communauté)</h2>
-            <p class="mt-1 text-xs text-violet-900/80">Pseudo forum et éléments visibles sur les messages et la fiche pour les autres membres.</p>
+          <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Pseudo, éléments visibles sur vos messages et sur votre fiche pour les autres membres.</p>
           </div>
           <div class="space-y-6 p-6">
             <div class="grid gap-4 md:grid-cols-2">
@@ -587,10 +670,10 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
                   <?php
                   $mode = (string) ($d['forum_label_mode'] ?? 'display_name');
                   $modes = [
-                      'display_name' => 'Nom d’affichage compte',
-                      'callsign' => 'Callsign',
-                      'character_name' => 'Nom affiché dossier personnage',
-                      'forum_alias' => 'Pseudo forum uniquement (fallback si vide)',
+                      'display_name' => 'Nom d’affichage du compte',
+                      'callsign' => 'Indicatif',
+                      'character_name' => 'Nom du personnage',
+                      'forum_alias' => 'Pseudo forum uniquement (si vide : nom du compte)',
                   ];
                   foreach ($modes as $k => $label) {
                       echo '<option value="' . htmlspecialchars($k) . '"' . ($mode === $k ? ' selected' : '') . '>' . htmlspecialchars($label) . '</option>';
@@ -658,7 +741,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
             </div>
             <label class="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-sm text-slate-800">
               <input type="checkbox" name="public_roster_opt_in" value="1" class="mt-0.5" <?= !empty($d['public_roster_opt_in']) ? 'checked' : '' ?>>
-              <span><strong>Roster public</strong> — apparaître sur la page vitrine <code class="rounded bg-white px-1 text-xs">/c/…</code> si l’organisation l’active.</span>
+              <span><strong>Liste publique des membres</strong> — apparaître sur la page vitrine de la communauté si elle est activée.</span>
             </label>
           </div>
         </section>
@@ -688,8 +771,9 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         <?php endif; ?>
 
         <section id="edit-equipement" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Équipement / dotation</h2>
+          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-slate-900">Équipement / dotation</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Classe, kit et matériels assignés au personnage.</p>
           </div>
           <div class="grid gap-4 p-6 md:grid-cols-2">
             <div>
@@ -720,14 +804,15 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         </section>
 
         <section id="edit-notes" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
-          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-4">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-900">Notes de commandement</h2>
-            <p class="mt-1 text-xs text-slate-500">Visibles par vous et le personnel habilité.</p>
+          <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
+            <h2 class="text-base font-black tracking-tight text-slate-900">Notes de commandement</h2>
+            <p class="mt-1.5 text-xs text-slate-600">Visibles par vous et le personnel habilité.</p>
           </div>
           <div class="p-6">
             <textarea name="command_notes" id="command_notes" rows="5" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20" placeholder="Notes internes…"><?= htmlspecialchars($p['command_notes'] ?? '') ?></textarea>
           </div>
         </section>
+        </div>
 
         <div class="flex flex-wrap gap-4 pt-2">
           <button type="submit" class="inline-flex min-w-[160px] items-center justify-center rounded-xl bg-slate-900 px-8 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-slate-900/15 transition hover:bg-emerald-600">Enregistrer</button>
@@ -737,7 +822,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
 
     <?php if (!$matriculeDisplay): ?>
     <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 px-5 py-4">
-      <p class="text-sm text-emerald-950"><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (ORBAT, courriers, forum).</p>
+      <p class="text-sm text-emerald-950"><strong>Matricule interne</strong> — attribue un identifiant unique au dossier (organigramme, courriers, forum).</p>
       <form method="post" action="<?= htmlspecialchars(url('personnel/' . (int) $targetUser['id'] . '/generate-matricule')) ?>" class="flex shrink-0 items-center gap-2">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="return_to" value="edit">

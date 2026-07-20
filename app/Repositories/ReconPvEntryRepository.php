@@ -8,11 +8,17 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Mini-PV de reconnaissance (fil chronologique, texte + captures d'écran) au sein d'une
- * session de transmission de renseignement.
+ * Mini-PV de reconnaissance (fil chronologique, structure MRT/TAMMUC simplifiée + captures)
+ * au sein d'une session de transmission de renseignement.
  */
 class ReconPvEntryRepository
 {
+    public const URGENCY_IMMEDIATE = 'immediate';
+    public const URGENCY_DEFERRED = 'deferred';
+
+    /** @var list<string> */
+    public const URGENCY_VALUES = [self::URGENCY_IMMEDIATE, self::URGENCY_DEFERRED];
+
     private PDO $pdo;
 
     public function __construct()
@@ -70,13 +76,52 @@ class ReconPvEntryRepository
         return $row ?: null;
     }
 
-    public function create(int $tenantId, int $sessionId, int $authorUserId, string $body, ?string $gridRef): int
+    /**
+     * @param array{
+     *   body?: string,
+     *   grid_ref?: ?string,
+     *   captured_at?: ?string,
+     *   terrain_text?: ?string,
+     *   adversary_text?: ?string,
+     *   mission_text?: ?string,
+     *   means_text?: ?string,
+     *   urgency?: ?string,
+     *   engagement_frame_text?: ?string
+     * } $fields
+     */
+    public function create(int $tenantId, int $sessionId, int $authorUserId, array $fields): int
     {
+        $body = (string) ($fields['body'] ?? '');
+        $gridRef = $fields['grid_ref'] ?? null;
+        $capturedAt = $fields['captured_at'] ?? null;
+        $terrain = $fields['terrain_text'] ?? null;
+        $adversary = $fields['adversary_text'] ?? null;
+        $mission = $fields['mission_text'] ?? null;
+        $means = $fields['means_text'] ?? null;
+        $urgency = $fields['urgency'] ?? null;
+        $engagement = $fields['engagement_frame_text'] ?? null;
+
         $stmt = $this->pdo->prepare(
-            'INSERT INTO recon_pv_entries (tenant_id, session_id, author_user_id, body, grid_ref, created_at)
-             VALUES (?, ?, ?, ?, ?, NOW())'
+            'INSERT INTO recon_pv_entries (
+                tenant_id, session_id, author_user_id, body, grid_ref,
+                captured_at, terrain_text, adversary_text, mission_text,
+                means_text, urgency, engagement_frame_text, created_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
         );
-        $stmt->execute([$tenantId, $sessionId, $authorUserId, $body, $gridRef]);
+        $stmt->execute([
+            $tenantId,
+            $sessionId,
+            $authorUserId,
+            $body,
+            $gridRef,
+            $capturedAt,
+            $terrain,
+            $adversary,
+            $mission,
+            $means,
+            $urgency,
+            $engagement,
+        ]);
 
         return (int) $this->pdo->lastInsertId();
     }

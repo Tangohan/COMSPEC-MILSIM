@@ -24,7 +24,7 @@ if (!$gate->allows('admin.system')) {
                 <a href="<?= url('admin/site-roles') ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Affectations rôles site</a>
                 <a href="<?= url('admin/system/blocklist') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-rose-50/80 px-3 py-2.5 text-xs font-semibold text-rose-950 hover:bg-rose-100">Liste de restriction (site entier)</a>
                 <a href="<?= url('admin/system/member-sanctions') ?>" class="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-xs font-semibold text-rose-900 hover:bg-rose-50">Sanctions à l’échelle du site</a>
-                <a href="<?= url('admin/system/recruitment-portal-tools') ?>" class="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-sky-50/90 px-3 py-2.5 text-xs font-semibold text-sky-950 hover:bg-sky-100">Portail recrutement — automod &amp; réouverture</a>
+                <a href="<?= url('admin/system/recruitment-portal-tools') ?>" class="inline-flex items-center justify-center rounded-lg border border-sky-200 bg-sky-50/90 px-3 py-2.5 text-xs font-semibold text-sky-950 hover:bg-sky-100">Suivi candidatures — filtre et accès</a>
             </div>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
