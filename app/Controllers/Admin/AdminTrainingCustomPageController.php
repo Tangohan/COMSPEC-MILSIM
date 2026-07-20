@@ -35,10 +35,13 @@ final class AdminTrainingCustomPageController
             return Response::redirect(url('platform/upgrade'));
         }
         $this->htmlPageService->applyScheduledPublicationIfDue($tenantId);
+        $search = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        $docStructure = trim((string) $request->query('doc_structure', ''));
         $rows = $this->pageRepository->listByTenant($tenantId, 250, [
-            'q' => (string) $request->query('q', ''),
-            'status' => (string) $request->query('status', ''),
-            'doc_structure' => (string) $request->query('doc_structure', ''),
+            'q' => $search,
+            'status' => $status,
+            'doc_structure' => $docStructure,
         ]);
         $metrics = $this->pageRepository->dashboardMetrics($tenantId);
 
@@ -49,6 +52,9 @@ final class AdminTrainingCustomPageController
             'activeNav' => 'docs_html',
             'customPagesRows' => $rows,
             'customPagesMetrics' => $metrics,
+            'customPagesSearch' => $search,
+            'customPagesStatus' => $status,
+            'customPagesDocStructure' => $docStructure,
         ]);
     }
 
