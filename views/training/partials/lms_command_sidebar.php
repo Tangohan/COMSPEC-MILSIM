@@ -16,6 +16,7 @@ if ($isStaffSidebar) {
     $staffTopActive = match (true) {
         $trainingAdminNav === 'studio' => 'studio',
         $trainingAdminNav === 'enrollments' => 'enrollments',
+        $trainingAdminNav === 'search' => 'search',
         $trainingAdminNav === 'dashboard' || $trainingAdminNav === '' => 'staff_hub',
         default => '',
     };
@@ -73,6 +74,7 @@ $modulesMeta = $totalModules > 0 ? (string) $totalModules : '—';
         $renderTile($lmsBase . '/formations', '02', 'Catalogue public', 'Parcours visibles aux membres', $modulesMeta, 'lms-cmd-tile');
         $renderTile(training_studio_url(), '03', 'Studio', 'Créer et éditer les parcours', 'Créer', $tileClass('studio'));
         $renderTile(training_lms_admin_url('enrollments'), '04', 'Inscriptions', 'Suivi des apprenants', 'Suivi', $tileClass('enrollments'));
+        $renderTile(training_lms_admin_url('recherche'), '05', 'Recherche', 'Formations, docs, certificats', 'Chercher', $tileClass('search'));
         ?>
         <?php else: ?>
         <?php

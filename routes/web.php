@@ -1031,6 +1031,7 @@ return function (Router $router) {
     $router->post('/formation/pages-html/{id}/versions/{revisionId}/restaurer', [AdminTrainingCustomPageController::class, 'restoreRevision'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
     $router->get('/formation', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
+    $router->get('/formation/recherche', [AdminTrainingController::class, 'search'], $trainingResMw);
 
     $router->get('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
     $router->post('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);

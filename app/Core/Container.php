@@ -1322,6 +1322,7 @@ class Container
                 self::get(\App\Repositories\TrainingLessonFeedbackRepository::class),
                 self::get(\App\Services\Training\TrainingCourseMediaUploadService::class),
                 self::get(\App\Repositories\ContentTagRepository::class),
+                self::get(\App\Repositories\TrainingFormationCustomPageRepository::class),
             ),
             \App\Services\Training\TrainingPublicSiteImageCatalog::class => new \App\Services\Training\TrainingPublicSiteImageCatalog(),
             \App\Services\Training\TrainingPresentationKitService::class => new \App\Services\Training\TrainingPresentationKitService(

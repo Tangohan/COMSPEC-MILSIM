@@ -56,6 +56,7 @@ class AdminTrainingController
         private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
         private TrainingCourseMediaUploadService $courseMediaUploadService,
         private \App\Repositories\ContentTagRepository $tagRepository,
+        private \App\Repositories\TrainingFormationCustomPageRepository $formationCustomPageRepository,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -80,6 +81,35 @@ class AdminTrainingController
             ],
             'expiring' => $expiring,
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
+        ]);
+    }
+
+    /**
+     * Recherche transverse LMS : formations, Documentations HTML, certificats — un seul point
+     * d'entrée pour un staff qui ne sait pas toujours où chercher.
+     */
+    public function search(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        $q = trim((string) $request->query('q', ''));
+        $courses = [];
+        $docs = [];
+        $certificates = [];
+        if ($q !== '') {
+            $courses = array_slice($this->courseRepository->listForTenant($tenantId, null, null, $q), 0, 15);
+            $docs = $this->formationCustomPageRepository->listByTenant($tenantId, 15, ['q' => $q]);
+            $certificates = array_slice($this->certificateRepository->listForTenantAdmin($tenantId, 200, $q), 0, 15);
+        }
+
+        return Response::view('layout.training_lms_staff_shell', [
+            'content' => 'admin.training.search',
+            'title' => 'Recherche',
+            'trainingAdminNav' => 'search',
+            'searchQuery' => $q,
+            'searchCourses' => $courses,
+            'searchDocs' => $docs,
+            'searchCertificates' => $certificates,
         ]);
     }
 
