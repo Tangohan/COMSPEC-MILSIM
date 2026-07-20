@@ -42,7 +42,14 @@ class OrganizationAdminMiddleware
                 || $gate->allows('personnel.status.manage')
             )) {
                 $scopedOrgAccess = true;
-            } elseif (str_starts_with($path, '/back-office/positions') && $gate->allows('organization.job_roles.referential.manage')) {
+            } elseif (str_starts_with($path, '/back-office/positions') && (
+                $gate->allows('organization.job_roles.referential.manage')
+                || $gate->allows('admin.roles.manage')
+            )) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/audit') && $gate->allows('admin.audit.view')) {
+                $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/conformite') && $gate->allows('admin.compliance.export')) {
                 $scopedOrgAccess = true;
             } elseif (str_starts_with($path, '/back-office/communications') && (
                 $gate->allows('comms.email.send.orbat')
