@@ -33,8 +33,60 @@ class ElevationApprovalService
     ) {
     }
 
+    public const ROLE_APPLY_REPLACE = 'replace';
+    public const ROLE_APPLY_ADD = 'add';
+
     /**
-     * Diff des permissions catalogue avant / après selon le rôle proposé.
+     * Modes d’application du rôle proposés à l’approbation.
+     *
+     * @return list<string>
+     */
+    public static function roleApplyModes(): array
+    {
+        return [self::ROLE_APPLY_REPLACE, self::ROLE_APPLY_ADD];
+    }
+
+    public static function normalizeRoleApplyMode(?string $mode): string
+    {
+        $mode = strtolower(trim((string) $mode));
+        // Alias métier : conserver les accès = cumuler le rôle (multi-rôles).
+        if (in_array($mode, ['keep', 'keep_access', 'conserve', 'union'], true)) {
+            return self::ROLE_APPLY_ADD;
+        }
+
+        return in_array($mode, self::roleApplyModes(), true) ? $mode : self::ROLE_APPLY_REPLACE;
+    }
+
+    /**
+     * Calcule les IDs de rôles après application selon le mode.
+     *
+     * @param list<int> $currentRoleIds
+     * @return list<int>
+     */
+    public function resolveRoleIdsAfterApply(array $currentRoleIds, ?int $proposedRoleId, string $mode = self::ROLE_APPLY_REPLACE): array
+    {
+        $mode = self::normalizeRoleApplyMode($mode);
+        $currentRoleIds = array_values(array_unique(array_filter(
+            array_map('intval', $currentRoleIds),
+            static fn (int $id): bool => $id > 0
+        )));
+        $proposedRoleId = $proposedRoleId !== null && $proposedRoleId > 0 ? $proposedRoleId : null;
+        if ($proposedRoleId === null) {
+            return $currentRoleIds;
+        }
+        if ($mode === self::ROLE_APPLY_ADD) {
+            if (in_array($proposedRoleId, $currentRoleIds, true)) {
+                return $currentRoleIds;
+            }
+
+            return array_values(array_merge($currentRoleIds, [$proposedRoleId]));
+        }
+
+        return [$proposedRoleId];
+    }
+
+    /**
+     * Diff des permissions catalogue avant / après selon le rôle proposé et le mode.
      * Ne invente aucun droit : lit uniquement `role_permissions` via RbacService.
      *
      * @param list<int> $currentRoleIds
@@ -43,11 +95,19 @@ class ElevationApprovalService
      *   after: list<array{id:int,name:string,slug:string,module:string}>,
      *   gained: list<array{id:int,name:string,slug:string,module:string}>,
      *   lost: list<array{id:int,name:string,slug:string,module:string}>,
-     *   unchanged_count: int
+     *   rows: list<array{id:int,name:string,slug:string,module:string,before:bool,after:bool,change:string}>,
+     *   unchanged_count: int,
+     *   mode: string,
+     *   after_role_ids: list<int>
      * }
      */
-    public function permissionDiffForRoleChange(int $tenantId, array $currentRoleIds, ?int $proposedRoleId): array
-    {
+    public function permissionDiffForRoleChange(
+        int $tenantId,
+        array $currentRoleIds,
+        ?int $proposedRoleId,
+        string $mode = self::ROLE_APPLY_REPLACE
+    ): array {
+        $mode = self::normalizeRoleApplyMode($mode);
         $matrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $permById = [];
         foreach ($matrix['permissions'] as $p) {
@@ -80,9 +140,7 @@ class ElevationApprovalService
 
         $byRole = is_array($matrix['byRole'] ?? null) ? $matrix['byRole'] : [];
         $beforeMap = $idsForRoles($currentRoleIds, $byRole);
-        $afterRoleIds = $proposedRoleId !== null && $proposedRoleId > 0
-            ? [$proposedRoleId]
-            : $currentRoleIds;
+        $afterRoleIds = $this->resolveRoleIdsAfterApply($currentRoleIds, $proposedRoleId, $mode);
         $afterMap = $idsForRoles($afterRoleIds, $byRole);
 
         $toList = static function (array $map) use ($permById): array {
@@ -99,25 +157,41 @@ class ElevationApprovalService
 
         $gained = [];
         $lost = [];
+        $rows = [];
         $unchanged = 0;
         foreach ($permById as $pid => $row) {
             $had = isset($beforeMap[$pid]);
             $will = isset($afterMap[$pid]);
+            if (!$had && !$will) {
+                continue;
+            }
+            $change = 'same';
             if ($had && $will) {
                 $unchanged++;
             } elseif (!$had && $will) {
                 $gained[] = $row;
+                $change = 'gained';
             } elseif ($had && !$will) {
                 $lost[] = $row;
+                $change = 'lost';
             }
+            $rows[] = array_merge($row, [
+                'before' => $had,
+                'after' => $will,
+                'change' => $change,
+            ]);
         }
+        usort($rows, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return [
             'before' => $toList($beforeMap),
             'after' => $toList($afterMap),
             'gained' => $gained,
             'lost' => $lost,
+            'rows' => $rows,
             'unchanged_count' => $unchanged,
+            'mode' => $mode,
+            'after_role_ids' => $afterRoleIds,
         ];
     }
 
@@ -187,7 +261,8 @@ class ElevationApprovalService
      *   grade_id?: int|null,
      *   role_id?: int|null,
      *   job_role_id?: int|null,
-     *   unit_id?: int|null
+     *   unit_id?: int|null,
+     *   role_apply_mode?: string|null
      * } $proposal
      * @return array{ok:bool,message:string,applied:list<string>}
      */
@@ -207,6 +282,9 @@ class ElevationApprovalService
         $roleId = (int) ($proposal['role_id'] ?? 0);
         $jobRoleId = (int) ($proposal['job_role_id'] ?? 0);
         $unitId = (int) ($proposal['unit_id'] ?? 0);
+        $roleApplyMode = self::normalizeRoleApplyMode(
+            isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : self::ROLE_APPLY_REPLACE
+        );
 
         $beforeSnap = null;
         if ($this->structureChangeNotification !== null) {
@@ -238,10 +316,12 @@ class ElevationApprovalService
                         'applied' => $applied,
                     ];
                 }
+                $currentRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($targetUserId);
+                $nextRoleIds = $this->resolveRoleIdsAfterApply($currentRoleIds, $roleId, $roleApplyMode);
                 $this->userRepository->syncOrganizationRoles(
                     $targetUserId,
                     $tenantId,
-                    [$roleId],
+                    $nextRoleIds,
                     $actorUserId
                 );
                 $applied[] = 'role';
@@ -326,7 +406,9 @@ class ElevationApprovalService
             $parts[] = 'grade « ' . $labels['grade'] . ' »';
         }
         if (in_array('role', $applied, true) && $labels['role']) {
-            $parts[] = 'rôle « ' . $labels['role'] . ' »';
+            $parts[] = $roleApplyMode === self::ROLE_APPLY_ADD
+                ? 'rôle « ' . $labels['role'] . ' » ajouté en plus des rôles actuels'
+                : 'rôle remplacé par « ' . $labels['role'] . ' »';
         }
         if (in_array('job_role', $applied, true) && $labels['job_role']) {
             $parts[] = 'fonction « ' . $labels['job_role'] . ' »';

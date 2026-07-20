@@ -588,7 +588,8 @@ class EffectifsWorkspaceController
             $diff = $this->elevationApprovalService->permissionDiffForRoleChange(
                 $tenantId,
                 $currentRoles,
-                $proposedRoleId
+                $proposedRoleId,
+                ElevationApprovalService::ROLE_APPLY_REPLACE
             );
             $proposalLabels = $this->elevationApprovalService->proposalLabels($tenantId, [
                 'grade_id' => (int) ($r['proposed_grade_id'] ?? 0) ?: null,
@@ -823,7 +824,7 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}
      */
     private function readElevationProposalFromRequest(Request $request): array
     {
@@ -841,15 +842,21 @@ class EffectifsWorkspaceController
             'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
+            'role_apply_mode' => ElevationApprovalService::normalizeRoleApplyMode(
+                (string) $request->input('role_apply_mode', ElevationApprovalService::ROLE_APPLY_REPLACE)
+            ),
         ];
     }
 
     /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int}, error:?string}
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode?:string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}, error:?string}
      */
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
+        $proposal['role_apply_mode'] = ElevationApprovalService::normalizeRoleApplyMode(
+            isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : ElevationApprovalService::ROLE_APPLY_REPLACE
+        );
         $gradeId = $proposal['grade_id'] ?? null;
         if ($gradeId !== null) {
             $allowed = array_map(

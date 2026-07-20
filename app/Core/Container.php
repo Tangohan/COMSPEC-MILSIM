@@ -527,7 +527,8 @@ class Container
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
-                self::get(TenantRepository::class)
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class)
             ),
             \App\Controllers\Admin\Organization\HrCharterDocumentAdminController::class => new \App\Controllers\Admin\Organization\HrCharterDocumentAdminController(
                 self::get(\App\Repositories\HrCharterRepository::class),
@@ -571,6 +572,7 @@ class Container
                 self::get(\App\Repositories\PersonnelStageBilanRepository::class),
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
                 self::get(\App\Repositories\BadgeRepository::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
             ),
             \App\Repositories\BadgeRepository::class => new \App\Repositories\BadgeRepository(),
             \App\Repositories\PersonnelStageBilanRepository::class => new \App\Repositories\PersonnelStageBilanRepository(),
@@ -788,6 +790,17 @@ class Container
                 self::get(\App\Repositories\ForumNotificationRepository::class),
                 self::get(TenantRepository::class),
             ),
+            \App\Services\Personnel\PersonnelStructureChangeNotificationService::class => new \App\Services\Personnel\PersonnelStructureChangeNotificationService(
+                self::get(\App\Services\EmailService::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\GradeRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelAssignmentRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
             \App\Services\Personnel\PersonnelOrgHistoryRecorder::class => new \App\Services\Personnel\PersonnelOrgHistoryRecorder(
                 self::get(\App\Repositories\PersonnelOrgHistoryRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
@@ -813,7 +826,8 @@ class Container
                 self::get(\App\Repositories\PositionRepository::class),
                 self::get(\App\Repositories\RoleSetRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
-                self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class)
+                self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class)
             ),
             \App\Services\Documents\DocumentTrainingReferencesService::class => new \App\Services\Documents\DocumentTrainingReferencesService(
                 self::get(\App\Repositories\TrainingResourceRepository::class),
@@ -1000,6 +1014,7 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Services\Rbac\RbacService::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
             ),
             \App\Repositories\ElevationRequestRepository::class => new \App\Repositories\ElevationRequestRepository(),
             \App\Repositories\TrainingCourseLmsSocialRepository::class => new \App\Repositories\TrainingCourseLmsSocialRepository(),
@@ -1225,6 +1240,7 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\GradeRepository::class),
                 self::get(\App\Services\Effectifs\ElevationApprovalService::class),
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
                 self::get(\App\Repositories\ElevationRequestRepository::class),
             ),
             \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController::class => new \App\Controllers\Admin\System\SystemRecruitmentPortalToolsController(

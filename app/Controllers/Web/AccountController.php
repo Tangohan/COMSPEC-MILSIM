@@ -843,6 +843,20 @@ class AccountController
             'group' => 'Immersion',
         ];
 
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_STRUCTURE_CHANGED,
+            'label' => 'Changement de grade, d’affectation ou de fonction',
+            'hint' => 'Confirmation lorsque votre grade, votre unité d’affectation ou votre fonction est mis à jour.',
+            'group' => 'Dossier personnel',
+        ];
+
+        $items[] = [
+            'key' => EmailEvents::PERSONNEL_STRUCTURE_CHANGED_STAFF,
+            'label' => 'Mises à jour de dossiers (équipe RH / effectifs)',
+            'hint' => 'Lorsqu’un autre membre voit son grade, son affectation ou sa fonction modifié dans la communauté.',
+            'group' => 'Dossier personnel',
+        ];
+
         $encadrement = 'Messages de l’encadrement';
         $items[] = [
             'key' => TenantEmailKind::notificationPreferenceKey(TenantEmailKind::ORBAT),

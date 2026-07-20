@@ -16,6 +16,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\MosInputValidator;
 use App\Support\OrganizationRoleLabels;
 
@@ -27,7 +28,8 @@ class PersonnelJobRoleAdminController
         private PersonnelProfileRepository $personnelProfileRepository,
         private UserRepository $userRepository,
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
-        private TenantRepository $tenantRepository
+        private TenantRepository $tenantRepository,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -517,6 +519,8 @@ class PersonnelJobRoleAdminController
             return Response::redirect(url('back-office/personnel-job-roles/assignments'));
         }
 
+        $structureBefore = $this->structureChangeNotification->snapshot($tenantId, $userId);
+
         $tenantSettings = $this->tenantRepository->getSettings($tenantId);
         $assignCfg = PersonnelJobRoleAssignmentsSettings::resolve($tenantSettings);
         $roleSubLabelGlobal = trim((string) $request->input('role_sub_label'));
@@ -628,6 +632,18 @@ class PersonnelJobRoleAdminController
 
                 return Response::redirect($this->assignmentsRedirectAfterSave($request));
             }
+        }
+
+        try {
+            $actorId = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                $userId,
+                $actorId > 0 ? $actorId : null,
+                $structureBefore,
+                $this->structureChangeNotification->snapshot($tenantId, $userId)
+            );
+        } catch (\Throwable) {
         }
 
         Session::flash('success', 'Rôles métier du dossier mis à jour pour ' . trim((string) ($user['display_name'] ?? 'le membre')) . '.');

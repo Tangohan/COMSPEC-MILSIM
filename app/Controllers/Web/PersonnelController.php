@@ -43,6 +43,7 @@ use App\Repositories\PersonnelStageBilanRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\BadgeRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Services\Personnel\SenioritySummaryService;
 use App\Services\Steam\SteamWebApiService;
 use App\Core\Gate;
@@ -209,6 +210,7 @@ class PersonnelController
         private PersonnelStageBilanRepository $personnelStageBilanRepository,
         private EnlistmentRecruitmentEngagementRepository $enlistmentRecruitmentEngagementRepository,
         private BadgeRepository $badgeRepository,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
     ) {}
 
     private function formatArmaPlaytimeFrench(int $seconds): string
@@ -1206,6 +1208,7 @@ class PersonnelController
             $data['command_notes'] = $notes;
             $this->personnelExtrasRepository->updateAdminNotes((int) $target['id'], $notes);
         }
+        $structureBefore = $this->structureChangeNotification->snapshot($tenantId, (int) $target['id']);
         $this->personnelProfileRepository->update((int) $target['id'], $data);
         if ($roleplayFollowupConfig['enabled']) {
             $actorId = (int) Session::get('user_id');
@@ -1343,6 +1346,18 @@ class PersonnelController
         } catch (\Throwable) {
             Session::flash('error', 'Le dossier a été enregistré, mais la synchronisation ORBAT / affectation a échoué. Réessayez ou contactez un administrateur.');
             return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+        }
+
+        try {
+            $actorForMail = (int) Session::get('user_id');
+            $this->structureChangeNotification->notifyFromSnapshots(
+                $tenantId,
+                (int) $target['id'],
+                $actorForMail > 0 ? $actorForMail : null,
+                $structureBefore,
+                $this->structureChangeNotification->snapshot($tenantId, (int) $target['id'])
+            );
+        } catch (\Throwable) {
         }
 
         if ($isSelf) {
