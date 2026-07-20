@@ -288,6 +288,8 @@ class Container
             ),
             \App\Repositories\TenantAnalyticsRepository::class => new \App\Repositories\TenantAnalyticsRepository(),
             \App\Repositories\CommunityEventRepository::class => new \App\Repositories\CommunityEventRepository(),
+            \App\Repositories\CommunityEventSlotRepository::class => new \App\Repositories\CommunityEventSlotRepository(),
+            \App\Repositories\CommunityEventSlotAssignmentRepository::class => new \App\Repositories\CommunityEventSlotAssignmentRepository(),
             \App\Repositories\CommunityMediaRepository::class => new \App\Repositories\CommunityMediaRepository(),
             \App\Services\Community\CommunityMediaUploadService::class => new \App\Services\Community\CommunityMediaUploadService(),
             \App\Controllers\Admin\Organization\CommunityMediaAdminController::class => new \App\Controllers\Admin\Organization\CommunityMediaAdminController(
@@ -441,18 +443,30 @@ class Container
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
                 self::get(\App\Repositories\ForumNotificationRepository::class)
             ),
+            \App\Services\Attendance\CommunityEventSlotService::class => new \App\Services\Attendance\CommunityEventSlotService(
+                self::get(\App\Repositories\CommunityEventSlotRepository::class),
+                self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
+            ),
             \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(UserRepository::class),
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
+                self::get(\App\Repositories\CommunityEventSlotRepository::class),
+                self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
+                self::get(\App\Repositories\UnitRepository::class)
             ),
             \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
-                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
+                self::get(\App\Repositories\CommunityEventSlotRepository::class),
+                self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
+                self::get(\App\Services\Attendance\CommunityEventSlotService::class)
             ),
             \App\Controllers\Web\PointageController::class => new \App\Controllers\Web\PointageController(
                 self::get(\App\Repositories\CommunityEventRepository::class),

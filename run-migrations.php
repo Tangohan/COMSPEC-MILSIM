@@ -1875,6 +1875,14 @@ try {
     echo '  [ATTENTION] community_event_rsvp_history : ' . $e->getMessage() . "\n";
 }
 
+$communityEventSlotsMigrate = require $root . '/bootstrap/community_event_slots_migration.php';
+try {
+    echo "Migration community_event_slots (slotting de mission)...\n";
+    $communityEventSlotsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_event_slots : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);

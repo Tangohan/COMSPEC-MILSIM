@@ -5,12 +5,18 @@
 /** @var string $eventMemberLookupQuery */
 /** @var array<int, bool> $eventRsvpUserIds */
 /** @var bool $eventStaffActionsEnabled */
+/** @var list<array<string, mixed>> $eventSlots */
+/** @var array<int, list<array<string, mixed>>> $eventSlotAssignmentsBySlot */
+/** @var list<array<string, mixed>> $eventUnits */
 
 $eventRsvps = $eventRsvps ?? [];
 $eventMemberLookup = $eventMemberLookup ?? [];
 $eventMemberLookupQuery = $eventMemberLookupQuery ?? '';
 $eventRsvpUserIds = $eventRsvpUserIds ?? [];
 $eventStaffActionsEnabled = $eventStaffActionsEnabled ?? false;
+$eventSlots = $eventSlots ?? [];
+$eventSlotAssignmentsBySlot = $eventSlotAssignmentsBySlot ?? [];
+$eventUnits = $eventUnits ?? [];
 $cancelled = !empty($event['cancelled_at']);
 $eid = (int) ($event['id'] ?? 0);
 
@@ -287,6 +293,142 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                 </div>
             </section>
         <?php endif; ?>
+
+        <section class="bo-events__panel bo-events__panel--static">
+            <div class="bo-events__panel-static-head bo-events__panel-static-head--row">
+                <div>
+                    <h2>Postes de mission</h2>
+                    <p><?= count($eventSlots) ?> poste<?= count($eventSlots) > 1 ? 's' : '' ?> défini<?= count($eventSlots) > 1 ? 's' : '' ?> — les membres s’inscrivent sur un rôle précis depuis la page Événements plutôt qu’un simple RSVP.</p>
+                </div>
+            </div>
+
+            <?php if ($eventStaffActionsEnabled): ?>
+            <form method="post" action="<?= url('back-office/events/' . $eid . '/slots') ?>" class="bo-events__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                <div class="bo-events__form-grid">
+                    <div>
+                        <label class="bo-events__label" for="slot-label">Nom du poste</label>
+                        <input id="slot-label" type="text" name="label" required maxlength="160" class="bo-events__input" placeholder="Ex. Pilote, Tireur AT, Chef d’équipe">
+                    </div>
+                    <div>
+                        <label class="bo-events__label" for="slot-capacity">Places</label>
+                        <input id="slot-capacity" type="number" name="capacity" min="1" max="200" value="1" class="bo-events__input">
+                    </div>
+                    <div>
+                        <label class="bo-events__label" for="slot-unit">Unité <span>(optionnel)</span></label>
+                        <select id="slot-unit" name="unit_id" class="bo-events__select">
+                            <option value="0">—</option>
+                            <?php foreach ($eventUnits as $u): ?>
+                            <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['name'] ?? '')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="bo-events__field--full">
+                        <label class="bo-events__label" for="slot-notes">Notes de loadout <span>(optionnel)</span></label>
+                        <textarea id="slot-notes" name="loadout_notes" rows="2" class="bo-events__textarea" placeholder="Ex. Tenue standard + AT4, munitions fournies au dépôt"></textarea>
+                    </div>
+                </div>
+                <div class="bo-events__form-actions">
+                    <button type="submit" class="bo-events__submit">Ajouter le poste</button>
+                </div>
+            </form>
+            <?php endif; ?>
+
+            <?php if ($eventSlots === []): ?>
+                <div class="bo-events__empty bo-events__empty--inset">
+                    <p>Aucun poste défini pour l’instant</p>
+                    <span>Ajoutez des postes pour que les membres s’inscrivent sur un rôle précis (pilote, tireur, chef d’équipe…) plutôt qu’un simple oui/non.</span>
+                </div>
+            <?php else: ?>
+                <div class="bo-events__table-wrap">
+                    <table class="bo-events__table">
+                        <thead>
+                            <tr>
+                                <th>Poste</th>
+                                <th>Unité</th>
+                                <th>Places</th>
+                                <th>Inscrits</th>
+                                <th>Notes loadout</th>
+                                <?php if ($eventStaffActionsEnabled): ?>
+                                    <th>Actions</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($eventSlots as $slot):
+                                $sid = (int) ($slot['id'] ?? 0);
+                                $capacity = (int) ($slot['capacity'] ?? 1);
+                                $confirmedN = (int) ($slot['confirmed_count'] ?? 0);
+                                $waitlistedN = (int) ($slot['waitlisted_count'] ?? 0);
+                                $roster = $eventSlotAssignmentsBySlot[$sid] ?? [];
+                                $unitName = trim((string) ($slot['unit_name'] ?? ''));
+                                ?>
+                                <tr>
+                                    <td data-label="Poste"><span class="bo-events__member-name"><?= htmlspecialchars((string) ($slot['label'] ?? '')) ?></span></td>
+                                    <td data-label="Unité"><?= $unitName !== '' ? htmlspecialchars($unitName) : '—' ?></td>
+                                    <td data-label="Places">
+                                        <?= $confirmedN ?> / <?= $capacity ?>
+                                        <?php if ($waitlistedN > 0): ?>
+                                            <span class="bo-events__chip bo-events__chip--muted"><?= $waitlistedN ?> en attente</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td data-label="Inscrits">
+                                        <?php if ($roster === []): ?>
+                                            <span class="bo-events__chip bo-events__chip--muted">—</span>
+                                        <?php else: ?>
+                                            <?php foreach ($roster as $a): ?>
+                                                <div class="bo-events__cell-main"><?= htmlspecialchars((string) ($a['display_name'] ?? '')) ?><?= (string) ($a['status'] ?? '') === 'waitlisted' ? ' (attente)' : '' ?></div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td data-label="Notes loadout"><?= !empty($slot['loadout_notes']) ? nl2br(htmlspecialchars((string) $slot['loadout_notes'])) : '—' ?></td>
+                                    <?php if ($eventStaffActionsEnabled): ?>
+                                        <td data-label="Actions">
+                                            <details>
+                                                <summary class="bo-events__link-btn">Modifier</summary>
+                                                <form method="post" action="<?= url('back-office/events/' . $eid . '/slots/' . $sid) ?>" class="bo-events__form">
+                                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                    <div class="bo-events__form-grid">
+                                                        <div>
+                                                            <label class="bo-events__label" for="slot-label-<?= $sid ?>">Nom du poste</label>
+                                                            <input id="slot-label-<?= $sid ?>" type="text" name="label" required maxlength="160" value="<?= htmlspecialchars((string) ($slot['label'] ?? '')) ?>" class="bo-events__input">
+                                                        </div>
+                                                        <div>
+                                                            <label class="bo-events__label" for="slot-capacity-<?= $sid ?>">Places</label>
+                                                            <input id="slot-capacity-<?= $sid ?>" type="number" name="capacity" min="1" max="200" value="<?= $capacity ?>" class="bo-events__input">
+                                                        </div>
+                                                        <div>
+                                                            <label class="bo-events__label" for="slot-unit-<?= $sid ?>">Unité</label>
+                                                            <select id="slot-unit-<?= $sid ?>" name="unit_id" class="bo-events__select">
+                                                                <option value="0">—</option>
+                                                                <?php foreach ($eventUnits as $u): ?>
+                                                                <option value="<?= (int) $u['id'] ?>" <?= (int) ($slot['unit_id'] ?? 0) === (int) $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) ($u['name'] ?? '')) ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <div class="bo-events__field--full">
+                                                            <label class="bo-events__label" for="slot-notes-<?= $sid ?>">Notes de loadout</label>
+                                                            <textarea id="slot-notes-<?= $sid ?>" name="loadout_notes" rows="2" class="bo-events__textarea"><?= htmlspecialchars((string) ($slot['loadout_notes'] ?? '')) ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="bo-events__form-actions">
+                                                        <button type="submit" class="bo-events__submit">Enregistrer</button>
+                                                    </div>
+                                                </form>
+                                            </details>
+                                            <form method="post" action="<?= url('back-office/events/' . $eid . '/slots/' . $sid . '/supprimer') ?>" onsubmit="return confirm('Supprimer ce poste ? Les inscriptions associées seront retirées.');">
+                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                <button type="submit" class="bo-events__link-btn bo-events__link-btn--danger">Supprimer</button>
+                                            </form>
+                                        </td>
+                                    <?php endif; ?>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
 
         <section class="bo-events__panel bo-events__panel--static">
             <div class="bo-events__panel-static-head bo-events__panel-static-head--row">

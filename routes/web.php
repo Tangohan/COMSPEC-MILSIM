@@ -278,6 +278,8 @@ return function (Router $router) {
     $router->get('/transmission/{id}/poe', [TransmissionController::class, 'poe'], [AuthMiddleware::class]);
     $router->post('/transmission/{id}/poe', [TransmissionController::class, 'savePoe'], [AuthMiddleware::class]);
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/evenements/{id}/slots/{slotId}/inscription', [CommunityEventsController::class, 'signUpSlot'], [AuthMiddleware::class]);
+    $router->post('/evenements/{id}/slots/desinscription', [CommunityEventsController::class, 'leaveSlot'], [AuthMiddleware::class]);
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
@@ -647,6 +649,9 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots', [CommunityEventsAdminController::class, 'storeSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots/{slotId}', [CommunityEventsAdminController::class, 'updateSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

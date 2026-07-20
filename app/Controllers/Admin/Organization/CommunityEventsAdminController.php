@@ -9,6 +9,9 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\CommunityEventSlotAssignmentRepository;
+use App\Repositories\CommunityEventSlotRepository;
+use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
 use App\Services\Auth\AuthService;
@@ -22,7 +25,10 @@ final class CommunityEventsAdminController
         private UserRepository $users,
         private AuthService $authService,
         private FeatureGateService $featureGate,
-        private CommunityEventAttendanceService $attendance
+        private CommunityEventAttendanceService $attendance,
+        private CommunityEventSlotRepository $slots,
+        private CommunityEventSlotAssignmentRepository $slotAssignments,
+        private UnitRepository $units
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -307,6 +313,8 @@ final class CommunityEventsAdminController
                 $rsvpUserIds[$uid] = true;
             }
         }
+        $slots = $this->slots->listForEventWithCounts($id);
+        $slotAssignmentsBySlot = $this->slotAssignments->listForEventGroupedBySlot($id);
 
         return Response::view('layout.main', [
             'title' => 'Participants — ' . (string) ($event['title'] ?? ''),
@@ -317,7 +325,113 @@ final class CommunityEventsAdminController
             'eventMemberLookupQuery' => $lookupQ,
             'eventRsvpUserIds' => $rsvpUserIds,
             'eventStaffActionsEnabled' => empty($event['cancelled_at']),
+            'eventSlots' => $slots,
+            'eventSlotAssignmentsBySlot' => $slotAssignmentsBySlot,
+            'eventUnits' => $this->units->allForTenant($tenantId),
         ]);
+    }
+
+    public function storeSlot(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $event = $id > 0 ? $this->events->findByIdForTenant($id, $tenantId) : null;
+        if (!$event || !empty($event['cancelled_at'])) {
+            Session::flash('error', 'Créneau introuvable ou déjà annulé.');
+
+            return $this->redirectToEvent($params, $id > 0 ? $id : null);
+        }
+        $label = trim((string) $request->input('label', ''));
+        if ($label === '') {
+            Session::flash('error', 'Le nom du poste est requis.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        $capacity = max(1, min(200, (int) $request->input('capacity', 1)));
+        $unitId = (int) $request->input('unit_id', 0);
+        $this->slots->create($tenantId, $id, [
+            'label' => mb_substr($label, 0, 160),
+            'unit_id' => $unitId > 0 ? $unitId : null,
+            'capacity' => $capacity,
+            'loadout_notes' => trim((string) $request->input('loadout_notes', '')) ?: null,
+        ]);
+        Session::flash('success', 'Poste ajouté.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function updateSlot(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $slotId = (int) ($params['slotId'] ?? 0);
+        $event = $id > 0 ? $this->events->findByIdForTenant($id, $tenantId) : null;
+        if (!$event) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return $this->redirectToEvent($params, $id > 0 ? $id : null);
+        }
+        $label = trim((string) $request->input('label', ''));
+        if ($label === '') {
+            Session::flash('error', 'Le nom du poste est requis.');
+
+            return $this->redirectToEvent($params, $id);
+        }
+        $capacity = max(1, min(200, (int) $request->input('capacity', 1)));
+        $unitId = (int) $request->input('unit_id', 0);
+        $updated = $this->slots->update($slotId, $id, [
+            'label' => mb_substr($label, 0, 160),
+            'unit_id' => $unitId > 0 ? $unitId : null,
+            'capacity' => $capacity,
+            'loadout_notes' => trim((string) $request->input('loadout_notes', '')) ?: null,
+        ]);
+        Session::flash($updated ? 'success' : 'error', $updated ? 'Poste modifié.' : 'Poste introuvable.');
+
+        return $this->redirectToEvent($params, $id);
+    }
+
+    public function deleteSlot(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $this->redirectToEvent($params);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('back-office/events'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $slotId = (int) ($params['slotId'] ?? 0);
+        $event = $id > 0 ? $this->events->findByIdForTenant($id, $tenantId) : null;
+        if (!$event) {
+            Session::flash('error', 'Créneau introuvable.');
+
+            return $this->redirectToEvent($params, $id > 0 ? $id : null);
+        }
+        $deleted = $this->slots->delete($slotId, $id);
+        if ($deleted) {
+            $this->slotAssignments->deleteAllForSlot($slotId);
+        }
+        Session::flash($deleted ? 'success' : 'error', $deleted ? 'Poste supprimé.' : 'Poste introuvable.');
+
+        return $this->redirectToEvent($params, $id);
     }
 
     public function updateParticipantRsvp(Request $request, array $params = []): Response

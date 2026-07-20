@@ -4,12 +4,16 @@
 /** @var array<string, mixed>|null $eventsQuota */
 /** @var array<int, bool> $eventsCheckInFlags */
 /** @var array<int, array{yes:list<array{display_name:string,callsign:string}>,maybe:list<array{display_name:string,callsign:string}>,no:list<array{display_name:string,callsign:string}>}> $eventsRsvpSummaries */
+/** @var array<int, list<array<string, mixed>>> $eventSlotsByEvent */
+/** @var array<int, array<string, mixed>> $mySlotAssignmentByEvent */
 
 use App\Support\CommunityEventDetails;
 
 $eventsQuota = $eventsQuota ?? null;
 $eventsCheckInFlags = $eventsCheckInFlags ?? [];
 $eventsRsvpSummaries = $eventsRsvpSummaries ?? [];
+$eventSlotsByEvent = $eventSlotsByEvent ?? [];
+$mySlotAssignmentByEvent = $mySlotAssignmentByEvent ?? [];
 $canPublishOperationalBoard = !empty($canPublishOperationalBoard);
 
 $typeMeta = [
@@ -471,7 +475,8 @@ $eventCount = count($events);
                             $coverUrl = CommunityEventDetails::publicCoverUrl(isset($ev['cover_image_path']) ? (string) $ev['cover_image_path'] : null);
                             $summary = $eventsRsvpSummaries[$eid] ?? ['yes' => [], 'maybe' => [], 'no' => []];
                             $hasDetails = $desc !== '' || $cg !== '' || $cs !== '' || $schedule !== [] || $tags !== [] || $coverUrl !== null
-                                || $summary['yes'] !== [] || $summary['maybe'] !== [] || $summary['no'] !== [];
+                                || $summary['yes'] !== [] || $summary['maybe'] !== [] || $summary['no'] !== []
+                                || !empty($eventSlotsByEvent[$eid]);
                             $searchHay = mb_strtolower($title . ' ' . $location . ' ' . implode(' ', array_map([CommunityEventDetails::class, 'tagLabel'], $tags)));
                             ?>
                         <tr data-event-row data-event-type="<?= htmlspecialchars($etype, ENT_QUOTES, 'UTF-8') ?>" data-event-search="<?= htmlspecialchars($searchHay, ENT_QUOTES, 'UTF-8') ?>" data-event-id="<?= $eid ?>">
@@ -644,6 +649,51 @@ $eventCount = count($events);
                                                 <?php endforeach; ?>
                                             </div>
                                         </div>
+                                        <?php
+                                        $slotsForEvent = $eventSlotsByEvent[$eid] ?? [];
+                                        $mySlotAssignment = $mySlotAssignmentByEvent[$eid] ?? null;
+                                        ?>
+                                        <?php if ($slotsForEvent !== []): ?>
+                                        <div class="events-detail__section" style="margin-top:1rem">
+                                            <h3>Postes de mission</h3>
+                                            <?php if ($mySlotAssignment && $currentUserId): ?>
+                                            <p class="muted">
+                                                Vous êtes <?= (string) ($mySlotAssignment['status'] ?? '') === 'waitlisted' ? 'en liste d’attente sur un poste' : 'inscrit sur un poste' ?> pour cet événement.
+                                                <form method="post" action="<?= url('evenements/' . $eid . '/slots/desinscription') ?>" style="display:inline">
+                                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                    <button type="submit" class="events-sheets__btn">Me désinscrire</button>
+                                                </form>
+                                            </p>
+                                            <?php endif; ?>
+                                            <ul class="events-detail__timeline">
+                                                <?php foreach ($slotsForEvent as $slot):
+                                                    $sid = (int) ($slot['id'] ?? 0);
+                                                    $capacity = (int) ($slot['capacity'] ?? 1);
+                                                    $confirmedN = (int) ($slot['confirmed_count'] ?? 0);
+                                                    $full = $confirmedN >= $capacity;
+                                                    $mine = $mySlotAssignment && (int) ($mySlotAssignment['slot_id'] ?? 0) === $sid;
+                                                    $unitName = trim((string) ($slot['unit_name'] ?? ''));
+                                                    ?>
+                                                    <li class="events-detail__phase">
+                                                        <span class="events-detail__dot is-<?= $full && !$mine ? 'no' : 'ok' ?>" aria-hidden="true"></span>
+                                                        <p class="events-detail__phase-label">
+                                                            <?= htmlspecialchars((string) ($slot['label'] ?? '')) ?>
+                                                            <?php if ($unitName !== ''): ?> · <?= htmlspecialchars($unitName) ?><?php endif; ?>
+                                                            — <?= $confirmedN ?>/<?= $capacity ?><?= $mine ? ' · vous' : '' ?>
+                                                        </p>
+                                                        <?php if ($currentUserId && !$mySlotAssignment): ?>
+                                                        <form method="post" action="<?= url('evenements/' . $eid . '/slots/' . $sid . '/inscription') ?>">
+                                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                                                            <button type="submit" class="events-sheets__btn"><?= $full ? 'Liste d’attente' : 'S’inscrire' ?></button>
+                                                        </form>
+                                                        <?php else: ?>
+                                                        <span></span>
+                                                        <?php endif; ?>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </td>
