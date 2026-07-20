@@ -2,6 +2,14 @@
 
 Le **guide du portail** (page « Guide du portail », connecté) est la référence principale pour les membres. Ce fichier trace les **révisions** du contenu et les grands thèmes couverts ; le détail à jour est toujours dans l’interface.
 
+## Révision 8 — 2026-07-20
+
+- **Réécriture complète** du guide intégré : manuel métier exhaustif (présentation / fonctionnement / utilisation / cas particuliers) pour **tous** les chapitres.
+- Volume multiplié (fragments `_guide_part_a.php`, `_guide_part_b.php`, `_guide_part_c.php` ; assemblage via `guide-content.php`).
+- **Mur & tableau opérationnel** : chapitre de référence enrichi (posture en tableau, types en prose, cycle Création → Clôture, FRAGO, points de contrôle, audiences, scénarios état-major / membre).
+- Enrichissement majeur : formations, coopérations, recrutement, ATAK/Overwatch/TACMAP, effectifs/ORBAT, documents, courrier, événements/messages/pointage, alertes, analytics, plans, pilotage.
+- **Interface** : hiérarchie visuelle renforcée (`site-docs.css` aligné sur la coque juridique Athena — Manrope / Space Grotesk, accent émeraude), sommaire **groupé**, tableaux, étapes numérotées, callouts.
+
 ## Révision 7 — 2026-07-19
 
 - **Mur & tableau opérationnel** : documentation complète (deux écrans, posture, types de fiches, cycle brouillon → publication → clôture / retrait, mise à jour opérationnelle, points de contrôle, modèles, publication liée, filtres, parcours membre / état-major).

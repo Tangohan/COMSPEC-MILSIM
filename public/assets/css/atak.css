@@ -879,6 +879,12 @@ body.atak-page {
   border-bottom: 1px solid var(--atak-border);
   margin-bottom: 0.25rem;
 }
+.atak-ctx-menu__feature {
+  padding: 0.25rem 0.65rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--atak-accent);
+}
 .atak-ctx-menu__item {
   display: block;
   width: 100%;
@@ -903,6 +909,14 @@ body.atak-page {
   font-weight: 500;
   color: var(--atak-muted);
   font-size: 0.75rem;
+}
+.atak-ctx-menu__item--danger {
+  color: #f87171;
+}
+.atak-ctx-menu__item--danger:hover,
+.atak-ctx-menu__item--danger:focus-visible {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
 }
 .atak-ctx-menu__sep {
   height: 1px;

@@ -140,8 +140,124 @@ window.ATAKMapShapes = (function () {
     }
     obj.bindPopup(popup);
     obj._atakShapeId = key;
+    obj._atakShape = s;
+    if (!obj._atakCtxBound) {
+      obj._atakCtxBound = true;
+      obj.on('contextmenu', function (e) {
+        if (!e || !e.originalEvent) return;
+        L.DomEvent.preventDefault(e);
+        L.DomEvent.stopPropagation(e);
+        try { e.originalEvent.stopImmediatePropagation(); } catch (err) {}
+        var featureType = 'shape';
+        if (kind === 'comment' || type === 'POINT') featureType = 'comment';
+        else if (kind === 'line' || type === 'LINE' || type === 'POLYLINE') featureType = 'line';
+        else if (kind === 'zone' || type === 'CIRCLE') featureType = 'zone';
+        window.dispatchEvent(new CustomEvent('atak:feature-contextmenu', {
+          detail: {
+            featureType: featureType,
+            id: key,
+            shape: s,
+            label: label || featureTypeLabel(featureType),
+            latlng: e.latlng || null,
+            clientX: e.originalEvent.clientX,
+            clientY: e.originalEvent.clientY
+          }
+        }));
+      });
+    }
     obj.addTo(lg);
     leafletById[key] = obj;
+  }
+
+  function featureTypeLabel(featureType) {
+    if (featureType === 'comment') return 'Commentaire';
+    if (featureType === 'line') return 'Trait';
+    if (featureType === 'zone') return 'Zone';
+    return 'Élément';
+  }
+
+  function getShapeById(id) {
+    var key = String(id);
+    for (var i = 0; i < shapes.length; i++) {
+      if (shapeKey(shapes[i]) === key) return shapes[i];
+    }
+    return null;
+  }
+
+  function applyLocalShapeUpdate(id, patch) {
+    var key = String(id);
+    for (var i = 0; i < shapes.length; i++) {
+      if (shapeKey(shapes[i]) === key) {
+        shapes[i] = Object.assign({}, shapes[i], patch || {});
+        renderShape(shapes[i]);
+        return shapes[i];
+      }
+    }
+    return null;
+  }
+
+  function removeLocalShape(id) {
+    var key = String(id);
+    shapes = shapes.filter(function (s) { return shapeKey(s) !== key; });
+    if (leafletById[key] && layer) {
+      try { layer.removeLayer(leafletById[key]); } catch (e) {}
+      delete leafletById[key];
+    }
+  }
+
+  function updateShape(id, patch) {
+    var base = getApiBase();
+    var local = applyLocalShapeUpdate(id, patch);
+    if (!base || String(id).indexOf('local_') === 0) {
+      return Promise.resolve(local);
+    }
+    return fetch(base + '/api/map-shapes/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch || {})
+    }).then(function (r) {
+      if (!r.ok) {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de mettre à jour cet élément.');
+        fetchShapes();
+        return null;
+      }
+      return r.json();
+    }).then(function (row) {
+      if (!row) return null;
+      var key = shapeKey(row);
+      shapes = shapes.filter(function (s) { return shapeKey(s) !== String(id) && shapeKey(s) !== key; });
+      shapes.push(row);
+      renderShape(row);
+      return row;
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de mettre à jour cet élément.');
+      fetchShapes();
+      return null;
+    });
+  }
+
+  function deleteShape(id) {
+    var base = getApiBase();
+    removeLocalShape(id);
+    if (!base || String(id).indexOf('local_') === 0) {
+      return Promise.resolve(true);
+    }
+    return fetch(base + '/api/map-shapes/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      credentials: 'include'
+    }).then(function (r) {
+      if (!r.ok) {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer cet élément.');
+        fetchShapes();
+        return false;
+      }
+      return true;
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer cet élément.');
+      fetchShapes();
+      return false;
+    });
   }
 
   function redrawAll() {
@@ -227,7 +343,10 @@ window.ATAKMapShapes = (function () {
   return {
     fetchShapes: fetchShapes,
     getShapes: function () { return shapes; },
+    getShapeById: getShapeById,
     createShape: createShape,
+    updateShape: updateShape,
+    deleteShape: deleteShape,
     redrawAll: redrawAll
   };
 })();

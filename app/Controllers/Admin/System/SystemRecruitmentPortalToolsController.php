@@ -80,11 +80,10 @@ final class SystemRecruitmentPortalToolsController
         $automodMailEnabled = $this->platformSettingsRepository->getBool(EnlistmentPortalAutoModerationCoordinator::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED, true);
 
         return Response::view('layout.main', [
-            'title' => 'Portail recrutement — modération & accès',
+            'title' => 'Suivi candidatures — filtre et accès',
             'content' => 'admin.system.recruitment_portal_tools',
             'lookup' => $lookup,
             'automodMailEnabled' => $automodMailEnabled,
-            'automodMailSettingKey' => EnlistmentPortalAutoModerationCoordinator::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED,
             'tenantSelectRows' => $tenantRows,
             'tenantIdsWithPortalBlocks' => $tenantIdsPortalBlock,
             'enlistmentSelectRows' => $enlistmentSummaries,
@@ -103,8 +102,8 @@ final class SystemRecruitmentPortalToolsController
             EnlistmentPortalAutoModerationCoordinator::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED => $enabled ? '1' : '0',
         ]);
         Session::flash('success', $enabled
-            ? 'Les courriels d’alerte modération automatique du portail recrutement sont activés sur la plateforme.'
-            : 'Les courriels d’alerte modération automatique du portail recrutement sont désactivés sur la plateforme (les blocages restent appliqués).');
+            ? 'Les courriels d’alerte du filtre candidature sont activés sur toute la plateforme.'
+            : 'Les courriels d’alerte du filtre candidature sont désactivés. Les blocages restent appliqués.');
 
         return Response::redirect(url('admin/system/recruitment-portal-tools'));
     }
@@ -123,20 +122,20 @@ final class SystemRecruitmentPortalToolsController
         $indicatorId = (int) $request->input('indicator_id');
         $tenantId = (int) $request->input('tenant_id');
         if ($indicatorId < 1 || $tenantId < 1) {
-            Session::flash('error', 'Paramètres invalides.');
+            Session::flash('error', 'Communauté ou restriction manquante.');
 
             return Response::redirect(url('admin/system/recruitment-portal-tools'));
         }
         $row = $this->blockedIndicatorRepository->findById($indicatorId);
         if (!is_array($row) || (string) ($row['scope'] ?? '') !== 'tenant' || (int) ($row['tenant_id'] ?? 0) !== $tenantId) {
-            Session::flash('error', 'Entrée introuvable ou hors périmètre communauté.');
+            Session::flash('error', 'Cette restriction est introuvable ou ne concerne pas cette communauté.');
 
             return Response::redirect(url('admin/system/recruitment-portal-tools'));
         }
         if ($this->indicatorBlocklistService->revokeIndicator((int) $actor['id'], $indicatorId, $tenantId)) {
-            Session::flash('success', 'Blocage levé.');
+            Session::flash('success', 'Restriction levée.');
         } else {
-            Session::flash('error', 'Impossible de lever ce blocage (déjà clos ?).');
+            Session::flash('error', 'Impossible de lever cette restriction (déjà close ?).');
         }
 
         return Response::redirect(url('admin/system/recruitment-portal-tools?' . http_build_query([
@@ -162,7 +161,7 @@ final class SystemRecruitmentPortalToolsController
         $alsoIp = (string) $request->input('also_revoke_ip_candidate', '0') === '1';
         $refreshToken = (string) $request->input('refresh_token_and_email', '0') === '1';
         if ($tenantId < 1 || $enlistmentId < 1) {
-            Session::flash('error', 'Indiquez un identifiant de communauté et de dossier valides.');
+            Session::flash('error', 'Choisissez une communauté et un dossier valides.');
 
             return Response::redirect(url('admin/system/recruitment-portal-tools'));
         }
@@ -180,13 +179,13 @@ final class SystemRecruitmentPortalToolsController
         $nIp = $alsoIp ? $this->blockedIndicatorRepository->revokeActiveTenantIpPortalCandidateViolations($tenantId) : 0;
         $lines = [];
         if ($nEmail > 0) {
-            $lines[] = 'Blocage e-mail dossier levé (' . $nEmail . ' entrée(s)).';
+            $lines[] = 'Restriction sur l’e-mail du dossier levée (' . $nEmail . ').';
         }
         if ($alsoIp && $nIp > 0) {
-            $lines[] = 'Blocages réseau « portail candidat » levés (' . $nIp . ' entrée(s)).';
+            $lines[] = 'Restrictions réseau liées aux messages candidats levées (' . $nIp . ').';
         }
         if ($lines === []) {
-            $lines[] = 'Aucun blocage actif correspondant n’a été trouvé (e-mail dossier ou critères IP).';
+            $lines[] = 'Aucune restriction active correspondante n’a été trouvée pour l’e-mail du dossier (ni pour le réseau, si demandé).';
         }
         $mailOk = false;
         if ($refreshToken && $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -212,12 +211,12 @@ final class SystemRecruitmentPortalToolsController
                 $enlistmentId
             );
             if ($mailOk) {
-                $lines[] = 'Jeton de suivi régénéré ou prolongé et courriel envoyé au candidat.';
+                $lines[] = 'Lien de suivi renouvelé et courriel envoyé au candidat.';
             } else {
                 $err = $this->emailService->getLastSendError();
                 $lines[] = $err !== null && $err !== ''
-                    ? ('Jeton de suivi régénéré ou prolongé ; courriel non envoyé : ' . $err)
-                    : 'Jeton de suivi régénéré ou prolongé ; l’envoi du courriel a échoué ou est désactivé.';
+                    ? ('Lien de suivi renouvelé ; courriel non envoyé : ' . $err)
+                    : 'Lien de suivi renouvelé ; l’envoi du courriel a échoué ou est désactivé.';
             }
         }
         if ($this->enlistmentTimelineRepository->tableExists()) {
@@ -226,7 +225,7 @@ final class SystemRecruitmentPortalToolsController
                 $enlistmentId,
                 'system',
                 'portal',
-                'Assistance site — réouverture portail après modération',
+                'Assistance site — réouverture du suivi après filtre',
                 implode("\n", $lines),
                 $actorId > 0 ? $actorId : null,
                 [

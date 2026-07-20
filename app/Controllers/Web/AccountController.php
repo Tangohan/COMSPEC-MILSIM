@@ -380,7 +380,6 @@ class AccountController
                 $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),
-                    'phone' => trim((string) $request->input('phone')),
                     'birth_date' => trim((string) ($profile['birth_date'] ?? '')),
                     'nationality' => trim((string) ($profile['nationality'] ?? '')),
                 ]);

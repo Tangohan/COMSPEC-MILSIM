@@ -21,7 +21,7 @@ class ForumTopicRepository
     }
 
     public function listByCategory(
-        int $categoryId,
+        int|array $categoryId,
         int $tenantId,
         int $page = 1,
         int $perPage = 20,
@@ -40,10 +40,16 @@ class ForumTopicRepository
             default => 'ft.is_pinned DESC, ft.updated_at DESC',
         };
 
+        $categoryIds = $this->normalizeCategoryIds($categoryId);
+        if ($categoryIds === []) {
+            return [];
+        }
+        $categoryPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
+
         $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
         $filterJoin = '';
         $filterWhere = '';
-        $params = [$categoryId, $tenantId];
+        $params = [...$categoryIds, $tenantId];
         if ($userId !== null && $filter !== null && $filter !== '') {
             switch ($filter) {
                 case 'unread':
@@ -74,7 +80,7 @@ class ForumTopicRepository
              FROM forum_topics ft
              $filterJoin
              LEFT JOIN users u ON u.id = ft.user_id
-             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond)
+             WHERE ft.category_id IN ($categoryPlaceholders) AND ft.tenant_id = ? AND ($hiddenCond)
              $filterWhere
              ORDER BY $orderBy
              LIMIT $perPage OFFSET $offset";
@@ -83,12 +89,17 @@ class ForumTopicRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function countByCategory(int $categoryId, int $tenantId, ?string $filter = null, ?int $userId = null, bool $includeHiddenForUser = false): int
+    public function countByCategory(int|array $categoryId, int $tenantId, ?string $filter = null, ?int $userId = null, bool $includeHiddenForUser = false): int
     {
+        $categoryIds = $this->normalizeCategoryIds($categoryId);
+        if ($categoryIds === []) {
+            return 0;
+        }
+        $categoryPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
         $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
         $filterJoin = '';
         $filterWhere = '';
-        $params = [$categoryId, $tenantId];
+        $params = [...$categoryIds, $tenantId];
         if ($userId !== null && $filter !== null && $filter !== '') {
             switch ($filter) {
                 case 'unread':
@@ -110,14 +121,19 @@ class ForumTopicRepository
             }
         }
         $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM forum_topics ft $filterJoin WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) $filterWhere"
+            "SELECT COUNT(*) FROM forum_topics ft $filterJoin WHERE ft.category_id IN ($categoryPlaceholders) AND ft.tenant_id = ? AND ($hiddenCond) $filterWhere"
         );
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     }
 
-    public function searchByCategory(int $categoryId, string $query, int $tenantId, bool $includeHiddenForUser = false, int $limit = 50): array
+    public function searchByCategory(int|array $categoryId, string $query, int $tenantId, bool $includeHiddenForUser = false, int $limit = 50): array
     {
+        $categoryIds = $this->normalizeCategoryIds($categoryId);
+        if ($categoryIds === []) {
+            return [];
+        }
+        $categoryPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
         $term = '%' . trim($query) . '%';
         $hiddenCond = $includeHiddenForUser ? '1' : 'ft.is_hidden = 0';
         $stmt = $this->pdo->prepare(
@@ -129,13 +145,13 @@ class ForumTopicRepository
                     (SELECT COUNT(*) FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS posts_7d
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
-             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ($hiddenCond) AND (ft.title LIKE ? OR EXISTS (
+             WHERE ft.category_id IN ($categoryPlaceholders) AND ft.tenant_id = ? AND ($hiddenCond) AND (ft.title LIKE ? OR EXISTS (
                  SELECT 1 FROM forum_posts fp WHERE fp.topic_id = ft.id AND fp.body LIKE ?
              ))
              ORDER BY ft.updated_at DESC
              LIMIT ?"
         );
-        $stmt->execute([$categoryId, $tenantId, $term, $term, $limit]);
+        $stmt->execute([...$categoryIds, $tenantId, $term, $term, $limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -363,17 +379,42 @@ class ForumTopicRepository
         }
     }
 
-    public function getPinnedInCategory(int $categoryId, int $tenantId): array
+    public function getPinnedInCategory(int|array $categoryId, int $tenantId): array
     {
+        $categoryIds = $this->normalizeCategoryIds($categoryId);
+        if ($categoryIds === []) {
+            return [];
+        }
+        $categoryPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
         $stmt = $this->pdo->prepare(
-            'SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name
+            "SELECT ft.*, u.id AS topic_author_user_id, u.display_name AS author_name
              FROM forum_topics ft
              LEFT JOIN users u ON u.id = ft.user_id
-             WHERE ft.category_id = ? AND ft.tenant_id = ? AND ft.is_pinned = 1 AND ft.is_hidden = 0
-             ORDER BY ft.updated_at DESC'
+             WHERE ft.category_id IN ($categoryPlaceholders) AND ft.tenant_id = ? AND ft.is_pinned = 1 AND ft.is_hidden = 0
+             ORDER BY ft.updated_at DESC"
         );
-        $stmt->execute([$categoryId, $tenantId]);
+        $stmt->execute([...$categoryIds, $tenantId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @param int|list<int>|array<int|string, mixed> $categoryId
+     * @return list<int>
+     */
+    private function normalizeCategoryIds(int|array $categoryId): array
+    {
+        if (is_int($categoryId)) {
+            return $categoryId > 0 ? [$categoryId] : [];
+        }
+        $ids = [];
+        foreach ($categoryId as $v) {
+            $id = (int) $v;
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

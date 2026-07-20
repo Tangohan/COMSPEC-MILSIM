@@ -220,6 +220,32 @@ class AtakApiController
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']], 201);
     }
 
+    public function markersUpdate(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+        $body = $this->jsonBody($request);
+        $markerData = isset($body['markerData'])
+            ? (is_string($body['markerData']) ? $body['markerData'] : json_encode($body['markerData']))
+            : null;
+        if ($markerData === null) {
+            return Response::json(['error' => 'markerData required'], 400);
+        }
+        $layerId = isset($body['layerId']) ? (int) $body['layerId'] : null;
+        $row = $this->atak->updateMarker($tenantId, $id, $markerData, $layerId);
+        if ($row === null) {
+            return Response::json(['error' => 'Not found'], 404);
+        }
+        return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']]);
+    }
+
     public function markersDelete(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

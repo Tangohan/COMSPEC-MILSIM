@@ -195,17 +195,27 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
         </div>
     <?php else: ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des effectifs" tabindex="0">
-            <table class="eff-sheets__table">
+            <table class="eff-sheets__table" id="eff-roster-table" data-cols-storage="eff-roster-col-widths-v1">
+                <colgroup>
+                    <col data-col="identity" style="width:14rem">
+                    <col data-col="grade" style="width:6.5rem">
+                    <col data-col="fonction" style="width:9rem">
+                    <col data-col="affectation" style="width:14rem">
+                    <col data-col="roles" style="width:11rem">
+                    <col data-col="indicateurs" style="width:14rem">
+                    <col data-col="statut" style="width:7.5rem">
+                    <col data-col="actions" style="width:13rem">
+                </colgroup>
                 <thead>
                     <tr>
-                        <th>Identité</th>
-                        <th>Grade</th>
-                        <th>Fonction</th>
-                        <th>Affectation</th>
-                        <th>Rôles</th>
-                        <th>Indicateurs</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
+                        <th data-col="identity">Identité<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Identité" tabindex="0"></span></th>
+                        <th data-col="grade">Grade<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Grade" tabindex="0"></span></th>
+                        <th data-col="fonction">Fonction<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Fonction" tabindex="0"></span></th>
+                        <th data-col="affectation">Affectation<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Affectation" tabindex="0"></span></th>
+                        <th data-col="roles">Rôles<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Rôles" tabindex="0"></span></th>
+                        <th data-col="indicateurs">Indicateurs<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Indicateurs" tabindex="0"></span></th>
+                        <th data-col="statut">Statut<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Statut" tabindex="0"></span></th>
+                        <th data-col="actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -241,7 +251,6 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                     $editUrl = url('back-office/users/' . $id . '/edit');
                     $personnelUrl = url('personnel/' . $id);
                     $personnelEditUrl = url('personnel/' . $id . '/edit');
-                    $metaLine = $callsign !== '' ? $callsign : $email;
                     $avatarUrl = function_exists('user_media_public_url')
                         ? (user_media_public_url($row['avatar_url'] ?? null) ?? '')
                         : trim((string) ($row['avatar_url'] ?? ''));
@@ -260,9 +269,11 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                         <?= htmlspecialchars($initials($name, $email), ENT_QUOTES, 'UTF-8') ?>
                                     <?php endif; ?>
                                 </span>
-                                <div>
+                                <div class="eff-sheets__id-text">
                                     <strong class="eff-sheets__name"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></strong>
-                                    <span class="eff-sheets__meta"><?= htmlspecialchars($metaLine, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($callsign !== '' && strcasecmp($callsign, $name) !== 0): ?>
+                                        <span class="eff-sheets__meta"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>
@@ -275,45 +286,47 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                         </td>
                         <td>
                             <?php if ($fonction !== ''): ?>
-                                <span style="font-weight:600;color:#334155"><?= htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="eff-sheets__cell-text"><?= htmlspecialchars($fonction, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php else: ?>
                                 <span class="eff-sheets__badge eff-sheets__badge--watch">Fonction manquante</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($assignmentPath !== ''): ?>
-                                <span class="eff-sheets__path" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">
-                                    <?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="eff-sheets__badge eff-sheets__badge--watch">Sans unité</span>
-                            <?php endif; ?>
-                            <?php if ($canManageAssignments): ?>
-                                <details class="eff-sheets__pop" style="margin-top:0.35rem">
-                                    <summary class="eff-sheets__chip" style="height:1.4rem"><?= $assignmentPath !== '' ? 'Modifier' : 'Affecter' ?></summary>
-                                    <div class="eff-sheets__pop-panel">
-                                        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
-                                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
-                                            <label for="eff-unit-<?= $id ?>">Unité de rattachement</label>
-                                            <select id="eff-unit-<?= $id ?>" name="unit_id">
-                                                <option value="0">Retirer l’affectation</option>
-                                                <?php foreach ($units as $u): ?>
-                                                    <?php
-                                                    $optId = (int) ($u['id'] ?? 0);
-                                                    $optLabel = trim((string) ($u['assignment_path'] ?? $u['name'] ?? ''));
-                                                    ?>
-                                                    <option value="<?= $optId ?>" <?= $unitId === $optId ? 'selected' : '' ?>>
-                                                        <?= htmlspecialchars($optLabel, ENT_QUOTES, 'UTF-8') ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:1.85rem">Enregistrer</button>
-                                            <a class="eff-sheets__pop-link" href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir le dossier</a>
-                                        </form>
-                                    </div>
-                                </details>
-                            <?php endif; ?>
+                            <div class="eff-sheets__assign">
+                                <?php if ($assignmentPath !== ''): ?>
+                                    <span class="eff-sheets__path" title="<?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars($assignmentPath, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch">Sans unité</span>
+                                <?php endif; ?>
+                                <?php if ($canManageAssignments): ?>
+                                    <details class="eff-sheets__pop">
+                                        <summary class="eff-sheets__chip" style="height:1.4rem"><?= $assignmentPath !== '' ? 'Modifier' : 'Affecter' ?></summary>
+                                        <div class="eff-sheets__pop-panel">
+                                            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
+                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+                                                <label for="eff-unit-<?= $id ?>">Unité de rattachement</label>
+                                                <select id="eff-unit-<?= $id ?>" name="unit_id">
+                                                    <option value="0">Retirer l’affectation</option>
+                                                    <?php foreach ($units as $u): ?>
+                                                        <?php
+                                                        $optId = (int) ($u['id'] ?? 0);
+                                                        $optLabel = trim((string) ($u['assignment_path'] ?? $u['name'] ?? ''));
+                                                        ?>
+                                                        <option value="<?= $optId ?>" <?= $unitId === $optId ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($optLabel, ENT_QUOTES, 'UTF-8') ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" style="height:1.85rem">Enregistrer</button>
+                                                <a class="eff-sheets__pop-link" href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir le dossier</a>
+                                            </form>
+                                        </div>
+                                    </details>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td>
                             <?php if ($roleParts === []): ?>
@@ -389,5 +402,108 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                 <?php endif; ?>
             </div>
         </div>
+
+        <script>
+        (function () {
+            var table = document.getElementById('eff-roster-table');
+            if (!table) return;
+            var storageKey = table.getAttribute('data-cols-storage') || 'eff-roster-col-widths-v1';
+            var cols = table.querySelectorAll('colgroup col[data-col]');
+            var minWidth = 56;
+
+            function applyWidths(map) {
+                cols.forEach(function (col) {
+                    var key = col.getAttribute('data-col');
+                    if (!key || !map[key]) return;
+                    var w = parseInt(map[key], 10);
+                    if (!isFinite(w) || w < minWidth) return;
+                    col.style.width = w + 'px';
+                });
+            }
+
+            function readStored() {
+                try {
+                    var raw = localStorage.getItem(storageKey);
+                    if (!raw) return {};
+                    var parsed = JSON.parse(raw);
+                    return parsed && typeof parsed === 'object' ? parsed : {};
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            function writeStored(map) {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(map));
+                } catch (e) { /* ignore quota / private mode */ }
+            }
+
+            function currentMap() {
+                var map = {};
+                cols.forEach(function (col) {
+                    var key = col.getAttribute('data-col');
+                    if (!key) return;
+                    var w = parseInt(col.style.width, 10);
+                    if (!isFinite(w) || w < minWidth) {
+                        w = Math.round(col.getBoundingClientRect().width);
+                    }
+                    if (isFinite(w) && w >= minWidth) map[key] = w;
+                });
+                return map;
+            }
+
+            applyWidths(readStored());
+
+            table.querySelectorAll('thead th .eff-sheets__col-resizer').forEach(function (handle) {
+                var th = handle.closest('th');
+                if (!th) return;
+                var colKey = th.getAttribute('data-col');
+                if (!colKey) return;
+                var col = table.querySelector('colgroup col[data-col="' + colKey + '"]');
+                if (!col) return;
+
+                function startResize(clientX) {
+                    var startX = clientX;
+                    var startW = col.getBoundingClientRect().width;
+                    document.body.classList.add('eff-sheets--resizing');
+
+                    function onMove(ev) {
+                        var next = Math.max(minWidth, Math.round(startW + (ev.clientX - startX)));
+                        col.style.width = next + 'px';
+                    }
+
+                    function onUp() {
+                        document.body.classList.remove('eff-sheets--resizing');
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                        writeStored(currentMap());
+                    }
+
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                }
+
+                handle.addEventListener('mousedown', function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    startResize(ev.clientX);
+                });
+
+                handle.addEventListener('keydown', function (ev) {
+                    var step = ev.shiftKey ? 24 : 8;
+                    var w = Math.round(col.getBoundingClientRect().width);
+                    if (ev.key === 'ArrowLeft') {
+                        ev.preventDefault();
+                        col.style.width = Math.max(minWidth, w - step) + 'px';
+                        writeStored(currentMap());
+                    } else if (ev.key === 'ArrowRight') {
+                        ev.preventDefault();
+                        col.style.width = (w + step) + 'px';
+                        writeStored(currentMap());
+                    }
+                });
+            });
+        })();
+        </script>
     <?php endif; ?>
 </div>

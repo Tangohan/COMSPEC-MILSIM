@@ -198,6 +198,87 @@
   overflow: hidden;
 }
 
+/* Page galerie dédiée (/c/{slug}/medias) */
+.community-media-page {
+  width: 100%;
+  min-width: 0;
+  background: #070d18;
+}
+
+.community-landing__media--page {
+  min-height: calc(100vh - 8rem);
+  padding-top: 2.25rem;
+  padding-bottom: 4.5rem;
+  /* Ne pas couper le léger lift au survol des tuiles */
+  overflow: visible;
+}
+
+.community-media-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1.5rem;
+  padding: 0.45rem 0.85rem 0.45rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.community-media-page__back:hover {
+  background: color-mix(in srgb, var(--cl-primary) 22%, rgba(255, 255, 255, 0.06));
+  border-color: color-mix(in srgb, var(--cl-primary) 45%, rgba(255, 255, 255, 0.2));
+  color: #fff;
+}
+
+.community-media-page__back:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--cl-primary) 70%, #fff);
+  outline-offset: 3px;
+}
+
+.community-media-page__count {
+  margin: 0;
+  flex-shrink: 0;
+  padding-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.community-media-page__empty-link {
+  margin: 1rem 0 0;
+}
+
+.community-media-page__empty-link a {
+  color: var(--cl-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.community-media-page__empty-link a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+@media (max-width: 640px) {
+  .community-landing__media--page {
+    padding-top: 1.75rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .community-media-page__count {
+    padding-bottom: 0;
+  }
+}
+
 .community-landing__media-shell {
   width: 100%;
 }

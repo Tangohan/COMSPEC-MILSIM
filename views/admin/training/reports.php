@@ -1,17 +1,27 @@
 <?php
 $courses = $courses ?? [];
+$successRateTenant = is_array($successRateTenant ?? null) ? $successRateTenant : [];
+$successRatePlatform = is_array($successRatePlatform ?? null) ? $successRatePlatform : [];
 require base_path('views/admin/training/partials/command_shell_open.php');
 ?>
                 <header class="tc-panel p-6 md:p-8">
                     <p class="tc-kicker">Conformité</p>
                     <h1 class="tc-hero-title mb-3">Rapports</h1>
                     <p class="text-slate-600 text-sm max-w-2xl leading-relaxed">
-                        Suivez la conformité et l’avancement des parcours : sélectionnez une formation ci-dessous pour ouvrir les inscriptions et la progression des participants.
+                        Suivez la conformité et l’avancement des parcours : consultez le taux de réussite ci-dessous, puis sélectionnez une formation pour ouvrir les inscriptions et la progression des participants.
                     </p>
                 </header>
 
+                <?php
+                $successRatePanelClass = 'tc-panel p-6 md:p-8';
+                require base_path('views/admin/training/partials/success_rate_panel.php');
+                ?>
+
                 <div class="tc-panel p-6 md:p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-4">Raccourcis par formation</h2>
+                    <?php if ($courses === []): ?>
+                    <p class="text-sm text-slate-600 m-0">Aucun parcours n’est encore disponible pour cette communauté.</p>
+                    <?php else: ?>
                     <ul class="space-y-3">
                         <?php foreach ($courses as $c): ?>
                         <li>
@@ -20,6 +30,7 @@ require base_path('views/admin/training/partials/command_shell_open.php');
                         </li>
                         <?php endforeach; ?>
                     </ul>
+                    <?php endif; ?>
                 </div>
 
                 <p class="text-sm text-slate-500">

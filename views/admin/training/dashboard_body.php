@@ -4,6 +4,11 @@ $stats = $stats ?? ['courses' => 0, 'enrollments' => 0, 'completed' => 0, 'expir
 $expiring = $expiring ?? [];
 $trainingCanExportFull = !empty($trainingCanExportFull);
 $expiringCount = (int) ($stats['expiringCount'] ?? 0);
+$successRateTenant = is_array($successRateTenant ?? null) ? $successRateTenant : [];
+$successRatePlatform = is_array($successRatePlatform ?? null) ? $successRatePlatform : [];
+$tenantRateDisplay = array_key_exists('rate_percent', $successRateTenant) && $successRateTenant['rate_percent'] !== null
+    ? rtrim(rtrim(number_format((float) $successRateTenant['rate_percent'], 1, ',', ''), '0'), ',') . ' %'
+    : '—';
 ?>
 <header class="lms-panel rounded-[2rem] p-6 md:p-8 overflow-hidden relative">
     <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-600/80 via-emerald-500/25 to-transparent" aria-hidden="true"></div>
@@ -27,8 +32,8 @@ $expiringCount = (int) ($stats['expiringCount'] ?? 0);
                 <p class="text-2xl font-bold tracking-tight tabular-nums text-slate-900"><?= (int) $stats['enrollments'] ?></p>
             </a>
             <a href="<?= htmlspecialchars(training_lms_admin_url('reports')) ?>" class="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-4 no-underline text-inherit transition hover:border-emerald-300 hover:bg-emerald-50/50">
-                <p class="text-xs font-semibold text-slate-500 mb-1.5">Complétion</p>
-                <p class="text-2xl font-bold tracking-tight tabular-nums text-emerald-700"><?= (float) ($stats['completed'] ?? 0) ?> %</p>
+                <p class="text-xs font-semibold text-slate-500 mb-1.5">Taux de réussite</p>
+                <p class="text-2xl font-bold tracking-tight tabular-nums text-emerald-700"><?= htmlspecialchars($tenantRateDisplay) ?></p>
             </a>
             <a href="<?= htmlspecialchars(training_lms_admin_url('enrollments') . '?expiring=1') ?>" class="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-4 no-underline text-inherit transition hover:border-emerald-300 hover:bg-emerald-50/50">
                 <p class="text-xs font-semibold text-slate-500 mb-1.5">À surveiller</p>
@@ -37,6 +42,8 @@ $expiringCount = (int) ($stats['expiringCount'] ?? 0);
         </div>
     </div>
 </header>
+
+<?php require base_path('views/admin/training/partials/success_rate_panel.php'); ?>
 
 <section class="lms-panel rounded-[2rem] p-5 md:p-6" aria-label="Priorités du jour">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">

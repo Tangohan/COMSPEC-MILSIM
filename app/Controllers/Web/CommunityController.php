@@ -339,6 +339,8 @@ class CommunityController
             'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
             'mediaViewerCanLike' => $viewerUserId !== null && $viewerUserId > 0,
             'tenantBranding' => $tenantBranding,
+            /* Charge community-landing.css + masque la nav bas (même shell que la vitrine). */
+            'communityShowcasePage' => true,
         ]);
     }
 

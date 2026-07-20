@@ -113,8 +113,11 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (is_file(base_path('public/assets/css/athena-header.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/athena-header.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
-    <?php if ((!empty($siteDocsPage) || !empty($siteDocsRefsPage)) && is_file(base_path('public/assets/css/site-docs.css'))): ?>
+    <?php if (!empty($siteDocsPage) || !empty($siteDocsRefsPage)): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <?php if (is_file(base_path('public/assets/css/site-docs.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/site-docs.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php endif; ?>
     <?php if (!empty($accountHubPage) && is_file(base_path('public/assets/css/account-hub.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/account-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">

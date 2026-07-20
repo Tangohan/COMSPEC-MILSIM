@@ -94,9 +94,10 @@ class ForumCategoryController
         $perPage = function_exists('forum_pagination_limit')
             ? forum_pagination_limit($fcat, 'forum_topics_per_page', 20, 1, 200)
             : 20;
+        $topicCategoryIds = $this->categoryRepository->topicCategoryIdsFor($category, $tenantId);
 
         if ($q !== '') {
-            $topics = $this->topicRepository->searchByCategory((int) $category['id'], $q, $tenantId, $isModo, 100);
+            $topics = $this->topicRepository->searchByCategory($topicCategoryIds, $q, $tenantId, $isModo, 100);
             $topics = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
                 $topics,
                 $this->forumAuthorIdentityRepository,
@@ -111,10 +112,10 @@ class ForumCategoryController
             $totalPages = 1;
             $topics = array_slice($topics, ($page - 1) * $perPage, $perPage);
         } else {
-            $totalTopics = $this->topicRepository->countByCategory((int) $category['id'], $tenantId, $filter ?: null, $userId, $isModo);
+            $totalTopics = $this->topicRepository->countByCategory($topicCategoryIds, $tenantId, $filter ?: null, $userId, $isModo);
             $totalPages = max(1, (int) ceil($totalTopics / $perPage));
             $topics = $this->topicRepository->listByCategory(
-                (int) $category['id'],
+                $topicCategoryIds,
                 $tenantId,
                 $page,
                 $perPage,

@@ -31,6 +31,7 @@ use App\Services\GradeValidationService;
 use App\Services\Personnel\PersonnelCompletenessService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Personnel\PersonnelOrgHistoryRecorder;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
 
@@ -70,6 +71,7 @@ class UserAdminController
         private RoleSetRepository $roleSetRepository,
         private IndicatorBlocklistService $indicatorBlocklist,
         private PersonnelOrgHistoryRecorder $personnelOrgHistoryRecorder,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -733,6 +735,11 @@ class UserAdminController
         }
         $data = $changed;
 
+        $structureBefore = null;
+        if (array_key_exists('grade_id', $data)) {
+            $structureBefore = $this->structureChangeNotification->snapshot($tenantId, $id);
+        }
+
         if (!empty($data)) {
             $auditKeys = ['email', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code', 'display_name', 'callsign', 'profile_slug'];
             $passwordWillChange = isset($data['password_hash']);
@@ -747,6 +754,19 @@ class UserAdminController
             [$o, $n] = AuditFieldSnapshot::diffOnly($beforeAugmented, $afterAugmented, $keys);
             [$os, $ns] = AuditFieldSnapshot::encodePair($o, $n);
             $this->adminAuditService->logUserUpdated($tenantId, $actorUserId, $id, $os, $ns);
+        }
+
+        if ($structureBefore !== null) {
+            try {
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $id,
+                    $actorUserId,
+                    $structureBefore,
+                    $this->structureChangeNotification->snapshot($tenantId, $id)
+                );
+            } catch (\Throwable) {
+            }
         }
 
         if ($rolesSynced || !empty($data)) {

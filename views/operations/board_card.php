@@ -37,19 +37,19 @@ $searchHaystack = strtolower(trim(implode(' ', array_filter([
          data-priority="<?= htmlspecialchars($priority, ENT_QUOTES, 'UTF-8') ?>"
          data-tag="<?= htmlspecialchars($tagBlob, ENT_QUOTES, 'UTF-8') ?>"
          data-search="<?= htmlspecialchars($searchHaystack, ENT_QUOTES, 'UTF-8') ?>">
-    <div class="flex items-start justify-between gap-2">
+    <div class="entry-card__head flex items-start justify-between gap-2">
         <?php if ($showAdminActions && $eid > 0): ?>
-            <h3 class="min-w-0 flex-1 font-bold leading-snug text-slate-900">
+            <h3 class="entry-card__title min-w-0 flex-1 font-bold leading-snug text-slate-900">
                 <a href="<?= url('back-office/tableau-operationnel/fiche/' . $eid) ?>" class="text-slate-900 underline decoration-emerald-200 decoration-2 underline-offset-2 hover:text-emerald-900 hover:decoration-emerald-400"><?= htmlspecialchars($titleDisplay, ENT_QUOTES, 'UTF-8') ?></a>
             </h3>
         <?php else: ?>
-            <h3 class="min-w-0 flex-1 font-bold text-slate-900"><?= htmlspecialchars($titleDisplay, ENT_QUOTES, 'UTF-8') ?></h3>
+            <h3 class="entry-card__title min-w-0 flex-1 font-bold leading-snug text-slate-900"><?= htmlspecialchars($titleDisplay, ENT_QUOTES, 'UTF-8') ?></h3>
         <?php endif; ?>
-        <div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
+        <div class="entry-card__badges flex shrink-0 flex-wrap items-center justify-end gap-1">
             <?php if ($showAdminActions && $isDraftPublication): ?>
-                <span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950" title="En cours de préparation : visible ici pour le pilotage, pas encore sur le mur des membres">Brouillon</span>
+                <span class="entry-card__badge entry-card__badge--draft rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950" title="En cours de préparation : visible ici pour le pilotage, pas encore sur le mur des membres">Brouillon</span>
             <?php endif; ?>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700"><?= htmlspecialchars($priorityShort[$priority] ?? $priority, ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="entry-card__badge entry-card__badge--priority rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-800"><?= htmlspecialchars($priorityShort[$priority] ?? $priority, ENT_QUOTES, 'UTF-8') ?></span>
         </div>
     </div>
     <?php if ($showAdminActions && $eid > 0 && $isDraftPublication): ?>
@@ -58,24 +58,24 @@ $searchHaystack = strtolower(trim(implode(' ', array_filter([
         </div>
     <?php endif; ?>
     <?php if ($etype === 'flash_info' && !empty($entry['description'])): ?>
-        <div class="mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></div>
+        <div class="entry-card__body mt-2 text-sm leading-relaxed text-slate-800"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></div>
     <?php elseif (!empty($entry['description'])): ?>
-        <p class="mt-2 text-slate-700"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></p>
+        <p class="entry-card__body mt-2 leading-relaxed text-slate-700"><?= nl2br(htmlspecialchars((string) $entry['description'], ENT_QUOTES, 'UTF-8')) ?></p>
     <?php endif; ?>
-    <dl class="mt-2 grid grid-cols-1 gap-1 text-slate-700 md:grid-cols-2">
-        <div>
+    <dl class="entry-card__meta mt-2 grid grid-cols-1 gap-1.5 text-slate-700 md:grid-cols-2">
+        <div class="entry-card__meta-row">
             <dt class="inline font-semibold text-slate-800">Commandement :</dt>
             <dd class="inline"><?= htmlspecialchars((string) ($entry['chief_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
         </div>
-        <div>
+        <div class="entry-card__meta-row">
             <dt class="inline font-semibold text-slate-800">Adjoint :</dt>
             <dd class="inline"><?= htmlspecialchars((string) ($entry['deputy_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
         </div>
-        <div>
+        <div class="entry-card__meta-row">
             <dt class="inline font-semibold text-slate-800">Remplaçant :</dt>
             <dd class="inline"><?= htmlspecialchars((string) ($entry['replacement_name'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
         </div>
-        <div>
+        <div class="entry-card__meta-row">
             <dt class="inline font-semibold text-slate-800">Zone :</dt>
             <dd class="inline"><?= htmlspecialchars((string) ($entry['operation_zone'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></dd>
             <?php if (!empty($entry['map_link'])): ?>
@@ -83,22 +83,22 @@ $searchHaystack = strtolower(trim(implode(' ', array_filter([
             <?php endif; ?>
         </div>
     </dl>
-    <p class="mt-1 text-slate-600">
-        <span class="font-semibold text-slate-800">Statut :</span> <?= htmlspecialchars($operationalLabels[$opKey] ?? $opKey, ENT_QUOTES, 'UTF-8') ?>
-        · <span class="font-semibold text-slate-800">Phase :</span> <?= htmlspecialchars($phaseLabels[$phaseKey] ?? $phaseKey, ENT_QUOTES, 'UTF-8') ?>
-        · <span class="font-semibold text-slate-800">Type :</span> <?= htmlspecialchars($entryTypeLabels[$etype] ?? $etype, ENT_QUOTES, 'UTF-8') ?>
+    <p class="entry-card__status mt-2 flex flex-wrap items-center gap-1.5 text-slate-700">
+        <span class="entry-card__chip"><span class="entry-card__chip-label">Statut</span> <?= htmlspecialchars($operationalLabels[$opKey] ?? $opKey, ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="entry-card__chip"><span class="entry-card__chip-label">Phase</span> <?= htmlspecialchars($phaseLabels[$phaseKey] ?? $phaseKey, ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="entry-card__chip"><span class="entry-card__chip-label">Type</span> <?= htmlspecialchars($entryTypeLabels[$etype] ?? $etype, ENT_QUOTES, 'UTF-8') ?></span>
     </p>
     <?php if ($showAdminActions): ?>
-    <p class="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Publication : <?= htmlspecialchars($valStat === 'draft' ? 'brouillon' : ($valStat === 'rejected' ? 'refusée' : ($valStat === 'validated' ? 'approuvée' : 'active')), ENT_QUOTES, 'UTF-8') ?></p>
+    <p class="mt-1 text-[10px] uppercase tracking-wide text-slate-500">Publication : <?= htmlspecialchars($valStat === 'draft' ? 'brouillon' : ($valStat === 'rejected' ? 'refusée' : ($valStat === 'validated' ? 'approuvée' : 'en ligne')), ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
-    <p class="mt-1 text-slate-600">
+    <p class="entry-card__checklist mt-1.5 text-slate-700">
         Points de contrôle : <?= (int) ($entry['checklist_done'] ?? 0) ?> / <?= (int) ($entry['checklist_required'] ?? 0) ?>
         <?php if (!empty($entry['dossier_ref'])): ?>
             · Dossier : <?= htmlspecialchars((string) $entry['dossier_ref'], ENT_QUOTES, 'UTF-8') ?>
         <?php endif; ?>
     </p>
     <?php if ($tags): ?>
-        <p class="mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Étiquettes : <?= htmlspecialchars(implode(' · ', $tags), ENT_QUOTES, 'UTF-8') ?></p>
+        <p class="entry-card__tags mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Étiquettes : <?= htmlspecialchars(implode(' · ', $tags), ENT_QUOTES, 'UTF-8') ?></p>
     <?php endif; ?>
     <?php if ($showAdminActions && $eid > 0): ?>
         <div class="entry-card-actions mt-3 flex flex-col gap-2 border-t border-slate-100 pt-3">

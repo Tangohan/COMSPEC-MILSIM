@@ -325,41 +325,42 @@ final class TrainingCompetencyController
 
             $action = (string) $request->input('action', '');
             $trainerSchemaReady = $this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable();
+            $schemaBlockedMessage = 'Enregistrement impossible pour le moment : cette fonction n’est pas encore activée sur l’installation. Contactez l’administrateur technique.';
             if ($action === 'pick_trainer_roles') {
                 if (!$trainerSchemaReady) {
-                    Session::flash('error', 'Enregistrement impossible : exécutez d’abord les migrations compétences.');
+                    Session::flash('error', $schemaBlockedMessage);
                 } else {
                     $picked = array_map('intval', (array) $request->input('trainer_role_ids', []));
                     $this->trainingCompetencyRepository->saveTrainerRolePicking($tenantId, $picked, $actorUserId);
-                    Session::flash('success', 'Rôles « conception de parcours » mis à jour.');
+                    Session::flash('success', 'Responsabilité « conception de parcours » mise à jour.');
                 }
             } elseif ($action === 'pick_delivery_instructor_roles') {
                 if (!$trainerSchemaReady) {
-                    Session::flash('error', 'Enregistrement impossible : exécutez d’abord les migrations compétences.');
+                    Session::flash('error', $schemaBlockedMessage);
                 } else {
                     $picked = array_map('intval', (array) $request->input('delivery_role_ids', []));
                     $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'delivery_instructor', $picked, $actorUserId);
-                    Session::flash('success', 'Rôles « animation sur le terrain » mis à jour.');
+                    Session::flash('success', 'Responsabilité « animation sur le terrain » mise à jour.');
                 }
             } elseif ($action === 'pick_instructor_certifier_roles') {
                 if (!$trainerSchemaReady) {
-                    Session::flash('error', 'Enregistrement impossible : exécutez d’abord les migrations compétences.');
+                    Session::flash('error', $schemaBlockedMessage);
                 } else {
                     $picked = array_map('intval', (array) $request->input('instructor_certifier_role_ids', []));
                     $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'instructor_certifier', $picked, $actorUserId);
-                    Session::flash('success', 'Rôles « validation des encadrants » mis à jour.');
+                    Session::flash('success', 'Responsabilité « validation des encadrants » mise à jour.');
                 }
             } elseif ($action === 'pick_trainer_certifier_roles') {
                 if (!$trainerSchemaReady) {
-                    Session::flash('error', 'Enregistrement impossible : exécutez d’abord les migrations compétences.');
+                    Session::flash('error', $schemaBlockedMessage);
                 } else {
                     $picked = array_map('intval', (array) $request->input('trainer_certifier_role_ids', []));
                     $this->trainingCompetencyRepository->savePedagogyRolePicking($tenantId, 'trainer_certifier', $picked, $actorUserId);
-                    Session::flash('success', 'Rôles « gouvernance des concepteurs » mis à jour.');
+                    Session::flash('success', 'Responsabilité « gouvernance des concepteurs » mise à jour.');
                 }
             } elseif ($action === 'assign_trainer_roles') {
                 if (!$trainerSchemaReady) {
-                    Session::flash('error', 'Assignation impossible : exécutez d’abord les migrations compétences.');
+                    Session::flash('error', $schemaBlockedMessage);
                 } else {
                     $targetUserId = (int) $request->input('target_user_id', 0);
                     if ($targetUserId > 0) {
@@ -367,7 +368,7 @@ final class TrainingCompetencyController
                         $picked = $this->trainingCompetencyRepository->trainerRoleIds($tenantId);
                         $merged = array_values(array_unique(array_merge($current, $picked)));
                         $this->userRepository->syncOrganizationRoles($targetUserId, $tenantId, $merged, $actorUserId);
-                        Session::flash('success', 'Rôles de conception assignés à l’utilisateur.');
+                        Session::flash('success', 'Les rôles de conception ont été ajoutés à ce membre.');
                     }
                 }
             }
@@ -386,6 +387,7 @@ final class TrainingCompetencyController
             'trainerCertifierRoles' => $this->trainingCompetencyRepository->listPedagogyRoleChecklist($tenantId, 'trainer_certifier'),
             'tenantUsers' => $this->trainingCompetencyRepository->listTenantUsers($tenantId),
             'competencySchemaAvailable' => $this->trainingCompetencyRepository->competencySchemaAvailable(),
+            'competencyTrainerSchemaReady' => $this->trainingCompetencyRepository->competencyTrainerRolesSchemaAvailable(),
         ]);
     }
 

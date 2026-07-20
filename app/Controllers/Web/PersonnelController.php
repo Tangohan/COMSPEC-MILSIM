@@ -1355,7 +1355,6 @@ class PersonnelController
             $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
                 'first_name' => trim((string) $request->input('civil_first_name')),
                 'last_name' => trim((string) $request->input('civil_last_name')),
-                'phone' => trim((string) $request->input('civil_phone')) ?: null,
                 'nationality' => trim((string) $request->input('civil_nationality')) ?: null,
                 'birth_date' => trim((string) $request->input('civil_birth_date')) ?: null,
             ]);

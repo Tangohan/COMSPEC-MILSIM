@@ -370,6 +370,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
                         <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
                     <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
+                    <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">Demande à l’encadrement</a>
                 </div>
                 <?php
                 $dashShowCommunitySwitch = $dashCtxCommunity && count($communityMemberships ?? []) > 1;
@@ -537,10 +538,26 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                     $pct = isset($t['progress_pct']) ? max(0, min(100, (int) $t['progress_pct'])) : 0;
                                     $urgent = !empty($t['urgent']);
                                     $mandatory = !empty($t['mandatory']);
-                                    $expiresLabel = trim((string) ($t['expires_label'] ?? ''));
                                     $subtitle = trim((string) ($t['subtitle'] ?? ''));
-                                    $prioLabel = $mandatory ? 'Obligatoire' : ($urgent ? 'Prioritaire' : 'Standard');
+                                    $detailLine = trim((string) ($t['detail_line'] ?? ''));
+                                    $remainingLabel = trim((string) ($t['remaining_label'] ?? ''));
+                                    $deadlineLabel = trim((string) ($t['deadline_label'] ?? ''));
+                                    $deadlineKind = (string) ($t['deadline_kind'] ?? '');
+                                    $actionLabel = trim((string) ($t['action_label'] ?? ''));
+                                    if ($actionLabel === '') {
+                                        $actionLabel = 'Ouvrir';
+                                    }
+                                    if ($deadlineLabel === '') {
+                                        $deadlineLabel = 'Sans échéance';
+                                        $deadlineKind = 'none';
+                                    }
+                                    $prioLabel = $mandatory ? 'Obligatoire' : ($urgent ? 'Prioritaire' : 'Optionnelle');
                                     $prioClass = ($mandatory || $urgent) ? 'das-badge--rose' : 'das-badge--muted';
+                                    $deadlineHint = match ($deadlineKind) {
+                                        'expires' => 'À terminer avant',
+                                        'session' => 'Prochaine session',
+                                        default => null,
+                                    };
                                     ?>
                                     <tr>
                                         <td class="dash-train-sheet__num"><?= (int) ($ti + 1) ?></td>
@@ -548,6 +565,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                             <span class="dash-train-sheet__title"><?= htmlspecialchars((string) ($t['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php if ($subtitle !== ''): ?>
                                                 <span class="dash-train-sheet__meta"><?= htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                            <?php if ($detailLine !== ''): ?>
+                                                <span class="dash-train-sheet__detail"><?= htmlspecialchars($detailLine, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td><span class="das-badge <?= $prioClass ?>"><?= htmlspecialchars($prioLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
@@ -557,11 +577,19 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                                 <span class="dash-train-sheet__bar" role="progressbar" aria-valuenow="<?= $pct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement <?= $pct ?> pour cent">
                                                     <span style="width:<?= $pct ?>%"></span>
                                                 </span>
+                                                <?php if ($remainingLabel !== ''): ?>
+                                                    <span class="dash-train-sheet__remain"><?= htmlspecialchars($remainingLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
-                                        <td class="dash-train-sheet__muted"><?= $expiresLabel !== '' ? htmlspecialchars($expiresLabel, ENT_QUOTES, 'UTF-8') : '—' ?></td>
+                                        <td class="dash-train-sheet__muted">
+                                            <?php if ($deadlineHint !== null): ?>
+                                                <span class="dash-train-sheet__deadline-hint"><?= htmlspecialchars($deadlineHint, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php endif; ?>
+                                            <span><?= htmlspecialchars($deadlineLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
                                         <td class="text-right">
-                                            <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="das-btn">Ouvrir</a>
+                                            <a href="<?= htmlspecialchars((string) ($t['href'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>" class="das-btn"><?= htmlspecialchars($actionLabel, ENT_QUOTES, 'UTF-8') ?></a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -863,7 +891,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-train-sheet__table td {
     padding: 0.7rem 0.85rem;
     border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle;
+    vertical-align: top;
     text-align: left;
 }
 .dash-train-sheet__table thead th {
@@ -885,9 +913,12 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 .dash-train-sheet__num { color: #94a3b8; font-variant-numeric: tabular-nums; width: 2.5rem; }
 .dash-train-sheet__title { display: block; font-weight: 700; color: #0f172a; }
 .dash-train-sheet__meta { display: block; margin-top: 0.15rem; font-size: 0.7rem; color: #64748b; }
+.dash-train-sheet__detail { display: block; margin-top: 0.35rem; font-size: 0.72rem; line-height: 1.35; color: #334155; max-width: 22rem; }
 .dash-train-sheet__muted { color: #475569; white-space: nowrap; }
+.dash-train-sheet__deadline-hint { display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; margin-bottom: 0.1rem; }
 .dash-train-sheet__pct { display: flex; flex-direction: column; gap: 0.35rem; min-width: 7rem; }
 .dash-train-sheet__pct-val { font-size: 0.75rem; font-weight: 800; color: #047857; font-variant-numeric: tabular-nums; }
+.dash-train-sheet__remain { font-size: 0.65rem; color: #64748b; line-height: 1.3; }
 .dash-train-sheet__bar {
     display: block;
     height: 0.4rem;

@@ -237,6 +237,63 @@ class TrainingEnrollmentRepository
     }
 
     /**
+     * Nombre d’inscriptions rattachées à une communauté.
+     */
+    public function countForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM training_enrollments WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Taux de réussite pédagogique.
+     *
+     * Réussites = inscriptions au statut « terminé ».
+     * Base = inscriptions engagées : en cours, terminées ou non validées
+     * (exclut non démarrées, en attente, annulées, révoquées, expirées).
+     *
+     * @return array{
+     *   completed: int,
+     *   failed: int,
+     *   in_progress: int,
+     *   engaged: int,
+     *   rate_percent: float|null
+     * }
+     */
+    public function aggregateSuccessRate(?int $tenantId = null): array
+    {
+        $sql = 'SELECT
+                    COALESCE(SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END), 0) AS completed_count,
+                    COALESCE(SUM(CASE WHEN status = \'failed\' THEN 1 ELSE 0 END), 0) AS failed_count,
+                    COALESCE(SUM(CASE WHEN status = \'in_progress\' THEN 1 ELSE 0 END), 0) AS in_progress_count,
+                    COALESCE(SUM(CASE WHEN status IN (\'in_progress\', \'completed\', \'failed\') THEN 1 ELSE 0 END), 0) AS engaged_count
+                FROM training_enrollments';
+        $params = [];
+        if ($tenantId !== null && $tenantId > 0) {
+            $sql .= ' WHERE tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $completed = (int) ($row['completed_count'] ?? 0);
+        $failed = (int) ($row['failed_count'] ?? 0);
+        $inProgress = (int) ($row['in_progress_count'] ?? 0);
+        $engaged = (int) ($row['engaged_count'] ?? 0);
+
+        return [
+            'completed' => $completed,
+            'failed' => $failed,
+            'in_progress' => $inProgress,
+            'engaged' => $engaged,
+            'rate_percent' => $engaged > 0 ? round(100.0 * $completed / $engaged, 1) : null,
+        ];
+    }
+
+    /**
      * Inscriptions terminées pour export conformité (jointure certificat si présent).
      *
      * @return list<array<string, mixed>>

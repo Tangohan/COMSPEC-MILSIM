@@ -10,6 +10,7 @@ use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Services\Rbac\RbacService;
 use App\Support\OrganizationRoleLabels;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ class ElevationApprovalService
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private UnitRepository $unitRepository,
         private RbacService $rbacService,
+        private ?PersonnelStructureChangeNotificationService $structureChangeNotification = null,
     ) {
     }
 
@@ -206,6 +208,11 @@ class ElevationApprovalService
         $jobRoleId = (int) ($proposal['job_role_id'] ?? 0);
         $unitId = (int) ($proposal['unit_id'] ?? 0);
 
+        $beforeSnap = null;
+        if ($this->structureChangeNotification !== null) {
+            $beforeSnap = $this->structureChangeNotification->snapshot($tenantId, $targetUserId);
+        }
+
         try {
             if ($gradeId > 0) {
                 $allowed = array_map(
@@ -296,6 +303,21 @@ class ElevationApprovalService
                 'message' => 'Demande acceptée. Aucun changement de grade, rôle, fonction ou affectation n’était sélectionné — seuls le statut et la note ont été enregistrés.',
                 'applied' => [],
             ];
+        }
+
+        if ($this->structureChangeNotification !== null && $beforeSnap !== null) {
+            try {
+                $afterSnap = $this->structureChangeNotification->snapshot($tenantId, $targetUserId);
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $targetUserId,
+                    $actorUserId,
+                    $beforeSnap,
+                    $afterSnap
+                );
+            } catch (Throwable) {
+                // L’e-mail ne doit pas faire échouer l’application.
+            }
         }
 
         $labels = $this->proposalLabels($tenantId, $proposal);

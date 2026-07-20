@@ -22,6 +22,7 @@ use App\Repositories\UserRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
+use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
 use DateTimeImmutable;
@@ -43,6 +44,7 @@ class EffectifsWorkspaceController
         private TenantRepository $tenantRepository,
         private GradeRepository $gradeRepository,
         private ElevationApprovalService $elevationApprovalService,
+        private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
@@ -346,6 +348,7 @@ class EffectifsWorkspaceController
         }
 
         try {
+            $beforeSnap = $this->structureChangeNotification->snapshot($tenantId, $id);
             $this->personnelProfileRepository->ensureRecord($id);
             $this->personnelProfileRepository->update($id, [
                 'primary_unit_id' => $unitId > 0 ? $unitId : null,
@@ -371,6 +374,16 @@ class EffectifsWorkspaceController
                 'affectation',
                 $unitId > 0 ? ('unit:' . $unitId) : 'unit:none'
             );
+            try {
+                $this->structureChangeNotification->notifyFromSnapshots(
+                    $tenantId,
+                    $id,
+                    $actorId > 0 ? $actorId : null,
+                    $beforeSnap,
+                    $this->structureChangeNotification->snapshot($tenantId, $id)
+                );
+            } catch (\Throwable) {
+            }
         } catch (\Throwable) {
             Session::flash('error', 'Impossible d’enregistrer l’affectation. Réessayez ou ouvrez le dossier personnel.');
 

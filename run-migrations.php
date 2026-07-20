@@ -117,6 +117,7 @@ $bootstrapFiles = [
     'personnel_stage_bilans_migration.php',
     'personnel_profile_extended_details_migration.php',
     'hr_charter_lms_migration.php',
+    'recon_pv_tammuc_migration.php',
     'core_schema_extensions_migration.php',
     'forum_reporting_workflow_migration.php',
     'request_telemetry_migration.php',
@@ -192,6 +193,7 @@ run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_hr_charter_lms_migration($pdo);
+run_recon_pv_tammuc_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
 run_rbac_three_layer_migration($pdo);
 run_user_roles_migration($pdo);
@@ -2037,6 +2039,13 @@ try {
     $cooperationCatalogMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cooperation_catalog_and_announcements : ' . $e->getMessage() . "\n";
+}
+
+$cooperationAnnouncementsV2 = require $root . '/bootstrap/cooperation_announcement_events_v2_migration.php';
+try {
+    $cooperationAnnouncementsV2($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] cooperation_announcement_events_v2 : ' . $e->getMessage() . "\n";
 }
 
 require_once $root . '/bootstrap/autoload.php';

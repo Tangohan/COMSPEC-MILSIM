@@ -767,6 +767,15 @@
   background: #1e293b;
 }
 
+.tc-btn-primary:disabled,
+.tc-btn-primary[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  filter: none;
+}
+
 .tc-btn-emerald {
   background: linear-gradient(135deg, #059669, #10b981);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);

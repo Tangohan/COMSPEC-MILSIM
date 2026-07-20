@@ -164,7 +164,8 @@ class ForumController
             }
         }
         if ($announcementsCategory) {
-            $pinnedAnnouncements = $this->topicRepository->getPinnedInCategory((int) $announcementsCategory['id'], $forumDataTenantId);
+            $announceCategoryIds = $this->categoryRepository->topicCategoryIdsFor($announcementsCategory, $forumDataTenantId);
+            $pinnedAnnouncements = $this->topicRepository->getPinnedInCategory($announceCategoryIds, $forumDataTenantId);
             $pinnedAnnouncements = $this->profilePublicIdentityService->enrichTopicRowsWithPublicNames(
                 $pinnedAnnouncements,
                 $this->forumAuthorIdentityRepository,
