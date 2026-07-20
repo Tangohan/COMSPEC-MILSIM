@@ -408,6 +408,97 @@ class EffectifsWorkspaceController
         return Response::redirect($this->redirectBackToRoster($request));
     }
 
+    /** Affectation d’unité groupée depuis la sélection multiple du tableur (bornée à 200 membres). */
+    public function bulkAssignment(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les affectations.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $unitId = (int) $request->input('unit_id', 0);
+        $rawIds = $request->input('user_ids', []);
+        $ids = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        $ids = array_slice($ids, 0, 200);
+
+        if ($ids === []) {
+            Session::flash('error', 'Sélectionnez au moins un membre.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+
+        $unitName = '';
+        if ($unitId > 0) {
+            $unit = $this->unitRepository->findById($unitId, $tenantId);
+            if (!$unit) {
+                Session::flash('error', 'Unité introuvable dans cette communauté.');
+
+                return Response::redirect($this->redirectBackToRoster($request));
+            }
+            $unitName = trim((string) ($unit['name'] ?? ''));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $updated = 0;
+        foreach ($ids as $id) {
+            $user = $this->userRepository->findById($id, $tenantId);
+            if (!$user) {
+                continue;
+            }
+            try {
+                $this->personnelProfileRepository->ensureRecord($id);
+                $this->personnelProfileRepository->update($id, [
+                    'primary_unit_id' => $unitId > 0 ? $unitId : null,
+                ]);
+                $roleName = trim((string) ($user['display_name'] ?? ''));
+                $profile = $this->personnelProfileRepository->getByUserId($id);
+                if ($profile) {
+                    $fromProfile = trim((string) ($profile['primary_role'] ?? ''));
+                    if ($fromProfile !== '') {
+                        $roleName = $fromProfile;
+                    }
+                }
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
+                    $id,
+                    $unitId > 0 ? $unitId : null,
+                    $roleName !== '' ? $roleName : 'Membre'
+                );
+                $this->adminAuditService->logUserUpdated(
+                    $tenantId,
+                    $actorId,
+                    $id,
+                    'affectation',
+                    $unitId > 0 ? ('unit:' . $unitId) : 'unit:none'
+                );
+                $updated++;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        Session::flash(
+            'success',
+            $updated > 0
+                ? ($updated . ' membre' . ($updated > 1 ? 's' : '') . ' affecté' . ($updated > 1 ? 's' : '')
+                    . ($unitName !== '' ? ' à ' . $unitName : ' — affectation retirée') . '.')
+                : 'Aucune affectation n’a pu être mise à jour.'
+        );
+
+        return Response::redirect($this->redirectBackToRoster($request));
+    }
+
     public function quickStatus(Request $request, array $params = []): Response
     {
         $denied = $this->denyUnlessAccess();

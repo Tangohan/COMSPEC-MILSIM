@@ -218,24 +218,36 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
             <?php endif; ?>
         </div>
     <?php else: ?>
-        <?php if ($canManageStatus): ?>
-        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" id="eff-bulk-form" data-eff-bulk-bar style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.6rem;background:#f8fafc">
+        <?php $canBulkAny = $canManageStatus || $canManageAssignments; ?>
+        <?php if ($canBulkAny): ?>
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" id="eff-bulk-form" data-eff-bulk-bar style="display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.6rem;background:#f8fafc">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
             <span data-eff-bulk-count style="font-size:12px;font-weight:700;color:#475569">0 sélectionné(s)</span>
+            <?php if ($canManageStatus): ?>
             <select name="status" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px">
                 <option value="active">Passer actif</option>
                 <option value="inactive">Passer inactif</option>
                 <option value="pending_verification">E-mail à vérifier</option>
             </select>
-            <button type="submit" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Appliquer</button>
+            <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Appliquer le statut</button>
+            <?php endif; ?>
+            <?php if ($canManageAssignments): ?>
+            <select name="unit_id" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px;max-width:14rem">
+                <option value="0">Retirer l’affectation</option>
+                <?php foreach ($units as $u): ?>
+                    <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= htmlspecialchars(trim((string) ($u['assignment_path'] ?? $u['name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Affecter l’unité</button>
+            <?php endif; ?>
         </form>
         <?php endif; ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des effectifs" tabindex="0">
             <table class="eff-sheets__table">
                 <thead>
                     <tr>
-                        <?php if ($canManageStatus): ?>
+                        <?php if ($canBulkAny): ?>
                         <th style="width:2rem"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
                         <?php endif; ?>
                         <th>Identité</th>
@@ -295,7 +307,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                     );
                     ?>
                     <tr>
-                        <?php if ($canManageStatus): ?>
+                        <?php if ($canBulkAny): ?>
                         <td><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
                         <?php endif; ?>
                         <td>
@@ -446,6 +458,6 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
         </div>
     <?php endif; ?>
 </div>
-<?php if ($canManageStatus && $rows !== []): ?>
+<?php if ($canBulkAny && $rows !== []): ?>
 <script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-bulk-actions.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <?php endif; ?>
