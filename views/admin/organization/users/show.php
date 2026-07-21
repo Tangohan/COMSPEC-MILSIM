@@ -229,14 +229,16 @@ $levelBadge = static function (string $level): array {
                         <dt class="text-xs font-semibold text-slate-500">Indicatif (compte)</dt>
                         <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($user['callsign'] ?? '—') ?></dd>
                     </div>
+                    <?php if ($showPlatformDiagnostics): ?>
                     <div>
-                        <dt class="text-xs font-semibold text-slate-500">Prénom (état civil)</dt>
+                        <dt class="text-xs font-semibold text-slate-500">Prénom (état civil) <span class="font-normal normal-case text-slate-400">— vue plateforme</span></dt>
                         <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($userProfile['first_name'] ?? '—') ?></dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-semibold text-slate-500">Nom (état civil)</dt>
+                        <dt class="text-xs font-semibold text-slate-500">Nom (état civil) <span class="font-normal normal-case text-slate-400">— vue plateforme</span></dt>
                         <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($userProfile['last_name'] ?? '—') ?></dd>
                     </div>
+                    <?php endif; ?>
                     <div>
                         <dt class="text-xs font-semibold text-slate-500">Rôles dans l’unité</dt>
                         <dd class="mt-0.5 text-slate-900">
