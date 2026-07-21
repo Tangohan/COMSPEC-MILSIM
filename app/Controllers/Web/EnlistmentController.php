@@ -13,6 +13,7 @@ use App\Repositories\EnlistmentTimelineRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\RecruitmentDiscordQuestionRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\RecruitmentPresetRepository;
 use App\Repositories\TenantBrandingRepository;
@@ -54,6 +55,7 @@ class EnlistmentController
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private UnitRepository $unitRepository,
         private TenantBrandingRepository $tenantBrandingRepository,
+        private RecruitmentDiscordQuestionRepository $recruitmentDiscordQuestionRepository,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -79,7 +81,8 @@ class EnlistmentController
             return Response::view('enlistment.error', ['message' => 'Le recrutement est verrouillé pour cette communauté.', 'enlistmentRetryUrl' => $this->enlistmentFormUrl($tenant)]);
         }
 
-        $mode = ($communityConfig['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
+        $registrationModeRaw = (string) ($communityConfig['registration_mode'] ?? 'milsim');
+        $mode = in_array($registrationModeRaw, ['simple', 'discord'], true) ? $registrationModeRaw : 'milsim';
         $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
         $formAction = $this->enlistmentActionUrl($tenant);
         $targetTenantId = (int) $tenant['id'];
@@ -153,6 +156,15 @@ class EnlistmentController
             ]));
         }
 
+        if ($mode === 'discord') {
+            return Response::view('layout.main', array_merge($viewData, [
+                'content' => 'enlistment.discord',
+                'title' => 'Rejoindre sur Discord — ' . $tenantName,
+                'discordInviteUrl' => trim((string) ($communityConfig['contact_discord_url'] ?? '')),
+                'discordQuestions' => $this->recruitmentDiscordQuestionRepository->listForTenant($targetTenantId, true),
+            ]));
+        }
+
         return Response::view('enlistment', array_merge($viewData, [
             'milsimPack' => EnlistmentMilsimPackService::forCommunity($communityConfig),
         ]));
@@ -184,6 +196,10 @@ class EnlistmentController
             Session::flash('enlistment_error', 'Le recrutement est verrouillé pour cette communauté.');
 
             return Response::redirect(url('enlistment/error'));
+        }
+
+        if ((string) ($communityConfig['registration_mode'] ?? 'milsim') === 'discord') {
+            return $this->storeDiscordEnlistment($request, $tenant);
         }
 
         $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $communityConfig['require_ai_ack'] : true;
@@ -493,6 +509,94 @@ class EnlistmentController
         );
 
         $this->notifyStaffNewEnlistment((int) $tenant['id'], $tenant, $enlistmentId, $payload);
+
+        return Response::redirect($this->enlistmentSuccessUrl($tenant));
+    }
+
+    /**
+     * Dépôt de candidature via le formulaire de recrutement Discord (mode registration_mode
+     * = discord) : pseudo Discord + réponses aux questions custom du tenant, sans le dossier
+     * MilSim complet.
+     *
+     * @param array<string, mixed> $tenant
+     */
+    private function storeDiscordEnlistment(Request $request, array $tenant): Response
+    {
+        $targetTenantId = (int) $tenant['id'];
+
+        $discordPseudo = trim((string) $request->input('discord_pseudo'));
+        $displayName = trim((string) $request->input('display_name'));
+        $email = trim((string) $request->input('email'));
+
+        if ($discordPseudo === '' || $displayName === '') {
+            Session::flash('enlistment_error', 'Merci d’indiquer votre pseudo Discord et votre nom.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            Session::flash('enlistment_error', 'Merci d’indiquer une adresse email valide (pour le suivi de votre candidature).');
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        if ($this->indicatorBlocklist->isEmailBlockedForTenant($targetTenantId, strtolower($email))) {
+            Session::flash('enlistment_error', 'Cette adresse ne peut pas être utilisée pour une candidature dans cette communauté pour le moment.');
+            Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant));
+
+            return Response::redirect(url('enlistment/error'));
+        }
+
+        $questions = $this->recruitmentDiscordQuestionRepository->listForTenant($targetTenantId, true);
+        $answers = [];
+        foreach ($questions as $q) {
+            $field = 'discord_q_' . $q['id'];
+            $raw = trim((string) $request->input($field, ''));
+            if ($q['required'] && $raw === '') {
+                Session::flash('enlistment_error', 'Merci de répondre à toutes les questions obligatoires (« ' . $q['label'] . ' »).');
+
+                return Response::redirect(url('enlistment/error'));
+            }
+            if ($raw === '') {
+                continue;
+            }
+            $answers[] = [
+                'question_id' => $q['id'],
+                'label' => $q['label'],
+                'type' => $q['type'],
+                'answer' => mb_substr($raw, 0, 4000),
+            ];
+        }
+
+        $payload = [
+            'first_name' => $displayName,
+            'last_name' => '—',
+            'email' => $email,
+            'callsign' => $discordPseudo,
+            'submitted_via' => 'guest',
+            'form_channel' => 'discord',
+            'discord_pseudo' => $discordPseudo,
+            'discord_answers' => $answers,
+        ];
+
+        try {
+            $enlistmentId = $this->enlistmentRepository->create($targetTenantId, $payload);
+        } catch (\Throwable) {
+            Session::flash('enlistment_error', 'Une erreur technique a empêché l\'enregistrement de votre candidature. Veuillez réessayer ou contacter le support.');
+
+            return Response::redirect(url('enlistment/error'));
+        }
+
+        $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, null, 'guest');
+        $this->analyticsEventService->record(
+            $targetTenantId,
+            null,
+            AnalyticsEventCategory::RECRUITMENT,
+            AnalyticsEventName::ENLISTMENT_SUBMITTED,
+            AnalyticsSubjectType::TENANT,
+            $targetTenantId,
+            null,
+            ['channel' => 'discord']
+        );
+        $this->notifyStaffNewEnlistment($targetTenantId, $tenant, $enlistmentId, $payload);
 
         return Response::redirect($this->enlistmentSuccessUrl($tenant));
     }

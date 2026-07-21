@@ -513,6 +513,51 @@ $tailwindHead = (string) ob_get_clean();
                 <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
 
+            <?php
+            $portalIsDiscordChannel = trim((string) ($enlistment['form_channel'] ?? 'milsim')) === 'discord';
+            if ($portalIsDiscordChannel):
+                $portalDiscordAnswersRaw = $enlistment['discord_answers_json'] ?? null;
+                $portalDiscordAnswers = [];
+                if (is_string($portalDiscordAnswersRaw) && $portalDiscordAnswersRaw !== '') {
+                    $decodedPortalAnswers = json_decode($portalDiscordAnswersRaw, true);
+                    $portalDiscordAnswers = is_array($decodedPortalAnswers) ? $decodedPortalAnswers : [];
+                } elseif (is_array($portalDiscordAnswersRaw)) {
+                    $portalDiscordAnswers = $portalDiscordAnswersRaw;
+                }
+                $portalDiscordInterviewAt = trim((string) ($enlistment['discord_interview_at'] ?? ''));
+            ?>
+            <section class="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fiche-discord">
+                <div class="border-b border-indigo-100 bg-indigo-50 px-5 py-4 sm:px-6">
+                    <h2 id="fiche-discord" class="text-[11px] font-bold uppercase tracking-[0.28em] text-indigo-900/90">Votre fiche de candidature Discord</h2>
+                </div>
+                <div class="space-y-4 p-5 sm:p-6">
+                    <?php if ($portalDiscordInterviewAt !== ''): ?>
+                    <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-800">Rendez-vous Discord</p>
+                        <p class="mt-1 text-sm font-semibold text-indigo-950"><?= htmlspecialchars(date('d/m/Y à H:i', strtotime($portalDiscordInterviewAt) ?: time()), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <?php else: ?>
+                    <p class="text-sm text-slate-600">Aucun rendez-vous Discord planifié pour le moment — l’équipe recrutement vous contactera.</p>
+                    <?php endif; ?>
+
+                    <?php if ($portalDiscordAnswers !== []): ?>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-2">Vos réponses</p>
+                        <dl class="space-y-3">
+                            <?php foreach ($portalDiscordAnswers as $portalAnswerRow): ?>
+                                <?php if (!is_array($portalAnswerRow)) { continue; } ?>
+                                <div>
+                                    <dt class="text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($portalAnswerRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                                    <dd class="mt-0.5 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap"><?= htmlspecialchars((string) ($portalAnswerRow['answer'] ?? '—') ?: '—', ENT_QUOTES, 'UTF-8') ?></dd>
+                                </div>
+                            <?php endforeach; ?>
+                        </dl>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <?php if ($portalRetroEligible || $candidateRetroFeedback): ?>
             <section class="overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="bilan-processus">
                 <div class="border-b border-sky-100 bg-sky-50 px-5 py-4 sm:px-6">

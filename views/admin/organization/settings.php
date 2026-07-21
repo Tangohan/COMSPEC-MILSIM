@@ -36,7 +36,8 @@ $primaryColor = trim((string) ($b['primary_color'] ?? '')) ?: '#059669';
 $accentColor = trim((string) ($b['accent_color'] ?? '')) ?: '#0f172a';
 
 $pm = is_array($c['public_modules'] ?? null) ? $c['public_modules'] : [];
-$registrationMode = ($c['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
+$registrationModeRaw = (string) ($c['registration_mode'] ?? 'milsim');
+$registrationMode = in_array($registrationModeRaw, ['simple', 'discord'], true) ? $registrationModeRaw : 'milsim';
 $locale = strtolower((string) ($c['default_locale'] ?? 'fr'));
 if ($locale === 'fr-fr') {
     $locale = 'fr';
@@ -420,7 +421,13 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
                         <select id="registration_mode" name="registration_mode" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
                             <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé)</option>
                             <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Mode simple (champs réduits)</option>
+                            <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo + questions custom)</option>
                         </select>
+                        <?php if ($registrationMode === 'discord'): ?>
+                        <p class="mt-1.5 text-xs text-slate-500">
+                            <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-indigo-700 underline">Configurer les questions du formulaire Discord →</a>
+                        </p>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="space-y-3">
