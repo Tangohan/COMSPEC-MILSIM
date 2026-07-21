@@ -74,8 +74,6 @@ private _json = format [
 
 "COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
 
-private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
-_log = _log + "[FLIGHT MANIFEST] Sent: " + _callsign + "\n";
-missionNamespace setVariable ["COMSPEC_Log", _log, true];
+[format ["[FLIGHT MANIFEST] Sent: %1", _callsign]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 closeDialog 0;

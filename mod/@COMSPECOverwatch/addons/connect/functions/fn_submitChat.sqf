@@ -27,7 +27,8 @@ private _formatted = [name player, _channel, _priority, _msg, _kind] call comspe
 
 private _console = _display displayCtrl 1401;
 private _consoleText = ctrlText _console;
-_consoleText = _consoleText + _formatted + "\n";
+private _nl = toString [10];
+_consoleText = _consoleText + _formatted + _nl;
 _console ctrlSetText _consoleText;
 
 private _radioLog = missionNamespace getVariable ["COMSPEC_RadioReplay", []];
@@ -37,12 +38,7 @@ if (count _radioLog > 200) then {
 };
 missionNamespace setVariable ["COMSPEC_RadioReplay", _radioLog, true];
 
-private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
-_log = _log + _formatted + "\n";
-missionNamespace setVariable ["COMSPEC_Log", _log, true];
-
-private _logCtrl = _display displayCtrl 1402;
-if (!isNull _logCtrl) then { _logCtrl ctrlSetText _log; };
+[_formatted] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 [player, "CHAT", _formatted, "", "INFANTRY", 0.7] call comspec_overwatch_connect_fnc_sendIntel;
 ["OnCommsMessage", createHashMapFromArray [["channel", _channel], ["priority", _priority], ["kind", _kind], ["text", _msg]]] call comspec_overwatch_connect_fnc_publishEvent;

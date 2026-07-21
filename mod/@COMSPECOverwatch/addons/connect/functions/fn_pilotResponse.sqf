@@ -13,7 +13,5 @@ if (_callsign == "") then { _callsign = "PILOT"; };
 private _s = toUpper (_status param [0, ""]);
 if (_s in ["ROGER","INBOUND","ENGAGED","RTB"]) then {
     "COMSPECExtension" callExtension ["PilotResponse", [_callsign, _s]];
-    private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
-    _log = _log + "[PILOT] " + _callsign + " -> " + _s + "\n";
-    missionNamespace setVariable ["COMSPEC_Log", _log, true];
+    [format ["[PILOT] %1 -> %2", _callsign, _s]] call comspec_overwatch_connect_fnc_appendLinkLog;
 };

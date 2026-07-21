@@ -22,7 +22,7 @@ if (_prefix != "OK") exitWith {
 };
 
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { "" };
-private _lines = _payload splitString "\n";
+private _lines = _payload splitString (toString [10]);
 private _slides = [];
 {
     if (_x != "") then {

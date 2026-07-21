@@ -41,6 +41,8 @@ private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 
 if (_prefix != "OK") exitWith {
     private _err = if (count _parts >= 2) then { _parts select 1 } else { _raw };
+    if (_raw isEqualTo "") then { _err = "extension_empty"; };
+    if (_err isEqualTo "") then { _err = "empty"; };
     private _msg = switch (_err) do {
         case "invalid": { "Adresse ou code invalide." };
         case "code_invalid_or_expired": { "Code invalide, déjà utilisé ou expiré — générez-en un nouveau sur Athena." };
@@ -51,6 +53,10 @@ if (_prefix != "OK") exitWith {
         case "invalid_response": { "Réponse inattendue d’Athena." };
         case "http_503": { "Liaison pas encore activée sur le portail (mise à jour serveur requise). Réessayez plus tard." };
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
+        case "extension_empty";
+        case "empty": {
+            "Extension non chargée (DLL invalide ~32 Ko). Remplacez COMSPECExtension_x64.dll par la version Native AOT (~5 Mo) puis relancez Arma."
+        };
         default {
             if (_err find "http_" == 0) then {
                 format ["Erreur serveur (%1).", _err select [5, (count _err) - 5]]
@@ -61,6 +67,9 @@ if (_prefix != "OK") exitWith {
     };
     [_msg, "#ff8a7a"] call _setStatus;
     [format ["[Athena] Échec liaison compte : %1", _msg]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    if (!(_raw isEqualTo "")) then {
+        [format ["[Athena] Réponse brute extension : %1", _raw]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    };
     ["COMSPEC_Warning", [_msg]] call BIS_fnc_showNotification;
 };
 
