@@ -121,6 +121,22 @@ class AtakApiController
         // dérivé du compte — jamais l'état civil, jamais réutilisable pour retrouver un autre joueur.
         $atakId = $callsign !== '' ? $callsign : sprintf('U-%05d', $userId);
 
+        // Activité réelle (temps de jeu Arma cumulé + dernier rapport) : absente si la table n'est
+        // pas encore migrée ou si le joueur n'a jamais été rapporté — jamais de valeur inventée.
+        $playtimeHours = null;
+        $lastSeenAt = null;
+        $summary = $this->armaPlaytimeRepository->getSummaryForUser($tenantId, $userId);
+        if ($summary !== null) {
+            $totalSeconds = (int) ($summary['total_seconds'] ?? 0);
+            $playtimeHours = round($totalSeconds / 3600, 1);
+            // Formaté ici (pas côté SQF, qui n'a pas de parseur de date fiable).
+            $rawLastSeen = (string) ($summary['last_report_at'] ?? '');
+            if ($rawLastSeen !== '') {
+                $ts = strtotime($rawLastSeen);
+                $lastSeenAt = $ts !== false ? date('d/m H:i', $ts) : null;
+            }
+        }
+
         return Response::json([
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
@@ -128,6 +144,8 @@ class AtakApiController
             'avatar_url' => (string) ($user['avatar_url'] ?? ''),
             'unit_name' => $unitName,
             'atak_id' => $atakId,
+            'playtime_hours' => $playtimeHours,
+            'last_seen_at' => $lastSeenAt,
         ]);
     }
 

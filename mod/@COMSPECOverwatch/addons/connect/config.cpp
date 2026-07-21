@@ -84,6 +84,7 @@ class CfgFunctions {
             class showDebugInfo {};
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
+            class showDeviceView {};
         };
     };
 };
@@ -121,4 +122,5 @@ class CfgNotifications {
 #include "display_briefing.hpp"
 #include "display_phone_connect.hpp"
 #include "display_account_link.hpp"
+#include "display_device.hpp"
 #include "CfgEventHandlers.hpp"

@@ -43,6 +43,15 @@ if (!hasInterface) exitWith {};
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
+    // Action "Ma tablette Athena" : vue superposant le statut/profil sur l'image du terminal
+    // physique, en complément du hub textuel existant.
+    player addAction [
+        "<t color='#7fffd4'>Ma tablette Athena</t>",
+        { if (isNull (findDisplay 9973)) then { createDialog "COMSPEC_Device_Dialog"; }; },
+        nil, 5.8, false, true, "",
+        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
+    ];
+
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, _interval] call CBA_fnc_addPerFrameHandler;
 

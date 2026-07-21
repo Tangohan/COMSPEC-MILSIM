@@ -650,12 +650,21 @@ public static class Extension
             var avatarUrl = root.TryGetProperty("avatar_url", out var au) ? (au.GetString() ?? "") : "";
             var unitName = root.TryGetProperty("unit_name", out var un) ? (un.GetString() ?? "") : "";
             var atakId = root.TryGetProperty("atak_id", out var ai) ? (ai.GetString() ?? "") : "";
+            // playtime_hours/last_seen_at sont explicitement null en JSON quand la donnée n'est pas
+            // trackée côté serveur (table absente, joueur jamais rapporté) — jamais une valeur
+            // inventée : la chaîne reste vide et le SQF affiche un placeholder explicite.
+            var playtimeHours = root.TryGetProperty("playtime_hours", out var ph) && ph.ValueKind == JsonValueKind.Number
+                ? ph.GetDouble().ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                : "";
+            var lastSeenAt = root.TryGetProperty("last_seen_at", out var ls) && ls.ValueKind == JsonValueKind.String
+                ? (ls.GetString() ?? "")
+                : "";
             displayName = displayName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             unitName = unitName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             atakId = atakId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             if (displayName.Length == 0 && callsign.Length == 0) return "";
-            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId;
+            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId + "\t" + playtimeHours + "\t" + lastSeenAt;
         }
         catch { return ""; }
     }
