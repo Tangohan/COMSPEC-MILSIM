@@ -189,23 +189,23 @@ class AtakApiController
         }
         $row = $this->gameLinkRepository->findValidByCode($code);
         if ($row === null) {
-            $latest = $this->gameLinkRepository->findLatestByCode($code);
-            if (is_array($latest)) {
-                if (!empty($latest['redeemed_at'])) {
-                    return Response::json([
-                        'error' => 'code_already_used',
-                        'message' => 'Ce code a déjà été utilisé. Générez-en un nouveau depuis Athena.',
-                    ], 404);
-                }
+            $reason = $this->gameLinkRepository->explainInvalidCode($code);
+            if ($reason === 'already_used') {
+                return Response::json([
+                    'error' => 'code_already_used',
+                    'message' => 'Ce code a déjà été utilisé. Générez-en un nouveau depuis Athena.',
+                ], 404);
+            }
+            if ($reason === 'expired') {
                 return Response::json([
                     'error' => 'code_expired',
-                    'message' => 'Ce code a expiré. Générez-en un nouveau depuis Athena (valable 15 minutes).',
+                    'message' => 'Ce code a expiré. Générez-en un nouveau depuis Athena (valable 30 minutes).',
                 ], 404);
             }
 
             return Response::json([
                 'error' => 'code_invalid_or_expired',
-                'message' => 'Ce code est invalide, déjà utilisé ou expiré. Générez-en un nouveau depuis Athena.',
+                'message' => 'Ce code est inconnu. Générez-en un nouveau depuis Athena, puis saisissez-le immédiatement en jeu.',
             ], 404);
         }
         $tenantId = (int) ($row['tenant_id'] ?? 0);

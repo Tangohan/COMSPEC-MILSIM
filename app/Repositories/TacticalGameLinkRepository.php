@@ -12,7 +12,7 @@ use PDO;
  */
 class TacticalGameLinkRepository
 {
-    private const TTL_MINUTES = 15;
+    private const TTL_MINUTES = 30;
 
     private PDO $pdo;
 
@@ -109,10 +109,16 @@ class TacticalGameLinkRepository
         if (!$this->tableExists() || trim($code) === '') {
             return null;
         }
+        // Validité basée sur created_at (posé avec NOW() à l’insert), pas sur expires_at
+        // seul — expires_at a pu être écrit avec l’horloge PHP (fuseau ≠ MySQL) et
+        // apparaître « déjà expiré » dès la création.
+        $ttl = (int) self::TTL_MINUTES;
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM tactical_game_link_codes
-             WHERE code = ? AND expires_at > NOW() AND redeemed_at IS NULL
-             LIMIT 1'
+            "SELECT * FROM tactical_game_link_codes
+             WHERE code = ?
+               AND redeemed_at IS NULL
+               AND created_at >= DATE_SUB(NOW(), INTERVAL {$ttl} MINUTE)
+             LIMIT 1"
         );
         $stmt->execute([strtoupper(trim($code))]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -137,6 +143,21 @@ class TacticalGameLinkRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /**
+     * @return 'already_used'|'expired'|'unknown'
+     */
+    public function explainInvalidCode(string $code): string
+    {
+        $latest = $this->findLatestByCode($code);
+        if (!is_array($latest)) {
+            return 'unknown';
+        }
+        if (!empty($latest['redeemed_at'])) {
+            return 'already_used';
+        }
+        return 'expired';
     }
 
     public function markRedeemed(int $id, ?string $steamUid = null): void

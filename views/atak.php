@@ -150,7 +150,7 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Connexion en jeu</h3>
           <span class="atak-pill atak-pill--ok">15 min · usage unique</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 15 minutes et ne peut être utilisé qu’une fois.</p>
+        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
