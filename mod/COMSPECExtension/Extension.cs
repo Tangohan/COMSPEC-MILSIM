@@ -278,8 +278,14 @@ public static class Extension
                 var url = _baseUrl + "/api/atak/phone-pairing";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
                 var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
-                resp.EnsureSuccessStatusCode();
                 var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
                 var simplified = SimplifyPhonePairingJson(respBody);
                 if (simplified.Length == 0) return "ERR|invalid_response";
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
@@ -294,7 +300,38 @@ public static class Extension
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
 
-                var bytes = HttpClient.GetByteArrayAsync(imageUrl, token).GetAwaiter().GetResult();
+                // Accepte les URL relatives renvoyées par l’API (ex. /api/atak/.../qr.png).
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
+                    && !string.IsNullOrEmpty(_baseUrl)
+                    && imageUrl.StartsWith('/'))
+                {
+                    imageUrl = _baseUrl.TrimEnd('/') + imageUrl;
+                }
+
+                HttpResponseMessage imgResp;
+                try
+                {
+                    imgResp = HttpClient.GetAsync(imageUrl, token).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    return "ERR|timeout";
+                }
+                catch (HttpRequestException)
+                {
+                    return "ERR|network";
+                }
+
+                if (!imgResp.IsSuccessStatusCode)
+                {
+                    var code = (int)imgResp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    return "ERR|http_" + code;
+                }
+
+                var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                if (bytes.Length == 0) return "ERR|empty_image";
 
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
@@ -644,9 +681,9 @@ public static class Extension
             {
                 var id = args[0] ?? "";
                 var line = args[1] ?? "";
-                var checked = (args[2] ?? "true").ToLowerInvariant() == "true";
+                var isChecked = (args[2] ?? "true").ToLowerInvariant() == "true";
                 var checkedBy = args[3] ?? "Pilot";
-                var payload = "{\"line\":\"" + EscapeJson(line) + "\",\"checked\":" + (checked ? "true" : "false") + ",\"checkedBy\":\"" + EscapeJson(checkedBy) + "\"}";
+                var payload = "{\"line\":\"" + EscapeJson(line) + "\",\"checked\":" + (isChecked ? "true" : "false") + ",\"checkedBy\":\"" + EscapeJson(checkedBy) + "\"}";
                 EnqueueOrSend(_baseUrl + "/api/cas/" + Uri.EscapeDataString(id) + "/check-line", payload);
                 return;
             }

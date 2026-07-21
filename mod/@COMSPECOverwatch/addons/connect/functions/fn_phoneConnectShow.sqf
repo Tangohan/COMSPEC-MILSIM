@@ -18,14 +18,23 @@ private _display = findDisplay 9971;
 if (isNull _display) exitWith {};
 
 private _ctrlCode = _display displayCtrl 9022;
-if (!isNull _ctrlCode) then { _ctrlCode ctrlSetText _code; };
+if (!isNull _ctrlCode) then {
+    _ctrlCode ctrlSetStructuredText parseText format [
+        "<t align='center' size='1.35' font='RobotoCondensedBold'>%1</t>",
+        _code
+    ];
+};
 
 private _ctrlUrl = _display displayCtrl 9023;
-if (!isNull _ctrlUrl) then { _ctrlUrl ctrlSetText _connectUrl; };
+if (!isNull _ctrlUrl) then {
+    _ctrlUrl ctrlSetStructuredText parseText format [
+        "<t align='center' size='0.55'>%1</t>",
+        _connectUrl
+    ];
+};
 
-// Réutilise downloadBriefingSlide : un QR est téléchargé/caché exactement comme une diapositive
-// (fausse "diapositive" [id, titre, ordre, imageUrl] avec un id fixe "phoneqr").
-private _qrPath = [[0, "phoneqr", 0, _qrImageUrl]] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
+// Réutilise downloadBriefingSlide : cache key = id "phoneqr" (évite collision avec une vraie diapo id 0).
+private _qrPath = [["phoneqr", "QR", 0, _qrImageUrl]] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
 
 if (isNull (findDisplay 9971)) exitWith {}; // le joueur a pu fermer le dialog pendant le téléchargement
 

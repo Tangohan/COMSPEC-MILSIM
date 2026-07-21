@@ -3,7 +3,7 @@ if (!hasInterface) exitWith {};
 private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
 if (_url == "") exitWith {};
 
-private _result = "COMSPECExtension" callExtension ["Connect", [_url]];
+private _result = ["COMSPECExtension" callExtension ["Connect", [_url]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };
@@ -11,7 +11,7 @@ private _payload = if (count _parts >= 2) then { _parts select 1 } else { _resul
 private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
 if (_prefix == "OK") then {
     _log = _log + "[SERVER] " + _payload + "\n";
-    private _ipResult = "COMSPECExtension" callExtension ["GetClientIp", []];
+    private _ipResult = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
     private _ipParts = _ipResult splitString "|";
     private _ipPrefix = if (count _ipParts >= 1) then { _ipParts select 0 } else { "" };
     private _userIp = if (count _ipParts >= 2) then { _ipParts select 1 } else { "—" };

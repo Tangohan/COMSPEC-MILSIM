@@ -31,7 +31,7 @@ if (!hasInterface) exitWith {};
     ];
 
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
-    [comspec_overwatch_connect_fnc_updatePosition, _interval] call CBA_fnc_addPerFrameHandler;
+    [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, _interval] call CBA_fnc_addPerFrameHandler;
 
     // CAS polling: every 10s check for CAS assigned to this callsign
     private _casPollInterval = 10;
@@ -40,7 +40,7 @@ if (!hasInterface) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         private _callsign = missionNamespace getVariable ["COMSPEC_Callsign", name player];
         if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
-        private _raw = "COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]];
+        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
         if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
         private _payload = _raw select [3, count _raw - 3];
         private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
