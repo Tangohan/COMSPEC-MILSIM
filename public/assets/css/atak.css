@@ -14,6 +14,7 @@
   --atak-left-w: 320px;
   --atak-right-w: 340px;
   --atak-header-h: 56px;
+  --atak-os-strip-h: 36px;
 }
 
 * { box-sizing: border-box; }
@@ -208,6 +209,22 @@ body.atak-page {
   box-shadow: none;
 }
 
+.atak-header-tagline {
+  display: none;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atak-muted);
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+@media (min-width: 1100px) {
+  .atak-header-tagline { display: inline-block; }
+}
+
 .atak-btn-account {
   background: var(--atak-panel-alt);
   border: 1px solid var(--atak-border);
@@ -221,6 +238,44 @@ body.atak-page {
   background: var(--atak-border);
   color: var(--atak-accent);
 }
+.atak-btn-game-link {
+  background: var(--atak-accent);
+  border: 1px solid var(--atak-accent);
+  color: #0a1210;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.32rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.atak-btn-game-link:hover {
+  filter: brightness(1.08);
+}
+
+.atak-os-strip {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1.25rem;
+  min-height: var(--atak-os-strip-h);
+  padding: 0.35rem 1rem;
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.08), transparent 55%);
+  border-bottom: 1px solid var(--atak-border);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+.atak-os-strip-lead {
+  margin: 0;
+  color: var(--atak-text);
+}
+.atak-os-strip-hint {
+  margin: 0;
+  color: var(--atak-muted);
+}
+.atak-os-strip strong { color: var(--atak-accent); font-weight: 700; }
 
 .atak-account-overlay {
   display: none;
@@ -296,6 +351,30 @@ body.atak-page {
 }
 .atak-account-panel-body a:hover { text-decoration: underline; }
 
+.atak-account-section--game-link {
+  padding: 0.85rem;
+  margin: 0 -0.15rem 1.35rem;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(52, 211, 153, 0.12), rgba(0, 0, 0, 0.2));
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08);
+}
+.atak-account-section--pulse {
+  animation: atak-game-link-pulse 1.4s ease-in-out 2;
+}
+@keyframes atak-game-link-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08); }
+  50% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.55); }
+}
+.atak-game-link-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.atak-game-link-head .atak-account-section-title { margin: 0; color: var(--atak-accent); }
+
 .atak-game-link-hint {
   font-size: 0.8rem;
   color: var(--atak-muted);
@@ -304,9 +383,10 @@ body.atak-page {
 }
 .atak-game-link-btn {
   display: inline-block;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.8rem;
-  font-weight: 600;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #0a1210;
   background: var(--atak-accent, #3dba8c);
   border: none;
@@ -1058,12 +1138,56 @@ body.atak-page {
   border-bottom: 1px solid var(--atak-border);
   flex-shrink: 0;
 }
-.atak-units-title { font-weight: 700; font-size: 0.95rem; }
+.atak-units-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.atak-units-title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+.atak-units-count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--atak-accent);
+  background: var(--atak-accent-dim);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+.atak-units-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.atak-units-summary-item {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  color: var(--atak-muted);
+}
+.atak-units-summary-item--live {
+  color: var(--atak-success);
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.1);
+}
+.atak-units-summary-item--delayed {
+  color: var(--atak-warning);
+  border-color: rgba(234, 179, 8, 0.35);
+  background: rgba(234, 179, 8, 0.08);
+}
 .atak-filter {
   margin-top: 0.5rem;
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 .atak-filter input {
   flex: 1;
@@ -1101,6 +1225,19 @@ body.atak-page {
   font-size: 0.8rem;
   text-align: center;
 }
+.atak-units-empty-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--atak-text);
+}
+.atak-units-empty-text {
+  margin: 0;
+  max-width: 16rem;
+  line-height: 1.4;
+  font-size: 0.75rem;
+}
+.atak-units-empty-text strong { color: var(--atak-accent); }
 .atak-units-empty-icon {
   width: 48px;
   height: 48px;
@@ -1137,7 +1274,34 @@ body.atak-page {
 .atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }
 .atak-unit-status.delayed { background: rgba(234, 179, 8, 0.2); color: var(--atak-warning); }
-.atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0.25rem; }
+.atak-unit-status.offline { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+.atak-unit-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  margin-top: 0.35rem;
+}
+.atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0; }
+.atak-unit-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+.atak-unit-vital {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.38rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--atak-muted);
+}
+.atak-unit-vital--ok { color: var(--atak-success); border-color: rgba(34, 197, 94, 0.35); }
+.atak-unit-vital--warn { color: var(--atak-warning); border-color: rgba(234, 179, 8, 0.4); }
+.atak-unit-vital--crit { color: #fecaca; border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.12); }
 .atak-unit-bft-meta { font-size: 0.7rem; color: var(--atak-muted); margin-top: 0.2rem; }
 .atak-unit-card.atak-unit-bft-wounded { border-left-color: #ef4444; animation: atak-bft-blink 1.2s ease-in-out infinite; }
 .atak-unit-card.atak-unit-bft-critical {

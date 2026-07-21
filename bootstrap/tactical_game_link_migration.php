@@ -6,6 +6,11 @@ declare(strict_types=1);
  * Code court de liaison Arma ↔ compte Athena : généré sur le portail (session membre),
  * saisi en jeu pour recevoir URL / clé / communauté sans passer par les réglages CBA obscurs.
  * Idempotent.
+ *
+ * Prod (si POST /atak/game-link renvoie 503) :
+ *   php run-migrations.php
+ * (inclut cette migration ; crée tactical_game_link_codes si absente.)
+ * Ou invoquer ce fichier via le pipeline de migrations déjà branché dans run-migrations.php.
  */
 return static function (PDO $pdo): void {
     $tableExists = static function (PDO $pdo, string $table): bool {

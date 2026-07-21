@@ -24,6 +24,8 @@ Le préfixe `/public` est obligatoire sur ce déploiement : sans lui, les appels
 2. En jeu : touche **K** (menu ATAK) → **Connecter mon compte Athena** → coller le code → **Établir la liaison**.
 3. Les paramètres sont enregistrés dans votre profil Arma pour les prochaines sessions.
 
+Si Athena répond **503** sur la génération de code : exécuter en prod `php run-migrations.php` (crée `tactical_game_link_codes` via `bootstrap/tactical_game_link_migration.php`). Pas besoin de redéployer les fichiers PHP si la route `POST /atak/game-link` est déjà en place.
+
 **Clé d’accès** (avancé) : en production, renseignez la clé fournie par l’admin (même valeur que `X_COMSPEC_KEY` côté serveur). Sans clé, la génération du QR téléphone est refusée.
 
 Pour modifier les réglages manuellement :

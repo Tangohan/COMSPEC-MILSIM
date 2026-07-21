@@ -167,6 +167,13 @@ class AtakController
         if ($tenantId < 1 || $userId < 1) {
             return Response::json(['error' => 'unauthorized', 'message' => 'Connectez-vous pour générer un code de liaison.'], 401);
         }
+        // Prod : 503 si la migration tactical_game_link n’a pas été exécutée (table absente).
+        if (!$this->gameLinkRepository->isReady()) {
+            return Response::json([
+                'error' => 'unavailable',
+                'message' => 'La liaison avec le jeu n’est pas encore activée sur ce serveur. Réessayez plus tard ou contactez un administrateur.',
+            ], 503);
+        }
         $created = $this->gameLinkRepository->create($tenantId, $userId);
         if ($created === null) {
             return Response::json([
@@ -180,7 +187,7 @@ class AtakController
             'code' => $created['code'],
             'expires_at' => $created['expires_at'],
             'api_url' => atak_client_base_url($this->atakConfigRepository->getByTenantId($tenantId)),
-            'hint' => 'Dans Arma : menu ATAK (K) → Connecter mon compte Athena, puis saisissez ce code.',
+            'hint' => 'Dans Arma : touche K → Compte Athena (saisir un code), puis entrez ce code.',
         ]);
     }
 

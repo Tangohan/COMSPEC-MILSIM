@@ -72,9 +72,10 @@ if ($atakMapConfig) {
   <header class="atak-header">
     <div class="atak-header-brand">
       <div class="atak-logo-wrap">
-        <span class="atak-logo">COMSPEC</span>
-        <span class="atak-overwatch">OVERWATCH</span>
+        <span class="atak-logo">ATHENA</span>
+        <span class="atak-overwatch">ATAK</span>
       </div>
+      <span class="atak-header-tagline" title="Image tactique commune">Image tactique</span>
       <div class="atak-header-chips" aria-label="État de la carte">
         <span class="atak-chip atak-chip--live" id="atak-status" title="État du réseau">
           <span class="dot" aria-hidden="true"></span>
@@ -87,6 +88,10 @@ if ($atakMapConfig) {
         <span class="atak-chip atak-chip--muted" id="atak-chip-sync" title="Dernière actualisation du journal">
           <span class="atak-chip-key">Journal</span>
           <span class="atak-chip-value" id="atak-chip-sync-value">—</span>
+        </span>
+        <span class="atak-chip atak-chip--muted" id="atak-chip-contacts" title="Contacts en liaison">
+          <span class="atak-chip-key">Contacts</span>
+          <span class="atak-chip-value" id="atak-chip-contacts-value">0</span>
         </span>
       </div>
     </div>
@@ -114,34 +119,33 @@ if ($atakMapConfig) {
       <?php endif; ?>
       <a href="<?= url('overwatch') ?>" class="atak-header-link" title="Carte C2 Overwatch">Overwatch</a>
       <a href="<?= url('dashboard') ?>" class="atak-header-link">Tableau de bord</a>
-      <button type="button" class="atak-btn-account" id="atak-btn-account" title="Paramètres">Paramètres</button>
+      <?php if ($currentUser): ?>
+      <button type="button" class="atak-btn-game-link" id="atak-btn-game-link" title="Générer un code pour lier Arma à votre compte">Connexion en jeu</button>
+      <?php endif; ?>
+      <button type="button" class="atak-btn-account" id="atak-btn-account" title="Compte et paramètres">Compte</button>
     </div>
   </header>
+
+  <div class="atak-os-strip" role="note">
+    <p class="atak-os-strip-lead"><strong>ATAK Athena</strong> — vue partagée du théâtre : positions, tchat, marqueurs et alertes médicales en direct depuis Arma.</p>
+    <p class="atak-os-strip-hint">Pour lier le mod à votre compte : <strong>Connexion en jeu</strong> → générer un code → le saisir en jeu (touche K → Connecter mon compte Athena).</p>
+  </div>
 
   <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
   <aside class="atak-account-panel" id="atak-account-panel" aria-labelledby="atak-account-title">
     <div class="atak-account-panel-head">
-      <h2 id="atak-account-title" class="atak-account-panel-title">Données du compte</h2>
+      <h2 id="atak-account-title" class="atak-account-panel-title">Compte &amp; liaison</h2>
       <button type="button" class="atak-account-panel-close" id="atak-account-panel-close" aria-label="Fermer">×</button>
     </div>
     <div class="atak-account-panel-body">
       <?php if ($currentUser): ?>
-      <section class="atak-account-section">
-        <h3 class="atak-account-section-title">Compte</h3>
-        <p><strong>Email :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
-        <p><strong>Nom affiché :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
-        <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
-        <p><a href="<?= url('account') ?>">Gérer mon compte</a></p>
-      </section>
-      <section class="atak-account-section">
-        <h3 class="atak-account-section-title">Liaison Steam</h3>
-        <p><?= !empty($currentUser['steam_id']) ? htmlspecialchars($currentUser['steam_id']) : 'Non renseignée' ?></p>
-        <p><a href="<?= url('account/preferences') ?>">Modifier (préférences)</a></p>
-      </section>
-      <section class="atak-account-section" id="atak-game-link-section">
-        <h3 class="atak-account-section-title">Connexion en jeu</h3>
-        <p class="atak-game-link-hint">Générez un code à saisir dans Arma (menu ATAK → Connecter mon compte Athena). Valable 15 minutes, usage unique.</p>
-        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code de liaison</button>
+      <section class="atak-account-section atak-account-section--game-link" id="atak-game-link-section">
+        <div class="atak-game-link-head">
+          <h3 class="atak-account-section-title">Connexion en jeu</h3>
+          <span class="atak-pill atak-pill--ok">15 min · usage unique</span>
+        </div>
+        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Connecter mon compte Athena</strong>. Le code expire après 15 minutes et ne peut être utilisé qu’une fois.</p>
+        <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
           <p class="atak-game-link-code" id="atak-game-link-code">————</p>
@@ -151,27 +155,36 @@ if ($atakMapConfig) {
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
       </section>
       <section class="atak-account-section">
-        <h3 class="atak-account-section-title">Liaison Arma</h3>
-        <p><?= !empty($currentUser['arma_callsign']) ? htmlspecialchars($currentUser['arma_callsign']) : 'Non renseignée' ?></p>
-        <p><a href="<?= url('account/preferences') ?>">Modifier (préférences)</a></p>
+        <h3 class="atak-account-section-title">Compte</h3>
+        <p><strong>E-mail :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
+        <p><strong>Nom affiché :</strong> <?= htmlspecialchars($currentUser['display_name'] ?? '') ?></p>
+        <p><strong>Indicatif :</strong> <?= htmlspecialchars($currentUser['callsign'] ?? '—') ?></p>
+        <p><a href="<?= url('account') ?>">Gérer mon compte</a></p>
       </section>
       <section class="atak-account-section">
-        <h3 class="atak-account-section-title">Liaison serveur</h3>
+        <h3 class="atak-account-section-title">Liaison Steam</h3>
+        <p><?= !empty($currentUser['steam_id']) ? 'Compte Steam associé' : 'Non renseignée' ?></p>
+        <p><a href="<?= url('account/preferences') ?>">Modifier dans les préférences</a></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Indicatif Arma</h3>
+        <p><?= !empty($currentUser['arma_callsign']) ? htmlspecialchars($currentUser['arma_callsign']) : 'Non renseigné' ?></p>
+        <p><a href="<?= url('account/preferences') ?>">Modifier dans les préférences</a></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Serveur &amp; guides</h3>
         <?php if ($atakConfig && ($atakConfig['arma_server_host'] ?? '')): ?>
         <p><strong>Serveur :</strong> <?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
-        <p><a href="<?= url('atak/tuto') ?>">Guide mod Arma</a></p>
-        <?php if ($canAccessAdminAtakConfig): ?>
-        <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
-        <?php endif; ?>
         <?php else: ?>
-        <p>Aucune config serveur.</p>
+        <p>Aucun serveur Arma configuré pour la communauté.</p>
+        <?php endif; ?>
+        <p><a href="<?= url('atak/tuto') ?>">Guide du mod Arma</a></p>
         <?php if ($canAccessAdminAtakConfig): ?>
         <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
-        <?php endif; ?>
         <?php endif; ?>
       </section>
       <?php else: ?>
-      <p>Non connecté.</p>
+      <p>Connectez-vous pour générer un code de liaison et voir vos données de compte.</p>
       <p><a href="<?= url('login') ?>">Se connecter</a></p>
       <?php endif; ?>
     </div>
@@ -277,8 +290,8 @@ if ($atakMapConfig) {
           <ul class="atak-activity-list" id="atak-activity-list" aria-live="polite"></ul>
           <div class="atak-empty-state atak-activity-empty" id="atak-activity-empty">
             <div class="atak-empty-state-icon" aria-hidden="true">⇄</div>
-            <p class="atak-empty-state-title">Aucune activité</p>
-            <p class="atak-empty-state-text">Les clients en jeu apparaîtront ici dès qu’ils se connectent à la carte.</p>
+            <p class="atak-empty-state-title">Journal en attente</p>
+            <p class="atak-empty-state-text">Connexions, indicatifs et échanges apparaîtront ici dès qu’un joueur est en liaison avec la carte.</p>
           </div>
         </div>
       </div>
@@ -290,28 +303,36 @@ if ($atakMapConfig) {
 
     <aside class="atak-panel-right" id="atak-panel-right">
       <div class="atak-air-assets-header">
-        <div class="atak-air-assets-title">Air Support Assets</div>
+        <div class="atak-air-assets-title">Appui aérien</div>
       </div>
       <div class="atak-air-assets-list" id="atak-air-assets-list">
         <div class="atak-air-assets-empty" id="atak-air-assets-empty">
-          <span>Aucun aéronef enregistré. Les pilotes déclarent le Flight Manifest depuis le menu Arma.</span>
+          <span>Aucun aéronef déclaré. Les pilotes enregistrent un vol depuis le menu Overwatch en jeu (touche K).</span>
         </div>
       </div>
       <div class="atak-units-header">
-        <div class="atak-units-title">All Workspaces</div>
-        <div class="atak-filter">
-          <input type="text" id="atak-units-filter" placeholder="Q Filter contacts..." />
-          <button type="button" class="btn-live active" id="atak-filter-live">LIVE</button>
-          <button type="button" class="btn-all" id="atak-filter-all">ALL</button>
+        <div class="atak-units-title-row">
+          <div class="atak-units-title">Effectifs</div>
+          <span class="atak-units-count" id="atak-units-count" title="Contacts affichés">0</span>
+          <button type="button" class="atak-toggle" id="atak-toggle-right" title="Réduire">▶</button>
         </div>
-        <button type="button" class="atak-toggle" id="atak-toggle-right" title="Réduire" style="margin-left:auto;">▶</button>
+        <div class="atak-units-summary" id="atak-units-summary" aria-live="polite">
+          <span class="atak-units-summary-item atak-units-summary-item--live" id="atak-units-sum-live">0 en liaison</span>
+          <span class="atak-units-summary-item atak-units-summary-item--delayed" id="atak-units-sum-delayed">0 en retard</span>
+        </div>
+        <div class="atak-filter">
+          <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif ou rôle…" />
+          <button type="button" class="btn-live active" id="atak-filter-live">En liaison</button>
+          <button type="button" class="btn-all" id="atak-filter-all">Tous</button>
+        </div>
       </div>
       <div class="atak-units-list" id="atak-units-list">
         <div class="atak-units-empty" id="atak-units-empty">
           <div class="atak-units-empty-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
           </div>
-          <span>No contacts connected</span>
+          <p class="atak-units-empty-title">Aucun contact en liaison</p>
+          <p class="atak-units-empty-text">Les positions remontées depuis Arma s’affichent ici. Vérifiez la liaison du mod, ou générez un code via <strong>Connexion en jeu</strong>.</p>
         </div>
       </div>
     </aside>
@@ -657,18 +678,36 @@ if ($atakMapConfig) {
       }
 
       var accountBtn = document.getElementById('atak-btn-account');
+      var gameLinkHeaderBtn = document.getElementById('atak-btn-game-link');
       var accountPanel = document.getElementById('atak-account-panel');
       var accountOverlay = document.getElementById('atak-account-overlay');
       var accountClose = document.getElementById('atak-account-panel-close');
-      function openAccountPanel() {
+      var gameLinkSection = document.getElementById('atak-game-link-section');
+      function openAccountPanel(opts) {
         if (accountPanel) accountPanel.classList.add('open');
         if (accountOverlay) accountOverlay.classList.add('show');
+        if (opts && opts.focusGameLink && gameLinkSection) {
+          gameLinkSection.classList.add('atak-account-section--pulse');
+          setTimeout(function () {
+            gameLinkSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 50);
+          setTimeout(function () {
+            gameLinkSection.classList.remove('atak-account-section--pulse');
+          }, 1800);
+          var genBtn = document.getElementById('atak-game-link-btn');
+          if (genBtn) setTimeout(function () { genBtn.focus(); }, 200);
+        }
       }
       function closeAccountPanel() {
         if (accountPanel) accountPanel.classList.remove('open');
         if (accountOverlay) accountOverlay.classList.remove('show');
       }
-      if (accountBtn) accountBtn.addEventListener('click', openAccountPanel);
+      if (accountBtn) accountBtn.addEventListener('click', function () { openAccountPanel(); });
+      if (gameLinkHeaderBtn) {
+        gameLinkHeaderBtn.addEventListener('click', function () {
+          openAccountPanel({ focusGameLink: true });
+        });
+      }
       if (accountClose) accountClose.addEventListener('click', closeAccountPanel);
       if (accountOverlay) accountOverlay.addEventListener('click', closeAccountPanel);
 
@@ -829,29 +868,50 @@ if ($atakMapConfig) {
         var errEl = document.getElementById('atak-game-link-error');
         var copyBtn = document.getElementById('atak-game-link-copy');
         var createUrl = <?= json_encode($gameLinkCreateUrl ?? url('atak/game-link'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var linkBusy = false;
+        function unlockLinkBtn(label, cooldownMs) {
+          var wait = Math.max(0, cooldownMs || 0);
+          setTimeout(function () {
+            linkBusy = false;
+            btn.disabled = false;
+            btn.textContent = label || 'Générer un code';
+          }, wait);
+        }
         btn.addEventListener('click', function () {
+          if (linkBusy) return;
           if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+          linkBusy = true;
           btn.disabled = true;
           btn.textContent = 'Génération…';
           fetch(createUrl, { method: 'POST', credentials: 'include', headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+            .then(function (r) {
+              return r.text().then(function (raw) {
+                var j = null;
+                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+                return { ok: r.ok, status: r.status, body: j };
+              });
+            })
             .then(function (res) {
-              btn.disabled = false;
-              btn.textContent = 'Générer un nouveau code';
               if (!res.ok || !res.body || !res.body.code) {
-                var msg = (res.body && res.body.message) ? res.body.message : 'Impossible de générer le code.';
+                var msg = (res.body && res.body.message)
+                  ? res.body.message
+                  : (res.status === 404
+                    ? 'Service de liaison introuvable. Rechargez la page après mise à jour du portail.'
+                    : 'Impossible de générer le code.');
                 if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+                // Pas de retry auto ; cooldown après 503 pour éviter de spammer le serveur.
+                unlockLinkBtn('Générer un code', res.status === 503 ? 4000 : 800);
                 return;
               }
+              unlockLinkBtn('Générer un nouveau code', 0);
               if (codeEl) codeEl.textContent = res.body.code;
               if (metaEl) {
-                metaEl.textContent = res.body.hint || 'Saisissez ce code dans Arma (menu ATAK).';
+                metaEl.textContent = res.body.hint || 'Dans Arma : touche K → Connecter mon compte Athena, puis saisissez ce code.';
               }
               if (resultEl) resultEl.hidden = false;
             })
             .catch(function () {
-              btn.disabled = false;
-              btn.textContent = 'Générer un code de liaison';
+              unlockLinkBtn('Générer un code', 1500);
               if (errEl) {
                 errEl.textContent = 'Réseau indisponible. Réessayez dans un instant.';
                 errEl.hidden = false;

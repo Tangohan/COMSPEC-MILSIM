@@ -21,12 +21,24 @@ class TacticalGameLinkRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * False tant que la migration bootstrap/tactical_game_link_migration.php n’a pas été jouée.
+     */
+    public function isReady(): bool
+    {
+        return $this->tableExists();
+    }
+
     private function tableExists(): bool
     {
         static $exists = null;
         if ($exists === null) {
-            $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_game_link_codes'");
-            $exists = (bool) ($stmt && $stmt->fetchColumn());
+            try {
+                $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_game_link_codes'");
+                $exists = (bool) ($stmt && $stmt->fetchColumn());
+            } catch (\Throwable) {
+                $exists = false;
+            }
         }
 
         return $exists;
@@ -40,18 +52,22 @@ class TacticalGameLinkRepository
         if (!$this->tableExists() || $tenantId < 1 || $userId < 1) {
             return null;
         }
-        $this->pdo->prepare(
-            'DELETE FROM tactical_game_link_codes WHERE user_id = ? AND tenant_id = ? AND redeemed_at IS NULL'
-        )->execute([$userId, $tenantId]);
+        try {
+            $this->pdo->prepare(
+                'DELETE FROM tactical_game_link_codes WHERE user_id = ? AND tenant_id = ? AND redeemed_at IS NULL'
+            )->execute([$userId, $tenantId]);
 
-        $code = $this->generateUniqueCode();
-        $expiresAt = date('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60);
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at) VALUES (?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([$tenantId, $userId, $code, $expiresAt]);
+            $code = $this->generateUniqueCode();
+            $expiresAt = date('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60);
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at) VALUES (?, ?, ?, ?, NOW())'
+            );
+            $stmt->execute([$tenantId, $userId, $code, $expiresAt]);
 
-        return ['code' => $code, 'expires_at' => $expiresAt];
+            return ['code' => $code, 'expires_at' => $expiresAt];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function generateUniqueCode(): string
