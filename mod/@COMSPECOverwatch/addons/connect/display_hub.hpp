@@ -35,7 +35,7 @@ class COMSPEC_Hub_Dialog {
 
         class Subtitle: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.62' color='#8aa0b4'>Menu des vues · touche K</t>";
+            text = "<t align='center' size='0.62' color='#8aa0b4'>Centre opérationnel · touche K</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.165 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
@@ -71,16 +71,16 @@ class COMSPEC_Hub_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.58' color='#6a7c90'>Choisissez un écran. Messagerie directe : Ctrl+K.</t>";
+            text = "<t align='center' size='0.55' color='#6a7c90'>Messagerie : Ctrl+K · Compte Athena : code depuis le site (Connexion en jeu)</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.242 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
-            h = 0.024 * safezoneH;
+            h = 0.028 * safezoneH;
         };
 
         class SectionComms: RscStructuredText {
             idc = -1;
-            text = "<t size='0.52' color='#5a9e88'>COMMUNICATIONS</t>";
+            text = "<t size='0.52' color='#5a9e88'>COMMUNICATIONS &amp; COMPTE</t>";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.275 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -113,7 +113,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnAccount: RscButton {
             idc = 9113;
-            text = "Connecter mon compte Athena";
+            text = "Compte Athena (saisir un code)";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.39 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -227,7 +227,7 @@ class COMSPEC_Hub_Dialog {
 
         class Footer: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.5' color='#4a5c6e'>Athena · cartographie opérationnelle</t>";
+            text = "<t align='center' size='0.5' color='#4a5c6e'>Athena ATAK · image tactique commune</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.79 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;

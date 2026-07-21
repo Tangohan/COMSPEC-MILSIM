@@ -181,6 +181,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       width: 100%;
       text-align: left;
       border: 1px solid #e2e8f0;
+      border-left: 3px solid #059669;
       background: #f8fafc;
       color: #0f172a;
       border-radius: 0.65rem;
@@ -268,7 +269,8 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-white">COMSPEC Overwatch</h1>
             <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wide border-emerald-500/50 bg-emerald-950 text-emerald-200">En attente</span>
           </div>
-          <p class="mt-1.5 text-sm text-slate-300">Situation en carte, urgences médicales et outils de commandement.</p>
+          <p class="mt-1.5 text-sm text-slate-300">Image tactique commune : effectifs, urgences médicales et outils de commandement sur une seule carte.</p>
+          <p class="mt-1 text-[11px] text-slate-500 uppercase tracking-wide">Carte live · Effectifs &amp; santé · Marqueurs · Urgences</p>
           <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <span class="text-sm text-slate-200" id="overwatch-theatre-label">—</span>
             <span class="text-sm text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
@@ -1323,10 +1325,30 @@ function setWorkspace(mapId) {
 
       function statusLabelFr(status) {
         var s = (status || '').toLowerCase();
-        if (s === 'linked') return 'Synchronisé';
-        if (s === 'delayed') return 'Retard';
+        if (s === 'linked') return 'En liaison';
+        if (s === 'delayed') return 'En retard';
         if (s === 'offline') return 'Hors ligne';
         return status || '—';
+      }
+
+      function parseUnitExtra(u) {
+        try {
+          return typeof u.extra === 'string' ? JSON.parse(u.extra) : (u.extra || {});
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function healthLabelOw(h) {
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr) {
+          return window.ATAKUnitPopup.healthLabelFr(h);
+        }
+        var s = String(h || '').toLowerCase();
+        if (s === 'ok' || s === 'stable' || s === 'healthy') return 'Stable';
+        if (s === 'wounded' || s === 'injured') return 'Blessé';
+        if (s === 'unconscious') return 'Inconscient';
+        if (s === 'dead' || s === 'kia') return 'Hors combat';
+        return h || '—';
       }
 
       function escapeHtmlOw(s) {
@@ -1357,14 +1379,23 @@ function setWorkspace(mapId) {
             '<p class="text-sm text-slate-500">Sélectionnez une unité dans la liste ou sur la carte.</p>';
           return;
         }
+        var ex = parseUnitExtra(u);
+        var health = ex.health || u.health || 'ok';
+        var fuel = ex.fuel != null && ex.fuel !== '' ? String(ex.fuel) + '%' : '—';
+        var battery = ex.battery != null && ex.battery !== '' ? String(ex.battery) + '%' : null;
+        var ammo = ex.ammo && ex.ammo !== 'n/a' ? String(ex.ammo) : null;
         root.innerHTML =
           '<p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fiche unité</p>' +
           '<p class="text-base font-black text-slate-900">' + escapeHtmlOw(u.call_sign || '—') + '</p>' +
           '<dl class="mt-2 space-y-1 text-xs">' +
-          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Rôle</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(u.role || '—') + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Rôle</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(u.role || ex.role || '—') + '</dd></div>' +
           '<div class="flex justify-between gap-2"><dt class="text-slate-500">Liaison</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(statusLabelFr(u.status)) + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">État</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(healthLabelOw(health)) + '</dd></div>' +
           '<div class="flex justify-between gap-2"><dt class="text-slate-500">Cap</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(u.heading != null ? String(u.heading) + '°' : '—') + '</dd></div>' +
           '<div class="flex justify-between gap-2"><dt class="text-slate-500">Grille</dt><dd class="font-mono font-semibold text-slate-800">' + escapeHtmlOw(u.grid_ref || '—') + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Carburant</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(fuel) + '</dd></div>' +
+          (battery ? '<div class="flex justify-between gap-2"><dt class="text-slate-500">Batterie</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(battery) + '</dd></div>' : '') +
+          (ammo ? '<div class="flex justify-between gap-2"><dt class="text-slate-500">Munitions</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(ammo) + '</dd></div>' : '') +
           '</dl>';
       }
 
@@ -1426,11 +1457,22 @@ function setWorkspace(mapId) {
             roster.innerHTML = '<p class="text-sm text-slate-500 px-2 py-3">Aucune position remontée pour ce théâtre. Vérifiez la liaison en jeu.</p>';
           } else {
             roster.innerHTML = overwatchLastUnits.map(function (u) {
+              var ex = parseUnitExtra(u);
+              var health = ex.health || u.health || 'ok';
+              var healthTxt = healthLabelOw(health);
+              var fuel = ex.fuel != null && ex.fuel !== '' ? 'Carb. ' + ex.fuel + '%' : null;
+              var battery = ex.battery != null && ex.battery !== '' ? 'Batt. ' + ex.battery + '%' : null;
+              var metaBits = [healthTxt];
+              if (fuel) metaBits.push(fuel);
+              if (battery) metaBits.push(battery);
               return '<button type="button" data-unit-id="' + escapeHtmlOw(u.id) + '" data-callsign="' + escapeHtmlOw(u.call_sign || '') + '" class="ow-roster-btn">' +
-                '<div class="flex justify-between gap-2"><span class="text-[10px] font-black uppercase text-slate-500">' + escapeHtmlOw(u.call_sign || '—') + '</span>' +
+                '<div class="flex justify-between gap-2 items-start"><span class="text-[10px] font-black uppercase text-slate-500">' + escapeHtmlOw(u.call_sign || '—') + '</span>' +
                 '<span class="text-[9px] font-black uppercase text-emerald-700">' + escapeHtmlOw(statusLabelFr(u.status)) + '</span></div>' +
-                '<p class="text-sm font-bold mt-1 text-slate-900">' + escapeHtmlOw(u.role || '—') + '</p>' +
-                '<p class="text-xs mt-1 text-slate-500">Grille ' + escapeHtmlOw(u.grid_ref || '—') + '</p></button>';
+                '<p class="text-sm font-bold mt-1 text-slate-900">' + escapeHtmlOw(u.role || ex.role || 'Rôle non renseigné') + '</p>' +
+                '<p class="text-[11px] mt-1 text-slate-600">' + escapeHtmlOw(metaBits.join(' · ')) + '</p>' +
+                '<p class="text-xs mt-1 text-slate-500">Grille ' + escapeHtmlOw(u.grid_ref || '—') +
+                (u.heading != null ? ' · Cap ' + escapeHtmlOw(String(Math.round(u.heading))) + '°' : '') +
+                '</p></button>';
             }).join('');
             roster.querySelectorAll('[data-unit-id]').forEach(function (btn) {
               btn.addEventListener('click', function () {

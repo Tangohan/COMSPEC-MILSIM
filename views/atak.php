@@ -127,8 +127,14 @@ if ($atakMapConfig) {
   </header>
 
   <div class="atak-os-strip" role="note">
-    <p class="atak-os-strip-lead"><strong>ATAK Athena</strong> — vue partagée du théâtre : positions, tchat, marqueurs et alertes médicales en direct depuis Arma.</p>
-    <p class="atak-os-strip-hint">Pour lier le mod à votre compte : <strong>Connexion en jeu</strong> → générer un code → le saisir en jeu (touche K → Connecter mon compte Athena).</p>
+    <p class="atak-os-strip-lead"><strong>ATAK Athena</strong> — image tactique commune : positions, tchat, marqueurs et alertes médicales en direct depuis Arma.</p>
+    <ul class="atak-os-caps" aria-label="Capacités">
+      <li><span class="atak-os-cap-num">01</span> Carte live</li>
+      <li><span class="atak-os-cap-num">02</span> Effectifs &amp; santé</li>
+      <li><span class="atak-os-cap-num">03</span> Marqueurs &amp; tchat</li>
+      <li><span class="atak-os-cap-num">04</span> Liaison compte</li>
+    </ul>
+    <p class="atak-os-strip-hint">Lier le mod : bouton <strong>Connexion en jeu</strong> → <strong>Générer un code</strong> → en jeu touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>.</p>
   </div>
 
   <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
@@ -144,7 +150,7 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Connexion en jeu</h3>
           <span class="atak-pill atak-pill--ok">15 min · usage unique</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Connecter mon compte Athena</strong>. Le code expire après 15 minutes et ne peut être utilisé qu’une fois.</p>
+        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 15 minutes et ne peut être utilisé qu’une fois.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
@@ -906,7 +912,7 @@ if ($atakMapConfig) {
               unlockLinkBtn('Générer un nouveau code', 0);
               if (codeEl) codeEl.textContent = res.body.code;
               if (metaEl) {
-                metaEl.textContent = res.body.hint || 'Dans Arma : touche K → Connecter mon compte Athena, puis saisissez ce code.';
+                metaEl.textContent = res.body.hint || 'Dans Arma : touche K → Compte Athena (saisir un code), puis entrez ce code.';
               }
               if (resultEl) resultEl.hidden = false;
             })

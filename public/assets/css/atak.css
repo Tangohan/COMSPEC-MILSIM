@@ -14,7 +14,7 @@
   --atak-left-w: 320px;
   --atak-right-w: 340px;
   --atak-header-h: 56px;
-  --atak-os-strip-h: 36px;
+  --atak-os-strip-h: 42px;
 }
 
 * { box-sizing: border-box; }
@@ -258,11 +258,11 @@ body.atak-page {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 1.25rem;
+  align-items: center;
+  gap: 0.45rem 1.1rem;
   min-height: var(--atak-os-strip-h);
-  padding: 0.35rem 1rem;
-  background: linear-gradient(90deg, rgba(52, 211, 153, 0.08), transparent 55%);
+  padding: 0.4rem 1rem;
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.1), transparent 58%);
   border-bottom: 1px solid var(--atak-border);
   font-size: 0.72rem;
   line-height: 1.35;
@@ -271,11 +271,41 @@ body.atak-page {
   margin: 0;
   color: var(--atak-text);
 }
+.atak-os-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--atak-muted);
+}
+.atak-os-caps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.atak-os-cap-num {
+  color: var(--atak-accent);
+  font-variant-numeric: tabular-nums;
+}
 .atak-os-strip-hint {
   margin: 0;
   color: var(--atak-muted);
+  flex: 1 1 12rem;
+  min-width: 0;
 }
 .atak-os-strip strong { color: var(--atak-accent); font-weight: 700; }
+@media (max-width: 1100px) {
+  .atak-os-caps { display: none; }
+}
+@media (max-width: 720px) {
+  .atak-os-strip-hint { display: none; }
+}
 
 .atak-account-overlay {
   display: none;

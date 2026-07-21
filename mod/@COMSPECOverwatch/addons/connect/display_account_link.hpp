@@ -35,7 +35,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.62' color='#8aa0b4'>Sur Athena, ouvrez ATAK → Connexion en jeu → Générer un code. Saisissez-le ci-dessous (valable 15 min).</t>";
+            text = "<t align='center' size='0.62' color='#8aa0b4'>Sur Athena, ouvrez ATAK → bouton Connexion en jeu → Générer un code. Saisissez-le ici (valable 15 min, usage unique).</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.278 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
