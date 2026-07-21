@@ -1592,6 +1592,55 @@ body.atak-page {
   white-space: pre-wrap;
 }
 
+/* Classe "texte atténué" utilisée dans une dizaine d'endroits (JS et vue) — la variable
+   --atak-muted existait déjà (utilisée par d'autres règles), mais pas la classe elle-même :
+   .atak-muted rendait donc en noir/hérité par défaut au lieu du gris atténué attendu. */
+.atak-muted { color: var(--atak-muted); }
+
+/* Thème sombre par défaut pour tout popup Leaflet de la carte tactique (marqueur générique,
+   JTAC, ping, SIGINT...) même sans classe dédiée — sans ça le popup blanc par défaut de
+   Leaflet tranche avec le thème sombre du reste de la page. Les règles .atak-map-popup
+   ci-dessus restent plus spécifiques pour le popup unité/aérien. */
+.atak-map-wrap .leaflet-popup-content-wrapper {
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.atak-map-wrap .leaflet-popup-tip {
+  background: var(--atak-panel);
+  border: 1px solid var(--atak-border);
+}
+.atak-map-wrap .leaflet-popup-content {
+  margin: 0.5rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.atak-map-wrap .leaflet-popup-close-button {
+  color: var(--atak-muted);
+}
+.atak-map-wrap .leaflet-popup-close-button:hover {
+  color: var(--atak-text);
+}
+.atak-marker-popup__coords {
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  margin-top: 0.15rem;
+}
+.atak-marker-popup__desc {
+  font-size: 0.7rem;
+  margin: 0.3rem 0 0;
+}
+.atak-marker-popup__author {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.62rem;
+  color: var(--atak-muted);
+  font-style: italic;
+}
+
 .nato-sidc-icon,
 .nato-sidc-badge {
   background: transparent !important;
