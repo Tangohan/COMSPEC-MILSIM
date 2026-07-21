@@ -648,10 +648,14 @@ public static class Extension
             var displayName = root.TryGetProperty("display_name", out var dn) ? (dn.GetString() ?? "") : "";
             var callsign = root.TryGetProperty("callsign", out var cs) ? (cs.GetString() ?? "") : "";
             var avatarUrl = root.TryGetProperty("avatar_url", out var au) ? (au.GetString() ?? "") : "";
+            var unitName = root.TryGetProperty("unit_name", out var un) ? (un.GetString() ?? "") : "";
+            var atakId = root.TryGetProperty("atak_id", out var ai) ? (ai.GetString() ?? "") : "";
             displayName = displayName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            unitName = unitName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            atakId = atakId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             if (displayName.Length == 0 && callsign.Length == 0) return "";
-            return displayName + "\t" + callsign + "\t" + avatarUrl;
+            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId;
         }
         catch { return ""; }
     }

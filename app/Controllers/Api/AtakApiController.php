@@ -44,12 +44,14 @@ class AtakApiController
         private ?AtakActivityLogService $activityLog = null,
         private ?TacticalGameLinkRepository $gameLinkRepository = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
+        private ?\App\Repositories\UnitRepository $unitRepository = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
         $this->phonePairingRepository ??= new TacticalPhonePairingRepository();
         $this->activityLog ??= new AtakActivityLogService();
         $this->gameLinkRepository ??= new TacticalGameLinkRepository();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
+        $this->unitRepository ??= new \App\Repositories\UnitRepository();
     }
 
     /**
@@ -102,12 +104,30 @@ class AtakApiController
         if (!$user) {
             return Response::json(['error' => 'not_found'], 404);
         }
+        $userId = (int) ($user['id'] ?? 0);
+
+        $unitName = '';
+        $unitIds = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+        $primaryUnitId = (int) ($unitIds[0] ?? 0);
+        if ($primaryUnitId > 0) {
+            $unit = $this->unitRepository->findById($primaryUnitId, $tenantId);
+            if ($unit) {
+                $unitName = trim((string) ($unit['name'] ?? ''));
+            }
+        }
+
+        $callsign = trim((string) ($user['callsign'] ?? ''));
+        // Identifiant ATAK stable : le callsign s'il est renseigné, sinon un identifiant technique
+        // dérivé du compte — jamais l'état civil, jamais réutilisable pour retrouver un autre joueur.
+        $atakId = $callsign !== '' ? $callsign : sprintf('U-%05d', $userId);
 
         return Response::json([
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
-            'callsign' => (string) ($user['callsign'] ?? ''),
+            'callsign' => $callsign,
             'avatar_url' => (string) ($user['avatar_url'] ?? ''),
+            'unit_name' => $unitName,
+            'atak_id' => $atakId,
         ]);
     }
 
