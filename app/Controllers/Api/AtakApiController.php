@@ -41,15 +41,15 @@ class AtakApiController
         private ArmaPlaytimeRepository $armaPlaytimeRepository,
         private ?TacticalBriefingSlideRepository $briefingSlideRepository = null,
         private ?TacticalPhonePairingRepository $phonePairingRepository = null,
+        private ?AtakActivityLogService $activityLog = null,
         private ?TacticalGameLinkRepository $gameLinkRepository = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
-        private ?AtakActivityLogService $activityLog = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
         $this->phonePairingRepository ??= new TacticalPhonePairingRepository();
+        $this->activityLog ??= new AtakActivityLogService();
         $this->gameLinkRepository ??= new TacticalGameLinkRepository();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
-        $this->activityLog ??= new AtakActivityLogService();
     }
 
     /**

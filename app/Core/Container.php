@@ -1849,9 +1849,9 @@ class Container
                 self::get(\App\Repositories\ArmaPlaytimeRepository::class),
                 self::get(\App\Repositories\TacticalBriefingSlideRepository::class),
                 self::get(\App\Repositories\TacticalPhonePairingRepository::class),
+                self::get(\App\Services\Tactical\AtakActivityLogService::class),
                 self::get(\App\Repositories\TacticalGameLinkRepository::class),
-                self::get(\App\Repositories\TenantAtakConfigRepository::class),
-                self::get(\App\Services\Tactical\AtakActivityLogService::class)
+                self::get(\App\Repositories\TenantAtakConfigRepository::class)
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),
