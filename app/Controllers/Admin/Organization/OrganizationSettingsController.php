@@ -191,7 +191,8 @@ final class OrganizationSettingsController
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
         $community['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
-        $community['registration_mode'] = ((string) $request->input('registration_mode', 'milsim')) === 'simple' ? 'simple' : 'milsim';
+        $registrationModeInput = (string) $request->input('registration_mode', 'milsim');
+        $community['registration_mode'] = in_array($registrationModeInput, ['simple', 'discord'], true) ? $registrationModeInput : 'milsim';
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
         $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';

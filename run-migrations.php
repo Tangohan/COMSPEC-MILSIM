@@ -2753,6 +2753,14 @@ try {
 
 echo "Seed OK. Compte : admin@athena.local / admin\n";
 
+$discordRecruitmentMigrate = require $root . '/bootstrap/discord_recruitment_migration.php';
+try {
+    echo "Migration discord_recruitment (recrutement via Discord)...\n";
+    $discordRecruitmentMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] discord_recruitment : ' . $e->getMessage() . "\n";
+}
+
 echo "\n--- Pipeline exécuté (résumé) ---\n";
 echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";

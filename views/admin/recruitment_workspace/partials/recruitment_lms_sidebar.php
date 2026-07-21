@@ -6,6 +6,8 @@ if ($active === '') {
     $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
     if (str_contains($requestUri, '/back-office/recruitments/messages-prefaits')) {
         $active = 'messages';
+    } elseif (str_contains($requestUri, '/back-office/recruitments/discord-questions')) {
+        $active = 'discord';
     } elseif (str_contains($requestUri, '/back-office/recruitments/settings')) {
         $active = 'sla';
     } elseif (str_contains($requestUri, '/back-office/recruitment/reference-format')) {
@@ -111,6 +113,13 @@ $navClass = static function (string $id) use ($active): string {
                 <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Messages préfaits</span>
             </span>
             <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Modèles</span>
+        </a>
+        <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('discord'), ENT_QUOTES, 'UTF-8') ?>">
+            <span>
+                <span class="block text-[8px] font-black tracking-[0.3em] uppercase <?= $active === 'discord' ? 'text-sky-400' : 'text-white/25' ?>">—</span>
+                <span class="block text-[12px] font-bold tracking-[0.14em] uppercase mt-1">Questions Discord</span>
+            </span>
+            <span class="text-[10px] font-black tracking-widest uppercase text-white/25">Réglages</span>
         </a>
         <?php if ($canStructureHub): ?>
             <a href="<?= htmlspecialchars(url('back-office/organisation/structure'), ENT_QUOTES, 'UTF-8') ?>" class="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 transition-all hover:border-emerald-500/20">

@@ -698,7 +698,9 @@ class Container
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
+                self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),
             ),
+            \App\Repositories\RecruitmentDiscordQuestionRepository::class => new \App\Repositories\RecruitmentDiscordQuestionRepository(),
             \App\Repositories\DocumentRepository::class => new \App\Repositories\DocumentRepository(),
             \App\Repositories\DocumentVersionRepository::class => new \App\Repositories\DocumentVersionRepository(),
             \App\Repositories\DocumentCategoryRepository::class => new \App\Repositories\DocumentCategoryRepository(),
@@ -1276,6 +1278,10 @@ class Container
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
                 self::get(\App\Repositories\RecruitmentTeamWallRepository::class),
                 self::get(\App\Services\Recruitment\EnlistmentCandidatePortalJourneyService::class)
+            ),
+            \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController::class => new \App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController(
+                self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),
+                self::get(\App\Repositories\EnlistmentRepository::class)
             ),
             \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService::class => new \App\Services\Recruitment\EnlistmentPortalMessagingNotificationService(
                 self::get(UserRepository::class),

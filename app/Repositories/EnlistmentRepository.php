@@ -276,8 +276,37 @@ class EnlistmentRepository
             if (!empty($data['recruitment_opening_id'])) {
                 $this->updateRecruitmentOpeningIdColumn($id, (int) $data['recruitment_opening_id']);
             }
+            if (($data['form_channel'] ?? '') === 'discord') {
+                $this->updateDiscordColumns($id, $data);
+            }
         }
         return $id;
+    }
+
+    /**
+     * Candidature déposée via le formulaire de recrutement Discord : pseudo + réponses
+     * aux questions custom du tenant. Sans effet si la migration n'est pas exécutée.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function updateDiscordColumns(int $enlistmentId, array $data): void
+    {
+        try {
+            $answers = !empty($data['discord_answers']) && is_array($data['discord_answers'])
+                ? json_encode(array_values($data['discord_answers']), JSON_UNESCAPED_UNICODE)
+                : null;
+            $stmt = $this->pdo->prepare(
+                'UPDATE enlistments SET form_channel = ?, discord_pseudo = ?, discord_answers_json = ? WHERE id = ?'
+            );
+            $stmt->execute([
+                'discord',
+                trim((string) ($data['discord_pseudo'] ?? '')) ?: null,
+                $answers,
+                $enlistmentId,
+            ]);
+        } catch (\Throwable) {
+            // Colonnes discord_* absentes (migration non exécutée) — on ignore
+        }
     }
 
     private function updateRecruitmentOpeningIdColumn(int $enlistmentId, int $openingId): void
@@ -507,7 +536,7 @@ class EnlistmentRepository
     }
 
     /** @var list<string> */
-    private const PIPELINE_STAGES = ['submitted', 'interview_scheduled', 'on_hold', 'accepted', 'rejected', 'blocked'];
+    private const PIPELINE_STAGES = ['submitted', 'interview_scheduled', 'on_hold', 'accepted', 'rejected', 'blocked', 'cancelled'];
 
     /**
      * Étape de pipeline explicite (visibilité recrutement), en complément de `status`.
@@ -542,8 +571,77 @@ class EnlistmentRepository
             'reviewed' => 'accepted',
             'rejected' => 'rejected',
             'blocked' => 'blocked',
+            'cancelled' => 'cancelled',
             default => 'submitted',
         };
+    }
+
+    /**
+     * Enregistre (ou met à jour) le rendez-vous Discord, ses notes et la grille d'évaluation
+     * staff (jamais exposée au candidat). Sans effet si la migration n'est pas exécutée.
+     *
+     * @param array<int, array{criterion: string, score: ?int, comment: string}>|null $evaluation
+     */
+    public function saveDiscordInterview(
+        int $tenantId,
+        int $id,
+        ?string $interviewAt,
+        ?string $notes,
+        ?array $evaluation,
+    ): bool {
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE enlistments SET discord_interview_at = ?, discord_interview_notes = ?, discord_evaluation_json = ?, updated_at = NOW()
+                 WHERE tenant_id = ? AND id = ?'
+            );
+            $stmt->execute([
+                $interviewAt !== '' ? $interviewAt : null,
+                $notes !== '' ? $notes : null,
+                $evaluation !== null ? json_encode($evaluation, JSON_UNESCAPED_UNICODE) : null,
+                $tenantId,
+                $id,
+            ]);
+
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Marque la fiche comme transmise au candidat (portail de suivi). Le lien du portail
+     * est généré séparément via ensureCandidatePortalToken().
+     */
+    public function markDiscordTransmitted(int $tenantId, int $id): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE enlistments SET discord_transmitted_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $stmt->execute([$tenantId, $id]);
+
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Annule et archive une candidature (statut dédié, la ligne est conservée pour l'audit —
+     * pas de suppression réelle).
+     */
+    public function cancelEnlistment(int $tenantId, int $id, int $actorUserId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET status = \'cancelled\', reviewed_by = ?, reviewed_at = NOW(), updated_at = NOW()
+             WHERE tenant_id = ? AND id = ? AND status NOT IN (\'reviewed\', \'cancelled\')'
+        );
+        $stmt->execute([$actorUserId, $tenantId, $id]);
+        if ($stmt->rowCount() > 0) {
+            $this->updatePipelineStage($tenantId, $id, 'cancelled');
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

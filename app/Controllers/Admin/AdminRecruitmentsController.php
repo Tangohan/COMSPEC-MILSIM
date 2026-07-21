@@ -1401,6 +1401,183 @@ class AdminRecruitmentsController
         return Response::redirect($this->recruitmentDossierShowUrl($id));
     }
 
+    /** @var list<string> Critères par défaut de la grille d'évaluation recrutement Discord. */
+    private const DISCORD_EVALUATION_CRITERIA = [
+        'Motivation',
+        'Communication',
+        'Disponibilité',
+        'Comportement / attitude',
+        'Adéquation technique',
+    ];
+
+    /**
+     * Fiche recrutement Discord : enregistre (ou met à jour) le rendez-vous, ses notes et la
+     * grille d'évaluation staff — jamais transmise au candidat.
+     */
+    public function discordInterviewSave(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $userId = (int) Session::get('user_id');
+        if ($id < 1 || $userId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            Session::flash('error', 'Dossier introuvable.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $interviewAt = trim((string) $request->input('discord_interview_at', ''));
+        if ($interviewAt !== '') {
+            $ts = strtotime($interviewAt);
+            $interviewAt = $ts !== false ? date('Y-m-d H:i:s', $ts) : '';
+        }
+        $notes = trim((string) $request->input('discord_interview_notes', ''));
+
+        $evaluation = [];
+        foreach (self::DISCORD_EVALUATION_CRITERIA as $criterion) {
+            $key = 'eval_' . md5($criterion);
+            $scoreRaw = $request->input($key . '_score', '');
+            $score = $scoreRaw !== '' ? max(1, min(5, (int) $scoreRaw)) : null;
+            $evalComment = trim((string) $request->input($key . '_comment', ''));
+            if ($score === null && $evalComment === '') {
+                continue;
+            }
+            $evaluation[] = ['criterion' => $criterion, 'score' => $score, 'comment' => $evalComment];
+        }
+        $overallComment = trim((string) $request->input('discord_evaluation_overall', ''));
+        if ($overallComment !== '') {
+            $evaluation[] = ['criterion' => 'Synthèse', 'score' => null, 'comment' => $overallComment];
+        }
+
+        $ok = $this->enlistmentRepository->saveDiscordInterview(
+            (int) $tenantId,
+            $id,
+            $interviewAt !== '' ? $interviewAt : null,
+            $notes !== '' ? $notes : null,
+            $evaluation !== [] ? $evaluation : null
+        );
+        if (!$ok) {
+            Session::flash('error', 'Impossible d’enregistrer la fiche pour le moment.');
+
+            return Response::redirect($this->recruitmentDossierShowUrl($id, 'discord'));
+        }
+
+        if ($this->enlistmentTimelineRepository->tableExists()) {
+            $summary = $interviewAt !== ''
+                ? 'Rendez-vous Discord planifié pour le ' . date('d/m/Y à H:i', strtotime($interviewAt))
+                : 'Fiche recrutement Discord mise à jour';
+            $this->enlistmentTimelineRepository->append(
+                (int) $tenantId,
+                $id,
+                'staff_note',
+                'instruction',
+                $summary,
+                $notes !== '' ? $notes : null,
+                $userId,
+                null
+            );
+        }
+        $this->enlistmentRepository->updatePipelineStage((int) $tenantId, $id, 'interview_scheduled');
+
+        Session::flash('success', 'Fiche recrutement Discord enregistrée.');
+
+        return Response::redirect($this->recruitmentDossierShowUrl($id, 'discord'));
+    }
+
+    /**
+     * Transmet la fiche (réponses + rendez-vous — jamais la grille d'évaluation) au candidat via
+     * le portail de suivi existant.
+     */
+    public function discordTransmit(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $userId = (int) Session::get('user_id');
+        if ($id < 1 || $userId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $row = $this->enlistmentRepository->findForTenant((int) $tenantId, $id);
+        if (!$row) {
+            Session::flash('error', 'Dossier introuvable.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+
+        $this->enlistmentRepository->markDiscordTransmitted((int) $tenantId, $id);
+        $this->notifyCandidate((int) $tenantId, $row, 'discord_transmit', 'Votre fiche de candidature a été mise à jour et transmise.', $userId);
+
+        Session::flash('success', 'Fiche transmise au candidat sur son portail de suivi.');
+
+        return Response::redirect($this->recruitmentDossierShowUrl($id, 'discord'));
+    }
+
+    /**
+     * Annule et archive la candidature (statut dédié, aucune suppression réelle en base).
+     */
+    public function cancel(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId || !$request->isPost()) {
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $userId = (int) Session::get('user_id');
+        if ($id < 1 || $userId < 1) {
+            Session::flash('error', 'Action impossible.');
+
+            return Response::redirect(url('back-office/recruitments'));
+        }
+        $ok = $this->enlistmentRepository->cancelEnlistment((int) $tenantId, $id, $userId);
+        if (!$ok) {
+            Session::flash('error', 'Cette candidature ne peut pas être annulée (déjà acceptée ou introuvable).');
+
+            return Response::redirect($this->recruitmentDossierShowUrl($id));
+        }
+        if ($this->enlistmentTimelineRepository->tableExists()) {
+            $this->enlistmentTimelineRepository->append(
+                (int) $tenantId,
+                $id,
+                'staff_note',
+                'instruction',
+                'Candidature annulée',
+                null,
+                $userId,
+                null
+            );
+        }
+        Session::flash('success', 'Candidature annulée.');
+
+        return Response::redirect(url('back-office/recruitments'));
+    }
+
     /**
      * @param array<string,mixed> $enlistment
      */
@@ -1424,6 +1601,7 @@ class AdminRecruitmentsController
             'block' => 'Non admis',
             'interview' => 'Entretien proposé',
             'pending' => 'Mise en attente',
+            'discord_transmit' => 'Fiche transmise',
             default => 'Mise à jour du dossier',
         };
         $commentStr = trim((string) $comment);

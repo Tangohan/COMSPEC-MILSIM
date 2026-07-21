@@ -1251,6 +1251,135 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 'ban' => '<svg class="enlist-decision-card__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 0 1 6.3 12.9L7.1 5.7A7.9 7.9 0 0 1 12 4zM5.7 7.1 18.9 20.3A8 8 0 0 1 5.7 7.1z"/></svg>',
             ];
             ?>
+            <?php
+            $discordFormChannel = trim((string) ($e['form_channel'] ?? 'milsim')) === 'discord';
+            if ($discordFormChannel):
+                $discordAnswersRaw = $e['discord_answers_json'] ?? null;
+                $discordAnswers = [];
+                if (is_string($discordAnswersRaw) && $discordAnswersRaw !== '') {
+                    $decoded = json_decode($discordAnswersRaw, true);
+                    $discordAnswers = is_array($decoded) ? $decoded : [];
+                } elseif (is_array($discordAnswersRaw)) {
+                    $discordAnswers = $discordAnswersRaw;
+                }
+                $discordEvalRaw = $e['discord_evaluation_json'] ?? null;
+                $discordEvaluation = [];
+                if (is_string($discordEvalRaw) && $discordEvalRaw !== '') {
+                    $decodedEval = json_decode($discordEvalRaw, true);
+                    $discordEvaluation = is_array($decodedEval) ? $decodedEval : [];
+                } elseif (is_array($discordEvalRaw)) {
+                    $discordEvaluation = $discordEvalRaw;
+                }
+                $discordEvalByCriterion = [];
+                foreach ($discordEvaluation as $row) {
+                    if (is_array($row) && isset($row['criterion'])) {
+                        $discordEvalByCriterion[(string) $row['criterion']] = $row;
+                    }
+                }
+                $discordInterviewAtRaw = trim((string) ($e['discord_interview_at'] ?? ''));
+                $discordInterviewAtFmt = $discordInterviewAtRaw !== '' ? date('d/m/Y à H:i', strtotime($discordInterviewAtRaw) ?: time()) : null;
+                $discordInterviewAtInput = $discordInterviewAtRaw !== '' ? date('Y-m-d\TH:i', strtotime($discordInterviewAtRaw) ?: time()) : '';
+                $discordTransmittedAt = trim((string) ($e['discord_transmitted_at'] ?? ''));
+                $discordEvalCriteria = ['Motivation', 'Communication', 'Disponibilité', 'Comportement / attitude', 'Adéquation technique'];
+                $discordOverall = $discordEvalByCriterion['Synthèse']['comment'] ?? '';
+            ?>
+            <section id="discord" class="scroll-mt-28 overflow-hidden rounded-2xl border border-indigo-200/90 bg-white shadow-sm">
+                <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-5 sm:px-8">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-indigo-900/70">Recrutement Discord</p>
+                    <h2 class="mt-1 text-lg font-black tracking-tight text-indigo-950 sm:text-xl">Fiche d’attribution &amp; rendez-vous</h2>
+                    <p class="mt-1.5 max-w-3xl text-sm leading-relaxed text-indigo-950/85">Candidature déposée depuis le formulaire Discord. Planifiez le rendez-vous, notez la grille d’évaluation (jamais transmise au candidat), puis transmettez la fiche ou concluez ci-dessous.</p>
+                </div>
+                <div class="space-y-6 p-5 sm:p-6 sm:px-8">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Pseudo Discord</p>
+                            <p class="mt-2 text-base font-bold leading-snug text-slate-900"><?= htmlspecialchars((string) ($e['discord_pseudo'] ?? '—') ?: '—', ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/90 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Transmission au candidat</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-800">
+                                <?= $discordTransmittedAt !== '' ? 'Transmise le ' . htmlspecialchars(date('d/m/Y à H:i', strtotime($discordTransmittedAt) ?: time()), ENT_QUOTES, 'UTF-8') : 'Pas encore transmise' ?>
+                            </p>
+                        </div>
+                    </div>
+
+                    <?php if ($discordAnswers !== []): ?>
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Réponses au formulaire</p>
+                        <dl class="mt-3 space-y-3">
+                            <?php foreach ($discordAnswers as $answerRow): ?>
+                                <?php if (!is_array($answerRow)) { continue; } ?>
+                                <div>
+                                    <dt class="text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) ($answerRow['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></dt>
+                                    <dd class="mt-0.5 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap"><?= htmlspecialchars((string) ($answerRow['answer'] ?? '—') ?: '—', ENT_QUOTES, 'UTF-8') ?></dd>
+                                </div>
+                            <?php endforeach; ?>
+                        </dl>
+                    </div>
+                    <?php endif; ?>
+
+                    <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/discord/entretien'), ENT_QUOTES, 'UTF-8') ?>" class="space-y-5 rounded-xl border border-indigo-100 bg-indigo-50/30 p-4 sm:p-5">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5" for="discord_interview_at">Rendez-vous Discord</label>
+                                <input type="datetime-local" id="discord_interview_at" name="discord_interview_at" value="<?= htmlspecialchars($discordInterviewAtInput, ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+                                <?php if ($discordInterviewAtFmt !== null): ?>
+                                <p class="mt-1 text-[11px] text-slate-500">Dernier rendez-vous enregistré : <?= htmlspecialchars($discordInterviewAtFmt, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5" for="discord_interview_notes">Notes d’entretien</label>
+                            <textarea id="discord_interview_notes" name="discord_interview_notes" rows="3" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"><?= htmlspecialchars((string) ($e['discord_interview_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Grille d’évaluation (usage interne — jamais visible du candidat)</p>
+                            <div class="mt-3 space-y-3">
+                                <?php foreach ($discordEvalCriteria as $criterion): ?>
+                                    <?php
+                                    $key = 'eval_' . md5($criterion);
+                                    $existing = $discordEvalByCriterion[$criterion] ?? null;
+                                    $existingScore = is_array($existing) ? ($existing['score'] ?? null) : null;
+                                    $existingComment = is_array($existing) ? (string) ($existing['comment'] ?? '') : '';
+                                    ?>
+                                    <div class="grid gap-2 sm:grid-cols-[10rem_5rem_1fr] sm:items-start">
+                                        <p class="pt-2 text-sm font-semibold text-slate-800"><?= htmlspecialchars($criterion, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <select name="<?= $key ?>_score" class="rounded-lg border border-slate-300 px-2 py-2 text-sm">
+                                            <option value="">—</option>
+                                            <?php for ($n = 1; $n <= 5; $n++): ?>
+                                                <option value="<?= $n ?>" <?= (int) $existingScore === $n ? 'selected' : '' ?>><?= $n ?>/5</option>
+                                            <?php endfor; ?>
+                                        </select>
+                                        <input type="text" name="<?= $key ?>_comment" value="<?= htmlspecialchars($existingComment, ENT_QUOTES, 'UTF-8') ?>" placeholder="Commentaire (facultatif)" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5" for="discord_evaluation_overall">Synthèse générale</label>
+                                <textarea id="discord_evaluation_overall" name="discord_evaluation_overall" rows="2" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"><?= htmlspecialchars((string) $discordOverall, ENT_QUOTES, 'UTF-8') ?></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="inline-flex items-center rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-800">Nouveau rendez-vous / enregistrer la fiche</button>
+                    </form>
+
+                    <div class="flex flex-wrap gap-3">
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/discord/transmission'), ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                            <button type="submit" class="inline-flex items-center rounded-xl border border-indigo-300 bg-white px-4 py-2.5 text-sm font-bold text-indigo-800 shadow-sm transition hover:bg-indigo-50">Transmettre la fiche au candidat</button>
+                        </form>
+                        <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/annuler'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Annuler cette candidature ?');">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
+                            <button type="submit" class="inline-flex items-center rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-bold text-rose-800 shadow-sm transition hover:bg-rose-50">Annuler et supprimer la candidature</button>
+                        </form>
+                    </div>
+                    <p class="text-xs text-slate-500">Pour valider le candidat et l’intégrer, utilisez « Accepter » dans le bloc « Décision à enregistrer » ci-dessous.</p>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <section id="instruction-dossier" class="enlist-decision-panel scroll-mt-28 overflow-hidden rounded-2xl border border-amber-200/90 bg-white shadow-sm">
                 <div class="enlist-decision-panel__head border-b border-amber-100 bg-amber-50 px-5 py-4 sm:px-6">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-900/70">Instruction</p>
