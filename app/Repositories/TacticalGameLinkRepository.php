@@ -58,11 +58,12 @@ class TacticalGameLinkRepository
             )->execute([$userId, $tenantId]);
 
             $code = $this->generateUniqueCode();
-            // Expiry calculée en SQL (même horloge que NOW() dans findValidByCode) —
-            // évite les faux « expiré » si PHP et MySQL n’ont pas le même fuseau.
+            // Toujours UTC_TIMESTAMP() : sur l’hébergeur, NOW() peut être en Europe/Paris
+            // alors que PHP écrit en UTC → expires_at / created_at paraissent déjà périmés.
+            $ttl = (int) self::TTL_MINUTES;
             $stmt = $this->pdo->prepare(
-                'INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at)
-                 VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . (int) self::TTL_MINUTES . ' MINUTE), NOW())'
+                "INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at)
+                 VALUES (?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL {$ttl} MINUTE), UTC_TIMESTAMP())"
             );
             $stmt->execute([$tenantId, $userId, $code]);
 
@@ -93,7 +94,10 @@ class TacticalGameLinkRepository
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
             $stmt = $this->pdo->prepare(
-                'SELECT 1 FROM tactical_game_link_codes WHERE code = ? AND expires_at > NOW() AND redeemed_at IS NULL LIMIT 1'
+                'SELECT 1 FROM tactical_game_link_codes
+                 WHERE code = ? AND redeemed_at IS NULL
+                   AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL ' . (int) self::TTL_MINUTES . ' MINUTE)
+                 LIMIT 1'
             );
             $stmt->execute([$code]);
             if (!$stmt->fetchColumn()) {
@@ -109,15 +113,15 @@ class TacticalGameLinkRepository
         if (!$this->tableExists() || trim($code) === '') {
             return null;
         }
-        // Validité basée sur created_at (posé avec NOW() à l’insert), pas sur expires_at
-        // seul — expires_at a pu être écrit avec l’horloge PHP (fuseau ≠ MySQL) et
-        // apparaître « déjà expiré » dès la création.
         $ttl = (int) self::TTL_MINUTES;
         $stmt = $this->pdo->prepare(
             "SELECT * FROM tactical_game_link_codes
              WHERE code = ?
                AND redeemed_at IS NULL
-               AND created_at >= DATE_SUB(NOW(), INTERVAL {$ttl} MINUTE)
+               AND (
+                 created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL {$ttl} MINUTE)
+                 OR expires_at > UTC_TIMESTAMP()
+               )
              LIMIT 1"
         );
         $stmt->execute([strtoupper(trim($code))]);
@@ -167,7 +171,7 @@ class TacticalGameLinkRepository
         }
         $stmt = $this->pdo->prepare(
             'UPDATE tactical_game_link_codes
-             SET redeemed_at = NOW(), redeemed_steam_uid = ?
+             SET redeemed_at = UTC_TIMESTAMP(), redeemed_steam_uid = ?
              WHERE id = ? AND redeemed_at IS NULL'
         );
         $uid = $steamUid !== null && trim($steamUid) !== '' ? trim($steamUid) : null;
