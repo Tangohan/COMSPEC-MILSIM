@@ -56,9 +56,48 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
 $rpStages = is_array($roleplayFollowupConfig['stages'] ?? null) ? $roleplayFollowupConfig['stages'] : [];
 $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $roleplayFollowupConfig['recruitment_tracks'] : [];
 $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
+
+$editNavGroups = [
+    [
+        'title' => 'Qui êtes-vous',
+        'items' => [
+            ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
+            ['id' => 'edit-identite-rp', 'label' => 'Personnage (RP)', 'show' => true],
+        ],
+    ],
+    [
+        'title' => 'Affectation',
+        'items' => [
+            ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
+            ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
+            ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
+        ],
+    ],
+    [
+        'title' => 'Affichage &amp; suite',
+        'items' => [
+            ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
+            ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
+            ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
+        ],
+    ],
+];
+$editNavFlat = [];
+foreach ($editNavGroups as $grp) {
+    foreach ($grp['items'] as $ni) {
+        if (!empty($ni['show'])) {
+            $editNavFlat[] = $ni;
+        }
+    }
+}
+$editDefaultTab = $editNavFlat[0]['id'] ?? '';
+$editValidTabIds = implode(',', array_map(
+    static fn ($ni) => "'" . addslashes((string) $ni['id']) . "'",
+    $editNavFlat
+));
 ?>
 <div class="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80 pb-16">
-  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8" x-data="{ tab: '<?= htmlspecialchars($editDefaultTab, ENT_QUOTES, 'UTF-8') ?>' }" x-init="const h = window.location.hash.slice(1); if ([<?= $editValidTabIds ?>].includes(h)) { tab = h }">
     <header class="mb-8 flex flex-col gap-4 border-b border-slate-200/80 pb-8 lg:flex-row lg:items-end lg:justify-between">
       <div>
         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Dossier opérationnel</p>
@@ -96,47 +135,16 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
     </div>
 
     <?php
-    $editNavGroups = [
-        [
-            'title' => 'Qui êtes-vous',
-            'items' => [
-                ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
-                ['id' => 'edit-identite-rp', 'label' => 'Personnage (RP)', 'show' => true],
-            ],
-        ],
-        [
-            'title' => 'Affectation',
-            'items' => [
-                ['id' => 'edit-orbat', 'label' => 'Unité &amp; rôle', 'show' => true],
-                ['id' => 'edit-habilitation', 'label' => 'Habilitation', 'show' => true],
-                ['id' => 'edit-suivi-immersion', 'label' => 'Suivi immersion', 'show' => !empty($roleplayFollowupConfig['enabled'])],
-            ],
-        ],
-        [
-            'title' => 'Affichage &amp; suite',
-            'items' => [
-                ['id' => 'forum-community-settings', 'label' => 'Forum &amp; fiche', 'show' => true],
-                ['id' => 'edit-equipement', 'label' => 'Équipement', 'show' => true],
-                ['id' => 'edit-notes', 'label' => 'Notes commandement', 'show' => true],
-            ],
-        ],
-    ];
-    $editNavFlat = [];
-    foreach ($editNavGroups as $grp) {
-        foreach ($grp['items'] as $ni) {
-            if (!empty($ni['show'])) {
-                $editNavFlat[] = $ni;
-            }
-        }
-    }
-    $navLinkClass = 'block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
+    $navLinkClass = 'block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900';
+    $navLinkActiveClass = 'bg-emerald-50 text-emerald-900';
     $navPillClass = 'shrink-0 snap-start rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50';
+    $navPillActiveClass = 'border-emerald-300 bg-emerald-600 text-white hover:border-emerald-300 hover:bg-emerald-600';
     ?>
     <nav class="mb-8 lg:hidden" aria-label="Sommaire du formulaire">
-      <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Aller à</p>
+      <p class="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Onglets</p>
       <div class="-mx-1 flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
         <?php foreach ($editNavFlat as $ni): ?>
-          <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navPillClass ?>"><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></a>
+          <button type="button" @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'" :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? '<?= $navPillActiveClass ?>' : ''" class="<?= $navPillClass ?>"><?= htmlspecialchars(str_replace('&amp;', '&', $ni['label']), ENT_QUOTES, 'UTF-8') ?></button>
         <?php endforeach; ?>
       </div>
     </nav>
@@ -144,7 +152,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
     <div class="lg:grid lg:grid-cols-[minmax(0,14.5rem)_1fr] lg:items-start lg:gap-10 xl:gap-12">
       <aside class="hidden lg:block" aria-label="Navigation du formulaire">
         <div class="sticky top-24 space-y-3">
-          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sommaire</p>
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Onglets</p>
           <nav class="space-y-4 rounded-2xl border border-slate-200/90 bg-white p-3 shadow-sm ring-1 ring-slate-900/[0.03]" aria-label="Sections">
             <?php foreach ($editNavGroups as $grp): ?>
               <?php
@@ -156,7 +164,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
               <div>
                 <p class="mb-1 px-3 text-[9px] font-black uppercase tracking-[0.18em] text-slate-400"><?= htmlspecialchars($grp['title'], ENT_QUOTES, 'UTF-8') ?></p>
                 <?php foreach ($visibleItems as $ni): ?>
-                <a href="#<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>" class="<?= $navLinkClass ?>"><?= $ni['label'] ?></a>
+                <button type="button" @click="tab = '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>'" :class="tab === '<?= htmlspecialchars($ni['id'], ENT_QUOTES, 'UTF-8') ?>' ? '<?= $navLinkActiveClass ?>' : ''" class="<?= $navLinkClass ?>"><?= $ni['label'] ?></button>
                 <?php endforeach; ?>
               </div>
             <?php endforeach; ?>
@@ -169,7 +177,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         <?= \App\Core\Csrf::field() ?>
 
         <?php if ($isMe): ?>
-        <div class="space-y-6">
+        <div class="space-y-6" x-cloak x-show="tab === 'edit-civil'">
           <div class="px-1">
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-700">1 · Vous (hors jeu)</p>
             <p class="mt-1 text-sm text-slate-600">Informations civiles du compte — distinctes du personnage.</p>
@@ -230,7 +238,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         </div>
         <?php endif; ?>
 
-        <div class="space-y-6">
+        <div class="space-y-6" x-cloak x-show="tab === 'edit-identite-rp'">
           <div class="px-1">
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-700"><?= $isMe ? '2' : '1' ?> · En mission</p>
             <p class="mt-1 text-sm text-slate-600">Identité du personnage — ce que les autres voient en opération et sur la fiche.</p>
@@ -370,12 +378,12 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         </section>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-6" x-cloak x-show="['edit-orbat','edit-habilitation','edit-suivi-immersion'].includes(tab)">
           <div class="px-1">
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700"><?= $isMe ? '3' : '2' ?> · Affectation</p>
             <p class="mt-1 text-sm text-slate-600">Unité, rôle dans l’organigramme, habilitation et suivi.</p>
           </div>
-        <section id="edit-orbat" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
+        <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
             <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Unité principale et fonction dans l’organigramme. L’enregistrement met à jour le dossier et l’affectation visible sur la fiche et le forum.</p>
@@ -470,7 +478,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
           </div>
         </section>
 
-        <section id="edit-habilitation" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-habilitation" x-show="tab === 'edit-habilitation'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-slate-900">Habilitation &amp; disponibilité</h2>
             <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Niveau d’accès, dates et indicateur de disponibilité pour le dossier.</p>
@@ -512,7 +520,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         </section>
 
         <?php if (!empty($roleplayFollowupConfig['enabled'])): ?>
-        <section id="edit-suivi-immersion" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/90 bg-white shadow-sm ring-1 ring-emerald-900/[0.05]">
+        <section id="edit-suivi-immersion" x-show="tab === 'edit-suivi-immersion'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-emerald-200/90 bg-white shadow-sm ring-1 ring-emerald-900/[0.05]">
           <div class="border-b border-emerald-100 bg-emerald-50/70 px-6 py-5 sm:px-8">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Suivi d’immersion</p>
             <h2 class="mt-2 text-base font-black tracking-tight text-emerald-950 sm:text-lg">Tutorat, filière et jalons</h2>
@@ -648,12 +656,12 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         <?php endif; ?>
         </div>
 
-        <div class="space-y-6">
+        <div class="space-y-6" x-cloak x-show="['forum-community-settings','edit-equipement','edit-notes'].includes(tab)">
           <div class="px-1">
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-700"><?= $isMe ? '4' : '3' ?> · Affichage &amp; suite</p>
             <p class="mt-1 text-sm text-slate-600">Ce que les autres voient sur le forum et la fiche, équipement et notes.</p>
           </div>
-        <section id="forum-community-settings" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
+        <section id="forum-community-settings" x-show="tab === 'forum-community-settings'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-violet-200/80 bg-white shadow-sm ring-1 ring-violet-900/[0.06]">
           <div class="border-b border-violet-100 bg-violet-50/60 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-violet-950">Forum &amp; fiche</h2>
             <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-violet-900/85">Pseudo, éléments visibles sur vos messages et sur votre fiche pour les autres membres.</p>
@@ -770,7 +778,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
         </script>
         <?php endif; ?>
 
-        <section id="edit-equipement" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-equipement" x-show="tab === 'edit-equipement'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-slate-900">Équipement / dotation</h2>
             <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-slate-600">Classe, kit et matériels assignés au personnage.</p>
@@ -803,7 +811,7 @@ $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
           </div>
         </section>
 
-        <section id="edit-notes" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
+        <section id="edit-notes" x-show="tab === 'edit-notes'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]">
           <div class="border-b border-slate-100 bg-slate-50/80 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-slate-900">Notes de commandement</h2>
             <p class="mt-1.5 text-xs text-slate-600">Visibles par vous et le personnel habilité.</p>
