@@ -4,6 +4,7 @@ $enlistment = is_array($enlistment ?? null) ? $enlistment : [];
 $messages = is_array($messages ?? null) ? $messages : [];
 $tenant = is_array($tenant ?? null) ? $tenant : [];
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+$recruitmentModeLabel = trim((string) ($portalRecruitmentModeLabel ?? ''));
 $status = (string) ($enlistment['status'] ?? 'submitted');
 $dossierRejected = $status === 'rejected';
 $dossierBlocked = $status === 'blocked';
@@ -310,6 +311,12 @@ $tailwindHead = (string) ob_get_clean();
                     <?php endif; ?>
                 </div>
                 <dl class="space-y-3 px-5 py-4 text-sm">
+                    <?php if ($recruitmentModeLabel !== ''): ?>
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Mode de recrutement</dt>
+                        <dd class="max-w-[58%] text-right text-xs font-medium text-slate-800"><?= htmlspecialchars($recruitmentModeLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+                    </div>
+                    <?php endif; ?>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Référent du dossier</dt>
                         <dd class="max-w-[58%] text-right text-xs font-medium text-slate-800"><?= $portalReferentLabel !== '' ? htmlspecialchars($portalReferentLabel, ENT_QUOTES, 'UTF-8') : 'Non précisé pour l’instant par l’équipe.' ?></dd>

@@ -308,6 +308,14 @@ final class EnlistmentCandidatePortalController
             ? $this->recruitmentEngagementRepository->findRetro($tenantId, $enlistmentId, EnlistmentRecruitmentEngagementRepository::SCOPE_CANDIDATE_RETURN)
             : null;
 
+        if (trim((string) ($row['form_channel'] ?? '')) === 'discord') {
+            $recruitmentModeLabel = 'Recrutement via Discord';
+        } else {
+            $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+            $regMode = (string) ($community['registration_mode'] ?? 'milsim');
+            $recruitmentModeLabel = $regMode === 'simple' ? 'Recrutement simplifié' : 'Recrutement MilSim complet';
+        }
+
         return Response::view('enlistment.candidate_portal', [
             'enlistment' => $row,
             'messages' => $messages,
@@ -328,6 +336,7 @@ final class EnlistmentCandidatePortalController
             'portalRecruitmentSlaHours' => $slaHours,
             'portalSubmittedAgeHours' => $submittedAgeHours,
             'portalSlaBreached' => $slaBreached,
+            'portalRecruitmentModeLabel' => $recruitmentModeLabel,
         ]);
     }
 
