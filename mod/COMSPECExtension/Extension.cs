@@ -104,7 +104,20 @@ public static class Extension
         for (var i = 0; i < argCount; i++)
             argsString[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(args + (i * Marshal.SizeOf<nint>())));
 
-        var syncResult = TryGetSyncResponse(functionString, argsString);
+        // Filet de sécurité au niveau du point d'entrée natif : une méthode [UnmanagedCallersOnly]
+        // ne doit jamais laisser fuiter d'exception (le runtime .NET fait un fail-fast qui tue le
+        // process hôte, c-à-d Arma). Toute exception imprévue devient un ERR| exploitable en SQF
+        // plutôt qu'un plantage silencieux ou un retour vide sans diagnostic.
+        string? syncResult;
+        try
+        {
+            syncResult = TryGetSyncResponse(functionString, argsString);
+        }
+        catch (Exception ex)
+        {
+            syncResult = "ERR|exception:" + ex.GetType().Name;
+        }
+
         if (syncResult != null)
         {
             var maxLen = Math.Min(syncResult.Length, Math.Min(outputSize - 1, MaxOutputBytes));
@@ -114,7 +127,14 @@ public static class Extension
             return 0;
         }
 
-        RvExtensionArgsImpl(functionString, argsString);
+        try
+        {
+            RvExtensionArgsImpl(functionString, argsString);
+        }
+        catch
+        {
+            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+        }
         Output(output, outputSize, "");
         return 0;
     }
@@ -198,6 +218,17 @@ public static class Extension
             catch (JsonException)
             {
                 return "ERR|invalid_response";
+            }
+            catch (UriFormatException)
+            {
+                return "ERR|invalid_url";
+            }
+            catch (Exception ex)
+            {
+                // Filet de sécurité : sans ce catch-all, toute exception non prévue ci-dessus
+                // (ex. UriFormatException sur une URL mal formée) remontait non interceptée et
+                // produisait un retour vide côté SQF ("Liaison impossible ()." sans détail).
+                return "ERR|exception:" + ex.GetType().Name;
             }
         }
 

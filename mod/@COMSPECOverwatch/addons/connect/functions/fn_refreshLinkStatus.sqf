@@ -44,7 +44,7 @@ if (_prefix == "OK") then {
         case "not_connected": { "Liaison non établie" };
         case "invalid": { "Extension indisponible" };
         default {
-            if (_payload isEqualTo "") then { "Hors liaison" } else { "Hors liaison" };
+            if (_payload isEqualTo "") then { "Hors liaison" } else { format ["Hors liaison (%1)", _payload] };
         };
     };
     [format ["[Athena] Contrôle liaison échoué : %1", _detail]] call comspec_overwatch_connect_fnc_appendLinkLog;
