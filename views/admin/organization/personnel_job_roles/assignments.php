@@ -145,23 +145,17 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                 $uid = (int) ($row['id'] ?? 0);
                 $slug = trim((string) ($row['profile_slug'] ?? ''));
                 $personnelUrl = url('personnel/' . ($slug !== '' ? $slug : (string) $uid));
-                $curJr = isset($row['personnel_job_role_id']) ? (int) $row['personnel_job_role_id'] : 0;
-                $pivotRows = $pivotEnabled && isset($assignmentPivot[$uid]) ? $assignmentPivot[$uid] : [];
-                if ($pivotEnabled && $pivotRows === [] && $curJr > 0) {
-                    $pivotRows = [[
-                        'personnel_job_role_id' => $curJr,
-                        'role_detail' => (string) ($row['role_sub_label'] ?? ''),
-                        'is_primary' => 1,
-                    ]];
-                }
+                $pivotRows = isset($assignmentPivot[$uid]) ? $assignmentPivot[$uid] : [];
                 $nExisting = count($pivotRows);
-                $slotCount = $pivotEnabled
-                    ? min($maxRoles, max($nExisting, 1, min($defaultExpand, $maxRoles)))
-                    : 1;
+                $slotCount = min($maxRoles, max($nExisting, 1, min($defaultExpand, $maxRoles)));
                 $primaryIdxFromData = null;
+                $dossierLabel = '';
                 foreach ($pivotRows as $pidx => $prow) {
                     if (!empty($prow['is_primary'])) {
                         $primaryIdxFromData = (int) $pidx;
+                        $prName = trim((string) ($prow['role_name'] ?? ''));
+                        $prDetail = trim((string) ($prow['role_detail'] ?? ''));
+                        $dossierLabel = $prDetail !== '' && $prName !== '' ? $prName . ' — ' . $prDetail : ($prName !== '' ? $prName : $prDetail);
                         break;
                     }
                 }
@@ -190,7 +184,6 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                             <?= \App\Core\Csrf::field() ?>
                             <input type="hidden" name="user_id" value="<?= $uid ?>">
                             <input type="hidden" name="return_query" value="<?= htmlspecialchars($returnQuery, ENT_QUOTES, 'UTF-8') ?>">
-                            <?php if ($pivotEnabled): ?>
                             <div class="space-y-2 rounded-lg border border-slate-100 bg-slate-50/50 p-3">
                                 <p class="text-[10px] font-bold uppercase text-slate-500">Emplois</p>
                                 <?php
@@ -225,32 +218,9 @@ $baseUrl = url('back-office/personnel-job-roles/assignments');
                                 <?php endfor; ?>
                                 <button type="button" class="pjr-add-slot rounded border border-dashed border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">Ajouter une ligne d’emploi</button>
                             </div>
-                            <div class="min-w-[200px]">
-                                <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Complément global (dossier)</label>
-                                <input type="text" name="role_sub_label" value="<?= htmlspecialchars((string) ($row['role_sub_label'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-2 py-1.5 text-xs" maxlength="150" placeholder="Texte ajouté au libellé principal">
-                            </div>
-                            <?php else: ?>
-                            <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                                <div class="min-w-[220px] flex-1">
-                                    <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500" for="pjr-legacy-<?= $uid ?>-btn">Rôle métier</label>
-                                    <?php
-                                    $pjrComboName = 'personnel_job_role_id';
-                                    $pjrComboSelectedId = $curJr;
-                                    $pjrComboEmptyValue = '';
-                                    $pjrComboEmptyLabel = 'Aucun choix';
-                                    $pjrComboId = 'pjr-legacy-' . $uid;
-                                    require __DIR__ . '/_role_combobox.php';
-                                    ?>
-                                </div>
-                                <div class="min-w-[160px] flex-1">
-                                    <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Sous-rôle</label>
-                                    <input type="text" name="role_sub_label" value="<?= htmlspecialchars((string) ($row['role_sub_label'] ?? '')) ?>" class="w-full rounded border border-slate-200 px-2 py-1.5 text-xs" maxlength="150" placeholder="Optionnel">
-                                </div>
-                            </div>
-                            <?php endif; ?>
                             <div class="rounded border border-dashed border-slate-200 bg-slate-50/80 px-2 py-1.5 text-xs text-slate-600">
                                 <span class="font-bold text-slate-500">Libellé dossier :</span>
-                                <?= htmlspecialchars((string) ($row['primary_role'] ?? '—')) ?>
+                                <?= $dossierLabel !== '' ? htmlspecialchars($dossierLabel) : '—' ?>
                             </div>
                             <div class="shrink-0">
                                 <button type="submit" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Enregistrer</button>

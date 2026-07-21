@@ -45,6 +45,39 @@ final class EnlistmentPortalAutoModerationCoordinator
         return $this->textModerationScanner->scan($text);
     }
 
+    /**
+     * @param array{code: string, public_label: string} $hit
+     */
+    public function isSelfHarmHit(array $hit): bool
+    {
+        return (string) ($hit['code'] ?? '') === 'self_harm';
+    }
+
+    /**
+     * Détresse évoquée par le candidat (idées suicidaires, automutilation...) : jamais de blocage IP/e-mail
+     * ni de refus du message — la priorité est que le message parte et que l’équipe soit alertée en urgence.
+     *
+     * @param array<string, mixed> $enlistment
+     * @param array{code: string, public_label: string} $hit
+     */
+    public function handleCandidateSelfHarmDisclosure(
+        int $tenantId,
+        string $tenantName,
+        array $enlistment,
+        array $hit,
+        string $textPreviewForLog,
+    ): void {
+        $this->broadcastAlerts($tenantId, $tenantName, $enlistment, 'candidat', $hit, $textPreviewForLog, null, false);
+        $this->appendModerationTimeline(
+            $tenantId,
+            $enlistment,
+            'candidat',
+            $hit,
+            null,
+            false
+        );
+    }
+
     public function isPortalAccessBlocked(int $tenantId, string $email, string $ip): bool
     {
         if ($tenantId < 1) {
@@ -131,6 +164,7 @@ final class EnlistmentPortalAutoModerationCoordinator
         string $side,
         array $hit,
         ?int $actorUserId,
+        bool $blocked = true,
     ): void {
         $eid = (int) ($enlistment['id'] ?? 0);
         if ($eid < 1 || !$this->enlistmentTimelineRepository->tableExists()) {
@@ -141,9 +175,14 @@ final class EnlistmentPortalAutoModerationCoordinator
             $label = 'contenu refusé';
         }
         $who = $side === 'equipe' ? 'un membre de l’équipe' : 'le candidat';
-        $body = 'Filtre automatique du portail : « ' . $label . ' ». Origine : ' . $who . '.'
-            . ' Des courriels d’alerte ont été envoyés au candidat, à l’équipe recrutement et aux contacts de pilotage de la communauté.'
-            . ' Les blocages automatiques (e-mail / réseau) peuvent être levés dans le back-office : Blocages portail & sécurité.';
+        if ($blocked) {
+            $body = 'Filtre automatique du portail : « ' . $label . ' ». Origine : ' . $who . '.'
+                . ' Des courriels d’alerte ont été envoyés au candidat, à l’équipe recrutement et aux contacts de pilotage de la communauté.'
+                . ' Les blocages automatiques (e-mail / réseau) peuvent être levés dans le back-office : Blocages portail & sécurité.';
+        } else {
+            $body = 'Alerte de vigilance sur le portail : « ' . $label . ' ». Origine : ' . $who . '.'
+                . ' Le message a été transmis normalement (aucun blocage) ; l’équipe recrutement a été alertée pour un suivi humain rapide.';
+        }
         $this->enlistmentTimelineRepository->append(
             $tenantId,
             $eid,
@@ -218,6 +257,7 @@ final class EnlistmentPortalAutoModerationCoordinator
         array $hit,
         string $textPreviewForLog,
         ?string $staffActorEmail,
+        bool $blocked = true,
     ): void {
         if (!$this->platformSettingsRepository->getBool(self::SETTING_AUTOMOD_ALERT_EMAILS_ENABLED, true)) {
             return;
@@ -229,7 +269,9 @@ final class EnlistmentPortalAutoModerationCoordinator
         }
         $masked = $this->maskPreview($textPreviewForLog);
         $recipients = [];
-        if ($candidateEmail !== '') {
+        // Détresse évoquée (non bloquant) : on n’envoie pas au candidat un courriel « votre message a été refusé »
+        // — le message est transmis normalement, seule l’équipe est alertée pour un suivi humain.
+        if ($blocked && $candidateEmail !== '') {
             $recipients['candidate:' . $candidateEmail] = ['to' => $candidateEmail, 'audience' => 'candidate'];
         }
         $staffSet = $this->mergeStaffRecipientEmails($tenantId);
@@ -252,7 +294,8 @@ final class EnlistmentPortalAutoModerationCoordinator
                     $side,
                     (string) $hit['public_label'],
                     $masked,
-                    $tenantId
+                    $tenantId,
+                    $blocked
                 );
             } catch (\Throwable) {
             }

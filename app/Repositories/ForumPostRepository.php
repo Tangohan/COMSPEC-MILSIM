@@ -171,7 +171,8 @@ class ForumPostRepository
                     r.name AS author_role_name, r.slug AS author_role_slug, r.role_layer AS author_role_layer,
                     up.bio AS author_bio,
                     $gradeCols,
-                    pp.matricule_internal AS author_matricule, COALESCE(pjr.name, pp.primary_role) AS author_primary_role,
+                    pp.matricule_internal AS author_matricule,
+                    TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), ''))) AS author_primary_role,
                     un.name AS author_unit_name, un.code AS author_unit_code,
                     (SELECT GROUP_CONCAT(psh.title ORDER BY psh.event_date DESC, psh.id DESC SEPARATOR ' · ')
                      FROM personnel_service_history psh
@@ -182,7 +183,8 @@ class ForumPostRepository
              LEFT JOIN user_profiles up ON up.user_id = u.id
              $gradeJoin
              LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
-             LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id
+             LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
+             LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id
              LEFT JOIN units un ON un.id = pp.primary_unit_id
              $upsJoin
              $roleJoinSql

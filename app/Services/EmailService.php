@@ -643,11 +643,12 @@ final class EmailService
         string $sourceSide,
         string $categoryLabel,
         string $maskedPreview,
-        int $tenantId
+        int $tenantId,
+        bool $blocked = true
     ): bool {
         $sourceSideLabel = $sourceSide === 'equipe' ? 'Équipe recrutement' : 'Candidat';
 
-        $portalBlocklistManageUrl = $recipientAudience !== 'candidate'
+        $portalBlocklistManageUrl = $recipientAudience !== 'candidate' && $blocked
             ? \url('back-office/security-indicators')
             : '';
 
@@ -655,7 +656,7 @@ final class EmailService
             EmailEvents::ENLISTMENT_PORTAL_AUTOMOD_ALERT,
             'enlistment_portal_moderation_alert',
             $to,
-            'Modération automatique — dossier #' . $enlistmentId . ' — ' . $tenantName,
+            ($blocked ? 'Modération automatique' : 'Vigilance — signal de détresse') . ' — dossier #' . $enlistmentId . ' — ' . $tenantName,
             [
                 'tenantName' => $tenantName,
                 'enlistmentId' => $enlistmentId,
@@ -664,6 +665,7 @@ final class EmailService
                 'categoryLabel' => $categoryLabel,
                 'maskedPreview' => $maskedPreview,
                 'portalBlocklistManageUrl' => $portalBlocklistManageUrl,
+                'blocked' => $blocked,
             ],
             $tenantId,
             null,
@@ -1294,6 +1296,34 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'effectifs_hr_weekly_digest']
+        );
+    }
+
+    /**
+     * @param list<array{name: string, next_due_label: string, overdue: bool}> $members
+     */
+    public function sendRoleplayBilanDueAlert(
+        string $to,
+        string $recipientDisplayName,
+        string $tenantName,
+        array $members,
+        string $roleplayFollowupUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ROLEPLAY_BILAN_DUE,
+            'roleplay_bilan_due_alert',
+            $to,
+            'Bilans roleplay dus — ' . $tenantName,
+            [
+                'recipientDisplayName' => $recipientDisplayName,
+                'tenantName' => $tenantName,
+                'members' => $members,
+                'roleplayFollowupUrl' => $roleplayFollowupUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'roleplay_bilan_due']
         );
     }
 

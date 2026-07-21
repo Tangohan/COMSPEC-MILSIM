@@ -246,6 +246,8 @@ $renderTable = static function (
                                 ? trim((string) ($row['tenant_name'] ?? '')) ?: 'Communauté'
                                 : $unitLabel;
                             [$createdDate, $createdTime] = $fmtDateParts((string) ($row['created_at'] ?? ''));
+                            $createdTs = strtotime((string) ($row['created_at'] ?? ''));
+                            $isRecent = $createdTs !== false && $createdTs >= strtotime('-7 days');
                             $lastAction = trim((string) ($row['updated_at'] ?? ''));
                             if ($lastAction === '') {
                                 $lastAction = trim((string) ($row['created_at'] ?? ''));
@@ -264,7 +266,10 @@ $renderTable = static function (
                                     <div class="das-sheet__who">
                                         <span class="das-sheet__avatar"><?= htmlspecialchars($initials($fn, $ln), ENT_QUOTES, 'UTF-8') ?></span>
                                         <span class="das-sheet__who-text">
-                                            <span class="das-sheet__name"><?= htmlspecialchars($full, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="das-sheet__name">
+                                                <?= htmlspecialchars($full, ENT_QUOTES, 'UTF-8') ?>
+                                                <?php if ($isRecent): ?><span class="das-badge das-badge--sky das-badge--new" title="Déposée il y a moins de 7 jours">Nouveau</span><?php endif; ?>
+                                            </span>
                                             <?php if ($email !== ''): ?>
                                                 <span class="das-sheet__mail"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></span>
                                             <?php endif; ?>
@@ -533,6 +538,7 @@ $renderTable = static function (
 .das-badge--slate { background: #f1f5f9; border-color: #cbd5e1; color: #334155; }
 .das-badge--sky { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
 .das-badge--muted { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
+.das-badge--new { margin-left: 0.35rem; padding: 0.1rem 0.4rem; font-size: 0.5625rem; vertical-align: middle; }
 
 .das-btn {
     display: inline-flex;

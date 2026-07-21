@@ -21,7 +21,65 @@ class PersonnelProfileRepository
         $stmt = $this->pdo->prepare('SELECT * FROM personnel_profiles WHERE user_id = ? LIMIT 1');
         $stmt->execute([$userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ?: null;
+        if (!$row) {
+            return null;
+        }
+
+        return $this->withPrimaryJobRoleBridge($row);
+    }
+
+    /**
+     * Compatibilité en lecture : `primary_role` / `personnel_job_role_id` / `role_sub_label` n'existent
+     * plus comme colonnes (fusionnées dans la table pivot personnel_profile_job_roles). Les appelants
+     * historiques qui lisent ces clés sur le tableau retourné par getByUserId() continuent de fonctionner,
+     * alimentés depuis le rôle métier principal de la pivot.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function withPrimaryJobRoleBridge(array $row): array
+    {
+        if (array_key_exists('primary_role', $row)) {
+            // Colonnes encore présentes (migration pas encore appliquée sur cet environnement) : ne rien changer.
+            return $row;
+        }
+        $userId = (int) ($row['user_id'] ?? 0);
+        $row['primary_role'] = '';
+        $row['personnel_job_role_id'] = null;
+        $row['role_sub_label'] = '';
+        if ($userId < 1) {
+            return $row;
+        }
+        $tenantStmt = $this->pdo->prepare('SELECT tenant_id FROM users WHERE id = ? LIMIT 1');
+        $tenantStmt->execute([$userId]);
+        $tenantId = (int) $tenantStmt->fetchColumn();
+        if ($tenantId < 1) {
+            return $row;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT pj.personnel_job_role_id, pj.role_detail, r.name AS role_name
+             FROM personnel_profile_job_roles pj
+             INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+             WHERE pj.tenant_id = ? AND pj.user_id = ?
+             ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC
+             LIMIT 1'
+        );
+        try {
+            $stmt->execute([$tenantId, $userId]);
+        } catch (\Throwable) {
+            return $row;
+        }
+        $pr = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$pr) {
+            return $row;
+        }
+        $name = trim((string) ($pr['role_name'] ?? ''));
+        $detail = trim((string) ($pr['role_detail'] ?? ''));
+        $row['personnel_job_role_id'] = (int) $pr['personnel_job_role_id'];
+        $row['role_sub_label'] = $detail;
+        $row['primary_role'] = $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail);
+
+        return $row;
     }
 
     public function ensureRecord(int $userId): void
@@ -41,8 +99,7 @@ class PersonnelProfileRepository
     public function update(int $userId, array $data): bool
     {
         $allowed = [
-            'character_name', 'callsign', 'rank_display', 'rank_display_override', 'primary_role', 'secondary_role',
-            'personnel_job_role_id', 'role_sub_label',
+            'character_name', 'callsign', 'rank_display', 'rank_display_override',
             'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
             'sex', 'family_situation', 'weight_kg', 'operator_status', 'operator_tags',
@@ -54,7 +111,7 @@ class PersonnelProfileRepository
             'rp_followup_stage', 'rp_followup_status', 'rp_followup_progress', 'rp_tutor_user_id',
             'rp_recruitment_stream', 'rp_operational_function', 'rp_recruitment_origin',
             'rp_next_interview_date', 'rp_medical_due_date', 'rp_service_rotation_date',
-            'rp_followup_notes', 'rp_eligibility_snapshot_json',
+            'rp_followup_notes', 'rp_eligibility_snapshot_json', 'rp_last_review_at',
         ];
         $set = [];
         $params = [];
@@ -122,5 +179,41 @@ class PersonnelProfileRepository
         $stmt->execute([$tenantId, $thresholdDays]);
 
         return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Membres actifs dont le bilan roleplay est dû, cadence App\Support\RoleplayBilanPolicy
+     * (6/8/12 mois selon ancienneté depuis users.created_at). Une seule requête, pas de N+1.
+     *
+     * @return list<array{user_id: int, email: string, display_name: string, callsign: string, joined_at: string, rp_last_review_at: ?string, rp_tutor_user_id: ?int, next_due_at: string, is_overdue: int}>
+     */
+    public function listRoleplayBilanDueForTenant(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT u.id AS user_id, u.email, u.display_name, u.callsign, u.created_at AS joined_at,
+                    pp.rp_last_review_at, pp.rp_tutor_user_id,
+                    DATE_ADD(COALESCE(pp.rp_last_review_at, u.created_at), INTERVAL
+                        CASE
+                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . \App\Support\RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . '
+                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN ' . \App\Support\RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
+                            ELSE " . \App\Support\RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . "
+                        END DAY
+                    ) AS next_due_at,
+                    CASE WHEN DATE_ADD(COALESCE(pp.rp_last_review_at, u.created_at), INTERVAL
+                        CASE
+                            WHEN DATEDIFF(NOW(), u.created_at) < 365 THEN " . \App\Support\RoleplayBilanPolicy::FIRST_YEAR_INTERVAL_DAYS . '
+                            WHEN DATEDIFF(NOW(), u.created_at) < 730 THEN ' . \App\Support\RoleplayBilanPolicy::SECOND_YEAR_INTERVAL_DAYS . "
+                            ELSE " . \App\Support\RoleplayBilanPolicy::ONGOING_INTERVAL_DAYS . '
+                        END DAY
+                    ) < DATE_SUB(NOW(), INTERVAL ' . \App\Support\RoleplayBilanPolicy::OVERDUE_GRACE_DAYS . " DAY) THEN 1 ELSE 0 END AS is_overdue
+             FROM users u
+             INNER JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ? AND u.status = 'active'
+             HAVING next_due_at <= NOW()
+             ORDER BY next_due_at ASC"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

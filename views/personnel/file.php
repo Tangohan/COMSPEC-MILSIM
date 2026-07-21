@@ -1099,8 +1099,6 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php if ($gradeLabel !== '' && $gradeLabel !== $effectiveRankDisplay): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Grade de référence</p><p class="text-sm text-slate-700"><?= htmlspecialchars($gradeLabel) ?></p></div>
                         <?php endif; ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle principal</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['primary_role'] ?? '—') ?></p></div>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle secondaire</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($personnelProfile['secondary_role'] ?? '—') ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Unité</p><p class="text-sm font-black text-slate-900"><?= $unitName ? htmlspecialchars($unitName) : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Chef direct</p><p class="text-sm font-black text-slate-900"><?= $commander ? htmlspecialchars($commander['display_name'] ?? $commander['callsign'] ?? '') : '—' ?></p></div>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Date d'incorporation</p><p class="text-sm font-black text-slate-900"><?= $enlistmentFormatted ?? '—' ?></p></div>
@@ -1168,9 +1166,9 @@ $personnelFileShell = $personnelFileIsRhFull
                     <?php endif; ?>
                 </section>
 
-                <?php if ($personnelJobRoleAssignments !== []): ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
-                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Rôles métier (référentiel)</h2>
+                    <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Rôle(s) métier (référentiel)</h2>
+                    <?php if ($personnelJobRoleAssignments !== []): ?>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <?php foreach ($personnelJobRoleAssignments as $jr):
                             $jrName = trim((string) ($jr['role_name'] ?? ''));
@@ -1186,8 +1184,10 @@ $personnelFileShell = $personnelFileIsRhFull
                         </div>
                         <?php endforeach; ?>
                     </div>
+                    <?php else: ?>
+                    <p class="text-sm text-slate-500">Aucun rôle métier attribué pour l’instant.</p>
+                    <?php endif; ?>
                 </section>
-                <?php endif; ?>
 
                 <section class="bg-white border border-slate-200 rounded-3xl p-8">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-6">Affectations actives</h2>

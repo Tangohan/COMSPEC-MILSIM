@@ -11,9 +11,23 @@ final class PersonnelDeploymentRepository
 {
     private PDO $pdo;
 
+    private static array $tableExistsCache = [];
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function tableExists(string $table): bool
+    {
+        if (array_key_exists($table, self::$tableExistsCache)) {
+            return self::$tableExistsCache[$table];
+        }
+        $stmt = $this->pdo->prepare('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1');
+        $stmt->execute([$table]);
+        self::$tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+
+        return self::$tableExistsCache[$table];
     }
 
     public function ensureSchema(): void
@@ -92,8 +106,16 @@ final class PersonnelDeploymentRepository
             $params[] = (int) $eventId;
         }
 
+        $jobRoleJoin = '';
+        $jobRoleSelect = "'' AS primary_role";
+        if ($this->tableExists('personnel_profile_job_roles') && $this->tableExists('personnel_job_roles')) {
+            $jobRoleJoin = 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
+                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
+            $jobRoleSelect = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), ''))) AS primary_role";
+        }
+
         $sql = 'SELECT u.id AS user_id, u.display_name, u.callsign, u.email,
-                    pp.primary_role, pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id, pp.deployable,
+                    ' . $jobRoleSelect . ', pp.blood_type AS profile_blood_type, pp.matricule_internal, pp.primary_unit_id, pp.deployable,
                     un.name AS unit_name,
                     d.id AS deployment_id, d.status AS deployment_status, d.campaign_tag, d.event_id, d.deployed_at,
                     d.mods_up_to_date, d.role_qualified_authorized, d.recycling_alpha_bravo_up_to_date, d.vmp_up_to_date,
@@ -103,6 +125,7 @@ final class PersonnelDeploymentRepository
                     r.status AS event_rsvp_status, r.checked_in_at AS event_checked_in_at
                 FROM users u
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $jobRoleJoin . '
                 LEFT JOIN units un ON un.id = pp.primary_unit_id
                 LEFT JOIN personnel_deployments d ON d.user_id = u.id AND d.tenant_id = u.tenant_id
                 LEFT JOIN community_events ce ON ce.id = d.event_id AND ce.tenant_id = u.tenant_id

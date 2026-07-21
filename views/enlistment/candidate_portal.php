@@ -4,6 +4,7 @@ $enlistment = is_array($enlistment ?? null) ? $enlistment : [];
 $messages = is_array($messages ?? null) ? $messages : [];
 $tenant = is_array($tenant ?? null) ? $tenant : [];
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
+$recruitmentModeLabel = trim((string) ($portalRecruitmentModeLabel ?? ''));
 $status = (string) ($enlistment['status'] ?? 'submitted');
 $dossierRejected = $status === 'rejected';
 $dossierBlocked = $status === 'blocked';
@@ -78,7 +79,10 @@ foreach ($attachments as $a) {
 $portalUploadsReady = !empty($portalUploadsReady);
 $allowPortalFiles = !empty($allowPortalFiles);
 $allowPortalAudio = !empty($allowPortalAudio);
-$canUploadSomething = !$dossierMessagingClosed && $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
+$isDiscordChannel = trim((string) ($enlistment['form_channel'] ?? '')) === 'discord';
+$discordMessagingEnabled = (int) ($enlistment['discord_portal_messaging_enabled'] ?? 0) === 1;
+$discordCommsLocked = $isDiscordChannel && !$discordMessagingEnabled && !$dossierMessagingClosed;
+$canUploadSomething = !$dossierMessagingClosed && !$discordCommsLocked && $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
 $attachmentCount = count($attachments);
 $fmtBytes = static function (int $b): string {
     if ($b >= 1048576) {
@@ -310,6 +314,12 @@ $tailwindHead = (string) ob_get_clean();
                     <?php endif; ?>
                 </div>
                 <dl class="space-y-3 px-5 py-4 text-sm">
+                    <?php if ($recruitmentModeLabel !== ''): ?>
+                    <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
+                        <dt class="text-slate-500">Mode de recrutement</dt>
+                        <dd class="max-w-[58%] text-right text-xs font-medium text-slate-800"><?= htmlspecialchars($recruitmentModeLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+                    </div>
+                    <?php endif; ?>
                     <div class="flex justify-between gap-3 border-b border-slate-100 pb-3">
                         <dt class="text-slate-500">Référent du dossier</dt>
                         <dd class="max-w-[58%] text-right text-xs font-medium text-slate-800"><?= $portalReferentLabel !== '' ? htmlspecialchars($portalReferentLabel, ENT_QUOTES, 'UTF-8') : 'Non précisé pour l’instant par l’équipe.' ?></dd>
@@ -405,9 +415,12 @@ $tailwindHead = (string) ob_get_clean();
                         $stState = (string) ($st['state'] ?? 'upcoming');
                         $isDone = $stState === 'done';
                         $isCurrent = $stState === 'current';
-                        $isCancelled = $stState === 'cancelled' || ($dossierJourneyClosedNegative && !$isDone);
+                        $isIncident = $stState === 'incident';
+                        $isCancelled = $stState === 'cancelled' || ($dossierJourneyClosedNegative && !$isDone && !$isIncident);
                         $stepPause = trim((string) ($st['pause_kind'] ?? ''));
-                        $dotClass = $isCancelled
+                        $dotClass = $isIncident
+                            ? 'border-rose-600 bg-rose-500 text-white ring-4 ring-rose-200'
+                            : ($isCancelled
                             ? 'border-slate-300 bg-slate-100 text-slate-400'
                             : ($isDone
                             ? 'border-emerald-600 bg-emerald-500 text-white'
@@ -417,8 +430,8 @@ $tailwindHead = (string) ob_get_clean();
                                     : ($stepPause === 'interview'
                                         ? 'border-violet-500 bg-violet-500 text-white ring-4 ring-violet-200'
                                         : 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200'))
-                                : 'border-slate-200 bg-white text-slate-300'));
-                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone && !$isCancelled ? 'bg-emerald-200' : 'bg-slate-200') : '';
+                                : 'border-slate-200 bg-white text-slate-300')));
+                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone && !$isCancelled ? 'bg-emerald-200' : ($isIncident ? 'bg-rose-200' : 'bg-slate-200')) : '';
                         ?>
                         <?php
                         $stepTooltip = trim((string) ($st['tooltip'] ?? ''));
@@ -429,11 +442,13 @@ $tailwindHead = (string) ob_get_clean();
                             <?php if ($si < count($portalSteps) - 1): ?>
                                 <span class="absolute left-[0.65rem] top-8 bottom-0 w-0.5 <?= htmlspecialchars($lineClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone && !$isCancelled ? '✓' : (string) ($si + 1) ?></span>
+                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isIncident ? '!' : ($isDone && !$isCancelled ? '✓' : (string) ($si + 1)) ?></span>
                             <div class="min-w-0 pt-0.5">
-                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold text-slate-900<?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-400' : '' ?>">
+                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold <?= $isIncident ? 'text-rose-900' : 'text-slate-900' ?><?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-400' : '' ?>">
                                     <span><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($isCurrent && $stepPause === 'pending'): ?>
+                                    <?php if ($isIncident): ?>
+                                        <span class="inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">Incident actif</span>
+                                    <?php elseif ($isCurrent && $stepPause === 'pending'): ?>
                                         <span class="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-900">Mis en attente</span>
                                     <?php elseif ($isCurrent && $stepPause === 'interview'): ?>
                                         <span class="inline-flex items-center rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">Entretien</span>
@@ -595,21 +610,30 @@ $tailwindHead = (string) ob_get_clean();
             </section>
             <?php endif; ?>
 
-            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
+            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages"<?php if ($pvMode === 'staff'): ?> x-data="{ hintDismissed: localStorage.getItem('athena_recruit_thread_hint_dismissed') === '1' }"<?php endif; ?>>
                 <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
-                    <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
-                    <p class="mt-1 text-sm text-slate-300"><?php if ($dossierMessagingClosed): ?>
-                        Historique en lecture seule — les envois sont désactivés pour ce dossier.
-                    <?php elseif ($viewerIsCandidateParty): ?>
-                        Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
-                    <?php elseif ($pvMode === 'staff'): ?>
-                        Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
-                    <?php else: ?>
-                        Fil visible avec ce lien : le candidat à gauche, l’équipe recrutement à droite.
-                    <?php endif; ?></p>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
+                            <p class="mt-1 text-sm text-slate-300"<?php if ($pvMode === 'staff'): ?> x-show="!hintDismissed" x-cloak<?php endif; ?>><?php if ($dossierMessagingClosed): ?>
+                                Historique en lecture seule — les envois sont désactivés pour ce dossier.
+                            <?php elseif ($discordCommsLocked): ?>
+                                Recrutement via Discord — ce fil est désactivé par défaut, activable ci-dessous.
+                            <?php elseif ($viewerIsCandidateParty): ?>
+                                Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
+                            <?php elseif ($pvMode === 'staff'): ?>
+                                Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
+                            <?php else: ?>
+                                Fil visible avec ce lien : le candidat à gauche, l’équipe recrutement à droite.
+                            <?php endif; ?></p>
+                        </div>
+                        <?php if ($pvMode === 'staff'): ?>
+                        <button type="button" class="shrink-0 rounded-lg border border-slate-600 bg-slate-800/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200 hover:bg-slate-700" x-show="!hintDismissed" x-cloak @click="hintDismissed = true; localStorage.setItem('athena_recruit_thread_hint_dismissed', '1')">Compris</button>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
-                    <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6">
+                    <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6" x-show="!hintDismissed" x-cloak>
                         <p class="text-xs font-bold text-amber-950">Consultation recrutement</p>
                         <p class="mt-1 text-sm text-amber-950/95">Vous êtes connecté en tant que <span class="font-black"><?= htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') ?></span>. Les messages que vous envoyez depuis cette page sont enregistrés côté <span class="font-semibold">recrutement</span> (pas au nom du candidat) et restent visibles sur ce fil.</p>
                     </div>
@@ -772,6 +796,15 @@ $tailwindHead = (string) ob_get_clean();
                                         Rattachement effectué — les messages sont désactivés. Vous pouvez encore consulter l’historique ci-dessus.
                                     <?php endif; ?>
                                 </p>
+                            </div>
+                        <?php elseif ($discordCommsLocked): ?>
+                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/90 px-5 py-5 text-center" role="status">
+                                <p class="text-xs font-black uppercase tracking-wider text-indigo-950">Recrutement via Discord</p>
+                                <p class="mt-1.5 text-sm leading-relaxed text-indigo-900/90">Les échanges pour ce dossier se font par défaut sur Discord. Vous pouvez activer ce fil pour discuter aussi ici, sur Athena.</p>
+                                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/activer-discord'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-indigo-700 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-indigo-800">Activer la communication par Athena</button>
+                                </form>
                             </div>
                         <?php else: ?>
                         <h3 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700"><?= $pvMode === 'staff' ? 'Message recrutement (visible du candidat)' : 'Écrire à l’équipe' ?></h3>

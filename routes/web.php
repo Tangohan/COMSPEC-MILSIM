@@ -285,6 +285,8 @@ return function (Router $router) {
     $router->post('/evenements/{id}/slots/desinscription', [CommunityEventsController::class, 'leaveSlot'], [AuthMiddleware::class]);
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
+    $router->get('/publier', [\App\Controllers\Web\PublicationLauncherController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/roleplay', [\App\Controllers\Web\RoleplayPageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
@@ -416,10 +418,14 @@ return function (Router $router) {
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
+    $router->get('/atak/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
+    $router->post('/atak/connect/code', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeSubmit']);
+    $router->get('/atak/connect/{token}', [\App\Controllers\Web\AtakPhoneConnectController::class, 'show']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}/preparation', [EnlistmentCandidatePortalController::class, 'attachmentDownloadPreparation']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}', [EnlistmentCandidatePortalController::class, 'downloadAttachment']);
     $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
     $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
+    $router->post('/enlistment/suivi/{token}/activer-discord', [EnlistmentCandidatePortalController::class, 'activateDiscordMessaging']);
     $router->post('/enlistment/suivi/{token}/bilan-candidat', [EnlistmentCandidatePortalController::class, 'candidateRetroSave']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);
@@ -760,6 +766,7 @@ return function (Router $router) {
     $router->post('/back-office/roleplay-followup/{id}/stage', [RoleplayFollowupAdminController::class, 'updateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/tutor', [RoleplayFollowupAdminController::class, 'updateTutor'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roleplay-followup/{id}/validate', [RoleplayFollowupAdminController::class, 'validateStage'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roleplay-followup/{id}/bilan', [RoleplayFollowupAdminController::class, 'markBilanReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/member-role-display', [AdminConfigurationController::class, 'saveMemberRoleDisplay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/roleplay-followup', [AdminConfigurationController::class, 'saveRoleplayFollowupConfig'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/configuration/debug-recruit-sync', [AdminConfigurationController::class, 'debugRecruitSync'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1031,6 +1038,12 @@ return function (Router $router) {
     $router->get('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);
     $router->post('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/formation/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
+    $router->get('/formation/groupes', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'index'], $trainingResMw);
+    $router->post('/formation/groupes', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'store'], $trainingResMw);
+    $router->get('/formation/groupes/{id}', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'show'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/supprimer', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'delete'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/membres', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'addMember'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/membres/{userId}/retirer', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'removeMember'], $trainingResMw);
     $router->get('/formation/publications', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'index'], $trainingResMw);
     $router->post('/formation/publications/brouillon', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'storeDraft'], $trainingResMw);
     $router->get('/formation/publications/{id}/changelog', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'changelog'], $trainingResMw);
@@ -1228,6 +1241,8 @@ return function (Router $router) {
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/phone-pairing', [AtakApiController::class, 'phonePairingCreate']);
+    $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);

@@ -25,7 +25,7 @@ final class PersonnelDossierCompleteness
             'Matricule' => trim((string) ($rich['matricule_internal'] ?? $rich['service_number'] ?? '')) !== '',
             'Grade' => trim((string) ($rich['grade_short'] ?? $rich['grade_long'] ?? '')) !== '',
             'Affectation' => $hasAssignment,
-            'Fonction' => trim((string) ($rich['personnel_job_role_name'] ?? $rich['primary_role'] ?? $rich['role_sub_label'] ?? '')) !== '',
+            'Fonction' => trim((string) ($rich['job_role_display'] ?? '')) !== '',
             'Date d’engagement' => trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
             'Niveau d’habilitation' => trim((string) ($rich['clearance_level'] ?? '')) !== '',
             'Revue d’habilitation' => !empty($rich['clearance_reviewed_at']),

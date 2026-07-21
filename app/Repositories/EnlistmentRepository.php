@@ -979,6 +979,17 @@ class EnlistmentRepository
         return $row ?: null;
     }
 
+    public function enableDiscordPortalMessaging(int $tenantId, int $enlistmentId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE enlistments SET discord_portal_messaging_enabled = 1, discord_portal_messaging_enabled_at = NOW()
+             WHERE tenant_id = ? AND id = ? AND discord_portal_messaging_enabled = 0'
+        );
+        $stmt->execute([$tenantId, $enlistmentId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function appendCandidatePortalMessage(int $tenantId, int $enlistmentId, string $entryKind, string $body, ?int $actorUserId = null): bool
     {
         if (!$this->hasCandidatePortalTables()) {

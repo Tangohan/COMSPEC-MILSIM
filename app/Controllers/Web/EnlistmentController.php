@@ -627,12 +627,25 @@ class EnlistmentController
      */
     private function notifyStaffNewEnlistment(int $tenantId, array $tenant, int $enlistmentId, array $payload): void
     {
-        $recipients = $this->userRepository->listRecruitmentNotificationEmailsForTenant($tenantId);
-        if ($recipients === []) {
-            $recipients = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
-        }
-        if ($recipients === []) {
-            $recipients = $this->userRepository->listAdministratorEmailsForTenant($tenantId);
+        // Aligné sur l'accès réel au back-office recrutement (OrganizationAdminMiddleware) : les
+        // anciens filtres sur des slugs de rôle fixes ('recruiter', 'hr'...) ne correspondaient à
+        // aucun rôle réellement utilisé par la plupart des communautés, ce qui laissait cette
+        // alerte silencieusement sans destinataire.
+        $ids = $this->userRepository->listActiveUserIdsWithAnyPermissionSlug($tenantId, [
+            'organization.recruitment.manage',
+            'admin.organization',
+            'admin.access',
+        ]);
+        $recipients = [];
+        if ($ids !== []) {
+            $users = $this->userRepository->findByIdsForTenant($tenantId, $ids);
+            foreach ($ids as $uid) {
+                $email = strtolower(trim((string) ($users[$uid]['email'] ?? '')));
+                if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $recipients[] = $email;
+                }
+            }
+            $recipients = array_values(array_unique($recipients));
         }
         if ($recipients === []) {
             $contact = trim((string) ($this->communityConfig($tenant)['contact_email'] ?? ''));

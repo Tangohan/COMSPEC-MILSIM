@@ -63,6 +63,11 @@ class CfgFunctions {
         class briefingBoardShow { file = "functions\fn_briefingBoardShow.sqf"; };
         class briefingBoardStep { file = "functions\fn_briefingBoardStep.sqf"; };
         class refreshBriefingSlides { file = "functions\fn_refreshBriefingSlides.sqf"; };
+
+        // Connexion téléphone (inspiré de cTab) : QR code + code court pour consulter le
+        // briefing en cours depuis un navigateur mobile.
+        class getPhoneConnectInfo { file = "functions\fn_getPhoneConnectInfo.sqf"; };
+        class phoneConnectShow { file = "functions\fn_phoneConnectShow.sqf"; };
     };
 };
 
@@ -71,4 +76,5 @@ class CfgFunctions {
 #include "display_cas.hpp"
 #include "display_flight_manifest.hpp"
 #include "display_briefing.hpp"
+#include "display_phone_connect.hpp"
 #include "CfgEventHandlers.hpp"

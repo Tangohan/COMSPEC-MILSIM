@@ -45,7 +45,14 @@ final class PersonnelStructureChangeNotificationService
         private PersonnelAssignmentRepository $personnelAssignmentRepository,
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
-    ) {}
+        private ?PersonnelPromotionCelebrationService $promotionCelebrationService = null,
+    ) {
+        $this->promotionCelebrationService ??= new PersonnelPromotionCelebrationService(
+            $this->gradeRepository,
+            new \App\Repositories\TenantAlertRepository(),
+            $this->userRepository,
+        );
+    }
 
     /**
      * État courant (identifiants + libellés métier) pour comparaison avant / après.
@@ -132,6 +139,15 @@ final class PersonnelStructureChangeNotificationService
         }
 
         $this->notify($tenantId, $targetUserId, $actorUserId, $changes);
+
+        $beforeGradeId = $before['grade_id'] ?? null;
+        $afterGradeId = $after['grade_id'] ?? null;
+        $this->promotionCelebrationService->celebrateIfPromotion(
+            $tenantId,
+            $targetUserId,
+            $beforeGradeId !== null ? (int) $beforeGradeId : null,
+            $afterGradeId !== null ? (int) $afterGradeId : null,
+        );
     }
 
     /**

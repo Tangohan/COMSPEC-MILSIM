@@ -308,6 +308,14 @@ final class EnlistmentCandidatePortalController
             ? $this->recruitmentEngagementRepository->findRetro($tenantId, $enlistmentId, EnlistmentRecruitmentEngagementRepository::SCOPE_CANDIDATE_RETURN)
             : null;
 
+        if (trim((string) ($row['form_channel'] ?? '')) === 'discord') {
+            $recruitmentModeLabel = 'Recrutement via Discord';
+        } else {
+            $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
+            $regMode = (string) ($community['registration_mode'] ?? 'milsim');
+            $recruitmentModeLabel = $regMode === 'simple' ? 'Recrutement simplifié' : 'Recrutement MilSim complet';
+        }
+
         return Response::view('enlistment.candidate_portal', [
             'enlistment' => $row,
             'messages' => $messages,
@@ -328,6 +336,7 @@ final class EnlistmentCandidatePortalController
             'portalRecruitmentSlaHours' => $slaHours,
             'portalSubmittedAgeHours' => $submittedAgeHours,
             'portalSlaBreached' => $slaBreached,
+            'portalRecruitmentModeLabel' => $recruitmentModeLabel,
         ]);
     }
 
@@ -364,8 +373,23 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
 
+        $author = $this->resolvePortalMessageAuthor($row);
+        $entryKind = $author['kind'];
+        $actorUserId = $author['actor_user_id'];
+        $notifyStaff = $author['notify_staff'];
+
         $hit = $this->portalAutoModerationCoordinator->scan($body);
-        if ($hit !== null) {
+        if ($hit !== null && $entryKind === 'candidate' && $this->portalAutoModerationCoordinator->isSelfHarmHit($hit)) {
+            // Détresse évoquée par le candidat : jamais de blocage ni de refus — le message part normalement,
+            // l’équipe est alertée en urgence pour un suivi humain (voir handleCandidateSelfHarmDisclosure()).
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+            $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+            if ($tenantName === '') {
+                $tenantName = 'Communauté';
+            }
+            $this->portalAutoModerationCoordinator->handleCandidateSelfHarmDisclosure($tenantId, $tenantName, $row, $hit, $body);
+        } elseif ($hit !== null) {
             $tenantId = (int) ($row['tenant_id'] ?? 0);
             $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
             $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
@@ -377,11 +401,6 @@ final class EnlistmentCandidatePortalController
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
-
-        $author = $this->resolvePortalMessageAuthor($row);
-        $entryKind = $author['kind'];
-        $actorUserId = $author['actor_user_id'];
-        $notifyStaff = $author['notify_staff'];
         $stepBeforeLabel = $this->portalJourneyCurrentStepLabel($row);
         $ok = $this->enlistmentRepository->appendCandidatePortalMessage(
             (int) ($row['tenant_id'] ?? 0),
@@ -453,6 +472,37 @@ final class EnlistmentCandidatePortalController
                 : 'Votre message a été transmis.')
             : 'Impossible d’enregistrer le message.';
         Session::flash($ok ? 'success' : 'error', $flashOk);
+
+        return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+    }
+
+    public function activateDiscordMessaging(Request $request, array $params = []): Response
+    {
+        $token = (string) ($params['token'] ?? '');
+        $row = $this->enlistmentRepository->findByCandidatePortalToken($token);
+        if (!$row || !$request->isPost()) {
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            $v = $this->portalAccessSuspendedErrorView();
+            Session::flash('enlistment_error', (string) ($v['message'] ?? ''));
+            Session::flash('enlistment_error_context', (string) ($v['errorContext'] ?? ''));
+            Session::flash('enlistment_retry_url', (string) ($v['enlistmentRetryUrl'] ?? url('enlistment')));
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (trim((string) ($row['form_channel'] ?? '')) === 'discord' && !$this->isDossierMessagingClosed($row)) {
+            $this->enlistmentRepository->enableDiscordPortalMessaging(
+                (int) ($row['tenant_id'] ?? 0),
+                (int) ($row['id'] ?? 0)
+            );
+            Session::flash('success', 'La communication par Athena est activée : vous pouvez maintenant échanger directement sur ce fil.');
+        }
 
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
     }

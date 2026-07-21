@@ -16,6 +16,14 @@ function run_personnel_profile_job_roles_migration(PDO $pdo): void
 
         return (bool) $st->fetchColumn();
     };
+    $hasColumn = static function (string $table, string $column) use ($pdo): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
 
     if (!$hasTable('personnel_job_roles') || !$hasTable('users')) {
         return;
@@ -50,7 +58,7 @@ function run_personnel_profile_job_roles_migration(PDO $pdo): void
         }
     }
 
-    if ($hasTable('personnel_profiles')) {
+    if ($hasTable('personnel_profiles') && $hasColumn('personnel_profiles', 'personnel_job_role_id')) {
         try {
             $pdo->exec(
                 'INSERT IGNORE INTO personnel_profile_job_roles (tenant_id, user_id, personnel_job_role_id, is_primary, sort_order)

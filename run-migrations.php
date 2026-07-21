@@ -2761,6 +2761,46 @@ try {
     echo '  [ATTENTION] discord_recruitment : ' . $e->getMessage() . "\n";
 }
 
+$personnelRoleConsolidationMigrate = require $root . '/bootstrap/personnel_role_consolidation_migration.php';
+try {
+    echo "Migration personnel_role_consolidation (fusion rôle métier / primary_role / secondary_role)...\n";
+    $personnelRoleConsolidationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] personnel_role_consolidation : ' . $e->getMessage() . "\n";
+}
+
+$defaultTenantCleanupMigrate = require $root . '/bootstrap/default_tenant_cleanup_migration.php';
+try {
+    echo "Nettoyage default_tenant_cleanup (artefacts du tenant système)...\n";
+    $defaultTenantCleanupMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] default_tenant_cleanup : ' . $e->getMessage() . "\n";
+}
+
+$roleplayBilanCadenceMigrate = require $root . '/bootstrap/roleplay_bilan_cadence_migration.php';
+try {
+    echo "Migration roleplay_bilan_cadence (date du dernier bilan RP)...\n";
+    $roleplayBilanCadenceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] roleplay_bilan_cadence : ' . $e->getMessage() . "\n";
+}
+
+$tacticalPhonePairingMigrate = require $root . '/bootstrap/tactical_phone_pairing_migration.php';
+try {
+    echo "Migration tactical_phone_pairing (connexion téléphone ATAK)...\n";
+    $tacticalPhonePairingMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tactical_phone_pairing : ' . $e->getMessage() . "\n";
+}
+
+$trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
+try {
+    echo "Migration training_groups (cohortes de formation)...\n";
+    $trainingGroupsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_groups : ' . $e->getMessage() . "\n";
+}
+
 echo "\n--- Pipeline exécuté (résumé) ---\n";
 echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";

@@ -158,7 +158,8 @@ final class TenantSeedHelper
         $st = $pdo->prepare('SELECT name, slug FROM tenants WHERE id = ? LIMIT 1');
         $st->execute([$tenantId]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
-        if (!$row) {
+        if (!$row || ($row['slug'] ?? '') === 'default') {
+            // Tenant système « pas d’organisation » : jamais de section forum dédiée (ce n’est pas une vraie communauté).
             return;
         }
         $slug = 'org-' . preg_replace('/[^a-z0-9-]+/', '-', strtolower((string) ($row['slug'] ?? '')));

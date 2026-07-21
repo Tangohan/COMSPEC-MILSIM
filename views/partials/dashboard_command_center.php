@@ -368,7 +368,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         </svg>
                     </button>
                         <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
-                        <a href="<?= url('documents') ?>" class="dash-idstrip__text-btn">Publier un ordre</a>
+                        <a href="<?= url('publier') ?>" class="dash-idstrip__text-btn">Publier</a>
                     <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
                     <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">Demande à l’encadrement</a>
                 </div>

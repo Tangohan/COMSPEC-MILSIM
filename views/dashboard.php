@@ -4,6 +4,7 @@ $title = $title ?? 'Tableau de bord — Athena';
 $showcase_training_feature = $showcase_training_feature ?? false;
 $showcase_items = $showcase_items ?? [];
 $dashboard_tenant_label = $dashboard_tenant_label ?? null;
+$dashboard_is_default_tenant = !empty($dashboard_is_default_tenant);
 $dashboard_tester_program = $dashboard_tester_program ?? null;
 $showcaseJsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
 if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
@@ -45,7 +46,9 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     <?php endif; ?>
     <?php
     $loadAlpineDashboard = (!empty($showcase_training_feature) && !empty($showcase_items))
-        || (int) (\App\Core\Session::get('tenant_id') ?? 0) > 1;
+        || !$dashboard_is_default_tenant
+        || !empty($candidate_enlistment_tracking ?? [])
+        || !empty($my_applications_all ?? []);
     ?>
     <?php if (!empty($showcase_training_feature) && !empty($showcase_items)): ?>
     <script>
@@ -99,10 +102,9 @@ require base_path('views/partials/alert_banners.php');
         <?php
         $communityMemberships = $communityMemberships ?? [];
         $candidate_enlistment_tracking = is_array($candidate_enlistment_tracking ?? null) ? $candidate_enlistment_tracking : [];
-        $currentTid = (int) (\App\Core\Session::get('tenant_id') ?? 0);
         ?>
 
-        <?php if ($currentTid === 1): ?>
+        <?php if ($dashboard_is_default_tenant): ?>
         <?php require base_path('views/partials/header_dashboard.php'); ?>
         <section class="relative overflow-hidden border-b border-emerald-900/20 bg-gradient-to-br from-[#022c22] via-[#064e3b] to-[#0f172a] text-white">
             <div class="relative mx-auto max-w-6xl px-6 py-12 md:px-10 md:py-16">
@@ -196,9 +198,24 @@ require base_path('views/partials/alert_banners.php');
             </div>
         </section>
         <?php endif; ?>
+
+        <?php if ($candidate_enlistment_tracking === [] && $myApplicationsAllRoot === []): ?>
+        <section class="bg-white">
+            <div class="mx-auto max-w-2xl px-6 py-16 text-center md:py-20">
+                <svg class="mx-auto h-24 w-24 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 21h18" />
+                    <path d="M5 21V7l7-4 7 4v14" />
+                    <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
+                    <path d="M10 21v-5a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5" />
+                </svg>
+                <h3 class="mt-6 text-lg font-black tracking-tight text-slate-900">Rien à afficher ici pour l’instant</h3>
+                <p class="mt-2 text-sm leading-relaxed text-slate-600">Vous n’êtes rattaché à aucune organisation et n’avez encore déposé aucune candidature. Une fois une candidature envoyée ou une communauté rejointe, son suivi apparaîtra ici.</p>
+            </div>
+        </section>
+        <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($currentTid > 1): ?>
+        <?php if (!$dashboard_is_default_tenant): ?>
             <?php require base_path('views/partials/dashboard_command_center.php'); ?>
         <?php endif; ?>
     </main>

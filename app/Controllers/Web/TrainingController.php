@@ -191,6 +191,15 @@ class TrainingController
             return Response::redirect(url('login'));
         }
         $tenantId = (int) $tenantId;
+        $tenantForOrgCheck = (new \App\Repositories\TenantRepository())->findById($tenantId);
+        if (is_array($tenantForOrgCheck) && ($tenantForOrgCheck['slug'] ?? '') === 'default') {
+            return Response::view('layout.main', [
+                'title' => 'Formations',
+                'content' => 'partials.no_organization_empty_state',
+                'noOrgTitle' => 'Aucune organisation',
+                'noOrgMessage' => 'Le catalogue de formations est propre à chaque communauté. Rejoignez une communauté avec un code d’invitation, ou créez la vôtre, pour y accéder.',
+            ]);
+        }
         if (!$this->featureGate->allows($tenantId, 'training')) {
             return Response::view('layout.main', [
                 'title' => 'Formations',

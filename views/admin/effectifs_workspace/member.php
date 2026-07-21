@@ -54,10 +54,7 @@ $grade = trim((string) ($m['grade_short'] ?? ''));
 if ($grade === '') {
     $grade = trim((string) ($m['grade_long'] ?? ''));
 }
-$fonction = trim((string) ($m['personnel_job_role_name'] ?? ''));
-if ($fonction === '') {
-    $fonction = trim((string) ($m['primary_role'] ?? ''));
-}
+$fonction = trim((string) ($m['job_role_display'] ?? ''));
 $unit = trim((string) ($m['unit_name'] ?? ''));
 $unitId = (int) ($m['unit_id'] ?? 0);
 $clearanceRaw = trim((string) ($m['clearance_level'] ?? ''));

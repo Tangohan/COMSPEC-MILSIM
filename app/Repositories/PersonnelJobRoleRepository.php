@@ -26,18 +26,18 @@ class PersonnelJobRoleRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * Historique : vérifiait la colonne unique personnel_profiles.personnel_job_role_id, supprimée au
+     * profit de la table pivot personnel_profile_job_roles (multi-rôles). Le nom est conservé pour ne
+     * pas casser les appelants existants ; signifie désormais « l'affectation de rôle métier par profil
+     * est disponible pour cette communauté ».
+     */
     public function personnelProfilesHaveJobRoleColumns(): bool
     {
         if (self::$personnelProfilesJobRoleColumns !== null) {
             return self::$personnelProfilesJobRoleColumns;
         }
-        if (!$this->tablesExist()) {
-            self::$personnelProfilesJobRoleColumns = false;
-
-            return false;
-        }
-        $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'personnel_job_role_id' LIMIT 1");
-        self::$personnelProfilesJobRoleColumns = (bool) ($stmt && $stmt->fetchColumn());
+        self::$personnelProfilesJobRoleColumns = $this->tablesExist() && $this->pivotTableExists();
 
         return self::$personnelProfilesJobRoleColumns;
     }
@@ -117,18 +117,10 @@ class PersonnelJobRoleRepository
             $params[] = $term;
             $params[] = $term;
         }
-        if ($this->pivotTableExists()) {
-            if ($onlyUnassigned) {
-                $parts[] = '(NOT EXISTS (SELECT 1 FROM personnel_profile_job_roles pj0 WHERE pj0.tenant_id = u.tenant_id AND pj0.user_id = u.id) AND (pp.personnel_job_role_id IS NULL OR pp.personnel_job_role_id = 0))';
-            } elseif ($filterJobRoleId !== null && $filterJobRoleId > 0) {
-                $parts[] = '(EXISTS (SELECT 1 FROM personnel_profile_job_roles pjf WHERE pjf.tenant_id = u.tenant_id AND pjf.user_id = u.id AND pjf.personnel_job_role_id = ?) OR pp.personnel_job_role_id = ?)';
-                $params[] = $filterJobRoleId;
-                $params[] = $filterJobRoleId;
-            }
-        } elseif ($onlyUnassigned) {
-            $parts[] = '(pp.personnel_job_role_id IS NULL OR pp.personnel_job_role_id = 0)';
+        if ($onlyUnassigned) {
+            $parts[] = 'NOT EXISTS (SELECT 1 FROM personnel_profile_job_roles pj0 WHERE pj0.tenant_id = u.tenant_id AND pj0.user_id = u.id)';
         } elseif ($filterJobRoleId !== null && $filterJobRoleId > 0) {
-            $parts[] = 'pp.personnel_job_role_id = ?';
+            $parts[] = 'EXISTS (SELECT 1 FROM personnel_profile_job_roles pjf WHERE pjf.tenant_id = u.tenant_id AND pjf.user_id = u.id AND pjf.personnel_job_role_id = ?)';
             $params[] = $filterJobRoleId;
         }
 
@@ -146,12 +138,9 @@ class PersonnelJobRoleRepository
     ): array {
         [$whereSql, $params] = $this->buildAssignmentWhere($tenantId, $search, $filterJobRoleId, $onlyUnassigned);
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.status, u.profile_slug,
-                       pp.personnel_job_role_id, pp.role_sub_label, pp.primary_role,
-                       pp.primary_unit_id,
-                       pjr.name AS personnel_job_role_name, pjr.slug AS personnel_job_role_slug
+                       pp.primary_unit_id
                 FROM users u
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
-                LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id
                 WHERE ' . $whereSql;
 
         return [$sql, $params];
@@ -713,19 +702,6 @@ class PersonnelJobRoleRepository
             return [];
         }
         $ids = [];
-        if ($this->personnelProfilesHaveJobRoleColumns()) {
-            $stmt = $this->pdo->prepare(
-                'SELECT pp.personnel_job_role_id FROM personnel_profiles pp
-                 INNER JOIN users u ON u.id = pp.user_id
-                 WHERE u.tenant_id = ? AND pp.user_id = ? AND u.status = \'active\'
-                 LIMIT 1'
-            );
-            $stmt->execute([$tenantId, $userId]);
-            $rid = (int) $stmt->fetchColumn();
-            if ($rid > 0) {
-                $ids[$rid] = true;
-            }
-        }
         if ($this->pivotTableExists()) {
             $stmt = $this->pdo->prepare(
                 'SELECT DISTINCT pj.personnel_job_role_id FROM personnel_profile_job_roles pj
@@ -742,5 +718,82 @@ class PersonnelJobRoleRepository
         }
 
         return array_map('intval', array_keys($ids));
+    }
+
+    /**
+     * Rôle métier principal (pivot) d’un membre, avec libellé prêt à afficher.
+     *
+     * @return array{id: int, name: string, role_detail: string, display: string}|null
+     */
+    public function getPrimaryJobRoleForUser(int $tenantId, int $userId): ?array
+    {
+        if (!$this->pivotTableExists() || $userId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT pj.personnel_job_role_id, pj.role_detail, r.name AS role_name
+             FROM personnel_profile_job_roles pj
+             INNER JOIN personnel_job_roles r ON r.id = pj.personnel_job_role_id AND r.tenant_id = pj.tenant_id
+             WHERE pj.tenant_id = ? AND pj.user_id = ?
+             ORDER BY pj.is_primary DESC, pj.sort_order ASC, pj.id ASC
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+        $name = trim((string) ($row['role_name'] ?? ''));
+        $detail = trim((string) ($row['role_detail'] ?? ''));
+
+        return [
+            'id' => (int) $row['personnel_job_role_id'],
+            'name' => $name,
+            'role_detail' => $detail,
+            'display' => $detail !== '' && $name !== '' ? $name . ' — ' . $detail : ($name !== '' ? $name : $detail),
+        ];
+    }
+
+    /**
+     * Trouve un emploi existant par nom (insensible à la casse) dans le tenant, ou le crée dans une
+     * catégorie « Importé » dédiée. Utilisé pour la reprise de données texte libre (ex-primary_role).
+     */
+    public function findOrCreateImportedRoleByLabel(int $tenantId, string $label): ?int
+    {
+        $label = trim($label);
+        if ($label === '' || !$this->tablesExist()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT id FROM personnel_job_roles WHERE tenant_id = ? AND LOWER(name) = LOWER(?) LIMIT 1');
+        $stmt->execute([$tenantId, $label]);
+        $existing = $stmt->fetchColumn();
+        if ($existing) {
+            return (int) $existing;
+        }
+
+        $catStmt = $this->pdo->prepare("SELECT id FROM personnel_job_role_categories WHERE tenant_id = ? AND slug = 'importe' LIMIT 1");
+        $catStmt->execute([$tenantId]);
+        $categoryId = (int) ($catStmt->fetchColumn() ?: 0);
+        if ($categoryId < 1) {
+            $categoryId = $this->createCategory($tenantId, null, 'Importé', 'importe', 9999);
+        }
+
+        $baseSlug = trim(preg_replace('/[^a-z0-9]+/', '-', mb_strtolower($label, 'UTF-8')) ?? '', '-');
+        if ($baseSlug === '') {
+            $baseSlug = 'role';
+        }
+        $slug = $baseSlug;
+        $suffix = 2;
+        while (true) {
+            $chk = $this->pdo->prepare('SELECT 1 FROM personnel_job_roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $chk->execute([$tenantId, $slug]);
+            if (!$chk->fetchColumn()) {
+                break;
+            }
+            $slug = $baseSlug . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $this->createRole($tenantId, $categoryId, $label, $slug, null, 0, false);
     }
 }

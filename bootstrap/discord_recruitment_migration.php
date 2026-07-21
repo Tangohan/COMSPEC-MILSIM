@@ -50,6 +50,8 @@ return static function (PDO $pdo): void {
         'discord_interview_notes' => 'ALTER TABLE enlistments ADD COLUMN discord_interview_notes TEXT',
         'discord_evaluation_json' => 'ALTER TABLE enlistments ADD COLUMN discord_evaluation_json JSON DEFAULT NULL',
         'discord_transmitted_at' => 'ALTER TABLE enlistments ADD COLUMN discord_transmitted_at DATETIME DEFAULT NULL',
+        'discord_portal_messaging_enabled' => 'ALTER TABLE enlistments ADD COLUMN discord_portal_messaging_enabled TINYINT(1) NOT NULL DEFAULT 0',
+        'discord_portal_messaging_enabled_at' => 'ALTER TABLE enlistments ADD COLUMN discord_portal_messaging_enabled_at DATETIME DEFAULT NULL',
     ];
 
     foreach ($columns as $column => $sql) {
