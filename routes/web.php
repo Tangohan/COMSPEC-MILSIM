@@ -420,6 +420,7 @@ return function (Router $router) {
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}', [EnlistmentCandidatePortalController::class, 'downloadAttachment']);
     $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
     $router->post('/enlistment/suivi/{token}/message', [EnlistmentCandidatePortalController::class, 'message']);
+    $router->post('/enlistment/suivi/{token}/activer-discord', [EnlistmentCandidatePortalController::class, 'activateDiscordMessaging']);
     $router->post('/enlistment/suivi/{token}/bilan-candidat', [EnlistmentCandidatePortalController::class, 'candidateRetroSave']);
     $router->get('/recrutement', [HomeController::class, 'recrutement']);
     $router->get('/equipement', [HomeController::class, 'equipement']);

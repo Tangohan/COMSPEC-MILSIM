@@ -79,7 +79,10 @@ foreach ($attachments as $a) {
 $portalUploadsReady = !empty($portalUploadsReady);
 $allowPortalFiles = !empty($allowPortalFiles);
 $allowPortalAudio = !empty($allowPortalAudio);
-$canUploadSomething = !$dossierMessagingClosed && $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
+$isDiscordChannel = trim((string) ($enlistment['form_channel'] ?? '')) === 'discord';
+$discordMessagingEnabled = (int) ($enlistment['discord_portal_messaging_enabled'] ?? 0) === 1;
+$discordCommsLocked = $isDiscordChannel && !$discordMessagingEnabled && !$dossierMessagingClosed;
+$canUploadSomething = !$dossierMessagingClosed && !$discordCommsLocked && $portalUploadsReady && ($allowPortalFiles || $allowPortalAudio);
 $attachmentCount = count($attachments);
 $fmtBytes = static function (int $b): string {
     if ($b >= 1048576) {
@@ -609,6 +612,8 @@ $tailwindHead = (string) ob_get_clean();
                             <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
                             <p class="mt-1 text-sm text-slate-300"<?php if ($pvMode === 'staff'): ?> x-show="!hintDismissed" x-cloak<?php endif; ?>><?php if ($dossierMessagingClosed): ?>
                                 Historique en lecture seule — les envois sont désactivés pour ce dossier.
+                            <?php elseif ($discordCommsLocked): ?>
+                                Recrutement via Discord — ce fil est désactivé par défaut, activable ci-dessous.
                             <?php elseif ($viewerIsCandidateParty): ?>
                                 Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
                             <?php elseif ($pvMode === 'staff'): ?>
@@ -786,6 +791,15 @@ $tailwindHead = (string) ob_get_clean();
                                         Rattachement effectué — les messages sont désactivés. Vous pouvez encore consulter l’historique ci-dessus.
                                     <?php endif; ?>
                                 </p>
+                            </div>
+                        <?php elseif ($discordCommsLocked): ?>
+                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/90 px-5 py-5 text-center" role="status">
+                                <p class="text-xs font-black uppercase tracking-wider text-indigo-950">Recrutement via Discord</p>
+                                <p class="mt-1.5 text-sm leading-relaxed text-indigo-900/90">Les échanges pour ce dossier se font par défaut sur Discord. Vous pouvez activer ce fil pour discuter aussi ici, sur Athena.</p>
+                                <form method="post" action="<?= htmlspecialchars(url('enlistment/suivi/' . rawurlencode((string) $token) . '/activer-discord'), ENT_QUOTES, 'UTF-8') ?>" class="mt-4">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-indigo-700 px-6 text-xs font-black uppercase tracking-wide text-white shadow-md transition hover:bg-indigo-800">Activer la communication par Athena</button>
+                                </form>
                             </div>
                         <?php else: ?>
                         <h3 id="nouveau-message" class="text-xs font-black uppercase tracking-wider text-slate-700"><?= $pvMode === 'staff' ? 'Message recrutement (visible du candidat)' : 'Écrire à l’équipe' ?></h3>

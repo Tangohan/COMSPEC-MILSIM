@@ -466,6 +466,37 @@ final class EnlistmentCandidatePortalController
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
     }
 
+    public function activateDiscordMessaging(Request $request, array $params = []): Response
+    {
+        $token = (string) ($params['token'] ?? '');
+        $row = $this->enlistmentRepository->findByCandidatePortalToken($token);
+        if (!$row || !$request->isPost()) {
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+        }
+        if ($this->isPortalAccessBlocked($request, $row)) {
+            $v = $this->portalAccessSuspendedErrorView();
+            Session::flash('enlistment_error', (string) ($v['message'] ?? ''));
+            Session::flash('enlistment_error_context', (string) ($v['errorContext'] ?? ''));
+            Session::flash('enlistment_retry_url', (string) ($v['enlistmentRetryUrl'] ?? url('enlistment')));
+
+            return Response::redirect(url('enlistment/error'));
+        }
+        if (trim((string) ($row['form_channel'] ?? '')) === 'discord' && !$this->isDossierMessagingClosed($row)) {
+            $this->enlistmentRepository->enableDiscordPortalMessaging(
+                (int) ($row['tenant_id'] ?? 0),
+                (int) ($row['id'] ?? 0)
+            );
+            Session::flash('success', 'La communication par Athena est activée : vous pouvez maintenant échanger directement sur ce fil.');
+        }
+
+        return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
+    }
+
     public function uploadAttachment(Request $request, array $params = []): Response
     {
         $token = (string) ($params['token'] ?? '');
