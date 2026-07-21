@@ -395,13 +395,25 @@
 }
 
 .bo-user-edit__roles {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
   margin-top: 1.25rem;
 }
 
-@media (min-width: 1024px) {
-  .bo-user-edit__roles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bo-user-edit__role-layer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bo-user-edit__role-layer-title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0f172a;
 }
 
 .bo-user-edit__role-group {
@@ -409,15 +421,44 @@
   border-radius: 0.85rem;
   background: #f8fafc;
   padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .bo-user-edit__role-layer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    align-items: start;
+  }
+
+  .bo-user-edit__role-layer-title {
+    grid-column: 1 / -1;
+  }
 }
 
 .bo-user-edit__role-group-title {
-  margin: 0 0 0.65rem;
+  margin: 0;
   font-size: 0.625rem;
   font-weight: 900;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #64748b;
+}
+
+.bo-user-edit__role-bucket {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bo-user-edit__role-bucket-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .bo-user-edit__role-list {

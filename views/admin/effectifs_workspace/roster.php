@@ -12,6 +12,8 @@ $totalPages = (int) ($rosterTotalPages ?? 1);
 $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
+$canManageStatus = (bool) ($canManageStatus ?? false);
+$canBulkAny = $canManageStatus || $canManageAssignments;
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
@@ -219,7 +221,6 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
             <?php endif; ?>
         </div>
     <?php else: ?>
-        <?php $canBulkAny = $canManageStatus || $canManageAssignments; ?>
         <?php if ($canBulkAny): ?>
         <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" id="eff-bulk-form" data-eff-bulk-bar style="display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.6rem;background:#f8fafc">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">

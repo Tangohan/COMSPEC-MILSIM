@@ -49,14 +49,117 @@ $initials = function_exists('user_display_initials')
     ? user_display_initials($initialsSource, 2)
     : mb_strtoupper(mb_substr($initialsSource, 0, 2, 'UTF-8'), 'UTF-8');
 
-$byLayer = ['community' => [], 'intra' => []];
+$roleBucketLabel = static function (array $r): string {
+    $tier = (string) ($r['semantic_tier'] ?? 'function');
+    $sub = trim((string) ($r['subcategory'] ?? ''));
+    $name = trim((string) ($r['name'] ?? ''));
+    $slug = strtolower(trim((string) ($r['slug'] ?? '')));
+
+    if ($tier === 'status' || $sub === 'Affichage' || str_contains($slug, 'probation') || str_contains($slug, 'trial')) {
+        return 'Statut';
+    }
+    if (
+        $sub === 'Commandement'
+        || $sub === 'Encadrement'
+        || $tier === 'authority'
+        || preg_match('/^Chef(\s|$|’|\')/iu', $name) === 1
+        || str_starts_with(mb_strtolower($name, 'UTF-8'), 'chef ')
+    ) {
+        return 'Chefs';
+    }
+    if (
+        $sub === 'Combattant'
+        || $sub === 'Spécialités'
+        || $sub === 'Specialites'
+        || $tier === 'specialty'
+        || preg_match('/^(Fusilier|Grenadier|Mitrailleur|Tireur|Éclaireur|Eclaireur|Opérateur|Operateur|Spécialiste|Specialiste)\b/iu', $name) === 1
+    ) {
+        return 'Spécificité';
+    }
+    if ($sub !== '') {
+        return $sub;
+    }
+
+    return match ($tier) {
+        'support' => 'Soutien',
+        'liaison' => 'Liaison',
+        'function' => 'Fonction',
+        default => 'Autres',
+    };
+};
+
+$roleCategoryLabel = static function (array $r) use ($roleBucketLabel): string {
+    $cat = trim((string) ($r['category'] ?? ''));
+    if ($cat !== '') {
+        return $cat;
+    }
+    $bucket = $roleBucketLabel($r);
+    if ($bucket === 'Statut') {
+        return 'Statut';
+    }
+
+    return 'Autres attributions';
+};
+
+$bucketSortOrder = [
+    'Statut' => 10,
+    'Chefs' => 20,
+    'Spécificité' => 30,
+    'Fonction' => 40,
+    'Soutien' => 50,
+    'Liaison' => 60,
+    'Autres' => 90,
+];
+
+/** @var array<string, array<string, array<string, list<array<string, mixed>>>>> $rolesByLayerCategoryBucket */
+$rolesByLayerCategoryBucket = ['community' => [], 'intra' => []];
 foreach ($roles as $r) {
     $ly = (string) ($r['role_layer'] ?? 'community');
-    if (!isset($byLayer[$ly])) {
-        $byLayer[$ly] = [];
+    if ($ly !== 'community' && $ly !== 'intra') {
+        $ly = 'community';
     }
-    $byLayer[$ly][] = $r;
+    $cat = $roleCategoryLabel($r);
+    $bucket = $roleBucketLabel($r);
+    $rolesByLayerCategoryBucket[$ly][$cat][$bucket][] = $r;
 }
+
+foreach ($rolesByLayerCategoryBucket as $ly => &$cats) {
+    uksort($cats, static function (string $a, string $b): int {
+        if ($a === 'Statut') {
+            return -1;
+        }
+        if ($b === 'Statut') {
+            return 1;
+        }
+
+        return strcasecmp($a, $b);
+    });
+    foreach ($cats as &$buckets) {
+        uksort($buckets, static function (string $a, string $b) use ($bucketSortOrder): int {
+            $oa = $bucketSortOrder[$a] ?? 80;
+            $ob = $bucketSortOrder[$b] ?? 80;
+            if ($oa !== $ob) {
+                return $oa <=> $ob;
+            }
+
+            return strcasecmp($a, $b);
+        });
+        foreach ($buckets as &$list) {
+            usort($list, static function (array $a, array $b): int {
+                $pa = (int) ($a['display_priority'] ?? 0);
+                $pb = (int) ($b['display_priority'] ?? 0);
+                if ($pa !== $pb) {
+                    return $pa <=> $pb;
+                }
+
+                return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+            });
+        }
+        unset($list);
+    }
+    unset($buckets);
+}
+unset($cats);
 
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
@@ -234,54 +337,56 @@ $formatDateFr = static function (?string $raw): string {
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-roles">
                     <h2 id="sec-roles" class="bo-user-edit__panel-title">Rôles dans la communauté</h2>
-                    <p class="bo-user-edit__panel-lead">Cochez un ou plusieurs rôles. Les droits effectifs sont l’union de ceux de chaque rôle coché. Les rôles plateforme ne sont pas listés ici.</p>
+                    <p class="bo-user-edit__panel-lead">
+                        Les rôles sont regroupés par domaine, puis par type d’attribution&nbsp;:
+                        <strong>Statut</strong> (période d’essai, service, etc.),
+                        <strong>Chefs</strong> (commandement et encadrement),
+                        <strong>Spécificité</strong> (fusilier, grenadier, tireurs…).
+                        Les droits effectifs restent l’union de tous les rôles cochés.
+                    </p>
 
                     <div class="bo-user-edit__roles">
-                        <?php if (!empty($byLayer['community'])): ?>
-                        <div class="bo-user-edit__role-group">
-                            <p class="bo-user-edit__role-group-title"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel('community', $organizationRoleLabelMode), ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="bo-user-edit__role-list">
-                                <?php foreach ($byLayer['community'] as $r):
-                                    $rid = (int) $r['id'];
-                                    $chk = in_array($rid, $selectedRoleIds, true);
-                                    $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
-                                ?>
-                                <label class="bo-user-edit__role <?= $chk ? 'is-on' : '' ?>">
-                                    <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
-                                    <span>
-                                        <span class="bo-user-edit__role-name"><?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php if (!empty($r['description'])): ?>
-                                        <span class="bo-user-edit__role-desc"><?= htmlspecialchars((string) $r['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </label>
+                        <?php
+                        $hasAnyOrgRole = false;
+                        foreach (['community', 'intra'] as $layerKey):
+                            $cats = $rolesByLayerCategoryBucket[$layerKey] ?? [];
+                            if ($cats === []) {
+                                continue;
+                            }
+                            $hasAnyOrgRole = true;
+                        ?>
+                        <div class="bo-user-edit__role-layer">
+                            <p class="bo-user-edit__role-layer-title"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel($layerKey, $organizationRoleLabelMode), ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php foreach ($cats as $catLabel => $buckets): ?>
+                            <div class="bo-user-edit__role-group">
+                                <p class="bo-user-edit__role-group-title"><?= htmlspecialchars((string) $catLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php foreach ($buckets as $bucketLabel => $bucketRoles): ?>
+                                <div class="bo-user-edit__role-bucket">
+                                    <p class="bo-user-edit__role-bucket-title"><?= htmlspecialchars((string) $bucketLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <div class="bo-user-edit__role-list">
+                                        <?php foreach ($bucketRoles as $r):
+                                            $rid = (int) $r['id'];
+                                            $chk = in_array($rid, $selectedRoleIds, true);
+                                            $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
+                                        ?>
+                                        <label class="bo-user-edit__role <?= $chk ? 'is-on' : '' ?>">
+                                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
+                                            <span>
+                                                <span class="bo-user-edit__role-name"><?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php if (!empty($r['description'])): ?>
+                                                <span class="bo-user-edit__role-desc"><?= htmlspecialchars((string) $r['description'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            </span>
+                                        </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
                                 <?php endforeach; ?>
                             </div>
+                            <?php endforeach; ?>
                         </div>
-                        <?php endif; ?>
-                        <?php if (!empty($byLayer['intra'])): ?>
-                        <div class="bo-user-edit__role-group">
-                            <p class="bo-user-edit__role-group-title"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel('intra', $organizationRoleLabelMode), ENT_QUOTES, 'UTF-8') ?></p>
-                            <div class="bo-user-edit__role-list">
-                                <?php foreach ($byLayer['intra'] as $r):
-                                    $rid = (int) $r['id'];
-                                    $chk = in_array($rid, $selectedRoleIds, true);
-                                    $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
-                                ?>
-                                <label class="bo-user-edit__role <?= $chk ? 'is-on' : '' ?>">
-                                    <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
-                                    <span>
-                                        <span class="bo-user-edit__role-name"><?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php if (!empty($r['description'])): ?>
-                                        <span class="bo-user-edit__role-desc"><?= htmlspecialchars((string) $r['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <?php endif; ?>
-                        <?php if (empty($byLayer['community']) && empty($byLayer['intra'])): ?>
+                        <?php endforeach; ?>
+                        <?php if (!$hasAnyOrgRole): ?>
                         <p class="bo-user-edit__panel-lead">Aucun rôle communauté n’est encore défini.</p>
                         <?php endif; ?>
                     </div>

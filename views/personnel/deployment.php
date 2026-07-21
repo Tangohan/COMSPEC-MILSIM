@@ -211,7 +211,7 @@ foreach ($rows as $r) {
 </style>
 
 <section
-    class="mx-auto w-full max-w-5xl space-y-4 px-3 sm:px-4 py-4 sm:py-6"
+    class="mx-auto w-full max-w-[96rem] space-y-4 px-2 sm:px-3 lg:px-4 py-4 sm:py-6"
     x-data="{ filter: 'all', openId: null }"
 >
     <header class="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
