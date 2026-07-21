@@ -181,11 +181,13 @@ class HomeController
         $canManageInvitations = false;
         $pendingInvitationsCount = 0;
         $emailAlertsDisabledCount = 0;
+        $dashboardIsDefaultTenant = false;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
             if ($tenantRow) {
                 $dashboardTenantLabel = community_display_name($tenantRow);
+                $dashboardIsDefaultTenant = ($tenantRow['slug'] ?? '') === 'default';
             }
             $showcaseTrainingFeature = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'training');
             if ($showcaseTrainingFeature) {
@@ -198,7 +200,7 @@ class HomeController
                 $uemail = (string) ($currentUser['email'] ?? '');
                 $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
                 $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
-                if ($tid === 1) {
+                if ($dashboardIsDefaultTenant) {
                     $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
                     foreach ($candidateRows as $row) {
                         $candidateTid = (int) ($row['tenant_id'] ?? 0);
@@ -460,6 +462,7 @@ class HomeController
             'founder_trial_ends_at' => $founderTrialEndsAt,
             'show_founder_trial_banner' => $showFounderTrialBanner,
             'dashboard_tenant_label' => $dashboardTenantLabel,
+            'dashboard_is_default_tenant' => $dashboardIsDefaultTenant,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
             'my_enlistments_pending' => $myEnlistmentsPending,

@@ -45,6 +45,15 @@ class DocumentsController
             return (new Response())->setStatusCode(403)->setBody('Accès refusé.');
         }
         $tenantId = (int) $tenantId;
+        $tenantForOrgCheck = (new \App\Repositories\TenantRepository())->findById($tenantId);
+        if (is_array($tenantForOrgCheck) && ($tenantForOrgCheck['slug'] ?? '') === 'default') {
+            return Response::view('layout.main', [
+                'title' => 'Documents',
+                'content' => 'partials.no_organization_empty_state',
+                'noOrgTitle' => 'Aucune organisation',
+                'noOrgMessage' => 'La documentation est propre à chaque communauté. Rejoignez une communauté avec un code d’invitation, ou créez la vôtre, pour y accéder.',
+            ]);
+        }
         $categoryId = $request->input('category') ? (int) $request->input('category') : null;
         $search = $request->input('q') ? trim((string) $request->input('q')) : null;
         $documentType = $request->input('document_type') ? trim((string) $request->input('document_type')) : null;
