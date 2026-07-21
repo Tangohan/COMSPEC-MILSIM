@@ -188,6 +188,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
+            'elevationNoRecipients' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients === [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
@@ -347,6 +348,7 @@ class EffectifsWorkspaceController
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
             'canManageGrades' => EffectifsLmsAccess::canManageGrades($gate),
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
+            'elevationNoRecipients' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients === [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);

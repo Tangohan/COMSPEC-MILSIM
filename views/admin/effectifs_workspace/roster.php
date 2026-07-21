@@ -13,6 +13,7 @@ $counts = is_array($rosterCounts ?? null) ? $rosterCounts : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
+$elevationNoRecipients = (bool) ($elevationNoRecipients ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? 'Communauté'));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
@@ -447,6 +448,8 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                                         </div>
                                     </details>
                                     <?php endif; ?>
+                                <?php elseif ($elevationNoRecipients): ?>
+                                    <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Aucun autre membre habilité à traiter une demande d’élévation dans cette communauté (vous êtes le seul, ou personne n’a le droit requis).">Élévation indisponible</span>
                                 <?php endif; ?>
                             </div>
                         </td>
