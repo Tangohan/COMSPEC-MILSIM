@@ -97,8 +97,6 @@ missionNamespace setVariable ["COMSPEC_lastRadio", _radioState, true];
 missionNamespace setVariable ["COMSPEC_lastMedical", _medicalState, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
-if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) != "linked") then {
-    missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-};
+// Ne pas forcer « Lié à Athena » ici : UpdatePosition est fire-and-forget côté extension.
+// Seuls Connect / refreshLinkStatus (whoami) confirment vraiment la liaison.
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;

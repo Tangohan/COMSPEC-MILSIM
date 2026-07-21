@@ -78,6 +78,8 @@ class CfgFunctions {
             class refreshLinkStatus {};
             class updateStatusBadges {};
             class chatDialogOnLoad {};
+            class appendLinkLog {};
+            class portalLabel {};
         };
     };
 };

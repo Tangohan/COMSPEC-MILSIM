@@ -23,16 +23,26 @@ if (_tenant isEqualTo "") then {
     };
 };
 
-_url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
-if (_url == "") exitWith {
+_url = trim (missionNamespace getVariable ["comspec_overwatch_api_url", ""]);
+if (_url isEqualTo "") exitWith {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena non renseignée", false];
+    ["[Athena] Pas d’adresse portail — utilisez Compte Athena (code) ou les réglages CBA."] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+};
+
+private _urlLower = toLower _url;
+if (((_urlLower find "https://") != 0) && {(_urlLower find "http://") != 0}) exitWith {
+    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena invalide", false];
+    [format ["[Athena] Adresse invalide (%1). Exemple : https://athena.ttrd.fr/public", _url]] call comspec_overwatch_connect_fnc_appendLinkLog;
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 };
 
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
 missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+[format ["[Athena] Connexion vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 _key = missionNamespace getVariable ["comspec_overwatch_api_key", ""];
 private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key]]] call comspec_overwatch_connect_fnc_extResult;
@@ -40,11 +50,7 @@ private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };
 
-private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
 if (_prefix == "OK") then {
-    _log = _log + "[Athena] Liaison établie.\n";
-    missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
     private _ipResult = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
     private _ipParts = _ipResult splitString "|";
     private _ipPrefix = if (count _ipParts >= 1) then { _ipParts select 0 } else { "" };
@@ -52,28 +58,34 @@ if (_prefix == "OK") then {
     if (_ipPrefix == "OK") then {
         missionNamespace setVariable ["COMSPEC_userIp", _userIp, true];
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+        missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+        [format ["[Athena] Liaison établie. Adresse client : %1", _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
     } else {
         missionNamespace setVariable ["COMSPEC_userIp", "—", true];
-        // Connect OK localement mais le portail ne répond pas encore
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "Portail injoignable", false];
-        _log = _log + "[Athena] Portail injoignable après connexion.\n";
+        private _why = if (count _ipParts >= 2) then { _ipParts select 1 } else { _ipResult };
+        [format ["[Athena] Portail injoignable après Connect (%1). Vérifiez l’URL /public et la clé.", _why]] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
 } else {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Échec de liaison", false];
     if (_prefix == "ERR") then {
-        _log = _log + "[Athena] Échec : " + _payload + "\n";
+        [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    } else {
+        [format ["[Athena] Réponse extension inattendue : %1", _result]] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
 };
-missionNamespace setVariable ["COMSPEC_Log", _log, true];
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 
 private _display = uiNamespace getVariable ["COMSPEC_Chat_Display", displayNull];
 if (!isNull _display) then {
-    private _ctrl = _display displayCtrl 1402;
-    if (!isNull _ctrl) then { _ctrl ctrlSetText _log; };
     private _ipCtrl = _display displayCtrl 1398;
     private _ip = missionNamespace getVariable ["COMSPEC_userIp", "—"];
     if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ("Votre adresse : " + _ip); };
+    private _urlCtrl = _display displayCtrl 1399;
+    if (!isNull _urlCtrl) then {
+        _urlCtrl ctrlSetText ("Portail : " + ([_url] call comspec_overwatch_connect_fnc_portalLabel));
+    };
 };

@@ -23,11 +23,16 @@ private _setStatus = {
 if (_url isEqualTo "") exitWith {
     ["Indiquez l’adresse du portail Athena.", "#ff8a7a"] call _setStatus;
 };
+private _urlLower = toLower _url;
+if (((_urlLower find "https://") != 0) && {(_urlLower find "http://") != 0}) exitWith {
+    ["Adresse invalide — utilisez https://athena.ttrd.fr/public", "#ff8a7a"] call _setStatus;
+};
 if (_code isEqualTo "" || {count _code < 4}) exitWith {
     ["Saisissez le code généré sur Athena.", "#ff8a7a"] call _setStatus;
 };
 
 ["Échange du code en cours…", "#8aa0b4"] call _setStatus;
+[format ["[Athena] Échange du code vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 private _steamUid = getPlayerUID player;
 private _raw = ["COMSPECExtension" callExtension ["RedeemGameLink", [_url, _code, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
@@ -44,15 +49,18 @@ if (_prefix != "OK") exitWith {
         case "timeout": { "Délai dépassé — vérifiez votre réseau." };
         case "network": { "Impossible de joindre Athena." };
         case "invalid_response": { "Réponse inattendue d’Athena." };
+        case "http_503": { "Liaison pas encore activée sur le portail (mise à jour serveur requise). Réessayez plus tard." };
+        case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
         default {
             if (_err find "http_" == 0) then {
                 format ["Erreur serveur (%1).", _err select [5, (count _err) - 5]]
             } else {
-                "Liaison impossible pour le moment."
+                format ["Liaison impossible (%1).", _err]
             }
         };
     };
     [_msg, "#ff8a7a"] call _setStatus;
+    [format ["[Athena] Échec liaison compte : %1", _msg]] call comspec_overwatch_connect_fnc_appendLinkLog;
     ["COMSPEC_Warning", [_msg]] call BIS_fnc_showNotification;
 };
 
@@ -60,6 +68,7 @@ private _payload = if (count _parts >= 2) then { _parts select 1 } else { "" };
 private _cols = _payload splitString "\t";
 if (count _cols < 2) exitWith {
     ["Réponse incomplète d’Athena.", "#ff8a7a"] call _setStatus;
+    ["[Athena] Réponse incomplète après échange du code."] call comspec_overwatch_connect_fnc_appendLinkLog;
 };
 
 private _apiUrl = _cols select 0;
@@ -87,6 +96,7 @@ if (!isNil "cba_settings_fnc_set") then {
     };
 };
 
+["[Athena] Code accepté — établissement de la liaison…"] call comspec_overwatch_connect_fnc_appendLinkLog;
 [] call comspec_overwatch_connect_fnc_connect;
 
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];

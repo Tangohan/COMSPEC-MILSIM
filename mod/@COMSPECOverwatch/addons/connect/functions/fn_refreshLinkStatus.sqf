@@ -37,6 +37,7 @@ if (_prefix == "OK") then {
         missionNamespace setVariable ["COMSPEC_userIp", _payload, true];
     };
     missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+    [format ["[Athena] Contrôle liaison OK (adresse %1).", missionNamespace getVariable ["COMSPEC_userIp", "—"]]] call comspec_overwatch_connect_fnc_appendLinkLog;
 } else {
     _state = "offline";
     _detail = switch (_payload) do {
@@ -46,6 +47,7 @@ if (_prefix == "OK") then {
             if (_payload isEqualTo "") then { "Hors liaison" } else { "Hors liaison" };
         };
     };
+    [format ["[Athena] Contrôle liaison échoué : %1", _detail]] call comspec_overwatch_connect_fnc_appendLinkLog;
 };
 
 missionNamespace setVariable ["COMSPEC_LinkState", _state, false];

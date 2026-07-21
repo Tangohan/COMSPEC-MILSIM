@@ -7,14 +7,7 @@ if (isNull _display) exitWith {};
 uiNamespace setVariable ["COMSPEC_Chat_Display", _display];
 
 private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
-private _host = "Athena";
-if (_url != "") then {
-    private _parts = _url splitString "/";
-    if (count _parts > 2) then {
-        private _h = _parts select 2;
-        if (_h != "") then { _host = _h; };
-    };
-};
+private _host = [_url] call comspec_overwatch_connect_fnc_portalLabel;
 
 private _urlCtrl = _display displayCtrl 1399;
 if (!isNull _urlCtrl) then { _urlCtrl ctrlSetText ("Portail : " + _host); };
@@ -25,6 +18,26 @@ if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ("Votre adresse : " + _ip); };
 
 private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
 private _logCtrl = _display displayCtrl 1402;
-if (!isNull _logCtrl && {_log != ""}) then { _logCtrl ctrlSetText _log; };
+if (!isNull _logCtrl) then {
+    if (_log isEqualTo "") then {
+        private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+        private _hint = switch (_state) do {
+            case "linked": {
+                "[Athena] Journal vide — liaison affichée active. Envoyez un message ou rouvrez Compte Athena si le site ne reçoit rien."
+            };
+            default {
+                "[Athena] Aucun événement. Touche K → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
+            };
+        };
+        _logCtrl ctrlSetText (_hint + "\n");
+    } else {
+        _logCtrl ctrlSetText _log;
+    };
+};
+
+private _console = _display displayCtrl 1401;
+if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
+    _console ctrlSetText "Les messages envoyés apparaissent ici.\n";
+};
 
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
