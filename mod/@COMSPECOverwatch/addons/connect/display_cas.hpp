@@ -1,8 +1,5 @@
 // COMSPEC CAS 9-Line dialog (idd 9980)
-class RscText;
-class RscButton;
-class RscStructuredText;
-class RscEdit;
+// Les classes Rsc* sont déclarées une seule fois dans ui_base.hpp (inclus avant ce fichier).
 
 class COMSPEC_CAS_Dialog {
     idd = 9980;

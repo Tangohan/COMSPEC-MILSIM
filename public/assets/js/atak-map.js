@@ -637,6 +637,12 @@ window.ATAKMap = (function () {
         else if (u.extra && typeof u.extra === 'object') extra = u.extra;
       } catch (e) {}
       var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
+      var health = String(extra.health || u.health || '').toLowerCase();
+      var healthClass = '';
+      if (health === 'wounded' || health === 'injured') healthClass = 'nato-sidc--wounded';
+      if (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia') {
+        healthClass = 'nato-sidc--critical';
+      }
       var iconOpts = {
         affiliation: aff,
         role: u.role || extra.role || '',
@@ -644,11 +650,13 @@ window.ATAKMap = (function () {
         heading: u.heading,
         showLabel: true,
         size: 34,
+        health: health,
+        className: healthClass,
       };
       var icon = nato && nato.leafletDivIcon
         ? nato.leafletDivIcon(L, iconOpts)
         : L.divIcon({
-            className: 'atak-unit-fallback',
+            className: 'atak-unit-fallback ' + healthClass,
             html: '<span style="background:#3b82f6;color:#fff;padding:2px 5px;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>',
             iconSize: [70, 20],
             iconAnchor: [35, 10],

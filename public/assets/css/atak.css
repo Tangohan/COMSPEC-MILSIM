@@ -11,9 +11,10 @@
   --atak-success: #22c55e;
   --atak-success-glow: rgba(34, 197, 94, 0.5);
   --atak-warning: #eab308;
-  --atak-left-w: 300px;
+  --atak-left-w: 320px;
   --atak-right-w: 340px;
-  --atak-header-h: 52px;
+  --atak-header-h: 56px;
+  --atak-os-strip-h: 42px;
 }
 
 * { box-sizing: border-box; }
@@ -32,53 +33,135 @@ body.atak-page {
 .atak-header {
   height: var(--atak-header-h);
   min-height: var(--atak-header-h);
-  background: var(--atak-panel);
+  background: linear-gradient(180deg, #16161f 0%, var(--atak-panel) 100%);
   border-bottom: 1px solid var(--atak-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.25rem;
+  gap: 1rem;
+  padding: 0 1rem 0 1.1rem;
   flex-shrink: 0;
+}
+
+.atak-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
 .atak-header .atak-logo-wrap {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .atak-header .atak-logo {
   font-weight: 800;
-  font-size: 1rem;
-  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--atak-text);
 }
 
 .atak-header .atak-overwatch {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--atak-accent);
+  text-transform: uppercase;
+}
+
+.atak-header-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.atak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--atak-border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.65rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--atak-text);
+}
+
+.atak-chip-key {
   color: var(--atak-muted);
-  margin-left: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 0.58rem;
+}
+
+.atak-chip-value,
+.atak-chip-label {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.atak-chip--live {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--atak-success);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.62rem;
+}
+
+.atak-chip--ok {
+  border-color: rgba(52, 211, 153, 0.4);
+  background: var(--atak-accent-dim);
+}
+
+.atak-chip--warn {
+  border-color: rgba(234, 179, 8, 0.45);
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.atak-chip--off,
+.atak-chip.offline {
+  border-color: var(--atak-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--atak-muted);
+}
+
+.atak-chip--muted .atak-chip-value {
+  color: var(--atak-muted);
+  font-weight: 500;
 }
 
 .atak-header .atak-zulu {
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--atak-muted);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .atak-header-links {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  flex-shrink: 0;
 }
 
 .atak-header-link {
   color: var(--atak-muted);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-decoration: none;
   transition: color 0.15s;
 }
@@ -90,17 +173,19 @@ body.atak-page {
 .atak-header-select-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .atak-header-select-label {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: var(--atak-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .atak-header-select {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.45rem;
   background: var(--atak-panel-alt);
   border: 1px solid var(--atak-border);
   border-radius: 4px;
@@ -108,41 +193,118 @@ body.atak-page {
   cursor: pointer;
 }
 
-.atak-header .atak-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--atak-success);
-  font-weight: 600;
-}
-
-.atak-status .dot {
-  width: 8px;
-  height: 8px;
+.atak-status .dot,
+.atak-chip .dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--atak-success);
-  box-shadow: 0 0 10px var(--atak-success-glow);
+  box-shadow: 0 0 8px var(--atak-success-glow);
+  flex-shrink: 0;
 }
 
-.atak-status.offline { color: var(--atak-muted); }
-.atak-status.offline .dot { background: #4a4a55; box-shadow: none; }
+.atak-chip--off .dot,
+.atak-chip.offline .dot {
+  background: #4a4a55;
+  box-shadow: none;
+}
+
+.atak-header-tagline {
+  display: none;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atak-muted);
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+@media (min-width: 1100px) {
+  .atak-header-tagline { display: inline-block; }
+}
 
 .atak-btn-account {
   background: var(--atak-panel-alt);
   border: 1px solid var(--atak-border);
   color: var(--atak-text);
-  font-size: 0.75rem;
-  padding: 0.35rem 0.6rem;
+  font-size: 0.72rem;
+  padding: 0.3rem 0.55rem;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 0.5rem;
 }
 .atak-btn-account:hover {
   background: var(--atak-border);
   color: var(--atak-accent);
+}
+.atak-btn-game-link {
+  background: var(--atak-accent);
+  border: 1px solid var(--atak-accent);
+  color: #0a1210;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.32rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.atak-btn-game-link:hover {
+  filter: brightness(1.08);
+}
+
+.atak-os-strip {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 1.1rem;
+  min-height: var(--atak-os-strip-h);
+  padding: 0.4rem 1rem;
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.1), transparent 58%);
+  border-bottom: 1px solid var(--atak-border);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+.atak-os-strip-lead {
+  margin: 0;
+  color: var(--atak-text);
+}
+.atak-os-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--atak-muted);
+}
+.atak-os-caps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.atak-os-cap-num {
+  color: var(--atak-accent);
+  font-variant-numeric: tabular-nums;
+}
+.atak-os-strip-hint {
+  margin: 0;
+  color: var(--atak-muted);
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+.atak-os-strip strong { color: var(--atak-accent); font-weight: 700; }
+@media (max-width: 1100px) {
+  .atak-os-caps { display: none; }
+}
+@media (max-width: 720px) {
+  .atak-os-strip-hint { display: none; }
 }
 
 .atak-account-overlay {
@@ -219,6 +381,83 @@ body.atak-page {
 }
 .atak-account-panel-body a:hover { text-decoration: underline; }
 
+.atak-account-section--game-link {
+  padding: 0.85rem;
+  margin: 0 -0.15rem 1.35rem;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 10px;
+  background: linear-gradient(160deg, rgba(52, 211, 153, 0.12), rgba(0, 0, 0, 0.2));
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08);
+}
+.atak-account-section--pulse {
+  animation: atak-game-link-pulse 1.4s ease-in-out 2;
+}
+@keyframes atak-game-link-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.08); }
+  50% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.55); }
+}
+.atak-game-link-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.atak-game-link-head .atak-account-section-title { margin: 0; color: var(--atak-accent); }
+
+.atak-game-link-hint {
+  font-size: 0.8rem;
+  color: var(--atak-muted);
+  line-height: 1.4;
+  margin-bottom: 0.65rem !important;
+}
+.atak-game-link-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0a1210;
+  background: var(--atak-accent, #3dba8c);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.atak-game-link-btn:hover { filter: brightness(1.08); }
+.atak-game-link-btn:disabled { opacity: 0.6; cursor: wait; }
+.atak-game-link-result {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--atak-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.atak-game-link-code-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--atak-muted);
+  margin: 0 0 0.25rem 0 !important;
+}
+.atak-game-link-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #e8f4f0;
+  margin: 0.15rem 0 0.5rem 0 !important;
+}
+.atak-game-link-meta {
+  font-size: 0.75rem;
+  color: var(--atak-muted);
+  margin-bottom: 0.5rem !important;
+}
+.atak-game-link-error {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #ff8a7a;
+}
+
 /* Section Configuration pour le jeu (Arma / mod) */
 .atak-game-config {
   background: linear-gradient(180deg, rgba(18, 18, 26, 0.98) 0%, rgba(10, 10, 15, 0.98) 100%);
@@ -228,9 +467,9 @@ body.atak-page {
 .atak-game-config-toggle {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1rem;
   background: none;
   border: none;
   color: var(--atak-muted);
@@ -247,6 +486,28 @@ body.atak-page {
 .atak-game-config-toggle-icon {
   font-size: 0.65rem;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.atak-accordion-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.atak-accordion-title-wrap > span:first-child {
+  color: var(--atak-text);
+  font-weight: 650;
+  font-size: 0.82rem;
+}
+.atak-accordion-subtitle {
+  font-size: 0.68rem;
+  color: var(--atak-muted);
+  font-weight: 400;
+}
+.atak-game-config-toggle .atak-pill {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 .atak-game-config-body {
   border-top: 1px solid var(--atak-border);
@@ -271,11 +532,14 @@ body.atak-page {
   color: var(--atak-accent);
 }
 .atak-game-config-hint {
+  display: block;
+  margin: 0 0 0.4rem;
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
   color: var(--atak-muted);
   font-size: 0.7rem;
+  line-height: 1.35;
 }
 .atak-game-config-url-wrap {
   display: flex;
@@ -368,30 +632,279 @@ body.atak-page {
 .atak-game-config-link:hover { color: var(--atak-accent); }
 
 /* État de santé */
-.atak-health-section { margin-top: 0.5rem; }
-.atak-health-body .atak-game-config-inner { padding: 0.75rem; }
+.atak-health-section { margin-top: 0; }
+.atak-health-body .atak-game-config-inner { padding: 0.75rem 1rem 1rem; }
 .atak-health-section,
 .atak-game-config {
-  margin-top: 1rem;
-  padding-top: 0.5rem;
+  margin-top: 0;
   border-top: 1px solid var(--atak-border);
 }
-.atak-health-grid { display: flex; flex-direction: column; gap: 0.6rem; }
-.atak-health-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 0.75rem; align-items: center; font-size: 0.8rem; min-height: 1.75rem; }
-.atak-health-row .atak-health-label { color: var(--atak-muted); }
-.atak-health-row .atak-health-cell:first-of-type { grid-column: 2; }
-.atak-health-row .atak-health-status { grid-column: 3; }
-.atak-health-row .atak-health-cell.atak-health-dll-text { grid-column: 2 / -1; }
-.atak-health-label { color: var(--atak-muted); }
-.atak-health-cell { word-break: break-all; }
-.atak-health-muted { color: var(--atak-muted); font-size: 0.8rem; }
+.atak-health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.55rem;
+}
+.atak-health-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.65rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--atak-border);
+  border-radius: 6px;
+  min-height: 4.2rem;
+}
+.atak-health-label {
+  color: var(--atak-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.atak-health-cell {
+  font-size: 0.8rem;
+  color: var(--atak-text);
+  word-break: break-word;
+}
+.atak-health-muted { color: var(--atak-muted); font-size: 0.72rem; }
+.atak-health-ok-text { color: #86efac; }
+.atak-health-warn-text { color: #facc15; }
+.atak-health-err { color: #fca5a5; font-size: 0.75rem; }
 .atak-health-status.ok { color: #22c55e; }
 .atak-health-status.err { color: #ef4444; }
 .atak-health-status.warn { color: #eab308; }
-.atak-health-err { color: var(--atak-warning); font-size: 0.75rem; }
-.atak-health-refresh { padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; background: var(--atak-bg-elevated); border: 1px solid var(--atak-border); border-radius: 4px; color: inherit; }
-.atak-health-refresh:hover { background: var(--atak-accent); color: #fff; border-color: var(--atak-accent); }
+.atak-health-refresh {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  color: inherit;
+}
+.atak-health-refresh:hover {
+  background: var(--atak-accent);
+  color: #0a0a0f;
+  border-color: var(--atak-accent);
+}
 .atak-health-body[hidden] { display: none; }
+
+.atak-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--atak-border);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--atak-muted);
+  white-space: nowrap;
+}
+.atak-pill--ok {
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+}
+.atak-pill--err {
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+}
+.atak-pill--warn {
+  color: #fde68a;
+  border-color: rgba(234, 179, 8, 0.45);
+  background: rgba(234, 179, 8, 0.12);
+}
+.atak-pill--muted {
+  color: var(--atak-muted);
+}
+
+/* Activité de liaison */
+.atak-activity-panel {
+  padding: 0.65rem 0.7rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 0;
+  height: 100%;
+}
+.atak-activity-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.atak-activity-intro {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--atak-muted);
+  line-height: 1.4;
+}
+.atak-activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.atak-activity-meta-label {
+  font-size: 0.68rem;
+  color: var(--atak-muted);
+}
+.atak-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.35rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+.atak-activity-item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 0.55rem;
+  align-items: stretch;
+  padding: 0.45rem 0.15rem 0.55rem;
+  position: relative;
+}
+.atak-activity-rail {
+  position: relative;
+  width: 10px;
+}
+.atak-activity-rail::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: -0.55rem;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.atak-activity-item:last-child .atak-activity-rail::before {
+  bottom: 0.35rem;
+}
+.atak-activity-rail::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0.35rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--atak-border);
+  border: 2px solid var(--atak-panel-alt);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.atak-activity-item--init .atak-activity-rail::after { background: #22c55e; }
+.atak-activity-item--callsign .atak-activity-rail::after { background: #eab308; }
+.atak-activity-item--position .atak-activity-rail::after { background: #38bdf8; }
+.atak-activity-item--message .atak-activity-rail::after { background: #34d399; }
+.atak-activity-item--tactical .atak-activity-rail::after { background: #f97316; }
+.atak-activity-body {
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+.atak-activity-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+.atak-activity-type {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--atak-accent);
+}
+.atak-activity-item--callsign .atak-activity-type { color: #eab308; }
+.atak-activity-item--position .atak-activity-type { color: #38bdf8; }
+.atak-activity-item--tactical .atak-activity-type { color: #fb923c; }
+.atak-activity-time {
+  color: var(--atak-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.65rem;
+}
+.atak-activity-label {
+  color: var(--atak-text);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.atak-activity-actor {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  font-weight: 600;
+}
+.atak-activity-empty {
+  margin-top: 0.35rem;
+}
+
+/* Empty states partagés */
+.atak-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.25rem;
+  padding: 1.25rem 0.85rem;
+  margin: 0.35rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.atak-empty-state[hidden],
+.atak-activity-empty[hidden],
+.atak-activity-meta[hidden] {
+  display: none !important;
+}
+.atak-empty-state--compact {
+  padding: 0.9rem 0.75rem;
+  margin: 0.25rem;
+}
+.atak-empty-state-icon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--atak-accent);
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+}
+.atak-empty-state-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--atak-text);
+}
+.atak-empty-state-text {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--atak-muted);
+  line-height: 1.4;
+  max-width: 16rem;
+}
+.atak-panel-hint {
+  margin: 0;
+  padding: 0.55rem 0.75rem 0.15rem;
+  font-size: 0.72rem;
+  color: var(--atak-muted);
+  line-height: 1.35;
+}
 
 .atak-error-toast {
   display: none;
@@ -486,25 +999,39 @@ body.atak-page {
 /* Tabs panneau gauche */
 .atak-tabs-headers {
   display: flex;
+  flex-wrap: wrap;
   border-bottom: 1px solid var(--atak-border);
   flex-shrink: 0;
-  align-items: center;
+  align-items: stretch;
+  gap: 0;
+  background: linear-gradient(180deg, #15151d 0%, var(--atak-panel) 100%);
+  padding: 0.15rem 0.15rem 0;
 }
 
 .atak-tab {
-  padding: 0.45rem 0.45rem;
+  padding: 0.5rem 0.48rem 0.45rem;
   font-size: 0.62rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   background: transparent;
   border: none;
+  border-bottom: 2px solid transparent;
   color: var(--atak-muted);
   cursor: pointer;
   white-space: nowrap;
+  font-weight: 600;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.atak-tab:hover { color: var(--atak-text); }
-.atak-tab.active { color: var(--atak-accent); border-bottom: 2px solid var(--atak-accent); margin-bottom: -1px; }
+.atak-tab:hover {
+  color: var(--atak-text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.atak-tab.active {
+  color: var(--atak-accent);
+  border-bottom-color: var(--atak-accent);
+  background: rgba(52, 211, 153, 0.06);
+}
 .atak-toggle:hover { color: var(--atak-text); }
 
 .atak-toggle {
@@ -514,6 +1041,29 @@ body.atak-page {
   border: none;
   color: var(--atak-muted);
   cursor: pointer;
+}
+
+.atak-tab-badge,
+.atak-tab .atak-medical-tab-badge,
+.atak-medical-tab-badge {
+  display: inline-flex;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 0.2rem;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+.atak-tab-badge--soft {
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--atak-accent);
+  border: 1px solid rgba(52, 211, 153, 0.35);
 }
 
 .atak-tabs-content {
@@ -542,8 +1092,9 @@ body.atak-page {
   padding: 0.5rem;
   font-size: 0.8rem;
 }
-.atak-chat-msg { margin-bottom: 0.5rem; }
+.atak-chat-msg { margin-bottom: 0.5rem; padding: 0.35rem 0.4rem; border-radius: 4px; }
 .atak-chat-msg .author { color: var(--atak-accent); font-weight: 600; }
+.atak-chat-time { color: var(--atak-muted); font-size: 0.7rem; margin-left: 0.15rem; }
 .atak-chat-input-wrap {
   display: flex;
   padding: 0.5rem;
@@ -617,12 +1168,56 @@ body.atak-page {
   border-bottom: 1px solid var(--atak-border);
   flex-shrink: 0;
 }
-.atak-units-title { font-weight: 700; font-size: 0.95rem; }
+.atak-units-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.atak-units-title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+.atak-units-count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--atak-accent);
+  background: var(--atak-accent-dim);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  border-radius: 6px;
+  padding: 0.15rem 0.45rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+.atak-units-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.atak-units-summary-item {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  color: var(--atak-muted);
+}
+.atak-units-summary-item--live {
+  color: var(--atak-success);
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.1);
+}
+.atak-units-summary-item--delayed {
+  color: var(--atak-warning);
+  border-color: rgba(234, 179, 8, 0.35);
+  background: rgba(234, 179, 8, 0.08);
+}
 .atak-filter {
   margin-top: 0.5rem;
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 .atak-filter input {
   flex: 1;
@@ -660,6 +1255,19 @@ body.atak-page {
   font-size: 0.8rem;
   text-align: center;
 }
+.atak-units-empty-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--atak-text);
+}
+.atak-units-empty-text {
+  margin: 0;
+  max-width: 16rem;
+  line-height: 1.4;
+  font-size: 0.75rem;
+}
+.atak-units-empty-text strong { color: var(--atak-accent); }
 .atak-units-empty-icon {
   width: 48px;
   height: 48px;
@@ -696,10 +1304,132 @@ body.atak-page {
 .atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }
 .atak-unit-status.delayed { background: rgba(234, 179, 8, 0.2); color: var(--atak-warning); }
-.atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0.25rem; }
+.atak-unit-status.offline { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+.atak-unit-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  margin-top: 0.35rem;
+}
+.atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0; }
+.atak-unit-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+.atak-unit-vital {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.38rem;
+  border-radius: 4px;
+  border: 1px solid var(--atak-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--atak-muted);
+}
+.atak-unit-vital--ok { color: var(--atak-success); border-color: rgba(34, 197, 94, 0.35); }
+.atak-unit-vital--warn { color: var(--atak-warning); border-color: rgba(234, 179, 8, 0.4); }
+.atak-unit-vital--crit { color: #fecaca; border-color: rgba(239, 68, 68, 0.45); background: rgba(239, 68, 68, 0.12); }
 .atak-unit-bft-meta { font-size: 0.7rem; color: var(--atak-muted); margin-top: 0.2rem; }
 .atak-unit-card.atak-unit-bft-wounded { border-left-color: #ef4444; animation: atak-bft-blink 1.2s ease-in-out infinite; }
+.atak-unit-card.atak-unit-bft-critical {
+  border-left-color: #dc2626;
+  background: rgba(220, 38, 38, 0.12);
+  animation: atak-bft-critical-pulse 1s ease-in-out infinite;
+}
+.atak-unit-health-flag {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fecaca;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 @keyframes atak-bft-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+@keyframes atak-bft-critical-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0.0); }
+  50% { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.55); }
+}
+
+/* Assistances médicales */
+.atak-medical-banner {
+  position: relative;
+  z-index: 1200;
+  background: linear-gradient(90deg, rgba(127, 29, 29, 0.95), rgba(153, 27, 27, 0.9));
+  border-bottom: 1px solid rgba(248, 113, 113, 0.45);
+  color: #fee2e2;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+}
+.atak-medical-banner[hidden] { display: none !important; }
+.atak-medical-banner-inner { display: flex; flex-wrap: wrap; gap: 0.5rem 0.85rem; align-items: center; }
+.atak-medical-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(254, 226, 226, 0.2);
+  border: 1px solid rgba(254, 202, 202, 0.45);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.atak-medical-banner-msg { font-weight: 600; }
+.atak-medical-banner-units { color: #fecaca; font-size: 0.78rem; }
+.atak-medical-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.5rem;
+  overflow-y: auto;
+  max-height: calc(100% - 0.5rem);
+}
+.atak-medical-section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--atak-muted);
+  font-weight: 700;
+  margin-top: 0.35rem;
+}
+.atak-medical-item {
+  border: 1px solid var(--atak-border);
+  border-left: 3px solid #f59e0b;
+  background: var(--atak-bg);
+  border-radius: 4px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+}
+.atak-medical-item.atak-medical-critical { border-left-color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+.atak-medical-item.atak-medical-attention { border-left-color: #f59e0b; }
+.atak-medical-item.atak-medical-urgent { border-left-color: #ef4444; }
+.atak-medical-item-title { font-weight: 700; font-size: 0.82rem; }
+.atak-medical-item-label { font-size: 0.78rem; color: var(--atak-text); margin-top: 0.15rem; }
+.atak-medical-item-meta { font-size: 0.7rem; color: var(--atak-muted); margin-top: 0.2rem; }
+.atak-medical-empty { padding: 0.75rem; }
+.atak-chat-msg-medical { background: rgba(220, 38, 38, 0.1); border-left: 3px solid #ef4444; padding: 0.25rem 0.4rem; border-radius: 3px; }
+.atak-chat-msg-medical-critical { border-left-color: #dc2626; background: rgba(220, 38, 38, 0.18); }
+.atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
+.atak-tab .atak-medical-tab-badge,
+.atak-medical-tab-badge {
+  /* styles unifiés via .atak-tab-badge ci-dessus */
+}
+.nato-sidc-stack.nato-sidc--wounded .nato-sidc-label,
+.nato-sidc-wrap.nato-sidc--wounded {
+  filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.85));
+}
+.nato-sidc-stack.nato-sidc--critical .nato-sidc-label {
+  color: #fecaca !important;
+  font-weight: 800;
+}
+.nato-sidc-stack.nato-sidc--critical,
+.nato-sidc-wrap.nato-sidc--critical {
+  filter: drop-shadow(0 0 3px rgba(220, 38, 38, 1));
+  animation: atak-bft-blink 1s ease-in-out infinite;
+}
 
 /* Air Support Assets (Flight Manifest) */
 .atak-air-assets-header {
@@ -1307,4 +2037,27 @@ body.atak-page {
   border-radius: 50%;
   background: #34d399;
   border: 2px solid #0a0a0f;
+}
+
+.atak-panel-section-label {
+  padding: 0.45rem 0.55rem 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--atak-muted);
+}
+
+@media (max-width: 1100px) {
+  .atak-header-chips #atak-chip-sync { display: none; }
+}
+@media (max-width: 900px) {
+  .atak-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--atak-header-h);
+    padding: 0.45rem 0.75rem;
+  }
+  .atak-header-brand { width: 100%; }
+  .atak-zulu { order: 3; }
 }

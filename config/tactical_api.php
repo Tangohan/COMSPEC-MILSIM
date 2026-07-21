@@ -9,6 +9,8 @@ return [
     'atak_exempt_paths' => [
         '/api/atak/ping',
         '/api/atak/whoami',
+        // Code court à usage unique : le secret est le code lui-même (TTL court).
+        '/api/atak/game-link/redeem',
     ],
     'protected_prefixes' => [
         '/api/markers',

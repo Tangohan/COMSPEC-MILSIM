@@ -373,9 +373,9 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
             <p class="text-[9px] text-slate-500">Consultation des documents et fiches</p>
           </a>
           <?php endif; ?>
-          <a href="<?= $baseUrl ?>/atak" class="block px-4 py-3 hover:bg-slate-50 transition">
-            <p class="text-xs font-bold text-slate-900 hover:text-emerald-700">ATAK / TACMAP</p>
-            <p class="text-[9px] text-slate-500">Carte tactique, marqueurs et outils C2</p>
+          <a href="<?= $baseUrl ?>/overwatch" class="block px-4 py-3 hover:bg-slate-50 transition">
+            <p class="text-xs font-bold text-slate-900 hover:text-emerald-700">ATAK / Overwatch</p>
+            <p class="text-[9px] text-slate-500">Situation en carte, marqueurs et outils de commandement</p>
           </a>
         </div>
       </div>

@@ -8,9 +8,11 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AssetLogisticsRepository;
+use App\Repositories\AtakDataRepository;
 use App\Services\Intel\IntelFusionService;
 use App\Services\Logistics\AssetLogisticsEvaluator;
 use App\Services\Replay\ReplayService;
+use App\Support\MedicalAlertParser;
 use App\Support\TrainingCertificatePdfEngine;
 
 class OperationsApiController
@@ -21,8 +23,10 @@ class OperationsApiController
         private ReplayService $replayService,
         private IntelFusionService $intelFusion,
         private AssetLogisticsRepository $assetLogisticsRepository,
-        private AssetLogisticsEvaluator $assetLogisticsEvaluator
+        private AssetLogisticsEvaluator $assetLogisticsEvaluator,
+        private ?AtakDataRepository $atakDataRepository = null,
     ) {
+        $this->atakDataRepository ??= new AtakDataRepository();
     }
 
     public function missionsTimeline(Request $request, array $params = []): Response
@@ -279,11 +283,52 @@ class OperationsApiController
             }
         }
 
+        $mapId = self::DEFAULT_MAP_ID;
+        $tenantId = (int) (Session::get('tenant_id') ?? 0);
+        if (preg_match('/^mission_(\d+)_map_(\d+)$/', $missionId, $m)) {
+            $tenantId = (int) $m[1];
+            $mapId = (int) $m[2];
+        }
+
+        $liveAlerts = [];
+        $criticalUnits = [];
+        if ($tenantId > 0) {
+            $liveAlerts = $this->atakDataRepository->getMedicalAlertsFromChat($tenantId, $mapId, 40);
+            $criticalUnits = $this->atakDataRepository->getUnitsWithCriticalHealth($tenantId, $mapId);
+        }
+
+        $medicalSignals = [];
+        if ($healthError !== null) {
+            $medicalSignals[] = $healthError;
+        }
+        foreach ($liveAlerts as $alert) {
+            $medicalSignals[] = [
+                'code' => 'LIVE_' . strtoupper((string) ($alert['kind'] ?? 'MEDICAL')),
+                'label' => (string) ($alert['summary'] ?? $alert['label'] ?? 'Assistance médicale'),
+                'severity' => (string) ($alert['severity'] ?? 'urgent'),
+                'callSign' => (string) ($alert['call_sign'] ?? ''),
+                'createdAt' => (string) ($alert['created_at'] ?? ''),
+                'source' => 'chat',
+            ];
+        }
+        foreach ($criticalUnits as $unit) {
+            $medicalSignals[] = [
+                'code' => 'UNIT_HEALTH_' . strtoupper((string) ($unit['health'] ?? 'CRITICAL')),
+                'label' => MedicalAlertParser::healthLabelFr((string) ($unit['health'] ?? '')) . ' — ' . (string) ($unit['call_sign'] ?? ''),
+                'severity' => (string) ($unit['severity'] ?? 'attention'),
+                'callSign' => (string) ($unit['call_sign'] ?? ''),
+                'createdAt' => (string) ($unit['updated_at'] ?? ''),
+                'source' => 'position',
+            ];
+        }
+
         return $this->success([
             'domain' => 'operations.medical',
             'missionId' => $missionId,
-            'criticalHealthAlerts' => (int) ($healthError['count'] ?? 0),
-            'medicalSignals' => $healthError !== null ? [$healthError] : [],
+            'criticalHealthAlerts' => (int) ($healthError['count'] ?? 0) + count($liveAlerts) + count($criticalUnits),
+            'medicalSignals' => $medicalSignals,
+            'liveAlerts' => $liveAlerts,
+            'criticalUnits' => $criticalUnits,
         ]);
     }
 

@@ -37,34 +37,73 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-map-crs.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/nato-sidc-icons.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/atak-medical-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars(asset_url('assets/css/atak-map-popups.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <style>
-    html, body { height: 100%; }
+    :root { --ow-trail: #67e8f9; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
     .panel-tab { display: none; }
     .panel-tab.active { display: block; }
+    .atak-medical-item {
+      border: 1px solid #334155;
+      border-left: 3px solid #f59e0b;
+      background: #0f172a;
+      border-radius: 0.5rem;
+      padding: 0.55rem 0.7rem;
+      cursor: pointer;
+    }
+    .atak-medical-item.atak-medical-critical { border-left-color: #dc2626; background: rgba(220, 38, 38, 0.12); }
+    .atak-medical-item.atak-medical-attention { border-left-color: #f59e0b; }
+    .atak-medical-item.atak-medical-urgent { border-left-color: #ef4444; }
+    .atak-medical-item-title { font-weight: 700; font-size: 0.82rem; color: #f8fafc; }
+    .atak-medical-item-label { font-size: 0.78rem; color: #cbd5e1; margin-top: 0.15rem; }
+    .atak-medical-item-meta { font-size: 0.7rem; color: #94a3b8; margin-top: 0.2rem; }
+    .atak-medical-section-title {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #94a3b8; font-weight: 700; margin-top: 0.5rem;
+    }
+    .atak-medical-empty { color: #94a3b8; padding: 0.5rem 0; }
+    .atak-medical-banner-inner { display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; align-items: center; }
+    .atak-medical-badge {
+      display: inline-flex; align-items: center; padding: 0.1rem 0.45rem; border-radius: 999px;
+      background: rgba(254, 226, 226, 0.15); border: 1px solid rgba(254, 202, 202, 0.35);
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    }
     #overwatch-map {
       width: 100%;
       height: 100%;
-      min-height: 420px;
+      min-height: 0;
       background: #0b1220;
-      border-radius: 0.75rem;
-      border: 1px solid #1e293b;
+      border-radius: 0;
+      border: 0;
     }
     .overwatch-shell {
-      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-height: 100dvh;
+      min-height: 0;
+      overflow: hidden;
       background: #020617;
       color: #e2e8f0;
+    }
+    .overwatch-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    @media (min-width: 1280px) {
+      .overwatch-body { flex-direction: row; }
     }
     .overwatch-map-stage {
       position: relative;
       flex: 1 1 auto;
-      min-height: 420px;
-      height: min(62vh, 720px);
-      background: #020617;
-    }
-    @media (min-width: 1280px) {
-      .overwatch-map-stage { height: calc(100vh - 14rem); min-height: 520px; }
+      min-height: 0;
+      min-width: 0;
+      height: auto;
+      background: #0b1220;
     }
     .overwatch-map-status {
       position: absolute; inset: 0; z-index: 500;
@@ -77,6 +116,49 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
     .overwatch-map-status.is-hidden { opacity: 0; visibility: hidden; }
     .leaflet-container { font: inherit; width: 100% !important; height: 100% !important; background: #0b1220; }
     .nato-sidc-icon { background: transparent !important; border: none !important; filter: drop-shadow(0 1px 2px rgba(0,0,0,.8)); }
+    #overwatch-ctx-menu {
+      position: fixed;
+      z-index: 12000;
+      min-width: 200px;
+      display: none;
+      padding: 0.35rem;
+      border-radius: 0.75rem;
+      border: 1px solid #334155;
+      background: #0f172a;
+      box-shadow: 0 12px 32px rgba(0,0,0,.45);
+      color: #e2e8f0;
+    }
+    #overwatch-ctx-menu.is-open { display: block; }
+    #overwatch-ctx-menu .ow-ctx-label {
+      padding: 0.4rem 0.65rem 0.55rem;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 0.25rem;
+      max-width: 240px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #overwatch-ctx-menu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 0.5rem;
+      padding: 0.55rem 0.65rem;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #e2e8f0;
+    }
+    #overwatch-ctx-menu button:hover { background: #1e293b; }
+    #overwatch-ctx-menu button.ow-ctx-danger { color: #fca5a5; }
+    #overwatch-ctx-menu button.ow-ctx-danger:hover { background: #7f1d1d; color: #fff; }
     /* Header : contraste lisible sur fond sombre (évite text-slate-100 hérité sur fond blanc) */
     .overwatch-header-select {
       color: #0f172a;
@@ -94,10 +176,90 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       border-color: rgba(110, 231, 183, 0.7);
       color: #fff;
     }
+    .ow-roster-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #059669;
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 0.65rem;
+      padding: 0.55rem 0.65rem;
+      margin-bottom: 0.35rem;
+      cursor: pointer;
+    }
+    .ow-roster-btn:hover,
+    .ow-roster-btn.is-selected {
+      border-color: #059669;
+      box-shadow: 0 0 0 1px #059669;
+      background: #ecfdf5;
+    }
+    .ow-positions-drawer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      max-height: 38%;
+      display: flex;
+      flex-direction: column;
+      background: #0f172a;
+      border-top: 1px solid #334155;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+      transform: translateY(calc(100% - 2rem));
+      transition: transform 0.2s ease;
+      color: #e2e8f0;
+    }
+    .ow-positions-drawer.is-open { transform: translateY(0); }
+    .ow-positions-drawer__toggle {
+      flex: 0 0 auto;
+      width: 100%;
+      border: 0;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.45rem;
+      cursor: pointer;
+    }
+    .ow-positions-drawer__toggle:hover { color: #e2e8f0; }
+    .ow-positions-drawer__body {
+      flex: 1 1 auto;
+      overflow: auto;
+      min-height: 0;
+    }
+    .ow-positions-drawer table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+    .ow-positions-drawer th {
+      position: sticky;
+      top: 0;
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 0.55rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    .ow-positions-drawer td {
+      padding: 0.45rem 0.75rem;
+      border-bottom: 1px solid #1e293b;
+      color: #e2e8f0;
+    }
+    .ow-positions-drawer tr[data-unit-id] { cursor: pointer; }
+    .ow-positions-drawer tr[data-unit-id]:hover { background: #1e293b; }
+    .ow-positions-drawer tr.is-selected { background: rgba(5, 150, 105, 0.2); }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 antialiased">
-  <div class="overwatch-shell flex flex-col">
+  <div class="overwatch-shell">
     <header class="flex-shrink-0 border-b border-slate-800 bg-slate-950">
       <div class="h-1.5 bg-gradient-to-r from-emerald-600 via-cyan-500 to-slate-700"></div>
       <div class="px-4 md:px-6 py-4 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -107,11 +269,13 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             <h1 class="text-2xl md:text-3xl font-black tracking-tight uppercase italic text-white">COMSPEC Overwatch</h1>
             <span id="overwatch-sync-badge" class="px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wide border-emerald-500/50 bg-emerald-950 text-emerald-200">En attente</span>
           </div>
-          <p class="mt-1.5 text-sm text-slate-300">Carte de commandement, symboles OTAN, appuis-feu et suivi des liaisons en temps réel.</p>
+          <p class="mt-1.5 text-sm text-slate-300">Image tactique commune : effectifs, urgences médicales et outils de commandement sur une seule carte.</p>
+          <p class="mt-1 text-[11px] text-slate-500 uppercase tracking-wide">Carte live · Effectifs &amp; santé · Marqueurs · Urgences</p>
           <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <span class="text-sm text-slate-200" id="overwatch-theatre-label">—</span>
             <span class="text-sm text-slate-400 font-mono" id="overwatch-mission-id-label">—</span>
             <span class="text-sm text-slate-300 font-mono" id="overwatch-zulu">—:—:— Z</span>
+            <span class="text-sm text-emerald-300 font-semibold" id="overwatch-unit-count" title="Effectifs en liaison">0 en liaison</span>
             <span class="text-sm text-slate-300" id="overwatch-sync-indicator">—</span>
           </div>
         </div>
@@ -136,25 +300,46 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           <button type="button" id="overwatch-custom-map-open" class="rounded-xl border border-emerald-400/70 bg-emerald-600 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-500">Nouvelle carte</button>
           <?php endif; ?>
           <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-400/70 bg-amber-500 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-400">Demander l’accès</button>
+          <button type="button" id="overwatch-toggle-positions" class="rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-100 hover:bg-slate-700" title="Ouvrir le tableau des positions">Positions</button>
           <nav class="overwatch-header-nav flex flex-wrap gap-2 text-sm font-semibold">
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">ATAK</a>
-            <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">TACMAP</a>
             <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">Tableau de bord</a>
           </nav>
         </div>
       </div>
     </header>
 
-    <div class="flex flex-1 min-h-0 flex-col xl:flex-row">
-      <aside class="overwatch-sidebar-left w-full xl:w-56 flex-shrink-0 border-b xl:border-b-0 xl:border-r border-slate-200 bg-white flex flex-col overflow-hidden">
-        <div class="p-4 border-b border-slate-100">
-          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Recherche unité</label>
-          <input type="text" id="overwatch-unit-search" placeholder="Indicatif…" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mb-4" />
-          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">Calques</h2>
-          <div class="space-y-2.5">
+    <div class="overwatch-body">
+      <aside class="overwatch-sidebar-left w-full xl:w-72 flex-shrink-0 border-b xl:border-b-0 xl:border-r border-slate-200 bg-white flex flex-col overflow-hidden min-h-0">
+        <div class="p-3 border-b border-slate-100 flex-shrink-0">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div>
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Effectifs en liaison</p>
+              <h2 class="text-sm font-black text-slate-900">Unités</h2>
+            </div>
+            <span class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1" id="overwatch-roster-count">0</span>
+          </div>
+          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5" for="overwatch-unit-search">Filtrer par indicatif</label>
+          <input type="search" id="overwatch-unit-search" placeholder="Indicatif…" autocomplete="off" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        </div>
+        <div class="flex-1 min-h-0 overflow-y-auto p-2" id="overwatch-roster">
+          <p class="text-sm text-slate-500 px-2 py-3">En attente des positions du théâtre…</p>
+        </div>
+        <div class="border-t border-slate-100 p-3 flex-shrink-0 max-h-[28%] overflow-y-auto" id="overwatch-unit-detail">
+          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fiche unité</p>
+          <p class="text-sm text-slate-500">Sélectionnez une unité dans la liste ou sur la carte.</p>
+        </div>
+        <div class="p-3 border-t border-slate-100 flex-shrink-0">
+          <p id="overwatch-units-off-map" class="hidden mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">Unités actives hors projection monde.</p>
+          <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Calques</h2>
+          <div class="space-y-2">
             <label class="flex items-center justify-between gap-2 cursor-pointer">
               <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-units" class="rounded border-slate-300 text-emerald-700" checked /> Unités</span>
               <span class="text-xs text-slate-400 font-mono" id="layer-units-count">0</span>
+            </label>
+            <label class="flex items-center justify-between gap-2 cursor-pointer">
+              <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-trails" class="rounded border-slate-300 text-emerald-700" checked /> Tracés de déplacement</span>
+              <span class="text-xs text-slate-400 font-mono" id="layer-trails-count">—</span>
             </label>
             <label class="flex items-center justify-between gap-2 cursor-pointer">
               <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" id="layer-danger-zones" class="rounded border-slate-300 text-emerald-700" checked /> Zones signalées</span>
@@ -170,28 +355,44 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             </label>
           </div>
         </div>
-        <div class="p-4 text-xs text-slate-500 flex-1">
-          <p id="overwatch-units-off-map" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">Unités actives hors projection monde.</p>
-        </div>
       </aside>
 
-      <main class="flex-1 min-w-0 p-3 md:p-4 flex flex-col min-h-0 gap-2">
-        <div class="flex gap-2 flex-wrap items-center">
-          <button type="button" id="overwatch-measure-btn" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-700 hover:bg-slate-50">Mesure</button>
-          <label class="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+      <main class="flex-1 min-w-0 flex flex-col min-h-0">
+        <div class="flex gap-2 flex-wrap items-center px-2 py-1.5 border-b border-slate-800 bg-slate-950/80">
+          <button type="button" id="overwatch-measure-btn" class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-slate-200 hover:bg-slate-800">Mesure</button>
+          <label class="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5">
             <input type="checkbox" id="overwatch-grid-toggle" class="rounded border-slate-300 text-emerald-700" />
-            <span class="text-xs font-bold text-slate-600">Grille (A1, B2…)</span>
+            <span class="text-xs font-bold text-slate-300">Grille (A1, B2…)</span>
           </label>
           <span class="text-xs text-slate-500 self-center" id="overwatch-measure-result"></span>
         </div>
-        <div class="overwatch-map-stage rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden p-2">
+        <div class="overwatch-map-stage overflow-hidden">
           <div id="overwatch-map-status" class="overwatch-map-status" role="status">
             <div class="text-center px-4">
-              <p class="text-sm font-bold text-slate-800">Chargement de la carte…</p>
-              <p class="mt-1 text-xs text-slate-500" id="overwatch-map-status-detail">Initialisation du fond cartographique</p>
+              <p class="text-sm font-bold text-slate-100">Chargement de la carte…</p>
+              <p class="mt-1 text-xs text-slate-400" id="overwatch-map-status-detail">Initialisation du fond cartographique</p>
             </div>
           </div>
           <div id="overwatch-map"></div>
+          <div class="ow-positions-drawer" id="overwatch-table-drawer">
+            <button type="button" class="ow-positions-drawer__toggle" id="overwatch-table-toggle">Positions suivies ▴</button>
+            <div class="ow-positions-drawer__body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Indicatif</th>
+                    <th>Rôle</th>
+                    <th>Liaison</th>
+                    <th>Cap</th>
+                    <th>Grille</th>
+                  </tr>
+                </thead>
+                <tbody id="overwatch-table-body">
+                  <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#94a3b8">Chargement…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -204,6 +405,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           <button type="button" data-tab="replay" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Replay</button>
           <button type="button" data-tab="iff" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Identification</button>
           <button type="button" data-tab="command-chat" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Tchat</button>
+          <button type="button" data-tab="medical" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Urgences <span id="overwatch-medical-tab-badge" class="ml-1 inline-flex min-w-[1.1rem] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-black items-center justify-center" hidden></span></button>
         </div>
         <div class="flex-1 overflow-y-auto p-4">
           <?php require __DIR__ . '/fire-support.php'; ?>
@@ -220,6 +422,12 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               <input type="text" id="command-chat-input" placeholder="Message…" class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm" />
               <button type="button" id="command-chat-send" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase">Envoyer</button>
             </div>
+          </div>
+          <div id="panel-medical" class="panel-tab">
+            <h2 class="text-lg font-black uppercase tracking-tight mb-2">Urgences médicales</h2>
+            <p class="text-xs text-slate-500 mb-3">Alertes transmises depuis le théâtre (combattant au sol, rythme cardiaque à zéro) et unités à secourir.</p>
+            <div id="overwatch-medical-banner" class="mb-3 rounded-xl border border-red-200 bg-red-50 text-red-900 text-sm px-3 py-2" hidden></div>
+            <div id="overwatch-medical-list" class="space-y-2 text-sm"></div>
           </div>
         </div>
       </aside>
@@ -289,6 +497,12 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
     </div>
   </div>
 
+  <div id="overwatch-ctx-menu" role="menu" aria-hidden="true">
+    <div class="ow-ctx-label" id="overwatch-ctx-label">Élément</div>
+    <button type="button" class="ow-ctx-danger" data-ow-ctx="delete" role="menuitem">Supprimer</button>
+    <button type="button" data-ow-ctx="cancel" role="menuitem">Annuler</button>
+  </div>
+
 <script>
     (function() {
       const overwatchContext = <?= json_encode($overwatchContext) ?>;
@@ -315,6 +529,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
         unitsCount: 0,
         layers: {
           units: true,
+          trails: true,
           dangerZones: true,
           fireSupport: true,
           logistics: false,
@@ -356,6 +571,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       const layerGroups = {
         base: null,
         units: null,
+        trails: null,
         dangerZones: null,
         fireSupport: null,
         drawings: null,
@@ -363,8 +579,24 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
         iff: null,
         grid: null,
       };
+      var unitTrailTracker = (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.createUnitTrailTracker)
+        ? ComspecOperationalMap.createUnitTrailTracker({ maxPoints: 40 })
+        : null;
+      function clearUnitTrails() {
+        if (unitTrailTracker) unitTrailTracker.clear();
+        if (layerGroups.trails) layerGroups.trails.clearLayers();
+      }
+      function renderUnitTrails() {
+        if (!unitTrailTracker || !layerGroups.trails) return;
+        var color = (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.trailColorFromCss)
+          ? ComspecOperationalMap.trailColorFromCss()
+          : '#67e8f9';
+        unitTrailTracker.render(layerGroups.trails, !!window.OverwatchState.layers.trails, color);
+      }
       var overwatchHealthStatus = { db: '—', units: '—', fireSupport: '—', dangerZones: '—', logistics: '—', sitrep: '—', iff: '—', replay: '—', chat: '—' };
       var overwatchUnitsIntervalId = null;
+      var overwatchLastUnits = [];
+      var overwatchSelectedUnitId = null;
       var syncIntervalMs = overwatchContext.syncIntervalMs || 8000;
       var dangerZoneLayers = [];
       var dzClickMarker = null;
@@ -511,6 +743,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
               }
             }
             layerGroups.base = L.layerGroup().addTo(map);
+            layerGroups.trails = L.layerGroup().addTo(map);
             layerGroups.units = L.layerGroup().addTo(map);
             layerGroups.dangerZones = L.layerGroup().addTo(map);
             layerGroups.fireSupport = L.layerGroup().addTo(map);
@@ -518,6 +751,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             layerGroups.markers = L.layerGroup().addTo(map);
             layerGroups.iff = L.layerGroup().addTo(map);
             layerGroups.grid = L.layerGroup();
+            clearUnitTrails();
           }
 
           if (isWorld) {
@@ -603,6 +837,9 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           } else {
             window.OverwatchState.unitsCount = 0;
             if (layerGroups.units) layerGroups.units.clearLayers();
+            overwatchLastUnits = [];
+            if (typeof renderRosterAndTable === 'function') renderRosterAndTable([]);
+            else updateLayerCounts();
           }
 
           window.overwatchMap = map;
@@ -655,6 +892,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       window.addEventListener('resize', function () { scheduleInvalidate(); });
 
 function setWorkspace(mapId) {
+        clearUnitTrails();
         mapId = parseInt(mapId, 10);
         var ws = overwatchWorkspaces.find(function (w) { return w.mapId === mapId; });
         window.OverwatchState.currentMapId = mapId;
@@ -674,6 +912,7 @@ function setWorkspace(mapId) {
       }
 
       function setMap(slug) {
+        clearUnitTrails();
         if (slug === 'world') {
           window.OverwatchState.currentMapType = 'world';
           window.OverwatchState.currentMapSlug = 'world';
@@ -707,9 +946,13 @@ function setWorkspace(mapId) {
               layerGroup: layerGroups.drawings,
               isWorld: window.OverwatchState.currentMapType === 'world',
               credentials: 'include',
+              onFeatureContextMenu: onOverwatchFeatureContextMenu,
             });
           }
         } catch (e) { if (console && console.error) console.error('renderMapShapes', e); }
+        try {
+          loadAtakMarkers();
+        } catch (e) { if (console && console.error) console.error('loadAtakMarkers', e); }
         try {
           loadDangerZones();
         } catch (e) { if (console && console.error) console.error('loadDangerZones', e); }
@@ -757,6 +1000,10 @@ function setWorkspace(mapId) {
           if (layers.units) { try { layerGroups.units.addTo(map); } catch (e) {} }
           else { try { map.removeLayer(layerGroups.units); } catch (e) {} }
         }
+        if (layerGroups.trails) {
+          if (layers.trails) { try { layerGroups.trails.addTo(map); } catch (e) {} }
+          else { try { map.removeLayer(layerGroups.trails); } catch (e) {} }
+        }
         if (layerGroups.dangerZones) {
           if (layers.dangerZones) { try { layerGroups.dangerZones.addTo(map); } catch (e) {} }
           else { try { map.removeLayer(layerGroups.dangerZones); } catch (e) {} }
@@ -769,11 +1016,17 @@ function setWorkspace(mapId) {
           if (layers.iff) { try { layerGroups.iff.addTo(map); } catch (e) {} }
           else { try { map.removeLayer(layerGroups.iff); } catch (e) {} }
         }
+        renderUnitTrails();
       }
 
       function updateLayerCounts() {
+        var n = window.OverwatchState.unitsCount || 0;
         var el = document.getElementById('layer-units-count');
-        if (el) el.textContent = String(window.OverwatchState.unitsCount || 0);
+        if (el) el.textContent = String(n);
+        el = document.getElementById('overwatch-roster-count');
+        if (el) el.textContent = String(n);
+        el = document.getElementById('overwatch-unit-count');
+        if (el) el.textContent = n === 1 ? '1 en liaison' : (n + ' en liaison');
         el = document.getElementById('layer-danger-zones-count');
         if (el) el.textContent = String(dangerZoneLayers.length);
         el = document.getElementById('layer-fire-support-count');
@@ -792,8 +1045,16 @@ function setWorkspace(mapId) {
       document.getElementById('layer-units').addEventListener('change', function () {
         window.OverwatchState.layers.units = this.checked;
         applyLayerVisibility();
-        if (this.checked && window.OverwatchState.currentMapType === 'arma') syncUnits();
+        if (this.checked) {
+          renderUnits(overwatchLastUnits);
+        } else if (layerGroups.units) {
+          layerGroups.units.clearLayers();
+        }
         updateLayerCounts();
+      });
+      document.getElementById('layer-trails') && document.getElementById('layer-trails').addEventListener('change', function () {
+        window.OverwatchState.layers.trails = this.checked;
+        applyLayerVisibility();
       });
       document.getElementById('layer-danger-zones').addEventListener('change', function () {
         window.OverwatchState.layers.dangerZones = this.checked;
@@ -813,12 +1074,33 @@ function setWorkspace(mapId) {
 
       var searchInput = document.getElementById('overwatch-unit-search');
       if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          filterRosterQuery(this.value);
+        });
         searchInput.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') {
             focusUnitByCallsign(this.value);
           }
         });
       }
+
+      var positionsDrawer = document.getElementById('overwatch-table-drawer');
+      var positionsToggle = document.getElementById('overwatch-table-toggle');
+      var positionsHeaderBtn = document.getElementById('overwatch-toggle-positions');
+      function setPositionsDrawerOpen(open) {
+        if (!positionsDrawer) return;
+        positionsDrawer.classList.toggle('is-open', !!open);
+        if (positionsToggle) {
+          positionsToggle.textContent = open ? 'Positions suivies ▾' : 'Positions suivies ▴';
+        }
+        scheduleInvalidate();
+      }
+      function togglePositionsDrawer() {
+        if (!positionsDrawer) return;
+        setPositionsDrawerOpen(!positionsDrawer.classList.contains('is-open'));
+      }
+      if (positionsToggle) positionsToggle.addEventListener('click', togglePositionsDrawer);
+      if (positionsHeaderBtn) positionsHeaderBtn.addEventListener('click', togglePositionsDrawer);
 
       var measureMode = false;
       var measurePointA = null;
@@ -985,7 +1267,10 @@ function setWorkspace(mapId) {
             if (window.refreshHealthPanel) refreshHealthPanel();
             el.innerHTML = (rows || []).slice(0, 50).reverse().map(function (m) {
               var t = m.created_at || '';
-              return '<div class="flex gap-1"><span class="text-slate-400 shrink-0">' + t.substring(11, 19) + '</span><strong>' + (m.author || '?') + '</strong>: ' + (m.body || '').replace(/</g, '&lt;') + '</div>';
+              var body = (m.body || '').replace(/</g, '&lt;');
+              var medical = window.ATAKMedicalAlerts ? window.ATAKMedicalAlerts.parseMessage(m.body || '') : null;
+              var wrapCls = medical ? (medical.severity === 'critical' ? 'bg-red-100 border-l-4 border-red-600 pl-2' : 'bg-amber-50 border-l-4 border-amber-500 pl-2') : '';
+              return '<div class="flex gap-1 ' + wrapCls + '"><span class="text-slate-400 shrink-0">' + t.substring(11, 19) + '</span><strong>' + (m.author || '?') + '</strong>: ' + body + '</div>';
             }).join('') || '<p class="text-slate-500 text-xs">Aucun message.</p>';
             el.scrollTop = el.scrollHeight;
           })
@@ -1008,6 +1293,13 @@ function setWorkspace(mapId) {
       document.getElementById('command-chat-send') && document.getElementById('command-chat-send').addEventListener('click', sendCommandChat);
       document.getElementById('command-chat-input') && document.getElementById('command-chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendCommandChat(); });
       document.querySelector('[data-tab="command-chat"]') && document.querySelector('[data-tab="command-chat"]').addEventListener('click', loadCommandChat);
+      function loadMedicalAssistances() {
+        if (window.ATAKMedicalAlerts) window.ATAKMedicalAlerts.fetchAlerts();
+      }
+      document.querySelector('[data-tab="medical"]') && document.querySelector('[data-tab="medical"]').addEventListener('click', loadMedicalAssistances);
+      if (window.ATAKMedicalAlerts) {
+        window.ATAKMedicalAlerts.startPolling(6000);
+      }
 
       var initialMapSlug = (document.getElementById('overwatch-map-select') && document.getElementById('overwatch-map-select').value) || '<?= isset($overwatchDefaultMapSlug) ? addslashes($overwatchDefaultMapSlug) : 'world' ?>';
       applyBaseLayer(initialMapSlug);
@@ -1031,8 +1323,217 @@ function setWorkspace(mapId) {
         return { x: e.latlng.lat * WORLD_SCALE, y: e.latlng.lng * WORLD_SCALE };
       }
 
+      function statusLabelFr(status) {
+        var s = (status || '').toLowerCase();
+        if (s === 'linked') return 'En liaison';
+        if (s === 'delayed') return 'En retard';
+        if (s === 'offline') return 'Hors ligne';
+        return status || '—';
+      }
+
+      function parseUnitExtra(u) {
+        try {
+          return typeof u.extra === 'string' ? JSON.parse(u.extra) : (u.extra || {});
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function healthLabelOw(h) {
+        if (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr) {
+          return window.ATAKUnitPopup.healthLabelFr(h);
+        }
+        var s = String(h || '').toLowerCase();
+        if (s === 'ok' || s === 'stable' || s === 'healthy') return 'Stable';
+        if (s === 'wounded' || s === 'injured') return 'Blessé';
+        if (s === 'unconscious') return 'Inconscient';
+        if (s === 'dead' || s === 'kia') return 'Hors combat';
+        return h || '—';
+      }
+
+      function escapeHtmlOw(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function unitCoords(u) {
+        var gridRef = ((u && u.grid_ref) || '').trim().split(/\s+/);
+        var x = parseFloat(gridRef[0]);
+        var y = parseFloat(gridRef[1]);
+        if (isNaN(x) || isNaN(y)) {
+          x = u && u.pos_x != null ? parseFloat(u.pos_x) : NaN;
+          y = u && u.pos_y != null ? parseFloat(u.pos_y) : NaN;
+        }
+        if (isNaN(x) || isNaN(y)) return null;
+        return { x: x, y: y, lat: y, lng: x };
+      }
+
+      function renderUnitDetail(u) {
+        var root = document.getElementById('overwatch-unit-detail');
+        if (!root) return;
+        if (!u) {
+          root.innerHTML = '<p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fiche unité</p>' +
+            '<p class="text-sm text-slate-500">Sélectionnez une unité dans la liste ou sur la carte.</p>';
+          return;
+        }
+        var ex = parseUnitExtra(u);
+        var health = ex.health || u.health || 'ok';
+        var fuel = ex.fuel != null && ex.fuel !== '' ? String(ex.fuel) + '%' : '—';
+        var battery = ex.battery != null && ex.battery !== '' ? String(ex.battery) + '%' : null;
+        var ammo = ex.ammo && ex.ammo !== 'n/a' ? String(ex.ammo) : null;
+        root.innerHTML =
+          '<p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Fiche unité</p>' +
+          '<p class="text-base font-black text-slate-900">' + escapeHtmlOw(u.call_sign || '—') + '</p>' +
+          '<dl class="mt-2 space-y-1 text-xs">' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Rôle</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(u.role || ex.role || '—') + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Liaison</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(statusLabelFr(u.status)) + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">État</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(healthLabelOw(health)) + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Cap</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(u.heading != null ? String(u.heading) + '°' : '—') + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Grille</dt><dd class="font-mono font-semibold text-slate-800">' + escapeHtmlOw(u.grid_ref || '—') + '</dd></div>' +
+          '<div class="flex justify-between gap-2"><dt class="text-slate-500">Carburant</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(fuel) + '</dd></div>' +
+          (battery ? '<div class="flex justify-between gap-2"><dt class="text-slate-500">Batterie</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(battery) + '</dd></div>' : '') +
+          (ammo ? '<div class="flex justify-between gap-2"><dt class="text-slate-500">Munitions</dt><dd class="font-semibold text-slate-800">' + escapeHtmlOw(ammo) + '</dd></div>' : '') +
+          '</dl>';
+      }
+
+      function highlightSelectedUnit() {
+        var roster = document.getElementById('overwatch-roster');
+        if (roster) {
+          roster.querySelectorAll('[data-unit-id]').forEach(function (node) {
+            node.classList.toggle('is-selected', overwatchSelectedUnitId != null && String(overwatchSelectedUnitId) === node.getAttribute('data-unit-id'));
+          });
+        }
+        var tbody = document.getElementById('overwatch-table-body');
+        if (tbody) {
+          tbody.querySelectorAll('tr[data-unit-id]').forEach(function (tr) {
+            tr.classList.toggle('is-selected', overwatchSelectedUnitId != null && String(overwatchSelectedUnitId) === tr.getAttribute('data-unit-id'));
+          });
+        }
+      }
+
+      function filterRosterQuery(q) {
+        q = (q || '').toUpperCase().trim();
+        var roster = document.getElementById('overwatch-roster');
+        if (roster) {
+          roster.querySelectorAll('[data-unit-id]').forEach(function (node) {
+            var cs = (node.getAttribute('data-callsign') || '').toUpperCase();
+            node.style.display = !q || cs.indexOf(q) >= 0 ? '' : 'none';
+          });
+        }
+        var tbody = document.getElementById('overwatch-table-body');
+        if (tbody) {
+          tbody.querySelectorAll('tr[data-unit-id]').forEach(function (tr) {
+            var cs = (tr.getAttribute('data-callsign') || '').toUpperCase();
+            tr.style.display = !q || cs.indexOf(q) >= 0 ? '' : 'none';
+          });
+        }
+      }
+
+      function selectOverwatchUnit(u) {
+        if (!u) {
+          overwatchSelectedUnitId = null;
+          renderUnitDetail(null);
+          highlightSelectedUnit();
+          return;
+        }
+        overwatchSelectedUnitId = u.id;
+        renderUnitDetail(u);
+        highlightSelectedUnit();
+        var c = unitCoords(u);
+        if (c && map) {
+          map.setView([c.lat, c.lng], Math.max(map.getZoom(), 4));
+        }
+      }
+
+      function renderRosterAndTable(units) {
+        overwatchLastUnits = units || [];
+        var roster = document.getElementById('overwatch-roster');
+        var tbody = document.getElementById('overwatch-table-body');
+        if (roster) {
+          if (!overwatchLastUnits.length) {
+            roster.innerHTML = '<p class="text-sm text-slate-500 px-2 py-3">Aucune position remontée pour ce théâtre. Vérifiez la liaison en jeu.</p>';
+          } else {
+            roster.innerHTML = overwatchLastUnits.map(function (u) {
+              var ex = parseUnitExtra(u);
+              var health = ex.health || u.health || 'ok';
+              var healthTxt = healthLabelOw(health);
+              var fuel = ex.fuel != null && ex.fuel !== '' ? 'Carb. ' + ex.fuel + '%' : null;
+              var battery = ex.battery != null && ex.battery !== '' ? 'Batt. ' + ex.battery + '%' : null;
+              var metaBits = [healthTxt];
+              if (fuel) metaBits.push(fuel);
+              if (battery) metaBits.push(battery);
+              return '<button type="button" data-unit-id="' + escapeHtmlOw(u.id) + '" data-callsign="' + escapeHtmlOw(u.call_sign || '') + '" class="ow-roster-btn">' +
+                '<div class="flex justify-between gap-2 items-start"><span class="text-[10px] font-black uppercase text-slate-500">' + escapeHtmlOw(u.call_sign || '—') + '</span>' +
+                '<span class="text-[9px] font-black uppercase text-emerald-700">' + escapeHtmlOw(statusLabelFr(u.status)) + '</span></div>' +
+                '<p class="text-sm font-bold mt-1 text-slate-900">' + escapeHtmlOw(u.role || ex.role || 'Rôle non renseigné') + '</p>' +
+                '<p class="text-[11px] mt-1 text-slate-600">' + escapeHtmlOw(metaBits.join(' · ')) + '</p>' +
+                '<p class="text-xs mt-1 text-slate-500">Grille ' + escapeHtmlOw(u.grid_ref || '—') +
+                (u.heading != null ? ' · Cap ' + escapeHtmlOw(String(Math.round(u.heading))) + '°' : '') +
+                '</p></button>';
+            }).join('');
+            roster.querySelectorAll('[data-unit-id]').forEach(function (btn) {
+              btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-unit-id');
+                var found = overwatchLastUnits.find(function (x) { return String(x.id) === String(id); });
+                selectOverwatchUnit(found);
+              });
+            });
+          }
+        }
+        if (tbody) {
+          if (!overwatchLastUnits.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#94a3b8">Aucune unité à afficher.</td></tr>';
+          } else {
+            tbody.innerHTML = overwatchLastUnits.map(function (u) {
+              return '<tr data-unit-id="' + escapeHtmlOw(u.id) + '" data-callsign="' + escapeHtmlOw(u.call_sign || '') + '">' +
+                '<td class="font-bold text-emerald-300">' + escapeHtmlOw(u.call_sign || '—') + '</td>' +
+                '<td>' + escapeHtmlOw(u.role || '—') + '</td>' +
+                '<td>' + escapeHtmlOw(statusLabelFr(u.status)) + '</td>' +
+                '<td>' + escapeHtmlOw(u.heading != null ? String(u.heading) + '°' : '—') + '</td>' +
+                '<td class="font-mono text-xs text-slate-400">' + escapeHtmlOw(u.grid_ref || '—') + '</td></tr>';
+            }).join('');
+            tbody.querySelectorAll('tr[data-unit-id]').forEach(function (tr) {
+              tr.addEventListener('click', function () {
+                var id = tr.getAttribute('data-unit-id');
+                var found = overwatchLastUnits.find(function (x) { return String(x.id) === String(id); });
+                selectOverwatchUnit(found);
+              });
+            });
+          }
+        }
+        if (overwatchSelectedUnitId != null) {
+          var still = overwatchLastUnits.find(function (x) { return String(x.id) === String(overwatchSelectedUnitId); });
+          if (still) renderUnitDetail(still);
+          else {
+            overwatchSelectedUnitId = null;
+            renderUnitDetail(null);
+          }
+        }
+        highlightSelectedUnit();
+        filterRosterQuery(document.getElementById('overwatch-unit-search') && document.getElementById('overwatch-unit-search').value);
+        updateLayerCounts();
+      }
+
+      function affiliationColor(aff) {
+        var a = (aff || '').toUpperCase();
+        if (a === 'ENEMY' || a === 'HOSTILE') return '#dc2626';
+        if (a === 'UNKNOWN' || a === 'SUSPECT') return '#eab308';
+        if (a === 'NEUTRAL') return '#22c55e';
+        return '#3b82f6';
+      }
+
       function syncUnits() {
-        if ((window.OverwatchState.currentMapType !== 'arma' && window.OverwatchState.currentMapType !== 'image') || !window.OverwatchState.layers.units) return;
+        if (window.OverwatchState.currentMapType !== 'arma' && window.OverwatchState.currentMapType !== 'image') {
+          window.OverwatchState.unitsCount = 0;
+          overwatchLastUnits = [];
+          renderRosterAndTable([]);
+          if (layerGroups.units) layerGroups.units.clearLayers();
+          updateLayerCounts();
+          return;
+        }
         if (window._overwatchSyncUnitsInProgress) return;
         window._overwatchSyncUnitsInProgress = true;
         window.OverwatchState.syncStatus = 'syncing';
@@ -1047,6 +1548,7 @@ function setWorkspace(mapId) {
             overwatchHealthStatus.units = 'OK';
             updateSyncIndicator('ok', window.OverwatchState.lastSyncAt);
             renderUnits(rows || []);
+            renderRosterAndTable(rows || []);
             if (window.updateUnitsOffMapBanner) window.updateUnitsOffMapBanner();
             if (window.refreshHealthPanel) refreshHealthPanel();
           })
@@ -1059,30 +1561,21 @@ function setWorkspace(mapId) {
           });
       }
 
-      function affiliationColor(aff) {
-        var a = (aff || '').toUpperCase();
-        if (a === 'ENEMY' || a === 'HOSTILE') return '#dc2626';
-        if (a === 'UNKNOWN' || a === 'SUSPECT') return '#eab308';
-        if (a === 'NEUTRAL') return '#22c55e';
-        return '#3b82f6';
-      }
-
-      var overwatchLastUnits = [];
       function renderUnits(units) {
         if (!layerGroups.units || !map) return;
         layerGroups.units.clearLayers();
-        overwatchLastUnits = [];
+        if (!window.OverwatchState.layers.units) {
+          renderUnitTrails();
+          if (window.updateLayerCounts) window.updateLayerCounts();
+          return;
+        }
         var nato = window.NatoSidcIcons;
         (units || []).forEach(function (u) {
-          var gridRef = (u.grid_ref || '').trim().split(/\s+/);
-          var x = parseFloat(gridRef[0]);
-          var y = parseFloat(gridRef[1]);
-          if (isNaN(x) || isNaN(y)) {
-            x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
-            y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
-          }
-          if (isNaN(x) || isNaN(y)) return;
-          var latlng = L.latLng(y, x);
+          var c = unitCoords(u);
+          if (!c) return;
+          var latlng = L.latLng(c.lat, c.lng);
+          var unitKey = String(u.id != null ? u.id : (u.call_sign || (c.x + ',' + c.y)));
+          if (unitTrailTracker) unitTrailTracker.push(unitKey, latlng);
           var extra = {};
           try {
             if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
@@ -1110,19 +1603,21 @@ function setWorkspace(mapId) {
           } else {
             marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + (aff !== 'friend' ? '<br/><em>' + aff + '</em>' : ''));
           }
+          marker.on('click', function () { selectOverwatchUnit(u); });
           marker.addTo(layerGroups.units);
-          overwatchLastUnits.push({ call_sign: (u.call_sign || '').toUpperCase(), lat: y, lng: x });
         });
+        renderUnitTrails();
         if (window.updateLayerCounts) window.updateLayerCounts();
       }
 
       function focusUnitByCallsign(callsign) {
         var q = (callsign || '').toUpperCase().trim();
-        if (!q || !map) return;
-        var u = overwatchLastUnits.find(function (x) { return x.call_sign.indexOf(q) >= 0 || q.indexOf(x.call_sign) >= 0; });
-        if (u) {
-          map.setView([u.lat, u.lng], Math.max(map.getZoom(), 4));
-        }
+        if (!q) return;
+        var u = overwatchLastUnits.find(function (x) {
+          var cs = (x.call_sign || '').toUpperCase();
+          return cs.indexOf(q) >= 0 || q.indexOf(cs) >= 0;
+        });
+        if (u) selectOverwatchUnit(u);
       }
       window.focusUnitByCallsign = focusUnitByCallsign;
 
@@ -1150,7 +1645,13 @@ function setWorkspace(mapId) {
       function attachMapClickHandlers() {
         if (!map) return;
         map.off('click');
+        map.off('contextmenu');
+        map.on('contextmenu', function (e) {
+          if (L.DomEvent) L.DomEvent.preventDefault(e);
+          if (e.originalEvent) e.originalEvent.preventDefault();
+        });
         map.on('click', function (e) {
+          hideOverwatchCtxMenu();
           if (measureMode) {
             onMeasureClick(e);
             return;
@@ -1223,6 +1724,138 @@ function setWorkspace(mapId) {
         });
       }
 
+      var overwatchCtxFeature = null;
+      var overwatchCtxMenuEl = document.getElementById('overwatch-ctx-menu');
+      var overwatchCtxLabelEl = document.getElementById('overwatch-ctx-label');
+
+      function hideOverwatchCtxMenu() {
+        overwatchCtxFeature = null;
+        if (!overwatchCtxMenuEl) return;
+        overwatchCtxMenuEl.classList.remove('is-open');
+        overwatchCtxMenuEl.setAttribute('aria-hidden', 'true');
+      }
+
+      function kindLabelFr(kind) {
+        if (kind === 'marker') return 'Repère';
+        if (kind === 'danger') return 'Zone à signaler';
+        return 'Tracé';
+      }
+
+      function onOverwatchFeatureContextMenu(payload) {
+        if (!payload || payload.id == null || !overwatchCtxMenuEl) return;
+        overwatchCtxFeature = {
+          kind: payload.kind,
+          id: payload.id,
+          label: payload.label || '',
+        };
+        if (overwatchCtxLabelEl) {
+          var title = (payload.label || kindLabelFr(payload.kind)).toString();
+          overwatchCtxLabelEl.textContent = title;
+          overwatchCtxLabelEl.title = title;
+        }
+        var x = 0;
+        var y = 0;
+        if (payload.originalEvent) {
+          x = payload.originalEvent.clientX;
+          y = payload.originalEvent.clientY;
+        } else if (payload.latlng && map) {
+          var pt = map.latLngToContainerPoint(payload.latlng);
+          var rect = map.getContainer().getBoundingClientRect();
+          x = rect.left + pt.x;
+          y = rect.top + pt.y;
+        }
+        overwatchCtxMenuEl.style.left = Math.max(8, Math.min(window.innerWidth - 220, x)) + 'px';
+        overwatchCtxMenuEl.style.top = Math.max(8, Math.min(window.innerHeight - 120, y)) + 'px';
+        overwatchCtxMenuEl.classList.add('is-open');
+        overwatchCtxMenuEl.setAttribute('aria-hidden', 'false');
+      }
+
+      function deleteOverwatchFeature(feature) {
+        if (!feature || feature.id == null) return Promise.resolve(false);
+        var kind = feature.kind;
+        var id = feature.id;
+        var confirmMsg = 'Retirer cet élément de la carte ?';
+        if (kind === 'shape') confirmMsg = 'Retirer ce tracé de la carte ?';
+        else if (kind === 'marker') confirmMsg = 'Retirer ce repère de la carte ?';
+        else if (kind === 'danger') confirmMsg = 'Retirer cette zone de la carte ?';
+        if (!window.confirm(confirmMsg)) return Promise.resolve(false);
+
+        var url = '';
+        if (kind === 'shape') {
+          url = apiBase + '/map-shapes/' + encodeURIComponent(id);
+        } else if (kind === 'marker') {
+          url = apiBase + '/markers/' + encodeURIComponent(id);
+        } else if (kind === 'danger') {
+          url = apiBase + '/danger-zones/' + encodeURIComponent(id) + '?missionId=' + encodeURIComponent(getMissionId());
+        } else {
+          return Promise.resolve(false);
+        }
+
+        return fetch(url, { method: 'DELETE', credentials: 'include' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('delete_failed');
+            if (kind === 'danger') loadDangerZones();
+            else if (kind === 'marker') loadAtakMarkers();
+            else refreshOperationalContext();
+            return true;
+          })
+          .catch(function () {
+            window.alert('Impossible de supprimer cet élément pour le moment.');
+            return false;
+          });
+      }
+
+      if (overwatchCtxMenuEl) {
+        overwatchCtxMenuEl.addEventListener('click', function (e) {
+          var btn = e.target && e.target.closest ? e.target.closest('[data-ow-ctx]') : null;
+          if (!btn) return;
+          var action = btn.getAttribute('data-ow-ctx');
+          if (action === 'cancel') {
+            hideOverwatchCtxMenu();
+            return;
+          }
+          if (action === 'delete') {
+            var feat = overwatchCtxFeature;
+            hideOverwatchCtxMenu();
+            deleteOverwatchFeature(feat);
+          }
+        });
+      }
+      document.addEventListener('click', function (e) {
+        if (!overwatchCtxMenuEl || !overwatchCtxMenuEl.classList.contains('is-open')) return;
+        if (e.button != null && e.button !== 0) return;
+        if (overwatchCtxMenuEl.contains(e.target)) return;
+        hideOverwatchCtxMenu();
+      });
+      document.addEventListener('contextmenu', function (e) {
+        if (!overwatchCtxMenuEl || !overwatchCtxMenuEl.classList.contains('is-open')) return;
+        if (overwatchCtxMenuEl.contains(e.target)) return;
+        // Nouveau clic droit hors menu : fermer l’ancien (le layer en ouvrira un autre)
+        if (!(e.target && e.target.closest && e.target.closest('.leaflet-interactive'))) {
+          hideOverwatchCtxMenu();
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') hideOverwatchCtxMenu();
+      });
+
+      function loadAtakMarkers() {
+        if (!layerGroups.markers || !map) return;
+        if (window.OverwatchState.currentMapType === 'world') {
+          layerGroups.markers.clearLayers();
+          return;
+        }
+        var isWorld = false;
+        fetch(apiBase + '/markers?mapId=' + encodeURIComponent(window.OverwatchState.currentMapId), { credentials: 'include' })
+          .then(function (r) { return r.json(); })
+          .then(function (list) {
+            if (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.renderAtakMarkers) {
+              ComspecOperationalMap.renderAtakMarkers(layerGroups.markers, list, isWorld, onOverwatchFeatureContextMenu);
+            }
+          })
+          .catch(function () {});
+      }
+
       function loadDangerZones() {
         fetch(apiBase + '/danger-zones?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
           .then(function (r) { return r.json(); })
@@ -1234,6 +1867,9 @@ function setWorkspace(mapId) {
             var listEl = document.getElementById('dz-list');
             if (listEl) listEl.innerHTML = '';
             var isWorld = window.OverwatchState.currentMapType === 'world';
+            var bindDel = (typeof ComspecOperationalMap !== 'undefined' && ComspecOperationalMap.bindDeletableLayer)
+              ? ComspecOperationalMap.bindDeletableLayer
+              : null;
             (zones || []).forEach(function (z) {
               var geom = z.geometry_json || z.geometry;
               var type = z.geometry_type || 'CIRCLE';
@@ -1249,7 +1885,11 @@ function setWorkspace(mapId) {
                   lng = geom.center[0];
                   radius = geom.radius;
                 }
-                var layer = L.circle([lat, lng], { radius: radius, color: z.color || '#ef4444', fillOpacity: z.fill_opacity || 0.25 }).bindPopup(z.label || z.zone_type);
+                var label = z.label || z.zone_type || 'Zone';
+                var layer = L.circle([lat, lng], { radius: radius, color: z.color || '#ef4444', fillOpacity: z.fill_opacity || 0.25 }).bindPopup(label);
+                if (bindDel && z.id != null) {
+                  bindDel(layer, { kind: 'danger', id: z.id, label: label }, onOverwatchFeatureContextMenu);
+                }
                 if (layerGroups.dangerZones) layer.addTo(layerGroups.dangerZones);
                 dangerZoneLayers.push(layer);
               }
@@ -1564,6 +2204,9 @@ function setWorkspace(mapId) {
         modal.addEventListener('click', function (e) {
           if (e.target === modal) closeModal();
         });
+        if (window.location.hash === '#close') {
+          try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (e) {}
+        }
         if (window.location.hash === '#nouvelle-carte') {
           setTimeout(openModal, 200);
         }

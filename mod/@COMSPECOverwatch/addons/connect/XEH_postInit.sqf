@@ -9,6 +9,19 @@ if (!hasInterface) exitWith {};
     [] call comspec_overwatch_connect_fnc_connect;
     [] call comspec_overwatch_connect_fnc_initACE;
 
+    // Alerte immédiate dès le passage KO (ACE) — le PFH position couvre aussi FC=0
+    if (isNil "COMSPEC_aceUnconsciousEH") then {
+        COMSPEC_aceUnconsciousEH = ["ace_unconscious", {
+            params ["_unit", "_isUnconscious"];
+            if (!local _unit || {_unit != player}) exitWith {};
+            if (_isUnconscious) then {
+                [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
+            } else {
+                missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+            };
+        }] call CBA_fnc_addEventHandler;
+    };
+
     // Action "Tableau de briefing" : disponible par défaut sur le joueur, sans placement Eden requis.
     // Limite connue : comme le reste de ce postInit, l'action est ajoutée à l'objet joueur courant
     // et ne suit pas automatiquement un respawn (objet joueur recréé) — à ré-ajouter via un handler
@@ -30,8 +43,17 @@ if (!hasInterface) exitWith {};
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
+    // Action "Ma tablette Athena" : vue superposant le statut/profil sur l'image du terminal
+    // physique, en complément du hub textuel existant.
+    player addAction [
+        "<t color='#7fffd4'>Ma tablette Athena</t>",
+        { if (isNull (findDisplay 9973)) then { createDialog "COMSPEC_Device_Dialog"; }; },
+        nil, 5.8, false, true, "",
+        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
+    ];
+
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
-    [comspec_overwatch_connect_fnc_updatePosition, _interval] call CBA_fnc_addPerFrameHandler;
+    [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, _interval] call CBA_fnc_addPerFrameHandler;
 
     // CAS polling: every 10s check for CAS assigned to this callsign
     private _casPollInterval = 10;
@@ -40,7 +62,7 @@ if (!hasInterface) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         private _callsign = missionNamespace getVariable ["COMSPEC_Callsign", name player];
         if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
-        private _raw = "COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]];
+        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
         if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
         private _payload = _raw select [3, count _raw - 3];
         private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
@@ -48,7 +70,8 @@ if (!hasInterface) exitWith {};
             missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
             missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
             [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-            ["Nouvelle demande CAS reçue"] call BIS_fnc_showNotification;
+            ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call BIS_fnc_showNotification;
+            ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
     }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;
 

@@ -23,18 +23,29 @@ window.ATAKChat = (function () {
     fetch(url, { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) {
-          var msg = 'Tchat: ' + (r.status === 401 ? 'Non authentifié (401)' : r.status === 403 ? 'Accès refusé (403)' : 'Erreur ' + r.status);
+          var msg = r.status === 401
+            ? 'Session expirée — reconnectez-vous pour accéder au tchat.'
+            : r.status === 403
+              ? 'Vous n’avez pas l’autorisation d’accéder au tchat.'
+              : 'Impossible de charger le tchat pour le moment.';
           if (window.ATAKShowError) window.ATAKShowError(msg);
           if (window.ATAKLastChatError) window.ATAKLastChatError(msg);
-          throw new Error(msg);
+          throw new Error('Tchat:');
         }
         return r.json();
       })
       .then(function (data) {
         var list = Array.isArray(data) ? data : [];
         var el = document.getElementById('atak-chat-messages');
-        if (el) el.innerHTML = list.map(formatMsg).join('');
-        el.scrollTop = el.scrollHeight;
+        if (!el) return;
+        if (list.length === 0) {
+          el.innerHTML = '<div class="atak-empty-state atak-empty-state--compact" id="atak-chat-empty">' +
+            '<p class="atak-empty-state-title">Aucun message</p>' +
+            '<p class="atak-empty-state-text">Les échanges d’équipe s’afficheront ici.</p></div>';
+        } else {
+          el.innerHTML = list.map(formatMsg).join('');
+          el.scrollTop = el.scrollHeight;
+        }
         if (window.ATAKLastChatError) window.ATAKLastChatError(null);
       })
       .catch(function (err) {
@@ -44,12 +55,21 @@ window.ATAKChat = (function () {
 
   function formatMsg(m) {
     var time = m.created_at ? m.created_at.replace('T', ' ').substring(0, 19) : '';
-    return '<div class="atak-chat-msg"><span class="author">' + (m.author || '') + '</span> ' + (m.body || '') + ' <span style="color:var(--atak-muted);font-size:0.7rem">' + time + '</span></div>';
+    var bodyHtml = (window.ATAKMedicalAlerts && window.ATAKMedicalAlerts.formatChatBody)
+      ? window.ATAKMedicalAlerts.formatChatBody(m.body || '')
+      : String(m.body || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var medical = (window.ATAKMedicalAlerts && window.ATAKMedicalAlerts.parseMessage)
+      ? window.ATAKMedicalAlerts.parseMessage(m.body || '')
+      : null;
+    var cls = 'atak-chat-msg' + (medical ? ' atak-chat-msg-medical' + (medical.severity === 'critical' ? ' atak-chat-msg-medical-critical' : '') : '');
+    return '<div class="' + cls + '"><span class="author">' + (m.author || '') + '</span> ' + bodyHtml + ' <span class="atak-chat-time">' + time + '</span></div>';
   }
 
   function appendMessage(msg) {
     var el = document.getElementById('atak-chat-messages');
     if (el) {
+      var empty = el.querySelector('.atak-empty-state');
+      if (empty) empty.remove();
       el.insertAdjacentHTML('beforeend', formatMsg(msg));
       el.scrollTop = el.scrollHeight;
     }

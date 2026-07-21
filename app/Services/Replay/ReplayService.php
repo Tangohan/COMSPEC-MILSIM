@@ -142,7 +142,7 @@ class ReplayService
                         $lowFuelAlerts++;
                     }
                     $health = strtolower((string) ($decoded['health'] ?? ''));
-                    if (in_array($health, ['critical', 'incapacitated', 'down', 'wounded'], true)) {
+                    if (in_array($health, ['critical', 'incapacitated', 'down', 'wounded', 'unconscious', 'cardiac_arrest', 'cardiac-arrest', 'dead', 'kia'], true)) {
                         $healthAlerts++;
                     }
                 }

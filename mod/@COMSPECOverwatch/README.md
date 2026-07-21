@@ -16,15 +16,36 @@ Mod Arma 3 pour la liaison avec l’overlay ATAK / Tacmap COMSPEC. Envoi de la p
 
 ## Configuration (CBA)
 
-**Valeur par défaut** : l’URL du nœud est définie sur `http://atak.athena.ttrd.fr` (HTTP, sans SSL). En utilisation standard, aucun réglage n’est nécessaire.
+**URL de production** : `https://athena.ttrd.fr/public` (sans slash final).  
+Le préfixe `/public` est obligatoire sur ce déploiement : sans lui, les appels `/api/atak/*` renvoient une page introuvable.
 
-Pour modifier les réglages en jeu :
+**Connexion recommandée (sans toucher aux réglages obscurs)** :
+1. Sur Athena (connecté) : page ATAK → panneau compte → **Générer un code de liaison**.
+2. En jeu : touche **K** (menu ATAK) → **Connecter mon compte Athena** → coller le code → **Établir la liaison**.
+3. Les paramètres sont enregistrés dans votre profil Arma pour les prochaines sessions.
+
+Si Athena répond **503** sur la génération de code : exécuter en prod `php run-migrations.php` (crée `tactical_game_link_codes` via `bootstrap/tactical_game_link_migration.php`). Pas besoin de redéployer les fichiers PHP si la route `POST /atak/game-link` est déjà en place.
+
+**Clé d’accès** (avancé) : en production, renseignez la clé fournie par l’admin (même valeur que `X_COMSPEC_KEY` côté serveur). Sans clé, la génération du QR téléphone est refusée.
+
+Pour modifier les réglages manuellement :
 - **ESC** → **Options** → **Jeu** → **Configurer les mods** (Configure Addons)
-- Dans la liste des addons, chercher **COMSPEC Overwatch** ou **COMSPEC Overwatch (Connexion)** → ouvrir **Connexion**
+- Dans la liste des addons, chercher **COMSPEC Overwatch**
 
-- **Activer COMSPEC Overwatch** : cocher pour activer.
-- **URL du nœud ATAK** : URL de base du serveur Node (défaut : `http://atak.athena.ttrd.fr`), sans slash final. Utiliser HTTP si pas de certificat SSL.
-- **Clé d'accès** : optionnel, si votre admin en fournit une.
+- **Activer Overwatch** : cocher pour activer.
+- **URL Athena** : URL de base du portail (défaut : `https://athena.ttrd.fr/public`), sans slash final.
+- **Clé d’accès Athena** : obligatoire en production si l’admin l’a activée.
+- **Identifiant de communauté** : laisser vide si `ATAK_DEFAULT_TENANT_ID` est défini côté serveur ; sinon renseigner l’id numérique fourni par l’admin.
+
+## Raccourcis clavier (CBA)
+
+| Action | Touche par défaut |
+|--------|-------------------|
+| Menu ATAK | **K** |
+| Messagerie | **Ctrl+K** |
+
+Si un raccourci ne répond pas : **ESC → Options → Commandes → Configurer les addons → COMSPEC Overwatch**, puis réassignez.  
+Les anciens profils pouvaient avoir « Messagerie » sur **K** seul (sans Ctrl) — les identifiants de raccourcis ont été renouvelés pour forcer les bons défauts.
 
 ## Build de l’extension (obligatoire pour la liaison ATAK)
 

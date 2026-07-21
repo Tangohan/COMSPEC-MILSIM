@@ -16,7 +16,7 @@ window.ATAKMarkers = (function () {
     var el = getListEl();
     if (!el) return;
     if (!window.ATAKMap || !window.ATAKMap.listMarkers) {
-      el.innerHTML = '<p class="atak-muted" style="padding:0.5rem;font-size:0.8rem;">Carte non prête.</p>';
+      el.innerHTML = '<div class="atak-empty-state"><p class="atak-empty-state-title">Carte non prête</p><p class="atak-empty-state-text">Réessayez dans un instant.</p></div>';
       return;
     }
     var list = window.ATAKMap.listMarkers();
@@ -31,7 +31,10 @@ window.ATAKMarkers = (function () {
       return ta < tb ? 1 : ta > tb ? -1 : 0;
     });
     if (list.length === 0) {
-      el.innerHTML = '<p class="atak-muted" style="padding:0.5rem;font-size:0.8rem;">Aucun marqueur. Clic droit sur la carte → Placer un marqueur.</p>';
+      el.innerHTML = '<div class="atak-empty-state">' +
+        '<div class="atak-empty-state-icon" aria-hidden="true">⌖</div>' +
+        '<p class="atak-empty-state-title">Aucun marqueur</p>' +
+        '<p class="atak-empty-state-text">Clic droit sur la carte → Placer un marqueur.</p></div>';
       return;
     }
     el.innerHTML = list.map(function (item) {

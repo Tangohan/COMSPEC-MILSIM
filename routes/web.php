@@ -489,6 +489,7 @@ return function (Router $router) {
     $router->get('/atak/setup', [AtakController::class, 'setup'], $mwAtakWeb);
     $router->get('/atak/mod/download', [AtakController::class, 'downloadMod'], $mwAtakWeb);
     $router->get('/atak/tuto', [AtakController::class, 'tuto'], $mwAtakWeb);
+    $router->post('/atak/game-link', [AtakController::class, 'createGameLink'], $mwAtakWeb);
     $router->get('/tacmap', [HomeController::class, 'tacmap'], [AuthMiddleware::class]);
     $router->get('/overwatch', [HomeController::class, 'overwatch'], [AuthMiddleware::class]);
     // Administration plateforme (super-admin) — préfixe /admin
@@ -1240,9 +1241,13 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
+    $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/player-profile', [AtakApiController::class, 'playerProfile']);
     $router->get('/api/atak/phone-pairing', [AtakApiController::class, 'phonePairingCreate']);
     $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
+    $router->post('/api/atak/game-link/redeem', [AtakApiController::class, 'gameLinkRedeem']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);
@@ -1256,6 +1261,8 @@ return function (Router $router) {
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->get('/api/chat', [AtakApiController::class, 'chatIndex']);
     $router->post('/api/chat', [AtakApiController::class, 'chatStore']);
+    $router->get('/api/atak/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
+    $router->get('/api/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
     $router->get('/api/pings', [AtakApiController::class, 'pingsIndex']);
     $router->post('/api/pings', [AtakApiController::class, 'pingsStore']);
     $router->get('/api/nine-line', [AtakApiController::class, 'nineLineIndex']);

@@ -40,7 +40,7 @@ window.ATAKCams = (function () {
       var el = document.getElementById('atak-intel-photos');
       if (!el) return;
       if (window.ATAKMap && window.ATAKMap.clearIntelMarkers) window.ATAKMap.clearIntelMarkers();
-      var html = list.length ? '<div style="padding:0.5rem;font-size:0.75rem;color:var(--atak-muted)">Recon Cams</div>' + list.map(function (p) {
+      var html = list.length ? '<div class="atak-panel-section-label">Recon</div>' + list.map(function (p) {
         var src = (p.url || '').indexOf('http') === 0 ? p.url : base + (p.url || '/uploads/recon/' + (p.image_path || '').split('/').pop());
         if (window.ATAKMap && window.ATAKMap.addIntelPhotoMarker) window.ATAKMap.addIntelPhotoMarker(p.id, p.pos_y, p.pos_x, src);
         return '<div class="atak-cam-item atak-recon-item" data-id="' + (p.id || '') + '"><img src="' + src + '" alt="" style="max-width:100%;max-height:120px;border-radius:4px;" /><div class="atak-recon-meta">' + (p.author_callsign || '') + ' ' + (p.caption || '') + '</div></div>';
@@ -62,7 +62,7 @@ window.ATAKCams = (function () {
         return;
       }
       var base = getApiBase();
-      el.innerHTML = '<div style="padding:0.5rem;font-size:0.75rem;color:var(--atak-muted)">Photos CTAB (API PHP)</div>' +
+      el.innerHTML = '<div class="atak-panel-section-label">Photos CTAB</div>' +
         list.map(function (p) {
           var u = p.url || p.path || '';
           var src = (u.indexOf('http') === 0 || u.indexOf('//') === 0) ? u : (base + (u.charAt(0) === '/' ? u : '/' + u));
@@ -94,7 +94,7 @@ window.ATAKCams = (function () {
   function addVideoElement(streamId, label) {
     var listEl = document.getElementById('atak-cams-list');
     if (!listEl) return null;
-    var first = listEl.querySelector('.atak-muted');
+    var first = listEl.querySelector('.atak-empty-state, .atak-muted');
     if (first) first.remove();
     var wrap = document.createElement('div');
     wrap.className = 'atak-cam-item';

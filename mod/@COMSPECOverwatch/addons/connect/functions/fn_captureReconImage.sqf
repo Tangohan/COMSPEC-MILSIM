@@ -29,7 +29,7 @@ if (_path isEqualTo "") then {
     };
 };
 if (_path isEqualTo "") exitWith {
-    ["COMSPEC Recon: No image path. Use PHOTO from Overwatch terminal or set COMSPEC_LastScreenshotPath."] call BIS_fnc_showNotification;
+    ["COMSPEC_Warning", ["Aucune image à envoyer — prenez une photo depuis le terminal Overwatch."]] call BIS_fnc_showNotification;
 };
 
 "COMSPECExtension" callExtension [
@@ -51,4 +51,4 @@ if (_path isEqualTo "") exitWith {
         _capturedAt
     ]
 ];
-["Recon image envoyée"] call BIS_fnc_showNotification;
+["COMSPEC_Info", ["Image de recon envoyée"]] call BIS_fnc_showNotification;

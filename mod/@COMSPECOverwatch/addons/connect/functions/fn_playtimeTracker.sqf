@@ -9,7 +9,9 @@ while { true } do {
     private _ptOn = missionNamespace getVariable ["comspec_overwatch_playtime_enabled", true];
     private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
 
-    if (_enabled && _ptOn && {!(_url isEqualTo "")} && {!missionPaused}) then {
+    // Pause menu (display 49) — ne pas utiliser missionPaused (variable inexistante).
+    private _paused = !isNull findDisplay 49;
+    if (_enabled && _ptOn && {!(_url isEqualTo "")} && {!_paused}) then {
         private _now = diag_tickTime;
         private _dt = _now - _lastTick;
         _lastTick = _now;

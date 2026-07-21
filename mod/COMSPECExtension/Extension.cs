@@ -12,6 +12,7 @@ public static class Extension
 {
     private const int SyncTimeoutSeconds = 3;
     private static string _baseUrl = "";
+    private static string _apiKey = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
@@ -103,7 +104,20 @@ public static class Extension
         for (var i = 0; i < argCount; i++)
             argsString[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(args + (i * Marshal.SizeOf<nint>())));
 
-        var syncResult = TryGetSyncResponse(functionString, argsString);
+        // Filet de sécurité au niveau du point d'entrée natif : une méthode [UnmanagedCallersOnly]
+        // ne doit jamais laisser fuiter d'exception (le runtime .NET fait un fail-fast qui tue le
+        // process hôte, c-à-d Arma). Toute exception imprévue devient un ERR| exploitable en SQF
+        // plutôt qu'un plantage silencieux ou un retour vide sans diagnostic.
+        string? syncResult;
+        try
+        {
+            syncResult = TryGetSyncResponse(functionString, argsString);
+        }
+        catch (Exception ex)
+        {
+            syncResult = "ERR|exception:" + ex.GetType().Name;
+        }
+
         if (syncResult != null)
         {
             var maxLen = Math.Min(syncResult.Length, Math.Min(outputSize - 1, MaxOutputBytes));
@@ -113,14 +127,112 @@ public static class Extension
             return 0;
         }
 
-        RvExtensionArgsImpl(functionString, argsString);
+        try
+        {
+            RvExtensionArgsImpl(functionString, argsString);
+        }
+        catch
+        {
+            // best effort : ne pas laisser fuiter d'exception hors du point d'entrée natif.
+        }
         Output(output, outputSize, "");
         return 0;
     }
 
+    /// <summary>
+    /// Applique (ou retire) l’en-tête X-COMSPEC-KEY sur le HttpClient partagé.
+    /// Doit être appelé à chaque Connect : les DefaultRequestHeaders sont globaux.
+    /// </summary>
+    private static void ApplyApiKeyHeaders(string? apiKey)
+    {
+        _apiKey = (apiKey ?? "").Trim();
+        HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
+        HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+        if (_apiKey.Length == 0) return;
+        HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-COMSPEC-KEY", _apiKey);
+    }
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|invalid";
+        // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
+        // (sinon le premier appel retourne ERR|invalid et la liaison ne s’établit jamais).
+        if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
+        {
+            _baseUrl = args[0]!.TrimEnd('/');
+            var key = args.Length > 1 ? (args[1] ?? "") : "";
+            ApplyApiKeyHeaders(key);
+            return "OK|connected";
+        }
+
+        // Code de liaison compte Athena — URL fournie en argument (pas besoin d’un Connect préalable).
+        if (function == "RedeemGameLink" && args.Length >= 2)
+        {
+            using var redeemCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var redeemToken = redeemCts.Token;
+            var baseUrl = (args[0] ?? "").Trim().TrimEnd('/');
+            var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
+            var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+            if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
+            var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamUid)}\"}}";
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
+            HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+            try
+            {
+                var resp = HttpClient.PostAsync(baseUrl + "/api/atak/game-link/redeem", content, redeemToken).GetAwaiter().GetResult();
+                var respBody = resp.Content.ReadAsStringAsync(redeemToken).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var httpCode = (int)resp.StatusCode;
+                    if (httpCode == 404)
+                    {
+                        if (respBody.Contains("code_invalid_or_expired", StringComparison.Ordinal))
+                            return "ERR|code_invalid_or_expired";
+                        return "ERR|not_found";
+                    }
+                    if (httpCode == 400 && respBody.Contains("invalid_code", StringComparison.Ordinal))
+                        return "ERR|invalid_code";
+                    return "ERR|http_" + httpCode;
+                }
+                using var doc = JsonDocument.Parse(respBody);
+                var root = doc.RootElement;
+                var apiUrl = root.TryGetProperty("api_url", out var au) ? (au.GetString() ?? "") : "";
+                var apiKey = root.TryGetProperty("api_key", out var ak) ? (ak.GetString() ?? "") : "";
+                var tenantId = root.TryGetProperty("tenant_id", out var ti)
+                    ? (ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? ""))
+                    : "";
+                if (apiUrl.Length == 0) apiUrl = baseUrl;
+                _baseUrl = apiUrl.TrimEnd('/');
+                ApplyApiKeyHeaders(apiKey);
+                var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            catch (OperationCanceledException)
+            {
+                return "ERR|timeout";
+            }
+            catch (HttpRequestException)
+            {
+                return "ERR|network";
+            }
+            catch (JsonException)
+            {
+                return "ERR|invalid_response";
+            }
+            catch (UriFormatException)
+            {
+                return "ERR|invalid_url";
+            }
+            catch (Exception ex)
+            {
+                // Filet de sécurité : sans ce catch-all, toute exception non prévue ci-dessus
+                // (ex. UriFormatException sur une URL mal formée) remontait non interceptée et
+                // produisait un retour vide côté SQF ("Liaison impossible ()." sans détail).
+                return "ERR|exception:" + ex.GetType().Name;
+            }
+        }
+
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         var token = cts.Token;
         try
@@ -141,11 +253,6 @@ public static class Extension
                 response.EnsureSuccessStatusCode();
                 var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
                 return "OK|" + SimplifyUnitsJson(body);
-            }
-            if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                _baseUrl = args[0]!.TrimEnd('/');
-                return "OK|connected";
             }
             if (function == "GetClientIp")
             {
@@ -278,9 +385,52 @@ public static class Extension
                 var url = _baseUrl + "/api/atak/phone-pairing";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
                 var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
-                resp.EnsureSuccessStatusCode();
                 var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    // 404 : URL de base incorrecte (souvent sans /public) ou route absente du déploiement.
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        // Communauté manquante côté serveur vs clé refusée.
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
                 var simplified = SimplifyPhonePairingJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Profil site (nom, callsign, photo) d'un joueur identifié par son SteamUID, résolu via
+            // le compte Athena lié (voir RedeemGameLink). Format : displayName\tcallsign\tavatarUrl —
+            // l'avatar se télécharge ensuite via DownloadBriefingSlideImage(avatarUrl, "avatar_<uid>")
+            // comme n'importe quelle image (même mécanisme que les diapositives / le QR téléphone).
+            if (function == "GetPlayerAvatarInfo" && args.Length >= 1)
+            {
+                var steamUid = (args[0] ?? "").Trim();
+                if (steamUid.Length == 0) return "ERR|invalid";
+                var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamUid);
+                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyPlayerProfileJson(respBody);
                 if (simplified.Length == 0) return "ERR|invalid_response";
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
@@ -294,7 +444,38 @@ public static class Extension
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
 
-                var bytes = HttpClient.GetByteArrayAsync(imageUrl, token).GetAwaiter().GetResult();
+                // Accepte les URL relatives renvoyées par l’API (ex. /api/atak/.../qr.png).
+                if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
+                    && !string.IsNullOrEmpty(_baseUrl)
+                    && imageUrl.StartsWith('/'))
+                {
+                    imageUrl = _baseUrl.TrimEnd('/') + imageUrl;
+                }
+
+                HttpResponseMessage imgResp;
+                try
+                {
+                    imgResp = HttpClient.GetAsync(imageUrl, token).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    return "ERR|timeout";
+                }
+                catch (HttpRequestException)
+                {
+                    return "ERR|network";
+                }
+
+                if (!imgResp.IsSuccessStatusCode)
+                {
+                    var code = (int)imgResp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    return "ERR|http_" + code;
+                }
+
+                var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+                if (bytes.Length == 0) return "ERR|empty_image";
 
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
@@ -458,6 +639,36 @@ public static class Extension
         catch { return ""; }
     }
 
+    private static string SimplifyPlayerProfileJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var displayName = root.TryGetProperty("display_name", out var dn) ? (dn.GetString() ?? "") : "";
+            var callsign = root.TryGetProperty("callsign", out var cs) ? (cs.GetString() ?? "") : "";
+            var avatarUrl = root.TryGetProperty("avatar_url", out var au) ? (au.GetString() ?? "") : "";
+            var unitName = root.TryGetProperty("unit_name", out var un) ? (un.GetString() ?? "") : "";
+            var atakId = root.TryGetProperty("atak_id", out var ai) ? (ai.GetString() ?? "") : "";
+            // playtime_hours/last_seen_at sont explicitement null en JSON quand la donnée n'est pas
+            // trackée côté serveur (table absente, joueur jamais rapporté) — jamais une valeur
+            // inventée : la chaîne reste vide et le SQF affiche un placeholder explicite.
+            var playtimeHours = root.TryGetProperty("playtime_hours", out var ph) && ph.ValueKind == JsonValueKind.Number
+                ? ph.GetDouble().ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)
+                : "";
+            var lastSeenAt = root.TryGetProperty("last_seen_at", out var ls) && ls.ValueKind == JsonValueKind.String
+                ? (ls.GetString() ?? "")
+                : "";
+            displayName = displayName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            unitName = unitName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            atakId = atakId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            if (displayName.Length == 0 && callsign.Length == 0) return "";
+            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId + "\t" + playtimeHours + "\t" + lastSeenAt;
+        }
+        catch { return ""; }
+    }
+
     private static void RvExtensionArgsImpl(string? function, string?[] args)
     {
         try
@@ -467,8 +678,11 @@ public static class Extension
                 if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
                 {
                     _baseUrl = args[0]!.TrimEnd('/');
+                    var key = args.Length > 1 ? (args[1] ?? "") : "";
+                    ApplyApiKeyHeaders(key);
                     SendChatMessage("COMSPEC Overwatch: mod actif.");
                     SendChatMessage("Liaison établie avec le nœud: " + _baseUrl);
+                    EnqueueOrSend(_baseUrl + "/api/atak/client-init", "{\"mapId\":1}");
                 }
                 return;
             }
@@ -644,9 +858,9 @@ public static class Extension
             {
                 var id = args[0] ?? "";
                 var line = args[1] ?? "";
-                var checked = (args[2] ?? "true").ToLowerInvariant() == "true";
+                var isChecked = (args[2] ?? "true").ToLowerInvariant() == "true";
                 var checkedBy = args[3] ?? "Pilot";
-                var payload = "{\"line\":\"" + EscapeJson(line) + "\",\"checked\":" + (checked ? "true" : "false") + ",\"checkedBy\":\"" + EscapeJson(checkedBy) + "\"}";
+                var payload = "{\"line\":\"" + EscapeJson(line) + "\",\"checked\":" + (isChecked ? "true" : "false") + ",\"checkedBy\":\"" + EscapeJson(checkedBy) + "\"}";
                 EnqueueOrSend(_baseUrl + "/api/cas/" + Uri.EscapeDataString(id) + "/check-line", payload);
                 return;
             }
