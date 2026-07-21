@@ -90,6 +90,20 @@ class COMSPEC_Chat_Dialog {
             h = 0.018 * safezoneH;
         };
 
+        // Dépose un instantané technique (URL/tenant/état liaison/version) dans le journal —
+        // catégorie "system", jamais masquable via les filtres ci-dessus.
+        class DebugButton: RscButton {
+            idc = 1414;
+            text = "Debug";
+            x = 0.65 * safezoneW + safezoneX;
+            y = 0.272 * safezoneH + safezoneY;
+            w = 0.1 * safezoneW;
+            h = 0.018 * safezoneH;
+            sizeEx = 0.022;
+            colorBackground[] = {0.06, 0.1, 0.14, 0.9};
+            action = "[] call comspec_overwatch_connect_fnc_showDebugInfo;";
+        };
+
         class ChatConsole: RscEdit {
             idc = 1401;
             text = "";

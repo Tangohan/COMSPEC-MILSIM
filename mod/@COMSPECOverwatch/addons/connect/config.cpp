@@ -81,6 +81,7 @@ class CfgFunctions {
             class appendLinkLog {};
             class portalLabel {};
             class toggleLogCategory {};
+            class showDebugInfo {};
         };
     };
 };
