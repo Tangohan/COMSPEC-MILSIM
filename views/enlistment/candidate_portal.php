@@ -595,21 +595,28 @@ $tailwindHead = (string) ob_get_clean();
             </section>
             <?php endif; ?>
 
-            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages">
+            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.04]" aria-labelledby="fil-messages"<?php if ($pvMode === 'staff'): ?> x-data="{ hintDismissed: localStorage.getItem('athena_recruit_thread_hint_dismissed') === '1' }"<?php endif; ?>>
                 <div class="border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 px-5 py-4 sm:px-6">
-                    <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
-                    <p class="mt-1 text-sm text-slate-300"><?php if ($dossierMessagingClosed): ?>
-                        Historique en lecture seule — les envois sont désactivés pour ce dossier.
-                    <?php elseif ($viewerIsCandidateParty): ?>
-                        Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
-                    <?php elseif ($pvMode === 'staff'): ?>
-                        Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
-                    <?php else: ?>
-                        Fil visible avec ce lien : le candidat à gauche, l’équipe recrutement à droite.
-                    <?php endif; ?></p>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h2 id="fil-messages" class="text-[11px] font-bold uppercase tracking-[0.28em] text-emerald-400/95">Fil de messages</h2>
+                            <p class="mt-1 text-sm text-slate-300"<?php if ($pvMode === 'staff'): ?> x-show="!hintDismissed" x-cloak<?php endif; ?>><?php if ($dossierMessagingClosed): ?>
+                                Historique en lecture seule — les envois sont désactivés pour ce dossier.
+                            <?php elseif ($viewerIsCandidateParty): ?>
+                                Seuls vous et l’équipe recrutement de la communauté voyez ces échanges sur ce lien.
+                            <?php elseif ($pvMode === 'staff'): ?>
+                                Vue recruteur : à gauche, le <span class="font-semibold text-white">candidat</span> ; à droite, les messages <span class="font-semibold text-white">recrutement</span>. Rien n’est étiqueté « Vous » pour le candidat.
+                            <?php else: ?>
+                                Fil visible avec ce lien : le candidat à gauche, l’équipe recrutement à droite.
+                            <?php endif; ?></p>
+                        </div>
+                        <?php if ($pvMode === 'staff'): ?>
+                        <button type="button" class="shrink-0 rounded-lg border border-slate-600 bg-slate-800/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200 hover:bg-slate-700" x-show="!hintDismissed" x-cloak @click="hintDismissed = true; localStorage.setItem('athena_recruit_thread_hint_dismissed', '1')">Compris</button>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php if ($pvMode === 'staff' && $pvLabel !== ''): ?>
-                    <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6">
+                    <div class="border-b border-amber-100 bg-amber-50/95 px-5 py-3 sm:px-6" x-show="!hintDismissed" x-cloak>
                         <p class="text-xs font-bold text-amber-950">Consultation recrutement</p>
                         <p class="mt-1 text-sm text-amber-950/95">Vous êtes connecté en tant que <span class="font-black"><?= htmlspecialchars($pvLabel, ENT_QUOTES, 'UTF-8') ?></span>. Les messages que vous envoyez depuis cette page sont enregistrés côté <span class="font-semibold">recrutement</span> (pas au nom du candidat) et restent visibles sur ce fil.</p>
                     </div>
