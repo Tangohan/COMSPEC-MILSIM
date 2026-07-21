@@ -31,7 +31,7 @@ $buildGaps = static function (array $r): array {
         $gaps[] = [
             'key' => 'deployable',
             'label' => 'Marqué non déployable',
-            'href' => $editBase . '#deployable',
+            'href' => $editBase . '#edit-equipement',
             'cta' => 'Activer « Déployable »',
         ];
     }
@@ -39,7 +39,7 @@ $buildGaps = static function (array $r): array {
         $gaps[] = [
             'key' => 'role',
             'label' => 'Rôle principal manquant',
-            'href' => $editBase . '#primary_role',
+            'href' => $editBase . '#edit-orbat',
             'cta' => 'Renseigner le rôle',
         ];
     }
@@ -47,7 +47,7 @@ $buildGaps = static function (array $r): array {
         $gaps[] = [
             'key' => 'unit',
             'label' => 'Unité principale manquante',
-            'href' => $editBase . '#primary_unit_id',
+            'href' => $editBase . '#edit-orbat',
             'cta' => 'Affecter l’unité',
         ];
     }
@@ -63,7 +63,7 @@ $buildGaps = static function (array $r): array {
         $gaps[] = [
             'key' => 'blood',
             'label' => 'Groupe sanguin manquant',
-            'href' => $editBase . '#blood_type',
+            'href' => $editBase . '#edit-identite-rp',
             'cta' => 'Renseigner le groupe sanguin',
         ];
     }

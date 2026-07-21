@@ -282,14 +282,10 @@ $editValidTabIds = implode(',', array_map(
                   <label for="rank_display_override" class="mb-1 block text-xs font-bold text-slate-600">Libellé court personnalisé (optionnel)</label>
                   <input type="text" name="rank_display_override" id="rank_display_override" value="<?= htmlspecialchars((string) ($p['rank_display_override'] ?? '')) ?>" placeholder="Remplace le libellé court automatique" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
                 </div>
-                <div>
-                  <label for="secondary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle secondaire</label>
-                  <input type="text" name="secondary_role" id="secondary_role" value="<?= htmlspecialchars($p['secondary_role'] ?? '') ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                </div>
-                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90 md:col-span-1 flex items-center">
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-[11px] leading-relaxed text-emerald-950/90 md:col-span-2 flex items-center">
                   <?= $jobRolesEnabled
-                    ? 'Le <strong>rôle métier</strong> principal (référentiel de la communauté) se choisit dans le bloc <a class="font-bold underline underline-offset-2" href="#edit-orbat">Unité &amp; rôle</a> ci-dessous.'
-                    : 'Le <strong>rôle dans l’unité</strong> se renseigne dans le bloc <a class="font-bold underline underline-offset-2" href="#edit-orbat">Unité &amp; rôle</a> ci-dessous.' ?>
+                    ? 'Le <strong>rôle métier</strong> (principal et complémentaires, référentiel de la communauté) se choisit dans le bloc <button type="button" class="font-bold underline underline-offset-2" @click="tab = \'edit-orbat\'">Unité &amp; rôle</button> ci-dessous.'
+                    : 'Le <strong>rôle dans l’unité</strong> se renseigne dans le bloc <button type="button" class="font-bold underline underline-offset-2" @click="tab = \'edit-orbat\'">Unité &amp; rôle</button> ci-dessous.' ?>
                 </div>
               </div>
             </div>
@@ -429,32 +425,43 @@ $editValidTabIds = implode(',', array_map(
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div class="md:col-span-2 space-y-3">
+              <div class="md:col-span-2 space-y-3" id="job_roles_editor">
                 <?php if ($jobRolesEnabled): ?>
                 <?php
-                $selJob = isset($p['personnel_job_role_id']) ? (int) $p['personnel_job_role_id'] : 0;
-                $subLab = trim((string) ($p['role_sub_label'] ?? ''));
+                $jobRoleOptionsJson = htmlspecialchars(json_encode($jobRoleOptions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
+                $currentJobRolesJson = htmlspecialchars(json_encode($currentJobRoles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
                 ?>
-                <div>
-                  <label for="personnel_job_role_id" class="mb-1 block text-xs font-bold text-slate-600">Rôle métier (référentiel)</label>
-                  <select name="personnel_job_role_id" id="personnel_job_role_id" class="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
-                    <option value="">— Non renseigné —</option>
-                    <?php foreach ($jobRoleOptions as $jo): ?>
-                    <option value="<?= (int) $jo['id'] ?>" <?= $selJob === (int) $jo['id'] ? 'selected' : '' ?>><?= htmlspecialchars($jo['label']) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div>
-                  <label for="role_sub_label" class="mb-1 block text-xs font-bold text-slate-600">Sous-rôle (libre)</label>
-                  <input type="text" name="role_sub_label" id="role_sub_label" value="<?= htmlspecialchars($subLab) ?>" placeholder="Ex. Spécialité, détachement, matière enseignée…" class="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20" maxlength="150" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-600">Optionnel. Le libellé sur la fiche et l’organigramme combine le rôle métier et ce sous-rôle.</p>
+                <div x-data="personnelJobRolesEditor(<?= $currentJobRolesJson ?>, <?= $jobRoleOptionsJson ?>, <?= (int) $maxJobRolesPerMember ?>)">
+                  <label class="mb-1 block text-xs font-bold text-slate-600">Rôle(s) métier (référentiel)</label>
+                  <div class="space-y-2">
+                    <template x-for="(row, idx) in roles" :key="row.key">
+                      <div class="flex flex-col gap-2 rounded-xl border border-cyan-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end">
+                        <label class="flex shrink-0 items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                          <input type="radio" name="job_roles_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
+                          Principal
+                        </label>
+                        <div class="min-w-[220px] flex-1">
+                          <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Emploi</label>
+                          <select :name="'job_roles[' + idx + '][role_id]'" x-model.number="row.role_id" class="w-full rounded-lg border border-cyan-200 bg-white px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                            <option value="0">— Non renseigné —</option>
+                            <template x-for="opt in jobRoleOptions" :key="opt.id">
+                              <option :value="opt.id" x-text="opt.label"></option>
+                            </template>
+                          </select>
+                        </div>
+                        <div class="min-w-[160px] flex-1">
+                          <label class="mb-0.5 block text-[10px] font-bold uppercase text-slate-500">Précision</label>
+                          <input type="text" :name="'job_roles[' + idx + '][detail]'" x-model="row.detail" maxlength="150" placeholder="Optionnel" class="w-full rounded-lg border border-cyan-200 px-2.5 py-2 text-xs shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
+                        </div>
+                        <button type="button" class="shrink-0 rounded-lg border border-rose-200 px-2.5 py-2 text-[10px] font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="roles.length > 1">Retirer</button>
+                      </div>
+                    </template>
+                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="roles.length < maxRoles">Ajouter un rôle</button>
+                  </div>
+                  <p class="mt-1 text-[11px] text-slate-600">Le rôle coché « Principal » sert de référence pour le dossier, l’organigramme et le forum. Les autres sont affichés comme rôles complémentaires.</p>
                 </div>
                 <?php else: ?>
-                <div>
-                  <label for="primary_role" class="mb-1 block text-xs font-bold text-slate-600">Rôle dans l’unité</label>
-                  <input type="text" name="primary_role" id="primary_role" value="<?= htmlspecialchars($p['primary_role'] ?? '') ?>" placeholder="Ex. Officier opérations, Chef de section, Fusilier…" class="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20" maxlength="100" autocomplete="off">
-                  <p class="mt-1 text-[11px] text-slate-600">Affiché sur la fiche et l’organigramme après enregistrement.</p>
-                </div>
+                <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Référentiel de rôles métier non disponible sur cet environnement (migration à exécuter).</p>
                 <?php endif; ?>
               </div>
             </div>
@@ -848,31 +855,17 @@ $editValidTabIds = implode(',', array_map(
 (function () {
   var PRESETS = <?= json_encode($dossierPresets, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;
   var JOB_ROLE_BY_SLUG = <?= json_encode($jobRoleSlugToId, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>;
-  var jobRolesEnabled = <?= $jobRolesEnabled ? 'true' : 'false' ?>;
-  var fields = ['secondary_role', 'equipment_class', 'kit_assigned', 'radio_assigned', 'vehicle_authorized', 'weapon_specialty'];
+  var fields = ['equipment_class', 'kit_assigned', 'radio_assigned', 'vehicle_authorized', 'weapon_specialty'];
   document.querySelectorAll('.personnel-preset-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var id = btn.getAttribute('data-preset-id');
       var preset = PRESETS.find(function (p) { return p.id === id; });
       if (!preset) return;
-      if (jobRolesEnabled) {
-        var sel = document.getElementById('personnel_job_role_id');
-        var sub = document.getElementById('role_sub_label');
-        if (preset.job_role_slug && JOB_ROLE_BY_SLUG && JOB_ROLE_BY_SLUG[preset.job_role_slug] != null && sel) {
-          sel.value = String(JOB_ROLE_BY_SLUG[preset.job_role_slug]);
-        } else if (sel) {
-          sel.value = '';
-        }
-        if (sub) {
-          if (preset.job_role_slug && preset.primary_role) {
-            sub.value = '';
-          } else if (preset.primary_role != null) {
-            sub.value = String(preset.primary_role);
-          }
-        }
-      } else {
-        var pr = document.getElementById('primary_role');
-        if (pr && preset.primary_role != null) pr.value = String(preset.primary_role);
+      var roleId = (preset.job_role_slug && JOB_ROLE_BY_SLUG && JOB_ROLE_BY_SLUG[preset.job_role_slug] != null)
+        ? JOB_ROLE_BY_SLUG[preset.job_role_slug]
+        : 0;
+      if (roleId > 0) {
+        window.dispatchEvent(new CustomEvent('personnel-preset-job-role', { detail: { roleId: roleId } }));
       }
       fields.forEach(function (key) {
         if (preset[key] === undefined || preset[key] === null) return;
@@ -886,3 +879,48 @@ $editValidTabIds = implode(',', array_map(
 })();
 </script>
 <?php endif; ?>
+<script>
+function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
+  var rows = (initialRows || []).map(function (r, i) {
+    return { key: i, role_id: r.role_id || 0, detail: r.detail || '' };
+  });
+  if (rows.length === 0) {
+    rows = [{ key: 0, role_id: 0, detail: '' }];
+  }
+  var primaryIdx = 0;
+  (initialRows || []).forEach(function (r, i) {
+    if (r.is_primary) { primaryIdx = i; }
+  });
+  return {
+    roles: rows,
+    primaryIdx: primaryIdx,
+    maxRoles: maxRoles || 5,
+    jobRoleOptions: jobRoleOptions || [],
+    nextKey: rows.length,
+    addRow: function () {
+      if (this.roles.length >= this.maxRoles) return;
+      this.roles.push({ key: this.nextKey++, role_id: 0, detail: '' });
+    },
+    removeRow: function (idx) {
+      if (this.roles.length <= 1) return;
+      this.roles.splice(idx, 1);
+      if (this.primaryIdx === idx) {
+        this.primaryIdx = 0;
+      } else if (this.primaryIdx > idx) {
+        this.primaryIdx--;
+      }
+    },
+    applyPresetRole: function (detail) {
+      var roleId = detail && detail.roleId ? parseInt(detail.roleId, 10) : 0;
+      if (!roleId) return;
+      this.roles[this.primaryIdx].role_id = roleId;
+    },
+    init: function () {
+      var self = this;
+      window.addEventListener('personnel-preset-job-role', function (ev) {
+        self.applyPresetRole(ev.detail);
+      });
+    }
+  };
+}
+</script>

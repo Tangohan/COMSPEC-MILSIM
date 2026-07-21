@@ -2761,6 +2761,14 @@ try {
     echo '  [ATTENTION] discord_recruitment : ' . $e->getMessage() . "\n";
 }
 
+$personnelRoleConsolidationMigrate = require $root . '/bootstrap/personnel_role_consolidation_migration.php';
+try {
+    echo "Migration personnel_role_consolidation (fusion rôle métier / primary_role / secondary_role)...\n";
+    $personnelRoleConsolidationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] personnel_role_consolidation : ' . $e->getMessage() . "\n";
+}
+
 echo "\n--- Pipeline exécuté (résumé) ---\n";
 echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";

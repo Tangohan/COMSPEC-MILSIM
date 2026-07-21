@@ -261,7 +261,7 @@ class EffectifsWorkspaceController
                 (string) ($r['callsign'] ?? ''),
                 (string) ($r['email'] ?? ''),
                 trim((string) ($r['grade_short'] ?? $r['grade_long'] ?? '')),
-                trim((string) ($r['personnel_job_role_name'] ?? $r['primary_role'] ?? '')),
+                trim((string) ($r['job_role_display'] ?? '')),
                 trim((string) ($r['assignment_path'] ?? '')),
                 $statusLabels[$rStatus] ?? $rStatus,
                 (string) ($r['seniority_label'] ?? ''),
@@ -1344,9 +1344,7 @@ class EffectifsWorkspaceController
                 'community_name' => trim((string) ($rich['community_name'] ?? '')) !== ''
                     ? (string) $rich['community_name']
                     : $communityFallback,
-                'personnel_job_role_name' => $rich['personnel_job_role_name'] ?? null,
-                'primary_role' => $rich['primary_role'] ?? null,
-                'role_sub_label' => $rich['role_sub_label'] ?? null,
+                'job_role_display' => $rich['job_role_display'] ?? null,
                 'character_name' => $rich['character_name'] ?? null,
                 'matricule_internal' => $rich['matricule_internal'] ?? null,
                 'enlistment_date_resolved' => $rich['enlistment_date_resolved'] ?? null,

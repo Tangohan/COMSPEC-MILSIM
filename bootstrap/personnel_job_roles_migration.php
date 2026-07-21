@@ -27,18 +27,10 @@ return function (PDO $pdo): void {
         }
     }
 
-    $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND COLUMN_NAME = 'personnel_job_role_id'");
-    if ($stmt && !$stmt->fetch()) {
-        echo "Colonnes personnel_profiles.personnel_job_role_id / role_sub_label...\n";
-        $pdo->exec('ALTER TABLE personnel_profiles ADD COLUMN personnel_job_role_id INT UNSIGNED NULL AFTER secondary_role');
-        $pdo->exec('ALTER TABLE personnel_profiles ADD COLUMN role_sub_label VARCHAR(150) NULL AFTER personnel_job_role_id');
-        $chkFk = $pdo->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_profiles' AND CONSTRAINT_NAME = 'pp_personnel_job_role_fk'");
-        if ($chkFk && !$chkFk->fetch()) {
-            $pdo->exec(
-                'ALTER TABLE personnel_profiles ADD CONSTRAINT pp_personnel_job_role_fk FOREIGN KEY (personnel_job_role_id) REFERENCES personnel_job_roles(id) ON DELETE SET NULL ON UPDATE CASCADE'
-            );
-        }
-    }
+    // Historique : ce bloc recréait personnel_profiles.personnel_job_role_id / role_sub_label.
+    // Ces colonnes ont été fusionnées dans la table pivot personnel_profile_job_roles
+    // (voir bootstrap/personnel_role_consolidation_migration.php, qui les supprime) — ne plus
+    // les recréer ici, sous peine de défaire cette fusion à chaque exécution des migrations.
 
     require_once dirname(__DIR__) . '/bootstrap/autoload.php';
     $repo = new PersonnelJobRoleRepository();

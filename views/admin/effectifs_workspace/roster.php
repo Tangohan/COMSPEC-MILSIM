@@ -284,13 +284,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                     if ($grade === '') {
                         $grade = trim((string) ($row['grade_long'] ?? ''));
                     }
-                    $fonction = trim((string) ($row['personnel_job_role_name'] ?? ''));
-                    if ($fonction === '') {
-                        $fonction = trim((string) ($row['primary_role'] ?? ''));
-                    }
-                    if ($fonction === '') {
-                        $fonction = trim((string) ($row['role_sub_label'] ?? ''));
-                    }
+                    $fonction = trim((string) ($row['job_role_display'] ?? ''));
                     $unit = trim((string) ($row['unit_name'] ?? ''));
                     $assignmentPath = trim((string) ($row['assignment_path'] ?? ''));
                     if ($assignmentPath === '' && $unit !== '') {

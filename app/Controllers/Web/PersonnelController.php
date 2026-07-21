@@ -964,7 +964,7 @@ class PersonnelController
         $matricule = $personnelProfile['matricule_internal'] ?? $personnelExtras['service_number'] ?? null;
         $personnelAssignments = $this->personnelAssignmentRepository->listActiveForUserResolved($uid);
         $dossierPresets = $this->loadDossierPresets();
-        $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist();
+        $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists();
         $jobRoleOptions = $jobRolesEnabled ? $this->personnelJobRoleRepository->listRoleOptionsForSelect($tenantId) : [];
         $jobRoleSlugToId = [];
         if ($jobRolesEnabled) {
@@ -975,6 +975,19 @@ class PersonnelController
                 }
             }
         }
+        $currentJobRoles = [];
+        if ($jobRolesEnabled) {
+            $pivotMapForEdit = $this->personnelJobRoleRepository->listPivotAssignmentsForUsers($tenantId, [$uid]);
+            foreach ($pivotMapForEdit[$uid] ?? [] as $pr) {
+                $currentJobRoles[] = [
+                    'role_id' => (int) ($pr['personnel_job_role_id'] ?? 0),
+                    'detail' => (string) ($pr['role_detail'] ?? ''),
+                    'is_primary' => !empty($pr['is_primary']),
+                ];
+            }
+        }
+        $tenantSettingsForJobRoles = $this->tenantRepository->getSettings($tenantId);
+        $maxJobRolesPerMember = \App\Services\Personnel\PersonnelJobRoleAssignmentsSettings::resolve($tenantSettingsForJobRoles)['max_roles_per_member'];
 
         $forumQuickMode = trim((string) $request->query('forum_mode', ''));
         if (!in_array($forumQuickMode, ['display_name', 'callsign', 'character_name', 'forum_alias'], true)) {
@@ -1042,6 +1055,8 @@ class PersonnelController
             'jobRolesEnabled' => $jobRolesEnabled,
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleSlugToId' => $jobRoleSlugToId,
+            'currentJobRoles' => $currentJobRoles,
+            'maxJobRolesPerMember' => $maxJobRolesPerMember,
             'forumOrgRoleChoices' => $forumOrgRoleChoices,
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
@@ -1091,45 +1106,51 @@ class PersonnelController
             $primaryUnitId = null;
         }
 
-        $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist();
+        $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists();
         $primaryRoleStr = '';
-        $jobRoleId = null;
-        $roleSubLabel = trim((string) $request->input('role_sub_label'));
+        $jobRolesParsed = [];
         if ($jobRolesEnabled) {
-            $rawJr = $request->input('personnel_job_role_id');
-            $jobRoleId = ($rawJr === null || $rawJr === '') ? null : (int) $rawJr;
-            if ($jobRoleId !== null && $jobRoleId <= 0) {
-                $jobRoleId = null;
+            $tenantSettingsForJobRoles = $this->tenantRepository->getSettings($tenantId);
+            $maxJobRoles = \App\Services\Personnel\PersonnelJobRoleAssignmentsSettings::resolve($tenantSettingsForJobRoles)['max_roles_per_member'];
+            $rowsIn = $request->input('job_roles');
+            if (!is_array($rowsIn)) {
+                $rowsIn = [];
             }
-            $jrRow = null;
-            if ($jobRoleId !== null) {
-                $jrRow = $this->personnelJobRoleRepository->findRoleById($jobRoleId, $tenantId);
-                if (!$jrRow) {
-                    Session::flash('error', 'Rôle métier invalide pour cette communauté.');
-
-                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+            foreach ($rowsIn as $r) {
+                if (!is_array($r)) {
+                    continue;
                 }
+                $rid = (int) ($r['role_id'] ?? 0);
+                if ($rid <= 0) {
+                    continue;
+                }
+                if (!$this->personnelJobRoleRepository->findRoleById($rid, $tenantId)) {
+                    continue;
+                }
+                $jobRolesParsed[] = [
+                    'personnel_job_role_id' => $rid,
+                    'role_detail' => trim((string) ($r['detail'] ?? '')),
+                    'is_primary' => false,
+                ];
             }
-            if ($jrRow !== null) {
-                $n = trim((string) ($jrRow['name'] ?? ''));
-                $primaryRoleStr = $roleSubLabel !== '' ? $n . ' — ' . $roleSubLabel : $n;
-            } else {
-                $primaryRoleStr = $roleSubLabel;
+            if (count($jobRolesParsed) > $maxJobRoles) {
+                $jobRolesParsed = array_slice($jobRolesParsed, 0, $maxJobRoles);
             }
-            if (function_exists('mb_strlen') && mb_strlen($primaryRoleStr) > 100) {
-                $primaryRoleStr = mb_substr($primaryRoleStr, 0, 100);
-            } elseif (strlen($primaryRoleStr) > 100) {
-                $primaryRoleStr = substr($primaryRoleStr, 0, 100);
+            $primaryIdx = (int) $request->input('job_roles_primary', 0);
+            if ($jobRolesParsed !== []) {
+                if ($primaryIdx < 0 || $primaryIdx >= count($jobRolesParsed)) {
+                    $primaryIdx = 0;
+                }
+                foreach ($jobRolesParsed as $i => &$jrp) {
+                    $jrp['is_primary'] = ($i === $primaryIdx);
+                }
+                unset($jrp);
             }
-        } else {
-            $primaryRoleStr = trim((string) $request->input('primary_role'));
         }
 
         $data = [
             'character_name' => trim((string) $request->input('character_name')),
             'callsign' => trim((string) $request->input('callsign')),
-            'primary_role' => $primaryRoleStr,
-            'secondary_role' => trim((string) $request->input('secondary_role')),
             'primary_unit_id' => $primaryUnitId,
             // clearance_level volontairement absent : se modifie uniquement via une demande d'élévation
             // (EffectifsWorkspaceController + ElevationApprovalService), pas par cette route directe,
@@ -1208,10 +1229,6 @@ class PersonnelController
             $data['rp_service_rotation_date'] = trim((string) $request->input('rp_service_rotation_date')) ?: null;
             $data['rp_followup_notes'] = trim((string) $request->input('rp_followup_notes')) ?: null;
             $data['rp_eligibility_snapshot_json'] = json_encode($snap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        }
-        if ($jobRolesEnabled) {
-            $data['personnel_job_role_id'] = $jobRoleId;
-            $data['role_sub_label'] = $roleSubLabel !== '' ? $roleSubLabel : null;
         }
         if ($isSelf || $canStaffEdit) {
             $notes = trim((string) $request->input('command_notes'));
@@ -1335,17 +1352,10 @@ class PersonnelController
             );
         }
 
-        if ($jobRolesEnabled && $this->personnelJobRoleRepository->pivotTableExists()) {
+        if ($jobRolesEnabled) {
             try {
-                if ($jobRoleId !== null && $jobRoleId > 0) {
-                    $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], [[
-                        'personnel_job_role_id' => $jobRoleId,
-                        'role_detail' => $roleSubLabel,
-                        'is_primary' => true,
-                    ]]);
-                } else {
-                    $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], []);
-                }
+                $pivotResult = $this->personnelJobRoleRepository->replaceUserPivotJobRoles($tenantId, (int) $target['id'], $jobRolesParsed);
+                $primaryRoleStr = $pivotResult['primary_role_display'];
             } catch (\Throwable) {
             }
         }
