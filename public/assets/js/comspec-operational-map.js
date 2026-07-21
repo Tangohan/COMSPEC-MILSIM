@@ -1,4 +1,4 @@
-/* COMSPEC — moteur carte opérationnelle partagé (TACMAP, hooks Overwatch) */
+/* COMSPEC — moteur carte opérationnelle partagé (Overwatch + legacy initTacmap) */
 (function (global) {
   'use strict';
 
@@ -7,6 +7,51 @@
   var ALTIS_FACTOR = 212 / ALTIS_WORLD_SIZE;
   var ALTIS_CENTER = [ALTIS_WORLD_SIZE / 2, ALTIS_WORLD_SIZE / 2];
   var ALTIS_BOUNDS = [[0, 0], [ALTIS_WORLD_SIZE, ALTIS_WORLD_SIZE]];
+  var lastTacmapInvalidate = null;
+
+  /**
+   * Traceurs de déplacement (polylines) réutilisables par Overwatch / initTacmap.
+   * @param {{ maxPoints?: number }} [options]
+   */
+  function createUnitTrailTracker(options) {
+    options = options || {};
+    var maxPoints = options.maxPoints || 40;
+    /** @type {Object.<string, Array<[number,number]>>} */
+    var buffers = {};
+    return {
+      clear: function () {
+        buffers = {};
+      },
+      push: function (unitKey, latlng) {
+        if (!unitKey || !latlng) return;
+        var buf = buffers[unitKey] || [];
+        var last = buf.length ? buf[buf.length - 1] : null;
+        if (last && last[0] === latlng.lat && last[1] === latlng.lng) return;
+        buf.push([latlng.lat, latlng.lng]);
+        if (buf.length > maxPoints) buf = buf.slice(buf.length - maxPoints);
+        buffers[unitKey] = buf;
+      },
+      render: function (layerGroup, visible, color) {
+        if (!layerGroup) return;
+        layerGroup.clearLayers();
+        if (!visible) return;
+        var c = color || '#67e8f9';
+        Object.keys(buffers).forEach(function (key) {
+          var pts = buffers[key];
+          if (!pts || pts.length < 2) return;
+          L.polyline(pts, { color: c, weight: 2, opacity: 0.75, interactive: false }).addTo(layerGroup);
+        });
+      },
+    };
+  }
+
+  function trailColorFromCss() {
+    if (typeof getComputedStyle !== 'function') return '#67e8f9';
+    var fromOw = getComputedStyle(document.documentElement).getPropertyValue('--ow-trail').trim();
+    if (fromOw) return fromOw;
+    var fromTm = getComputedStyle(document.documentElement).getPropertyValue('--tm-trail').trim();
+    return fromTm || '#67e8f9';
+  }
 
   function buildArmaConfig(raw) {
     if (!raw || !raw.tilePattern) return null;
@@ -79,6 +124,46 @@
   }
 
   /**
+   * Attache métadonnées + clic droit pour suppression (Overwatch / TACMAP).
+   * @param {L.Layer} layer
+   * @param {{ kind: string, id: string|number, label?: string }} meta
+   * @param {function|null|undefined} onCtx
+   */
+  function bindDeletableLayer(layer, meta, onCtx) {
+    if (!layer || !meta || meta.id == null || meta.id === '') return layer;
+    var kind = String(meta.kind || 'shape');
+    var id = meta.id;
+    var label = (meta.label != null ? String(meta.label) : '') || '';
+    layer.options = layer.options || {};
+    layer.options.comspecFeatureKind = kind;
+    layer.options.comspecFeatureId = id;
+    layer.options.comspecFeatureLabel = label;
+    layer.feature = layer.feature || {};
+    layer.feature.comspec = { kind: kind, id: id, label: label };
+    if (typeof onCtx === 'function') {
+      layer.on('contextmenu', function (e) {
+        if (L.DomEvent) {
+          L.DomEvent.preventDefault(e);
+          L.DomEvent.stopPropagation(e);
+        }
+        if (e.originalEvent) {
+          e.originalEvent.preventDefault();
+          e.originalEvent.stopPropagation();
+        }
+        onCtx({
+          kind: kind,
+          id: id,
+          label: label,
+          latlng: e.latlng,
+          layer: layer,
+          originalEvent: e.originalEvent || null,
+        });
+      });
+    }
+    return layer;
+  }
+
+  /**
    * @param {object} opts
    * @param {string} opts.apiBase
    * @param {number} opts.mapId
@@ -86,6 +171,7 @@
    * @param {L.Map} opts.map
    * @param {L.LayerGroup} opts.layerGroup
    * @param {boolean} opts.isWorld
+   * @param {function} [opts.onFeatureContextMenu]
    */
   function renderMapShapes(opts) {
     if (!opts || !opts.layerGroup || !opts.map) return;
@@ -97,19 +183,21 @@
         if (!opts.layerGroup || !opts.map) return;
         opts.layerGroup.clearLayers();
         (rows || []).forEach(function (s) {
-          addOneMapShape(s, opts.layerGroup, opts.isWorld);
+          addOneMapShape(s, opts.layerGroup, opts.isWorld, opts.onFeatureContextMenu);
         });
       })
       .catch(function () {});
   }
 
-  function addOneMapShape(s, layerGroup, isWorld) {
+  function addOneMapShape(s, layerGroup, isWorld, onCtx) {
     var geom = s.geometry || {};
     var type = (s.type || '').toString().toUpperCase();
     var color = s.color || '#3388ff';
     var fillOp = s.fill_opacity != null ? parseFloat(s.fill_opacity) : 0.15;
     var weight = s.stroke != null ? parseInt(s.stroke, 10) : 2;
     var label = (s.label || type || 'Tracé').toString();
+    var shapeId = s.id != null ? s.id : (s.shapeUid || s.shape_uid || null);
+    var layer = null;
 
     if (geom.center && geom.radius != null) {
       var lat, lng, radius;
@@ -122,9 +210,10 @@
         lng = geom.center[0];
         radius = geom.radius;
       }
-      L.circle([lat, lng], { radius: radius, color: color, fillOpacity: fillOp, weight: weight })
-        .bindPopup(label)
-        .addTo(layerGroup);
+      layer = L.circle([lat, lng], { radius: radius, color: color, fillOpacity: fillOp, weight: weight });
+      layer.bindPopup(label);
+      bindDeletableLayer(layer, { kind: 'shape', id: shapeId, label: label }, onCtx);
+      layer.addTo(layerGroup);
       return;
     }
 
@@ -137,10 +226,13 @@
         return [y, x];
       });
       if (type === 'POLYGON' || geom.closed) {
-        L.polygon(latlngs, { color: color, fillOpacity: fillOp, weight: weight }).bindPopup(label).addTo(layerGroup);
+        layer = L.polygon(latlngs, { color: color, fillOpacity: fillOp, weight: weight });
       } else {
-        L.polyline(latlngs, { color: color, weight: weight }).bindPopup(label).addTo(layerGroup);
+        layer = L.polyline(latlngs, { color: color, weight: weight });
       }
+      layer.bindPopup(label);
+      bindDeletableLayer(layer, { kind: 'shape', id: shapeId, label: label }, onCtx);
+      layer.addTo(layerGroup);
     }
   }
 
@@ -161,7 +253,7 @@
     return L.latLng(y, x);
   }
 
-  function renderAtakMarkers(layerGroup, list, isWorld) {
+  function renderAtakMarkers(layerGroup, list, isWorld, onCtx) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
     (list || []).forEach(function (m) {
@@ -171,13 +263,17 @@
       var data = typeof raw === 'string' ? (function () { try { return JSON.parse(raw || '{}'); } catch (e) { return {}; } })() : (raw || {});
       var latlng = parseMarkerDataPos(data.pos, isWorld);
       if (!latlng) return;
+      var label = (data.text || data.label || 'Repère') + '';
       var icon = L.divIcon({
         className: 'comspec-atak-marker',
         html: '<span style="width:11px;height:11px;border-radius:50%;background:#10b981;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);"></span>',
         iconSize: [15, 15],
         iconAnchor: [7, 7],
       });
-      L.marker(latlng, { icon: icon }).bindPopup((data.text || data.label || 'Repère') + '').addTo(layerGroup);
+      var marker = L.marker(latlng, { icon: icon });
+      marker.bindPopup(label);
+      bindDeletableLayer(marker, { kind: 'marker', id: id, label: label }, onCtx);
+      marker.addTo(layerGroup);
     });
   }
 
@@ -304,6 +400,10 @@
     var syncMs = ctx.syncIntervalMs || 8000;
     var tenantId = ctx.tenantId || 0;
     var els = cfg.els || {};
+    var features = cfg.features || {};
+    var trailsEnabled = features.trails !== false;
+    var medicalPanelEnabled = !!features.medicalPanel;
+    var TRAIL_MAX_POINTS = 40;
 
     var state = {
       currentMapId: ctx.defaultMapId,
@@ -315,6 +415,7 @@
       unitsCount: 0,
       layers: {
         units: true,
+        trails: trailsEnabled,
         danger: true,
         drawings: true,
         markers: true,
@@ -333,6 +434,7 @@
     var lastUnits = [];
     var selectedUnitId = null;
     var syncLock = false;
+    var trailTracker = createUnitTrailTracker({ maxPoints: TRAIL_MAX_POINTS });
 
     function getEl(id) {
       return typeof id === 'string' ? document.getElementById(id) : id;
@@ -342,10 +444,16 @@
       return 'mission_' + Number(tenantId) + '_map_' + Number(state.currentMapId);
     }
 
+    function invalidateSize() {
+      if (map) {
+        try { map.invalidateSize(true); } catch (e) {}
+      }
+    }
+    lastTacmapInvalidate = invalidateSize;
     function applyLayerVisibility() {
       if (!map) return;
       var Ls = state.layers;
-      [['units', layerGroups.units], ['danger', layerGroups.dangerZones], ['drawings', layerGroups.drawings],
+      [['units', layerGroups.units], ['trails', layerGroups.trails], ['danger', layerGroups.dangerZones], ['drawings', layerGroups.drawings],
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
         ['intel', layerGroups.intel], ['air', layerGroups.air]].forEach(function (pair) {
         var key = pair[0];
@@ -356,6 +464,109 @@
           else map.removeLayer(lg);
         } catch (e) {}
       });
+    }
+
+    function clearTrails() {
+      trailTracker.clear();
+      if (layerGroups.trails) layerGroups.trails.clearLayers();
+    }
+
+    function pushTrailPoint(unitKey, latlng) {
+      if (!trailsEnabled || !unitKey || !latlng) return;
+      trailTracker.push(unitKey, latlng);
+    }
+
+    function renderTrails() {
+      trailTracker.render(layerGroups.trails, !!state.layers.trails, trailColorFromCss());
+    }
+
+    function unitHealthRaw(u) {
+      var extra = {};
+      try {
+        if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
+        else if (u.extra && typeof u.extra === 'object') extra = u.extra;
+      } catch (e) {}
+      return extra.health != null ? extra.health : u.health;
+    }
+
+    function isCriticalHealth(raw) {
+      var x = String(raw || '').toLowerCase().trim();
+      return x === 'unconscious' || x === 'cardiac_arrest' || x === 'cardiac-arrest' || x === 'dead' || x === 'kia';
+    }
+
+    function renderMedicalPanel(units, chatAlerts) {
+      var root = getEl(els.medicalList);
+      if (!root || !medicalPanelEnabled) return;
+      var critical = (units || []).filter(function (u) { return isCriticalHealth(unitHealthRaw(u)); });
+      var alerts = Array.isArray(chatAlerts) ? chatAlerts : [];
+      if (!critical.length && !alerts.length) {
+        root.innerHTML = '<p class="text-sm" style="color:var(--tm-muted)">Aucune urgence détectée pour l’instant.</p>';
+        return;
+      }
+      var html = '';
+      if (critical.length) {
+        html += critical.map(function (u) {
+          var raw = unitHealthRaw(u);
+          var label = (window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr)
+            ? window.ATAKUnitPopup.healthLabelFr(raw)
+            : String(raw || 'Urgence');
+          return '<button type="button" class="tacmap-assist-item is-critical" data-unit-id="' + u.id + '">' +
+            '<div class="tacmap-assist-item__title">' + escapeHtml(u.call_sign || '—') + ' — ' + escapeHtml(label) + '</div>' +
+            '<div class="tacmap-assist-item__meta">' + escapeHtml(u.role || '—') + ' · Grille ' + escapeHtml(u.grid_ref || '—') + '</div>' +
+            '</button>';
+        }).join('');
+      }
+      if (alerts.length) {
+        html += alerts.slice().reverse().slice(0, 12).map(function (a) {
+          var sev = (a.severity === 'critical') ? 'is-critical' : 'is-attention';
+          return '<div class="tacmap-assist-item ' + sev + '">' +
+            '<div class="tacmap-assist-item__title">' + escapeHtml(a.summary || a.label || 'Assistance médicale') + '</div>' +
+            '<div class="tacmap-assist-item__meta">' + escapeHtml(a.created_at ? String(a.created_at).replace('T', ' ').substring(0, 19) : '') +
+            (a.grid ? ' · Grille ' + escapeHtml(a.grid) : '') + '</div>' +
+            '</div>';
+        }).join('');
+      }
+      root.innerHTML = html;
+      root.querySelectorAll('[data-unit-id]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = parseInt(btn.getAttribute('data-unit-id'), 10);
+          var u = lastUnits.find(function (x) { return x.id === id; });
+          selectUnit(u);
+        });
+      });
+    }
+
+    function fetchMedicalChatAlerts() {
+      return fetch(apiBase + '/atak/medical-alerts?mapId=' + encodeURIComponent(state.currentMapId) + '&limit=30', { credentials: 'include' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) { return (data && data.alerts) ? data.alerts : []; })
+        .catch(function () { return []; });
+    }
+
+    function deleteFeatureByKind(kind, id) {
+      var url = '';
+      if (kind === 'shape') url = apiBase + '/map-shapes/' + encodeURIComponent(id);
+      else if (kind === 'marker') url = apiBase + '/markers/' + encodeURIComponent(id);
+      else if (kind === 'danger') url = apiBase + '/danger-zones/' + encodeURIComponent(id) + '?missionId=' + encodeURIComponent(getMissionId());
+      else return;
+      fetch(url, { method: 'DELETE', credentials: 'include' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('fail');
+          refreshSecondaryLayers();
+        })
+        .catch(function () {
+          window.alert('Impossible de supprimer cet élément pour le moment.');
+        });
+    }
+
+    function onTacmapFeatureContextMenu(payload) {
+      if (!payload || payload.id == null) return;
+      var msg = 'Retirer cet élément de la carte ?';
+      if (payload.kind === 'shape') msg = 'Retirer ce tracé de la carte ?';
+      else if (payload.kind === 'marker') msg = 'Retirer ce repère de la carte ?';
+      else if (payload.kind === 'danger') msg = 'Retirer cette zone de la carte ?';
+      if (!window.confirm(msg)) return;
+      deleteFeatureByKind(payload.kind, payload.id);
     }
 
     function loadDangerZones() {
@@ -371,9 +582,11 @@
               var lat = geom.center[1];
               var lng = geom.center[0];
               var radius = geom.radius;
-              L.circle([lat, lng], { radius: radius, color: z.color || '#ef4444', fillOpacity: z.fill_opacity || 0.25 })
-                .bindPopup(z.label || z.zone_type || 'Zone')
-                .addTo(layerGroups.dangerZones);
+              var label = z.label || z.zone_type || 'Zone';
+              var layer = L.circle([lat, lng], { radius: radius, color: z.color || '#ef4444', fillOpacity: z.fill_opacity || 0.25 });
+              layer.bindPopup(label);
+              bindDeletableLayer(layer, { kind: 'danger', id: z.id, label: label }, onTacmapFeatureContextMenu);
+              layer.addTo(layerGroups.dangerZones);
             }
           });
         })
@@ -392,12 +605,13 @@
           layerGroup: layerGroups.drawings,
           isWorld: isWorld,
           credentials: 'include',
+          onFeatureContextMenu: onTacmapFeatureContextMenu,
         });
       }
       if (state.layers.markers) {
         fetch(apiBase + '/markers?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
           .then(function (r) { return r.json(); })
-          .then(function (list) { renderAtakMarkers(layerGroups.markers, list, isWorld); })
+          .then(function (list) { renderAtakMarkers(layerGroups.markers, list, isWorld, onTacmapFeatureContextMenu); })
           .catch(function () {});
       }
       if (state.layers.pings) {
@@ -430,23 +644,21 @@
     function updateSyncBadge() {
       var el = getEl(els.syncBadge);
       if (!el) return;
+      el.className = 'tacmap-badge';
       if (state.currentMapType === 'world') {
         el.textContent = 'Vue monde';
-        el.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] border-slate-200 bg-slate-50 text-slate-600';
         return;
       }
       if (state.syncStatus === 'ok') {
-        el.textContent = 'Carte synchronisée';
-        el.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] border-emerald-200 bg-emerald-50 text-emerald-700';
+        el.textContent = 'Synchronisé';
+        el.classList.add('is-ok');
       } else if (state.syncStatus === 'error') {
         el.textContent = 'Problème de liaison';
-        el.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] border-red-200 bg-red-50 text-red-700';
+        el.classList.add('is-err');
       } else if (state.syncStatus === 'syncing') {
         el.textContent = 'Mise à jour…';
-        el.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] border-amber-200 bg-amber-50 text-amber-800';
       } else {
         el.textContent = 'En attente';
-        el.className = 'px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-[0.2em] border-slate-200 bg-slate-50 text-slate-600';
       }
     }
 
@@ -550,9 +762,9 @@
       roster.querySelectorAll('[data-unit-id]').forEach(function (node) {
         var id = node.getAttribute('data-unit-id');
         if (selectedUnitId && String(selectedUnitId) === id) {
-          node.classList.add('ring-2', 'ring-blue-500', 'border-blue-300');
+          node.classList.add('is-selected');
         } else {
-          node.classList.remove('ring-2', 'ring-blue-500', 'border-blue-300');
+          node.classList.remove('is-selected');
         }
       });
     }
@@ -577,10 +789,15 @@
         } else {
           roster.innerHTML = lastUnits.map(function (u) {
             var st = statusLabelFr(u.status);
-            return '<button type="button" data-unit-id="' + u.id + '" data-callsign="' + escapeHtml(u.call_sign || '') + '" class="w-full text-left rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 hover:bg-white transition">' +
-              '<div class="flex justify-between gap-2"><span class="text-[10px] font-black uppercase text-slate-500">' + escapeHtml(u.call_sign || '—') + '</span><span class="text-[9px] font-black uppercase text-emerald-700">' + escapeHtml(st) + '</span></div>' +
-              '<p class="text-sm font-bold text-slate-900 mt-1">' + escapeHtml(u.role || '—') + '</p>' +
-              '<p class="text-xs text-slate-500 mt-1">Grille ' + escapeHtml(u.grid_ref || '—') + '</p></button>';
+            var rawH = unitHealthRaw(u);
+            var hLabel = '';
+            if (isCriticalHealth(rawH) && window.ATAKUnitPopup && window.ATAKUnitPopup.healthLabelFr) {
+              hLabel = window.ATAKUnitPopup.healthLabelFr(rawH);
+            }
+            return '<button type="button" data-unit-id="' + u.id + '" data-callsign="' + escapeHtml(u.call_sign || '') + '" class="tacmap-roster-btn">' +
+              '<div class="flex justify-between gap-2"><span class="text-[10px] font-black uppercase" style="color:var(--tm-muted)">' + escapeHtml(u.call_sign || '—') + '</span><span class="text-[9px] font-black uppercase" style="color:var(--tm-ok)">' + escapeHtml(hLabel || st) + '</span></div>' +
+              '<p class="text-sm font-bold mt-1">' + escapeHtml(u.role || '—') + '</p>' +
+              '<p class="text-xs mt-1" style="color:var(--tm-muted)">Grille ' + escapeHtml(u.grid_ref || '—') + '</p></button>';
           }).join('');
           roster.querySelectorAll('[data-unit-id]').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -629,12 +846,15 @@
         }
         if (isNaN(x) || isNaN(y)) return;
         var latlng = L.latLng(y, x);
+        var unitKey = String(u.id != null ? u.id : (u.call_sign || Math.random()));
+        pushTrailPoint(unitKey, latlng);
         var extra = {};
         try {
           if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
           else if (u.extra && typeof u.extra === 'object') extra = u.extra;
         } catch (e) {}
         var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
+        var health = String(extra.health || u.health || '').toLowerCase();
         var icon = nato && nato.leafletDivIcon
           ? nato.leafletDivIcon(L, {
               affiliation: aff,
@@ -643,6 +863,7 @@
               heading: u.heading,
               showLabel: true,
               size: 34,
+              health: health,
             })
           : L.divIcon({
               className: 'tacmap-unit-icon',
@@ -659,6 +880,7 @@
         marker.on('click', function () { selectUnit(u); });
         marker.addTo(layerGroups.units);
       });
+      renderTrails();
     }
 
     function syncUnits() {
@@ -676,6 +898,13 @@
           state.unitsCount = (rows && rows.length) ? rows.length : 0;
           renderUnitsOnMap(rows || []);
           renderRosterAndTable(rows || []);
+          if (medicalPanelEnabled) {
+            fetchMedicalChatAlerts().then(function (alerts) {
+              renderMedicalPanel(rows || [], alerts);
+            });
+          } else {
+            renderMedicalPanel(rows || [], []);
+          }
           updateUnitCountEl();
           updateSyncBadge();
         })
@@ -729,6 +958,7 @@
           }
         }
         layerGroups.units = L.layerGroup();
+        layerGroups.trails = L.layerGroup();
         layerGroups.dangerZones = L.layerGroup();
         layerGroups.drawings = L.layerGroup();
         layerGroups.markers = L.layerGroup();
@@ -736,8 +966,16 @@
         layerGroups.sigint = L.layerGroup();
         layerGroups.intel = L.layerGroup();
         layerGroups.air = L.layerGroup();
+        map.on('contextmenu', function (e) {
+          if (L.DomEvent) L.DomEvent.preventDefault(e);
+          if (e.originalEvent) e.originalEvent.preventDefault();
+        });
         applyLayerVisibility();
       }
+
+      clearTrails();
+      setTimeout(invalidateSize, 80);
+      setTimeout(invalidateSize, 250);
 
       if (isWorld) {
         currentBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
@@ -777,10 +1015,13 @@
       } else {
         state.unitsCount = 0;
         if (layerGroups.units) layerGroups.units.clearLayers();
+        clearTrails();
         renderRosterAndTable([]);
+        renderMedicalPanel([]);
         updateUnitCountEl();
       }
       applyLayerVisibility();
+      setTimeout(invalidateSize, 100);
     }
 
     function setWorkspace(mapId) {
@@ -830,6 +1071,10 @@
       el.addEventListener('change', function () {
         state.layers[key] = el.checked;
         applyLayerVisibility();
+        if (key === 'trails') {
+          renderTrails();
+          return;
+        }
         if (state.currentMapType === 'arma' || state.currentMapType === 'image') {
           if (key === 'units') syncUnits();
           else refreshSecondaryLayers();
@@ -857,6 +1102,7 @@
     if (rs) rs.addEventListener('input', function () { filterRosterQuery(this.value); });
 
     bindLayerCheckbox(els.layerUnits, 'units');
+    bindLayerCheckbox(els.layerTrails, 'trails');
     bindLayerCheckbox(els.layerDanger, 'danger');
     bindLayerCheckbox(els.layerDrawings, 'drawings');
     bindLayerCheckbox(els.layerMarkers, 'markers');
@@ -864,6 +1110,8 @@
     bindLayerCheckbox(els.layerSigint, 'sigint');
     bindLayerCheckbox(els.layerIntel, 'intel');
     bindLayerCheckbox(els.layerAir, 'air');
+
+    // Trails handled in bindLayerCheckbox
 
     function zuluTick() {
       var el = getEl(els.zulu);
@@ -892,6 +1140,7 @@
       selectUnit: selectUnit,
       syncUnits: syncUnits,
       refreshSecondaryLayers: refreshSecondaryLayers,
+      invalidateSize: invalidateSize,
     };
   }
 
@@ -900,8 +1149,14 @@
     buildArmaConfig: buildArmaConfig,
     buildImageConfig: buildImageConfig,
     mapKindFromSlug: mapKindFromSlug,
+    bindDeletableLayer: bindDeletableLayer,
     renderMapShapes: renderMapShapes,
     renderAtakMarkers: renderAtakMarkers,
+    createUnitTrailTracker: createUnitTrailTracker,
+    trailColorFromCss: trailColorFromCss,
     initTacmap: initTacmap,
+    invalidateTacmapSize: function () {
+      if (typeof lastTacmapInvalidate === 'function') lastTacmapInvalidate();
+    },
   };
 })(window);

@@ -27,6 +27,8 @@ declare(strict_types=1);
  * @var int $currentTid
  */
 
+$currentTid = (int) ($currentTid ?? \App\Core\Session::get('tenant_id') ?? 0);
+
 $mb = is_array($mission_briefing ?? null) ? $mission_briefing : null;
 $mbOp = $mb['next_op'] ?? null;
 $mbOps = is_array($mb['upcoming_ops'] ?? null) ? $mb['upcoming_ops'] : [];

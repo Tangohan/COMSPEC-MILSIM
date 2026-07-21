@@ -21,8 +21,8 @@ final class TenantAccessRequestApiController
 {
     /** @var array<string, string> */
     private const AREA_LABELS = [
-        'overwatch' => 'Vue commandement (Overwatch)',
-        'tacmap' => 'Carte tactique (TACMAP)',
+        'overwatch' => 'Situation et commandement (Overwatch)',
+        'tacmap' => 'Situation et commandement (Overwatch)', // ancien libellé TACMAP — même surface
         'atak_c2' => 'Données de mission et liaisons (ATAK / outils C2)',
     ];
 

@@ -35,7 +35,7 @@ if (isNull _display) exitWith {}; // le joueur a pu fermer le dialog pendant le 
 if (_path != "") then {
     if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText _path; };
 } else {
-    ["Impossible de charger cette diapositive (réseau ou cache indisponible)."] call BIS_fnc_showNotification;
+    ["COMSPEC_Warning", ["Impossible de charger cette diapositive (réseau ou cache indisponible)."]] call BIS_fnc_showNotification;
 };
 
 /*

@@ -24,10 +24,14 @@ window.ATAKPings = (function () {
     fetch(url, { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) {
-          var msg = 'Pings: ' + (r.status === 401 ? 'Non authentifié (401)' : r.status === 403 ? 'Accès refusé (403)' : 'Erreur ' + r.status);
+          var msg = r.status === 401
+            ? 'Session expirée — reconnectez-vous pour voir les pings.'
+            : r.status === 403
+              ? 'Vous n’avez pas l’autorisation d’accéder aux pings.'
+              : 'Impossible de charger les pings pour le moment.';
           if (window.ATAKShowError) window.ATAKShowError(msg);
           if (window.ATAKLastPingsError) window.ATAKLastPingsError(msg);
-          throw new Error(msg);
+          throw new Error('Pings:');
         }
         return r.json();
       })
@@ -36,7 +40,10 @@ window.ATAKPings = (function () {
         var el = document.getElementById('atak-pings-list');
         if (el) {
           if (list.length === 0) {
-            el.innerHTML = '<p class="atak-muted" style="padding:0.5rem;font-size:0.8rem;">Aucun ping pour le moment. Clic droit sur la carte → Envoyer un ping.</p>';
+            el.innerHTML = '<div class="atak-empty-state">' +
+              '<div class="atak-empty-state-icon" aria-hidden="true">◎</div>' +
+              '<p class="atak-empty-state-title">Aucun ping</p>' +
+              '<p class="atak-empty-state-text">Clic droit sur la carte → Envoyer un ping.</p></div>';
           } else {
             el.innerHTML = list.map(formatPing).join('');
             bindPingClicks();
@@ -69,7 +76,7 @@ window.ATAKPings = (function () {
   function appendPing(ping) {
     var el = document.getElementById('atak-pings-list');
     if (el) {
-      var empty = el.querySelector('.atak-muted');
+      var empty = el.querySelector('.atak-empty-state, .atak-muted');
       if (empty) empty.remove();
       el.insertAdjacentHTML('afterbegin', formatPing(ping));
       bindPingClicks();

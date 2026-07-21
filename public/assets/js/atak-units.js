@@ -69,7 +69,11 @@ window.ATAKUnits = (function () {
         ? window.ATAKUnitPopup.statusLabelFr(u.status || 'linked')
         : (u.status || 'En liaison');
       var cardClass = 'atak-unit-card ' + (statusClass === 'delayed' ? 'delayed' : 'linked');
-      if (health === 'wounded' || health === 'unconscious') cardClass += ' atak-unit-bft-wounded';
+      var healthNorm = String(health || '').toLowerCase();
+      if (healthNorm === 'wounded' || healthNorm === 'injured') cardClass += ' atak-unit-bft-wounded';
+      if (healthNorm === 'unconscious' || healthNorm === 'cardiac_arrest' || healthNorm === 'cardiac-arrest' || healthNorm === 'dead' || healthNorm === 'kia') {
+        cardClass += ' atak-unit-bft-critical';
+      }
       var grid = u.grid_ref || '—';
       var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
       var roleText = u.role || ex.role || '—';
@@ -100,6 +104,7 @@ window.ATAKUnits = (function () {
         '</div>' +
         '<div class="atak-unit-role">' + (roleText !== '—' ? roleText : '—') + '</div>' +
         '<span class="atak-unit-status ' + statusClass + '">' + statusLabel + '</span>' +
+        (health !== 'ok' && health !== 'stable' ? '<div class="atak-unit-health-flag">' + healthLabel + '</div>' : '') +
         (fuelAmmo.length ? '<div class="atak-unit-bft-meta">' + fuelAmmo.join(' · ') + '</div>' : '') +
         '<div class="atak-unit-grid">Coord. ' + grid + '</div>' +
         '<div class="atak-unit-heading">Cap ' + heading + '</div>' +

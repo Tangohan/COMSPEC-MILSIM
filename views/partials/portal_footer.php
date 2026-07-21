@@ -47,7 +47,7 @@ $year = (int) date('Y');
                 <ul class="portal-footer__list">
                     <li><a href="<?= htmlspecialchars(url('enlistment'), ENT_QUOTES, 'UTF-8') ?>">Enrôlement</a></li>
                     <li><a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>">Overwatch</a></li>
-                    <li><a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>">Tacmap</a></li>
+                    <li><a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>">Overwatch</a></li>
                     <li><a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>">Fiches matériel</a></li>
                 </ul>
             </details>

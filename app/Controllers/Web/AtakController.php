@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
@@ -24,8 +25,11 @@ class AtakController
         private AuthService $authService,
         private UserProfileRepository $userProfileRepository,
         private UserRepository $userRepository,
-        private FeatureGateService $featureGate
-    ) {}
+        private FeatureGateService $featureGate,
+        private ?TacticalGameLinkRepository $gameLinkRepository = null,
+    ) {
+        $this->gameLinkRepository ??= new TacticalGameLinkRepository();
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -145,6 +149,38 @@ class AtakController
             'atakUserForJs' => $atakUserForJs,
             'canAccessAdminAtakConfig' => function_exists('can') && can('admin.access'),
             'atakModDownloadUrl' => $atakModDownloadUrl,
+            'gameLinkCreateUrl' => url('atak/game-link'),
+        ]);
+    }
+
+    /**
+     * Génère un code court à saisir en jeu pour lier le mod au compte Athena (TTL 15 min).
+     */
+    public function createGameLink(Request $request, array $params = []): Response
+    {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if ($tenantId < 1 || $userId < 1) {
+            return Response::json(['error' => 'unauthorized', 'message' => 'Connectez-vous pour générer un code de liaison.'], 401);
+        }
+        $created = $this->gameLinkRepository->create($tenantId, $userId);
+        if ($created === null) {
+            return Response::json([
+                'error' => 'unavailable',
+                'message' => 'Impossible de générer un code pour le moment. Réessayez dans un instant.',
+            ], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'code' => $created['code'],
+            'expires_at' => $created['expires_at'],
+            'api_url' => atak_client_base_url($this->atakConfigRepository->getByTenantId($tenantId)),
+            'hint' => 'Dans Arma : menu ATAK (K) → Connecter mon compte Athena, puis saisissez ce code.',
         ]);
     }
 

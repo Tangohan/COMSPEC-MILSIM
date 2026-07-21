@@ -16,13 +16,19 @@ class CommunityEventRepository
         $this->pdo = Database::getPdo();
     }
 
-    /** @return list<array<string, mixed>> */
+    /**
+     * Actifs (commencés mais pas encore terminés) + à venir.
+     * Fin = ends_at si renseigné, sinon starts_at.
+     *
+     * @return list<array<string, mixed>>
+     */
     public function upcomingForTenant(int $tenantId, int $limit = 50): array
     {
         $lim = max(1, min(100, $limit));
         $stmt = $this->pdo->prepare(
             "SELECT * FROM community_events
-             WHERE tenant_id = ? AND cancelled_at IS NULL AND starts_at >= NOW()
+             WHERE tenant_id = ? AND cancelled_at IS NULL
+               AND COALESCE(ends_at, starts_at) >= NOW()
              ORDER BY starts_at ASC LIMIT {$lim}"
         );
         $stmt->execute([$tenantId]);
@@ -30,13 +36,14 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** Créneaux déjà commencés (non annulés). @return list<array<string, mixed>> */
+    /** Créneaux vraiment terminés (non annulés). @return list<array<string, mixed>> */
     public function pastForTenant(int $tenantId, int $limit = 100): array
     {
         $lim = max(1, min(150, $limit));
         $stmt = $this->pdo->prepare(
             "SELECT * FROM community_events
-             WHERE tenant_id = ? AND cancelled_at IS NULL AND starts_at < NOW()
+             WHERE tenant_id = ? AND cancelled_at IS NULL
+               AND COALESCE(ends_at, starts_at) < NOW()
              ORDER BY starts_at DESC LIMIT {$lim}"
         );
         $stmt->execute([$tenantId]);
@@ -59,7 +66,7 @@ class CommunityEventRepository
     }
 
     /**
-     * Événements à venir avec ligne RSVP et pointage pour l’utilisateur (LEFT JOIN).
+     * Actifs + à venir, avec ligne RSVP et pointage pour l’utilisateur (LEFT JOIN).
      *
      * @return list<array<string, mixed>>
      */
@@ -73,7 +80,8 @@ class CommunityEventRepository
                     r.reminder_sent_at AS rsvp_reminder_sent_at
              FROM community_events ce
              LEFT JOIN community_event_rsvps r ON r.event_id = ce.id AND r.user_id = ?
-             WHERE ce.tenant_id = ? AND ce.cancelled_at IS NULL AND ce.starts_at >= NOW()
+             WHERE ce.tenant_id = ? AND ce.cancelled_at IS NULL
+               AND COALESCE(ce.ends_at, ce.starts_at) >= NOW()
              ORDER BY ce.starts_at ASC
              LIMIT {$lim}"
         );
@@ -105,7 +113,7 @@ class CommunityEventRepository
     }
 
     /**
-     * Historique récent (passés).
+     * Historique récent (vraiment terminés).
      *
      * @return list<array<string, mixed>>
      */
@@ -118,7 +126,8 @@ class CommunityEventRepository
                     r.checked_in_at AS rsvp_checked_in_at
              FROM community_events ce
              LEFT JOIN community_event_rsvps r ON r.event_id = ce.id AND r.user_id = ?
-             WHERE ce.tenant_id = ? AND ce.cancelled_at IS NULL AND ce.starts_at < NOW()
+             WHERE ce.tenant_id = ? AND ce.cancelled_at IS NULL
+               AND COALESCE(ce.ends_at, ce.starts_at) < NOW()
              ORDER BY ce.starts_at DESC
              LIMIT {$lim}"
         );

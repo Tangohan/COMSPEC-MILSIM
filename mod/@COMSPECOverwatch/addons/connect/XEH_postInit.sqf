@@ -9,6 +9,19 @@ if (!hasInterface) exitWith {};
     [] call comspec_overwatch_connect_fnc_connect;
     [] call comspec_overwatch_connect_fnc_initACE;
 
+    // Alerte immédiate dès le passage KO (ACE) — le PFH position couvre aussi FC=0
+    if (isNil "COMSPEC_aceUnconsciousEH") then {
+        COMSPEC_aceUnconsciousEH = ["ace_unconscious", {
+            params ["_unit", "_isUnconscious"];
+            if (!local _unit || {_unit != player}) exitWith {};
+            if (_isUnconscious) then {
+                [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
+            } else {
+                missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+            };
+        }] call CBA_fnc_addEventHandler;
+    };
+
     // Action "Tableau de briefing" : disponible par défaut sur le joueur, sans placement Eden requis.
     // Limite connue : comme le reste de ce postInit, l'action est ajoutée à l'objet joueur courant
     // et ne suit pas automatiquement un respawn (objet joueur recréé) — à ré-ajouter via un handler
@@ -48,7 +61,7 @@ if (!hasInterface) exitWith {};
             missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
             missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
             [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-            ["Nouvelle demande CAS reçue"] call BIS_fnc_showNotification;
+            ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call BIS_fnc_showNotification;
         };
     }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;
 

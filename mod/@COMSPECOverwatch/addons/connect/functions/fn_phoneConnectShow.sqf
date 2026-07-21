@@ -8,7 +8,12 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
 private _info = [] call comspec_overwatch_connect_fnc_getPhoneConnectInfo;
 if (count _info < 4) exitWith {
-    ["Connexion téléphone indisponible pour le moment (réseau ou plateforme)."] call BIS_fnc_showNotification;
+    private _err = missionNamespace getVariable ["COMSPEC_PhoneConnectLastError", ""];
+    if (_err == "") then {
+        _err = "Connexion téléphone indisponible pour le moment (réseau ou plateforme).";
+    };
+    ["COMSPEC_Warning", [_err]] call BIS_fnc_showNotification;
+    systemChat ("[COMSPEC] " + _err);
 };
 
 _info params ["_token", "_code", "_connectUrl", "_qrImageUrl", "_expiresAt"];
@@ -42,5 +47,5 @@ private _ctrlPic = _display displayCtrl 9021;
 if (_qrPath != "") then {
     if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText _qrPath; };
 } else {
-    ["QR code indisponible — utilisez le code affiché pour vous connecter manuellement."] call BIS_fnc_showNotification;
+    ["COMSPEC_Warning", ["QR code indisponible — utilisez le code affiché pour vous connecter manuellement."]] call BIS_fnc_showNotification;
 };

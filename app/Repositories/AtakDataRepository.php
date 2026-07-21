@@ -107,18 +107,25 @@ class AtakDataRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function upsertUnitPosition(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $heading, string $role, string $extraJson): void
+    /**
+     * @return array{created: bool}
+     */
+    public function upsertUnitPosition(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $heading, string $role, string $extraJson): array
     {
         $gridRef = (string) round($posX) . ' ' . round($posY);
         $stmt = $this->pdo->prepare('SELECT id FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
         $stmt->execute([$tenantId, $mapId, $callSign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+        $created = false;
         if ($existing) {
             $this->pdo->prepare('UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ? WHERE id = ?')->execute([$gridRef, $heading, $role, $extraJson, $existing['id']]);
         } else {
             $this->pdo->prepare('INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $role, 'linked', $gridRef, $heading, $extraJson]);
+            $created = true;
         }
         $this->setLastActivity($tenantId, $mapId);
+
+        return ['created' => $created];
     }
 
     public function addUnit(int $tenantId, int $mapId, array $data): array
@@ -181,6 +188,72 @@ class AtakDataRepository
         $stmt = $this->pdo->prepare('SELECT * FROM atak_chat_messages WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Alertes / bilans médicaux dérivés du tchat ATAK (préfixe ALERTE MÉDICALE ou WIA).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getMedicalAlertsFromChat(int $tenantId, int $mapId, int $limit = 50): array
+    {
+        $limit = max(1, min($limit, 200));
+        // On lit un volume plus large puis on filtre côté PHP (préfixe accentué / WIA).
+        $scan = min(500, max(100, $limit * 5));
+        $rows = $this->getChatMessages($tenantId, $mapId, $scan);
+        $out = [];
+        foreach ($rows as $row) {
+            $enriched = \App\Support\MedicalAlertParser::enrichChatRow(is_array($row) ? $row : []);
+            if ($enriched === null) {
+                continue;
+            }
+            $out[] = $enriched;
+        }
+        if (count($out) > $limit) {
+            $out = array_slice($out, -$limit);
+        }
+        return $out;
+    }
+
+    /**
+     * Unités dont l’état santé (extra.health) est critique / blessé.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getUnitsWithCriticalHealth(int $tenantId, int $mapId): array
+    {
+        $units = $this->getUnits($tenantId, $mapId);
+        $out = [];
+        foreach ($units as $unit) {
+            $extra = [];
+            $raw = $unit['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $health = (string) ($extra['health'] ?? $unit['health'] ?? '');
+            if (!\App\Support\MedicalAlertParser::isCriticalHealth($health)) {
+                continue;
+            }
+            $out[] = [
+                'id' => $unit['id'] ?? null,
+                'call_sign' => (string) ($unit['call_sign'] ?? ''),
+                'role' => (string) ($unit['role'] ?? ''),
+                'grid_ref' => (string) ($unit['grid_ref'] ?? ''),
+                'pos_x' => $unit['pos_x'] ?? null,
+                'pos_y' => $unit['pos_y'] ?? null,
+                'health' => $health,
+                'health_label' => \App\Support\MedicalAlertParser::healthLabelFr($health),
+                'severity' => \App\Support\MedicalAlertParser::isEmergencyHealth($health) ? 'critical' : 'attention',
+                'status' => (string) ($unit['status'] ?? ''),
+                'updated_at' => (string) ($unit['updated_at'] ?? ''),
+            ];
+        }
+        return $out;
     }
 
     public function getPings(int $tenantId, int $mapId, int $limit = 50): array

@@ -15,10 +15,18 @@ private _pingAction = [
 
 private _medAction = [
     "COMSPEC_Med", "Transmettre Bilan Santé", "", {
-        private _blood = player getVariable ["ace_medical_bloodVolume", 100];
-        private _incap = player getVariable ["ace_medical_incapacitated", false];
-        private _status = if (_incap) then { "Inconscient" } else { if (_blood < 60) then { "Blessé" } else { "Stable" } };
-        [player, "CHAT", format ["WIA|%1|blood=%2", _status, round _blood], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
+        private _state = [player] call comspec_overwatch_connect_fnc_getMedicalState;
+        private _parts = _state splitString "|";
+        private _health = if (count _parts >= 1) then { _parts select 0 } else { "stable" };
+        private _blood = if (count _parts >= 2) then { _parts select 1 } else { "?" };
+        private _hr = if (count _parts >= 4) then { _parts select 3 } else { "?" };
+        private _status = switch (_health) do {
+            case "cardiac_arrest": { "Arrêt cardiaque" };
+            case "unconscious": { "Inconscient" };
+            case "wounded": { "Blessé" };
+            default { "Stable" };
+        };
+        [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
         systemChat "Bilan santé transmis.";
     }, { comspec_overwatch_enabled }
 ] call ace_interact_menu_fnc_createAction;

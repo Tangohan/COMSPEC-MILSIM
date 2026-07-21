@@ -1,0 +1,461 @@
+/* TACMAP — shell plein écran + thème jour / nuit */
+:root {
+  --tm-bg: #f1f5f9;
+  --tm-surface: #ffffff;
+  --tm-surface-2: #f8fafc;
+  --tm-border: #e2e8f0;
+  --tm-text: #0f172a;
+  --tm-muted: #64748b;
+  --tm-accent: #0369a1;
+  --tm-accent-soft: #e0f2fe;
+  --tm-danger: #b91c1c;
+  --tm-danger-soft: #fef2f2;
+  --tm-ok: #047857;
+  --tm-ok-soft: #ecfdf5;
+  --tm-header-h: 3.5rem;
+  --tm-trail: #0284c7;
+}
+
+html.tacmap-night {
+  --tm-bg: #020617;
+  --tm-surface: #0f172a;
+  --tm-surface-2: #1e293b;
+  --tm-border: #334155;
+  --tm-text: #e2e8f0;
+  --tm-muted: #94a3b8;
+  --tm-accent: #38bdf8;
+  --tm-accent-soft: #0c4a6e;
+  --tm-danger: #f87171;
+  --tm-danger-soft: #450a0a;
+  --tm-ok: #34d399;
+  --tm-ok-soft: #064e3b;
+  --tm-trail: #67e8f9;
+}
+
+html, body.tacmap-body {
+  height: 100%;
+  margin: 0;
+}
+
+.tacmap-body {
+  background: var(--tm-bg);
+  color: var(--tm-text);
+  overflow: hidden;
+}
+
+.tacmap-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+}
+
+.tacmap-header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  min-height: var(--tm-header-h);
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--tm-border);
+  background: var(--tm-surface);
+  z-index: 20;
+}
+
+.tacmap-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.tacmap-header__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.tacmap-header__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tacmap-header label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tm-muted);
+}
+
+.tacmap-header select,
+.tacmap-btn {
+  border: 1px solid var(--tm-border);
+  background: var(--tm-surface-2);
+  color: var(--tm-text);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tacmap-btn:hover {
+  border-color: var(--tm-accent);
+}
+
+.tacmap-btn.is-active {
+  background: var(--tm-accent-soft);
+  border-color: var(--tm-accent);
+  color: var(--tm-accent);
+}
+
+.tacmap-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-surface-2);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tm-muted);
+  white-space: nowrap;
+}
+
+.tacmap-badge.is-ok {
+  border-color: var(--tm-ok);
+  background: var(--tm-ok-soft);
+  color: var(--tm-ok);
+}
+
+.tacmap-badge.is-err {
+  border-color: var(--tm-danger);
+  background: var(--tm-danger-soft);
+  color: var(--tm-danger);
+}
+
+.tacmap-kpi {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--tm-text);
+}
+
+.tacmap-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.tacmap-links a {
+  color: var(--tm-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tacmap-links a:hover {
+  text-decoration: underline;
+}
+
+.tacmap-body-main {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 0;
+  position: relative;
+}
+
+@media (min-width: 1100px) {
+  .tacmap-body-main {
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 260px);
+  }
+  .tacmap-body-main.side-left-collapsed {
+    grid-template-columns: 0 minmax(0, 1fr) minmax(0, 260px);
+  }
+  .tacmap-body-main.side-right-collapsed {
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr) 0;
+  }
+  .tacmap-body-main.side-left-collapsed.side-right-collapsed {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+}
+
+.tacmap-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--tm-surface);
+  border-right: 1px solid var(--tm-border);
+  overflow: hidden;
+  transition: width 0.15s ease, opacity 0.15s ease;
+}
+
+.tacmap-panel--right {
+  border-right: 0;
+  border-left: 1px solid var(--tm-border);
+}
+
+.tacmap-panel.is-collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+}
+
+.tacmap-panel__head {
+  flex: 0 0 auto;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tacmap-panel__head h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+.tacmap-panel__head p {
+  margin: 0.15rem 0 0;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tm-muted);
+}
+
+.tacmap-panel__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0.5rem;
+  min-height: 0;
+}
+
+.tacmap-map-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: #0b1220;
+}
+
+.tacmap-map-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--tm-border);
+  background: color-mix(in srgb, var(--tm-surface) 92%, transparent);
+  z-index: 15;
+}
+
+.tacmap-map-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--tm-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#tacmap-map {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.tacmap-map-stage .leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  background: #0b1220;
+  font: inherit;
+}
+
+html.tacmap-night .leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.85);
+  color: #94a3b8;
+}
+
+.tacmap-drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  max-height: 38%;
+  display: flex;
+  flex-direction: column;
+  background: var(--tm-surface);
+  border-top: 1px solid var(--tm-border);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(calc(100% - 2rem));
+  transition: transform 0.2s ease;
+}
+
+.tacmap-drawer.is-open {
+  transform: translateY(0);
+}
+
+.tacmap-drawer__toggle {
+  flex: 0 0 auto;
+  width: 100%;
+  border: 0;
+  background: var(--tm-surface-2);
+  color: var(--tm-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.45rem;
+  cursor: pointer;
+}
+
+.tacmap-drawer__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0;
+}
+
+.tacmap-drawer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.tacmap-drawer th {
+  position: sticky;
+  top: 0;
+  background: var(--tm-surface-2);
+  color: var(--tm-muted);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--tm-border);
+}
+
+.tacmap-drawer td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--tm-border);
+  color: var(--tm-text);
+}
+
+.tacmap-assist-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-surface-2);
+  color: var(--tm-text);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+}
+
+.tacmap-assist-item:hover {
+  border-color: var(--tm-danger);
+}
+
+.tacmap-assist-item__title {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.tacmap-assist-item__meta {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  color: var(--tm-muted);
+}
+
+.tacmap-assist-item.is-critical {
+  border-color: var(--tm-danger);
+  background: var(--tm-danger-soft);
+}
+
+.tacmap-roster-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-surface-2);
+  color: var(--tm-text);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.35rem;
+  cursor: pointer;
+}
+
+.tacmap-roster-btn:hover,
+.tacmap-roster-btn.is-selected {
+  border-color: var(--tm-accent);
+  box-shadow: 0 0 0 1px var(--tm-accent);
+}
+
+.tacmap-search {
+  width: 100%;
+  margin-top: 0.45rem;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-bg);
+  color: var(--tm-text);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.tacmap-detail dl {
+  margin: 0;
+}
+
+@media (max-width: 1099px) {
+  .tacmap-body-main {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .tacmap-panel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(88vw, 300px);
+    z-index: 30;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
+  }
+  .tacmap-panel--left { left: 0; }
+  .tacmap-panel--right { right: 0; left: auto; }
+  .tacmap-panel.is-collapsed {
+    transform: translateX(-105%);
+  }
+  .tacmap-panel--right.is-collapsed {
+    transform: translateX(105%);
+  }
+  .tacmap-map-stage {
+    grid-column: 1;
+  }
+}

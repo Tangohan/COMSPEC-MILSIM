@@ -21,14 +21,8 @@ final class C2Controller
             [
                 'id' => 'overwatch',
                 'label' => 'Overwatch',
-                'description' => 'Supervision et suivi d’ensemble.',
+                'description' => 'Situation en carte, urgences médicales et outils de commandement.',
                 'href' => url('overwatch'),
-            ],
-            [
-                'id' => 'tacmap',
-                'label' => 'TACMAP',
-                'description' => 'Cartographie tactique.',
-                'href' => url('tacmap'),
             ],
             [
                 'id' => 'operateur',

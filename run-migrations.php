@@ -2793,6 +2793,14 @@ try {
     echo '  [ATTENTION] tactical_phone_pairing : ' . $e->getMessage() . "\n";
 }
 
+$tacticalGameLinkMigrate = require $root . '/bootstrap/tactical_game_link_migration.php';
+try {
+    echo "Migration tactical_game_link (code de liaison Arma)...\n";
+    $tacticalGameLinkMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
+}
+
 $trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
 try {
     echo "Migration training_groups (cohortes de formation)...\n";

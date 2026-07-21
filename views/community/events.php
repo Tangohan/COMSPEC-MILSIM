@@ -52,16 +52,30 @@ $formatTime = static function (?string $iso): string {
     return $d->format('H:i');
 };
 /** @return array{label:string, badge:string} */
-$dayBadge = static function (?string $iso): array {
-    if (!$iso) {
+$dayBadge = static function (?string $startsAt, ?string $endsAt = null): array {
+    if (!$startsAt) {
         return ['label' => '—', 'badge' => 'is-muted'];
     }
     try {
-        $d = (new DateTimeImmutable($iso))->setTime(0, 0, 0);
+        $start = new DateTimeImmutable($startsAt);
     } catch (\Throwable) {
         return ['label' => '—', 'badge' => 'is-muted'];
     }
-    $today = (new DateTimeImmutable('today'));
+    $now = new DateTimeImmutable('now');
+    $end = null;
+    if ($endsAt) {
+        try {
+            $end = new DateTimeImmutable($endsAt);
+        } catch (\Throwable) {
+            $end = null;
+        }
+    }
+    // Commencé et pas encore terminé
+    if ($start <= $now && $end !== null && $end > $now) {
+        return ['label' => 'En cours', 'badge' => 'is-ok'];
+    }
+    $d = $start->setTime(0, 0, 0);
+    $today = new DateTimeImmutable('today');
     $diff = (int) round(($d->getTimestamp() - $today->getTimestamp()) / 86400);
     if ($diff < 0) {
         return ['label' => 'Passé', 'badge' => 'is-muted'];
@@ -466,7 +480,10 @@ $eventCount = count($events);
                             $location = trim((string) ($ev['location'] ?? ''));
                             $desc = trim((string) ($ev['description'] ?? ''));
                             $descPreview = $desc !== '' ? (mb_strlen($desc) > 110 ? mb_substr($desc, 0, 110) . '…' : $desc) : '';
-                            $when = $dayBadge(is_string($ev['starts_at'] ?? null) ? $ev['starts_at'] : null);
+                            $when = $dayBadge(
+                                is_string($ev['starts_at'] ?? null) ? $ev['starts_at'] : null,
+                                is_string($ev['ends_at'] ?? null) ? $ev['ends_at'] : null
+                            );
                             $rsvpBadge = $rsvpMetaFor($cur);
                             $tags = CommunityEventDetails::decodeTags($ev['tags_json'] ?? null);
                             $schedule = CommunityEventDetails::decodeSchedule($ev['schedule_json'] ?? null);

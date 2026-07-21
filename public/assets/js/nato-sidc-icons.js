@@ -98,17 +98,25 @@ window.NatoSidcIcons = (function () {
     if (isNaN(heading)) heading = 0;
     var size = opts.size || 36;
     var showLabel = opts.showLabel !== false;
+    var health = String(opts.health || '').toLowerCase();
+    var healthClass = opts.className || '';
+    if (!healthClass) {
+      if (health === 'wounded' || health === 'injured') healthClass = 'nato-sidc--wounded';
+      if (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia') {
+        healthClass = 'nato-sidc--critical';
+      }
+    }
 
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" class="nato-sidc-svg" aria-hidden="true">'
       + '<path d="' + framePath(aff) + '" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="1.5"/>'
       + '<g color="' + c.stroke + '" opacity="0.95">' + roleGlyph(roleKey) + '</g>'
       + '</svg>';
 
-    var wrap = '<div class="nato-sidc-wrap nato-sidc--' + aff + '" style="display:flex;flex-direction:column;align-items:center;transform:rotate(' + heading + 'deg);transform-origin:center center;">'
+    var wrap = '<div class="nato-sidc-wrap nato-sidc--' + aff + (healthClass ? ' ' + healthClass : '') + '" style="display:flex;flex-direction:column;align-items:center;transform:rotate(' + heading + 'deg);transform-origin:center center;">'
       + svg
       + '</div>';
     if (showLabel && label) {
-      wrap = '<div class="nato-sidc-stack" style="display:flex;flex-direction:column;align-items:center;gap:1px;">'
+      wrap = '<div class="nato-sidc-stack' + (healthClass ? ' ' + healthClass : '') + '" style="display:flex;flex-direction:column;align-items:center;gap:1px;">'
         + wrap
         + '<span class="nato-sidc-label">'
         + label.replace(/</g, '&lt;')

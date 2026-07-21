@@ -1,11 +1,11 @@
 ========== COMSPEC Overwatch Build ========== 
-Date: 14/03/2026 13:15:52,99 
+Date: 21/07/2026 23:39:25,90 
 Repertoire: E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\ 
  
 [ATHENA] Initialisation de la sequence de build... 
 [DOTNET] Compilation de COMSPECExtension (Release x64)... 
   Identification des projets Ã  restaurer...
-  Tous les projets sont Ã  jour pour la restauration.
+  Restauration effectuÃ©e de E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\COMSPECExtension.csproj (en 333 ms).
   COMSPECExtension -> E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.dll
   Generating native code
      CrÃ©ation de la bibliothÃ¨que ..\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.lib et de l'objet ..\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.exp
@@ -13,69 +13,69 @@ Repertoire: E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\
 [BUILD] Compilation de comspec_overwatch_main... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-03-14 13:16:02,842] [INFO ]: ==========================================================================
-[2026-03-14 13:16:02,844] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-03-14 13:16:02,849] [INFO ]: Version: 1.5.152926
-[2026-03-14 13:16:02,849] [INFO ]: ==========================================================================
-[2026-03-14 13:16:02,849] [INFO ]: 
-[2026-03-14 13:16:02,849] [INFO ]: Arma 3 Tools path retrived from Steam client: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-03-14 13:16:02,856] [INFO ]: --------------------
-[2026-03-14 13:16:02,856] [INFO ]:        Binarize -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-03-14 13:16:02,856] [INFO ]:      CfgConvert -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-03-14 13:16:02,856] [INFO ]:      DsSignFile -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-03-14 13:16:02,856] [INFO ]:        FileBank -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-03-14 13:16:02,856] [INFO ]: --------------------
-[2026-03-14 13:16:02,861] [INFO ]: Builder starting...
-[2026-03-14 13:16:02,868] [INFO ]: Copying to temp...
-[2026-03-14 13:16:02,878] [INFO ]: Copy done.
-[2026-03-14 13:16:02,878] [INFO ]: 
-[2026-03-14 13:16:02,930] [INFO ]: 
-[2026-03-14 13:16:02,930] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\main"
-[2026-03-14 13:16:02,930] [INFO ]: Done.
-[2026-03-14 13:16:02,931] [INFO ]: 
-[2026-03-14 13:16:02,931] [INFO ]: Binarizing texture headers...
-[2026-03-14 13:16:03,117] [INFO ]: Done.
-[2026-03-14 13:16:03,117] [INFO ]: 
-[2026-03-14 13:16:03,117] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\main"...
-[2026-03-14 13:16:03,207] [INFO ]: Done.
-[2026-03-14 13:16:03,207] [INFO ]: 
-[2026-03-14 13:16:03,207] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\main.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\main.pbo
-[2026-03-14 13:16:03,208] [INFO ]: Done.
-[2026-03-14 13:16:03,208] [INFO ]: 
-[2026-03-14 13:16:03,208] [INFO ]: Build Successful
+[2026-07-21 23:39:36,249] [INFO ]: ==========================================================================
+[2026-07-21 23:39:36,250] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-07-21 23:39:36,254] [INFO ]: Version: 1.5.152926
+[2026-07-21 23:39:36,254] [INFO ]: ==========================================================================
+[2026-07-21 23:39:36,254] [INFO ]: 
+[2026-07-21 23:39:36,255] [INFO ]: Arma 3 Tools path retrived from Steam client: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-07-21 23:39:36,260] [INFO ]: --------------------
+[2026-07-21 23:39:36,260] [INFO ]:        Binarize -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-07-21 23:39:36,260] [INFO ]:      CfgConvert -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-07-21 23:39:36,260] [INFO ]:      DsSignFile -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-07-21 23:39:36,260] [INFO ]:        FileBank -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-07-21 23:39:36,260] [INFO ]: --------------------
+[2026-07-21 23:39:36,262] [INFO ]: Builder starting...
+[2026-07-21 23:39:36,266] [INFO ]: Copying to temp...
+[2026-07-21 23:39:36,272] [INFO ]: Copy done.
+[2026-07-21 23:39:36,272] [INFO ]: 
+[2026-07-21 23:39:36,293] [INFO ]: 
+[2026-07-21 23:39:36,294] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\main"
+[2026-07-21 23:39:36,294] [INFO ]: Done.
+[2026-07-21 23:39:36,294] [INFO ]: 
+[2026-07-21 23:39:36,295] [INFO ]: Binarizing texture headers...
+[2026-07-21 23:39:36,493] [INFO ]: Done.
+[2026-07-21 23:39:36,496] [INFO ]: 
+[2026-07-21 23:39:36,496] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\main"...
+[2026-07-21 23:39:36,619] [INFO ]: Done.
+[2026-07-21 23:39:36,619] [INFO ]: 
+[2026-07-21 23:39:36,619] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\main.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\main.pbo
+[2026-07-21 23:39:36,621] [INFO ]: Done.
+[2026-07-21 23:39:36,621] [INFO ]: 
+[2026-07-21 23:39:36,621] [INFO ]: Build Successful
 [BUILD] Compilation de comspec_overwatch_connect... 
 Setting breakpad minidump AppID = 233800
 SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561198267756457 [API loaded no]
-[2026-03-14 13:16:03,488] [INFO ]: ==========================================================================
-[2026-03-14 13:16:03,490] [INFO ]: WELCOME TO ADDON BUILDER
-[2026-03-14 13:16:03,493] [INFO ]: Version: 1.5.152926
-[2026-03-14 13:16:03,493] [INFO ]: ==========================================================================
-[2026-03-14 13:16:03,493] [INFO ]: 
-[2026-03-14 13:16:03,494] [INFO ]: Arma 3 Tools path retrived from Steam client: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools'.
-[2026-03-14 13:16:03,499] [INFO ]: --------------------
-[2026-03-14 13:16:03,499] [INFO ]:        Binarize -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
-[2026-03-14 13:16:03,499] [INFO ]:      CfgConvert -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
-[2026-03-14 13:16:03,499] [INFO ]:      DsSignFile -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
-[2026-03-14 13:16:03,499] [INFO ]:        FileBank -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
-[2026-03-14 13:16:03,499] [INFO ]: --------------------
-[2026-03-14 13:16:03,501] [INFO ]: Builder starting...
-[2026-03-14 13:16:03,505] [INFO ]: Copying to temp...
-[2026-03-14 13:16:03,518] [INFO ]: Copy done.
-[2026-03-14 13:16:03,518] [INFO ]: 
-[2026-03-14 13:16:03,547] [INFO ]: 
-[2026-03-14 13:16:03,547] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\connect"
-[2026-03-14 13:16:03,548] [INFO ]: Done.
-[2026-03-14 13:16:03,548] [INFO ]: 
-[2026-03-14 13:16:03,548] [INFO ]: Binarizing texture headers...
-[2026-03-14 13:16:03,665] [INFO ]: Done.
-[2026-03-14 13:16:03,665] [INFO ]: 
-[2026-03-14 13:16:03,665] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\connect"...
-[2026-03-14 13:16:03,823] [INFO ]: Done.
-[2026-03-14 13:16:03,824] [INFO ]: 
-[2026-03-14 13:16:03,824] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\connect.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect.pbo
-[2026-03-14 13:16:03,825] [INFO ]: Done.
-[2026-03-14 13:16:03,825] [INFO ]: 
-[2026-03-14 13:16:03,825] [INFO ]: Build Successful
+[2026-07-21 23:39:36,874] [INFO ]: ==========================================================================
+[2026-07-21 23:39:36,876] [INFO ]: WELCOME TO ADDON BUILDER
+[2026-07-21 23:39:36,880] [INFO ]: Version: 1.5.152926
+[2026-07-21 23:39:36,880] [INFO ]: ==========================================================================
+[2026-07-21 23:39:36,880] [INFO ]: 
+[2026-07-21 23:39:36,881] [INFO ]: Arma 3 Tools path retrived from Steam client: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools'.
+[2026-07-21 23:39:36,885] [INFO ]: --------------------
+[2026-07-21 23:39:36,885] [INFO ]:        Binarize -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\Binarize\binarize.exe'.
+[2026-07-21 23:39:36,885] [INFO ]:      CfgConvert -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\CfgConvert\CfgConvert.exe'.
+[2026-07-21 23:39:36,885] [INFO ]:      DsSignFile -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\DSSignFile\DSSignFile.exe'.
+[2026-07-21 23:39:36,885] [INFO ]:        FileBank -      found: 'D:\SteamLibrary\steamapps\common\Arma 3 Tools\FileBank\FileBank.exe'.
+[2026-07-21 23:39:36,885] [INFO ]: --------------------
+[2026-07-21 23:39:36,887] [INFO ]: Builder starting...
+[2026-07-21 23:39:36,891] [INFO ]: Copying to temp...
+[2026-07-21 23:39:36,936] [INFO ]: Copy done.
+[2026-07-21 23:39:36,936] [INFO ]: 
+[2026-07-21 23:39:36,960] [INFO ]: 
+[2026-07-21 23:39:36,961] [INFO ]: Deleting empty folders in "C:\Users\tetar\AppData\Local\Temp\connect"
+[2026-07-21 23:39:36,961] [INFO ]: Done.
+[2026-07-21 23:39:36,962] [INFO ]: 
+[2026-07-21 23:39:36,962] [INFO ]: Binarizing texture headers...
+[2026-07-21 23:39:37,118] [INFO ]: Done.
+[2026-07-21 23:39:37,118] [INFO ]: 
+[2026-07-21 23:39:37,119] [INFO ]: Packing "C:\Users\tetar\AppData\Local\Temp\connect"...
+[2026-07-21 23:39:37,355] [INFO ]: Done.
+[2026-07-21 23:39:37,355] [INFO ]: 
+[2026-07-21 23:39:37,356] [INFO ]: Copying PBO. [source]=C:\Users\tetar\AppData\Local\Temp\connect.pbo, [dest]=E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect.pbo
+[2026-07-21 23:39:37,357] [INFO ]: Done.
+[2026-07-21 23:39:37,357] [INFO ]: 
+[2026-07-21 23:39:37,357] [INFO ]: Build Successful
 [DEPLOY] Transfert de la DLL COMSPECExtension_x64... 
         1 fichier(s) copi‚(s).
         1 fichier(s) copi‚(s).
@@ -90,16 +90,75 @@ E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\con
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\CfgEventHandlers.hpp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\config.cpp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_account_link.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_briefing.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_cas.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_flight_manifest.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_hub.hpp
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\display_phone_connect.hpp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\ui_base.hpp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\XEH_postInit.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\XEH_preInit.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_accountLinkOnLoad.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_accountLinkShow.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_accountLinkSubmit.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_briefingBoardShow.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_briefingBoardStep.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_captureReconImage.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_chatDialogOnLoad.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_checkCASLine.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_checkMedicalAlerts.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_checkPlayerInDangerZone.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_connect.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_deleteDangerZone.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_deleteMapShape.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_displayFireSolution.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_downloadBriefingSlide.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_extResult.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_fillFlightManifest.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_formatCommsMessage.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getAircraftType.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getBriefingSlides.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getMedicalState.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getModVersion.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getPhoneConnectInfo.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_getRadioState.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_hubSelect.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_initACE.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_issueOrder.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_openBriefingBoard.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_openCASDialog.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_openHub.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_phoneConnectShow.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_pilotResponse.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_playtimeTracker.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_pollMapShapes.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_publishEvent.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_receiveCASRequest.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_receiveDangerZone.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_receiveFireSolution.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_receiveIFFChallenge.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_receiveMapShape.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_refreshBriefingSlides.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_refreshLinkStatus.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_registerEventHandler.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_reportMedicalAlert.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_requestFireSolution.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_sendCASAck.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_sendCASStatus.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_sendIntel.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_sendLogisticsStatus.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_submitChat.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_submitFlightManifest.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_submitIFFResponse.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_syncLaserCode.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updateCASState.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updateDangerZone.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updateIFFMarkerState.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updateOrderStatus.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updatePosition.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_updateStatusBadges.sqf
+E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\connect\functions\fn_warnDangerZoneEntry.sqf
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\main\$PBOPREFIX$
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\addons\main\config.cpp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.deps.json
@@ -109,7 +168,7 @@ E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.exp
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.lib
 E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.pdb
-29 fichier(s) copié(s)
+88 fichier(s) copié(s)
  
 ========== BUILD REUSSI ========== 
 Sortie: E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch 

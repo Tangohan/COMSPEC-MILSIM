@@ -56,14 +56,16 @@ window.ATAKUnitPopup = (function () {
     if (x === 'ok' || x === 'stable' || x === 'healthy') return 'Opérationnel';
     if (x === 'wounded' || x === 'injured') return 'Blessé';
     if (x === 'unconscious') return 'Inconscient';
+    if (x === 'cardiac_arrest' || x === 'cardiac-arrest') return 'Arrêt cardiaque';
     if (x === 'dead' || x === 'kia') return 'Hors combat';
+    if (x === 'critical' || x === 'incapacitated' || x === 'down') return 'État critique';
     return h ? String(h) : '';
   }
 
   function healthTone(h) {
     var x = String(h || '').toLowerCase().trim();
     if (x === 'wounded' || x === 'injured') return 'warn';
-    if (x === 'unconscious' || x === 'dead' || x === 'kia') return 'danger';
+    if (x === 'unconscious' || x === 'dead' || x === 'kia' || x === 'cardiac_arrest' || x === 'cardiac-arrest' || x === 'critical' || x === 'incapacitated' || x === 'down') return 'danger';
     if (x === 'ok' || x === 'stable' || x === 'healthy') return 'ok';
     return '';
   }

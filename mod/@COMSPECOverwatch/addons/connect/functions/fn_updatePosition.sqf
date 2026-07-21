@@ -1,6 +1,9 @@
 params ["_unit"];
 if (isNull _unit || !alive _unit) exitWith {};
 
+// Alertes KO / rythme cardiaque à zéro (chaque tick, avant le filtre de batch position)
+[_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
+
 private _pos = getPos _unit;
 private _callSign = name _unit;
 private _role = (roleDescription _unit) splitString ":" joinString " - ";
@@ -93,3 +96,9 @@ missionNamespace setVariable ["COMSPEC_lastRole", _role, true];
 missionNamespace setVariable ["COMSPEC_lastRadio", _radioState, true];
 missionNamespace setVariable ["COMSPEC_lastMedical", _medicalState, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
+missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
+if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) != "linked") then {
+    missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+};
+[] call comspec_overwatch_connect_fnc_updateStatusBadges;

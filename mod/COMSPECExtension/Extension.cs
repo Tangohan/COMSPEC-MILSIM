@@ -12,6 +12,7 @@ public static class Extension
 {
     private const int SyncTimeoutSeconds = 3;
     private static string _baseUrl = "";
+    private static string _apiKey = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
@@ -118,9 +119,89 @@ public static class Extension
         return 0;
     }
 
+    /// <summary>
+    /// Applique (ou retire) l’en-tête X-COMSPEC-KEY sur le HttpClient partagé.
+    /// Doit être appelé à chaque Connect : les DefaultRequestHeaders sont globaux.
+    /// </summary>
+    private static void ApplyApiKeyHeaders(string? apiKey)
+    {
+        _apiKey = (apiKey ?? "").Trim();
+        HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
+        HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+        if (_apiKey.Length == 0) return;
+        HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-COMSPEC-KEY", _apiKey);
+    }
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
-        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|invalid";
+        // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
+        // (sinon le premier appel retourne ERR|invalid et la liaison ne s’établit jamais).
+        if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
+        {
+            _baseUrl = args[0]!.TrimEnd('/');
+            var key = args.Length > 1 ? (args[1] ?? "") : "";
+            ApplyApiKeyHeaders(key);
+            return "OK|connected";
+        }
+
+        // Code de liaison compte Athena — URL fournie en argument (pas besoin d’un Connect préalable).
+        if (function == "RedeemGameLink" && args.Length >= 2)
+        {
+            using var redeemCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var redeemToken = redeemCts.Token;
+            var baseUrl = (args[0] ?? "").Trim().TrimEnd('/');
+            var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
+            var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+            if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
+            var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamUid)}\"}}";
+            var content = new StringContent(payload, Encoding.UTF8, "application/json");
+            HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
+            HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+            try
+            {
+                var resp = HttpClient.PostAsync(baseUrl + "/api/atak/game-link/redeem", content, redeemToken).GetAwaiter().GetResult();
+                var respBody = resp.Content.ReadAsStringAsync(redeemToken).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var httpCode = (int)resp.StatusCode;
+                    if (httpCode == 404)
+                    {
+                        if (respBody.Contains("code_invalid_or_expired", StringComparison.Ordinal))
+                            return "ERR|code_invalid_or_expired";
+                        return "ERR|not_found";
+                    }
+                    if (httpCode == 400 && respBody.Contains("invalid_code", StringComparison.Ordinal))
+                        return "ERR|invalid_code";
+                    return "ERR|http_" + httpCode;
+                }
+                using var doc = JsonDocument.Parse(respBody);
+                var root = doc.RootElement;
+                var apiUrl = root.TryGetProperty("api_url", out var au) ? (au.GetString() ?? "") : "";
+                var apiKey = root.TryGetProperty("api_key", out var ak) ? (ak.GetString() ?? "") : "";
+                var tenantId = root.TryGetProperty("tenant_id", out var ti)
+                    ? (ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? ""))
+                    : "";
+                if (apiUrl.Length == 0) apiUrl = baseUrl;
+                _baseUrl = apiUrl.TrimEnd('/');
+                ApplyApiKeyHeaders(apiKey);
+                var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            catch (OperationCanceledException)
+            {
+                return "ERR|timeout";
+            }
+            catch (HttpRequestException)
+            {
+                return "ERR|network";
+            }
+            catch (JsonException)
+            {
+                return "ERR|invalid_response";
+            }
+        }
+
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         var token = cts.Token;
         try
@@ -141,11 +222,6 @@ public static class Extension
                 response.EnsureSuccessStatusCode();
                 var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
                 return "OK|" + SimplifyUnitsJson(body);
-            }
-            if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
-            {
-                _baseUrl = args[0]!.TrimEnd('/');
-                return "OK|connected";
             }
             if (function == "GetClientIp")
             {
@@ -282,7 +358,16 @@ public static class Extension
                 if (!resp.IsSuccessStatusCode)
                 {
                     var code = (int)resp.StatusCode;
-                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    // 404 : URL de base incorrecte (souvent sans /public) ou route absente du déploiement.
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        // Communauté manquante côté serveur vs clé refusée.
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
                     if (code == 503) return "ERR|unavailable";
                     return "ERR|http_" + code;
                 }
@@ -504,8 +589,11 @@ public static class Extension
                 if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
                 {
                     _baseUrl = args[0]!.TrimEnd('/');
+                    var key = args.Length > 1 ? (args[1] ?? "") : "";
+                    ApplyApiKeyHeaders(key);
                     SendChatMessage("COMSPEC Overwatch: mod actif.");
                     SendChatMessage("Liaison établie avec le nœud: " + _baseUrl);
+                    EnqueueOrSend(_baseUrl + "/api/atak/client-init", "{\"mapId\":1}");
                 }
                 return;
             }

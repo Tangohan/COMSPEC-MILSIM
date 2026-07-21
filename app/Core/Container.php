@@ -1208,6 +1208,7 @@ class Container
             \App\Services\Tactical\AtakTokenService::class => new \App\Services\Tactical\AtakTokenService(),
             \App\Repositories\TenantAtakConfigRepository::class => new \App\Repositories\TenantAtakConfigRepository(),
             \App\Repositories\AtakMapRepository::class => new \App\Repositories\AtakMapRepository(),
+            \App\Repositories\TacticalGameLinkRepository::class => new \App\Repositories\TacticalGameLinkRepository(),
             \App\Controllers\Web\AtakController::class => new \App\Controllers\Web\AtakController(
                 self::get(\App\Services\Tactical\AtakTokenService::class),
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
@@ -1215,7 +1216,8 @@ class Container
                 self::get(AuthService::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Services\Platform\FeatureGateService::class)
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\TacticalGameLinkRepository::class)
             ),
             \App\Controllers\Admin\AdminUnitsController::class => new \App\Controllers\Admin\AdminUnitsController(
                 self::get(\App\Repositories\UnitRepository::class),
@@ -1833,6 +1835,9 @@ class Container
             \App\Repositories\MapShapeRepository::class => new \App\Repositories\MapShapeRepository(),
             \App\Repositories\LaserCodeRepository::class => new \App\Repositories\LaserCodeRepository(),
             \App\Repositories\ArmaPlaytimeRepository::class => new \App\Repositories\ArmaPlaytimeRepository(),
+            \App\Repositories\TacticalBriefingSlideRepository::class => new \App\Repositories\TacticalBriefingSlideRepository(),
+            \App\Repositories\TacticalPhonePairingRepository::class => new \App\Repositories\TacticalPhonePairingRepository(),
+            \App\Services\Tactical\AtakActivityLogService::class => new \App\Services\Tactical\AtakActivityLogService(),
             \App\Controllers\Api\AtakApiController::class => new \App\Controllers\Api\AtakApiController(
                 self::get(\App\Repositories\AtakDataRepository::class),
                 self::get(\App\Repositories\CasNineLineRepository::class),
@@ -1841,7 +1846,12 @@ class Container
                 self::get(\App\Repositories\LaserCodeRepository::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\ArmaPlaytimeRepository::class)
+                self::get(\App\Repositories\ArmaPlaytimeRepository::class),
+                self::get(\App\Repositories\TacticalBriefingSlideRepository::class),
+                self::get(\App\Repositories\TacticalPhonePairingRepository::class),
+                self::get(\App\Repositories\TacticalGameLinkRepository::class),
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(\App\Services\Tactical\AtakActivityLogService::class)
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),
@@ -1885,7 +1895,8 @@ class Container
                 self::get(\App\Services\Replay\ReplayService::class),
                 self::get(\App\Services\Intel\IntelFusionService::class),
                 self::get(\App\Repositories\AssetLogisticsRepository::class),
-                self::get(\App\Services\Logistics\AssetLogisticsEvaluator::class)
+                self::get(\App\Services\Logistics\AssetLogisticsEvaluator::class),
+                self::get(\App\Repositories\AtakDataRepository::class)
             ),
             \App\Repositories\IffChallengeRepository::class => new \App\Repositories\IffChallengeRepository(),
             \App\Repositories\IffAssetStatusRepository::class => new \App\Repositories\IffAssetStatusRepository(),
