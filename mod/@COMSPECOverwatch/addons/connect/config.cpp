@@ -80,6 +80,7 @@ class CfgFunctions {
             class chatDialogOnLoad {};
             class appendLinkLog {};
             class portalLabel {};
+            class toggleLogCategory {};
         };
     };
 };

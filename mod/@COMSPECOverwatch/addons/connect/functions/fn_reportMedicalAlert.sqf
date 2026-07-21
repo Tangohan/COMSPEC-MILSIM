@@ -57,3 +57,4 @@ private _alert = createHashMapFromArray [
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", _kindNorm, false];
 systemChat format ["[COMSPEC] Alerte médicale transmise : %1", _label];
 diag_log format ["[COMSPEC] Medical alert %1 — %2", _kindNorm, _msg];
+[format ["[Médical] %1 — %2 (grille %3)", _callSign, _label, _grid], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;

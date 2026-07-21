@@ -40,4 +40,19 @@ if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
     _console ctrlSetText "Les messages envoyés apparaissent ici.\n";
 };
 
+// Reflète l'état masqué/affiché sauvegardé (profileNamespace) sur les boutons de filtre,
+// sans changer le réglage — le libellé est juste redessiné.
+{
+    _x params ["_category", "_idc", "_label"];
+    private _ctrl = _display displayCtrl _idc;
+    if (!isNull _ctrl) then {
+        private _muted = profileNamespace getVariable [format ["comspec_overwatch_mute_%1", _category], false];
+        _ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "masqué" } else { "affiché" }];
+    };
+} forEach [
+    ["liaison", 1411, "Liaison"],
+    ["cas", 1412, "CAS"],
+    ["medical", 1413, "Médical"]
+];
+
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;

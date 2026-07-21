@@ -1,9 +1,14 @@
 /*
     Ajoute une ligne au journal de liaison et rafraîchit le dialog messagerie s’il est ouvert.
-    Params: [_line]
+    Params: [_line, _category] où _category ∈ "liaison" (défaut) | "cas" | "medical" | "system".
+    Une catégorie masquée par le joueur (réglage persistant, voir fn_toggleLogCategory) est
+    silencieusement ignorée : rien n’est ajouté au journal ni affiché.
 */
-params [["_line", ""]];
+params [["_line", ""], ["_category", "liaison", [""]]];
 if (_line isEqualTo "") exitWith {};
+
+private _muted = profileNamespace getVariable [format ["comspec_overwatch_mute_%1", _category], false];
+if (_muted) exitWith {};
 
 private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
 _log = _log + _line + "\n";

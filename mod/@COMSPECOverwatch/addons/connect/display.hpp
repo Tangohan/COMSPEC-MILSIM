@@ -113,6 +113,45 @@ class COMSPEC_Chat_Dialog {
             h = 0.018 * safezoneH;
         };
 
+        // Filtres du journal : masque/affiche une catégorie d'alertes, persistant par profil
+        // (voir fn_toggleLogCategory.sqf). Le libellé initial est redessiné par
+        // fn_chatDialogOnLoad selon l'état sauvegardé.
+        class LogFilterLiaison: RscButton {
+            idc = 1411;
+            text = "Liaison : affiché";
+            x = 0.56 * safezoneW + safezoneX;
+            y = 0.462 * safezoneH + safezoneY;
+            w = 0.06 * safezoneW;
+            h = 0.018 * safezoneH;
+            sizeEx = 0.022;
+            colorBackground[] = {0.06, 0.1, 0.14, 0.9};
+            action = "['liaison', 1411] call comspec_overwatch_connect_fnc_toggleLogCategory;";
+        };
+
+        class LogFilterCas: RscButton {
+            idc = 1412;
+            text = "CAS : affiché";
+            x = 0.625 * safezoneW + safezoneX;
+            y = 0.462 * safezoneH + safezoneY;
+            w = 0.06 * safezoneW;
+            h = 0.018 * safezoneH;
+            sizeEx = 0.022;
+            colorBackground[] = {0.06, 0.1, 0.14, 0.9};
+            action = "['cas', 1412] call comspec_overwatch_connect_fnc_toggleLogCategory;";
+        };
+
+        class LogFilterMedical: RscButton {
+            idc = 1413;
+            text = "Médical : affiché";
+            x = 0.69 * safezoneW + safezoneX;
+            y = 0.462 * safezoneH + safezoneY;
+            w = 0.06 * safezoneW;
+            h = 0.018 * safezoneH;
+            sizeEx = 0.022;
+            colorBackground[] = {0.06, 0.1, 0.14, 0.9};
+            action = "['medical', 1413] call comspec_overwatch_connect_fnc_toggleLogCategory;";
+        };
+
         class LogWindow: RscEdit {
             idc = 1402;
             text = "";
