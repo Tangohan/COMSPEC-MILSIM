@@ -273,16 +273,16 @@ $formatDateFr = static function (?string $raw): string {
                     <h2 id="sec-account" class="bo-user-edit__panel-title">Compte et accès</h2>
                     <p class="bo-user-edit__panel-lead">Adresse de connexion, mot de passe et état du compte dans la communauté.</p>
                     <div class="bo-user-edit__grid">
-                        <div class="bo-user-edit__field--full">
+                        <div>
                             <label for="email" class="bo-user-edit__label">Adresse e-mail <span class="req">*</span></label>
                             <input type="email" id="email" name="email" required class="bo-user-edit__input" value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" autocomplete="email" maxlength="190">
                         </div>
-                        <div class="bo-user-edit__field--full">
+                        <div>
                             <label for="password" class="bo-user-edit__label">Nouveau mot de passe</label>
                             <input type="password" id="password" name="password" minlength="6" class="bo-user-edit__input" autocomplete="new-password" placeholder="Laisser vide pour ne pas changer">
                             <p class="bo-user-edit__hint">Au moins 6 caractères si vous en définissez un nouveau.</p>
                         </div>
-                        <div class="bo-user-edit__field--full">
+                        <div>
                             <label for="status" class="bo-user-edit__label">Statut du compte</label>
                             <select id="status" name="status" class="bo-user-edit__select">
                                 <option value="pending_verification" <?= $ust === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
@@ -429,13 +429,13 @@ $formatDateFr = static function (?string $raw): string {
 
                 <?php if (!$isServiceAccount): ?>
                 <aside class="bo-user-edit__panel bo-user-edit__panel--soft">
-                    <h2 class="bo-user-edit__panel-title">Personnage et dossier opérationnel</h2>
-                    <p class="bo-user-edit__panel-lead">
-                        Indicatif de personnage, unité, habilitation et forum — distinct du compte ci-dessus.
-                    </p>
-                    <p style="margin: 1rem 0 0;">
-                        <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--dark">Ouvrir la fiche personnelle →</a>
-                    </p>
+                    <div>
+                        <h2 class="bo-user-edit__panel-title">Personnage et dossier opérationnel</h2>
+                        <p class="bo-user-edit__panel-lead">
+                            Indicatif de personnage, unité, habilitation et forum — distinct du compte ci-dessus.
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--dark">Ouvrir la fiche personnelle →</a>
                 </aside>
                 <?php endif; ?>
 
