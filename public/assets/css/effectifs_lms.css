@@ -31,9 +31,9 @@ body.eff-body::before {
     z-index: 0;
     pointer-events: none;
     background:
-        radial-gradient(circle at 14% 12%, rgba(15, 118, 110, 0.22), transparent 30%),
-        radial-gradient(circle at 88% 18%, rgba(45, 212, 191, 0.1), transparent 28%),
-        linear-gradient(180deg, #07090b, #0b1412 48%, #07090b);
+        radial-gradient(circle at 14% 12%, rgba(15, 118, 110, 0.1), transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(45, 212, 191, 0.045), transparent 28%),
+        linear-gradient(180deg, #07090b, #0a0d0c 48%, #07090b);
 }
 
 .eff-gridlines {
@@ -46,7 +46,7 @@ body.eff-body::before {
         linear-gradient(rgba(242, 244, 243, 0.06) 1px, transparent 1px),
         linear-gradient(90deg, rgba(242, 244, 243, 0.06) 1px, transparent 1px);
     background-size: 72px 72px;
-    mask-image: radial-gradient(circle at 50% 30%, black, transparent 78%);
+    mask-image: radial-gradient(circle at 50% 35%, black, transparent 95%);
 }
 
 /* Rail collapsé / hover expand */
