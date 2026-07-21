@@ -10,6 +10,7 @@ set "TMP_OUT=%PROJECT_DIR%build_tmp_out.txt"
 
 :: --- CONFIGURATION .NET ---
 set "CS_PROJ_PATH=%PROJECT_DIR%COMSPECExtension\COMSPECExtension.csproj"
+set "DOTNET_PUBLISH_DIR=%PROJECT_DIR%COMSPECExtension\bin\publish"
 set "DOTNET_BUILD_DIR=%PROJECT_DIR%COMSPECExtension\bin\Release\net8.0\win-x64\publish"
 
 :: Demarrer le log (ecrase a chaque run)
@@ -67,16 +68,18 @@ if %ERRORLEVEL% NEQ 0 (
     goto :build_fail
 )
 
-:: 4. DLL a la racine du mod
+:: 4. DLL a la racine du mod (Native AOT ~5 Mo — jamais le stub managé ~30 Ko)
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64..."
-if exist "%OUTPUT_DIR%\net8.0\win-x64\COMSPECExtension_x64.dll" (
-    copy /Y "%OUTPUT_DIR%\net8.0\win-x64\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
+if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" (
+    copy /Y "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
 ) else if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" (
     copy /Y "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
+) else if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" (
+    copy /Y "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
 ) else (
-    echo [WARN] DLL non trouvee. Verifiez la compilation .NET. >> "%BUILD_LOG%"
-    echo [WARN] DLL non trouvee. Verifiez la compilation .NET.
+    echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET. >> "%BUILD_LOG%"
+    echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET.
 )
 copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\" >> "%BUILD_LOG%" 2>&1
 

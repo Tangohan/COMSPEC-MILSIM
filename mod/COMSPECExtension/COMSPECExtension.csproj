@@ -6,8 +6,9 @@
     <OutputType>Library</OutputType>
     <PublishAot>true</PublishAot>
     <AssemblyName>COMSPECExtension_x64</AssemblyName>
-    <OutputPath>..\@COMSPECOverwatch\</OutputPath>
-    <!-- Publier directement dans le dossier du mod -->
-    <PublishDir>..\@COMSPECOverwatch\</PublishDir>
+    <!-- Ne JAMAIS écrire le stub managé (~30 Ko) dans @COMSPECOverwatch :
+         seul `dotnet publish` (Native AOT) doit y déposer la vraie DLL (~5 Mo). -->
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <PublishDir>bin\publish\</PublishDir>
   </PropertyGroup>
 </Project>

@@ -45,6 +45,22 @@ missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 [format ["[Athena] Connexion vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 _key = missionNamespace getVariable ["comspec_overwatch_api_key", ""];
+if (_key isEqualTo "") then {
+    ["[Athena] Clé API absente — liez votre compte : K → Compte Athena (saisir un code) avec un code généré sur le site."] call comspec_overwatch_connect_fnc_appendLinkLog;
+};
+
+// Vérifie que la DLL Native AOT répond (un stub managé ~30 Ko renvoie une chaîne vide).
+private _ping = ["COMSPECExtension" callExtension ["Ping", []]] call comspec_overwatch_connect_fnc_extResult;
+if (_ping isEqualTo "" || {(_ping select [0, 3]) != "OK|"}) exitWith {
+    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Extension non chargée", false];
+    ["[Athena] Extension COMSPECExtension_x64.dll absente ou invalide (réponse vide). Copiez la DLL Native AOT (~5 Mo) dans @COMSPECOverwatch, puis relancez Arma."] call comspec_overwatch_connect_fnc_appendLinkLog;
+    if (!(_ping isEqualTo "")) then {
+        [format ["[Athena] Ping extension : %1", _ping]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    };
+    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+};
+
 private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
@@ -71,10 +87,14 @@ if (_prefix == "OK") then {
 } else {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Échec de liaison", false];
-    if (_prefix == "ERR") then {
-        [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    if (_result isEqualTo "") then {
+        ["[Athena] Connect a renvoyé vide — DLL non Native AOT ou non chargée. Remplacez COMSPECExtension_x64.dll (~5 Mo) dans @COMSPECOverwatch."] call comspec_overwatch_connect_fnc_appendLinkLog;
     } else {
-        [format ["[Athena] Réponse extension inattendue : %1", _result]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        if (_prefix == "ERR") then {
+            [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        } else {
+            [format ["[Athena] Réponse extension inattendue : %1", _result]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        };
     };
 };
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;

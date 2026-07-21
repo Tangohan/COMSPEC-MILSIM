@@ -82,8 +82,11 @@ public static class Extension
 
     private static void Output(nint output, int outputSize, string data)
     {
-        var bytes = Encoding.UTF8.GetBytes(data);
-        Marshal.Copy(bytes, 0, output, Math.Min(bytes.Length, outputSize));
+        if (outputSize <= 0) return;
+        var bytes = Encoding.UTF8.GetBytes(data ?? "");
+        var n = Math.Min(bytes.Length, outputSize - 1);
+        if (n > 0) Marshal.Copy(bytes, 0, output, n);
+        Marshal.WriteByte(output, n, 0); // C-string NUL — requis par callExtension Arma
     }
 
     [UnmanagedCallersOnly(EntryPoint = "RVExtension")]
@@ -154,6 +157,12 @@ public static class Extension
 
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
+        // Sonde légère : confirme que la DLL Native AOT est bien chargée (pas le stub ~30 Ko).
+        if (function is "Ping" or "Warmup" or "GetExtensionVersion")
+        {
+            return "OK|COMSPECExtension 1.1";
+        }
+
         // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
         // (sinon le premier appel retourne ERR|invalid et la liaison ne s’établit jamais).
         if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
