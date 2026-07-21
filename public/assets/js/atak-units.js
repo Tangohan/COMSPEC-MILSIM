@@ -98,6 +98,34 @@ window.ATAKUnits = (function () {
     if (chipEl) chipEl.textContent = String(linked);
   }
 
+  /* Tableau des effectifs (tiroir sous la carte, façon TACMAP) — alimenté en plus de la
+     liste .atak-units-list, sans changer son rendu. */
+  function renderTable(list) {
+    var body = document.getElementById('atak-units-table-body');
+    if (!body) return;
+    if (!list.length) {
+      body.innerHTML = '<tr><td colspan="5" class="atak-drawer-empty">Aucun contact.</td></tr>';
+      return;
+    }
+    body.innerHTML = list.map(function (u) {
+      var ex = parseExtra(u);
+      var roleText = u.role || ex.role || '—';
+      var statusClass = (u.status || 'linked').toLowerCase();
+      var statusLabel = (window.ATAKUnitPopup && window.ATAKUnitPopup.statusLabelFr)
+        ? window.ATAKUnitPopup.statusLabelFr(u.status || 'linked')
+        : (u.status || 'En liaison');
+      var heading = u.heading != null ? (Math.round(u.heading) + '°') : '—';
+      var grid = u.grid_ref || '—';
+      return '<tr>' +
+        '<td>' + esc(u.call_sign || '—') + '</td>' +
+        '<td>' + esc(roleText) + '</td>' +
+        '<td><span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
+        '<td>' + esc(heading) + '</td>' +
+        '<td>' + esc(grid) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
   function render() {
     var listEl = document.getElementById('atak-units-list');
     if (!listEl) return;
@@ -112,6 +140,7 @@ window.ATAKUnits = (function () {
       }
       return true;
     });
+    renderTable(filtered);
     if (filtered.length === 0) {
       listEl.innerHTML = emptyStateHtml;
       return;

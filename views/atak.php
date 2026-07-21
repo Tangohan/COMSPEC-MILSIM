@@ -305,6 +305,26 @@ if ($atakMapConfig) {
 
     <div class="atak-map-wrap">
       <div id="atak-map"></div>
+
+      <div class="atak-drawer" id="atak-effectifs-drawer">
+        <button type="button" class="atak-drawer__toggle" id="atak-effectifs-drawer-toggle" aria-expanded="false" aria-controls="atak-effectifs-drawer-body">Tableau des effectifs ▴</button>
+        <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Indicatif</th>
+                <th>Rôle</th>
+                <th>Liaison</th>
+                <th>Cap</th>
+                <th>Grille</th>
+              </tr>
+            </thead>
+            <tbody id="atak-units-table-body">
+              <tr><td colspan="5" class="atak-drawer-empty">Aucun contact.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <aside class="atak-panel-right" id="atak-panel-right">
@@ -656,6 +676,17 @@ if ($atakMapConfig) {
         document.getElementById('atak-panel-right').classList.toggle('collapsed');
         this.textContent = document.getElementById('atak-panel-right').classList.contains('collapsed') ? '◀' : '▶';
       });
+
+      var effectifsDrawer = document.getElementById('atak-effectifs-drawer');
+      var effectifsDrawerToggle = document.getElementById('atak-effectifs-drawer-toggle');
+      if (effectifsDrawer && effectifsDrawerToggle) {
+        effectifsDrawerToggle.addEventListener('click', function () {
+          effectifsDrawer.classList.toggle('is-open');
+          effectifsDrawerToggle.textContent = effectifsDrawer.classList.contains('is-open')
+            ? 'Tableau des effectifs ▾'
+            : 'Tableau des effectifs ▴';
+        });
+      }
 
       var configToggle = document.getElementById('atak-game-config-toggle');
       var configBody = document.getElementById('atak-game-config-body');
