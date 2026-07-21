@@ -83,6 +83,35 @@ class AtakApiController
     }
 
     /**
+     * Profil public d'un joueur (nom d'affichage, callsign, photo) identifié par son SteamUID,
+     * consommé par l'extension Arma (fonction native GetPlayerAvatarInfo) pour affichage en jeu.
+     * Ne renvoie jamais l'état civil (prénom/nom légal) — uniquement l'identité de jeu.
+     */
+    public function playerProfile(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $steamUid = trim((string) ($request->query('steam_uid') ?? ''));
+        if ($steamUid === '' || preg_match('/^\d{15,20}$/', $steamUid) !== 1) {
+            return Response::json(['error' => 'invalid_steam_uid'], 400);
+        }
+        $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steamUid);
+        if (!$user) {
+            return Response::json(['error' => 'not_found'], 404);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'display_name' => (string) ($user['display_name'] ?? ''),
+            'callsign' => (string) ($user['callsign'] ?? ''),
+            'avatar_url' => (string) ($user['avatar_url'] ?? ''),
+        ]);
+    }
+
+    /**
      * Connexion téléphone (inspiré de cTab) : génère un token (QR) + un code court lisible,
      * consommés par l'extension Arma (fonction native GetPhoneConnectInfo) pour affichage
      * en jeu, puis par un navigateur mobile sans compte sur /atak/connect/{token}.

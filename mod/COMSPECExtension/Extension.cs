@@ -406,6 +406,34 @@ public static class Extension
                 if (simplified.Length == 0) return "ERR|invalid_response";
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Profil site (nom, callsign, photo) d'un joueur identifié par son SteamUID, résolu via
+            // le compte Athena lié (voir RedeemGameLink). Format : displayName\tcallsign\tavatarUrl —
+            // l'avatar se télécharge ensuite via DownloadBriefingSlideImage(avatarUrl, "avatar_<uid>")
+            // comme n'importe quelle image (même mécanisme que les diapositives / le QR téléphone).
+            if (function == "GetPlayerAvatarInfo" && args.Length >= 1)
+            {
+                var steamUid = (args[0] ?? "").Trim();
+                if (steamUid.Length == 0) return "ERR|invalid";
+                var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamUid);
+                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyPlayerProfileJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             // Télécharge une diapositive (image_url renvoyée par GetBriefingSlides) et la met en cache local ;
             // retourne le chemin de fichier local à passer à setObjectTexture / ctrlSetText côté SQF.
             if (function == "DownloadBriefingSlideImage" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
@@ -607,6 +635,23 @@ public static class Extension
             var expiresAt = root.TryGetProperty("expires_at", out var ea) ? (ea.GetString() ?? "") : "";
             if (token.Length == 0 || qrImageUrl.Length == 0) return "";
             return token + "\t" + code + "\t" + connectUrl + "\t" + qrImageUrl + "\t" + expiresAt;
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyPlayerProfileJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var displayName = root.TryGetProperty("display_name", out var dn) ? (dn.GetString() ?? "") : "";
+            var callsign = root.TryGetProperty("callsign", out var cs) ? (cs.GetString() ?? "") : "";
+            var avatarUrl = root.TryGetProperty("avatar_url", out var au) ? (au.GetString() ?? "") : "";
+            displayName = displayName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            if (displayName.Length == 0 && callsign.Length == 0) return "";
+            return displayName + "\t" + callsign + "\t" + avatarUrl;
         }
         catch { return ""; }
     }

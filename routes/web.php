@@ -1244,6 +1244,7 @@ return function (Router $router) {
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/player-profile', [AtakApiController::class, 'playerProfile']);
     $router->get('/api/atak/phone-pairing', [AtakApiController::class, 'phonePairingCreate']);
     $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
     $router->post('/api/atak/game-link/redeem', [AtakApiController::class, 'gameLinkRedeem']);

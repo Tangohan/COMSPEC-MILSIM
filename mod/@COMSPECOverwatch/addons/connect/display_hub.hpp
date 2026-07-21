@@ -2,7 +2,7 @@
 class COMSPEC_Hub_Dialog {
     idd = 9969;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges;";
+    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile;";
     onUnload = "uiNamespace setVariable ['COMSPEC_Hub_Display', displayNull];";
 
     class Controls {
@@ -225,13 +225,45 @@ class COMSPEC_Hub_Dialog {
             action = "closeDialog 0;";
         };
 
+        // Bloc profil (photo + nom du site) : espace jusqu'ici inutilisé entre les boutons et le
+        // pied de page, qui a été redescendu de 0.79 à 0.925 pour lui faire de la place. Rempli en
+        // best-effort par fn_showPlayerProfile (spawné depuis l'onLoad du dialog) — reste vide/
+        // inchangé si le compte n'est pas lié ou si le site n'a pas de photo.
+        class SectionProfile: RscStructuredText {
+            idc = -1;
+            text = "<t size='0.52' color='#5a9e88'>PROFIL</t>";
+            x = 0.355 * safezoneW + safezoneX;
+            y = 0.79 * safezoneH + safezoneY;
+            w = 0.29 * safezoneW;
+            h = 0.018 * safezoneH;
+        };
+
+        class ProfileAvatar: RscPicture {
+            idc = 9114;
+            text = "";
+            x = 0.355 * safezoneW + safezoneX;
+            y = 0.815 * safezoneH + safezoneY;
+            w = 0.06 * safezoneW;
+            h = 0.09 * safezoneH;
+            colorBackground[] = {0.06, 0.1, 0.14, 0.9};
+        };
+
+        class ProfileName: RscStructuredText {
+            idc = 9115;
+            text = "";
+            x = 0.425 * safezoneW + safezoneX;
+            y = 0.815 * safezoneH + safezoneY;
+            w = 0.22 * safezoneW;
+            h = 0.09 * safezoneH;
+        };
+
         class Footer: RscStructuredText {
             idc = -1;
             text = "<t align='center' size='0.5' color='#4a5c6e'>Athena ATAK · image tactique commune</t>";
             x = 0.345 * safezoneW + safezoneX;
-            y = 0.79 * safezoneH + safezoneY;
+            y = 0.915 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
-            h = 0.02 * safezoneH;
+            h = 0.018 * safezoneH;
         };
     };
 };

@@ -82,6 +82,8 @@ class CfgFunctions {
             class portalLabel {};
             class toggleLogCategory {};
             class showDebugInfo {};
+            class getPlayerAvatarInfo {};
+            class showPlayerProfile {};
         };
     };
 };
