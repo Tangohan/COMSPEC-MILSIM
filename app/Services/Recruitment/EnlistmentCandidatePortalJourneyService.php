@@ -153,6 +153,11 @@ final class EnlistmentCandidatePortalJourneyService
 
         $hasPortalActivity = $messages !== [] || $attachments !== [];
         $hasModerationTimeline = $this->timelineHasModerationMarker($timelineRows);
+        $lastIncidentTs = $this->lastModerationEventTs($timelineRows, 'moderation');
+        $lastResolutionTs = $this->lastModerationEventTs($timelineRows, 'moderation_override');
+        $incidentResolved = $hasModerationTimeline && $lastResolutionTs !== null
+            && ($lastIncidentTs === null || $lastResolutionTs >= $lastIncidentTs);
+        $incidentOpen = $hasModerationTimeline && !$incidentResolved;
 
         $stReception = 'done';
         $stInstruction = 'upcoming';
@@ -160,7 +165,7 @@ final class EnlistmentCandidatePortalJourneyService
         $stDecision = 'upcoming';
         $stAdhesion = 'upcoming';
         $stModFilter = $hasPortalActivity ? 'done' : 'upcoming';
-        $stModIncident = $hasModerationTimeline ? 'done' : 'upcoming';
+        $stModIncident = $incidentOpen ? 'incident' : ($hasModerationTimeline ? 'done' : 'upcoming');
 
         if ($status === 'submitted') {
             if (!$hasRecruiterMessage) {
@@ -239,10 +244,22 @@ final class EnlistmentCandidatePortalJourneyService
             ],
             [
                 'id' => 'portal_moderation_incident',
-                'label' => 'Modération et suites d’incident',
-                'hint' => 'En cas de contenu refusé ou d’accès restreint, l’équipe est informée et peut rétablir le suivi.',
+                'label' => $incidentOpen ? 'Incident de modération détecté' : 'Modération et suites d’incident',
+                'hint' => $incidentOpen
+                    ? 'Un contenu refusé par le filtre automatique a déclenché des restrictions d’accès. L’équipe recrutement a été alertée.'
+                    : 'En cas de contenu refusé ou d’accès restreint, l’équipe est informée et peut rétablir le suivi.',
                 'state' => $stModIncident,
             ],
+        ];
+        if ($incidentResolved) {
+            $steps[] = [
+                'id' => 'portal_moderation_resolved',
+                'label' => 'Incident corrigé — accès rétabli',
+                'hint' => 'L’équipe a levé les restrictions liées à l’incident : les échanges peuvent reprendre normalement.',
+                'state' => 'done',
+            ];
+        }
+        $steps = array_merge($steps, [
             [
                 'id' => 'instruction',
                 'label' => 'Instruction et arbitrage',
@@ -267,7 +284,7 @@ final class EnlistmentCandidatePortalJourneyService
                 'hint' => $adhesionHint,
                 'state' => $stAdhesion,
             ],
-        ];
+        ]);
 
         foreach ($steps as $i => $def) {
             $id = (string) ($def['id'] ?? '');
@@ -335,6 +352,35 @@ final class EnlistmentCandidatePortalJourneyService
         }
 
         return $min;
+    }
+
+    /**
+     * Horodatage du dernier événement d’une famille de timeline donnée (« moderation » ou « moderation_override »).
+     *
+     * @param list<array<string, mixed>> $timelineRows
+     */
+    private function lastModerationEventTs(array $timelineRows, string $family): ?int
+    {
+        $max = null;
+        foreach ($timelineRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $meta = $row['metadata'] ?? null;
+            $meta = is_array($meta) ? $meta : [];
+            if ((string) ($meta['timeline_family'] ?? '') !== $family) {
+                continue;
+            }
+            $ts = $this->parseTs((string) ($row['created_at'] ?? ''));
+            if ($ts === null) {
+                continue;
+            }
+            if ($max === null || $ts > $max) {
+                $max = $ts;
+            }
+        }
+
+        return $max;
     }
 
     /**

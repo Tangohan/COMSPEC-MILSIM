@@ -415,9 +415,12 @@ $tailwindHead = (string) ob_get_clean();
                         $stState = (string) ($st['state'] ?? 'upcoming');
                         $isDone = $stState === 'done';
                         $isCurrent = $stState === 'current';
-                        $isCancelled = $stState === 'cancelled' || ($dossierJourneyClosedNegative && !$isDone);
+                        $isIncident = $stState === 'incident';
+                        $isCancelled = $stState === 'cancelled' || ($dossierJourneyClosedNegative && !$isDone && !$isIncident);
                         $stepPause = trim((string) ($st['pause_kind'] ?? ''));
-                        $dotClass = $isCancelled
+                        $dotClass = $isIncident
+                            ? 'border-rose-600 bg-rose-500 text-white ring-4 ring-rose-200'
+                            : ($isCancelled
                             ? 'border-slate-300 bg-slate-100 text-slate-400'
                             : ($isDone
                             ? 'border-emerald-600 bg-emerald-500 text-white'
@@ -427,8 +430,8 @@ $tailwindHead = (string) ob_get_clean();
                                     : ($stepPause === 'interview'
                                         ? 'border-violet-500 bg-violet-500 text-white ring-4 ring-violet-200'
                                         : 'border-amber-500 bg-amber-500 text-white ring-4 ring-amber-200'))
-                                : 'border-slate-200 bg-white text-slate-300'));
-                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone && !$isCancelled ? 'bg-emerald-200' : 'bg-slate-200') : '';
+                                : 'border-slate-200 bg-white text-slate-300')));
+                        $lineClass = $si < count($portalSteps) - 1 ? ($isDone && !$isCancelled ? 'bg-emerald-200' : ($isIncident ? 'bg-rose-200' : 'bg-slate-200')) : '';
                         ?>
                         <?php
                         $stepTooltip = trim((string) ($st['tooltip'] ?? ''));
@@ -439,11 +442,13 @@ $tailwindHead = (string) ob_get_clean();
                             <?php if ($si < count($portalSteps) - 1): ?>
                                 <span class="absolute left-[0.65rem] top-8 bottom-0 w-0.5 <?= htmlspecialchars($lineClass, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isDone && !$isCancelled ? '✓' : (string) ($si + 1) ?></span>
+                            <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-black <?= $dotClass ?>" aria-hidden="true"><?= $isIncident ? '!' : ($isDone && !$isCancelled ? '✓' : (string) ($si + 1)) ?></span>
                             <div class="min-w-0 pt-0.5">
-                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold text-slate-900<?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-400' : '' ?>">
+                                <p class="flex flex-wrap items-center gap-1.5 text-sm font-bold <?= $isIncident ? 'text-rose-900' : 'text-slate-900' ?><?= $isCancelled || $dossierJourneyClosedNegative ? ' line-through decoration-slate-400' : '' ?>">
                                     <span><?= htmlspecialchars((string) ($st['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($isCurrent && $stepPause === 'pending'): ?>
+                                    <?php if ($isIncident): ?>
+                                        <span class="inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-900">Incident actif</span>
+                                    <?php elseif ($isCurrent && $stepPause === 'pending'): ?>
                                         <span class="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-900">Mis en attente</span>
                                     <?php elseif ($isCurrent && $stepPause === 'interview'): ?>
                                         <span class="inline-flex items-center rounded-md border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">Entretien</span>

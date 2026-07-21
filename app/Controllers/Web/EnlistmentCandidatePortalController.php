@@ -373,8 +373,23 @@ final class EnlistmentCandidatePortalController
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
 
+        $author = $this->resolvePortalMessageAuthor($row);
+        $entryKind = $author['kind'];
+        $actorUserId = $author['actor_user_id'];
+        $notifyStaff = $author['notify_staff'];
+
         $hit = $this->portalAutoModerationCoordinator->scan($body);
-        if ($hit !== null) {
+        if ($hit !== null && $entryKind === 'candidate' && $this->portalAutoModerationCoordinator->isSelfHarmHit($hit)) {
+            // Détresse évoquée par le candidat : jamais de blocage ni de refus — le message part normalement,
+            // l’équipe est alertée en urgence pour un suivi humain (voir handleCandidateSelfHarmDisclosure()).
+            $tenantId = (int) ($row['tenant_id'] ?? 0);
+            $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
+            $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
+            if ($tenantName === '') {
+                $tenantName = 'Communauté';
+            }
+            $this->portalAutoModerationCoordinator->handleCandidateSelfHarmDisclosure($tenantId, $tenantName, $row, $hit, $body);
+        } elseif ($hit !== null) {
             $tenantId = (int) ($row['tenant_id'] ?? 0);
             $tenantRow = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
             $tenantName = trim((string) (is_array($tenantRow) ? ($tenantRow['name'] ?? '') : ''));
@@ -386,11 +401,6 @@ final class EnlistmentCandidatePortalController
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
-
-        $author = $this->resolvePortalMessageAuthor($row);
-        $entryKind = $author['kind'];
-        $actorUserId = $author['actor_user_id'];
-        $notifyStaff = $author['notify_staff'];
         $stepBeforeLabel = $this->portalJourneyCurrentStepLabel($row);
         $ok = $this->enlistmentRepository->appendCandidatePortalMessage(
             (int) ($row['tenant_id'] ?? 0),
