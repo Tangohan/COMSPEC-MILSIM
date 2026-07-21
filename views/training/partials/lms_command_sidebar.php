@@ -17,6 +17,7 @@ if ($isStaffSidebar) {
         $trainingAdminNav === 'studio' => 'studio',
         $trainingAdminNav === 'enrollments' => 'enrollments',
         $trainingAdminNav === 'search' => 'search',
+        $trainingAdminNav === 'groups' => 'groups',
         $trainingAdminNav === 'dashboard' || $trainingAdminNav === '' => 'staff_hub',
         default => '',
     };
@@ -75,6 +76,7 @@ $modulesMeta = $totalModules > 0 ? (string) $totalModules : '—';
         $renderTile(training_studio_url(), '03', 'Studio', 'Créer et éditer les parcours', 'Créer', $tileClass('studio'));
         $renderTile(training_lms_admin_url('enrollments'), '04', 'Inscriptions', 'Suivi des apprenants', 'Suivi', $tileClass('enrollments'));
         $renderTile(training_lms_admin_url('recherche'), '05', 'Recherche', 'Formations, docs, certificats', 'Chercher', $tileClass('search'));
+        $renderTile(training_lms_admin_url('groupes'), '06', 'Groupes', 'Cohortes de membres suivant un même parcours', '—', $tileClass('groups'));
         ?>
         <?php else: ?>
         <?php

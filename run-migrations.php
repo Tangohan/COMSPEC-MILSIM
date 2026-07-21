@@ -2793,6 +2793,14 @@ try {
     echo '  [ATTENTION] tactical_phone_pairing : ' . $e->getMessage() . "\n";
 }
 
+$trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
+try {
+    echo "Migration training_groups (cohortes de formation)...\n";
+    $trainingGroupsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_groups : ' . $e->getMessage() . "\n";
+}
+
 echo "\n--- Pipeline exécuté (résumé) ---\n";
 echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";

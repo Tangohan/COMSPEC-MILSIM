@@ -1038,6 +1038,12 @@ return function (Router $router) {
     $router->get('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabarit'], $trainingResMw);
     $router->post('/formation/certificates/gabarit', [AdminTrainingController::class, 'certificateGabaritSave'], $trainingResMw);
     $router->get('/formation/audit', [AdminTrainingController::class, 'audit'], $trainingResMw);
+    $router->get('/formation/groupes', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'index'], $trainingResMw);
+    $router->post('/formation/groupes', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'store'], $trainingResMw);
+    $router->get('/formation/groupes/{id}', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'show'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/supprimer', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'delete'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/membres', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'addMember'], $trainingResMw);
+    $router->post('/formation/groupes/{id}/membres/{userId}/retirer', [\App\Controllers\Admin\TrainingGroupAdminController::class, 'removeMember'], $trainingResMw);
     $router->get('/formation/publications', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'index'], $trainingResMw);
     $router->post('/formation/publications/brouillon', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'storeDraft'], $trainingResMw);
     $router->get('/formation/publications/{id}/changelog', [\App\Controllers\Admin\AdminTrainingPublicationController::class, 'changelog'], $trainingResMw);
