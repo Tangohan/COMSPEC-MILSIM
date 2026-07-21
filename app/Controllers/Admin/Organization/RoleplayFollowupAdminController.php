@@ -81,6 +81,9 @@ final class RoleplayFollowupAdminController
                 }
             }
             $rpProgress = $p['rp_followup_progress'] ?? null;
+            $rpLastReviewAt = trim((string) ($p['rp_last_review_at'] ?? '')) ?: null;
+            $rpJoinedAt = trim((string) ($u['created_at'] ?? '')) ?: null;
+            $rpBilanNextDueAt = \App\Support\RoleplayBilanPolicy::nextReviewDueAt($rpJoinedAt, $rpLastReviewAt);
             $rows[] = [
                 'user_id' => $uid,
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
@@ -99,6 +102,9 @@ final class RoleplayFollowupAdminController
                 'service_rotation_date' => trim((string) ($p['rp_service_rotation_date'] ?? '')) ?: null,
                 'next_due' => $nextDue,
                 'next_due_is_overdue' => $nextDue !== null && $nextDue < $today,
+                'rp_last_review_at' => $rpLastReviewAt,
+                'rp_bilan_next_due_at' => $rpBilanNextDueAt?->format('Y-m-d'),
+                'rp_bilan_overdue' => \App\Support\RoleplayBilanPolicy::isOverdue($rpJoinedAt, $rpLastReviewAt),
                 'eligible' => !empty($snapshot['eligible']),
                 'latest_timeline' => $timeline[0] ?? null,
             ];
@@ -285,6 +291,43 @@ final class RoleplayFollowupAdminController
             $actorId > 0 ? $actorId : null
         );
         Session::flash('success', 'Étape validée.');
+
+        return Response::redirect(url('back-office/roleplay-followup'));
+    }
+
+    public function markBilanReviewed(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        $uid = (int) ($params['id'] ?? 0);
+        if ($tenantId < 1 || $uid < 1) {
+            return Response::redirect(url('back-office/roleplay-followup'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/roleplay-followup'));
+        }
+        $target = $this->userRepository->findById($uid, $tenantId);
+        if (!$target) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(url('back-office/roleplay-followup'));
+        }
+        $this->personnelProfileRepository->update($uid, ['rp_last_review_at' => date('Y-m-d H:i:s')]);
+        $actorId = (int) Session::get('user_id');
+        $this->timelineRepository->addEvent(
+            $tenantId,
+            $uid,
+            'bilan',
+            'Bilan roleplay effectué',
+            'Bilan marqué comme fait par l’encadrement.',
+            date('Y-m-d'),
+            null,
+            'completed',
+            null,
+            $actorId > 0 ? $actorId : null
+        );
+        Session::flash('success', 'Bilan roleplay marqué comme fait. Prochaine échéance recalculée.');
 
         return Response::redirect(url('back-office/roleplay-followup'));
     }

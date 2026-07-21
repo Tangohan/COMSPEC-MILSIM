@@ -131,6 +131,8 @@ final class EmailEvents
 
     /** Mise à jour du suivi roleplay / tutorat (membre ou tuteur). */
     public const ROLEPLAY_FOLLOWUP_UPDATED = 'ROLEPLAY_FOLLOWUP_UPDATED';
+    /** Rappel — bilan roleplay dû ou en retard (tuteur / staff RH). */
+    public const ROLEPLAY_BILAN_DUE = 'ROLEPLAY_BILAN_DUE';
 
     /** Retour questionnaire après (ou pendant) une démonstration NDA. */
     public const DEMO_NDA_FEEDBACK = 'DEMO_NDA_FEEDBACK';
@@ -200,6 +202,7 @@ final class EmailEvents
         self::PERSONNEL_STRUCTURE_CHANGED,
         self::PERSONNEL_STRUCTURE_CHANGED_STAFF,
         self::ROLEPLAY_FOLLOWUP_UPDATED,
+        self::ROLEPLAY_BILAN_DUE,
         self::DEMO_NDA_FEEDBACK,
     ];
 }

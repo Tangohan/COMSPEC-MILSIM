@@ -1300,6 +1300,34 @@ final class EmailService
     }
 
     /**
+     * @param list<array{name: string, next_due_label: string, overdue: bool}> $members
+     */
+    public function sendRoleplayBilanDueAlert(
+        string $to,
+        string $recipientDisplayName,
+        string $tenantName,
+        array $members,
+        string $roleplayFollowupUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::ROLEPLAY_BILAN_DUE,
+            'roleplay_bilan_due_alert',
+            $to,
+            'Bilans roleplay dus — ' . $tenantName,
+            [
+                'recipientDisplayName' => $recipientDisplayName,
+                'tenantName' => $tenantName,
+                'members' => $members,
+                'roleplayFollowupUrl' => $roleplayFollowupUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'roleplay_bilan_due']
+        );
+    }
+
+    /**
      * @param list<array{title:string,updated_at:?string}> $forgottenDrafts
      * @param list<array{title:string,updated_at:?string}> $neverViewed
      */

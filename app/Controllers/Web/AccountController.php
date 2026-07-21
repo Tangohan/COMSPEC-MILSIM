@@ -854,6 +854,13 @@ class AccountController
         ];
 
         $items[] = [
+            'key' => EmailEvents::ROLEPLAY_BILAN_DUE,
+            'label' => 'Rappel bilan roleplay dû',
+            'hint' => 'Rappel hebdomadaire lorsqu’un bilan roleplay est dû ou en retard pour un membre que vous tutorez, ou pour le staff RH habilité.',
+            'group' => 'Immersion',
+        ];
+
+        $items[] = [
             'key' => EmailEvents::PERSONNEL_STRUCTURE_CHANGED,
             'label' => 'Changement de grade, d’affectation ou de fonction',
             'hint' => 'Confirmation lorsque votre grade, votre unité d’affectation ou votre fonction est mis à jour.',

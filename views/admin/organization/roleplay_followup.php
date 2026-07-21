@@ -313,6 +313,7 @@ $timelineStatusFr = static function (?string $raw): string {
                         <th>Filière</th>
                         <th>Notes</th>
                         <th>Échéances</th>
+                        <th>Bilan RP</th>
                         <th>Éligibilité</th>
                         <th>Dernier événement</th>
                         <th>Actions</th>
@@ -349,6 +350,13 @@ $timelineStatusFr = static function (?string $raw): string {
                             'Médical' => $row['medical_due_date'] ?? null,
                             'Rotation' => $row['service_rotation_date'] ?? null,
                         ];
+                        $bilanNextDueRaw = $row['rp_bilan_next_due_at'] ?? null;
+                        $bilanNextDue = $bilanNextDueRaw ? date('d/m/Y', strtotime((string) $bilanNextDueRaw)) : '—';
+                        $bilanLastRaw = $row['rp_last_review_at'] ?? null;
+                        $bilanLast = $bilanLastRaw ? date('d/m/Y', strtotime((string) $bilanLastRaw)) : null;
+                        $bilanBadge = !empty($row['rp_bilan_overdue'])
+                            ? 'rp-followup-sheets__badge--late'
+                            : 'rp-followup-sheets__badge--muted';
                     ?>
                     <tr>
                         <td>
@@ -384,6 +392,10 @@ $timelineStatusFr = static function (?string $raw): string {
                                 <span class="<?= $dueRaw < $todayStr ? 'is-overdue' : '' ?>"><?= htmlspecialchars($dueLabel, ENT_QUOTES, 'UTF-8') ?> : <?= htmlspecialchars(date('d/m/Y', strtotime((string) $dueRaw)), ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endforeach; ?>
                             </div>
+                        </td>
+                        <td>
+                            <span class="rp-followup-sheets__badge <?= $bilanBadge ?>"><?= htmlspecialchars($bilanNextDue, ENT_QUOTES, 'UTF-8') ?></span>
+                            <div class="rp-followup-sheets__meta"><?= $bilanLast !== null ? 'Dernier bilan : ' . htmlspecialchars($bilanLast, ENT_QUOTES, 'UTF-8') : 'Aucun bilan enregistré' ?></div>
                         </td>
                         <td>
                             <span class="rp-followup-sheets__badge <?= $eligBadge ?>"><?= !empty($row['eligible']) ? 'Éligible' : 'À compléter' ?></span>
@@ -434,6 +446,10 @@ $timelineStatusFr = static function (?string $raw): string {
                                 <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/validate'), ENT_QUOTES, 'UTF-8') ?>">
                                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                     <button type="submit" title="Marquer l’étape actuelle comme validée par l’encadrement">Valider</button>
+                                </form>
+                                <form method="post" action="<?= htmlspecialchars(url('back-office/roleplay-followup/' . $uid . '/bilan'), ENT_QUOTES, 'UTF-8') ?>">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($rpCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                    <button type="submit" title="Marquer le bilan roleplay comme fait aujourd’hui (recalcule la prochaine échéance)">Bilan fait</button>
                                 </form>
                                 <a href="<?= htmlspecialchars(url('personnel/' . $uid . '/edit'), ENT_QUOTES, 'UTF-8') ?>">Dossier</a>
                             </div>
