@@ -418,6 +418,9 @@ return function (Router $router) {
     $router->get('/enlistment/success', [EnlistmentController::class, 'success']);
     $router->get('/enlistment/error', [EnlistmentController::class, 'error']);
     $router->get('/enlistment/suivi/{token}', [EnlistmentCandidatePortalController::class, 'show']);
+    $router->get('/atak/connect', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeForm']);
+    $router->post('/atak/connect/code', [\App\Controllers\Web\AtakPhoneConnectController::class, 'codeSubmit']);
+    $router->get('/atak/connect/{token}', [\App\Controllers\Web\AtakPhoneConnectController::class, 'show']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}/preparation', [EnlistmentCandidatePortalController::class, 'attachmentDownloadPreparation']);
     $router->get('/enlistment/suivi/{token}/piece/{attachmentId}', [EnlistmentCandidatePortalController::class, 'downloadAttachment']);
     $router->post('/enlistment/suivi/{token}/piece', [EnlistmentCandidatePortalController::class, 'uploadAttachment']);
@@ -1232,6 +1235,8 @@ return function (Router $router) {
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/phone-pairing', [AtakApiController::class, 'phonePairingCreate']);
+    $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);

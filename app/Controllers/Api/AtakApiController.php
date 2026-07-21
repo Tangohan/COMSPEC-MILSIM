@@ -17,6 +17,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\TacticalBriefingSlideRepository;
+use App\Repositories\TacticalPhonePairingRepository;
 
 class AtakApiController
 {
@@ -35,8 +36,10 @@ class AtakApiController
         private UserRepository $userRepository,
         private ArmaPlaytimeRepository $armaPlaytimeRepository,
         private ?TacticalBriefingSlideRepository $briefingSlideRepository = null,
+        private ?TacticalPhonePairingRepository $phonePairingRepository = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
+        $this->phonePairingRepository ??= new TacticalPhonePairingRepository();
     }
 
     /**
@@ -67,6 +70,63 @@ class AtakApiController
         }
 
         return Response::json(['slides' => $out]);
+    }
+
+    /**
+     * Connexion téléphone (inspiré de cTab) : génère un token (QR) + un code court lisible,
+     * consommés par l'extension Arma (fonction native GetPhoneConnectInfo) pour affichage
+     * en jeu, puis par un navigateur mobile sans compte sur /atak/connect/{token}.
+     */
+    public function phonePairingCreate(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $pairing = $this->phonePairingRepository->create($tenantId);
+        if ($pairing === null) {
+            return Response::json(['error' => 'phone_pairing_unavailable'], 503);
+        }
+        $token = $pairing['token'];
+
+        return Response::json([
+            'token' => $token,
+            'code' => $pairing['code'],
+            'connect_url' => url('atak/connect/' . $token),
+            'qr_image_url' => url('api/atak/phone-pairing/' . $token . '/qr.png'),
+            'expires_at' => $pairing['expires_at'],
+        ]);
+    }
+
+    /** PNG du QR code encodant l’URL de connexion — consommé par le même téléchargeur d’image que les diapositives. */
+    public function phonePairingQrImage(Request $request, array $params = []): Response
+    {
+        $token = trim((string) ($params['token'] ?? ''));
+        $pairing = $this->phonePairingRepository->findValidByToken($token);
+        if ($pairing === null) {
+            return (new Response())->setStatusCode(404)->setBody('Not found');
+        }
+        $connectUrl = url('atak/connect/' . $token);
+        if (!class_exists(\Endroid\QrCode\Builder\Builder::class) || !class_exists(\Endroid\QrCode\Writer\PngWriter::class)) {
+            return (new Response())->setStatusCode(503)->setBody('QR unavailable');
+        }
+        try {
+            $result = \Endroid\QrCode\Builder\Builder::create()
+                ->writer(new \Endroid\QrCode\Writer\PngWriter())
+                ->data($connectUrl)
+                ->size(400)
+                ->margin(12)
+                ->build();
+        } catch (\Throwable) {
+            return (new Response())->setStatusCode(500)->setBody('QR generation failed');
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', $result->getMimeType())
+            ->header('Cache-Control', 'no-store')
+            ->setBody($result->getString());
     }
 
     /**

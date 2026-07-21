@@ -269,6 +269,21 @@ public static class Extension
                 var simplified = SimplifyBriefingSlidesJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Connexion téléphone (inspiré de cTab) : génère un token/QR + un code court côté serveur.
+            // Format : token\tcode\tconnectUrl\tqrImageUrl\texpiresAt — le QR se télécharge ensuite
+            // via DownloadBriefingSlideImage(qrImageUrl, "phoneqr") comme n'importe quelle diapositive.
+            if (function == "GetPhoneConnectInfo")
+            {
+                var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
+                var url = _baseUrl + "/api/atak/phone-pairing";
+                if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
+                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                resp.EnsureSuccessStatusCode();
+                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var simplified = SimplifyPhonePairingJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             // Télécharge une diapositive (image_url renvoyée par GetBriefingSlides) et la met en cache local ;
             // retourne le chemin de fichier local à passer à setObjectTexture / ctrlSetText côté SQF.
             if (function == "DownloadBriefingSlideImage" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
@@ -422,6 +437,23 @@ public static class Extension
                 sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\n');
             }
             return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyPhonePairingJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var token = root.TryGetProperty("token", out var tk) ? (tk.GetString() ?? "") : "";
+            var code = root.TryGetProperty("code", out var cd) ? (cd.GetString() ?? "") : "";
+            var connectUrl = root.TryGetProperty("connect_url", out var cu) ? (cu.GetString() ?? "") : "";
+            var qrImageUrl = root.TryGetProperty("qr_image_url", out var qu) ? (qu.GetString() ?? "") : "";
+            var expiresAt = root.TryGetProperty("expires_at", out var ea) ? (ea.GetString() ?? "") : "";
+            if (token.Length == 0 || qrImageUrl.Length == 0) return "";
+            return token + "\t" + code + "\t" + connectUrl + "\t" + qrImageUrl + "\t" + expiresAt;
         }
         catch { return ""; }
     }

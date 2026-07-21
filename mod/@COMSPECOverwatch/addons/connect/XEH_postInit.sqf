@@ -21,6 +21,15 @@ if (!hasInterface) exitWith {};
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
+    // Action "Connecter mon téléphone" : QR + code court pour consulter le briefing en cours
+    // depuis un navigateur mobile (voir aussi le bouton dans le dialog Tableau de briefing).
+    player addAction [
+        "<t color='#7fffd4'>Connecter mon téléphone</t>",
+        { [] call comspec_overwatch_connect_fnc_phoneConnectShow; },
+        nil, 5.9, false, true, "",
+        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
+    ];
+
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
     [comspec_overwatch_connect_fnc_updatePosition, _interval] call CBA_fnc_addPerFrameHandler;
 

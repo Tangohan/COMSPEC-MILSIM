@@ -92,5 +92,15 @@ class COMSPEC_Briefing_Dialog {
             h = 0.04 * safezoneH;
             action = "closeDialog 0;";
         };
+
+        class PhoneConnectButton: RscButton {
+            idc = 9014;
+            text = "Connecter mon téléphone";
+            x = 0.44 * safezoneW + safezoneX;
+            y = 0.865 * safezoneH + safezoneY;
+            w = 0.16 * safezoneW;
+            h = 0.04 * safezoneH;
+            action = "[] call comspec_overwatch_connect_fnc_phoneConnectShow;";
+        };
     };
 };
