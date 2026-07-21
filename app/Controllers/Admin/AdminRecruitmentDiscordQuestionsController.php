@@ -36,6 +36,7 @@ class AdminRecruitmentDiscordQuestionsController
             'recruitmentAdminNav' => 'discord',
             'recruitmentSidebarCounts' => $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId),
             'showPortalFooter' => false,
+            'discordQuestionsTableMissing' => !$this->questionRepository->tableExists(),
             'discordQuestions' => $this->questionRepository->listForTenant((int) $tenantId),
             'discordQuestionTypes' => [
                 'select' => 'Liste déroulante (select)',
@@ -68,8 +69,11 @@ class AdminRecruitmentDiscordQuestionsController
         $options = $this->parseOptions((string) $request->input('options', ''));
         $required = (string) $request->input('required', '0') === '1';
 
-        $this->questionRepository->create((int) $tenantId, $type, $label, $options, $required);
-        Session::flash('success', 'Question ajoutée au formulaire Discord.');
+        $newId = $this->questionRepository->create((int) $tenantId, $type, $label, $options, $required);
+        Session::flash(
+            $newId > 0 ? 'success' : 'error',
+            $newId > 0 ? 'Question ajoutée au formulaire Discord.' : 'Ce module n’est pas encore disponible sur cet environnement (migration à exécuter).'
+        );
 
         return Response::redirect(url('back-office/recruitments/discord-questions'));
     }

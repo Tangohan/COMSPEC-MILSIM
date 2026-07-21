@@ -88,7 +88,7 @@ final class PersonnelDeploymentController
         if (!$user || $tenantId < 1 || !$this->canManageDeployments()) {
             return Response::redirect(url('deploiement'));
         }
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
+        if (!Csrf::validate((string) $request->input('_csrf'))) {
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('deploiement'));
@@ -193,7 +193,7 @@ final class PersonnelDeploymentController
         if (!$actor || $tenantId < 1) {
             return Response::redirect(url('login'));
         }
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
+        if (!Csrf::validate((string) $request->input('_csrf'))) {
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('deploiement'));
@@ -303,7 +303,7 @@ final class PersonnelDeploymentController
         if (!$actor || $tenantId < 1) {
             return Response::redirect(url('login'));
         }
-        if (!Csrf::verify((string) $request->input('_csrf'))) {
+        if (!Csrf::validate((string) $request->input('_csrf'))) {
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('deploiement'));

@@ -579,6 +579,11 @@ class Container
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
             ),
+            \App\Controllers\Admin\System\SystemUsersController::class => new \App\Controllers\Admin\System\SystemUsersController(
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Audit\AuditService::class),
+            ),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
             \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController::class => new \App\Controllers\Admin\Organization\PersonnelJobRoleAdminController(

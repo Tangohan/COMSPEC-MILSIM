@@ -4,6 +4,7 @@ declare(strict_types=1);
 /** @var array<string,string> $discordQuestionTypes */
 $rows = $discordQuestions ?? [];
 $typeLabels = $discordQuestionTypes ?? [];
+$tableMissing = !empty($discordQuestionsTableMissing);
 $listUrl = url('back-office/recruitments');
 $formAction = url('back-office/recruitments/discord-questions');
 $fieldClass = 'canned-field w-full max-w-xl rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25';
@@ -28,7 +29,15 @@ $hintClass = 'mt-1.5 text-xs leading-relaxed text-slate-500';
             </p>
         </div>
 
-        <div class="px-5 py-8 sm:px-8 sm:py-10 space-y-8">
+        <?php if ($tableMissing): ?>
+            <div class="border-b border-amber-200 bg-amber-50 px-5 py-4 sm:px-8">
+                <p class="text-sm leading-relaxed text-amber-950">
+                    Ce module n’est pas encore disponible sur cet environnement. Un administrateur technique doit finaliser la mise à jour de la plateforme (exécuter les migrations) ; rechargez ensuite cette page.
+                </p>
+            </div>
+        <?php endif; ?>
+
+        <div class="px-5 py-8 sm:px-8 sm:py-10 space-y-8 <?= $tableMissing ? 'pointer-events-none opacity-50' : '' ?>">
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 bg-slate-50 px-5 py-3.5 sm:px-6">
                     <h2 class="text-sm font-bold text-slate-900">Nouvelle question</h2>

@@ -111,7 +111,7 @@ if ($rowsJson === false) {
     $rowsJson = '[]';
 }
 ?>
-<div class="bo-seniority" x-data="boSeniorityFilters(<?= $rowsJson ?>)">
+<div class="bo-seniority" x-data="boSeniorityFilters(<?= htmlspecialchars($rowsJson, ENT_QUOTES, 'UTF-8') ?>)">
     <header class="bo-seniority__hero">
         <div class="bo-seniority__hero-inner">
             <div>

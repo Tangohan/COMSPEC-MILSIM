@@ -137,26 +137,37 @@ $draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibili
                     <h2>Liste des formations</h2>
                     <p><strong>Fiche</strong> pour les données et l’inscription · <strong>Modules</strong> pour le contenu et les ressources par leçon.</p>
                 </div>
-                <form method="get" action="<?= training_studio_url() ?>" class="ts-index-filter">
-                    <label for="studio-vis-filter">Visibilité</label>
-                    <select id="studio-vis-filter" name="visibility" onchange="this.form.submit()">
-                        <option value="">Toutes</option>
-                        <?php foreach ($visLabels as $k => $lab): ?>
-                        <option value="<?= htmlspecialchars($k) ?>" <?= $visibilityFilter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
+                <div class="ts-index-toolbar__controls">
+                    <?php if (!empty($courses)): ?>
+                    <div class="ts-index-search">
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m17 17-3.5-3.5M15.5 9a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <input type="search" id="studio-index-search" placeholder="Rechercher un parcours…" aria-label="Rechercher un parcours" autocomplete="off">
+                    </div>
+                    <?php endif; ?>
+                    <form method="get" action="<?= training_studio_url() ?>" class="ts-index-filter">
+                        <label for="studio-vis-filter">Visibilité</label>
+                        <select id="studio-vis-filter" name="visibility" onchange="this.form.submit()">
+                            <option value="">Toutes</option>
+                            <?php foreach ($visLabels as $k => $lab): ?>
+                            <option value="<?= htmlspecialchars($k) ?>" <?= $visibilityFilter === $k ? 'selected' : '' ?>><?= htmlspecialchars($lab) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </form>
+                </div>
             </div>
         </div>
 
         <?php if (empty($courses)): ?>
-        <div class="p-12 text-center">
-            <p class="text-slate-700 font-semibold text-base">Aucune formation pour ce filtre.</p>
-            <p class="text-sm text-slate-500 mt-2">Utilisez le formulaire <strong class="text-slate-700">Nouvelle formation</strong> ci-dessus.</p>
+        <div class="ts-index-empty">
+            <div class="ts-index-empty__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H14l6 6v9.5A2.5 2.5 0 0 1 17.5 22h-11A2.5 2.5 0 0 1 4 19.5v-13Z" stroke="currentColor" stroke-width="1.5"/><path d="M14 4v5a1 1 0 0 0 1 1h5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </div>
+            <p class="text-slate-700 font-semibold text-base"><?= $visibilityFilter !== '' ? 'Aucune formation pour ce filtre.' : 'Aucune formation pour le moment.' ?></p>
+            <p class="text-sm text-slate-500 mt-2">Utilisez le formulaire <strong class="text-slate-700">Nouvelle formation</strong> ci-dessus pour créer le premier parcours.</p>
         </div>
         <?php else: ?>
         <div class="ts-index-table-wrap">
-            <table class="ts-index-table">
+            <table class="ts-index-table" id="studio-index-table">
                 <thead>
                     <tr>
                         <th scope="col">Parcours</th>
@@ -168,6 +179,7 @@ $draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibili
                 <tbody>
                     <?php foreach ($courses as $c):
                         $t = (string) ($c['title'] ?? '');
+                        $slugRow = (string) ($c['slug'] ?? '');
                         $initial = $t !== '' ? mb_strtoupper(mb_substr($t, 0, 1)) : '?';
                         $isPub = ($c['visibility'] ?? '') === 'published';
                         $visKey = (string) ($c['visibility'] ?? '');
@@ -175,18 +187,19 @@ $draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibili
                         $lmsBehind = function_exists('lms_course_studio_created_before_current') && lms_course_studio_created_before_current($c);
                         $rowScope = (string) ($c['lms_scope'] ?? 'tenant');
                         $cidRow = (int) ($c['id'] ?? 0);
+                        $thumbClass = 'training-studio-thumb' . ($isPub ? ' training-studio-thumb--published' : '');
                     ?>
-                    <tr>
-                        <td>
+                    <tr data-studio-search="<?= htmlspecialchars(mb_strtolower($t . ' ' . $slugRow), ENT_QUOTES, 'UTF-8') ?>">
+                        <td data-label="Parcours">
                             <div class="ts-index-course">
-                                <div class="training-studio-thumb" aria-hidden="true"><?= htmlspecialchars($initial) ?></div>
+                                <div class="<?= $thumbClass ?>" aria-hidden="true"><?= htmlspecialchars($initial) ?></div>
                                 <div class="ts-index-course__text">
                                     <strong><?= htmlspecialchars($t) ?></strong>
-                                    <span title="<?= htmlspecialchars((string) ($c['slug'] ?? '')) ?>"><?= htmlspecialchars((string) ($c['slug'] ?? '')) ?></span>
+                                    <span title="<?= htmlspecialchars($slugRow) ?>"><?= htmlspecialchars($slugRow) ?></span>
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Statut">
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md <?= $isPub ? 'bg-emerald-100 text-emerald-900 border border-emerald-200/90' : 'bg-slate-200 text-slate-800 border border-slate-300/80' ?>"><?= htmlspecialchars($visShort) ?></span>
                                 <?php if ($lmsBehind): ?>
@@ -194,14 +207,14 @@ $draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibili
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td class="hidden lg:table-cell">
+                        <td class="hidden lg:table-cell" data-label="Portée">
                             <?php if ($rowScope === 'platform'): ?>
                             <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md bg-sky-100 text-sky-900 border border-sky-200/90">Plateforme</span>
                             <?php else: ?>
                             <span class="text-xs text-slate-500 font-medium">Communauté</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                             <div class="ts-index-actions">
                                 <a href="<?= htmlspecialchars(training_studio_url((string) $cidRow . '/echange/export')) ?>" class="ts-index-btn ts-index-btn--ghost" title="Télécharger une sauvegarde réimportable">Exporter</a>
                                 <a href="<?= htmlspecialchars(training_studio_url((string) $cidRow . '/structure#studio-ressources-aide')) ?>" class="ts-index-btn ts-index-btn--sky" title="Modules, leçons et ressources">Modules</a>
@@ -212,7 +225,34 @@ $draftCount = count(array_filter($courses, static fn (array $c) => ($c['visibili
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            <p class="ts-index-no-match hidden" id="studio-index-no-match">Aucun parcours ne correspond à cette recherche.</p>
         </div>
         <?php endif; ?>
     </section>
 </div>
+<?php if (!empty($courses)): ?>
+<script>
+(function () {
+    var input = document.getElementById('studio-index-search');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#studio-index-table [data-studio-search]'));
+    var noMatch = document.getElementById('studio-index-no-match');
+    if (!input || rows.length === 0) {
+        return;
+    }
+    input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase();
+        var visible = 0;
+        rows.forEach(function (row) {
+            var match = !q || (row.getAttribute('data-studio-search') || '').indexOf(q) !== -1;
+            row.classList.toggle('hidden', !match);
+            if (match) {
+                visible++;
+            }
+        });
+        if (noMatch) {
+            noMatch.classList.toggle('hidden', visible > 0);
+        }
+    });
+})();
+</script>
+<?php endif; ?>

@@ -17,9 +17,28 @@ final class RecruitmentDiscordQuestionRepository
 
     private PDO $pdo;
 
+    private static ?bool $tableExists = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    /**
+     * Vérifie que la migration a bien été exécutée sur cet environnement — évite de faire
+     * planter le formulaire public si le déploiement du code précède la migration.
+     */
+    public function tableExists(): bool
+    {
+        if (self::$tableExists === null) {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_discord_questions' LIMIT 1"
+            );
+            $st->execute();
+            self::$tableExists = (bool) $st->fetchColumn();
+        }
+
+        return self::$tableExists;
     }
 
     private function decode(array $row): array
@@ -43,6 +62,9 @@ final class RecruitmentDiscordQuestionRepository
     /** @return list<array{id:int,type:string,label:string,options:list<string>,required:bool,position:int,active:bool}> */
     public function listForTenant(int $tenantId, bool $activeOnly = false): array
     {
+        if (!$this->tableExists()) {
+            return [];
+        }
         $sql = 'SELECT id, type, label, options_json, required, position, active FROM recruitment_discord_questions WHERE tenant_id = ?';
         if ($activeOnly) {
             $sql .= ' AND active = 1';
@@ -56,6 +78,9 @@ final class RecruitmentDiscordQuestionRepository
 
     public function findForTenant(int $tenantId, int $id): ?array
     {
+        if (!$this->tableExists()) {
+            return null;
+        }
         $st = $this->pdo->prepare('SELECT id, type, label, options_json, required, position, active FROM recruitment_discord_questions WHERE tenant_id = ? AND id = ? LIMIT 1');
         $st->execute([$tenantId, $id]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -68,6 +93,9 @@ final class RecruitmentDiscordQuestionRepository
      */
     public function create(int $tenantId, string $type, string $label, array $options, bool $required): int
     {
+        if (!$this->tableExists()) {
+            return 0;
+        }
         $type = in_array($type, self::TYPES, true) ? $type : 'open';
         $st = $this->pdo->prepare(
             'SELECT COALESCE(MAX(position), -1) + 1 FROM recruitment_discord_questions WHERE tenant_id = ?'
@@ -96,6 +124,9 @@ final class RecruitmentDiscordQuestionRepository
      */
     public function update(int $tenantId, int $id, string $type, string $label, array $options, bool $required): bool
     {
+        if (!$this->tableExists()) {
+            return false;
+        }
         $type = in_array($type, self::TYPES, true) ? $type : 'open';
         $st = $this->pdo->prepare(
             'UPDATE recruitment_discord_questions SET type = ?, label = ?, options_json = ?, required = ?, updated_at = NOW()
@@ -115,6 +146,9 @@ final class RecruitmentDiscordQuestionRepository
 
     public function setActive(int $tenantId, int $id, bool $active): bool
     {
+        if (!$this->tableExists()) {
+            return false;
+        }
         $st = $this->pdo->prepare('UPDATE recruitment_discord_questions SET active = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
         $st->execute([$active ? 1 : 0, $tenantId, $id]);
 
@@ -123,6 +157,9 @@ final class RecruitmentDiscordQuestionRepository
 
     public function delete(int $tenantId, int $id): bool
     {
+        if (!$this->tableExists()) {
+            return false;
+        }
         $st = $this->pdo->prepare('DELETE FROM recruitment_discord_questions WHERE tenant_id = ? AND id = ?');
         $st->execute([$tenantId, $id]);
 
@@ -132,6 +169,9 @@ final class RecruitmentDiscordQuestionRepository
     /** @param list<int> $orderedIds */
     public function reorder(int $tenantId, array $orderedIds): void
     {
+        if (!$this->tableExists()) {
+            return;
+        }
         $position = 0;
         $st = $this->pdo->prepare('UPDATE recruitment_discord_questions SET position = ? WHERE tenant_id = ? AND id = ?');
         foreach ($orderedIds as $id) {

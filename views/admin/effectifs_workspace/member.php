@@ -279,6 +279,10 @@ $statusLabel = static function (string $raw): string {
                     ?>
                     <button type="submit" class="eff-btn eff-btn--warn">Envoyer la demande</button>
                 </form>
+            <?php elseif ($elevationNoRecipients ?? false): ?>
+                <p class="eff-member-elevate__title" style="opacity:.6" title="Aucun autre membre habilité à traiter une demande d’élévation dans cette communauté (vous êtes le seul, ou personne n’a le droit requis).">
+                    Élévation indisponible — aucun autre membre habilité à traiter la demande.
+                </p>
             <?php endif; ?>
 
             <?php if ($canManageStatus): ?>
