@@ -19,6 +19,36 @@ public static class Extension
     private static readonly object QueueDrainLock = new();
     private static System.Threading.Timer? _drainTimer;
 
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
+
+    private static ExtensionCallback? _callback;
+
+    [UnmanagedCallersOnly(EntryPoint = "RVExtensionRegisterCallback")]
+    public static void RvExtensionRegisterCallback(nint func)
+    {
+        if (func == 0) { _callback = null; return; }
+        _callback = Marshal.GetDelegateForFunctionPointer<ExtensionCallback>(func);
+    }
+
+    private static void InvokeCallback(string function, string data)
+    {
+        var cb = _callback;
+        if (cb == null) return;
+        if (function.Length > 64) function = function.Substring(0, 64);
+        if (data.Length > 20000) data = data.Substring(0, 20000);
+        try
+        {
+            // Arma callback peut être appelé hors thread jeu ; démarrer une tâche dédiée.
+            _ = Task.Run(() =>
+            {
+                try { cb("comspec", function, data); }
+                catch { /* ne jamais faire planter le process hôte */ }
+            });
+        }
+        catch { }
+    }
+
     private static void EnsureDrainTimer()
     {
         if (_drainTimer != null) return;
@@ -77,7 +107,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-        Output(output, outputSize, "COMSPECExtension 1.0");
+        Output(output, outputSize, "COMSPECExtension 1.2");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -160,7 +190,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL Native AOT est bien chargée (pas le stub ~30 Ko).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.1";
+            return "OK|COMSPECExtension 1.2";
         }
 
         // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
@@ -691,7 +721,33 @@ public static class Extension
                     ApplyApiKeyHeaders(key);
                     SendChatMessage("COMSPEC Overwatch: mod actif.");
                     SendChatMessage("Liaison établie avec le nœud: " + _baseUrl);
-                    EnqueueOrSend(_baseUrl + "/api/atak/client-init", "{\"mapId\":1}");
+                    var initUrl = _baseUrl + "/api/atak/client-init";
+                    var initBody = "{\"mapId\":1}";
+                    _ = HttpClient.PostAsync(initUrl, new StringContent(initBody, Encoding.UTF8, "application/json"))
+                        .ContinueWith(t =>
+                        {
+                            try
+                            {
+                                if (t.IsFaulted || t.IsCanceled)
+                                {
+                                    InvokeCallback("Error", "Portail injoignable");
+                                    return;
+                                }
+                                var resp = t.Result;
+                                if (resp.IsSuccessStatusCode)
+                                {
+                                    InvokeCallback("Connected", _baseUrl);
+                                }
+                                else
+                                {
+                                    InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
+                                }
+                            }
+                            catch
+                            {
+                                InvokeCallback("Error", "Portail injoignable");
+                            }
+                        });
                 }
                 return;
             }
@@ -707,6 +763,8 @@ public static class Extension
                 var fuel = args.Length > 6 ? (args[6] ?? "") : "";
                 var ammo = args.Length > 7 ? (args[7] ?? "n/a") : "n/a";
                 var radioFreq = args.Length > 8 ? (args[8] ?? "") : "";
+                // args[9] = JSON véhicule optionnel (speed, in_vehicle, vector_dir, vector_up, velocity…)
+                var vehicleJson = args.Length > 9 ? (args[9] ?? "") : "";
                 var headingStr = heading.HasValue ? heading.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture) : "null";
                 var extra = new System.Text.StringBuilder();
                 extra.Append("\"role\":\"").Append(EscapeJson(role)).Append("\"");
@@ -714,6 +772,12 @@ public static class Extension
                 if (!string.IsNullOrEmpty(fuel)) extra.Append(",\"fuel\":\"").Append(EscapeJson(fuel)).Append("\"");
                 extra.Append(",\"ammo\":\"").Append(EscapeJson(ammo)).Append("\"");
                 if (!string.IsNullOrEmpty(radioFreq)) extra.Append(",\"radio_freq\":\"").Append(EscapeJson(radioFreq)).Append("\"");
+                if (!string.IsNullOrWhiteSpace(vehicleJson) && vehicleJson.StartsWith('{') && vehicleJson.EndsWith('}'))
+                {
+                    // Fusionne le JSON véhicule dans extra (sans enveloppe {}).
+                    var inner = vehicleJson.Substring(1, vehicleJson.Length - 2).Trim();
+                    if (inner.Length > 0) extra.Append(',').Append(inner);
+                }
                 var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\",\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
                 return;
@@ -814,7 +878,10 @@ public static class Extension
                 var armaName = args[0] ?? "";
                 var markerDataRaw = args[1] ?? "{}";
                 var layerId = args.Length > 2 ? (args[2] ?? "1") : "1";
-                var payload = "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"markerData\":" + markerDataRaw + "}";
+                var deleted = args.Length > 3 && (args[3] ?? "") == "1";
+                var payload = deleted
+                    ? "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"deleted\":true}"
+                    : "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"markerData\":" + markerDataRaw + "}";
                 EnqueueOrSend(_baseUrl + "/api/atak/marker", payload);
                 return;
             }

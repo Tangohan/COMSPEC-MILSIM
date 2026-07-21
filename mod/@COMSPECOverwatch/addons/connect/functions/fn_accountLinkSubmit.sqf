@@ -112,6 +112,7 @@ private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 if (_state isEqualTo "linked") then {
     ["Compte lié — liaison Athena établie.", "#7dffb0"] call _setStatus;
     ["COMSPEC_Info", ["Compte Athena connecté."]] call BIS_fnc_showNotification;
+    [] call comspec_overwatch_connect_fnc_updateLinkDiary;
     uiSleep 0.8;
     closeDialog 0;
 } else {

@@ -85,6 +85,10 @@ class CfgFunctions {
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
+            class updateLinkDiary {};
+            class extensionCallback {};
+            class hasTerminal {};
+            class syncMapMarker {};
         };
     };
 };

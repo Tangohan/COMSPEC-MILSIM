@@ -76,7 +76,10 @@ if (_prefix == "OK") then {
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
         missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-        [format ["[Athena] Liaison établie. Adresse client : %1", _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
+        [format ["[Athena] Connecté à %1 — adresse client : %2", _label, _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        systemChat format ["[Athena] Connecté à %1", _label];
+        [] call comspec_overwatch_connect_fnc_updateLinkDiary;
     } else {
         missionNamespace setVariable ["COMSPEC_userIp", "—", true];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];

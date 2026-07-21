@@ -3,6 +3,13 @@ if (!hasInterface) exitWith {};
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
+// Callbacks async extension → SQF (inspiré cTab IRL)
+if (isNil "COMSPEC_ExtensionCallbackEH") then {
+    COMSPEC_ExtensionCallbackEH = addMissionEventHandler ["ExtensionCallback", {
+        _this call comspec_overwatch_connect_fnc_extensionCallback;
+    }];
+};
+
 ["CBA_settingsInitialized", {
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
@@ -22,11 +29,6 @@ if (!hasInterface) exitWith {};
         }] call CBA_fnc_addEventHandler;
     };
 
-    // Action "Tableau de briefing" : disponible par défaut sur le joueur, sans placement Eden requis.
-    // Limite connue : comme le reste de ce postInit, l'action est ajoutée à l'objet joueur courant
-    // et ne suit pas automatiquement un respawn (objet joueur recréé) — à ré-ajouter via un handler
-    // MPRespawn côté mission si besoin. Pour un vrai écran/tableau posé dans Eden, voir le
-    // commentaire d'en-tête de fn_openBriefingBoard.sqf (this addAction sur un objet nommé).
     player addAction [
         "<t color='#7fffd4'>Tableau de briefing</t>",
         { [] call comspec_overwatch_connect_fnc_openBriefingBoard; },
@@ -34,8 +36,6 @@ if (!hasInterface) exitWith {};
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
-    // Action "Connecter mon téléphone" : QR + code court pour consulter le briefing en cours
-    // depuis un navigateur mobile (voir aussi le bouton dans le dialog Tableau de briefing).
     player addAction [
         "<t color='#7fffd4'>Connecter mon téléphone</t>",
         { [] call comspec_overwatch_connect_fnc_phoneConnectShow; },
@@ -43,8 +43,6 @@ if (!hasInterface) exitWith {};
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
-    // Action "Ma tablette Athena" : vue superposant le statut/profil sur l'image du terminal
-    // physique, en complément du hub textuel existant.
     player addAction [
         "<t color='#7fffd4'>Ma tablette Athena</t>",
         { if (isNull (findDisplay 9973)) then { createDialog "COMSPEC_Device_Dialog"; }; },
@@ -55,7 +53,24 @@ if (!hasInterface) exitWith {};
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
     [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, _interval] call CBA_fnc_addPerFrameHandler;
 
-    // CAS polling: every 10s check for CAS assigned to this callsign
+    // Sync marqueurs carte → Athena (inspiré cTab MarkerCreated/Updated/Deleted)
+    if (isNil "COMSPEC_MapMarkerEHs") then {
+        COMSPEC_MapMarkerEHs = [
+            addMissionEventHandler ["MarkerCreated", {
+                params ["_marker"];
+                [_marker, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }],
+            addMissionEventHandler ["MarkerUpdated", {
+                params ["_marker"];
+                [_marker, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }],
+            addMissionEventHandler ["MarkerDeleted", {
+                params ["_marker"];
+                [_marker, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }]
+        ];
+    };
+
     private _casPollInterval = 10;
     [{
         params ["_args", "_pfhId"];
@@ -75,20 +90,16 @@ if (!hasInterface) exitWith {};
         };
     }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;
 
-    // Map shapes polling: every 10s fetch shapes and update local markers
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollMapShapes;
     }, 10, []] call CBA_fnc_addPerFrameHandler;
 
-
-    // Event bus wiring C2: propagation hiérarchique simple (Commandant -> Squad -> Fireteam)
     ["OnOrderIssued", {
         params ["_order"];
         private _target = _order getOrDefault ["target", ""];
         if (_target isEqualTo "") exitWith {};
 
-        // Simule la propagation en log local, consommable par UI/replay
         private _chainLog = missionNamespace getVariable ["COMSPEC_OrderPropagationLog", []];
         _chainLog pushBack [
             serverTime,

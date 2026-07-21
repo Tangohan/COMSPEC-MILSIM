@@ -530,6 +530,21 @@ class AtakApiController
         if ($armaName === null || $armaName === '') {
             return Response::json(['error' => 'arma_name required'], 400);
         }
+        $deleted = !empty($body['deleted']) || (($body['action'] ?? '') === 'delete');
+        if ($deleted) {
+            $ok = $this->atak->deleteMarkerByArmaName($tenantId, $mapId, (string) $armaName);
+            if ($ok) {
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    AtakActivityLogService::TYPE_MARKER,
+                    'Marqueur retiré — ' . $armaName,
+                    (string) $armaName
+                );
+            }
+
+            return Response::json(['ok' => true, 'deleted' => $ok]);
+        }
         $markerData = isset($body['markerData']) ? (is_string($body['markerData']) ? $body['markerData'] : json_encode($body['markerData'])) : '{}';
         $row = $this->atak->upsertMarkerByArmaName($tenantId, $mapId, $layerId, $armaName, $markerData);
         $this->activityLog->record(
