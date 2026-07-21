@@ -285,6 +285,7 @@ return function (Router $router) {
     $router->post('/evenements/{id}/slots/desinscription', [CommunityEventsController::class, 'leaveSlot'], [AuthMiddleware::class]);
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
+    $router->get('/publier', [\App\Controllers\Web\PublicationLauncherController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/deploiement', [PersonnelDeploymentController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/deploiement/{id}/assigner', [PersonnelDeploymentController::class, 'deploy'], [AuthMiddleware::class]);
