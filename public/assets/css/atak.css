@@ -238,6 +238,11 @@ body.atak-page {
   background: var(--atak-border);
   color: var(--atak-accent);
 }
+.atak-btn-account--config {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 .atak-btn-game-link {
   background: var(--atak-accent);
   border: 1px solid var(--atak-accent);
@@ -380,6 +385,46 @@ body.atak-page {
   text-decoration: none;
 }
 .atak-account-panel-body a:hover { text-decoration: underline; }
+
+.atak-details {
+  border: 1px solid var(--atak-border);
+  border-radius: 8px;
+  background: var(--atak-panel-alt);
+  margin: 0 0 0.6rem;
+  overflow: hidden;
+}
+.atak-details + .atak-details { margin-top: 0.6rem; }
+.atak-details summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--atak-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+.atak-details summary::-webkit-details-marker { display: none; }
+.atak-details summary::before {
+  content: "▸";
+  display: inline-block;
+  color: var(--atak-accent);
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+.atak-details[open] summary::before { transform: rotate(90deg); }
+.atak-details summary:hover { color: var(--atak-accent); }
+.atak-details summary:hover::before { color: var(--atak-accent); }
+.atak-details-body {
+  padding: 0 0.75rem 0.75rem;
+  border-top: 1px solid var(--atak-border);
+  padding-top: 0.65rem;
+}
 
 .atak-account-section--game-link {
   padding: 0.85rem;
