@@ -657,6 +657,11 @@ class Container
                 self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
                 self::get(TenantRepository::class),
             ),
+            \App\Controllers\Web\RoleplayPageController::class => new \App\Controllers\Web\RoleplayPageController(
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
+            ),
             \App\Controllers\Web\PersonnelDeploymentController::class => new \App\Controllers\Web\PersonnelDeploymentController(
                 self::get(AuthService::class),
                 self::get(UserRepository::class),
