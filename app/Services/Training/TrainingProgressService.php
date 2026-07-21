@@ -57,7 +57,8 @@ class TrainingProgressService
 
     public function markLessonStarted(int $enrollmentId, int $lessonId, int $tenantId, int $userId, ?int $timeSpentSeconds = null): void
     {
-        $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $enrollment = $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $this->ensureLessonBelongsToCourse($lessonId, (int) $enrollment['course_id']);
         $this->progressRepository->upsert($enrollmentId, $lessonId, [
             'status' => 'in_progress',
             'viewed_at' => date('Y-m-d H:i:s'),
@@ -67,7 +68,8 @@ class TrainingProgressService
 
     public function markLessonCompleted(int $enrollmentId, int $lessonId, int $tenantId, int $userId, ?int $timeSpentSeconds = null): void
     {
-        $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $enrollment = $this->ensureEnrollmentAccess($enrollmentId, $tenantId, $userId);
+        $this->ensureLessonBelongsToCourse($lessonId, (int) $enrollment['course_id']);
         $this->progressRepository->upsert($enrollmentId, $lessonId, [
             'status' => 'completed',
             'progress_percent' => 100,
@@ -313,31 +315,60 @@ class TrainingProgressService
     public function isModuleValidated(int $enrollmentId, int $moduleId): bool
     {
         $lessons = $this->lessonRepository->listByModuleId($moduleId);
+        $quizzes = $this->quizRepository->listQuizzesByModuleId($moduleId);
+        $byLessonStatus = $this->lessonStatusMapForEnrollment($enrollmentId);
+        $passedQuizIds = $this->passedQuizIdsForEnrollment($enrollmentId);
+
+        return $this->isModuleValidatedFromData($lessons, $quizzes, $byLessonStatus, $passedQuizIds);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $lessons
+     * @param list<array<string, mixed>> $quizzes
+     * @param array<int, string> $byLessonStatus
+     * @param array<int, true> $passedQuizIds
+     */
+    private function isModuleValidatedFromData(array $lessons, array $quizzes, array $byLessonStatus, array $passedQuizIds): bool
+    {
         foreach ($lessons as $l) {
             if ((int) ($l['is_required'] ?? 1) === 1) {
-                $p = $this->progressRepository->findByEnrollmentAndLesson($enrollmentId, (int) $l['id']);
-                if (!$p || ($p['status'] ?? '') !== 'completed') {
+                $status = $byLessonStatus[(int) $l['id']] ?? '';
+                if ($status !== 'completed') {
                     return false;
                 }
             }
         }
-        $quizzes = $this->quizRepository->listQuizzesByModuleId($moduleId);
         foreach ($quizzes as $q) {
-            if ((int) ($q['is_final_exam'] ?? 0) === 0) {
-                $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, (int) $q['id']);
-                $passed = false;
-                foreach ($attempts as $a) {
-                    if ((int) ($a['passed'] ?? 0) === 1) {
-                        $passed = true;
-                        break;
-                    }
-                }
-                if (!$passed) {
-                    return false;
-                }
+            if ((int) ($q['is_final_exam'] ?? 0) === 0 && !isset($passedQuizIds[(int) $q['id']])) {
+                return false;
             }
         }
+
         return true;
+    }
+
+    /** @return array<int, string> lesson_id => statut */
+    private function lessonStatusMapForEnrollment(int $enrollmentId): array
+    {
+        $byLesson = [];
+        foreach ($this->progressRepository->listByEnrollmentId($enrollmentId) as $p) {
+            $byLesson[(int) $p['lesson_id']] = (string) ($p['status'] ?? '');
+        }
+
+        return $byLesson;
+    }
+
+    /** @return array<int, true> quiz_id => réussi */
+    private function passedQuizIdsForEnrollment(int $enrollmentId): array
+    {
+        $passed = [];
+        foreach ($this->quizRepository->summarizeSubmittedAttemptsForEnrollment($enrollmentId) as $row) {
+            if ((int) ($row['passed_any'] ?? 0) === 1) {
+                $passed[(int) $row['quiz_id']] = true;
+            }
+        }
+
+        return $passed;
     }
 
     /** La formation est validée si tous les modules requis sont validés et le quiz final (s'il existe) est réussi. */
@@ -349,43 +380,53 @@ class TrainingProgressService
         }
         $courseId = (int) $enrollment['course_id'];
         $modules = $this->moduleRepository->listByCourseId($courseId);
+        $moduleIds = array_map(static fn (array $m): int => (int) $m['id'], $modules);
+
+        $lessonsByModule = [];
+        foreach ($this->lessonRepository->listByModuleIds($moduleIds) as $l) {
+            $lessonsByModule[(int) $l['module_id']][] = $l;
+        }
+        $quizzesByModule = [];
+        foreach ($this->quizRepository->listQuizzesByModuleIds($moduleIds) as $q) {
+            $quizzesByModule[(int) $q['module_id']][] = $q;
+        }
+        $byLessonStatus = $this->lessonStatusMapForEnrollment($enrollmentId);
+        $passedQuizIds = $this->passedQuizIdsForEnrollment($enrollmentId);
+
         $requiredModules = 0;
         $validatedRequired = 0;
+        $hasFinalExam = false;
+        $finalQuizPassed = true;
+
         foreach ($modules as $mod) {
+            $moduleId = (int) $mod['id'];
+            $lessons = $lessonsByModule[$moduleId] ?? [];
+            $quizzes = $quizzesByModule[$moduleId] ?? [];
+
             if ((int) ($mod['is_required'] ?? 1) === 1) {
                 $requiredModules++;
-                if ($this->isModuleValidated($enrollmentId, (int) $mod['id'])) {
+                if ($this->isModuleValidatedFromData($lessons, $quizzes, $byLessonStatus, $passedQuizIds)) {
                     $validatedRequired++;
                 }
             }
-        }
-        $hasFinalExam = false;
-        $finalQuizPassed = true;
-        foreach ($modules as $mod) {
-            $quizzes = $this->quizRepository->listQuizzesByModuleId((int) $mod['id']);
+
             foreach ($quizzes as $q) {
                 if ((int) ($q['is_final_exam'] ?? 0) === 1) {
                     $hasFinalExam = true;
-                    $attempts = $this->quizRepository->listAttemptsByEnrollmentAndQuiz($enrollmentId, (int) $q['id']);
-                    $passed = false;
-                    foreach ($attempts as $a) {
-                        if ((int) ($a['passed'] ?? 0) === 1) {
-                            $passed = true;
-                            break;
-                        }
-                    }
-                    if (!$passed) {
+                    if (!isset($passedQuizIds[(int) $q['id']])) {
                         $finalQuizPassed = false;
                     }
                 }
             }
         }
+
         $completed = $requiredModules > 0 && $validatedRequired >= $requiredModules && (!$hasFinalExam || $finalQuizPassed);
         $percent = $this->trainingService->getGlobalProgress($enrollmentId);
         return ['completed' => $completed, 'percent' => $percent];
     }
 
-    private function ensureEnrollmentAccess(int $enrollmentId, int $tenantId, int $userId): void
+    /** @return array<string, mixed> L’inscription, pour éviter un second aller-retour en base à l’appelant. */
+    private function ensureEnrollmentAccess(int $enrollmentId, int $tenantId, int $userId): array
     {
         $enrollment = $this->enrollmentRepository->findById($enrollmentId, $tenantId);
         if (!$enrollment || (int) $enrollment['user_id'] !== $userId) {
@@ -393,6 +434,24 @@ class TrainingProgressService
         }
         if (in_array($enrollment['status'], ['revoked', 'expired', 'pending_approval', 'withdrawn'], true)) {
             throw new \InvalidArgumentException('Enrollment no longer active.');
+        }
+
+        return $enrollment;
+    }
+
+    /**
+     * Empêche de faire progresser une leçon qui n’appartient pas au cours de l’inscription
+     * (id de leçon forgé/copié depuis une autre formation) — protège l’intégrité de training_progress.
+     */
+    private function ensureLessonBelongsToCourse(int $lessonId, int $courseId): void
+    {
+        $lesson = $this->lessonRepository->findById($lessonId);
+        if (!$lesson) {
+            throw new \InvalidArgumentException('Lesson not found.');
+        }
+        $module = $this->moduleRepository->findById((int) ($lesson['module_id'] ?? 0));
+        if (!$module || (int) ($module['course_id'] ?? 0) !== $courseId) {
+            throw new \InvalidArgumentException('Lesson does not belong to this course.');
         }
     }
 }

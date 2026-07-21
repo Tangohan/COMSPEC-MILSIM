@@ -10,10 +10,40 @@ $units = is_array($orgUnits ?? null) ? $orgUnits : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
+$canManageRoles = (bool) ($canManageRoles ?? false);
 $canRequestElevation = (bool) ($canRequestElevation ?? false);
 $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? ($m['community_name'] ?? 'Communauté')));
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
+$elevationCooldownSeconds = (int) ($elevationCooldownSeconds ?? 0);
+$elevationCooldownLabel = static function (int $seconds): string {
+    $hours = max(1, (int) ceil($seconds / 3600));
+    if ($hours < 24) {
+        return $hours . ' heure' . ($hours > 1 ? 's' : '');
+    }
+
+    $days = max(1, (int) ceil($hours / 24));
+
+    return $days . ' jour' . ($days > 1 ? 's' : '');
+};
+
+$elevationHistory = is_array($elevationHistory ?? null) ? $elevationHistory : [];
+$latestDeparture = is_array($latestDeparture ?? null) ? $latestDeparture : null;
+$departureReasonLabels = [
+    'end_of_engagement' => 'Fin d’engagement',
+    'exclusion' => 'Exclusion',
+    'pause' => 'Pause',
+    'other' => 'Autre',
+];
+$elevStatusLabel = static function (string $status): string {
+    return match ($status) {
+        'pending' => 'En attente',
+        'in_review' => 'En cours d’examen',
+        'approved' => 'Acceptée',
+        'rejected' => 'Refusée',
+        default => $status,
+    };
+};
 
 $status = (string) ($m['status'] ?? '');
 $display = trim((string) ($m['display_name'] ?? ''));
@@ -30,6 +60,11 @@ if ($fonction === '') {
 }
 $unit = trim((string) ($m['unit_name'] ?? ''));
 $unitId = (int) ($m['unit_id'] ?? 0);
+$clearanceRaw = trim((string) ($m['clearance_level'] ?? ''));
+$clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels();
+$clearanceLabel = $clearanceRaw !== '' ? ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw) : '';
+$clearanceReviewedAt = trim((string) ($m['clearance_reviewed_at'] ?? ''));
+$clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue($clearanceRaw, $clearanceReviewedAt);
 
 $statusLabel = static function (string $raw): string {
     return match ($raw) {
@@ -86,6 +121,23 @@ $statusLabel = static function (string $raw): string {
             <div>
                 <dt>Fonction</dt>
                 <dd><?= htmlspecialchars($fonction !== '' ? $fonction : '—', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <div>
+                <dt>Habilitation</dt>
+                <dd>
+                    <?php if ($clearanceLabel !== ''): ?>
+                        <span class="eff-tag"><?= htmlspecialchars($clearanceLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php if ($clearanceReviewedAt !== ''): ?>
+                            <span style="font-size:11px;color:rgba(242,244,243,.5);margin-left:.35rem">revue le <?= htmlspecialchars(date('d/m/Y', strtotime($clearanceReviewedAt)), ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                        <?php if ($clearanceOverdue): ?>
+                            <span class="eff-tag eff-tag--warn" style="margin-left:.35rem">À revoir</span>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        —
+                    <?php endif; ?>
+                    <p style="margin:.35rem 0 0;font-size:11px;color:rgba(242,244,243,.5)">Se modifie via une demande d’élévation ci-contre.</p>
+                </dd>
             </div>
             <div>
                 <dt>Unité</dt>
@@ -148,6 +200,38 @@ $statusLabel = static function (string $raw): string {
             </ul>
         <?php endif; ?>
 
+        <?php if ($elevationHistory !== []): ?>
+            <p class="eff-section-label" style="margin-top:1.35rem">Historique des élévations</p>
+            <ul style="margin:0.5rem 0 0;padding-left:1.1rem;color:rgba(242,244,243,.7);font-size:13px;line-height:1.6">
+                <?php foreach ($elevationHistory as $eh): ?>
+                    <?php
+                    $ehStatus = (string) ($eh['status'] ?? 'pending');
+                    $ehRequester = trim((string) ($eh['requester_display_name'] ?? '')) ?: trim((string) ($eh['requester_email'] ?? '')) ?: 'Membre';
+                    $ehDate = (string) ($eh['created_at'] ?? '');
+                    $ehDateFmt = $ehDate !== '' ? date('d/m/Y', strtotime($ehDate)) : '—';
+                    ?>
+                    <li>
+                        <?= htmlspecialchars($ehDateFmt, ENT_QUOTES, 'UTF-8') ?> — demandée par <?= htmlspecialchars($ehRequester, ENT_QUOTES, 'UTF-8') ?>
+                        <span class="eff-badge <?= $ehStatus === 'approved' ? 'eff-badge--active' : '' ?>" style="margin-left:.35rem"><?= htmlspecialchars($elevStatusLabel($ehStatus), ENT_QUOTES, 'UTF-8') ?></span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <?php if ($latestDeparture !== null): ?>
+            <?php
+            $ldReason = (string) ($latestDeparture['reason'] ?? 'other');
+            $ldDate = (string) ($latestDeparture['departed_at'] ?? '');
+            $ldRevoked = !empty($latestDeparture['access_revoked']);
+            ?>
+            <p class="eff-section-label" style="margin-top:1.35rem">Dernier départ enregistré</p>
+            <p style="margin:.35rem 0 0;font-size:13px;color:rgba(242,244,243,.7)">
+                <?= $ldDate !== '' ? htmlspecialchars(date('d/m/Y', strtotime($ldDate)), ENT_QUOTES, 'UTF-8') : '—' ?>
+                — <?= htmlspecialchars($departureReasonLabels[$ldReason] ?? $ldReason, ENT_QUOTES, 'UTF-8') ?>
+                <?php if ($ldRevoked): ?><span class="eff-badge" style="margin-left:.35rem">Accès retirés</span><?php endif; ?>
+            </p>
+        <?php endif; ?>
+
         <?php if ($canManageAssignments): ?>
             <p class="eff-section-label" style="margin-top:1.35rem">Modifier l’unité</p>
             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form" style="margin-top:.65rem">
@@ -178,7 +262,11 @@ $statusLabel = static function (string $raw): string {
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>">Gérer les emplois métier</a>
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Gérer les rôles</a>
 
-            <?php if ($canRequestElevation): ?>
+            <?php if ($canRequestElevation && $elevationCooldownSeconds > 0): ?>
+                <p class="eff-member-elevate__title" style="opacity:.6">
+                    Demande d’élévation déjà envoyée — patientez <?= htmlspecialchars($elevationCooldownLabel($elevationCooldownSeconds), ENT_QUOTES, 'UTF-8') ?> avant d’en renvoyer une.
+                </p>
+            <?php elseif ($canRequestElevation): ?>
                 <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/elevation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form eff-member-elevate">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="return_to" value="member">
@@ -204,6 +292,33 @@ $statusLabel = static function (string $raw): string {
                     </select>
                     <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer le statut</button>
                 </form>
+            <?php endif; ?>
+
+            <?php if ($canManageStatus): ?>
+                <details class="eff-pop">
+                    <summary class="eff-btn eff-btn--ghost" style="cursor:pointer">Enregistrer un départ</summary>
+                    <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/depart'), ENT_QUOTES, 'UTF-8') ?>" class="eff-pop__form" style="margin-top:.65rem">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                        <label for="eff-depart-reason">Motif</label>
+                        <select id="eff-depart-reason" name="reason">
+                            <option value="end_of_engagement">Fin d’engagement</option>
+                            <option value="exclusion">Exclusion</option>
+                            <option value="pause">Pause</option>
+                            <option value="other">Autre</option>
+                        </select>
+                        <label for="eff-depart-date">Date du départ</label>
+                        <input type="date" id="eff-depart-date" name="departed_at" value="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>">
+                        <label for="eff-depart-note">Note (optionnel)</label>
+                        <textarea id="eff-depart-note" name="reason_note" rows="2" maxlength="500" placeholder="Contexte du départ…"></textarea>
+                        <?php if ($canManageRoles): ?>
+                        <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;text-transform:none;letter-spacing:normal">
+                            <input type="checkbox" name="revoke_access" value="1" style="width:auto">
+                            Retirer immédiatement les rôles organisation et l’habilitation
+                        </label>
+                        <?php endif; ?>
+                        <button type="submit" class="eff-btn eff-btn--warn">Confirmer le départ</button>
+                    </form>
+                </details>
             <?php endif; ?>
         </div>
     </aside>

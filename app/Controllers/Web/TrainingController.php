@@ -33,7 +33,9 @@ use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\HrCharterRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Repositories\RoleRepository;
 use App\Support\TrainingFormationCustomPageRenderer;
+use App\Support\TrainingLmsStaffAccess;
 use App\Core\Csrf;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
@@ -69,6 +71,9 @@ class TrainingController
         private AnalyticsEventService $analyticsEventService,
         private HrCharterRepository $hrCharterRepository,
         private TrainingFormationCustomPageRepository $formationCustomPageRepository,
+        private RoleRepository $roleRepository,
+        private \App\Services\Training\TrainingFormationCustomPageExportPdfService $formationCustomPagePdfExport,
+        private \App\Repositories\TrainingFormationCustomPageFeedbackRepository $formationCustomPageFeedbackRepository,
     ) {}
 
     /**
@@ -1068,7 +1073,7 @@ class TrainingController
             return Response::redirect(url('formations'));
         }
         $row = $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug);
-        if ($row === null) {
+        if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {
             return Response::view('training.formation_introuvable', [
                 'slug' => $slug,
                 'context' => 'documentation',
@@ -1076,11 +1081,177 @@ class TrainingController
         }
         $this->formationCustomPageRepository->incrementView((int) $row['id'], $tenantId, $userId);
         $base = rtrim(url(''), '/');
-        $full = TrainingFormationCustomPageRenderer::render($row, $base);
+        $pdfUrl = url('formations/page/' . rawurlencode($slug) . '/pdf');
+        $feedbackHtml = $this->buildFormationDocFeedbackHtml((int) $row['id'], $tenantId, $userId, $slug);
+        $full = TrainingFormationCustomPageRenderer::render($row, $base, null, $pdfUrl, $feedbackHtml);
 
         return (new Response())
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->setBody($full);
+    }
+
+    private function buildFormationDocFeedbackHtml(int $pageId, int $tenantId, int $userId, string $slug): string
+    {
+        $existing = $this->formationCustomPageFeedbackRepository->findForPageUser($pageId, $userId);
+        $agg = $this->formationCustomPageFeedbackRepository->aggregateForPage($pageId, $tenantId);
+        $myRating = (int) ($existing['rating'] ?? 0);
+        $myComment = (string) ($existing['comment'] ?? '');
+        $flashSuccess = Session::getFlash('formation_doc_feedback_success');
+        $formationDocFeedbackAction = htmlspecialchars(url('formations/page/' . rawurlencode($slug) . '/avis'), ENT_QUOTES, 'UTF-8');
+
+        $stars = '';
+        for ($i = 5; $i >= 1; $i--) {
+            $checked = $i === $myRating ? ' checked' : '';
+            $stars .= '<label class="formation-doc-feedback__star"><input type="radio" name="rating" value="' . $i . '"' . $checked . ' required><span aria-hidden="true">★</span><span class="sr-only">' . $i . ' / 5</span></label>';
+        }
+
+        $aggLine = $agg['count'] > 0
+            ? '<p class="formation-doc-feedback__agg">Note moyenne des lecteurs : <strong>' . htmlspecialchars((string) $agg['avg_rating'], ENT_QUOTES, 'UTF-8') . '/5</strong> (' . (int) $agg['count'] . ' avis)</p>'
+            : '<p class="formation-doc-feedback__agg">Soyez le premier à donner votre avis sur ce document.</p>';
+
+        $successMsg = $flashSuccess ? '<p class="formation-doc-feedback__success" role="status">Merci, votre avis a été enregistré.</p>' : '';
+
+        return '<section class="formation-doc-feedback" aria-labelledby="formation-doc-feedback-heading">'
+            . '<h2 id="formation-doc-feedback-heading">Votre avis sur ce document</h2>'
+            . $aggLine
+            . $successMsg
+            . '<form method="post" action="' . $formationDocFeedbackAction . '" class="formation-doc-feedback__form">'
+            . \App\Core\Csrf::field()
+            . '<div class="formation-doc-feedback__stars" role="radiogroup" aria-label="Note sur 5">' . $stars . '</div>'
+            . '<textarea name="comment" maxlength="2000" placeholder="Un commentaire (optionnel)…">' . htmlspecialchars($myComment, ENT_QUOTES, 'UTF-8') . '</textarea>'
+            . '<button type="submit">' . ($existing ? 'Mettre à jour mon avis' : 'Envoyer mon avis') . '</button>'
+            . '</form>'
+            . '</section>';
+    }
+
+    public function formationCustomPageSubmitFeedback(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        $slug = trim(rawurldecode((string) ($params['slug'] ?? '')));
+        $redirect = Response::redirect(url('formations/page/' . rawurlencode($slug)));
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return $redirect;
+        }
+        $row = $slug !== '' ? $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug) : null;
+        if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $rating = (int) $request->input('rating', 0);
+        if ($rating < 1 || $rating > 5) {
+            Session::flash('error', 'Merci de choisir une note entre 1 et 5.');
+
+            return $redirect;
+        }
+        $comment = trim((string) $request->input('comment', ''));
+        $this->formationCustomPageFeedbackRepository->upsert($tenantId, (int) $row['id'], $userId, $rating, $comment !== '' ? $comment : null);
+        Session::flash('formation_doc_feedback_success', '1');
+
+        return $redirect;
+    }
+
+    public function formationCustomPageExportPdf(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        $userId = Session::get('user_id');
+        if (!$tenantId || !$userId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $userId = (int) $userId;
+        if (!$this->featureGate->allows($tenantId, 'training')) {
+            return Response::redirect(url('formations'));
+        }
+        $charterBlock = $this->responseIfHrCharterBlocking($request, $tenantId, $userId);
+        if ($charterBlock !== null) {
+            return $charterBlock;
+        }
+        $slug = trim(rawurldecode((string) ($params['slug'] ?? '')));
+        $row = $slug !== '' ? $this->formationCustomPageRepository->findPublishedBySlug($tenantId, $slug) : null;
+        if ($row === null || !$this->canViewFormationCustomPage($row, $tenantId, $userId)) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $binary = $this->formationCustomPagePdfExport->generateBinary($row);
+        if ($binary === null) {
+            Session::flash('error', $this->formationCustomPagePdfExport->getLastFailureReason() ?? 'Impossible de générer le PDF.');
+
+            return Response::redirect(url('formations/page/' . rawurlencode($slug)));
+        }
+        $filename = 'documentation-' . $slug . '.pdf';
+
+        return (new Response())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary);
+    }
+
+    /**
+     * Applique visibility_level / allowed_roles_json d'une Documentation HTML.
+     * Le staff LMS (TrainingLmsStaffAccess) voit toujours tout, comme dans le studio d'édition.
+     *
+     * @param array<string,mixed> $row
+     */
+    private function canViewFormationCustomPage(array $row, int $tenantId, int $userId): bool
+    {
+        $level = (string) ($row['visibility_level'] ?? 'tenant');
+        if ($level === 'tenant' || $level === 'internal_link' || $level === '') {
+            return true;
+        }
+        if (TrainingLmsStaffAccess::allows(Gate::getInstance())) {
+            return true;
+        }
+        if ($level === 'staff_private') {
+            return false;
+        }
+        if ($level === 'role_based') {
+            $allowed = $this->allowedRoleTokensFromJson((string) ($row['allowed_roles_json'] ?? ''));
+            if ($allowed === []) {
+                // Niveau restreint choisi mais aucun rôle configuré : on ferme l'accès plutôt que
+                // de dégrader silencieusement vers un accès « tenant » non voulu par l'auteur.
+                return false;
+            }
+            $userRoles = $this->roleRepository->listOrganizationRolesForUsers($tenantId, [$userId])[$userId] ?? [];
+            foreach ($userRoles as $role) {
+                $slug = strtolower(trim((string) ($role['slug'] ?? '')));
+                $name = strtolower(trim((string) ($role['name'] ?? '')));
+                if (($slug !== '' && in_array($slug, $allowed, true)) || ($name !== '' && in_array($name, $allowed, true))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @return list<string> tokens en minuscule (slug ou nom de rôle attendu) */
+    private function allowedRoleTokensFromJson(string $json): array
+    {
+        $json = trim($json);
+        if ($json === '') {
+            return [];
+        }
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+        $out = [];
+        foreach ($decoded as $v) {
+            $t = strtolower(trim((string) $v));
+            if ($t !== '') {
+                $out[] = $t;
+            }
+        }
+
+        return $out;
     }
 
     /** Lecture d'une leçon. */

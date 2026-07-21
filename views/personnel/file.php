@@ -238,7 +238,8 @@ $rExtra = (int) ($personnelExtras['readiness_percent'] ?? 0);
 $readinessMerged = max($rScore, $rExtra);
 $readiness = $readinessMerged > 0 ? $readinessMerged : null;
 $adminNotes = trim((string)($personnelProfile['command_notes'] ?? '')) ?: ($personnelExtras['admin_notes'] ?? null);
-$clearanceLevel = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
+$clearanceLevelRaw = trim((string)($personnelProfile['clearance_level'] ?? '')) ?: trim((string)($personnelExtras['clearance_level'] ?? ''));
+$clearanceLevel = \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels()[$clearanceLevelRaw] ?? $clearanceLevelRaw;
 
 $avatarUrl = !empty($targetUser['avatar_url']) ? $targetUser['avatar_url'] : null;
 if ($avatarUrl && strpos($avatarUrl, 'http') !== 0) {
@@ -1118,17 +1119,43 @@ $personnelFileShell = $personnelFileIsRhFull
                     $rpBlood = trim((string) ($personnelProfile['blood_type'] ?? ''));
                     $rpLangs = trim((string) ($personnelProfile['languages'] ?? ''));
                     $rpNat = trim((string) ($personnelProfile['nationality'] ?? ''));
-                    $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpLangs !== '' || $rpNat !== '';
+                    $rpSex = trim((string) ($personnelProfile['sex'] ?? ''));
+                    $rpBirthPlace = trim((string) ($personnelProfile['birth_place'] ?? ''));
+                    $rpFamily = trim((string) ($personnelProfile['family_situation'] ?? ''));
+                    $rpWeight = (int) ($personnelProfile['weight_kg'] ?? 0);
+                    $rpOperatorStatus = trim((string) ($personnelProfile['operator_status'] ?? ''));
+                    $rpOperatorTags = trim((string) ($personnelProfile['operator_tags'] ?? ''));
+                    $rpExtra = $rpMotto !== '' || $rpBlood !== '' || $rpLangs !== '' || $rpNat !== ''
+                        || $rpSex !== '' || $rpBirthPlace !== '' || $rpFamily !== '' || $rpWeight > 0
+                        || $rpOperatorStatus !== '' || $rpOperatorTags !== '';
                     ?>
                     <?php if ($rpExtra): ?>
                     <div class="mt-8 border-t border-slate-100 pt-6">
                         <h3 class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mb-4">Détails RP (dossier opérationnel)</h3>
                         <div class="grid md:grid-cols-2 gap-6">
+                            <?php if ($rpOperatorStatus !== ''): ?>
+                            <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Statut opérateur</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpOperatorStatus) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpOperatorTags !== ''): ?>
+                            <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Spécialités / tags</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($rpOperatorTags) ?></p></div>
+                            <?php endif; ?>
                             <?php if ($rpMotto !== ''): ?>
                             <div class="md:col-span-2"><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Devise / motto</p><p class="text-sm font-semibold text-slate-800 italic"><?= htmlspecialchars($rpMotto) ?></p></div>
                             <?php endif; ?>
+                            <?php if ($rpSex !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Sexe</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpSex) ?></p></div>
+                            <?php endif; ?>
                             <?php if ($rpBlood !== ''): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Groupe sanguin</p><p class="text-sm font-black text-slate-900"><?= htmlspecialchars($rpBlood) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpWeight > 0): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Poids</p><p class="text-sm text-slate-800"><?= $rpWeight ?> kg</p></div>
+                            <?php endif; ?>
+                            <?php if ($rpBirthPlace !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Lieu de naissance</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpBirthPlace) ?></p></div>
+                            <?php endif; ?>
+                            <?php if ($rpFamily !== ''): ?>
+                            <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Situation familiale</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpFamily) ?></p></div>
                             <?php endif; ?>
                             <?php if ($rpLangs !== ''): ?>
                             <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Langues (RP)</p><p class="text-sm text-slate-800"><?= htmlspecialchars($rpLangs) ?></p></div>

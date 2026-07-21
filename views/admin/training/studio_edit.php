@@ -24,6 +24,7 @@ foreach ($modules as $sm) {
 }
 $studioStructureEmptyButMetaShowsModules = $modules === [] && $studioMetaModuleCount > 0;
 $libraryDocumentsForPicker = $libraryDocumentsForPicker ?? [];
+$formationDocsForPicker = $formationDocsForPicker ?? [];
 
 $gateEdit = \App\Core\Gate::getInstance();
 $studioEditCanVitrine = $gateEdit->allows('admin.access') || $gateEdit->allows('training.manage')
@@ -72,6 +73,14 @@ if ($fileResourceTypeLabels === []) {
     $fileResourceTypeLabels = ['attachment' => 'Fichier joint'];
 }
 $studioDocPickerCount = count($libraryDocumentsForPicker);
+$studioFormationDocPickerCount = count($formationDocsForPicker);
+$formationDocStatusLabels = [
+    'draft' => 'Brouillon',
+    'review' => 'En révision',
+    'scheduled' => 'Programmé',
+    'published' => 'Publié',
+    'archived' => 'Archivé',
+];
 $studioCanDocsAdmin = $gateEdit->allows('documents.upload') || $gateEdit->allows('documents.view') || $gateEdit->allows('admin.access');
 $studioOtherCourses = $studioOtherCourses ?? [];
 $studioRoles = $studioRoles ?? [];
@@ -1012,6 +1021,7 @@ $defaultCanvasJson = json_encode([
                                             <option value="file">Un autre fichier (PDF, archive, audio…)</option>
                                             <option value="library">Un document du centre documentaire de la communauté</option>
                                             <option value="library_upload">Bibliothèque d’assets (upload type YouTube Studio)</option>
+                                            <option value="formation_doc">Une Documentation HTML (Studio LMS)</option>
                                         </select>
                                     </div>
                                     <div class="space-y-2" data-lms-res-panel="image">
@@ -1101,6 +1111,29 @@ $defaultCanvasJson = json_encode([
                                         <?php endif; ?>
                                         <?php if ($studioDocPickerCount === 0): ?>
                                         <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucun document dans le centre pour cette communauté. Ajoutez-en depuis la gestion documentaire, puis revenez ici.</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="space-y-2 hidden" data-lms-res-panel="formation_doc">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Documentation HTML</label>
+                                            <select name="formation_doc_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                                <option value="">— Choisir un document —</option>
+                                                <?php foreach ($formationDocsForPicker as $fdoc):
+                                                    $fdId = (int) ($fdoc['id'] ?? 0);
+                                                    $fdTitle = (string) ($fdoc['title'] ?? 'Sans titre');
+                                                    $fdSt = (string) ($fdoc['status'] ?? '');
+                                                    $fdStLab = $fdSt !== '' && isset($formationDocStatusLabels[$fdSt]) ? $formationDocStatusLabels[$fdSt] : $fdSt;
+                                                    ?>
+                                                <option value="<?= $fdId ?>"><?= htmlspecialchars($fdTitle) ?><?= $fdStLab !== '' ? ' — ' . htmlspecialchars($fdStLab) : '' ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <p class="text-xs text-slate-600">
+                                            <a href="<?= htmlspecialchars(url('formation/pages-html'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-sky-800 underline decoration-sky-200 hover:decoration-sky-600">Ouvrir les Documentations HTML</a>
+                                            pour créer ou publier un document.
+                                        </p>
+                                        <?php if ($studioFormationDocPickerCount === 0): ?>
+                                        <p class="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune Documentation HTML pour cette communauté.</p>
                                         <?php endif; ?>
                                     </div>
                                     <div class="space-y-2 hidden" data-lms-res-panel="library_upload">

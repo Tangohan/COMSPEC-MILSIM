@@ -203,7 +203,11 @@ class AdminTrainingStudioController
         private TrainingPublicSiteImageCatalog $publicSiteImageCatalog,
         private TrainingPresentationKitService $presentationKitService,
         private TrainingStaffAlertService $staffAlertService,
+        private \App\Repositories\TrainingFormationCustomPageRepository $formationCustomPageRepository,
+        private \App\Repositories\ContentTagRepository $tagRepository,
     ) {}
+
+    private const TAG_CONTENT_TYPE = 'course';
 
     public function index(Request $request, array $params = []): Response
     {
@@ -527,6 +531,10 @@ class AdminTrainingStudioController
                 null,
                 'title_asc'
             ),
+            'formationDocsForPicker' => $this->formationCustomPageRepository->listByTenant($tenantId, 200),
+            'studioCourseTags' => implode(', ', array_map(static fn (array $t): string => $t['name'], $this->tagRepository->listForContent($tenantId, self::TAG_CONTENT_TYPE, $id))),
+            'studioAllTags' => $this->tagRepository->listForTenant($tenantId),
+            'studioCategoriesForPicker' => $this->courseRepository->listDistinctCategoriesForTenant($tenantId),
             'studioPresentationKits' => $section === 'presentation'
                 ? $this->presentationKitService->listKits($tenantId)
                 : [],
@@ -809,6 +817,7 @@ class AdminTrainingStudioController
             'visibility' => $oldVis,
         ];
         $this->courseRepository->update($courseId, $patch);
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $courseId, (string) $request->input('tags', ''));
         $this->auditService->logCourseUpdated($tenantId, $userId, $courseId, $oldSnapshot, [
             'title' => $title,
             'slug' => $slug,
@@ -1459,8 +1468,46 @@ class AdminTrainingStudioController
         }
         $hash = '#lesson-res-' . $lessonId;
         $mode = (string) $request->input('resource_add_mode', 'link');
-        if (!in_array($mode, ['link', 'file', 'image', 'library', 'library_upload'], true)) {
+        if (!in_array($mode, ['link', 'file', 'image', 'library', 'library_upload', 'formation_doc'], true)) {
             $mode = 'link';
+        }
+
+        if ($mode === 'formation_doc') {
+            $docId = (int) $request->input('formation_doc_id', 0);
+            $doc = $docId > 0 ? $this->formationCustomPageRepository->findById($docId, $tenantId) : null;
+            if (!$doc) {
+                Session::flash('error', 'Choisissez une Documentation HTML dans la liste.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $title = trim((string) $request->input('resource_title', ''));
+            if ($title === '') {
+                $title = trim((string) ($doc['title'] ?? 'Documentation'));
+            }
+            $slug = (string) ($doc['slug'] ?? '');
+            $extUrl = $slug !== '' ? rtrim(url(''), '/') . '/formations/page/' . rawurlencode($slug) : null;
+            if ($extUrl === null) {
+                Session::flash('error', 'Ce document n’a pas d’adresse publique valide.');
+
+                return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+            }
+            $this->resourceRepository->create($lessonId, [
+                'resource_type' => 'link',
+                'title' => mb_substr($title, 0, 255),
+                'external_url' => $extUrl,
+                'file_path' => null,
+            ]);
+            $this->markCourseSavedWithCurrentStudioVersion($courseId);
+            $msg = 'Documentation liée à la leçon.';
+            $visLevel = (string) ($doc['visibility_level'] ?? 'tenant');
+            if (($doc['status'] ?? '') !== 'published') {
+                $msg .= ' Ce document n’est pas encore publié : les apprenants ne verront le lien qu’après publication.';
+            } elseif (!in_array($visLevel, ['tenant', 'internal_link', ''], true)) {
+                $msg .= ' Attention : ce document a une visibilité restreinte (' . $visLevel . ') — seuls les apprenants autorisés pourront ouvrir le lien.';
+            }
+            Session::flash('success', $msg);
+
+            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
         }
         if ($mode === 'library_upload') {
             $upload = isset($_FILES['resource_library_upload']) && is_array($_FILES['resource_library_upload'])

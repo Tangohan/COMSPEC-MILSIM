@@ -38,7 +38,21 @@ $validityDaysField = $course['validity_days'] ?? null;
             </div>
             <div class="ts-field">
                 <label for="fiche-category">Catégorie</label>
-                <input id="fiche-category" type="text" name="category" value="<?= htmlspecialchars((string) ($course['category'] ?? '')) ?>" placeholder="Optionnel">
+                <input id="fiche-category" type="text" name="category" list="fiche-category-datalist" value="<?= htmlspecialchars((string) ($course['category'] ?? '')) ?>" placeholder="Optionnel">
+                <datalist id="fiche-category-datalist">
+                    <?php foreach (($studioCategoriesForPicker ?? []) as $catOpt): ?>
+                    <option value="<?= htmlspecialchars((string) $catOpt) ?>">
+                    <?php endforeach; ?>
+                </datalist>
+            </div>
+            <div class="ts-field">
+                <label for="fiche-tags">Tags</label>
+                <input id="fiche-tags" type="text" name="tags" list="fiche-tags-datalist" value="<?= htmlspecialchars((string) ($studioCourseTags ?? '')) ?>" placeholder="Séparés par des virgules">
+                <datalist id="fiche-tags-datalist">
+                    <?php foreach (($studioAllTags ?? []) as $tg): ?>
+                    <option value="<?= htmlspecialchars((string) $tg['name']) ?>">
+                    <?php endforeach; ?>
+                </datalist>
             </div>
             <div class="ts-field">
                 <label for="fiche-language">Langue</label>

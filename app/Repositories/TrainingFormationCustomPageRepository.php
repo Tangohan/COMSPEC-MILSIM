@@ -16,14 +16,10 @@ final class TrainingFormationCustomPageRepository
         $this->pdo = Database::getPdo();
     }
 
-    /** @return list<array<string, mixed>> */
-    public function listByTenant(int $tenantId, int $limit = 200, array $filters = []): array
+    /** @return array{sql:string, params:list<mixed>} */
+    private function whereClauseForTenant(int $tenantId, array $filters): array
     {
-        $limit = max(1, min(500, $limit));
-        $sql = 'SELECT p.*, t.name AS theme_name
-            FROM training_formation_custom_pages p
-            LEFT JOIN training_formation_custom_page_themes t ON t.id = p.theme_id AND t.tenant_id = p.tenant_id
-            WHERE p.tenant_id = ?';
+        $sql = ' WHERE p.tenant_id = ?';
         $params = [$tenantId];
 
         $q = trim((string) ($filters['q'] ?? ''));
@@ -47,11 +43,48 @@ final class TrainingFormationCustomPageRepository
             $params[] = $structure;
         }
 
-        $sql .= ' ORDER BY p.updated_at DESC LIMIT ' . $limit;
+        $idIn = $filters['id_in'] ?? null;
+        if (is_array($idIn)) {
+            $idIn = array_values(array_unique(array_filter(array_map('intval', $idIn), static fn (int $v): bool => $v > 0)));
+            if ($idIn === []) {
+                // Filtre actif (ex. tag) sans résultat : ne rien retourner plutôt qu'ignorer le filtre.
+                $sql .= ' AND 1=0';
+            } else {
+                $sql .= ' AND p.id IN (' . implode(',', array_fill(0, count($idIn), '?')) . ')';
+                foreach ($idIn as $pid) {
+                    $params[] = $pid;
+                }
+            }
+        }
+
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listByTenant(int $tenantId, int $limit = 200, array $filters = [], int $offset = 0): array
+    {
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+        $where = $this->whereClauseForTenant($tenantId, $filters);
+        $sql = 'SELECT p.*, t.name AS theme_name
+            FROM training_formation_custom_pages p
+            LEFT JOIN training_formation_custom_page_themes t ON t.id = p.theme_id AND t.tenant_id = p.tenant_id'
+            . $where['sql']
+            . ' ORDER BY p.updated_at DESC LIMIT ' . $limit . ' OFFSET ' . $offset;
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute($where['params']);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @param array<string,mixed> $filters */
+    public function countByTenant(int $tenantId, array $filters = []): int
+    {
+        $where = $this->whereClauseForTenant($tenantId, $filters);
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM training_formation_custom_pages p' . $where['sql']);
+        $stmt->execute($where['params']);
+
+        return (int) $stmt->fetchColumn();
     }
 
     /** @return list<array<string,mixed>> */
@@ -265,5 +298,31 @@ final class TrainingFormationCustomPageRepository
         }
 
         return $metrics;
+    }
+
+    /** Brouillons/révisions non modifiés depuis {$days} jours. @return list<array<string,mixed>> */
+    public function listForgottenDrafts(int $tenantId, int $days = 30, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, title, status, updated_at FROM training_formation_custom_pages
+             WHERE tenant_id = ? AND status IN ('draft','review') AND updated_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+             ORDER BY updated_at ASC LIMIT " . max(1, min(50, $limit))
+        );
+        $stmt->execute([$tenantId, $days]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** Documents publiés jamais consultés. @return list<array<string,mixed>> */
+    public function listNeverViewed(int $tenantId, int $limit = 10): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, title, status, updated_at FROM training_formation_custom_pages
+             WHERE tenant_id = ? AND is_published = 1 AND view_count = 0
+             ORDER BY updated_at ASC LIMIT ' . max(1, min(50, $limit))
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

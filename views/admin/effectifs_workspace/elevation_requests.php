@@ -6,8 +6,12 @@ declare(strict_types=1);
  *
  * @var list<array<string,mixed>> $elevationRequests
  * @var bool $elevationShowAll
+ * @var int $elevationPage
+ * @var int $elevationPerPage
+ * @var int $elevationTotal
+ * @var int $elevationTotalPages
  * @var array<string,string> $elevationKindLabels
- * @var array{grades?:list,roles?:list,job_roles?:list,units?:list} $elevationCatalog
+ * @var array{grades?:list,roles?:list,job_roles?:list,units?:list,clearance_levels?:array<string,string>} $elevationCatalog
  * @var array{roles?:list,permissions?:list,byRole?:array} $elevationRoleMatrix
  */
 
@@ -16,12 +20,24 @@ use App\Support\OrganizationRoleLabels;
 
 $requests = is_array($elevationRequests ?? null) ? $elevationRequests : [];
 $showAll = (bool) ($elevationShowAll ?? false);
+$elevPage = (int) ($elevationPage ?? 1);
+$elevTotalPages = (int) ($elevationTotalPages ?? 1);
+$elevTotal = (int) ($elevationTotal ?? count($requests));
+$elevPageUrl = static function (int $p) use ($showAll): string {
+    $q = http_build_query(array_filter([
+        'all' => $showAll ? '1' : null,
+        'page' => $p > 1 ? $p : null,
+    ], static fn ($v) => $v !== null));
+
+    return effectifs_workspace_url('elevations') . ($q !== '' ? '?' . $q : '');
+};
 $kindLabels = is_array($elevationKindLabels ?? null) ? $elevationKindLabels : [];
 $catalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
 $grades = is_array($catalog['grades'] ?? null) ? $catalog['grades'] : [];
 $roles = is_array($catalog['roles'] ?? null) ? $catalog['roles'] : [];
 $jobRoles = is_array($catalog['job_roles'] ?? null) ? $catalog['job_roles'] : [];
 $units = is_array($catalog['units'] ?? null) ? $catalog['units'] : [];
+$clearanceLevels = is_array($catalog['clearance_levels'] ?? null) ? $catalog['clearance_levels'] : [];
 $roleMatrix = is_array($elevationRoleMatrix ?? null) ? $elevationRoleMatrix : ['roles' => [], 'permissions' => [], 'byRole' => []];
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $openCount = 0;
@@ -79,6 +95,9 @@ $proposalSummary = static function (array $labels): string {
     }
     if (!empty($labels['unit'])) {
         $bits[] = 'Affectation « ' . $labels['unit'] . ' »';
+    }
+    if (!empty($labels['clearance'])) {
+        $bits[] = 'Habilitation « ' . $labels['clearance'] . ' »';
     }
 
     return $bits !== [] ? implode(' · ', $bits) : '—';
@@ -197,6 +216,23 @@ $proposalSummary = static function (array $labels): string {
         <div class="eff-catalog-foot">
             <p style="margin:0"><?= count($requests) ?> demande<?= count($requests) > 1 ? 's' : '' ?><?= $showAll ? ' (historique)' : ' ouverte' . ($openCount > 1 ? 's' : '') ?></p>
         </div>
+
+        <?php if ($showAll && $elevTotalPages > 1): ?>
+        <div class="eff-catalog-foot">
+            <p style="margin:0">
+                <strong style="color:#0f172a"><?= $elevTotal ?></strong>
+                demande<?= $elevTotal > 1 ? 's' : '' ?> — page <?= $elevPage ?> / <?= $elevTotalPages ?>
+            </p>
+            <div class="eff-catalog-foot__links">
+                <?php if ($elevPage > 1): ?>
+                    <a class="eff-catalog__btn" href="<?= htmlspecialchars($elevPageUrl($elevPage - 1), ENT_QUOTES, 'UTF-8') ?>">Page précédente</a>
+                <?php endif; ?>
+                <?php if ($elevPage < $elevTotalPages): ?>
+                    <a class="eff-catalog__btn" href="<?= htmlspecialchars($elevPageUrl($elevPage + 1), ENT_QUOTES, 'UTF-8') ?>">Page suivante</a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
@@ -215,6 +251,7 @@ $proposalSummary = static function (array $labels): string {
     $proposedRoleId = (int) ($r['proposed_role_id'] ?? 0);
     $proposedJobId = (int) ($r['proposed_job_role_id'] ?? 0);
     $proposedUnitId = (int) ($r['proposed_unit_id'] ?? 0);
+    $proposedClearance = trim((string) ($r['proposed_clearance_level'] ?? ''));
     $currentRoleIds = is_array($r['_current_role_ids'] ?? null) ? $r['_current_role_ids'] : [];
     $diff = is_array($r['_permission_diff'] ?? null) ? $r['_permission_diff'] : ['gained' => [], 'lost' => [], 'unchanged_count' => 0, 'rows' => []];
     $proposalLabels = is_array($r['_proposal_labels'] ?? null) ? $r['_proposal_labels'] : [];
@@ -300,6 +337,15 @@ $proposalSummary = static function (array $labels): string {
                     <?php foreach ($units as $u): ?>
                         <?php $uid = (int) ($u['id'] ?? 0); if ($uid < 1) continue; ?>
                         <option value="<?= $uid ?>" <?= $proposedUnitId === $uid ? 'selected' : '' ?>><?= htmlspecialchars((string) ($u['assignment_path'] ?? $u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label for="elev-clearance-<?= $id ?>">Habilitation à appliquer</label>
+                <select id="elev-clearance-<?= $id ?>" name="proposed_clearance_level" class="eff-elev-select">
+                    <option value="">— Ne pas modifier l’habilitation —</option>
+                    <?php foreach ($clearanceLevels as $clValue => $clLabel): ?>
+                        <option value="<?= htmlspecialchars((string) $clValue, ENT_QUOTES, 'UTF-8') ?>" <?= $proposedClearance === (string) $clValue ? 'selected' : '' ?>><?= htmlspecialchars((string) $clLabel, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -577,6 +623,7 @@ $proposalSummary = static function (array $labels): string {
             var role = selectedLabel(form.querySelector('[name="proposed_role_id"]'));
             var job = selectedLabel(form.querySelector('[name="proposed_job_role_id"]'));
             var unit = selectedLabel(form.querySelector('[name="proposed_unit_id"]'));
+            var clearance = selectedLabel(form.querySelector('[name="proposed_clearance_level"]'));
             var panel = form.closest('[data-elev-panel]');
             var name = panel ? (panel.querySelector('.eff-elev-panel__title') || {}).textContent || 'ce membre' : 'ce membre';
             var lines = ['<p><strong>Membre :</strong> ' + name.replace(/</g, '&lt;') + '</p>', '<ul>'];
@@ -584,8 +631,9 @@ $proposalSummary = static function (array $labels): string {
             if (role) lines.push('<li>Rôle → ' + role.replace(/</g, '&lt;') + ' <em>(' + modeLabel(form).replace(/</g, '&lt;') + ')</em></li>');
             if (job) lines.push('<li>Fonction → ' + job.replace(/</g, '&lt;') + '</li>');
             if (unit) lines.push('<li>Affectation → ' + unit.replace(/</g, '&lt;') + '</li>');
-            if (!grade && !role && !job && !unit) {
-                lines.push('<li>Aucun changement de grade, rôle, fonction ou affectation — seule l’acceptation sera enregistrée.</li>');
+            if (clearance) lines.push('<li>Habilitation → ' + clearance.replace(/</g, '&lt;') + ' <em>(conditionne l’accès aux documents classifiés)</em></li>');
+            if (!grade && !role && !job && !unit && !clearance) {
+                lines.push('<li>Aucun changement de grade, rôle, fonction, affectation ou habilitation — seule l’acceptation sera enregistrée.</li>');
             }
             lines.push('</ul>');
             var gainedCount = form.querySelector('[data-elev-gained-count]');

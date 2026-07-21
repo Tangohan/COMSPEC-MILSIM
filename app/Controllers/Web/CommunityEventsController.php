@@ -10,7 +10,10 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\CommunityEventSlotAssignmentRepository;
+use App\Repositories\CommunityEventSlotRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
+use App\Services\Attendance\CommunityEventSlotService;
 use App\Services\Auth\AuthService;
 use App\Services\Calendar\CommunityCalendarFeedTokenService;
 use App\Services\Platform\FeatureGateService;
@@ -21,7 +24,10 @@ final class CommunityEventsController
         private CommunityEventRepository $events,
         private AuthService $authService,
         private FeatureGateService $featureGate,
-        private CommunityEventAttendanceService $attendance
+        private CommunityEventAttendanceService $attendance,
+        private CommunityEventSlotRepository $slots,
+        private CommunityEventSlotAssignmentRepository $slotAssignments,
+        private CommunityEventSlotService $slotService
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -79,6 +85,8 @@ final class CommunityEventsController
             }
         }
         $rsvpSummaries = $this->events->rsvpSummariesForEvents($eventIds);
+        $eventSlotsByEvent = $this->slots->listForEventsWithCounts($eventIds);
+        $mySlotAssignmentByEvent = $userId ? $this->slotAssignments->listForUserAcrossEvents($userId, $eventIds) : [];
 
         return Response::view('layout.main', [
             'title' => 'Événements & opérations',
@@ -90,7 +98,64 @@ final class CommunityEventsController
             'calendar_subscription_url' => $calendarSubscriptionUrl,
             'canPublishOperationalBoard' => $canPublishOperationalBoard,
             'eventsRsvpSummaries' => $rsvpSummaries,
+            'eventSlotsByEvent' => $eventSlotsByEvent,
+            'mySlotAssignmentByEvent' => $mySlotAssignmentByEvent,
         ]);
+    }
+
+    public function signUpSlot(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('evenements'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('evenements'));
+        }
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $eventId = (int) ($params['id'] ?? 0);
+        $slotId = (int) ($params['slotId'] ?? 0);
+        $result = $this->slotService->signUp($tenantId, $eventId, $slotId, (int) $user['id']);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Inscription impossible.');
+
+            return Response::redirect(url('evenements'));
+        }
+        Session::flash('success', $result['status'] === 'waitlisted' ? 'Poste complet : vous êtes en liste d’attente.' : 'Inscription au poste confirmée.');
+
+        return Response::redirect(url('evenements'));
+    }
+
+    public function leaveSlot(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('evenements'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allowsLimitedFeatureModule($tenantId, 'events')) {
+            return Response::redirect(url('evenements'));
+        }
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        $eventId = (int) ($params['id'] ?? 0);
+        $result = $this->slotService->leave($tenantId, $eventId, (int) $user['id']);
+        if (!($result['ok'] ?? false)) {
+            Session::flash('error', $result['error'] ?? 'Désinscription impossible.');
+
+            return Response::redirect(url('evenements'));
+        }
+        Session::flash('success', 'Désinscription du poste effectuée.');
+
+        return Response::redirect(url('evenements'));
     }
 
     public function rsvp(Request $request, array $params = []): Response

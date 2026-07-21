@@ -1047,6 +1047,7 @@ class PersonnelController
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
             'roleplayEventTypes' => $roleplayEventTypes,
+            'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
         ]);
     }
 
@@ -1130,7 +1131,9 @@ class PersonnelController
             'primary_role' => $primaryRoleStr,
             'secondary_role' => trim((string) $request->input('secondary_role')),
             'primary_unit_id' => $primaryUnitId,
-            'clearance_level' => trim((string) $request->input('clearance_level')),
+            // clearance_level volontairement absent : se modifie uniquement via une demande d'élévation
+            // (EffectifsWorkspaceController + ElevationApprovalService), pas par cette route directe,
+            // ce niveau conditionnant l'accès aux documents classifiés (DocumentAccessService).
             'clearance_reviewed_at' => $clearanceReview !== '' ? $clearanceReview : null,
             'readiness_score' => $readinessScore !== null ? $readinessScore : 0,
             'enlistment_date' => trim((string) $request->input('enlistment_date')) ?: null,
@@ -1146,7 +1149,14 @@ class PersonnelController
             'languages' => trim((string) $request->input('languages')) ?: null,
             'nationality' => trim((string) $request->input('nationality_rp')) ?: null,
             'blood_type' => trim((string) $request->input('blood_type')) ?: null,
+            'birth_place' => mb_substr(trim((string) $request->input('birth_place')), 0, 150) ?: null,
+            'sex' => mb_substr(trim((string) $request->input('sex')), 0, 20) ?: null,
+            'family_situation' => mb_substr(trim((string) $request->input('family_situation')), 0, 100) ?: null,
+            'operator_status' => mb_substr(trim((string) $request->input('operator_status')), 0, 160) ?: null,
+            'operator_tags' => mb_substr(trim((string) $request->input('operator_tags')), 0, 255) ?: null,
         ];
+        $weightRaw = $request->input('weight_kg');
+        $data['weight_kg'] = ($weightRaw === null || $weightRaw === '') ? null : max(20, min(300, (int) $weightRaw));
         if ($roleplayFollowupConfig['enabled']) {
             $stage = trim((string) $request->input('rp_followup_stage'));
             if ($stage !== '' && !in_array($stage, $roleplayFollowupConfig['stages'], true)) {

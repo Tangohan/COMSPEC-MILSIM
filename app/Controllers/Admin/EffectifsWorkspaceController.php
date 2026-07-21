@@ -19,9 +19,11 @@ use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\MemberDepartureRepository;
 use App\Services\Admin\AdminAuditService;
 use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
+use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\EffectifsLmsAccess;
 use App\Support\OrganizationRoleLabels;
@@ -44,6 +46,8 @@ class EffectifsWorkspaceController
         private TenantRepository $tenantRepository,
         private GradeRepository $gradeRepository,
         private ElevationApprovalService $elevationApprovalService,
+        private MemberOffboardingService $memberOffboardingService,
+        private MemberDepartureRepository $memberDepartureRepository,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
     ) {
@@ -139,9 +143,12 @@ class EffectifsWorkspaceController
         });
         $gate = Gate::getInstance();
         $communityName = $this->communityNameForTenant($tenantId);
-        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients(
-            $tenantId,
-            (int) Session::get('user_id')
+        $viewerId = (int) Session::get('user_id');
+        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
+        $rowIds = array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $rows);
+        $elevationCooldownByUserId = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequestBatch(
+            $rowIds,
+            $viewerId
         );
 
         return $this->shell('admin.effectifs_workspace.roster', [
@@ -174,6 +181,7 @@ class EffectifsWorkspaceController
             'orgUnits' => $units,
             'communityName' => $communityName,
             'elevationRecipientsCount' => count($elevationRecipients),
+            'elevationCooldownByUserId' => $elevationCooldownByUserId,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -183,6 +191,95 @@ class EffectifsWorkspaceController
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /** Export CSV du tableur, avec les mêmes filtres que roster() mais sans pagination (borné à 5000 lignes). */
+    public function exportCsv(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+
+        $search = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        if ($status === 'pending') {
+            $status = 'pending_verification';
+        }
+        $roleId = max(0, (int) $request->query('role_id', 0));
+        $onlyNoUnit = $request->query('sans_affectation') === '1';
+        $onlyNoRole = $request->query('sans_role') === '1';
+
+        $statusFilter = $status !== '' ? $status : null;
+        $roleFilter = $roleId > 0 ? $roleId : null;
+        $onlyWithoutUnit = $onlyNoUnit ? true : null;
+        $onlyWithoutRole = $onlyNoRole ? true : null;
+        $searchFilter = $search !== '' ? $search : null;
+
+        $total = $this->userRepository->countListForTenant(
+            $tenantId,
+            $searchFilter,
+            $statusFilter,
+            $roleFilter,
+            true,
+            $onlyWithoutUnit,
+            $onlyWithoutRole
+        );
+        $fetchLimit = min(5000, max($total, 1));
+        $baseUsers = $this->userRepository->listForTenant(
+            $tenantId,
+            $searchFilter,
+            $statusFilter,
+            $roleFilter,
+            $fetchLimit,
+            0,
+            true,
+            $onlyWithoutUnit,
+            $onlyWithoutRole
+        );
+        $rows = $this->enrichRosterRows($tenantId, $baseUsers);
+        $rows = $this->sortRosterRows($rows, 'nom');
+
+        $statusLabels = [
+            'active' => 'Actif',
+            'inactive' => 'Inactif',
+            'pending_verification' => 'E-mail à vérifier',
+        ];
+
+        $fh = fopen('php://temp', 'r+');
+        $sep = ';';
+        fputcsv($fh, [
+            'Nom affiché', 'Indicatif', 'E-mail', 'Grade', 'Fonction', 'Affectation', 'Statut',
+            'Ancienneté', 'Disponibilité (%)', 'Présence (%)', 'Complétion du dossier (%)',
+        ], $sep);
+        foreach ($rows as $r) {
+            $rStatus = (string) ($r['status'] ?? '');
+            fputcsv($fh, [
+                (string) ($r['display_name'] ?? ''),
+                (string) ($r['callsign'] ?? ''),
+                (string) ($r['email'] ?? ''),
+                trim((string) ($r['grade_short'] ?? $r['grade_long'] ?? '')),
+                trim((string) ($r['personnel_job_role_name'] ?? $r['primary_role'] ?? '')),
+                trim((string) ($r['assignment_path'] ?? '')),
+                $statusLabels[$rStatus] ?? $rStatus,
+                (string) ($r['seniority_label'] ?? ''),
+                (string) ($r['availability_score'] ?? ''),
+                (string) ($r['presence_score'] ?? ''),
+                (string) ($r['completion_score'] ?? ''),
+            ], $sep);
+        }
+        rewind($fh);
+        $csv = "\xEF\xBB\xBF" . (stream_get_contents($fh) ?: '');
+        fclose($fh);
+
+        $filename = 'effectifs-' . date('Y-m-d') . '.csv';
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($csv);
     }
 
     public function member(Request $request, array $params = []): Response
@@ -224,10 +321,11 @@ class EffectifsWorkspaceController
         }
         $gate = Gate::getInstance();
         $units = $this->unitRepository->allForTenant($tenantId);
-        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients(
-            $tenantId,
-            (int) Session::get('user_id')
-        );
+        $viewerId = (int) Session::get('user_id');
+        $elevationRecipients = $this->effectifsStaffAlertService->listElevationRecipients($tenantId, $viewerId);
+        $elevationCooldownSeconds = $this->effectifsStaffAlertService->secondsBeforeNextElevationRequest($id, $viewerId);
+        $elevationHistory = $this->elevationRequestRepository->listForTarget($tenantId, $id, 10);
+        $latestDeparture = $this->memberDepartureRepository->findLatestForUser($tenantId, $id);
 
         return $this->shell('admin.effectifs_workspace.member', [
             'title' => 'Fiche membre',
@@ -240,6 +338,9 @@ class EffectifsWorkspaceController
             'orgRoles' => $roles,
             'orgUnits' => $units,
             'communityName' => $this->communityNameForTenant($tenantId),
+            'elevationCooldownSeconds' => $elevationCooldownSeconds,
+            'elevationHistory' => $elevationHistory,
+            'latestDeparture' => $latestDeparture,
             'canEditProfiles' => EffectifsLmsAccess::canEditProfiles($gate),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
@@ -248,6 +349,248 @@ class EffectifsWorkspaceController
             'canRequestElevation' => EffectifsLmsAccess::canRequestElevation($gate) && $elevationRecipients !== [],
             'elevationCatalog' => $this->elevationCatalogForTenant($tenantId),
             'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    /** Changement de statut groupé depuis la sélection multiple du tableur (borné à 200 membres). */
+    public function bulkStatus(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier le statut des comptes.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $status = trim((string) $request->input('status', ''));
+        $allowed = ['active', 'inactive', 'pending_verification'];
+        $rawIds = $request->input('user_ids', []);
+        $ids = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        $ids = array_slice($ids, 0, 200);
+
+        if (!in_array($status, $allowed, true) || $ids === []) {
+            Session::flash('error', 'Sélectionnez au moins un membre et un statut valide.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $updated = 0;
+        foreach ($ids as $id) {
+            $user = $this->userRepository->findById($id, $tenantId);
+            if (!$user) {
+                continue;
+            }
+            $before = (string) ($user['status'] ?? '');
+            if ($before === $status) {
+                continue;
+            }
+            $this->userRepository->update($id, $tenantId, ['status' => $status]);
+            $this->adminAuditService->logUserUpdated($tenantId, $actorId, $id, 'status:' . $before, 'status:' . $status);
+            $updated++;
+        }
+
+        $label = match ($status) {
+            'active' => 'Compte actif',
+            'inactive' => 'Compte inactif',
+            'pending_verification' => 'En attente de vérification de l’e-mail',
+            default => $status,
+        };
+        Session::flash(
+            'success',
+            $updated > 0
+                ? ($updated . ' compte' . ($updated > 1 ? 's' : '') . ' mis à jour : ' . $label . '.')
+                : 'Aucun changement : les membres sélectionnés avaient déjà ce statut.'
+        );
+
+        return Response::redirect($this->redirectBackToRoster($request));
+    }
+
+    /** Affectation d’unité groupée depuis la sélection multiple du tableur (bornée à 200 membres). */
+    public function bulkAssignment(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageAssignments($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les affectations.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $unitId = (int) $request->input('unit_id', 0);
+        $rawIds = $request->input('user_ids', []);
+        $ids = is_array($rawIds) ? array_map('intval', $rawIds) : [];
+        $ids = array_values(array_unique(array_filter($ids, static fn (int $id): bool => $id > 0)));
+        $ids = array_slice($ids, 0, 200);
+
+        if ($ids === []) {
+            Session::flash('error', 'Sélectionnez au moins un membre.');
+
+            return Response::redirect($this->redirectBackToRoster($request));
+        }
+
+        $unitName = '';
+        if ($unitId > 0) {
+            $unit = $this->unitRepository->findById($unitId, $tenantId);
+            if (!$unit) {
+                Session::flash('error', 'Unité introuvable dans cette communauté.');
+
+                return Response::redirect($this->redirectBackToRoster($request));
+            }
+            $unitName = trim((string) ($unit['name'] ?? ''));
+        }
+
+        $actorId = (int) Session::get('user_id');
+        $updated = 0;
+        foreach ($ids as $id) {
+            $user = $this->userRepository->findById($id, $tenantId);
+            if (!$user) {
+                continue;
+            }
+            try {
+                $this->personnelProfileRepository->ensureRecord($id);
+                $this->personnelProfileRepository->update($id, [
+                    'primary_unit_id' => $unitId > 0 ? $unitId : null,
+                ]);
+                $roleName = trim((string) ($user['display_name'] ?? ''));
+                $profile = $this->personnelProfileRepository->getByUserId($id);
+                if ($profile) {
+                    $fromProfile = trim((string) ($profile['primary_role'] ?? ''));
+                    if ($fromProfile !== '') {
+                        $roleName = $fromProfile;
+                    }
+                }
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
+                    $id,
+                    $unitId > 0 ? $unitId : null,
+                    $roleName !== '' ? $roleName : 'Membre'
+                );
+                $this->adminAuditService->logUserUpdated(
+                    $tenantId,
+                    $actorId,
+                    $id,
+                    'affectation',
+                    $unitId > 0 ? ('unit:' . $unitId) : 'unit:none'
+                );
+                $updated++;
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        Session::flash(
+            'success',
+            $updated > 0
+                ? ($updated . ' membre' . ($updated > 1 ? 's' : '') . ' affecté' . ($updated > 1 ? 's' : '')
+                    . ($unitName !== '' ? ' à ' . $unitName : ' — affectation retirée') . '.')
+                : 'Aucune affectation n’a pu être mise à jour.'
+        );
+
+        return Response::redirect($this->redirectBackToRoster($request));
+    }
+
+    /** Enregistre un départ (offboarding structuré) — motif, date, et retrait d’accès optionnel. */
+    public function recordDeparture(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à enregistrer un départ.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $reason = trim((string) $request->input('reason', 'other'));
+        $reasonNote = trim((string) $request->input('reason_note', ''));
+        if (mb_strlen($reasonNote) > 500) {
+            $reasonNote = mb_substr($reasonNote, 0, 500);
+        }
+        $departedAt = trim((string) $request->input('departed_at', '')) ?: date('Y-m-d');
+        $requestRevoke = $request->input('revoke_access') === '1';
+        $revokeAccess = $requestRevoke && EffectifsLmsAccess::canManageRoles($gate);
+
+        $result = $this->memberOffboardingService->recordDeparture(
+            $tenantId,
+            $id,
+            (int) Session::get('user_id'),
+            $reason,
+            $reasonNote,
+            $departedAt,
+            $revokeAccess
+        );
+        Session::flash($result['ok'] ? 'success' : 'error', $result['message']);
+
+        return Response::redirect(effectifs_workspace_url('membres/' . $id));
+    }
+
+    /** Vue « anciens membres » — historique des départs, filtrable par motif. */
+    public function departures(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $gate = Gate::getInstance();
+        if (!EffectifsLmsAccess::canManageStatus($gate)) {
+            Session::flash('error', 'Vous n’êtes pas habilité à consulter les départs.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $reasonFilter = trim((string) $request->query('motif', ''));
+        if (!in_array($reasonFilter, MemberDepartureRepository::REASONS, true)) {
+            $reasonFilter = null;
+        }
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 50;
+        $total = $this->memberDepartureRepository->countForTenant($tenantId, $reasonFilter);
+        $departures = $this->memberDepartureRepository->listForTenant(
+            $tenantId,
+            $reasonFilter,
+            $perPage,
+            ($page - 1) * $perPage
+        );
+
+        return $this->shell('admin.effectifs_workspace.departures', [
+            'title' => 'Anciens membres',
+            'effectifsNav' => 'departures',
+            'departures' => $departures,
+            'departureReasonFilter' => $reasonFilter,
+            'departureTotal' => $total,
+            'departurePage' => $page,
+            'departureTotalPages' => max(1, (int) ceil($total / $perPage)),
         ]);
     }
 
@@ -566,12 +909,24 @@ class EffectifsWorkspaceController
         }
         $tenantId = (int) Session::get('tenant_id');
         $showAll = $request->query('all') === '1';
-        $requests = $showAll
-            ? $this->elevationRequestRepository->listRecentForTenant($tenantId, 300)
-            : $this->elevationRequestRepository->listOpenForTenant($tenantId, 300);
+        $elevationPerPage = 50;
+        $elevationPage = max(1, (int) $request->query('page', 1));
+        $elevationTotal = 0;
+        if ($showAll) {
+            $elevationTotal = $this->elevationRequestRepository->countRecentForTenant($tenantId);
+            $requests = $this->elevationRequestRepository->listRecentForTenant(
+                $tenantId,
+                $elevationPerPage,
+                ($elevationPage - 1) * $elevationPerPage
+            );
+        } else {
+            $requests = $this->elevationRequestRepository->listOpenForTenant($tenantId, 300);
+            $elevationTotal = count($requests);
+        }
 
         $catalog = $this->elevationCatalogForTenant($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
+        $labelMaps = $this->elevationApprovalService->buildLabelMapsFromCatalog($catalog);
         $targetRoleIds = [];
         foreach ($requests as $r) {
             $tid = (int) ($r['target_user_id'] ?? 0);
@@ -589,13 +944,15 @@ class EffectifsWorkspaceController
                 $tenantId,
                 $currentRoles,
                 $proposedRoleId,
-                ElevationApprovalService::ROLE_APPLY_REPLACE
+                ElevationApprovalService::ROLE_APPLY_REPLACE,
+                $roleMatrix
             );
-            $proposalLabels = $this->elevationApprovalService->proposalLabels($tenantId, [
+            $proposalLabels = $this->elevationApprovalService->proposalLabelsFromMaps($labelMaps, [
                 'grade_id' => (int) ($r['proposed_grade_id'] ?? 0) ?: null,
                 'role_id' => $proposedRoleId,
                 'job_role_id' => (int) ($r['proposed_job_role_id'] ?? 0) ?: null,
                 'unit_id' => (int) ($r['proposed_unit_id'] ?? 0) ?: null,
+                'clearance_level' => trim((string) ($r['proposed_clearance_level'] ?? '')) ?: null,
             ]);
             $r['_current_role_ids'] = $currentRoles;
             $r['_permission_diff'] = $diff;
@@ -608,6 +965,10 @@ class EffectifsWorkspaceController
             'effectifsNav' => 'elevations',
             'elevationRequests' => $enrichedRequests,
             'elevationShowAll' => $showAll,
+            'elevationPage' => $elevationPage,
+            'elevationPerPage' => $elevationPerPage,
+            'elevationTotal' => $elevationTotal,
+            'elevationTotalPages' => $showAll ? max(1, (int) ceil($elevationTotal / $elevationPerPage)) : 1,
             'elevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
             'elevationCatalog' => $catalog,
             'elevationRoleMatrix' => $roleMatrix,
@@ -648,6 +1009,12 @@ class EffectifsWorkspaceController
         }
         if (!in_array($status, ElevationRequestRepository::STATUSES, true)) {
             Session::flash('error', 'Statut non reconnu.');
+
+            return Response::redirect(url('back-office/ressources/effectifs/elevations'));
+        }
+        $currentStatus = (string) ($existing['status'] ?? 'pending');
+        if (in_array($currentStatus, ['approved', 'rejected'], true)) {
+            Session::flash('error', 'Cette demande a déjà été traitée (' . ($currentStatus === 'approved' ? 'acceptée' : 'refusée') . ') — action impossible.');
 
             return Response::redirect(url('back-office/ressources/effectifs/elevations'));
         }
@@ -768,6 +1135,10 @@ class EffectifsWorkspaceController
             'pending' => $this->userRepository->countListForTenant($tenantId, null, 'pending_verification', null, true),
             'no_unit' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, true, null),
             'no_role' => $this->userRepository->countListForTenant($tenantId, null, null, null, true, null, true),
+            'clearance_review_due' => $this->personnelProfileRepository->countOverdueClearanceReviewForTenant(
+                $tenantId,
+                \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS
+            ),
         ];
     }
 
@@ -791,7 +1162,8 @@ class EffectifsWorkspaceController
      *   grades: list<array<string,mixed>>,
      *   roles: list<array<string,mixed>>,
      *   job_roles: list<array{id:int,label:string}>,
-     *   units: list<array<string,mixed>>
+     *   units: list<array<string,mixed>>,
+     *   clearance_levels: array<string,string>
      * }
      */
     private function elevationCatalogForTenant(int $tenantId): array
@@ -820,11 +1192,12 @@ class EffectifsWorkspaceController
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,
+            'clearance_levels' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
         ];
     }
 
     /**
-     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}
+     * @return array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}
      */
     private function readElevationProposalFromRequest(Request $request): array
     {
@@ -836,12 +1209,14 @@ class EffectifsWorkspaceController
 
             return $id > 0 ? $id : null;
         };
+        $clearance = trim((string) $request->input('proposed_clearance_level', $request->input('elevation_clearance_level', '')));
 
         return [
             'grade_id' => $intOrNull($request->input('proposed_grade_id', $request->input('elevation_grade_id'))),
             'role_id' => $intOrNull($request->input('proposed_role_id', $request->input('elevation_role_id'))),
             'job_role_id' => $intOrNull($request->input('proposed_job_role_id', $request->input('elevation_job_role_id'))),
             'unit_id' => $intOrNull($request->input('proposed_unit_id', $request->input('elevation_unit_id'))),
+            'clearance_level' => $clearance !== '' ? $clearance : null,
             'role_apply_mode' => ElevationApprovalService::normalizeRoleApplyMode(
                 (string) $request->input('role_apply_mode', ElevationApprovalService::ROLE_APPLY_REPLACE)
             ),
@@ -849,11 +1224,12 @@ class EffectifsWorkspaceController
     }
 
     /**
-     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode?:string} $proposal
-     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,role_apply_mode:string}, error:?string}
+     * @param array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level?:?string,role_apply_mode?:string} $proposal
+     * @return array{proposal: array{grade_id:?int,role_id:?int,job_role_id:?int,unit_id:?int,clearance_level:?string,role_apply_mode:string}, error:?string}
      */
     private function validateElevationProposal(int $tenantId, array $proposal): array
     {
+        $proposal['clearance_level'] = $proposal['clearance_level'] ?? null;
         $proposal['role_apply_mode'] = ElevationApprovalService::normalizeRoleApplyMode(
             isset($proposal['role_apply_mode']) ? (string) $proposal['role_apply_mode'] : ElevationApprovalService::ROLE_APPLY_REPLACE
         );
@@ -884,6 +1260,12 @@ class EffectifsWorkspaceController
         $unitId = $proposal['unit_id'] ?? null;
         if ($unitId !== null && !$this->unitRepository->findById($unitId, $tenantId)) {
             return ['proposal' => $proposal, 'error' => 'L’affectation sélectionnée est introuvable.'];
+        }
+
+        $clearanceLevel = $proposal['clearance_level'] ?? null;
+        if ($clearanceLevel !== null
+            && !array_key_exists($clearanceLevel, \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels())) {
+            return ['proposal' => $proposal, 'error' => 'Le niveau d’habilitation sélectionné n’est pas reconnu.'];
         }
 
         return ['proposal' => $proposal, 'error' => null];
@@ -972,6 +1354,8 @@ class EffectifsWorkspaceController
                 'presence_score' => $presenceScore,
                 'completion_score' => $completionScore,
                 'roles_display' => $u['roles_display'] ?? ($u['role_name'] ?? null),
+                'clearance_level' => $rich['clearance_level'] ?? null,
+                'clearance_reviewed_at' => $rich['clearance_reviewed_at'] ?? null,
             ]);
         }
 
@@ -1073,26 +1457,7 @@ class EffectifsWorkspaceController
      */
     private function rosterCompletionScore(array $user, array $rich, bool $hasAssignment): int
     {
-        $checks = [
-            trim((string) ($user['display_name'] ?? $rich['character_name'] ?? '')) !== '',
-            trim((string) ($user['callsign'] ?? '')) !== '',
-            trim((string) ($rich['matricule_internal'] ?? $rich['service_number'] ?? '')) !== '',
-            trim((string) ($rich['grade_short'] ?? $rich['grade_long'] ?? '')) !== '',
-            $hasAssignment,
-            trim((string) ($rich['personnel_job_role_name'] ?? $rich['primary_role'] ?? $rich['role_sub_label'] ?? '')) !== '',
-            trim((string) ($rich['enlistment_date_resolved'] ?? '')) !== '',
-            trim((string) ($rich['clearance_level'] ?? '')) !== '',
-            !empty($rich['clearance_reviewed_at']),
-            (int) ($rich['readiness_score'] ?? 0) > 0,
-            trim((string) ($user['email'] ?? '')) !== '',
-        ];
-        $total = count($checks);
-        if ($total < 1) {
-            return 0;
-        }
-        $filled = count(array_filter($checks));
-
-        return (int) round(($filled / $total) * 100);
+        return \App\Support\PersonnelDossierCompleteness::evaluate($user, $rich, $hasAssignment)['score'];
     }
 
     private function formatSeniorityDays(int $days): string

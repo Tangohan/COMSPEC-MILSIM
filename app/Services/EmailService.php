@@ -1261,6 +1261,73 @@ final class EmailService
         );
     }
 
+    /**
+     * Résumé hebdomadaire au staff RH : dossiers incomplets, membres sans unité/rôle, élévations en attente.
+     */
+    public function sendEffectifsHrWeeklyDigest(
+        string $to,
+        string $staffDisplayName,
+        string $tenantName,
+        int $incompleteProfiles,
+        int $withoutUnit,
+        int $withoutRole,
+        int $pendingElevations,
+        int $clearanceReviewDue,
+        string $rosterUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::EFFECTIFS_HR_WEEKLY_DIGEST,
+            'effectifs_hr_weekly_digest',
+            $to,
+            'Digest RH hebdomadaire — ' . $tenantName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'tenantName' => $tenantName,
+                'incompleteProfiles' => $incompleteProfiles,
+                'withoutUnit' => $withoutUnit,
+                'withoutRole' => $withoutRole,
+                'pendingElevations' => $pendingElevations,
+                'clearanceReviewDue' => $clearanceReviewDue,
+                'rosterUrl' => $rosterUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'effectifs_hr_weekly_digest']
+        );
+    }
+
+    /**
+     * @param list<array{title:string,updated_at:?string}> $forgottenDrafts
+     * @param list<array{title:string,updated_at:?string}> $neverViewed
+     */
+    public function sendTrainingForgottenDocsDigest(
+        string $to,
+        string $staffDisplayName,
+        string $tenantName,
+        array $forgottenDrafts,
+        array $neverViewed,
+        string $docsUrl,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_FORGOTTEN_DOCS_DIGEST,
+            'training_forgotten_docs_digest',
+            $to,
+            'Documentations LMS à relancer — ' . $tenantName,
+            [
+                'staffDisplayName' => $staffDisplayName,
+                'tenantName' => $tenantName,
+                'forgottenDrafts' => $forgottenDrafts,
+                'neverViewed' => $neverViewed,
+                'docsUrl' => $docsUrl,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_forgotten_docs_digest']
+        );
+    }
+
     public function sendTrainingCourseSessionScheduledLearner(
         string $to,
         string $displayName,

@@ -145,6 +145,27 @@ class UserRepository
         return ['sql' => '(' . implode(' AND ', $fragments) . ')', 'params' => $params];
     }
 
+    /** @var array<string,bool> */
+    private static array $tableExistsCache = [];
+
+    private function tableExists(string $table): bool
+    {
+        if (array_key_exists($table, self::$tableExistsCache)) {
+            return self::$tableExistsCache[$table];
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$table]);
+            self::$tableExistsCache[$table] = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            self::$tableExistsCache[$table] = false;
+        }
+
+        return self::$tableExistsCache[$table];
+    }
+
     private function hasUserUnitsTable(): bool
     {
         if (self::$hasUserUnitsTable === null) {
@@ -589,6 +610,64 @@ class UserRepository
         return $out;
     }
 
+    /** RGPD : programme la suppression du compte (délai de rétractation). */
+    public function requestDeletion(int $userId, int $tenantId, string $requestedAt, string $scheduledAt): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET deletion_requested_at = ?, deletion_scheduled_at = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$requestedAt, $scheduledAt, $userId, $tenantId]);
+    }
+
+    /** RGPD : annule une suppression de compte programmée (reconnexion pendant le délai). */
+    public function cancelDeletion(int $userId, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET deletion_requested_at = NULL, deletion_scheduled_at = NULL, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?'
+        );
+
+        return $stmt->execute([$userId, $tenantId]);
+    }
+
+    /** RGPD : comptes dont le délai de rétractation est dépassé (à anonymiser). */
+    public function listDueForDeletionAnonymization(): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT id, tenant_id FROM users
+             WHERE deletion_requested_at IS NOT NULL AND deletion_scheduled_at IS NOT NULL
+               AND deletion_scheduled_at <= NOW() AND status != 'inactive'"
+        );
+
+        return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    }
+
+    /** RGPD : anonymise un compte après le délai de rétractation. */
+    public function anonymizeForDeletion(int $userId, int $tenantId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users SET
+                email = CONCAT('deleted-user-', id, '@deleted.invalid'),
+                password_hash = ?,
+                display_name = 'Compte supprimé',
+                callsign = NULL,
+                profile_slug = NULL,
+                athena_identifier = NULL,
+                steam_id = NULL,
+                avatar_url = NULL,
+                profile_banner_url = NULL,
+                status = 'inactive',
+                deletion_requested_at = NULL,
+                deletion_scheduled_at = NULL,
+                updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?"
+        );
+
+        return $stmt->execute([password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID), $userId, $tenantId]);
+    }
+
     public function findById(int $id, ?int $tenantId = null): ?array
     {
         $sql = 'SELECT * FROM users WHERE id = ?';
@@ -914,16 +993,11 @@ class UserRepository
         $ph = implode(',', array_fill(0, count($userIds), '?'));
         $jobRoleJoin = '';
         $jobRoleSelect = 'NULL AS personnel_job_role_name';
-        $stmtJr = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_job_roles' LIMIT 1");
-        if ($stmtJr && $stmtJr->fetchColumn()) {
+        if ($this->tableExists('personnel_job_roles')) {
             $jobRoleJoin = 'LEFT JOIN personnel_job_roles pjr ON pjr.id = pp.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
             $jobRoleSelect = 'pjr.name AS personnel_job_role_name';
         }
-        $hasPa = false;
-        $stmtPa = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments' LIMIT 1");
-        if ($stmtPa && $stmtPa->fetchColumn()) {
-            $hasPa = true;
-        }
+        $hasPa = $this->tableExists('personnel_assignments');
         $hasUu = $this->hasUserUnitsTable();
         $unitParts = [];
         $codeParts = [];
@@ -958,8 +1032,7 @@ class UserRepository
         }
         $extrasJoin = '';
         $extrasSelect = ', NULL AS date_of_enlistment, NULL AS service_number';
-        $stmtEx = $this->pdo->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_extras' LIMIT 1");
-        if ($stmtEx && $stmtEx->fetchColumn()) {
+        if ($this->tableExists('personnel_extras')) {
             $extrasJoin = 'LEFT JOIN personnel_extras pex ON pex.user_id = u.id';
             $extrasSelect = ', pex.date_of_enlistment, pex.service_number';
         }

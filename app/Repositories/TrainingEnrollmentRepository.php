@@ -37,6 +37,29 @@ class TrainingEnrollmentRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Comptes agrégés (inscriptions totales / terminées) pour toutes les formations d’un tenant,
+     * en une seule requête (tableau de bord admin, évite une requête par formation).
+     *
+     * @return array{total: int, completed: int}
+     */
+    public function countAndCompletedForTenantCourses(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) AS total, SUM(CASE WHEN e.status = ? THEN 1 ELSE 0 END) AS completed
+             FROM training_enrollments e
+             INNER JOIN training_courses c ON c.id = e.course_id
+             WHERE c.tenant_id = ?'
+        );
+        $stmt->execute(['completed', $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'completed' => (int) ($row['completed'] ?? 0),
+        ];
+    }
+
     /** @return list<array<string, mixed>> */
     public function listByCourseId(int $courseId): array
     {
@@ -199,6 +222,47 @@ class TrainingEnrollmentRepository
         $stmt->execute([$enrollmentId, $userId, $tenantId]);
 
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Statistiques de conformité par formation (rapport admin) : une seule requête agrégée
+     * pour tout le tenant au lieu d'une requête par formation.
+     *
+     * @return array<int, array{total: int, completed: int, active: int, revoked: int, avg_completion_seconds: ?float}> clé = course_id
+     */
+    public function complianceStatsByCourseForTenant(int $tenantId): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT e.course_id,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN e.status = 'completed' THEN 1 ELSE 0 END) AS completed,
+                    SUM(CASE WHEN e.status IN ('assigned', 'in_progress') THEN 1 ELSE 0 END) AS active,
+                    SUM(CASE WHEN e.status = 'revoked' THEN 1 ELSE 0 END) AS revoked,
+                    AVG(CASE WHEN e.status = 'completed' AND e.completed_at IS NOT NULL
+                             THEN TIMESTAMPDIFF(SECOND, COALESCE(e.started_at, e.assigned_at), e.completed_at) END) AS avg_completion_seconds
+             FROM training_enrollments e
+             INNER JOIN training_courses c ON c.id = e.course_id
+             WHERE c.tenant_id = ?
+             GROUP BY e.course_id"
+        );
+        $stmt->execute([$tenantId]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $courseId = (int) ($row['course_id'] ?? 0);
+            if ($courseId < 1) {
+                continue;
+            }
+            $avgSeconds = $row['avg_completion_seconds'] ?? null;
+            $out[$courseId] = [
+                'total' => (int) ($row['total'] ?? 0),
+                'completed' => (int) ($row['completed'] ?? 0),
+                'active' => (int) ($row['active'] ?? 0),
+                'revoked' => (int) ($row['revoked'] ?? 0),
+                'avg_completion_seconds' => $avgSeconds !== null ? (float) $avgSeconds : null,
+            ];
+        }
+
+        return $out;
     }
 
     /** Enrollments expirant ou expirés pour un tenant. */

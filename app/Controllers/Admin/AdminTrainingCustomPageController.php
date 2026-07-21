@@ -9,10 +9,15 @@ use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\ContentTagRepository;
+use App\Repositories\TrainingFormationCustomPageFeedbackRepository;
 use App\Repositories\TrainingFormationCustomPageRepository;
+use App\Services\Audit\AuditService;
 use App\Services\Platform\FeatureGateService;
+use App\Services\Training\TrainingFormationCustomPageExportPdfService;
 use App\Services\Training\TrainingHtmlPageService;
 use App\Support\Training\TrainingHtmlPagePolicy;
+use App\Support\HtmlContentSanitizer;
 use App\Support\TrainingFormationCustomPageRenderer;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -22,7 +27,13 @@ final class AdminTrainingCustomPageController
         private TrainingFormationCustomPageRepository $pageRepository,
         private TrainingHtmlPageService $htmlPageService,
         private FeatureGateService $featureGate,
+        private TrainingFormationCustomPageExportPdfService $pdfExport,
+        private AuditService $auditService,
+        private TrainingFormationCustomPageFeedbackRepository $feedbackRepository,
+        private ContentTagRepository $tagRepository,
     ) {}
+
+    private const TAG_CONTENT_TYPE = 'formation_doc';
 
     public function index(Request $request, array $params = []): Response
     {
@@ -34,12 +45,22 @@ final class AdminTrainingCustomPageController
             return Response::redirect(url('platform/upgrade'));
         }
         $this->htmlPageService->applyScheduledPublicationIfDue($tenantId);
-        $rows = $this->pageRepository->listByTenant($tenantId, 250, [
-            'q' => (string) $request->query('q', ''),
-            'status' => (string) $request->query('status', ''),
-            'doc_structure' => (string) $request->query('doc_structure', ''),
-        ]);
+        $search = trim((string) $request->query('q', ''));
+        $status = trim((string) $request->query('status', ''));
+        $docStructure = trim((string) $request->query('doc_structure', ''));
+        $tagSlug = trim((string) $request->query('tag', ''));
+        $filters = ['q' => $search, 'status' => $status, 'doc_structure' => $docStructure];
+        if ($tagSlug !== '') {
+            $filters['id_in'] = $this->tagRepository->listContentIdsForTagSlug($tenantId, self::TAG_CONTENT_TYPE, $tagSlug);
+        }
+        $perPage = 50;
+        $page = max(1, (int) $request->query('page', 1));
+        $total = $this->pageRepository->countByTenant($tenantId, $filters);
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $totalPages);
+        $rows = $this->pageRepository->listByTenant($tenantId, $perPage, $filters, ($page - 1) * $perPage);
         $metrics = $this->pageRepository->dashboardMetrics($tenantId);
+        $tagsByPageId = $this->tagRepository->listForContentIds(self::TAG_CONTENT_TYPE, array_map(static fn (array $r): int => (int) $r['id'], $rows));
 
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.custom_pages',
@@ -48,6 +69,15 @@ final class AdminTrainingCustomPageController
             'activeNav' => 'docs_html',
             'customPagesRows' => $rows,
             'customPagesMetrics' => $metrics,
+            'customPagesSearch' => $search,
+            'customPagesStatus' => $status,
+            'customPagesDocStructure' => $docStructure,
+            'customPagesTagSlug' => $tagSlug,
+            'customPagesTagsByPageId' => $tagsByPageId,
+            'customPagesAllTags' => $this->tagRepository->listForTenant($tenantId),
+            'customPagesTotal' => $total,
+            'customPagesPage' => $page,
+            'customPagesTotalPages' => $totalPages,
         ]);
     }
 
@@ -68,6 +98,7 @@ final class AdminTrainingCustomPageController
             'customPageRevisions' => [],
             'customPageActivity' => [],
             'customPagePolicy' => $this->policyMatrix(),
+            'customPageAllTags' => $this->tagRepository->listForTenant($this->tenantId()),
         ]);
     }
 
@@ -93,6 +124,11 @@ final class AdminTrainingCustomPageController
             Session::flash('error', 'Slug déjà utilisé dans ce tenant.');
             return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
         }
+        $newStatus = (string) ($payload['data']['status'] ?? 'draft');
+        if (!$this->canSetStatus($newStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($newStatus));
+            return Response::redirect(training_lms_admin_url('pages-html/nouvelle'));
+        }
 
         $id = $this->pageRepository->create($tenantId, $payload['data'] + ['created_by' => $userId ?: null, 'updated_by' => $userId ?: null]);
         $row = $this->pageRepository->findById($id, $tenantId);
@@ -100,6 +136,8 @@ final class AdminTrainingCustomPageController
             $this->htmlPageService->createRevision($id, $tenantId, $userId, 'create', $row, null);
         }
         $this->pageRepository->addActivity($id, $tenantId, $userId ?: null, 'created', ['status' => $payload['data']['status']]);
+        $this->auditService->log('formation_doc_created', $tenantId, $userId ?: null, 'formation_doc', $id, null, (string) $payload['data']['title']);
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Documentation créée.');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $id . '/modifier'));
@@ -129,6 +167,10 @@ final class AdminTrainingCustomPageController
             'customPageRevisions' => $this->pageRepository->listRevisions($id, $tenantId),
             'customPageActivity' => $this->pageRepository->listActivity($id, $tenantId),
             'customPagePolicy' => $this->policyMatrix(),
+            'customPageFeedbackAgg' => $this->feedbackRepository->aggregateForPage($id, $tenantId),
+            'customPageFeedbackRows' => $this->feedbackRepository->listRecentForPage($id, $tenantId, 20),
+            'customPageTags' => implode(', ', array_map(static fn (array $t): string => $t['name'], $this->tagRepository->listForContent($tenantId, self::TAG_CONTENT_TYPE, $id))),
+            'customPageAllTags' => $this->tagRepository->listForTenant($tenantId),
         ]);
     }
 
@@ -161,6 +203,12 @@ final class AdminTrainingCustomPageController
             Session::flash('error', 'Slug déjà utilisé dans ce tenant.');
             return $redirect;
         }
+        $newStatus = (string) ($payload['data']['status'] ?? 'draft');
+        $previousStatus = (string) ($before['status'] ?? 'draft');
+        if ($newStatus !== $previousStatus && !$this->canSetStatus($newStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($newStatus));
+            return $redirect;
+        }
 
         $userId = (int) (Session::get('user_id') ?? 0);
         $payload['data']['updated_by'] = $userId > 0 ? $userId : null;
@@ -170,6 +218,14 @@ final class AdminTrainingCustomPageController
             $this->htmlPageService->createRevision($id, $tenantId, $userId, 'update', $after, $before);
         }
         $this->pageRepository->addActivity($id, $tenantId, $userId ?: null, 'updated', ['status' => $payload['data']['status'] ?? null]);
+        if ($newStatus === 'published' && $previousStatus !== 'published') {
+            $this->auditService->log('formation_doc_published', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        } elseif ($newStatus === 'archived' && $previousStatus !== 'archived') {
+            $this->auditService->log('formation_doc_archived', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        } else {
+            $this->auditService->log('formation_doc_updated', $tenantId, $userId ?: null, 'formation_doc', $id, $previousStatus, $newStatus);
+        }
+        $this->tagRepository->setTagsFromCommaText($tenantId, self::TAG_CONTENT_TYPE, $id, (string) $request->input('tags', ''));
         Session::flash('success', 'Modifications enregistrées.');
 
         return $redirect;
@@ -188,6 +244,71 @@ final class AdminTrainingCustomPageController
         return (new Response())->header('Content-Type', 'text/html; charset=utf-8')->setBody(
             TrainingFormationCustomPageRenderer::render($row, rtrim(url(''), '/'), $this->previewChrome($row))
         );
+    }
+
+    public function compareRevisions(Request $request, array $params = []): Response
+    {
+        if (!$this->canView()) {
+            return Response::redirect(training_lms_admin_url('pages-html'));
+        }
+        $pageId = (int) ($params['id'] ?? 0);
+        $tenantId = $this->tenantId();
+        $page = $this->pageRepository->findById($pageId, $tenantId);
+        if (!$page) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $revisions = $this->pageRepository->listRevisions($pageId, $tenantId, 100);
+        $revA = (int) $request->query('a', 0);
+        $revB = (int) $request->query('b', 0);
+        $diff = null;
+        $snapA = null;
+        $snapB = null;
+        if ($revA > 0 && $revB > 0) {
+            $rowA = $this->pageRepository->findRevision($pageId, $revA, $tenantId);
+            $rowB = $this->pageRepository->findRevision($pageId, $revB, $tenantId);
+            $snapA = $rowA ? json_decode((string) ($rowA['content_snapshot_json'] ?? ''), true) : null;
+            $snapB = $rowB ? json_decode((string) ($rowB['content_snapshot_json'] ?? ''), true) : null;
+            if (is_array($snapA) && is_array($snapB)) {
+                $diff = (new \App\Support\Training\TrainingRevisionDiffService())->diffSnapshots($snapA, $snapB);
+            }
+        }
+
+        return Response::view('layout.training_lms_staff_shell', [
+            'content' => 'admin.training.custom_page_diff',
+            'title' => 'Comparer des versions — ' . (string) ($page['title'] ?? ''),
+            'trainingAdminNav' => 'custom_pages',
+            'activeNav' => 'docs_html',
+            'customPage' => $page,
+            'customPageRevisions' => $revisions,
+            'diffRevA' => $revA,
+            'diffRevB' => $revB,
+            'diffRows' => $diff,
+            'diffSnapAFound' => $snapA !== null,
+            'diffSnapBFound' => $snapB !== null,
+        ]);
+    }
+
+    public function exportPdf(Request $request, array $params = []): Response
+    {
+        if (!$this->canView()) {
+            return Response::redirect(training_lms_admin_url('pages-html'));
+        }
+        $row = $this->pageRepository->findById((int) ($params['id'] ?? 0), $this->tenantId());
+        if (!$row) {
+            return (new Response())->setStatusCode(404)->setBody('Documentation introuvable.');
+        }
+        $binary = $this->pdfExport->generateBinary($row);
+        if ($binary === null) {
+            Session::flash('error', $this->pdfExport->getLastFailureReason() ?? 'Impossible de générer le PDF.');
+
+            return Response::redirect(training_lms_admin_url('pages-html/' . $row['id'] . '/modifier'));
+        }
+        $filename = 'documentation-' . ($row['slug'] ?: $row['id']) . '.pdf';
+
+        return (new Response())
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($binary);
     }
 
     /**
@@ -215,6 +336,8 @@ final class AdminTrainingCustomPageController
         if ($publicUrl !== null) {
             $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($publicUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">Voir la fiche publique</a>';
         }
+        $pdfUrl = training_lms_admin_url('pages-html/' . $id . '/pdf');
+        $actions .= '<a class="formation-doc-adminbar__btn formation-doc-adminbar__btn--ghost" href="' . htmlspecialchars($pdfUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">Exporter en PDF</a>';
 
         $note = $isPublished
             ? ''
@@ -265,15 +388,17 @@ final class AdminTrainingCustomPageController
             ++$i;
         }
         $userId = (int) (Session::get('user_id') ?? 0);
+        // Re-sanitisé au cas où la source proviendrait d'une version antérieure au filtrage HTML.
+        $sanitizedSource = $this->sanitizeSnapshotHtml($row);
         $newId = $this->pageRepository->create($tenantId, [
             'slug' => $slug,
             'title' => (string) $row['title'] . ' (copie)',
             'subtitle' => $row['subtitle'] ?? null,
             'summary' => $row['summary'] ?? null,
             'doc_structure' => $row['doc_structure'] ?? 'single',
-            'intro_html' => $row['intro_html'] ?? null,
-            'html_body' => $row['html_body'] ?? '',
-            'sections_json' => $row['sections_json'] ?? null,
+            'intro_html' => $sanitizedSource['intro_html'] ?? null,
+            'html_body' => $sanitizedSource['html_body'] ?? '',
+            'sections_json' => $sanitizedSource['sections_json'] ?? null,
             'theme_id' => $row['theme_id'] ?? null,
             'icon' => $row['icon'] ?? null,
             'accent_color' => $row['accent_color'] ?? null,
@@ -291,6 +416,7 @@ final class AdminTrainingCustomPageController
             'updated_by' => $userId ?: null,
         ]);
         $this->pageRepository->addActivity($newId, $tenantId, $userId ?: null, 'duplicated', ['source_id' => $id]);
+        $this->auditService->log('formation_doc_duplicated', $tenantId, $userId ?: null, 'formation_doc', $newId, (string) $id, (string) $row['title']);
         Session::flash('success', 'Copie créée.');
 
         return Response::redirect(training_lms_admin_url('pages-html/' . $newId . '/modifier'));
@@ -315,10 +441,19 @@ final class AdminTrainingCustomPageController
             Session::flash('error', 'Snapshot de version invalide.');
             return Response::redirect(training_lms_admin_url('pages-html/' . $pageId . '/modifier'));
         }
+        // Re-sanitisé au cas où le snapshot provient d'une version antérieure au filtrage HTML.
+        $snapshot = $this->sanitizeSnapshotHtml($snapshot);
+        $restoredStatus = (string) ($snapshot['status'] ?? 'draft');
+        $currentStatus = (string) ($current['status'] ?? 'draft');
+        if ($restoredStatus !== $currentStatus && !$this->canSetStatus($restoredStatus)) {
+            Session::flash('error', $this->statusPermissionErrorMessage($restoredStatus));
+            return Response::redirect(training_lms_admin_url('pages-html/' . $pageId . '/modifier'));
+        }
         $userId = (int) (Session::get('user_id') ?? 0);
         $snapshot['updated_by'] = $userId ?: null;
         $this->pageRepository->update($pageId, $tenantId, $snapshot);
         $this->pageRepository->addActivity($pageId, $tenantId, $userId ?: null, 'restored_revision', ['revision_id' => $revId]);
+        $this->auditService->log('formation_doc_restored', $tenantId, $userId ?: null, 'formation_doc', $pageId, null, 'v' . $revId);
         $updated = $this->pageRepository->findById($pageId, $tenantId);
         if ($updated) {
             $this->htmlPageService->createRevision($pageId, $tenantId, $userId, 'restore', $updated, $current);
@@ -336,7 +471,10 @@ final class AdminTrainingCustomPageController
         $tenantId = $this->tenantId();
         $id = (int) ($params['id'] ?? 0);
         if ($id > 0) {
+            $row = $this->pageRepository->findById($id, $tenantId);
             $this->pageRepository->delete($id, $tenantId);
+            $userId = (int) (Session::get('user_id') ?? 0);
+            $this->auditService->log('formation_doc_deleted', $tenantId, $userId ?: null, 'formation_doc', $id, $row ? (string) $row['title'] : null, null);
         }
         Session::flash('success', 'Documentation supprimée.');
 
@@ -364,6 +502,37 @@ final class AdminTrainingCustomPageController
     private function canDuplicate(): bool
     {
         return TrainingLmsStaffAccess::allows(Gate::getInstance()) && TrainingHtmlPagePolicy::canDuplicate(Gate::getInstance());
+    }
+
+    /**
+     * Un simple droit d'édition (training.create/training.update) ne suffit pas à faire
+     * franchir au document une étape du circuit éditorial — mettre en revue, publier
+     * (y compris programmer) ou archiver sont des droits distincts (canReview/canPublish/
+     * canArchive), déjà calculés dans policyMatrix() mais jusqu'ici jamais vérifiés côté
+     * serveur : le formulaire les exposait sans que rien n'empêche un simple rédacteur de
+     * les déclencher directement.
+     */
+    private function canSetStatus(string $status): bool
+    {
+        $g = Gate::getInstance();
+
+        return match ($status) {
+            'review' => TrainingHtmlPagePolicy::canReview($g),
+            'scheduled', 'published' => TrainingHtmlPagePolicy::canPublish($g),
+            'archived' => TrainingHtmlPagePolicy::canArchive($g),
+            default => true,
+        };
+    }
+
+    private function statusPermissionErrorMessage(string $status): string
+    {
+        return match ($status) {
+            'review' => 'Vous n’avez pas les droits pour passer ce document en revue.',
+            'scheduled' => 'Vous n’avez pas les droits pour programmer la publication de ce document.',
+            'published' => 'Vous n’avez pas les droits pour publier ce document.',
+            'archived' => 'Vous n’avez pas les droits pour archiver ce document.',
+            default => 'Vous n’avez pas les droits pour ce changement de statut.',
+        };
     }
 
     /** @return array<string,bool> */
@@ -405,7 +574,7 @@ final class AdminTrainingCustomPageController
         if ($sectionsRes['error'] !== null) {
             return ['error' => $sectionsRes['error'], 'data' => []];
         }
-        $body = (string) $request->input('html_body', '');
+        $body = HtmlContentSanitizer::sanitize((string) $request->input('html_body', ''));
         if ($title === '' || $slug === '') {
             return ['error' => 'Titre et slug sont requis.', 'data' => []];
         }
@@ -420,7 +589,7 @@ final class AdminTrainingCustomPageController
             'subtitle' => trim((string) $request->input('subtitle', '')) ?: null,
             'summary' => trim((string) $request->input('summary', '')) ?: null,
             'doc_structure' => in_array($structure, ['single', 'handbook'], true) ? $structure : 'single',
-            'intro_html' => (string) $request->input('intro_html', ''),
+            'intro_html' => HtmlContentSanitizer::sanitize((string) $request->input('intro_html', '')),
             'html_body' => $body,
             'sections_json' => $sectionsRes['sections_json'],
             'theme_id' => ($tid = (int) $request->input('theme_id', 0)) > 0 ? $tid : null,
@@ -450,6 +619,30 @@ final class AdminTrainingCustomPageController
         return ['error' => null, 'data' => $payload];
     }
 
+    /** @param array<string,mixed> $snapshot @return array<string,mixed> */
+    private function sanitizeSnapshotHtml(array $snapshot): array
+    {
+        if (isset($snapshot['html_body'])) {
+            $snapshot['html_body'] = HtmlContentSanitizer::sanitize((string) $snapshot['html_body']);
+        }
+        if (isset($snapshot['intro_html'])) {
+            $snapshot['intro_html'] = HtmlContentSanitizer::sanitize((string) $snapshot['intro_html']);
+        }
+        if (!empty($snapshot['sections_json']) && is_string($snapshot['sections_json'])) {
+            $decoded = json_decode($snapshot['sections_json'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $i => $section) {
+                    if (is_array($section) && isset($section['html'])) {
+                        $decoded[$i]['html'] = HtmlContentSanitizer::sanitize((string) $section['html']);
+                    }
+                }
+                $snapshot['sections_json'] = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+        }
+
+        return $snapshot;
+    }
+
     /** @return array{sections_json:?string,error:?string} */
     private function resolveSectionsPayload(Request $request, string $mode): array
     {
@@ -467,7 +660,7 @@ final class AdminTrainingCustomPageController
                 continue;
             }
             $title = trim((string) ($it['title'] ?? ''));
-            $html = (string) ($it['html'] ?? '');
+            $html = HtmlContentSanitizer::sanitize((string) ($it['html'] ?? ''));
             $slug = $this->normalizeSlug((string) ($it['slug'] ?? ''));
             if ($title === '' && trim(strip_tags($html)) === '') {
                 continue;

@@ -85,10 +85,11 @@ final class TrainingEnrollmentCompletionAnalytics
         }
         $sec = $end - $start;
 
-        return $this->formatDurationSeconds($sec);
+        return self::formatDurationSeconds($sec);
     }
 
-    private function formatDurationSeconds(int $sec): string
+    /** Formatage lisible d'une durée en secondes (réutilisé par le fil d'activité et les rapports de conformité). */
+    public static function formatDurationSeconds(int $sec): string
     {
         if ($sec < 60) {
             return 'moins d’une minute';
@@ -129,7 +130,7 @@ final class TrainingEnrollmentCompletionAnalytics
         }
         $main = 'Évaluations : ' . $totalAttempts . ' tentative' . ($totalAttempts > 1 ? 's' : '') . ' enregistrée' . ($totalAttempts > 1 ? 's' : '');
         if ($bestOverall !== null) {
-            $main .= ', meilleur résultat : ' . $this->formatScorePercent($bestOverall) . ' %';
+            $main .= ', meilleur résultat : ' . self::formatScorePercent($bestOverall) . ' %';
         }
         $main .= '.';
         $lines = [$main];
@@ -145,7 +146,7 @@ final class TrainingEnrollmentCompletionAnalytics
                 $chunk = '« ' . $t . ' » : ' . $n . ' tentative' . ($n > 1 ? 's' : '');
                 $bs = $q['best_score'] ?? null;
                 if ($bs !== null) {
-                    $chunk .= ', meilleur score ' . $this->formatScorePercent((float) $bs) . ' %';
+                    $chunk .= ', meilleur score ' . self::formatScorePercent((float) $bs) . ' %';
                 }
                 $parts[] = $chunk;
             }
@@ -156,7 +157,8 @@ final class TrainingEnrollmentCompletionAnalytics
         return $lines;
     }
 
-    private function formatScorePercent(float $score): string
+    /** Formatage lisible d'un score (réutilisé par le fil d'activité et les rapports de conformité). */
+    public static function formatScorePercent(float $score): string
     {
         $r = round($score, 1);
 

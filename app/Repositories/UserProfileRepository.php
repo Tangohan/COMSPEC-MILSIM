@@ -31,6 +31,13 @@ class UserProfileRepository
         $stmt->execute([$userId]);
     }
 
+    /** RGPD : efface le profil étendu lors de l’anonymisation d’un compte. */
+    public function deleteByUserId(int $userId): void
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM user_profiles WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     public function upsert(int $userId, array $data): void
     {
         $fields = ['first_name', 'last_name', 'birth_date', 'nationality', 'country_of_residence', 'public_flag_country_code', 'discord_handle', 'timezone', 'language', 'bio', 'phone'];

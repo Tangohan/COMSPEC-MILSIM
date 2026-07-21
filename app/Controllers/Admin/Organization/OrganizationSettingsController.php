@@ -12,6 +12,7 @@ use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\TenantSlugService;
+use App\Services\Integrations\DiscordWebhookService;
 
 /**
  * Hub de paramétrage de la communauté : identité, images (logo, bannière, favicon,
@@ -44,7 +45,8 @@ final class OrganizationSettingsController
     public function __construct(
         private AuthService $authService,
         private TenantRepository $tenantRepository,
-        private TenantBrandingRepository $brandingRepository
+        private TenantBrandingRepository $brandingRepository,
+        private DiscordWebhookService $discordWebhook
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -59,6 +61,7 @@ final class OrganizationSettingsController
         }
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
         $branding = $this->brandingRepository->findByTenantId($tenantId) ?? [];
         $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
 
@@ -67,6 +70,7 @@ final class OrganizationSettingsController
             'content' => 'admin.organization.settings',
             'tenant' => $tenant,
             'community' => $community,
+            'integrations' => $integrations,
             'branding' => $branding,
             'orgSettings' => $settings,
             'orgTimezoneOptions' => $this->timezoneOptions((string) ($settings['timezone'] ?? 'Europe/Paris')),
@@ -104,8 +108,11 @@ final class OrganizationSettingsController
         }
         $notices[] = 'Identité mise à jour.';
 
-        $this->updateContactAccessAndOptions($tenantId, $request);
+        $discordWarning = $this->updateContactAccessAndOptions($tenantId, $request);
         $notices[] = 'Contact, accès et options enregistrés.';
+        if ($discordWarning !== null) {
+            $notices[] = $discordWarning;
+        }
 
         $freshTenant = $this->tenantRepository->findById($tenantId) ?? $tenant;
         $imagesOutcome = $this->updateImages($tenantId, $freshTenant, $request);
@@ -171,10 +178,11 @@ final class OrganizationSettingsController
         return null;
     }
 
-    private function updateContactAccessAndOptions(int $tenantId, Request $request): void
+    private function updateContactAccessAndOptions(int $tenantId, Request $request): ?string
     {
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
 
         $community['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
         $community['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
@@ -214,10 +222,23 @@ final class OrganizationSettingsController
             $timezone = 'Europe/Paris';
         }
 
+        $discordWarning = null;
+        $discordRaw = trim((string) $request->input('discord_webhook_url', ''));
+        if ($discordRaw === '') {
+            $integrations['discord_webhook_url'] = null;
+        } elseif ($this->discordWebhook->isValidWebhookUrl($discordRaw)) {
+            $integrations['discord_webhook_url'] = $discordRaw;
+        } else {
+            $discordWarning = 'L’URL de webhook Discord n’a pas été enregistrée : elle doit commencer par https://discord.com/api/webhooks/…';
+        }
+
         $this->tenantRepository->mergeSettings($tenantId, [
             'timezone' => $timezone,
             'community' => $community,
+            'integrations' => $integrations,
         ]);
+
+        return $discordWarning;
     }
 
     /**

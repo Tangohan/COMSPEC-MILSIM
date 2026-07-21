@@ -266,6 +266,26 @@
   z-index: 1;
 }
 
+.formation-doc-pdf-link {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+}
+
+.formation-doc-pdf-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 .formation-doc-kicker {
   margin: 0 0 0.45rem;
   font-family: inherit;
@@ -607,11 +627,101 @@
   .formation-doc-adminbar,
   .formation-doc-topbar,
   .formation-doc-progress,
-  .formation-doc-toc { display: none !important; }
+  .formation-doc-toc,
+  .formation-doc-feedback { display: none !important; }
   .formation-doc-body { background: #fff; }
   .formation-doc-header {
     border-bottom: 1px solid #cbd5e1;
   }
   .formation-doc-panel { box-shadow: none; border: none; padding: 0; }
   .formation-doc-layout { grid-template-columns: 1fr !important; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.formation-doc-feedback {
+  max-width: 42rem;
+  margin: 3rem auto 0;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #f8fafc;
+}
+
+.formation-doc-feedback h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.formation-doc-feedback__agg {
+  font-size: 0.85rem;
+  color: #475569;
+  margin: 0 0 0.75rem;
+}
+
+.formation-doc-feedback__success {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #047857;
+  margin: 0 0 0.75rem;
+}
+
+.formation-doc-feedback__stars {
+  display: flex;
+  gap: 0.25rem;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.formation-doc-feedback__star input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.formation-doc-feedback__star span[aria-hidden] {
+  cursor: pointer;
+  color: #cbd5e1;
+}
+
+.formation-doc-feedback__star input:checked + span[aria-hidden],
+.formation-doc-feedback__star:hover span[aria-hidden] {
+  color: #f59e0b;
+}
+
+.formation-doc-feedback__form textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
+.formation-doc-feedback__form button {
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--doc-accent, #0f766e);
+  cursor: pointer;
 }

@@ -29,6 +29,7 @@ use App\Services\Training\TrainingCertificateService;
 use App\Services\Training\TrainingCertificatePdfService;
 use App\Services\Training\TrainingCertificateAssetStorageService;
 use App\Services\Training\TrainingCourseMediaUploadService;
+use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 use App\Support\TrainingCertificatePdfEngine;
 use App\Support\TrainingLmsStaffAccess;
 
@@ -54,6 +55,8 @@ class AdminTrainingController
         private TrainingCertificatePdfService $certificatePdfService,
         private TrainingLessonFeedbackRepository $lessonFeedbackRepository,
         private TrainingCourseMediaUploadService $courseMediaUploadService,
+        private \App\Repositories\ContentTagRepository $tagRepository,
+        private \App\Repositories\TrainingFormationCustomPageRepository $formationCustomPageRepository,
     ) {}
 
     public function dashboard(Request $request, array $params = []): Response
@@ -83,17 +86,58 @@ class AdminTrainingController
         ]);
     }
 
+    /**
+     * Recherche transverse LMS : formations, Documentations HTML, certificats — un seul point
+     * d'entrée pour un staff qui ne sait pas toujours où chercher.
+     */
+    public function search(Request $request, array $params = []): Response
+    {
+        $this->requireTrainingAccess();
+        $tenantId = (int) Session::get('tenant_id');
+        $q = trim((string) $request->query('q', ''));
+        $courses = [];
+        $docs = [];
+        $certificates = [];
+        if ($q !== '') {
+            $courses = array_slice($this->courseRepository->listForTenant($tenantId, null, null, $q), 0, 15);
+            $docs = $this->formationCustomPageRepository->listByTenant($tenantId, 15, ['q' => $q]);
+            $certificates = array_slice($this->certificateRepository->listForTenantAdmin($tenantId, 200, $q), 0, 15);
+        }
+
+        return Response::view('layout.training_lms_staff_shell', [
+            'content' => 'admin.training.search',
+            'title' => 'Recherche',
+            'trainingAdminNav' => 'search',
+            'searchQuery' => $q,
+            'searchCourses' => $courses,
+            'searchDocs' => $docs,
+            'searchCertificates' => $certificates,
+        ]);
+    }
+
     public function courses(Request $request, array $params = []): Response
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $courses = $this->courseRepository->listForTenant($tenantId, null);
+        $search = trim((string) $request->query('q', ''));
+        $tagSlug = trim((string) $request->query('tag', ''));
+        $courses = $this->courseRepository->listForTenant($tenantId, null, null, $search !== '' ? $search : null);
+        if ($tagSlug !== '') {
+            $matchingIds = $this->tagRepository->listContentIdsForTagSlug($tenantId, 'course', $tagSlug);
+            $courses = array_values(array_filter($courses, static fn (array $c): bool => in_array((int) ($c['id'] ?? 0), $matchingIds, true)));
+        }
+        $tagsByCourseId = $this->tagRepository->listForContentIds('course', array_map(static fn (array $c): int => (int) $c['id'], $courses));
+
         return Response::view('layout.training_lms_staff_shell', [
             'content' => 'admin.training.courses',
             'title' => 'Formations',
             'trainingAdminNav' => 'courses',
             'totalModules' => count($courses),
             'courses' => $courses,
+            'coursesSearch' => $search,
+            'coursesTagSlug' => $tagSlug,
+            'coursesTagsByCourseId' => $tagsByCourseId,
+            'coursesAllTags' => $this->tagRepository->listForTenant($tenantId),
             'trainingCanExportFull' => $this->userCanExportFullCourse(),
             'trainingCanDeleteCourse' => $this->userCanDeleteTrainingCourse(),
             'trainingCanEditShowcaseOrCatalog' => $this->userCanManageTrainingCourseEditorially(),
@@ -398,6 +442,34 @@ class AdminTrainingController
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
         $courses = $this->courseRepository->listForTenant($tenantId, null);
+        $statsByCourse = $this->enrollmentRepository->complianceStatsByCourseForTenant($tenantId);
+
+        $expiringByCourse = [];
+        foreach ($this->assignmentService->listOverdueOrExpiring($tenantId, 30) as $row) {
+            $cid = (int) ($row['course_id'] ?? 0);
+            if ($cid > 0) {
+                $expiringByCourse[$cid] = ($expiringByCourse[$cid] ?? 0) + 1;
+            }
+        }
+
+        $courseReports = [];
+        foreach ($courses as $c) {
+            $courseId = (int) $c['id'];
+            $stats = $statsByCourse[$courseId] ?? ['total' => 0, 'completed' => 0, 'active' => 0, 'revoked' => 0, 'avg_completion_seconds' => null];
+            $total = $stats['total'];
+            $avgSeconds = $stats['avg_completion_seconds'];
+            $courseReports[] = [
+                'course' => $c,
+                'total' => $total,
+                'completed' => $stats['completed'],
+                'active' => $stats['active'],
+                'revoked' => $stats['revoked'],
+                'completion_rate' => $total > 0 ? round(100.0 * $stats['completed'] / $total, 1) : null,
+                'avg_completion_label' => $avgSeconds !== null ? TrainingEnrollmentCompletionAnalytics::formatDurationSeconds((int) round($avgSeconds)) : null,
+                'expiring_soon' => $expiringByCourse[$courseId] ?? 0,
+            ];
+        }
+
         $successRateTenant = $this->enrollmentRepository->aggregateSuccessRate($tenantId);
         $successRatePlatform = $this->enrollmentRepository->aggregateSuccessRate(null);
         return Response::view('layout.training_lms_staff_shell', [
@@ -406,6 +478,7 @@ class AdminTrainingController
             'trainingAdminNav' => 'reports',
             'totalModules' => count($courses),
             'courses' => $courses,
+            'courseReports' => $courseReports,
             'successRateTenant' => $successRateTenant,
             'successRatePlatform' => $successRatePlatform,
         ]);
@@ -436,7 +509,8 @@ class AdminTrainingController
     {
         $this->requireTrainingAccess();
         $tenantId = (int) Session::get('tenant_id');
-        $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200);
+        $search = trim((string) $request->query('q', ''));
+        $certificates = $this->certificateRepository->listForTenantAdmin($tenantId, 200, $search !== '' ? $search : null);
         $pdfReady = TrainingCertificatePdfEngine::isAvailable();
         $pendingPdf = 0;
         foreach ($certificates as $c) {
@@ -455,6 +529,7 @@ class AdminTrainingController
             'trainingAdminNav' => 'certificates',
             'totalModules' => $this->trainingShellTotalModules($tenantId),
             'certificates' => $certificates,
+            'certificatesSearch' => $search,
             'trainingCertificatesPdfReady' => $pdfReady,
             'trainingCertificatesPendingPdf' => $pendingPdf,
         ]);

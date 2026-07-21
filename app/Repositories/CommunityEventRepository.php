@@ -326,6 +326,27 @@ class CommunityEventRepository
         }
     }
 
+    /**
+     * Toutes les participations d'un membre, avec le titre de l'événement — pour l'export
+     * de données personnelles (RGPD).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listRsvpsForUser(int $userId, int $tenantId, int $limit = 2000): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT r.event_id, e.title AS event_title, e.starts_at, r.status, r.absence_reason, r.checked_in_at, r.created_at
+             FROM community_event_rsvps r
+             INNER JOIN community_events e ON e.id = r.event_id
+             WHERE e.tenant_id = ? AND r.user_id = ?
+             ORDER BY e.starts_at DESC
+             LIMIT ' . max(1, min(5000, $limit))
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function getRsvp(int $eventId, int $userId): ?array
     {
         $stmt = $this->pdo->prepare(

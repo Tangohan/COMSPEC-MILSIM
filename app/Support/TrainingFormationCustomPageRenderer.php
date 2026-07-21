@@ -39,8 +39,10 @@ final class TrainingFormationCustomPageRenderer
      * @param array<string, mixed> $row
      * @param string|null $chrome Bandeau HTML optionnel injecté en tête de page (réservé au studio interne :
      *                             ne jamais le passer depuis une route publique).
+     * @param string|null $downloadPdfUrl URL d'export PDF, affichée en petit lien discret (public ou interne).
+     * @param string|null $feedbackHtml Bloc HTML d'avis lecteurs (formulaire + synthèse), inséré en fin de contenu.
      */
-    public static function render(array $row, string $assetsBaseUrl, ?string $chrome = null): string
+    public static function render(array $row, string $assetsBaseUrl, ?string $chrome = null, ?string $downloadPdfUrl = null, ?string $feedbackHtml = null): string
     {
         $base = rtrim($assetsBaseUrl, '/');
         $title = trim((string) ($row['title'] ?? 'Documentation'));
@@ -48,7 +50,8 @@ final class TrainingFormationCustomPageRenderer
         $summary = trim((string) ($row['summary'] ?? ''));
         $titleEsc = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $sections = self::decodeSections(isset($row['sections_json']) ? (string) $row['sections_json'] : null);
-        $intro = trim((string) (($row['intro_html'] ?? '') ?: ($row['html_body'] ?? '')));
+        $introHtml = (string) ($row['intro_html'] ?? '');
+        $intro = trim($introHtml !== '' ? $introHtml : (string) ($row['html_body'] ?? ''));
         $cssHref = $base . '/assets/css/training_formation_doc.css';
         $catalogueUrl = $base . '/formations';
 
@@ -85,6 +88,15 @@ final class TrainingFormationCustomPageRenderer
                 $catalogueUrl,
                 $isPreview
             );
+        }
+
+        if ($downloadPdfUrl !== null && $downloadPdfUrl !== '') {
+            $pdfLink = '<a href="' . htmlspecialchars($downloadPdfUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" class="formation-doc-pdf-link">Télécharger en PDF</a>';
+            $body = str_replace('</header>', $pdfLink . '</header>', $body);
+        }
+
+        if ($feedbackHtml !== null && $feedbackHtml !== '') {
+            $body = str_replace('</main>', $feedbackHtml . '</main>', $body);
         }
 
         return self::wrapShell($titleEsc, $cssHref, $body, $chrome, $showProgress);

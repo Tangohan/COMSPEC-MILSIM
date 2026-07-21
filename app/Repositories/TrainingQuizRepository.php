@@ -33,6 +33,26 @@ class TrainingQuizRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Quiz de plusieurs modules en une seule requête (évite le N+1 module par module).
+     *
+     * @param list<int> $moduleIds
+     * @return list<array<string, mixed>>
+     */
+    public function listQuizzesByModuleIds(array $moduleIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $moduleIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM training_quizzes WHERE module_id IN ($placeholders) ORDER BY module_id ASC, id ASC"
+        );
+        $stmt->execute($ids);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function createQuiz(int $moduleId, array $data): int
     {
         $stmt = $this->pdo->prepare(

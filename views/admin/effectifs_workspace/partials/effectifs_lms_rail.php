@@ -57,6 +57,10 @@ $navClass = static function (string $id) use ($active): string {
                 <b>06</b>
                 <span>Élévations<?= $nElevationOpen > 0 ? ' <i class="eff-nav-badge">' . $nElevationOpen . '</i>' : '' ?><em>Grade, rôle, droits</em></span>
             </a>
+            <a href="<?= htmlspecialchars(effectifs_workspace_url('departs'), ENT_QUOTES, 'UTF-8') ?>" class="<?= htmlspecialchars($navClass('departures'), ENT_QUOTES, 'UTF-8') ?>">
+                <b>07</b>
+                <span>Anciens membres<em>Historique des départs</em></span>
+            </a>
         </nav>
 
         <p class="eff-section-label">Alertes</p>

@@ -116,6 +116,8 @@ $bootstrapFiles = [
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
     'personnel_profile_extended_details_migration.php',
+    'personnel_profile_rp_identity_migration.php',
+    'user_deletion_request_migration.php',
     'hr_charter_lms_migration.php',
     'recon_pv_tammuc_migration.php',
     'core_schema_extensions_migration.php',
@@ -192,6 +194,8 @@ run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
+run_personnel_profile_rp_identity_migration($pdo);
+run_user_deletion_request_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_recon_pv_tammuc_migration($pdo);
 run_production_import_gap_migrations($pdo, $root);
@@ -1877,6 +1881,38 @@ try {
     echo '  [ATTENTION] community_event_rsvp_history : ' . $e->getMessage() . "\n";
 }
 
+$communityEventSlotsMigrate = require $root . '/bootstrap/community_event_slots_migration.php';
+try {
+    echo "Migration community_event_slots (slotting de mission)...\n";
+    $communityEventSlotsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_event_slots : ' . $e->getMessage() . "\n";
+}
+
+$competencyGradeRequirementsMigrate = require $root . '/bootstrap/competency_grade_requirements_migration.php';
+try {
+    echo "Migration competency_grade_requirements (matrice compétences × grades)...\n";
+    $competencyGradeRequirementsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] competency_grade_requirements : ' . $e->getMessage() . "\n";
+}
+
+$contentTagsMigrate = require $root . '/bootstrap/content_tags_migration.php';
+try {
+    echo "Migration content_tags (tags partagés formations/documentations)...\n";
+    $contentTagsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] content_tags : ' . $e->getMessage() . "\n";
+}
+
+$trainingFormationCustomPageFeedbackMigrate = require $root . '/bootstrap/training_formation_custom_page_feedback_migration.php';
+try {
+    echo "Migration training_formation_custom_page_feedback (avis lecteurs Documentations)...\n";
+    $trainingFormationCustomPageFeedbackMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_formation_custom_page_feedback : ' . $e->getMessage() . "\n";
+}
+
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
 try {
     $tenantCustomMapsMigrate($pdo);
@@ -1924,6 +1960,13 @@ try {
     $elevationRequestsProposalMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
+}
+
+$memberDeparturesMigrate = require $root . '/bootstrap/member_departures_migration.php';
+try {
+    $memberDeparturesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] member_departures : ' . $e->getMessage() . "\n";
 }
 
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';

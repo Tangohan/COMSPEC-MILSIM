@@ -20,6 +20,14 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
       <?php include __DIR__.'/partials/custom_page_publication_panel.php'; ?>
       <?php include __DIR__.'/partials/custom_page_theme_picker.php'; ?>
       <?php include __DIR__.'/partials/custom_page_visibility_selector.php'; ?>
+      <div class="cp-editor-card text-xs space-y-2"><div class="cp-editor-card__head"><p class="cp-editor-card__title">Tags</p></div>
+        <input name="tags" list="cp-tags-datalist" placeholder="Séparés par des virgules" value="<?= htmlspecialchars((string) ($customPageTags ?? '')) ?>" class="w-full rounded border px-2 py-2">
+        <datalist id="cp-tags-datalist">
+          <?php foreach (($customPageAllTags ?? []) as $tg): ?>
+          <option value="<?= htmlspecialchars((string) $tg['name']) ?>">
+          <?php endforeach; ?>
+        </datalist>
+      </div>
       <div class="cp-editor-card text-xs space-y-2"><div class="cp-editor-card__head"><p class="cp-editor-card__title">SEO / partage</p></div>
         <input name="canonical_url" placeholder="Canonical URL" value="<?= htmlspecialchars((string)($customPage['canonical_url'] ?? '')) ?>" class="w-full rounded border px-2 py-2">
         <input name="meta_title" placeholder="Meta title" value="<?= htmlspecialchars((string)($customPage['meta_title'] ?? '')) ?>" class="w-full rounded border px-2 py-2">
@@ -49,11 +57,38 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
     <aside class="lg:col-span-3 space-y-4">
       <div class="cp-editor-card">
         <div class="cp-editor-card__head"><p class="cp-editor-card__title">Aperçu</p></div>
-        <iframe id="cp-preview-frame" class="w-full min-h-[420px] rounded-lg border border-slate-200" sandbox="allow-scripts allow-same-origin"></iframe>
+        <iframe id="cp-preview-frame" class="w-full min-h-[420px] rounded-lg border border-slate-200" sandbox="allow-scripts"></iframe>
       </div>
-      <div class="cp-editor-card text-xs"><div class="cp-editor-card__head"><p class="cp-editor-card__title">Versions</p></div>
+      <div class="cp-editor-card text-xs">
+        <div class="cp-editor-card__head flex items-center justify-between gap-2">
+          <p class="cp-editor-card__title">Versions</p>
+          <?php if (!empty($customPage['id'])): ?>
+          <a href="<?= htmlspecialchars(training_lms_admin_url('pages-html/' . (int) $customPage['id'] . '/versions/comparer')) ?>" class="text-indigo-700 font-semibold">Comparer</a>
+          <?php endif; ?>
+        </div>
         <ul class="space-y-2 max-h-80 overflow-auto"><?php foreach (($customPageRevisions ?? []) as $rev) { include __DIR__.'/partials/custom_page_version_item.php'; } ?></ul>
       </div>
+      <?php if ($isEdit): ?>
+      <div class="cp-editor-card text-xs">
+        <div class="cp-editor-card__head"><p class="cp-editor-card__title">Avis lecteurs</p></div>
+        <?php $fbAgg = $customPageFeedbackAgg ?? ['count' => 0, 'avg_rating' => 0.0]; ?>
+        <?php if ((int) $fbAgg['count'] > 0): ?>
+        <p class="px-1 pb-2 text-slate-700"><strong><?= htmlspecialchars((string) $fbAgg['avg_rating']) ?>/5</strong> — <?= (int) $fbAgg['count'] ?> avis</p>
+        <ul class="space-y-2 max-h-64 overflow-auto">
+          <?php foreach (($customPageFeedbackRows ?? []) as $fb): ?>
+          <li class="rounded-lg border border-slate-200 px-3 py-2">
+            <div class="flex justify-between gap-2"><strong><?= (int) ($fb['rating'] ?? 0) ?>/5</strong><span class="text-slate-500"><?= htmlspecialchars((string) ($fb['reader_name'] ?? $fb['reader_email'] ?? '')) ?></span></div>
+            <?php if (!empty($fb['comment'])): ?>
+            <p class="text-slate-600 mt-1"><?= htmlspecialchars((string) $fb['comment']) ?></p>
+            <?php endif; ?>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+        <?php else: ?>
+        <p class="px-1 text-slate-500">Aucun avis pour l’instant.</p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
     </aside>
   </div>
 

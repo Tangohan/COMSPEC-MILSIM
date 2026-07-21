@@ -17,6 +17,15 @@ $csrfToken = (string) ($csrfToken ?? '');
 $communityName = trim((string) ($communityName ?? 'Communauté'));
 $currentSort = (string) ($filters['tri'] ?? 'nom');
 $elevationCatalog = is_array($elevationCatalog ?? null) ? $elevationCatalog : [];
+$elevationCooldownByUserId = is_array($elevationCooldownByUserId ?? null) ? $elevationCooldownByUserId : [];
+$cooldownLabel = static function (int $seconds): string {
+    $hours = max(1, (int) ceil($seconds / 3600));
+    if ($hours < 24) {
+        return $hours . ' h';
+    }
+
+    return max(1, (int) ceil($hours / 24)) . ' j';
+};
 
 $filterQuery = static function (array $overrides = []) use ($filters, $page): array {
     $q = [
@@ -92,6 +101,15 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
     || !empty($filters['sans_affectation'])
     || !empty($filters['sans_role'])
     || (($filters['tri'] ?? 'nom') !== 'nom');
+
+$exportQuery = array_filter([
+    'q' => $filters['q'] ?? null,
+    'status' => !empty($filters['status']) ? $filters['status'] : null,
+    'role_id' => !empty($filters['role_id']) ? (int) $filters['role_id'] : null,
+    'sans_affectation' => !empty($filters['sans_affectation']) ? '1' : null,
+    'sans_role' => !empty($filters['sans_role']) ? '1' : null,
+], static fn ($v) => $v !== null && $v !== '' && $v !== 0);
+$exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_build_query($exportQuery) : '');
 ?>
 <div class="eff-catalog">
     <div class="eff-catalog__head">
@@ -101,17 +119,19 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
             <p class="eff-catalog__lead">
                 Vue opérationnelle des membres de <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
                 identité, grade, fonction, affectation, rôles et indicateurs. Affectez une unité ou demandez une élévation sans quitter le tableur.
+                Pour l’organigramme et les référentiels (non nominatif), voir <a href="<?= htmlspecialchars(url('back-office/organisation-effectifs'), ENT_QUOTES, 'UTF-8') ?>" class="underline">Structure &amp; grades</a>.
             </p>
         </div>
         <div class="eff-catalog__tools">
             <a href="<?= htmlspecialchars(effectifs_workspace_url('elevations'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Demandes d’élévation</a>
+            <a href="<?= htmlspecialchars($exportUrl, ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Exporter en CSV</a>
             <?php if ($hasActiveFilters): ?>
                 <a href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn">Réinitialiser</a>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="eff-catalog-filters" style="grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
+    <div class="eff-catalog-filters" style="grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 0; padding-bottom: 0.35rem;">
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Membres</p>
             <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['total'] ?? $total) ?></p>
@@ -127,6 +147,10 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
         <div>
             <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Sans rôle</p>
             <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['no_role'] ?? 0) ?></p>
+        </div>
+        <div>
+            <p class="eff-catalog__kicker" style="letter-spacing:0.14em">Habilitation à revoir</p>
+            <p style="margin:0.15rem 0 0;font-size:1.35rem;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums"><?= (int) ($counts['clearance_review_due'] ?? 0) ?></p>
         </div>
     </div>
 
@@ -194,9 +218,35 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
             <?php endif; ?>
         </div>
     <?php else: ?>
+        <?php $canBulkAny = $canManageStatus || $canManageAssignments; ?>
+        <?php if ($canBulkAny): ?>
+        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" id="eff-bulk-form" data-eff-bulk-bar style="display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;border:1px solid #e2e8f0;border-radius:.6rem;background:#f8fafc">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl, ENT_QUOTES, 'UTF-8') ?>">
+            <span data-eff-bulk-count style="font-size:12px;font-weight:700;color:#475569">0 sélectionné(s)</span>
+            <?php if ($canManageStatus): ?>
+            <select name="status" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px">
+                <option value="active">Passer actif</option>
+                <option value="inactive">Passer inactif</option>
+                <option value="pending_verification">E-mail à vérifier</option>
+            </select>
+            <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Appliquer le statut</button>
+            <?php endif; ?>
+            <?php if ($canManageAssignments): ?>
+            <select name="unit_id" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px;max-width:14rem">
+                <option value="0">Retirer l’affectation</option>
+                <?php foreach ($units as $u): ?>
+                    <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= htmlspecialchars(trim((string) ($u['assignment_path'] ?? $u['name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Affecter l’unité</button>
+            <?php endif; ?>
+        </form>
+        <?php endif; ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des effectifs" tabindex="0">
             <table class="eff-sheets__table" id="eff-roster-table" data-cols-storage="eff-roster-col-widths-v1">
                 <colgroup>
+                    <?php if ($canBulkAny): ?><col style="width:2rem"><?php endif; ?>
                     <col data-col="identity" style="width:14rem">
                     <col data-col="grade" style="width:6.5rem">
                     <col data-col="fonction" style="width:9rem">
@@ -208,6 +258,9 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                 </colgroup>
                 <thead>
                     <tr>
+                        <?php if ($canBulkAny): ?>
+                        <th style="width:2rem"><input type="checkbox" data-eff-bulk-all aria-label="Tout sélectionner"></th>
+                        <?php endif; ?>
                         <th data-col="identity">Identité<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Identité" tabindex="0"></span></th>
                         <th data-col="grade">Grade<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Grade" tabindex="0"></span></th>
                         <th data-col="fonction">Fonction<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Fonction" tabindex="0"></span></th>
@@ -258,8 +311,15 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                     $availabilityScore = (int) ($row['availability_score'] ?? 0);
                     $presenceScore = (int) ($row['presence_score'] ?? 0);
                     $completionScore = (int) ($row['completion_score'] ?? 0);
+                    $clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue(
+                        $row['clearance_level'] ?? null,
+                        $row['clearance_reviewed_at'] ?? null
+                    );
                     ?>
                     <tr>
+                        <?php if ($canBulkAny): ?>
+                        <td><input type="checkbox" class="eff-bulk-check" name="user_ids[]" value="<?= $id ?>" form="eff-bulk-form" aria-label="Sélectionner <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"></td>
+                        <?php endif; ?>
                         <td>
                             <div class="eff-sheets__identity">
                                 <span class="eff-sheets__avatar" aria-hidden="true">
@@ -348,6 +408,9 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                 <span class="eff-sheets__metric" title="Disponibilité">Disp. <?= $availabilityScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Présence">Prés. <?= $presenceScore ?>%</span>
                                 <span class="eff-sheets__metric" title="Complétion du dossier">Doss. <?= $completionScore ?>%</span>
+                                <?php if ($clearanceOverdue): ?>
+                                    <span class="eff-sheets__badge eff-sheets__badge--watch" title="Habilitation accordée sans revue récente (&gt; <?= \App\Support\ClearanceReviewPolicy::REVIEW_INTERVAL_DAYS ?> jours)">Habilitation à revoir</span>
+                                <?php endif; ?>
                             </div>
                         </td>
                         <td>
@@ -363,6 +426,10 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                     <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>">Compte</a>
                                 <?php endif; ?>
                                 <?php if ($canRequestElevation): ?>
+                                    <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>
+                                    <?php if ($cooldownSec > 0): ?>
+                                        <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Une demande a déjà été envoyée récemment pour ce membre — patientez avant d’en renvoyer une.">Élévation (patientez <?= htmlspecialchars($cooldownLabel($cooldownSec), ENT_QUOTES, 'UTF-8') ?>)</span>
+                                    <?php else: ?>
                                     <details class="eff-sheets__pop eff-sheets__pop--end">
                                         <summary class="eff-sheets__chip">Élévation</summary>
                                         <div class="eff-sheets__pop-panel">
@@ -379,6 +446,7 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
                                             </form>
                                         </div>
                                     </details>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -507,3 +575,6 @@ $hasActiveFilters = ($filters['q'] ?? '') !== ''
         </script>
     <?php endif; ?>
 </div>
+<?php if ($canBulkAny && $rows !== []): ?>
+<script defer src="<?= htmlspecialchars(asset_url('assets/js/eff-bulk-actions.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+<?php endif; ?>

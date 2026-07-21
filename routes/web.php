@@ -13,6 +13,7 @@ use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
 use App\Controllers\Web\AccountController;
+use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
 use App\Controllers\Web\RhWorkspaceController;
 use App\Controllers\Admin\System\PlatformDeploymentAdminController;
@@ -104,6 +105,7 @@ use App\Controllers\Admin\Organization\AccessManagementController;
 use App\Controllers\Admin\Organization\OrganizationPositionsController;
 use App\Controllers\Admin\Organization\RolesFunctionsAdminController;
 use App\Controllers\Admin\Organization\CategoryAdminController;
+use App\Controllers\Admin\Organization\CompetencyMatrixController;
 use App\Controllers\Admin\Organization\GradeReferentielController;
 use App\Controllers\Admin\Organization\PersonnelJobRoleAdminController;
 use App\Controllers\Admin\Organization\HrCharterDocumentAdminController;
@@ -278,6 +280,8 @@ return function (Router $router) {
     $router->get('/transmission/{id}/poe', [TransmissionController::class, 'poe'], [AuthMiddleware::class]);
     $router->post('/transmission/{id}/poe', [TransmissionController::class, 'savePoe'], [AuthMiddleware::class]);
     $router->post('/evenements/rsvp', [CommunityEventsController::class, 'rsvp'], [AuthMiddleware::class]);
+    $router->post('/evenements/{id}/slots/{slotId}/inscription', [CommunityEventsController::class, 'signUpSlot'], [AuthMiddleware::class]);
+    $router->post('/evenements/{id}/slots/desinscription', [CommunityEventsController::class, 'leaveSlot'], [AuthMiddleware::class]);
     $router->post('/api/events/{id}/rsvp', [CommunityEventsController::class, 'rsvpApi'], [AuthMiddleware::class]);
     $router->get('/dashboard', [HomeController::class, 'dashboard'], [AuthMiddleware::class]);
     $router->get('/alertes', [MemberAlertsController::class, 'index'], [AuthMiddleware::class]);
@@ -356,6 +360,10 @@ return function (Router $router) {
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
+    $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/supprimer', [AccountPrivacyController::class, 'requestDeletion'], [AuthMiddleware::class]);
+    $router->post('/account/donnees/annuler-suppression', [AccountPrivacyController::class, 'cancelDeletion'], [AuthMiddleware::class]);
     $router->get('/rh/charte', [HrCharterController::class, 'show'], [AuthMiddleware::class]);
     $router->post('/rh/charte/accepter', [HrCharterController::class, 'accept'], [AuthMiddleware::class]);
     $router->get('/account/preferences', [AccountController::class, 'preferences'], [AuthMiddleware::class]);
@@ -456,6 +464,8 @@ return function (Router $router) {
     $router->get('/formations/competences', [TrainingCompetencyController::class, 'userJourney'], $mwTraining);
     /** Avant /formations/{slug} : documentations HTML publiées (pilotage /formation/pages-html). */
     $router->get('/formations/page/{slug}', [TrainingController::class, 'formationCustomPage'], $mwTraining);
+    $router->get('/formations/page/{slug}/pdf', [TrainingController::class, 'formationCustomPageExportPdf'], $mwTraining);
+    $router->post('/formations/page/{slug}/avis', [TrainingController::class, 'formationCustomPageSubmitFeedback'], $mwTraining);
     $router->get('/formations/code-acces', [TrainingController::class, 'accessCodeForm'], $mwTraining);
     $router->post('/formations/code-acces', [TrainingController::class, 'accessCodeSubmit'], $mwTraining);
     /** Doit rester avant /formations/{slug} pour que « …/echanges » ne soit pas confondu avec un slug. */
@@ -649,6 +659,9 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/participant/presence', [CommunityEventsAdminController::class, 'forceCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/presence/clear', [CommunityEventsAdminController::class, 'clearCheckIn'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/cancel', [CommunityEventsAdminController::class, 'cancel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots', [CommunityEventsAdminController::class, 'storeSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots/{slotId}', [CommunityEventsAdminController::class, 'updateSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -689,6 +702,10 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences', [CompetencyMatrixController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences/{id}', [CompetencyMatrixController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/competences/{id}/supprimer', [CompetencyMatrixController::class, 'destroy'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles', [PersonnelJobRoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments', [PersonnelJobRoleAdminController::class, 'assignments'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/personnel-job-roles/assignments/member-permissions', [PersonnelJobRoleAdminController::class, 'memberJobRolePermissions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -753,14 +770,19 @@ return function (Router $router) {
     $router->post('/back-office/ressources/recrutement/automod/restore-access', [RecruitmentWorkspaceController::class, 'automodRestoreAccess'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/recrutement/automod/escalate', [RecruitmentWorkspaceController::class, 'automodEscalateToPlatform'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs', [EffectifsWorkspaceController::class, 'roster'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/export', [EffectifsWorkspaceController::class, 'exportCsv'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/roles', [EffectifsWorkspaceController::class, 'roles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/droits', [EffectifsWorkspaceController::class, 'droits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/fonctions', [EffectifsWorkspaceController::class, 'fonctions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/affectations', [EffectifsWorkspaceController::class, 'affectations'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/membres/{id}', [EffectifsWorkspaceController::class, 'member'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/statut', [EffectifsWorkspaceController::class, 'quickStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/bulk/statut', [EffectifsWorkspaceController::class, 'bulkStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/bulk/affectation', [EffectifsWorkspaceController::class, 'bulkAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/depart', [EffectifsWorkspaceController::class, 'recordDeparture'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ressources/effectifs/departs', [EffectifsWorkspaceController::class, 'departures'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/effectifs/elevations', [EffectifsWorkspaceController::class, 'elevationRequests'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/elevations/{id}/statut', [EffectifsWorkspaceController::class, 'updateElevationRequestStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitments', [AdminRecruitmentsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1003,12 +1025,15 @@ return function (Router $router) {
     $router->get('/formation/pages-html/nouvelle', [AdminTrainingCustomPageController::class, 'create'], $trainingResMw);
     $router->post('/formation/pages-html', [AdminTrainingCustomPageController::class, 'store'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/previsualiser', [AdminTrainingCustomPageController::class, 'preview'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/pdf', [AdminTrainingCustomPageController::class, 'exportPdf'], $trainingResMw);
+    $router->get('/formation/pages-html/{id}/versions/comparer', [AdminTrainingCustomPageController::class, 'compareRevisions'], $trainingResMw);
     $router->get('/formation/pages-html/{id}/modifier', [AdminTrainingCustomPageController::class, 'edit'], $trainingResMw);
     $router->post('/formation/pages-html/{id}', [AdminTrainingCustomPageController::class, 'update'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/dupliquer', [AdminTrainingCustomPageController::class, 'duplicate'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/versions/{revisionId}/restaurer', [AdminTrainingCustomPageController::class, 'restoreRevision'], $trainingResMw);
     $router->post('/formation/pages-html/{id}/supprimer', [AdminTrainingCustomPageController::class, 'destroy'], $trainingResMw);
     $router->get('/formation', [AdminTrainingController::class, 'dashboard'], $trainingResMw);
+    $router->get('/formation/recherche', [AdminTrainingController::class, 'search'], $trainingResMw);
 
     $router->get('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);
     $router->post('/formation/competences/commandement', [TrainingCompetencyController::class, 'commandCenter'], $trainingResMw);

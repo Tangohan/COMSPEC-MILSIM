@@ -45,6 +45,7 @@ class PersonnelProfileRepository
             'personnel_job_role_id', 'role_sub_label',
             'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
+            'sex', 'family_situation', 'weight_kg', 'operator_status', 'operator_tags',
             'service_branch', 'birth_place', 'service_status', 'gendarmerie_status', 'administrative_position',
             'bureau_sn', 'military_origin', 'statutory_limit_date', 'management_service_limit_date',
             'readiness_score', 'command_notes', 'matricule_internal', 'clearance_reviewed_at',
@@ -81,5 +82,45 @@ class PersonnelProfileRepository
     public function updateCommandNotes(int $userId, ?string $notes): bool
     {
         return $this->update($userId, ['command_notes' => $notes]);
+    }
+
+    /**
+     * Compte les comptes actifs dont le dossier personnel est manifestement incomplet
+     * (proxy léger sur 3 champs clés — pas la même heuristique à 11 critères que le
+     * tableur RH, juste un indicateur agrégé pour le digest hebdomadaire, une seule requête).
+     */
+    public function countIncompleteForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users u
+             LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ? AND u.status = 'active' AND (
+                pp.user_id IS NULL
+                OR TRIM(COALESCE(pp.character_name, '')) = ''
+                OR TRIM(COALESCE(pp.matricule_internal, '')) = ''
+                OR pp.primary_unit_id IS NULL
+             )"
+        );
+        $stmt->execute([$tenantId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Compte les comptes actifs ayant une habilitation accordée dont la revue est absente
+     * ou périmée (au-delà de $thresholdDays) — une seule requête, pas de N+1.
+     */
+    public function countOverdueClearanceReviewForTenant(int $tenantId, int $thresholdDays): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM users u
+             INNER JOIN personnel_profiles pp ON pp.user_id = u.id
+             WHERE u.tenant_id = ? AND u.status = 'active'
+               AND TRIM(COALESCE(pp.clearance_level, '')) <> ''
+               AND (pp.clearance_reviewed_at IS NULL OR pp.clearance_reviewed_at < DATE_SUB(NOW(), INTERVAL ? DAY))"
+        );
+        $stmt->execute([$tenantId, $thresholdDays]);
+
+        return (int) $stmt->fetchColumn();
     }
 }

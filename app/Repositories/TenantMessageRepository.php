@@ -296,6 +296,27 @@ class TenantMessageRepository
     }
 
     /** @return list<array<string, mixed>> */
+    /**
+     * Messages envoyés par un membre, tous fils confondus — pour l'export de données
+     * personnelles (RGPD).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listSentByUserId(int $userId, int $tenantId, int $limit = 2000): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT m.thread_id, t.subject, m.body, m.created_at
+             FROM tenant_messages m
+             INNER JOIN tenant_message_threads t ON t.id = m.thread_id
+             WHERE t.tenant_id = ? AND m.sender_user_id = ?
+             ORDER BY m.created_at DESC
+             LIMIT ' . max(1, min(5000, $limit))
+        );
+        $stmt->execute([$tenantId, $userId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function listMessages(int $threadId): array
     {
         $stmt = $this->pdo->prepare(
