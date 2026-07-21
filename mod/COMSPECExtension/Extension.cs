@@ -10,7 +10,9 @@ namespace COMSPECExtension;
 
 public static class Extension
 {
-    private const int SyncTimeoutSeconds = 3;
+    // Timeout HttpClient = plafond global ; les appels sync utilisent aussi un CTS dédié.
+    // 3 s était trop juste pour TLS+DNS sur le premier appel (redeem / whoami).
+    private const int SyncTimeoutSeconds = 8;
     private static string _baseUrl = "";
     private static string _apiKey = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
@@ -107,7 +109,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-        Output(output, outputSize, "COMSPECExtension 1.2");
+        Output(output, outputSize, "COMSPECExtension 1.6");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -148,7 +150,8 @@ public static class Extension
         }
         catch (Exception ex)
         {
-            syncResult = "ERR|exception:" + ex.GetType().Name;
+            // Même mapping que les handlers internes (évite ERR|exception:InvalidOperationException opaque).
+            syncResult = FormatCaughtError(ex);
         }
 
         if (syncResult != null)
@@ -172,32 +175,152 @@ public static class Extension
         return 0;
     }
 
+    private static readonly object HeaderLock = new();
+
     /// <summary>
-    /// Applique (ou retire) l’en-tête X-COMSPEC-KEY sur le HttpClient partagé.
-    /// Doit être appelé à chaque Connect : les DefaultRequestHeaders sont globaux.
+    /// Mémorise la clé API et tente de l’appliquer sur le HttpClient partagé.
+    /// Ne doit JAMAIS lever : DefaultRequestHeaders lève InvalidOperationException
+    /// si une requête est déjà en vol (file d’attente / Connect async).
     /// </summary>
     private static void ApplyApiKeyHeaders(string? apiKey)
     {
-        _apiKey = (apiKey ?? "").Trim();
-        HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
-        HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
-        if (_apiKey.Length == 0) return;
-        HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-COMSPEC-KEY", _apiKey);
+        var key = (apiKey ?? "").Trim();
+        lock (HeaderLock)
+        {
+            _apiKey = key;
+            try
+            {
+                HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
+                HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+                if (_apiKey.Length == 0) return;
+                HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-COMSPEC-KEY", _apiKey);
+            }
+            catch (InvalidOperationException)
+            {
+                // Requête en cours : la clé reste dans _apiKey ; AttachApiKeyHeader la posera
+                // sur les prochains HttpRequestMessage dédiés.
+            }
+        }
+    }
+
+    /// <summary>Attache X-COMSPEC-KEY sur une requête (thread-safe, pas de DefaultRequestHeaders).</summary>
+    private static void AttachApiKeyHeader(HttpRequestMessage req)
+    {
+        var key = _apiKey;
+        if (key.Length == 0) return;
+        req.Headers.Remove("X-COMSPEC-KEY");
+        req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
+    }
+
+    /// <summary>
+    /// Nettoie une URL issue de SQF/CBA (guillemets, espaces) et impose un schéma absolu.
+    /// Sans schéma absolu, HttpClient lève InvalidOperationException (« request URI must be absolute »).
+    /// </summary>
+    private static string NormalizeBaseUrl(string? raw)
+    {
+        var s = (raw ?? "").Trim().TrimEnd('/');
+        if (s.Length >= 2 && ((s[0] == '"' && s[^1] == '"') || (s[0] == '\'' && s[^1] == '\'')))
+            s = s.Substring(1, s.Length - 2).Trim().TrimEnd('/');
+        // Caractères invisibles / BOM parfois collés par copier-coller dans le dialog.
+        s = s.Trim('\uFEFF', '\u200B', '\u200E', '\u200F');
+        if (s.Length == 0) return "";
+        if (s.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+            || s.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            return s.TrimEnd('/');
+        // Hôte nu (ex. athena.ttrd.fr/public) → https par défaut.
+        if (s.Contains('.', StringComparison.Ordinal) && !s.Contains("://", StringComparison.Ordinal))
+            return "https://" + s.TrimStart('/');
+        return s.TrimEnd('/');
+    }
+
+    private static bool TryBuildRequestUri(string baseUrl, string relativePath, out Uri? uri, out string errorCode)
+    {
+        uri = null;
+        errorCode = "invalid_url";
+        var root = NormalizeBaseUrl(baseUrl);
+        if (root.Length == 0)
+        {
+            errorCode = "invalid";
+            return false;
+        }
+        if (!Uri.TryCreate(root, UriKind.Absolute, out var baseUri)
+            || (baseUri.Scheme != Uri.UriSchemeHttps && baseUri.Scheme != Uri.UriSchemeHttp))
+        {
+            errorCode = "invalid_url";
+            return false;
+        }
+        // Important : ne PAS combiner avec un chemin absolu "/api/..." via Uri(base, path) —
+        // ça remplace tout le path et perd le préfixe /public
+        // (https://host/public + /api/x → https://host/api/x → 404).
+        var path = relativePath.StartsWith('/') ? relativePath : "/" + relativePath;
+        var combined = root.TrimEnd('/') + path;
+        if (!Uri.TryCreate(combined, UriKind.Absolute, out uri) || uri is null || !uri.IsAbsoluteUri)
+        {
+            errorCode = "invalid_url";
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Lit le corps en octets puis UTF-8 : évite InvalidOperationException de ReadAsStringAsync
+    /// quand le Content-Type annonce un charset non supporté (fréquent en Native AOT).
+    /// </summary>
+    private static string ReadContentUtf8(HttpResponseMessage resp, CancellationToken token)
+    {
+        var bytes = resp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
+        if (bytes.Length == 0) return "";
+        return Encoding.UTF8.GetString(bytes);
+    }
+
+    private static string FormatCaughtError(Exception ex)
+    {
+        // Messages stables pour SQF (pas de '|' qui casse le split).
+        if (ex is InvalidOperationException ioe)
+        {
+            var msg = ioe.Message ?? "";
+            if (msg.Contains("request URI", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("BaseAddress", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("absolute", StringComparison.OrdinalIgnoreCase))
+                return "ERR|invalid_url";
+            if (msg.Contains("charset", StringComparison.OrdinalIgnoreCase))
+                return "ERR|invalid_response";
+            // Souvent : modification DefaultRequestHeaders pendant un envoi HTTP.
+            if (msg.Contains("header", StringComparison.OrdinalIgnoreCase)
+                || msg.Contains("headers", StringComparison.OrdinalIgnoreCase))
+                return "ERR|busy_retry";
+            return "ERR|invalid_op";
+        }
+        if (ex is UriFormatException) return "ERR|invalid_url";
+        if (ex is JsonException) return "ERR|invalid_response";
+        if (ex is HttpRequestException) return "ERR|network";
+        if (ex is OperationCanceledException) return "ERR|timeout";
+        // Une ligne de détail (sans '|') pour le journal SQF.
+        var detail = (ex.Message ?? "").Replace('|', ' ').Replace('\n', ' ').Replace('\r', ' ').Trim();
+        if (detail.Length > 80) detail = detail.Substring(0, 80);
+        return detail.Length > 0
+            ? "ERR|exception:" + ex.GetType().Name + ":" + detail
+            : "ERR|exception:" + ex.GetType().Name;
     }
 
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
-        // Sonde légère : confirme que la DLL Native AOT est bien chargée (pas le stub ~30 Ko).
+        // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.2";
+            return "OK|COMSPECExtension 1.6";
         }
 
         // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
         // (sinon le premier appel retourne ERR|invalid et la liaison ne s’établit jamais).
         if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
         {
-            _baseUrl = args[0]!.TrimEnd('/');
+            var normalized = NormalizeBaseUrl(args[0]);
+            if (normalized.Length == 0
+                || !Uri.TryCreate(normalized, UriKind.Absolute, out var connectUri)
+                || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
+                return "ERR|invalid_url";
+            _baseUrl = normalized;
             var key = args.Length > 1 ? (args[1] ?? "") : "";
             ApplyApiKeyHeaders(key);
             return "OK|connected";
@@ -208,29 +331,46 @@ public static class Extension
         {
             using var redeemCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
             var redeemToken = redeemCts.Token;
-            var baseUrl = (args[0] ?? "").Trim().TrimEnd('/');
+            var baseUrl = NormalizeBaseUrl(args[0]);
             var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
             var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
             if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
-            var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamUid)}\"}}";
-            var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
-            HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
+            if (!TryBuildRequestUri(baseUrl, "/api/atak/game-link/redeem", out var redeemUri, out var uriErr) || redeemUri is null)
+                return "ERR|" + uriErr;
+
             try
             {
-                var resp = HttpClient.PostAsync(baseUrl + "/api/atak/game-link/redeem", content, redeemToken).GetAwaiter().GetResult();
-                var respBody = resp.Content.ReadAsStringAsync(redeemToken).GetAwaiter().GetResult();
+                var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamUid)}\"}}";
+                // Contenu JSON sans ctor media-type (évite surprises Native AOT / headers).
+                using var content = new StringContent(payload, Encoding.UTF8);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                // HttpRequestMessage dédié : redeem sans clé API (le code court est le secret).
+                using var req = new HttpRequestMessage(HttpMethod.Post, redeemUri) { Content = content };
+                var resp = HttpClient.SendAsync(req, redeemToken).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, redeemToken);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
                     if (httpCode == 404)
                     {
+                        if (respBody.Contains("code_already_used", StringComparison.Ordinal))
+                            return "ERR|code_already_used";
+                        if (respBody.Contains("code_expired", StringComparison.Ordinal))
+                            return "ERR|code_expired";
                         if (respBody.Contains("code_invalid_or_expired", StringComparison.Ordinal))
                             return "ERR|code_invalid_or_expired";
-                        return "ERR|not_found";
+                        // 404 HTML (route hors /public) vs JSON métier.
+                        if (respBody.Contains("<html", StringComparison.OrdinalIgnoreCase)
+                            || respBody.Contains("<!DOCTYPE", StringComparison.OrdinalIgnoreCase))
+                            return "ERR|not_found";
+                        if (respBody.Length == 0)
+                            return "ERR|not_found";
+                        return "ERR|code_invalid_or_expired";
                     }
                     if (httpCode == 400 && respBody.Contains("invalid_code", StringComparison.Ordinal))
                         return "ERR|invalid_code";
+                    if (httpCode == 503)
+                        return "ERR|http_503";
                     return "ERR|http_" + httpCode;
                 }
                 using var doc = JsonDocument.Parse(respBody);
@@ -240,38 +380,26 @@ public static class Extension
                 var tenantId = root.TryGetProperty("tenant_id", out var ti)
                     ? (ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? ""))
                     : "";
+                apiUrl = NormalizeBaseUrl(apiUrl.Length == 0 ? baseUrl : apiUrl);
                 if (apiUrl.Length == 0) apiUrl = baseUrl;
-                _baseUrl = apiUrl.TrimEnd('/');
+                _baseUrl = apiUrl;
+                // Mémorise la clé sans exiger DefaultRequestHeaders (race → busy_retry).
                 ApplyApiKeyHeaders(apiKey);
                 var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
-            catch (OperationCanceledException)
-            {
-                return "ERR|timeout";
-            }
-            catch (HttpRequestException)
-            {
-                return "ERR|network";
-            }
-            catch (JsonException)
-            {
-                return "ERR|invalid_response";
-            }
-            catch (UriFormatException)
-            {
-                return "ERR|invalid_url";
-            }
             catch (Exception ex)
             {
-                // Filet de sécurité : sans ce catch-all, toute exception non prévue ci-dessus
-                // (ex. UriFormatException sur une URL mal formée) remontait non interceptée et
-                // produisait un retour vide côté SQF ("Liaison impossible ()." sans détail).
-                return "ERR|exception:" + ex.GetType().Name;
+                return FormatCaughtError(ex);
             }
         }
 
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        // Re-normalise au cas où une ancienne session a stocké une URL sans schéma.
+        _baseUrl = NormalizeBaseUrl(_baseUrl);
+        if (!Uri.TryCreate(_baseUrl, UriKind.Absolute, out _))
+            return "ERR|invalid_url";
+
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
         var token = cts.Token;
         try
@@ -279,28 +407,47 @@ public static class Extension
             if (function == "GetMarkers")
             {
                 var since = args.Length > 0 ? (args[0] ?? "") : "";
-                var url = _baseUrl + "/api/atak/markers?mapId=1";
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/markers?mapId=1", out var markersUri, out var markersErr) || markersUri is null)
+                    return "ERR|" + markersErr;
+                var url = markersUri.AbsoluteUri;
                 if (!string.IsNullOrEmpty(since)) url += "&since=" + Uri.EscapeDataString(since);
                 var response = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
-                var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var body = ReadContentUtf8(response, token);
                 return "OK|" + SimplifyMarkersJson(body);
             }
             if (function == "GetUnits")
             {
-                var response = HttpClient.GetAsync(_baseUrl + "/api/units?mapId=1", token).GetAwaiter().GetResult();
+                if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=1", out var unitsUri, out var unitsErr) || unitsUri is null)
+                    return "ERR|" + unitsErr;
+                var response = HttpClient.GetAsync(unitsUri, token).GetAwaiter().GetResult();
                 response.EnsureSuccessStatusCode();
-                var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var body = ReadContentUtf8(response, token);
                 return "OK|" + SimplifyUnitsJson(body);
             }
             if (function == "GetClientIp")
             {
-                var response = HttpClient.GetAsync(_baseUrl + "/api/atak/whoami", token).GetAwaiter().GetResult();
-                response.EnsureSuccessStatusCode();
-                var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
-                using var doc = JsonDocument.Parse(body);
-                var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "—") : "—";
-                return "OK|" + ip;
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/whoami", out var whoamiUri, out var whoamiErr) || whoamiUri is null)
+                    return "ERR|" + whoamiErr;
+                try
+                {
+                    var response = HttpClient.GetAsync(whoamiUri, token).GetAwaiter().GetResult();
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var code = (int)response.StatusCode;
+                        if (code == 401 || code == 403) return "ERR|unauthorized";
+                        if (code == 404) return "ERR|not_found";
+                        return "ERR|http_" + code;
+                    }
+                    var body = ReadContentUtf8(response, token);
+                    using var doc = JsonDocument.Parse(body);
+                    var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "—") : "—";
+                    return "OK|" + ip;
+                }
+                catch (Exception ex)
+                {
+                    return FormatCaughtError(ex);
+                }
             }
             if (function == "FireSupport.Request" && args.Length >= 6)
             {

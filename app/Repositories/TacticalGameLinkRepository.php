@@ -58,13 +58,27 @@ class TacticalGameLinkRepository
             )->execute([$userId, $tenantId]);
 
             $code = $this->generateUniqueCode();
-            $expiresAt = date('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60);
+            // Expiry calculée en SQL (même horloge que NOW() dans findValidByCode) —
+            // évite les faux « expiré » si PHP et MySQL n’ont pas le même fuseau.
             $stmt = $this->pdo->prepare(
-                'INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at) VALUES (?, ?, ?, ?, NOW())'
+                'INSERT INTO tactical_game_link_codes (tenant_id, user_id, code, expires_at, created_at)
+                 VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ' . (int) self::TTL_MINUTES . ' MINUTE), NOW())'
             );
-            $stmt->execute([$tenantId, $userId, $code, $expiresAt]);
+            $stmt->execute([$tenantId, $userId, $code]);
 
-            return ['code' => $code, 'expires_at' => $expiresAt];
+            $read = $this->pdo->prepare(
+                'SELECT code, expires_at FROM tactical_game_link_codes WHERE code = ? ORDER BY id DESC LIMIT 1'
+            );
+            $read->execute([$code]);
+            $row = $read->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return null;
+            }
+
+            return [
+                'code' => (string) $row['code'],
+                'expires_at' => (string) $row['expires_at'],
+            ];
         } catch (\Throwable) {
             return null;
         }
@@ -99,6 +113,25 @@ class TacticalGameLinkRepository
             'SELECT * FROM tactical_game_link_codes
              WHERE code = ? AND expires_at > NOW() AND redeemed_at IS NULL
              LIMIT 1'
+        );
+        $stmt->execute([strtoupper(trim($code))]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Dernière ligne pour ce code (même expirée / déjà utilisée) — pour messages d’erreur précis.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findLatestByCode(string $code): ?array
+    {
+        if (!$this->tableExists() || trim($code) === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM tactical_game_link_codes WHERE code = ? ORDER BY id DESC LIMIT 1'
         );
         $stmt->execute([strtoupper(trim($code))]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

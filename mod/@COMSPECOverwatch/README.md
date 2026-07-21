@@ -14,6 +14,24 @@ Mod Arma 3 pour la liaison avec l’overlay ATAK / Tacmap COMSPEC. Envoi de la p
 3. S’assurer que l’extension `COMSPECExtension_x64.dll` est bien dans le dossier `@COMSPECOverwatch` (fournie avec le mod ou à compiler, voir ci‑dessous).
 4. Activer **CBA A3** puis **COMSPEC Overwatch** dans le launcher.
 
+## BattlEye (cause fréquente de « extension non chargée »)
+
+Avec **BattlEye activé**, Arma refuse souvent `COMSPECExtension` tant que l’extension n’est pas whitelistée. Le journal `.rpt` affiche alors un message trompeur :
+
+`Call extension 'COMSPECExtension' could not be loaded: Insufficient system resources…`  
+(en français : « Ressources système insuffisantes… »)
+
+Ce n’est **pas** un problème de taille de DLL : une `COMSPECExtension_x64.dll` Native AOT correcte fait ~5 Mo et peut quand même être bloquée.
+
+**Pour tester en solo / éditeur :**
+1. Lanceur Arma 3 → paramètres → **désactiver BattlEye**
+2. Quitter Arma complètement (pas seulement retour menu)
+3. Relancer avec `@COMSPECOverwatch` (Workshop : `Arma 3\!Workshop\@COMSPECOverwatch`)
+
+**En multijoueur protégé BE :** il faut une whitelist BattlEye officielle de l’extension (comme ACE), sinon le module restera bloqué côté client.
+
+Un message UI du type « DLL invalide ~32 Ko » (anciennes versions du mod) était un **faux positif** : SQF voyait seulement une réponse vide et concluait à tort un stub managé.
+
 ## Configuration (CBA)
 
 **URL de production** : `https://athena.ttrd.fr/public` (sans slash final).  

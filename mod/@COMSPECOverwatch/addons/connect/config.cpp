@@ -74,6 +74,8 @@ class CfgFunctions {
             class accountLinkOnLoad {};
             class accountLinkSubmit {};
             class extResult {};
+            class extensionStatus {};
+            class extensionLoadHint {};
             class getModVersion {};
             class refreshLinkStatus {};
             class updateStatusBadges {};

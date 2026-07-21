@@ -34,6 +34,22 @@ if (_code isEqualTo "" || {count _code < 4}) exitWith {
 ["Échange du code en cours…", "#8aa0b4"] call _setStatus;
 [format ["[Athena] Échange du code vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
+// Sonde d’abord : une réponse vide n’implique PAS un stub ~32 Ko (souvent BattlEye).
+private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
+_extStatus params ["_extOk", "_extCode", "_extPing"];
+if (!_extOk) exitWith {
+    private _msg = if (_extCode isEqualTo "bad_response") then {
+        format ["Module Athena réponse inattendue (%1).", _extPing]
+    } else {
+        ["link", false] call comspec_overwatch_connect_fnc_extensionLoadHint
+    };
+    [_msg, "#ff8a7a"] call _setStatus;
+    private _logMsg = if (_extCode isEqualTo "bad_response") then { _msg } else { ["link", true] call comspec_overwatch_connect_fnc_extensionLoadHint };
+    [format ["[Athena] Échec liaison compte : %1", _logMsg]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [format ["[Athena] Ping extension : '%1' (err Arma %2)", _extPing, missionNamespace getVariable ["COMSPEC_LastExtError", 0]]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    ["COMSPEC_Warning", [_msg]] call BIS_fnc_showNotification;
+};
+
 private _steamUid = getPlayerUID player;
 private _raw = ["COMSPECExtension" callExtension ["RedeemGameLink", [_url, _code, _steamUid]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
@@ -45,17 +61,25 @@ if (_prefix != "OK") exitWith {
     if (_err isEqualTo "") then { _err = "empty"; };
     private _msg = switch (_err) do {
         case "invalid": { "Adresse ou code invalide." };
+        case "invalid_url": { "Adresse du portail invalide — utilisez https://athena.ttrd.fr/public" };
+        case "invalid_op": { "Le module Athena était occupé. Réessayez dans une seconde." };
+        case "busy_retry": { "Échange en cours côté module — réessayez dans une seconde." };
         case "code_invalid_or_expired": { "Code invalide, déjà utilisé ou expiré — générez-en un nouveau sur Athena." };
+        case "code_already_used": { "Ce code a déjà été utilisé — générez-en un nouveau sur Athena." };
+        case "code_expired": { "Ce code a expiré — générez-en un nouveau sur Athena (valable 15 min)." };
         case "invalid_code": { "Code manquant ou trop court." };
-        case "not_found": { "Adresse Athena incorrecte (page introuvable). Vérifiez le /public." };
+        case "not_found": { "Athena n’a pas trouvé cette ressource. Vérifiez l’adresse (…/public) ou générez un nouveau code." };
         case "timeout": { "Délai dépassé — vérifiez votre réseau." };
         case "network": { "Impossible de joindre Athena." };
         case "invalid_response": { "Réponse inattendue d’Athena." };
         case "http_503": { "Liaison pas encore activée sur le portail (mise à jour serveur requise). Réessayez plus tard." };
         case "http_500": { "Erreur interne du portail. Réessayez dans un instant." };
-        case "extension_empty";
+        case "extension_empty": {
+            // Ping a réussi juste avant : la DLL est OK, c’est l’échange qui a échoué silencieusement.
+            "Le module Athena est chargé, mais l’échange du code n’a pas répondu. Réessayez ; vérifiez votre connexion Internet."
+        };
         case "empty": {
-            "Extension non chargée (DLL invalide ~32 Ko). Remplacez COMSPECExtension_x64.dll par la version Native AOT (~5 Mo) puis relancez Arma."
+            "Réponse incomplète du module Athena. Réessayez."
         };
         default {
             if (_err find "http_" == 0) then {

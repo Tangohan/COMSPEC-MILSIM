@@ -1,9 +1,4 @@
 <?php
-/**
- * Legacy TACMAP view — non servie.
- * La route /tacmap redirige vers /overwatch (HomeController::tacmap).
- * Conservée comme référence UI + styles/JS partagés (tacmap.css, ComspecOperationalMap.initTacmap).
- */
 $base = url('');
 $overwatchContext = $overwatchContext ?? [
     'tenantId' => 0,

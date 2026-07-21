@@ -14,9 +14,14 @@ private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
 private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
 private _enabled = missionNamespace getVariable ["comspec_overwatch_enabled", true];
 
-private _ping = ["COMSPECExtension" callExtension ["Ping", []]] call comspec_overwatch_connect_fnc_extResult;
-private _extLabel = if (_ping isEqualTo "") then {
-    "NON CHARGÉE (réponse vide — DLL stub ou absente)"
+private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
+_extStatus params ["_extOk", "_extCode", "_ping", ["_extErr", 0]];
+private _extLabel = if (!_extOk) then {
+    if (_extCode isEqualTo "not_loaded") then {
+        format ["NON CHARGÉE (réponse vide, err Arma %1 — souvent BattlEye / mauvais dossier mod, PAS un test de taille DLL)", _extErr]
+    } else {
+        format ["RÉPONSE INVALIDE : %1", _ping]
+    }
 } else {
     if ((_ping select [0, 3]) == "OK|") then { _ping select [3, (count _ping) - 3] } else { _ping };
 };
@@ -25,6 +30,7 @@ private _lines = [
     "[Debug] --- Instantané technique ---",
     format ["[Debug] Version mod : %1", _version],
     format ["[Debug] Extension DLL : %1", _extLabel],
+    format ["[Debug] Extension status : %1 (err Arma %2)", _extCode, missionNamespace getVariable ["COMSPEC_LastExtError", _extErr]],
     format ["[Debug] Overwatch activé : %1", if (_enabled) then { "oui" } else { "non" }],
     format ["[Debug] URL portail : %1", if (_url == "") then { "(vide)" } else { _url }],
     format ["[Debug] Tenant : %1", if (_tenant == "") then { "(défaut)" } else { _tenant }],

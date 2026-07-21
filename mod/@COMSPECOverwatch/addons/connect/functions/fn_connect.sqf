@@ -49,15 +49,14 @@ if (_key isEqualTo "") then {
     ["[Athena] Clé API absente — liez votre compte : K → Compte Athena (saisir un code) avec un code généré sur le site."] call comspec_overwatch_connect_fnc_appendLinkLog;
 };
 
-// Vérifie que la DLL Native AOT répond (un stub managé ~30 Ko renvoie une chaîne vide).
-private _ping = ["COMSPECExtension" callExtension ["Ping", []]] call comspec_overwatch_connect_fnc_extResult;
-if (_ping isEqualTo "" || {(_ping select [0, 3]) != "OK|"}) exitWith {
+// Vérifie que l’extension répond. Réponse vide ≠ stub 32 Ko : souvent BattlEye (voir RPT).
+private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
+_extStatus params ["_extOk", "_extCode", "_ping"];
+if (!_extOk) exitWith {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Extension non chargée", false];
-    ["[Athena] Extension COMSPECExtension_x64.dll absente ou invalide (réponse vide). Copiez la DLL Native AOT (~5 Mo) dans @COMSPECOverwatch, puis relancez Arma."] call comspec_overwatch_connect_fnc_appendLinkLog;
-    if (!(_ping isEqualTo "")) then {
-        [format ["[Athena] Ping extension : %1", _ping]] call comspec_overwatch_connect_fnc_appendLinkLog;
-    };
+    [["connect", true] call comspec_overwatch_connect_fnc_extensionLoadHint] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [format ["[Athena] Ping extension : '%1' (code %2, err Arma %3)", _ping, _extCode, missionNamespace getVariable ["COMSPEC_LastExtError", 0]]] call comspec_overwatch_connect_fnc_appendLinkLog;
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 };
 
@@ -91,7 +90,7 @@ if (_prefix == "OK") then {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Échec de liaison", false];
     if (_result isEqualTo "") then {
-        ["[Athena] Connect a renvoyé vide — DLL non Native AOT ou non chargée. Remplacez COMSPECExtension_x64.dll (~5 Mo) dans @COMSPECOverwatch."] call comspec_overwatch_connect_fnc_appendLinkLog;
+        ["[Athena] Connect a renvoyé vide alors que Ping était OK — réessayez ; vérifiez le réseau / le journal Arma."] call comspec_overwatch_connect_fnc_appendLinkLog;
     } else {
         if (_prefix == "ERR") then {
             [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;

@@ -82,6 +82,7 @@ return [
                         ['label' => 'Poste de commandement', 'path' => 'c2', 'description' => 'Accès aux modes de coordination'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
                         ['label' => 'Overwatch', 'path' => 'overwatch', 'description' => 'Situation en carte et commandement'],
+                        ['label' => 'TACMAP', 'path' => 'tacmap', 'description' => 'Cartographie tactique'],
                         ['label' => 'Première liaison ATAK', 'path' => 'atak/premiere-liaison', 'description' => 'Mise en service guidée'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                     ],
