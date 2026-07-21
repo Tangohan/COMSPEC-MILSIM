@@ -1514,6 +1514,84 @@ body.atak-page {
 .atak-map-hud__v { color: #e2e8f0; font-weight: 700; }
 .atak-map-hud__ok { color: #34d399 !important; }
 
+/* Popup unité/aérien affiché au clic sur un marqueur carte (voir atak-unit-popup.js).
+   Jusqu'ici sans style : le popup Leaflet par défaut (fond blanc) tranchait avec le thème
+   sombre du reste de la page. */
+.leaflet-popup.atak-map-popup .leaflet-popup-content-wrapper {
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-tip {
+  background: var(--atak-panel);
+  border: 1px solid var(--atak-border);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-close-button {
+  color: var(--atak-muted);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-close-button:hover {
+  color: var(--atak-text);
+}
+.atak-unit-popup {
+  padding: 0.6rem 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-width: 190px;
+}
+.atak-unit-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--atak-border);
+}
+.atak-unit-popup__head--ok { border-bottom-color: var(--atak-success); }
+.atak-unit-popup__head--warn { border-bottom-color: var(--atak-warning); }
+.atak-unit-popup__head--danger { border-bottom-color: #ef4444; }
+.atak-unit-popup__title-wrap { display: flex; flex-direction: column; min-width: 0; }
+.atak-unit-popup__callsign {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--atak-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atak-unit-popup__subtitle {
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.atak-unit-popup__body { display: flex; flex-direction: column; gap: 0.2rem; }
+.atak-unit-popup__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.atak-unit-popup__k { color: var(--atak-muted); font-weight: 600; white-space: nowrap; }
+.atak-unit-popup__v { color: var(--atak-text); font-weight: 600; text-align: right; }
+.atak-unit-popup__val--ok { color: var(--atak-success) !important; }
+.atak-unit-popup__val--warn { color: var(--atak-warning) !important; }
+.atak-unit-popup__val--danger { color: #ef4444 !important; }
+.atak-unit-popup__notes {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--atak-border);
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
 .nato-sidc-icon,
 .nato-sidc-badge {
   background: transparent !important;
