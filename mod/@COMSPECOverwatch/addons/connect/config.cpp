@@ -43,6 +43,8 @@ class CfgFunctions {
             class medicalInboxOnLoad {};
             class medicalTriage {};
             class pollMedicalAlerts {};
+            class hasOwnActiveMedicalAlert {};
+            class selfCancelMedicalAlert {};
             class getAircraftType {};
             class fillFlightManifest {};
             class submitFlightManifest {};
