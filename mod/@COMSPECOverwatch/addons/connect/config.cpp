@@ -84,9 +84,14 @@ class CfgFunctions {
             class portalLabel {};
             class toggleLogCategory {};
             class showDebugInfo {};
+            class profileWrap {};
+            class profileReport {};
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
+            class deviceToggleView {};
+            class getUnitsList {};
+            class showDeviceRoster {};
             class updateLinkDiary {};
             class extensionCallback {};
             class hasTerminal {};

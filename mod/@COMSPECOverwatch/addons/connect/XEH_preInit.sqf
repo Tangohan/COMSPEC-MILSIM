@@ -76,6 +76,12 @@
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
+[
+    "comspec_overwatch_profile_enabled", "CHECKBOX",
+    ["Profiler (debug)", "Mesure le temps d'exécution des boucles/PerFrameHandlers critiques (position, CAS, marqueurs). Rapport visible via le panneau de debug. Coût nul quand désactivé."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
 // IDs v2 : l’ancien comspec_open_chat était enregistré sur K seul (sans Ctrl).
 // CBA conserve les binds du profil joueur — sans nouvel ID, Ctrl+K ne s’applique jamais.
 [

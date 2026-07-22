@@ -178,7 +178,7 @@ final class RegisterController
             $resolvedSteamId = $this->steamWebApiService->resolveSteamIdFromUserInput($steamProfile);
             if ($resolvedSteamId === null) {
                 $flashBack(
-                    'Profil Steam non reconnu. Indiquez le lien de votre profil ou votre identifiant à 17 chiffres, ou laissez le champ vide.',
+                    'Profil Steam non reconnu. Indiquez le lien de votre profil, votre numéro Steam, un identifiant classique (STEAM_0:…), ou laissez le champ vide.',
                     2
                 );
 

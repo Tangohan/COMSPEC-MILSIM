@@ -343,7 +343,8 @@ class AccountController
                 if ($rawSteam !== '' && $resolvedSteam === null) {
                     Session::flash(
                         'error',
-                        'Impossible de reconnaître cet identifiant Steam. Utilisez le numéro à 17 chiffres, une adresse de profil se terminant par « …/profiles/… », ou un lien « …/id/votre-pseudo » si le service Steam du serveur est configuré.'
+                        'Impossible de reconnaître cet identifiant Steam. Indiquez le numéro affiché en jeu (souvent 17 chiffres), un identifiant Steam classique (STEAM_0:… ou [U:1:…]), ou une adresse de profil public'
+                        . ($this->steamWebApiService->isConfigured() ? ' (y compris un lien avec votre pseudo).' : '.')
                     );
 
                     return Response::redirect(url('account/preferences'));
@@ -478,7 +479,7 @@ class AccountController
         if ($postedSteam !== '') {
             $resolvedPosted = $this->steamWebApiService->resolveSteamIdFromUserInput($postedSteam);
             if ($resolvedPosted === null) {
-                Session::flash('error', 'Impossible de reconnaître l’identifiant Steam indiqué dans le formulaire. Vérifiez le numéro ou l’adresse du profil public.');
+                Session::flash('error', 'Impossible de reconnaître l’identifiant Steam indiqué. Vérifiez le numéro, le format classique Steam, ou l’adresse du profil public.');
 
                 return Response::redirect(url('account/preferences'));
             }

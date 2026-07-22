@@ -14,6 +14,8 @@ final class AtakActivityLogService
     private const POSITION_THROTTLE_SEC = 15;
     private const INIT_THROTTLE_SEC = 90;
     private const SESSION_TTL_SEC = 7200;
+    /** Présence des visiteurs web sur la Tacmap (TTL court). */
+    private const WEB_PRESENCE_TTL_SEC = 90;
 
     /** Types internes → libellés métier (FR). */
     public const TYPE_CLIENT_INIT = 'client_init';
@@ -225,6 +227,71 @@ final class AtakActivityLogService
     }
 
     /**
+     * Signal de présence d'un utilisateur connecté sur la Tacmap web (portail).
+     */
+    public function heartbeatWebPresence(
+        int $tenantId,
+        int $mapId,
+        int $userId,
+        string $displayName,
+        string $callsign = ''
+    ): void {
+        if ($tenantId < 1 || $mapId < 1 || $userId < 1) {
+            return;
+        }
+        $label = trim($callsign) !== '' ? trim($callsign) : trim($displayName);
+        if ($label === '') {
+            $label = 'Opérateur';
+        }
+        $now = time();
+        $key = 'u' . $userId;
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($key, $userId, $label, $displayName, $callsign, $now): void {
+            $web = $this->pruneWebPresence($data['web_presence'] ?? [], $now);
+            $web[$key] = [
+                'user_id' => $userId,
+                'label' => $label,
+                'display_name' => trim($displayName),
+                'callsign' => trim($callsign),
+                'last_seen_at' => $now,
+            ];
+            $data['web_presence'] = $web;
+        });
+    }
+
+    /**
+     * Visiteurs web encore actifs sur la Tacmap (TTL court).
+     *
+     * @return list<array{user_id:int,label:string,display_name:string,callsign:string,last_seen_at:int}>
+     */
+    public function listWebPresence(int $tenantId, int $mapId): array
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return [];
+        }
+        $data = $this->readFile($this->path($tenantId, $mapId));
+        $now = time();
+        $web = $this->pruneWebPresence($data['web_presence'] ?? [], $now);
+        $out = [];
+        foreach ($web as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $out[] = [
+                'user_id' => (int) ($row['user_id'] ?? 0),
+                'label' => (string) ($row['label'] ?? 'Opérateur'),
+                'display_name' => (string) ($row['display_name'] ?? ''),
+                'callsign' => (string) ($row['callsign'] ?? ''),
+                'last_seen_at' => (int) ($row['last_seen_at'] ?? 0),
+            ];
+        }
+        usort($out, static function (array $a, array $b): int {
+            return strcasecmp($a['label'], $b['label']);
+        });
+
+        return $out;
+    }
+
+    /**
      * @param callable(array<string, mixed>): void $fn
      */
     private function mutate(int $tenantId, int $mapId, callable $fn): void
@@ -246,7 +313,7 @@ final class AtakActivityLogService
             $raw = stream_get_contents($fp);
             $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
             if (!is_array($data)) {
-                $data = ['next_id' => 1, 'events' => [], 'sessions' => []];
+                $data = ['next_id' => 1, 'events' => [], 'sessions' => [], 'web_presence' => []];
             }
             $fn($data);
             $payload = json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -308,6 +375,30 @@ final class AtakActivityLogService
             }
             $seen = (int) ($row['last_seen_at'] ?? 0);
             if ($seen > 0 && ($now - $seen) > self::SESSION_TTL_SEC) {
+                continue;
+            }
+            $out[$key] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $presence
+     * @return array<string, array<string, mixed>>
+     */
+    private function pruneWebPresence(mixed $presence, int $now): array
+    {
+        if (!is_array($presence)) {
+            return [];
+        }
+        $out = [];
+        foreach ($presence as $key => $row) {
+            if (!is_string($key) || !is_array($row)) {
+                continue;
+            }
+            $seen = (int) ($row['last_seen_at'] ?? 0);
+            if ($seen > 0 && ($now - $seen) > self::WEB_PRESENCE_TTL_SEC) {
                 continue;
             }
             $out[$key] = $row;

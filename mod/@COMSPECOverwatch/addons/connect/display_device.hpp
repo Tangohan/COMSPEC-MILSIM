@@ -64,26 +64,58 @@ class COMSPEC_Device_Dialog {
             h = 0.14 * safezoneH;
         };
 
+        // --- Vue "Effectifs" (BFT léger, façon FBCB2 cTab) : mêmes coordonnées que le bloc profil,
+        // basculée avec lui (une seule vue visible à la fois — voir fn_deviceToggleView.sqf).
+        class DeviceRosterTitle: RscStructuredText {
+            idc = 9315;
+            text = "<t size='0.5' color='#5a9e88'>EFFECTIFS EN LIAISON</t>";
+            x = 0.2453 * safezoneW + safezoneX;
+            y = 0.415 * safezoneH + safezoneY;
+            w = 0.475 * safezoneW;
+            h = 0.018 * safezoneH;
+        };
+
+        class DeviceRosterList: RscStructuredText {
+            idc = 9314;
+            text = "";
+            x = 0.2453 * safezoneW + safezoneX;
+            y = 0.436 * safezoneH + safezoneY;
+            w = 0.475 * safezoneW;
+            h = 0.119 * safezoneH;
+        };
+
         class DeviceBtnHub: RscButton {
             idc = 9304;
             text = "Hub complet";
             x = 0.2453 * safezoneW + safezoneX;
             y = 0.575 * safezoneH + safezoneY;
-            w = 0.18 * safezoneW;
+            w = 0.15 * safezoneW;
             h = 0.034 * safezoneH;
-            sizeEx = 0.026;
+            sizeEx = 0.024;
             colorBackground[] = {0.06, 0.14, 0.2, 0.95};
             action = "closeDialog 0; createDialog 'COMSPEC_Hub_Dialog';";
+        };
+
+        class DeviceBtnRoster: RscButton {
+            idc = 9306;
+            text = "Effectifs";
+            x = 0.4053 * safezoneW + safezoneX;
+            y = 0.575 * safezoneH + safezoneY;
+            w = 0.15 * safezoneW;
+            h = 0.034 * safezoneH;
+            sizeEx = 0.024;
+            colorBackground[] = {0.08, 0.16, 0.14, 0.95};
+            action = "[findDisplay 9973] call comspec_overwatch_connect_fnc_deviceToggleView;";
         };
 
         class DeviceBtnClose: RscButton {
             idc = 9305;
             text = "Fermer";
-            x = 0.44 * safezoneW + safezoneX;
+            x = 0.5653 * safezoneW + safezoneX;
             y = 0.575 * safezoneH + safezoneY;
-            w = 0.13 * safezoneW;
+            w = 0.12 * safezoneW;
             h = 0.034 * safezoneH;
-            sizeEx = 0.026;
+            sizeEx = 0.024;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};
             action = "closeDialog 0;";
         };

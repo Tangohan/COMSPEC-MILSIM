@@ -29,4 +29,5 @@ if (!isNull _statusCtrl) then {
     ];
 };
 
+[_display, "profile"] call comspec_overwatch_connect_fnc_deviceToggleView;
 [_display, 9302, 9303] spawn comspec_overwatch_connect_fnc_showPlayerProfile;

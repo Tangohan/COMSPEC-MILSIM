@@ -11,6 +11,8 @@ return [
         '/api/atak/whoami',
         // Code court à usage unique : le secret est le code lui-même (TTL court).
         '/api/atak/game-link/redeem',
+        // Steam déjà lié au compte : l’UID Steam du client Arma fait office de preuve (pas de clé ATAK).
+        '/api/atak/game-link/by-steam',
     ],
     'protected_prefixes' => [
         '/api/markers',

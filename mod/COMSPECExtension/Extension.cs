@@ -51,6 +51,54 @@ public static class Extension
         catch { }
     }
 
+    /// <summary>
+    /// POST /api/atak/client-init en arrière-plan (ne bloque pas callExtension).
+    /// Utilise TryBuildRequestUri pour conserver le préfixe /public.
+    /// </summary>
+    private static void StartClientInitAsync()
+    {
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl)) return;
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/client-init", out var initUri, out _) || initUri is null)
+            return;
+
+        try
+        {
+            var initReq = new HttpRequestMessage(HttpMethod.Post, initUri)
+            {
+                Content = JsonContent("{\"mapId\":1}")
+            };
+            AttachApiKeyHeader(initReq);
+            _ = HttpClient.SendAsync(initReq).ContinueWith(t =>
+            {
+                try { initReq.Dispose(); } catch { /* ignore */ }
+                try
+                {
+                    if (t.IsFaulted || t.IsCanceled)
+                    {
+                        InvokeCallback("Error", "Portail injoignable");
+                        return;
+                    }
+                    var resp = t.Result;
+                    if (resp.IsSuccessStatusCode)
+                        InvokeCallback("Connected", baseUrl);
+                    else if ((int)resp.StatusCode is 401 or 403)
+                        InvokeCallback("Error", "Clé d’accès refusée");
+                    else
+                        InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
+                }
+                catch
+                {
+                    InvokeCallback("Error", "Portail injoignable");
+                }
+            });
+        }
+        catch
+        {
+            // best effort
+        }
+    }
+
     private static void EnsureDrainTimer()
     {
         if (_drainTimer != null) return;
@@ -66,8 +114,12 @@ public static class Extension
             {
                 try
                 {
-                    var content = new StringContent(item.Body, Encoding.UTF8, "application/json");
-                    var response = HttpClient.PostAsync(item.Url, content).GetAwaiter().GetResult();
+                    using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
+                    {
+                        Content = JsonContent(item.Body)
+                    };
+                    AttachApiKeyHeader(req);
+                    var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
                     if (!response.IsSuccessStatusCode && PendingPosts.Count < MaxQueueSize)
                         PendingPosts.Enqueue(item);
                 }
@@ -83,10 +135,15 @@ public static class Extension
     {
         try
         {
-            var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-            _ = HttpClient.PostAsync(url, content).ContinueWith(t =>
+            var req = new HttpRequestMessage(HttpMethod.Post, url)
             {
-                if (t.IsFaulted || !t.Result.IsSuccessStatusCode)
+                Content = JsonContent(jsonBody)
+            };
+            AttachApiKeyHeader(req);
+            _ = HttpClient.SendAsync(req).ContinueWith(t =>
+            {
+                try { req.Dispose(); } catch { /* ignore */ }
+                if (t.IsFaulted || t.IsCanceled || (t.Status == TaskStatus.RanToCompletion && !t.Result.IsSuccessStatusCode))
                 {
                     if (PendingPosts.Count < MaxQueueSize)
                     {
@@ -106,10 +163,42 @@ public static class Extension
         }
     }
 
+    private static StringContent JsonContent(string jsonBody)
+    {
+        var content = new StringContent(jsonBody ?? "", Encoding.UTF8);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        return content;
+    }
+
+    /// <summary>GET avec clé API sur la requête (jamais DefaultRequestHeaders — race Native AOT).</summary>
+    private static HttpResponseMessage SendGet(Uri uri, CancellationToken token)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, uri);
+        AttachApiKeyHeader(req);
+        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+    }
+
+    private static HttpResponseMessage SendGet(string url, CancellationToken token)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        AttachApiKeyHeader(req);
+        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+    }
+
+    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent(jsonBody)
+        };
+        AttachApiKeyHeader(req);
+        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+    }
+
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-        Output(output, outputSize, "COMSPECExtension 1.6");
+        Output(output, outputSize, "COMSPECExtension 1.10");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -138,6 +227,12 @@ public static class Extension
         var argsString = new string?[argCount];
         for (var i = 0; i < argCount; i++)
             argsString[i] = Marshal.PtrToStringUTF8(Marshal.ReadIntPtr(args + (i * Marshal.SizeOf<nint>())));
+
+        // Comme cTab IRL (Worker.ArmaString) : callExtension passe chaque argument avec guillemets.
+        // Sans strip, RedeemGameLink envoie le code "ABCD12" (invalide) et Connect met
+        // X-COMSPEC-KEY: "secret" → 401 sur toutes les routes authentifiées.
+        for (var i = 0; i < argsString.Length; i++)
+            argsString[i] = ArmaString(argsString[i]);
 
         // Filet de sécurité au niveau du point d'entrée natif : une méthode [UnmanagedCallersOnly]
         // ne doit jamais laisser fuiter d'exception (le runtime .NET fait un fail-fast qui tue le
@@ -178,27 +273,36 @@ public static class Extension
     private static readonly object HeaderLock = new();
 
     /// <summary>
-    /// Mémorise la clé API et tente de l’appliquer sur le HttpClient partagé.
-    /// Ne doit JAMAIS lever : DefaultRequestHeaders lève InvalidOperationException
-    /// si une requête est déjà en vol (file d’attente / Connect async).
+    /// Retire les guillemets ajoutés par Arma autour des arguments callExtension (même logique que cTab IRL).
+    /// </summary>
+    private static string ArmaString(string? str)
+    {
+        if (str == null) return string.Empty;
+        if (str.Length >= 2
+            && ((str[0] == '"' && str[^1] == '"') || (str[0] == '\'' && str[^1] == '\'')))
+            return str.Substring(1, str.Length - 2);
+        return str;
+    }
+
+    /// <summary>
+    /// Mémorise la clé API. Ne touche plus DefaultRequestHeaders (race → InvalidOperationException
+    /// + risque d’envoyer une ancienne clé en double). AttachApiKeyHeader sur chaque requête.
     /// </summary>
     private static void ApplyApiKeyHeaders(string? apiKey)
     {
-        var key = (apiKey ?? "").Trim();
+        var key = ArmaString(apiKey).Trim();
         lock (HeaderLock)
         {
             _apiKey = key;
+            // Nettoyage best-effort d’éventuelles clés héritées d’anciennes versions de la DLL.
             try
             {
                 HttpClient.DefaultRequestHeaders.Remove("X-COMSPEC-KEY");
                 HttpClient.DefaultRequestHeaders.Remove("X-ATAK-TOKEN");
-                if (_apiKey.Length == 0) return;
-                HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-COMSPEC-KEY", _apiKey);
             }
             catch (InvalidOperationException)
             {
-                // Requête en cours : la clé reste dans _apiKey ; AttachApiKeyHeader la posera
-                // sur les prochains HttpRequestMessage dédiés.
+                // Requête en vol : ignorer ; les envois passent par AttachApiKeyHeader.
             }
         }
     }
@@ -308,7 +412,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.6";
+            return "OK|COMSPECExtension 1.10";
         }
 
         // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
@@ -323,6 +427,9 @@ public static class Extension
             _baseUrl = normalized;
             var key = args.Length > 1 ? (args[1] ?? "") : "";
             ApplyApiKeyHeaders(key);
+            // client-init exige la clé ; sans clé le SQF gère « compte non lié » via whoami.
+            if (_apiKey.Length > 0)
+                StartClientInitAsync();
             return "OK|connected";
         }
 
@@ -335,12 +442,18 @@ public static class Extension
             var linkCode = (args[1] ?? "").Trim().ToUpperInvariant();
             var steamUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
             if (baseUrl.Length == 0 || linkCode.Length < 4) return "ERR|invalid";
+            if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
+            {
+                // UID présent mais non reconnu : on envoie quand même le trim pour laisser le serveur trancher ;
+                // s’il est vide, pas de champ utile.
+                steamNorm = steamUid;
+            }
             if (!TryBuildRequestUri(baseUrl, "/api/atak/game-link/redeem", out var redeemUri, out var uriErr) || redeemUri is null)
                 return "ERR|" + uriErr;
 
             try
             {
-                var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamUid)}\"}}";
+                var payload = $"{{\"code\":\"{EscapeJson(linkCode)}\",\"steam_uid\":\"{EscapeJson(steamNorm)}\"}}";
                 // Contenu JSON sans ctor media-type (évite surprises Native AOT / headers).
                 using var content = new StringContent(payload, Encoding.UTF8);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -382,8 +495,77 @@ public static class Extension
                     : "";
                 apiUrl = NormalizeBaseUrl(apiUrl.Length == 0 ? baseUrl : apiUrl);
                 if (apiUrl.Length == 0) apiUrl = baseUrl;
+                if (apiKey.Length == 0) return "ERR|http_503";
                 _baseUrl = apiUrl;
                 // Mémorise la clé sans exiger DefaultRequestHeaders (race → busy_retry).
+                ApplyApiKeyHeaders(apiKey);
+                var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            catch (Exception ex)
+            {
+                return FormatCaughtError(ex);
+            }
+        }
+
+        // Liaison par Steam ID déjà enregistré sur le compte Athena (sans code court).
+        if (function == "LinkBySteam" && args.Length >= 2)
+        {
+            using var steamCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var steamToken = steamCts.Token;
+            var baseUrl = NormalizeBaseUrl(args[0]);
+            var steamUid = (args[1] ?? "").Trim();
+            // Solo / éditeur : getPlayerUID est souvent vide ou placeholder → message dédié.
+            if (baseUrl.Length == 0) return "ERR|invalid_url";
+            if (!TryNormalizeSteamUid(steamUid, out var steamNorm)) return "ERR|no_steam_uid";
+            if (!TryBuildRequestUri(baseUrl, "/api/atak/game-link/by-steam", out var steamUri, out var steamUriErr) || steamUri is null)
+                return "ERR|" + steamUriErr;
+
+            try
+            {
+                var payload = $"{{\"steam_uid\":\"{EscapeJson(steamNorm)}\"}}";
+                using var content = new StringContent(payload, Encoding.UTF8);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                using var req = new HttpRequestMessage(HttpMethod.Post, steamUri) { Content = content };
+                var resp = HttpClient.SendAsync(req, steamToken).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, steamToken);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var httpCode = (int)resp.StatusCode;
+                    if (httpCode == 404)
+                    {
+                        if (respBody.Contains("steam_not_linked", StringComparison.Ordinal))
+                            return "ERR|steam_not_linked";
+                        if (respBody.Contains("<html", StringComparison.OrdinalIgnoreCase)
+                            || respBody.Contains("<!DOCTYPE", StringComparison.OrdinalIgnoreCase)
+                            || respBody.Length == 0)
+                            return "ERR|not_found";
+                        return "ERR|steam_not_linked";
+                    }
+                    if (httpCode == 400) return "ERR|invalid_steam";
+                    if (httpCode == 401 || httpCode == 403)
+                    {
+                        // Route absente sur un portail pas à jour → middleware clé API.
+                        if (respBody.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
+                            || respBody.Contains("X_COMSPEC", StringComparison.OrdinalIgnoreCase)
+                            || respBody.Contains("X-COMSPEC", StringComparison.OrdinalIgnoreCase))
+                            return "ERR|server_outdated";
+                        return "ERR|account_disabled";
+                    }
+                    if (httpCode == 503) return "ERR|http_503";
+                    return "ERR|http_" + httpCode;
+                }
+                using var doc = JsonDocument.Parse(respBody);
+                var root = doc.RootElement;
+                var apiUrl = root.TryGetProperty("api_url", out var au) ? (au.GetString() ?? "") : "";
+                var apiKey = root.TryGetProperty("api_key", out var ak) ? (ak.GetString() ?? "") : "";
+                var tenantId = root.TryGetProperty("tenant_id", out var ti)
+                    ? (ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? ""))
+                    : "";
+                apiUrl = NormalizeBaseUrl(apiUrl.Length == 0 ? baseUrl : apiUrl);
+                if (apiUrl.Length == 0) apiUrl = baseUrl;
+                if (apiKey.Length == 0) return "ERR|http_503";
+                _baseUrl = apiUrl;
                 ApplyApiKeyHeaders(apiKey);
                 var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
@@ -411,7 +593,7 @@ public static class Extension
                     return "ERR|" + markersErr;
                 var url = markersUri.AbsoluteUri;
                 if (!string.IsNullOrEmpty(since)) url += "&since=" + Uri.EscapeDataString(since);
-                var response = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var response = SendGet(url, token);
                 response.EnsureSuccessStatusCode();
                 var body = ReadContentUtf8(response, token);
                 return "OK|" + SimplifyMarkersJson(body);
@@ -420,7 +602,7 @@ public static class Extension
             {
                 if (!TryBuildRequestUri(_baseUrl, "/api/units?mapId=1", out var unitsUri, out var unitsErr) || unitsUri is null)
                     return "ERR|" + unitsErr;
-                var response = HttpClient.GetAsync(unitsUri, token).GetAwaiter().GetResult();
+                var response = SendGet(unitsUri, token);
                 response.EnsureSuccessStatusCode();
                 var body = ReadContentUtf8(response, token);
                 return "OK|" + SimplifyUnitsJson(body);
@@ -431,7 +613,7 @@ public static class Extension
                     return "ERR|" + whoamiErr;
                 try
                 {
-                    var response = HttpClient.GetAsync(whoamiUri, token).GetAwaiter().GetResult();
+                    var response = SendGet(whoamiUri, token);
                     if (!response.IsSuccessStatusCode)
                     {
                         var code = (int)response.StatusCode;
@@ -463,51 +645,49 @@ public static class Extension
                 var payload = fireUnitId.HasValue && fireUnitId > 0
                     ? $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"fireUnitId\":{fireUnitId.Value},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}"
                     : $"{{\"missionId\":\"{EscapeJson(missionId)}\",\"gun_x\":{gunX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_y\":{gunY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"gun_z\":{gunZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_x\":{targetX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_y\":{targetY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"target_z\":{targetZ.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"ammoType\":\"{EscapeJson(ammoType)}\"}}";
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                var resp = HttpClient.PostAsync(_baseUrl + "/api/fire-support/calculate", content, token).GetAwaiter().GetResult();
+                var resp = SendJsonPost(_baseUrl + "/api/fire-support/calculate", payload, token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
             }
             if (function == "GetFireSupportUnits")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = HttpClient.GetAsync(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token).GetAwaiter().GetResult();
+                var resp = SendGet(_baseUrl + "/api/fire-support/units?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
             }
             if (function == "DangerZones.Sync")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = HttpClient.GetAsync(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token).GetAwaiter().GetResult();
+                var resp = SendGet(_baseUrl + "/api/danger-zones?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
             }
             if (function == "IFF.Current")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = HttpClient.GetAsync(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token).GetAwaiter().GetResult();
+                var resp = SendGet(_baseUrl + "/api/iff/current?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
             }
             if (function == "IFF.Status")
             {
                 var missionId = args.Length > 0 ? (args[0] ?? "mission_1_map_1") : "mission_1_map_1";
-                var resp = HttpClient.GetAsync(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token).GetAwaiter().GetResult();
+                var resp = SendGet(_baseUrl + "/api/iff/assets?missionId=" + Uri.EscapeDataString(missionId), token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 return "OK|" + respBody.Replace("|", "_").Replace("\n", " ");
             }
             if (function == "Intel.Report" && args.Length >= 1)
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return "{\"status\":\"error\",\"message\":\"payload vide\"}";
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = HttpClient.PostAsync(_baseUrl + "/api/intel/report", content, token).GetAwaiter().GetResult();
-                var body = response.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var response = SendJsonPost(_baseUrl + "/api/intel/report", json, token);
+                var body = ReadContentUtf8(response, token);
                 var safeBody = body.Replace("\n", " ").Replace("\r", "");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -521,9 +701,9 @@ public static class Extension
                 var callsign = Uri.EscapeDataString(args[0] ?? "");
                 var mapId = args.Length > 1 ? (args[1] ?? "1") : "1";
                 var url = _baseUrl + "/api/cas?mapId=" + mapId + "&assignedTo=" + callsign;
-                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                 return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
             }
@@ -533,18 +713,18 @@ public static class Extension
                 var since = args.Length > 1 ? Uri.EscapeDataString(args[1] ?? "") : "";
                 var url = _baseUrl + "/api/map-shapes?mapId=" + mapId;
                 if (!string.IsNullOrEmpty(since)) url += "&since=" + since;
-                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                 return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
             }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
-                var resp = HttpClient.GetAsync(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token).GetAwaiter().GetResult();
+                var resp = SendGet(_baseUrl + "/api/atak/laser-codes?mapId=" + mapId, token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                 return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
             }
@@ -556,9 +736,9 @@ public static class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/briefing-slides";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
+                var resp = SendGet(url, token);
                 resp.EnsureSuccessStatusCode();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, token);
                 var simplified = SimplifyBriefingSlidesJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
@@ -570,8 +750,8 @@ public static class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 var url = _baseUrl + "/api/atak/phone-pairing";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
-                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var code = (int)resp.StatusCode;
@@ -599,10 +779,12 @@ public static class Extension
             if (function == "GetPlayerAvatarInfo" && args.Length >= 1)
             {
                 var steamUid = (args[0] ?? "").Trim();
-                if (steamUid.Length == 0) return "ERR|invalid";
-                var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamUid);
-                var resp = HttpClient.GetAsync(url, token).GetAwaiter().GetResult();
-                var respBody = resp.Content.ReadAsStringAsync(token).GetAwaiter().GetResult();
+                if (!TryNormalizeSteamUid(steamUid, out var steamNorm)) return "ERR|invalid";
+                var tenantId = args.Length > 1 ? (args[1] ?? "") : "";
+                var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamNorm);
+                if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     var code = (int)resp.StatusCode;
@@ -641,7 +823,7 @@ public static class Extension
                 HttpResponseMessage imgResp;
                 try
                 {
-                    imgResp = HttpClient.GetAsync(imageUrl, token).GetAwaiter().GetResult();
+                    imgResp = SendGet(imageUrl, token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -863,38 +1045,14 @@ public static class Extension
             {
                 if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
                 {
-                    _baseUrl = args[0]!.TrimEnd('/');
+                    // Normalise comme le chemin sync (évite URL relative / perte de /public).
+                    var normalized = NormalizeBaseUrl(args[0]);
+                    if (normalized.Length == 0) return;
+                    _baseUrl = normalized;
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     ApplyApiKeyHeaders(key);
-                    SendChatMessage("COMSPEC Overwatch: mod actif.");
-                    SendChatMessage("Liaison établie avec le nœud: " + _baseUrl);
-                    var initUrl = _baseUrl + "/api/atak/client-init";
-                    var initBody = "{\"mapId\":1}";
-                    _ = HttpClient.PostAsync(initUrl, new StringContent(initBody, Encoding.UTF8, "application/json"))
-                        .ContinueWith(t =>
-                        {
-                            try
-                            {
-                                if (t.IsFaulted || t.IsCanceled)
-                                {
-                                    InvokeCallback("Error", "Portail injoignable");
-                                    return;
-                                }
-                                var resp = t.Result;
-                                if (resp.IsSuccessStatusCode)
-                                {
-                                    InvokeCallback("Connected", _baseUrl);
-                                }
-                                else
-                                {
-                                    InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
-                                }
-                            }
-                            catch
-                            {
-                                InvokeCallback("Error", "Portail injoignable");
-                            }
-                        });
+                    if (_apiKey.Length > 0)
+                        StartClientInitAsync();
                 }
                 return;
             }
@@ -933,12 +1091,15 @@ public static class Extension
             if (function == "ReportPlaytime" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var uid = args[0] ?? "";
+                if (!TryNormalizeSteamUid(uid, out var uidNorm)) return;
                 var secStr = args[1] ?? "0";
                 var secs = long.TryParse(secStr, out var s) ? s : 0L;
                 if (secs < 1) return;
                 if (secs > 7200) secs = 7200;
                 var call = args.Length > 2 ? (args[2] ?? "") : "";
-                var payload = $"{{\"player_uid\":\"{EscapeJson(uid)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"}}";
+                var tenantId = args.Length > 3 ? (args[3] ?? "") : "";
+                var tenantJson = string.IsNullOrEmpty(tenantId) ? "" : $",\"tenant_id\":\"{EscapeJson(tenantId)}\"";
+                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/playtime", payload);
                 return;
             }
@@ -1050,7 +1211,9 @@ public static class Extension
                     var fileContent = new ByteArrayContent(bytes);
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                     multipart.Add(fileContent, "photo", Path.GetFileName(path) ?? "photo.jpg");
-                    _ = HttpClient.PostAsync(_baseUrl + "/api/intel/photos", multipart);
+                    var photoReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/intel/photos") { Content = multipart };
+                    AttachApiKeyHeader(photoReq);
+                    _ = HttpClient.SendAsync(photoReq);
                 }
                 catch { }
                 return;
@@ -1141,7 +1304,9 @@ public static class Extension
                     var fileContent = new ByteArrayContent(bytes);
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                     multipart.Add(fileContent, "image", Path.GetFileName(path) ?? "recon.jpg");
-                    _ = HttpClient.PostAsync(_baseUrl + "/api/recon/images", multipart);
+                    var reconReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/recon/images") { Content = multipart };
+                    AttachApiKeyHeader(reconReq);
+                    _ = HttpClient.SendAsync(reconReq);
                 }
                 catch { }
                 return;
@@ -1156,8 +1321,10 @@ public static class Extension
                 try
                 {
                     var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
-                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                    var content = new StringContent(payload, Encoding.UTF8);
+                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     var request = new HttpRequestMessage(HttpMethod.Patch, url) { Content = content };
+                    AttachApiKeyHeader(request);
                     _ = HttpClient.SendAsync(request);
                 }
                 catch
@@ -1196,5 +1363,93 @@ public static class Extension
     {
         if (string.IsNullOrEmpty(s)) return s;
         return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+    }
+
+    /// <summary>
+    /// Normalise SteamID64 / SteamID2 / SteamID3 (et chiffres avec séparateurs) vers SteamID64.
+    /// Rejette vide, placeholders solo Arma, et chaînes absurdes.
+    /// </summary>
+    private static bool TryNormalizeSteamUid(string? raw, out string steam64)
+    {
+        steam64 = "";
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+        raw = raw.Trim();
+        if (raw.Length >= 2
+            && ((raw[0] == '"' && raw[^1] == '"') || (raw[0] == '\'' && raw[^1] == '\'')))
+        {
+            raw = raw.Substring(1, raw.Length - 2).Trim();
+        }
+        if (raw.Length == 0) return false;
+
+        if (raw.StartsWith("_SP_", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("LOCAL", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("AI", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // STEAM_X:Y:Z
+        if (raw.StartsWith("STEAM_", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = raw.Split(':');
+            if (parts.Length == 3
+                && parts[0].Length == 7
+                && (parts[1] == "0" || parts[1] == "1")
+                && ulong.TryParse(parts[2], out var z)
+                && z > 0)
+            {
+                var account = z * 2UL + ulong.Parse(parts[1]);
+                steam64 = (account + 76561197960265728UL).ToString();
+                return steam64.Length is >= 15 and <= 20;
+            }
+            return false;
+        }
+
+        // [U:1:N] ou U:1:N
+        var steam3 = raw;
+        if (steam3.StartsWith('[') && steam3.EndsWith(']'))
+            steam3 = steam3.Substring(1, steam3.Length - 2);
+        if (steam3.StartsWith("U:1:", StringComparison.OrdinalIgnoreCase))
+        {
+            var idPart = steam3.Substring(4);
+            if (ulong.TryParse(idPart, out var account) && account > 0)
+            {
+                steam64 = (account + 76561197960265728UL).ToString();
+                return steam64.Length is >= 15 and <= 20;
+            }
+            return false;
+        }
+
+        // …/profiles/7656…
+        const string profilesMarker = "/profiles/";
+        var pIdx = raw.IndexOf(profilesMarker, StringComparison.OrdinalIgnoreCase);
+        if (pIdx >= 0)
+        {
+            var start = pIdx + profilesMarker.Length;
+            var end = start;
+            while (end < raw.Length && char.IsDigit(raw[end])) end++;
+            if (end > start)
+            {
+                var digs = raw.Substring(start, end - start);
+                if (digs.Length is >= 15 and <= 20 && digs.TrimStart('0').Length > 0)
+                {
+                    steam64 = digs;
+                    return true;
+                }
+            }
+        }
+
+        // Chiffres seuls (espaces / tirets tolérés) — pas d’URL vanity.
+        if (raw.Contains('/') || raw.Contains("steamcommunity", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var digits = new string(raw.Where(char.IsDigit).ToArray());
+        if (digits.Length is >= 15 and <= 20 && digits.TrimStart('0').Length > 0)
+        {
+            steam64 = digits;
+            return true;
+        }
+
+        return false;
     }
 }

@@ -22,6 +22,7 @@ use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\MedicalAlertParser;
+use App\Support\SteamId;
 
 class AtakApiController
 {
@@ -96,8 +97,8 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
-        $steamUid = trim((string) ($request->query('steam_uid') ?? ''));
-        if ($steamUid === '' || preg_match('/^\d{15,20}$/', $steamUid) !== 1) {
+        $steamUid = SteamId::normalize((string) ($request->query('steam_uid') ?? ''));
+        if ($steamUid === null) {
             return Response::json(['error' => 'invalid_steam_uid'], 400);
         }
         $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steamUid);
@@ -214,28 +215,94 @@ class AtakApiController
             return Response::json(['error' => 'code_invalid_or_expired'], 404);
         }
 
-        $steamUid = trim((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? ''));
-        if ($steamUid !== '' && preg_match('/^\d{15,20}$/', $steamUid) === 1) {
-                $user = $this->userRepository->findById($userId, $tenantId);
+        $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? ''));
+        if ($steamUid !== null) {
+            $user = $this->userRepository->findById($userId, $tenantId);
             if (is_array($user)) {
-                $existing = trim((string) ($user['steam_id'] ?? ''));
-                if ($existing === '') {
+                $existing = SteamId::normalize((string) ($user['steam_id'] ?? ''));
+                // Toujours aligner sur le SteamUID détecté en jeu lors d'une liaison réussie —
+                // le code de liaison à usage unique est une preuve plus forte que tout ce qui a
+                // pu être saisi manuellement sur /account (source du "aucune remontée compte"
+                // quand l'ancienne valeur ne correspondait plus au joueur réel).
+                if ($existing !== $steamUid) {
                     $this->userRepository->update($userId, $tenantId, ['steam_id' => $steamUid]);
                 }
             }
         }
 
-        $this->gameLinkRepository->markRedeemed((int) $row['id'], $steamUid !== '' ? $steamUid : null);
+        $this->gameLinkRepository->markRedeemed((int) $row['id'], $steamUid);
 
         $config = $this->tenantAtakConfigRepository->getByTenantId($tenantId);
         $apiUrl = atak_client_base_url($config);
         $apiKey = ComspecApiKeyAuth::expectedSecret();
+        if ($apiKey === '') {
+            return Response::json([
+                'error' => 'api_key_not_configured',
+                'message' => 'La liaison jeu n’est pas encore configurée sur le portail. Contactez un administrateur Athena.',
+            ], 503);
+        }
 
         return Response::json([
             'ok' => true,
             'api_url' => $apiUrl,
             'api_key' => $apiKey,
             'tenant_id' => (string) $tenantId,
+        ]);
+    }
+
+    /**
+     * Liaison Arma sans code court : le Steam ID du joueur doit déjà être enregistré sur le compte Athena.
+     * POST JSON { steam_uid } — même forme de réponse que gameLinkRedeem.
+     */
+    public function gameLinkBySteam(Request $request, array $params = []): Response
+    {
+        $body = $this->jsonBody($request);
+        $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? $request->input('steam_uid') ?? ''));
+        if ($steamUid === null) {
+            return Response::json([
+                'error' => 'invalid_steam_uid',
+                'message' => 'Identifiant Steam manquant ou non reconnu. Utilisez le numéro affiché en jeu, ou le format classique Steam.',
+            ], 400);
+        }
+
+        $user = $this->userRepository->findBySteamId($steamUid);
+        if ($user === null) {
+            return Response::json([
+                'error' => 'steam_not_linked',
+                'message' => 'Aucun compte Athena n’est lié à ce Steam. Liez Steam dans votre profil, ou utilisez un code de connexion en jeu.',
+            ], 404);
+        }
+
+        $tenantId = (int) ($user['tenant_id'] ?? 0);
+        if ($tenantId < 1) {
+            return Response::json(['error' => 'steam_not_linked'], 404);
+        }
+
+        $status = strtolower(trim((string) ($user['status'] ?? 'active')));
+        if (in_array($status, ['banned', 'disabled', 'suspended', 'deleted'], true)) {
+            return Response::json([
+                'error' => 'account_disabled',
+                'message' => 'Ce compte Athena n’est pas autorisé à se lier.',
+            ], 403);
+        }
+
+        $config = $this->tenantAtakConfigRepository->getByTenantId($tenantId);
+        $apiUrl = atak_client_base_url($config);
+        $apiKey = ComspecApiKeyAuth::expectedSecret();
+        if ($apiKey === '') {
+            return Response::json([
+                'error' => 'api_key_not_configured',
+                'message' => 'La liaison jeu n’est pas encore configurée sur le portail. Contactez un administrateur Athena.',
+            ], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'api_url' => $apiUrl,
+            'api_key' => $apiKey,
+            'tenant_id' => (string) $tenantId,
+            'display_name' => (string) ($user['display_name'] ?? ''),
+            'callsign' => (string) ($user['callsign'] ?? ''),
         ]);
     }
 
@@ -353,7 +420,50 @@ class AtakApiController
 
     public function ping(Request $request, array $params = []): Response
     {
-        return Response::json(['ok' => true, 'service' => 'atak']);
+        return Response::json([
+            'ok' => true,
+            'service' => 'atak',
+            // Horodatage serveur (ms) pour mesurer la latence côté navigateur.
+            'server_ms' => (int) round(microtime(true) * 1000),
+        ]);
+    }
+
+    /**
+     * Présence des opérateurs connectés à la Tacmap web (portail), distincte des joueurs Arma.
+     */
+    public function presence(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId > 0) {
+            $user = $this->userRepository->findById($userId);
+            $displayName = '';
+            $callsign = '';
+            if (is_array($user)) {
+                $displayName = trim((string) ($user['display_name'] ?? ''));
+                $callsign = trim((string) ($user['callsign'] ?? ''));
+            }
+            $this->activityLog->heartbeatWebPresence($tenantId, $mapId, $userId, $displayName, $callsign);
+        }
+        $viewers = $this->activityLog->listWebPresence($tenantId, $mapId);
+        $out = [];
+        foreach ($viewers as $v) {
+            $out[] = [
+                'label' => $v['label'],
+                'callsign' => $v['callsign'] !== '' ? $v['callsign'] : null,
+                'display_name' => $v['display_name'] !== '' ? $v['display_name'] : null,
+            ];
+        }
+
+        return Response::json([
+            'viewers' => $out,
+            'count' => count($out),
+        ]);
     }
 
     public function whoami(Request $request, array $params = []): Response
@@ -673,8 +783,8 @@ class AtakApiController
         }
         $tenantId = $r;
         $body = $this->jsonBody($request);
-        $uidRaw = trim((string) ($body['player_uid'] ?? $body['playerUid'] ?? $body['steam_id'] ?? ''));
-        if ($uidRaw === '') {
+        $uidRaw = SteamId::normalize((string) ($body['player_uid'] ?? $body['playerUid'] ?? $body['steam_id'] ?? ''));
+        if ($uidRaw === null) {
             return Response::json(['error' => 'player_uid required'], 400);
         }
         $seconds = (int) ($body['session_seconds'] ?? $body['seconds'] ?? 0);

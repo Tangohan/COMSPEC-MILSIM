@@ -39,4 +39,7 @@ private _lines = [
     format ["[Debug] Dernière position envoyée : %1", if (_lastSync >= 0) then { format ["il y a %1 s", round (diag_tickTime - _lastSync)] } else { "jamais" }]
 ];
 
+private _profileLines = [] call comspec_overwatch_connect_fnc_profileReport;
+_lines append _profileLines;
+
 { [_x, "system"] call comspec_overwatch_connect_fnc_appendLinkLog; } forEach _lines;

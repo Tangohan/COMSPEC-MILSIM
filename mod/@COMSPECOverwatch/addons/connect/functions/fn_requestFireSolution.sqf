@@ -16,7 +16,7 @@ private _args = [_missionId, str _gunX, str _gunY, str _gunZ, str _targetX, str 
 if (_fireUnitId > 0) then {
     _args pushBack (str _fireUnitId);
 };
-private _raw = "COMSPECExtension" callExtension ["FireSupport.Request", _args];
+private _raw = ["COMSPECExtension" callExtension ["FireSupport.Request", _args]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "") exitWith { [] };
 private _parts = _raw splitString "|";
 if (count _parts < 2) exitWith { [] };

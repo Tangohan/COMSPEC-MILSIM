@@ -51,7 +51,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ];
 
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 0.25];
-    [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, _interval] call CBA_fnc_addPerFrameHandler;
+    [{
+        [{ [player] call comspec_overwatch_connect_fnc_updatePosition }, [], "updatePosition"] call comspec_overwatch_connect_fnc_profileWrap;
+    }, _interval] call CBA_fnc_addPerFrameHandler;
 
     // Sync marqueurs carte → Athena (inspiré cTab MarkerCreated/Updated/Deleted)
     if (isNil "COMSPEC_MapMarkerEHs") then {
@@ -74,25 +76,29 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     private _casPollInterval = 10;
     [{
         params ["_args", "_pfhId"];
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        private _callsign = missionNamespace getVariable ["COMSPEC_Callsign", name player];
-        if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
-        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
-        if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
-        private _payload = _raw select [3, count _raw - 3];
-        private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-        if (_payload != "" && {_payload != _lastPayload}) then {
-            missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-            missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
-            [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-            ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call BIS_fnc_showNotification;
-            ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        };
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            private _callsign = missionNamespace getVariable ["COMSPEC_Callsign", name player];
+            if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
+            private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
+            if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
+            private _payload = _raw select [3, count _raw - 3];
+            private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+            if (_payload != "" && {_payload != _lastPayload}) then {
+                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
+                [] call comspec_overwatch_connect_fnc_receiveCASRequest;
+                ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call BIS_fnc_showNotification;
+                ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            };
+        }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
     }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;
 
     [{
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-        [] call comspec_overwatch_connect_fnc_pollMapShapes;
+        [{
+            if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_pollMapShapes;
+        }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
     }, 10, []] call CBA_fnc_addPerFrameHandler;
 
     ["OnOrderIssued", {
