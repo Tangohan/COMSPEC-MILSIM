@@ -5,6 +5,7 @@
     "license": "proprietary",
     "require": {
         "php": ">=8.4",
+        "ext-zlib": "*",
         "vlucas/phpdotenv": "^5.6",
         "dompdf/dompdf": "^3.0",
         "endroid/qr-code": "^5.0",
@@ -15,6 +16,9 @@
         "phpunit/phpunit": "^11.0",
         "phpstan/phpstan": "^2.1",
         "symfony/var-dumper": "^7.0"
+    },
+    "suggest": {
+        "ext-gd": "Recommandé pour les QR PNG via endroid/qr-code (PngWriter) et phpqrcode. Sans GD, Athena bascule sur PNG zlib / SVG (phpqrcode)."
     },
     "autoload": {
         "psr-4": {

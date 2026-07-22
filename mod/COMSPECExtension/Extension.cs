@@ -15,11 +15,21 @@ public static class Extension
     private const int SyncTimeoutSeconds = 8;
     private static string _baseUrl = "";
     private static string _apiKey = "";
+    /// <summary>Tenant issu du redeem / Connect (requis par client-init côté portail).</summary>
+    private static string _tenantId = "";
+    /// <summary>SteamID64 mémorisé (liaison / Connect / UpdatePosition) — identité côté DLL, pas seulement SQF.</summary>
+    private static string _steamUid = "";
+    /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
+    private static string _sessionToken = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
     private static readonly object QueueDrainLock = new();
     private static System.Threading.Timer? _drainTimer;
+    /// <summary>Backoff après HTTP 429 (Ticks UTC). Pendant ce délai : pas d’envoi position / drain réduit.</summary>
+    private static long _rateLimitUntilTicks;
+    private static int _rateLimitBackoffSec = 2;
+    private static long _lastRateLimitCbTicks;
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
@@ -52,8 +62,154 @@ public static class Extension
     }
 
     /// <summary>
-    /// POST /api/atak/client-init en arrière-plan (ne bloque pas callExtension).
-    /// Utilise TryBuildRequestUri pour conserver le préfixe /public.
+    /// Corps JSON client-init (mapId + tenant_id + steam_uid si connus).
+    /// Sans tenant le portail peut répondre 403 (tenant_context_required).
+    /// </summary>
+    private static string BuildClientInitBody()
+    {
+        var sb = new StringBuilder("{\"mapId\":1");
+        if (_tenantId.Length > 0)
+        {
+            if (long.TryParse(_tenantId, out var tid) && tid > 0)
+                sb.Append(",\"tenant_id\":").Append(tid.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            else
+                sb.Append(",\"tenant_id\":\"").Append(EscapeJson(_tenantId)).Append('"');
+        }
+        if (_steamUid.Length > 0)
+            sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
+        sb.Append('}');
+        return sb.ToString();
+    }
+
+    /// <summary>Corps JSON disconnect (mapId + tenant + indicatif + steam optionnels).</summary>
+    private static string BuildDisconnectBody(string callSign)
+    {
+        var sb = new StringBuilder("{\"mapId\":1");
+        if (_tenantId.Length > 0)
+        {
+            if (long.TryParse(_tenantId, out var tid) && tid > 0)
+                sb.Append(",\"tenant_id\":").Append(tid.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            else
+                sb.Append(",\"tenant_id\":\"").Append(EscapeJson(_tenantId)).Append('"');
+        }
+        if (!string.IsNullOrEmpty(callSign))
+            sb.Append(",\"call_sign\":\"").Append(EscapeJson(callSign)).Append('"');
+        if (_steamUid.Length > 0)
+            sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
+        if (_sessionToken.Length > 0)
+            sb.Append(",\"session_token\":\"").Append(EscapeJson(_sessionToken)).Append('"');
+        sb.Append('}');
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// POST /api/atak/client-init synchrone : valide la clé + le tenant (+ Steam lié) avant OK|connected.
+    /// Mémorise session_token si le portail en renvoie un.
+    /// </summary>
+    private static string VerifyClientInitSync()
+    {
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl))
+            return "ERR|not_connected";
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/client-init", out var initUri, out var initErr) || initUri is null)
+            return "ERR|" + initErr;
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+        try
+        {
+            var resp = SendJsonPost(initUri.AbsoluteUri, BuildClientInitBody(), cts.Token);
+            var code = (int)resp.StatusCode;
+            var respBody = "";
+            try { respBody = ReadContentUtf8(resp, cts.Token); } catch { /* ignore */ }
+
+            if (resp.IsSuccessStatusCode)
+            {
+                TryRememberSessionFromInitBody(respBody);
+                return "OK|connected";
+            }
+
+            if (code is 401)
+                return "ERR|unauthorized";
+            if (code is 403)
+            {
+                if (respBody.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|steam_not_linked";
+                if (respBody.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|account_disabled";
+                if (respBody.Contains("tenant_context_required", StringComparison.OrdinalIgnoreCase)
+                    || respBody.Contains("tenant", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|tenant_required";
+                return "ERR|unauthorized";
+            }
+            if (code == 400 && respBody.Contains("invalid_steam", StringComparison.OrdinalIgnoreCase))
+                return "ERR|invalid_steam";
+            if (code == 404) return "ERR|not_found";
+            if (code == 503) return "ERR|http_503";
+            return "ERR|http_" + code;
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
+    }
+
+    private static void TryRememberSessionFromInitBody(string respBody)
+    {
+        if (string.IsNullOrWhiteSpace(respBody) || respBody[0] != '{') return;
+        try
+        {
+            using var doc = JsonDocument.Parse(respBody);
+            var root = doc.RootElement;
+            if (root.TryGetProperty("session_token", out var tok))
+            {
+                var t = (tok.GetString() ?? "").Trim();
+                if (t.Length >= 32)
+                    _sessionToken = t;
+            }
+            if (root.TryGetProperty("steam_uid", out var su))
+            {
+                var s = (su.GetString() ?? "").Trim();
+                if (TryNormalizeSteamUid(s, out var sn))
+                    _steamUid = sn;
+            }
+        }
+        catch { /* ignore */ }
+    }
+
+    /// <summary>
+    /// POST /api/atak/disconnect synchrone (timeout court : le process Arma peut mourir tout de suite).
+    /// </summary>
+    private static string VerifyDisconnectSync(string callSign)
+    {
+        var baseUrl = _baseUrl;
+        if (string.IsNullOrEmpty(baseUrl))
+            return "ERR|not_connected";
+        if (_apiKey.Length == 0)
+            return "ERR|unauthorized";
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/disconnect", out var discUri, out var discErr) || discUri is null)
+            return "ERR|" + discErr;
+
+        // Timeout court : quit / Ended doit aboutir avant la mort du process.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        try
+        {
+            var resp = SendJsonPost(discUri.AbsoluteUri, BuildDisconnectBody(callSign), cts.Token);
+            if (resp.IsSuccessStatusCode)
+                return "OK|disconnected";
+            var code = (int)resp.StatusCode;
+            if (code is 401 or 403) return "ERR|unauthorized";
+            if (code == 404) return "ERR|not_found";
+            return "ERR|http_" + code;
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
+    }
+
+    /// <summary>
+    /// Ancien chemin async (RvExtensionArgsImpl) : notifie SQF sans bloquer.
+    /// Préférer VerifyClientInitSync sur Connect.
     /// </summary>
     private static void StartClientInitAsync()
     {
@@ -66,7 +222,7 @@ public static class Extension
         {
             var initReq = new HttpRequestMessage(HttpMethod.Post, initUri)
             {
-                Content = JsonContent("{\"mapId\":1}")
+                Content = JsonContent(BuildClientInitBody())
             };
             AttachApiKeyHeader(initReq);
             _ = HttpClient.SendAsync(initReq).ContinueWith(t =>
@@ -81,9 +237,14 @@ public static class Extension
                     }
                     var resp = t.Result;
                     if (resp.IsSuccessStatusCode)
+                    {
+                        try { TryRememberSessionFromInitBody(ReadContentUtf8(resp, CancellationToken.None)); } catch { /* ignore */ }
                         InvokeCallback("Connected", baseUrl);
-                    else if ((int)resp.StatusCode is 401 or 403)
-                        InvokeCallback("Error", "Clé d’accès refusée");
+                    }
+                    else if ((int)resp.StatusCode == 401)
+                        InvokeCallback("Error", "Acces refuse (cle Athena)");
+                    else if ((int)resp.StatusCode == 403)
+                        InvokeCallback("Error", "Communaute Athena manquante — refaites la liaison");
                     else
                         InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
                 }
@@ -105,12 +266,73 @@ public static class Extension
         _drainTimer = new System.Threading.Timer(_ => DrainQueue(), null, 2000, 2000);
     }
 
+    private static bool IsRateLimitedNow()
+    {
+        return DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _rateLimitUntilTicks);
+    }
+
+    private static void NoteRateLimited()
+    {
+        var next = Math.Min(_rateLimitBackoffSec * 2, 60);
+        if (_rateLimitBackoffSec < 2) _rateLimitBackoffSec = 2;
+        var delaySec = _rateLimitBackoffSec;
+        _rateLimitBackoffSec = next;
+        var until = DateTime.UtcNow.AddSeconds(delaySec).Ticks;
+        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, until);
+        var now = DateTime.UtcNow.Ticks;
+        // Évite de spammer le callback SQF (max ~1 / 3 s).
+        if (now - System.Threading.Interlocked.Read(ref _lastRateLimitCbTicks) > TimeSpan.FromSeconds(3).Ticks)
+        {
+            System.Threading.Interlocked.Exchange(ref _lastRateLimitCbTicks, now);
+            InvokeCallback("RateLimited", "Athena est saturé — synchronisation ralentie quelques instants.");
+        }
+    }
+
+    private static void NoteRateLimitCleared()
+    {
+        if (_rateLimitBackoffSec <= 2 && System.Threading.Interlocked.Read(ref _rateLimitUntilTicks) == 0)
+            return;
+        _rateLimitBackoffSec = 2;
+        System.Threading.Interlocked.Exchange(ref _rateLimitUntilTicks, 0);
+        InvokeCallback("RateLimitClear", "");
+    }
+
+    private static void HandlePostResponse(HttpResponseMessage? response, string url, string jsonBody)
+    {
+        if (response == null)
+        {
+            if (PendingPosts.Count < MaxQueueSize)
+            {
+                PendingPosts.Enqueue((url, jsonBody));
+                EnsureDrainTimer();
+            }
+            return;
+        }
+        if ((int)response.StatusCode == 429)
+        {
+            NoteRateLimited();
+            // Ne pas ré-enfiler immédiatement : sinon boucle 429 → lag.
+            return;
+        }
+        if (response.IsSuccessStatusCode)
+        {
+            NoteRateLimitCleared();
+            return;
+        }
+        if (PendingPosts.Count < MaxQueueSize)
+        {
+            PendingPosts.Enqueue((url, jsonBody));
+            EnsureDrainTimer();
+        }
+    }
+
     private static void DrainQueue()
     {
         if (string.IsNullOrEmpty(_baseUrl)) return;
+        if (IsRateLimitedNow()) return;
         lock (QueueDrainLock)
         {
-            for (var i = 0; i < 5 && PendingPosts.TryDequeue(out var item); i++)
+            for (var i = 0; i < 3 && PendingPosts.TryDequeue(out var item); i++)
             {
                 try
                 {
@@ -120,8 +342,18 @@ public static class Extension
                     };
                     AttachApiKeyHeader(req);
                     var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+                    if ((int)response.StatusCode == 429)
+                    {
+                        NoteRateLimited();
+                        // Remettre en file pour plus tard, sans boucle serrée.
+                        if (PendingPosts.Count < MaxQueueSize)
+                            PendingPosts.Enqueue(item);
+                        break;
+                    }
                     if (!response.IsSuccessStatusCode && PendingPosts.Count < MaxQueueSize)
                         PendingPosts.Enqueue(item);
+                    else if (response.IsSuccessStatusCode)
+                        NoteRateLimitCleared();
                 }
                 catch
                 {
@@ -133,6 +365,17 @@ public static class Extension
 
     private static void EnqueueOrSend(string url, string jsonBody)
     {
+        if (IsRateLimitedNow())
+        {
+            // Position : drop pendant backoff (la suivante reviendra). Autres : file limitée.
+            var isPosition = url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase);
+            if (!isPosition && PendingPosts.Count < MaxQueueSize)
+            {
+                PendingPosts.Enqueue((url, jsonBody));
+                EnsureDrainTimer();
+            }
+            return;
+        }
         try
         {
             var req = new HttpRequestMessage(HttpMethod.Post, url)
@@ -143,14 +386,10 @@ public static class Extension
             _ = HttpClient.SendAsync(req).ContinueWith(t =>
             {
                 try { req.Dispose(); } catch { /* ignore */ }
-                if (t.IsFaulted || t.IsCanceled || (t.Status == TaskStatus.RanToCompletion && !t.Result.IsSuccessStatusCode))
-                {
-                    if (PendingPosts.Count < MaxQueueSize)
-                    {
-                        PendingPosts.Enqueue((url, jsonBody));
-                        EnsureDrainTimer();
-                    }
-                }
+                HttpResponseMessage? resp = null;
+                if (t.Status == TaskStatus.RanToCompletion)
+                    resp = t.Result;
+                HandlePostResponse(resp, url, jsonBody);
             });
         }
         catch
@@ -195,10 +434,73 @@ public static class Extension
         return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
     }
 
+    // --- MessageBox Win32 (alerte liaison Athena) ---
+    private const uint MbYesNo = 0x00000004;
+    private const uint MbIconInformation = 0x00000040;
+    private const uint MbSetForeground = 0x00010000;
+    private const uint MbTopmost = 0x00040000;
+    private const int IdNo = 7;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern int MessageBoxW(nint hWnd, string lpText, string lpCaption, uint uType);
+
+    private static readonly object AthenaHelpLock = new();
+    private static bool _athenaHelpShowing;
+
+    /// <summary>
+    /// Affiche une alerte Windows (MessageBox) avec la marche à suivre pour lier Athena.
+    /// Retour : OK|dismissed (Oui) | OK|dont_show (Non) | OK|busy (déjà affichée).
+    /// </summary>
+    private static string ShowAthenaLinkHelpMessageBox()
+    {
+        lock (AthenaHelpLock)
+        {
+            if (_athenaHelpShowing)
+                return "OK|busy";
+            _athenaHelpShowing = true;
+        }
+
+        try
+        {
+            const string title = "COMSPEC Overwatch — Lier mon compte Athena";
+            const string body =
+                "Pour apparaître sur la carte tactique et utiliser Overwatch, associez votre compte Athena.\n\n" +
+                "Marche à suivre :\n" +
+                "1. Ouvrez Athena dans un navigateur :\n" +
+                "   https://athena.ttrd.fr/public\n" +
+                "2. Connectez-vous à votre compte.\n" +
+                "3. Générez un code de liaison (profil / liaison jeu).\n" +
+                "4. En jeu : appuyez sur K (menu Overwatch) → Compte Athena → collez le code.\n\n" +
+                "Si le code ne fonctionne pas : quittez complètement Arma, puis relancez.\n" +
+                "Vous pouvez aussi vérifier l’adresse Athena dans les réglages du mod (Escape → Options → Modules complémentaires → COMSPEC Overwatch).\n\n" +
+                "Oui = j’ai compris (ce message ne réapparaîtra pas avant la prochaine session)\n" +
+                "Non = ne plus afficher ce message";
+
+            var result = MessageBoxW(
+                IntPtr.Zero,
+                body,
+                title,
+                MbYesNo | MbIconInformation | MbSetForeground | MbTopmost);
+
+            return result == IdNo ? "OK|dont_show" : "OK|dismissed";
+        }
+        catch
+        {
+            return "ERR|messagebox_failed";
+        }
+        finally
+        {
+            lock (AthenaHelpLock)
+            {
+                _athenaHelpShowing = false;
+            }
+        }
+    }
+
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-        Output(output, outputSize, "COMSPECExtension 1.10");
+            Output(output, outputSize, "COMSPECExtension 1.16");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -290,7 +592,7 @@ public static class Extension
     /// </summary>
     private static void ApplyApiKeyHeaders(string? apiKey)
     {
-        var key = ArmaString(apiKey).Trim();
+        var key = SanitizeSecret(apiKey);
         lock (HeaderLock)
         {
             _apiKey = key;
@@ -307,13 +609,58 @@ public static class Extension
         }
     }
 
-    /// <summary>Attache X-COMSPEC-KEY sur une requête (thread-safe, pas de DefaultRequestHeaders).</summary>
+    /// <summary>Mémorise le tenant (redeem / 3e arg Connect). Vide = laisser le portail utiliser ATAK_DEFAULT_TENANT_ID.</summary>
+    private static void ApplyTenantId(string? tenantId)
+    {
+        var t = SanitizeSecret(tenantId);
+        if (t.Length > 0)
+            _tenantId = t;
+    }
+
+    /// <summary>Guillemets Arma + espaces / BOM parfois collés via profileNamespace ou CBA.</summary>
+    private static string SanitizeSecret(string? raw)
+    {
+        var s = ArmaString(raw).Trim();
+        s = s.Trim('\uFEFF', '\u200B', '\u200E', '\u200F');
+        // Double strip si une ancienne version a persisté des guillemets dans la valeur.
+        for (var n = 0; n < 2; n++)
+        {
+            if (s.Length >= 2
+                && ((s[0] == '"' && s[^1] == '"') || (s[0] == '\'' && s[^1] == '\'')))
+                s = s.Substring(1, s.Length - 2).Trim();
+            else
+                break;
+        }
+        return s;
+    }
+
+    /// <summary>Attache X-COMSPEC-KEY (+ session / Steam mémorisés) sur une requête.</summary>
     private static void AttachApiKeyHeader(HttpRequestMessage req)
     {
         var key = _apiKey;
-        if (key.Length == 0) return;
-        req.Headers.Remove("X-COMSPEC-KEY");
-        req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
+        if (key.Length > 0)
+        {
+            req.Headers.Remove("X-COMSPEC-KEY");
+            req.Headers.TryAddWithoutValidation("X-COMSPEC-KEY", key);
+        }
+        var sess = _sessionToken;
+        if (sess.Length > 0)
+        {
+            req.Headers.Remove("X-COMSPEC-SESSION");
+            req.Headers.TryAddWithoutValidation("X-COMSPEC-SESSION", sess);
+        }
+        var steam = _steamUid;
+        if (steam.Length > 0)
+        {
+            req.Headers.Remove("X-COMSPEC-STEAM");
+            req.Headers.TryAddWithoutValidation("X-COMSPEC-STEAM", steam);
+        }
+    }
+
+    private static void ApplySteamUid(string? steamUid)
+    {
+        if (TryNormalizeSteamUid(steamUid, out var sn))
+            _steamUid = sn;
     }
 
     /// <summary>
@@ -412,11 +759,20 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.10";
+            return "OK|COMSPECExtension 1.16";
         }
 
-        // Connect doit pouvoir s’exécuter même si aucune URL n’est encore mémorisée
-        // (sinon le premier appel retourne ERR|invalid et la liaison ne s’établit jamais).
+        // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
+        if (function is "ShowAthenaLinkHelp")
+        {
+            return ShowAthenaLinkHelpMessageBox();
+        }
+
+        // Connect : mémorise URL/clé/tenant puis valide la clé via client-init synchrone.
+        // Sans clé (et aucune clé déjà mémorisée après Redeem) → OK|connected (SQF : joignable non lié).
+        // Avec clé → ERR|unauthorized / tenant_required si le portail refuse (plus de faux « Connecté »).
+        // Clé vide en arg = garder la clé déjà mémorisée (Redeem/Steam) : évite qu’un round-trip
+        // SQF/CBA tronqué écrase une clé valide juste après un redeem OK.
         if (function == "Connect" && args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
         {
             var normalized = NormalizeBaseUrl(args[0]);
@@ -425,12 +781,51 @@ public static class Extension
                 || (connectUri.Scheme != Uri.UriSchemeHttps && connectUri.Scheme != Uri.UriSchemeHttp))
                 return "ERR|invalid_url";
             _baseUrl = normalized;
-            var key = args.Length > 1 ? (args[1] ?? "") : "";
-            ApplyApiKeyHeaders(key);
-            // client-init exige la clé ; sans clé le SQF gère « compte non lié » via whoami.
-            if (_apiKey.Length > 0)
-                StartClientInitAsync();
-            return "OK|connected";
+
+            var prevKey = _apiKey;
+            var prevTenant = _tenantId;
+            var keyArg = SanitizeSecret(args.Length > 1 ? args[1] : "");
+            // Ne pas remplacer une clé longue (Redeem) par une valeur SQF plus courte (troncature CBA/EDITBOX).
+            if (keyArg.Length > 0)
+            {
+                if (prevKey.Length == 0 || keyArg.Length >= prevKey.Length || keyArg == prevKey)
+                    ApplyApiKeyHeaders(keyArg);
+                // sinon : conserver prevKey (clé SQF suspecte / tronquée)
+            }
+            if (args.Length > 2)
+            {
+                var tidArg = SanitizeSecret(args[2]);
+                if (tidArg.Length > 0)
+                    ApplyTenantId(tidArg);
+            }
+            // args[3] = Steam UID (identité fiable côté extension, pas seulement SQF ultérieur).
+            if (args.Length > 3)
+                ApplySteamUid(args[3]);
+            if (_apiKey.Length == 0)
+                return "OK|connected";
+
+            var verify = VerifyClientInitSync();
+            if (verify.StartsWith("OK|", StringComparison.Ordinal))
+                return verify;
+
+            // Dernier filet : si la clé SQF vient de faire échouer client-init, restaurer Redeem.
+            if (prevKey.Length > 0 && !string.Equals(prevKey, _apiKey, StringComparison.Ordinal))
+            {
+                ApplyApiKeyHeaders(prevKey);
+                if (prevTenant.Length > 0)
+                    ApplyTenantId(prevTenant);
+                var restored = VerifyClientInitSync();
+                if (restored.StartsWith("OK|", StringComparison.Ordinal))
+                    return restored;
+            }
+            return verify;
+        }
+
+        // Déconnexion explicite (sortie mission / quit) — sync court avant mort du process.
+        if (function is "Disconnect" or "ClientDisconnect")
+        {
+            var callSign = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+            return VerifyDisconnectSync(callSign);
         }
 
         // Code de liaison compte Athena — URL fournie en argument (pas besoin d’un Connect préalable).
@@ -493,13 +888,20 @@ public static class Extension
                 var tenantId = root.TryGetProperty("tenant_id", out var ti)
                     ? (ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? ""))
                     : "";
-                apiUrl = NormalizeBaseUrl(apiUrl.Length == 0 ? baseUrl : apiUrl);
-                if (apiUrl.Length == 0) apiUrl = baseUrl;
+                apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                _baseUrl = apiUrl;
-                // Mémorise la clé sans exiger DefaultRequestHeaders (race → busy_retry).
+                // Toujours l’URL qui a réussi le redeem (évite node_url admin incorrect → 401).
+                _baseUrl = baseUrl;
                 ApplyApiKeyHeaders(apiKey);
-                var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
+                ApplyTenantId(tenantId);
+                ApplySteamUid(steamNorm);
+                _sessionToken = "";
+                // Valide immédiatement la clé (évite Redeem OK puis Connect 401 à cause d’un round-trip SQF).
+                var verify = VerifyClientInitSync();
+                if (!verify.StartsWith("OK|", StringComparison.Ordinal))
+                    return verify;
+                // Séparateur | (pas tab) : Arma/SQF splitString "\t" est fragile → URL/"h" + clé tronquée.
+                var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             catch (Exception ex)
@@ -564,10 +966,19 @@ public static class Extension
                     : "";
                 apiUrl = NormalizeBaseUrl(apiUrl.Length == 0 ? baseUrl : apiUrl);
                 if (apiUrl.Length == 0) apiUrl = baseUrl;
+                apiKey = SanitizeSecret(apiKey);
                 if (apiKey.Length == 0) return "ERR|http_503";
-                _baseUrl = apiUrl;
+                // Toujours l’URL qui a réussi by-steam (évite node_url admin incorrect → 401).
+                _baseUrl = baseUrl;
                 ApplyApiKeyHeaders(apiKey);
-                var simplified = apiUrl + "\t" + apiKey + "\t" + tenantId;
+                ApplyTenantId(tenantId);
+                ApplySteamUid(steamNorm);
+                _sessionToken = "";
+                var verifySteam = VerifyClientInitSync();
+                if (!verifySteam.StartsWith("OK|", StringComparison.Ordinal))
+                    return verifySteam;
+                // Séparateur | (pas tab) — même format que RedeemGameLink.
+                var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             catch (Exception ex)
@@ -742,12 +1153,150 @@ public static class Extension
                 var simplified = SimplifyBriefingSlidesJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Équipes de feu (mission ATAK). Format tabulaire SQF-friendly :
+            // une ligne par équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
+            // puis lignes membres préfixées "M\t" : M\tteamId\tcallsign\trole\tdisplayName
+            if (function == "GetFireTeams")
+            {
+                var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
+                var mapId = args.Length > 1 ? (args[1] ?? "") : "";
+                var url = _baseUrl + "/api/atak/fire-teams?kind=ephemeral";
+                if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
+                if (!string.IsNullOrEmpty(mapId)) url += "&mapId=" + Uri.EscapeDataString(mapId);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403)
+                    {
+                        if (respBody.Contains("tenant_context_required", StringComparison.Ordinal))
+                            return "ERR|no_tenant";
+                        return "ERR|unauthorized";
+                    }
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyFireTeamsJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Alertes médicales actives (≤ 30 min) + triage.
+            // Lignes : id\tkind\tcall_sign\tlabel\tgrid\tcreated_at\ttriage_status\ttriage_label\tseverity
+            if (function == "GetMedicalAlerts")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "25";
+                var url = _baseUrl + "/api/atak/medical-alerts?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=" + Uri.EscapeDataString(limit);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyMedicalAlertsJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Ordres C2 web → jeu. Args : [mapId, limit, callsign?]
+            // Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases
+            if (function == "GetOrders")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "40";
+                var callsign = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var url = _baseUrl + "/api/atak/orders?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=" + Uri.EscapeDataString(limit)
+                    + "&for_game=1";
+                if (_steamUid.Length > 0)
+                    url += "&steam_uid=" + Uri.EscapeDataString(_steamUid);
+                if (callsign.Length > 0)
+                    url += "&callsign=" + Uri.EscapeDataString(callsign);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyOrdersJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?]
+            if (function == "UpdateOrderStatus" && args.Length >= 2)
+            {
+                var orderId = (args[0] ?? "").Trim();
+                var status = (args[1] ?? "").Trim();
+                var by = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var mapId = args.Length > 3 && !string.IsNullOrWhiteSpace(args[3]) ? args[3]!.Trim() : "1";
+                if (orderId.Length == 0 || status.Length == 0) return "ERR|invalid";
+                if (!int.TryParse(mapId, out var mapIdNum)) mapIdNum = 1;
+                var url = _baseUrl + "/api/atak/orders/" + Uri.EscapeDataString(orderId) + "/status";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{mapIdNum}{steamJson}{sessJson}}}";
+                var resp = SendJsonPost(url, payload, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|forbidden";
+                    if (code == 503) return "ERR|not_migrated";
+                    return "ERR|http_" + code;
+                }
+                return "OK|updated";
+            }
+            // Triage d'une alerte médicale : args = [chatId, status, by]
+            if (function == "TriageMedicalAlert" && args.Length >= 2)
+            {
+                var alertId = (args[0] ?? "").Trim();
+                var status = (args[1] ?? "").Trim();
+                var by = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                if (alertId.Length == 0 || status.Length == 0) return "ERR|invalid";
+                var url = _baseUrl + "/api/atak/medical-alerts/" + Uri.EscapeDataString(alertId) + "/triage";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":1{steamJson}{sessJson}}}";
+                var resp = SendJsonPost(url, payload, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|forbidden";
+                    if (code == 503) return "ERR|not_migrated";
+                    if (respBody.Contains("invalid_status", StringComparison.Ordinal)) return "ERR|invalid_status";
+                    return "ERR|http_" + code;
+                }
+                return "OK|triaged";
+            }
             // Connexion téléphone (inspiré de cTab) : génère un token/QR + un code court côté serveur.
             // Format : token\tcode\tconnectUrl\tqrImageUrl\texpiresAt — le QR se télécharge ensuite
             // via DownloadBriefingSlideImage(qrImageUrl, "phoneqr") comme n'importe quelle diapositive.
             if (function == "GetPhoneConnectInfo")
             {
+                // Préfère l’arg SQF ; sinon le tenant mémorisé au redeem / Connect (clé communauté).
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
+                if (string.IsNullOrEmpty(tenantId))
+                    tenantId = _tenantId;
                 var url = _baseUrl + "/api/atak/phone-pairing";
                 if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
                 var resp = SendGet(url, token);
@@ -765,7 +1314,12 @@ public static class Extension
                             return "ERR|no_tenant";
                         return "ERR|unauthorized";
                     }
-                    if (code == 503) return "ERR|unavailable";
+                    if (code == 503)
+                    {
+                        if (respBody.Contains("phone_pairing_schema_missing", StringComparison.Ordinal))
+                            return "ERR|not_enabled";
+                        return "ERR|unavailable";
+                    }
                     return "ERR|http_" + code;
                 }
                 var simplified = SimplifyPhonePairingJson(respBody);
@@ -812,12 +1366,12 @@ public static class Extension
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
 
-                // Accepte les URL relatives renvoyées par l’API (ex. /api/atak/.../qr.png).
+                // URL relatives : conserver le préfixe /public de _baseUrl (ne pas utiliser Uri(base, /abs)).
                 if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
-                    && !string.IsNullOrEmpty(_baseUrl)
-                    && imageUrl.StartsWith('/'))
+                    && !string.IsNullOrEmpty(_baseUrl))
                 {
-                    imageUrl = _baseUrl.TrimEnd('/') + imageUrl;
+                    var rel = imageUrl.StartsWith('/') ? imageUrl : "/" + imageUrl.TrimStart('/');
+                    imageUrl = _baseUrl.TrimEnd('/') + rel;
                 }
 
                 HttpResponseMessage imgResp;
@@ -839,11 +1393,21 @@ public static class Extension
                     var code = (int)imgResp.StatusCode;
                     if (code == 401 || code == 403) return "ERR|unauthorized";
                     if (code == 404) return "ERR|not_found";
+                    if (code == 503) return "ERR|unavailable";
                     return "ERR|http_" + code;
                 }
 
                 var bytes = imgResp.Content.ReadAsByteArrayAsync(token).GetAwaiter().GetResult();
                 if (bytes.Length == 0) return "ERR|empty_image";
+
+                // Rejeter les corps texte (ex. « QR unavailable ») / HTML d’erreur sauvés par erreur en .png.
+                var isPng = bytes.Length >= 8
+                    && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G';
+                var isJpeg = bytes.Length >= 3
+                    && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+                if (!isPng && !isJpeg) return "ERR|invalid_image";
+                if (isPng) ext = ".png";
+                else if (isJpeg) ext = ".jpg";
 
                 var cacheDir = GetWritableCacheDir();
                 if (cacheDir == null) return "ERR|no_writable_cache_dir";
@@ -858,7 +1422,9 @@ public static class Extension
                     return "ERR|write_failed_" + ex.GetType().Name;
                 }
 
-                return "OK|" + destPath;
+                // Slash avant pour RscPicture / setObjectTexture sous Windows (Arma).
+                var armaPath = destPath.Replace('\\', '/');
+                return "OK|" + armaPath;
             }
         }
         catch (OperationCanceledException)
@@ -990,6 +1556,165 @@ public static class Extension
         catch { return ""; }
     }
 
+    /// <summary>
+    /// Simplifie GET /api/atak/fire-teams pour SQF (pas de JSON natif).
+    /// Lignes équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
+    /// Lignes membre : M\tteamId\tcallsign\trole\tdisplayName
+    /// </summary>
+    /// <summary>
+    /// Simplifie GET /api/atak/orders pour SQF.
+    /// Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases
+    /// </summary>
+    private static string SimplifyOrdersJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("orders", out var orders) || orders.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            foreach (var el in orders.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(id)) continue;
+                var type = el.TryGetProperty("type", out var t) ? (t.GetString() ?? "MOVE") : "MOVE";
+                var target = el.TryGetProperty("target", out var tg) ? (tg.GetString() ?? "") : "";
+                var priority = el.TryGetProperty("priority", out var pr) ? (pr.GetString() ?? "IMPORTANT") : "IMPORTANT";
+                var issuer = el.TryGetProperty("issuer", out var iss) ? (iss.GetString() ?? "") : "";
+                var status = el.TryGetProperty("status", out var st) ? (st.GetString() ?? "PENDING") : "PENDING";
+                var payload = el.TryGetProperty("payload", out var pl) ? (pl.GetString() ?? "") : "";
+                var targetType = el.TryGetProperty("target_type", out var tt) ? (tt.GetString() ?? "all") : "all";
+                var targetRef = el.TryGetProperty("target_ref", out var tr) ? (tr.GetString() ?? "") : "";
+                var aliases = "";
+                if (el.TryGetProperty("match_aliases", out var ma))
+                {
+                    if (ma.ValueKind == JsonValueKind.Array)
+                    {
+                        var parts = new List<string>();
+                        foreach (var a in ma.EnumerateArray())
+                        {
+                            var s = Clean(a.GetString() ?? "");
+                            if (s.Length > 0 && !parts.Contains(s, StringComparer.OrdinalIgnoreCase))
+                                parts.Add(s);
+                        }
+                        aliases = string.Join(",", parts);
+                    }
+                    else if (ma.ValueKind == JsonValueKind.String)
+                    {
+                        aliases = Clean(ma.GetString() ?? "");
+                    }
+                }
+                if (payload.Length > 120) payload = payload.Substring(0, 120);
+                sb.Append(Clean(id)).Append('\t')
+                  .Append(Clean(type)).Append('\t')
+                  .Append(Clean(target)).Append('\t')
+                  .Append(Clean(priority)).Append('\t')
+                  .Append(Clean(issuer)).Append('\t')
+                  .Append(Clean(status)).Append('\t')
+                  .Append(Clean(payload)).Append('\t')
+                  .Append(Clean(targetType)).Append('\t')
+                  .Append(Clean(targetRef)).Append('\t')
+                  .Append(Clean(aliases)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/medical-alerts pour SQF.
+    /// Lignes : id\tkind\tcall_sign\tlabel\tgrid\tcreated_at\ttriage_status\ttriage_label\tseverity
+    /// </summary>
+    private static string SimplifyMedicalAlertsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("alerts", out var alerts) || alerts.ValueKind != JsonValueKind.Array)
+                return "";
+            foreach (var el in alerts.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i)
+                    ? (i.ValueKind == JsonValueKind.Number ? i.GetInt32().ToString() : (i.GetString() ?? ""))
+                    : "";
+                if (string.IsNullOrEmpty(id) || id == "0") continue;
+                var kind = el.TryGetProperty("kind", out var k) ? (k.GetString() ?? "") : "";
+                var callSign = el.TryGetProperty("call_sign", out var cs) ? (cs.GetString() ?? "") : "";
+                var label = el.TryGetProperty("label", out var lb) ? (lb.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(label) && el.TryGetProperty("summary", out var sm))
+                    label = sm.GetString() ?? "";
+                var grid = el.TryGetProperty("grid", out var g) ? (g.GetString() ?? "") : "";
+                var created = el.TryGetProperty("created_at", out var ca) ? (ca.GetString() ?? "") : "";
+                var severity = el.TryGetProperty("severity", out var sev) ? (sev.GetString() ?? "") : "";
+                var triageStatus = "a_secourir";
+                var triageLabel = "A secourir";
+                if (el.TryGetProperty("triage", out var tri) && tri.ValueKind == JsonValueKind.Object)
+                {
+                    if (tri.TryGetProperty("status", out var ts))
+                        triageStatus = ts.GetString() ?? triageStatus;
+                    if (tri.TryGetProperty("status_label", out var tl))
+                        triageLabel = tl.GetString() ?? triageLabel;
+                }
+                static string Clean(string s) =>
+                    (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                if (created.Length > 19) created = created.Replace('T', ' ').Substring(0, 19);
+                sb.Append(Clean(id)).Append('\t')
+                  .Append(Clean(kind)).Append('\t')
+                  .Append(Clean(callSign)).Append('\t')
+                  .Append(Clean(label)).Append('\t')
+                  .Append(Clean(grid)).Append('\t')
+                  .Append(Clean(created)).Append('\t')
+                  .Append(Clean(triageStatus)).Append('\t')
+                  .Append(Clean(triageLabel)).Append('\t')
+                  .Append(Clean(severity)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    private static string SimplifyFireTeamsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("fire_teams", out var teams)) return "";
+            foreach (var el in teams.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i) ? i.GetInt32() : 0;
+                if (id <= 0) continue;
+                var label = el.TryGetProperty("label", out var lb) ? (lb.GetString() ?? "") : "";
+                var color = el.TryGetProperty("color", out var c) ? (c.GetString() ?? "") : "";
+                var mapId = el.TryGetProperty("map_id", out var mi) && mi.ValueKind != JsonValueKind.Null ? mi.ToString() : "";
+                var kind = el.TryGetProperty("kind", out var k) ? (k.GetString() ?? "") : "";
+                var memberCount = el.TryGetProperty("member_count", out var mc) ? mc.GetInt32() : 0;
+                label = label.Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                color = color.Replace("\t", "").Replace("\n", "").Replace("|", "");
+                sb.Append(id).Append('\t').Append(label).Append('\t').Append(color).Append('\t')
+                  .Append(mapId).Append('\t').Append(kind).Append('\t').Append(memberCount).Append('\n');
+                if (el.TryGetProperty("members", out var members) && members.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var mem in members.EnumerateArray())
+                    {
+                        var callsign = mem.TryGetProperty("callsign", out var cs) ? (cs.GetString() ?? "") : "";
+                        var role = mem.TryGetProperty("role", out var ro) ? (ro.GetString() ?? "member") : "member";
+                        var displayName = mem.TryGetProperty("display_name", out var dn) ? (dn.GetString() ?? "") : "";
+                        callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("|", "-");
+                        displayName = displayName.Replace("\t", " ").Replace("\n", " ").Replace("|", "-");
+                        sb.Append('M').Append('\t').Append(id).Append('\t').Append(callsign).Append('\t')
+                          .Append(role).Append('\t').Append(displayName).Append('\n');
+                    }
+                }
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyPhonePairingJson(string json)
     {
         try
@@ -1001,10 +1726,35 @@ public static class Extension
             var connectUrl = root.TryGetProperty("connect_url", out var cu) ? (cu.GetString() ?? "") : "";
             var qrImageUrl = root.TryGetProperty("qr_image_url", out var qu) ? (qu.GetString() ?? "") : "";
             var expiresAt = root.TryGetProperty("expires_at", out var ea) ? (ea.GetString() ?? "") : "";
-            if (token.Length == 0 || qrImageUrl.Length == 0) return "";
+            // Séparateur tab : côté SQF il faut splitString (toString [9]), PAS "\t" (\ + t).
+            // Nettoyer | / tab / LF pour ne pas casser le parse pipe+colonnes.
+            token = SanitizePhoneField(token);
+            code = SanitizePhoneField(code).ToUpperInvariant();
+            connectUrl = SanitizePhoneField(connectUrl);
+            qrImageUrl = SanitizePhoneField(qrImageUrl);
+            expiresAt = SanitizePhoneField(expiresAt);
+            // Code court obligatoire (alphanumérique) ; QR optionnel (téléchargement séparé).
+            if (token.Length == 0 || code.Length < 4 || code.Length > 12) return "";
+            if (code.Contains("://", StringComparison.Ordinal) || code.Contains('/') || code.Contains('.'))
+                return "";
+            for (var i = 0; i < code.Length; i++)
+            {
+                if (!char.IsAsciiLetterOrDigit(code[i])) return "";
+            }
             return token + "\t" + code + "\t" + connectUrl + "\t" + qrImageUrl + "\t" + expiresAt;
         }
         catch { return ""; }
+    }
+
+    private static string SanitizePhoneField(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        return value
+            .Replace("\t", " ")
+            .Replace("\n", " ")
+            .Replace("\r", "")
+            .Replace("|", "-")
+            .Trim();
     }
 
     private static string SimplifyPlayerProfileJson(string json)
@@ -1018,6 +1768,7 @@ public static class Extension
             var avatarUrl = root.TryGetProperty("avatar_url", out var au) ? (au.GetString() ?? "") : "";
             var unitName = root.TryGetProperty("unit_name", out var un) ? (un.GetString() ?? "") : "";
             var atakId = root.TryGetProperty("atak_id", out var ai) ? (ai.GetString() ?? "") : "";
+            var militaryId = root.TryGetProperty("military_id", out var mid) ? (mid.GetString() ?? "") : "";
             // playtime_hours/last_seen_at sont explicitement null en JSON quand la donnée n'est pas
             // trackée côté serveur (table absente, joueur jamais rapporté) — jamais une valeur
             // inventée : la chaîne reste vide et le SQF affiche un placeholder explicite.
@@ -1031,8 +1782,10 @@ public static class Extension
             callsign = callsign.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             unitName = unitName.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             atakId = atakId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
+            militaryId = militaryId.Replace("\t", " ").Replace("\n", " ").Replace("\r", "");
             if (displayName.Length == 0 && callsign.Length == 0) return "";
-            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId + "\t" + playtimeHours + "\t" + lastSeenAt;
+            return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
+                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId;
         }
         catch { return ""; }
     }
@@ -1043,14 +1796,16 @@ public static class Extension
         {
             if (function == "Connect")
             {
+                // Chemin async de secours (TryGetSyncResponse gère normalement Connect).
                 if (args.Length >= 1 && !string.IsNullOrWhiteSpace(args[0]))
                 {
-                    // Normalise comme le chemin sync (évite URL relative / perte de /public).
                     var normalized = NormalizeBaseUrl(args[0]);
                     if (normalized.Length == 0) return;
                     _baseUrl = normalized;
                     var key = args.Length > 1 ? (args[1] ?? "") : "";
                     ApplyApiKeyHeaders(key);
+                    if (args.Length > 2)
+                        ApplyTenantId(args[2]);
                     if (_apiKey.Length > 0)
                         StartClientInitAsync();
                 }
@@ -1059,10 +1814,16 @@ public static class Extension
 
             if (function == "UpdatePosition" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 4)
             {
-                var posX = double.TryParse(args[0], out var x) ? x : 0;
-                var posY = double.TryParse(args[1], out var y) ? y : 0;
-                var heading = double.TryParse(args[2], out var h) ? h : (double?)null;
-                var callSign = args[3] ?? "Unknown";
+                // InvariantCulture : sous locale FR, TryParse("12345.67") échoue sinon → pos 0,0.
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                var styles = System.Globalization.NumberStyles.Float;
+                var posX = double.TryParse(args[0], styles, inv, out var x) ? x : 0;
+                var posY = double.TryParse(args[1], styles, inv, out var y) ? y : 0;
+                var heading = double.TryParse(args[2], styles, inv, out var h) ? h : (double?)null;
+                var callSign = (args[3] ?? "").Trim();
+                if (callSign.Equals("Unknown", StringComparison.OrdinalIgnoreCase)
+                    || callSign.Equals("Inconnu", StringComparison.OrdinalIgnoreCase))
+                    callSign = "";
                 var role = args.Length > 4 ? (args[4] ?? "") : "";
                 var health = args.Length > 5 ? (args[5] ?? "ok") : "ok";
                 var fuel = args.Length > 6 ? (args[6] ?? "") : "";
@@ -1070,6 +1831,16 @@ public static class Extension
                 var radioFreq = args.Length > 8 ? (args[8] ?? "") : "";
                 // args[9] = JSON véhicule optionnel (speed, in_vehicle, vector_dir, vector_up, velocity…)
                 var vehicleJson = args.Length > 9 ? (args[9] ?? "") : "";
+                // args[10] = Steam UID — repli sur UID mémorisé à la liaison (ne pas faire confiance au seul SQF).
+                var steamUid = args.Length > 10 ? (args[10] ?? "").Trim() : "";
+                if (TryNormalizeSteamUid(steamUid, out var steamNorm))
+                    _steamUid = steamNorm;
+                else if (_steamUid.Length > 0)
+                    steamNorm = _steamUid;
+                else
+                    steamNorm = "";
+                // args[11] = nom de groupe Arma (groupId)
+                var groupName = args.Length > 11 ? (args[11] ?? "").Trim() : "";
                 var headingStr = heading.HasValue ? heading.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture) : "null";
                 var extra = new System.Text.StringBuilder();
                 extra.Append("\"role\":\"").Append(EscapeJson(role)).Append("\"");
@@ -1077,13 +1848,24 @@ public static class Extension
                 if (!string.IsNullOrEmpty(fuel)) extra.Append(",\"fuel\":\"").Append(EscapeJson(fuel)).Append("\"");
                 extra.Append(",\"ammo\":\"").Append(EscapeJson(ammo)).Append("\"");
                 if (!string.IsNullOrEmpty(radioFreq)) extra.Append(",\"radio_freq\":\"").Append(EscapeJson(radioFreq)).Append("\"");
+                if (!string.IsNullOrEmpty(groupName))
+                {
+                    extra.Append(",\"group_name\":\"").Append(EscapeJson(groupName)).Append("\"");
+                    extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
+                }
                 if (!string.IsNullOrWhiteSpace(vehicleJson) && vehicleJson.StartsWith('{') && vehicleJson.EndsWith('}'))
                 {
                     // Fusionne le JSON véhicule dans extra (sans enveloppe {}).
                     var inner = vehicleJson.Substring(1, vehicleJson.Length - 2).Trim();
                     if (inner.Length > 0) extra.Append(',').Append(inner);
                 }
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\",\"extra\":{{{extra}}}}}";
+                var steamJson = steamNorm.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(steamNorm)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
                 return;
             }
@@ -1091,15 +1873,27 @@ public static class Extension
             if (function == "ReportPlaytime" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var uid = args[0] ?? "";
-                if (!TryNormalizeSteamUid(uid, out var uidNorm)) return;
+                if (!TryNormalizeSteamUid(uid, out var uidNorm))
+                {
+                    if (_steamUid.Length == 0) return;
+                    uidNorm = _steamUid;
+                }
+                else
+                {
+                    _steamUid = uidNorm;
+                }
                 var secStr = args[1] ?? "0";
                 var secs = long.TryParse(secStr, out var s) ? s : 0L;
                 if (secs < 1) return;
                 if (secs > 7200) secs = 7200;
                 var call = args.Length > 2 ? (args[2] ?? "") : "";
                 var tenantId = args.Length > 3 ? (args[3] ?? "") : "";
+                if (string.IsNullOrEmpty(tenantId)) tenantId = _tenantId;
                 var tenantJson = string.IsNullOrEmpty(tenantId) ? "" : $",\"tenant_id\":\"{EscapeJson(tenantId)}\"";
-                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}}}";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}{sessJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/playtime", payload);
                 return;
             }
@@ -1108,7 +1902,13 @@ public static class Extension
             {
                 var author = args[0] ?? "Unknown";
                 var body = args[1] ?? "";
-                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"}}";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"body\":\"{EscapeJson(body)}\"{steamJson}{sessJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/chat", payload);
                 return;
             }
@@ -1119,7 +1919,13 @@ public static class Extension
                 var x = args[1] ?? "0";
                 var y = args[2] ?? "0";
                 var msg = args[3] ?? "Ping";
-                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"pos_x\":{x},\"pos_y\":{y},\"message\":\"{EscapeJson(msg)}\"}}";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var payload = $"{{\"mapId\":1,\"author\":\"{EscapeJson(author)}\",\"pos_x\":{x},\"pos_y\":{y},\"message\":\"{EscapeJson(msg)}\"{steamJson}{sessJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/pings", payload);
                 return;
             }

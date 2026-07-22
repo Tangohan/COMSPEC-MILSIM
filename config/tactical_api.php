@@ -13,6 +13,7 @@ return [
         '/api/atak/game-link/redeem',
         // Steam déjà lié au compte : l’UID Steam du client Arma fait office de preuve (pas de clé ATAK).
         '/api/atak/game-link/by-steam',
+        // QR téléphone : token dans l’URL (TTL court) — scannable / téléchargeable sans clé (voir aussi regex dans ComspecApiKeyAuth).
     ],
     'protected_prefixes' => [
         '/api/markers',

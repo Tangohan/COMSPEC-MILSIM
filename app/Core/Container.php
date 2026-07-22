@@ -1230,6 +1230,26 @@ class Container
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class)
             ),
+            \App\Repositories\FireTeamRepository::class => new \App\Repositories\FireTeamRepository(),
+            \App\Controllers\Admin\AdminFireTeamsController::class => new \App\Controllers\Admin\AdminFireTeamsController(
+                self::get(\App\Repositories\FireTeamRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class)
+            ),
+            \App\Controllers\Admin\AdminAtakOperatorsController::class => new \App\Controllers\Admin\AdminAtakOperatorsController(
+                self::get(\App\Repositories\AtakDataRepository::class),
+                self::get(\App\Repositories\AtakMapRepository::class),
+                self::get(\App\Repositories\AtakOperatorIdRepository::class),
+                self::get(\App\Repositories\FireTeamRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\UserProfileRepository::class)
+            ),
+            \App\Controllers\Api\FireTeamApiController::class => new \App\Controllers\Api\FireTeamApiController(
+                self::get(\App\Repositories\FireTeamRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\UnitRepository::class)
+            ),
             \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
@@ -1837,6 +1857,9 @@ class Container
             \App\Repositories\ArmaPlaytimeRepository::class => new \App\Repositories\ArmaPlaytimeRepository(),
             \App\Repositories\TacticalBriefingSlideRepository::class => new \App\Repositories\TacticalBriefingSlideRepository(),
             \App\Repositories\TacticalPhonePairingRepository::class => new \App\Repositories\TacticalPhonePairingRepository(),
+            \App\Repositories\AtakOrderRepository::class => new \App\Repositories\AtakOrderRepository(),
+            \App\Repositories\AtakOperatorIdRepository::class => new \App\Repositories\AtakOperatorIdRepository(),
+            \App\Repositories\AtakMedicalTriageRepository::class => new \App\Repositories\AtakMedicalTriageRepository(),
             \App\Services\Tactical\AtakActivityLogService::class => new \App\Services\Tactical\AtakActivityLogService(),
             \App\Controllers\Api\AtakApiController::class => new \App\Controllers\Api\AtakApiController(
                 self::get(\App\Repositories\AtakDataRepository::class),
@@ -1851,7 +1874,12 @@ class Container
                 self::get(\App\Repositories\TacticalPhonePairingRepository::class),
                 self::get(\App\Services\Tactical\AtakActivityLogService::class),
                 self::get(\App\Repositories\TacticalGameLinkRepository::class),
-                self::get(\App\Repositories\TenantAtakConfigRepository::class)
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\AtakOrderRepository::class),
+                self::get(\App\Repositories\FireTeamRepository::class),
+                self::get(\App\Repositories\AtakOperatorIdRepository::class),
+                self::get(\App\Repositories\AtakMedicalTriageRepository::class)
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),

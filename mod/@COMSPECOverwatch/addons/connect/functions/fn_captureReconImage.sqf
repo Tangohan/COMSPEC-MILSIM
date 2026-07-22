@@ -9,7 +9,7 @@ private _unit = player;
 private _pos = getPosASL _unit;
 private _dir = getDir _unit;
 private _grid = mapGridPosition _unit;
-private _author = missionNamespace getVariable ["COMSPEC_Callsign", name _unit];
+private _author = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_author isEqualTo "") then { _author = name _unit };
 private _sideStr = "WEST";
 switch (side _unit) do {
@@ -29,7 +29,7 @@ if (_path isEqualTo "") then {
     };
 };
 if (_path isEqualTo "") exitWith {
-    ["COMSPEC_Warning", ["Aucune image à envoyer — prenez une photo depuis le terminal Overwatch."]] call BIS_fnc_showNotification;
+    ["COMSPEC_Warning", ["Aucune image à envoyer — prenez une photo depuis le terminal Overwatch."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 "COMSPECExtension" callExtension [
@@ -51,4 +51,4 @@ if (_path isEqualTo "") exitWith {
         _capturedAt
     ]
 ];
-["COMSPEC_Info", ["Image de recon envoyée"]] call BIS_fnc_showNotification;
+["COMSPEC_Info", ["Image de recon envoyée"]] call comspec_overwatch_connect_fnc_showNotification;

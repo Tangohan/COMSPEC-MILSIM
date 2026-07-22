@@ -1042,60 +1042,172 @@ if ($stmt && !$stmt->fetch()) {
     $pdo->exec("ALTER TABLE units ADD COLUMN show_on_public_page tinyint(1) NOT NULL DEFAULT 1 AFTER public_tags");
 }
 
-// Seed atak_maps (Altis) si table vide
-$stmt = $pdo->query("SELECT 1 FROM atak_maps LIMIT 1");
-// CRS aligné sur jetelain/Arma3Map (altis.js CDN)
-$altisFactorX = 0.006839;
-$altisFactorY = 0.006836;
-$altisTileCdn = rtrim((string) (getenv('ATAK_MAP_TILES_CDN') ?: 'https://jetelain.github.io/Arma3Map'), '/');
-$altisTilePattern = $altisTileCdn . '/maps/altis/{z}/{x}/{y}.png';
-$configAltisPayload = [
-    'center' => [15000, 15000],
-    'defaultZoom' => 3,
-    'minZoom' => 0,
-    'maxZoom' => 6,
-    'tileSize' => 212,
-    'worldSize' => 30720,
-    'bounds' => [[0, 0], [30720, 30720]],
-    'crs' => ['factorx' => $altisFactorX, 'factory' => $altisFactorY, 'tileWidth' => 212],
-    'attribution' => '&copy; Bohemia Interactive',
-    'title' => 'Altis',
+// Seed / upsert atak_maps (théâtres Arma via CDN jetelain/Arma3Map)
+$atakTileCdn = rtrim((string) (getenv('ATAK_MAP_TILES_CDN') ?: 'https://jetelain.github.io/Arma3Map'), '/');
+$atakMapsSeed = [
+    [
+        'slug' => 'altis',
+        'label' => 'Altis',
+        'world_name' => 'altis',
+        'display_order' => 0,
+        'factorx' => 0.006839,
+        'factory' => 0.006836,
+        'tileSize' => 212,
+        'worldSize' => 30720,
+        'center' => [15000, 15000],
+        'defaultZoom' => 3,
+        'maxZoom' => 6,
+        'attribution' => '&copy; Bohemia Interactive',
+    ],
+    [
+        'slug' => 'stratis',
+        'label' => 'Stratis',
+        'world_name' => 'stratis',
+        'display_order' => 1,
+        'factorx' => 0.027475,
+        'factory' => 0.027475,
+        'tileSize' => 226,
+        'worldSize' => 8192,
+        'center' => [4100, 4100],
+        'defaultZoom' => 2,
+        'maxZoom' => 4,
+        'attribution' => '&copy; Bohemia Interactive',
+    ],
+    [
+        'slug' => 'malden',
+        'label' => 'Malden',
+        'world_name' => 'malden',
+        'display_order' => 2,
+        'factorx' => 0.01448,
+        'factory' => 0.01448,
+        'tileSize' => 186,
+        'worldSize' => 12800,
+        'center' => [7000, 7000],
+        'defaultZoom' => 2,
+        'maxZoom' => 5,
+        'attribution' => '&copy; Bohemia Interactive',
+    ],
+    [
+        'slug' => 'tanoa',
+        'label' => 'Tanoa',
+        'world_name' => 'tanoa',
+        'display_order' => 3,
+        'factorx' => 0.01385,
+        'factory' => 0.01385,
+        'tileSize' => 213,
+        'worldSize' => 15360,
+        'center' => [7000, 7000],
+        'defaultZoom' => 2,
+        'maxZoom' => 5,
+        'attribution' => '&copy; Bohemia Interactive',
+    ],
+    [
+        'slug' => 'enoch',
+        'label' => 'Livonia',
+        'world_name' => 'enoch',
+        'display_order' => 4,
+        'factorx' => 0.02735,
+        'factory' => 0.02735,
+        'tileSize' => 356,
+        'worldSize' => 12800,
+        'center' => [7100, 7100],
+        'defaultZoom' => 2,
+        'maxZoom' => 4,
+        'attribution' => '&copy; Bohemia Interactive',
+    ],
+    [
+        'slug' => 'chernarus',
+        'label' => 'Chernarus',
+        'world_name' => 'chernarus',
+        'display_order' => 5,
+        'factorx' => 0.01575,
+        'factory' => 0.01575,
+        'tileSize' => 242,
+        'worldSize' => 15360,
+        'center' => [7680, 7680],
+        'defaultZoom' => 2,
+        'maxZoom' => 5,
+        'attribution' => '&copy; Bohemia Interactive, CUP Team',
+    ],
+    [
+        'slug' => 'takistan',
+        'label' => 'Takistan',
+        'world_name' => 'takistan',
+        'display_order' => 6,
+        'factorx' => 0.01575,
+        'factory' => 0.01575,
+        'tileSize' => 202,
+        'worldSize' => 12800,
+        'center' => [6400, 6400],
+        'defaultZoom' => 2,
+        'maxZoom' => 5,
+        'attribution' => '&copy; Bohemia Interactive, CUP Team',
+    ],
 ];
-if ($stmt && !$stmt->fetch()) {
-    echo "Seed atak_maps (Altis CDN)...\n";
-    $config = json_encode($configAltisPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    $ins = $pdo->prepare("INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES ('altis', 'Altis', 'altis', ?, ?, 0)");
-    $ins->execute([$altisTilePattern, $config]);
-    echo "atak_maps seed OK.\n";
-} else {
-    // Mise à jour config + bascule motifs locaux → CDN
-    $configAltis = json_encode($configAltisPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    $upd = $pdo->prepare("UPDATE atak_maps SET config = ? WHERE slug = 'altis'");
-    $upd->execute([$configAltis]);
-    if ($upd->rowCount() > 0) {
-        echo "atak_maps config Altis mise à jour (CRS/bounds).\n";
-    }
-    try {
-        $updTiles = $pdo->prepare(
-            "UPDATE atak_maps
-             SET tile_pattern = ?
-             WHERE slug = 'altis'
-               AND (
-                    tile_pattern IS NULL
-                    OR tile_pattern = ''
-                    OR tile_pattern LIKE '/assets/maps/%'
-                    OR tile_pattern LIKE 'assets/maps/%'
-                    OR tile_pattern LIKE '%/assets/maps/%'
-                    OR tile_pattern LIKE 'ressources/MapViewers/%'
-               )"
-        );
-        $updTiles->execute([$altisTilePattern]);
-        if ($updTiles->rowCount() > 0) {
-            echo "atak_maps tile_pattern Altis → CDN ({$altisTileCdn}).\n";
+try {
+    $chkMap = $pdo->prepare('SELECT id, tile_pattern FROM atak_maps WHERE slug = ? LIMIT 1');
+    $insMap = $pdo->prepare('INSERT INTO atak_maps (slug, label, world_name, tile_pattern, config, display_order) VALUES (?, ?, ?, ?, ?, ?)');
+    $updMap = $pdo->prepare('UPDATE atak_maps SET label = ?, world_name = ?, tile_pattern = ?, config = ?, display_order = ? WHERE slug = ?');
+    $seeded = 0;
+    $updated = 0;
+    foreach ($atakMapsSeed as $row) {
+        $slug = (string) $row['slug'];
+        $ws = (int) $row['worldSize'];
+        $ts = (int) $row['tileSize'];
+        $tilePattern = $atakTileCdn . '/maps/' . $slug . '/{z}/{x}/{y}.png';
+        $configPayload = [
+            'center' => $row['center'],
+            'defaultZoom' => (int) $row['defaultZoom'],
+            'minZoom' => 0,
+            'maxZoom' => (int) $row['maxZoom'],
+            'tileSize' => $ts,
+            'worldSize' => $ws,
+            'bounds' => [[0, 0], [$ws, $ws]],
+            'crs' => [
+                'factorx' => (float) $row['factorx'],
+                'factory' => (float) $row['factory'],
+                'tileWidth' => $ts,
+            ],
+            'attribution' => (string) $row['attribution'],
+            'title' => (string) $row['label'],
+        ];
+        $configJson = json_encode($configPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $chkMap->execute([$slug]);
+        $existing = $chkMap->fetch(PDO::FETCH_ASSOC);
+        if (!$existing) {
+            $insMap->execute([
+                $slug,
+                (string) $row['label'],
+                (string) $row['world_name'],
+                $tilePattern,
+                $configJson,
+                (int) $row['display_order'],
+            ]);
+            $seeded++;
+            continue;
         }
-    } catch (Throwable $e) {
-        echo '  [ATTENTION] atak_maps tile CDN : ' . $e->getMessage() . "\n";
+        $oldPattern = trim((string) ($existing['tile_pattern'] ?? ''));
+        $forceCdn = $oldPattern === ''
+            || str_contains($oldPattern, '/assets/maps/')
+            || str_contains($oldPattern, 'assets/maps/')
+            || str_contains($oldPattern, 'ressources/MapViewers/')
+            || !str_contains($oldPattern, '/maps/' . $slug . '/');
+        $nextPattern = $forceCdn ? $tilePattern : $oldPattern;
+        $updMap->execute([
+            (string) $row['label'],
+            (string) $row['world_name'],
+            $nextPattern,
+            $configJson,
+            (int) $row['display_order'],
+            $slug,
+        ]);
+        $updated++;
     }
+    if ($seeded > 0 || $updated > 0) {
+        echo "atak_maps seed/upsert : +{$seeded} insert, {$updated} maj (CDN {$atakTileCdn}).\n";
+    }
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_maps seed : ' . $e->getMessage() . "\n";
 }
 
 // Documents Athena : colonnes et tables manquantes (migration incrémentale)
@@ -2799,6 +2911,54 @@ try {
     $tacticalGameLinkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
+}
+
+$tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
+try {
+    echo "Migration tenant_atak_access_key (clé d’accès Overwatch par communauté)...\n";
+    $tenantAtakAccessKeyMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_atak_access_key : ' . $e->getMessage() . "\n";
+}
+
+$fireTeamsMigrate = require $root . '/bootstrap/fire_teams_migration.php';
+try {
+    echo "Migration fire_teams (équipes de feu mission + organigramme)...\n";
+    $fireTeamsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] fire_teams : ' . $e->getMessage() . "\n";
+}
+
+$atakOrdersMigrate = require $root . '/bootstrap/atak_orders_migration.php';
+try {
+    echo "Migration atak_orders (ordres C2 Tacmap)...\n";
+    $atakOrdersMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_orders : ' . $e->getMessage() . "\n";
+}
+
+$atakOrdersV2Migrate = require $root . '/bootstrap/atak_orders_v2_migration.php';
+try {
+    echo "Migration atak_orders v2 (destinataires, ACK, délais radio, ID militaire)...\n";
+    $atakOrdersV2Migrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_orders_v2 : ' . $e->getMessage() . "\n";
+}
+
+$atakUnitsPositionMigrate = require $root . '/bootstrap/atak_units_position_migration.php';
+try {
+    echo "Migration atak_units_position (coordonnées carte pos_x / pos_y)...\n";
+    $atakUnitsPositionMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_units_position : ' . $e->getMessage() . "\n";
+}
+
+$atakMedicalTriageMigrate = require $root . '/bootstrap/atak_medical_triage_migration.php';
+try {
+    echo "Migration atak_medical_alert_triage (triage alertes médicales)...\n";
+    $atakMedicalTriageMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
 }
 
 $trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';

@@ -23,12 +23,25 @@ class TacticalPhonePairingRepository
         $this->pdo = Database::getPdo();
     }
 
+    /**
+     * False tant que la migration bootstrap/tactical_phone_pairing_migration.php n’a pas été jouée.
+     */
+    public function isReady(): bool
+    {
+        return $this->tableExists();
+    }
+
     private function tableExists(): bool
     {
         static $exists = null;
-        if ($exists === null) {
+        if ($exists === true) {
+            return true;
+        }
+        try {
             $stmt = $this->pdo->query("SHOW TABLES LIKE 'tactical_phone_pairings'");
             $exists = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            $exists = false;
         }
 
         return $exists;
@@ -41,18 +54,37 @@ class TacticalPhonePairingRepository
      */
     public function create(int $tenantId): ?array
     {
-        if (!$this->tableExists()) {
+        if (!$this->tableExists() || $tenantId < 1) {
             return null;
         }
-        $token = bin2hex(random_bytes(16));
-        $code = $this->generateUniqueCode($tenantId);
-        $expiresAt = date('Y-m-d H:i:s', time() + self::TTL_MINUTES * 60);
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO tactical_phone_pairings (tenant_id, token, code, expires_at, created_at) VALUES (?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([$tenantId, $token, $code, $expiresAt]);
+        try {
+            $token = bin2hex(random_bytes(16));
+            $code = $this->generateUniqueCode($tenantId);
+            $ttl = (int) self::TTL_MINUTES;
+            // UTC_TIMESTAMP() : même piège que game_link (NOW() hébergeur ≠ PHP UTC).
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO tactical_phone_pairings (tenant_id, token, code, expires_at, created_at)
+                 VALUES (?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL {$ttl} MINUTE), UTC_TIMESTAMP())"
+            );
+            $stmt->execute([$tenantId, $token, $code]);
 
-        return ['token' => $token, 'code' => $code, 'expires_at' => $expiresAt];
+            $read = $this->pdo->prepare(
+                'SELECT token, code, expires_at FROM tactical_phone_pairings WHERE token = ? LIMIT 1'
+            );
+            $read->execute([$token]);
+            $row = $read->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return null;
+            }
+
+            return [
+                'token' => (string) $row['token'],
+                'code' => (string) $row['code'],
+                'expires_at' => (string) $row['expires_at'],
+            ];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function generateUniqueCode(int $tenantId): string
@@ -64,7 +96,7 @@ class TacticalPhonePairingRepository
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
             $stmt = $this->pdo->prepare(
-                'SELECT 1 FROM tactical_phone_pairings WHERE tenant_id = ? AND code = ? AND expires_at > NOW() LIMIT 1'
+                'SELECT 1 FROM tactical_phone_pairings WHERE tenant_id = ? AND code = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
             );
             $stmt->execute([$tenantId, $code]);
             if (!$stmt->fetchColumn()) {
@@ -81,7 +113,7 @@ class TacticalPhonePairingRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM tactical_phone_pairings WHERE token = ? AND expires_at > NOW() LIMIT 1'
+            'SELECT * FROM tactical_phone_pairings WHERE token = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
         );
         $stmt->execute([trim($token)]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -100,7 +132,7 @@ class TacticalPhonePairingRepository
             return null;
         }
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM tactical_phone_pairings WHERE code = ? AND expires_at > NOW() LIMIT 1'
+            'SELECT * FROM tactical_phone_pairings WHERE code = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1'
         );
         $stmt->execute([strtoupper(trim($code))]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -117,5 +149,52 @@ class TacticalPhonePairingRepository
             'UPDATE tactical_phone_pairings SET paired_at = NOW() WHERE token = ? AND paired_at IS NULL'
         );
         $stmt->execute([trim($token)]);
+    }
+
+    /**
+     * Dernière liaison téléphone réussie pour la communauté (paired_at renseigné).
+     *
+     * @return array{paired_at: string, code: string}|null
+     */
+    public function latestPairedForTenant(int $tenantId): ?array
+    {
+        if (!$this->tableExists() || $tenantId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT paired_at, code FROM tactical_phone_pairings
+             WHERE tenant_id = ? AND paired_at IS NOT NULL
+             ORDER BY paired_at DESC
+             LIMIT 1'
+        );
+        $stmt->execute([$tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row || empty($row['paired_at'])) {
+            return null;
+        }
+
+        return [
+            'paired_at' => (string) $row['paired_at'],
+            'code' => (string) ($row['code'] ?? ''),
+        ];
+    }
+
+    /**
+     * Pairing par token (même expiré) — pour le statut après scan, limité au tenant appelant.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByTokenForTenant(string $token, int $tenantId): ?array
+    {
+        if (!$this->tableExists() || trim($token) === '' || $tenantId < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM tactical_phone_pairings WHERE token = ? AND tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([trim($token), $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
     }
 }

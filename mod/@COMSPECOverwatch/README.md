@@ -1,6 +1,11 @@
 # COMSPEC Overwatch — Mod Arma 3
 
-Mod Arma 3 pour la liaison avec l’overlay ATAK / Tacmap COMSPEC. Envoi de la position du joueur vers le nœud ATAK.
+Mod Arma 3 pour la liaison avec Athena (carte tactique / ATAK). Envoi de la position du joueur et outils terrain (messagerie, tablette, téléphone, ordres…).
+
+- Description Steam Workshop (BBCode prêt à coller) : [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md)
+- Crédits & sources (cTab, SIT, ctav-b2, etc.) : [CREDITS.md](CREDITS.md)
+- **Diffusion Workshop (checklist)** : [PACKAGING.md](PACKAGING.md)
+- **Sécurité / limites anti-copie** : [SECURITY.md](SECURITY.md)
 
 ## Prérequis
 
@@ -78,12 +83,22 @@ dotnet publish -c Release -r win-x64
 
 Copier tout le contenu de `bin\Release\net8.0\win-x64\publish\` dans `@COMSPECOverwatch\`. Raccourci PowerShell : `Copy-Item "bin\Release\net8.0\win-x64\publish\*" "..\@COMSPECOverwatch\" -Recurse -Force`
 
-## Packaging (zip pour diffusion)
+## Packaging (zip / Workshop — diffusion propre)
 
-1. Builder les addons en PBO (HEMTT ou Arma 3 Tools).
-2. Inclure dans le zip :
-   - le dossier `@COMSPECOverwatch` avec les PBO dans `addons/`,
-   - `COMSPECExtension_x64.dll` à la racine de `@COMSPECOverwatch`,
-   - `mod.cpp`.
+**Ne publiez jamais** le dossier de travail brut (il contient les `.sqf` sources, parfois `net8.0/` et des `.pdb`).
 
-Voir le tutoriel sur le site : **ATAK → Tuto mod Arma**.
+1. Builder : `mod\build_mod.bat` (PBO + DLL Native AOT).
+2. Pack filtrant :
+
+```powershell
+cd mod
+.\workshop-pack.ps1
+# ou avec zip :
+.\workshop-pack.ps1 -Zip
+```
+
+3. Publier **uniquement** `mod\publisher\@COMSPECOverwatch\` (PBO + DLL + `mod.cpp` + `CREDITS.md`).
+
+Checklist complète : [PACKAGING.md](PACKAGING.md). Limites honnêtes : [SECURITY.md](SECURITY.md).
+
+Voir aussi le tutoriel sur le site : **ATAK → Tuto mod Arma**.

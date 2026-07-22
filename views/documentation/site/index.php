@@ -41,6 +41,7 @@ $tocGroups = [
             ['id' => 'evenements-messages-pointage', 'title' => 'Événements, messages & pointage'],
             ['id' => 'equipement-et-modpacks', 'title' => 'Équipement & modpacks'],
             ['id' => 'outils-cartes-et-tactique', 'title' => 'Outils, cartes & tactique'],
+            ['id' => 'diapositives-briefing-eden', 'title' => 'Diapositives de briefing (Eden)'],
             ['id' => 'recrutement-et-enrolement', 'title' => 'Recrutement & enrôlement'],
         ],
     ],

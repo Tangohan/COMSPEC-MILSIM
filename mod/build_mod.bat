@@ -69,8 +69,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: 4. DLL a la racine du mod (Native AOT ~5 Mo — jamais le stub managé ~30 Ko)
+::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) — pack Workshop : workshop-pack.ps1
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
-echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64..."
+echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64...
 if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" (
     copy /Y "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
 ) else if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" (
@@ -81,14 +82,49 @@ if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" (
     echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET. >> "%BUILD_LOG%"
     echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET.
 )
-copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\" >> "%BUILD_LOG%" 2>&1
+:: Nettoyage artefacts de debug / publish accidentels a la racine du mod
+if exist "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" del /F /Q "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" >> "%BUILD_LOG%" 2>&1
+if exist "%OUTPUT_DIR%\net8.0" (
+    echo [CLEAN] Suppression net8.0\ du dossier mod (ne pas shipper). >> "%BUILD_LOG%"
+    rmdir /S /Q "%OUTPUT_DIR%\net8.0" >> "%BUILD_LOG%" 2>&1
+)
+if exist "%PROJECT_DIR%mod.cpp" (
+    copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\" >> "%BUILD_LOG%" 2>&1
+) else if exist "%OUTPUT_DIR%\mod.cpp" (
+    echo [INFO] mod.cpp deja present dans le mod. >> "%BUILD_LOG%"
+) else (
+    echo [WARN] mod.cpp introuvable a la racine mod\ — verifiez @COMSPECOverwatch\mod.cpp >> "%BUILD_LOG%"
+)
 
 :: 5. Deploiement vers Arma 3
+:: IMPORTANT: le launcher charge souvent !Workshop\@COMSPECOverwatch
+:: (= junction vers steamapps\workshop\content\107410\3684656708), PAS le dossier local @COMSPECOverwatch.
+:: Ne jamais laisser addons\connect\ ou addons\main\ (sources) a cote des .pbo : conflit de prefixe.
 echo [DEPLOY] Synchronisation avec le dossier Arma 3... >> "%BUILD_LOG%"
 echo [DEPLOY] Synchronisation avec le dossier Arma 3...
+set "WORKSHOP_MOD=%ARMA_PATH%\!Workshop\%MOD_NAME%"
+set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
+set "WORKSHOP_CONTENT=D:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
+
 if exist "%ARMA_PATH%" (
-    xcopy "%OUTPUT_DIR%" "%ARMA_PATH%\%MOD_NAME%" /E /I /Y >> "%BUILD_LOG%" 2>&1
-    if %ERRORLEVEL% NEQ 0 (echo [WARN] xcopy vers Arma 3 a peut-etre echoue. >> "%BUILD_LOG%")
+    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%") do (
+        if exist %%~T (
+            echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
+            echo [DEPLOY] Cible: %%~T
+            if not exist "%%~T\addons" mkdir "%%~T\addons"
+            :: Retirer sources loose + artefacts qui cassent le prefixe PBO
+            if exist "%%~T\addons\connect" rd /s /q "%%~T\addons\connect"
+            if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
+            if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
+            copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
+            copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1
+        ) else (
+            echo [WARN] Cible absente: %%~T >> "%BUILD_LOG%"
+            echo [WARN] Cible absente: %%~T
+        )
+    )
 ) else (
     echo [WARN] Dossier Arma 3 non trouve: %ARMA_PATH% >> "%BUILD_LOG%"
     echo [WARN] Dossier Arma 3 non trouve: %ARMA_PATH%
@@ -107,6 +143,8 @@ echo   Sortie mod : %OUTPUT_DIR%
 echo   PBO        : %OUTPUT_DIR%\addons\*.pbo
 echo   DLL        : %OUTPUT_DIR%\COMSPECExtension_x64.dll
 echo.
+echo   Workshop   : executer workshop-pack.ps1 avant upload Steam
+echo                (ne pas publier les .sqf / net8.0 / .pdb)
 echo   Log complet : %BUILD_LOG%
 echo ===========================================================
 pause

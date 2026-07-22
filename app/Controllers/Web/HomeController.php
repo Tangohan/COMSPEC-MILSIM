@@ -158,7 +158,7 @@ class HomeController
             }
             $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
             if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod/download');
+                $atakModDownloadUrl = url('atak/mod');
             }
         }
 
@@ -181,6 +181,8 @@ class HomeController
         $canManageInvitations = false;
         $pendingInvitationsCount = 0;
         $emailAlertsDisabledCount = 0;
+        $canViewAtakOperators = false;
+        $atakOperatorsLinkedCount = null;
         $dashboardIsDefaultTenant = false;
         if ($tenantId) {
             $tid = (int) $tenantId;
@@ -289,6 +291,35 @@ class HomeController
                         $pendingInvitationsCount = count($invitationRepo->listForTenant($tid, 'pending'));
                     } catch (\Throwable) {
                         $pendingInvitationsCount = 0;
+                    }
+                }
+
+                $canViewAtakOperators = $gate->allows('admin.system')
+                    || $gate->allows('admin.organization')
+                    || $gate->allows('admin.access');
+                if ($canViewAtakOperators) {
+                    try {
+                        $mapRepo = \App\Core\Container::get(\App\Repositories\AtakMapRepository::class);
+                        $defaultMap = $mapRepo->getDefaultForTenant($tid);
+                        $mapId = $defaultMap ? (int) ($defaultMap['id'] ?? 1) : 1;
+                        if ($mapId < 1) {
+                            $mapId = 1;
+                        }
+                        $units = \App\Core\Container::get(\App\Repositories\AtakDataRepository::class)
+                            ->getUnits($tid, $mapId);
+                        $linked = 0;
+                        foreach ($units as $unit) {
+                            if (!is_array($unit)) {
+                                continue;
+                            }
+                            $st = (string) ($unit['status'] ?? '');
+                            if ($st === 'linked' || $st === 'delayed') {
+                                ++$linked;
+                            }
+                        }
+                        $atakOperatorsLinkedCount = $linked;
+                    } catch (\Throwable) {
+                        $atakOperatorsLinkedCount = null;
                     }
                 }
 
@@ -482,6 +513,8 @@ class HomeController
             'can_manage_invitations' => $canManageInvitations,
             'pending_invitations_count' => $pendingInvitationsCount,
             'email_alerts_disabled_count' => $emailAlertsDisabledCount,
+            'can_view_atak_operators' => $canViewAtakOperators,
+            'atak_operators_linked_count' => $atakOperatorsLinkedCount,
         ]);
     }
 
@@ -925,7 +958,10 @@ class HomeController
             $defaultMapLabel = 'Vue du monde';
         }
 
-        $overwatchMapsList = [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
+        $overwatchMapsList = [
+            ['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world'],
+            ['slug' => 'world_relief', 'label' => 'Relief mondial', 'type' => 'world'],
+        ];
         foreach ($atakMapsList as $m) {
             $c = $m['config'] ?? [];
             $slug = (string) ($m['slug'] ?? '');

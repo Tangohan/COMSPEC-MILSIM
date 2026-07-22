@@ -81,6 +81,7 @@ return [
                     'links' => [
                         ['label' => 'Poste de commandement', 'path' => 'c2', 'description' => 'Accès aux modes de coordination'],
                         ['label' => 'Situation tactique (ATAK)', 'path' => 'atak', 'description' => 'Vue opérationnelle'],
+                        ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Overwatch', 'path' => 'overwatch', 'description' => 'Situation en carte et commandement'],
                         ['label' => 'TACMAP', 'path' => 'tacmap', 'description' => 'Cartographie tactique'],
                         ['label' => 'Première liaison ATAK', 'path' => 'atak/premiere-liaison', 'description' => 'Mise en service guidée'],
@@ -360,6 +361,7 @@ return [
                     'links' => [
                         ['label' => 'Modpacks', 'path' => 'back-office/ressources/modpacks', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration ATAK', 'path' => 'back-office/ressources/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Formations (LMS)', 'path' => 'formation', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete']],

@@ -11,7 +11,10 @@ $overwatchContext = $overwatchContext ?? [
     'syncIntervalMs' => 8000,
     'assetBase' => $base,
 ];
-$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
+$overwatchMapsList = $overwatchMapsList ?? [
+    ['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world'],
+    ['slug' => 'world_relief', 'label' => 'Relief mondial', 'type' => 'world'],
+];
 $overwatchWorkspaces = $overwatchWorkspaces ?? [['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis', 'isDefault' => true]];
 $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;
@@ -35,6 +38,9 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <link rel="stylesheet" href="<?= htmlspecialchars($leafletCss, ENT_QUOTES, 'UTF-8') ?>" />
   <script src="<?= htmlspecialchars($leafletJs, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-map-crs.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/vendor/milsymbol/milsymbol.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/vendor/milstd/milstd2525.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/milstd-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/nato-sidc-icons.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-medical-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -632,10 +638,27 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
       }
 
       function mapKind(slug) {
-        if (slug === 'world') return 'world';
+        if (slug === 'world' || slug === 'world_relief') return 'world';
         var c = overwatchMapsConfigs[slug];
         if (c && (c.type === 'image' || c.imageUrl)) return 'image';
         return 'arma';
+      }
+
+      function worldTileSpec(slug) {
+        if (slug === 'world_relief') {
+          return {
+            url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+            attribution: '&copy; OpenStreetMap contributors, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)',
+            maxZoom: 17,
+            label: 'Relief mondial'
+          };
+        }
+        return {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attribution: '&copy; OpenStreetMap',
+          maxZoom: 19,
+          label: 'Vue du monde'
+        };
       }
 
       function buildImageConfig(raw) {
@@ -670,7 +693,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           var isImage = kind === 'image';
           var mapEl = document.getElementById('overwatch-map');
           if (!mapEl) return;
-          setMapStatus(true, 'Chargement de la carte…', isWorld ? 'Vue du monde' : (isImage ? 'Carte image' : ('Carte ' + requested)));
+          setMapStatus(true, 'Chargement de la carte…', isWorld ? worldTileSpec(requested).label : (isImage ? 'Carte image' : ('Carte ' + requested)));
 
           if (kind === 'arma') {
             var cfgProbe = overwatchMapsConfigs[requested] ? buildArmaConfig(overwatchMapsConfigs[requested]) : null;
@@ -756,9 +779,10 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           }
 
           if (isWorld) {
-            currentBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '&copy; OpenStreetMap',
-              maxZoom: 19,
+            var worldSpec = worldTileSpec(requested);
+            currentBaseLayer = L.tileLayer(worldSpec.url, {
+              attribution: worldSpec.attribution,
+              maxZoom: worldSpec.maxZoom,
               crossOrigin: true
             });
             currentBaseLayer.on('tileerror', function () {
@@ -775,6 +799,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             currentBaseLayer.addTo(map);
             map.setView([46.6, 2.4], 6);
             window.OverwatchState.currentMapType = 'world';
+            window.OverwatchState.currentMapSlug = requested;
           } else if (isImage) {
             var icfg2 = buildImageConfig(overwatchMapsConfigs[requested]);
             if (!icfg2) {
@@ -826,7 +851,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
             }
             window.OverwatchState.currentMapType = 'arma';
           }
-          window.OverwatchState.currentMapSlug = isWorld ? 'world' : requested;
+          window.OverwatchState.currentMapSlug = requested;
 
           if (overwatchUnitsIntervalId) {
             clearInterval(overwatchUnitsIntervalId);
@@ -858,7 +883,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           setMapStatus(false);
           var badge = document.getElementById('overwatch-sync-badge');
           if (badge) {
-            badge.textContent = isWorld ? 'Vue du monde' : (isImage ? 'Carte image' : 'Carte de mission');
+            badge.textContent = isWorld ? worldTileSpec(requested).label : (isImage ? 'Carte image' : 'Carte de mission');
             badge.className = 'px-3 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wide border-emerald-500/50 bg-emerald-950 text-emerald-200';
             badge.removeAttribute('title');
           }

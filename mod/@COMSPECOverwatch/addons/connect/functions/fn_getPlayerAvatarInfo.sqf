@@ -1,13 +1,9 @@
 /*
-    Demande le profil site (nom, callsign, photo, unité, identifiant ATAK, activité) du joueur
+    Demande le profil site (nom, callsign, photo, unité, identifiant ATAK, activité, MID) du joueur
     courant à la plateforme (extension native, fonction GetPlayerAvatarInfo), identifié par son
     SteamUID + l'identifiant de communauté obtenu lors de la liaison de compte (RedeemGameLink).
 
-    Retourne : [displayName, callsign, avatarUrl, unitName, atakId, playtimeHours, lastSeenAt, errorCode]
-    displayName isEqualTo "" en cas d'échec — errorCode explique pourquoi ("not_linked" = SteamUID
-    non retrouvé côté compte, "no_tenant"/"unauthorized"/... = problème de liaison). playtimeHours/
-    lastSeenAt sont des chaînes vides si l'activité n'est pas trackée côté serveur — jamais une
-    valeur inventée.
+    Retourne : [displayName, callsign, avatarUrl, unitName, atakId, playtimeHours, lastSeenAt, militaryId, errorCode]
 */
 if (!hasInterface) exitWith { [] };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { [] };
@@ -24,12 +20,12 @@ if (_prefix != "OK") exitWith {
     private _err = if (count _parts >= 2) then { _parts select 1 } else { "empty" };
     if (_err isEqualTo "not_found") then { _err = "not_linked"; };
     diag_log format ["[COMSPEC] Échec GetPlayerAvatarInfo : %1", _raw];
-    ["", "", "", "", "", "", "", _err]
+    ["", "", "", "", "", "", "", "", _err]
 };
 
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { "" };
-private _cols = _payload splitString "\t";
-if (count _cols < 3) exitWith { ["", "", "", "", "", "", "", "invalid_response"] };
+private _cols = _payload splitString (toString [9]);
+if (count _cols < 3) exitWith { ["", "", "", "", "", "", "", "", "invalid_response"] };
 
 [
     _cols select 0,
@@ -39,5 +35,6 @@ if (count _cols < 3) exitWith { ["", "", "", "", "", "", "", "invalid_response"]
     if (count _cols >= 5) then { _cols select 4 } else { "" },
     if (count _cols >= 6) then { _cols select 5 } else { "" },
     if (count _cols >= 7) then { _cols select 6 } else { "" },
+    if (count _cols >= 8) then { _cols select 7 } else { "" },
     ""
 ]

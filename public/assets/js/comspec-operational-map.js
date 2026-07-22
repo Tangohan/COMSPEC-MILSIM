@@ -100,10 +100,25 @@
   }
 
   function mapKindFromSlug(slug, mapsConfigs) {
-    if (slug === 'world') return 'world';
+    if (slug === 'world' || slug === 'world_relief') return 'world';
     var c = mapsConfigs && mapsConfigs[slug];
     if (c && (c.type === 'image' || c.imageUrl)) return 'image';
     return 'arma';
+  }
+
+  function worldTileSpec(slug) {
+    if (slug === 'world_relief') {
+      return {
+        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        attribution: '© OpenStreetMap contributors, SRTM | Style: © OpenTopoMap (CC-BY-SA)',
+        maxZoom: 17
+      };
+    }
+    return {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    };
   }
 
   function affiliationColor(aff) {
@@ -497,8 +512,23 @@
     function renderMedicalPanel(units, chatAlerts) {
       var root = getEl(els.medicalList);
       if (!root || !medicalPanelEnabled) return;
-      var critical = (units || []).filter(function (u) { return isCriticalHealth(unitHealthRaw(u)); });
-      var alerts = Array.isArray(chatAlerts) ? chatAlerts : [];
+      var windowMs = (window.ATAKMedicalAlerts && window.ATAKMedicalAlerts.ACTIVE_WINDOW_MS)
+        ? window.ATAKMedicalAlerts.ACTIVE_WINDOW_MS
+        : (30 * 60 * 1000);
+      var now = Date.now();
+      function withinWindow(ts) {
+        if (!ts) return true;
+        var t = Date.parse(String(ts).replace(' ', 'T'));
+        if (isNaN(t)) return true;
+        return (now - t) < windowMs;
+      }
+      var critical = (units || []).filter(function (u) {
+        if (!isCriticalHealth(unitHealthRaw(u))) return false;
+        return withinWindow(u.updated_at || u.created_at);
+      });
+      var alerts = (Array.isArray(chatAlerts) ? chatAlerts : []).filter(function (a) {
+        return withinWindow(a && a.created_at);
+      });
       if (!critical.length && !alerts.length) {
         root.innerHTML = '<p class="text-sm" style="color:var(--tm-muted)">Aucune urgence détectée pour l’instant.</p>';
         return;
@@ -519,8 +549,10 @@
       if (alerts.length) {
         html += alerts.slice().reverse().slice(0, 12).map(function (a) {
           var sev = (a.severity === 'critical') ? 'is-critical' : 'is-attention';
+          var triageLabel = (a.triage && a.triage.status_label) ? String(a.triage.status_label) : 'À secourir';
           return '<div class="tacmap-assist-item ' + sev + '">' +
-            '<div class="tacmap-assist-item__title">' + escapeHtml(a.summary || a.label || 'Assistance médicale') + '</div>' +
+            '<div class="tacmap-assist-item__title">' + escapeHtml(a.summary || a.label || 'Assistance médicale') +
+            ' · ' + escapeHtml(triageLabel) + '</div>' +
             '<div class="tacmap-assist-item__meta">' + escapeHtml(a.created_at ? String(a.created_at).replace('T', ' ').substring(0, 19) : '') +
             (a.grid ? ' · Grille ' + escapeHtml(a.grid) : '') + '</div>' +
             '</div>';
@@ -978,9 +1010,10 @@
       setTimeout(invalidateSize, 250);
 
       if (isWorld) {
-        currentBaseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
+        var wSpec = worldTileSpec(slug);
+        currentBaseLayer = L.tileLayer(wSpec.url, { attribution: wSpec.attribution, maxZoom: wSpec.maxZoom });
         currentBaseLayer.addTo(map);
-        map.setView([0.5, 0.5], 4);
+        map.setView([46.6, 2.4], 6);
         state.currentMapType = 'world';
       } else if (isImage) {
         var ic = mapsConfigs[slug] ? buildImageConfig(mapsConfigs[slug]) : null;
@@ -1001,7 +1034,7 @@
         }
         state.currentMapType = 'arma';
       }
-      state.currentMapSlug = isWorld ? 'world' : slug;
+      state.currentMapSlug = slug;
       updateTheatreLabel();
       updateSyncBadge();
 
