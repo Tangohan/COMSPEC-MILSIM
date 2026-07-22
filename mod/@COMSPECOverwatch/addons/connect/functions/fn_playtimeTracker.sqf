@@ -30,7 +30,8 @@ while { true } do {
                 if (_secs >= 1) then {
                     _accum = _accum - _secs;
                     private _callsign = name player;
-                    "COMSPECExtension" callExtension ["ReportPlaytime", [_uid, str _secs, _callsign]];
+                    private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
+                    "COMSPECExtension" callExtension ["ReportPlaytime", [_uid, str _secs, _callsign, _tenantId]];
                 };
             };
         };

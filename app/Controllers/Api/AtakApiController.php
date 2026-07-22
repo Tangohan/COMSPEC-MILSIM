@@ -220,7 +220,11 @@ class AtakApiController
             $user = $this->userRepository->findById($userId, $tenantId);
             if (is_array($user)) {
                 $existing = SteamId::normalize((string) ($user['steam_id'] ?? ''));
-                if ($existing === null) {
+                // Toujours aligner sur le SteamUID détecté en jeu lors d'une liaison réussie —
+                // le code de liaison à usage unique est une preuve plus forte que tout ce qui a
+                // pu être saisi manuellement sur /account (source du "aucune remontée compte"
+                // quand l'ancienne valeur ne correspondait plus au joueur réel).
+                if ($existing !== $steamUid) {
                     $this->userRepository->update($userId, $tenantId, ['steam_id' => $steamUid]);
                 }
             }

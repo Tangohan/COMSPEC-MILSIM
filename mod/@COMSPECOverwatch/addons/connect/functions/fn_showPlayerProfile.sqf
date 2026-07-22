@@ -19,11 +19,26 @@ if (count _info < 3) exitWith {};
 _info params [
     "_displayName", "_callsign", "_avatarUrl",
     ["_unitName", ""], ["_atakId", ""],
-    ["_playtimeHours", ""], ["_lastSeenAt", ""]
+    ["_playtimeHours", ""], ["_lastSeenAt", ""],
+    ["_errorCode", ""]
 ];
 
 private _label = if (_callsign != "") then { _callsign } else { _displayName };
-if (_label == "") exitWith {};
+if (_label == "") exitWith {
+    // Rien à afficher, mais on distingue "jamais tenté" d'un vrai échec de remontée compte
+    // (SteamUID non retrouvé, communauté non résolue...) — visible dans le journal de liaison
+    // plutôt que de disparaître sans trace.
+    if (_errorCode != "") then {
+        private _reason = switch (_errorCode) do {
+            case "not_linked": { "compte non retrouvé pour ce SteamID (relier via Connexion en jeu)" };
+            case "no_tenant": { "communauté non identifiée (relier via Connexion en jeu)" };
+            case "unauthorized": { "clé Athena refusée" };
+            case "invalid_response": { "réponse Athena invalide" };
+            default { _errorCode };
+        };
+        [format ["[Athena] Profil compte indisponible : %1", _reason]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    };
+};
 
 private _localPath = "";
 if (_avatarUrl != "") then {

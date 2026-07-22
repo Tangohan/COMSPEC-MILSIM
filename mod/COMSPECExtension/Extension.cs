@@ -780,7 +780,9 @@ public static class Extension
             {
                 var steamUid = (args[0] ?? "").Trim();
                 if (!TryNormalizeSteamUid(steamUid, out var steamNorm)) return "ERR|invalid";
+                var tenantId = args.Length > 1 ? (args[1] ?? "") : "";
                 var url = _baseUrl + "/api/atak/player-profile?steam_uid=" + Uri.EscapeDataString(steamNorm);
+                if (!string.IsNullOrEmpty(tenantId)) url += "&tenant_id=" + Uri.EscapeDataString(tenantId);
                 var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
@@ -1095,7 +1097,9 @@ public static class Extension
                 if (secs < 1) return;
                 if (secs > 7200) secs = 7200;
                 var call = args.Length > 2 ? (args[2] ?? "") : "";
-                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"}}";
+                var tenantId = args.Length > 3 ? (args[3] ?? "") : "";
+                var tenantJson = string.IsNullOrEmpty(tenantId) ? "" : $",\"tenant_id\":\"{EscapeJson(tenantId)}\"";
+                var payload = $"{{\"player_uid\":\"{EscapeJson(uidNorm)}\",\"session_seconds\":{secs.ToString(System.Globalization.CultureInfo.InvariantCulture)},\"call_sign\":\"{EscapeJson(call)}\"{tenantJson}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/playtime", payload);
                 return;
             }
