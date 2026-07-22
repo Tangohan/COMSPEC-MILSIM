@@ -47,6 +47,18 @@ class AtakController
         }
         $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
 
+        $canAccessAdminAtakConfig = function_exists('can') && can('admin.access');
+        if (
+            $tenantId
+            && $this->atakConfigRepository->isMaintenanceEnabled($tenantId)
+            && !$canAccessAdminAtakConfig
+        ) {
+            return Response::view('atak-maintenance', [
+                'maintenanceMessage' => $this->atakConfigRepository->getMaintenanceMessage($tenantId),
+                'canAccessAdminAtakConfig' => false,
+            ]);
+        }
+
         $nodeUrl = atak_client_base_url($config);
 
         $visitorIp = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -192,9 +204,11 @@ class AtakController
             'currentUser' => $currentUser,
             'atakUserForJs' => $atakUserForJs,
             'atakUiPrefs' => $atakUiPrefs,
-            'canAccessAdminAtakConfig' => function_exists('can') && can('admin.access'),
+            'canAccessAdminAtakConfig' => $canAccessAdminAtakConfig,
             'atakModDownloadUrl' => $atakModDownloadUrl,
             'gameLinkCreateUrl' => url('atak/game-link'),
+            'atakMaintenanceActive' => $tenantId > 0 && $this->atakConfigRepository->isMaintenanceEnabled($tenantId),
+            'atakMaintenanceMessage' => $tenantId > 0 ? $this->atakConfigRepository->getMaintenanceMessage($tenantId) : '',
         ]);
     }
 

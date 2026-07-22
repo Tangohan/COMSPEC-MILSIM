@@ -2921,6 +2921,14 @@ try {
     echo '  [ATTENTION] tenant_atak_access_key : ' . $e->getMessage() . "\n";
 }
 
+$tenantAtakMaintenanceMigrate = require $root . '/bootstrap/tenant_atak_maintenance_migration.php';
+try {
+    echo "Migration tenant_atak_maintenance (mode maintenance ATAK / Tacmap)...\n";
+    $tenantAtakMaintenanceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_atak_maintenance : ' . $e->getMessage() . "\n";
+}
+
 $fireTeamsMigrate = require $root . '/bootstrap/fire_teams_migration.php';
 try {
     echo "Migration fire_teams (équipes de feu mission + organigramme)...\n";

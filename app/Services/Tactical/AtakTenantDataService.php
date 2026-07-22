@@ -1,0 +1,196 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Tactical;
+
+use App\Core\Database;
+use PDO;
+
+/**
+ * Export et purge des données opérationnelles ATAK / Tacmap d’une communauté.
+ * Ne touche pas à la configuration (clé d’accès, serveur, consignes) ni aux liens opérateurs.
+ */
+final class AtakTenantDataService
+{
+    /** Tables opérationnelles scopées par tenant_id. */
+    private const TENANT_TABLES = [
+        'atak_medical_alert_triage',
+        'atak_orders',
+        'atak_markers',
+        'atak_units',
+        'atak_chat_messages',
+        'atak_pings',
+        'atak_nine_line',
+        'atak_intel_photos',
+        'atak_designator_targets',
+        'atak_sigint_reports',
+        'atak_intel',
+        'atak_last_activity',
+        'atak_air_assets',
+        'atak_map_shapes',
+        'atak_laser_codes',
+        'atak_layers',
+    ];
+
+    public function __construct(
+        private ?PDO $pdo = null,
+        private ?AtakActivityLogService $activityLog = null,
+    ) {
+        $this->pdo ??= Database::getPdo();
+        $this->activityLog ??= new AtakActivityLogService();
+    }
+
+    /**
+     * Export complet (journal + tables) pour téléchargement admin.
+     *
+     * @return array<string, mixed>
+     */
+    public function exportAll(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+
+        $tables = [];
+        foreach (self::TENANT_TABLES as $table) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+            $stmt = $this->pdo->prepare('SELECT * FROM `' . $table . '` WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            $tables[$table] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        return [
+            'exported_at' => date('c'),
+            'tenant_id' => $tenantId,
+            'activity_logs' => $this->activityLog->exportAllForTenant($tenantId),
+            'tables' => $tables,
+        ];
+    }
+
+    /**
+     * Purge journal + données de mission. Conserve config et indicatifs liés.
+     *
+     * @return array{activity_files:int,tables:array<string,int>,photos_removed:int}
+     */
+    public function purgeAll(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return ['activity_files' => 0, 'tables' => [], 'photos_removed' => 0];
+        }
+
+        $photosRemoved = $this->purgeIntelPhotoFiles($tenantId);
+        $activityFiles = $this->activityLog->purgeAllForTenant($tenantId);
+        $tables = [];
+
+        foreach (self::TENANT_TABLES as $table) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+            $stmt = $this->pdo->prepare('DELETE FROM `' . $table . '` WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            $tables[$table] = $stmt->rowCount();
+        }
+
+        $this->purgeSessionCache($tenantId);
+
+        return [
+            'activity_files' => $activityFiles,
+            'tables' => $tables,
+            'photos_removed' => $photosRemoved,
+        ];
+    }
+
+    /** @return array<string, int> compteurs par table / fichier */
+    public function summarize(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $out = [
+            'activity_events' => $this->activityLog->countAllForTenant($tenantId),
+        ];
+        foreach (self::TENANT_TABLES as $table) {
+            if (!$this->tableExists($table)) {
+                continue;
+            }
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `' . $table . '` WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            $out[$table] = (int) $stmt->fetchColumn();
+        }
+
+        return $out;
+    }
+
+    private function purgeIntelPhotoFiles(int $tenantId): int
+    {
+        if (!$this->tableExists('atak_intel_photos')) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT path, filename FROM atak_intel_photos WHERE tenant_id = ?');
+        $stmt->execute([$tenantId]);
+        $removed = 0;
+        $uploadRoot = base_path('public/uploads');
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $rel = trim((string) ($row['path'] ?? ''));
+            $candidates = [];
+            if ($rel !== '') {
+                $candidates[] = $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+            }
+            $fn = trim((string) ($row['filename'] ?? ''));
+            if ($fn !== '') {
+                $candidates[] = $uploadRoot . '/intel/' . basename($fn);
+            }
+            foreach ($candidates as $path) {
+                if (is_file($path) && @unlink($path)) {
+                    $removed++;
+                    break;
+                }
+            }
+        }
+
+        return $removed;
+    }
+
+    private function purgeSessionCache(int $tenantId): void
+    {
+        $dir = base_path('storage/cache/atak_sessions');
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (glob($dir . '/*.json') ?: [] as $file) {
+            $raw = @file_get_contents($file);
+            if (!is_string($raw) || $raw === '') {
+                continue;
+            }
+            $data = json_decode($raw, true);
+            if (!is_array($data)) {
+                continue;
+            }
+            if ((int) ($data['tenant_id'] ?? 0) === $tenantId) {
+                @unlink($file);
+            }
+        }
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table]);
+            $cache[$table] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$table] = false;
+        }
+
+        return $cache[$table];
+    }
+}

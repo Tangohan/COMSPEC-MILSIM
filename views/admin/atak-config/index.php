@@ -14,6 +14,18 @@ $hasTenantAccessKey = !empty($hasTenantAccessKey);
 $newAccessKeyPlain = is_string($newAccessKeyPlain ?? null) ? $newAccessKeyPlain : null;
 $authEvents = is_array($authEvents ?? null) ? $authEvents : [];
 $portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
+$dataSummary = is_array($dataSummary ?? null) ? $dataSummary : [];
+$maintenanceEnabled = !empty($maintenanceEnabled);
+$maintenanceMessage = (string) ($maintenanceMessage ?? '');
+$purgeConfirmPhrase = (string) ($purgeConfirmPhrase ?? 'EFFACER');
+$activityEventsCount = (int) ($dataSummary['activity_events'] ?? 0);
+$missionRowsCount = 0;
+foreach ($dataSummary as $k => $v) {
+    if ($k === 'activity_events') {
+        continue;
+    }
+    $missionRowsCount += (int) $v;
+}
 ?>
 <div class="max-w-6xl mx-auto px-6 py-10">
     <header class="mb-8">
@@ -29,6 +41,15 @@ $portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
     <?php endif; ?>
     <?php if ($error): ?>
         <p class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"><?= htmlspecialchars($error) ?></p>
+    <?php endif; ?>
+
+    <?php if ($maintenanceEnabled): ?>
+        <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
+            <p class="text-sm font-bold text-amber-950">Mode maintenance actif</p>
+            <p class="text-xs text-amber-900 mt-1 leading-relaxed">
+                La carte tactique et la liaison jeu sont indisponibles pour les opérateurs. Vous pouvez toujours gérer cette page.
+            </p>
+        </div>
     <?php endif; ?>
 
     <?php if ($newAccessKeyPlain): ?>
@@ -54,6 +75,59 @@ $portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
 
     <div class="grid lg:grid-cols-12 gap-8 items-start">
         <div class="lg:col-span-8 space-y-6">
+            <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                <h2 class="text-sm font-bold text-slate-800 mb-3">Mode maintenance</h2>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                    Pendant la maintenance, les opérateurs ne peuvent plus ouvrir la carte tactique ni synchroniser le jeu. La configuration reste accessible aux administrateurs.
+                </p>
+                <form action="<?= $baseUrl ?>/admin/atak-config/maintenance" method="post" class="space-y-4">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="hidden" name="maintenance_enabled" value="0" />
+                        <input type="checkbox" name="maintenance_enabled" value="1" class="mt-1 rounded border-slate-300" <?= $maintenanceEnabled ? 'checked' : '' ?> />
+                        <span>
+                            <span class="block text-sm font-medium text-slate-800">Mettre la carte tactique en maintenance</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Les joueurs verront un message d’indisponibilité à la place de la carte.</span>
+                        </span>
+                    </label>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Message affiché aux opérateurs (facultatif)</label>
+                        <textarea name="maintenance_message" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex. : Intervention prévue jusqu’à 21h00 Zulu. Reprenez contact avec l’état-major si besoin."><?= htmlspecialchars($maintenanceMessage) ?></textarea>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer le mode maintenance</button>
+                </form>
+            </div>
+
+            <div class="border border-red-200 rounded-xl p-5 bg-red-50/40 shadow-sm">
+                <h2 class="text-sm font-bold text-red-950 mb-3">Journal et données de mission</h2>
+                <p class="text-xs text-red-900/80 mb-3 leading-relaxed">
+                    Vous pouvez exporter une copie complète (journal d’activité, unités, messages, ordres, pings, photos, tracés…) puis, si besoin, tout effacer pour repartir à zéro.
+                    La configuration (clé d’accès, serveur, consignes) et les indicatifs liés aux comptes sont conservés.
+                </p>
+                <p class="text-xs text-slate-700 mb-4">
+                    État actuel&nbsp;:
+                    <span class="font-semibold"><?= $activityEventsCount ?></span> entrée(s) de journal,
+                    <span class="font-semibold"><?= $missionRowsCount ?></span> enregistrement(s) de mission.
+                </p>
+                <div class="flex flex-wrap gap-2 mb-5">
+                    <a href="<?= $baseUrl ?>/admin/atak-config/export" class="inline-flex px-4 py-2 bg-white border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
+                        Exporter tout (fichier)
+                    </a>
+                </div>
+                <form action="<?= $baseUrl ?>/admin/atak-config/purge" method="post" class="rounded-lg border border-red-200 bg-white p-4 space-y-3" onsubmit="return confirm('Confirmer l’effacement définitif du journal et des données de mission de cette communauté&nbsp;? Cette action est irréversible.');">
+                    <?= \App\Core\Csrf::field() ?>
+                    <p class="text-sm font-medium text-slate-800">Effacer définitivement</p>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Pour confirmer, saisissez <strong class="font-mono tracking-wide"><?= htmlspecialchars($purgeConfirmPhrase) ?></strong> ci-dessous.
+                        Nous recommandons d’exporter avant.
+                    </p>
+                    <input type="text" name="confirm_phrase" autocomplete="off" class="w-full border border-red-200 rounded-lg px-3 py-2.5 text-sm font-mono" placeholder="<?= htmlspecialchars($purgeConfirmPhrase) ?>" />
+                    <button type="submit" class="px-4 py-2 bg-red-800 text-white text-sm font-semibold rounded-lg hover:bg-red-700">
+                        Tout effacer
+                    </button>
+                </form>
+            </div>
+
             <div class="border border-emerald-200 rounded-xl p-5 bg-emerald-50/40 shadow-sm">
                 <h2 class="text-sm font-bold text-emerald-950 mb-4">Accès mod Overwatch (Arma&nbsp;3)</h2>
                 <p class="text-xs text-emerald-900/80 mb-4 leading-relaxed">

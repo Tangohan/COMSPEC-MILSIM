@@ -71,6 +71,84 @@ class TenantAtakConfigRepository
         }
     }
 
+    public function isMaintenanceEnabled(int $tenantId): bool
+    {
+        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT maintenance_enabled FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId]);
+        $val = $stmt->fetchColumn();
+
+        return (int) $val === 1;
+    }
+
+    public function getMaintenanceMessage(int $tenantId): string
+    {
+        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
+            return '';
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT maintenance_message FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId]);
+        $msg = $stmt->fetchColumn();
+
+        return is_string($msg) ? trim($msg) : '';
+    }
+
+    public function setMaintenance(int $tenantId, bool $enabled, ?string $message = null): void
+    {
+        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
+            return;
+        }
+        $msg = $message !== null ? trim($message) : null;
+        if ($msg === '') {
+            $msg = null;
+        }
+
+        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt->execute([$tenantId]);
+        $exists = (bool) $stmt->fetchColumn();
+
+        if ($exists) {
+            $upd = $this->pdo->prepare(
+                'UPDATE tenant_atak_config
+                 SET maintenance_enabled = ?, maintenance_message = ?, updated_at = NOW()
+                 WHERE tenant_id = ?'
+            );
+            $upd->execute([$enabled ? 1 : 0, $msg, $tenantId]);
+        } else {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO tenant_atak_config
+                    (tenant_id, maintenance_enabled, maintenance_message, default_map_slug, created_at, updated_at)
+                 VALUES (?, ?, ?, \'altis\', NOW(), NOW())'
+            );
+            $ins->execute([$tenantId, $enabled ? 1 : 0, $msg]);
+        }
+    }
+
+    private function hasMaintenanceColumns(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'maintenance_enabled' LIMIT 1"
+            );
+            $cached = (bool) $st?->fetchColumn();
+        } catch (\Throwable) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
+
     /**
      * Génère (ou régénère) la clé d’accès Overwatch pour une communauté.
      * La clé en clair n’est renvoyée qu’une fois ; elle est stockée pour le redeem / l’auth.

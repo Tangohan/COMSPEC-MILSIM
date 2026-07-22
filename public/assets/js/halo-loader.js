@@ -20,7 +20,7 @@
   var HALF = 8;
   var SPACING = 14;
   var MAX_R = 118;
-  var SEEN_KEY = 'athena-halo-loader-tacmap';
+  var SEEN_KEY = (root.getAttribute('data-halo-seen-key') || 'athena-halo-loader-tacmap').trim() || 'athena-halo-loader-tacmap';
 
   /** @type {{el: SVGLineElement, ang: number, dist: number}[]} */
   var segs = [];

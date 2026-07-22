@@ -11,16 +11,21 @@ use App\Core\Csrf;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\Tactical\AtakTenantDataService;
 use App\Support\ComspecApiKeyAuth;
 
 class AdminAtakConfigController
 {
+    public const PURGE_CONFIRM_PHRASE = 'EFFACER';
+
     public function __construct(
         private TenantAtakConfigRepository $atakConfigRepository,
         private AtakMapRepository $atakMapRepository,
         private ?AtakActivityLogService $activityLog = null,
+        private ?AtakTenantDataService $tenantData = null,
     ) {
         $this->activityLog ??= new AtakActivityLogService();
+        $this->tenantData ??= new AtakTenantDataService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -38,6 +43,9 @@ class AdminAtakConfigController
         $hasTenantAccessKey = is_array($config) && trim((string) ($config['access_key'] ?? '')) !== '';
         $newAccessKey = Session::getFlash('new_atak_access_key');
         $authEvents = $this->activityLog->listRecent($tenantId, AtakActivityLogService::AUTH_MAP_ID, 30);
+        $dataSummary = $this->tenantData->summarize($tenantId);
+        $maintenanceEnabled = is_array($config) && (int) ($config['maintenance_enabled'] ?? 0) === 1;
+        $maintenanceMessage = is_array($config) ? trim((string) ($config['maintenance_message'] ?? '')) : '';
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -52,6 +60,10 @@ class AdminAtakConfigController
             'newAccessKeyPlain' => is_string($newAccessKey) ? $newAccessKey : null,
             'authEvents' => $authEvents,
             'portalBaseUrl' => rtrim(url(''), '/'),
+            'dataSummary' => $dataSummary,
+            'maintenanceEnabled' => $maintenanceEnabled,
+            'maintenanceMessage' => $maintenanceMessage,
+            'purgeConfirmPhrase' => self::PURGE_CONFIRM_PHRASE,
         ]);
     }
 
@@ -108,6 +120,113 @@ class AdminAtakConfigController
             'Clé d’accès régénérée par un administrateur',
             ['reason' => 'key_regenerated', 'method' => 'admin'],
             null
+        );
+
+        return Response::redirect(url('admin/atak-config'));
+    }
+
+    /** Active ou désactive le mode maintenance ATAK / Tacmap. */
+    public function setMaintenance(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $enabled = (string) $request->input('maintenance_enabled', '0') === '1';
+        $message = trim((string) $request->input('maintenance_message', ''));
+        $this->atakConfigRepository->setMaintenance((int) $tenantId, $enabled, $message !== '' ? $message : null);
+
+        Session::flash(
+            'success',
+            $enabled
+                ? 'Mode maintenance activé. La carte tactique et la liaison jeu sont temporairement indisponibles pour les opérateurs.'
+                : 'Mode maintenance désactivé. La carte tactique est à nouveau accessible.'
+        );
+
+        return Response::redirect(url('admin/atak-config'));
+    }
+
+    /** Télécharge un export JSON de tout le journal et des données de mission. */
+    public function exportData(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) $tenantId;
+        $payload = $this->tenantData->exportAll($tenantId);
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if ($json === false) {
+            Session::flash('error', 'Impossible de préparer l’export. Réessayez.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $filename = 'atak-export-communaute-' . $tenantId . '-' . date('Ymd-His') . '.json';
+        $response = new Response();
+        $response->setStatusCode(200)
+            ->header('Content-Type', 'application/json; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Cache-Control', 'no-store')
+            ->setBody($json);
+
+        return $response;
+    }
+
+    /** Efface définitivement journal + données de mission de la communauté. */
+    public function purgeData(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $confirm = trim((string) $request->input('confirm_phrase', ''));
+        if (strcasecmp($confirm, self::PURGE_CONFIRM_PHRASE) !== 0) {
+            Session::flash(
+                'error',
+                'Pour confirmer l’effacement, saisissez exactement le mot demandé (en majuscules).'
+            );
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $tenantId = (int) $tenantId;
+        $result = $this->tenantData->purgeAll($tenantId);
+        $tableRows = array_sum($result['tables']);
+        $this->activityLog?->recordAuthAttempt(
+            $tenantId,
+            true,
+            'Journal et données de mission effacés par un administrateur',
+            [
+                'reason' => 'admin_purge',
+                'method' => 'admin',
+                'activity_files' => $result['activity_files'],
+                'table_rows' => $tableRows,
+                'photos_removed' => $result['photos_removed'],
+            ],
+            null
+        );
+
+        Session::flash(
+            'success',
+            sprintf(
+                'Effacement terminé : %d fichier(s) de journal, %d enregistrement(s) de mission, %d photo(s) retirée(s). La configuration et les indicatifs liés sont conservés.',
+                $result['activity_files'],
+                $tableRows,
+                $result['photos_removed']
+            )
         );
 
         return Response::redirect(url('admin/atak-config'));
