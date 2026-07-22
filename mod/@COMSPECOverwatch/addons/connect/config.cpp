@@ -89,6 +89,9 @@ class CfgFunctions {
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
+            class deviceToggleView {};
+            class getUnitsList {};
+            class showDeviceRoster {};
             class updateLinkDiary {};
             class extensionCallback {};
             class hasTerminal {};
