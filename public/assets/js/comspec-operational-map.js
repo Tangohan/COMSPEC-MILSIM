@@ -1,4 +1,4 @@
-/* COMSPEC — moteur carte opérationnelle partagé (Overwatch + legacy initTacmap) */
+/* COMSPEC — moteur carte opérationnelle partagé (Overwatch + TACMAP / initTacmap) */
 (function (global) {
   'use strict';
 

@@ -29,7 +29,7 @@ if (!isNull _logCtrl) then {
                 "[Athena] Aucun événement. Touche K → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
             };
         };
-        _logCtrl ctrlSetText (_hint + "\n");
+        _logCtrl ctrlSetText (_hint + (toString [10]));
     } else {
         _logCtrl ctrlSetText _log;
     };
@@ -37,7 +37,7 @@ if (!isNull _logCtrl) then {
 
 private _console = _display displayCtrl 1401;
 if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
-    _console ctrlSetText "Les messages envoyés apparaissent ici.\n";
+    _console ctrlSetText ("Les messages envoyés apparaissent ici." + (toString [10]));
 };
 
 // Reflète l'état masqué/affiché sauvegardé (profileNamespace) sur les boutons de filtre,

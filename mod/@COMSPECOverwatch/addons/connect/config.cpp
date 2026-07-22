@@ -74,6 +74,8 @@ class CfgFunctions {
             class accountLinkOnLoad {};
             class accountLinkSubmit {};
             class extResult {};
+            class extensionStatus {};
+            class extensionLoadHint {};
             class getModVersion {};
             class refreshLinkStatus {};
             class updateStatusBadges {};
@@ -85,6 +87,10 @@ class CfgFunctions {
             class getPlayerAvatarInfo {};
             class showPlayerProfile {};
             class showDeviceView {};
+            class updateLinkDiary {};
+            class extensionCallback {};
+            class hasTerminal {};
+            class syncMapMarker {};
         };
     };
 };

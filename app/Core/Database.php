@@ -76,6 +76,8 @@ final class Database
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
+            // Horloge SQL stable (évite expires_at / NOW() incohérents selon le serveur hôte).
+            self::$pdo->exec("SET time_zone = '+00:00'");
         } catch (PDOException $e) {
             throw new RuntimeException('Database connection failed: ' . $e->getMessage(), 0, $e);
         }

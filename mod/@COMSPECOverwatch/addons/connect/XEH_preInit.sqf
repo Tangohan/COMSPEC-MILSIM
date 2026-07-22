@@ -58,6 +58,24 @@
     "COMSPEC Overwatch", [2, 60, 5, 0]
 ] call CBA_fnc_addSetting;
 
+[
+    "comspec_overwatch_require_terminal", "CHECKBOX",
+    ["Exiger un terminal", "Ne remonter la position que si le joueur a GPS/carte/Android/cTab ou un rôle de commandement"],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_vehicle_mode", "CHECKBOX",
+    ["Détail véhicule", "Envoyer orientation 3D et vitesse quand le joueur est en véhicule"],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_sync_map_markers", "CHECKBOX",
+    ["Synchroniser les marqueurs carte", "Envoie vers Athena les marqueurs créés / modifiés / supprimés en jeu"],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
 // IDs v2 : l’ancien comspec_open_chat était enregistré sur K seul (sans Ctrl).
 // CBA conserve les binds du profil joueur — sans nouvel ID, Ctrl+K ne s’applique jamais.
 [

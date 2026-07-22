@@ -4,6 +4,9 @@ if (isNull _unit || !alive _unit) exitWith {};
 // Alertes KO / rythme cardiaque à zéro (chaque tick, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 
+// Niveau appareil (inspiré cTab deviceLevel) : pas de push position sans terminal
+if (!([_unit] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {};
+
 private _pos = getPos _unit;
 private _callSign = name _unit;
 private _role = (roleDescription _unit) splitString ":" joinString " - ";
@@ -13,8 +16,10 @@ private _medicalState = [_unit] call comspec_overwatch_connect_fnc_getMedicalSta
 private _medicalParts = _medicalState splitString "|";
 private _health = if (count _medicalParts >= 1) then { _medicalParts select 0 } else { "stable" };
 
-private _fuel = if (vehicle _unit != _unit) then { str (round ((fuel vehicle _unit) * 100)) } else { "" };
-private _ammo = if (vehicle _unit == _unit) then { str (count (magazines _unit)) + " mags" } else { "Vehicle" };
+private _veh = vehicle _unit;
+private _inVeh = _veh != _unit;
+private _fuel = if (_inVeh) then { str (round ((fuel _veh) * 100)) } else { "" };
+private _ammo = if (!_inVeh) then { str (count (magazines _unit)) + " mags" } else { "Vehicle" };
 
 private _radioState = [_unit] call comspec_overwatch_connect_fnc_getRadioState;
 private _radioFreq = "N/A";
@@ -60,9 +65,31 @@ private _reportedPos = if (_stealthMode == "ON") then {
     _pos
 };
 
+// JSON véhicule / cinématique (inspiré cTab UpdatePosition)
+private _vehJson = format [
+    "{""speed"":%1,""in_vehicle"":%2",
+    (round (_speed * 10)) / 10,
+    if (_inVeh) then { "true" } else { "false" }
+];
+if (_inVeh && {missionNamespace getVariable ["comspec_overwatch_vehicle_mode", true]}) then {
+    private _vd = vectorDir _veh;
+    private _vu = vectorUp _veh;
+    private _vv = velocity _veh;
+    private _vp = getPosASL _veh;
+    _vehJson = _vehJson + format [
+        ",""vehicle"":""%1"",""vector_dir"":[%2,%3,%4],""vector_up"":[%5,%6,%7],""velocity"":[%8,%9,%10],""pos_asl"":[%11,%12,%13]",
+        typeOf _veh,
+        _vd select 0, _vd select 1, _vd select 2,
+        _vu select 0, _vu select 1, _vu select 2,
+        _vv select 0, _vv select 1, _vv select 2,
+        _vp select 0, _vp select 1, _vp select 2
+    ];
+};
+_vehJson = _vehJson + "}";
+
 "COMSPECExtension" callExtension ["UpdatePosition", [
     str (_reportedPos select 0), str (_reportedPos select 1), str _heading,
-    _callSign, _role, _health, _fuel, _ammo, _radioFreq
+    _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson
 ]];
 
 private _trail = missionNamespace getVariable ["COMSPEC_PositionTrail", []];
@@ -97,6 +124,4 @@ missionNamespace setVariable ["COMSPEC_lastRadio", _radioState, true];
 missionNamespace setVariable ["COMSPEC_lastMedical", _medicalState, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
-// Ne pas forcer « Lié à Athena » ici : UpdatePosition est fire-and-forget côté extension.
-// Seuls Connect / refreshLinkStatus (whoami) confirment vraiment la liaison.
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;

@@ -302,6 +302,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           <button type="button" id="overwatch-access-request-open" class="rounded-xl border border-amber-400/70 bg-amber-500 px-3 py-2 text-xs font-bold uppercase tracking-wide text-amber-950 hover:bg-amber-400">Demander l’accès</button>
           <button type="button" id="overwatch-toggle-positions" class="rounded-xl border border-slate-500 bg-slate-800 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-100 hover:bg-slate-700" title="Ouvrir le tableau des positions">Positions</button>
           <nav class="overwatch-header-nav flex flex-wrap gap-2 text-sm font-semibold">
+            <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">TACMAP</a>
             <a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">ATAK</a>
             <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-xl border px-3 py-2">Tableau de bord</a>
           </nav>

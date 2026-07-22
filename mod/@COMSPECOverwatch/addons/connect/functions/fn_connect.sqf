@@ -45,6 +45,21 @@ missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 [format ["[Athena] Connexion vers %1…", [_url] call comspec_overwatch_connect_fnc_portalLabel]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 _key = missionNamespace getVariable ["comspec_overwatch_api_key", ""];
+if (_key isEqualTo "") then {
+    ["[Athena] Clé API absente — liez votre compte : K → Compte Athena (saisir un code) avec un code généré sur le site."] call comspec_overwatch_connect_fnc_appendLinkLog;
+};
+
+// Vérifie que l’extension répond. Réponse vide ≠ stub 32 Ko : souvent BattlEye (voir RPT).
+private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
+_extStatus params ["_extOk", "_extCode", "_ping"];
+if (!_extOk) exitWith {
+    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Extension non chargée", false];
+    [["connect", true] call comspec_overwatch_connect_fnc_extensionLoadHint] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [format ["[Athena] Ping extension : '%1' (code %2, err Arma %3)", _ping, _extCode, missionNamespace getVariable ["COMSPEC_LastExtError", 0]]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+};
+
 private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
@@ -60,7 +75,10 @@ if (_prefix == "OK") then {
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
         missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
-        [format ["[Athena] Liaison établie. Adresse client : %1", _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
+        [format ["[Athena] Connecté à %1 — adresse client : %2", _label, _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        systemChat format ["[Athena] Connecté à %1", _label];
+        [] call comspec_overwatch_connect_fnc_updateLinkDiary;
     } else {
         missionNamespace setVariable ["COMSPEC_userIp", "—", true];
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
@@ -71,10 +89,14 @@ if (_prefix == "OK") then {
 } else {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Échec de liaison", false];
-    if (_prefix == "ERR") then {
-        [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    if (_result isEqualTo "") then {
+        ["[Athena] Connect a renvoyé vide alors que Ping était OK — réessayez ; vérifiez le réseau / le journal Arma."] call comspec_overwatch_connect_fnc_appendLinkLog;
     } else {
-        [format ["[Athena] Réponse extension inattendue : %1", _result]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        if (_prefix == "ERR") then {
+            [format ["[Athena] Échec : %1", _payload]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        } else {
+            [format ["[Athena] Réponse extension inattendue : %1", _result]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        };
     };
 };
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;

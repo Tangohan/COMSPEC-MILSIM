@@ -122,6 +122,14 @@ if ($atakMapConfig) {
       <?php if ($currentUser): ?>
       <button type="button" class="atak-btn-game-link" id="atak-btn-game-link" title="Générer un code pour lier Arma à votre compte">Connexion en jeu</button>
       <?php endif; ?>
+      <button type="button" class="atak-btn-account atak-btn-account--config" id="atak-btn-config" title="Configuration pour le jeu">
+        Configuration
+        <span class="atak-pill <?= !empty($nodeAtakUrl) ? 'atak-pill--ok' : 'atak-pill--warn' ?>" id="atak-config-summary-pill"><?= !empty($nodeAtakUrl) ? 'Prête' : 'À compléter' ?></span>
+      </button>
+      <button type="button" class="atak-btn-account atak-btn-account--config" id="atak-btn-health" title="État de la liaison">
+        État
+        <span class="atak-pill atak-pill--muted" id="atak-health-summary-pill">Non vérifié</span>
+      </button>
       <button type="button" class="atak-btn-account" id="atak-btn-account" title="Compte et paramètres">Compte</button>
     </div>
   </header>
@@ -150,7 +158,7 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Connexion en jeu</h3>
           <span class="atak-pill atak-pill--ok">15 min · usage unique</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 15 minutes et ne peut être utilisé qu’une fois.</p>
+        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
@@ -193,6 +201,124 @@ if ($atakMapConfig) {
       <p>Connectez-vous pour générer un code de liaison et voir vos données de compte.</p>
       <p><a href="<?= url('login') ?>">Se connecter</a></p>
       <?php endif; ?>
+    </div>
+  </aside>
+
+  <aside class="atak-account-panel" id="atak-config-panel" aria-labelledby="atak-config-panel-title">
+    <div class="atak-account-panel-head">
+      <h2 id="atak-config-panel-title" class="atak-account-panel-title">Configuration pour le jeu</h2>
+      <button type="button" class="atak-account-panel-close" id="atak-config-panel-close" aria-label="Fermer">×</button>
+    </div>
+    <div class="atak-account-panel-body">
+      <?php if (!empty($nodeAtakUrl)): ?>
+      <details class="atak-details" open>
+        <summary>Adresse de liaison</summary>
+        <div class="atak-details-body">
+          <p class="atak-game-config-hint">À saisir dans le mod : Paramètres → Addons → COMSPEC Overwatch</p>
+          <div class="atak-game-config-url-wrap">
+            <pre class="atak-game-config-url" id="atak-node-url-copy"><?= htmlspecialchars($nodeAtakUrl) ?></pre>
+            <button type="button" class="atak-game-config-copy" id="atak-copy-node-url" title="Copier l’adresse">Copier</button>
+          </div>
+        </div>
+      </details>
+      <?php else: ?>
+      <p class="atak-game-config-warn" id="atak-no-node-url">Aucune adresse de serveur de liaison configurée. Complétez la <a href="<?= url('admin/atak-config') ?>">configuration ATAK</a> dans l’administration pour activer la liaison.</p>
+      <?php endif; ?>
+      <details class="atak-details">
+        <summary>Votre adresse réseau (visiteur)</summary>
+        <div class="atak-details-body">
+          <p class="atak-game-config-value" id="atak-visitor-ip"><?= htmlspecialchars($visitorIp) ?: '—' ?></p>
+        </div>
+      </details>
+      <?php if (!empty($atakModDownloadUrl)): ?>
+      <details class="atak-details">
+        <summary>Mod dédié</summary>
+        <div class="atak-details-body">
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download" download>Télécharger le mod COMSPEC Overwatch</a></p>
+        </div>
+      </details>
+      <?php endif; ?>
+      <?php if (!empty($atakConfig['arma_server_host'])): ?>
+      <details class="atak-details">
+        <summary>Serveur Arma</summary>
+        <div class="atak-details-body">
+          <p class="atak-game-config-value"><?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
+        </div>
+      </details>
+      <?php endif; ?>
+      <?php if (!empty($atakConfig['arma_mod_credentials'])): ?>
+      <details class="atak-details">
+        <summary>Identifiants du mod</summary>
+        <div class="atak-details-body">
+          <pre class="atak-game-config-pre"><?= htmlspecialchars($atakConfig['arma_mod_credentials']) ?></pre>
+        </div>
+      </details>
+      <?php endif; ?>
+      <?php if (!empty($atakConfig['instructions'])): ?>
+      <details class="atak-details">
+        <summary>Instructions</summary>
+        <div class="atak-details-body">
+          <p class="atak-game-config-value atak-game-config-instructions"><?= nl2br(htmlspecialchars($atakConfig['instructions'])) ?></p>
+        </div>
+      </details>
+      <?php endif; ?>
+      <div class="atak-game-config-footer">
+        <a href="<?= url('atak/setup') ?>" class="atak-game-config-link">Assistant Mod Arma (installation, config, vérification)</a>
+        <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Guide complet — Tuto mod Arma</a>
+      </div>
+    </div>
+  </aside>
+
+  <aside class="atak-account-panel" id="atak-health-panel" aria-labelledby="atak-health-panel-title">
+    <div class="atak-account-panel-head">
+      <h2 id="atak-health-panel-title" class="atak-account-panel-title">État de la liaison</h2>
+      <button type="button" class="atak-account-panel-close" id="atak-health-panel-close" aria-label="Fermer">×</button>
+    </div>
+    <div class="atak-account-panel-body">
+      <details class="atak-details" open>
+        <summary>Liaison &amp; données</summary>
+        <div class="atak-details-body atak-health-grid">
+          <div class="atak-health-card">
+            <span class="atak-health-label">Liaison carte</span>
+            <span class="atak-health-cell" id="health-node-url">—</span>
+            <span class="atak-pill" id="health-node-status">—</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Mises à jour</span>
+            <span class="atak-health-cell" id="health-socket-state">—</span>
+            <span class="atak-health-cell atak-health-muted" id="health-socket-url">—</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Données</span>
+            <span class="atak-pill" id="health-db">—</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Mod en jeu</span>
+            <span class="atak-health-cell" id="health-arma">—</span>
+          </div>
+        </div>
+      </details>
+      <details class="atak-details">
+        <summary>Contacts &amp; échanges</summary>
+        <div class="atak-details-body atak-health-grid">
+          <div class="atak-health-card">
+            <span class="atak-health-label">Contacts actifs</span>
+            <span class="atak-health-cell" id="health-units-count">—</span>
+            <span class="atak-health-cell atak-health-muted" id="health-active-callsigns">—</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Tchat</span>
+            <span class="atak-health-cell" id="health-chat-error">Aucun incident</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Pings</span>
+            <span class="atak-health-cell" id="health-pings-error">Aucun incident</span>
+          </div>
+        </div>
+      </details>
+      <div class="atak-game-config-footer">
+        <button type="button" class="atak-health-refresh" id="atak-health-refresh">Actualiser</button>
+      </div>
     </div>
   </aside>
 
@@ -305,6 +431,26 @@ if ($atakMapConfig) {
 
     <div class="atak-map-wrap">
       <div id="atak-map"></div>
+
+      <div class="atak-drawer" id="atak-effectifs-drawer">
+        <button type="button" class="atak-drawer__toggle" id="atak-effectifs-drawer-toggle" aria-expanded="false" aria-controls="atak-effectifs-drawer-body">Tableau des effectifs ▴</button>
+        <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Indicatif</th>
+                <th>Rôle</th>
+                <th>Liaison</th>
+                <th>Cap</th>
+                <th>Grille</th>
+              </tr>
+            </thead>
+            <tbody id="atak-units-table-body">
+              <tr><td colspan="5" class="atak-drawer-empty">Aucun contact.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <aside class="atak-panel-right" id="atak-panel-right">
@@ -343,116 +489,6 @@ if ($atakMapConfig) {
       </div>
     </aside>
   </div>
-
-  <section class="atak-game-config" id="atak-game-config" aria-labelledby="atak-game-config-title">
-    <button type="button" id="atak-game-config-toggle" class="atak-game-config-toggle" aria-expanded="false" aria-controls="atak-game-config-body">
-      <span class="atak-game-config-toggle-icon" aria-hidden="true">▼</span>
-      <span class="atak-accordion-title-wrap">
-        <span id="atak-game-config-title">Configuration pour le jeu</span>
-        <span class="atak-accordion-subtitle">Adresse de liaison, serveur Arma et guides d’installation</span>
-      </span>
-      <span class="atak-pill <?= !empty($nodeAtakUrl) ? 'atak-pill--ok' : 'atak-pill--warn' ?>" id="atak-config-summary-pill"><?= !empty($nodeAtakUrl) ? 'Prête' : 'À compléter' ?></span>
-    </button>
-    <div id="atak-game-config-body" class="atak-game-config-body" hidden>
-      <div class="atak-game-config-inner">
-        <?php if (!empty($nodeAtakUrl)): ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Adresse du serveur de liaison</p>
-          <p class="atak-game-config-hint">À saisir dans le mod : Paramètres → Addons → COMSPEC Overwatch</p>
-          <div class="atak-game-config-url-wrap">
-            <pre class="atak-game-config-url" id="atak-node-url-copy"><?= htmlspecialchars($nodeAtakUrl) ?></pre>
-            <button type="button" class="atak-game-config-copy" id="atak-copy-node-url" title="Copier l’adresse">Copier</button>
-          </div>
-        </div>
-        <?php else: ?>
-          <p class="atak-game-config-warn" id="atak-no-node-url">Aucune adresse de serveur de liaison configurée. Complétez la <a href="<?= url('admin/atak-config') ?>">configuration ATAK</a> dans l’administration pour activer la liaison.</p>
-        <?php endif; ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Votre adresse réseau (visiteur)</p>
-          <p class="atak-game-config-value" id="atak-visitor-ip"><?= htmlspecialchars($visitorIp) ?: '—' ?></p>
-        </div>
-        <?php if (!empty($atakModDownloadUrl)): ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Mod dédié</p>
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download" download>Télécharger le mod COMSPEC Overwatch</a></p>
-        </div>
-        <?php endif; ?>
-        <?php if (!empty($atakConfig['arma_server_host'])): ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Serveur Arma</p>
-          <p class="atak-game-config-value"><?= htmlspecialchars($atakConfig['arma_server_host']) ?><?= !empty($atakConfig['arma_server_port']) ? ':' . (int)$atakConfig['arma_server_port'] : '' ?></p>
-        </div>
-        <?php endif; ?>
-        <?php if (!empty($atakConfig['arma_mod_credentials'])): ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Identifiants du mod</p>
-          <pre class="atak-game-config-pre"><?= htmlspecialchars($atakConfig['arma_mod_credentials']) ?></pre>
-        </div>
-        <?php endif; ?>
-        <?php if (!empty($atakConfig['instructions'])): ?>
-        <div class="atak-game-config-block">
-          <p class="atak-game-config-label">Instructions</p>
-          <p class="atak-game-config-value atak-game-config-instructions"><?= nl2br(htmlspecialchars($atakConfig['instructions'])) ?></p>
-        </div>
-        <?php endif; ?>
-        <div class="atak-game-config-footer">
-          <a href="<?= url('atak/setup') ?>" class="atak-game-config-link">Assistant Mod Arma (installation, config, vérification)</a>
-          <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Guide complet — Tuto mod Arma</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="atak-health-section" id="atak-health-section" aria-labelledby="atak-health-title">
-    <button type="button" id="atak-health-toggle" class="atak-game-config-toggle" aria-expanded="false" aria-controls="atak-health-body">
-      <span class="atak-game-config-toggle-icon" aria-hidden="true">▼</span>
-      <span class="atak-accordion-title-wrap">
-        <span id="atak-health-title">État de santé</span>
-        <span class="atak-accordion-subtitle">Liaison, données, contacts en jeu</span>
-      </span>
-      <span class="atak-pill atak-pill--muted" id="atak-health-summary-pill">Non vérifié</span>
-    </button>
-    <div id="atak-health-body" class="atak-game-config-body atak-health-body" hidden>
-      <div class="atak-game-config-inner">
-        <div class="atak-health-grid">
-          <div class="atak-health-card">
-            <span class="atak-health-label">Liaison carte</span>
-            <span class="atak-health-cell" id="health-node-url">—</span>
-            <span class="atak-pill" id="health-node-status">—</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Mises à jour</span>
-            <span class="atak-health-cell" id="health-socket-state">—</span>
-            <span class="atak-health-cell atak-health-muted" id="health-socket-url">—</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Données</span>
-            <span class="atak-pill" id="health-db">—</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Mod en jeu</span>
-            <span class="atak-health-cell" id="health-arma">—</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Contacts actifs</span>
-            <span class="atak-health-cell" id="health-units-count">—</span>
-            <span class="atak-health-cell atak-health-muted" id="health-active-callsigns">—</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Tchat</span>
-            <span class="atak-health-cell" id="health-chat-error">Aucun incident</span>
-          </div>
-          <div class="atak-health-card">
-            <span class="atak-health-label">Pings</span>
-            <span class="atak-health-cell" id="health-pings-error">Aucun incident</span>
-          </div>
-        </div>
-        <div class="atak-game-config-footer">
-          <button type="button" class="atak-health-refresh" id="atak-health-refresh">Actualiser</button>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
@@ -657,18 +693,17 @@ if ($atakMapConfig) {
         this.textContent = document.getElementById('atak-panel-right').classList.contains('collapsed') ? '◀' : '▶';
       });
 
-      var configToggle = document.getElementById('atak-game-config-toggle');
-      var configBody = document.getElementById('atak-game-config-body');
-      var configTitle = configToggle ? configToggle.querySelector('#atak-game-config-title') : null;
-      var toggleIcon = configToggle ? configToggle.querySelector('.atak-game-config-toggle-icon') : null;
-      if (configToggle && configBody) {
-        configToggle.addEventListener('click', function () {
-          var open = !configBody.hidden;
-          configBody.hidden = open;
-          configToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
-          if (toggleIcon) toggleIcon.textContent = open ? '▼' : '▲';
+      var effectifsDrawer = document.getElementById('atak-effectifs-drawer');
+      var effectifsDrawerToggle = document.getElementById('atak-effectifs-drawer-toggle');
+      if (effectifsDrawer && effectifsDrawerToggle) {
+        effectifsDrawerToggle.addEventListener('click', function () {
+          effectifsDrawer.classList.toggle('is-open');
+          effectifsDrawerToggle.textContent = effectifsDrawer.classList.contains('is-open')
+            ? 'Tableau des effectifs ▾'
+            : 'Tableau des effectifs ▴';
         });
       }
+
       var copyBtn = document.getElementById('atak-copy-node-url');
       var urlPre = document.getElementById('atak-node-url-copy');
       if (copyBtn && urlPre) {
@@ -683,14 +718,23 @@ if ($atakMapConfig) {
         });
       }
 
-      var accountBtn = document.getElementById('atak-btn-account');
-      var gameLinkHeaderBtn = document.getElementById('atak-btn-game-link');
+      // Panneaux latéraux (Compte, Configuration, État) : un seul overlay partagé, un seul
+      // panneau ouvert à la fois.
       var accountPanel = document.getElementById('atak-account-panel');
+      var configPanel = document.getElementById('atak-config-panel');
+      var healthPanel = document.getElementById('atak-health-panel');
       var accountOverlay = document.getElementById('atak-account-overlay');
-      var accountClose = document.getElementById('atak-account-panel-close');
+      var slidePanels = [accountPanel, configPanel, healthPanel];
       var gameLinkSection = document.getElementById('atak-game-link-section');
-      function openAccountPanel(opts) {
-        if (accountPanel) accountPanel.classList.add('open');
+
+      function closeAllSlidePanels() {
+        slidePanels.forEach(function (p) { if (p) p.classList.remove('open'); });
+        if (accountOverlay) accountOverlay.classList.remove('show');
+        stopHealthAutoRefresh();
+      }
+      function openSlidePanel(panel, opts) {
+        closeAllSlidePanels();
+        if (panel) panel.classList.add('open');
         if (accountOverlay) accountOverlay.classList.add('show');
         if (opts && opts.focusGameLink && gameLinkSection) {
           gameLinkSection.classList.add('atak-account-section--pulse');
@@ -703,19 +747,29 @@ if ($atakMapConfig) {
           var genBtn = document.getElementById('atak-game-link-btn');
           if (genBtn) setTimeout(function () { genBtn.focus(); }, 200);
         }
+        if (panel === healthPanel) {
+          refreshHealth();
+          startHealthAutoRefresh();
+        }
       }
-      function closeAccountPanel() {
-        if (accountPanel) accountPanel.classList.remove('open');
-        if (accountOverlay) accountOverlay.classList.remove('show');
-      }
-      if (accountBtn) accountBtn.addEventListener('click', function () { openAccountPanel(); });
+
+      var accountBtn = document.getElementById('atak-btn-account');
+      var gameLinkHeaderBtn = document.getElementById('atak-btn-game-link');
+      var configBtn = document.getElementById('atak-btn-config');
+      var healthBtn = document.getElementById('atak-btn-health');
+      if (accountBtn) accountBtn.addEventListener('click', function () { openSlidePanel(accountPanel); });
       if (gameLinkHeaderBtn) {
         gameLinkHeaderBtn.addEventListener('click', function () {
-          openAccountPanel({ focusGameLink: true });
+          openSlidePanel(accountPanel, { focusGameLink: true });
         });
       }
-      if (accountClose) accountClose.addEventListener('click', closeAccountPanel);
-      if (accountOverlay) accountOverlay.addEventListener('click', closeAccountPanel);
+      if (configBtn) configBtn.addEventListener('click', function () { openSlidePanel(configPanel); });
+      if (healthBtn) healthBtn.addEventListener('click', function () { openSlidePanel(healthPanel); });
+
+      document.querySelectorAll('.atak-account-panel-close').forEach(function (btn) {
+        btn.addEventListener('click', closeAllSlidePanels);
+      });
+      if (accountOverlay) accountOverlay.addEventListener('click', closeAllSlidePanels);
 
       window.ATAKLastChatError = function (msg) {
         var el = document.getElementById('health-chat-error');
@@ -842,25 +896,15 @@ if ($atakMapConfig) {
           updateSummary();
         });
       }
-      var healthToggle = document.getElementById('atak-health-toggle');
-      var healthBody = document.getElementById('atak-health-body');
       var healthRefresh = document.getElementById('atak-health-refresh');
       var healthRefreshInterval = null;
-      if (healthToggle && healthBody) {
-        healthToggle.addEventListener('click', function () {
-          var open = healthBody.hidden;
-          healthBody.hidden = !open;
-          healthToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-          var icon = healthToggle.querySelector('.atak-game-config-toggle-icon');
-          if (icon) icon.textContent = open ? '▲' : '▼';
-          if (open) {
-            refreshHealth();
-            healthRefreshInterval = setInterval(refreshHealth, 15000);
-          } else {
-            if (healthRefreshInterval) clearInterval(healthRefreshInterval);
-            healthRefreshInterval = null;
-          }
-        });
+      function startHealthAutoRefresh() {
+        if (healthRefreshInterval) return;
+        healthRefreshInterval = setInterval(refreshHealth, 15000);
+      }
+      function stopHealthAutoRefresh() {
+        if (healthRefreshInterval) clearInterval(healthRefreshInterval);
+        healthRefreshInterval = null;
       }
       if (healthRefresh) healthRefresh.addEventListener('click', refreshHealth);
       }

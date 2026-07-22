@@ -93,6 +93,14 @@ class AtakDataRepository
         return $this->getMarkerById($tenantId, $id);
     }
 
+    public function deleteMarkerByArmaName(int $tenantId, int $mapId, string $armaName): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
+        $stmt->execute([$tenantId, $mapId, $armaName]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function deleteMarker(int $tenantId, int $id): bool
     {
         $stmt = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');

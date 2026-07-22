@@ -11,10 +11,10 @@
   --atak-success: #22c55e;
   --atak-success-glow: rgba(34, 197, 94, 0.5);
   --atak-warning: #eab308;
-  --atak-left-w: 320px;
-  --atak-right-w: 340px;
-  --atak-header-h: 56px;
-  --atak-os-strip-h: 42px;
+  --atak-left-w: 300px;
+  --atak-right-w: 310px;
+  --atak-header-h: 48px;
+  --atak-os-strip-h: 38px;
 }
 
 * { box-sizing: border-box; }
@@ -238,6 +238,11 @@ body.atak-page {
   background: var(--atak-border);
   color: var(--atak-accent);
 }
+.atak-btn-account--config {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 .atak-btn-game-link {
   background: var(--atak-accent);
   border: 1px solid var(--atak-accent);
@@ -320,7 +325,7 @@ body.atak-page {
   position: fixed;
   top: 0;
   right: 0;
-  width: 320px;
+  width: 300px;
   max-width: 95vw;
   height: 100vh;
   background: var(--atak-panel);
@@ -338,21 +343,23 @@ body.atak-page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--atak-border);
   flex-shrink: 0;
 }
 .atak-account-panel-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--atak-text);
 }
 .atak-account-panel-close {
   background: none;
   border: none;
   color: var(--atak-muted);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 0.25rem;
@@ -360,18 +367,19 @@ body.atak-page {
 .atak-account-panel-close:hover { color: var(--atak-text); }
 
 .atak-account-panel-body {
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1rem;
   overflow-y: auto;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 .atak-account-section {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 .atak-account-section-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.8rem;
+  margin: 0 0 0.4rem 0;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--atak-muted);
 }
 .atak-account-panel-body p { margin: 0.35rem 0; }
@@ -380,6 +388,46 @@ body.atak-page {
   text-decoration: none;
 }
 .atak-account-panel-body a:hover { text-decoration: underline; }
+
+.atak-details {
+  border: 1px solid var(--atak-border);
+  border-radius: 8px;
+  background: var(--atak-panel-alt);
+  margin: 0 0 0.6rem;
+  overflow: hidden;
+}
+.atak-details + .atak-details { margin-top: 0.6rem; }
+.atak-details summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--atak-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+.atak-details summary::-webkit-details-marker { display: none; }
+.atak-details summary::before {
+  content: "▸";
+  display: inline-block;
+  color: var(--atak-accent);
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+.atak-details[open] summary::before { transform: rotate(90deg); }
+.atak-details summary:hover { color: var(--atak-accent); }
+.atak-details summary:hover::before { color: var(--atak-accent); }
+.atak-details-body {
+  padding: 0 0.75rem 0.75rem;
+  border-top: 1px solid var(--atak-border);
+  padding-top: 0.65rem;
+}
 
 .atak-account-section--game-link {
   padding: 0.85rem;
@@ -441,9 +489,9 @@ body.atak-page {
 }
 .atak-game-link-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   color: #e8f4f0;
   margin: 0.15rem 0 0.5rem 0 !important;
 }
@@ -874,8 +922,8 @@ body.atak-page {
   margin: 0.25rem;
 }
 .atak-empty-state-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 1.7rem;
+  height: 1.7rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1173,7 +1221,14 @@ body.atak-page {
   align-items: center;
   gap: 0.5rem;
 }
-.atak-units-title { font-weight: 700; font-size: 0.95rem; flex: 1; }
+.atak-units-title {
+  font-weight: 800;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-style: italic;
+  flex: 1;
+}
 .atak-units-count {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.72rem;
@@ -1257,8 +1312,10 @@ body.atak-page {
 }
 .atak-units-empty-title {
   margin: 0 0 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: var(--atak-text);
 }
 .atak-units-empty-text {
@@ -1269,9 +1326,9 @@ body.atak-page {
 }
 .atak-units-empty-text strong { color: var(--atak-accent); }
 .atak-units-empty-icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 0.75rem;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 0.6rem;
   opacity: 0.5;
 }
 .atak-units-empty-icon svg {
@@ -1300,7 +1357,7 @@ body.atak-page {
 .atak-unit-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
 .atak-unit-fiche-link { font-size: 0.65rem; color: var(--atak-muted); text-decoration: none; padding: 0.15rem 0.35rem; border: 1px solid var(--atak-border); border-radius: 4px; white-space: nowrap; }
 .atak-unit-fiche-link:hover { color: var(--atak-accent); border-color: var(--atak-accent); }
-.atak-unit-role { font-weight: 700; font-size: 0.9rem; }
+.atak-unit-role { font-weight: 700; font-size: 0.8rem; }
 .atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }
 .atak-unit-status.delayed { background: rgba(234, 179, 8, 0.2); color: var(--atak-warning); }
@@ -1514,6 +1571,201 @@ body.atak-page {
 .atak-map-hud__v { color: #e2e8f0; font-weight: 700; }
 .atak-map-hud__ok { color: #34d399 !important; }
 
+/* Tiroir "Tableau des effectifs" (même logique que le tiroir TACMAP) : replié par défaut,
+   ne recouvre que le bas de la carte. */
+.atak-drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  max-height: 42%;
+  display: flex;
+  flex-direction: column;
+  background: var(--atak-panel);
+  border-top: 1px solid var(--atak-border);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(calc(100% - 1.9rem));
+  transition: transform 0.2s ease;
+}
+.atak-drawer.is-open { transform: translateY(0); }
+.atak-drawer__toggle {
+  flex: 0 0 auto;
+  width: 100%;
+  border: 0;
+  background: var(--atak-panel-alt);
+  color: var(--atak-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-style: italic;
+  padding: 0.4rem;
+  cursor: pointer;
+}
+.atak-drawer__toggle:hover { color: var(--atak-accent); }
+.atak-drawer__body {
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0;
+}
+.atak-drawer table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.atak-drawer th {
+  position: sticky;
+  top: 0;
+  background: var(--atak-panel-alt);
+  color: var(--atak-muted);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--atak-border);
+}
+.atak-drawer td {
+  padding: 0.35rem 0.65rem;
+  border-bottom: 1px solid var(--atak-border);
+  color: var(--atak-text);
+}
+.atak-drawer-empty {
+  text-align: center;
+  padding: 1.1rem;
+  color: var(--atak-muted);
+  font-style: normal;
+}
+
+/* Popup unité/aérien affiché au clic sur un marqueur carte (voir atak-unit-popup.js).
+   Jusqu'ici sans style : le popup Leaflet par défaut (fond blanc) tranchait avec le thème
+   sombre du reste de la page. */
+.leaflet-popup.atak-map-popup .leaflet-popup-content-wrapper {
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-tip {
+  background: var(--atak-panel);
+  border: 1px solid var(--atak-border);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-close-button {
+  color: var(--atak-muted);
+}
+.leaflet-popup.atak-map-popup .leaflet-popup-close-button:hover {
+  color: var(--atak-text);
+}
+.atak-unit-popup {
+  padding: 0.6rem 0.7rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-width: 190px;
+}
+.atak-unit-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--atak-border);
+}
+.atak-unit-popup__head--ok { border-bottom-color: var(--atak-success); }
+.atak-unit-popup__head--warn { border-bottom-color: var(--atak-warning); }
+.atak-unit-popup__head--danger { border-bottom-color: #ef4444; }
+.atak-unit-popup__title-wrap { display: flex; flex-direction: column; min-width: 0; }
+.atak-unit-popup__callsign {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--atak-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atak-unit-popup__subtitle {
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.atak-unit-popup__body { display: flex; flex-direction: column; gap: 0.2rem; }
+.atak-unit-popup__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+.atak-unit-popup__k { color: var(--atak-muted); font-weight: 600; white-space: nowrap; }
+.atak-unit-popup__v { color: var(--atak-text); font-weight: 600; text-align: right; }
+.atak-unit-popup__val--ok { color: var(--atak-success) !important; }
+.atak-unit-popup__val--warn { color: var(--atak-warning) !important; }
+.atak-unit-popup__val--danger { color: #ef4444 !important; }
+.atak-unit-popup__notes {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--atak-border);
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+/* Classe "texte atténué" utilisée dans une dizaine d'endroits (JS et vue) — la variable
+   --atak-muted existait déjà (utilisée par d'autres règles), mais pas la classe elle-même :
+   .atak-muted rendait donc en noir/hérité par défaut au lieu du gris atténué attendu. */
+.atak-muted { color: var(--atak-muted); }
+
+/* Thème sombre par défaut pour tout popup Leaflet de la carte tactique (marqueur générique,
+   JTAC, ping, SIGINT...) même sans classe dédiée — sans ça le popup blanc par défaut de
+   Leaflet tranche avec le thème sombre du reste de la page. Les règles .atak-map-popup
+   ci-dessus restent plus spécifiques pour le popup unité/aérien. */
+.atak-map-wrap .leaflet-popup-content-wrapper {
+  background: var(--atak-panel);
+  color: var(--atak-text);
+  border: 1px solid var(--atak-border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.atak-map-wrap .leaflet-popup-tip {
+  background: var(--atak-panel);
+  border: 1px solid var(--atak-border);
+}
+.atak-map-wrap .leaflet-popup-content {
+  margin: 0.5rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.atak-map-wrap .leaflet-popup-close-button {
+  color: var(--atak-muted);
+}
+.atak-map-wrap .leaflet-popup-close-button:hover {
+  color: var(--atak-text);
+}
+.atak-marker-popup__coords {
+  font-size: 0.65rem;
+  color: var(--atak-muted);
+  margin-top: 0.15rem;
+}
+.atak-marker-popup__desc {
+  font-size: 0.7rem;
+  margin: 0.3rem 0 0;
+}
+.atak-marker-popup__author {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.62rem;
+  color: var(--atak-muted);
+  font-style: italic;
+}
+
 .nato-sidc-icon,
 .nato-sidc-badge {
   background: transparent !important;
@@ -1575,10 +1827,11 @@ body.atak-page {
 }
 .atak-boot-label {
   margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
   color: var(--atak-text);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
 }
 .atak-boot-hint {
   margin: 0;
@@ -1680,8 +1933,10 @@ body.atak-page {
 }
 .atak-input-modal__title {
   margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--atak-text);
 }
 .atak-input-modal__hint {

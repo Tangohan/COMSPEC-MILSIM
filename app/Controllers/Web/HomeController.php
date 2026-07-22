@@ -881,8 +881,9 @@ class HomeController
 
     public function tacmap(Request $request, array $params = []): Response
     {
-        // TACMAP fusionné dans Overwatch (surface situation + C2 unique).
-        return Response::redirect(url('overwatch'), 301);
+        return Response::view('tacmap', array_merge($this->buildOperationalMapPageData(), [
+            'title' => 'TACMAP — Athena',
+        ]));
     }
 
     public function overwatch(Request $request, array $params = []): Response
@@ -893,7 +894,7 @@ class HomeController
     }
 
     /**
-     * Données communes à la vue carte opérationnelle Overwatch : cartes ATAK, workspaces, contexte API.
+     * Données communes aux vues carte opérationnelle (Overwatch, TACMAP) : cartes ATAK, workspaces, contexte API.
      *
      * @return array<string, mixed>
      */
