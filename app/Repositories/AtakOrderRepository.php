@@ -77,18 +77,46 @@ class AtakOrderRepository
     }
 
     /**
+     * Liste les ordres d’une carte.
+     * Avec $since (datetime SQL), ne renvoie que les lignes créées/modifiées depuis
+     * (y compris CANCELLED = tombstone d’annulation). En vue émetteur, inclut aussi
+     * les PENDING encore en transit radio pour que le client puisse animer l’état.
+     *
      * @return list<array<string, mixed>>
      */
-    public function listForMap(int $tenantId, int $mapId, int $limit = 80, bool $issuerView = true): array
-    {
+    public function listForMap(
+        int $tenantId,
+        int $mapId,
+        int $limit = 80,
+        bool $issuerView = true,
+        ?string $since = null
+    ): array {
         if (!$this->tablesReady()) {
             return [];
         }
-        $limit = max(1, min(200, $limit));
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM atak_orders WHERE tenant_id = ? AND map_id = ? ORDER BY updated_at DESC, id DESC LIMIT ' . $limit
-        );
-        $stmt->execute([$tenantId, $mapId]);
+        $since = $this->normalizeSince($since);
+        $isDelta = $since !== null;
+        // Delta : plafond plus haut (petits paquets attendus). Snapshot : limite métier.
+        $limit = max(1, min($isDelta ? 500 : 200, $limit));
+
+        $sql = 'SELECT * FROM atak_orders WHERE tenant_id = ? AND map_id = ?';
+        $params = [$tenantId, $mapId];
+        if ($isDelta) {
+            if ($issuerView && $this->v2ColumnsReady()) {
+                $sql .= ' AND (
+                    updated_at >= ? OR created_at >= ?
+                    OR (UPPER(status) = \'PENDING\' AND deliver_at IS NOT NULL AND deliver_at > NOW())
+                )';
+            } else {
+                $sql .= ' AND (updated_at >= ? OR created_at >= ?)';
+            }
+            $params[] = $since;
+            $params[] = $since;
+        }
+        $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT ' . $limit;
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         $out = [];
@@ -101,6 +129,75 @@ class AtakOrderRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Compteurs carte (SQL léger, indépendants du delta) pour badge / résumé.
+     * N’applique pas le filtre destinataire jeu — réservé à la vue web émetteur.
+     *
+     * @return array{total: int, pending: int, overdue: int}
+     */
+    public function countStatsForMap(int $tenantId, int $mapId): array
+    {
+        if (!$this->tablesReady()) {
+            return ['total' => 0, 'pending' => 0, 'overdue' => 0];
+        }
+
+        $hasDeadline = $this->hasColumn('ack_deadline_at');
+        $overdueExpr = $hasDeadline
+            ? "SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
+                    AND ack_deadline_at IS NOT NULL AND ack_deadline_at < NOW() THEN 1 ELSE 0 END)"
+            : '0';
+
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED') THEN 1 ELSE 0 END) AS pending,
+                    {$overdueExpr} AS overdue
+                 FROM atak_orders
+                 WHERE tenant_id = ? AND map_id = ?"
+            );
+            $stmt->execute([$tenantId, $mapId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            return [
+                'total' => (int) ($row['total'] ?? 0),
+                'pending' => (int) ($row['pending'] ?? 0),
+                'overdue' => (int) ($row['overdue'] ?? 0),
+            ];
+        } catch (\Throwable) {
+            return ['total' => 0, 'pending' => 0, 'overdue' => 0];
+        }
+    }
+
+    /**
+     * @return non-empty-string|null
+     */
+    private function normalizeSince(?string $since): ?string
+    {
+        if ($since === null) {
+            return null;
+        }
+        $since = trim($since);
+        if ($since === '') {
+            return null;
+        }
+        // Accepte "Y-m-d H:i:s", ISO-8601, timestamp unix.
+        if (ctype_digit($since)) {
+            $ts = (int) $since;
+            if ($ts > 0) {
+                return date('Y-m-d H:i:s', $ts);
+            }
+
+            return null;
+        }
+        $ts = strtotime($since);
+        if ($ts === false) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', $ts);
     }
 
     /**

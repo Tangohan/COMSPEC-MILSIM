@@ -25,9 +25,6 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical")) then {
         if (!isNil "_hrFn" && {_hrFn isEqualType 0}) then { _hr = _hrFn; };
     };
 
-    _cardiac = _unit getVariable ["ace_medical_inCardiacArrest", false];
-    if (!_cardiac && {_hr <= 0}) then { _cardiac = true; };
-
     private _uncon = _unit getVariable ["ACE_isUnconscious", false];
     if (!_uncon) then { _uncon = _unit getVariable ["ace_medical_incapacitated", false]; };
     if (!_uncon && {lifeState _unit == "INCAPACITATED"}) then { _uncon = true; };
@@ -35,7 +32,13 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical")) then {
         _uncon = !([_unit] call ace_common_fnc_isAwake);
     };
 
-    if (_cardiac || {_hr <= 0}) then {
+    // Arrêt cardiaque = flag ACE explicite, ou FC à zéro UNIQUEMENT si déjà inconscient.
+    // Ne pas inférer depuis HR=0 seul : à la déconnexion / teardown ACE le rythme peut
+    // retomber à 0 sans arrêt cardiaque réel → fausse alerte « mort ».
+    _cardiac = _unit getVariable ["ace_medical_inCardiacArrest", false];
+    if (!_cardiac && {_hr <= 0} && {_uncon}) then { _cardiac = true; };
+
+    if (_cardiac) then {
         _health = "cardiac_arrest";
         _hr = 0;
     } else {

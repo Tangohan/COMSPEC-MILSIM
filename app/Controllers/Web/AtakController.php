@@ -176,13 +176,8 @@ class AtakController
             /** Tout compte connecté peut retirer son propre contact (indicatif). */
             'canDeleteOwnUnit' => (bool) $currentUser,
             'canPing' => true,
-            'canTriageMedical' => (bool) $currentUser && function_exists('can')
-                && (can('operations.medical.manage')
-                    || can('operations.medical.view')
-                    || can('admin.access')
-                    || can('admin.organization')
-                    || can('personnel.profile.view')
-                    || can('personnel.profile.update')),
+            // Compte connecté : la spécialité Médecin du profil de session débloque le triage.
+            'canTriageMedical' => (bool) $currentUser,
         ];
         if (!$currentUser) {
             $atakCaps['canViewPersonnel'] = false;

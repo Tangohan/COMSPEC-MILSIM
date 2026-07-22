@@ -85,11 +85,8 @@ final class AtakPhoneConnectController
         $this->pairingRepository->markPaired($token);
 
         $tenantId = (int) ($pairing['tenant_id'] ?? 0);
-        try {
-            (new \App\Services\Tactical\AtakActivityLogService())->recordPhonePaired($tenantId);
-        } catch (\Throwable) {
-            // Best-effort.
-        }
+        // Journal Activité : premier heartbeat présence (connect_slides) — pas ici,
+        // pour éviter un doublon « Accès / Briefing » à l’ouverture.
         $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
         $tenantName = $tenant ? (function_exists('community_display_name') ? community_display_name($tenant) : (string) ($tenant['name'] ?? 'Communauté')) : 'Communauté';
         $slides = $tenantId > 0 ? $this->briefingSlideRepository->listActiveForTenant($tenantId) : [];
@@ -98,6 +95,9 @@ final class AtakPhoneConnectController
             'title' => 'Briefing tactique — ' . $tenantName,
             'atakTenantName' => $tenantName,
             'atakSlides' => $slides,
+            'atakPairingToken' => $token,
+            'atakPresenceUrl' => url('api/atak/briefing-presence'),
+            'atakCommentsBaseUrl' => url('api/atak/briefing-slides'),
         ]);
     }
 }

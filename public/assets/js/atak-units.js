@@ -51,18 +51,23 @@ window.ATAKUnits = (function () {
 
   function resolveLiveStatus(u) {
     var raw = String((u && u.status) || '').toLowerCase().trim();
+    // /api/units a déjà appliqué le TTL MySQL (TIMESTAMPDIFF) : ne pas recalculer
+    // avec Date(updated_at) — DATETIME sans TZ → faux « hors liaison » selon le fuseau navigateur.
+    // Aligné sur Tacmap (comspec-operational-map) qui affiche u.status tel quel.
+    if (raw === 'linked' || raw === 'delayed') {
+      return hasValidPosition(u) ? raw : 'offline';
+    }
     if (raw === 'offline') return 'offline';
-    var updated = u && u.updated_at ? new Date(u.updated_at).getTime() : NaN;
+    // Payload legacy sans status résolu : dernier recours (âge navigateur).
+    var updated = u && u.updated_at ? new Date(String(u.updated_at).replace(' ', 'T')).getTime() : NaN;
     if (!isNaN(updated)) {
       var age = Date.now() - updated;
+      if (age < 0) age = 0;
       if (age > LIVE_TTL_MS) return 'offline';
       if (age > LIVE_TTL_MS * 0.6) return 'delayed';
-    } else if (raw !== 'linked' && raw !== 'delayed') {
-      return raw || 'offline';
+      return hasValidPosition(u) ? 'linked' : 'offline';
     }
-    if (raw === 'delayed') return 'delayed';
-    if (raw === 'linked' || raw === '') return 'linked';
-    return raw;
+    return raw || 'offline';
   }
 
   function isInLiaison(u) {
@@ -164,7 +169,7 @@ window.ATAKUnits = (function () {
     '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>' +
     '</div>' +
     '<p class="atak-units-empty-title">Aucun contact en liaison</p>' +
-    '<p class="atak-units-empty-text">Les positions remontées depuis Arma s’affichent ici. Vérifiez la liaison du mod, ou générez un code via <strong>Connexion en jeu</strong>.</p>' +
+    '<p class="atak-units-empty-text">La liaison du compte Athena ne suffit pas : le jeu doit envoyer une position valide. En mission, déplacez-vous un peu ou utilisez le hub → Transmettre. Vérifiez aussi le journal Liaison côté Athena.</p>' +
     '</div>';
 
   function updateSummary() {

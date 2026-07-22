@@ -73,7 +73,11 @@ class TenantAtakConfigRepository
 
     public function isMaintenanceEnabled(int $tenantId): bool
     {
-        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
+        if ($tenantId < 1) {
+            return false;
+        }
+        $this->ensureMaintenanceSchema();
+        if (!$this->hasMaintenanceColumns()) {
             return false;
         }
         $stmt = $this->pdo->prepare(
@@ -87,7 +91,11 @@ class TenantAtakConfigRepository
 
     public function getMaintenanceMessage(int $tenantId): string
     {
-        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
+        if ($tenantId < 1) {
+            return '';
+        }
+        $this->ensureMaintenanceSchema();
+        if (!$this->hasMaintenanceColumns()) {
             return '';
         }
         $stmt = $this->pdo->prepare(
@@ -99,40 +107,100 @@ class TenantAtakConfigRepository
         return is_string($msg) ? trim($msg) : '';
     }
 
-    public function setMaintenance(int $tenantId, bool $enabled, ?string $message = null): void
+    /**
+     * Active / désactive le mode maintenance pour une communauté.
+     * @return bool true si l’écriture a réussi ; false si schéma absent ou tenant invalide
+     */
+    public function setMaintenance(int $tenantId, bool $enabled, ?string $message = null): bool
     {
-        if ($tenantId < 1 || !$this->hasMaintenanceColumns()) {
-            return;
+        if ($tenantId < 1) {
+            return false;
+        }
+        $this->ensureMaintenanceSchema();
+        if (!$this->hasMaintenanceColumns()) {
+            return false;
         }
         $msg = $message !== null ? trim($message) : null;
         if ($msg === '') {
             $msg = null;
         }
 
-        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
-        $stmt->execute([$tenantId]);
-        $exists = (bool) $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+            $stmt->execute([$tenantId]);
+            $exists = (bool) $stmt->fetchColumn();
 
-        if ($exists) {
-            $upd = $this->pdo->prepare(
-                'UPDATE tenant_atak_config
-                 SET maintenance_enabled = ?, maintenance_message = ?, updated_at = NOW()
-                 WHERE tenant_id = ?'
+            if ($exists) {
+                $upd = $this->pdo->prepare(
+                    'UPDATE tenant_atak_config
+                     SET maintenance_enabled = ?, maintenance_message = ?, updated_at = NOW()
+                     WHERE tenant_id = ?'
+                );
+                $upd->execute([$enabled ? 1 : 0, $msg, $tenantId]);
+            } else {
+                $ins = $this->pdo->prepare(
+                    'INSERT INTO tenant_atak_config
+                        (tenant_id, maintenance_enabled, maintenance_message, default_map_slug, created_at, updated_at)
+                     VALUES (?, ?, ?, \'altis\', NOW(), NOW())'
+                );
+                $ins->execute([$tenantId, $enabled ? 1 : 0, $msg]);
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** Colonnes maintenance présentes (migration jouée ou auto-appliquée). */
+    public function isMaintenanceSchemaReady(): bool
+    {
+        $this->ensureMaintenanceSchema();
+
+        return $this->hasMaintenanceColumns();
+    }
+
+    /**
+     * Applique les colonnes maintenance si absentes (idempotent, même DDL que la migration bootstrap).
+     */
+    private function ensureMaintenanceSchema(): void
+    {
+        static $attempted = false;
+        if ($attempted) {
+            return;
+        }
+        $attempted = true;
+
+        if ($this->hasMaintenanceColumns()) {
+            return;
+        }
+
+        try {
+            $this->pdo->exec(
+                'ALTER TABLE tenant_atak_config
+                 ADD COLUMN maintenance_enabled TINYINT(1) NOT NULL DEFAULT 0,
+                 ADD COLUMN maintenance_message TEXT DEFAULT NULL'
             );
-            $upd->execute([$enabled ? 1 : 0, $msg, $tenantId]);
-        } else {
-            $ins = $this->pdo->prepare(
-                'INSERT INTO tenant_atak_config
-                    (tenant_id, maintenance_enabled, maintenance_message, default_map_slug, created_at, updated_at)
-                 VALUES (?, ?, ?, \'altis\', NOW(), NOW())'
-            );
-            $ins->execute([$tenantId, $enabled ? 1 : 0, $msg]);
+            // Invalider le cache de détection
+            $this->resetMaintenanceColumnsCache();
+        } catch (\Throwable) {
+            // Colonnes déjà présentes (course) ou droits insuffisants — hasMaintenanceColumns tranchera
+            $this->resetMaintenanceColumnsCache();
         }
     }
 
-    private function hasMaintenanceColumns(): bool
+    private function resetMaintenanceColumnsCache(): void
+    {
+        // Relance la détection au prochain appel (static locale dans hasMaintenanceColumns)
+        $this->hasMaintenanceColumns(true);
+    }
+
+    private function hasMaintenanceColumns(bool $resetCache = false): bool
     {
         static $cached = null;
+        if ($resetCache) {
+            $cached = null;
+        }
         if ($cached !== null) {
             return $cached;
         }
@@ -141,7 +209,29 @@ class TenantAtakConfigRepository
                 "SELECT 1 FROM information_schema.COLUMNS
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'maintenance_enabled' LIMIT 1"
             );
-            $cached = (bool) $st?->fetchColumn();
+            if ($st && $st->fetchColumn()) {
+                $cached = true;
+
+                return true;
+            }
+        } catch (\Throwable) {
+            // Fallback ci-dessous (hébergeurs qui restreignent information_schema)
+        }
+
+        try {
+            $st = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_enabled'");
+            if ($st && $st->fetch(PDO::FETCH_ASSOC)) {
+                $cached = true;
+
+                return true;
+            }
+        } catch (\Throwable) {
+            // Dernier recours : SELECT direct
+        }
+
+        try {
+            $this->pdo->query('SELECT maintenance_enabled FROM tenant_atak_config LIMIT 0');
+            $cached = true;
         } catch (\Throwable) {
             $cached = false;
         }

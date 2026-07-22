@@ -580,7 +580,8 @@ class UserRepository
 
     public function findByEmail(int $tenantId, string $email): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND email = ? LIMIT 1');
+        $email = strtolower(trim($email));
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
         $stmt->execute([$tenantId, $email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
@@ -593,11 +594,11 @@ class UserRepository
      */
     public function listIdsByEmailNormalized(string $email): array
     {
-        $email = trim($email);
+        $email = strtolower(trim($email));
         if ($email === '') {
             return [];
         }
-        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE email = ?');
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?');
         $stmt->execute([$email]);
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
@@ -777,6 +778,12 @@ class UserRepository
             : '';
         if ($hasAthenaIdentifier && $athenaIdentifier === '') {
             $athenaIdentifier = $this->generateAthenaIdentifier();
+        }
+
+        // Toujours normaliser l’e-mail (évite doublons casing / espaces).
+        $data['email'] = strtolower(trim((string) ($data['email'] ?? '')));
+        if ($data['email'] === '') {
+            throw new \InvalidArgumentException('E-mail requis pour créer un compte.');
         }
 
         $profileSlug = null;
@@ -1346,7 +1353,8 @@ class UserRepository
     /** Vérifie si un autre utilisateur (hors userId) a déjà cet email dans le tenant. */
     public function emailExistsInTenant(int $tenantId, string $email, ?int $excludeUserId = null): bool
     {
-        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND email = ?';
+        $email = strtolower(trim($email));
+        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ?';
         $params = [$tenantId, $email];
         if ($excludeUserId !== null) {
             $sql .= ' AND id != ?';
@@ -1354,6 +1362,28 @@ class UserRepository
         }
         $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
         $stmt->execute($params);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /** Indique si cet e-mail existe déjà sur n’importe quelle communauté (hors comptes techniques). */
+    public function emailExistsGlobally(string $email, ?int $excludeUserId = null): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || strcasecmp($email, self::SYSTEM_MODERATOR_EMAIL) === 0) {
+            return false;
+        }
+        $sql = 'SELECT 1 FROM users WHERE LOWER(TRIM(email)) = ?';
+        $params = [$email];
+        if ($this->hasServiceAccountColumn()) {
+            $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
+        }
+        if ($excludeUserId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeUserId;
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
         return (bool) $stmt->fetchColumn();
     }
 
@@ -1705,7 +1735,8 @@ class UserRepository
 
     public function findIdByTenantAndEmail(int $tenantId, string $email): ?int
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND email = ? LIMIT 1');
+        $email = strtolower(trim($email));
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
         $stmt->execute([$tenantId, $email]);
         $id = $stmt->fetchColumn();
         return $id !== false ? (int) $id : null;
@@ -1714,8 +1745,17 @@ class UserRepository
     /** Premier compte trouvé pour cet email (tout tenant), pour rattachement invitation. */
     public function findFirstByEmailGlobal(string $email): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ? ORDER BY id ASC LIMIT 1');
-        $stmt->execute([strtolower(trim($email))]);
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+        $sql = 'SELECT * FROM users WHERE LOWER(TRIM(email)) = ?';
+        if ($this->hasServiceAccountColumn()) {
+            $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
+        }
+        $sql .= ' ORDER BY id ASC LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$email]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;

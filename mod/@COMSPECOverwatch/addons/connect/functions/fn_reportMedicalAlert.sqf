@@ -10,12 +10,39 @@ params [
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (isNull _unit || {!local _unit}) exitWith {};
+if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
+if (isNull findDisplay 46) exitWith {};
+if (isMultiplayer && {getClientStateNumber >= 11}) exitWith {};
+if (!alive _unit) exitWith {};
 
 private _kindNorm = toLower _kind;
 if !(_kindNorm in ["unconscious", "cardiac_arrest"]) exitWith {};
 
 private _last = missionNamespace getVariable ["COMSPEC_lastMedicalAlertKind", ""];
 if (_last isEqualTo _kindNorm) exitWith {}; // déjà signalé pour cet état
+// Pas de « downgrade » : arrêt cardiaque déjà signalé → ne pas republier inconscient
+if (_last isEqualTo "cardiac_arrest" && {_kindNorm isEqualTo "unconscious"}) exitWith {};
+
+// Déjà une alerte active non résolue du même type (cache poll) → ne pas republier
+private _own = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
+private _skipDup = false;
+if (count _own > 0) then {
+    private _ownKind = toLower (_own getOrDefault ["kind", ""]);
+    if (_ownKind isEqualTo _kindNorm) then { _skipDup = true; };
+    if (
+        !_skipDup
+        && {_ownKind in ["cardiac_arrest", "cardiac-arrest", "death", "dead", "kia"]}
+        && {_kindNorm isEqualTo "unconscious"}
+    ) then {
+        _skipDup = true;
+    };
+};
+if (_skipDup) exitWith {
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", _kindNorm, false];
+};
+
+// Verrouiller AVANT l’envoi pour éviter un double POST si le PFH / ACE rappellent dans la foulée
+missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", _kindNorm, false];
 
 private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _parts = _state splitString "|";
@@ -54,7 +81,6 @@ private _alert = createHashMapFromArray [
 ];
 ["OnMedicalAlert", _alert] call comspec_overwatch_connect_fnc_publishEvent;
 
-missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", _kindNorm, false];
 [format ["Alerte médicale transmise : %1", _label], "medical", "critical"] call comspec_overwatch_connect_fnc_announce;
 // Son d’urgence dédié (inconscient → atak_alert_2, arrêt cardiaque → atak_death).
 // Mode discret ne coupe pas ce son ; seul « Muet » (CBA Son des notifications) le coupe.

@@ -8,7 +8,9 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalBriefingSlideRepository;
+use App\Services\Tactical\AtakActivityLogService;
 
 /**
  * Diapositives de briefing tactique — images consultées in-game (Arma/Eden Editor) via l'extension.
@@ -21,9 +23,13 @@ final class AdminBriefingSlidesController
     private const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png'];
 
     public function __construct(
-        private ?TacticalBriefingSlideRepository $slides = null
+        private ?TacticalBriefingSlideRepository $slides = null,
+        private ?TacticalBriefingSlideCommentRepository $comments = null,
+        private ?AtakActivityLogService $activityLog = null,
     ) {
         $this->slides ??= new TacticalBriefingSlideRepository();
+        $this->comments ??= new TacticalBriefingSlideCommentRepository();
+        $this->activityLog ??= new AtakActivityLogService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -42,6 +48,8 @@ final class AdminBriefingSlidesController
         }
 
         $feedUrl = url('api/atak/briefing-slides') . '?tenant_id=' . $tenantId;
+        $commentCounts = $this->comments->countsBySlideForTenant($tenantId);
+        $presence = $this->activityLog->listBriefingPresence($tenantId);
 
         return Response::view('layout.main', [
             'content' => 'admin.briefing_slides.index',
@@ -54,6 +62,10 @@ final class AdminBriefingSlidesController
                 'active' => $activeCount,
                 'inactive' => count($slides) - $activeCount,
             ],
+            'briefingCommentCounts' => $commentCounts,
+            'briefingPresence' => $presence,
+            'briefingPresenceUrl' => url('api/atak/briefing-presence') . '?tenant_id=' . $tenantId,
+            'briefingCommentsBaseUrl' => url('api/atak/briefing-slides'),
         ]);
     }
 
@@ -84,6 +96,7 @@ final class AdminBriefingSlidesController
 
         $this->slides->insert($tenantId, [
             'title' => $title,
+            'detail_text' => trim((string) $request->input('detail_text', '')),
             'image_path' => $upload['path'],
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
@@ -126,6 +139,7 @@ final class AdminBriefingSlidesController
 
         $this->slides->update($id, $tenantId, [
             'title' => trim((string) $request->input('title', '')),
+            'detail_text' => trim((string) $request->input('detail_text', '')),
             'image_path' => $imagePath,
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
@@ -133,6 +147,44 @@ final class AdminBriefingSlidesController
         Session::flash('success', 'Diapositive mise à jour.');
 
         return Response::redirect(url('back-office/atak/briefing-slides'));
+    }
+
+    public function storeComment(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->slides->findByIdForTenant($id, $tenantId) : null;
+        if (!$row) {
+            Session::flash('error', 'Diapositive introuvable.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+        $body = trim((string) $request->input('body', ''));
+        if ($body === '') {
+            Session::flash('error', 'Saisissez un commentaire avant d’envoyer.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides') . '#slide-' . $id);
+        }
+        $author = trim((string) $request->input('author_label', ''));
+        if ($author === '') {
+            $author = 'État-major';
+        }
+        $inserted = $this->comments->insert($tenantId, $id, $author, $body, 'admin');
+        if ($inserted === null) {
+            Session::flash('error', 'Impossible d’enregistrer le commentaire pour le moment.');
+        } else {
+            Session::flash('success', 'Commentaire ajouté sur la diapositive.');
+        }
+
+        return Response::redirect(url('back-office/atak/briefing-slides') . '#slide-' . $id);
     }
 
     public function delete(Request $request, array $params = []): Response

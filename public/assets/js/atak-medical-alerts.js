@@ -222,9 +222,11 @@ window.ATAKMedicalAlerts = (function () {
   }
 
   function canTriage() {
-    if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.canTriageMedicalUi === 'function'
-        && window.ATAK_SESSION_PROFILE) {
-      return !!window.ATAKSessionProfile.canTriageMedicalUi();
+    if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.canTriageMedicalUi === 'function') {
+      // Profil de session chargé (spécialité Médecin) : priorité sur le cache API.
+      if (window.ATAK_SESSION_PROFILE || (typeof window.ATAKSessionProfile.get === 'function' && window.ATAKSessionProfile.get())) {
+        return !!window.ATAKSessionProfile.canTriageMedicalUi();
+      }
     }
     if (canTriageCached != null) return canTriageCached;
     if (window.ATAK_CAPS && typeof window.ATAK_CAPS.canTriageMedical === 'boolean') {
@@ -543,15 +545,17 @@ window.ATAKMedicalAlerts = (function () {
         var status = triageStatusOf(a);
         var statusLabel = triageLabelOf(a);
         var triageBtns = '';
-        if (allowTriage && a.id != null && a.id !== '') {
-          triageBtns = '<div class="atak-medical-triage-actions">' +
-            TRIAGE_OPTIONS.filter(function (o) { return o.value !== 'a_secourir'; }).map(function (o) {
-              var active = status === o.value ? ' is-active' : '';
-              return '<button type="button" class="atak-medical-triage-btn' + active + '" data-medical-action="triage" data-alert-id="' +
-                escapeHtml(String(a.id)) + '" data-triage-status="' + escapeHtml(o.value) + '" title="Passer en ' + escapeHtml(o.label) + '">' +
-                escapeHtml(o.label) + '</button>';
+        var alertId = a.id != null && a.id !== '' ? a.id : (a.chat_id != null ? a.chat_id : null);
+        if (allowTriage && alertId != null && alertId !== '') {
+          triageBtns = '<label class="atak-medical-triage-indicate">' +
+            '<span class="atak-medical-triage-indicate-label">Indiquer</span>' +
+            '<select class="atak-medical-triage-select" data-medical-action="triage-select" data-alert-id="' +
+            escapeHtml(String(alertId)) + '" aria-label="Indiquer le statut de secours">' +
+            TRIAGE_OPTIONS.map(function (o) {
+              var sel = status === o.value ? ' selected' : '';
+              return '<option value="' + escapeHtml(o.value) + '"' + sel + '>' + escapeHtml(o.label) + '</option>';
             }).join('') +
-            '</div>';
+            '</select></label>';
         }
         return '<div class="atak-medical-item atak-medical-' + sev + '">' +
           '<div class="atak-medical-item-main">' +
@@ -560,8 +564,9 @@ window.ATAKMedicalAlerts = (function () {
           '<div class="atak-medical-item-meta">' + escapeHtml(t) + (a.grid ? ' · Grille ' + escapeHtml(a.grid) : '') + '</div>' +
           '</div>' +
           '<div class="atak-medical-item-side">' +
-          '<span class="atak-medical-triage-badge is-' + escapeHtml(status) + '">' + escapeHtml(statusLabel) + '</span>' +
-          triageBtns +
+          (triageBtns
+            ? triageBtns
+            : '<span class="atak-medical-triage-badge is-' + escapeHtml(status) + '">' + escapeHtml(statusLabel) + '</span>') +
           '<button type="button" class="atak-medical-dismiss" data-medical-action="dismiss-alert" data-dismiss-key="' + ak + '" title="Masquer cette alerte" aria-label="Masquer cette alerte">✕</button>' +
           '</div>' +
           '</div>';
@@ -642,9 +647,11 @@ window.ATAKMedicalAlerts = (function () {
   function onDismissClick(ev) {
     var btn = ev.target && ev.target.closest ? ev.target.closest('[data-medical-action]') : null;
     if (!btn) return;
+    var action = btn.getAttribute('data-medical-action');
+    // Le select « Indiquer » gère son propre change ; ignorer le click bullé.
+    if (action === 'triage-select') return;
     ev.preventDefault();
     ev.stopPropagation();
-    var action = btn.getAttribute('data-medical-action');
     var visible = filterData(lastData || {});
     if (action === 'triage') {
       var alertId = btn.getAttribute('data-alert-id') || '';
@@ -652,7 +659,7 @@ window.ATAKMedicalAlerts = (function () {
       if (!alertId || !status) return;
       if (!(canTriage() || (lastData && lastData.can_triage))) {
         if (window.ATAKShowNotification) {
-          window.ATAKShowNotification('Seul un médecin ou un responsable d’effectifs peut faire le triage.');
+          window.ATAKShowNotification('Cochez la spécialité Médecin dans votre profil de session pour indiquer un statut.');
         }
         return;
       }
@@ -689,6 +696,21 @@ window.ATAKMedicalAlerts = (function () {
       }
       refreshFromLast();
     }
+  }
+
+  function onTriageSelectChange(ev) {
+    var sel = ev.target && ev.target.closest ? ev.target.closest('[data-medical-action="triage-select"]') : null;
+    if (!sel || sel.tagName !== 'SELECT') return;
+    var alertId = sel.getAttribute('data-alert-id') || '';
+    var status = sel.value || '';
+    if (!alertId || !status) return;
+    if (!(canTriage() || (lastData && lastData.can_triage))) {
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification('Cochez la spécialité Médecin dans votre profil de session pour indiquer un statut.');
+      }
+      return;
+    }
+    submitTriage(alertId, status);
   }
 
   function submitTriage(alertId, status) {
@@ -746,6 +768,7 @@ window.ATAKMedicalAlerts = (function () {
     if (boundUi) return;
     boundUi = true;
     document.addEventListener('click', onDismissClick);
+    document.addEventListener('change', onTriageSelectChange);
     var clearBtn = document.getElementById('atak-medical-clear-all');
     if (clearBtn && !clearBtn._atakBound) {
       clearBtn._atakBound = true;
@@ -946,12 +969,17 @@ window.ATAKMedicalAlerts = (function () {
     var body = msg && (msg.body || msg.message);
     var parsed = (msg && msg.medical) || parseMessage(body);
     if (!parsed) return;
-    showToast(
-      parsed.summary || parsed.label,
-      parsed.kind,
-      parsed.label || parsed.summary,
-      parsed.heart_rate != null ? parsed.heart_rate : null
-    );
+    // Rejeu historique (resync socket / reload) : peupler la liste sans toast/son.
+    var ageMs = Date.now() - parseCreatedAtMs(msg && msg.created_at);
+    var isRecent = isNaN(ageMs) || (ageMs >= 0 && ageMs < TOAST_MAX_AGE_MS);
+    if (isRecent) {
+      showToast(
+        parsed.summary || parsed.label,
+        parsed.kind,
+        parsed.label || parsed.summary,
+        parsed.heart_rate != null ? parsed.heart_rate : null
+      );
+    }
     ingestFromChatMessages([msg]);
     fetchAlerts();
   }

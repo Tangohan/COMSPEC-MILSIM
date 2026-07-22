@@ -19,6 +19,8 @@ public static class Extension
     private static string _tenantId = "";
     /// <summary>SteamID64 mémorisé (liaison / Connect / UpdatePosition) — identité côté DLL, pas seulement SQF.</summary>
     private static string _steamUid = "";
+    /// <summary>Version du mod Overwatch (CfgPatches) — remontée dans les journal Activité.</summary>
+    private static string _modVersion = "";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
@@ -85,6 +87,20 @@ public static class Extension
         catch { }
     }
 
+    private static void ApplyModVersion(string? raw)
+    {
+        var v = (raw ?? "").Trim();
+        if (v.Length == 0 || v.Length > 48) return;
+        // Évite d’écraser une version déjà connue par une valeur vide / bruit.
+        _modVersion = v;
+    }
+
+    private static string ModVersionJsonFragment()
+    {
+        if (_modVersion.Length == 0) return "";
+        return $",\"mod_version\":\"{EscapeJson(_modVersion)}\"";
+    }
+
     /// <summary>
     /// Corps JSON client-init (mapId + tenant_id + steam_uid si connus).
     /// Sans tenant le portail peut répondre 403 (tenant_context_required).
@@ -101,6 +117,8 @@ public static class Extension
         }
         if (_steamUid.Length > 0)
             sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
+        if (_modVersion.Length > 0)
+            sb.Append(",\"mod_version\":\"").Append(EscapeJson(_modVersion)).Append('"');
         sb.Append('}');
         return sb.ToString();
     }
@@ -122,6 +140,8 @@ public static class Extension
             sb.Append(",\"steam_uid\":\"").Append(EscapeJson(_steamUid)).Append('"');
         if (_sessionToken.Length > 0)
             sb.Append(",\"session_token\":\"").Append(EscapeJson(_sessionToken)).Append('"');
+        if (_modVersion.Length > 0)
+            sb.Append(",\"mod_version\":\"").Append(EscapeJson(_modVersion)).Append('"');
         sb.Append('}');
         return sb.ToString();
     }
@@ -905,6 +925,9 @@ public static class Extension
             // args[3] = Steam UID (identité fiable côté extension, pas seulement SQF ultérieur).
             if (args.Length > 3)
                 ApplySteamUid(args[3]);
+            // args[4] = version mod Overwatch (journal Activité).
+            if (args.Length > 4)
+                ApplyModVersion(args[4]);
             if (_apiKey.Length == 0)
                 return "OK|connected";
 
@@ -929,6 +952,8 @@ public static class Extension
         if (function is "Disconnect" or "ClientDisconnect")
         {
             var callSign = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+            if (args.Length > 1)
+                ApplyModVersion(args[1]);
             return VerifyDisconnectSync(callSign);
         }
 
@@ -1751,7 +1776,14 @@ public static class Extension
                 if (string.IsNullOrEmpty(label) && el.TryGetProperty("summary", out var sm))
                     label = sm.GetString() ?? "";
                 var grid = el.TryGetProperty("grid", out var g) ? (g.GetString() ?? "") : "";
-                var created = el.TryGetProperty("created_at", out var ca) ? (ca.GetString() ?? "") : "";
+                var created = "";
+                if (el.TryGetProperty("created_at", out var ca))
+                {
+                    // ISO string ou epoch numérique selon l’API — toujours une chaîne pour SQF
+                    created = ca.ValueKind == JsonValueKind.Number
+                        ? ca.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : (ca.GetString() ?? "");
+                }
                 var severity = el.TryGetProperty("severity", out var sev) ? (sev.GetString() ?? "") : "";
                 var triageStatus = "a_secourir";
                 var triageLabel = "A secourir";
@@ -1918,12 +1950,25 @@ public static class Extension
 
             if (function == "UpdatePosition" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 4)
             {
-                // InvariantCulture : sous locale FR, TryParse("12345.67") échoue sinon → pos 0,0.
-                var inv = System.Globalization.CultureInfo.InvariantCulture;
-                var styles = System.Globalization.NumberStyles.Float;
-                var posX = double.TryParse(args[0], styles, inv, out var x) ? x : 0;
-                var posY = double.TryParse(args[1], styles, inv, out var y) ? y : 0;
-                var heading = double.TryParse(args[2], styles, inv, out var h) ? h : (double?)null;
+                // InvariantCulture + virgule→point : SQF str/format sous locale FR envoie « 1850,12 ».
+                // Sans normalisation : parse raté → (0,0) drop, ou « 1850,12 » lu comme milliers → hors limites.
+                static double ParseArmaFloat(string? raw, double fallback = 0)
+                {
+                    if (string.IsNullOrWhiteSpace(raw)) return fallback;
+                    var s = raw.Trim().Replace(',', '.');
+                    return double.TryParse(s, System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : fallback;
+                }
+                static double? ParseArmaFloatNullable(string? raw)
+                {
+                    if (string.IsNullOrWhiteSpace(raw)) return null;
+                    var s = raw.Trim().Replace(',', '.');
+                    return double.TryParse(s, System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : null;
+                }
+                var posX = ParseArmaFloat(args[0]);
+                var posY = ParseArmaFloat(args[1]);
+                var heading = ParseArmaFloatNullable(args[2]);
                 var callSign = (args[3] ?? "").Trim();
                 if (callSign.Equals("Unknown", StringComparison.OrdinalIgnoreCase)
                     || callSign.Equals("Inconnu", StringComparison.OrdinalIgnoreCase))
@@ -1945,6 +1990,14 @@ public static class Extension
                     steamNorm = "";
                 // args[11] = nom de groupe Arma (groupId)
                 var groupName = args.Length > 11 ? (args[11] ?? "").Trim() : "";
+                // args[12] = altitude ASL (getPosASL Z) — format BI absolu pour Z
+                double? aslZ = args.Length > 12 ? ParseArmaFloatNullable(args[12]) : null;
+                // args[13] = version mod Overwatch (optionnel)
+                if (args.Length > 13)
+                    ApplyModVersion(args[13]);
+                // Position2D carte : X/Y hors origine (0,0) = menu / parse raté — ne pas poster
+                if (Math.Abs(posX) < 1.0 && Math.Abs(posY) < 1.0)
+                    return;
                 var headingStr = heading.HasValue ? heading.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture) : "null";
                 var extra = new System.Text.StringBuilder();
                 extra.Append("\"role\":\"").Append(EscapeJson(role)).Append("\"");
@@ -1957,11 +2010,36 @@ public static class Extension
                     extra.Append(",\"group_name\":\"").Append(EscapeJson(groupName)).Append("\"");
                     extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
                 }
+                if (aslZ.HasValue)
+                {
+                    var aslStr = aslZ.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+                    // Évite doublon si le JSON véhicule fournit déjà asl_z / pos_z
+                    if (string.IsNullOrWhiteSpace(vehicleJson)
+                        || (!vehicleJson.Contains("\"asl_z\"", StringComparison.Ordinal)
+                            && !vehicleJson.Contains("\"pos_z\"", StringComparison.Ordinal)))
+                    {
+                        extra.Append(",\"asl_z\":").Append(aslStr);
+                        extra.Append(",\"pos_z\":").Append(aslStr);
+                    }
+                }
                 if (!string.IsNullOrWhiteSpace(vehicleJson) && vehicleJson.StartsWith('{') && vehicleJson.EndsWith('}'))
                 {
-                    // Fusionne le JSON véhicule dans extra (sans enveloppe {}).
-                    var inner = vehicleJson.Substring(1, vehicleJson.Length - 2).Trim();
-                    if (inner.Length > 0) extra.Append(',').Append(inner);
+                    // Locale FR : format SQF peut produire « "speed":1,5 » → JSON invalide →
+                    // tout le POST /position est rejeté (body vide) alors que SALUTE (chat) passe.
+                    var sanitizedVeh = System.Text.RegularExpressions.Regex.Replace(
+                        vehicleJson,
+                        @"(?<=[:\[\s])(-?\d+),(\d+)(?=[,\}\]\s])",
+                        "$1.$2");
+                    try
+                    {
+                        using var _ = JsonDocument.Parse(sanitizedVeh);
+                        var inner = sanitizedVeh.Substring(1, sanitizedVeh.Length - 2).Trim();
+                        if (inner.Length > 0) extra.Append(',').Append(inner);
+                    }
+                    catch
+                    {
+                        // Métadonnées véhicule irrécupérables : poster quand même la Position2D.
+                    }
                 }
                 var steamJson = steamNorm.Length > 0
                     ? $",\"steam_uid\":\"{EscapeJson(steamNorm)}\""
@@ -1969,7 +2047,17 @@ public static class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson},\"extra\":{{{extra}}}}}";
+                var modJson = ModVersionJsonFragment();
+                var aslJson = aslZ.HasValue
+                    ? $",\"pos_z\":{aslZ.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"asl_z\":{aslZ.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}"
+                    : "";
+                if (_modVersion.Length > 0
+                    && (string.IsNullOrWhiteSpace(vehicleJson)
+                        || !vehicleJson.Contains("\"mod_version\"", StringComparison.Ordinal)))
+                {
+                    extra.Append(",\"mod_version\":\"").Append(EscapeJson(_modVersion)).Append('"');
+                }
+                var payload = $"{{\"mapId\":1,\"call_sign\":\"{EscapeJson(callSign)}\",\"pos_x\":{posX.ToString("R", System.Globalization.CultureInfo.InvariantCulture)},\"pos_y\":{posY.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}{aslJson},\"heading\":{headingStr},\"role\":\"{EscapeJson(role)}\"{steamJson}{sessJson}{modJson},\"extra\":{{{extra}}}}}";
                 EnqueueOrSend(_baseUrl + "/api/atak/position", payload);
                 return;
             }

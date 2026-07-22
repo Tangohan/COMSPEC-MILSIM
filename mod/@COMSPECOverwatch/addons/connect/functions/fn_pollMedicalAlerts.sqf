@@ -1,6 +1,7 @@
 /*
     Interroge Athena pour les alertes médicales actives (≤ 30 min) et met à jour le cache local.
     Notifie en cas de nouvelle alerte critique non encore vue.
+    Premier poll de la session : peuplement silencieux (pas de replay des alertes passées).
 */
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -51,30 +52,40 @@ private _alerts = [];
 missionNamespace setVariable ["COMSPEC_MedicalAlerts", _alerts, false];
 
 private _seen = missionNamespace getVariable ["COMSPEC_MedicalAlertsSeen", []];
-{
-    private _a = _x;
-    private _id = _a getOrDefault ["id", ""];
-    if (_id isEqualTo "" || {_id in _seen}) then { continue };
-    _seen pushBack _id;
-    if ((_a getOrDefault ["severity", ""]) isEqualTo "critical") then {
-        private _cs = _a getOrDefault ["call_sign", ""];
-        private _lb = _a getOrDefault ["label", "Assistance médicale"];
-        private _kind = toLower (_a getOrDefault ["kind", ""]);
-        private _msg = if (_cs isEqualTo "") then { _lb } else { format ["%1 — %2", _cs, _lb] };
-        // Message enrichi du kind pour que showNotification choisisse death / unconscious
-        private _toast = switch (_kind) do {
-            case "cardiac_arrest";
-            case "cardiac-arrest";
-            case "death";
-            case "dead";
-            case "kia": { format ["Alerte médicale — arrêt cardiaque — %1", _msg] };
-            case "unconscious": { format ["Alerte médicale — inconscient — %1", _msg] };
-            default { format ["Alerte médicale — %1", _msg] };
+private _bootstrapped = missionNamespace getVariable ["COMSPEC_MedicalAlertsBootstrapped", false];
+
+// Premier poll réussi : marquer toutes les alertes déjà présentes comme vues, sans toast/son.
+if (!_bootstrapped) then {
+    {
+        private _id = _x getOrDefault ["id", ""];
+        if (!(_id isEqualTo "") && {!(_id in _seen)}) then { _seen pushBack _id; };
+    } forEach _alerts;
+    missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", true, false];
+} else {
+    {
+        private _a = _x;
+        private _id = _a getOrDefault ["id", ""];
+        if (_id isEqualTo "" || {_id in _seen}) then { continue };
+        _seen pushBack _id;
+        if ((_a getOrDefault ["severity", ""]) isEqualTo "critical") then {
+            private _cs = _a getOrDefault ["call_sign", ""];
+            private _lb = _a getOrDefault ["label", "Assistance médicale"];
+            private _kind = toLower (_a getOrDefault ["kind", ""]);
+            private _msg = if (_cs isEqualTo "") then { _lb } else { format ["%1 — %2", _cs, _lb] };
+            private _toast = switch (_kind) do {
+                case "cardiac_arrest";
+                case "cardiac-arrest";
+                case "death";
+                case "dead";
+                case "kia": { format ["Alerte médicale — arrêt cardiaque — %1", _msg] };
+                case "unconscious": { format ["Alerte médicale — inconscient — %1", _msg] };
+                default { format ["Alerte médicale — %1", _msg] };
+            };
+            ["COMSPEC_Warning", [_toast]] call comspec_overwatch_connect_fnc_showNotification;
+            [format ["[Médical] %1", _msg], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
-        ["COMSPEC_Warning", [_toast]] call comspec_overwatch_connect_fnc_showNotification;
-        [format ["[Médical] %1", _msg], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
-    };
-} forEach _alerts;
+    } forEach _alerts;
+};
 
 if (count _seen > 100) then { _seen deleteRange [0, (count _seen) - 100]; };
 missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", _seen, false];

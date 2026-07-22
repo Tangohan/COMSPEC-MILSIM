@@ -7,6 +7,11 @@ window.ATAKOrders = (function () {
   var canIssue = false;
   var recipientsCache = null;
   var recipientsLoading = false;
+  /** @type {Record<string, object>} cache local pour merge delta (?since=) */
+  var ordersById = {};
+  /** Curseur datetime SQL du dernier poll (null = snapshot complet) */
+  var ordersSince = null;
+  var currentMapIdForOrders = null;
 
   function getApiBase() {
     if (window.ATAKSocket && window.ATAKSocket.getApiBase) return window.ATAKSocket.getApiBase();
@@ -317,10 +322,63 @@ window.ATAKOrders = (function () {
     }).join('');
   }
 
+  function resetOrdersCache() {
+    ordersById = {};
+    ordersSince = null;
+    lastFingerprint = '';
+  }
+
+  function ordersSortedFromCache() {
+    return Object.keys(ordersById).map(function (k) {
+      return ordersById[k];
+    }).sort(function (a, b) {
+      var ua = String((a && a.updated_at) || (a && a.created_at) || '');
+      var ub = String((b && b.updated_at) || (b && b.created_at) || '');
+      if (ua === ub) return 0;
+      return ua < ub ? 1 : -1;
+    });
+  }
+
+  function mergeOrdersDelta(incoming, isDelta) {
+    incoming = Array.isArray(incoming) ? incoming : [];
+    if (!isDelta) {
+      ordersById = {};
+    }
+    incoming.forEach(function (o) {
+      if (!o || !o.id) return;
+      ordersById[String(o.id)] = o;
+    });
+    return ordersSortedFromCache();
+  }
+
+  function advanceOrdersSince(data, merged) {
+    var cursor = data && (data.cursor || data.server_time);
+    if (cursor) {
+      ordersSince = String(cursor);
+      return;
+    }
+    var max = ordersSince || '';
+    (merged || []).forEach(function (o) {
+      var u = String((o && o.updated_at) || '');
+      if (u && (!max || u > max)) max = u;
+    });
+    if (max) ordersSince = max;
+  }
+
   function fetchOrders() {
     var base = getApiBase();
     if (!base) return Promise.resolve();
-    return fetch(base + '/api/atak/orders?mapId=' + encodeURIComponent(getMapId()) + '&limit=80', {
+    var mapId = getMapId();
+    if (currentMapIdForOrders != null && String(currentMapIdForOrders) !== String(mapId)) {
+      resetOrdersCache();
+    }
+    currentMapIdForOrders = mapId;
+
+    var url = base + '/api/atak/orders?mapId=' + encodeURIComponent(mapId) + '&limit=80';
+    if (ordersSince) {
+      url += '&since=' + encodeURIComponent(ordersSince);
+    }
+    return fetch(url, {
       credentials: 'include',
       cache: 'no-store'
     })
@@ -338,10 +396,19 @@ window.ATAKOrders = (function () {
           canIssue = !!window.ATAKSessionProfile.canIssueOrders();
         }
         renderIssueForm(canIssue);
-        var orders = (data && data.orders) || [];
-        var pending = (data && data.counts && data.counts.pending) || 0;
+        var incoming = (data && data.orders) || [];
+        var isDelta = !!(data && data.delta && ordersSince);
+        var orders = mergeOrdersDelta(incoming, isDelta);
+        advanceOrdersSince(data, orders);
+        var pending = (data && data.counts && data.counts.pending);
+        if (pending == null) {
+          pending = orders.filter(function (o) {
+            var s = String((o && o.status) || '').toUpperCase();
+            return s === 'PENDING' || s === 'DELIVERED';
+          }).length;
+        }
         var fp = JSON.stringify(orders.map(function (o) {
-          return [o.id, o.status, o.updated_at, o.sim_state, o.is_overdue];
+          return [o.id, o.status, o.updated_at, o.sim_state, o.is_overdue, o.deleted];
         }));
         if (fp !== lastFingerprint) {
           lastFingerprint = fp;
@@ -429,7 +496,7 @@ window.ATAKOrders = (function () {
           msg = 'Ordre émis — livraison radio estimée ~' + res.data.order.sim_latency_sec + ' s.';
         }
         if (window.ATAKShowNotification) window.ATAKShowNotification(msg);
-        lastFingerprint = '';
+        resetOrdersCache();
         fetchOrders();
       })
       .catch(function () {
@@ -467,7 +534,7 @@ window.ATAKOrders = (function () {
           if (status === 'ACK') window.ATAKShowNotification('Réception confirmée.');
           else if (status === 'CANCELLED') window.ATAKShowNotification('Ordre annulé.');
         }
-        lastFingerprint = '';
+        resetOrdersCache();
         fetchOrders();
       })
       .catch(function () {

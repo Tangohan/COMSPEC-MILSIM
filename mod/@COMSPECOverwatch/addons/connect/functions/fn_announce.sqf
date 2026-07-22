@@ -1,7 +1,7 @@
 /*
     Annonce métier : journal HTML + (sauf mode discret) chat système.
     Params: [_message, _type, _priority, _forceGameUi]
-      type     : link | medical | order | ping | system
+      type     : link | medical | order | ping | system | tactical
       priority : info | warn | critical
       forceGameUi : true pour toujours afficher le chat (dialogues critiques)
 */
@@ -21,6 +21,7 @@ private _titles = createHashMapFromArray [
     ["medical", "Alerte médicale"],
     ["order", "Ordre"],
     ["ping", "Signal"],
+    ["tactical", "Signalement"],
     ["system", "Overwatch"]
 ];
 private _title = _titles getOrDefault [toLower _type, "Overwatch"];
@@ -32,6 +33,7 @@ if (!_quiet || {_forceGameUi}) then {
     private _prefix = switch (toLower _type) do {
         case "link": { "[Athena] " };
         case "medical": { "[COMSPEC] " };
+        case "tactical": { "[Situation] " };
         default { "[COMSPEC] " };
     };
     systemChat (_prefix + _message);

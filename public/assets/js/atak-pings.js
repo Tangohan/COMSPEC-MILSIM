@@ -18,6 +18,13 @@ window.ATAKPings = (function () {
     return 'Opérateur';
   }
 
+  function askConfirm(message) {
+    if (window.ATAKContextMenu && typeof window.ATAKContextMenu.confirmAction === 'function') {
+      return window.ATAKContextMenu.confirmAction(message);
+    }
+    return Promise.resolve(window.confirm(message));
+  }
+
   function fetchPings() {
     if (!isNodeConfigured()) return;
     var url = getApiBase() + '/api/pings?mapId=' + getMapId();
@@ -46,8 +53,12 @@ window.ATAKPings = (function () {
               '<p class="atak-empty-state-text">Clic droit sur la carte → Envoyer un ping.</p></div>';
           } else {
             el.innerHTML = list.map(formatPing).join('');
-            bindPingClicks();
+            bindPingList();
           }
+        }
+        // Même couche que TACMAP : tracer tous les pings sur la carte (pas seulement la liste).
+        if (window.ATAKMap && typeof window.ATAKMap.setPingsOnMap === 'function') {
+          window.ATAKMap.setPingsOnMap(list);
         }
         if (window.ATAKLastPingsError) window.ATAKLastPingsError(null);
       })
@@ -60,9 +71,16 @@ window.ATAKPings = (function () {
     var time = p.created_at ? p.created_at.replace('T', ' ').substring(11, 19) : '';
     var gx = p.pos_x != null ? Math.round(Number(p.pos_x)) : '—';
     var gy = p.pos_y != null ? Math.round(Number(p.pos_y)) : '—';
-    return '<div class="atak-ping-item" data-x="' + (p.pos_x || '') + '" data-y="' + (p.pos_y || '') + '">' +
+    var id = p.id != null ? String(p.id) : '';
+    return '<div class="atak-ping-item" data-id="' + escapeHtml(id) + '" data-x="' + (p.pos_x || '') + '" data-y="' + (p.pos_y || '') + '">' +
+      '<button type="button" class="atak-ping-item__main" data-focus-ping>' +
       '<strong>' + escapeHtml(p.author || '') + '</strong> ' + escapeHtml(p.message || '') +
-      ' <span style="color:var(--atak-muted)">' + time + ' · grille ' + gx + ' / ' + gy + '</span></div>';
+      ' <span style="color:var(--atak-muted)">' + time + ' · grille ' + gx + ' / ' + gy + '</span>' +
+      '</button>' +
+      (id
+        ? '<button type="button" class="atak-ping-item__del" data-delete-ping="' + escapeHtml(id) + '" title="Supprimer">×</button>'
+        : '') +
+      '</div>';
   }
 
   function escapeHtml(s) {
@@ -79,34 +97,92 @@ window.ATAKPings = (function () {
       var empty = el.querySelector('.atak-empty-state, .atak-muted');
       if (empty) empty.remove();
       el.insertAdjacentHTML('afterbegin', formatPing(ping));
-      bindPingClicks();
+      bindPingList();
     }
     if (ping.pos_x != null && ping.pos_y != null && window.ATAKMap && window.ATAKMap.addTemporaryPingMarker) {
-      window.ATAKMap.addTemporaryPingMarker(ping.pos_x, ping.pos_y, ping.author, ping.message || '');
+      window.ATAKMap.addTemporaryPingMarker(ping.pos_x, ping.pos_y, ping.author, ping.message || '', ping.id);
     }
   }
 
-  function bindPingClicks() {
-    document.querySelectorAll('#atak-pings-list .atak-ping-item').forEach(function (node) {
-      if (node._bound) return;
-      node._bound = true;
-      node.addEventListener('click', function () {
-        var x = this.getAttribute('data-x');
-        var y = this.getAttribute('data-y');
+  function bindPingList() {
+    var el = document.getElementById('atak-pings-list');
+    if (!el || el._bound) return;
+    el._bound = true;
+    el.addEventListener('click', function (e) {
+      var delBtn = e.target.closest('[data-delete-ping]');
+      if (delBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var delId = delBtn.getAttribute('data-delete-ping');
+        if (!delId) return;
+        askConfirm('Supprimer ce ping ?').then(function (ok) {
+          if (!ok) return;
+          deletePing(delId).then(function () {
+            if (window.ATAKShowNotification) window.ATAKShowNotification('Ping supprimé.');
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le ping.');
+          });
+        });
+        return;
+      }
+      var focusBtn = e.target.closest('[data-focus-ping]');
+      if (focusBtn) {
+        var row = focusBtn.closest('.atak-ping-item');
+        if (!row) return;
+        var x = row.getAttribute('data-x');
+        var y = row.getAttribute('data-y');
         if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
           window.ATAKMap.centerOn(parseFloat(y), parseFloat(x));
         }
-      });
+      }
     });
   }
 
-  function createPingAt(posX, posY, message) {
+  function deletePing(id) {
+    if (!isNodeConfigured()) {
+      return Promise.reject(new Error('no-api'));
+    }
+    var pingId = String(id || '');
+    if (!pingId || pingId.indexOf('live_') === 0 || pingId.indexOf('p_') === 0) {
+      if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
+        window.ATAKMap.removeTemporaryPingMarker(pingId);
+      }
+      return Promise.resolve(true);
+    }
+    return fetch(getApiBase() + '/api/pings/' + encodeURIComponent(pingId), {
+      method: 'DELETE',
+      credentials: 'include'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('delete');
+      if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
+        window.ATAKMap.removeTemporaryPingMarker(pingId);
+      }
+      fetchPings();
+      return true;
+    });
+  }
+
+  function createPingAt(posX, posY, message, kind) {
     if (!isNodeConfigured()) {
       if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible pour envoyer un ping.');
       return;
     }
     var author = getAuthor();
-    var payload = { mapId: getMapId(), author: author, pos_x: posX, pos_y: posY, message: message || '' };
+    var kindKey = String(kind || 'info').toLowerCase();
+    var kindLabels = {
+      contact: 'Contact',
+      hostile: 'Hostile',
+      medical: 'Médical',
+      rally: 'Ralliement',
+      objective: 'Objectif',
+      info: 'Info'
+    };
+    var kindLabel = kindLabels[kindKey] || 'Info';
+    var body = String(message || '').trim();
+    if (!/^\s*\[[^\]]+\]/.test(body)) {
+      body = '[' + kindLabel + ']' + (body ? ' ' + body : '');
+    }
+    var payload = { mapId: getMapId(), author: author, pos_x: posX, pos_y: posY, message: body };
 
     // Toujours passer par l’API HTTP (mode PHP : pas de bus temps réel).
     fetch(getApiBase() + '/api/pings', {
@@ -127,14 +203,14 @@ window.ATAKPings = (function () {
         // Affichage immédiat même si la réponse est minimale
         appendPing({
           author: author,
-          message: message || '',
+          message: body,
           pos_x: posX,
           pos_y: posY,
           created_at: new Date().toISOString()
         });
         fetchPings();
       }
-      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping envoyé.');
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping ' + kindLabel + ' envoyé.');
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le ping.');
     });
@@ -142,5 +218,10 @@ window.ATAKPings = (function () {
 
   // Le clic droit est géré par ATAKContextMenu (menu marqueur / ping / trait / commentaire).
 
-  return { appendPing: appendPing, fetchPings: fetchPings, createPingAt: createPingAt };
+  return {
+    appendPing: appendPing,
+    fetchPings: fetchPings,
+    createPingAt: createPingAt,
+    deletePing: deletePing
+  };
 })();

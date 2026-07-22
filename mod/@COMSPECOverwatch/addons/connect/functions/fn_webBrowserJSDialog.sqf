@@ -154,6 +154,25 @@ switch (true) do {
             [_wx, _wy, _mType, _mColor] call comspec_overwatch_connect_fnc_placeMarkerFromTablet;
         };
     };
+    case ((_cmd select [0, 9]) isEqualTo "map:show"): {
+        // map:show[|<zoom>]
+        private _rest = _cmd select [9, (count _cmd) - 9];
+        if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
+        private _z = if (_rest isEqualTo "") then { -1 } else { parseNumber _rest };
+        [_z] call comspec_overwatch_connect_fnc_webBrowserMapShow;
+    };
+    case ((_cmd select [0, 9]) isEqualTo "map:hide"): {
+        // map:hide[|<view>]
+        private _rest = _cmd select [9, (count _cmd) - 9];
+        if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
+        if (_rest isEqualTo "") then { _rest = "bft"; };
+        [_rest] call comspec_overwatch_connect_fnc_webBrowserMapHide;
+    };
+    case ((_cmd select [0, 10]) isEqualTo "map:names"): {
+        private _rest = _cmd select [10, (count _cmd) - 10];
+        if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
+        missionNamespace setVariable ["COMSPEC_WebBrowser_MapShowNames", (_rest isEqualTo "1") || {_rest isEqualTo "true"}];
+    };
     default {
         _handled = true;
     };

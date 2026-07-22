@@ -893,8 +893,9 @@ return function (Router $router) {
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
-    $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+$router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+$router->post('/back-office/atak/briefing-slides/{id}/comment', [AdminBriefingSlidesController::class, 'storeComment'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+$router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1264,7 +1265,11 @@ return function (Router $router) {
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->post('/api/atak/disconnect', [AtakApiController::class, 'disconnect']);
-    $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+$router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/briefing-presence', [AtakApiController::class, 'briefingPresence']);
+    $router->post('/api/atak/briefing-presence', [AtakApiController::class, 'briefingPresence']);
+    $router->get('/api/atak/briefing-slides/{id}/comments', [AtakApiController::class, 'briefingSlideComments']);
+    $router->post('/api/atak/briefing-slides/{id}/comments', [AtakApiController::class, 'briefingSlideComments']);
     $router->get('/api/atak/fire-teams', [FireTeamApiController::class, 'index']);
     $router->post('/api/atak/fire-teams', [FireTeamApiController::class, 'store']);
     $router->get('/api/atak/fire-teams/{id}', [FireTeamApiController::class, 'show']);
@@ -1298,6 +1303,9 @@ return function (Router $router) {
     $router->get('/api/atak/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
     $router->post('/api/atak/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
     $router->patch('/api/atak/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
+    $router->get('/api/atak/tactical-alerts', [AtakApiController::class, 'tacticalAlertsIndex']);
+    $router->get('/api/atak/mission-settings', [AtakApiController::class, 'missionSettings']);
+    $router->post('/api/atak/mission-settings', [AtakApiController::class, 'missionSettings']);
 $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
 $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
 $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);
@@ -1308,6 +1316,7 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->patch('/api/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
     $router->get('/api/pings', [AtakApiController::class, 'pingsIndex']);
     $router->post('/api/pings', [AtakApiController::class, 'pingsStore']);
+    $router->delete('/api/pings/{id}', [AtakApiController::class, 'pingsDelete']);
     $router->get('/api/nine-line', [AtakApiController::class, 'nineLineIndex']);
     $router->post('/api/nine-line', [AtakApiController::class, 'nineLineStore']);
     $router->patch('/api/nine-line/{id}', [AtakApiController::class, 'nineLineUpdate']);

@@ -271,6 +271,7 @@
   function renderAtakMarkers(layerGroup, list, isWorld, onCtx) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
+    var arma = window.ArmaMapMarkers;
     (list || []).forEach(function (m) {
       var id = m.id;
       if (id == null) return;
@@ -278,18 +279,57 @@
       var data = typeof raw === 'string' ? (function () { try { return JSON.parse(raw || '{}'); } catch (e) { return {}; } })() : (raw || {});
       var latlng = parseMarkerDataPos(data.pos, isWorld);
       if (!latlng) return;
-      var label = (data.text || data.label || 'Repère') + '';
-      var icon = L.divIcon({
-        className: 'comspec-atak-marker',
-        html: '<span style="width:11px;height:11px;border-radius:50%;background:#10b981;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);"></span>',
-        iconSize: [15, 15],
-        iconAnchor: [7, 7],
-      });
+      var label = (arma && arma.labelOf) ? arma.labelOf(data) : ((data.text || data.label || 'Repère') + '');
+      var icon;
+      if (arma && arma.leafletDivIcon && (arma.isArmaStyleMarker(data) || data.type || data.color)) {
+        icon = arma.leafletDivIcon(L, data);
+      } else {
+        var color = (arma && arma.armaColorHex) ? arma.armaColorHex(data.color) : '#10b981';
+        icon = L.divIcon({
+          className: 'comspec-atak-marker',
+          html: '<span style="width:11px;height:11px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);"></span>',
+          iconSize: [15, 15],
+          iconAnchor: [7, 7],
+        });
+      }
       var marker = L.marker(latlng, { icon: icon });
-      marker.bindPopup(label);
+      var typeLab = data.type ? String(data.type) : '';
+      var colorLab = data.color ? String(data.color) : '';
+      marker.bindPopup('<strong>' + String(label || 'Repère').replace(/</g, '&lt;') + '</strong>' +
+        (typeLab ? '<br/>Type : ' + typeLab.replace(/</g, '&lt;') : '') +
+        (colorLab ? '<br/>Couleur : ' + colorLab.replace(/</g, '&lt;') : ''));
       bindDeletableLayer(marker, { kind: 'marker', id: id, label: label }, onCtx);
       marker.addTo(layerGroup);
     });
+  }
+
+  function pingKindFromMessage(msg) {
+    var rawMsg = String(msg || '');
+    var m = rawMsg.match(/^\s*\[([^\]]+)\]\s*/);
+    if (m) {
+      var raw = m[1].toLowerCase();
+      var rest = rawMsg.slice(m[0].length);
+      if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
+      if (raw.indexOf('medical') >= 0 || raw.indexOf('medecin') >= 0 || raw.indexOf('médecin') >= 0 || raw.indexOf('bless') >= 0) {
+        return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
+      }
+      if (raw.indexOf('rally') >= 0 || raw.indexOf('ralli') >= 0 || raw.indexOf('rp') >= 0) {
+        return { kind: 'rally', label: 'Ralliement', color: '#22c55e', rest: rest };
+      }
+      if (raw.indexOf('contact') >= 0) return { kind: 'contact', label: 'Contact', color: '#f97316', rest: rest };
+      if (raw.indexOf('objectif') >= 0 || raw.indexOf('obj') >= 0) return { kind: 'objective', label: 'Objectif', color: '#eab308', rest: rest };
+      if (raw.indexOf('alerte') >= 0 || raw.indexOf('warning') >= 0) return { kind: 'warning', label: 'Alerte', color: '#f97316', rest: rest };
+      if (raw.indexOf('rep') >= 0 || raw.indexOf('marqueur') >= 0) return { kind: 'marker', label: 'Repère', color: '#ef4444', rest: rest };
+      return { kind: 'info', label: m[1], color: '#38bdf8', rest: rest };
+    }
+    var low = rawMsg.toLowerCase();
+    if (low.indexOf('point d') >= 0 && low.indexOf('inter') >= 0) {
+      return { kind: 'info', label: 'Intérêt', color: '#38bdf8', rest: rawMsg };
+    }
+    if (low.indexOf('marqueur') >= 0) {
+      return { kind: 'marker', label: 'Repère', color: '#ef4444', rest: rawMsg };
+    }
+    return { kind: 'info', label: 'Ping', color: '#ec4899', rest: rawMsg };
   }
 
   function renderPingsLayer(layerGroup, rows, isWorld) {
@@ -300,14 +340,22 @@
       var y = parseFloat(p.pos_y);
       if (isNaN(x) || isNaN(y)) return;
       var latlng = isWorld ? L.latLng(x / WORLD_SCALE, y / WORLD_SCALE) : L.latLng(y, x);
+      var kind = pingKindFromMessage(p.message);
+      var author = String(p.author || '').trim();
+      var pinLabel = author || kind.label;
       var icon = L.divIcon({
         className: 'comspec-ping-marker',
-        html: '<span style="font-size:14px;">📍</span>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
+        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
+          '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">' +
+          String(pinLabel).replace(/</g, '&lt;').slice(0, 12) + '</span></div>',
+        iconSize: [64, 26],
+        iconAnchor: [32, 8],
       });
       L.marker(latlng, { icon: icon })
-        .bindPopup('<strong>' + (p.author || '—') + '</strong><br/>' + (p.message || '').replace(/</g, '&lt;'))
+        .bindPopup('<strong>' + String(author || '—').replace(/</g, '&lt;') + '</strong> · ' +
+          String(kind.label).replace(/</g, '&lt;') + '<br/>' +
+          String(kind.rest || p.message || '').replace(/</g, '&lt;'))
         .addTo(layerGroup);
     });
   }
@@ -379,9 +427,9 @@
 
   function statusLabelFr(status) {
     var s = (status || '').toLowerCase();
-    if (s === 'linked') return 'Synchronisé';
-    if (s === 'delayed') return 'Retard';
-    if (s === 'offline') return 'Hors ligne';
+    if (s === 'linked') return 'En liaison';
+    if (s === 'delayed') return 'Signal différé';
+    if (s === 'offline') return 'Hors liaison';
     return status || '—';
   }
 
@@ -438,6 +486,14 @@
         sigint: false,
         intel: false,
         air: true,
+        elevation: true,
+        route: true,
+      },
+      affiliations: {
+        friend: true,
+        hostile: true,
+        unknown: true,
+        neutral: true,
       },
     };
 
@@ -450,6 +506,8 @@
     var selectedUnitId = null;
     var syncLock = false;
     var trailTracker = createUnitTrailTracker({ maxPoints: TRAIL_MAX_POINTS });
+    var terrainTools = null;
+    var routeTools = null;
 
     function getEl(id) {
       return typeof id === 'string' ? document.getElementById(id) : id;
@@ -470,7 +528,8 @@
       var Ls = state.layers;
       [['units', layerGroups.units], ['trails', layerGroups.trails], ['danger', layerGroups.dangerZones], ['drawings', layerGroups.drawings],
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
-        ['intel', layerGroups.intel], ['air', layerGroups.air]].forEach(function (pair) {
+        ['intel', layerGroups.intel], ['air', layerGroups.air],
+        ['elevation', layerGroups.elevation], ['route', layerGroups.route]].forEach(function (pair) {
         var key = pair[0];
         var lg = pair[1];
         if (!lg) return;
@@ -579,6 +638,7 @@
       var url = '';
       if (kind === 'shape') url = apiBase + '/map-shapes/' + encodeURIComponent(id);
       else if (kind === 'marker') url = apiBase + '/markers/' + encodeURIComponent(id);
+      else if (kind === 'ping') url = apiBase + '/pings/' + encodeURIComponent(id);
       else if (kind === 'danger') url = apiBase + '/danger-zones/' + encodeURIComponent(id) + '?missionId=' + encodeURIComponent(getMissionId());
       else return;
       fetch(url, { method: 'DELETE', credentials: 'include' })
@@ -596,6 +656,7 @@
       var msg = 'Retirer cet élément de la carte ?';
       if (payload.kind === 'shape') msg = 'Retirer ce tracé de la carte ?';
       else if (payload.kind === 'marker') msg = 'Retirer ce repère de la carte ?';
+      else if (payload.kind === 'ping') msg = 'Supprimer ce ping ?';
       else if (payload.kind === 'danger') msg = 'Retirer cette zone de la carte ?';
       if (!window.confirm(msg)) return;
       deleteFeatureByKind(payload.kind, payload.id);
@@ -864,19 +925,48 @@
       filterRosterQuery(getEl(els.rosterSearch) && getEl(els.rosterSearch).value);
     }
 
+    function unitAffiliation(u) {
+      var extra = {};
+      try {
+        if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
+        else if (u.extra && typeof u.extra === 'object') extra = u.extra;
+      } catch (e) {}
+      var aff = String(extra.affiliation || extra.affil || u.affiliation || 'friend').toLowerCase();
+      var side = String(extra.side || u.side || '').toUpperCase();
+      if (side === 'EAST') aff = 'hostile';
+      else if (side === 'GUER') aff = 'unknown';
+      else if (side === 'CIV') aff = 'neutral';
+      else if (side === 'WEST') aff = 'friend';
+      if (aff === 'hostile' || aff === 'enemy' || aff === 'east') return 'hostile';
+      if (aff === 'unknown' || aff === 'guer' || aff === 'independent') return 'unknown';
+      if (aff === 'neutral' || aff === 'civ' || aff === 'civilian') return 'neutral';
+      return 'friend';
+    }
+
+    function filterUnitsByAffiliation(units) {
+      var aff = state.affiliations || {};
+      return (units || []).filter(function (u) {
+        var a = unitAffiliation(u);
+        if (a === 'hostile') return !!aff.hostile;
+        if (a === 'unknown') return !!aff.unknown;
+        if (a === 'neutral') return !!aff.neutral;
+        return !!aff.friend;
+      });
+    }
+
     function renderUnitsOnMap(units) {
       if (!layerGroups.units || !map) return;
       layerGroups.units.clearLayers();
       var nato = window.NatoSidcIcons;
-      (units || []).forEach(function (u) {
-        var gridRef = (u.grid_ref || '').trim().split(/\s+/);
-        var x = parseFloat(gridRef[0]);
-        var y = parseFloat(gridRef[1]);
+      filterUnitsByAffiliation(units || []).forEach(function (u) {
+        var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : NaN;
+        var y = u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : NaN;
         if (isNaN(x) || isNaN(y)) {
-          x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
-          y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
+          var gridRef = (u.grid_ref || '').trim().split(/\s+/);
+          x = parseFloat(gridRef[0]);
+          y = parseFloat(gridRef[1]);
         }
-        if (isNaN(x) || isNaN(y)) return;
+        if (isNaN(x) || isNaN(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return;
         var latlng = L.latLng(y, x);
         var unitKey = String(u.id != null ? u.id : (u.call_sign || Math.random()));
         pushTrailPoint(unitKey, latlng);
@@ -885,7 +975,7 @@
           if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
           else if (u.extra && typeof u.extra === 'object') extra = u.extra;
         } catch (e) {}
-        var aff = extra.affiliation || extra.affil || u.affiliation || 'friend';
+        var aff = unitAffiliation(u);
         var health = String(extra.health || u.health || '').toLowerCase();
         var icon = nato && nato.leafletDivIcon
           ? nato.leafletDivIcon(L, {
@@ -927,16 +1017,19 @@
           syncLock = false;
           state.syncStatus = 'ok';
           state.lastSyncAt = Date.now();
-          state.unitsCount = (rows && rows.length) ? rows.length : 0;
-          renderUnitsOnMap(rows || []);
-          renderRosterAndTable(rows || []);
+          lastUnits = rows || [];
+          var filtered = filterUnitsByAffiliation(lastUnits);
+          state.unitsCount = filtered.length;
+          renderUnitsOnMap(lastUnits);
+          renderRosterAndTable(filtered);
           if (medicalPanelEnabled) {
             fetchMedicalChatAlerts().then(function (alerts) {
-              renderMedicalPanel(rows || [], alerts);
+              renderMedicalPanel(filtered, alerts);
             });
           } else {
-            renderMedicalPanel(rows || [], []);
+            renderMedicalPanel(filtered, []);
           }
+          refreshTacticalPanel();
           updateUnitCountEl();
           updateSyncBadge();
         })
@@ -998,11 +1091,14 @@
         layerGroups.sigint = L.layerGroup();
         layerGroups.intel = L.layerGroup();
         layerGroups.air = L.layerGroup();
+        layerGroups.elevation = L.layerGroup();
+        layerGroups.route = L.layerGroup();
         map.on('contextmenu', function (e) {
           if (L.DomEvent) L.DomEvent.preventDefault(e);
           if (e.originalEvent) e.originalEvent.preventDefault();
         });
         applyLayerVisibility();
+        bindAnalysisTools();
       }
 
       clearTrails();
@@ -1143,6 +1239,116 @@
     bindLayerCheckbox(els.layerSigint, 'sigint');
     bindLayerCheckbox(els.layerIntel, 'intel');
     bindLayerCheckbox(els.layerAir, 'air');
+    bindLayerCheckbox(els.layerElevation, 'elevation');
+    bindLayerCheckbox(els.layerRoute, 'route');
+
+    function bindAffCheckbox(id, key) {
+      var el = getEl(id);
+      if (!el) return;
+      el.checked = !!state.affiliations[key];
+      el.addEventListener('change', function () {
+        state.affiliations[key] = el.checked;
+        if (lastUnits.length) {
+          var filtered = filterUnitsByAffiliation(lastUnits);
+          state.unitsCount = filtered.length;
+          renderUnitsOnMap(lastUnits);
+          renderRosterAndTable(filtered);
+          updateUnitCountEl();
+        }
+      });
+    }
+    bindAffCheckbox(els.showFriend, 'friend');
+    bindAffCheckbox(els.showHostile, 'hostile');
+    bindAffCheckbox(els.showUnknown, 'unknown');
+    bindAffCheckbox(els.showNeutral, 'neutral');
+
+    function bindAnalysisTools() {
+      if (!map) return;
+      var hintEl = getEl(els.toolHint);
+      var etaEl = getEl(els.toolEta);
+      if (window.TacmapTerrainTools && typeof window.TacmapTerrainTools.bind === 'function') {
+        terrainTools = window.TacmapTerrainTools.bind(map, layerGroups, { hintEl: hintEl });
+      }
+      if (window.TacmapRouteTools && typeof window.TacmapRouteTools.bind === 'function') {
+        routeTools = window.TacmapRouteTools.bind(map, layerGroups, { hintEl: hintEl, etaEl: etaEl });
+      }
+    }
+
+    function wireToolButtons() {
+      var btnVs = getEl(els.toolViewshed);
+      var btnHm = getEl(els.toolHeatmap);
+      var btnRf = getEl(els.toolRouteFoot);
+      var btnRv = getEl(els.toolRouteVeh);
+      var btnClr = getEl(els.toolClear);
+      var inpR = getEl(els.toolRadius);
+      var inpS = getEl(els.toolSpeed);
+      if (btnVs) btnVs.addEventListener('click', function () {
+        if (terrainTools) {
+          if (inpR) terrainTools.setRadiusM(inpR.value);
+          terrainTools.startViewshed();
+        }
+      });
+      if (btnHm) btnHm.addEventListener('click', function () {
+        if (terrainTools) terrainTools.startHeatmap();
+      });
+      if (btnRf) btnRf.addEventListener('click', function () {
+        if (routeTools) {
+          if (inpS) routeTools.setSpeedKph(inpS.value);
+          routeTools.startFoot();
+        }
+      });
+      if (btnRv) btnRv.addEventListener('click', function () {
+        if (routeTools) {
+          if (inpS) routeTools.setSpeedKph(inpS.value || 40);
+          routeTools.startVehicle();
+        }
+      });
+      if (btnClr) btnClr.addEventListener('click', function () {
+        if (terrainTools) terrainTools.clear();
+        if (routeTools) routeTools.clear();
+      });
+      if (inpR) inpR.addEventListener('change', function () {
+        if (terrainTools) terrainTools.setRadiusM(inpR.value);
+      });
+      if (inpS) inpS.addEventListener('change', function () {
+        if (routeTools) routeTools.setSpeedKph(inpS.value);
+      });
+    }
+    wireToolButtons();
+
+    function refreshTacticalPanel() {
+      var listEl = getEl(els.tacticalList);
+      if (!listEl || !window.TacmapTacticalAlerts) return;
+      window.TacmapTacticalAlerts.poll(apiBase, state.currentMapId, listEl);
+    }
+
+    function loadMissionSettings() {
+      var url = apiBase + '/atak/mission-settings?mapId=' + encodeURIComponent(state.currentMapId);
+      if (String(apiBase).indexOf('/atak') >= 0) {
+        url = apiBase + '/mission-settings?mapId=' + encodeURIComponent(state.currentMapId);
+      }
+      fetch(url, { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var s = (data && data.settings) ? data.settings : null;
+          if (!s) return;
+          // show_east → hostile, show_guer → unknown, show_civ → neutral
+          if (typeof s.show_east === 'boolean') state.affiliations.hostile = s.show_east;
+          if (typeof s.show_guer === 'boolean') state.affiliations.unknown = s.show_guer;
+          if (typeof s.show_civ === 'boolean') state.affiliations.neutral = s.show_civ;
+          var h = getEl(els.showHostile);
+          var u = getEl(els.showUnknown);
+          var n = getEl(els.showNeutral);
+          if (h) h.checked = !!state.affiliations.hostile;
+          if (u) u.checked = !!state.affiliations.unknown;
+          if (n) n.checked = !!state.affiliations.neutral;
+          if (lastUnits.length) {
+            renderUnitsOnMap(lastUnits);
+            renderRosterAndTable(filterUnitsByAffiliation(lastUnits));
+          }
+        })
+        .catch(function () {});
+    }
 
     // Trails handled in bindLayerCheckbox
 
@@ -1155,6 +1361,9 @@
 
     refreshPlatformHealth();
     intervals.push(setInterval(refreshPlatformHealth, 60000));
+    intervals.push(setInterval(refreshTacticalPanel, Math.max(syncMs, 8000)));
+    loadMissionSettings();
+    refreshTacticalPanel();
 
     var initialSlug = (mapSel && mapSel.value) || ctx.defaultMapSlug || 'altis';
     applyBaseLayer(initialSlug);
@@ -1174,6 +1383,7 @@
       syncUnits: syncUnits,
       refreshSecondaryLayers: refreshSecondaryLayers,
       invalidateSize: invalidateSize,
+      loadMissionSettings: loadMissionSettings,
     };
   }
 

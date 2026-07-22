@@ -288,13 +288,10 @@ final class QrPngGenerator
 
     private function pngChunk(string $type, string $data): string
     {
-        // crc32 peut être négatif sur certaines plateformes → forcer unsigned 32-bit.
-        $crc = crc32($type . $data);
-        if ($crc < 0) {
-            $crc = $crc + 4294967296.0;
-        }
+        // crc32 peut être négatif sur 32-bit ; pack('N') attend un unsigned 32-bit.
+        $crc = crc32($type . $data) & 0xffffffff;
 
-        return pack('N', strlen($data)) . $type . $data . pack('N', (int) $crc);
+        return pack('N', strlen($data)) . $type . $data . pack('N', $crc);
     }
 
     /**

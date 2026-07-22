@@ -111,7 +111,7 @@ window.ATAKContextMenu = (function () {
       '</div>';
     if (feature.featureType === 'ping') {
       return header +
-        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Retirer de la carte</button>' +
+        '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--danger" data-action="feature-delete" role="menuitem">Supprimer</button>' +
         '<div class="atak-ctx-menu__sep" role="separator"></div>' +
         '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
     }
@@ -199,6 +199,84 @@ window.ATAKContextMenu = (function () {
     promptEl.setAttribute('aria-hidden', 'true');
     var cb = promptResolve;
     promptResolve = null;
+    if (cb) cb(value);
+  }
+
+  var pingFormEl = null;
+  var pingFormResolve = null;
+  var PING_KINDS = [
+    { value: 'contact', label: 'Contact' },
+    { value: 'hostile', label: 'Hostile' },
+    { value: 'medical', label: 'Médical' },
+    { value: 'rally', label: 'Ralliement' },
+    { value: 'objective', label: 'Objectif' },
+    { value: 'info', label: 'Info' }
+  ];
+
+  function ensurePingForm() {
+    if (pingFormEl) return pingFormEl;
+    pingFormEl = document.createElement('div');
+    pingFormEl.id = 'atak-ping-modal';
+    pingFormEl.className = 'atak-input-modal';
+    pingFormEl.hidden = true;
+    pingFormEl.setAttribute('aria-hidden', 'true');
+    pingFormEl.innerHTML =
+      '<div class="atak-input-modal__backdrop" data-atak-ping-cancel></div>' +
+      '<div class="atak-input-modal__box atak-marker-form" role="dialog" aria-modal="true" aria-labelledby="atak-ping-modal-title">' +
+      '<h3 class="atak-input-modal__title" id="atak-ping-modal-title">Envoyer un ping</h3>' +
+      '<p class="atak-input-modal__hint">Choisissez le type de repère, puis un message optionnel.</p>' +
+      '<fieldset class="atak-marker-form__fieldset"><legend>Type de ping</legend>' +
+      '<div class="atak-marker-form__choices" id="atak-ping-kinds"></div></fieldset>' +
+      '<label class="atak-marker-form__label">Message' +
+      '<input type="text" class="atak-input-modal__field" id="atak-ping-message" maxlength="160" placeholder="Ex. mouvement au nord" autocomplete="off" /></label>' +
+      '<div class="atak-input-modal__actions">' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-ping-cancel>Annuler</button>' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--primary" id="atak-ping-ok">Envoyer</button>' +
+      '</div></div>';
+    document.body.appendChild(pingFormEl);
+    document.getElementById('atak-ping-kinds').innerHTML = optionButtons('pingkind', PING_KINDS, 'contact');
+    function cancel() { closePingForm(null); }
+    pingFormEl.querySelectorAll('[data-atak-ping-cancel]').forEach(function (el) {
+      el.addEventListener('click', cancel);
+    });
+    document.getElementById('atak-ping-ok').addEventListener('click', function () {
+      var kind = (pingFormEl.querySelector('input[name="pingkind"]:checked') || {}).value || 'info';
+      var msgEl = document.getElementById('atak-ping-message');
+      closePingForm({ kind: kind, message: msgEl ? msgEl.value : '' });
+    });
+    document.getElementById('atak-ping-message').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('atak-ping-ok').click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closePingForm(null);
+      }
+    });
+    return pingFormEl;
+  }
+
+  function openPingForm() {
+    ensurePingForm();
+    var def = pingFormEl.querySelector('input[name="pingkind"][value="contact"]') ||
+      pingFormEl.querySelector('input[name="pingkind"]');
+    if (def) def.checked = true;
+    var msg = document.getElementById('atak-ping-message');
+    if (msg) msg.value = '';
+    pingFormEl.hidden = false;
+    pingFormEl.setAttribute('aria-hidden', 'false');
+    setTimeout(function () { if (msg) msg.focus(); }, 30);
+    return new Promise(function (resolve) {
+      pingFormResolve = resolve;
+    });
+  }
+
+  function closePingForm(value) {
+    if (!pingFormEl) return;
+    pingFormEl.hidden = true;
+    pingFormEl.setAttribute('aria-hidden', 'true');
+    var cb = pingFormResolve;
+    pingFormResolve = null;
     if (cb) cb(value);
   }
 
@@ -981,38 +1059,96 @@ window.ATAKContextMenu = (function () {
   function deleteConfirmLabel(feature) {
     var t = feature && feature.featureType;
     if (t === 'marker') return 'ce marqueur';
+    if (t === 'ping') return 'ce ping';
     if (t === 'comment') return 'ce commentaire';
     if (t === 'line') return 'ce trait';
     if (t === 'zone') return 'cette zone';
     return 'cet élément';
   }
 
+  var confirmEl = null;
+  var confirmResolve = null;
+
+  function ensureConfirm() {
+    if (confirmEl) return confirmEl;
+    confirmEl = document.createElement('div');
+    confirmEl.id = 'atak-confirm-modal';
+    confirmEl.className = 'atak-input-modal';
+    confirmEl.hidden = true;
+    confirmEl.setAttribute('aria-hidden', 'true');
+    confirmEl.innerHTML =
+      '<div class="atak-input-modal__backdrop" data-atak-confirm-cancel></div>' +
+      '<div class="atak-input-modal__box" role="dialog" aria-modal="true" aria-labelledby="atak-confirm-title">' +
+      '<h3 class="atak-input-modal__title" id="atak-confirm-title">Confirmation</h3>' +
+      '<p class="atak-input-modal__hint" id="atak-confirm-message"></p>' +
+      '<div class="atak-input-modal__actions">' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-confirm-cancel>Annuler</button>' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--primary" id="atak-confirm-ok">Supprimer</button>' +
+      '</div></div>';
+    document.body.appendChild(confirmEl);
+    function cancel() { closeConfirm(false); }
+    confirmEl.querySelectorAll('[data-atak-confirm-cancel]').forEach(function (el) {
+      el.addEventListener('click', cancel);
+    });
+    document.getElementById('atak-confirm-ok').addEventListener('click', function () {
+      closeConfirm(true);
+    });
+    return confirmEl;
+  }
+
+  function closeConfirm(ok) {
+    if (!confirmEl) return;
+    confirmEl.hidden = true;
+    confirmEl.setAttribute('aria-hidden', 'true');
+    var cb = confirmResolve;
+    confirmResolve = null;
+    if (cb) cb(!!ok);
+  }
+
+  function confirmAction(message) {
+    ensureConfirm();
+    var msgEl = document.getElementById('atak-confirm-message');
+    if (msgEl) msgEl.textContent = message || 'Confirmer cette action ?';
+    confirmEl.hidden = false;
+    confirmEl.setAttribute('aria-hidden', 'false');
+    return new Promise(function (resolve) {
+      confirmResolve = resolve;
+    });
+  }
+
   function deleteFeature(feature) {
-    if (feature.featureType === 'ping') {
-      if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
-        window.ATAKMap.removeTemporaryPingMarker(feature.id);
-      }
-      if (window.ATAKShowNotification) window.ATAKShowNotification('Ping retiré de la carte.');
-      return;
-    }
-    if (!window.confirm('Supprimer ' + deleteConfirmLabel(feature) + ' ?')) return;
-    if (feature.featureType === 'marker') {
-      if (!window.ATAKMap || !window.ATAKMap.deleteMarkerById) return;
-      window.ATAKMap.deleteMarkerById(feature.id).then(function () {
-        if (window.ATAKMarkers && window.ATAKMarkers.refresh) window.ATAKMarkers.refresh();
-        if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur supprimé.');
-      }).catch(function () {
-        if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le marqueur.');
-      });
-      return;
-    }
-    if (window.ATAKMapShapes && window.ATAKMapShapes.deleteShape) {
-      window.ATAKMapShapes.deleteShape(feature.id).then(function (ok) {
-        if (ok && window.ATAKShowNotification) {
-          window.ATAKShowNotification(featureDeletedMsg(feature));
+    confirmAction('Supprimer ' + deleteConfirmLabel(feature) + ' ?').then(function (ok) {
+      if (!ok || !feature) return;
+      if (feature.featureType === 'ping') {
+        if (window.ATAKPings && window.ATAKPings.deletePing) {
+          window.ATAKPings.deletePing(feature.id).then(function () {
+            if (window.ATAKShowNotification) window.ATAKShowNotification('Ping supprimé.');
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le ping.');
+          });
+        } else if (window.ATAKMap && window.ATAKMap.removeTemporaryPingMarker) {
+          window.ATAKMap.removeTemporaryPingMarker(feature.id);
         }
-      });
-    }
+        return;
+      }
+      if (feature.featureType === 'marker') {
+        if (!window.ATAKMap || !window.ATAKMap.deleteMarkerById) return;
+        window.ATAKMap.deleteMarkerById(feature.id).then(function () {
+          if (window.ATAKMarkers && window.ATAKMarkers.refresh) window.ATAKMarkers.refresh();
+          if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur supprimé.');
+        }).catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le marqueur.');
+        });
+        return;
+      }
+      if (window.ATAKMapShapes && window.ATAKMapShapes.deleteShape) {
+        window.ATAKMapShapes.deleteShape(feature.id).then(function (okDel) {
+          if (okDel && window.ATAKShowNotification) {
+            window.ATAKShowNotification(featureDeletedMsg(feature));
+          }
+        });
+      }
+    });
   }
 
   function runAction(action) {
@@ -1044,10 +1180,10 @@ window.ATAKContextMenu = (function () {
       return;
     }
     if (action === 'ping') {
-      openPrompt('Message du ping', 'Optionnel — visible par les opérateurs connectés.', 'Ex. contact hostile', '').then(function (msg) {
-        if (msg === null) return;
+      openPingForm().then(function (vals) {
+        if (!vals) return;
         if (window.ATAKPings && window.ATAKPings.createPingAt) {
-          window.ATAKPings.createPingAt(ll.lng, ll.lat, msg || '');
+          window.ATAKPings.createPingAt(ll.lng, ll.lat, vals.message || '', vals.kind || 'info');
         }
       });
       return;
@@ -1089,6 +1225,14 @@ window.ATAKContextMenu = (function () {
 
   function onKeyDown(e) {
     if (e.key === 'Escape') {
+      if (confirmEl && !confirmEl.hidden) {
+        closeConfirm(false);
+        return;
+      }
+      if (pingFormEl && !pingFormEl.hidden) {
+        closePingForm(null);
+        return;
+      }
       if (colorPickEl && !colorPickEl.hidden) {
         closeColorPick(null);
         return;
@@ -1109,7 +1253,7 @@ window.ATAKContextMenu = (function () {
       hideMenu();
       return;
     }
-    if (e.key === 'Enter' && drawMode === 'line' && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden) && !(colorPickEl && !colorPickEl.hidden)) {
+    if (e.key === 'Enter' && drawMode === 'line' && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden) && !(colorPickEl && !colorPickEl.hidden) && !(pingFormEl && !pingFormEl.hidden)) {
       e.preventDefault();
       finishLine();
     }
@@ -1152,6 +1296,8 @@ window.ATAKContextMenu = (function () {
     hide: hideMenu,
     cancelDraw: cancelDraw,
     openPrompt: openPrompt,
-    finishLine: finishLine
+    openPingForm: openPingForm,
+    finishLine: finishLine,
+    confirmAction: confirmAction
   };
 })();

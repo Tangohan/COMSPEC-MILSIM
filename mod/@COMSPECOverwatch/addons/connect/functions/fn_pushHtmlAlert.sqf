@@ -1,7 +1,7 @@
 /*
     File d'alertes pour la tablette HTML (toast + journal Alertes).
     Params: [_type, _title, _body, _priority]
-      type     : link | medical | order | ping | system
+      type     : link | medical | order | ping | system | tactical
       priority : info | warn | critical
 */
 params [
@@ -14,7 +14,7 @@ params [
 if (!hasInterface) exitWith {};
 
 _type = toLower (trim _type);
-if (!(_type in ["link", "medical", "order", "ping", "system"])) then { _type = "system"; };
+if (!(_type in ["link", "medical", "order", "ping", "system", "tactical"])) then { _type = "system"; };
 _priority = toLower (trim _priority);
 if (!(_priority in ["info", "warn", "critical"])) then { _priority = "info"; };
 _title = trim _title;

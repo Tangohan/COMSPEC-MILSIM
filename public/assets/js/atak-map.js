@@ -11,6 +11,8 @@ window.ATAKMap = (function () {
   var sigintCirclesById = {};
   var pingTempLayer = null;
   var pingTempMarkersById = {};
+  var pingLayer = null;
+  var pingMarkersById = {};
   var airAssetsLayer = null;
   var airAssetsById = {};
   var unitsLayer = null;
@@ -78,6 +80,8 @@ window.ATAKMap = (function () {
     sigintCirclesById = {};
     pingTempLayer = null;
     pingTempMarkersById = {};
+    pingLayer = null;
+    pingMarkersById = {};
     airAssetsLayer = null;
     airAssetsById = {};
     unitsLayer = null;
@@ -324,15 +328,21 @@ window.ATAKMap = (function () {
     var applied = applyOffset(lat, lng);
     var latlng = L.latLng(applied[0], applied[1]);
     var popupHtml = markerPopupHtml(data, lng, lat);
-    var isManual = (data.type === 'manual') || data.color || data.icon || data.size || data.description;
+    var armaHelper = window.ArmaMapMarkers;
+    var isArma = armaHelper && typeof armaHelper.isArmaStyleMarker === 'function' && armaHelper.isArmaStyleMarker(data);
+    var isManual = !isArma && ((data.type === 'manual') || data.color || data.icon || data.size || data.description);
 
     if (markersById[id]) {
       markersById[id].setLatLng(latlng);
       markersById[id]._atakData = data;
       markersById[id]._atakGrid = { lng: lng, lat: lat };
-      if (isManual) {
-        try { markersById[id].setIcon(buildManualMarkerIcon(data)); } catch (e) {}
-      }
+      try {
+        if (isArma && armaHelper.leafletDivIcon) {
+          markersById[id].setIcon(armaHelper.leafletDivIcon(L, data));
+        } else if (isManual) {
+          markersById[id].setIcon(buildManualMarkerIcon(data));
+        }
+      } catch (e) {}
       if (markersById[id].getPopup && markersById[id].getPopup()) {
         markersById[id].setPopupContent(popupHtml);
       } else {
@@ -343,7 +353,9 @@ window.ATAKMap = (function () {
     }
     var layer = ensureLayer(layerId);
     var icon;
-    if (isManual) {
+    if (isArma && armaHelper && armaHelper.leafletDivIcon) {
+      icon = armaHelper.leafletDivIcon(L, data);
+    } else if (isManual) {
       icon = buildManualMarkerIcon(data);
     } else {
       var nato = window.NatoSidcIcons;
@@ -455,7 +467,7 @@ window.ATAKMap = (function () {
       method: 'DELETE',
       credentials: 'include'
     }).then(function (r) {
-      if (!r.ok && r.status !== 204) throw new Error('delete');
+      if (!r.ok) throw new Error('delete');
       removeMarker({ id: id });
       return true;
     });
@@ -574,49 +586,153 @@ window.ATAKMap = (function () {
     designatorMarkersById[id] = marker;
   }
 
-  function addTemporaryPingMarker(posX, posY, author, message) {
+  function pingKindFromMessage(msg) {
+    var rawMsg = String(msg || '');
+    var m = rawMsg.match(/^\s*\[([^\]]+)\]\s*/);
+    if (m) {
+      var raw = m[1].toLowerCase();
+      var rest = rawMsg.slice(m[0].length);
+      if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
+      if (raw.indexOf('medical') >= 0 || raw.indexOf('médical') >= 0) return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
+      if (raw.indexOf('ralli') >= 0 || raw.indexOf('rally') >= 0) return { kind: 'rally', label: 'Ralliement', color: '#22c55e', rest: rest };
+      if (raw.indexOf('contact') >= 0) return { kind: 'contact', label: 'Contact', color: '#f97316', rest: rest };
+      if (raw.indexOf('objectif') >= 0) return { kind: 'objective', label: 'Objectif', color: '#eab308', rest: rest };
+      if (raw.indexOf('alerte') >= 0) return { kind: 'warning', label: 'Alerte', color: '#f97316', rest: rest };
+      if (raw.indexOf('rep') >= 0 || raw.indexOf('marqueur') >= 0 || raw.indexOf('intérêt') >= 0 || raw.indexOf('interet') >= 0) {
+        return { kind: 'marker', label: m[1], color: '#ef4444', rest: rest };
+      }
+      return { kind: 'info', label: m[1], color: '#38bdf8', rest: rest };
+    }
+    var low = rawMsg.toLowerCase();
+    if (low.indexOf('point d') >= 0 && low.indexOf('inter') >= 0) {
+      return { kind: 'info', label: 'Intérêt', color: '#38bdf8', rest: rawMsg };
+    }
+    if (low.indexOf('marqueur') >= 0) {
+      return { kind: 'marker', label: 'Repère', color: '#ef4444', rest: rawMsg };
+    }
+    return { kind: 'info', label: 'Ping', color: '#ec4899', rest: rawMsg };
+  }
+
+  function setPingsOnMap(rows) {
     if (!map) return;
+    if (!pingLayer) pingLayer = L.layerGroup().addTo(map);
+    var list = Array.isArray(rows) ? rows : [];
+    var seen = {};
+    list.forEach(function (p) {
+      if (!p) return;
+      var id = p.id != null ? String(p.id) : ('p_' + p.pos_x + '_' + p.pos_y + '_' + (p.created_at || ''));
+      seen[id] = true;
+      var x = parseFloat(p.pos_x);
+      var y = parseFloat(p.pos_y);
+      if (isNaN(x) || isNaN(y)) return;
+      var applied = applyOffset(y, x);
+      var latlng = L.latLng(applied[0], applied[1]);
+      var kind = pingKindFromMessage(p.message);
+      var author = String(p.author || '').trim();
+      var pinLabel = author || kind.label;
+      var icon = L.divIcon({
+        className: 'atak-ping-map-icon',
+        html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
+          '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">' +
+          String(pinLabel).replace(/</g, '&lt;').slice(0, 12) + '</span></div>',
+        iconSize: [64, 26],
+        iconAnchor: [32, 8]
+      });
+      var popup = '<b>' + String(kind.label).replace(/</g, '&lt;') + ' — ' + String(author || '?').replace(/</g, '&lt;') +
+        '</b><br/>' + String(kind.rest || p.message || '').replace(/</g, '&lt;');
+      if (pingMarkersById[id]) {
+        pingMarkersById[id].setLatLng(latlng);
+        pingMarkersById[id].setIcon(icon);
+        pingMarkersById[id].setPopupContent(popup);
+        return;
+      }
+      var marker = L.marker(latlng, { icon: icon, zIndexOffset: 350 });
+      marker.bindPopup(popup);
+      marker._atakPingId = id;
+      if (!marker._atakCtxBound) {
+        marker._atakCtxBound = true;
+        marker.on('contextmenu', function (e) {
+          emitFeatureContextMenu({
+            featureType: 'ping',
+            id: id,
+            label: kind.label,
+            data: { author: author, message: p.message || '' }
+          }, e);
+        });
+      }
+      marker.addTo(pingLayer);
+      pingMarkersById[id] = marker;
+    });
+    Object.keys(pingMarkersById).forEach(function (k) {
+      if (!seen[k]) {
+        try { pingLayer.removeLayer(pingMarkersById[k]); } catch (e) {}
+        delete pingMarkersById[k];
+      }
+    });
+  }
+
+  function addTemporaryPingMarker(posX, posY, author, message, pingId) {
+    if (!map) return;
+    if (!pingLayer) pingLayer = L.layerGroup().addTo(map);
     var applied = applyOffset(parseFloat(posY), parseFloat(posX));
     var latlng = L.latLng(applied[0], applied[1]);
-    if (!pingTempLayer) pingTempLayer = L.layerGroup().addTo(map);
-    var id = 'ping_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var kind = pingKindFromMessage(message);
+    var pinLabel = String(author || kind.label || 'Ping').slice(0, 12);
+    var id = pingId != null && String(pingId) !== '' ? String(pingId) : ('live_' + Date.now());
     var icon = L.divIcon({
       className: 'atak-ping-temp-icon',
-      html: '<span style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:2px solid #fca5a5;"></span>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+      html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
+        '<span style="width:14px;height:14px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
+        '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;">' +
+        pinLabel.replace(/</g, '&lt;') + '</span></div>',
+      iconSize: [64, 28],
+      iconAnchor: [32, 10]
     });
-    var marker = L.marker(latlng, { icon: icon });
-    marker.bindPopup('<b>PING de ' + (author || '?') + '</b><br/>' + (message || '')).openPopup();
-    marker._atakPingTempId = id;
+    var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
+    marker.bindPopup('<b>' + kind.label + ' — ' + (author || '?') + '</b><br/>' + String(message || '').replace(/</g, '&lt;')).openPopup();
+    marker._atakPingId = id;
     if (!marker._atakCtxBound) {
       marker._atakCtxBound = true;
       marker.on('contextmenu', function (e) {
         emitFeatureContextMenu({
           featureType: 'ping',
-          id: id,
-          label: 'Ping',
+          id: marker._atakPingId || id,
+          label: kind.label,
           data: { author: author, message: message || '' }
         }, e);
       });
     }
-    marker.addTo(pingTempLayer);
-    pingTempMarkersById[id] = marker;
-    setTimeout(function () {
-      if (pingTempMarkersById[id] && pingTempLayer) {
-        pingTempLayer.removeLayer(pingTempMarkersById[id]);
-        delete pingTempMarkersById[id];
-      }
-    }, 30000);
+    marker.addTo(pingLayer);
+    pingMarkersById[id] = marker;
+    // Les pings API restent via setPingsOnMap ; l’éphémère live disparaît après sync.
+    if (String(id).indexOf('live_') === 0) {
+      setTimeout(function () {
+        if (pingMarkersById[id] && String(id).indexOf('live_') === 0) {
+          try { pingLayer.removeLayer(pingMarkersById[id]); } catch (e) {}
+          delete pingMarkersById[id];
+        }
+      }, 120000);
+    }
   }
 
   function removeTemporaryPingMarker(id) {
-    if (!id || !pingTempMarkersById[id]) return false;
-    if (pingTempLayer) {
-      try { pingTempLayer.removeLayer(pingTempMarkersById[id]); } catch (e) {}
+    if (!id) return false;
+    if (pingMarkersById[id]) {
+      if (pingLayer) {
+        try { pingLayer.removeLayer(pingMarkersById[id]); } catch (e) {}
+      }
+      delete pingMarkersById[id];
+      return true;
     }
-    delete pingTempMarkersById[id];
-    return true;
+    if (pingTempMarkersById[id]) {
+      if (pingTempLayer) {
+        try { pingTempLayer.removeLayer(pingTempMarkersById[id]); } catch (e) {}
+      }
+      delete pingTempMarkersById[id];
+      return true;
+    }
+    return false;
   }
 
   function pollMarkers() {
@@ -952,6 +1068,7 @@ window.ATAKMap = (function () {
     endPointMap: endPointMap,
     centerOn: centerOn,
     addTemporaryPingMarker: addTemporaryPingMarker,
-    removeTemporaryPingMarker: removeTemporaryPingMarker
+    removeTemporaryPingMarker: removeTemporaryPingMarker,
+    setPingsOnMap: setPingsOnMap
   };
 })();

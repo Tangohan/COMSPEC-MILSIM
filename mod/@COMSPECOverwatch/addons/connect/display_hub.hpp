@@ -237,11 +237,23 @@ class COMSPEC_Hub_Dialog {
             action = "['medical'] call comspec_overwatch_connect_fnc_hubSelect;";
         };
 
+        class BtnTactical: RscButton {
+            idc = 9120;
+            text = "Signaler une situation";
+            x = 0.355 * safezoneW + safezoneX;
+            y = 0.696 * safezoneH + safezoneY;
+            w = 0.29 * safezoneW;
+            h = 0.032 * safezoneH;
+            colorBackground[] = {0.22, 0.1, 0.08, 0.95};
+            colorBackgroundActive[] = {0.38, 0.16, 0.1, 1};
+            action = "['tactical'] call comspec_overwatch_connect_fnc_hubSelect;";
+        };
+
         class BtnForceSync: COMSPEC_RscButtonAccent {
             idc = 9119;
             text = "Transmettre ma position et mes données";
             x = 0.355 * safezoneW + safezoneX;
-            y = 0.696 * safezoneH + safezoneY;
+            y = 0.734 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
             h = 0.032 * safezoneH;
             action = "[] spawn { [] call comspec_overwatch_connect_fnc_forceSyncData; };";
@@ -251,7 +263,7 @@ class COMSPEC_Hub_Dialog {
             idc = 9109;
             text = "Vérifier la liaison";
             x = 0.355 * safezoneW + safezoneX;
-            y = 0.738 * safezoneH + safezoneY;
+            y = 0.772 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
             h = 0.03 * safezoneH;
             colorBackground[] = {0.05, 0.12, 0.16, 0.95};
@@ -263,7 +275,7 @@ class COMSPEC_Hub_Dialog {
             idc = 9108;
             text = "Fermer";
             x = 0.505 * safezoneW + safezoneX;
-            y = 0.738 * safezoneH + safezoneY;
+            y = 0.772 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
             h = 0.03 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};
@@ -275,7 +287,7 @@ class COMSPEC_Hub_Dialog {
             idc = -1;
             text = "<t size='0.52' color='#5a9e88'>PROFIL</t>";
             x = 0.355 * safezoneW + safezoneX;
-            y = 0.78 * safezoneH + safezoneY;
+            y = 0.81 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
             h = 0.016 * safezoneH;
         };
@@ -284,7 +296,7 @@ class COMSPEC_Hub_Dialog {
             idc = 9114;
             text = "";
             x = 0.355 * safezoneW + safezoneX;
-            y = 0.8 * safezoneH + safezoneY;
+            y = 0.83 * safezoneH + safezoneY;
             w = 0.05 * safezoneW;
             h = 0.078 * safezoneH;
             colorBackground[] = {0.06, 0.1, 0.14, 0.9};
@@ -294,7 +306,7 @@ class COMSPEC_Hub_Dialog {
             idc = 9115;
             text = "";
             x = 0.415 * safezoneW + safezoneX;
-            y = 0.8 * safezoneH + safezoneY;
+            y = 0.83 * safezoneH + safezoneY;
             w = 0.23 * safezoneW;
             h = 0.078 * safezoneH;
         };

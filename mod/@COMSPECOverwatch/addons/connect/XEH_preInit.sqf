@@ -124,6 +124,25 @@
     "COMSPEC Overwatch", [1, 10, 2, 1]
 ] call CBA_fnc_addSetting;
 
+// Affichage camps sur Tacmap (inspiré Athena Remastered ATH_showEast/Guer/Civ)
+[
+    "comspec_overwatch_show_opfor", "CHECKBOX",
+    ["Afficher l’adversaire sur la carte", "Les positions du camp adverse restent visibles pour les observateurs sur Athena / Tacmap."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_show_independent", "CHECKBOX",
+    ["Afficher les indépendants sur la carte", "Les positions des indépendants restent visibles pour les observateurs sur Athena / Tacmap."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_show_civilian", "CHECKBOX",
+    ["Afficher les civils sur la carte", "Les positions des civils restent visibles pour les observateurs sur Athena / Tacmap."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
 // IDs v2 : l’ancien comspec_open_chat était enregistré sur K seul (sans Ctrl).
 // CBA conserve les binds du profil joueur — sans nouvel ID, Ctrl+K ne s’applique jamais.
 [
@@ -157,6 +176,9 @@ missionNamespace setVariable ["COMSPEC_lastRole", "", true];
 missionNamespace setVariable ["COMSPEC_lastRadio", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedical", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
+missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];
 missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
 missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
 missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];

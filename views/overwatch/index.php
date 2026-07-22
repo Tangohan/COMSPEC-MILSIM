@@ -42,6 +42,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <script src="<?= htmlspecialchars(asset_url('assets/vendor/milstd/milstd2525.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/milstd-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/nato-sidc-icons.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/arma-map-markers.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-medical-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -1351,8 +1352,8 @@ function setWorkspace(mapId) {
 
       function statusLabelFr(status) {
         var s = (status || '').toLowerCase();
-        if (s === 'linked') return 'En liaison';
-        if (s === 'delayed') return 'En retard';
+        if (s === 'linked') return 'En ligne';
+        if (s === 'delayed') return 'Signal différé';
         if (s === 'offline') return 'Hors ligne';
         return status || '—';
       }

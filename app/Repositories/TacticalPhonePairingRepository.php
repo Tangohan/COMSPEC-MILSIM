@@ -145,10 +145,24 @@ class TacticalPhonePairingRepository
         if (!$this->tableExists()) {
             return;
         }
+        // Prolonge la fenêtre de validité pour laisser le temps du briefing (navigation + commentaires).
         $stmt = $this->pdo->prepare(
-            'UPDATE tactical_phone_pairings SET paired_at = NOW() WHERE token = ? AND paired_at IS NULL'
+            'UPDATE tactical_phone_pairings
+             SET paired_at = COALESCE(paired_at, UTC_TIMESTAMP()),
+                 expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 120 MINUTE)
+             WHERE token = ?'
         );
         $stmt->execute([trim($token)]);
+    }
+
+    /**
+     * Pairing encore utilisable pour le briefing (non expiré), après scan ou saisie de code.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findBriefingSessionByToken(string $token): ?array
+    {
+        return $this->findValidByToken($token);
     }
 
     /**

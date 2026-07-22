@@ -414,6 +414,7 @@ final class MedicalAlertParser
         $hrRaw = $parts[3] ?? '';
         $bloodRaw = $parts[4] ?? '';
         $gridRaw = $parts[5] ?? '';
+        $posRaw = $parts[6] ?? '';
 
         $heartRate = null;
         if (preg_match('/(\d+)/', $hrRaw, $m)) {
@@ -424,6 +425,13 @@ final class MedicalAlertParser
             $bloodPct = (int) $m[1];
         }
         $grid = trim(preg_replace('/^Grille\s+/iu', '', $gridRaw) ?? $gridRaw);
+
+        $posX = null;
+        $posY = null;
+        if (preg_match('/POS\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/iu', $posRaw . ' ' . $body, $pm)) {
+            $posX = (float) $pm[1];
+            $posY = (float) $pm[2];
+        }
 
         $kind = 'medical_alert';
         $severity = 'urgent';
@@ -463,6 +471,8 @@ final class MedicalAlertParser
             'heart_rate' => $heartRate,
             'blood_pct' => $bloodPct,
             'grid' => $grid,
+            'pos_x' => $posX,
+            'pos_y' => $posY,
             'summary' => implode(' — ', $summaryParts),
         ];
     }

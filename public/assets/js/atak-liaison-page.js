@@ -104,11 +104,24 @@ window.ATAKLiaisonPage = (function () {
       '<div class="atak-activity-body">' +
         '<div class="atak-activity-top">' +
           '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + '</span>' +
-          '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
+          '<div class="atak-activity-top-actions">' +
+            '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
+            '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Voir les détails" aria-label="Voir les détails de l’événement">i</button>' +
+          '</div>' +
         '</div>' +
         '<div class="atak-activity-label">' + escapeHtml(ev.label || '') + '</div>' +
         actor + archivedTag +
       '</div>';
+    var btn = li.querySelector('[data-activity-info]');
+    if (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.ATAKActivity && typeof ATAKActivity.openEventDetails === 'function') {
+          ATAKActivity.openEventDetails(ev);
+        }
+      });
+    }
     return li;
   }
 

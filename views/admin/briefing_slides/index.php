@@ -6,6 +6,9 @@ declare(strict_types=1);
  * @var string $briefingSlidesFeedUrl
  * @var int $briefingSlidesTenantId
  * @var array{total:int,active:int,inactive:int} $briefingSlidesStats
+ * @var array<int,int> $briefingCommentCounts
+ * @var list<array{label:string,source:string,last_seen_at:int}> $briefingPresence
+ * @var string $briefingPresenceUrl
  */
 
 $rows = is_array($briefingSlides ?? null) ? $briefingSlides : [];
@@ -15,6 +18,9 @@ $stats = is_array($briefingSlidesStats ?? null) ? $briefingSlidesStats : [];
 $total = (int) ($stats['total'] ?? count($rows));
 $active = (int) ($stats['active'] ?? 0);
 $inactive = (int) ($stats['inactive'] ?? max(0, $total - $active));
+$commentCounts = is_array($briefingCommentCounts ?? null) ? $briefingCommentCounts : [];
+$presence = is_array($briefingPresence ?? null) ? $briefingPresence : [];
+$presenceUrl = (string) ($briefingPresenceUrl ?? '');
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 
@@ -50,7 +56,8 @@ foreach ($rows as $r) {
                 <p class="bo-briefing__eyebrow">Tactique · ATAK / Arma</p>
                 <h1 class="bo-briefing__title">Diapositives de briefing</h1>
                 <p class="bo-briefing__lead">
-                    Préparez les images du briefing, définissez leur ordre, puis publiez-les pour le jeu.
+                    Préparez les images du briefing, définissez leur ordre, enrichissez-les ensuite avec des précisions,
+                    puis publiez-les pour le jeu et les téléphones ATAK.
                     Les diapositives marquées « Visible en jeu » sont récupérées automatiquement par le mod COMSPEC Overwatch.
                 </p>
             </div>
@@ -86,6 +93,11 @@ foreach ($rows as $r) {
                 <p class="bo-briefing__kpi-value"><?= $inactive ?></p>
                 <p class="bo-briefing__kpi-meta">Masquées côté Arma</p>
             </div>
+            <div class="bo-briefing__kpi" id="bo-briefing-presence-kpi">
+                <p class="bo-briefing__kpi-label">ATAK connectés</p>
+                <p class="bo-briefing__kpi-value" data-presence-count><?= count($presence) ?></p>
+                <p class="bo-briefing__kpi-meta">Pendant le briefing en cours</p>
+            </div>
         </div>
 
         <div class="bo-briefing__layout">
@@ -109,6 +121,11 @@ foreach ($rows as $r) {
                             <div class="bo-briefing__field bo-briefing__span-2">
                                 <label for="bs-title">Titre affiché</label>
                                 <input type="text" id="bs-title" name="title" maxlength="160" placeholder="Ex. Ordre d’opération — Phase 1">
+                            </div>
+                            <div class="bo-briefing__field bo-briefing__span-2">
+                                <label for="bs-detail">Précisions (facultatif)</label>
+                                <textarea id="bs-detail" name="detail_text" rows="3" maxlength="8000" placeholder="Contexte, consignes, points d’attention… Vous pourrez enrichir ce texte plus tard."></textarea>
+                                <p class="bo-briefing__field-hint">Visible sur le téléphone ATAK et consultable après le briefing pour ajouter du détail.</p>
                             </div>
                             <div class="bo-briefing__field">
                                 <label for="bs-order">Ordre d’affichage</label>
@@ -153,13 +170,15 @@ foreach ($rows as $r) {
                                     <?php
                                     $id = (int) ($row['id'] ?? 0);
                                     $title = trim((string) ($row['title'] ?? ''));
+                                    $detailText = trim((string) ($row['detail_text'] ?? ''));
                                     $imagePath = trim((string) ($row['image_path'] ?? ''));
                                     $imageUrl = $imagePath !== '' ? asset_url($imagePath) : null;
                                     $isActive = !empty($row['is_active']);
                                     $sortOrder = (int) ($row['sort_order'] ?? 0);
                                     $displayTitle = $title !== '' ? $title : 'Sans titre';
+                                    $commentCount = (int) ($commentCounts[$id] ?? 0);
                                     ?>
-                                    <article class="bo-briefing__card">
+                                    <article class="bo-briefing__card" id="slide-<?= $id ?>">
                                         <div class="bo-briefing__thumb">
                                             <?php if ($imageUrl): ?>
                                                 <img src="<?= htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($displayTitle, ENT_QUOTES, 'UTF-8') ?>">
@@ -172,6 +191,7 @@ foreach ($rows as $r) {
                                             <div class="bo-briefing__card-meta">
                                                 <span class="bo-briefing__pill">Position <?= $index + 1 ?></span>
                                                 <span class="bo-briefing__pill">Ordre <?= $sortOrder ?></span>
+                                                <span class="bo-briefing__pill"><?= $commentCount ?> commentaire<?= $commentCount > 1 ? 's' : '' ?></span>
                                             </div>
                                             <form
                                                 method="post"
@@ -183,6 +203,10 @@ foreach ($rows as $r) {
                                                 <div class="bo-briefing__field bo-briefing__span-2">
                                                     <label for="bs-title-<?= $id ?>">Titre affiché</label>
                                                     <input type="text" id="bs-title-<?= $id ?>" name="title" value="<?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?>" maxlength="160">
+                                                </div>
+                                                <div class="bo-briefing__field bo-briefing__span-2">
+                                                    <label for="bs-detail-<?= $id ?>">Précisions / détail a posteriori</label>
+                                                    <textarea id="bs-detail-<?= $id ?>" name="detail_text" rows="3" maxlength="8000" placeholder="Ajoutez ou enrichissez le détail après le briefing…"><?= htmlspecialchars($detailText, ENT_QUOTES, 'UTF-8') ?></textarea>
                                                 </div>
                                                 <div class="bo-briefing__field">
                                                     <label for="bs-order-<?= $id ?>">Ordre d’affichage</label>
@@ -204,6 +228,25 @@ foreach ($rows as $r) {
                                             </form>
                                             <form
                                                 method="post"
+                                                action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/comment'), ENT_QUOTES, 'UTF-8') ?>"
+                                                class="bo-briefing__form-grid"
+                                                style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--bo-line);"
+                                            >
+                                                <?= \App\Core\Csrf::field() ?>
+                                                <div class="bo-briefing__field bo-briefing__span-2">
+                                                    <label for="bs-comment-<?= $id ?>">Commentaire sur cette diapositive</label>
+                                                    <textarea id="bs-comment-<?= $id ?>" name="body" rows="2" maxlength="2000" placeholder="Note pour l’équipe ou précision partagée pendant / après le briefing"></textarea>
+                                                </div>
+                                                <div class="bo-briefing__field">
+                                                    <label for="bs-comment-author-<?= $id ?>">Signé par</label>
+                                                    <input type="text" id="bs-comment-author-<?= $id ?>" name="author_label" maxlength="80" placeholder="État-major">
+                                                </div>
+                                                <div class="bo-briefing__card-actions" style="align-items:flex-end;">
+                                                    <button type="submit" class="bo-briefing__btn bo-briefing__btn--ghost">Publier le commentaire</button>
+                                                </div>
+                                            </form>
+                                            <form
+                                                method="post"
                                                 action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/delete'), ENT_QUOTES, 'UTF-8') ?>"
                                                 class="bo-briefing__card-actions"
                                                 onsubmit="return confirm('Supprimer cette diapositive ? Cette action est définitive.');"
@@ -221,6 +264,29 @@ foreach ($rows as $r) {
             </div>
 
             <aside class="bo-briefing__aside" id="bo-briefing-arma">
+                <section class="bo-briefing__panel" aria-labelledby="bo-briefing-presence-title">
+                    <div class="bo-briefing__panel-head">
+                        <h2 id="bo-briefing-presence-title">ATAK connectés</h2>
+                        <p>Appareils qui consultent actuellement le briefing (téléphone ou tableau en jeu).</p>
+                    </div>
+                    <div class="bo-briefing__panel-body">
+                        <ul class="bo-briefing__steps" data-presence-list style="list-style:disc;padding-left:1.1rem;">
+                            <?php if ($presence === []): ?>
+                                <li style="list-style:none;margin-left:-1.1rem;color:#64748b;">Aucun appareil connecté pour le moment.</li>
+                            <?php else: ?>
+                                <?php foreach ($presence as $viewer): ?>
+                                    <?php
+                                    $label = trim((string) ($viewer['label'] ?? 'Opérateur'));
+                                    $source = trim((string) ($viewer['source'] ?? 'phone'));
+                                    $srcLabel = $source === 'arma' ? 'tableau en jeu' : ($source === 'admin' ? 'poste de commandement' : 'téléphone');
+                                    ?>
+                                    <li><?= htmlspecialchars($label . ' · ' . $srcLabel, ENT_QUOTES, 'UTF-8') ?></li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </section>
+
                 <section class="bo-briefing__panel" aria-labelledby="bo-briefing-arma-title">
                     <div class="bo-briefing__panel-head">
                         <h2 id="bo-briefing-arma-title">Afficher dans Arma</h2>
@@ -353,5 +419,43 @@ foreach ($rows as $r) {
             done();
         }
     });
+
+    var presenceUrl = <?= json_encode($presenceUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    var countEl = root.querySelector('[data-presence-count]');
+    var listEl = root.querySelector('[data-presence-list]');
+    if (!presenceUrl || !countEl || !listEl) return;
+
+    function renderPresence(data) {
+        var viewers = (data && data.viewers) || [];
+        var count = typeof data.count === 'number' ? data.count : viewers.length;
+        countEl.textContent = String(count);
+        listEl.innerHTML = '';
+        if (!viewers.length) {
+            var empty = document.createElement('li');
+            empty.style.listStyle = 'none';
+            empty.style.marginLeft = '-1.1rem';
+            empty.style.color = '#64748b';
+            empty.textContent = 'Aucun appareil connecté pour le moment.';
+            listEl.appendChild(empty);
+            return;
+        }
+        viewers.forEach(function (v) {
+            var li = document.createElement('li');
+            var label = (v && v.label) ? String(v.label) : 'Opérateur';
+            var source = (v && v.source) ? String(v.source) : 'phone';
+            var srcLabel = source === 'arma' ? 'tableau en jeu' : (source === 'admin' ? 'poste de commandement' : 'téléphone');
+            li.textContent = label + ' · ' + srcLabel;
+            listEl.appendChild(li);
+        });
+    }
+
+    function pollPresence() {
+        fetch(presenceUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(renderPresence)
+            .catch(function () {});
+    }
+
+    window.setInterval(pollPresence, 15000);
 })();
 </script>

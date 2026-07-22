@@ -180,6 +180,22 @@ if (!empty($errors)) {
 echo "Schéma OK. ({$done} instructions exécutées)\n";
 $migrationFlush();
 
+// CREATE TABLE IF NOT EXISTS ne met jamais à jour une table existante : combler les colonnes critiques.
+require_once $root . '/bootstrap/schema_ensure_column.php';
+echo "Vérification colonnes manquantes (ensure schema drift)…\n";
+$migrationFlush();
+$ensureAdded = schema_ensure_columns($pdo, 'atak_units', [
+    'military_id' => '`military_id` varchar(32) DEFAULT NULL AFTER `call_sign`',
+    'pos_x' => '`pos_x` decimal(15,4) DEFAULT NULL AFTER `heading`',
+    'pos_y' => '`pos_y` decimal(15,4) DEFAULT NULL AFTER `pos_x`',
+]);
+if ($ensureAdded === 0) {
+    echo "  [OK] atak_units : military_id, pos_x, pos_y déjà présentes\n";
+} else {
+    echo "  [OK] atak_units : {$ensureAdded} colonne(s) comblée(s)\n";
+}
+$migrationFlush();
+
 // Extensions DDL (tableau opérationnel planning_*, ORBAT, tenant_email_*, app_maintenance, label_en rôles…).
 run_core_schema_extensions_migration($pdo, $root, $migrationFlush);
 
@@ -655,13 +671,17 @@ $atakLiveTables = [
         tenant_id int unsigned NOT NULL,
         map_id int unsigned NOT NULL DEFAULT 1,
         call_sign varchar(255) NOT NULL,
+        military_id varchar(32) DEFAULT NULL,
         role varchar(255) DEFAULT NULL,
         status varchar(50) DEFAULT 'linked',
         grid_ref varchar(100) DEFAULT NULL,
         heading decimal(10,4) DEFAULT NULL,
+        pos_x decimal(15,4) DEFAULT NULL,
+        pos_y decimal(15,4) DEFAULT NULL,
         extra json DEFAULT NULL,
         updated_at datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id), KEY tenant_map (tenant_id, map_id), KEY map_callsign (map_id, call_sign),
+        KEY idx_atak_units_tenant_military (tenant_id, military_id),
         CONSTRAINT atak_units_tenant_fk FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
     'atak_chat_messages' => "CREATE TABLE atak_chat_messages (
@@ -2953,6 +2973,14 @@ try {
     echo '  [ATTENTION] atak_orders_v2 : ' . $e->getMessage() . "\n";
 }
 
+$atakOrdersSinceMigrate = require $root . '/bootstrap/atak_orders_since_migration.php';
+try {
+    echo "Migration atak_orders since (updated_at + index poll delta)...\n";
+    $atakOrdersSinceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_orders_since : ' . $e->getMessage() . "\n";
+}
+
 $atakUnitsPositionMigrate = require $root . '/bootstrap/atak_units_position_migration.php';
 try {
     echo "Migration atak_units_position (coordonnées carte pos_x / pos_y)...\n";
@@ -2978,7 +3006,7 @@ try {
 }
 
 echo "\n--- Pipeline exécuté (résumé) ---\n";
-echo "Schéma SQL (migrations/schema.sql) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
+echo "Schéma SQL (migrations/schema.sql) ; ensure colonnes (atak_units.military_id/pos_x/pos_y) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";
 echo "autoload (modération système) ; option TRAINING_ONBOARDING_ASSIGN_ALL ; seeds tenant default (forum, documents, permissions) si applicable.\n";
 echo "Migrations terminées.\n";

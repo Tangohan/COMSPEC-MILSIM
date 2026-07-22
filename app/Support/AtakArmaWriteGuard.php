@@ -17,9 +17,9 @@ use App\Services\Tactical\AtakActivityLogService;
  */
 final class AtakArmaWriteGuard
 {
-    /** Bornes carte Arma génériques (évite NaN/inf et valeurs absurdes). */
+    /** Bornes carte Arma v1.94+ (BI : X/Y/Z clampés ≈ -50 km … +500 km). */
     public const POS_MIN = -50000.0;
-    public const POS_MAX = 200000.0;
+    public const POS_MAX = 500000.0;
 
     public function __construct(
         private UserRepository $users = new UserRepository(),

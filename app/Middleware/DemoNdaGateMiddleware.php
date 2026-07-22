@@ -33,8 +33,11 @@ final class DemoNdaGateMiddleware
             return $next($request);
         }
 
-        // Webhooks / santé : pas d’enregistrement IP
+        // Webhooks / santé / QR téléphone (token = secret, consommé aussi en <img> sans session démo)
         if ($path === '/api/stripe/webhook' || $path === '/api/health' || str_starts_with($path, '/calendrier/abonnement/')) {
+            return $next($request);
+        }
+        if (str_starts_with($path, '/api/atak/phone-pairing/') && str_ends_with($path, '/qr.png')) {
             return $next($request);
         }
 

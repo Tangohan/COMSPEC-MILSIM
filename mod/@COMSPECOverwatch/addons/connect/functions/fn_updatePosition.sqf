@@ -8,6 +8,8 @@ params ["_unit", ["_force", false, [true]]];
 if (!hasInterface) exitWith { if (_force) then { "" } else { nil } };
 if (isNull _unit || !alive _unit) exitWith { if (_force) then { "dead" } else { nil } };
 if (isNull player || _unit != player) exitWith { if (_force) then { "dead" } else { nil } };
+// Quit jeu / fin mission : ne plus pousser position ni évaluer d’alerte médicale
+if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { if (_force) then { "" } else { nil } };
 
 // Log skip throttlé (RPT) — évite le spam PFH
 private _fnc_skip = {
@@ -37,9 +39,16 @@ if (!_force && {diag_tickTime < _backoffUntil}) exitWith {
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 
-private _pos = getPos _unit;
+// BI Position formats :
+// - Carte 2D / markers : Position2D = [X,Y] monde (X ouest→est, Y sud→nord)
+// - getPosWorld : X/Y stables (évite faux (0,0) menu / transition éditeur)
+// - ASL seul format Z absolu pour calculs 3D (getPosASL select 2) — pas ATL
+private _pos = getPosWorld _unit;
+private _posAsl = getPosASL _unit;
+private _aslZ = _posAsl select 2;
+
 // Menu / spawn origine (0,0) : ne jamais appeler UpdatePosition (spam journal Liaison côté Athena)
-if ((abs (_pos select 0) < 0.5) && { abs (_pos select 1) < 0.5 }) exitWith {
+if ((abs (_pos select 0) < 1) && { abs (_pos select 1) < 1 }) exitWith {
     ["origin_00"] call _fnc_skip;
     if (_force) then { "origin" } else { nil };
 };
@@ -105,12 +114,17 @@ private _radioChanged = _radioSig != _lastRadio;
 private _medicalChanged = _medicalSig != _lastMedical;
 private _groupChanged = _groupName != _lastGroup;
 private _batchOk = (_now - _lastSendTime) >= _batchInterval;
+// Keep-alive : rafraîchir updated_at même immobile (TTL Tacmap ~180 s)
+private _heartbeatOk = (_now - _lastSendTime) >= 45;
 // Émission radio : pousser hors batch pour pastille « Émet » quasi temps réel
 private _txUrgent = _radioChanged && {
     _radioSpeaking || _radioTxFlag || ((_lastRadio find "|1|") >= 0) || ((_lastRadio find "|1") >= 0)
 };
 
-private _shouldSend = _force || (_batchOk && (_distanceOk || _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged)) || _txUrgent;
+private _shouldSend = _force
+    || _heartbeatOk
+    || (_batchOk && (_distanceOk || _nameChanged || _roleChanged || _radioChanged || _medicalChanged || _groupChanged))
+    || _txUrgent;
 if (!_shouldSend) exitWith {};
 
 private _velocity = velocity _unit;
@@ -119,21 +133,31 @@ private _heading = getDir _unit;
 private _future = [
     (_pos select 0) + ((_velocity select 0) * 10),
     (_pos select 1) + ((_velocity select 1) * 10),
-    _pos select 2
+    _aslZ
 ];
 
 private _stealthMode = if ((unitPos _unit) in ["DOWN", "MIDDLE"] || {captive _unit}) then { "ON" } else { "OFF" };
 private _reportedPos = if (_stealthMode == "ON") then {
-    [(_pos select 0) + (random 20) - 10, (_pos select 1) + (random 20) - 10, _pos select 2]
+    [(_pos select 0) + (random 20) - 10, (_pos select 1) + (random 20) - 10, _aslZ]
 } else {
-    _pos
+    [(_pos select 0), (_pos select 1), _aslZ]
+};
+// Stealth peut ramener près de (0,0) — re-vérifier Position2D avant envoi
+if ((abs (_reportedPos select 0) < 1) && { abs (_reportedPos select 1) < 1 }) exitWith {
+    ["origin_00"] call _fnc_skip;
+    if (_force) then { "origin" } else { nil };
 };
 
-// JSON véhicule / cinématique (inspiré cTab UpdatePosition)
+// toFixed : point décimal invariant (évite « 1850,12 » localisé → JSON invalide / parse 0,0).
+// Même piège que SALUTE avant toFixed : sous locale FR, str/format cassent POST /api/atak/position.
+private _fnc_num = { (_this select 0) toFixed (_this select 1) };
+
+// JSON véhicule / cinématique + asl_z joueur (altitude mer, pas ATL)
 private _vehJson = format [
-    "{""speed"":%1,""in_vehicle"":%2",
-    (round (_speed * 10)) / 10,
-    if (_inVeh) then { "true" } else { "false" }
+    "{""speed"":%1,""in_vehicle"":%2,""asl_z"":%3,""pos_z"":%3",
+    [((round (_speed * 10)) / 10), 1] call _fnc_num,
+    if (_inVeh) then { "true" } else { "false" },
+    [_aslZ, 3] call _fnc_num
 ];
 if (_inVeh && {missionNamespace getVariable ["comspec_overwatch_vehicle_mode", true]}) then {
     private _vd = vectorDir _veh;
@@ -143,10 +167,10 @@ if (_inVeh && {missionNamespace getVariable ["comspec_overwatch_vehicle_mode", t
     _vehJson = _vehJson + format [
         ",""vehicle"":""%1"",""vector_dir"":[%2,%3,%4],""vector_up"":[%5,%6,%7],""velocity"":[%8,%9,%10],""pos_asl"":[%11,%12,%13]",
         typeOf _veh,
-        _vd select 0, _vd select 1, _vd select 2,
-        _vu select 0, _vu select 1, _vu select 2,
-        _vv select 0, _vv select 1, _vv select 2,
-        _vp select 0, _vp select 1, _vp select 2
+        [_vd select 0, 5] call _fnc_num, [_vd select 1, 5] call _fnc_num, [_vd select 2, 5] call _fnc_num,
+        [_vu select 0, 5] call _fnc_num, [_vu select 1, 5] call _fnc_num, [_vu select 2, 5] call _fnc_num,
+        [_vv select 0, 3] call _fnc_num, [_vv select 1, 3] call _fnc_num, [_vv select 2, 3] call _fnc_num,
+        [_vp select 0, 2] call _fnc_num, [_vp select 1, 2] call _fnc_num, [_vp select 2, 3] call _fnc_num
     ];
 };
 // Métadonnées radio (pas d’audio serveur) — pastilles Tacmap / tablette
@@ -162,6 +186,30 @@ _vehJson = _vehJson + format [
     if (_radioModuleOk) then { "true" } else { "false" },
     _escRid
 ];
+// Camp / affiliation (filtres Tacmap — fusionné dans extra via la DLL existante)
+private _side = side group _unit;
+private _sideStr = switch (_side) do {
+    case east: { "EAST" };
+    case resistance: { "GUER" };
+    case civilian: { "CIV" };
+    default { "WEST" };
+};
+private _affiliation = switch (_side) do {
+    case east: { "hostile" };
+    case resistance: { "unknown" };
+    case civilian: { "neutral" };
+    default { "friend" };
+};
+_vehJson = _vehJson + format [
+    ",""side"":""%1"",""affiliation"":""%2""",
+    _sideStr,
+    _affiliation
+];
+private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
+_modVersion = (_modVersion splitString """" joinString "");
+if (!(_modVersion isEqualTo "")) then {
+    _vehJson = _vehJson + format [",""mod_version"":""%1""", _modVersion];
+};
 _vehJson = _vehJson + "}";
 
 private _steamUid = getPlayerUID player;
@@ -170,12 +218,16 @@ if ((count _steamUid) < 15) then {
 };
 
 "COMSPECExtension" callExtension ["UpdatePosition", [
-    str (_reportedPos select 0), str (_reportedPos select 1), str _heading,
-    _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson, _steamUid, _groupName
+    [_reportedPos select 0, 2] call _fnc_num,
+    [_reportedPos select 1, 2] call _fnc_num,
+    [_heading, 2] call _fnc_num,
+    _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson, _steamUid, _groupName,
+    [_aslZ, 3] call _fnc_num,
+    _modVersion
 ]];
 
 private _trail = missionNamespace getVariable ["COMSPEC_PositionTrail", []];
-_trail pushBack [_now, _callSign, _pos, _speed, _heading, _future];
+_trail pushBack [_now, _callSign, [_pos select 0, _pos select 1, _aslZ], _speed, _heading, _future];
 if (count _trail > 150) then {
     _trail deleteRange [0, (count _trail) - 150];
 };

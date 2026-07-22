@@ -1,9 +1,17 @@
-/* COMSPEC ATAK - Tchat / journal radio */
+/* COMSPEC ATAK - Tchat / journal radio (+ mentions @) */
 window.ATAKChat = (function () {
   var sessionStartMs = Date.now();
   var lastMessagesFp = '';
   var cachedMessages = [];
   var LS_PREFIX = 'atak_chat_cleared_before_v1_';
+  var LS_MENTION_SEEN = 'atak_chat_mention_seen_v1_';
+  var mentionState = {
+    open: false,
+    query: '',
+    start: -1,
+    items: [],
+    active: 0
+  };
 
   function getApiBase() {
     return window.ATAKSocket ? window.ATAKSocket.getApiBase() : '';
@@ -23,8 +31,37 @@ window.ATAKChat = (function () {
     return 'User';
   }
 
+  function getMyCallsigns() {
+    var out = [];
+    var u = window.ATAK_USER || {};
+    [u.callsign, u.armaCallsign, u.displayName].forEach(function (v) {
+      var s = String(v || '').trim();
+      if (s) out.push(s.toUpperCase());
+    });
+    return out;
+  }
+
   function clearStorageKey() {
     return LS_PREFIX + String(getMapId());
+  }
+
+  function mentionSeenKey() {
+    return LS_MENTION_SEEN + String(getMapId());
+  }
+
+  function getMentionSeenId() {
+    try {
+      var v = parseInt(localStorage.getItem(mentionSeenKey()) || '0', 10);
+      return isNaN(v) || v < 0 ? 0 : v;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function setMentionSeenId(id) {
+    try {
+      localStorage.setItem(mentionSeenKey(), String(id > 0 ? id : 0));
+    } catch (e) { /* ignore */ }
   }
 
   /** Id max masqué localement (vue seule — n’efface pas le serveur ni le journal Liaison). */
@@ -127,10 +164,113 @@ window.ATAKChat = (function () {
     return '<span class="atak-chat-text">' + html + '</span>';
   }
 
+  /** Surligne les @indicatif dans un texte déjà échappé HTML. */
+  function highlightMentionsHtml(escapedText) {
+    return String(escapedText || '').replace(
+      /(^|[\s\[\(\{,;:])@([A-Za-z0-9][A-Za-z0-9._\-]{0,31})\b/g,
+      function (_m, pre, token) {
+        var mine = getMyCallsigns().indexOf(String(token).toUpperCase()) >= 0;
+        var cls = 'atak-chat-mention' + (mine ? ' atak-chat-mention--me' : '');
+        return pre + '<span class="' + cls + '">@' + token + '</span>';
+      }
+    );
+  }
+
+  function bodyWithMentions(rawText) {
+    return wrapBodyHtml(highlightMentionsHtml(escapeHtml(rawText)));
+  }
+
+  function extractMentionTokens(body) {
+    var text = String(body || '');
+    var parsed = parseCommsBody(text);
+    if (parsed) text = parsed.text;
+    var re = /(^|[\s\[\(\{,;:])@([A-Za-z0-9][A-Za-z0-9._\-]{0,31})\b/g;
+    var out = [];
+    var seen = {};
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var t = String(m[2] || '').trim();
+      var key = t.toUpperCase();
+      if (!t || seen[key]) continue;
+      seen[key] = true;
+      out.push(t);
+    }
+    return out;
+  }
+
+  function messageMentionsMe(m) {
+    if (!m) return false;
+    var mine = getMyCallsigns();
+    if (!mine.length) return false;
+    var author = String(m.author || '').toUpperCase();
+    if (mine.indexOf(author) >= 0) return false;
+    if (Array.isArray(m.mentions)) {
+      for (var i = 0; i < m.mentions.length; i++) {
+        var cs = String((m.mentions[i] && (m.mentions[i].call_sign || m.mentions[i].token)) || '').toUpperCase();
+        if (cs && mine.indexOf(cs) >= 0) return true;
+      }
+    }
+    var tokens = extractMentionTokens(m.body || '');
+    for (var j = 0; j < tokens.length; j++) {
+      if (mine.indexOf(String(tokens[j]).toUpperCase()) >= 0) return true;
+    }
+    return false;
+  }
+
+  var mentionToastKeys = {};
+  var mentionToastLastPrune = 0;
+
+  function consumeMentionToast(key) {
+    var k = String(key || '');
+    if (!k) return true;
+    var now = Date.now();
+    if (now - mentionToastLastPrune > 60000) {
+      mentionToastKeys = {};
+      mentionToastLastPrune = now;
+    }
+    if (mentionToastKeys[k] && (now - mentionToastKeys[k]) < 8000) {
+      return false;
+    }
+    mentionToastKeys[k] = now;
+    return true;
+  }
+
+  function notifyMention(m) {
+    if (!m || !messageMentionsMe(m)) return;
+    var author = String(m.author || 'Un opérateur');
+    var dedupe = 'mention:' + author.toUpperCase();
+    if (!consumeMentionToast(dedupe)) return;
+    var msg = author + ' vous a mentionné dans le journal radio.';
+    if (window.ATAKShowNotification) {
+      window.ATAKShowNotification(msg);
+    }
+  }
+
+  function scanMentionsForMe(list, opts) {
+    opts = opts || {};
+    var seen = getMentionSeenId();
+    var maxId = seen;
+    var newest = null;
+    (Array.isArray(list) ? list : []).forEach(function (m) {
+      var id = messageId(m);
+      if (id > maxId) maxId = id;
+      if (id > 0 && id <= seen) return;
+      if (!messageMentionsMe(m)) return;
+      if (!newest || id > messageId(newest)) newest = m;
+    });
+    if (opts.notify && newest) {
+      notifyMention(newest);
+    }
+    if (maxId > seen) {
+      setMentionSeenId(maxId);
+    }
+  }
+
   function formatMsg(m) {
     var absTime = formatAbsoluteTime(m.created_at);
     var bodyRaw = m.body || '';
     var author = escapeHtml(m.author || '');
+    var mentionedMe = messageMentionsMe(m);
 
     var orderHtml = (window.ATAKOrders && window.ATAKOrders.formatChatBody)
       ? window.ATAKOrders.formatChatBody(bodyRaw)
@@ -144,7 +284,8 @@ window.ATAKChat = (function () {
 
     var cls = 'atak-chat-msg'
       + (orderHtml ? ' atak-chat-msg-order' : '')
-      + (medical ? ' atak-chat-msg-medical' + (medical.severity === 'critical' ? ' atak-chat-msg-medical-critical' : '') : '');
+      + (medical ? ' atak-chat-msg-medical' + (medical.severity === 'critical' ? ' atak-chat-msg-medical-critical' : '') : '')
+      + (mentionedMe ? ' atak-chat-msg-mention' : '');
 
     var parsed = (!orderHtml && !medicalHtml) ? parseCommsBody(bodyRaw) : null;
     var line1Tags = '';
@@ -163,12 +304,12 @@ window.ATAKChat = (function () {
           tagHtml(parsed.priority) +
           tagHtml(parsed.kind) +
           ' ' +
-          wrapBodyHtml(escapeHtml(parsed.text)) +
+          bodyWithMentions(parsed.text) +
         '</div>';
     } else {
       line2 =
         '<div class="atak-chat-msg-line atak-chat-msg-body">' +
-          wrapBodyHtml(escapeHtml(bodyRaw)) +
+          bodyWithMentions(bodyRaw) +
         '</div>';
     }
 
@@ -204,6 +345,7 @@ window.ATAKChat = (function () {
       })
       .then(function (data) {
         var list = Array.isArray(data) ? data : [];
+        var prevFp = lastMessagesFp;
         cachedMessages = list;
         var visible = filterVisible(list);
         var fp = visible.map(function (m) {
@@ -222,11 +364,25 @@ window.ATAKChat = (function () {
         if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromChatMessages === 'function') {
           window.ATAKMedicalAlerts.ingestFromChatMessages(list);
         }
+        // Premier chargement : mémoriser sans toast. Ensuite : notifier les nouvelles mentions.
+        scanMentionsForMe(list, { notify: prevFp !== '' });
         if (window.ATAKLastChatError) window.ATAKLastChatError(null);
       })
       .catch(function (err) {
         if (window.ATAKShowError && (!err.message || err.message.indexOf('Tchat:') !== 0)) window.ATAKShowError('Impossible de charger le tchat.');
       });
+  }
+
+  function applyMentionPings(pings) {
+    if (!Array.isArray(pings) || !pings.length) return;
+    pings.forEach(function (p) {
+      if (window.ATAKPings && typeof window.ATAKPings.appendPing === 'function') {
+        window.ATAKPings.appendPing(p);
+      }
+    });
+    if (window.ATAKPings && typeof window.ATAKPings.fetchPings === 'function') {
+      window.ATAKPings.fetchPings();
+    }
   }
 
   function appendMessage(msg) {
@@ -247,6 +403,16 @@ window.ATAKChat = (function () {
     if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.notifyFromChatMessage === 'function') {
       window.ATAKMedicalAlerts.notifyFromChatMessage(msg);
     }
+    var id = messageId(msg);
+    if (id > 0 && id > getMentionSeenId()) {
+      if (messageMentionsMe(msg)) {
+        notifyMention(msg);
+      }
+      setMentionSeenId(id);
+    }
+    if (msg && Array.isArray(msg.mention_pings)) {
+      applyMentionPings(msg.mention_pings);
+    }
   }
 
   /** Formate un envoi web comme le journal radio du mod. */
@@ -254,10 +420,157 @@ window.ATAKChat = (function () {
     return '[' + formatSessionStamp() + '][SQUAD][ROUTINE][FREE] ' + text;
   }
 
+  /* ——— Autocomplete @ ——— */
+
+  function getMentionCandidates() {
+    var map = {};
+    var units = (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function')
+      ? window.ATAKUnits.getUnits()
+      : [];
+    units.forEach(function (u) {
+      var cs = String((u && u.call_sign) || '').trim();
+      if (!cs) return;
+      var status = String((u && u.status) || '');
+      var statusFr = status === 'linked' ? 'En liaison'
+        : (status === 'delayed' ? 'Signal différé'
+          : (status === 'offline' ? 'Hors liaison' : 'Effectif'));
+      var role = String((u && u.role) || '').trim();
+      map[cs.toUpperCase()] = {
+        callsign: cs,
+        label: cs,
+        subtitle: role ? (role + ' · ' + statusFr) : statusFr,
+        kind: 'unit'
+      };
+    });
+    var dir = window.ATAK_CALLSIGN_TO_USER || {};
+    Object.keys(dir).forEach(function (k) {
+      var p = dir[k] || {};
+      var cs = String(p.callsign || k || '').trim();
+      if (!cs) return;
+      var key = cs.toUpperCase();
+      var dn = String(p.displayName || '').trim();
+      if (!map[key]) {
+        map[key] = {
+          callsign: cs,
+          label: cs,
+          subtitle: dn || 'Opérateur',
+          kind: 'operator'
+        };
+      } else if (dn) {
+        map[key].subtitle = dn + ' · ' + map[key].subtitle;
+      }
+    });
+    return Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) {
+      return String(a.callsign).localeCompare(String(b.callsign), 'fr', { sensitivity: 'base' });
+    });
+  }
+
+  function findMentionContext(value, caret) {
+    var before = String(value || '').slice(0, caret == null ? value.length : caret);
+    var m = before.match(/(^|[\s\[\(\{,;:])@([A-Za-z0-9._\-]*)$/);
+    if (!m) return null;
+    return {
+      start: before.length - m[2].length - 1,
+      query: m[2] || ''
+    };
+  }
+
+  function hideMentions() {
+    mentionState.open = false;
+    mentionState.items = [];
+    mentionState.active = 0;
+    mentionState.start = -1;
+    mentionState.query = '';
+    var list = document.getElementById('atak-chat-mentions');
+    if (list) {
+      list.hidden = true;
+      list.innerHTML = '';
+    }
+    var input = document.getElementById('atak-chat-input');
+    if (input) input.setAttribute('aria-expanded', 'false');
+  }
+
+  function renderMentions() {
+    var list = document.getElementById('atak-chat-mentions');
+    if (!list) return;
+    if (!mentionState.open || !mentionState.items.length) {
+      hideMentions();
+      return;
+    }
+    list.hidden = false;
+    list.innerHTML = mentionState.items.map(function (item, idx) {
+      var active = idx === mentionState.active ? ' is-active' : '';
+      var kindFr = item.kind === 'operator' ? 'Opérateur' : 'ATAK';
+      return '<li class="atak-chat-mention-item' + active + '" role="option" data-idx="' + idx + '"' +
+        (idx === mentionState.active ? ' aria-selected="true"' : ' aria-selected="false"') + '>' +
+        '<span class="atak-chat-mention-cs">@' + escapeHtml(item.callsign) + '</span>' +
+        '<span class="atak-chat-mention-meta">' + escapeHtml(item.subtitle || kindFr) + '</span>' +
+        '</li>';
+    }).join('');
+    var input = document.getElementById('atak-chat-input');
+    if (input) input.setAttribute('aria-expanded', 'true');
+    list.querySelectorAll('.atak-chat-mention-item').forEach(function (li) {
+      li.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        var idx = parseInt(li.getAttribute('data-idx') || '0', 10);
+        applyMention(idx);
+      });
+    });
+  }
+
+  function updateMentionsFromInput() {
+    var input = document.getElementById('atak-chat-input');
+    if (!input) return;
+    var ctx = findMentionContext(input.value, input.selectionStart);
+    if (!ctx) {
+      hideMentions();
+      return;
+    }
+    var q = String(ctx.query || '').toUpperCase();
+    var items = getMentionCandidates().filter(function (c) {
+      if (!q) return true;
+      var cs = String(c.callsign || '').toUpperCase();
+      var sub = String(c.subtitle || '').toUpperCase();
+      return cs.indexOf(q) === 0 || cs.indexOf(q) >= 0 || sub.indexOf(q) >= 0;
+    }).slice(0, 8);
+    if (!items.length) {
+      hideMentions();
+      return;
+    }
+    mentionState.open = true;
+    mentionState.start = ctx.start;
+    mentionState.query = ctx.query;
+    mentionState.items = items;
+    if (mentionState.active >= items.length) mentionState.active = 0;
+    renderMentions();
+  }
+
+  function applyMention(idx) {
+    var input = document.getElementById('atak-chat-input');
+    if (!input || !mentionState.open) return;
+    var item = mentionState.items[idx];
+    if (!item) return;
+    var val = String(input.value || '');
+    var caret = input.selectionStart == null ? val.length : input.selectionStart;
+    var start = mentionState.start;
+    if (start < 0) start = caret;
+    var before = val.slice(0, start);
+    var after = val.slice(caret);
+    var insert = '@' + item.callsign + ' ';
+    input.value = before + insert + after;
+    var pos = before.length + insert.length;
+    input.focus();
+    try {
+      input.setSelectionRange(pos, pos);
+    } catch (e) { /* ignore */ }
+    hideMentions();
+  }
+
   function send() {
     var input = document.getElementById('atak-chat-input');
     var body = input && input.value && input.value.trim();
     if (!body) return;
+    hideMentions();
     var author = getAuthor();
     if (!isNodeConfigured()) {
       if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible pour envoyer un message.');
@@ -271,9 +584,26 @@ window.ATAKChat = (function () {
     }).then(function (r) {
       if (!r.ok) {
         if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le message.');
-        return;
+        return null;
       }
-      fetchMessages();
+      return r.json().catch(function () { return null; });
+    }).then(function (row) {
+      if (row && row.id) {
+        appendMessage(row);
+        var pinged = Array.isArray(row.mentions)
+          ? row.mentions.filter(function (m) { return m && m.pinged; }).length
+          : 0;
+        if (pinged > 0 && window.ATAKShowNotification) {
+          window.ATAKShowNotification(
+            pinged === 1
+              ? 'Message envoyé — ping carte vers l’unité mentionnée.'
+              : 'Message envoyé — pings carte vers les unités mentionnées.',
+            { silent: true }
+          );
+        }
+      } else {
+        fetchMessages();
+      }
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible d’envoyer le message.');
     });
@@ -317,7 +647,40 @@ window.ATAKChat = (function () {
     var input = document.getElementById('atak-chat-input');
     var clearBtn = document.getElementById('atak-chat-clear');
     if (btn) btn.addEventListener('click', send);
-    if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') send(); });
+    if (input) {
+      input.addEventListener('input', updateMentionsFromInput);
+      input.addEventListener('click', updateMentionsFromInput);
+      input.addEventListener('blur', function () {
+        setTimeout(hideMentions, 120);
+      });
+      input.addEventListener('keydown', function (e) {
+        if (mentionState.open && mentionState.items.length) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            mentionState.active = (mentionState.active + 1) % mentionState.items.length;
+            renderMentions();
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            mentionState.active = (mentionState.active - 1 + mentionState.items.length) % mentionState.items.length;
+            renderMentions();
+            return;
+          }
+          if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            applyMention(mentionState.active);
+            return;
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            hideMentions();
+            return;
+          }
+        }
+        if (e.key === 'Enter') send();
+      });
+    }
     if (clearBtn && !clearBtn._atakBound) {
       clearBtn._atakBound = true;
       clearBtn.addEventListener('click', function () {
@@ -335,6 +698,8 @@ window.ATAKChat = (function () {
     clearDisplay: clearDisplay,
     parseCommsBody: parseCommsBody,
     formatMsg: formatMsg,
+    extractMentionTokens: extractMentionTokens,
+    consumeMentionToast: consumeMentionToast,
     getCachedMessages: function () { return cachedMessages.slice(); }
   };
 })();

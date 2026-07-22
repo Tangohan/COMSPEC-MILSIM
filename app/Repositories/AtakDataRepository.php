@@ -47,12 +47,78 @@ class AtakDataRepository
     {
         $parts = preg_split('/\s+/', trim((string) $gridRef), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if (count($parts) < 2) {
-            return [null, null];
+            // Grille compacte Arma (ex. 180097) → approx. monde.
+            return self::mapGridToWorldApprox($gridRef);
         }
-        $x = is_numeric($parts[0]) ? (float) $parts[0] : null;
-        $y = is_numeric($parts[1]) ? (float) $parts[1] : null;
+        $x = self::coerceFloat($parts[0]);
+        $y = self::coerceFloat($parts[1]);
 
         return [$x, $y];
+    }
+
+    /**
+     * Convertit une grille carte Arma (6/8/10 chiffres) en coords monde approximatives.
+     * Ex. « 180097 » → centre de cellule 100 m (easting 180, northing 097).
+     *
+     * @return array{0: ?float, 1: ?float}
+     */
+    public static function mapGridToWorldApprox(?string $grid): array
+    {
+        $digits = preg_replace('/\D+/', '', (string) $grid) ?? '';
+        $len = strlen($digits);
+        if ($len < 6 || ($len % 2) !== 0) {
+            return [null, null];
+        }
+        $half = intdiv($len, 2);
+        $east = (int) substr($digits, 0, $half);
+        $north = (int) substr($digits, $half);
+        $cell = match ($half) {
+            3 => 100.0,
+            4 => 10.0,
+            5 => 1.0,
+            default => 100.0,
+        };
+        // Centre de cellule — assez précis pour un marker effectifs / carte.
+        $x = ($east * $cell) + ($cell / 2.0);
+        $y = ($north * $cell) + ($cell / 2.0);
+
+        return [$x, $y];
+    }
+
+    /**
+     * Résout une position carte : world x/y prioritaires, sinon grille (espace ou compacte).
+     *
+     * @return array{0: ?float, 1: ?float}
+     */
+    public static function resolveAlertPosition(mixed $posX, mixed $posY, ?string $grid = null): array
+    {
+        $x = self::coerceFloat($posX);
+        $y = self::coerceFloat($posY);
+        if (self::isValidMapPosition($x, $y)) {
+            return [$x, $y];
+        }
+        [$gx, $gy] = self::parseGridRef($grid);
+
+        return self::isValidMapPosition($gx, $gy) ? [$gx, $gy] : [null, null];
+    }
+
+    public static function coerceFloat(mixed $raw): ?float
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (is_int($raw) || is_float($raw)) {
+            $f = (float) $raw;
+
+            return is_finite($f) ? $f : null;
+        }
+        $s = trim(str_replace(',', '.', (string) $raw));
+        if ($s === '' || !is_numeric($s)) {
+            return null;
+        }
+        $f = (float) $s;
+
+        return is_finite($f) ? $f : null;
     }
 
     public static function isValidMapPosition(?float $x, ?float $y): bool
@@ -67,25 +133,49 @@ class AtakDataRepository
         return true;
     }
 
+    public function getUnitByCallSign(int $tenantId, int $mapId, string $callSign): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $mapId, $callSign]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     /**
      * Statut métier : linked uniquement si pas offline et last update récente.
+     *
+     * Préférer $ageSeconds (TIMESTAMPDIFF MySQL) pour éviter les faux hors-ligne
+     * quand PHP et MySQL ne partagent pas le même fuseau (DATETIME sans TZ).
      */
-    public static function resolveLiveStatus(?string $dbStatus, ?string $updatedAt, ?int $now = null): string
-    {
+    public static function resolveLiveStatus(
+        ?string $dbStatus,
+        ?string $updatedAt,
+        ?int $now = null,
+        ?int $ageSeconds = null
+    ): string {
         $status = strtolower(trim((string) $dbStatus));
         if ($status === 'offline') {
             return 'offline';
         }
-        $now ??= time();
-        $ts = $updatedAt !== null && $updatedAt !== '' ? strtotime($updatedAt) : false;
-        if ($ts === false) {
+        if ($ageSeconds === null) {
+            $now ??= time();
+            $ts = $updatedAt !== null && $updatedAt !== '' ? strtotime($updatedAt) : false;
+            if ($ts === false) {
+                return 'offline';
+            }
+            $ageSeconds = $now - $ts;
+        }
+        // Horodatage « futur » = écart de fuseau PHP↔MySQL : traiter comme frais.
+        if ($ageSeconds < 0) {
+            $ageSeconds = 0;
+        }
+        if ($ageSeconds > self::UNIT_LIVE_TTL_SECONDS) {
             return 'offline';
         }
-        $age = $now - $ts;
-        if ($age > self::UNIT_LIVE_TTL_SECONDS) {
-            return 'offline';
-        }
-        if ($age > (int) (self::UNIT_LIVE_TTL_SECONDS * 0.6)) {
+        if ($ageSeconds > (int) (self::UNIT_LIVE_TTL_SECONDS * 0.6)) {
             return 'delayed';
         }
         if ($status === 'delayed') {
@@ -110,6 +200,11 @@ class AtakDataRepository
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $out = [];
         foreach ($rows as $r) {
+            $raw = (string) ($r['marker_data'] ?? '');
+            // Marqueurs retirés côté web : ne pas les renvoyer (évite le resync Arma).
+            if ($this->markerDataIsSuppressed($raw)) {
+                continue;
+            }
             $out[] = [
                 'id' => (int) $r['id'],
                 'layerId' => (int) $r['layer_id'],
@@ -118,6 +213,15 @@ class AtakDataRepository
             ];
         }
         return $out;
+    }
+
+    private function markerDataIsSuppressed(string $markerData): bool
+    {
+        if ($markerData === '' || !str_contains($markerData, 'suppressed')) {
+            return false;
+        }
+        $decoded = json_decode($markerData, true);
+        return is_array($decoded) && !empty($decoded['suppressed']);
     }
 
     public function addMarker(int $tenantId, int $mapId, int $layerId, string $markerData, ?string $armaName = null): array
@@ -146,10 +250,15 @@ class AtakDataRepository
 
     public function upsertMarkerByArmaName(int $tenantId, int $mapId, int $layerId, string $armaName, string $markerData): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
+        $stmt = $this->pdo->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ?');
         $stmt->execute([$tenantId, $mapId, $armaName]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($existing) {
+            // Respecte une suppression web : le jeu ne doit pas republier le marqueur.
+            if ($this->markerDataIsSuppressed((string) ($existing['marker_data'] ?? ''))) {
+                return $this->getMarkerById($tenantId, (int) $existing['id'])
+                    ?? ['id' => (int) $existing['id'], 'layerId' => $layerId, 'markerData' => (string) $existing['marker_data'], 'updated_at' => null];
+            }
             $this->pdo->prepare('UPDATE atak_markers SET layer_id = ?, marker_data = ? WHERE id = ?')->execute([$layerId, $markerData, $existing['id']]);
             return $this->getMarkerById($tenantId, (int) $existing['id']);
         }
@@ -182,15 +291,41 @@ class AtakDataRepository
 
     public function deleteMarker(int $tenantId, int $id): bool
     {
-        $stmt = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, arma_name, marker_data FROM atak_markers WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
-        return $stmt->rowCount() > 0;
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return false;
+        }
+        $armaName = trim((string) ($row['arma_name'] ?? ''));
+        // Marqueur issu du jeu : soft-suppress pour ne pas le voir revenir au prochain sync.
+        if ($armaName !== '') {
+            $decoded = json_decode((string) ($row['marker_data'] ?? '{}'), true);
+            if (!is_array($decoded)) {
+                $decoded = [];
+            }
+            $decoded['suppressed'] = true;
+            $decoded['suppressed_at'] = gmdate('c');
+            $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $upd = $this->pdo->prepare('UPDATE atak_markers SET marker_data = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?');
+            $upd->execute([is_string($encoded) ? $encoded : '{"suppressed":true}', $tenantId, $id]);
+
+            return true;
+        }
+        $del = $this->pdo->prepare('DELETE FROM atak_markers WHERE tenant_id = ? AND id = ?');
+        $del->execute([$tenantId, $id]);
+
+        return $del->rowCount() > 0;
     }
 
     public function getUnits(int $tenantId, int $mapId): array
     {
         $this->markStaleUnitsOffline($tenantId, $mapId);
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign');
+        // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
+        $stmt = $this->pdo->prepare(
+            'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
+             FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign'
+        );
         $stmt->execute([$tenantId, $mapId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $now = time();
@@ -210,6 +345,14 @@ class AtakDataRepository
     {
         $now ??= time();
         $dbStatus = isset($row['status']) ? (string) $row['status'] : '';
+        $ageSeconds = null;
+        if (array_key_exists('age_seconds', $row)) {
+            $rawAge = $row['age_seconds'];
+            unset($row['age_seconds']);
+            if ($rawAge !== null && $rawAge !== '') {
+                $ageSeconds = (int) $rawAge;
+            }
+        }
         $posX = isset($row['pos_x']) && $row['pos_x'] !== null && $row['pos_x'] !== ''
             ? (float) $row['pos_x']
             : null;
@@ -229,7 +372,8 @@ class AtakDataRepository
         $live = self::resolveLiveStatus(
             $dbStatus,
             isset($row['updated_at']) ? (string) $row['updated_at'] : null,
-            $now
+            $now,
+            $ageSeconds
         );
         // Pas de position carte valide → ne pas afficher « En liaison ».
         if (($live === 'linked' || $live === 'delayed') && !self::isValidMapPosition($posX, $posY)) {
@@ -272,12 +416,18 @@ class AtakDataRepository
     {
         $validPos = self::isValidMapPosition($posX, $posY);
         $gridRef = $validPos ? ((string) round($posX) . ' ' . round($posY)) : '';
-        $stmt = $this->pdo->prepare('SELECT id, grid_ref, pos_x, pos_y FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
+        // hasPos AVANT le SELECT : sans migration pos_x/pos_y, un SELECT pos_* plante
+        // toute la méthode (pas d’INSERT, pas de setLastActivity) → /units vide.
+        $hasPos = $this->hasPosColumns();
+        $stmt = $this->pdo->prepare(
+            $hasPos
+                ? 'SELECT id, grid_ref, pos_x, pos_y FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+                : 'SELECT id, grid_ref FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+        );
         $stmt->execute([$tenantId, $mapId, $callSign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         $created = false;
         $unitId = 0;
-        $hasPos = $this->hasPosColumns();
 
         if ($existing) {
             $unitId = (int) $existing['id'];
@@ -445,6 +595,48 @@ class AtakDataRepository
     }
 
     /**
+     * Dédup courte : même indicatif + même type d’alerte médicale déjà posté récemment.
+     * Évite de republier en boucle la même « ALERTE MÉDICALE » (mod / reconnexion).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findRecentDuplicateMedicalAlert(
+        int $tenantId,
+        int $mapId,
+        string $callSign,
+        string $kind,
+        int $withinSeconds = 300
+    ): ?array {
+        $callSign = mb_strtoupper(trim($callSign));
+        $kind = mb_strtolower(trim($kind));
+        if ($callSign === '' || $kind === '') {
+            return null;
+        }
+        $withinSeconds = max(30, min($withinSeconds, 1800));
+        $rows = $this->getChatMessagesSince($tenantId, $mapId, 80, $withinSeconds);
+        for ($i = count($rows) - 1; $i >= 0; $i--) {
+            $row = $rows[$i];
+            if (!is_array($row)) {
+                continue;
+            }
+            $enriched = \App\Support\MedicalAlertParser::enrichChatRow($row);
+            if ($enriched === null) {
+                continue;
+            }
+            $ecs = mb_strtoupper(trim((string) ($enriched['call_sign'] ?? '')));
+            if ($ecs === '') {
+                $ecs = mb_strtoupper(trim((string) ($row['author'] ?? '')));
+            }
+            $ek = mb_strtolower(trim((string) ($enriched['kind'] ?? '')));
+            if ($ecs === $callSign && $ek === $kind) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Alertes / bilans médicaux dérivés du tchat ATAK (préfixe ALERTE MÉDICALE ou WIA).
      * Filtre la fenêtre active (30 min depuis created_at, horloge MySQL) sauf si $includeExpired.
      *
@@ -471,6 +663,55 @@ class AtakDataRepository
         if (count($out) > $limit) {
             $out = array_slice($out, -$limit);
         }
+        return $out;
+    }
+
+    /**
+     * Alertes tactiques dérivées du tchat (préfixe ALERTE TACTIQUE).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getTacticalAlertsFromChat(int $tenantId, int $mapId, int $limit = 50, bool $includeExpired = false): array
+    {
+        $limit = max(1, min($limit, 200));
+        $scan = min(500, max(100, $limit * 5));
+        $windowSec = \App\Support\TacticalAlertParser::ACTIVE_WINDOW_SECONDS;
+        $scanWindowSec = $windowSec + (3 * 3600);
+        $rows = !$includeExpired
+            ? $this->getChatMessagesSince($tenantId, $mapId, $scan, $scanWindowSec)
+            : $this->getChatMessages($tenantId, $mapId, $scan);
+        $out = [];
+        foreach ($rows as $row) {
+            $enriched = \App\Support\TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
+            if ($enriched === null) {
+                continue;
+            }
+            if (!$includeExpired) {
+                $created = isset($enriched['created_at']) ? (string) $enriched['created_at'] : '';
+                if (!\App\Support\TacticalAlertParser::isWithinActiveWindow($created)) {
+                    continue;
+                }
+            }
+            $out[] = $enriched;
+        }
+        if ($out === [] && !$includeExpired) {
+            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            foreach ($fallbackRows as $row) {
+                $enriched = \App\Support\TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
+                if ($enriched === null) {
+                    continue;
+                }
+                $created = isset($enriched['created_at']) ? (string) $enriched['created_at'] : '';
+                if (!\App\Support\TacticalAlertParser::isWithinActiveWindow($created)) {
+                    continue;
+                }
+                $out[] = $enriched;
+            }
+        }
+        if (count($out) > $limit) {
+            $out = array_slice($out, -$limit);
+        }
+
         return $out;
     }
 
@@ -577,6 +818,14 @@ class AtakDataRepository
         $stmt = $this->pdo->prepare('SELECT * FROM atak_pings WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function deletePing(int $tenantId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM atak_pings WHERE tenant_id = ? AND id = ?');
+        $stmt->execute([$tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
     }
 
     public function getNineLines(int $tenantId, int $mapId): array

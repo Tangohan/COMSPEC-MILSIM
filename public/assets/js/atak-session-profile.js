@@ -153,9 +153,10 @@ window.ATAKSessionProfile = (function () {
 
   function canTriageMedicalUi() {
     if (!isLoggedIn()) return false;
-    var serverOk = !!(window.ATAK_CAPS && window.ATAK_CAPS.canTriageMedical);
-    if (!state) return serverOk;
-    return serverOk && hasSpecialty('medic');
+    // Spécialité Médecin cochée = intention de session : débloque l’UI de triage.
+    // Le serveur refuse encore si le compte n’est pas connecté.
+    if (state && hasSpecialty('medic')) return true;
+    return !!(window.ATAK_CAPS && window.ATAK_CAPS.canTriageMedical);
   }
 
   function applyGating() {

@@ -1,0 +1,23 @@
+// Exemple — à coller dans description.ext de la mission (Athena Remastered compatible).
+// Si absents, Overwatch utilise les cases à cocher CBA « Afficher l’adversaire / indépendants / civils ».
+
+class Params {
+    class ATH_showEast {
+        title = "Carte Athena : afficher l’adversaire";
+        values[] = {0, 1};
+        texts[] = {"Masqué", "Visible"};
+        default = 1;
+    };
+    class ATH_showGuer {
+        title = "Carte Athena : afficher les indépendants";
+        values[] = {0, 1};
+        texts[] = {"Masqué", "Visible"};
+        default = 1;
+    };
+    class ATH_showCiv {
+        title = "Carte Athena : afficher les civils";
+        values[] = {0, 1};
+        texts[] = {"Masqué", "Visible"};
+        default = 1;
+    };
+};

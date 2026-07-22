@@ -210,7 +210,7 @@
 }
 
 @media (min-width: 720px) {
-  .bo-briefing__kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bo-briefing__kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .bo-briefing__kpi {
@@ -327,7 +327,8 @@
 
 .bo-briefing__field input[type="text"],
 .bo-briefing__field input[type="number"],
-.bo-briefing__field input[type="file"] {
+.bo-briefing__field input[type="file"],
+.bo-briefing__field textarea {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 0.65rem;
@@ -337,12 +338,20 @@
   background: #fff;
 }
 
+.bo-briefing__field textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
 .bo-briefing__field input[type="file"] {
   padding: 0.45rem 0.55rem;
   font-size: 0.8125rem;
 }
 
-.bo-briefing__field input:focus {
+.bo-briefing__field input:focus,
+.bo-briefing__field textarea:focus {
   outline: 2px solid rgba(5, 150, 105, 0.35);
   outline-offset: 1px;
   border-color: #059669;

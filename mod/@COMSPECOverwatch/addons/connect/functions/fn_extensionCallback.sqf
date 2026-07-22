@@ -20,10 +20,14 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
         private _label = [_uri] call comspec_overwatch_connect_fnc_portalLabel;
         [format ["[Athena] Connecte a %1", _label], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+        // Pas de bandeau / chat pendant le handshake au démarrage (1 message max ailleurs)
+        if (
+            !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
+            && {!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])}
+        ) then {
             systemChat format ["[Athena] Connecte a %1", _label];
+            ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
         };
-        ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };

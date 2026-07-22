@@ -459,3 +459,81 @@ html.tacmap-night .leaflet-control-attribution {
     grid-column: 1;
   }
 }
+
+/* Barre outils terrain / itinéraire */
+.tacmap-tools-bar,
+.tacmap-faction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--tm-surface-2);
+  border-bottom: 1px solid var(--tm-border);
+  font-size: 0.75rem;
+  color: var(--tm-text);
+}
+.tacmap-tools-bar__label,
+.tacmap-faction-bar .tacmap-tools-bar__label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tm-muted);
+  font-size: 0.65rem;
+}
+.tacmap-tools-bar__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--tm-muted);
+}
+.tacmap-tools-bar__field input {
+  width: 4.5rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--tm-border);
+  border-radius: 0.25rem;
+  background: var(--tm-surface);
+  color: var(--tm-text);
+  font-size: 0.75rem;
+}
+.tacmap-tools-bar__hint,
+.tacmap-tools-bar__eta {
+  color: var(--tm-muted);
+  font-size: 0.72rem;
+  max-width: 28rem;
+}
+.tacmap-tools-bar__eta {
+  color: var(--tm-accent);
+  font-weight: 600;
+}
+
+/* Signalements tactiques */
+.tacmap-talert {
+  border-left: 3px solid var(--tm-accent);
+  background: var(--tm-surface-2);
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+.tacmap-talert header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
+}
+.tacmap-talert p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+.tacmap-talert__grid {
+  margin-top: 0.25rem !important;
+  color: var(--tm-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 0.7rem !important;
+}
+.tacmap-talert--critical { border-left-color: var(--tm-danger); background: var(--tm-danger-soft); }
+.tacmap-talert--high { border-left-color: #ea580c; }
+.tacmap-talert--mid { border-left-color: var(--tm-accent); }
+.tacmap-talert--info { border-left-color: var(--tm-ok); }

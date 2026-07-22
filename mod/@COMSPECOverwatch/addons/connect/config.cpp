@@ -20,6 +20,11 @@ class CfgFunctions {
         class connect {
             file = "z\comspec_overwatch\addons\connect\functions";
             class connect {};
+            class waitAthenaReady {};
+            class startSyncLoops {};
+            class sendFactionSettings {};
+            class sendTacticalAlert {};
+            class tacticalAlertDialogShow {};
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
@@ -136,6 +141,11 @@ class CfgFunctions {
             class webBrowserOpenAthena {};
             class webBrowserOpenSystem {};
             class webBrowserJsEscape {};
+            class webBrowserMapShow {};
+            class webBrowserMapHide {};
+            class webBrowserMapOnDraw {};
+            class webBrowserMapCenter {};
+            class webBrowserMapZoom {};
             class updateLinkDiary {};
             class extensionCallback {};
             class hasTerminal {};

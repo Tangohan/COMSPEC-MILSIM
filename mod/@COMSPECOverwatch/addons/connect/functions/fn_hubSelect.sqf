@@ -66,6 +66,10 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
                 systemChat "Bilan de santé transmis.";
             };
         };
+        case "tactical";
+        case "tactical_alert": {
+            [] call comspec_overwatch_connect_fnc_tacticalAlertDialogShow;
+        };
         case "forcesync": {
             [] call comspec_overwatch_connect_fnc_forceSyncData;
         };

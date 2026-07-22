@@ -8,6 +8,7 @@ class RscPicture;
 class RscPictureKeepAspect;
 class RscListBox;
 class RscWebBrowser;
+class RscMapControl;
 
 class COMSPEC_RscButton: RscButton {
     access = 0;

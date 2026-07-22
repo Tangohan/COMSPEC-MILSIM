@@ -291,8 +291,9 @@ final class ComspecApiKeyAuth
                     return false;
                 }
             }
-            // QR téléphone : le token dans l’URL est le secret (TTL court) — scannable sans clé ATAK.
-            if (preg_match('#^/api/atak/phone-pairing/[A-Za-z0-9]+/qr\.png$#', $path) === 1) {
+            // QR téléphone : le token dans l’URL est le secret (TTL court) — scannable / <img> sans clé ATAK.
+            // Filet large : tout …/phone-pairing/{token}/qr.png (évite un 401 JSON qui casse l’image).
+            if (str_starts_with($path, '/api/atak/phone-pairing/') && str_ends_with($path, '/qr.png')) {
                 return false;
             }
 

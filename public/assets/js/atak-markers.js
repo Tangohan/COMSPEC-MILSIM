@@ -8,6 +8,13 @@ window.ATAKMarkers = (function () {
       .replace(/"/g, '&quot;');
   }
 
+  function askConfirm(message) {
+    if (window.ATAKContextMenu && typeof window.ATAKContextMenu.confirmAction === 'function') {
+      return window.ATAKContextMenu.confirmAction(message);
+    }
+    return Promise.resolve(window.confirm(message));
+  }
+
   function getListEl() {
     return document.getElementById('atak-markers-list');
   }
@@ -20,10 +27,14 @@ window.ATAKMarkers = (function () {
       return;
     }
     var list = window.ATAKMap.listMarkers();
-    // Historique : marqueurs manuels / enrichis en tête, ordre stable
+    // Historique : marqueurs manuels, Arma, ou enrichis
     list = list.filter(function (item) {
       var d = item.data || {};
-      return d.type === 'manual' || d.color || d.icon || d.description || d.label;
+      if (d.suppressed) return false;
+      var isArma = window.ArmaMapMarkers && window.ArmaMapMarkers.isArmaStyleMarker
+        ? window.ArmaMapMarkers.isArmaStyleMarker(d)
+        : (d.source === 'arma' || (d.type && String(d.type).indexOf('mil_') === 0));
+      return isArma || d.type === 'manual' || d.color || d.icon || d.description || d.label || d.text;
     });
     list.sort(function (a, b) {
       var ta = (a.data && a.data.created_at) || '';
@@ -39,11 +50,14 @@ window.ATAKMarkers = (function () {
     }
     el.innerHTML = list.map(function (item) {
       var d = item.data || {};
-      var label = d.label || d.symbolName || d.name || 'Marqueur';
+      var label = d.label || d.text || d.symbolName || d.name || 'Marqueur';
       var desc = d.description || '';
       var gx = item.gridLng != null ? Math.round(Number(item.gridLng)) : '—';
       var gy = item.gridLat != null ? Math.round(Number(item.gridLat)) : '—';
       var color = d.color || '#34d399';
+      if (window.ArmaMapMarkers && window.ArmaMapMarkers.armaColorHex && String(color).indexOf('Color') === 0) {
+        color = window.ArmaMapMarkers.armaColorHex(color);
+      }
       var metaExtra = '';
       if (d.symbolName || d.affiliation) {
         var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
@@ -90,12 +104,14 @@ window.ATAKMarkers = (function () {
         e.stopPropagation();
         var delId = delBtn.getAttribute('data-delete');
         if (!delId || !window.ATAKMap || !window.ATAKMap.deleteMarkerById) return;
-        if (!window.confirm('Supprimer ce marqueur ?')) return;
-        window.ATAKMap.deleteMarkerById(delId).then(function () {
-          renderFromMap();
-          if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur supprimé.');
-        }).catch(function () {
-          if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le marqueur.');
+        askConfirm('Supprimer ce marqueur ?').then(function (ok) {
+          if (!ok) return;
+          window.ATAKMap.deleteMarkerById(delId).then(function () {
+            renderFromMap();
+            if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur supprimé.');
+          }).catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer le marqueur.');
+          });
         });
         return;
       }

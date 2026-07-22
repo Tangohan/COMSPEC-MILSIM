@@ -16,7 +16,8 @@ if (_url isEqualTo "" || {_key isEqualTo ""}) exitWith {
 };
 
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
-private _raw = ["COMSPECExtension" callExtension ["Disconnect", [_cs]]] call comspec_overwatch_connect_fnc_extResult;
+private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
+private _raw = ["COMSPECExtension" callExtension ["Disconnect", [_cs, _modVersion]]] call comspec_overwatch_connect_fnc_extResult;
 
 missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
 missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];

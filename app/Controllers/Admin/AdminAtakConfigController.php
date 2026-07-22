@@ -44,8 +44,13 @@ class AdminAtakConfigController
         $newAccessKey = Session::getFlash('new_atak_access_key');
         $authEvents = $this->activityLog->listRecent($tenantId, AtakActivityLogService::AUTH_MAP_ID, 30);
         $dataSummary = $this->tenantData->summarize($tenantId);
-        $maintenanceEnabled = is_array($config) && (int) ($config['maintenance_enabled'] ?? 0) === 1;
-        $maintenanceMessage = is_array($config) ? trim((string) ($config['maintenance_message'] ?? '')) : '';
+        $maintenanceSchemaReady = $this->atakConfigRepository->isMaintenanceSchemaReady();
+        $maintenanceEnabled = $maintenanceSchemaReady
+            && is_array($config)
+            && (int) ($config['maintenance_enabled'] ?? 0) === 1;
+        $maintenanceMessage = ($maintenanceSchemaReady && is_array($config))
+            ? trim((string) ($config['maintenance_message'] ?? ''))
+            : '';
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -61,6 +66,7 @@ class AdminAtakConfigController
             'authEvents' => $authEvents,
             'portalBaseUrl' => rtrim(url(''), '/'),
             'dataSummary' => $dataSummary,
+            'maintenanceSchemaReady' => $maintenanceSchemaReady,
             'maintenanceEnabled' => $maintenanceEnabled,
             'maintenanceMessage' => $maintenanceMessage,
             'purgeConfirmPhrase' => self::PURGE_CONFIRM_PHRASE,
@@ -140,12 +146,25 @@ class AdminAtakConfigController
 
         $enabled = (string) $request->input('maintenance_enabled', '0') === '1';
         $message = trim((string) $request->input('maintenance_message', ''));
-        $this->atakConfigRepository->setMaintenance((int) $tenantId, $enabled, $message !== '' ? $message : null);
+        $ok = $this->atakConfigRepository->setMaintenance(
+            (int) $tenantId,
+            $enabled,
+            $message !== '' ? $message : null
+        );
+
+        if (!$ok) {
+            Session::flash(
+                'error',
+                'Impossible d’enregistrer le mode maintenance : la base de données n’est pas à jour. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.'
+            );
+
+            return Response::redirect(url('admin/atak-config'));
+        }
 
         Session::flash(
             'success',
             $enabled
-                ? 'Mode maintenance activé. La carte tactique et la liaison jeu sont temporairement indisponibles pour les opérateurs.'
+                ? 'Mode maintenance activé. La carte tactique et la liaison jeu sont temporairement indisponibles pour les opérateurs. Les administrateurs gardent l’accès.'
                 : 'Mode maintenance désactivé. La carte tactique est à nouveau accessible.'
         );
 

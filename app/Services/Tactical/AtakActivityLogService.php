@@ -19,6 +19,9 @@ final class AtakActivityLogService
     /** Présence des visiteurs web sur la Tacmap (TTL court). */
     private const WEB_PRESENCE_TTL_SEC = 90;
 
+    /** Présence des clients téléphone / ATAK pendant le briefing. */
+    private const BRIEFING_PRESENCE_TTL_SEC = 75;
+
     /** Types internes → libellés métier (FR). */
     public const TYPE_CLIENT_INIT = 'client_init';
     public const TYPE_CALLSIGN_CHANGE = 'callsign_change';
@@ -40,6 +43,8 @@ final class AtakActivityLogService
     public const TYPE_PHONE = 'phone';
     /** Joueur quitte Arma / la mission — présence ATAK hors ligne. */
     public const TYPE_DISCONNECT = 'disconnect';
+    /** Alerte tactique structurée (Contact, FRAGO, SALUTE, etc.). */
+    public const TYPE_TACTICAL_ALERT = 'tactical_alert';
 
     /** Carte « virtuelle » pour les événements d’auth / téléphone non liés à un théâtre. */
     public const AUTH_MAP_ID = 1;
@@ -60,6 +65,7 @@ final class AtakActivityLogService
             self::TYPE_LASER,
             self::TYPE_INTEL,
             self::TYPE_ORDER,
+            self::TYPE_TACTICAL_ALERT,
         ],
     ];
 
@@ -79,9 +85,87 @@ final class AtakActivityLogService
         if ($tenantId < 1 || $mapId < 1 || $label === '') {
             return;
         }
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($type, $label, $actor, $meta): void {
-            $this->appendEvent($data, $type, $label, $actor, $meta);
+        $safeMeta = $this->sanitizeMeta($meta);
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($type, $label, $actor, $safeMeta): void {
+            $this->appendEvent($data, $type, $label, $actor, $safeMeta);
         });
+    }
+
+    /**
+     * Métadonnées sûres pour le journal (pas de secrets). Valeurs tronquées.
+     *
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
+    public function sanitizeMeta(array $meta): array
+    {
+        return $this->sanitizeMetaRecursive($meta, 0);
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     * @return array<string, mixed>
+     */
+    private function sanitizeMetaRecursive(array $meta, int $depth): array
+    {
+        if ($depth > 3) {
+            return [];
+        }
+        $blocked = [
+            'api_key', 'apikey', 'apiKey', 'token', 'session_token', 'game_session',
+            'password', 'secret', 'authorization', 'cookie', 'csrf', 'csrf_token',
+        ];
+        $out = [];
+        $i = 0;
+        foreach ($meta as $key => $value) {
+            if ($i >= 48) {
+                break;
+            }
+            $k = is_string($key) ? $key : (string) $key;
+            if ($k === '' || strlen($k) > 64) {
+                continue;
+            }
+            $lk = strtolower($k);
+            $blockedHit = false;
+            foreach ($blocked as $b) {
+                if ($lk === strtolower($b) || str_contains($lk, 'secret') || str_contains($lk, 'password') || str_contains($lk, 'api_key')) {
+                    $blockedHit = true;
+                    break;
+                }
+            }
+            if ($blockedHit) {
+                continue;
+            }
+            if (is_bool($value) || is_int($value) || is_float($value)) {
+                if (is_float($value) && !is_finite($value)) {
+                    continue;
+                }
+                $out[$k] = $value;
+                $i++;
+                continue;
+            }
+            if (is_string($value)) {
+                $v = trim($value);
+                if ($v === '') {
+                    continue;
+                }
+                if (mb_strlen($v) > 400) {
+                    $v = mb_substr($v, 0, 400) . '…';
+                }
+                $out[$k] = $v;
+                $i++;
+                continue;
+            }
+            if (is_array($value)) {
+                $nested = $this->sanitizeMetaRecursive($value, $depth + 1);
+                if ($nested !== []) {
+                    $out[$k] = $nested;
+                    $i++;
+                }
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -99,8 +183,9 @@ final class AtakActivityLogService
             'actor' => $actor !== null && $actor !== '' ? $actor : null,
             'at' => date('c'),
         ];
-        if ($meta !== []) {
-            $event['meta'] = $meta;
+        $safe = $meta !== [] ? $this->sanitizeMeta($meta) : [];
+        if ($safe !== []) {
+            $event['meta'] = $safe;
         }
         $events = $data['events'] ?? [];
         if (!is_array($events)) {
@@ -219,34 +304,41 @@ final class AtakActivityLogService
     }
 
     /**
-     * Connexion téléphone réussie (QR scanné ou code saisi).
+     * Connexion téléphone réussie (QR scanné ou code saisi) — ouverture réelle des diapos.
      */
     public function recordPhonePaired(int $tenantId, ?string $actor = null): void
     {
         if ($tenantId < 1) {
             return;
         }
+        $who = $actor !== null && trim($actor) !== '' ? trim($actor) : null;
+        $label = $who !== null
+            ? $who . ' a ouvert les diapos'
+            : 'Connexion au briefing — téléphone';
         $this->record(
             $tenantId,
             self::AUTH_MAP_ID,
             self::TYPE_PHONE,
-            'Téléphone connecté — briefing accessible',
-            $actor,
+            $label,
+            $who,
             ['ok' => true]
         );
     }
 
     /**
      * Première prise de contact / vérification de liaison (throttlée par client).
+     *
+     * @param array<string, mixed> $meta
      */
-    public function recordClientInit(int $tenantId, int $mapId, string $clientKey, ?string $callSign = null): void
+    public function recordClientInit(int $tenantId, int $mapId, string $clientKey, ?string $callSign = null, array $meta = []): void
     {
         $clientKey = $this->normalizeKey($clientKey);
         if ($clientKey === '') {
             return;
         }
         $now = time();
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $callSign, $now): void {
+        $safeMeta = $this->sanitizeMeta($meta);
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $callSign, $now, $safeMeta): void {
             $sessions = $this->pruneSessions($data['sessions'] ?? [], $now);
             $prev = $sessions[$clientKey] ?? null;
             $lastInit = is_array($prev) ? (int) ($prev['last_init_at'] ?? 0) : 0;
@@ -265,15 +357,17 @@ final class AtakActivityLogService
             $label = $call !== ''
                 ? 'Connexion établie — ' . $call
                 : 'Client ATAK initialisé';
-            $this->appendEvent($data, self::TYPE_CLIENT_INIT, $label, $call !== '' ? $call : null);
+            $this->appendEvent($data, self::TYPE_CLIENT_INIT, $label, $call !== '' ? $call : null, $safeMeta);
         });
     }
 
     /**
      * Déconnexion explicite (sortie Arma / mission) : retire la session client.
      * Retourne l’indicatif résolu (body ou session) pour marquer l’unité hors ligne.
+     *
+     * @param array<string, mixed> $meta
      */
-    public function recordDisconnect(int $tenantId, int $mapId, string $clientKey, ?string $callSign = null): string
+    public function recordDisconnect(int $tenantId, int $mapId, string $clientKey, ?string $callSign = null, array $meta = []): string
     {
         $clientKey = $this->normalizeKey($clientKey);
         $call = $callSign !== null ? trim($callSign) : '';
@@ -282,7 +376,8 @@ final class AtakActivityLogService
             return $resolved;
         }
         $now = time();
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $call, $now, &$resolved): void {
+        $safeMeta = $this->sanitizeMeta($meta);
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $call, $now, &$resolved, $safeMeta): void {
             $sessions = $this->pruneSessions($data['sessions'] ?? [], $now);
             if ($clientKey !== '' && isset($sessions[$clientKey]) && is_array($sessions[$clientKey])) {
                 $prevCall = trim((string) ($sessions[$clientKey]['call_sign'] ?? ''));
@@ -295,7 +390,11 @@ final class AtakActivityLogService
             $label = $resolved !== ''
                 ? 'Déconnexion jeu — ' . $resolved
                 : 'Déconnexion jeu';
-            $this->appendEvent($data, self::TYPE_DISCONNECT, $label, $resolved !== '' ? $resolved : null);
+            $eventMeta = $safeMeta;
+            if ($resolved !== '' && !isset($eventMeta['call_sign'])) {
+                $eventMeta['call_sign'] = $resolved;
+            }
+            $this->appendEvent($data, self::TYPE_DISCONNECT, $label, $resolved !== '' ? $resolved : null, $eventMeta);
         });
 
         return $resolved;
@@ -303,8 +402,10 @@ final class AtakActivityLogService
 
     /**
      * Position reçue : détecte init / changement d’indicatif / envoi (throttlé).
+     *
+     * @param array<string, mixed> $meta
      */
-    public function recordFromPosition(int $tenantId, int $mapId, string $clientKey, string $callSign, bool $isNewUnit): void
+    public function recordFromPosition(int $tenantId, int $mapId, string $clientKey, string $callSign, bool $isNewUnit, array $meta = []): void
     {
         $clientKey = $this->normalizeKey($clientKey);
         $callSign = trim($callSign);
@@ -312,7 +413,8 @@ final class AtakActivityLogService
             $callSign = 'Inconnu';
         }
         $now = time();
-        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $callSign, $isNewUnit, $now): void {
+        $safeMeta = $this->sanitizeMeta($meta);
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $callSign, $isNewUnit, $now, $safeMeta): void {
             $sessions = $this->pruneSessions($data['sessions'] ?? [], $now);
             $prev = ($clientKey !== '' && isset($sessions[$clientKey]) && is_array($sessions[$clientKey]))
                 ? $sessions[$clientKey]
@@ -322,18 +424,18 @@ final class AtakActivityLogService
             $lastPos = is_array($prev) ? (int) ($prev['last_position_at'] ?? 0) : 0;
 
             if ($prevCall !== '' && strcasecmp($prevCall, $callSign) !== 0) {
-                $this->appendEvent($data, self::TYPE_CALLSIGN_CHANGE, 'Indicatif mis à jour — ' . $prevCall . ' → ' . $callSign, $callSign, [
+                $this->appendEvent($data, self::TYPE_CALLSIGN_CHANGE, 'Indicatif mis à jour — ' . $prevCall . ' → ' . $callSign, $callSign, array_merge($safeMeta, [
                     'from' => $prevCall,
                     'to' => $callSign,
-                ]);
+                ]));
                 $lastInit = $now;
             } elseif ($prev === null || $lastInit === 0 || ($isNewUnit && ($now - $lastInit) >= self::INIT_THROTTLE_SEC)) {
-                $this->appendEvent($data, self::TYPE_CLIENT_INIT, 'Connexion établie — ' . $callSign, $callSign);
+                $this->appendEvent($data, self::TYPE_CLIENT_INIT, 'Connexion établie — ' . $callSign, $callSign, $safeMeta);
                 $lastInit = $now;
             }
 
             if ($lastPos === 0 || ($now - $lastPos) >= self::POSITION_THROTTLE_SEC) {
-                $this->appendEvent($data, self::TYPE_POSITION, 'Position envoyée — ' . $callSign, $callSign);
+                $this->appendEvent($data, self::TYPE_POSITION, 'Position envoyée — ' . $callSign, $callSign, $safeMeta);
                 $lastPos = $now;
             }
 
@@ -490,17 +592,7 @@ final class AtakActivityLogService
             $item['archived_at'] = (string) $e['archived_at'];
         }
         if (isset($e['meta']) && is_array($e['meta']) && $e['meta'] !== []) {
-            $meta = [];
-            if (isset($e['meta']['from'], $e['meta']['to'])) {
-                $meta['from'] = (string) $e['meta']['from'];
-                $meta['to'] = (string) $e['meta']['to'];
-            }
-            if (array_key_exists('ok', $e['meta'])) {
-                $meta['ok'] = (bool) $e['meta']['ok'];
-            }
-            if (isset($e['meta']['reason']) && is_string($e['meta']['reason'])) {
-                $meta['reason'] = (string) $e['meta']['reason'];
-            }
+            $meta = $this->sanitizeMeta($e['meta']);
             if ($meta !== []) {
                 $item['meta'] = $meta;
             }
@@ -627,7 +719,7 @@ final class AtakActivityLogService
             ['type' => self::TYPE_PING, 'label' => 'Ping carte — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 60],
             ['type' => self::TYPE_CALLSIGN_CHANGE, 'label' => 'Indicatif mis à jour — VIPER → VIPER-2', 'actor' => 'VIPER-2', 'offset_sec' => 40],
             ['type' => self::TYPE_ORDER, 'label' => 'Ordre émis — Se déplacer (VIPER-2)', 'actor' => 'PC', 'offset_sec' => 30],
-            ['type' => self::TYPE_PHONE, 'label' => 'Téléphone connecté — briefing accessible', 'actor' => 'Opérateur', 'offset_sec' => 20],
+            ['type' => self::TYPE_PHONE, 'label' => 'Connexion au briefing', 'actor' => 'Opérateur', 'offset_sec' => 20],
             ['type' => self::TYPE_AUTH, 'label' => 'Liaison en jeu réussie — code accepté', 'actor' => 'HAWK-1', 'offset_sec' => 15],
             ['type' => self::TYPE_NINE_LINE, 'label' => '9-Line CAS transmise', 'actor' => 'JTAC-1', 'offset_sec' => 10],
             ['type' => self::TYPE_DISCONNECT, 'label' => 'Déconnexion jeu — GHOST-3', 'actor' => 'GHOST-3', 'offset_sec' => 5],
@@ -744,6 +836,87 @@ final class AtakActivityLogService
                 'label' => (string) ($row['label'] ?? 'Opérateur'),
                 'display_name' => (string) ($row['display_name'] ?? ''),
                 'callsign' => (string) ($row['callsign'] ?? ''),
+                'last_seen_at' => (int) ($row['last_seen_at'] ?? 0),
+            ];
+        }
+        usort($out, static function (array $a, array $b): int {
+            return strcasecmp($a['label'], $b['label']);
+        });
+
+        return $out;
+    }
+
+    /**
+     * Signal de présence d'un client consultant le briefing (téléphone / ATAK).
+     */
+    public function heartbeatBriefingPresence(
+        int $tenantId,
+        string $clientKey,
+        string $label = '',
+        string $source = 'phone'
+    ): void {
+        if ($tenantId < 1) {
+            return;
+        }
+        $clientKey = $this->normalizeKey($clientKey);
+        if ($clientKey === '') {
+            return;
+        }
+        $label = trim($label);
+        if ($label === '') {
+            $label = 'Opérateur';
+        }
+        $source = trim($source) !== '' ? trim($source) : 'phone';
+        $now = time();
+        $this->mutate($tenantId, self::AUTH_MAP_ID, function (array &$data) use ($clientKey, $label, $source, $now): void {
+            $presence = $this->pruneBriefingPresence($data['briefing_presence'] ?? [], $now);
+            $prev = $presence[$clientKey] ?? null;
+            $isNew = !is_array($prev);
+            $presence[$clientKey] = [
+                'label' => $label,
+                'source' => $source,
+                'last_seen_at' => $now,
+                'first_seen_at' => $isNew ? $now : (int) ($prev['first_seen_at'] ?? $now),
+            ];
+            $data['briefing_presence'] = $presence;
+            // Une seule entrée Activité à l’arrivée (pas à chaque poll / heartbeat).
+            if ($isNew) {
+                $eventLabel = match ($source) {
+                    'arma' => 'Connexion au briefing — tableau en jeu',
+                    'admin' => 'Connexion au briefing — état-major',
+                    default => ($label !== '' && $label !== 'Téléphone' && $label !== 'Opérateur')
+                        ? $label . ' a ouvert les diapos'
+                        : 'Connexion au briefing',
+                };
+                $this->appendEvent($data, self::TYPE_PHONE, $eventLabel, $label !== '' ? $label : null, [
+                    'ok' => true,
+                    'source' => $source,
+                ]);
+            }
+        });
+    }
+
+    /**
+     * Clients encore actifs sur le briefing (TTL court).
+     *
+     * @return list<array{label:string,source:string,last_seen_at:int}>
+     */
+    public function listBriefingPresence(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $data = $this->readFile($this->path($tenantId, self::AUTH_MAP_ID));
+        $now = time();
+        $presence = $this->pruneBriefingPresence($data['briefing_presence'] ?? [], $now);
+        $out = [];
+        foreach ($presence as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $out[] = [
+                'label' => (string) ($row['label'] ?? 'Opérateur'),
+                'source' => (string) ($row['source'] ?? 'phone'),
                 'last_seen_at' => (int) ($row['last_seen_at'] ?? 0),
             ];
         }
@@ -944,6 +1117,30 @@ final class AtakActivityLogService
             }
             $seen = (int) ($row['last_seen_at'] ?? 0);
             if ($seen > 0 && ($now - $seen) > self::WEB_PRESENCE_TTL_SEC) {
+                continue;
+            }
+            $out[$key] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $presence
+     * @return array<string, array<string, mixed>>
+     */
+    private function pruneBriefingPresence(mixed $presence, int $now): array
+    {
+        if (!is_array($presence)) {
+            return [];
+        }
+        $out = [];
+        foreach ($presence as $key => $row) {
+            if (!is_string($key) || !is_array($row)) {
+                continue;
+            }
+            $seen = (int) ($row['last_seen_at'] ?? 0);
+            if ($seen > 0 && ($now - $seen) > self::BRIEFING_PRESENCE_TTL_SEC) {
                 continue;
             }
             $out[$key] = $row;

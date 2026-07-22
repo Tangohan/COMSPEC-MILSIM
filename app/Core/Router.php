@@ -58,8 +58,18 @@ class Router
 
     private function pathToRegex(string $path): string
     {
-        $path = preg_replace('/\{([a-zA-Z_]+)\}/', '(?P<$1>[^/]+)', $path);
-        return '#^' . $path . '$#';
+        // Échapper les segments littéraux (ex. « qr.png ») pour que « . » ne signifie pas « n’importe quel caractère ».
+        $parts = preg_split('/(\{[a-zA-Z_]+\})/', $path, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $regex = '';
+        foreach ($parts ?: [] as $part) {
+            if (preg_match('/^\{([a-zA-Z_]+)\}$/', $part, $m) === 1) {
+                $regex .= '(?P<' . $m[1] . '>[^/]+)';
+            } else {
+                $regex .= preg_quote($part, '#');
+            }
+        }
+
+        return '#^' . $regex . '$#';
     }
 
     public function dispatch(): Response

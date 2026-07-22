@@ -74,6 +74,7 @@ window.ATAKActivity = (function () {
       case 'flight':
       case 'sigint':
       case 'order':
+      case 'tactical_alert':
         return 'atak-activity-item--tactical';
       default: return '';
     }
@@ -86,12 +87,13 @@ window.ATAKActivity = (function () {
       case 'callsign_change': return 'Indicatif';
       case 'position': return 'Position';
       case 'auth': return 'Accès';
-      case 'phone': return 'Téléphone';
+      case 'phone': return 'Briefing';
       case 'chat': return 'Tchat';
       case 'ping': return 'Ping';
       case 'marker': return 'Marqueur';
       case 'intel': return 'Renseignement';
       case 'nine_line': return '9-Line';
+      case 'tactical_alert': return 'Situation';
       case 'designator': return 'Désignateur';
       case 'laser': return 'Laser';
       case 'flight': return 'Vol';
@@ -196,12 +198,187 @@ window.ATAKActivity = (function () {
       '<div class="atak-activity-body">' +
         '<div class="atak-activity-top">' +
           '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + '</span>' +
-          '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
+          '<div class="atak-activity-top-actions">' +
+            '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
+            '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Voir les détails" aria-label="Voir les détails de l’événement">i</button>' +
+          '</div>' +
         '</div>' +
         '<div class="atak-activity-label">' + escapeHtml(ev.label || '') + '</div>' +
         actor +
       '</div>';
+    var btn = li.querySelector('[data-activity-info]');
+    if (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openEventDetails(ev);
+      });
+    }
     return li;
+  }
+
+  var META_LABELS_FR = {
+    call_sign: 'Indicatif',
+    callsign: 'Indicatif',
+    profile_callsign: 'Indicatif du profil',
+    display_name: 'Compte Athena',
+    user_id: 'Identifiant compte',
+    steam_uid: 'Identifiant Steam',
+    mod_version: 'Version Overwatch',
+    tenant_id: 'Communauté (n°)',
+    map_id: 'Théâtre (n°)',
+    grid: 'Grille',
+    grid_ref: 'Grille',
+    role: 'Rôle',
+    group_name: 'Groupe',
+    pos_x: 'Position X',
+    pos_y: 'Position Y',
+    asl_z: 'Altitude',
+    heading: 'Cap',
+    health: 'État médical',
+    side: 'Camp',
+    affiliation: 'Affiliation',
+    from: 'Ancien indicatif',
+    to: 'Nouvel indicatif',
+    ok: 'Résultat',
+    reason: 'Motif',
+    mentions: 'Mentions',
+    source: 'Origine',
+    kind: 'Type',
+    method: 'Méthode',
+    path_hint: 'Chemin'
+  };
+
+  var META_PRIMARY_ORDER = [
+    'display_name', 'user_id', 'call_sign', 'callsign', 'profile_callsign',
+    'steam_uid', 'mod_version', 'tenant_id', 'map_id', 'grid', 'grid_ref',
+    'role', 'group_name', 'pos_x', 'pos_y', 'asl_z', 'heading', 'health',
+    'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'source', 'side', 'affiliation'
+  ];
+
+  function formatMetaValue(key, value) {
+    if (key === 'ok') return value ? 'Réussi' : 'Échec';
+    if (key === 'source') {
+      var s = String(value || '');
+      if (s === 'arma') return 'Jeu Arma';
+      if (s === 'phone') return 'Téléphone';
+      if (s === 'admin') return 'État-major';
+      return s || '—';
+    }
+    if (Array.isArray(value)) {
+      return value.map(function (v) { return String(v); }).filter(Boolean).join(', ') || '—';
+    }
+    if (value == null || value === '') return '—';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  function ensureDetailsModal() {
+    var el = document.getElementById('atak-activity-details-modal');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'atak-activity-details-modal';
+    el.className = 'atak-activity-details-modal';
+    el.hidden = true;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'atak-activity-details-title');
+    el.innerHTML =
+      '<div class="atak-activity-details-backdrop" data-activity-details-close="1"></div>' +
+      '<div class="atak-activity-details-panel">' +
+        '<div class="atak-activity-details-head">' +
+          '<h2 id="atak-activity-details-title" class="atak-activity-details-title">Détail de l’événement</h2>' +
+          '<button type="button" class="atak-activity-details-close" data-activity-details-close="1" aria-label="Fermer">×</button>' +
+        '</div>' +
+        '<div class="atak-activity-details-body" id="atak-activity-details-body"></div>' +
+      '</div>';
+    document.body.appendChild(el);
+    el.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-activity-details-close')) {
+        closeEventDetails();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && el && !el.hidden) closeEventDetails();
+    });
+    return el;
+  }
+
+  function closeEventDetails() {
+    var el = document.getElementById('atak-activity-details-modal');
+    if (el) el.hidden = true;
+  }
+
+  function openEventDetails(ev) {
+    if (!ev) return;
+    var modal = ensureDetailsModal();
+    var body = document.getElementById('atak-activity-details-body');
+    if (!body) return;
+    var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var rows = [];
+    rows.push({ label: 'Type', value: typeLabelFr(ev.type || '') });
+    rows.push({ label: 'Résumé', value: ev.label || '—' });
+    rows.push({ label: 'Acteur', value: ev.actor || '—' });
+    rows.push({ label: 'Horodatage', value: formatTime(ev.at) + (ev.at ? ' (' + String(ev.at) + ')' : '') });
+    if (ev.archived) {
+      rows.push({ label: 'État', value: 'Archivé' });
+    }
+
+    var used = {};
+    META_PRIMARY_ORDER.forEach(function (key) {
+      if (!Object.prototype.hasOwnProperty.call(meta, key)) return;
+      if (meta[key] == null || meta[key] === '') return;
+      used[key] = true;
+      rows.push({
+        label: META_LABELS_FR[key] || key,
+        value: formatMetaValue(key, meta[key])
+      });
+    });
+    Object.keys(meta).forEach(function (key) {
+      if (used[key]) return;
+      if (meta[key] == null || meta[key] === '') return;
+      if (typeof meta[key] === 'object' && !Array.isArray(meta[key])) return;
+      used[key] = true;
+      rows.push({
+        label: META_LABELS_FR[key] || key,
+        value: formatMetaValue(key, meta[key])
+      });
+    });
+
+    var html = '<dl class="atak-activity-details-dl">';
+    for (var i = 0; i < rows.length; i++) {
+      html +=
+        '<div class="atak-activity-details-row">' +
+          '<dt>' + escapeHtml(rows[i].label) + '</dt>' +
+          '<dd>' + escapeHtml(rows[i].value) + '</dd>' +
+        '</div>';
+    }
+    html += '</dl>';
+
+    var hasMeta = Object.keys(meta).length > 0;
+    html +=
+      '<details class="atak-activity-details-tech"' + (hasMeta ? '' : ' open') + '>' +
+        '<summary>Détail technique</summary>' +
+        '<pre class="atak-activity-details-json">' + escapeHtml(JSON.stringify({
+          id: ev.id,
+          type: ev.type,
+          label: ev.label,
+          actor: ev.actor,
+          at: ev.at,
+          archived: ev.archived || false,
+          meta: meta
+        }, null, 2)) + '</pre>' +
+      '</details>';
+
+    if (!hasMeta) {
+      html =
+        '<p class="atak-activity-details-empty">Aucune métadonnée enrichie pour cet événement (entrée plus ancienne ou non issue du jeu).</p>' +
+        html;
+    }
+
+    body.innerHTML = html;
+    modal.hidden = false;
   }
 
   function renderDayHeader(iso) {
@@ -315,6 +492,11 @@ window.ATAKActivity = (function () {
             }
           }
         }
+        // Mention radio : prioriser un toast métier (sans doubler le bip chat générique).
+        if (actType === 'chat' && notifyMentionFromActivityEvent(fresh[j])) {
+          played = true;
+          break;
+        }
         if (!window.ATAKSounds.shouldPlayForActivity(actType)) continue;
         if (typeof window.ATAKSounds.playForActivity === 'function') {
           if (window.ATAKSounds.playForActivity(actType)) played = true;
@@ -323,6 +505,43 @@ window.ATAKActivity = (function () {
         }
         if (played) break;
       }
+    }
+    return true;
+  }
+
+  function myCallsignsUpper() {
+    var out = [];
+    var u = window.ATAK_USER || {};
+    [u.callsign, u.armaCallsign, u.displayName].forEach(function (v) {
+      var s = String(v || '').trim().toUpperCase();
+      if (s) out.push(s);
+    });
+    return out;
+  }
+
+  /** @returns {boolean} true si toast mention affiché (son géré par ATAKShowNotification) */
+  function notifyMentionFromActivityEvent(ev) {
+    if (!ev || ev.type !== 'chat') return false;
+    var mentions = ev.meta && Array.isArray(ev.meta.mentions) ? ev.meta.mentions : null;
+    if (!mentions || !mentions.length) return false;
+    var mine = myCallsignsUpper();
+    if (!mine.length) return false;
+    var actor = String(ev.actor || '').toUpperCase();
+    if (mine.indexOf(actor) >= 0) return false;
+    var hit = false;
+    for (var m = 0; m < mentions.length; m++) {
+      if (mine.indexOf(String(mentions[m] || '').toUpperCase()) >= 0) {
+        hit = true;
+        break;
+      }
+    }
+    if (!hit) return false;
+    var dedupeKey = 'mention:' + actor;
+    if (window.ATAKChat && typeof window.ATAKChat.consumeMentionToast === 'function') {
+      if (!window.ATAKChat.consumeMentionToast(dedupeKey)) return false;
+    }
+    if (window.ATAKShowNotification) {
+      window.ATAKShowNotification((ev.actor || 'Un opérateur') + ' vous a mentionné dans le journal radio.');
     }
     return true;
   }
@@ -462,6 +681,7 @@ window.ATAKActivity = (function () {
     dayLabelFr: dayLabelFr,
     dayKeyFromIso: dayKeyFromIso,
     escapeHtml: escapeHtml,
+    openEventDetails: openEventDetails,
     getCachedEvents: function () { return eventsCache.slice(); }
   };
 })();

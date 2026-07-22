@@ -558,7 +558,10 @@ if ($atakMapConfig) {
           </div>
         </div>
         <div class="atak-chat-input-wrap">
-          <input type="text" id="atak-chat-input" placeholder="Émettre" autocomplete="off" spellcheck="false" />
+          <div class="atak-chat-compose">
+            <ul id="atak-chat-mentions" class="atak-chat-mentions" hidden role="listbox" aria-label="Mentionner un effectif"></ul>
+            <input type="text" id="atak-chat-input" placeholder="Émettre — @ pour mentionner" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-controls="atak-chat-mentions" />
+          </div>
           <button type="button" class="atak-chat-send" id="atak-chat-send" title="Envoyer" aria-label="Envoyer">
             <svg class="atak-chat-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
               <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -814,6 +817,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= $base ?>/assets/js/arma-map-markers.js"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
@@ -1594,16 +1598,42 @@ if ($atakMapConfig) {
               }
               var body = res.body;
               if (codeEl) codeEl.textContent = body.code;
-              if (qrImg && body.qr_image_url) {
-                qrImg.onload = function () { qrImg.classList.remove('atak-phone-link-qr--err'); };
-                qrImg.onerror = function () {
+              if (qrImg) {
+                qrImg.classList.remove('atak-phone-link-qr--err');
+                var qrUrl = body.qr_image_url
+                  ? (body.qr_image_url + (body.qr_image_url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now())
+                  : '';
+                function showQrError() {
+                  qrImg.removeAttribute('src');
+                  qrImg.hidden = true;
                   qrImg.classList.add('atak-phone-link-qr--err');
                   if (metaEl) {
                     metaEl.textContent = (formatExpires(body.expires_at) || 'Code prêt') +
-                      ' — l’image du QR n’a pas pu être chargée ; utilisez le code ci-dessus.';
+                      ' — le QR n’a pas pu être affiché ; utilisez le code ci-dessus ou le lien.';
                   }
-                };
-                qrImg.src = body.qr_image_url + (body.qr_image_url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+                }
+                function setQrSrc(src, allowUrlFallback) {
+                  qrImg.hidden = false;
+                  qrImg.onload = function () {
+                    qrImg.classList.remove('atak-phone-link-qr--err');
+                    qrImg.hidden = false;
+                  };
+                  qrImg.onerror = function () {
+                    if (allowUrlFallback && qrUrl && src !== qrUrl) {
+                      setQrSrc(qrUrl, false);
+                      return;
+                    }
+                    showQrError();
+                  };
+                  qrImg.src = src;
+                }
+                if (body.qr_image_data_uri) {
+                  setQrSrc(body.qr_image_data_uri, true);
+                } else if (qrUrl) {
+                  setQrSrc(qrUrl, false);
+                } else {
+                  showQrError();
+                }
               }
               if (openLink && body.connect_url) {
                 openLink.href = body.connect_url;
@@ -1611,7 +1641,7 @@ if ($atakMapConfig) {
               } else if (openLink) {
                 openLink.hidden = true;
               }
-              if (metaEl) {
+              if (metaEl && !(qrImg && qrImg.hidden && qrImg.classList.contains('atak-phone-link-qr--err'))) {
                 metaEl.textContent = (formatExpires(body.expires_at) || 'Valable 15 minutes') +
                   ' — scannez le QR ou saisissez le code sur le téléphone.';
               }

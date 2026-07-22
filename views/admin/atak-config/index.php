@@ -15,6 +15,7 @@ $newAccessKeyPlain = is_string($newAccessKeyPlain ?? null) ? $newAccessKeyPlain 
 $authEvents = is_array($authEvents ?? null) ? $authEvents : [];
 $portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
 $dataSummary = is_array($dataSummary ?? null) ? $dataSummary : [];
+$maintenanceSchemaReady = !empty($maintenanceSchemaReady);
 $maintenanceEnabled = !empty($maintenanceEnabled);
 $maintenanceMessage = (string) ($maintenanceMessage ?? '');
 $purgeConfirmPhrase = (string) ($purgeConfirmPhrase ?? 'EFFACER');
@@ -78,8 +79,17 @@ foreach ($dataSummary as $k => $v) {
             <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
                 <h2 class="text-sm font-bold text-slate-800 mb-3">Mode maintenance</h2>
                 <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                    Pendant la maintenance, les opérateurs ne peuvent plus ouvrir la carte tactique ni synchroniser le jeu. La configuration reste accessible aux administrateurs.
+                    Pendant la maintenance, les opérateurs ne peuvent plus ouvrir la carte tactique ni synchroniser le jeu.
+                    Les administrateurs gardent l’accès à la carte et à cette page de configuration.
                 </p>
+                <?php if (!$maintenanceSchemaReady): ?>
+                    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                        <p class="text-sm font-semibold text-red-950">Fonction indisponible pour le moment</p>
+                        <p class="text-xs text-red-900 mt-1 leading-relaxed">
+                            La base de données n’est pas à jour pour le mode maintenance. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.
+                        </p>
+                    </div>
+                <?php else: ?>
                 <form action="<?= $baseUrl ?>/admin/atak-config/maintenance" method="post" class="space-y-4">
                     <?= \App\Core\Csrf::field() ?>
                     <label class="flex items-start gap-3 cursor-pointer">
@@ -87,7 +97,7 @@ foreach ($dataSummary as $k => $v) {
                         <input type="checkbox" name="maintenance_enabled" value="1" class="mt-1 rounded border-slate-300" <?= $maintenanceEnabled ? 'checked' : '' ?> />
                         <span>
                             <span class="block text-sm font-medium text-slate-800">Mettre la carte tactique en maintenance</span>
-                            <span class="block text-xs text-slate-500 mt-0.5">Les joueurs verront un message d’indisponibilité à la place de la carte.</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Les opérateurs verront un message d’indisponibilité. Vous (admin) pourrez toujours ouvrir la carte.</span>
                         </span>
                     </label>
                     <div>
@@ -96,6 +106,7 @@ foreach ($dataSummary as $k => $v) {
                     </div>
                     <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer le mode maintenance</button>
                 </form>
+                <?php endif; ?>
             </div>
 
             <div class="border border-red-200 rounded-xl p-5 bg-red-50/40 shadow-sm">

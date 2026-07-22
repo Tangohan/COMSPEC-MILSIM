@@ -498,12 +498,22 @@ window.ATAKUnitMenu = (function () {
         px = parseFloat(gp[0]);
         py = parseFloat(gp[1]);
       }
-      openPrompt('Message du ping', 'Optionnel — visible par les opérateurs connectés.', 'Ex. contact hostile', '').then(function (msg) {
-        if (msg === null) return;
+      var sendPing = function (msg, kind) {
         if (window.ATAKPings && window.ATAKPings.createPingAt) {
-          window.ATAKPings.createPingAt(px, py, msg || '');
+          window.ATAKPings.createPingAt(px, py, msg || '', kind || 'contact');
         }
-      });
+      };
+      if (window.ATAKContextMenu && typeof window.ATAKContextMenu.openPingForm === 'function') {
+        window.ATAKContextMenu.openPingForm().then(function (vals) {
+          if (!vals) return;
+          sendPing(vals.message || '', vals.kind || 'contact');
+        });
+      } else {
+        openPrompt('Message du ping', 'Optionnel — visible par les opérateurs connectés.', 'Ex. contact hostile', '').then(function (msg) {
+          if (msg === null) return;
+          sendPing(msg || '', 'contact');
+        });
+      }
       return;
     }
 

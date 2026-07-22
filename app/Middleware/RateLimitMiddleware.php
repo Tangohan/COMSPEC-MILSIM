@@ -139,6 +139,10 @@ final class RateLimitMiddleware
         if (str_starts_with($path, '/api/stripe/')) {
             return true;
         }
+        // QR téléphone : téléchargement anonyme (token = secret) — ne pas compter comme scraping.
+        if (str_starts_with($path, '/api/atak/phone-pairing/') && str_ends_with($path, '/qr.png')) {
+            return true;
+        }
 
         return false;
     }

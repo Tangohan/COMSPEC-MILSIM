@@ -177,7 +177,8 @@ private _steamForConnect = getPlayerUID player;
 if ((count _steamForConnect) < 15) then {
     _steamForConnect = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
-private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect]]] call comspec_overwatch_connect_fnc_extResult;
+private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
+private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion]]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };
@@ -201,8 +202,11 @@ if (_prefix == "OK") then {
             missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
             private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
             [format ["[Athena] Connecte a %1 — adresse client : %2", _label, _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
-            [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
-            ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
+            // Silence pendant handshake démarrage (évite défilé d’annonces Athena)
+            if (!(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])) then {
+                [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
+                ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
+            };
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
             0 spawn {
                 uiSleep 0.5;
@@ -222,8 +226,10 @@ if (_prefix == "OK") then {
             missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
             private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
             [format ["[Athena] Liaison etablie avec %1 (adresse client indisponible).", _label]] call comspec_overwatch_connect_fnc_appendLinkLog;
-            [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
-            ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
+            if (!(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])) then {
+                [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
+                ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
+            };
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
             0 spawn {
                 uiSleep 0.5;

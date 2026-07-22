@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Athena Overwatch</title>
 <style>
@@ -357,295 +358,596 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* —— Peau Commande (FBCB2) —— */
+  /* ============================================================
+     FBCB2 AUTHENTIQUE — BOÎTIER TACTIQUE RENFORCÉ (RUGGEDIZED)
+     ============================================================ */
   .fbcb2-only { display: none !important; }
+
   body.skin-fbcb2 {
-    --bg: #2a2e28;
-    --panel: #3a3f38;
-    --panel2: #4a5046;
-    --line: #1a1c18;
-    --text: #1a1a14;
-    --muted: #3a3a30;
-    --accent: #0a5a28;
-    --warn: #b84a10;
-    --bad: #a01818;
-    --good: #1a7a28;
-    --osd: #c8c4b0;
-    --blue: #1848a0;
-    font-family: Tahoma, "MS Sans Serif", "Segoe UI", sans-serif;
-    background: #5a5e52;
-    color: #101008;
+    --bg: #3a3e36;
+    --panel: #9d9a8f;
+    --panel2: #c5c2b8;
+    --line: #403e35;
+    --text: #000000;
+    --muted: #3a3830;
+    --accent: #009900;
+    --warn: #ffb400;
+    --bad: #cc0000;
+    --good: #00ff44;
+    --osd: #a8a59b;
+    --blue: #0066ff;
+    --bevel-light: #ffffff;
+    --bevel-dark: #20221e;
+    --btn-face: #c5c2b8;
+    --fkey-face: #a8b8c8;
+    font-family: "Arial Black", Arial, Helvetica, sans-serif;
+    background: #3a3e36;
+    color: #000000;
+    font-size: 14px;
   }
+
   body.skin-fbcb2 .shell {
-    grid-template-rows: 34px 1fr 32px;
-    background: #6a6e62;
+    grid-template-rows: 46px 1fr 42px;
+    background: #2b2e28;
+    padding: 8px;
+    gap: 6px;
+    box-shadow: inset 0 0 20px #000;
   }
+
   body.skin-fbcb2 .athena-only { display: none !important; }
   body.skin-fbcb2 .fbcb2-only { display: flex !important; }
+
+  /* ── BANDEAU SUPÉRIEUR ── */
   body.skin-fbcb2 .osd.fbcb2-bar {
     display: flex !important;
-    background: linear-gradient(180deg, #d0ccc0 0%, #b8b4a4 100%);
-    border-bottom: 2px solid #2a2c24;
-    color: #101008;
-    font-size: 11px;
-    font-weight: 600;
-    gap: 6px;
-    padding: 0 6px;
-  }
-  body.skin-fbcb2 .fbcb2-zulu {
-    font-family: Consolas, "Courier New", monospace;
+    align-items: center;
+    justify-content: space-between;
+    background: #a8a59b;
+    border-top: 3px solid #e0ddd0;
+    border-left: 3px solid #e0ddd0;
+    border-right: 3px solid #4a4840;
+    border-bottom: 3px solid #4a4840;
+    padding: 4px 8px;
+    gap: 10px;
+    color: #000000;
     font-size: 12px;
-    letter-spacing: 0.04em;
-    min-width: 150px;
+    font-weight: 900;
   }
+
+  body.skin-fbcb2 .fbcb2-tools {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+  }
+
   body.skin-fbcb2 .fbcb2-classif {
-    background: #1a7a28;
-    color: #e8ffe8;
-    padding: 2px 14px;
-    border: 1px solid #0a4020;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    font-size: 11px;
+    background: #009900;
+    color: #ffffff;
+    padding: 4px 16px;
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    border: 2px solid #004d00;
+    box-shadow: 0 0 6px rgba(0, 255, 0, 0.4);
+    text-shadow: 1px 1px 0 #000;
+    flex-shrink: 0;
   }
-  body.skin-fbcb2 .fbcb2-tool {
+
+  body.skin-fbcb2 .fbcb2-zulu {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 15px;
+    font-weight: 900;
+    min-width: 132px;
+    background: #000000;
+    color: #00ff66;
+    padding: 4px 10px;
+    border: 2px inset #555;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  body.skin-fbcb2 .osd.fbcb2-bar .right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* ── BOUTONS POUSSANTS GROS FORMAT ── */
+  body.skin-fbcb2 .fbcb2-tool,
+  body.skin-fbcb2 .fkey,
+  body.skin-fbcb2 .btn,
+  body.skin-fbcb2 .skin-toggle,
+  body.skin-fbcb2 .bell,
+  body.skin-fbcb2 .fbcb2-app {
     appearance: none;
-    border: 1px solid #2a2c24;
-    background: linear-gradient(180deg, #e8e4d4 0%, #c8c4b0 45%, #a8a490 100%);
-    color: #101008;
-    padding: 3px 8px;
-    font-size: 11px;
-    font-weight: 600;
+    background: linear-gradient(135deg, #dfdccf 0%, #b8b5aa 100%);
+    color: #000000;
+    font-weight: 900;
+    font-size: 12px;
+    text-transform: uppercase;
+    border-top: 3px solid var(--bevel-light) !important;
+    border-left: 3px solid var(--bevel-light) !important;
+    border-right: 3px solid var(--bevel-dark) !important;
+    border-bottom: 3px solid var(--bevel-dark) !important;
+    border-radius: 0 !important;
     cursor: pointer;
-    box-shadow: inset 1px 1px 0 #f4f0e0, inset -1px -1px 0 #686458;
+    padding: 6px 12px;
+    box-sizing: border-box;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
   }
+
   body.skin-fbcb2 .fbcb2-tool:active,
-  body.skin-fbcb2 .fbcb2-tool.on {
-    background: linear-gradient(180deg, #a8a490 0%, #c8c4b0 100%);
-    box-shadow: inset 1px 1px 2px #484438;
+  body.skin-fbcb2 .fkey:active,
+  body.skin-fbcb2 .fkey.active,
+  body.skin-fbcb2 .fbcb2-tool.on,
+  body.skin-fbcb2 .btn:active,
+  body.skin-fbcb2 .fbcb2-app:active,
+  body.skin-fbcb2 .fbcb2-app.on {
+    border-top: 3px solid var(--bevel-dark) !important;
+    border-left: 3px solid var(--bevel-dark) !important;
+    border-right: 3px solid var(--bevel-light) !important;
+    border-bottom: 3px solid var(--bevel-light) !important;
+    background: linear-gradient(135deg, #a09d94 0%, #c5c2b8 100%);
+    box-shadow: inset 2px 2px 3px rgba(0,0,0,0.4);
+    transform: translate(1px, 1px);
+    text-shadow: none;
   }
-  body.skin-fbcb2 .fbcb2-tool.disabled {
-    opacity: 0.55;
-    text-decoration: line-through;
+
+  body.skin-fbcb2 .skin-toggle:hover,
+  body.skin-fbcb2 .bell:hover,
+  body.skin-fbcb2 .btn:hover,
+  body.skin-fbcb2 .fbcb2-app:hover {
+    color: #000000;
+    border-color: inherit;
   }
-  body.skin-fbcb2 .body {
-    grid-template-columns: 1fr 168px;
-    background: #5a5e52;
+
+  body.skin-fbcb2 .bell.has-new {
+    background: linear-gradient(135deg, #ffd060 0%, #e09020 100%);
   }
-  body.skin-fbcb2 .main {
-    background:
-      radial-gradient(ellipse at 30% 40%, rgba(180,160,110,0.35) 0%, transparent 55%),
-      radial-gradient(ellipse at 70% 60%, rgba(90,110,70,0.4) 0%, transparent 50%),
-      linear-gradient(160deg, #9a9478 0%, #7a7e62 40%, #6a6e52 100%);
-  }
-  body.skin-fbcb2 .map-chrome {
-    display: none;
-  }
-  body.skin-fbcb2 .stage {
-    margin: 4px;
-    border: 2px solid #2a2c24;
+  body.skin-fbcb2 .bell .badge {
     border-radius: 0;
-    background:
-      linear-gradient(rgba(42,44,36,0.12) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(42,44,36,0.12) 1px, transparent 1px),
-      linear-gradient(180deg, #b0a888 0%, #8a8e6e 50%, #7a7e5e 100%);
-    background-size: 48px 48px, 48px 48px, auto;
-    box-shadow: inset 0 0 0 1px #c8c4a8;
+    background: #cc0000;
+    color: #fff;
   }
+
+  body.skin-fbcb2 .fbcb2-tool.disabled {
+    opacity: 0.45;
+    text-decoration: line-through;
+    pointer-events: none;
+  }
+
+  body.skin-fbcb2 .btn.primary,
+  body.skin-fbcb2 .fbcb2-app.primary {
+    background: linear-gradient(135deg, #c8e8b8 0%, #7aaa68 100%);
+  }
+  body.skin-fbcb2 .btn.danger {
+    background: linear-gradient(135deg, #e8b0a8 0%, #c06050 100%);
+  }
+
+  /* ── CORPS ── */
+  body.skin-fbcb2 .body {
+    grid-template-columns: 1fr 230px;
+    background: #232520;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  body.skin-fbcb2 .main {
+    background: #1a1a16;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: 1fr;
+    border: 4px solid #1a1a16;
+  }
+
+  body.skin-fbcb2 .map-chrome { display: none; }
+
+  /* Carte topo — fond de secours si la carte Arma native n’est pas encore affichée */
+  body.skin-fbcb2 .stage {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background-color: #c4b89a;
+    background-image:
+      linear-gradient(rgba(60,55,40,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(60,55,40,0.12) 1px, transparent 1px);
+    background-size: 48px 48px, 48px 48px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
   body.skin-fbcb2 .stage-overlay {
-    background: rgba(90, 94, 70, 0.82);
+    background: rgba(180, 175, 155, 0.92);
+    border: 2px solid #4a4840;
   }
-  body.skin-fbcb2 .stage-overlay .title { color: #1a3a18; }
-  body.skin-fbcb2 .stage-overlay .sub { color: #2a2a20; }
+  body.skin-fbcb2 .stage-overlay .title {
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  body.skin-fbcb2 .stage-overlay .sub { color: #303028; }
+
+  /* Symboles MIL-STD rectangles */
   body.skin-fbcb2 .contact-dot .sym {
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 14px solid #1848a0;
-    filter: none;
+    width: 32px;
+    height: 22px;
+    border: 3px solid #0000cc !important;
+    border-left-color: #0000cc !important;
+    border-right-color: #0000cc !important;
+    border-top-color: #0000cc !important;
+    border-bottom-color: #0000cc !important;
+    background: rgba(30, 100, 255, 0.85);
+    border-radius: 0;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    filter: none !important;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
   }
   body.skin-fbcb2 .contact-dot.self .sym {
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    width: 12px;
-    height: 12px;
-    border: 2px solid #0a3018;
-    border-radius: 50%;
-    background: #1a8a38;
-    box-sizing: border-box;
-    filter: none;
+    border-color: #008000 !important;
+    background: rgba(0, 230, 60, 0.9);
+    color: #000;
+  }
+  body.skin-fbcb2 .contact-dot.tx .sym {
+    border-color: #cc0000 !important;
+    background: rgba(255, 30, 30, 0.85);
+    color: #fff;
+    animation: fbcb2TxBlink 1s steps(2) infinite;
+  }
+  @keyframes fbcb2TxBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
   body.skin-fbcb2 .contact-dot label {
-    color: #101008;
-    font-weight: 700;
-    text-shadow: 0 0 3px #e8e4c8, 1px 1px 0 #e8e4c8;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #000;
+    background: #fff;
+    padding: 1px 5px;
+    border: 1px solid #000;
+    text-shadow: none;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
   }
-  body.skin-fbcb2 .contact-dot.self label { color: #0a4018; }
+  body.skin-fbcb2 .contact-dot.self label { color: #004d00; }
+  body.skin-fbcb2 .contact-dot.tx label { color: #660000; }
+
+  /* Panneaux */
   body.skin-fbcb2 .panel-view {
-    margin: 4px;
-    border: 2px solid #2a2c24;
+    margin: 0;
+    border: none;
     border-radius: 0;
-    background: #d8d4c0;
-    color: #101008;
+    background: #d8d4c4;
+    color: #000;
+    padding: 10px;
+    overflow-y: auto;
   }
+
   body.skin-fbcb2 .feed-line,
   body.skin-fbcb2 .order-row,
   body.skin-fbcb2 .alert-row .title,
   body.skin-fbcb2 .alert-row .body,
   body.skin-fbcb2 .help-block,
-  body.skin-fbcb2 .status-card .v {
-    color: #101008;
-  }
+  body.skin-fbcb2 .status-card .v { color: #000; }
+
   body.skin-fbcb2 .feed-empty,
   body.skin-fbcb2 .alert-row .meta,
   body.skin-fbcb2 .status-card .k,
-  body.skin-fbcb2 .order-row .issuer {
-    color: #3a3a30;
-  }
+  body.skin-fbcb2 .order-row .issuer { color: #3a3830; }
+
   body.skin-fbcb2 .status-card,
   body.skin-fbcb2 .radio-card,
-  body.skin-fbcb2 .radio-banner {
-    background: #e8e4d0;
-    border-color: #6a6a58;
+  body.skin-fbcb2 .radio-banner,
+  body.skin-fbcb2 .fbcb2-tile {
+    background: #e8e4d6;
+    border-top: 2px solid #404038;
+    border-left: 2px solid #404038;
+    border-right: 2px solid #b8b4a8;
+    border-bottom: 2px solid #b8b4a8;
+    border-radius: 0;
+    padding: 10px 12px;
   }
-  body.skin-fbcb2 .radio-card .cs { color: #0a5a28; }
-  body.skin-fbcb2 .btn {
-    border: 1px solid #2a2c24;
-    background: linear-gradient(180deg, #e8e4d4 0%, #b8b4a0 100%);
-    color: #101008;
-    border-radius: 2px;
-  }
-  body.skin-fbcb2 .btn.primary {
-    background: linear-gradient(180deg, #c8e8c8 0%, #6a9a6a 100%);
-    border-color: #2a4a2a;
+  body.skin-fbcb2 .radio-card .cs { color: #006600; }
+  body.skin-fbcb2 .help-block h3 {
+    color: #000080;
+    border-bottom: 2px solid #808078;
+    padding-bottom: 3px;
+    margin-top: 12px;
+    font-size: 14px;
   }
 
+  /* Grille état / faux SITREP */
+  body.skin-fbcb2 .fbcb2-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  body.skin-fbcb2 .fbcb2-status-grid .status-card {
+    min-height: 64px;
+  }
+  body.skin-fbcb2 .status-card .k {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  body.skin-fbcb2 .status-card .v {
+    font-size: 15px;
+    font-weight: 900;
+    font-family: "Courier New", monospace;
+  }
+  body.skin-fbcb2 .fbcb2-tile {
+    margin-bottom: 8px;
+  }
+  body.skin-fbcb2 .fbcb2-tile .tile-h {
+    font-size: 11px;
+    font-weight: 900;
+    color: #000080;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  body.skin-fbcb2 .fbcb2-tile .tile-b {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  /* Gros boutons Apps (grille tactile) */
+  body.skin-fbcb2 .apps-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    height: 100%;
+    align-content: stretch;
+  }
+  body.skin-fbcb2 .fbcb2-app {
+    min-height: 72px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 10px;
+    font-size: 13px;
+    background: linear-gradient(180deg, #c8d4e0 0%, #a8b8c8 100%);
+  }
+  body.skin-fbcb2 .fbcb2-app .app-ico {
+    font-size: 22px;
+    line-height: 1;
+    color: #000080;
+  }
+  body.skin-fbcb2 .fbcb2-app .app-sub {
+    font-size: 10px;
+    font-weight: 700;
+    color: #303028;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  body.skin-fbcb2 .fbcb2-app.primary {
+    background: linear-gradient(180deg, #b8e0b0 0%, #6a9a60 100%);
+  }
+  body.skin-fbcb2 .fbcb2-app.wide {
+    grid-column: 1 / -1;
+  }
+
+  /* ── RAIL DROIT — F1-F8 GRILLE 2×4 ── */
   body.skin-fbcb2 .fbcb2-rail {
     display: flex !important;
     flex-direction: column;
-    background: linear-gradient(180deg, #c8c4b0 0%, #a8a490 100%);
-    border-left: 2px solid #2a2c24;
+    background: #9d9a8f;
+    border-top: 3px solid #d0cdcb;
+    border-left: 3px solid #d0cdcb;
+    border-right: 3px solid #3a3830;
+    border-bottom: 3px solid #3a3830;
     min-height: 0;
-    padding: 4px;
-    gap: 4px;
+    padding: 6px;
+    gap: 6px;
   }
+
   body.skin-fbcb2 .fbcb2-unit {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
-    padding: 4px 6px;
-    background: #e8e4d4;
-    border: 1px solid #4a4a38;
-    font-size: 11px;
-    font-weight: 700;
+    padding: 7px 8px;
+    background: #dedbc8;
+    border: 2px solid #403e35;
+    font-size: 12px;
+    font-weight: 900;
   }
   body.skin-fbcb2 .fbcb2-unit .lamp {
-    width: 10px; height: 10px; border-radius: 50%;
-    border: 1px solid #1a1a10;
-    background: #a01818;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1px solid #000;
+    background: #cc0000;
     flex-shrink: 0;
+    box-shadow: 0 0 4px #cc0000;
   }
-  body.skin-fbcb2 .fbcb2-unit .lamp.ok { background: #1a7a28; }
-  body.skin-fbcb2 .fbcb2-unit .lamp.wait { background: #c87810; }
+  body.skin-fbcb2 .fbcb2-unit .lamp.ok {
+    background: #00dd00;
+    box-shadow: 0 0 6px #00ff00;
+  }
+  body.skin-fbcb2 .fbcb2-unit .lamp.wait {
+    background: #ffaa00;
+    box-shadow: 0 0 6px #ffaa00;
+  }
+
   body.skin-fbcb2 .fbcb2-mgrs {
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 12px;
-    font-weight: 700;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 14px;
+    font-weight: 900;
     text-align: center;
-    padding: 4px;
-    background: #101008;
-    color: #e8e4c8;
-    border: 1px solid #4a4a38;
-    letter-spacing: 0.04em;
+    padding: 7px 6px;
+    background: #0a1005;
+    color: #00ff44;
+    border: 2px solid #303028;
+    letter-spacing: 0.08em;
   }
+
   body.skin-fbcb2 .fbcb2-fkeys {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    align-content: start;
   }
+
   body.skin-fbcb2 .fkey {
-    appearance: none;
-    display: block;
     width: 100%;
-    text-align: left;
-    border: 1px solid #2a2c24;
-    background: linear-gradient(180deg, #ece8d8 0%, #c0bcac 42%, #9a9688 100%);
-    color: #101008;
-    padding: 7px 8px;
+    min-height: 54px;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 2px;
+    padding: 4px 6px 8px;
     font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: inset 1px 1px 0 #f8f4e8, inset -1px -1px 0 #585448;
-  }
-  body.skin-fbcb2 .fkey:active,
-  body.skin-fbcb2 .fkey.active {
-    background: linear-gradient(180deg, #9a9688 0%, #c0bcac 100%);
-    box-shadow: inset 1px 1px 2px #383428;
+    background: linear-gradient(180deg, #c0d0e0 0%, #a0b0c0 100%);
+    text-align: center;
   }
   body.skin-fbcb2 .fkey .fk {
-    color: #1848a0;
-    margin-right: 4px;
+    align-self: flex-start;
+    color: #000;
+    font-size: 10px;
+    font-weight: 900;
+    background: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
   }
+  body.skin-fbcb2 .fkey .flabel {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.15;
+  }
+  body.skin-fbcb2 .fkey.active {
+    background: linear-gradient(180deg, #90a8c0 0%, #7088a0 100%);
+  }
+
   body.skin-fbcb2 .fbcb2-rail-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 4px;
-    padding-top: 2px;
   }
-  body.skin-fbcb2 .fbcb2-zoom {
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 6px;
-    background: #e8e4d4;
-    border: 1px solid #4a4a38;
-  }
-  body.skin-fbcb2 .fbcb2-clock {
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 13px;
-    font-weight: 700;
-  }
-
-  body.skin-fbcb2 .footer.fbcb2-foot {
-    display: flex !important;
-    background: linear-gradient(180deg, #b8b4a4 0%, #989480 100%);
-    border-top: 2px solid #2a2c24;
-    color: #101008;
-    gap: 8px;
-    padding: 0 6px;
-    font-weight: 600;
-  }
-  body.skin-fbcb2 .fbcb2-lights {
+  body.skin-fbcb2 .fbcb2-zoom-row {
     display: flex;
     gap: 4px;
+  }
+  body.skin-fbcb2 .fbcb2-zoom-row .btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  body.skin-fbcb2 .fbcb2-zoom,
+  body.skin-fbcb2 .fbcb2-clock {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13px;
+    font-weight: 900;
+    padding: 4px 8px;
+    background: #0a1005;
+    color: #00ff44;
+    border: 2px solid #303028;
+  }
+
+  /* ── PIED & LED ── */
+  body.skin-fbcb2 .footer.fbcb2-foot {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: #a8a59b;
+    border-top: 3px solid #e0ddd0;
+    border-left: 3px solid #e0ddd0;
+    border-right: 3px solid #4a4840;
+    border-bottom: 3px solid #4a4840;
+    color: #000;
+    gap: 10px;
+    padding: 2px 8px;
+    font-weight: 900;
+  }
+
+  body.skin-fbcb2 .fbcb2-lights {
+    display: flex;
+    gap: 8px;
     align-items: center;
   }
+  body.skin-fbcb2 .fbcb2-light-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 900;
+  }
   body.skin-fbcb2 .fbcb2-light {
-    width: 22px; height: 18px;
-    border: 1px solid #1a1a10;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; font-weight: 800;
-    color: #101008;
-    background: #6a6a58;
+    width: 30px;
+    height: 22px;
+    border: 2px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #222;
+    background: #66635a;
   }
-  body.skin-fbcb2 .fbcb2-light.g { background: #2a9a38; color: #e8ffe8; }
-  body.skin-fbcb2 .fbcb2-light.a { background: #c87810; color: #1a1000; }
-  body.skin-fbcb2 .fbcb2-light.r { background: #a01818; color: #ffe8e8; }
+  body.skin-fbcb2 .fbcb2-light.g {
+    background: #00ff00;
+    color: #000;
+    box-shadow: 0 0 8px #00ff00;
+  }
+  body.skin-fbcb2 .fbcb2-light.a {
+    background: #ffaa00;
+    color: #000;
+    box-shadow: 0 0 8px #ffaa00;
+  }
+  body.skin-fbcb2 .fbcb2-light.r {
+    background: #ff0000;
+    color: #fff;
+    box-shadow: 0 0 8px #ff0000;
+  }
   body.skin-fbcb2 .fbcb2-light-label {
-    font-size: 9px;
-    color: #2a2a20;
-    margin-right: 2px;
+    font-size: 10px;
+    color: #2a2820;
+    font-weight: 900;
+    text-transform: uppercase;
   }
-  body.skin-fbcb2 .footer .live { color: #0a4018; }
+
+  body.skin-fbcb2 .footer .live,
+  body.skin-fbcb2 .fbcb2-status-msg {
+    color: #000;
+    font-family: "Courier New", monospace;
+    font-weight: 900;
+    font-size: 12px;
+  }
+  body.skin-fbcb2 .footer .live { color: #006600; }
+
   body.skin-fbcb2 .toast {
-    background: rgba(232, 228, 208, 0.97);
-    border-color: #4a4a38;
-    color: #101008;
+    background: #e8e4d6;
+    border: 2px solid #3a3830;
+    border-radius: 0;
+    color: #000;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.35);
   }
-  body.skin-fbcb2 .toast .t-body { color: #2a2a20; }
+  body.skin-fbcb2 .toast .t-body { color: #303028; }
+  body.skin-fbcb2 .toast.warn { border-left: 4px solid #ffb400; }
+  body.skin-fbcb2 .toast.critical { border-left: 4px solid #cc0000; }
 </style>
 </head>
 <body class="skin-athena">
@@ -662,7 +964,7 @@
     <span class="muted">GRILLE</span>
     <span id="osd-grid">000000</span>
     <div class="right">
-      <button class="skin-toggle" type="button" id="btn-skin-cmd" title="Passer à la vue Commande">Vue Commande</button>
+      <button class="skin-toggle" type="button" id="btn-skin-cmd" title="Passer à la vue Commande (suivi des forces)">Vue Commande</button>
       <button class="bell" id="bell-btn" type="button" data-view="alerts" title="Journal des alertes">🔔 <span class="badge" id="bell-badge">0</span></button>
       <span><span id="osd-dot" class="status-dot"></span><span id="osd-status">Hors liaison</span></span>
     </div>
@@ -670,17 +972,18 @@
 
   <!-- Bandeau FBCB2 -->
   <header class="osd fbcb2-bar fbcb2-only">
-    <span class="fbcb2-zulu" id="fbcb2-zulu">------Z ------</span>
+    <div class="fbcb2-tools">
+      <button class="fbcb2-tool on" type="button" data-view="bft" title="Vue carte">Carte</button>
+      <button class="fbcb2-tool" type="button" data-view="chat" title="Messagerie">Messages</button>
+      <button class="fbcb2-tool" type="button" data-view="alerts" title="Messages de combat">Combat</button>
+      <button class="fbcb2-tool" type="button" data-fbcb2="zoom-in" title="Rapprocher">Zoom +</button>
+      <button class="fbcb2-tool" type="button" data-fbcb2="zoom-out" title="Éloigner">Zoom −</button>
+      <button class="fbcb2-tool" type="button" id="btn-auto-center" data-fbcb2="auto-center" title="Recentrer">Auto-centre</button>
+    </div>
     <span class="fbcb2-classif">NON CLASSIFIÉ</span>
-    <button class="fbcb2-tool" type="button" data-fbcb2="grab" title="Déplacer la vue (à venir)">Grab</button>
-    <button class="fbcb2-tool" type="button" data-fbcb2="zoom-in" title="Rapprocher">Zoom +</button>
-    <button class="fbcb2-tool" type="button" data-fbcb2="zoom-out" title="Éloigner">Zoom −</button>
-    <button class="fbcb2-tool" type="button" data-view="bft" title="Vue carte / effectifs">Vue</button>
-    <button class="fbcb2-tool" type="button" data-fbcb2="nav" title="Navigation">Nav…</button>
-    <button class="fbcb2-tool" type="button" data-fbcb2="los" title="Ligne de vue">LOS</button>
-    <button class="fbcb2-tool" type="button" id="btn-auto-center" data-fbcb2="auto-center" title="Recentrer sur votre position">Auto-centre</button>
+    <span class="fbcb2-zulu" id="fbcb2-zulu">------Z ------</span>
     <div class="right">
-      <button class="skin-toggle" type="button" id="btn-skin-athena" title="Revenir à la vue Athena">Vue Athena</button>
+      <button class="skin-toggle" type="button" id="btn-skin-athena" title="Revenir à la vue Athena">Athena</button>
       <button class="bell" id="bell-btn-fbcb2" type="button" data-view="alerts" title="Journal des alertes">⚠ <span class="badge" id="bell-badge-fbcb2">0</span></button>
     </div>
   </header>
@@ -709,7 +1012,7 @@
         <div class="contacts" id="contacts"></div>
         <div class="stage-overlay" id="stage-empty">
           <div class="title">Aucun contact affiché</div>
-          <div class="sub" id="stage-empty-sub">Si vous êtes lié à Athena, ouvrez le Hub puis « Transmettre ma position ». Sinon Actualiser pour recharger le radar local.</div>
+          <div class="sub" id="stage-empty-sub">Ouverture de la carte terrain… Si rien n’apparaît, utilisez F1 / Carte. Sinon Hub → Transmettre ma position.</div>
         </div>
       </div>
       <div class="panel-view" id="view-radio">
@@ -729,34 +1032,106 @@
         <div id="alerts-feed"></div>
       </div>
       <div class="panel-view" id="view-status">
-        <div class="status-card"><div class="k">Liaison</div><div class="v" id="status-link">—</div></div>
-        <div class="status-card"><div class="k">Indicatif</div><div class="v" id="status-callsign">—</div></div>
-        <div class="status-card"><div class="k">Rôle</div><div class="v" id="status-role">—</div></div>
-        <div class="status-card"><div class="k">Grille</div><div class="v" id="status-grid">—</div></div>
-        <div class="status-card"><div class="k">Contacts affichés</div><div class="v" id="status-count">0</div></div>
-        <button class="btn" type="button" data-cmd="refresh">Actualiser la synchronisation</button>
+        <div class="fbcb2-status-grid">
+          <div class="status-card"><div class="k">Liaison</div><div class="v" id="status-link">—</div></div>
+          <div class="status-card"><div class="k">Indicatif</div><div class="v" id="status-callsign">—</div></div>
+          <div class="status-card"><div class="k">Rôle</div><div class="v" id="status-role">—</div></div>
+          <div class="status-card"><div class="k">Grille</div><div class="v" id="status-grid">—</div></div>
+          <div class="status-card"><div class="k">Contacts</div><div class="v" id="status-count">0</div></div>
+          <div class="status-card"><div class="k">Réseau</div><div class="v" id="status-mode">BFT</div></div>
+        </div>
+        <div class="fbcb2-tile">
+          <div class="tile-h">Plateforme · suivi des forces</div>
+          <div class="tile-b">
+            Variante console · Vue Commande (type Appliqué / JCR)<br>
+            Liaison satellitaire · capacité étendue<br>
+            Dernière sync · &lt; 5 s · canal prioritaire<br>
+            Afficheur véhicule · charge 87 %
+          </div>
+        </div>
+        <div class="fbcb2-tile">
+          <div class="tile-h">Situation forces (extrait)</div>
+          <div class="tile-b">
+            HQ — poste de commandement · fixe<br>
+            ALPHA-1 / ALPHA-2 — bleus en liaison<br>
+            MEDIC-1 — en attente de position<br>
+            LOG-3 — ravitaillement prévu 14:30 Z
+          </div>
+        </div>
+        <div class="fbcb2-tile">
+          <div class="tile-h">Coalition / interarmées</div>
+          <div class="tile-b">
+            Standard commun de suivi · compatible poste de combat joint<br>
+            Icônes amis (bleu) · contacts hostiles (rouge) sur carte topo
+          </div>
+        </div>
+        <button class="btn primary" type="button" data-cmd="refresh" style="width:100%;min-height:48px;margin-top:4px">Actualiser la synchronisation</button>
       </div>
       <div class="panel-view" id="view-apps">
         <div class="apps-menu">
-          <button class="btn primary" type="button" data-cmd="open:briefing">Briefing</button>
-          <button class="btn" type="button" data-cmd="open:cas">Appui aérien</button>
-          <button class="btn" type="button" data-cmd="open:phone">Téléphone</button>
-          <button class="btn" type="button" data-cmd="open:account">Compte Athena</button>
-          <button class="btn" type="button" data-cmd="open:callsign">Modifier mon rôle</button>
-          <button class="btn" type="button" data-cmd="open:hub">Centre opérationnel</button>
-          <button class="btn" type="button" data-cmd="open:athena">Carte Athena (navigateur)</button>
+          <button class="fbcb2-app primary" type="button" data-cmd="open:briefing">
+            <span class="app-ico">▤</span>
+            Briefing
+            <span class="app-sub">Ordre de mission</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="open:cas">
+            <span class="app-ico">✈</span>
+            Appui aérien
+            <span class="app-sub">Demande CAS</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="open:phone">
+            <span class="app-ico">☎</span>
+            Téléphone
+            <span class="app-sub">Pairage terrain</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="open:account">
+            <span class="app-ico">◎</span>
+            Compte
+            <span class="app-sub">Profil Athena</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="open:callsign">
+            <span class="app-ico">✦</span>
+            Mon rôle
+            <span class="app-sub">Indicatif / fonction</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="open:hub">
+            <span class="app-ico">◆</span>
+            Centre ops
+            <span class="app-sub">Hub tactique</span>
+          </button>
+          <button class="fbcb2-app wide" type="button" data-cmd="open:athena">
+            <span class="app-ico">▣</span>
+            Carte Athena
+            <span class="app-sub">Situation forces · navigateur</span>
+          </button>
         </div>
       </div>
       <div class="panel-view" id="view-help">
         <div class="help-block">
           <h3>Vue Commande</h3>
-          <p>Présentation type poste de commandement. La carte centrale montre vos effectifs en liaison.</p>
+          <p>Console embarquée inspirée des systèmes de commandement de bataille (suivi des forces bleues). La carte topo centrale affiche vos unités en liaison, comme un poste véhicule de type Appliqué.</p>
+          <h3>À quoi ça sert</h3>
+          <p>Situer ses forces, lire les messages de combat, consulter l’état de liaison et lancer les applications tactiques — dans l’esprit Force XXI, puis des versions modernisées à débit satellitaire accru.</p>
           <h3>Touches de fonction</h3>
-          <p><strong>F1</strong> — Carte et effectifs · <strong>F2</strong> — Afficher ou masquer les noms · <strong>F3</strong> — Alertes · <strong>F4</strong> — Messagerie · <strong>F5</strong> — État de liaison · <strong>F6</strong> — Compte / rôle · <strong>F7</strong> — Applications · <strong>F8</strong> — Cette aide</p>
+          <p><strong>F1</strong> Carte · <strong>F2</strong> Filtres / noms · <strong>F3</strong> Messages de combat · <strong>F4</strong> Messagerie · <strong>F5</strong> État · <strong>F6</strong> Admin · <strong>F7</strong> Applications · <strong>F8</strong> Aide</p>
           <h3>Carte</h3>
-          <p>Zoom + / − pour rapprocher ou éloigner. Auto-centre recentre sur votre position. Double-clic pour poser un marqueur.</p>
+          <p>La carte centrale affiche le terrain Arma (routes, relief, satmap) avec vos unités en liaison. Utilisez Zoom, Recentrer, ou Menus pour revenir aux écrans Messages / Combat / Apps.</p>
+          <div class="fbcb2-tile" style="margin-top:12px">
+            <div class="tile-h">Repères console</div>
+            <div class="tile-b">
+              Bandeau vert — niveau de classification affiché<br>
+              Voyants bas — liaison · sync · alertes<br>
+              Rail droit — menus F1 à F8 (grille 2×4)
+            </div>
+          </div>
+          <div class="fbcb2-tile">
+            <div class="tile-h">Contexte (ambiance)</div>
+            <div class="tile-b">
+              Hérité des concepts Force XXI / suivi des forces (BFT), puis des versions jointes modernisées. Ici : présentation milsim Overwatch, pas un clone officiel.
+            </div>
+          </div>
           <h3>Retour</h3>
-          <p>Utilisez « Vue Athena » en haut à droite pour retrouver l’interface Overwatch classique.</p>
+          <p>Utilisez « Athena » en haut à droite pour retrouver l’interface Overwatch classique.</p>
         </div>
       </div>
     </section>
@@ -801,20 +1176,40 @@
       </div>
       <div class="fbcb2-mgrs" id="fbcb2-mgrs">000000 0000</div>
       <div class="fbcb2-fkeys">
-        <button class="fkey active" type="button" data-view="bft" data-fkey="F1"><span class="fk">F1</span> Carte…</button>
-        <button class="fkey" type="button" data-fbcb2="filters" data-fkey="F2"><span class="fk">F2</span> Filtres…</button>
-        <button class="fkey" type="button" data-view="alerts" data-fkey="F3"><span class="fk">F3</span> Combat…</button>
-        <button class="fkey" type="button" data-view="chat" data-fkey="F4"><span class="fk">F4</span> Messages…</button>
-        <button class="fkey" type="button" data-view="status" data-fkey="F5"><span class="fk">F5</span> État…</button>
-        <button class="fkey" type="button" data-fbcb2="admin" data-fkey="F6"><span class="fk">F6</span> Admin…</button>
-        <button class="fkey" type="button" data-view="apps" data-fkey="F7"><span class="fk">F7</span> Apps…</button>
-        <button class="fkey" type="button" data-view="help" data-fkey="F8"><span class="fk">F8</span> Aide</button>
+        <button class="fkey active" type="button" data-view="bft" data-fkey="F1">
+          <span class="fk">F1</span><span class="flabel">Carte…</span>
+        </button>
+        <button class="fkey" type="button" data-fbcb2="filters" data-fkey="F2">
+          <span class="fk">F2</span><span class="flabel">Filtres…</span>
+        </button>
+        <button class="fkey" type="button" data-view="alerts" data-fkey="F3">
+          <span class="fk">F3</span><span class="flabel">Msgs combat…</span>
+        </button>
+        <button class="fkey" type="button" data-view="chat" data-fkey="F4">
+          <span class="fk">F4</span><span class="flabel">Messages…</span>
+        </button>
+        <button class="fkey" type="button" data-view="status" data-fkey="F5">
+          <span class="fk">F5</span><span class="flabel">État…</span>
+        </button>
+        <button class="fkey" type="button" data-fbcb2="admin" data-fkey="F6">
+          <span class="fk">F6</span><span class="flabel">Admin…</span>
+        </button>
+        <button class="fkey" type="button" data-view="apps" data-fkey="F7">
+          <span class="fk">F7</span><span class="flabel">Apps…</span>
+        </button>
+        <button class="fkey" type="button" data-view="help" data-fkey="F8">
+          <span class="fk">F8</span><span class="flabel">Aide</span>
+        </button>
+      </div>
+      <div class="fbcb2-zoom-row">
+        <button class="btn" type="button" data-fbcb2="zoom-in">+ Zoom</button>
+        <button class="btn" type="button" data-fbcb2="zoom-out">− Zoom</button>
       </div>
       <div class="fbcb2-rail-foot">
         <span class="fbcb2-zoom" id="fbcb2-zoom">1×</span>
         <span class="fbcb2-clock" id="fbcb2-clock">--:--</span>
       </div>
-      <button class="btn" type="button" data-cmd="close" style="margin-top:2px">Fermer</button>
+      <button class="btn danger" type="button" data-cmd="close" style="width:100%;min-height:36px">Fermer</button>
     </aside>
   </div>
 
@@ -825,15 +1220,21 @@
 
   <footer class="footer fbcb2-foot fbcb2-only">
     <div class="fbcb2-lights" title="État des sous-systèmes">
-      <span class="fbcb2-light-label">Liaison</span>
-      <span class="fbcb2-light r" id="light-link">R</span>
-      <span class="fbcb2-light-label">Sync</span>
-      <span class="fbcb2-light a" id="light-sync">A</span>
-      <span class="fbcb2-light-label">Alertes</span>
-      <span class="fbcb2-light g" id="light-alerts">G</span>
+      <div class="fbcb2-light-group">
+        <span class="fbcb2-light-label">Liaison</span>
+        <span class="fbcb2-light r" id="light-link">R</span>
+      </div>
+      <div class="fbcb2-light-group">
+        <span class="fbcb2-light-label">Sync</span>
+        <span class="fbcb2-light a" id="light-sync">A</span>
+      </div>
+      <div class="fbcb2-light-group">
+        <span class="fbcb2-light-label">Alertes</span>
+        <span class="fbcb2-light g" id="light-alerts">G</span>
+      </div>
     </div>
     <span class="live" id="footer-count-fbcb2">0 contact(s)</span>
-    <span id="footer-msg-fbcb2" style="flex:1">Prêt</span>
+    <span class="fbcb2-status-msg" id="footer-msg-fbcb2" style="flex:1">Suivi des forces · réseau prêt</span>
     <button class="fbcb2-tool" type="button" data-cmd="refresh">Envoyer</button>
     <button class="fbcb2-tool" type="button" data-view="status">Détail</button>
   </footer>
@@ -939,6 +1340,15 @@
     if (a) a.textContent = txt;
     if (b) b.textContent = txt;
   }
+  window.COMSPEC_setFooterMsg = setFooterMsg;
+
+  function requestNativeMap(show) {
+    if (show) {
+      send("map:show|" + radarZoom);
+    } else {
+      send("map:hide|" + (currentView || "bft"));
+    }
+  }
 
   function setFooterCount(n) {
     var txt = n + " contact(s)";
@@ -1030,10 +1440,10 @@
     document.body.classList.remove("skin-athena", "skin-fbcb2");
     document.body.classList.add("skin-" + currentSkin);
     try { localStorage.setItem(SKIN_KEY, currentSkin); } catch (e) {}
-    setView(currentView);
+    applyView(currentView);
     updateZoomLabel();
     updateStatusLights();
-    setFooterMsg(currentSkin === "fbcb2" ? "Vue Commande" : "Vue Athena");
+    setFooterMsg(currentSkin === "fbcb2" ? "Suivi des forces · réseau prêt" : "Vue Athena");
   }
 
   function setOsd(data) {
@@ -1056,7 +1466,7 @@
     document.getElementById("osd-status").textContent = label;
 
     var unitName = document.getElementById("fbcb2-unit-name");
-    if (unitName) unitName.textContent = data.callsign || "—";
+    if (unitName) unitName.textContent = "UNITÉ: " + (data.callsign || "—");
     var mgrs = document.getElementById("fbcb2-mgrs");
     if (mgrs) mgrs.textContent = data.grid || "000000 0000";
 
@@ -1313,7 +1723,7 @@
     if (currentView === "alerts") renderAlerts();
   }
 
-  function setView(view) {
+  function applyView(view) {
     currentView = view || "bft";
     var apps = document.querySelectorAll(".app[data-view]");
     for (var i = 0; i < apps.length; i++) {
@@ -1334,6 +1744,11 @@
     for (var p = 0; p < panels.length; p++) {
       var el = document.getElementById("view-" + panels[p]);
       if (el) el.classList.toggle("active", currentView === panels[p]);
+    }
+
+    var tools = document.querySelectorAll(".fbcb2-tool[data-view]");
+    for (var ti = 0; ti < tools.length; ti++) {
+      tools[ti].classList.toggle("on", tools[ti].getAttribute("data-view") === currentView);
     }
 
     var title = document.getElementById("main-title");
@@ -1365,7 +1780,7 @@
     } else if (currentView === "status") {
       if (title) title.textContent = "ÉTAT";
       if (sideHead) sideHead.textContent = "ÉTAT DE LIAISON";
-      if (hint) hint.textContent = "Synthèse liaison · indicatif · grille";
+      if (hint) hint.textContent = "Synthèse liaison · réseau BFT · situation forces";
     } else if (currentView === "apps") {
       if (title) title.textContent = "APPLICATIONS";
       if (sideHead) sideHead.textContent = "RACCOURCIS";
@@ -1373,13 +1788,23 @@
     } else if (currentView === "help") {
       if (title) title.textContent = "AIDE";
       if (sideHead) sideHead.textContent = "AIDE COMMANDE";
-      if (hint) hint.textContent = "Raccourcis de la vue Commande";
+      if (hint) hint.textContent = "Console type Appliqué · suivi des forces";
     } else {
       if (title) title.textContent = "SUIVI DES FORCES";
       if (sideHead) sideHead.textContent = "EFFECTIFS EN LIAISON";
       if (hint && boot && boot.mapHint) hint.textContent = boot.mapHint;
     }
   }
+
+  function setView(view) {
+    applyView(view || "bft");
+    // Carte Arma native (le Chromium masque tout contrôle dessous → bascule navigateur ↔ carte)
+    if (currentView === "bft") {
+      requestNativeMap(true);
+    }
+  }
+  // Appelé depuis SQF après fermeture carte : ne pas redemander la carte si vue = bft (Menus)
+  window.COMSPEC_setView = applyView;
 
   function handleFbcb2(action) {
     if (action === "zoom-in") {
@@ -1406,14 +1831,15 @@
     }
     if (action === "filters") {
       showNames = !showNames;
+      send("map:names|" + (showNames ? "1" : "0"));
       renderUnits(lastUnits);
       setFooterMsg(showNames ? "Noms des contacts affichés" : "Noms des contacts masqués");
       setView("bft");
       return;
     }
     if (action === "admin") {
-      send("open:account");
-      setFooterMsg("Ouverture du compte…");
+      setView("help");
+      setFooterMsg("Admin · console Vue Commande (type Appliqué / JCR)");
       return;
     }
     if (action === "los") {
@@ -1577,6 +2003,10 @@
   }
 
   setTimeout(function () { send("refresh"); }, 400);
+  // Afficher la carte terrain dès que le shell est prêt (vue Carte / F1)
+  setTimeout(function () {
+    if (currentView === "bft") requestNativeMap(true);
+  }, 700);
 })();
 </script>
 </body>

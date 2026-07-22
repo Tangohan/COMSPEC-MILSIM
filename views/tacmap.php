@@ -41,8 +41,12 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/comspec-operational-map.js"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
@@ -120,6 +124,31 @@ $pageTitle = $title ?? 'TACMAP — Athena';
           <label><input type="checkbox" id="tacmap-layer-sigint" /> Veille radio</label>
           <label><input type="checkbox" id="tacmap-layer-intel" /> Indices fusionnés</label>
           <label><input type="checkbox" id="tacmap-layer-air" checked /> Aéronefs</label>
+          <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Analyse terrain</label>
+          <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
+        </div>
+        <div class="tacmap-tools-bar" id="tacmap-tools-bar">
+          <span class="tacmap-tools-bar__label">Outils</span>
+          <button type="button" class="tacmap-btn" id="tacmap-tool-viewshed" title="Zone visible depuis un point">Zone visible</button>
+          <button type="button" class="tacmap-btn" id="tacmap-tool-heatmap" title="Carte des hauteurs">Hauteurs</button>
+          <button type="button" class="tacmap-btn" id="tacmap-tool-route-foot" title="Itinéraire à pied">Itinéraire à pied</button>
+          <button type="button" class="tacmap-btn" id="tacmap-tool-route-veh" title="Itinéraire véhicule">Itinéraire véhicule</button>
+          <label class="tacmap-tools-bar__field">Rayon (m)
+            <input type="number" id="tacmap-tool-radius" min="100" max="3000" value="500" />
+          </label>
+          <label class="tacmap-tools-bar__field">Vitesse (km/h)
+            <input type="number" id="tacmap-tool-speed" min="1" max="120" value="5" />
+          </label>
+          <button type="button" class="tacmap-btn" id="tacmap-tool-clear">Effacer analyses</button>
+          <span class="tacmap-tools-bar__hint" id="tacmap-tool-hint"></span>
+          <span class="tacmap-tools-bar__eta" id="tacmap-tool-eta"></span>
+        </div>
+        <div class="tacmap-faction-bar" id="tacmap-faction-bar">
+          <span class="tacmap-tools-bar__label">Affichage</span>
+          <label><input type="checkbox" id="tacmap-show-friend" checked /> Alliés</label>
+          <label><input type="checkbox" id="tacmap-show-hostile" checked /> Adversaire</label>
+          <label><input type="checkbox" id="tacmap-show-unknown" checked /> Indépendants</label>
+          <label><input type="checkbox" id="tacmap-show-neutral" checked /> Civils</label>
         </div>
         <div id="tacmap-map"></div>
 
@@ -154,6 +183,12 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Urgences médicales</p>
             <div id="tacmap-medical-list">
               <p class="text-sm text-[color:var(--tm-muted)]">Aucune urgence détectée pour l’instant.</p>
+            </div>
+          </section>
+          <section>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Signalements</p>
+            <div id="tacmap-tactical-list">
+              <p class="text-sm text-[color:var(--tm-muted)]">Aucun signalement récent.</p>
             </div>
           </section>
           <section>
@@ -261,6 +296,22 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             layerSigint: 'tacmap-layer-sigint',
             layerIntel: 'tacmap-layer-intel',
             layerAir: 'tacmap-layer-air',
+            layerElevation: 'tacmap-layer-elevation',
+            layerRoute: 'tacmap-layer-route',
+            tacticalList: 'tacmap-tactical-list',
+            toolViewshed: 'tacmap-tool-viewshed',
+            toolHeatmap: 'tacmap-tool-heatmap',
+            toolRouteFoot: 'tacmap-tool-route-foot',
+            toolRouteVeh: 'tacmap-tool-route-veh',
+            toolClear: 'tacmap-tool-clear',
+            toolRadius: 'tacmap-tool-radius',
+            toolSpeed: 'tacmap-tool-speed',
+            toolHint: 'tacmap-tool-hint',
+            toolEta: 'tacmap-tool-eta',
+            showFriend: 'tacmap-show-friend',
+            showHostile: 'tacmap-show-hostile',
+            showUnknown: 'tacmap-show-unknown',
+            showNeutral: 'tacmap-show-neutral',
           },
         });
         invalidateMapSoon();

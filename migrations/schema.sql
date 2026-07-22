@@ -1404,6 +1404,7 @@ CREATE TABLE IF NOT EXISTS `tactical_briefing_slides` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
   `title` varchar(160) NOT NULL DEFAULT '',
+  `detail_text` text DEFAULT NULL,
   `image_path` varchar(512) NOT NULL,
   `sort_order` int NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
@@ -1413,6 +1414,22 @@ CREATE TABLE IF NOT EXISTS `tactical_briefing_slides` (
   KEY `idx_tbs_tenant_active_sort` (`tenant_id`,`is_active`,`sort_order`),
   CONSTRAINT `tactical_briefing_slides_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Commentaires opérateurs sur une diapositive de briefing (téléphone / back-office).
+CREATE TABLE IF NOT EXISTS `tactical_briefing_slide_comments` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `slide_id` int unsigned NOT NULL,
+  `author_label` varchar(120) NOT NULL DEFAULT '',
+  `body` text NOT NULL,
+  `source` enum('phone','admin','arma') NOT NULL DEFAULT 'phone',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tbsc_slide_created` (`slide_id`,`created_at`),
+  KEY `idx_tbsc_tenant_created` (`tenant_id`,`created_at`),
+  CONSTRAINT `tbsc_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `tbsc_slide_fk` FOREIGN KEY (`slide_id`) REFERENCES `tactical_briefing_slides` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Transmission de renseignement → PoE : sessions ouvertes par mission/événement, fil de mini-PV
 -- de reconnaissance (texte + captures d'écran), synthétisés par le Mission Maker en Plan d'Exécution.

@@ -98,6 +98,7 @@ private _timeStr = format ["%1:%2:%3",
 
 
 private _units = [] call comspec_overwatch_connect_fnc_getUnitsList;
+missionNamespace setVariable ["COMSPEC_WebBrowser_MapUnits", _units];
 
 // Scan radio à jour pour pastilles tablette
 if (missionNamespace getVariable ["comspec_overwatch_radio_proximity_enabled", true]) then {
@@ -389,5 +390,12 @@ private _js = format [
 ];
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];
+
+if (
+    missionNamespace getVariable ["COMSPEC_WebBrowser_MapVisible", false]
+    && {missionNamespace getVariable ["COMSPEC_WebBrowser_MapAutoCenter", true]}
+) then {
+    [] call comspec_overwatch_connect_fnc_webBrowserMapCenter;
+};
 
 
