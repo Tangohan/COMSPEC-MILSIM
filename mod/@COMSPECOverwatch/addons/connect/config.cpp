@@ -132,6 +132,7 @@ class CfgFunctions {
             class webBrowserOnLoad {};
             class webBrowserPageLoaded {};
             class webBrowserJSDialog {};
+            class placeMarkerFromTablet {};
             class webBrowserOpenAthena {};
             class webBrowserOpenSystem {};
             class webBrowserJsEscape {};
