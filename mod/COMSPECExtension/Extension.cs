@@ -25,6 +25,12 @@ public static class Extension
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
     private static readonly object QueueDrainLock = new();
+    /// <summary>
+    /// Dernière position en attente de retry (coupure / 429). Coalescée : une seule entrée,
+    /// toujours la plus récente — évite de rejouer des positions périmées à la reconnexion.
+    /// </summary>
+    private static (string Url, string Body)? _coalescedPosition;
+    private static readonly object CoalescedPositionLock = new();
     private static System.Threading.Timer? _drainTimer;
     /// <summary>Backoff après HTTP 429 (Ticks UTC). Pendant ce délai : pas d’envoi position / drain réduit.</summary>
     private static long _rateLimitUntilTicks;
@@ -284,6 +290,44 @@ public static class Extension
         _drainTimer = new System.Threading.Timer(_ => DrainQueue(), null, 2000, 2000);
     }
 
+    private static bool IsPositionEndpoint(string url) =>
+        url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Retry après échec / backoff. Positions = slot unique (dernière gagne) ;
+    /// autres posts = FIFO bornée.
+    /// </summary>
+    private static void EnqueueForRetry(string url, string jsonBody)
+    {
+        if (IsPositionEndpoint(url))
+        {
+            lock (CoalescedPositionLock)
+                _coalescedPosition = (url, jsonBody);
+            EnsureDrainTimer();
+            return;
+        }
+        if (PendingPosts.Count < MaxQueueSize)
+        {
+            PendingPosts.Enqueue((url, jsonBody));
+            EnsureDrainTimer();
+        }
+    }
+
+    private static bool TryTakeCoalescedPosition(out (string Url, string Body) item)
+    {
+        lock (CoalescedPositionLock)
+        {
+            if (_coalescedPosition is { } pos)
+            {
+                _coalescedPosition = null;
+                item = pos;
+                return true;
+            }
+        }
+        item = default;
+        return false;
+    }
+
     private static bool IsRateLimitedNow()
     {
         return DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref _rateLimitUntilTicks);
@@ -320,17 +364,16 @@ public static class Extension
         if (response == null)
         {
             NotePostError(0, url);
-            if (PendingPosts.Count < MaxQueueSize)
-            {
-                PendingPosts.Enqueue((url, jsonBody));
-                EnsureDrainTimer();
-            }
+            EnqueueForRetry(url, jsonBody);
             return;
         }
         if ((int)response.StatusCode == 429)
         {
             NoteRateLimited();
-            // Ne pas ré-enfiler immédiatement : sinon boucle 429 → lag.
+            // Position : garder la dernière pour flush après backoff. Autres : ne pas
+            // ré-enfiler (évite boucle 429 → lag) — le SQF renverra si besoin.
+            if (IsPositionEndpoint(url))
+                EnqueueForRetry(url, jsonBody);
             return;
         }
         if (response.IsSuccessStatusCode)
@@ -339,11 +382,42 @@ public static class Extension
             return;
         }
         NotePostError((int)response.StatusCode, url);
-        if (PendingPosts.Count < MaxQueueSize)
+        EnqueueForRetry(url, jsonBody);
+    }
+
+    /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
+    private static bool TrySendQueuedPost((string Url, string Body) item)
+    {
+        try
         {
-            PendingPosts.Enqueue((url, jsonBody));
-            EnsureDrainTimer();
+            using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
+            {
+                Content = JsonContent(item.Body)
+            };
+            AttachApiKeyHeader(req);
+            var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
+            if ((int)response.StatusCode == 429)
+            {
+                NoteRateLimited();
+                EnqueueForRetry(item.Url, item.Body);
+                return false;
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                NotePostError((int)response.StatusCode, item.Url);
+                EnqueueForRetry(item.Url, item.Body);
+            }
+            else
+            {
+                NoteRateLimitCleared();
+            }
         }
+        catch
+        {
+            NotePostError(-1, item.Url);
+            EnqueueForRetry(item.Url, item.Body);
+        }
+        return true;
     }
 
     private static void DrainQueue()
@@ -352,40 +426,33 @@ public static class Extension
         if (IsRateLimitedNow()) return;
         lock (QueueDrainLock)
         {
-            for (var i = 0; i < 3 && PendingPosts.TryDequeue(out var item); i++)
+            const int maxPerTick = 3;
+            var sent = 0;
+            // Toujours la position coalescée en premier (freshness > ordre FIFO).
+            var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
+            if (hadCoalesced)
             {
-                try
-                {
-                    using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
-                    {
-                        Content = JsonContent(item.Body)
-                    };
-                    AttachApiKeyHeader(req);
-                    var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
-                    if ((int)response.StatusCode == 429)
-                    {
-                        NoteRateLimited();
-                        // Remettre en file pour plus tard, sans boucle serrée.
-                        if (PendingPosts.Count < MaxQueueSize)
-                            PendingPosts.Enqueue(item);
-                        break;
-                    }
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        NotePostError((int)response.StatusCode, item.Url);
-                        if (PendingPosts.Count < MaxQueueSize) PendingPosts.Enqueue(item);
-                    }
-                    else
-                    {
-                        NoteRateLimitCleared();
-                    }
-                }
-                catch
-                {
-                    NotePostError(-1, item.Url);
-                    if (PendingPosts.Count < MaxQueueSize) PendingPosts.Enqueue(item);
-                }
+                if (!TrySendQueuedPost(posItem))
+                    return;
+                sent++;
             }
+            while (sent < maxPerTick && PendingPosts.TryDequeue(out var item))
+            {
+                // Positions résiduelles dans l’ancienne FIFO : si le slot coalescé
+                // n’existait pas, on coalesce (dernière gagne) ; sinon ce sont des périmées.
+                if (IsPositionEndpoint(item.Url))
+                {
+                    if (!hadCoalesced)
+                        EnqueueForRetry(item.Url, item.Body);
+                    continue;
+                }
+                if (!TrySendQueuedPost(item))
+                    break;
+                sent++;
+            }
+            // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
+            if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
+                TrySendQueuedPost(fromFifo);
         }
     }
 
@@ -393,9 +460,10 @@ public static class Extension
     {
         if (IsRateLimitedNow())
         {
-            // Position : drop pendant backoff (la suivante reviendra). Autres : file limitée.
-            var isPosition = url.Contains("/api/atak/position", StringComparison.OrdinalIgnoreCase);
-            if (!isPosition && PendingPosts.Count < MaxQueueSize)
+            // Position : coalescer pour flush dès fin de backoff. Autres : file limitée.
+            if (IsPositionEndpoint(url))
+                EnqueueForRetry(url, jsonBody);
+            else if (PendingPosts.Count < MaxQueueSize)
             {
                 PendingPosts.Enqueue((url, jsonBody));
                 EnsureDrainTimer();
@@ -421,11 +489,7 @@ public static class Extension
         catch
         {
             NotePostError(-1, url);
-            if (PendingPosts.Count < MaxQueueSize)
-            {
-                PendingPosts.Enqueue((url, jsonBody));
-                EnsureDrainTimer();
-            }
+            EnqueueForRetry(url, jsonBody);
         }
     }
 
@@ -2175,12 +2239,8 @@ public static class Extension
                 }
                 catch
                 {
-                    if (PendingPosts.Count < MaxQueueSize)
-                    {
-                        var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
-                        PendingPosts.Enqueue((url, payload));
-                        EnsureDrainTimer();
-                    }
+                    var url = _baseUrl + "/api/atak/air-assets/" + Uri.EscapeDataString(callsign) + "/pilot-status";
+                    EnqueueForRetry(url, payload);
                 }
                 return;
             }

@@ -55,6 +55,12 @@
   .osd .status-dot.wait { background: var(--warn); }
   .osd .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
   .osd-role { color: var(--muted); font-size: 11px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .skin-toggle {
+    appearance: none; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text);
+    border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer;
+  }
+  .skin-toggle:hover { border-color: var(--accent-dim); color: var(--accent); }
   .bell {
     appearance: none; border: 1px solid var(--line);
     background: var(--panel2); color: var(--text);
@@ -160,6 +166,7 @@
     animation: txPulse 0.9s ease-in-out infinite;
   }
   .contact-dot.tx label { color: var(--warn); font-weight: 700; }
+  .hide-names .contact-dot label { display: none; }
   @keyframes txPulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.55; transform: scale(1.15); }
@@ -233,6 +240,16 @@
   .alert-row .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
   .alert-row .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
   .alert-row .body { font-size: 12px; color: #c5d6e2; line-height: 1.35; }
+
+  .status-card {
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; margin-bottom: 8px; background: var(--panel2);
+  }
+  .status-card .k { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .status-card .v { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .apps-menu { display: flex; flex-direction: column; gap: 8px; }
+  .help-block { font-size: 12px; line-height: 1.5; color: #c5d6e2; }
+  .help-block h3 { color: var(--accent); font-size: 13px; margin: 10px 0 4px; }
 
   .side {
     background: var(--panel);
@@ -339,11 +356,302 @@
     from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* —— Peau Commande (FBCB2) —— */
+  .fbcb2-only { display: none !important; }
+  body.skin-fbcb2 {
+    --bg: #2a2e28;
+    --panel: #3a3f38;
+    --panel2: #4a5046;
+    --line: #1a1c18;
+    --text: #1a1a14;
+    --muted: #3a3a30;
+    --accent: #0a5a28;
+    --warn: #b84a10;
+    --bad: #a01818;
+    --good: #1a7a28;
+    --osd: #c8c4b0;
+    --blue: #1848a0;
+    font-family: Tahoma, "MS Sans Serif", "Segoe UI", sans-serif;
+    background: #5a5e52;
+    color: #101008;
+  }
+  body.skin-fbcb2 .shell {
+    grid-template-rows: 34px 1fr 32px;
+    background: #6a6e62;
+  }
+  body.skin-fbcb2 .athena-only { display: none !important; }
+  body.skin-fbcb2 .fbcb2-only { display: flex !important; }
+  body.skin-fbcb2 .osd.fbcb2-bar {
+    display: flex !important;
+    background: linear-gradient(180deg, #d0ccc0 0%, #b8b4a4 100%);
+    border-bottom: 2px solid #2a2c24;
+    color: #101008;
+    font-size: 11px;
+    font-weight: 600;
+    gap: 6px;
+    padding: 0 6px;
+  }
+  body.skin-fbcb2 .fbcb2-zulu {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    min-width: 150px;
+  }
+  body.skin-fbcb2 .fbcb2-classif {
+    background: #1a7a28;
+    color: #e8ffe8;
+    padding: 2px 14px;
+    border: 1px solid #0a4020;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+  }
+  body.skin-fbcb2 .fbcb2-tool {
+    appearance: none;
+    border: 1px solid #2a2c24;
+    background: linear-gradient(180deg, #e8e4d4 0%, #c8c4b0 45%, #a8a490 100%);
+    color: #101008;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: inset 1px 1px 0 #f4f0e0, inset -1px -1px 0 #686458;
+  }
+  body.skin-fbcb2 .fbcb2-tool:active,
+  body.skin-fbcb2 .fbcb2-tool.on {
+    background: linear-gradient(180deg, #a8a490 0%, #c8c4b0 100%);
+    box-shadow: inset 1px 1px 2px #484438;
+  }
+  body.skin-fbcb2 .fbcb2-tool.disabled {
+    opacity: 0.55;
+    text-decoration: line-through;
+  }
+  body.skin-fbcb2 .body {
+    grid-template-columns: 1fr 168px;
+    background: #5a5e52;
+  }
+  body.skin-fbcb2 .main {
+    background:
+      radial-gradient(ellipse at 30% 40%, rgba(180,160,110,0.35) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 60%, rgba(90,110,70,0.4) 0%, transparent 50%),
+      linear-gradient(160deg, #9a9478 0%, #7a7e62 40%, #6a6e52 100%);
+  }
+  body.skin-fbcb2 .map-chrome {
+    display: none;
+  }
+  body.skin-fbcb2 .stage {
+    margin: 4px;
+    border: 2px solid #2a2c24;
+    border-radius: 0;
+    background:
+      linear-gradient(rgba(42,44,36,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(42,44,36,0.12) 1px, transparent 1px),
+      linear-gradient(180deg, #b0a888 0%, #8a8e6e 50%, #7a7e5e 100%);
+    background-size: 48px 48px, 48px 48px, auto;
+    box-shadow: inset 0 0 0 1px #c8c4a8;
+  }
+  body.skin-fbcb2 .stage-overlay {
+    background: rgba(90, 94, 70, 0.82);
+  }
+  body.skin-fbcb2 .stage-overlay .title { color: #1a3a18; }
+  body.skin-fbcb2 .stage-overlay .sub { color: #2a2a20; }
+  body.skin-fbcb2 .contact-dot .sym {
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 14px solid #1848a0;
+    filter: none;
+  }
+  body.skin-fbcb2 .contact-dot.self .sym {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #0a3018;
+    border-radius: 50%;
+    background: #1a8a38;
+    box-sizing: border-box;
+    filter: none;
+  }
+  body.skin-fbcb2 .contact-dot label {
+    color: #101008;
+    font-weight: 700;
+    text-shadow: 0 0 3px #e8e4c8, 1px 1px 0 #e8e4c8;
+  }
+  body.skin-fbcb2 .contact-dot.self label { color: #0a4018; }
+  body.skin-fbcb2 .panel-view {
+    margin: 4px;
+    border: 2px solid #2a2c24;
+    border-radius: 0;
+    background: #d8d4c0;
+    color: #101008;
+  }
+  body.skin-fbcb2 .feed-line,
+  body.skin-fbcb2 .order-row,
+  body.skin-fbcb2 .alert-row .title,
+  body.skin-fbcb2 .alert-row .body,
+  body.skin-fbcb2 .help-block,
+  body.skin-fbcb2 .status-card .v {
+    color: #101008;
+  }
+  body.skin-fbcb2 .feed-empty,
+  body.skin-fbcb2 .alert-row .meta,
+  body.skin-fbcb2 .status-card .k,
+  body.skin-fbcb2 .order-row .issuer {
+    color: #3a3a30;
+  }
+  body.skin-fbcb2 .status-card,
+  body.skin-fbcb2 .radio-card,
+  body.skin-fbcb2 .radio-banner {
+    background: #e8e4d0;
+    border-color: #6a6a58;
+  }
+  body.skin-fbcb2 .radio-card .cs { color: #0a5a28; }
+  body.skin-fbcb2 .btn {
+    border: 1px solid #2a2c24;
+    background: linear-gradient(180deg, #e8e4d4 0%, #b8b4a0 100%);
+    color: #101008;
+    border-radius: 2px;
+  }
+  body.skin-fbcb2 .btn.primary {
+    background: linear-gradient(180deg, #c8e8c8 0%, #6a9a6a 100%);
+    border-color: #2a4a2a;
+  }
+
+  body.skin-fbcb2 .fbcb2-rail {
+    display: flex !important;
+    flex-direction: column;
+    background: linear-gradient(180deg, #c8c4b0 0%, #a8a490 100%);
+    border-left: 2px solid #2a2c24;
+    min-height: 0;
+    padding: 4px;
+    gap: 4px;
+  }
+  body.skin-fbcb2 .fbcb2-unit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: #e8e4d4;
+    border: 1px solid #4a4a38;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  body.skin-fbcb2 .fbcb2-unit .lamp {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1px solid #1a1a10;
+    background: #a01818;
+    flex-shrink: 0;
+  }
+  body.skin-fbcb2 .fbcb2-unit .lamp.ok { background: #1a7a28; }
+  body.skin-fbcb2 .fbcb2-unit .lamp.wait { background: #c87810; }
+  body.skin-fbcb2 .fbcb2-mgrs {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px;
+    background: #101008;
+    color: #e8e4c8;
+    border: 1px solid #4a4a38;
+    letter-spacing: 0.04em;
+  }
+  body.skin-fbcb2 .fbcb2-fkeys {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  body.skin-fbcb2 .fkey {
+    appearance: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid #2a2c24;
+    background: linear-gradient(180deg, #ece8d8 0%, #c0bcac 42%, #9a9688 100%);
+    color: #101008;
+    padding: 7px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: inset 1px 1px 0 #f8f4e8, inset -1px -1px 0 #585448;
+  }
+  body.skin-fbcb2 .fkey:active,
+  body.skin-fbcb2 .fkey.active {
+    background: linear-gradient(180deg, #9a9688 0%, #c0bcac 100%);
+    box-shadow: inset 1px 1px 2px #383428;
+  }
+  body.skin-fbcb2 .fkey .fk {
+    color: #1848a0;
+    margin-right: 4px;
+  }
+  body.skin-fbcb2 .fbcb2-rail-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding-top: 2px;
+  }
+  body.skin-fbcb2 .fbcb2-zoom {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: #e8e4d4;
+    border: 1px solid #4a4a38;
+  }
+  body.skin-fbcb2 .fbcb2-clock {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  body.skin-fbcb2 .footer.fbcb2-foot {
+    display: flex !important;
+    background: linear-gradient(180deg, #b8b4a4 0%, #989480 100%);
+    border-top: 2px solid #2a2c24;
+    color: #101008;
+    gap: 8px;
+    padding: 0 6px;
+    font-weight: 600;
+  }
+  body.skin-fbcb2 .fbcb2-lights {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  body.skin-fbcb2 .fbcb2-light {
+    width: 22px; height: 18px;
+    border: 1px solid #1a1a10;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+    color: #101008;
+    background: #6a6a58;
+  }
+  body.skin-fbcb2 .fbcb2-light.g { background: #2a9a38; color: #e8ffe8; }
+  body.skin-fbcb2 .fbcb2-light.a { background: #c87810; color: #1a1000; }
+  body.skin-fbcb2 .fbcb2-light.r { background: #a01818; color: #ffe8e8; }
+  body.skin-fbcb2 .fbcb2-light-label {
+    font-size: 9px;
+    color: #2a2a20;
+    margin-right: 2px;
+  }
+  body.skin-fbcb2 .footer .live { color: #0a4018; }
+  body.skin-fbcb2 .toast {
+    background: rgba(232, 228, 208, 0.97);
+    border-color: #4a4a38;
+    color: #101008;
+  }
+  body.skin-fbcb2 .toast .t-body { color: #2a2a20; }
 </style>
 </head>
-<body>
+<body class="skin-athena">
 <div class="shell">
-  <header class="osd">
+  <!-- OSD Athena -->
+  <header class="osd athena-only">
     <span class="brand">ATHENA · OVERWATCH</span>
     <span class="sep">|</span>
     <span id="osd-time" class="muted">--:--:--</span>
@@ -354,13 +662,31 @@
     <span class="muted">GRILLE</span>
     <span id="osd-grid">000000</span>
     <div class="right">
+      <button class="skin-toggle" type="button" id="btn-skin-cmd" title="Passer à la vue Commande">Vue Commande</button>
       <button class="bell" id="bell-btn" type="button" data-view="alerts" title="Journal des alertes">🔔 <span class="badge" id="bell-badge">0</span></button>
       <span><span id="osd-dot" class="status-dot"></span><span id="osd-status">Hors liaison</span></span>
     </div>
   </header>
 
+  <!-- Bandeau FBCB2 -->
+  <header class="osd fbcb2-bar fbcb2-only">
+    <span class="fbcb2-zulu" id="fbcb2-zulu">------Z ------</span>
+    <span class="fbcb2-classif">NON CLASSIFIÉ</span>
+    <button class="fbcb2-tool" type="button" data-fbcb2="grab" title="Déplacer la vue (à venir)">Grab</button>
+    <button class="fbcb2-tool" type="button" data-fbcb2="zoom-in" title="Rapprocher">Zoom +</button>
+    <button class="fbcb2-tool" type="button" data-fbcb2="zoom-out" title="Éloigner">Zoom −</button>
+    <button class="fbcb2-tool" type="button" data-view="bft" title="Vue carte / effectifs">Vue</button>
+    <button class="fbcb2-tool" type="button" data-fbcb2="nav" title="Navigation">Nav…</button>
+    <button class="fbcb2-tool" type="button" data-fbcb2="los" title="Ligne de vue">LOS</button>
+    <button class="fbcb2-tool" type="button" id="btn-auto-center" data-fbcb2="auto-center" title="Recentrer sur votre position">Auto-centre</button>
+    <div class="right">
+      <button class="skin-toggle" type="button" id="btn-skin-athena" title="Revenir à la vue Athena">Vue Athena</button>
+      <button class="bell" id="bell-btn-fbcb2" type="button" data-view="alerts" title="Journal des alertes">⚠ <span class="badge" id="bell-badge-fbcb2">0</span></button>
+    </div>
+  </header>
+
   <div class="body">
-    <nav class="apps" aria-label="Applications">
+    <nav class="apps athena-only" aria-label="Applications">
       <button class="app active" data-view="bft" type="button"><span class="ico">▣</span>Effectifs</button>
       <button class="app" data-view="radio" type="button"><span class="ico">◎</span>Radio</button>
       <button class="app" data-view="alerts" type="button"><span class="ico">⚠</span>Alertes</button>
@@ -375,7 +701,7 @@
     </nav>
 
     <section class="main">
-      <div class="map-chrome">
+      <div class="map-chrome athena-only">
         <h1 id="main-title">SUIVI DES FORCES</h1>
         <span class="hint" id="map-hint">Contacts en liaison · vue tactique</span>
       </div>
@@ -402,9 +728,40 @@
         <div class="feed-empty" id="alerts-empty">Aucune alerte pour le moment. Les notifications Overwatch s’affichent ici, surtout en mode discret.</div>
         <div id="alerts-feed"></div>
       </div>
+      <div class="panel-view" id="view-status">
+        <div class="status-card"><div class="k">Liaison</div><div class="v" id="status-link">—</div></div>
+        <div class="status-card"><div class="k">Indicatif</div><div class="v" id="status-callsign">—</div></div>
+        <div class="status-card"><div class="k">Rôle</div><div class="v" id="status-role">—</div></div>
+        <div class="status-card"><div class="k">Grille</div><div class="v" id="status-grid">—</div></div>
+        <div class="status-card"><div class="k">Contacts affichés</div><div class="v" id="status-count">0</div></div>
+        <button class="btn" type="button" data-cmd="refresh">Actualiser la synchronisation</button>
+      </div>
+      <div class="panel-view" id="view-apps">
+        <div class="apps-menu">
+          <button class="btn primary" type="button" data-cmd="open:briefing">Briefing</button>
+          <button class="btn" type="button" data-cmd="open:cas">Appui aérien</button>
+          <button class="btn" type="button" data-cmd="open:phone">Téléphone</button>
+          <button class="btn" type="button" data-cmd="open:account">Compte Athena</button>
+          <button class="btn" type="button" data-cmd="open:callsign">Modifier mon rôle</button>
+          <button class="btn" type="button" data-cmd="open:hub">Centre opérationnel</button>
+          <button class="btn" type="button" data-cmd="open:athena">Carte Athena (navigateur)</button>
+        </div>
+      </div>
+      <div class="panel-view" id="view-help">
+        <div class="help-block">
+          <h3>Vue Commande</h3>
+          <p>Présentation type poste de commandement. La carte centrale montre vos effectifs en liaison.</p>
+          <h3>Touches de fonction</h3>
+          <p><strong>F1</strong> — Carte et effectifs · <strong>F2</strong> — Afficher ou masquer les noms · <strong>F3</strong> — Alertes · <strong>F4</strong> — Messagerie · <strong>F5</strong> — État de liaison · <strong>F6</strong> — Compte / rôle · <strong>F7</strong> — Applications · <strong>F8</strong> — Cette aide</p>
+          <h3>Carte</h3>
+          <p>Zoom + / − pour rapprocher ou éloigner. Auto-centre recentre sur votre position. Double-clic pour poser un marqueur.</p>
+          <h3>Retour</h3>
+          <p>Utilisez « Vue Athena » en haut à droite pour retrouver l’interface Overwatch classique.</p>
+        </div>
+      </div>
     </section>
 
-    <aside class="side">
+    <aside class="side athena-only">
       <div class="side-head" id="side-head">EFFECTIFS EN LIAISON</div>
       <div class="roster" id="roster">
         <div class="roster-empty">Chargement…</div>
@@ -435,11 +792,50 @@
         <button class="btn danger" type="button" data-cmd="close">Fermer</button>
       </div>
     </aside>
+
+    <!-- Rail droit FBCB2 -->
+    <aside class="fbcb2-rail fbcb2-only" aria-label="Commandes">
+      <div class="fbcb2-unit">
+        <span class="lamp" id="fbcb2-unit-lamp"></span>
+        <span id="fbcb2-unit-name">—</span>
+      </div>
+      <div class="fbcb2-mgrs" id="fbcb2-mgrs">000000 0000</div>
+      <div class="fbcb2-fkeys">
+        <button class="fkey active" type="button" data-view="bft" data-fkey="F1"><span class="fk">F1</span> Carte…</button>
+        <button class="fkey" type="button" data-fbcb2="filters" data-fkey="F2"><span class="fk">F2</span> Filtres…</button>
+        <button class="fkey" type="button" data-view="alerts" data-fkey="F3"><span class="fk">F3</span> Combat…</button>
+        <button class="fkey" type="button" data-view="chat" data-fkey="F4"><span class="fk">F4</span> Messages…</button>
+        <button class="fkey" type="button" data-view="status" data-fkey="F5"><span class="fk">F5</span> État…</button>
+        <button class="fkey" type="button" data-fbcb2="admin" data-fkey="F6"><span class="fk">F6</span> Admin…</button>
+        <button class="fkey" type="button" data-view="apps" data-fkey="F7"><span class="fk">F7</span> Apps…</button>
+        <button class="fkey" type="button" data-view="help" data-fkey="F8"><span class="fk">F8</span> Aide</button>
+      </div>
+      <div class="fbcb2-rail-foot">
+        <span class="fbcb2-zoom" id="fbcb2-zoom">1×</span>
+        <span class="fbcb2-clock" id="fbcb2-clock">--:--</span>
+      </div>
+      <button class="btn" type="button" data-cmd="close" style="margin-top:2px">Fermer</button>
+    </aside>
   </div>
 
-  <footer class="footer">
+  <footer class="footer athena-only">
     <span class="live" id="footer-count">0 contact(s)</span>
     <span id="footer-msg">Prêt</span>
+  </footer>
+
+  <footer class="footer fbcb2-foot fbcb2-only">
+    <div class="fbcb2-lights" title="État des sous-systèmes">
+      <span class="fbcb2-light-label">Liaison</span>
+      <span class="fbcb2-light r" id="light-link">R</span>
+      <span class="fbcb2-light-label">Sync</span>
+      <span class="fbcb2-light a" id="light-sync">A</span>
+      <span class="fbcb2-light-label">Alertes</span>
+      <span class="fbcb2-light g" id="light-alerts">G</span>
+    </div>
+    <span class="live" id="footer-count-fbcb2">0 contact(s)</span>
+    <span id="footer-msg-fbcb2" style="flex:1">Prêt</span>
+    <button class="fbcb2-tool" type="button" data-cmd="refresh">Envoyer</button>
+    <button class="fbcb2-tool" type="button" data-view="status">Détail</button>
   </footer>
 </div>
 
@@ -449,15 +845,19 @@
 (function () {
   var boot = window.COMSPEC_BOOT || null;
   var currentView = "bft";
+  var currentSkin = "athena";
   var alerts = [];
   var seenAlertIds = {};
   var unread = 0;
   var quiet = false;
-  // Dernière projection radar (plotPositions) : sert à convertir un double-clic sur la vue
-  // en position monde réelle pour la pose de marqueur.
+  var lastUnits = [];
   var lastProjection = null;
   var measureMode = false;
   var measurePointA = null;
+  var showNames = true;
+  var radarZoom = 1;
+  var autoCenter = true;
+  var SKIN_KEY = "comspec_tablet_skin";
 
   function worldFromStageEvent(ev) {
     var stage = document.getElementById("stage");
@@ -503,8 +903,7 @@
     lab.style.top = ((y1 + y2) / 2) + "%";
     lab.textContent = Math.round(dist) + " m · " + oct + " " + Math.round(bearing) + "°";
     stage.appendChild(lab);
-    document.getElementById("footer-msg").textContent =
-      "Mesure : " + Math.round(dist) + " m · " + oct + " " + Math.round(bearing) + "°";
+    setFooterMsg("Mesure : " + Math.round(dist) + " m · " + oct + " " + Math.round(bearing) + "°");
   }
 
   var TYPE_LABEL = {
@@ -534,15 +933,89 @@
       .replace(/"/g, "&quot;");
   }
 
-  function updateBell() {
-    var bell = document.getElementById("bell-btn");
-    var badge = document.getElementById("bell-badge");
-    if (unread > 0) {
-      bell.classList.add("has-new");
-      badge.textContent = unread > 9 ? "9+" : String(unread);
-    } else {
-      bell.classList.remove("has-new");
+  function setFooterMsg(txt) {
+    var a = document.getElementById("footer-msg");
+    var b = document.getElementById("footer-msg-fbcb2");
+    if (a) a.textContent = txt;
+    if (b) b.textContent = txt;
+  }
+
+  function setFooterCount(n) {
+    var txt = n + " contact(s)";
+    var a = document.getElementById("footer-count");
+    var b = document.getElementById("footer-count-fbcb2");
+    if (a) a.textContent = txt;
+    if (b) b.textContent = txt;
+    var sc = document.getElementById("status-count");
+    if (sc) sc.textContent = String(n);
+  }
+
+  function formatZulu(d) {
+    d = d || new Date();
+    var dd = ("0" + d.getUTCDate()).slice(-2);
+    var hh = ("0" + d.getUTCHours()).slice(-2);
+    var mm = ("0" + d.getUTCMinutes()).slice(-2);
+    var months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    return dd + hh + mm + "Z " + months[d.getUTCMonth()] + d.getUTCFullYear();
+  }
+
+  function formatLocalClock(d) {
+    d = d || new Date();
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+
+  function setLight(id, level) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.className = "fbcb2-light " + level;
+    el.textContent = level.toUpperCase();
+  }
+
+  function updateStatusLights() {
+    var status = (boot && boot.status) || "offline";
+    if (status === "linked") setLight("light-link", "g");
+    else if (status === "connecting") setLight("light-link", "a");
+    else setLight("light-link", "r");
+
+    var units = lastUnits || [];
+    if (status === "linked" && units.length > 0) setLight("light-sync", "g");
+    else if (status === "linked") setLight("light-sync", "a");
+    else setLight("light-sync", "r");
+
+    if (unread > 0) setLight("light-alerts", "a");
+    else if (alerts.length > 0) setLight("light-alerts", "g");
+    else setLight("light-alerts", "g");
+
+    var lamp = document.getElementById("fbcb2-unit-lamp");
+    if (lamp) {
+      lamp.className = "lamp" + (status === "linked" ? " ok" : (status === "connecting" ? " wait" : ""));
     }
+  }
+
+  function updateZoomLabel() {
+    var z = document.getElementById("fbcb2-zoom");
+    if (z) z.textContent = (Math.round(radarZoom * 10) / 10) + "×";
+    var ac = document.getElementById("btn-auto-center");
+    if (ac) ac.classList.toggle("on", !!autoCenter);
+  }
+
+  function updateBell() {
+    var pairs = [
+      ["bell-btn", "bell-badge"],
+      ["bell-btn-fbcb2", "bell-badge-fbcb2"]
+    ];
+    for (var i = 0; i < pairs.length; i++) {
+      var bell = document.getElementById(pairs[i][0]);
+      var badge = document.getElementById(pairs[i][1]);
+      if (!bell || !badge) continue;
+      if (unread > 0) {
+        bell.classList.add("has-new");
+        badge.textContent = unread > 9 ? "9+" : String(unread);
+      } else {
+        bell.classList.remove("has-new");
+      }
+    }
+    updateStatusLights();
   }
 
   function updateQuietBtn() {
@@ -550,6 +1023,17 @@
     if (!btn) return;
     btn.classList.toggle("on", !!quiet);
     btn.textContent = quiet ? "Mode discret · ON" : "Mode discret";
+  }
+
+  function setSkin(skin) {
+    currentSkin = (skin === "fbcb2") ? "fbcb2" : "athena";
+    document.body.classList.remove("skin-athena", "skin-fbcb2");
+    document.body.classList.add("skin-" + currentSkin);
+    try { localStorage.setItem(SKIN_KEY, currentSkin); } catch (e) {}
+    setView(currentView);
+    updateZoomLabel();
+    updateStatusLights();
+    setFooterMsg(currentSkin === "fbcb2" ? "Vue Commande" : "Vue Athena");
   }
 
   function setOsd(data) {
@@ -570,6 +1054,22 @@
     var dot = document.getElementById("osd-dot");
     dot.className = "status-dot" + (status === "linked" ? " ok" : (status === "connecting" ? " wait" : ""));
     document.getElementById("osd-status").textContent = label;
+
+    var unitName = document.getElementById("fbcb2-unit-name");
+    if (unitName) unitName.textContent = data.callsign || "—";
+    var mgrs = document.getElementById("fbcb2-mgrs");
+    if (mgrs) mgrs.textContent = data.grid || "000000 0000";
+
+    var sl = document.getElementById("status-link");
+    var sc = document.getElementById("status-callsign");
+    var sr = document.getElementById("status-role");
+    var sg = document.getElementById("status-grid");
+    if (sl) sl.textContent = label;
+    if (sc) sc.textContent = data.callsign || "—";
+    if (sr) sr.textContent = role || "—";
+    if (sg) sg.textContent = data.grid || "—";
+
+    updateStatusLights();
   }
 
   function plotPositions(units) {
@@ -589,7 +1089,7 @@
       if (dx > span) span = dx;
       if (dy > span) span = dy;
     }
-    span = Math.max(span * 1.25, 40);
+    span = Math.max(span * 1.25, 40) / Math.max(radarZoom, 0.25);
     lastProjection = { originX: originX, originY: originY, span: span };
     var out = [];
     for (i = 0; i < units.length; i++) {
@@ -664,17 +1164,23 @@
 
   function renderUnits(units) {
     units = units || [];
+    lastUnits = units;
     var roster = document.getElementById("roster");
     var contacts = document.getElementById("contacts");
     var empty = document.getElementById("stage-empty");
     var emptySub = document.getElementById("stage-empty-sub");
-    document.getElementById("footer-count").textContent = units.length + " contact(s)";
+    setFooterCount(units.length);
+
+    var stage = document.getElementById("stage");
+    if (stage) stage.classList.toggle("hide-names", !showNames);
 
     if (!units.length) {
       var linked = boot && boot.status === "linked";
-      roster.innerHTML = linked
-        ? '<div class="roster-empty">Aucun contact reçu.<br><span style="opacity:.8">Hub → Transmettre ma position, puis Actualiser ici.</span></div>'
-        : '<div class="roster-empty">Hors liaison.<br><span style="opacity:.8">Liez votre compte Athena (Hub / Compte), puis Actualiser.</span></div>';
+      if (roster) {
+        roster.innerHTML = linked
+          ? '<div class="roster-empty">Aucun contact reçu.<br><span style="opacity:.8">Hub → Transmettre ma position, puis Actualiser ici.</span></div>'
+          : '<div class="roster-empty">Hors liaison.<br><span style="opacity:.8">Liez votre compte Athena (Hub / Compte), puis Actualiser.</span></div>';
+      }
       contacts.innerHTML = "";
       empty.style.display = "flex";
       if (emptySub) {
@@ -682,6 +1188,7 @@
           ? "Liaison OK mais pas de positions. Transmettez depuis le Hub, puis Actualiser."
           : "Hors liaison — liez Athena puis Actualiser pour voir au moins votre position locale.";
       }
+      updateStatusLights();
       return;
     }
 
@@ -710,8 +1217,9 @@
       dots += '<div class="' + cls + '" style="left:' + p.x + '%;top:' + p.y + '%">' +
         '<div class="sym"></div><label>' + escapeHtml(label) + "</label></div>";
     }
-    roster.innerHTML = html;
+    if (roster) roster.innerHTML = html;
     contacts.innerHTML = dots;
+    updateStatusLights();
   }
 
   function renderChat(lines) {
@@ -811,46 +1319,116 @@
     for (var i = 0; i < apps.length; i++) {
       apps[i].classList.toggle("active", apps[i].getAttribute("data-view") === currentView);
     }
+    var fkeys = document.querySelectorAll(".fkey[data-view], .fkey[data-fkey]");
+    for (var fi = 0; fi < fkeys.length; fi++) {
+      var fv = fkeys[fi].getAttribute("data-view");
+      var active = false;
+      if (fv) active = fv === currentView;
+      else if (fkeys[fi].getAttribute("data-fkey") === "F2" && currentView === "bft" && !showNames) active = true;
+      fkeys[fi].classList.toggle("active", active);
+    }
+
     var stage = document.getElementById("stage");
-    var chat = document.getElementById("view-chat");
-    var orders = document.getElementById("view-orders");
-    var alertsView = document.getElementById("view-alerts");
-    var radioView = document.getElementById("view-radio");
+    var panels = ["chat", "orders", "alerts", "radio", "status", "apps", "help"];
+    stage.classList.toggle("hidden", currentView !== "bft");
+    for (var p = 0; p < panels.length; p++) {
+      var el = document.getElementById("view-" + panels[p]);
+      if (el) el.classList.toggle("active", currentView === panels[p]);
+    }
+
     var title = document.getElementById("main-title");
     var sideHead = document.getElementById("side-head");
-
-    stage.classList.toggle("hidden", currentView !== "bft");
-    chat.classList.toggle("active", currentView === "chat");
-    orders.classList.toggle("active", currentView === "orders");
-    alertsView.classList.toggle("active", currentView === "alerts");
-    if (radioView) radioView.classList.toggle("active", currentView === "radio");
+    var hint = document.getElementById("map-hint");
 
     if (currentView === "chat") {
-      title.textContent = "MESSAGERIE";
-      sideHead.textContent = "JOURNAL DE LIAISON";
-      document.getElementById("map-hint").textContent = "Aperçu local · messagerie complète via Hub";
+      if (title) title.textContent = "MESSAGERIE";
+      if (sideHead) sideHead.textContent = "JOURNAL DE LIAISON";
+      if (hint) hint.textContent = "Aperçu local · messagerie complète via Hub";
     } else if (currentView === "orders") {
-      title.textContent = "ORDRES";
-      sideHead.textContent = "ORDRES REÇUS";
-      document.getElementById("map-hint").textContent = "Aperçu · boîte complète via le menu Ordres";
+      if (title) title.textContent = "ORDRES";
+      if (sideHead) sideHead.textContent = "ORDRES REÇUS";
+      if (hint) hint.textContent = "Aperçu · boîte complète via le menu Ordres";
     } else if (currentView === "alerts") {
-      title.textContent = "ALERTES";
-      sideHead.textContent = "JOURNAL D’ALERTES";
-      document.getElementById("map-hint").textContent = quiet
+      if (title) title.textContent = "ALERTES";
+      if (sideHead) sideHead.textContent = "JOURNAL D’ALERTES";
+      if (hint) hint.textContent = quiet
         ? "Mode discret actif — les bandeaux jeu sont masqués"
         : "Notifications Overwatch · mode discret disponible";
       unread = 0;
       updateBell();
       renderAlerts();
     } else if (currentView === "radio") {
-      title.textContent = "RADIO PROXIMITÉ";
-      sideHead.textContent = "ÉMISSIONS À PROXIMITÉ";
-      document.getElementById("map-hint").textContent = "Métadonnées radio · écoute audio uniquement en jeu";
+      if (title) title.textContent = "RADIO PROXIMITÉ";
+      if (sideHead) sideHead.textContent = "ÉMISSIONS À PROXIMITÉ";
+      if (hint) hint.textContent = "Métadonnées radio · écoute audio uniquement en jeu";
       renderRadio(boot && boot.radio ? boot.radio : {});
+    } else if (currentView === "status") {
+      if (title) title.textContent = "ÉTAT";
+      if (sideHead) sideHead.textContent = "ÉTAT DE LIAISON";
+      if (hint) hint.textContent = "Synthèse liaison · indicatif · grille";
+    } else if (currentView === "apps") {
+      if (title) title.textContent = "APPLICATIONS";
+      if (sideHead) sideHead.textContent = "RACCOURCIS";
+      if (hint) hint.textContent = "Briefing, appui, compte, hub…";
+    } else if (currentView === "help") {
+      if (title) title.textContent = "AIDE";
+      if (sideHead) sideHead.textContent = "AIDE COMMANDE";
+      if (hint) hint.textContent = "Raccourcis de la vue Commande";
     } else {
-      title.textContent = "SUIVI DES FORCES";
-      sideHead.textContent = "EFFECTIFS EN LIAISON";
-      if (boot && boot.mapHint) document.getElementById("map-hint").textContent = boot.mapHint;
+      if (title) title.textContent = "SUIVI DES FORCES";
+      if (sideHead) sideHead.textContent = "EFFECTIFS EN LIAISON";
+      if (hint && boot && boot.mapHint) hint.textContent = boot.mapHint;
+    }
+  }
+
+  function handleFbcb2(action) {
+    if (action === "zoom-in") {
+      radarZoom = Math.min(4, radarZoom * 1.35);
+      updateZoomLabel();
+      renderUnits(lastUnits);
+      setFooterMsg("Zoom " + (Math.round(radarZoom * 10) / 10) + "×");
+      return;
+    }
+    if (action === "zoom-out") {
+      radarZoom = Math.max(0.35, radarZoom / 1.35);
+      updateZoomLabel();
+      renderUnits(lastUnits);
+      setFooterMsg("Zoom " + (Math.round(radarZoom * 10) / 10) + "×");
+      return;
+    }
+    if (action === "auto-center") {
+      autoCenter = true;
+      radarZoom = 1;
+      updateZoomLabel();
+      renderUnits(lastUnits);
+      setFooterMsg("Carte recentrée sur votre position");
+      return;
+    }
+    if (action === "filters") {
+      showNames = !showNames;
+      renderUnits(lastUnits);
+      setFooterMsg(showNames ? "Noms des contacts affichés" : "Noms des contacts masqués");
+      setView("bft");
+      return;
+    }
+    if (action === "admin") {
+      send("open:account");
+      setFooterMsg("Ouverture du compte…");
+      return;
+    }
+    if (action === "los") {
+      setFooterMsg("Ligne de vue — non disponible sur cette tablette");
+      showToast({ title: "Ligne de vue", body: "Cette fonction n’est pas encore disponible. Utilisez la mesure sur la carte (vue Athena).", priority: "info" });
+      return;
+    }
+    if (action === "nav") {
+      setFooterMsg("Navigation — utilisez Zoom et Auto-centre");
+      showToast({ title: "Navigation", body: "Déplacez-vous en jeu : la carte se recentre sur votre position. Zoom + / − pour ajuster l’échelle.", priority: "info" });
+      return;
+    }
+    if (action === "grab") {
+      setFooterMsg("Déplacement libre — non disponible (centrage automatique)");
+      return;
     }
   }
 
@@ -872,15 +1450,14 @@
       ingestAlert(incoming[i], true);
     }
     renderAlerts();
-    document.getElementById("footer-msg").textContent = boot.footer || "Synchronisé";
+    setFooterMsg(boot.footer || "Synchronisé");
     if (boot.mapHint && currentView === "bft") {
-      document.getElementById("map-hint").textContent = boot.mapHint;
+      var hint = document.getElementById("map-hint");
+      if (hint) hint.textContent = boot.mapHint;
     }
+    updateStatusLights();
   };
 
-  // Double-clic sur la vue radar (hors contact existant) : pose un marqueur à cet endroit,
-  // en inversant la projection self-centrée de plotPositions vers une position monde réelle.
-  // Même convention que la carte web (double-clic / double-tap pour poser un marqueur).
   var stageEl = document.getElementById("stage");
   if (stageEl) {
     stageEl.addEventListener("dblclick", function (ev) {
@@ -891,7 +1468,7 @@
       var mkType = (document.getElementById("mk-type") || {}).value || "mil_dot";
       var mkColor = (document.getElementById("mk-color") || {}).value || "ColorRed";
       send("marker:place|" + w.wx.toFixed(1) + "|" + w.wy.toFixed(1) + "|" + mkType + "|" + mkColor);
-      document.getElementById("footer-msg").textContent = "Marqueur placé…";
+      setFooterMsg("Marqueur placé…");
     });
     stageEl.addEventListener("click", function (ev) {
       if (!measureMode) return;
@@ -901,7 +1478,7 @@
       if (!measurePointA) {
         measurePointA = w;
         clearMeasureOverlay();
-        document.getElementById("footer-msg").textContent = "Mesure : point A — cliquez le point B";
+        setFooterMsg("Mesure : point A — cliquez le point B");
         return;
       }
       showMeasure(measurePointA, w);
@@ -917,13 +1494,34 @@
       measurePointA = null;
       clearMeasureOverlay();
       btnMeasure.classList.toggle("on", measureMode);
-      document.getElementById("footer-msg").textContent = measureMode
+      setFooterMsg(measureMode
         ? "Mode mesure — cliquez deux points sur le radar"
-        : "Mode mesure désactivé";
+        : "Mode mesure désactivé");
     });
   }
 
+  document.getElementById("btn-skin-cmd").addEventListener("click", function (ev) {
+    ev.preventDefault();
+    setSkin("fbcb2");
+  });
+  document.getElementById("btn-skin-athena").addEventListener("click", function (ev) {
+    ev.preventDefault();
+    setSkin("athena");
+  });
+
   document.addEventListener("click", function (ev) {
+    var skinBtn = ev.target.closest("[data-skin]");
+    if (skinBtn) {
+      ev.preventDefault();
+      setSkin(skinBtn.getAttribute("data-skin"));
+      return;
+    }
+    var fbcb2 = ev.target.closest("[data-fbcb2]");
+    if (fbcb2) {
+      ev.preventDefault();
+      handleFbcb2(fbcb2.getAttribute("data-fbcb2"));
+      return;
+    }
     var viewBtn = ev.target.closest("[data-view]");
     if (viewBtn) {
       ev.preventDefault();
@@ -934,22 +1532,48 @@
     if (!t) return;
     ev.preventDefault();
     var cmd = t.getAttribute("data-cmd");
-    if (cmd === "refresh") {
-      document.getElementById("footer-msg").textContent = "Actualisation…";
-    }
-    if (cmd === "toggle:quiet") {
-      document.getElementById("footer-msg").textContent = "Mise à jour du mode discret…";
-    }
-    if (cmd === "open:athena") {
-      document.getElementById("footer-msg").textContent = "Ouverture du portail…";
-    }
+    if (cmd === "refresh") setFooterMsg("Actualisation…");
+    if (cmd === "toggle:quiet") setFooterMsg("Mise à jour du mode discret…");
+    if (cmd === "open:athena") setFooterMsg("Ouverture du portail…");
     send(cmd);
   });
 
+  document.addEventListener("keydown", function (ev) {
+    if (currentSkin !== "fbcb2") return;
+    var map = {
+      F1: function () { setView("bft"); },
+      F2: function () { handleFbcb2("filters"); },
+      F3: function () { setView("alerts"); },
+      F4: function () { setView("chat"); },
+      F5: function () { setView("status"); },
+      F6: function () { handleFbcb2("admin"); },
+      F7: function () { setView("apps"); },
+      F8: function () { setView("help"); }
+    };
+    if (map[ev.key]) {
+      ev.preventDefault();
+      map[ev.key]();
+    }
+  });
+
+  setInterval(function () {
+    var z = document.getElementById("fbcb2-zulu");
+    var c = document.getElementById("fbcb2-clock");
+    var now = new Date();
+    if (z) z.textContent = formatZulu(now);
+    if (c) c.textContent = formatLocalClock(now);
+  }, 1000);
+
+  try {
+    var saved = localStorage.getItem(SKIN_KEY);
+    if (saved === "fbcb2" || saved === "athena") currentSkin = saved;
+  } catch (e) {}
+  setSkin(currentSkin);
+
   if (boot) window.COMSPEC_onBoot(boot);
   else {
-    document.getElementById("roster").innerHTML =
-      '<div class="roster-empty">En attente de la liaison jeu…</div>';
+    var roster = document.getElementById("roster");
+    if (roster) roster.innerHTML = '<div class="roster-empty">En attente de la liaison jeu…</div>';
   }
 
   setTimeout(function () { send("refresh"); }, 400);
