@@ -47,18 +47,6 @@
 ] call CBA_fnc_addSetting;
 
 [
-    "comspec_overwatch_terminal_mode", "LIST",
-    ["Détection terminal (position)", "Comment reconnaître le téléphone tactique (S7 Android) pour autoriser la remontée de position. « Slot d’objet » = ItemAndroid équipé (comme un GPS/NVG). « Inventaire » = ItemAndroidMisc simplement transporté (objet cTab, sans effet si cTab n’est pas chargé). « Les deux » accepte l’un ou l’autre."],
-    "COMSPEC Overwatch",
-    [
-        [0, 1, 2],
-        ["Slot d’objet uniquement (ItemAndroid)", "Présence en inventaire (ItemAndroidMisc)", "Les deux (par défaut)"],
-        2
-    ],
-    false
-] call CBA_fnc_addSetting;
-
-[
     "comspec_overwatch_playtime_enabled", "CHECKBOX",
     ["Enregistrer le temps de jeu", "Envoie au portail le temps passé en mission (mod connecté)"],
     "COMSPEC Overwatch", true

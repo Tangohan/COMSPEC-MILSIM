@@ -1,8 +1,8 @@
 /*
     Remonte position + métadonnées vers Athena.
     Params: [_unit, _force]
-      _force : true = envoi manuel (ignore état mission, batch, backoff) — ItemAndroid toujours requis.
-    Retour (si _force) : "ok" | "dead" | "no_android" | "origin" | ""
+      _force : true = envoi manuel (ignore état mission, batch, backoff).
+    Retour (si _force) : "ok" | "dead" | "origin" | ""
 */
 params ["_unit", ["_force", false, [true]]];
 if (!hasInterface) exitWith { if (_force) then { "" } else { nil } };
@@ -36,16 +36,6 @@ if (!_force && {diag_tickTime < _backoffUntil}) exitWith {
 
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
-
-// Position Athena uniquement avec ItemAndroid (cTab « S7 Android »)
-if (!([_unit] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {
-    ["no_ItemAndroid"] call _fnc_skip;
-    if (!_force && {!(missionNamespace getVariable ["COMSPEC_PosNoAndroidHintShown", false])}) then {
-        missionNamespace setVariable ["COMSPEC_PosNoAndroidHintShown", true, false];
-        hintSilent "Équipez le téléphone tactique (S7 Android) pour remonter votre position.";
-    };
-    if (_force) then { "no_android" } else { nil };
-};
 
 private _pos = getPos _unit;
 // Menu / spawn origine (0,0) : ne jamais appeler UpdatePosition (spam journal Liaison côté Athena)

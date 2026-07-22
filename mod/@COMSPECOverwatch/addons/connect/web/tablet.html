@@ -271,12 +271,26 @@
   .row .role { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 400; }
   .row.self .role { color: #8fd4c0; }
   .row .grid { color: var(--accent); font-variant-numeric: tabular-nums; padding-top: 2px; }
-  .side-actions {
-    padding: 8px;
-    border-top: 1px solid var(--line);
-    display: grid;
-    gap: 6px;
+  .side-actions { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
+  .tool-row { display: flex; gap: 6px; }
+  .tool-row select {
+    flex: 1; appearance: none; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--text);
+    border-radius: 4px; padding: 4px 6px; font-size: 10px;
   }
+  .measure-line {
+    position: absolute; pointer-events: none;
+    border-top: 2px dashed var(--warn);
+    transform-origin: 0 0;
+    z-index: 5;
+  }
+  .measure-label {
+    position: absolute; z-index: 6; pointer-events: none;
+    font-size: 11px; font-weight: 700; color: var(--warn);
+    background: rgba(12, 18, 24, 0.85); padding: 2px 6px; border-radius: 3px;
+    text-shadow: 0 1px 2px #000;
+  }
+  .btn.on { border-color: var(--warn); color: var(--warn); }
   .btn {
     appearance: none;
     border: 1px solid var(--line);
@@ -290,7 +304,6 @@
   .btn:hover { border-color: var(--accent-dim); color: var(--accent); }
   .btn.primary { background: #155a48; border-color: #1f7a62; }
   .btn.danger { background: #3a1a1a; border-color: #5a2a2a; }
-  .btn.on { border-color: var(--warn); color: var(--warn); }
 
   .footer {
     display: flex;
@@ -369,8 +382,8 @@
       <div class="stage" id="stage">
         <div class="contacts" id="contacts"></div>
         <div class="stage-overlay" id="stage-empty">
-          <div class="title">En attente des effectifs</div>
-          <div class="sub">La liaison jeu synchronise les contacts. Appuyez sur Actualiser si la liste reste vide.</div>
+          <div class="title">Aucun contact affiché</div>
+          <div class="sub" id="stage-empty-sub">Si vous êtes lié à Athena, ouvrez le Hub puis « Transmettre ma position ». Sinon Actualiser pour recharger le radar local.</div>
         </div>
       </div>
       <div class="panel-view" id="view-radio">
@@ -397,6 +410,24 @@
         <div class="roster-empty">Chargement…</div>
       </div>
       <div class="side-actions">
+        <div class="tool-row" id="marker-tools" title="Type et couleur du marqueur (double-clic radar)">
+          <select id="mk-type" aria-label="Type de marqueur">
+            <option value="mil_dot">Point</option>
+            <option value="mil_triangle">Triangle</option>
+            <option value="mil_objective">Objectif</option>
+            <option value="mil_box">Carré</option>
+            <option value="hd_warning">Alerte</option>
+          </select>
+          <select id="mk-color" aria-label="Couleur">
+            <option value="ColorRed">Rouge</option>
+            <option value="ColorBlue">Bleu</option>
+            <option value="ColorGreen">Vert</option>
+            <option value="ColorYellow">Jaune</option>
+            <option value="ColorWhite">Blanc</option>
+            <option value="ColorOrange">Orange</option>
+          </select>
+        </div>
+        <button class="btn" type="button" id="btn-measure" title="Mesurer une distance sur le radar (2 clics)">Mesurer</button>
         <button class="btn" type="button" data-cmd="refresh">Actualiser</button>
         <button class="btn" id="btn-quiet" type="button" data-cmd="toggle:quiet">Mode discret</button>
         <button class="btn" type="button" data-cmd="open:callsign">Modifier mon rôle</button>
@@ -425,6 +456,56 @@
   // Dernière projection radar (plotPositions) : sert à convertir un double-clic sur la vue
   // en position monde réelle pour la pose de marqueur.
   var lastProjection = null;
+  var measureMode = false;
+  var measurePointA = null;
+
+  function worldFromStageEvent(ev) {
+    var stage = document.getElementById("stage");
+    if (!lastProjection || !stage) return null;
+    var rect = stage.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+    var px = ((ev.clientX - rect.left) / rect.width) * 100;
+    var py = ((ev.clientY - rect.top) / rect.height) * 100;
+    var wx = lastProjection.originX + ((px - 50) / 40) * lastProjection.span;
+    var wy = lastProjection.originY - ((py - 50) / 40) * lastProjection.span;
+    return { wx: wx, wy: wy, px: px, py: py };
+  }
+
+  function clearMeasureOverlay() {
+    var stage = document.getElementById("stage");
+    var old = stage ? stage.querySelectorAll(".measure-line, .measure-label") : [];
+    for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+  }
+
+  function showMeasure(a, b) {
+    clearMeasureOverlay();
+    var stage = document.getElementById("stage");
+    if (!stage || !a || !b) return;
+    var dx = b.wx - a.wx;
+    var dy = b.wy - a.wy;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var bearing = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+    var octs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    var oct = octs[Math.round(bearing / 45) % 8];
+    var line = document.createElement("div");
+    line.className = "measure-line";
+    var x1 = a.px, y1 = a.py, x2 = b.px, y2 = b.py;
+    var len = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    var ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    line.style.left = x1 + "%";
+    line.style.top = y1 + "%";
+    line.style.width = len + "%";
+    line.style.transform = "rotate(" + ang + "deg)";
+    stage.appendChild(line);
+    var lab = document.createElement("div");
+    lab.className = "measure-label";
+    lab.style.left = ((x1 + x2) / 2) + "%";
+    lab.style.top = ((y1 + y2) / 2) + "%";
+    lab.textContent = Math.round(dist) + " m · " + oct + " " + Math.round(bearing) + "°";
+    stage.appendChild(lab);
+    document.getElementById("footer-msg").textContent =
+      "Mesure : " + Math.round(dist) + " m · " + oct + " " + Math.round(bearing) + "°";
+  }
 
   var TYPE_LABEL = {
     link: "Liaison",
@@ -479,7 +560,11 @@
     var role = data.role || "";
     roleEl.textContent = role ? ("· " + role) : "";
     roleEl.title = role || "";
-    document.getElementById("osd-grid").textContent = data.grid || "000000";
+    var gridTxt = data.grid || "000000";
+    if (data.octant || (data.heading != null && data.heading >= 0)) {
+      gridTxt += " · " + (data.octant || "") + (data.heading != null && data.heading >= 0 ? (" " + Math.round(data.heading) + "°") : "");
+    }
+    document.getElementById("osd-grid").textContent = gridTxt;
     var status = data.status || "offline";
     var label = data.statusLabel || "Hors liaison";
     var dot = document.getElementById("osd-dot");
@@ -582,12 +667,21 @@
     var roster = document.getElementById("roster");
     var contacts = document.getElementById("contacts");
     var empty = document.getElementById("stage-empty");
+    var emptySub = document.getElementById("stage-empty-sub");
     document.getElementById("footer-count").textContent = units.length + " contact(s)";
 
     if (!units.length) {
-      roster.innerHTML = '<div class="roster-empty">Aucun contact en liaison.<br><span style="opacity:.8">Si vous êtes lié à Athena, appuyez sur Actualiser.</span></div>';
+      var linked = boot && boot.status === "linked";
+      roster.innerHTML = linked
+        ? '<div class="roster-empty">Aucun contact reçu.<br><span style="opacity:.8">Hub → Transmettre ma position, puis Actualiser ici.</span></div>'
+        : '<div class="roster-empty">Hors liaison.<br><span style="opacity:.8">Liez votre compte Athena (Hub / Compte), puis Actualiser.</span></div>';
       contacts.innerHTML = "";
       empty.style.display = "flex";
+      if (emptySub) {
+        emptySub.textContent = linked
+          ? "Liaison OK mais pas de positions. Transmettez depuis le Hub, puis Actualiser."
+          : "Hors liaison — liez Athena puis Actualiser pour voir au moins votre position locale.";
+      }
       return;
     }
 
@@ -790,16 +884,42 @@
   var stageEl = document.getElementById("stage");
   if (stageEl) {
     stageEl.addEventListener("dblclick", function (ev) {
+      if (measureMode) return;
       if (ev.target && ev.target.closest && ev.target.closest(".contact-dot")) return;
-      if (!lastProjection) return;
-      var rect = stageEl.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      var px = ((ev.clientX - rect.left) / rect.width) * 100;
-      var py = ((ev.clientY - rect.top) / rect.height) * 100;
-      var wx = lastProjection.originX + ((px - 50) / 40) * lastProjection.span;
-      var wy = lastProjection.originY - ((py - 50) / 40) * lastProjection.span;
-      send("marker:place|" + wx.toFixed(1) + "|" + wy.toFixed(1));
+      var w = worldFromStageEvent(ev);
+      if (!w) return;
+      var mkType = (document.getElementById("mk-type") || {}).value || "mil_dot";
+      var mkColor = (document.getElementById("mk-color") || {}).value || "ColorRed";
+      send("marker:place|" + w.wx.toFixed(1) + "|" + w.wy.toFixed(1) + "|" + mkType + "|" + mkColor);
       document.getElementById("footer-msg").textContent = "Marqueur placé…";
+    });
+    stageEl.addEventListener("click", function (ev) {
+      if (!measureMode) return;
+      if (ev.target && ev.target.closest && ev.target.closest(".contact-dot")) return;
+      var w = worldFromStageEvent(ev);
+      if (!w) return;
+      if (!measurePointA) {
+        measurePointA = w;
+        clearMeasureOverlay();
+        document.getElementById("footer-msg").textContent = "Mesure : point A — cliquez le point B";
+        return;
+      }
+      showMeasure(measurePointA, w);
+      measurePointA = null;
+    });
+  }
+
+  var btnMeasure = document.getElementById("btn-measure");
+  if (btnMeasure) {
+    btnMeasure.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      measureMode = !measureMode;
+      measurePointA = null;
+      clearMeasureOverlay();
+      btnMeasure.classList.toggle("on", measureMode);
+      document.getElementById("footer-msg").textContent = measureMode
+        ? "Mode mesure — cliquez deux points sur le radar"
+        : "Mode mesure désactivé";
     });
   }
 

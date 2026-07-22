@@ -1,6 +1,6 @@
 /*
     Transmet immédiatement position + données vers Athena (bouton hub TERRAIN).
-    Force un envoi hors filtres de batch / état mission ; ItemAndroid reste obligatoire.
+    Force un envoi hors filtres de batch / état mission.
     Cooldown ~8 s pour éviter le spam.
 */
 if (!hasInterface) exitWith { false };
@@ -22,14 +22,7 @@ if (_remain > 0) exitWith {
     false
 };
 
-// Marquer le cooldown avant tout, y compris en cas d'échec (terminal absent) — sinon un joueur
-// sans S7 Android peut spammer le bouton sans aucune limite (message répété en boucle).
 missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
-
-if (!([player] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {
-    ["Équipez le téléphone S7 Android", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
-    false
-};
 
 private _result = [player, true] call comspec_overwatch_connect_fnc_updatePosition;
 
@@ -38,7 +31,6 @@ if (_ok) then {
     ["Position et données transmises.", "link", "info", true] call comspec_overwatch_connect_fnc_announce;
 } else {
     private _msg = switch (_result) do {
-        case "no_android": { "Équipez le téléphone S7 Android" };
         case "origin": { "Position non valide — déplacez-vous un peu." };
         case "dead": { "Impossible de transmettre (opérateur hors service)." };
         default { "Transmission impossible pour le moment." };

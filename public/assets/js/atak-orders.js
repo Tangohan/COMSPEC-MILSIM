@@ -333,6 +333,10 @@ window.ATAKOrders = (function () {
         if (typeof window.ATAK_CAN_ISSUE_ORDERS === 'boolean') {
           canIssue = canIssue || window.ATAK_CAN_ISSUE_ORDERS;
         }
+        if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.canIssueOrders === 'function'
+            && window.ATAK_SESSION_PROFILE) {
+          canIssue = !!window.ATAKSessionProfile.canIssueOrders();
+        }
         renderIssueForm(canIssue);
         var orders = (data && data.orders) || [];
         var pending = (data && data.counts && data.counts.pending) || 0;
@@ -504,10 +508,23 @@ window.ATAKOrders = (function () {
     }
   }
 
+  function refreshIssuePermission() {
+    if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.canIssueOrders === 'function'
+        && window.ATAK_SESSION_PROFILE) {
+      canIssue = !!window.ATAKSessionProfile.canIssueOrders();
+    } else {
+      canIssue = !!window.ATAK_CAN_ISSUE_ORDERS;
+    }
+    renderIssueForm(canIssue);
+  }
+
   function startPolling(intervalMs) {
     bindUi();
-    canIssue = !!window.ATAK_CAN_ISSUE_ORDERS;
-    renderIssueForm(canIssue);
+    refreshIssuePermission();
+    if (!window.__atakOrdersProfileBound) {
+      window.__atakOrdersProfileBound = true;
+      document.addEventListener('atak:session-profile', refreshIssuePermission);
+    }
     fetchOrders();
     if (pollTimer) clearInterval(pollTimer);
     // Poll plus fréquent pendant les délais radio (2–15 s)

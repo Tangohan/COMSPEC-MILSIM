@@ -59,15 +59,7 @@ missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 // ——— Priorité 1 : navigateur système (Windows) ———
 openURL _atakUrl;
 
-private _display = findDisplay 9974;
-if (!isNull _display) then {
-    private _hint = _display displayCtrl 9403;
-    if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#7dffb3'>Ouverture du portail…</t>";
-    };
-};
-
-// ——— Priorité 2 : embarqué (Dev / allowExternalURL réel) ———
+// Sur Stable, l’embarqué ne charge pas /atak : rester en mode local (radar tablette).
 private _branch = "";
 private _pv = productVersion;
 if (_pv isEqualType [] && {count _pv > 4}) then {
@@ -75,12 +67,36 @@ if (_pv isEqualType [] && {count _pv > 4}) then {
 };
 private _isDev = (_branch find "Development") >= 0;
 
+if (!_isDev) then {
+    missionNamespace setVariable ["COMSPEC_WebBrowser_Mode", "local"];
+};
+
+private _display = findDisplay 9974;
+if (!isNull _display) then {
+    private _hint = _display displayCtrl 9403;
+    if (!isNull _hint) then {
+        private _hintTxt = if (_isDev) then {
+            "<t align='right' size='0.5' color='#7dffb3'>Ouverture du portail…</t>"
+        } else {
+            "<t align='right' size='0.5' color='#7dffb3'>Carte ouverte dans le navigateur PC</t>"
+        };
+        _hint ctrlSetStructuredText parseText _hintTxt;
+    };
+};
+
+// ——— Priorité 2 : embarqué (Dev / allowExternalURL réel) ———
 if (_isDev && {!isNull _ctrl}) then {
     missionNamespace setVariable ["COMSPEC_WebBrowser_Mode", "athena"];
     _ctrl ctrlShow true;
     _ctrl ctrlEnable true;
     ctrlSetFocus _ctrl;
     _ctrl ctrlSetURL _atakUrl;
+} else {
+    // Stable : réinjecter le boot local si le contrôle est encore là
+    if (!isNull _ctrl) then {
+        missionNamespace setVariable ["COMSPEC_WebBrowser_Mode", "local"];
+        [_ctrl] call comspec_overwatch_connect_fnc_webBrowserPageLoaded;
+    };
 };
 
 private _lastNotify = missionNamespace getVariable ["COMSPEC_WebBrowser_AthenaNotifyAt", -1e9];
@@ -89,7 +105,7 @@ if ((_now - _lastNotify) >= 12) then {
     private _msg = if (_isDev) then {
         "Ouverture du portail Athena… Navigateur PC, et éventuelle fenêtre Autoriser / Accepter dans Arma."
     } else {
-        "Ouverture du portail Athena dans le navigateur de votre PC…"
+        "Carte Athena ouverte dans le navigateur de votre PC. La tablette reste sur le suivi local."
     };
     ["COMSPEC_Info", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 };

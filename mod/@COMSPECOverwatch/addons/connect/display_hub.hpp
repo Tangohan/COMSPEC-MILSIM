@@ -237,15 +237,13 @@ class COMSPEC_Hub_Dialog {
             action = "['medical'] call comspec_overwatch_connect_fnc_hubSelect;";
         };
 
-        class BtnForceSync: RscButton {
+        class BtnForceSync: COMSPEC_RscButtonAccent {
             idc = 9119;
             text = "Transmettre ma position et mes données";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.696 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
             h = 0.032 * safezoneH;
-            colorBackground[] = {0.08, 0.22, 0.2, 0.95};
-            colorBackgroundActive[] = {0.12, 0.35, 0.3, 1};
             action = "[] spawn { [] call comspec_overwatch_connect_fnc_forceSyncData; };";
         };
 

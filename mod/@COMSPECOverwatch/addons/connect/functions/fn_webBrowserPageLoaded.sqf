@@ -74,7 +74,10 @@ private _statusLabel = switch (_state) do {
 
 
 
-private _grid = mapGridPosition player;
+private _grid = [player] call comspec_overwatch_connect_fnc_gridPosition;
+if (_grid isEqualTo "") then { _grid = mapGridPosition player; };
+private _myHdg = round (getDir player);
+private _myOct = [_myHdg] call comspec_overwatch_connect_fnc_formatHeading;
 
 private _h = floor daytime;
 
@@ -122,14 +125,20 @@ private _unitJs = [];
     private _net = [_rad getOrDefault ["net", ""]] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
     private _dist = _rad getOrDefault ["dist", -1];
 
+    private _hdg = if (_isSelf) then { round (getDir player) } else { -1 };
+    private _oct = if (_hdg >= 0) then {
+        [_hdg] call comspec_overwatch_connect_fnc_formatHeading
+    } else { "" };
+    private _safeOct = [_oct] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+
     _unitJs pushBack format [
-        "{callsign:'%1',gx:%2,gy:%3,self:%4,wx:%5,wy:%6,role:'%7',tx:%8,speaking:%9,radioChannel:'%10',radioNet:'%11',dist:%12}",
+        "{callsign:'%1',gx:%2,gy:%3,self:%4,wx:%5,wy:%6,role:'%7',tx:%8,speaking:%9,radioChannel:'%10',radioNet:'%11',dist:%12,hdg:%13,octant:'%14'}",
         _safeCs, _gx, _gy,
         if (_isSelf) then { "true" } else { "false" },
         _wx, _wy, _safeRole,
         if (_tx) then { "true" } else { "false" },
         if (_spk) then { "true" } else { "false" },
-        _ch, _net, _dist
+        _ch, _net, _dist, _hdg, _safeOct
     ];
 
 } forEach _units;
@@ -353,52 +362,31 @@ private _safeStatus = [_statusLabel] call comspec_overwatch_connect_fnc_webBrows
 private _safeFooter = [_footer] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
 private _safeHint = [_mapHint] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
-
-
+private _safeOct = [_myOct] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
 private _js = format [
-
-    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',radio:{moduleOk:%14,radius:%15,monitoring:%16,monitorChannel:'%17',contacts:[%18]}}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
-
+    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]}}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
     _safeCallsign,
-
     _safeRole,
-
     _state,
-
     _safeStatus,
-
     _grid,
-
     _timeStr,
-
     _unitJs joinString ",",
-
     _chatJs joinString ",",
-
     _orderJs joinString ",",
-
     _alertJs joinString ",",
-
     _quiet,
-
     _safeFooter,
-
     _safeHint,
-
+    _myHdg,
+    _safeOct,
     _radioModuleOk,
-
     _radioRadius,
-
     _radioMon,
-
     _radioMonCh,
-
     _radioProxJs joinString ","
-
 ];
-
-
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];
 

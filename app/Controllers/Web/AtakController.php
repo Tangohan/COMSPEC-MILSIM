@@ -8,6 +8,9 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakMapRepository;
+use App\Repositories\GradeRepository;
+use App\Repositories\PersonnelJobRoleRepository;
+use App\Repositories\RoleRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\UserProfileRepository;
@@ -134,8 +137,14 @@ class AtakController
         }
         $atakUserForJs = null;
         $atakUiPrefs = ['theme' => 'system', 'density' => 'comfortable'];
+        $atakProfileHints = [
+            'suggestedRole' => 'operator',
+            'suggestedSpecialties' => [],
+        ];
         if ($currentUser) {
             $atakUserForJs = [
+                'id' => (int) ($currentUser['id'] ?? 0),
+                'tenantId' => (int) ($currentUser['tenant_id'] ?? ($tenantId > 0 ? $tenantId : 0)),
                 'displayName' => $currentUser['display_name'] ?? '',
                 'callsign' => trim((string) ($currentUser['callsign'] ?? '')) ?: (trim((string) (($currentUser['arma_callsign'] ?? ''))) ?: ''),
                 'steamId' => $currentUser['steam_id'] ?? null,
@@ -184,6 +193,8 @@ class AtakController
             $atakCaps['canTriageMedical'] = false;
         }
 
+        $atakProfileHints = $this->buildAtakProfileHints($currentUser, $atakCaps, $tenantId);
+
         return Response::view('atak', [
             'atakToken' => $token,
             'nodeAtakUrl' => $nodeUrl,
@@ -201,6 +212,7 @@ class AtakController
             'atakDefaultMapId' => $atakDefaultMapId,
             'atakCallsignToUser' => $atakCallsignToUser,
             'atakCaps' => $atakCaps,
+            'atakProfileHints' => $atakProfileHints,
             'currentUser' => $currentUser,
             'atakUserForJs' => $atakUserForJs,
             'atakUiPrefs' => $atakUiPrefs,
@@ -467,5 +479,114 @@ class AtakController
             'atakDefaultMapId' => $atakDefaultMapId,
             'demoSeedAllowed' => $demoAllowed,
         ]);
+    }
+
+    /**
+     * Suggestions de rôle / spécialités ATAK à partir du compte Athena.
+     *
+     * @param array<string, mixed>|null $currentUser
+     * @param array<string, mixed> $atakCaps
+     * @return array{suggestedRole: string, suggestedSpecialties: list<string>}
+     */
+    private function buildAtakProfileHints(?array $currentUser, array $atakCaps, int $tenantId): array
+    {
+        $suggestedRole = 'operator';
+        $suggestedSpecialties = [];
+        if (!$currentUser) {
+            return [
+                'suggestedRole' => $suggestedRole,
+                'suggestedSpecialties' => $suggestedSpecialties,
+            ];
+        }
+
+        $parts = [
+            (string) ($currentUser['display_name'] ?? ''),
+            (string) ($currentUser['callsign'] ?? ''),
+            (string) ($currentUser['arma_callsign'] ?? ''),
+            (string) ($currentUser['professional_category_code'] ?? ''),
+        ];
+
+        $roleId = (int) ($currentUser['role_id'] ?? 0);
+        if ($roleId > 0) {
+            try {
+                $role = (new RoleRepository())->findById($roleId, $tenantId > 0 ? $tenantId : null);
+                if ($role) {
+                    $parts[] = (string) ($role['name'] ?? '');
+                    $parts[] = (string) ($role['slug'] ?? '');
+                    $parts[] = (string) ($role['label_en'] ?? '');
+                }
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
+        $gradeId = (int) ($currentUser['grade_id'] ?? 0);
+        if ($gradeId > 0) {
+            try {
+                $grade = (new GradeRepository())->findById($gradeId);
+                if ($grade) {
+                    $parts[] = (string) ($grade['label_short'] ?? '');
+                    $parts[] = (string) ($grade['label_long'] ?? '');
+                    $parts[] = (string) ($grade['label_otan'] ?? '');
+                    $parts[] = (string) ($grade['category_label'] ?? '');
+                } else {
+                    $legacy = (new GradeRepository())->findByIdLegacy($gradeId, $tenantId > 0 ? $tenantId : null);
+                    if ($legacy) {
+                        $parts[] = (string) ($legacy['short_name'] ?? $legacy['label_short'] ?? '');
+                        $parts[] = (string) ($legacy['name'] ?? $legacy['label_long'] ?? '');
+                    }
+                }
+            } catch (\Throwable) {
+                // ignore
+            }
+        }
+
+        try {
+            if ($tenantId > 0) {
+                $job = (new PersonnelJobRoleRepository())->getPrimaryJobRoleForUser($tenantId, (int) $currentUser['id']);
+                if ($job) {
+                    $parts[] = (string) ($job['name'] ?? '');
+                    $parts[] = (string) ($job['role_detail'] ?? '');
+                    $parts[] = (string) ($job['display'] ?? '');
+                }
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+
+        $blob = mb_strtolower(implode(' ', array_filter(array_map('trim', $parts))));
+        $blob = str_replace(['é', 'è', 'ê', 'ë', 'à', 'â', 'ù', 'û', 'ô', 'î', 'ï', 'ç'], ['e', 'e', 'e', 'e', 'a', 'a', 'u', 'u', 'o', 'i', 'i', 'c'], $blob);
+
+        $isDeputy = (bool) preg_match('/\b(adjoint|2ic|xo|deputy|second|assistant\s+chef)\b/u', $blob);
+        $isCommander = (bool) preg_match('/\b(commandant|commandeur|chef\s+d[e\']?\s*unite|chef\s+de\s+section|squad\s*lead|platoon|leader|cdt|sl|tl|officier|officer)\b/u', $blob);
+        if (function_exists('can') && (can('admin.access') || can('admin.organization'))) {
+            $isCommander = true;
+        }
+        if ($isDeputy) {
+            $suggestedRole = 'deputy';
+        } elseif ($isCommander) {
+            $suggestedRole = 'commander';
+        }
+
+        $addSpec = static function (string $id) use (&$suggestedSpecialties): void {
+            if (!in_array($id, $suggestedSpecialties, true)) {
+                $suggestedSpecialties[] = $id;
+            }
+        };
+
+        if (!empty($atakCaps['canTriageMedical']) || preg_match('/\b(medic|medecin|medical|corpsman|infirmier|secouriste|sante)\b/u', $blob)) {
+            $addSpec('medic');
+        }
+        if (preg_match('/\b(jtac|fac|cas\s*control|controleur\s+aerien|forward\s+air)\b/u', $blob)) {
+            $addSpec('jtac');
+        }
+        if (preg_match('/\b(radio|rto|transmetteur|signal|sigint|communications|comms)\b/u', $blob)) {
+            $addSpec('radio');
+        }
+
+        return [
+            'suggestedRole' => $suggestedRole,
+            'suggestedSpecialties' => $suggestedSpecialties,
+        ];
     }
 }

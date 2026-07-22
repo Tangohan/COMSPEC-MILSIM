@@ -19,16 +19,41 @@ if ((_msg select [0, 8]) != "COMSPEC|") exitWith {
 
 private _cmd = _msg select [8, (count _msg) - 8];
 
+// Ferme la tablette (idd 9974) puis attend sa destruction avant d’ouvrir un autre dialog.
+private _fnc_afterTabletClosed = {
+    params ["_code"];
+    [_code] spawn {
+        params ["_code"];
+        private _disp = findDisplay 9974;
+        if (!isNull _disp) then {
+            _disp closeDisplay 1;
+        } else {
+            closeDialog 0;
+        };
+        private _t = diag_tickTime + 2;
+        waitUntil {
+            isNull (findDisplay 9974) || {diag_tickTime > _t}
+        };
+        uiSleep 0.05;
+        call _code;
+    };
+};
+
 switch (true) do {
     case (_cmd isEqualTo "close"): {
-        closeDialog 0;
+        private _disp = findDisplay 9974;
+        if (!isNull _disp) then {
+            _disp closeDisplay 1;
+        } else {
+            closeDialog 0;
+        };
     };
     case (_cmd isEqualTo "classic"): {
-        closeDialog 0;
-        [] spawn {
-            uiSleep 0.05;
-            createDialog "COMSPEC_Device_Dialog";
-        };
+        [{
+            if (isNull (findDisplay 9973)) then {
+                createDialog "COMSPEC_Device_Dialog";
+            };
+        }] call _fnc_afterTabletClosed;
     };
     case (_cmd isEqualTo "refresh"): {
         if (!isNull _ctrl) then {
@@ -61,14 +86,29 @@ switch (true) do {
     };
     case ((_cmd select [0, 5]) isEqualTo "open:"): {
         private _view = _cmd select [5, (count _cmd) - 5];
-        closeDialog 0;
+        // Capture _view dans le spawn (évite race closeDialog trop rapide)
         [_view] spawn {
             params ["_view"];
-            uiSleep 0.08;
+            private _disp = findDisplay 9974;
+            if (!isNull _disp) then {
+                _disp closeDisplay 1;
+            } else {
+                closeDialog 0;
+            };
+            private _t = diag_tickTime + 2;
+            waitUntil {
+                isNull (findDisplay 9974) || {diag_tickTime > _t}
+            };
+            uiSleep 0.05;
             switch (_view) do {
                 case "chat": { createDialog "COMSPEC_Chat_Dialog"; };
                 case "cas": { [] call comspec_overwatch_connect_fnc_openCASDialog; };
-                case "briefing": { [] call comspec_overwatch_connect_fnc_openBriefingBoard; };
+                case "briefing": {
+                    [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+                    if (isNull (findDisplay 9970)) then {
+                        ["Impossible d’ouvrir le tableau de briefing.", "system", "warn", true] call comspec_overwatch_connect_fnc_announce;
+                    };
+                };
                 case "phone": { [] call comspec_overwatch_connect_fnc_phoneConnectShow; };
                 case "account": { [] call comspec_overwatch_connect_fnc_accountLinkShow; };
                 case "callsign": { [] call comspec_overwatch_connect_fnc_callsignDialogShow; };
@@ -80,7 +120,6 @@ switch (true) do {
         };
     };
     case ((_cmd select [0, 13]) isEqualTo "radio:monitor"): {
-        // radio:monitor|<channel>|<radioId>
         private _rest = _cmd select [13, (count _cmd) - 13];
         if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
         private _parts = _rest splitString "|";
@@ -92,7 +131,6 @@ switch (true) do {
         };
     };
     case ((_cmd select [0, 11]) isEqualTo "radio:focus"): {
-        // radio:focus|<callsign>
         private _rest = _cmd select [11, (count _cmd) - 11];
         if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
         missionNamespace setVariable ["COMSPEC_RadioWatchFocusCs", _rest, false];
@@ -104,14 +142,16 @@ switch (true) do {
         };
     };
     case ((_cmd select [0, 12]) isEqualTo "marker:place"): {
-        // marker:place|<wx>|<wy> — position monde déjà résolue côté JS (inverse de plotPositions).
+        // marker:place|<wx>|<wy>[|<type>|<color>]
         private _rest = _cmd select [12, (count _cmd) - 12];
         if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
         private _parts = _rest splitString "|";
         if (count _parts >= 2) then {
             private _wx = parseNumber (_parts select 0);
             private _wy = parseNumber (_parts select 1);
-            [_wx, _wy] call comspec_overwatch_connect_fnc_placeMarkerFromTablet;
+            private _mType = if ((count _parts) >= 3) then { _parts select 2 } else { "mil_dot" };
+            private _mColor = if ((count _parts) >= 4) then { _parts select 3 } else { "ColorRed" };
+            [_wx, _wy, _mType, _mColor] call comspec_overwatch_connect_fnc_placeMarkerFromTablet;
         };
     };
     default {

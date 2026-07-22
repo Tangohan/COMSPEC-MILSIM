@@ -53,7 +53,7 @@ class COMSPEC_Briefing_Dialog {
             size = 0.9;
         };
 
-        class PrevButton: RscButton {
+        class PrevButton: COMSPEC_RscButton {
             idc = 9010;
             text = "< Précédente";
             x = 0.14 * safezoneW + safezoneX;
@@ -63,7 +63,7 @@ class COMSPEC_Briefing_Dialog {
             action = "[-1] call comspec_overwatch_connect_fnc_briefingBoardStep;";
         };
 
-        class NextButton: RscButton {
+        class NextButton: COMSPEC_RscButton {
             idc = 9011;
             text = "Suivante >";
             x = 0.29 * safezoneW + safezoneX;
@@ -73,7 +73,7 @@ class COMSPEC_Briefing_Dialog {
             action = "[1] call comspec_overwatch_connect_fnc_briefingBoardStep;";
         };
 
-        class RefreshButton: RscButton {
+        class RefreshButton: COMSPEC_RscButton {
             idc = 9012;
             text = "Actualiser";
             x = 0.62 * safezoneW + safezoneX;
@@ -83,7 +83,7 @@ class COMSPEC_Briefing_Dialog {
             action = "[] call comspec_overwatch_connect_fnc_refreshBriefingSlides;";
         };
 
-        class CloseButton: RscButton {
+        class CloseButton: COMSPEC_RscButtonDanger {
             idc = 9013;
             text = "Fermer";
             x = 0.74 * safezoneW + safezoneX;
@@ -93,7 +93,7 @@ class COMSPEC_Briefing_Dialog {
             action = "closeDialog 0;";
         };
 
-        class PhoneConnectButton: RscButton {
+        class PhoneConnectButton: COMSPEC_RscButtonAccent {
             idc = 9014;
             text = "Connecter mon téléphone";
             x = 0.44 * safezoneW + safezoneX;

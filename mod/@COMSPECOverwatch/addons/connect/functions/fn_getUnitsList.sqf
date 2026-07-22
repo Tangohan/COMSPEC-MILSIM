@@ -54,7 +54,9 @@ if ((count _pool) == 0) then { _pool = [player]; };
 {
     private _u = _x;
     private _cs = [_u] call _callsignOf;
-    private _grid = [mapGridPosition _u] call _parseGrid;
+    private _gridStr = [_u] call comspec_overwatch_connect_fnc_gridPosition;
+    if (_gridStr isEqualTo "") then { _gridStr = mapGridPosition _u; };
+    private _grid = [_gridStr] call _parseGrid;
     private _pos = getPosWorld _u;
     private _isSelf = _u isEqualTo player;
     private _role = [_u] call comspec_overwatch_connect_fnc_getUnitRole;

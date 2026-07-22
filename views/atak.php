@@ -52,11 +52,10 @@ if ($atakMapConfig) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>COMSPEC ATAK | Carte tactique Arma 3</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
@@ -81,6 +80,10 @@ if ($atakMapConfig) {
         'canTriageMedical' => false,
     ]) ?>;
     window.ATAK_CAN_ISSUE_ORDERS = <?= !empty($currentUser) ? 'true' : 'false' ?>;
+    window.ATAK_PROFILE_HINTS = <?= json_encode($atakProfileHints ?? [
+        'suggestedRole' => 'operator',
+        'suggestedSpecialties' => [],
+    ]) ?>;
   </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'comfortable')) ?>">
@@ -139,6 +142,10 @@ if ($atakMapConfig) {
       <a href="<?= url('overwatch') ?>" class="atak-header-link" title="Carte C2 Overwatch">Overwatch</a>
       <a href="<?= url('dashboard') ?>" class="atak-header-link">Tableau de bord</a>
       <?php if ($currentUser): ?>
+      <button type="button" class="atak-session-profile-chip" id="atak-session-profile-change" title="Modifier le profil de session" hidden>
+        <span class="atak-session-profile-chip-key">Profil</span>
+        <span class="atak-session-profile-chip-value" id="atak-session-profile-badge"></span>
+      </button>
       <button type="button" class="atak-btn-game-link" id="atak-btn-game-link" title="Générer un code pour lier Arma à votre compte">Connexion en jeu</button>
       <button type="button" class="atak-btn-phone-link" id="atak-btn-phone-link" title="Générer un QR pour lier un téléphone au briefing">Lier un téléphone</button>
       <?php endif; ?>
@@ -220,6 +227,12 @@ if ($atakMapConfig) {
           </div>
         </div>
         <p class="atak-game-link-error" id="atak-phone-link-error" hidden></p>
+      </section>
+      <section class="atak-account-section">
+        <h3 class="atak-account-section-title">Profil de session</h3>
+        <p class="atak-game-link-hint">Rôle et spécialités pour cette session ATAK (mémorisés sur cet appareil). Ils déterminent les outils visibles (ordres, assistances, radio, 9-line).</p>
+        <p id="atak-session-profile-account-summary" class="atak-session-profile-summary">Non défini</p>
+        <button type="button" class="atak-game-link-btn" id="atak-session-profile-change-account">Modifier le profil</button>
       </section>
       <section class="atak-account-section">
         <h3 class="atak-account-section-title">Compte</h3>
@@ -409,6 +422,71 @@ if ($atakMapConfig) {
   <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
   <div class="atak-notification-toast" id="atak-notification-toast" role="status" aria-live="polite"></div>
   <div class="atak-medical-banner" id="atak-medical-banner" role="alert" aria-live="assertive" hidden></div>
+
+  <?php if ($currentUser): ?>
+  <div class="atak-session-profile-overlay" id="atak-session-profile-overlay" role="dialog" aria-modal="true" aria-labelledby="atak-session-profile-title" hidden>
+    <div class="atak-session-profile-backdrop" aria-hidden="true"></div>
+    <div class="atak-session-profile-card">
+      <h2 id="atak-session-profile-title" class="atak-session-profile-title">Profil de session ATAK</h2>
+      <p class="atak-session-profile-lead">Indiquez votre rôle pour cette session. Les spécialités débloquent des outils supplémentaires. Le choix est mémorisé sur cet appareil et reste modifiable à tout moment.</p>
+      <p class="atak-session-profile-suggest" id="atak-session-profile-suggest" role="status"></p>
+      <form id="atak-session-profile-form" class="atak-session-profile-form">
+        <fieldset class="atak-session-profile-fieldset">
+          <legend>Rôle</legend>
+          <label class="atak-session-profile-option">
+            <input type="radio" name="atak-session-role" value="commander" />
+            <span>
+              <strong>Commandant d’unité</strong>
+              <small>Pilote les ordres et la manœuvre d’ensemble.</small>
+            </span>
+          </label>
+          <label class="atak-session-profile-option">
+            <input type="radio" name="atak-session-role" value="deputy" />
+            <span>
+              <strong>Commandant adjoint</strong>
+              <small>Appuie le commandant ; mêmes outils de conduite.</small>
+            </span>
+          </label>
+          <label class="atak-session-profile-option">
+            <input type="radio" name="atak-session-role" value="operator" checked />
+            <span>
+              <strong>Exécutant</strong>
+              <small>Suit les ordres reçus et remonte la situation.</small>
+            </span>
+          </label>
+        </fieldset>
+        <fieldset class="atak-session-profile-fieldset">
+          <legend>Spécialités (facultatif)</legend>
+          <label class="atak-session-profile-option" for="atak-spec-medic">
+            <input type="checkbox" id="atak-spec-medic" value="medic" />
+            <span>
+              <strong>Médecin</strong>
+              <small>Assistances, triage et choix médicaux.</small>
+            </span>
+          </label>
+          <label class="atak-session-profile-option" for="atak-spec-radio">
+            <input type="checkbox" id="atak-spec-radio" value="radio" />
+            <span>
+              <strong>Transmetteur</strong>
+              <small>Radio proximité et suivi des émissions.</small>
+            </span>
+          </label>
+          <label class="atak-session-profile-option" for="atak-spec-jtac">
+            <input type="checkbox" id="atak-spec-jtac" value="jtac" />
+            <span>
+              <strong>JTAC</strong>
+              <small>Appui aérien et 9-line.</small>
+            </span>
+          </label>
+        </fieldset>
+        <div class="atak-session-profile-actions">
+          <button type="button" class="atak-session-profile-btn atak-session-profile-btn--ghost" id="atak-session-profile-reset">Repartir des suggestions</button>
+          <button type="submit" class="atak-session-profile-btn atak-session-profile-btn--primary">Continuer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <div class="atak-main">
     <aside class="atak-panel-left" id="atak-panel-left">
@@ -728,7 +806,8 @@ if ($atakMapConfig) {
     </aside>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-profile.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
   <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
@@ -1572,7 +1651,15 @@ if ($atakMapConfig) {
         })
         .then(function (data) {
           if (!data || !data.ok) throw new Error('ping');
-          startAtakApplication();
+          function bootApp() {
+            startAtakApplication();
+          }
+          if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.onReady === 'function') {
+            window.ATAKSessionProfile.onReady(bootApp);
+            window.ATAKSessionProfile.init();
+          } else {
+            bootApp();
+          }
         })
         .catch(function (err) {
           clearTimeout(bootTimer);

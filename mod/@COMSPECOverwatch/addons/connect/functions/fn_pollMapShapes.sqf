@@ -1,11 +1,51 @@
 /*
     Poll GetMapShapes from extension, parse minimal JSON and create/update/delete local markers.
+    Enrichi : extrait coordinates / points pour LINE / POLYLINE (comme cTabIRL createLine).
 */
 private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];
 private _idx = 0;
+
+private _fnc_parseFlatCoords = {
+    params ["_jsonStr", "_start", "_window"];
+    private _flat = [];
+    private _keyPos = -1;
+    {
+        private _p = _jsonStr find _x, _start;
+        if (_p >= 0 && {_p < _start + _window}) then {
+            if (_keyPos < 0 || {_p < _keyPos}) then { _keyPos = _p; };
+        };
+    } forEach ["\"coordinates\"", "\"points\"", "\"polyline\"", "\"latlngs\""];
+    if (_keyPos < 0) exitWith { [] };
+    private _bracket = _jsonStr find "[", _keyPos;
+    if (_bracket < 0 || {_bracket > _keyPos + 40}) exitWith { [] };
+    private _chunk = _jsonStr select [_bracket, (_window min 800)];
+    // Extraire tous les nombres (x,y pairs) — best-effort sans parseur JSON complet
+    private _nums = [];
+    private _i = 0;
+    private _len = count _chunk;
+    while {_i < _len && {(count _nums) < 64}} do {
+        private _c = _chunk select [_i, 1];
+        if (_c in ["0","1","2","3","4","5","6","7","8","9","-","."]) then {
+            private _j = _i;
+            while {_j < _len} do {
+                private _cj = _chunk select [_j, 1];
+                if (!(_cj in ["0","1","2","3","4","5","6","7","8","9","-",".", "e", "E", "+"])) exitWith {};
+                _j = _j + 1;
+            };
+            private _tok = _chunk select [_i, _j - _i];
+            private _n = parseNumber _tok;
+            if (!isNil "_n") then { _nums pushBack _n; };
+            _i = _j;
+        } else {
+            _i = _i + 1;
+        };
+    };
+    _nums
+};
+
 while {_idx >= 0} do {
     private _idPos = _json find "\"id\"", _idx;
     if (_idPos < 0) exitWith {};
@@ -63,7 +103,15 @@ while {_idx >= 0} do {
         _radius = (_rest3 call BIS_fnc_parseNumber);
         if (isNil "_radius" || {_radius <= 0}) then { _radius = 100 };
     };
-    [_num, _type, _label, _color, _x, _y, _radius] call comspec_overwatch_connect_fnc_receiveMapShape;
+
+    private _flat = [_json, _idPos, 1200] call _fnc_parseFlatCoords;
+    // Si coords latlng-like (petits nombres) ou world XY (grands) — Arma attend world meters
+    if ((count _flat) >= 4 && {_x == 0} && {_y == 0}) then {
+        _x = _flat select 0;
+        _y = _flat select 1;
+    };
+
+    [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
     _idx = _idPos + 1;
 };
 

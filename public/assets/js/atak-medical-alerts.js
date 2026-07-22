@@ -222,6 +222,10 @@ window.ATAKMedicalAlerts = (function () {
   }
 
   function canTriage() {
+    if (window.ATAKSessionProfile && typeof window.ATAKSessionProfile.canTriageMedicalUi === 'function'
+        && window.ATAK_SESSION_PROFILE) {
+      return !!window.ATAKSessionProfile.canTriageMedicalUi();
+    }
     if (canTriageCached != null) return canTriageCached;
     if (window.ATAK_CAPS && typeof window.ATAK_CAPS.canTriageMedical === 'boolean') {
       canTriageCached = !!window.ATAK_CAPS.canTriageMedical;
@@ -1043,6 +1047,12 @@ window.ATAKMedicalAlerts = (function () {
 
   function startPolling(intervalMs) {
     stopPolling();
+    if (!window.__atakMedicalProfileBound) {
+      window.__atakMedicalProfileBound = true;
+      document.addEventListener('atak:session-profile', function () {
+        if (lastData) apply(lastData);
+      });
+    }
     fetchAlerts();
     pollTimer = setInterval(fetchAlerts, intervalMs || 5000);
   }
