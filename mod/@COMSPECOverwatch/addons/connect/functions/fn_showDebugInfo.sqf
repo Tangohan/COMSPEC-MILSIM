@@ -14,6 +14,26 @@ private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
 private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
 private _enabled = missionNamespace getVariable ["comspec_overwatch_enabled", true];
 
+// Dernier échec d'un envoi fire-and-forget (position, tchat, marqueurs...) — ces envois ne
+// remontent jamais d'erreur au jeu autrement (retry silencieux côté extension).
+private _lastPostErrRaw = ["COMSPECExtension" callExtension ["GetLastPostError", []]] call comspec_overwatch_connect_fnc_extResult;
+private _lastPostErrLabel = "aucun";
+if (_lastPostErrRaw isEqualType "" && {(_lastPostErrRaw select [0, 3]) == "OK|"}) then {
+    private _errBody = _lastPostErrRaw select [3, (count _lastPostErrRaw) - 3];
+    if (_errBody != "none") then {
+        private _errParts = _errBody splitString "|";
+        if (count _errParts >= 3) then {
+            private _code = _errParts select 0;
+            private _path = _errParts select 1;
+            private _age = _errParts select 2;
+            private _codeLabel = if (_code == "0") then { "pas de réponse (réseau/DNS/TLS)" } else {
+                if (_code == "-1") then { "erreur locale avant envoi" } else { format ["HTTP %1", _code] }
+            };
+            _lastPostErrLabel = format ["%1 sur %2 (il y a %3 s)", _codeLabel, _path, _age];
+        };
+    };
+};
+
 private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
 _extStatus params ["_extOk", "_extCode", "_ping", ["_extErr", 0]];
 private _extLabel = if (!_extOk) then {
@@ -36,7 +56,8 @@ private _lines = [
     format ["[Debug] Tenant : %1", if (_tenant == "") then { "(défaut)" } else { _tenant }],
     format ["[Debug] Clé API : %1", if (_keyLen > 0) then { format ["renseignée (%1 car.)", _keyLen] } else { "(absente — liez le compte via un code Athena)" }],
     format ["[Debug] État liaison : %1%2", _state, if (_detail != "") then { format [" — %1", _detail] } else { "" }],
-    format ["[Debug] Dernière position envoyée : %1", if (_lastSync >= 0) then { format ["il y a %1 s", round (diag_tickTime - _lastSync)] } else { "jamais" }]
+    format ["[Debug] Dernière position envoyée : %1", if (_lastSync >= 0) then { format ["il y a %1 s", round (diag_tickTime - _lastSync)] } else { "jamais" }],
+    format ["[Debug] Dernier échec d'envoi (position/tchat/marqueurs…) : %1", _lastPostErrLabel]
 ];
 
 private _profileLines = [] call comspec_overwatch_connect_fnc_profileReport;

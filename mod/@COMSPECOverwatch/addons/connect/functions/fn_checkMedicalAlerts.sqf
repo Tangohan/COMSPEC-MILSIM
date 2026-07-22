@@ -6,6 +6,9 @@ params [["_unit", player, [objNull]]];
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (isNull _unit || {!local _unit}) exitWith {};
+// Déconnexion en cours (mission Ended / retour menu) : l'état santé peut lire faux pendant le
+// nettoyage du personnage (FC/ACE réinitialisés) — ne pas déclencher de fausse alerte critique.
+if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
 
 private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _parts = _state splitString "|";

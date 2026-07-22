@@ -6,9 +6,10 @@
   --bo-ink: #0f172a;
   --bo-muted: #64748b;
   --bo-line: #e2e8f0;
-  --bo-accent: #059669;
+  --bo-accent: #334155;
   min-height: 0;
   flex: 1 1 auto;
+  width: 100%;
   background: var(--bo-void);
   color: var(--bo-ink);
   padding-bottom: 5.5rem;
@@ -16,26 +17,31 @@
 
 .bo-user-edit__hero {
   margin: 0;
-  padding: 1.5rem 1rem 1.35rem;
+  padding: 1.35rem 1rem 1.25rem;
   background: var(--bo-void);
   color: #f8fafc;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (min-width: 640px) {
-  .bo-user-edit__hero { padding: 1.85rem 1.5rem 1.6rem; }
+  .bo-user-edit__hero { padding: 1.5rem 1.5rem 1.35rem; }
 }
 
 @media (min-width: 1024px) {
-  .bo-user-edit__hero { padding: 2.1rem 2rem 1.75rem; }
+  .bo-user-edit__hero { padding: 1.65rem 1.75rem 1.45rem; }
+}
+
+@media (min-width: 1440px) {
+  .bo-user-edit__hero { padding-left: 2rem; padding-right: 2rem; }
 }
 
 .bo-user-edit__hero-inner {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-width: 56rem;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 @media (min-width: 768px) {
@@ -66,7 +72,7 @@
   font-weight: 900;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: #6ee7b7;
+  color: #94a3b8;
 }
 
 .bo-user-edit__identity {
@@ -85,7 +91,7 @@
   height: 4.25rem;
   border-radius: 1rem;
   overflow: hidden;
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(148, 163, 184, 0.22);
   color: #fff;
   font-size: 1.15rem;
   font-weight: 900;
@@ -123,7 +129,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 28rem;
+  max-width: min(42rem, 100%);
 }
 
 .bo-user-edit__badges {
@@ -146,9 +152,9 @@
 }
 
 .bo-user-edit__badge--ok {
-  border-color: rgba(52, 211, 153, 0.35);
-  background: rgba(16, 185, 129, 0.15);
-  color: #a7f3d0;
+  border-color: rgba(226, 232, 240, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
 }
 
 .bo-user-edit__badge--warn {
@@ -165,22 +171,22 @@
 
 .bo-user-edit__lead {
   margin: 0.75rem 0 0;
-  max-width: 36rem;
+  max-width: 48rem;
   font-size: 0.8125rem;
   line-height: 1.55;
   color: #737373;
 }
 
 .bo-user-edit__lead a {
-  color: #6ee7b7;
+  color: #e2e8f0;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
-  text-decoration-color: rgba(110, 231, 183, 0.35);
+  text-decoration-color: rgba(226, 232, 240, 0.35);
 }
 
 .bo-user-edit__lead a:hover {
-  text-decoration-color: #6ee7b7;
+  text-decoration-color: #fff;
 }
 
 .bo-user-edit__hero-actions {
@@ -218,9 +224,9 @@
 }
 
 .bo-user-edit__btn--solid {
-  border: 1px solid #d1fae5;
-  background: #ecfdf5;
-  color: #064e3b;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .bo-user-edit__btn--solid:hover { background: #fff; }
@@ -240,12 +246,11 @@
 .bo-user-edit__btn--amber:hover { background: #451a03; }
 
 .bo-user-edit__deck {
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 2rem;
-  background:
-    radial-gradient(800px 280px at 12% 0%, rgba(5, 150, 105, 0.06), transparent 55%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 45%, #eef2f7 100%);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.25rem 1rem 2rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 @media (min-width: 640px) {
@@ -253,13 +258,54 @@
 }
 
 @media (min-width: 1024px) {
-  .bo-user-edit__deck { padding: 1.75rem 2rem 2.25rem; }
+  .bo-user-edit__deck { padding: 1.5rem 1.75rem 2.25rem; }
+}
+
+@media (min-width: 1440px) {
+  .bo-user-edit__deck { padding-left: 2rem; padding-right: 2rem; }
 }
 
 .bo-user-edit__stack {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.15rem;
+  width: 100%;
+}
+
+@media (min-width: 1100px) {
+  .bo-user-edit__deck > .bo-user-edit__stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: start;
+    column-gap: 1.15rem;
+    row-gap: 1.15rem;
+  }
+
+  .bo-user-edit__deck > .bo-user-edit__stack > form#user-admin-edit-form,
+  .bo-user-edit__deck > .bo-user-edit__stack > .bo-user-edit__flash,
+  .bo-user-edit__deck > .bo-user-edit__stack > .bo-user-edit__footer-link {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1100px) {
+  form#user-admin-edit-form.bo-user-edit__stack {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    column-gap: 1.15rem;
+    row-gap: 1.15rem;
+  }
+
+  form#user-admin-edit-form.bo-user-edit__stack > .bo-user-edit__panel[aria-labelledby="sec-roles"],
+  form#user-admin-edit-form.bo-user-edit__stack > .bo-user-edit__dock,
+  form#user-admin-edit-form.bo-user-edit__stack > .bo-user-edit__panel--soft {
+    grid-column: 1 / -1;
+  }
+
+  form#user-admin-edit-form.bo-user-edit__stack > .bo-user-edit__panel > .bo-user-edit__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .bo-user-edit__flash {
@@ -270,9 +316,9 @@
 }
 
 .bo-user-edit__flash--ok {
-  border: 1px solid #a7f3d0;
-  background: #ecfdf5;
-  color: #065f46;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
 }
 
 .bo-user-edit__flash--warn {
@@ -300,8 +346,18 @@
 }
 
 .bo-user-edit__panel--soft {
-  border-color: #a7f3d0;
-  background: linear-gradient(135deg, #ecfdf5 0%, #fff 55%, #ecfeff 100%);
+  border-color: #e2e8f0;
+  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bo-user-edit__panel--soft .bo-user-edit__panel-title,
+.bo-user-edit__panel--soft .bo-user-edit__panel-lead {
+  max-width: 42rem;
 }
 
 .bo-user-edit__panel--amber {
@@ -325,15 +381,15 @@
 }
 
 .bo-user-edit__panel-lead a {
-  color: #047857;
+  color: #0f172a;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 2px;
-  text-decoration-color: #a7f3d0;
+  text-decoration-color: #cbd5e1;
 }
 
 .bo-user-edit__panel-lead a:hover {
-  text-decoration-color: #047857;
+  text-decoration-color: #0f172a;
 }
 
 .bo-user-edit__grid {
@@ -344,6 +400,10 @@
 
 @media (min-width: 640px) {
   .bo-user-edit__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+  .bo-user-edit__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .bo-user-edit__field--full { grid-column: 1 / -1; }
@@ -383,8 +443,8 @@
 .bo-user-edit__input:focus,
 .bo-user-edit__select:focus {
   outline: none;
-  border-color: #34d399;
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.25);
 }
 
 .bo-user-edit__hint {
@@ -395,13 +455,25 @@
 }
 
 .bo-user-edit__roles {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
   margin-top: 1.25rem;
 }
 
-@media (min-width: 1024px) {
-  .bo-user-edit__roles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bo-user-edit__role-layer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bo-user-edit__role-layer-title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0f172a;
 }
 
 .bo-user-edit__role-group {
@@ -409,15 +481,50 @@
   border-radius: 0.85rem;
   background: #f8fafc;
   padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .bo-user-edit__role-layer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    align-items: start;
+  }
+
+  .bo-user-edit__role-layer-title {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1400px) {
+  .bo-user-edit__role-layer {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .bo-user-edit__role-group-title {
-  margin: 0 0 0.65rem;
+  margin: 0;
   font-size: 0.625rem;
   font-weight: 900;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #64748b;
+}
+
+.bo-user-edit__role-bucket {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bo-user-edit__role-bucket-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .bo-user-edit__role-list {
@@ -439,19 +546,20 @@
 }
 
 .bo-user-edit__role:hover {
-  border-color: #6ee7b7;
+  border-color: #94a3b8;
 }
 
 .bo-user-edit__role.is-on {
-  border-color: #34d399;
-  box-shadow: 0 0 0 1px #34d399;
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #0f172a;
+  background: #f8fafc;
 }
 
 .bo-user-edit__role input {
   margin-top: 0.15rem;
   border-radius: 0.25rem;
   border-color: #cbd5e1;
-  color: #047857;
+  color: #0f172a;
 }
 
 .bo-user-edit__role-name {
@@ -525,18 +633,18 @@
 }
 
 .bo-user-edit__matrix .role-col.is-on {
-  background: #ecfdf5;
-  color: #065f46;
-  box-shadow: inset 0 0 0 2px #6ee7b7;
+  background: #f1f5f9;
+  color: #0f172a;
+  box-shadow: inset 0 0 0 2px #94a3b8;
 }
 
 .bo-user-edit__matrix .union-cell {
-  background: rgba(236, 253, 245, 0.45);
+  background: rgba(241, 245, 249, 0.65);
   font-weight: 700;
 }
 
 .bo-user-edit__matrix .union-cell.is-on {
-  color: #047857;
+  color: #0f172a;
 }
 
 .bo-user-edit__matrix .union-cell.is-off {
@@ -565,7 +673,7 @@
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 999px;
-  background: #10b981;
+  background: #64748b;
   flex-shrink: 0;
 }
 
@@ -609,8 +717,9 @@
 }
 
 .bo-user-edit__dock-inner {
-  max-width: 56rem;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 0.8rem 1rem;
   display: flex;
   flex-wrap: wrap;
@@ -624,6 +733,10 @@
 }
 
 @media (min-width: 1024px) {
+  .bo-user-edit__dock-inner { padding-left: 1.75rem; padding-right: 1.75rem; }
+}
+
+@media (min-width: 1440px) {
   .bo-user-edit__dock-inner { padding-left: 2rem; padding-right: 2rem; }
 }
 

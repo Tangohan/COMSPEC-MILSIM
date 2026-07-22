@@ -30,6 +30,24 @@ public static class Extension
     private static long _rateLimitUntilTicks;
     private static int _rateLimitBackoffSec = 2;
     private static long _lastRateLimitCbTicks;
+    /// <summary>
+    /// Dernier échec d'envoi fire-and-forget (position, tchat, marqueurs...) : ces requêtes ne
+    /// remontent jamais d'erreur à SQF (retry silencieux via PendingPosts), donc sans ce
+    /// compteur un échec serveur persistant (403/422/500) est invisible même en debug.
+    /// 0 = code réseau (pas de réponse HTTP, ex. DNS/TLS/timeout).
+    /// </summary>
+    private static int _lastPostErrorCode;
+    private static string _lastPostErrorPath = "";
+    private static long _lastPostErrorAtTicks;
+
+    private static void NotePostError(int code, string url)
+    {
+        _lastPostErrorCode = code;
+        string path;
+        try { path = new Uri(url).AbsolutePath; } catch { path = url; }
+        _lastPostErrorPath = path.Replace("|", "/");
+        System.Threading.Interlocked.Exchange(ref _lastPostErrorAtTicks, DateTime.UtcNow.Ticks);
+    }
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int ExtensionCallback([MarshalAs(UnmanagedType.LPStr)] string name, [MarshalAs(UnmanagedType.LPStr)] string function, [MarshalAs(UnmanagedType.LPStr)] string data);
@@ -301,6 +319,7 @@ public static class Extension
     {
         if (response == null)
         {
+            NotePostError(0, url);
             if (PendingPosts.Count < MaxQueueSize)
             {
                 PendingPosts.Enqueue((url, jsonBody));
@@ -319,6 +338,7 @@ public static class Extension
             NoteRateLimitCleared();
             return;
         }
+        NotePostError((int)response.StatusCode, url);
         if (PendingPosts.Count < MaxQueueSize)
         {
             PendingPosts.Enqueue((url, jsonBody));
@@ -350,13 +370,19 @@ public static class Extension
                             PendingPosts.Enqueue(item);
                         break;
                     }
-                    if (!response.IsSuccessStatusCode && PendingPosts.Count < MaxQueueSize)
-                        PendingPosts.Enqueue(item);
-                    else if (response.IsSuccessStatusCode)
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        NotePostError((int)response.StatusCode, item.Url);
+                        if (PendingPosts.Count < MaxQueueSize) PendingPosts.Enqueue(item);
+                    }
+                    else
+                    {
                         NoteRateLimitCleared();
+                    }
                 }
                 catch
                 {
+                    NotePostError(-1, item.Url);
                     if (PendingPosts.Count < MaxQueueSize) PendingPosts.Enqueue(item);
                 }
             }
@@ -394,6 +420,7 @@ public static class Extension
         }
         catch
         {
+            NotePostError(-1, url);
             if (PendingPosts.Count < MaxQueueSize)
             {
                 PendingPosts.Enqueue((url, jsonBody));
@@ -766,6 +793,19 @@ public static class Extension
         if (function is "ShowAthenaLinkHelp")
         {
             return ShowAthenaLinkHelpMessageBox();
+        }
+
+        // Dernier échec d'un envoi fire-and-forget (position, tchat, marqueurs...). Ces envois
+        // ne remontent jamais d'erreur à SQF (retry silencieux) : sans ce point d'accès, un
+        // rejet serveur persistant (403/422/500) est invisible même dans le debug technique.
+        // Retour : OK|none, ou OK|<code>|<chemin>|<secondes écoulées>. code=0 = pas de réponse
+        // HTTP (DNS/TLS/timeout) ; code=-1 = exception avant même l'envoi.
+        if (function == "GetLastPostError")
+        {
+            var ticks = System.Threading.Interlocked.Read(ref _lastPostErrorAtTicks);
+            if (ticks == 0) return "OK|none";
+            var ageSec = Math.Max(0, (int)((DateTime.UtcNow.Ticks - ticks) / TimeSpan.TicksPerSecond));
+            return $"OK|{_lastPostErrorCode}|{_lastPostErrorPath}|{ageSec}";
         }
 
         // Connect : mémorise URL/clé/tenant puis valide la clé via client-init synchrone.
