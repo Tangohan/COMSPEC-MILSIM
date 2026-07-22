@@ -1,0 +1,750 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="STR_ctab_core_DisplayHide" xml:space="preserve">
+    <value>Afficher/Masquer</value>
+  </data>
+  <data name="STR_ctab_core_TAD" xml:space="preserve">
+    <value>TAD</value>
+  </data>
+  <data name="STR_ctab_core_ConfigureTAD" xml:space="preserve">
+    <value>Configurer TAD</value>
+  </data>
+  <data name="STR_ctab_core_Android" xml:space="preserve">
+    <value>S7 Android</value>
+  </data>
+  <data name="STR_ctab_core_AndroidShort" xml:space="preserve">
+    <value>Samsung S7 avec protection Kägwerks</value>
+  </data>
+  <data name="STR_ctab_core_ConfigureAndroid" xml:space="preserve">
+    <value>Configurer S7 Android</value>
+  </data>
+  <data name="STR_ctab_core_MicroDAGR" xml:space="preserve">
+    <value>MicroDAGR</value>
+  </data>
+  <data name="STR_ctab_core_MicroDAGRShort" xml:space="preserve">
+    <value>HNV-2930 Micro Defense Advanced GPS Receiver</value>
+  </data>
+  <data name="STR_ctab_core_ConfigureMicroDAGR" xml:space="preserve">
+    <value>Configurer MicroDAGR</value>
+  </data>
+  <data name="STR_ctab_core_FBCB2" xml:space="preserve">
+    <value>FBCB2</value>
+  </data>
+  <data name="STR_ctab_core_Tablet" xml:space="preserve">
+    <value>Tablette endurcie</value>
+  </data>
+  <data name="STR_ctab_core_TabletShort" xml:space="preserve">
+    <value>Tablette endurcie DK10</value>
+  </data>
+  <data name="STR_ctab_core_HCam" xml:space="preserve">
+    <value>Caméra pour casque</value>
+  </data>
+  <data name="STR_ctab_core_HCamShort" xml:space="preserve">
+    <value>Caméra HD montée sur casque</value>
+  </data>
+  <data name="STR_ctab_core_MessageSent" xml:space="preserve">
+    <value>Votre message a été envoyé.</value>
+  </data>
+  <data name="STR_ctab_core_Loading" xml:space="preserve">
+    <value>Chargement...</value>
+  </data>
+  <data name="STR_ctab_core_TextOnOff" xml:space="preserve">
+    <value>Texte On/Off</value>
+  </data>
+  <data name="STR_ctab_core_TextOnOffHint" xml:space="preserve">
+    <value>Permetuer l'affichage du texte</value>
+  </data>
+  <data name="STR_ctab_core_SizeUp" xml:space="preserve">
+    <value>Taille +</value>
+  </data>
+  <data name="STR_ctab_core_SizeUpHint" xml:space="preserve">
+    <value>Augmenter la taille du texte/des icones</value>
+  </data>
+  <data name="STR_ctab_core_SizeDown" xml:space="preserve">
+    <value>Taille -</value>
+  </data>
+  <data name="STR_ctab_core_SizeDownHint" xml:space="preserve">
+    <value>Réduire la taille du texte/des icones</value>
+  </data>
+  <data name="STR_ctab_core_InboxTitle" xml:space="preserve">
+    <value>Boite de reception</value>
+  </data>
+  <data name="STR_ctab_core_ComposeMessageTitle" xml:space="preserve">
+    <value>Ecrire un message</value>
+  </data>
+  <data name="STR_ctab_core_NoMessageSelected" xml:space="preserve">
+    <value>Aucun message sélectionné</value>
+  </data>
+  <data name="STR_ctab_core_DeleteMessage" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="STR_ctab_core_DeleteMessageHint" xml:space="preserve">
+    <value>Supprimer le(s) message(s) sélectionné(s)</value>
+  </data>
+  <data name="STR_ctab_core_ComposeMessage" xml:space="preserve">
+    <value>Ecrire &gt;&gt;</value>
+  </data>
+  <data name="STR_ctab_core_ComposeMessageHint" xml:space="preserve">
+    <value>Ecrire des messages</value>
+  </data>
+  <data name="STR_ctab_core_ReadMessages" xml:space="preserve">
+    <value>Lire &gt;&gt;</value>
+  </data>
+  <data name="STR_ctab_core_ReadMessagesHint" xml:space="preserve">
+    <value>Afficher la boite de reception</value>
+  </data>
+  <data name="STR_ctab_core_SendMessage" xml:space="preserve">
+    <value>Envoyer</value>
+  </data>
+  <data name="STR_ctab_core_MapOptionsHint" xml:space="preserve">
+    <value>Options de la carte</value>
+  </data>
+  <data name="STR_ctab_core_CloseInterfaceHint" xml:space="preserve">
+    <value>Fermer l'interface</value>
+  </data>
+  <data name="STR_ctab_core_HomeAndroidHint" xml:space="preserve">
+    <value>Basculer entre Carte (F1) / Messages (F4)</value>
+  </data>
+  <data name="STR_ctab_core_MapTools" xml:space="preserve">
+    <value>Outils carte</value>
+  </data>
+  <data name="STR_ctab_core_MapToolsHint" xml:space="preserve">
+    <value>Afficher/masquer outils carte (F5)</value>
+  </data>
+  <data name="STR_ctab_core_MapTextures" xml:space="preserve">
+    <value>Vue satellite</value>
+  </data>
+  <data name="STR_ctab_core_MapTexturesHint" xml:space="preserve">
+    <value>Afficher/masquer vue satellite (F6)</value>
+  </data>
+  <data name="STR_ctab_core_CenterMap" xml:space="preserve">
+    <value>Centrer carte</value>
+  </data>
+  <data name="STR_ctab_core_CenterMapHint" xml:space="preserve">
+    <value>Centrer la carte sur la position actuelle (F7)</value>
+  </data>
+  <data name="STR_ctab_core_IncreaseFontHint" xml:space="preserve">
+    <value>Augmenter la taille du texte</value>
+  </data>
+  <data name="STR_ctab_core_DecreaseFontHint" xml:space="preserve">
+    <value>Réduire la taille du texte</value>
+  </data>
+  <data name="STR_ctab_core_IncreaseBrightnessHint" xml:space="preserve">
+    <value>Augmenter la luminosité</value>
+  </data>
+  <data name="STR_ctab_core_DecreaseBrightnessHint" xml:space="preserve">
+    <value>Réduire la luminosité</value>
+  </data>
+  <data name="STR_ctab_core_HomeTADHint" xml:space="preserve">
+    <value>clic gauche: Bascule mode jour / nuit; clic droit : Fermer l'interface</value>
+  </data>
+  <data name="STR_ctab_core_HomeTabletHint" xml:space="preserve">
+    <value>Menu principal</value>
+  </data>
+  <data name="STR_ctab_core_BFTF1Hint" xml:space="preserve">
+    <value>Blue Force Tracker - Accès rapide</value>
+  </data>
+  <data name="STR_ctab_core_UAVF2Hint" xml:space="preserve">
+    <value>Flux vidéo drones - Accès rapide</value>
+  </data>
+  <data name="STR_ctab_core_HelmetCamF3Hint" xml:space="preserve">
+    <value>Flux vidéo caméra casque - Accès rapide</value>
+  </data>
+  <data name="STR_ctab_core_MessageF4Hint" xml:space="preserve">
+    <value>Application messagerie - Accès rapide</value>
+  </data>
+  <data name="STR_ctab_core_BFTIconHint" xml:space="preserve">
+    <value>FBCB2 - Blue Force Tracker</value>
+  </data>
+  <data name="STR_ctab_core_UAVIconHint" xml:space="preserve">
+    <value>Flux vidéo drones</value>
+  </data>
+  <data name="STR_ctab_core_HelmetCamIconHint" xml:space="preserve">
+    <value>Flux vidéo caméra casque</value>
+  </data>
+  <data name="STR_ctab_core_MessageIconHint" xml:space="preserve">
+    <value>Application messagerie</value>
+  </data>
+  <data name="STR_ctab_core_EnemyMenu" xml:space="preserve">
+    <value>Position Ennemi</value>
+  </data>
+  <data name="STR_ctab_core_MedicalMenu" xml:space="preserve">
+    <value>Médical</value>
+  </data>
+  <data name="STR_ctab_core_GeneralMenu" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="STR_ctab_core_UAVLockMenu" xml:space="preserve">
+    <value>Vérouiller caméra drone</value>
+  </data>
+  <data name="STR_ctab_core_UAVLockHint" xml:space="preserve">
+    <value>Vérouille la caméra du drone sur cette position, un drone doit avoir été selectionné précédemment</value>
+  </data>
+  <data name="STR_ctab_core_MenuExit" xml:space="preserve">
+    <value>[Annuler]</value>
+  </data>
+  <data name="STR_ctab_core_InfantryMenu" xml:space="preserve">
+    <value>Infanterie</value>
+  </data>
+  <data name="STR_ctab_core_MechInfMenu" xml:space="preserve">
+    <value>Inf. mécanisée</value>
+  </data>
+  <data name="STR_ctab_core_MechInfHint" xml:space="preserve">
+    <value>Equippée avec VTTs/VCIs</value>
+  </data>
+  <data name="STR_ctab_core_MotoInfMenu" xml:space="preserve">
+    <value>Inf. motorisée</value>
+  </data>
+  <data name="STR_ctab_core_MotoInfHint" xml:space="preserve">
+    <value>Equippée avec des véhicules non blindés</value>
+  </data>
+  <data name="STR_ctab_core_ArmorMenu" xml:space="preserve">
+    <value>Blindé/Cavalerie</value>
+  </data>
+  <data name="STR_ctab_core_HelicopterMenu" xml:space="preserve">
+    <value>Hélicoptère</value>
+  </data>
+  <data name="STR_ctab_core_PlaneMenu" xml:space="preserve">
+    <value>Avion</value>
+  </data>
+  <data name="STR_ctab_core_UnknownMenu" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="STR_ctab_core_SingularMenu" xml:space="preserve">
+    <value>1 Personnel</value>
+  </data>
+  <data name="STR_ctab_core_TeamMenu" xml:space="preserve">
+    <value>Equipage Ø</value>
+  </data>
+  <data name="STR_ctab_core_TeamHint" xml:space="preserve">
+    <value>3–5 personnels</value>
+  </data>
+  <data name="STR_ctab_core_SquadMenu" xml:space="preserve">
+    <value>Equipe •</value>
+  </data>
+  <data name="STR_ctab_core_SquadHint" xml:space="preserve">
+    <value>5–10 personnels</value>
+  </data>
+  <data name="STR_ctab_core_SectionMenu" xml:space="preserve">
+    <value>Groupe ••</value>
+  </data>
+  <data name="STR_ctab_core_SectionHint" xml:space="preserve">
+    <value>7–13 personnels</value>
+  </data>
+  <data name="STR_ctab_core_PlatoonMenu" xml:space="preserve">
+    <value>Section •••</value>
+  </data>
+  <data name="STR_ctab_core_PlatoonHint" xml:space="preserve">
+    <value>25–40 personnels</value>
+  </data>
+  <data name="STR_ctab_core_StationaryMenu" xml:space="preserve">
+    <value>Immobile</value>
+  </data>
+  <data name="STR_ctab_core_North" xml:space="preserve">
+    <value>N </value>
+  </data>
+  <data name="STR_ctab_core_NorthEast" xml:space="preserve">
+    <value>NE</value>
+  </data>
+  <data name="STR_ctab_core_East" xml:space="preserve">
+    <value>E </value>
+  </data>
+  <data name="STR_ctab_core_SouthEast" xml:space="preserve">
+    <value>SE</value>
+  </data>
+  <data name="STR_ctab_core_South" xml:space="preserve">
+    <value>S </value>
+  </data>
+  <data name="STR_ctab_core_SouthWest" xml:space="preserve">
+    <value>SO</value>
+  </data>
+  <data name="STR_ctab_core_West" xml:space="preserve">
+    <value>O </value>
+  </data>
+  <data name="STR_ctab_core_NorthWest" xml:space="preserve">
+    <value>NO</value>
+  </data>
+  <data name="STR_ctab_core_RifleMenu" xml:space="preserve">
+    <value>ALI / Fusil</value>
+  </data>
+  <data name="STR_ctab_core_MGMenu" xml:space="preserve">
+    <value>MG</value>
+  </data>
+  <data name="STR_ctab_core_ATMenu" xml:space="preserve">
+    <value>ABL / AT</value>
+  </data>
+  <data name="STR_ctab_core_StaticMGMenu" xml:space="preserve">
+    <value>MG fixe</value>
+  </data>
+  <data name="STR_ctab_core_StaticATMenu" xml:space="preserve">
+    <value>ABL / AT fixe</value>
+  </data>
+  <data name="STR_ctab_core_StaticAAMenu" xml:space="preserve">
+    <value>AA fixe</value>
+  </data>
+  <data name="STR_ctab_core_MortarMenu" xml:space="preserve">
+    <value>Mortier</value>
+  </data>
+  <data name="STR_ctab_core_CasualtyMenu" xml:space="preserve">
+    <value>Casualty</value>
+  </data>
+  <data name="STR_ctab_core_CCPMenu" xml:space="preserve">
+    <value>CCP</value>
+  </data>
+  <data name="STR_ctab_core_CCPHint" xml:space="preserve">
+    <value>Casualty Collection Point</value>
+  </data>
+  <data name="STR_ctab_core_BASMenu" xml:space="preserve">
+    <value>BAS</value>
+  </data>
+  <data name="STR_ctab_core_BASHint" xml:space="preserve">
+    <value>Battalion Aid Station</value>
+  </data>
+  <data name="STR_ctab_core_MCIMenu" xml:space="preserve">
+    <value>MCI</value>
+  </data>
+  <data name="STR_ctab_core_MCIHint" xml:space="preserve">
+    <value>Mass Casualty Incident</value>
+  </data>
+  <data name="STR_ctab_core_HQMenu" xml:space="preserve">
+    <value>HQ</value>
+  </data>
+  <data name="STR_ctab_core_HQHint" xml:space="preserve">
+    <value>Headquaters</value>
+  </data>
+  <data name="STR_ctab_core_LZMenu" xml:space="preserve">
+    <value>ZP</value>
+  </data>
+  <data name="STR_ctab_core_LZHint" xml:space="preserve">
+    <value>Zone de Posée</value>
+  </data>
+  <data name="STR_ctab_core_ifMain" xml:space="preserve">
+    <value>Permuter l'interface principale</value>
+  </data>
+  <data name="STR_ctab_core_ifMainDetails" xml:space="preserve">
+    <value>Ouvre l'appareil cTab en sur-impression petit si disponible</value>
+  </data>
+  <data name="STR_ctab_core_ifSecondary" xml:space="preserve">
+    <value>Permuter l'interface secondaire</value>
+  </data>
+  <data name="STR_ctab_core_ifSecondaryDetails" xml:space="preserve">
+    <value>Ouvre l'appareil cTab en mode interactif (plein écran)</value>
+  </data>
+  <data name="STR_ctab_core_ifTertiary" xml:space="preserve">
+    <value>Permuter l'interface tertiaire</value>
+  </data>
+  <data name="STR_ctab_core_ifTertiaryDetails" xml:space="preserve">
+    <value>Ouvre l'appareil cTab personnel quand le véhicule possède son propre appareil cTab, ou pour ouvrir la tablette lorsque un MicroDAGR est porté</value>
+  </data>
+  <data name="STR_ctab_core_zoomIn" xml:space="preserve">
+    <value>Zoomer</value>
+  </data>
+  <data name="STR_ctab_core_zoomInDetails" xml:space="preserve">
+    <value>Augmente le zoom lorsque cTab est en sur-impression petit</value>
+  </data>
+  <data name="STR_ctab_core_zoomOut" xml:space="preserve">
+    <value>Dézoomer</value>
+  </data>
+  <data name="STR_ctab_core_zoomOutDetails" xml:space="preserve">
+    <value>Réduit le zoom lorsque cTab est en sur-impression petit</value>
+  </data>
+  <data name="STR_ctab_core_toggleIfPosition" xml:space="preserve">
+    <value>Permuter la position de l'interface</value>
+  </data>
+  <data name="STR_ctab_core_toggleIfPositionDetails" xml:space="preserve">
+    <value>Permute la sur-impression petit entre la droite et la gauche de l'écran</value>
+  </data>
+  <data name="STR_ctab_core_sync_time" xml:space="preserve">
+    <value>Fréquence de synchronisation</value>
+  </data>
+  <data name="STR_ctab_core_sync_timeDetails" xml:space="preserve">
+    <value>Temps requis pour la prise en compte des nouveaux appareils et unitées</value>
+  </data>
+  <data name="STR_ctab_core_bft_mode" xml:space="preserve">
+    <value>Blue Force Tracking</value>
+  </data>
+  <data name="STR_ctab_core_bft_modeDetails" xml:space="preserve">
+    <value>Permet le suivi des unités équipés avec des appareils cTab. La position peut être actualisée à chaque synchronisation ou être temps réel</value>
+  </data>
+  <data name="STR_ctab_core_helmetcam_mode" xml:space="preserve">
+    <value>Caméra casque</value>
+  </data>
+  <data name="STR_ctab_core_helmetcam_modeDetails" xml:space="preserve">
+    <value>Autorise l'utilisation des caméra casque depuis la tablette</value>
+  </data>
+  <data name="STR_ctab_core_uav_mode" xml:space="preserve">
+    <value>Caméra drone</value>
+  </data>
+  <data name="STR_ctab_core_uav_modeDetails" xml:space="preserve">
+    <value>Autorise l'utilisation des flux vidéo des drones sur la tablette</value>
+  </data>
+  <data name="STR_ctab_core_disabled" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="STR_ctab_core_enabled" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="STR_ctab_core_realTime" xml:space="preserve">
+    <value>Temp réel</value>
+  </data>
+  <data name="STR_ctab_core_atSync" xml:space="preserve">
+    <value>A chaque synchronisation</value>
+  </data>
+  <data name="STR_ctab_core_useAceMicroDagr" xml:space="preserve">
+    <value>Ajouter Blue Force Tracking au MicroDAGR de ACE</value>
+  </data>
+  <data name="STR_ctab_core_useAceMicroDagrDetails" xml:space="preserve">
+    <value>Affiche les informations Blue Force Tracking sur le MicroDAGR de ACE, et inclus les personnels qui en sont équipés dans le suivi</value>
+  </data>
+  <data name="STR_ctab_core_newMessage" xml:space="preserve">
+    <value>Nouveau message de %1</value>
+  </data>
+  <data name="STR_ctab_core_newMarker" xml:space="preserve">
+    <value>Nouveau marqueur à #%1</value>
+  </data>
+  <data name="STR_ctab_core_markerAdded" xml:space="preserve">
+    <value>Marqueur ajouté avec succès</value>
+  </data>
+  <data name="STR_ctab_core_toggleFullscreen" xml:space="preserve">
+    <value>Bascule plein écran</value>
+  </data>
+  <data name="STR_ctab_core_viewGunnerOptics" xml:space="preserve">
+    <value>Voir optique tireur</value>
+  </data>
+  <data name="STR_ctab_core_aceMenu" xml:space="preserve">
+    <value>Blue Force Tracking</value>
+  </data>
+  <data name="STR_ctab_core_useMils" xml:space="preserve">
+    <value>Unité de la boussole</value>
+  </data>
+  <data name="STR_ctab_core_useMilsDetails" xml:space="preserve">
+    <value>Unité de la boussole affichée dans les appareils cTab</value>
+  </data>
+  <data name="STR_ctab_core_useMils_true" xml:space="preserve">
+    <value>Milièmes (0-6400)</value>
+  </data>
+  <data name="STR_ctab_core_useMils_false" xml:space="preserve">
+    <value>Degrés (0-360)</value>
+  </data>
+  <data name="STR_ctab_core_techData" xml:space="preserve">
+    <value>Données techniques</value>
+  </data>
+  <data name="STR_ctab_core_callSign" xml:space="preserve">
+    <value>Identifiant du groupe</value>
+  </data>
+  <data name="InvalidQrCode" xml:space="preserve">
+    <value>Le code a expiré. Merci de scanner de nouveau le QR Code disponible en jeu.</value>
+  </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>Se déconnecter</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Connecter</value>
+  </data>
+  <data name="Privacy" xml:space="preserve">
+    <value>Mentions légales</value>
+  </data>
+  <data name="ArmaNotYetConnected" xml:space="preserve">
+    <value>Arma n'est pas encore connecté. Veuillez attendre que la clé soit disponible en jeu.</value>
+  </data>
+  <data name="Contact" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="GoBackTo" xml:space="preserve">
+    <value>Retourner à {0}</value>
+  </data>
+  <data name="InvalidKey" xml:space="preserve">
+    <value>La clé saisie est invalide. Veuillez vérifier la clé affichée en jeu.</value>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>Télécharger le mod</value>
+  </data>
+  <data name="ProvidedBy" xml:space="preserve">
+    <value>Proposé par le 1er GTD</value>
+  </data>
+  <data name="STR_ctab_core_videoCategory" xml:space="preserve">
+    <value>Vidéo</value>
+  </data>
+  <data name="STR_ctab_core_mapCategory" xml:space="preserve">
+    <value>Carte et BFT</value>
+  </data>
+  <data name="STR_ctab_core_defMapStyle" xml:space="preserve">
+    <value>Mode par défaut de la carte</value>
+  </data>
+  <data name="STR_ctab_core_defMapStyleDetails" xml:space="preserve">
+    <value>Mode par défaut de la carte dans les appareils cTab. Le mode actif se modifie avec F6 en jeu.</value>
+  </data>
+  <data name="STR_ctab_core_satStyle" xml:space="preserve">
+    <value>Satellite</value>
+  </data>
+  <data name="STR_ctab_core_topoStyle" xml:space="preserve">
+    <value>Topographique</value>
+  </data>
+  <data name="STR_ctab_core_useArmaMarker" xml:space="preserve">
+    <value>Marqueur position joueur</value>
+  </data>
+  <data name="STR_ctab_core_useArmaMarkerDetails" xml:space="preserve">
+    <value>Marqueur de la position du joueur sur la tablette endurcie, Android GD300 et TAD.</value>
+  </data>
+  <data name="STR_ctab_core_useArmaMarker_true" xml:space="preserve">
+    <value>Marqueur Arma avec orientation</value>
+  </data>
+  <data name="STR_ctab_core_useArmaMarker_false" xml:space="preserve">
+    <value>Symbole OTAN</value>
+  </data>
+  <data name="STR_ctab_core_gridPrecision" xml:space="preserve">
+    <value>Précision coordonnées</value>
+  </data>
+  <data name="STR_ctab_core_gridPrecisionDetails" xml:space="preserve">
+    <value>Précision coordonnées</value>
+  </data>
+  <data name="STR_ctab_core_gridPrecision0" xml:space="preserve">
+    <value>Par défaut</value>
+  </data>
+  <data name="STR_ctab_core_gridPrecision1" xml:space="preserve">
+    <value>10 m</value>
+  </data>
+  <data name="STR_ctab_core_gridPrecision2" xml:space="preserve">
+    <value>1 m</value>
+  </data>
+  <data name="STR_ctab_core_DotMenu" xml:space="preserve">
+    <value>Point avec libellé</value>
+  </data>
+  <data name="STR_ctab_core_CircleMenu" xml:space="preserve">
+    <value>Cercle avec libellé</value>
+  </data>
+  <data name="STR_ctab_core_AWithTSMenu" xml:space="preserve">
+    <value>A + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_BWithTSMenu" xml:space="preserve">
+    <value>B + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_CWithTSMenu" xml:space="preserve">
+    <value>C + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_DWithTSMenu" xml:space="preserve">
+    <value>D + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_EWithTSMenu" xml:space="preserve">
+    <value>E + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_FWithTSMenu" xml:space="preserve">
+    <value>F + Horodatage</value>
+  </data>
+  <data name="STR_ctab_core_TSMenu" xml:space="preserve">
+    <value>Horodatage uniquement</value>
+  </data>
+  <data name="STR_ctab_core_ControlPointMenu" xml:space="preserve">
+    <value>Commandement</value>
+  </data>
+  <data name="STR_ctab_core_ManoeuvreMenu" xml:space="preserve">
+    <value>Manoeuvre</value>
+  </data>
+  <data name="STR_ctab_core_SustainmentMenu" xml:space="preserve">
+    <value>Logistique</value>
+  </data>
+  <data name="STR_ctab_core_Mine" xml:space="preserve">
+    <value>Mine</value>
+  </data>
+  <data name="STR_ctab_core_IED" xml:space="preserve">
+    <value>IED/EEI</value>
+  </data>
+  <data name="STR_ctab_core_PointUnspec" xml:space="preserve">
+    <value>Unspecified Control Point</value>
+  </data>
+  <data name="STR_ctab_core_PointContact" xml:space="preserve">
+    <value>Contact Point</value>
+  </data>
+  <data name="STR_ctab_core_PointCoord" xml:space="preserve">
+    <value>Coordinating Point</value>
+  </data>
+  <data name="STR_ctab_core_PointCKP" xml:space="preserve">
+    <value>CKP - Checkpoint</value>
+  </data>
+  <data name="STR_ctab_core_PointSOS" xml:space="preserve">
+    <value>SOS Distress call</value>
+  </data>
+  <data name="STR_ctab_core_PointEC" xml:space="preserve">
+    <value>EC Entry Control</value>
+  </data>
+  <data name="STR_ctab_core_PointRLY" xml:space="preserve">
+    <value>RLY Rally Point</value>
+  </data>
+  <data name="STR_ctab_core_PointSP" xml:space="preserve">
+    <value>SP Start Point</value>
+  </data>
+  <data name="STR_ctab_core_Outpost" xml:space="preserve">
+    <value>Unspecified outpost</value>
+  </data>
+  <data name="STR_ctab_core_CombatOutpost" xml:space="preserve">
+    <value>Combat outpost</value>
+  </data>
+  <data name="STR_ctab_core_PointTarget" xml:space="preserve">
+    <value>Target reference point</value>
+  </data>
+  <data name="STR_ctab_core_PointPD" xml:space="preserve">
+    <value>PD Point of Departure</value>
+  </data>
+  <data name="STR_ctab_core_PointCCP" xml:space="preserve">
+    <value>CCP Casualty Collection</value>
+  </data>
+  <data name="STR_ctab_core_PointDET" xml:space="preserve">
+    <value>DET Detainee Collection</value>
+  </data>
+  <data name="STR_ctab_core_PointMED" xml:space="preserve">
+    <value>EVASAN Point récupération</value>
+  </data>
+  <data name="STR_ctab_core_PointR3P" xml:space="preserve">
+    <value>R3P Réarmer et ravitailler</value>
+  </data>
+  <data name="WhereIsTheUnitMoving" xml:space="preserve">
+    <value>Par où se déplace l'unité ?</value>
+  </data>
+  <data name="STR_ctab_core_WhereIsTheUnitMoving" xml:space="preserve">
+    <value>Par où se déplace l'unité ?</value>
+  </data>
+  <data name="STR_ctab_messaging_Attachements" xml:space="preserve">
+    <value>Pièces jointes</value>
+  </data>
+  <data name="STR_ctab_messaging_Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="STR_ctab_messaging_GeneratedMessage" xml:space="preserve">
+    <value>Message généré</value>
+  </data>
+  <data name="STR_ctab_messaging_MarkerAt" xml:space="preserve">
+    <value>Marqueur à %1</value>
+  </data>
+  <data name="STR_ctab_messaging_Recipient" xml:space="preserve">
+    <value>Destinataire</value>
+  </data>
+  <data name="STR_ctab_messaging_Send" xml:space="preserve">
+    <value>Envoyer</value>
+  </data>
+  <data name="STR_ctab_messaging_Templates" xml:space="preserve">
+    <value>Modèles</value>
+  </data>
+  <data name="STR_ctab_messaging_MEDEVAC" xml:space="preserve">
+    <value>EVASAN</value>
+  </data>
+  <data name="BuiltinMedevacTemplateJson" xml:space="preserve">
+    <value>{"uid":"builtin#1","lines":[{"title":"EVASAN","description":"","fields":[]},{"title":"Line 1","description":"POSITION UTM","fields":[{"description":"Position UTM","type":"Grid"}]},{"title":"Line 2","description":"INDICATIF / FREQUENCE","fields":[{"description":"Indicatif","type":"CallSign"},{"description":"Fr\u00E9quence","type":"Frequency"}]},{"title":"Line 3","description":"NOMBRE ET PRIORITE DES BLESSES","fields":[{"title":"A","description":"P1 (urgent)","type":"Number"},{"title":"B","description":"P2 (urgence chir.)","type":"Number"},{"title":"C","description":"P2 (prioritaire)","type":"Number"}]},{"title":"Line 4","description":"EQUIPEMENTS NECESSAIRES","fields":[{"title":"A","description":"n\u00E9ant","type":"CheckBox"},{"title":"B","description":"h\u00E9lico","type":"CheckBox"},{"title":"C","description":"d\u00E9sincar.","type":"CheckBox"},{"title":"D","description":"O2","type":"CheckBox"},{"title":"E","description":"Autres","type":"Text"}]},{"title":"Line 5","description":"NOMBRE ET TYPE DE BLESSES","fields":[{"title":"L","description":"couch\u00E9","type":"Number"},{"title":"A","description":"ambulatoire","type":"Number"},{"title":"E","description":"accompagnant (obligatoire si enfant)","type":"Number"}]},{"title":"Line 6","description":"SECURITE ZONE","fields":[{"title":"N","description":"Sure","type":"CheckBox"},{"title":"P","description":"ennemis possibles","type":"CheckBox"},{"title":"E","description":"ennemis pr\u00E9sent","type":"CheckBox"},{"title":"X","description":"escorte arm\u00E9e","type":"CheckBox"}]},{"title":"Line 7","description":"MARQUAGE ZPH","fields":[{"title":"A","description":"cyalum, PN2A","type":"CheckBox"},{"title":"B","description":"fus\u00E9e \u00E9clair.","type":"CheckBox"},{"title":"C","description":"fumig\u00E8ne","type":"CheckBox"},{"title":"D","description":"n\u00E9ant","type":"CheckBox"},{"title":"E","description":"autre moyen","type":"Text"}]},{"title":"Line 8","description":"NATIONALITES DES BLESSES","fields":[{"title":"A","description":"Militaire FR/OTAN","type":"Number"},{"title":"D","description":"Civils","type":"Number"},{"title":"E","description":"Prisonnier","type":"Number"},{"title":"F","description":"Enfants","type":"Number"}]},{"title":"Line 9","description":"DESCRIPTIF DE LA ZONE ZPH","fields":[{"description":"si diff\u00E9rent de Line 1","type":"Text"}]}],"title":"EVASAN","description":"(message originally builtin ctab.plan-ops.fr)","type":"MedicalEvacuation","href":"https://maps2.plan-ops.fr/MessageTemplates/Details/1?t=6sRe0JNoF7pGTB_-uw_H5wsvDSgExzPY6ufXqVt_jjE","countryCode":"FR"}</value>
+  </data>
+</root>
