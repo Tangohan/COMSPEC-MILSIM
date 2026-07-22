@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Steam;
 
+use App\Support\SteamId;
+
 /**
  * Lecture du profil public Steam (Web API officielle).
  * La clé doit être fournie via STEAM_WEB_API_KEY dans l’environnement — jamais en dur dans le code.
@@ -23,8 +25,9 @@ final class SteamWebApiService
     }
 
     /**
-     * Accepte l’identifiant numérique (17 chiffres), une adresse de profil « …/profiles/7656… »
+     * Accepte SteamID64, SteamID2 / SteamID3, une adresse « …/profiles/… »,
      * ou, si la clé serveur Steam est configurée, un pseudo d’URL « …/id/pseudo ».
+     * Toujours normalisé vers SteamID64 (chiffres) quand la résolution réussit.
      */
     public function resolveSteamIdFromUserInput(string $raw): ?string
     {
@@ -33,18 +36,9 @@ final class SteamWebApiService
             return null;
         }
 
-        if (preg_match('#steamcommunity\.com/profiles/(\d{15,20})\b#i', $raw, $m)) {
-            return $m[1];
-        }
-        if (preg_match('#^https?://s\.team/p/(\d{15,20})\b#i', $raw, $m)) {
-            return $m[1];
-        }
-
-        $digits = preg_replace('/\D/', '', $raw) ?? '';
-        if ($digits !== '' && strlen($digits) >= 15 && strlen($digits) <= 20) {
-            if (!preg_match('#steamcommunity\.com/id/#i', $raw)) {
-                return $digits;
-            }
+        $offline = SteamId::normalize($raw);
+        if ($offline !== null) {
+            return $offline;
         }
 
         if (preg_match('#steamcommunity\.com/id/([^/?\#\s]+)#i', $raw, $m)) {
@@ -96,7 +90,7 @@ final class SteamWebApiService
         }
         $sid = isset($resp['steamid']) ? preg_replace('/\D/', '', (string) $resp['steamid']) : '';
 
-        return ($sid !== '' && strlen($sid) >= 15 && strlen($sid) <= 20) ? $sid : null;
+        return SteamId::normalize($sid ?? '');
     }
 
     /**
@@ -107,8 +101,8 @@ final class SteamWebApiService
         if (!$this->isConfigured()) {
             return null;
         }
-        $sid = preg_replace('/\D/', '', $steamId64) ?? '';
-        if ($sid === '' || strlen($sid) < 15 || strlen($sid) > 20) {
+        $sid = SteamId::normalize($steamId64);
+        if ($sid === null) {
             return null;
         }
 

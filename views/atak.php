@@ -75,7 +75,7 @@ if ($atakMapConfig) {
         <span class="atak-logo">ATHENA</span>
         <span class="atak-overwatch">ATAK</span>
       </div>
-      <span class="atak-header-tagline" title="Image tactique commune">Image tactique</span>
+      <span class="atak-header-tagline" title="État de la liaison">Liaison</span>
       <div class="atak-header-chips" aria-label="État de la carte">
         <span class="atak-chip atak-chip--live" id="atak-status" title="État du réseau">
           <span class="dot" aria-hidden="true"></span>
@@ -134,13 +134,25 @@ if ($atakMapConfig) {
     </div>
   </header>
 
-  <div class="atak-os-strip" role="note">
-    <p class="atak-os-strip-lead"><strong>ATAK Athena</strong> — image tactique commune : positions, tchat, marqueurs et alertes médicales en direct depuis Arma.</p>
-    <ul class="atak-os-caps" aria-label="Capacités">
-      <li><span class="atak-os-cap-num">01</span> Carte live</li>
-      <li><span class="atak-os-cap-num">02</span> Effectifs &amp; santé</li>
-      <li><span class="atak-os-cap-num">03</span> Marqueurs &amp; tchat</li>
-      <li><span class="atak-os-cap-num">04</span> Liaison compte</li>
+  <div class="atak-os-strip" role="status" aria-live="polite" aria-label="Métriques de liaison">
+    <p class="atak-os-strip-lead"><strong>ATAK Athena</strong></p>
+    <ul class="atak-os-metrics" aria-label="Qualité des communications">
+      <li class="atak-os-metric" id="atak-metric-quality" title="Qualité perçue de la liaison avec le portail">
+        <span class="atak-os-metric-key">Qualité</span>
+        <span class="atak-os-metric-value" id="atak-metric-quality-value">En attente de liaison</span>
+      </li>
+      <li class="atak-os-metric" id="atak-metric-latency" title="Délai aller-retour mesuré avec le portail">
+        <span class="atak-os-metric-key">Latence</span>
+        <span class="atak-os-metric-value" id="atak-metric-latency-value">—</span>
+      </li>
+      <li class="atak-os-metric" id="atak-metric-loss" title="Pertes de paquets (indisponible tant que le mod ne remonte pas cette mesure)">
+        <span class="atak-os-metric-key">Pertes de paquets</span>
+        <span class="atak-os-metric-value" id="atak-metric-loss-value">—</span>
+      </li>
+      <li class="atak-os-metric" id="atak-metric-theatre" title="Dernière activité reçue depuis le théâtre">
+        <span class="atak-os-metric-key">Théâtre</span>
+        <span class="atak-os-metric-value" id="atak-metric-theatre-value">En attente</span>
+      </li>
     </ul>
     <p class="atak-os-strip-hint">Lier le mod : bouton <strong>Connexion en jeu</strong> → <strong>Générer un code</strong> → en jeu touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>.</p>
   </div>
@@ -177,7 +189,19 @@ if ($atakMapConfig) {
       </section>
       <section class="atak-account-section">
         <h3 class="atak-account-section-title">Liaison Steam</h3>
-        <p><?= !empty($currentUser['steam_id']) ? 'Compte Steam associé' : 'Non renseignée' ?></p>
+        <?php
+          $steamLinked = \App\Support\SteamId::normalize((string) ($currentUser['steam_id'] ?? ''));
+        ?>
+        <?php if ($steamLinked !== null): ?>
+        <p>Compte Steam associé — utilisez ce numéro dans Arma (éditeur / solo) :</p>
+        <div class="atak-game-config-url-wrap">
+          <pre class="atak-game-config-url" id="atak-steam-id-copy"><?= htmlspecialchars($steamLinked) ?></pre>
+          <button type="button" class="atak-game-config-copy" id="atak-copy-steam-id" title="Copier l’identifiant Steam">Copier</button>
+        </div>
+        <?php else: ?>
+        <p>Non renseignée</p>
+        <p class="atak-game-link-hint">Enregistrez le numéro vu en jeu, un identifiant Steam classique, ou l’adresse de votre profil public — depuis les préférences du compte. Sans cela, utilisez un code « Connexion en jeu ».</p>
+        <?php endif; ?>
         <p><a href="<?= url('account/preferences') ?>">Modifier dans les préférences</a></p>
       </section>
       <section class="atak-account-section">
@@ -329,16 +353,16 @@ if ($atakMapConfig) {
 
   <div class="atak-main">
     <aside class="atak-panel-left" id="atak-panel-left">
-      <div class="atak-tabs-headers">
-        <button type="button" class="atak-tab active" data-tab="cams">Cams</button>
-        <button type="button" class="atak-tab" data-tab="markers">Marqueurs</button>
-        <button type="button" class="atak-tab" data-tab="chat">Tchat</button>
-        <button type="button" class="atak-tab" data-tab="medical">Assistances <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" data-tab="pings">Pings</button>
-        <button type="button" class="atak-tab" data-tab="jtac">JTAC</button>
-        <button type="button" class="atak-tab" data-tab="liaison">Liaison <span class="atak-tab-badge atak-tab-badge--soft" id="atak-liaison-tab-badge" hidden></span></button>
-        <button type="button" class="atak-toggle" id="atak-toggle-left" title="Réduire">◀</button>
-      </div>
+      <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
+        <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams">Cams</button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs">Marqueurs</button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat">Tchat</button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" title="Assistances">Assistances <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" title="Pings">Pings</button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" title="JTAC">JTAC</button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="liaison" title="Liaison">Liaison</button>
+      </nav>
+      <div class="atak-left-body">
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-list" id="atak-cams-list">
           <div class="atak-empty-state">
@@ -410,8 +434,14 @@ if ($atakMapConfig) {
           <div id="atak-laser-codes-list"></div>
         </div>
       </div>
-      <div class="atak-tabs-content" id="tab-liaison">
+      <div class="atak-tabs-content" id="tab-liaison" role="tabpanel">
         <div class="atak-activity-panel">
+          <section class="atak-web-presence" aria-labelledby="atak-web-presence-title">
+            <h3 class="atak-web-presence-title" id="atak-web-presence-title">Sur le site</h3>
+            <p class="atak-web-presence-intro">Opérateurs connectés à la carte Athena depuis le portail.</p>
+            <ul class="atak-web-presence-list" id="atak-web-presence-list" aria-live="polite"></ul>
+            <p class="atak-web-presence-empty" id="atak-web-presence-empty">En attente de liaison</p>
+          </section>
           <div class="atak-activity-head">
             <p class="atak-activity-intro">Suivi des connexions en jeu, des changements d’indicatif et des échanges récents avec la carte.</p>
             <div class="atak-activity-meta" id="atak-activity-meta" hidden>
@@ -427,13 +457,14 @@ if ($atakMapConfig) {
           </div>
         </div>
       </div>
+      </div>
     </aside>
 
     <div class="atak-map-wrap">
       <div id="atak-map"></div>
 
-      <div class="atak-drawer" id="atak-effectifs-drawer">
-        <button type="button" class="atak-drawer__toggle" id="atak-effectifs-drawer-toggle" aria-expanded="false" aria-controls="atak-effectifs-drawer-body">Tableau des effectifs ▴</button>
+      <div class="atak-drawer atak-drawer--fixed" id="atak-effectifs-drawer">
+        <div class="atak-drawer__head">Tableau des effectifs</div>
         <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
           <table>
             <thead>
@@ -465,12 +496,6 @@ if ($atakMapConfig) {
       <div class="atak-units-header">
         <div class="atak-units-title-row">
           <div class="atak-units-title">Effectifs</div>
-          <span class="atak-units-count" id="atak-units-count" title="Contacts affichés">0</span>
-          <button type="button" class="atak-toggle" id="atak-toggle-right" title="Réduire">▶</button>
-        </div>
-        <div class="atak-units-summary" id="atak-units-summary" aria-live="polite">
-          <span class="atak-units-summary-item atak-units-summary-item--live" id="atak-units-sum-live">0 en liaison</span>
-          <span class="atak-units-summary-item atak-units-summary-item--delayed" id="atak-units-sum-delayed">0 en retard</span>
         </div>
         <div class="atak-filter">
           <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif ou rôle…" />
@@ -493,7 +518,11 @@ if ($atakMapConfig) {
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
+  <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
+  <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
+  <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
@@ -649,13 +678,71 @@ if ($atakMapConfig) {
         else if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) window.ATAKMarkers.renderFromMap();
         refreshLiaisonChipQuiet();
       }
+      var lastMeasuredLatencyMs = null;
+      var lastPingOk = false;
+      function setMetricValue(id, text, tone) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('atak-os-metric-value--ok', 'atak-os-metric-value--warn', 'atak-os-metric-value--err');
+        if (tone) el.classList.add('atak-os-metric-value--' + tone);
+      }
+      function qualityFromLatency(ms, pingOk, theatreAgo) {
+        if (!pingOk || ms == null || isNaN(ms)) return { label: 'En attente de liaison', tone: null };
+        if (theatreAgo != null && theatreAgo > 180) return { label: 'Dégradée', tone: 'warn' };
+        if (ms <= 120) return { label: 'Bonne', tone: 'ok' };
+        if (ms <= 350) return { label: 'Acceptable', tone: 'warn' };
+        return { label: 'Dégradée', tone: 'err' };
+      }
+      function refreshLiaisonMetrics(theatreAgo) {
+        var q = qualityFromLatency(lastMeasuredLatencyMs, lastPingOk, theatreAgo);
+        setMetricValue('atak-metric-quality-value', q.label, q.tone);
+        if (lastPingOk && lastMeasuredLatencyMs != null && !isNaN(lastMeasuredLatencyMs)) {
+          setMetricValue(
+            'atak-metric-latency-value',
+            Math.round(lastMeasuredLatencyMs) + ' ms',
+            lastMeasuredLatencyMs <= 120 ? 'ok' : (lastMeasuredLatencyMs <= 350 ? 'warn' : 'err')
+          );
+        } else {
+          setMetricValue('atak-metric-latency-value', '—', null);
+        }
+        setMetricValue('atak-metric-loss-value', '—', null);
+        var theatreLabel = (typeof formatAgoFr === 'function') ? formatAgoFr(theatreAgo) : null;
+        setMetricValue(
+          'atak-metric-theatre-value',
+          theatreLabel || 'En attente',
+          theatreAgo != null && theatreAgo <= 60 ? 'ok' : (theatreAgo != null ? 'warn' : null)
+        );
+      }
+      function measurePingLatency() {
+        var t0 = performance.now();
+        var ctrl = new AbortController();
+        var to = setTimeout(function () { ctrl.abort(); }, 5000);
+        return fetch('<?= url("api/atak/ping") ?>', { credentials: 'include', signal: ctrl.signal, cache: 'no-store' })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok && !!(d && d.ok), data: d }; }); })
+          .then(function (res) {
+            clearTimeout(to);
+            lastPingOk = !!res.ok;
+            lastMeasuredLatencyMs = lastPingOk ? (performance.now() - t0) : null;
+            return res;
+          })
+          .catch(function () {
+            clearTimeout(to);
+            lastPingOk = false;
+            lastMeasuredLatencyMs = null;
+          });
+      }
       var lastLiaisonChipAt = 0;
       function refreshLiaisonChipQuiet() {
         var now = Date.now();
         if (now - lastLiaisonChipAt < 12000) return;
         lastLiaisonChipAt = now;
         var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
-        fetch('<?= url("api/atak/stats") ?>?mapId=' + mid, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (d) {
+        Promise.all([
+          measurePingLatency(),
+          fetch('<?= url("api/atak/stats") ?>?mapId=' + mid, { credentials: 'include' }).then(function (r) { return r.json(); })
+        ]).then(function (results) {
+          var d = results[1] || {};
           var ago = d.lastArmaActivityAgo != null ? Number(d.lastArmaActivityAgo) : null;
           var agoLabel = formatAgoFr(ago);
           var liaisonChipVal = document.getElementById('atak-chip-liaison-value');
@@ -665,7 +752,10 @@ if ($atakMapConfig) {
             chip.classList.toggle('atak-chip--ok', ago != null && ago <= 60);
             chip.classList.toggle('atak-chip--warn', ago != null && ago > 60);
           }
-        }).catch(function () {});
+          refreshLiaisonMetrics(ago);
+        }).catch(function () {
+          refreshLiaisonMetrics(null);
+        });
       }
       atakPoll();
       setInterval(atakPoll, 3000);
@@ -676,33 +766,50 @@ if ($atakMapConfig) {
       document.querySelectorAll('.atak-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var tab = this.getAttribute('data-tab');
-          document.querySelectorAll('.atak-tab').forEach(function (b) { b.classList.remove('active'); });
+          document.querySelectorAll('.atak-tab').forEach(function (b) {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
           document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
           this.classList.add('active');
+          this.setAttribute('aria-selected', 'true');
           var content = document.getElementById('tab-' + tab);
           if (content) content.classList.add('active');
         });
       });
 
-      document.getElementById('atak-toggle-left').addEventListener('click', function () {
-        document.getElementById('atak-panel-left').classList.toggle('collapsed');
-        this.textContent = document.getElementById('atak-panel-left').classList.contains('collapsed') ? '▶' : '◀';
-      });
-      document.getElementById('atak-toggle-right').addEventListener('click', function () {
-        document.getElementById('atak-panel-right').classList.toggle('collapsed');
-        this.textContent = document.getElementById('atak-panel-right').classList.contains('collapsed') ? '◀' : '▶';
-      });
-
-      var effectifsDrawer = document.getElementById('atak-effectifs-drawer');
-      var effectifsDrawerToggle = document.getElementById('atak-effectifs-drawer-toggle');
-      if (effectifsDrawer && effectifsDrawerToggle) {
-        effectifsDrawerToggle.addEventListener('click', function () {
-          effectifsDrawer.classList.toggle('is-open');
-          effectifsDrawerToggle.textContent = effectifsDrawer.classList.contains('is-open')
-            ? 'Tableau des effectifs ▾'
-            : 'Tableau des effectifs ▴';
-        });
+      function refreshWebPresence() {
+        var listEl = document.getElementById('atak-web-presence-list');
+        var emptyEl = document.getElementById('atak-web-presence-empty');
+        if (!listEl) return;
+        var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
+        fetch('<?= url("api/atak/presence") ?>?mapId=' + encodeURIComponent(mid), { credentials: 'include', cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            var viewers = (d && d.viewers) ? d.viewers : [];
+            listEl.innerHTML = '';
+            if (!viewers.length) {
+              if (emptyEl) emptyEl.hidden = false;
+              return;
+            }
+            if (emptyEl) emptyEl.hidden = true;
+            viewers.forEach(function (v) {
+              var li = document.createElement('li');
+              li.className = 'atak-web-presence-item';
+              var name = (v && (v.callsign || v.label || v.display_name)) || 'Opérateur';
+              li.textContent = name;
+              listEl.appendChild(li);
+            });
+          })
+          .catch(function () {});
       }
+      refreshWebPresence();
+      setInterval(refreshWebPresence, 20000);
+      measurePingLatency().then(function () { refreshLiaisonMetrics(null); });
+      setInterval(function () {
+        lastLiaisonChipAt = 0;
+        refreshLiaisonChipQuiet();
+      }, 15000);
 
       var copyBtn = document.getElementById('atak-copy-node-url');
       var urlPre = document.getElementById('atak-node-url-copy');
@@ -714,6 +821,30 @@ if ($atakMapConfig) {
           } else {
             var ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
             copyBtn.textContent = 'Copié !'; setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+          }
+        });
+      }
+
+      var copySteamBtn = document.getElementById('atak-copy-steam-id');
+      var steamPre = document.getElementById('atak-steam-id-copy');
+      if (copySteamBtn && steamPre) {
+        copySteamBtn.addEventListener('click', function () {
+          var sid = (steamPre.textContent || '').trim();
+          if (!sid) return;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(sid).then(function () {
+              copySteamBtn.textContent = 'Copié !';
+              setTimeout(function () { copySteamBtn.textContent = 'Copier'; }, 1500);
+            });
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = sid;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            copySteamBtn.textContent = 'Copié !';
+            setTimeout(function () { copySteamBtn.textContent = 'Copier'; }, 1500);
           }
         });
       }

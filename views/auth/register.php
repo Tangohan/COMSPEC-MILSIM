@@ -303,7 +303,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                        placeholder="Lien de votre profil Steam"
                                        value="<?= $val($old, 'steam_profile') ?>"
                                        class="login-field">
-                                <p class="mt-1.5 text-xs text-white/35">Lien de profil Steam ou identifiant à 17 chiffres.</p>
+                                <p class="mt-1.5 text-xs text-white/35">Lien de profil Steam, numéro en jeu, ou identifiant Steam classique.</p>
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>

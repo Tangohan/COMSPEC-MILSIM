@@ -1241,6 +1241,7 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
@@ -1248,6 +1249,7 @@ return function (Router $router) {
     $router->get('/api/atak/phone-pairing', [AtakApiController::class, 'phonePairingCreate']);
     $router->get('/api/atak/phone-pairing/{token}/qr.png', [AtakApiController::class, 'phonePairingQrImage']);
     $router->post('/api/atak/game-link/redeem', [AtakApiController::class, 'gameLinkRedeem']);
+    $router->post('/api/atak/game-link/by-steam', [AtakApiController::class, 'gameLinkBySteam']);
     $router->get('/api/markers', [AtakApiController::class, 'markersIndex']);
     $router->post('/api/markers', [AtakApiController::class, 'markersStore']);
     $router->patch('/api/markers/{id}', [AtakApiController::class, 'markersUpdate']);

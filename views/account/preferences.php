@@ -199,8 +199,8 @@ require base_path('views/partials/account/shell_open.php');
 
                 <div style="padding:1rem;border-radius:.85rem;border:1px solid #e2e8f0;background:#f8fafc">
                     <label class="account-hub__label" for="steam_id">Liaison Steam (jeu et cartographie)</label>
-                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars((string) ($user['steam_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Numéro à 17 chiffres ou adresse de votre profil public" maxlength="512" autocomplete="off">
-                    <p class="account-hub__hint">Collez le numéro affiché dans le jeu, ou une adresse de profil public<?php if ($steamWebConfigured): ?> (y compris un lien avec votre pseudo)<?php endif; ?>.</p>
+                    <input type="text" name="steam_id" id="steam_id" value="<?= htmlspecialchars((string) ($user['steam_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Numéro en jeu, STEAM_0:…, ou adresse de profil" maxlength="512" autocomplete="off">
+                    <p class="account-hub__hint">Collez le numéro affiché dans le jeu, un identifiant Steam classique, ou une adresse de profil public<?php if ($steamWebConfigured): ?> (y compris un lien avec votre pseudo)<?php endif; ?>.</p>
                     <?php if (!empty($errors['steam_id'])): foreach ($errors['steam_id'] as $e): ?>
                     <p class="account-hub__field-error"><?= htmlspecialchars((string) $e, ENT_QUOTES, 'UTF-8') ?></p>
                     <?php endforeach; endif; ?>

@@ -1,7 +1,7 @@
 /*
     Poll GetMapShapes from extension, parse minimal JSON and create/update/delete local markers.
 */
-private _raw = "COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]];
+private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];

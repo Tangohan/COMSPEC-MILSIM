@@ -711,8 +711,8 @@ class UserRepository
     /** @return array<string, mixed>|null */
     public function findBySteamIdForTenant(int $tenantId, string $steamId): ?array
     {
-        $sid = trim($steamId);
-        if ($sid === '') {
+        $sid = \App\Support\SteamId::normalize($steamId);
+        if ($sid === null) {
             return null;
         }
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND steam_id = ? LIMIT 1');
@@ -720,6 +720,51 @@ class UserRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /**
+     * Compte Athena lié à un Steam ID (tous tenants). Utile pour la liaison Arma sans code court.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findBySteamId(string $steamId): ?array
+    {
+        $sid = \App\Support\SteamId::normalize($steamId);
+        if ($sid === null) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM users WHERE steam_id = ? ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute([$sid]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return $row;
+        }
+
+        // Repli : anciennes saisies (espaces, STEAM_x:y:z, [U:1:n]) non encore normalisées en base.
+        $digits = preg_replace('/\D/', '', $sid) ?? $sid;
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM users
+             WHERE steam_id IS NOT NULL AND TRIM(steam_id) <> ''
+               AND (
+                 REPLACE(REPLACE(REPLACE(steam_id, ' ', ''), '-', ''), '\t', '') = ?
+                 OR steam_id LIKE 'STEAM_%'
+                 OR steam_id LIKE 'U:1:%'
+                 OR steam_id LIKE '[U:1:%'
+               )
+             ORDER BY id DESC
+             LIMIT 80"
+        );
+        $stmt->execute([$digits]);
+        while ($candidate = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $normalized = \App\Support\SteamId::normalize((string) ($candidate['steam_id'] ?? ''));
+            if ($normalized === $sid) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     public function create(int $tenantId, array $data): int
@@ -1276,8 +1321,16 @@ class UserRepository
         $params = [];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $data)) {
+                $value = $data[$key];
+                if ($key === 'steam_id' && $value !== null && $value !== '') {
+                    $normalized = \App\Support\SteamId::normalize((string) $value);
+                    if ($normalized === null) {
+                        continue;
+                    }
+                    $value = $normalized;
+                }
                 $set[] = "`$key` = ?";
-                $params[] = $data[$key];
+                $params[] = $value;
             }
         }
         if (empty($set)) {

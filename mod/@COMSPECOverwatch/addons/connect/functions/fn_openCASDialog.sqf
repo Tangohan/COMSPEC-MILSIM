@@ -4,7 +4,7 @@
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 private _callsign = missionNamespace getVariable ["COMSPEC_Callsign", name player];
 if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
-private _raw = "COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]];
+private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {
     createDialog "COMSPEC_CAS_Dialog";
     private _disp = uiNamespace getVariable ["COMSPEC_CAS_Display", displayNull];
