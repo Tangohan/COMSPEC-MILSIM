@@ -9,6 +9,9 @@ window.ATAKMedicalAlerts = (function () {
   var LS_PREFIX = 'atak_medical_dismissed_v1_';
   var boundUi = false;
   var ACTIVE_WINDOW_MS = 30 * 60 * 1000;
+  // Toast/son : uniquement pour une alerte réellement fraîche (pas un vieux message de tchat
+  // rejoué par un rechargement de page ou un resync après reconnexion).
+  var TOAST_MAX_AGE_MS = 2 * 60 * 1000;
   var canTriageCached = null;
 
   var TRIAGE_OPTIONS = [
@@ -603,7 +606,12 @@ window.ATAKMedicalAlerts = (function () {
       // d'une unité, triage, fenêtre active qui glisse...) : ne rejouer le toast/son que si
       // l'alerte critique la plus récente n'est pas celle déjà signalée la dernière fois.
       var isNew = !!prev && latestKey !== lastToastedAlertKey;
-      if (isNew && latest && latest.severity === 'critical') {
+      // Un rechargement de page remet lastToastedAlertKey à zéro : sans garde d'âge, la plus
+      // récente alerte encore visible (même vieille d'une session précédente) rejouerait le
+      // toast/son au premier chargement. On ne sonne que pour du vraiment récent.
+      var latestAgeMs = Date.now() - parseCreatedAtMs(latest && latest.created_at);
+      var isRecent = !isNaN(latestAgeMs) && latestAgeMs >= 0 && latestAgeMs < TOAST_MAX_AGE_MS;
+      if (isNew && isRecent && latest && latest.severity === 'critical') {
         showToast(
           latest.summary || latest.label,
           latest.kind,
