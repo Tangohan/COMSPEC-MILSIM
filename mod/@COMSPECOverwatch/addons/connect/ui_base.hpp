@@ -6,3 +6,5 @@ class RscEdit;
 class RscStructuredText;
 class RscPicture;
 class RscPictureKeepAspect;
+class RscListBox;
+class RscWebBrowser;

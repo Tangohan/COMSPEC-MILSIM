@@ -6,7 +6,7 @@ params [["_laserCode", ""]];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
 private _unit = player;
-private _callSign = missionNamespace getVariable ["COMSPEC_Callsign", name _unit];
+private _callSign = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_callSign isEqualTo "") then { _callSign = name _unit };
 if (_laserCode isEqualTo "") then {
     _laserCode = _unit getVariable ["COMSPEC_LaserCode", "1688"];

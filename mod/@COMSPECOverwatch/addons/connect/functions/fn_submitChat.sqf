@@ -23,7 +23,7 @@ if ((_msg select [0, 1]) == "#") then {
     };
 };
 
-private _formatted = [name player, _channel, _priority, _msg, _kind] call comspec_overwatch_connect_fnc_formatCommsMessage;
+private _formatted = [[] call comspec_overwatch_connect_fnc_getCallsign, _channel, _priority, _msg, _kind] call comspec_overwatch_connect_fnc_formatCommsMessage;
 
 private _console = _display displayCtrl 1401;
 private _consoleText = ctrlText _console;

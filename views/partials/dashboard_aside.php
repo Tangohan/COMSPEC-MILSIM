@@ -33,6 +33,12 @@ $activeDashNav = (string) ($activeDashNav ?? 'overview');
 
 $canAdmin = function_exists('can') && (can('admin.organization') || can('admin.access'));
 $canSystem = function_exists('can') && can('admin.system');
+$canAtakOperators = !empty($can_view_atak_operators)
+    || $canSystem
+    || $canAdmin;
+$atakOperatorsLinkedBadge = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
+    ? (string) (int) $atak_operators_linked_count
+    : null;
 $canForum = !function_exists('can') || can('forum.view');
 $canForumCreate = function_exists('can') && can('forum.create_topic');
 $canTrainingManage = function_exists('can') && (
@@ -217,8 +223,11 @@ if ($canDocs) {
     ]), 'documents');
 }
 
-$espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', null, $links([
+$espaceTiles[] = $tile('atak', 'ATAK', 'Carte tactique', 'default', $atakOperatorsLinkedBadge, $links([
     ['label' => 'Carte', 'href' => url('atak'), 'hint' => 'Situation tactique'],
+    $canAtakOperators
+        ? ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur des opérateurs connectés']
+        : null,
     ['label' => 'Première liaison', 'href' => url('atak/premiere-liaison'), 'hint' => 'Mise en service'],
     ['label' => 'Configuration', 'href' => url('atak/setup'), 'hint' => 'Paramètres'],
     ['label' => 'Tutoriel', 'href' => url('atak/tuto'), 'hint' => 'Prise en main'],
@@ -256,6 +265,20 @@ if ($canInvitationsTile) {
             ['label' => 'Envoyer une invitation', 'href' => url('back-office/invitations'), 'hint' => 'Nouveau code d’accès'],
         ]),
         'invitations'
+    );
+}
+if ($canAtakOperators) {
+    $backofficeTiles[] = $tile(
+        'atak-operators',
+        'Effectifs en liaison',
+        'Tableur des opérateurs connectés',
+        'bo',
+        $atakOperatorsLinkedBadge,
+        $links([
+            ['label' => 'Ouvrir le tableur', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Opérateurs actuellement en liaison'],
+            ['label' => 'Carte tactique', 'href' => url('atak'), 'hint' => 'Situation sur la carte'],
+        ]),
+        'atak'
     );
 }
 if ($canAdmin) {

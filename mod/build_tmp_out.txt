@@ -1,6 +1,0 @@
-  Identification des projets à restaurer...
-  Restauration effectuée de E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\COMSPECExtension\COMSPECExtension.csproj (en 333 ms).
-  COMSPECExtension -> E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\net8.0\win-x64\COMSPECExtension_x64.dll
-  Generating native code
-     Création de la bibliothèque ..\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.lib et de l'objet ..\@COMSPECOverwatch\net8.0\win-x64\native\COMSPECExtension_x64.exp
-  COMSPECExtension -> E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\mod\@COMSPECOverwatch\

@@ -11,4 +11,4 @@ _entered pushBack _zoneId;
 missionNamespace setVariable ["COMSPEC_EnteredZones", _entered, true];
 
 playSound "Alarm";
-["COMSPEC_Warning", [format ["Zone interdite — entrée en zone %1", _zoneType]]] call BIS_fnc_showNotification;
+["COMSPEC_Warning", [format ["Zone interdite — entrée en zone %1", _zoneType]]] call comspec_overwatch_connect_fnc_showNotification;

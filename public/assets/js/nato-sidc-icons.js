@@ -1,6 +1,6 @@
 /**
- * Symboles OTAN / APP-6 simplifiés (cadres d’affiliation) pour Leaflet.
- * Pas de dépendance externe — SVG inline.
+ * Symboles OTAN / APP-6 pour Leaflet.
+ * Préfère milsymbol (window.ms) quand disponible ; sinon SVG maison (fallback).
  */
 window.NatoSidcIcons = (function () {
   var COLORS = {
@@ -18,6 +18,7 @@ window.NatoSidcIcons = (function () {
     if (a === 'hostile' || a === 'enemy' || a === 'east') return 'hostile';
     if (a === 'neutral' || a === 'guer' || a === 'civ') return 'neutral';
     if (a === 'unknown' || a === 'suspect') return a === 'suspect' ? 'suspect' : 'unknown';
+    if (a === 'friendly') return 'friend';
     return 'friend';
   }
 
@@ -74,30 +75,78 @@ window.NatoSidcIcons = (function () {
   }
 
   function framePath(aff) {
-    // APP-6 frames (viewBox 0 0 32 32)
-    if (aff === 'hostile') {
-      return 'M16 3 L29 16 L16 29 L3 16 Z'; // diamond
-    }
-    if (aff === 'neutral') {
-      return 'M6 6 H26 V26 H6 Z'; // square
-    }
+    if (aff === 'hostile') return 'M16 3 L29 16 L16 29 L3 16 Z';
+    if (aff === 'neutral') return 'M6 6 H26 V26 H6 Z';
     if (aff === 'unknown' || aff === 'suspect') {
-      return 'M16 4 C20 4 26 10 26 16 C26 22 20 28 16 28 C12 28 6 22 6 16 C6 10 12 4 16 4 Z'; // quatrefoil-ish
+      return 'M16 4 C20 4 26 10 26 16 C26 22 20 28 16 28 C12 28 6 22 6 16 C6 10 12 4 16 4 Z';
     }
-    // friend: rectangle (land)
     return 'M5 8 H27 V24 H5 Z';
   }
 
-  function svgMarkup(opts) {
+  function hasMilsymbol() {
+    return !!(window.ms && typeof window.ms.Symbol === 'function');
+  }
+
+  function resolveSidc(opts) {
     opts = opts || {};
+    if (opts.sidc) return String(opts.sidc).trim();
+    var aff = normAff(opts.affiliation);
+    var cat = window.MilstdCatalog;
+    if (cat && opts.functionid) {
+      return cat.buildSidc(aff, {
+        scheme: opts.scheme || 'S',
+        dim: opts.battledimension || opts.dim || 'G',
+        functionid: opts.functionid,
+      });
+    }
+    var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType);
+    if (cat && cat.sidcForRole) return cat.sidcForRole(roleKey, aff);
+    var letter = { friend: 'F', hostile: 'H', neutral: 'N', unknown: 'U', suspect: 'S' }[aff] || 'F';
+    var fidMap = {
+      infantry: 'UCI---', armor: 'UCA---', artillery: 'UCF---', recon: 'UCR---',
+      hq: 'UH----', medical: 'USM---', logistics: 'US----',
+      aviation_fixed: 'MF----', aviation_rotary: 'MH----', uav: 'MFQ---',
+    };
+    var dim = /aviation|uav/.test(roleKey) ? 'A' : 'G';
+    var fid = fidMap[roleKey] || 'UCI---';
+    return ('S' + letter + dim + 'P' + fid + '-----').slice(0, 15);
+  }
+
+  function milsymbolSvg(opts) {
+    if (!hasMilsymbol()) return null;
+    try {
+      var sidc = resolveSidc(opts);
+      var size = opts.size || 36;
+      var symOpts = {
+        size: size,
+        uniqueDesignation: opts.uniqueDesignation || opts.callSign || opts.label || '',
+      };
+      var heading = parseFloat(opts.heading);
+      if (!isNaN(heading)) symOpts.direction = heading;
+      var sym = new window.ms.Symbol(sidc, symOpts);
+      if (sym.isValid && sym.isValid() === false) return null;
+      var svg = sym.asSVG();
+      if (!svg) return null;
+      var anchor = sym.getAnchor ? sym.getAnchor() : { x: size / 2, y: size / 2 };
+      var sz = sym.getSize ? sym.getSize() : { width: size, height: size };
+      return { svg: svg, anchor: anchor, size: sz, sidc: sidc };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function fallbackSvgInner(opts) {
     var aff = normAff(opts.affiliation);
     var roleKey = opts.roleKey || guessRole(opts.role, opts.aircraftType);
     var c = COLORS[aff] || COLORS.friend;
-    var label = String(opts.callSign || opts.label || '').slice(0, 12);
-    var heading = parseFloat(opts.heading);
-    if (isNaN(heading)) heading = 0;
     var size = opts.size || 36;
-    var showLabel = opts.showLabel !== false;
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" class="nato-sidc-svg" aria-hidden="true">'
+      + '<path d="' + framePath(aff) + '" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="1.5"/>'
+      + '<g color="' + c.stroke + '" opacity="0.95">' + roleGlyph(roleKey) + '</g>'
+      + '</svg>';
+  }
+
+  function healthClassFromOpts(opts) {
     var health = String(opts.health || '').toLowerCase();
     var healthClass = opts.className || '';
     if (!healthClass) {
@@ -106,21 +155,46 @@ window.NatoSidcIcons = (function () {
         healthClass = 'nato-sidc--critical';
       }
     }
+    return healthClass;
+  }
 
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 32 32" class="nato-sidc-svg" aria-hidden="true">'
-      + '<path d="' + framePath(aff) + '" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="1.5"/>'
-      + '<g color="' + c.stroke + '" opacity="0.95">' + roleGlyph(roleKey) + '</g>'
-      + '</svg>';
+  function escapeLabel(s) {
+    return String(s == null ? '' : s).replace(/</g, '&lt;').replace(/&/g, '&amp;');
+  }
 
-    var wrap = '<div class="nato-sidc-wrap nato-sidc--' + aff + (healthClass ? ' ' + healthClass : '') + '" style="display:flex;flex-direction:column;align-items:center;transform:rotate(' + heading + 'deg);transform-origin:center center;">'
+  function svgMarkup(opts) {
+    opts = opts || {};
+    var aff = normAff(opts.affiliation);
+    var label = String(opts.callSign || opts.label || '').slice(0, 12);
+    var heading = parseFloat(opts.heading);
+    if (isNaN(heading)) heading = 0;
+    var size = opts.size || 36;
+    var showLabel = opts.showLabel !== false;
+    var healthClass = healthClassFromOpts(opts);
+
+    var mil = milsymbolSvg(opts);
+    var svg;
+    var rotate = '';
+    if (mil) {
+      svg = mil.svg;
+      // milsymbol direction already applied when heading set; avoid double rotate
+      if (opts.heading == null || opts.heading === '' || isNaN(parseFloat(opts.heading))) {
+        rotate = 'transform:rotate(' + heading + 'deg);transform-origin:center center;';
+      }
+    } else {
+      svg = fallbackSvgInner(opts);
+      rotate = 'transform:rotate(' + heading + 'deg);transform-origin:center center;';
+    }
+
+    var wrap = '<div class="nato-sidc-wrap nato-sidc--' + aff + (healthClass ? ' ' + healthClass : '') + '" style="display:flex;flex-direction:column;align-items:center;' + rotate + '">'
       + svg
+      + (opts.emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '')
+      + (opts.listening && !opts.emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '')
       + '</div>';
     if (showLabel && label) {
       wrap = '<div class="nato-sidc-stack' + (healthClass ? ' ' + healthClass : '') + '" style="display:flex;flex-direction:column;align-items:center;gap:1px;">'
         + wrap
-        + '<span class="nato-sidc-label">'
-        + label.replace(/</g, '&lt;')
-        + '</span></div>';
+        + '<span class="nato-sidc-label">' + escapeLabel(label) + '</span></div>';
     }
     return wrap;
   }
@@ -130,14 +204,27 @@ window.NatoSidcIcons = (function () {
     opts = opts || {};
     var size = opts.size || 36;
     var showLabel = opts.showLabel !== false;
-    var h = showLabel ? size + 14 : size;
-    var w = Math.max(size, 72);
+    var mil = milsymbolSvg(opts);
+    var iconW = size;
+    var iconH = size;
+    var anchorX = size / 2;
+    var anchorY = size / 2;
+    if (mil && mil.size) {
+      iconW = Math.ceil(mil.size.width) || size;
+      iconH = Math.ceil(mil.size.height) || size;
+      if (mil.anchor) {
+        anchorX = mil.anchor.x != null ? mil.anchor.x : iconW / 2;
+        anchorY = mil.anchor.y != null ? mil.anchor.y : iconH / 2;
+      }
+    }
+    var w = Math.max(iconW, showLabel ? 72 : iconW);
+    var h = showLabel ? iconH + 14 : iconH;
     return L.divIcon({
       className: 'nato-sidc-icon',
       html: svgMarkup(opts),
       iconSize: [w, h],
-      iconAnchor: [w / 2, size / 2],
-      popupAnchor: [0, -size / 2],
+      iconAnchor: [w / 2, showLabel ? anchorY : anchorY],
+      popupAnchor: [0, -anchorY],
     });
   }
 
@@ -150,12 +237,23 @@ window.NatoSidcIcons = (function () {
       + '</span>';
   }
 
+  function previewHtml(opts) {
+    opts = opts || {};
+    opts.showLabel = false;
+    opts.size = opts.size || 40;
+    return svgMarkup(opts);
+  }
+
   return {
     colors: COLORS,
     normalizeAffiliation: normAff,
     guessRole: guessRole,
+    resolveSidc: resolveSidc,
+    hasMilsymbol: hasMilsymbol,
+    milsymbolSvg: milsymbolSvg,
     svgMarkup: svgMarkup,
     leafletDivIcon: leafletDivIcon,
     listBadgeHtml: listBadgeHtml,
+    previewHtml: previewHtml,
   };
 })();

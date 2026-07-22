@@ -35,6 +35,33 @@ Le bootstrap charge **`app/Config/*.php`** (app, database, auth, maintenance, un
 6. Vérifier **HTTPS**, cookies sécurisés, et sauvegardes planifiées.
 7. Lancer les smoke tests post-déploiement (`php scripts/post-deploy-smoke-tests.php --base-url=https://votre-domaine.tld`).
 
+### QR codes (pairing téléphone ATAK, courrier)
+
+`vendor/` n’est **pas** versionné : sans `composer install`, `endroid/qr-code` est absent. Le générateur bascule alors sur **`phpqrcode/`** (présent dans le dépôt) + PNG zlib (`ext-zlib`), sans GD.
+
+Sur le serveur Athena (après déploiement du code) :
+
+```bash
+cd /chemin/vers/COMSPEC-MILSIM
+# Fichiers critiques QR (si déploiement partiel) :
+#   app/Services/Qr/QrPngGenerator.php
+#   app/Controllers/Api/AtakApiController.php   (phonePairingQrImage)
+#   app/Services/Courrier/CourrierQrService.php
+#   composer.json
+#   phpqrcode/   (dossier entier à la racine)
+composer install --no-dev --no-interaction --optimize-autoloader
+php -m | grep -E 'gd|zlib'
+php scripts/smoke-qr-png.php
+```
+
+- **`ext-zlib`** : requis (fallback PNG sans GD).
+- **`ext-gd`** : recommandé (Endroid PngWriter + phpqrcode GD). Sous Debian/Ubuntu : `sudo apt install php-gd` puis redémarrer PHP-FPM / Apache.
+- Vérifier que le dossier **`phpqrcode/`** est bien déployé à la racine du projet.
+- Contrôle rapide : ouvrir `/api/atak/phone-pairing/{token}/qr.png` — doit renvoyer `Content-Type: image/png` (signature `\x89PNG`), **pas** le texte `QR unavailable`.
+- Si le jeu affiche encore « QR indisponible » alors que le code court (ex. `XFC56D`) est OK : le pairing API marche, c’est uniquement le PNG — déployer `QrPngGenerator` + `composer install` suffit en général (pas besoin de republier le mod).
+
+**Cause classique en prod (avant ce fix)** : `phonePairingQrImage` ne faisait que Endroid `PngWriter` ; sans `vendor/` ou sans GD → HTTP **503** `QR unavailable` → l’extension Arma renvoie `ERR|unavailable` → dialog fallback.
+
 ## Santé et maintenance
 
 - Des routes comme **`/api/health`** peuvent servir aux sondes de disponibilité.

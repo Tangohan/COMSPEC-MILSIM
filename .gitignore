@@ -25,3 +25,17 @@ ressources/
 
 # Copie locale TCPDF : ne pas versionner un dépôt Git imbriqué
 tcpdf/.git/
+
+# --- Mod Arma : artefacts de build / debug (ne jamais shipper sur Workshop) ---
+mod/@COMSPECOverwatch/**/*.pdb
+mod/@COMSPECOverwatch/net8.0/
+mod/@COMSPECOverwatch/COMSPECExtension_x64.pdb
+mod/COMSPECExtension/bin/
+mod/COMSPECExtension/obj/
+mod/COMSPECExtension/**/*.pdb
+mod/build_log.txt
+mod/build_tmp_out.txt
+# Staging Workshop régénéré par mod/workshop-pack.ps1
+mod/publisher/
+mod/COMSPECOverwatch-workshop.zip
+

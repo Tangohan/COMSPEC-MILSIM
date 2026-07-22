@@ -19,7 +19,7 @@ if (count _slides == 0) then {
     _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
 };
 if (count _slides == 0) exitWith {
-    ["COMSPEC_Info", ["Aucune diapositive de briefing disponible pour le moment."]] call BIS_fnc_showNotification;
+    ["COMSPEC_Info", ["Aucune diapositive de briefing disponible pour le moment."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 // L'affichage de la première diapositive est déclenché par onLoad du dialog (display_briefing.hpp).

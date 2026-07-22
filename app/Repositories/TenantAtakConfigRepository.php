@@ -70,4 +70,104 @@ class TenantAtakConfigRepository
             ]);
         }
     }
+
+    /**
+     * Génère (ou régénère) la clé d’accès Overwatch pour une communauté.
+     * La clé en clair n’est renvoyée qu’une fois ; elle est stockée pour le redeem / l’auth.
+     *
+     * @return array{plain_key: string, prefix: string}|null
+     */
+    public function generateAccessKey(int $tenantId): ?array
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        $plain = 'ow_' . bin2hex(random_bytes(24));
+        $prefix = substr($plain, 0, 10);
+
+        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt->execute([$tenantId]);
+        $exists = (bool) $stmt->fetchColumn();
+
+        if ($exists) {
+            $upd = $this->pdo->prepare(
+                'UPDATE tenant_atak_config
+                 SET access_key = ?, access_key_prefix = ?, access_key_generated_at = NOW(), updated_at = NOW()
+                 WHERE tenant_id = ?'
+            );
+            $upd->execute([$plain, $prefix, $tenantId]);
+        } else {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO tenant_atak_config
+                    (tenant_id, access_key, access_key_prefix, access_key_generated_at, default_map_slug, created_at, updated_at)
+                 VALUES (?, ?, ?, NOW(), \'altis\', NOW(), NOW())'
+            );
+            $ins->execute([$tenantId, $plain, $prefix]);
+        }
+
+        return ['plain_key' => $plain, 'prefix' => $prefix];
+    }
+
+    /** Clé d’accès Overwatch de la communauté (vide si non générée). */
+    public function getAccessKey(int $tenantId): string
+    {
+        if ($tenantId < 1 || !$this->hasAccessKeyColumn()) {
+            return '';
+        }
+        $stmt = $this->pdo->prepare('SELECT access_key FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt->execute([$tenantId]);
+        $key = $stmt->fetchColumn();
+
+        return is_string($key) ? trim($key) : '';
+    }
+
+    /**
+     * Vérifie si une clé présentée correspond à une clé de communauté.
+     * @return int|null tenant_id si trouvé
+     */
+    public function findTenantIdByAccessKey(string $presented): ?int
+    {
+        $presented = trim($presented);
+        if ($presented === '' || !$this->hasAccessKeyColumn()) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT tenant_id, access_key FROM tenant_atak_config
+                 WHERE access_key IS NOT NULL AND access_key != \'\' LIMIT 500'
+            );
+            $stmt->execute();
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $stored = trim((string) ($row['access_key'] ?? ''));
+                if ($stored !== '' && hash_equals($stored, $presented)) {
+                    $tid = (int) ($row['tenant_id'] ?? 0);
+
+                    return $tid > 0 ? $tid : null;
+                }
+            }
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    private function hasAccessKeyColumn(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'access_key' LIMIT 1"
+            );
+            $cached = (bool) $st?->fetchColumn();
+        } catch (\Throwable) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
 }

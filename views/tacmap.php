@@ -8,7 +8,10 @@ $overwatchContext = $overwatchContext ?? [
     'apiBase' => rtrim($base, '/') . '/api',
     'syncIntervalMs' => 8000,
 ];
-$overwatchMapsList = $overwatchMapsList ?? [['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world']];
+$overwatchMapsList = $overwatchMapsList ?? [
+    ['slug' => 'world', 'label' => 'Vue du monde', 'type' => 'world'],
+    ['slug' => 'world_relief', 'label' => 'Relief mondial', 'type' => 'world'],
+];
 $overwatchWorkspaces = $overwatchWorkspaces ?? [['mapId' => 1, 'label' => 'Principal', 'slug' => 'altis', 'isDefault' => true]];
 $overwatchMapsConfigs = $overwatchMapsConfigs ?? [];
 $overwatchDefaultMapId = $overwatchDefaultMapId ?? 1;
@@ -34,6 +37,9 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milsymbol/milsymbol.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milstd/milstd2525.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>

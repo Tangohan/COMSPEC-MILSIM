@@ -39,16 +39,36 @@ window.ATAKMarkers = (function () {
     }
     el.innerHTML = list.map(function (item) {
       var d = item.data || {};
-      var label = d.label || d.name || 'Marqueur';
+      var label = d.label || d.symbolName || d.name || 'Marqueur';
       var desc = d.description || '';
       var gx = item.gridLng != null ? Math.round(Number(item.gridLng)) : '—';
       var gy = item.gridLat != null ? Math.round(Number(item.gridLat)) : '—';
       var color = d.color || '#34d399';
+      var metaExtra = '';
+      if (d.symbolName || d.affiliation) {
+        var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
+          ? window.MilstdCatalog.affiliationLabelFr(d.affiliation)
+          : '';
+        var bits = [];
+        if (d.symbolName) bits.push(escapeHtml(d.symbolName));
+        if (affFr) bits.push(escapeHtml(affFr));
+        if (bits.length) metaExtra = '<span class="atak-marker-item__symbol">' + bits.join(' · ') + '</span>';
+      }
+      var thumb = '';
+      if ((d.sidc || d.icon === 'milsymbol') && window.NatoSidcIcons && window.NatoSidcIcons.listBadgeHtml) {
+        thumb = window.NatoSidcIcons.listBadgeHtml({
+          sidc: d.sidc,
+          affiliation: d.affiliation || 'friend',
+          functionid: d.functionid,
+          size: 20,
+        });
+      }
       return '<div class="atak-marker-item" data-id="' + escapeHtml(item.id) + '">' +
         '<button type="button" class="atak-marker-item__main" data-focus="' + escapeHtml(item.id) + '">' +
-        '<span class="atak-marker-item__swatch" style="background:' + escapeHtml(color) + '" aria-hidden="true"></span>' +
+        (thumb || '<span class="atak-marker-item__swatch" style="background:' + escapeHtml(color) + '" aria-hidden="true"></span>') +
         '<span class="atak-marker-item__body">' +
         '<strong>' + escapeHtml(label) + '</strong>' +
+        metaExtra +
         '<span class="atak-marker-item__meta">Grille ' + gx + ' / ' + gy + '</span>' +
         (desc ? '<span class="atak-marker-item__desc">' + escapeHtml(desc) + '</span>' : '') +
         '</span></button>' +

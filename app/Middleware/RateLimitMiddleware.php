@@ -89,6 +89,10 @@ final class RateLimitMiddleware
             '/api/forum-moderation' => [90, 300],
             '/api/forum-upload' => [40, 300],
             '/forum/new-topic' => [25, 600],
+            '/api/atak/game-link/redeem' => [20, 3600],
+            '/api/atak/game-link/by-steam' => [30, 3600],
+            '/api/atak/client-init' => [60, 300],
+            '/api/atak/position' => [200, 60],
         ];
         foreach ($routes as $routePath => $rule) {
             if ($path === $routePath) {

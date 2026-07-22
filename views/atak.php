@@ -10,8 +10,18 @@ $atakMapsConfigs = $atakMapsConfigs ?? [];
 $atakWorkspaces = $atakWorkspaces ?? [];
 $atakDefaultMapId = (int)($atakDefaultMapId ?? 1);
 $atakCallsignToUser = $atakCallsignToUser ?? [];
+$atakCaps = $atakCaps ?? [
+    'loggedIn' => false,
+    'canViewPersonnel' => false,
+    'canLinkPersonnel' => false,
+    'canRenameUnit' => false,
+    'canDeleteUnitStaff' => false,
+    'canDeleteOwnUnit' => false,
+    'canPing' => true,
+];
 $currentUser = $currentUser ?? null;
 $atakUserForJs = $atakUserForJs ?? null;
+$atakUiPrefs = $atakUiPrefs ?? ['theme' => 'system', 'density' => 'comfortable'];
 $canAccessAdminAtakConfig = $canAccessAdminAtakConfig ?? false;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
@@ -59,9 +69,20 @@ if ($atakMapConfig) {
     window.ATAK_DEFAULT_MAP_ID = <?= (int)$atakDefaultMapId ?>;
     window.ATAK_NODE_URL = <?= json_encode($nodeAtakUrl ?? '') ?>;
     window.ATAK_CALLSIGN_TO_USER = <?= json_encode($atakCallsignToUser) ?>;
+    window.ATAK_CAPS = <?= json_encode($atakCaps ?? [
+        'loggedIn' => false,
+        'canViewPersonnel' => false,
+        'canLinkPersonnel' => false,
+        'canRenameUnit' => false,
+        'canDeleteUnitStaff' => false,
+        'canDeleteOwnUnit' => false,
+        'canPing' => true,
+        'canTriageMedical' => false,
+    ]) ?>;
+    window.ATAK_CAN_ISSUE_ORDERS = <?= !empty($currentUser) ? 'true' : 'false' ?>;
   </script>
 </head>
-<body class="atak-page">
+<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'comfortable')) ?>">
   <div id="atak-boot-overlay" class="atak-boot-overlay" role="status" aria-live="polite" aria-busy="true">
     <div class="atak-boot-inner">
       <div class="atak-boot-spinner" aria-hidden="true"></div>
@@ -84,14 +105,6 @@ if ($atakMapConfig) {
         <span class="atak-chip" id="atak-chip-liaison" title="Dernière activité reçue depuis le théâtre">
           <span class="atak-chip-key">Liaison</span>
           <span class="atak-chip-value" id="atak-chip-liaison-value">En attente</span>
-        </span>
-        <span class="atak-chip atak-chip--muted" id="atak-chip-sync" title="Dernière actualisation du journal">
-          <span class="atak-chip-key">Journal</span>
-          <span class="atak-chip-value" id="atak-chip-sync-value">—</span>
-        </span>
-        <span class="atak-chip atak-chip--muted" id="atak-chip-contacts" title="Contacts en liaison">
-          <span class="atak-chip-key">Contacts</span>
-          <span class="atak-chip-value" id="atak-chip-contacts-value">0</span>
         </span>
       </div>
     </div>
@@ -121,6 +134,7 @@ if ($atakMapConfig) {
       <a href="<?= url('dashboard') ?>" class="atak-header-link">Tableau de bord</a>
       <?php if ($currentUser): ?>
       <button type="button" class="atak-btn-game-link" id="atak-btn-game-link" title="Générer un code pour lier Arma à votre compte">Connexion en jeu</button>
+      <button type="button" class="atak-btn-phone-link" id="atak-btn-phone-link" title="Générer un QR pour lier un téléphone au briefing">Lier un téléphone</button>
       <?php endif; ?>
       <button type="button" class="atak-btn-account atak-btn-account--config" id="atak-btn-config" title="Configuration pour le jeu">
         Configuration
@@ -180,6 +194,27 @@ if ($atakMapConfig) {
         </div>
         <p class="atak-game-link-error" id="atak-game-link-error" hidden></p>
       </section>
+      <section class="atak-account-section atak-account-section--phone-link" id="atak-phone-link-section">
+        <div class="atak-game-link-head">
+          <h3 class="atak-account-section-title">Connexion téléphone</h3>
+          <span class="atak-pill atak-pill--muted" id="atak-phone-link-pill">Non lié</span>
+        </div>
+        <p class="atak-game-link-hint" id="atak-phone-link-hint">Générez un code, puis scannez le QR avec le téléphone (ou saisissez le code sur la page de connexion). Même si un téléphone est déjà lié, vous pouvez en générer un nouveau pour un autre appareil.</p>
+        <button type="button" class="atak-game-link-btn" id="atak-phone-link-btn">Générer un QR</button>
+        <div class="atak-phone-link-result" id="atak-phone-link-result" hidden>
+          <div class="atak-phone-link-qr-wrap">
+            <img class="atak-phone-link-qr" id="atak-phone-link-qr" alt="QR code de connexion téléphone" width="200" height="200" />
+          </div>
+          <p class="atak-game-link-code-label">Code à saisir</p>
+          <p class="atak-game-link-code" id="atak-phone-link-code">————</p>
+          <p class="atak-game-link-meta" id="atak-phone-link-meta"></p>
+          <div class="atak-phone-link-actions">
+            <button type="button" class="atak-game-config-copy" id="atak-phone-link-copy" title="Copier le code">Copier le code</button>
+            <a class="atak-phone-link-open" id="atak-phone-link-open" href="#" target="_blank" rel="noopener noreferrer">Ouvrir la page</a>
+          </div>
+        </div>
+        <p class="atak-game-link-error" id="atak-phone-link-error" hidden></p>
+      </section>
       <section class="atak-account-section">
         <h3 class="atak-account-section-title">Compte</h3>
         <p><strong>E-mail :</strong> <?= htmlspecialchars($currentUser['email'] ?? '') ?></p>
@@ -225,6 +260,24 @@ if ($atakMapConfig) {
       <p>Connectez-vous pour générer un code de liaison et voir vos données de compte.</p>
       <p><a href="<?= url('login') ?>">Se connecter</a></p>
       <?php endif; ?>
+      <section class="atak-account-section" id="atak-sound-prefs">
+        <h3 class="atak-account-section-title">Son des alertes</h3>
+        <p class="atak-game-link-hint">Sons d’événements (démarrage, déconnexion, inconscient, mort) + alertes courantes. Le volume et les modes silence sont aussi réglables dans la barre latérale.</p>
+        <label class="atak-sound-pref-label" for="atak-alert-volume-account">
+          <span class="atak-sound-pref-key">Volume des alertes</span>
+          <input type="range" id="atak-alert-volume-account" class="atak-sound-pref-slider" min="0" max="100" step="1" value="70" title="Volume des alertes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+        </label>
+        <label class="atak-sound-pref-label" for="atak-notif-sound">
+          <span class="atak-sound-pref-key">Choix du son</span>
+          <select id="atak-notif-sound" class="atak-header-select atak-sound-pref-select" title="Son des alertes sur la carte">
+            <option value="silent_vib">Mode silence (avec vibration)</option>
+            <option value="stalker">Stalker</option>
+            <option value="health">Alerte santé</option>
+            <option value="mute">Mode silence sans vibration</option>
+          </select>
+        </label>
+        <button type="button" class="atak-game-config-copy" id="atak-notif-sound-preview" title="Écouter le son choisi">Écouter</button>
+      </section>
     </div>
   </aside>
 
@@ -256,9 +309,9 @@ if ($atakMapConfig) {
       </details>
       <?php if (!empty($atakModDownloadUrl)): ?>
       <details class="atak-details">
-        <summary>Mod dédié</summary>
+        <summary>Pack Overwatch</summary>
         <div class="atak-details-body">
-          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download" download>Télécharger le mod COMSPEC Overwatch</a></p>
+          <p><a href="<?= htmlspecialchars($atakModDownloadUrl) ?>" class="atak-game-config-download">Télécharger le pack Overwatch</a></p>
         </div>
       </details>
       <?php endif; ?>
@@ -353,15 +406,35 @@ if ($atakMapConfig) {
 
   <div class="atak-main">
     <aside class="atak-panel-left" id="atak-panel-left">
+      <div class="atak-left-rail">
       <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
-        <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams">Cams</button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs">Marqueurs</button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat">Tchat</button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" title="Assistances">Assistances <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" title="Pings">Pings</button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" title="JTAC">JTAC</button>
-        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="liaison" title="Liaison">Liaison</button>
+        <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams"><span class="atak-tab-label">Cams</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs"><span class="atak-tab-label">Marqueurs</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat"><span class="atak-tab-label">Tchat</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" title="Ordres"><span class="atak-tab-label">Ordres</span> <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" title="Assistances"><span class="atak-tab-label">Assistances</span> <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="radio" title="Radio proximité"><span class="atak-tab-label">Radio</span> <span class="atak-tab-badge" id="atak-radio-tab-badge" hidden></span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" title="Pings"><span class="atak-tab-label">Pings</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" title="JTAC"><span class="atak-tab-label">JTAC</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="liaison" title="Liaison"><span class="atak-tab-label">Liaison</span> <span class="atak-tab-badge" id="atak-liaison-tab-badge" hidden></span></button>
       </nav>
+      <section class="atak-rail-audio" id="atak-rail-audio" aria-label="Réglages des alertes">
+        <h3 class="atak-rail-audio-title">Alertes</h3>
+        <label class="atak-rail-audio-vol" for="atak-alert-volume">
+          <span class="atak-rail-audio-vol-label">Volume des alertes <span id="atak-alert-volume-value" aria-hidden="true">70</span>%</span>
+          <input type="range" id="atak-alert-volume" class="atak-rail-audio-slider" min="0" max="100" step="1" value="70" title="Volume des alertes" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" />
+        </label>
+        <label class="atak-rail-audio-opt" for="atak-alert-silence" title="Coupe les sons ; garde une vibration courte si l’appareil le permet. Les bandeaux d’alerte restent visibles.">
+          <input type="checkbox" id="atak-alert-silence" />
+          <span>Mode silence</span>
+        </label>
+        <label class="atak-rail-audio-opt" for="atak-alert-silence-novib" title="Coupe les sons et toute vibration. Les bandeaux d’alerte restent visibles.">
+          <input type="checkbox" id="atak-alert-silence-novib" />
+          <span>Mode silence sans vibration</span>
+        </label>
+        <p class="atak-rail-audio-hint" id="atak-alert-mute-hint" hidden role="status"></p>
+      </section>
+      </div>
       <div class="atak-left-body">
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-list" id="atak-cams-list">
@@ -383,24 +456,142 @@ if ($atakMapConfig) {
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-chat">
+        <div class="atak-panel-strip">
+          <span class="atak-panel-strip-title">Journal radio</span>
+          <div class="atak-panel-strip-actions">
+            <span class="atak-panel-strip-badge">SQUAD</span>
+            <button type="button" class="atak-chat-clear" id="atak-chat-clear" title="Vider l’affichage du tchat (l’historique serveur n’est pas effacé)" aria-label="Vider le tchat">
+              <svg class="atak-chat-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
         <div class="atak-chat-messages" id="atak-chat-messages">
           <div class="atak-empty-state atak-empty-state--compact" id="atak-chat-empty">
             <p class="atak-empty-state-title">Aucun message</p>
-            <p class="atak-empty-state-text">Les échanges d’équipe s’afficheront ici.</p>
+            <p class="atak-empty-state-text">Les échanges radio de l’équipe s’afficheront ici.</p>
           </div>
         </div>
         <div class="atak-chat-input-wrap">
-          <input type="text" id="atak-chat-input" placeholder="Envoyer un message…" />
-          <button type="button" id="atak-chat-send">Envoyer</button>
+          <input type="text" id="atak-chat-input" placeholder="Émettre" autocomplete="off" spellcheck="false" />
+          <button type="button" class="atak-chat-send" id="atak-chat-send" title="Envoyer" aria-label="Envoyer">
+            <svg class="atak-chat-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-orders" role="tabpanel">
+        <p class="atak-panel-hint">Ordres tactiques émis depuis la carte ou reçus du théâtre. Confirmez la réception, suivez l’exécution ou annulez si besoin. Un léger délai radio peut s’appliquer côté destinataire.</p>
+        <div class="atak-orders-issue" id="atak-orders-issue" hidden>
+          <div class="atak-orders-issue-grid">
+            <label class="atak-orders-field">
+              <span>Type d’ordre</span>
+              <select id="atak-order-type">
+                <option value="MOVE">Se déplacer</option>
+                <option value="HOLD">Tenir la position</option>
+                <option value="RECON">Reconnaissance</option>
+                <option value="CAS">Appui aérien</option>
+                <option value="QRF">Force de réaction</option>
+              </select>
+            </label>
+            <label class="atak-orders-field">
+              <span>Priorité</span>
+              <select id="atak-order-priority">
+                <option value="ROUTINE">Routine</option>
+                <option value="IMPORTANT" selected>Important</option>
+                <option value="URGENT">Urgent</option>
+                <option value="CONTACT">Contact</option>
+              </select>
+            </label>
+            <label class="atak-orders-field">
+              <span>Type de destinataire</span>
+              <select id="atak-order-target-type">
+                <option value="all">Toute l’équipe</option>
+                <option value="user">Utilisateur</option>
+                <option value="group">Groupe en jeu</option>
+                <option value="fire_team">Fire team</option>
+                <option value="channel">Canal</option>
+                <option value="solo">ATAK Solo</option>
+              </select>
+            </label>
+            <label class="atak-orders-field" id="atak-order-target-wrap" hidden>
+              <span id="atak-order-target-label">Destinataire</span>
+              <select id="atak-order-target-ref">
+                <option value="">Choisir…</option>
+              </select>
+            </label>
+            <label class="atak-orders-field atak-orders-field--wide">
+              <span>Précisions</span>
+              <input type="text" id="atak-order-payload" placeholder="Consignes complémentaires (facultatif)" maxlength="400" />
+            </label>
+            <label class="atak-orders-field atak-orders-field--wide atak-orders-check">
+              <input type="checkbox" id="atak-order-radio-sim" checked />
+              <span>Conditions radio réalistes (délai, brouillage fictif)</span>
+            </label>
+          </div>
+          <button type="button" class="atak-order-issue-submit" id="atak-order-issue-btn">Émettre l’ordre</button>
+        </div>
+        <div class="atak-orders-list" id="atak-orders-list"></div>
+        <div class="atak-empty-state" id="atak-orders-empty">
+          <div class="atak-empty-state-icon" aria-hidden="true">☰</div>
+          <p class="atak-empty-state-title">Aucun ordre</p>
+          <p class="atak-empty-state-text">Les ordres émis depuis la carte ou remontés depuis le théâtre s’afficheront ici.</p>
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-medical">
-        <p class="atak-panel-hint">Alertes transmises depuis le théâtre (combattant au sol, rythme cardiaque à zéro) et unités à secourir.</p>
+        <div class="atak-medical-head">
+          <p class="atak-panel-hint">Alertes transmises depuis le théâtre (combattant au sol, rythme cardiaque à zéro) et unités à secourir. Les alertes disparaissent automatiquement après 30 minutes. Masquer une alerte la retire de cet écran uniquement — le journal Liaison et le tchat restent inchangés. Le triage (Traité, KIA, Annulé…) est réservé aux médecins et responsables d’effectifs.</p>
+          <div class="atak-medical-toolbar">
+            <button type="button" class="atak-medical-clear-all" id="atak-medical-clear-all" title="Masquer toutes les alertes affichées" hidden>Tout masquer</button>
+          </div>
+        </div>
         <div class="atak-medical-list" id="atak-medical-list">
           <div class="atak-empty-state atak-medical-empty">
             <div class="atak-empty-state-icon" aria-hidden="true">✚</div>
             <p class="atak-empty-state-title">Aucune assistance</p>
             <p class="atak-empty-state-text">Les demandes médicales en cours s’afficheront ici.</p>
+          </div>
+        </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-radio">
+        <div class="atak-radio-head" id="atak-radio-head">
+          <p class="atak-panel-hint">Qui émet près d’un opérateur en liaison, et sur quel réseau. L’écoute audio se fait en jeu ; ici vous suivez qui émet (pastilles, liste, alertes). Sur la tablette Overwatch, « Surveiller ce réseau » bascule aussi le canal radio actif.</p>
+          <div class="atak-radio-toolbar">
+            <label class="atak-radio-field">
+              <span>Opérateur de référence</span>
+              <select id="atak-radio-focus">
+                <option value="">Opérateur de référence (auto)</option>
+              </select>
+            </label>
+            <label class="atak-radio-field">
+              <span>Rayon (m)</span>
+              <select id="atak-radio-radius">
+                <option value="50">50</option>
+                <option value="75" selected>75</option>
+                <option value="100">100</option>
+                <option value="150">150</option>
+                <option value="200">200</option>
+              </select>
+            </label>
+            <label class="atak-radio-check">
+              <input type="checkbox" id="atak-radio-tx-only" />
+              <span>Émissions uniquement</span>
+            </label>
+            <label class="atak-radio-check">
+              <input type="checkbox" id="atak-radio-hide-nomodule" />
+              <span>Masquer cet onglet si aucun module radio</span>
+            </label>
+          </div>
+          <div class="atak-radio-listen-bar" id="atak-radio-listen-bar" hidden></div>
+          <div class="atak-radio-banner" id="atak-radio-banner" hidden></div>
+        </div>
+        <div class="atak-radio-list" id="atak-radio-list">
+          <div class="atak-empty-state">
+            <div class="atak-empty-state-icon" aria-hidden="true">◎</div>
+            <p class="atak-empty-state-title">En attente des effectifs</p>
+            <p class="atak-empty-state-text">Les contacts en liaison apparaîtront ici avec leur état d’émission.</p>
           </div>
         </div>
       </div>
@@ -444,9 +635,15 @@ if ($atakMapConfig) {
           </section>
           <div class="atak-activity-head">
             <p class="atak-activity-intro">Suivi des connexions en jeu, des changements d’indicatif et des échanges récents avec la carte.</p>
-            <div class="atak-activity-meta" id="atak-activity-meta" hidden>
-              <span class="atak-pill atak-pill--ok" id="atak-activity-meta-count">0</span>
-              <span class="atak-activity-meta-label" id="atak-activity-meta-label">événements récents</span>
+            <div class="atak-activity-toolbar">
+              <div class="atak-activity-meta" id="atak-activity-meta" hidden>
+                <span class="atak-pill atak-pill--ok" id="atak-activity-meta-count">0</span>
+                <span class="atak-activity-meta-label" id="atak-activity-meta-label">événements récents</span>
+              </div>
+              <div class="atak-activity-actions">
+                <a class="atak-activity-link" id="atak-activity-fullscreen" href="<?= $base ?>/atak/liaison">Voir tout</a>
+                <button type="button" class="atak-activity-clear" id="atak-activity-clear" title="Mettre le journal de côté sans le supprimer">Vider</button>
+              </div>
             </div>
           </div>
           <ul class="atak-activity-list" id="atak-activity-list" aria-live="polite"></ul>
@@ -464,20 +661,30 @@ if ($atakMapConfig) {
       <div id="atak-map"></div>
 
       <div class="atak-drawer atak-drawer--fixed" id="atak-effectifs-drawer">
-        <div class="atak-drawer__head">Tableau des effectifs</div>
+        <div class="atak-drawer__head">
+          <span class="atak-drawer__title">Tableau des effectifs</span>
+          <span class="atak-drawer__count" id="atak-effectifs-count" hidden></span>
+        </div>
         <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
           <table>
+            <colgroup>
+              <col class="atak-col-cs" />
+              <col class="atak-col-role" />
+              <col class="atak-col-link" />
+              <col class="atak-col-hdg" />
+              <col class="atak-col-grid" />
+            </colgroup>
             <thead>
               <tr>
-                <th>Indicatif</th>
-                <th>Rôle</th>
-                <th>Liaison</th>
-                <th>Cap</th>
-                <th>Grille</th>
+                <th scope="col">Indicatif</th>
+                <th scope="col">Rôle</th>
+                <th scope="col">Liaison</th>
+                <th scope="col">Cap</th>
+                <th scope="col">Grille</th>
               </tr>
             </thead>
             <tbody id="atak-units-table-body">
-              <tr><td colspan="5" class="atak-drawer-empty">Aucun contact.</td></tr>
+              <tr><td colspan="5" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>
             </tbody>
           </table>
         </div>
@@ -528,16 +735,20 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-orders.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medical-alerts.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-context-menu.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-unit-menu.js"></script>
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-sounds.js"></script>
   <script>
     (function () {
       window.ATAKShowError = function (msg) {
@@ -548,13 +759,17 @@ if ($atakMapConfig) {
         clearTimeout(el._toastTimer);
         el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
       };
-      window.ATAKShowNotification = function (msg) {
+      window.ATAKShowNotification = function (msg, opts) {
         var el = document.getElementById('atak-notification-toast');
         if (!el) return;
         el.textContent = msg || '';
         el.classList.add('show');
         clearTimeout(el._toastTimer);
         el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
+        opts = opts || {};
+        if (opts.silent !== true && window.ATAKSounds && typeof window.ATAKSounds.play === 'function') {
+          window.ATAKSounds.play();
+        }
       };
 
       var bootOverlay = document.getElementById('atak-boot-overlay');
@@ -567,6 +782,14 @@ if ($atakMapConfig) {
           bootOverlay.setAttribute('aria-busy', 'false');
           bootOverlay.setAttribute('aria-hidden', 'true');
         }
+        setTimeout(function () {
+          try {
+            if (window.ATAKMap && window.ATAKMap.getMap) {
+              var m = window.ATAKMap.getMap();
+              if (m) m.invalidateSize({ animate: false });
+            }
+          } catch (e) {}
+        }, 50);
       }
 
       var bootAbort = new AbortController();
@@ -590,6 +813,7 @@ if ($atakMapConfig) {
           if (window.ATAKUnits) ATAKUnits.fetchUnits();
           if (window.ATAKChat) ATAKChat.fetchMessages();
           if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
+          if (window.ATAKOrders) ATAKOrders.fetchOrders();
           if (window.ATAKPings) ATAKPings.fetchPings();
           if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) window.ATAKJTAC.fetchCas();
           else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
@@ -645,15 +869,22 @@ if ($atakMapConfig) {
       ATAKSocket.connect({
         mapId: mapId,
         onConnect: function () {
+          var firstBoot = !atakLiveConnectedOnce;
           atakLiveConnectedOnce = true;
           dismissAtakBoot();
           setNetworkChip(true);
           if (connectionLostEl) connectionLostEl.classList.remove('show');
+          if (firstBoot && window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+            window.ATAKSounds.playEvent('start');
+          }
         },
         onConnectionLost: function () {
           if (connectionLostEl) connectionLostEl.classList.add('show');
           setNetworkChip(false);
           if (atakLiveConnectedOnce) {
+            if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+              window.ATAKSounds.playEvent('disconnect');
+            }
             window.ATAKShowError('La liaison en direct avec la Tacmap est interrompue. Les données se rafraîchissent de façon moins fréquente.');
           }
         }
@@ -664,6 +895,7 @@ if ($atakMapConfig) {
         if (window.ATAKUnits) ATAKUnits.fetchUnits();
         if (window.ATAKChat) ATAKChat.fetchMessages();
         if (window.ATAKMedicalAlerts) ATAKMedicalAlerts.fetchAlerts();
+        if (window.ATAKOrders) ATAKOrders.fetchOrders();
         if (window.ATAKPings) ATAKPings.fetchPings();
         if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) ATAKJTAC.fetchCas();
         else if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
@@ -762,6 +994,12 @@ if ($atakMapConfig) {
       if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
         ATAKActivity.start();
       }
+      if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.startPolling === 'function') {
+        ATAKMedicalAlerts.startPolling(5000);
+      }
+      if (window.ATAKOrders && typeof window.ATAKOrders.startPolling === 'function') {
+        ATAKOrders.startPolling(4000);
+      }
 
       document.querySelectorAll('.atak-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -775,8 +1013,22 @@ if ($atakMapConfig) {
           this.setAttribute('aria-selected', 'true');
           var content = document.getElementById('tab-' + tab);
           if (content) content.classList.add('active');
+          if (window.ATAKActivity && typeof window.ATAKActivity.setLiaisonTabActive === 'function') {
+            window.ATAKActivity.setLiaisonTabActive(tab === 'liaison');
+          }
         });
       });
+      (function syncLiaisonFullscreenHref() {
+        var link = document.getElementById('atak-activity-fullscreen');
+        if (!link) return;
+        function update() {
+          var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : (window.ATAK_DEFAULT_MAP_ID || 1);
+          link.href = '<?= $base ?>/atak/liaison?mapId=' + encodeURIComponent(mid);
+        }
+        update();
+        var ws = document.getElementById('atak-workspace-select');
+        if (ws) ws.addEventListener('change', update);
+      })();
 
       function refreshWebPresence() {
         var listEl = document.getElementById('atak-web-presence-list');
@@ -857,26 +1109,36 @@ if ($atakMapConfig) {
       var accountOverlay = document.getElementById('atak-account-overlay');
       var slidePanels = [accountPanel, configPanel, healthPanel];
       var gameLinkSection = document.getElementById('atak-game-link-section');
+      var phoneLinkSection = document.getElementById('atak-phone-link-section');
 
       function closeAllSlidePanels() {
         slidePanels.forEach(function (p) { if (p) p.classList.remove('open'); });
         if (accountOverlay) accountOverlay.classList.remove('show');
         stopHealthAutoRefresh();
       }
+      function pulseAccountSection(section, focusBtnId) {
+        if (!section) return;
+        section.classList.add('atak-account-section--pulse');
+        setTimeout(function () {
+          section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+        setTimeout(function () {
+          section.classList.remove('atak-account-section--pulse');
+        }, 1800);
+        if (focusBtnId) {
+          var genBtn = document.getElementById(focusBtnId);
+          if (genBtn) setTimeout(function () { genBtn.focus(); }, 200);
+        }
+      }
       function openSlidePanel(panel, opts) {
         closeAllSlidePanels();
         if (panel) panel.classList.add('open');
         if (accountOverlay) accountOverlay.classList.add('show');
-        if (opts && opts.focusGameLink && gameLinkSection) {
-          gameLinkSection.classList.add('atak-account-section--pulse');
-          setTimeout(function () {
-            gameLinkSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }, 50);
-          setTimeout(function () {
-            gameLinkSection.classList.remove('atak-account-section--pulse');
-          }, 1800);
-          var genBtn = document.getElementById('atak-game-link-btn');
-          if (genBtn) setTimeout(function () { genBtn.focus(); }, 200);
+        if (opts && opts.focusGameLink) {
+          pulseAccountSection(gameLinkSection, 'atak-game-link-btn');
+        }
+        if (opts && opts.focusPhoneLink) {
+          pulseAccountSection(phoneLinkSection, 'atak-phone-link-btn');
         }
         if (panel === healthPanel) {
           refreshHealth();
@@ -886,12 +1148,18 @@ if ($atakMapConfig) {
 
       var accountBtn = document.getElementById('atak-btn-account');
       var gameLinkHeaderBtn = document.getElementById('atak-btn-game-link');
+      var phoneLinkHeaderBtn = document.getElementById('atak-btn-phone-link');
       var configBtn = document.getElementById('atak-btn-config');
       var healthBtn = document.getElementById('atak-btn-health');
       if (accountBtn) accountBtn.addEventListener('click', function () { openSlidePanel(accountPanel); });
       if (gameLinkHeaderBtn) {
         gameLinkHeaderBtn.addEventListener('click', function () {
           openSlidePanel(accountPanel, { focusGameLink: true });
+        });
+      }
+      if (phoneLinkHeaderBtn) {
+        phoneLinkHeaderBtn.addEventListener('click', function () {
+          openSlidePanel(accountPanel, { focusPhoneLink: true });
         });
       }
       if (configBtn) configBtn.addEventListener('click', function () { openSlidePanel(configPanel); });
@@ -1107,6 +1375,189 @@ if ($atakMapConfig) {
               navigator.clipboard.writeText(t).then(function () {
                 copyBtn.textContent = 'Copié';
                 setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+              });
+            }
+          });
+        }
+      })();
+
+      (function initPhoneLink() {
+        var btn = document.getElementById('atak-phone-link-btn');
+        if (!btn) return;
+        var resultEl = document.getElementById('atak-phone-link-result');
+        var codeEl = document.getElementById('atak-phone-link-code');
+        var metaEl = document.getElementById('atak-phone-link-meta');
+        var errEl = document.getElementById('atak-phone-link-error');
+        var qrImg = document.getElementById('atak-phone-link-qr');
+        var copyBtn = document.getElementById('atak-phone-link-copy');
+        var openLink = document.getElementById('atak-phone-link-open');
+        var pill = document.getElementById('atak-phone-link-pill');
+        var hintEl = document.getElementById('atak-phone-link-hint');
+        var createUrl = <?= json_encode(url('api/atak/phone-pairing'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var statusUrl = <?= json_encode(url('api/atak/phone-pairing/status'), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        var busy = false;
+        var activeToken = null;
+        var pollTimer = null;
+
+        function setPill(tone, text) {
+          if (!pill) return;
+          pill.textContent = text;
+          pill.className = 'atak-pill' + (tone ? ' atak-pill--' + tone : '');
+        }
+        function unlockBtn(label, cooldownMs) {
+          var wait = Math.max(0, cooldownMs || 0);
+          setTimeout(function () {
+            busy = false;
+            btn.disabled = false;
+            btn.textContent = label || 'Générer un QR';
+          }, wait);
+        }
+        function stopPoll() {
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        }
+        function formatExpires(iso) {
+          if (!iso) return '';
+          try {
+            var d = new Date(iso.indexOf('T') >= 0 || iso.indexOf('Z') >= 0 ? iso : (iso.replace(' ', 'T') + 'Z'));
+            if (isNaN(d.getTime())) return '';
+            return 'Valable jusqu’à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+          } catch (e) {
+            return '';
+          }
+        }
+        function applyLinkedState(linked, message) {
+          if (linked) {
+            setPill('ok', 'Téléphone lié');
+            if (hintEl && message) hintEl.textContent = message;
+            else if (hintEl) {
+              hintEl.textContent = 'Un téléphone a déjà été lié. Vous pouvez générer un nouveau QR pour un autre appareil.';
+            }
+          } else {
+            setPill('muted', 'Non lié');
+          }
+        }
+        function refreshStatus(token) {
+          var url = statusUrl + (token ? ('?token=' + encodeURIComponent(token)) : '');
+          return fetch(url, { credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+            .then(function (r) {
+              return r.text().then(function (raw) {
+                var j = null;
+                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+                return { ok: r.ok, status: r.status, body: j };
+              });
+            })
+            .then(function (res) {
+              if (!res.ok || !res.body) {
+                if (res.status === 503 && res.body && res.body.message && errEl && !activeToken) {
+                  errEl.textContent = res.body.message;
+                  errEl.hidden = false;
+                  btn.disabled = true;
+                  btn.textContent = 'Indisponible';
+                }
+                return res;
+              }
+              applyLinkedState(!!res.body.linked, res.body.message || '');
+              if (res.body.linked && !busy && !activeToken) {
+                btn.textContent = 'Nouveau QR';
+              }
+              if (res.body.current && res.body.current.paired) {
+                setPill('ok', 'Téléphone lié');
+                if (metaEl) {
+                  metaEl.textContent = 'Lien réussi — vous pouvez générer un nouveau QR pour un autre appareil.';
+                }
+                stopPoll();
+                unlockBtn('Nouveau QR', 0);
+              } else if (res.body.current && res.body.current.expired && activeToken) {
+                if (metaEl) metaEl.textContent = 'Ce code a expiré. Générez-en un nouveau.';
+                stopPoll();
+                unlockBtn('Générer un QR', 0);
+              }
+              return res;
+            })
+            .catch(function () { return null; });
+        }
+        function startPoll(token) {
+          stopPoll();
+          activeToken = token;
+          pollTimer = setInterval(function () { refreshStatus(token); }, 3000);
+        }
+
+        refreshStatus(null);
+
+        btn.addEventListener('click', function () {
+          if (busy) return;
+          if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
+          busy = true;
+          btn.disabled = true;
+          btn.textContent = 'Génération…';
+          stopPoll();
+          fetch(createUrl, { method: 'GET', credentials: 'include', cache: 'no-store', headers: { 'Accept': 'application/json' } })
+            .then(function (r) {
+              return r.text().then(function (raw) {
+                var j = null;
+                try { j = raw ? JSON.parse(raw) : null; } catch (e) { j = null; }
+                return { ok: r.ok, status: r.status, body: j };
+              });
+            })
+            .then(function (res) {
+              if (!res.ok || !res.body || !res.body.code) {
+                var msg = (res.body && res.body.message)
+                  ? res.body.message
+                  : (res.status === 401 || res.status === 403
+                    ? 'Connexion requise pour générer un code téléphone.'
+                    : 'Impossible de préparer la connexion téléphone.');
+                if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+                unlockBtn('Générer un QR', res.status === 503 ? 4000 : 800);
+                return;
+              }
+              var body = res.body;
+              if (codeEl) codeEl.textContent = body.code;
+              if (qrImg && body.qr_image_url) {
+                qrImg.onload = function () { qrImg.classList.remove('atak-phone-link-qr--err'); };
+                qrImg.onerror = function () {
+                  qrImg.classList.add('atak-phone-link-qr--err');
+                  if (metaEl) {
+                    metaEl.textContent = (formatExpires(body.expires_at) || 'Code prêt') +
+                      ' — l’image du QR n’a pas pu être chargée ; utilisez le code ci-dessus.';
+                  }
+                };
+                qrImg.src = body.qr_image_url + (body.qr_image_url.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+              }
+              if (openLink && body.connect_url) {
+                openLink.href = body.connect_url;
+                openLink.hidden = false;
+              } else if (openLink) {
+                openLink.hidden = true;
+              }
+              if (metaEl) {
+                metaEl.textContent = (formatExpires(body.expires_at) || 'Valable 15 minutes') +
+                  ' — scannez le QR ou saisissez le code sur le téléphone.';
+              }
+              if (resultEl) resultEl.hidden = false;
+              unlockBtn('Nouveau QR', 0);
+              if (body.token) startPoll(body.token);
+              refreshStatus(null);
+            })
+            .catch(function () {
+              unlockBtn('Générer un QR', 1500);
+              if (errEl) {
+                errEl.textContent = 'Réseau indisponible. Réessayez dans un instant.';
+                errEl.hidden = false;
+              }
+            });
+        });
+
+        if (copyBtn && codeEl) {
+          copyBtn.addEventListener('click', function () {
+            var t = codeEl.textContent || '';
+            if (!t || t.indexOf('—') === 0) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(t).then(function () {
+                copyBtn.textContent = 'Copié';
+                setTimeout(function () { copyBtn.textContent = 'Copier le code'; }, 1500);
               });
             }
           });

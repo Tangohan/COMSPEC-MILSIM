@@ -52,6 +52,19 @@ final class AtakPhoneConnectController
         $pairing = $this->pairingRepository->findValidByCode($code);
         if ($pairing === null) {
             Session::flash('error', 'Code invalide ou expiré. Générez un nouveau code depuis la tablette en jeu.');
+            try {
+                $guessTenant = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+                if ($guessTenant > 0) {
+                    (new \App\Services\Tactical\AtakActivityLogService())->recordAuthAttempt(
+                        $guessTenant,
+                        false,
+                        'Connexion téléphone refusée — code invalide ou expiré',
+                        ['reason' => 'invalid_or_expired_code', 'method' => 'phone']
+                    );
+                }
+            } catch (\Throwable) {
+                // Best-effort.
+            }
 
             return Response::redirect(url('atak/connect'));
         }
@@ -72,6 +85,11 @@ final class AtakPhoneConnectController
         $this->pairingRepository->markPaired($token);
 
         $tenantId = (int) ($pairing['tenant_id'] ?? 0);
+        try {
+            (new \App\Services\Tactical\AtakActivityLogService())->recordPhonePaired($tenantId);
+        } catch (\Throwable) {
+            // Best-effort.
+        }
         $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
         $tenantName = $tenant ? (function_exists('community_display_name') ? community_display_name($tenant) : (string) ($tenant['name'] ?? 'Communauté')) : 'Communauté';
         $slides = $tenantId > 0 ? $this->briefingSlideRepository->listActiveForTenant($tenantId) : [];

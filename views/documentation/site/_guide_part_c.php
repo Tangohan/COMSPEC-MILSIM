@@ -365,6 +365,186 @@
     </div>
 </section>
 
+<section id="diapositives-briefing-eden" class="site-docs__section">
+    <h2>Diapositives de briefing (écrans Eden)</h2>
+    <p class="site-docs__lead">
+        Préparez, en éditeur Eden, un <strong>grand écran</strong> (interaction) et un <strong>écran de salle de briefing</strong> (affichage mural),
+        pour que les joueurs consultent les diapositives publiées depuis Athena. Les scripts ci-dessous sont ceux recommandés par le pack Overwatch
+        (identiques à l’aide « Afficher dans Arma » du back-office).
+    </p>
+
+    <h3>Objectif</h3>
+    <ul>
+        <li><strong>Grand écran</strong> : le joueur s’approche, choisit « Consulter le briefing », et ouvre le tableau plein écran (Précédente / Suivante).</li>
+        <li><strong>Écran de salle de briefing</strong> : la première diapositive visible apparaît directement sur l’objet (panneau mural).</li>
+    </ul>
+    <p>Les deux objets se complètent souvent dans une même salle : l’un sert de point d’interaction, l’autre projette l’image.</p>
+
+    <div class="site-docs__gallery" role="group" aria-label="Captures éditeur Eden">
+        <figure class="site-docs__figure">
+            <img src="<?= htmlspecialchars(asset_url('assets/images/docs/eden-grand-ecran-briefing.png'), ENT_QUOTES, 'UTF-8') ?>" alt="Propriétés Eden d’un grand écran avec l’action Consulter le briefing" loading="lazy" width="960" height="640" />
+            <figcaption>Grand écran renforcé — action « Consulter le briefing » dans le champ Init.</figcaption>
+        </figure>
+        <figure class="site-docs__figure">
+            <img src="<?= htmlspecialchars(asset_url('assets/images/docs/eden-ecran-salle-briefing.png'), ENT_QUOTES, 'UTF-8') ?>" alt="Propriétés Eden d’un écran de salle de briefing nommé briefingScreen1" loading="lazy" width="960" height="640" />
+            <figcaption>Écran de salle de briefing — nom <code>briefingScreen1</code> et script de texture.</figcaption>
+        </figure>
+    </div>
+
+    <h3>Prérequis</h3>
+    <ul>
+        <li>Pack <strong>COMSPEC Overwatch</strong> chargé dans la mission (et côté client pour tester).</li>
+        <li>Au moins une diapositive <strong>Visible en jeu</strong> dans Athena.</li>
+        <li>Connexion plateforme / extension opérationnelle (sinon le jeu indiquera qu’aucune diapositive n’est disponible).</li>
+    </ul>
+
+    <h3>Vue d’ensemble Eden</h3>
+    <div class="site-docs__table-wrap">
+        <table class="site-docs__table">
+            <thead>
+                <tr>
+                    <th>Rôle</th>
+                    <th>Objet Eden typique</th>
+                    <th>Nom de variable</th>
+                    <th>Champ Init</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Interaction (menu)</td>
+                    <td>Grand écran renforcé (noir) — ou tout autre objet</td>
+                    <td>facultatif</td>
+                    <td>Script « Consulter le briefing »</td>
+                </tr>
+                <tr>
+                    <td>Affichage mural</td>
+                    <td>Écran de salle de briefing</td>
+                    <td>obligatoire (ex. <code>briefingScreen1</code>)</td>
+                    <td>Script texture</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>Vous pouvez aussi mettre les deux scripts sur le même objet si un seul écran doit à la fois afficher l’image et proposer le menu.</p>
+
+    <div class="site-docs__step">
+        <span class="site-docs__step-num" aria-hidden="true">1</span>
+        <div class="site-docs__step-body">
+            <h3>Placer l’écran d’affichage</h3>
+            <ol>
+                <li>Dans Eden, placez un <strong>Écran de salle de briefing</strong> (Choses → Électronique).</li>
+                <li>Ouvrez ses propriétés (double-clic).</li>
+                <li>Dans <strong>Nom de la variable</strong>, saisissez exactement : <code>briefingScreen1</code>.</li>
+                <li>Collez le script suivant dans le champ <strong>Init</strong> :</li>
+            </ol>
+            <pre class="site-docs__code" tabindex="0"><code>this setVariable ["comspec_briefingScreenIndex", 0];
+[briefingScreen1, 0] spawn {
+    params ["_obj", "_selIdx"];
+    waitUntil { !isNull _obj };
+    private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
+    if (count _slides == 0) then { _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides; };
+    if (count _slides &gt; 0) then {
+        private _path = [_slides select 0] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
+        if (_path != "") then { _obj setObjectTexture [_selIdx, _path]; };
+    };
+};</code></pre>
+            <div class="site-docs__callout site-docs__callout--tip">
+                <strong>Autre nom.</strong> Si l’écran s’appelle <code>briefingScreenOps</code>, utilisez ce nom dans le champ Nom de la variable
+                et remplacez les deux occurrences de <code>briefingScreen1</code> dans la ligne <code>[…, 0] spawn</code>.
+                Le <code>0</code> désigne la face texturable du modèle (essayez <code>1</code> si l’image n’apparaît pas sur le bon panneau).
+            </div>
+        </div>
+    </div>
+
+    <div class="site-docs__step">
+        <span class="site-docs__step-num" aria-hidden="true">2</span>
+        <div class="site-docs__step-body">
+            <h3>Placer le grand écran (interaction)</h3>
+            <ol>
+                <li>Placez un <strong>Grand écran renforcé (noir)</strong> (ou tout objet interactif).</li>
+                <li>Collez uniquement ceci dans <strong>Init</strong> :</li>
+            </ol>
+            <pre class="site-docs__code" tabindex="0"><code>this addAction ["Consulter le briefing", { [] call comspec_overwatch_connect_fnc_openBriefingBoard; }];</code></pre>
+            <p>En jeu, s’approcher de l’objet et utiliser le menu d’actions affichera <em>Consulter le briefing</em>.</p>
+            <h4>Variante — un seul objet</h4>
+            <p>Si un seul écran nommé <code>briefingScreen1</code> doit faire les deux, combinez action + texture (le nom de variable doit être <code>briefingScreen1</code>) :</p>
+            <pre class="site-docs__code" tabindex="0"><code>this addAction ["Consulter le briefing", { [] call comspec_overwatch_connect_fnc_openBriefingBoard; }];
+this setVariable ["comspec_briefingScreenIndex", 0];
+[briefingScreen1, 0] spawn {
+    params ["_obj", "_selIdx"];
+    waitUntil { !isNull _obj };
+    private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
+    if (count _slides == 0) then { _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides; };
+    if (count _slides &gt; 0) then {
+        private _path = [_slides select 0] call comspec_overwatch_connect_fnc_downloadBriefingSlide;
+        if (_path != "") then { _obj setObjectTexture [_selIdx, _path]; };
+    };
+};</code></pre>
+        </div>
+    </div>
+
+    <h3>Définir / changer les diapositives (Athena)</h3>
+    <p>Les images ne se collent pas dans Eden : elles sont gérées côté plateforme.</p>
+    <ol>
+        <li>Connectez-vous à Athena (droits d’administration de la communauté).</li>
+        <li>Ouvrez <strong>Diapositives de briefing</strong> (back-office tactique).</li>
+        <li>Pour chaque image : titre affiché, ordre (0, 1, 2…), case <strong>Visible en jeu</strong>, fichier JPG/PNG (max. 12&nbsp;Mo).</li>
+        <li>Enregistrez. Les brouillons restent masqués pour Arma.</li>
+    </ol>
+    <p>Après une modification Athena, en jeu utilisez le bouton <strong>Actualiser</strong> du tableau de briefing, ou rouvrez le menu.</p>
+
+    <h3>Contrôle en jeu</h3>
+    <ul>
+        <li>Sans objet Eden : le pack ajoute déjà l’action <strong>Tableau de briefing</strong> au joueur.</li>
+        <li>Depuis le grand écran : action locale <em>Consulter le briefing</em>.</li>
+        <li>Dans le tableau : Précédente / Suivante, Actualiser, Fermer.</li>
+        <li>Sur l’écran mural : au démarrage, première diapositive visible ; la navigation multi-pages passe par le tableau plein écran.</li>
+    </ul>
+
+    <h3>Dépannage courant</h3>
+    <div class="site-docs__table-wrap">
+        <table class="site-docs__table">
+            <thead>
+                <tr>
+                    <th>Symptôme</th>
+                    <th>Piste</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>« Aucune diapositive de briefing disponible »</td>
+                    <td>Aucune image « Visible en jeu » côté Athena, ou liaison plateforme indisponible.</td>
+                </tr>
+                <tr>
+                    <td>« Impossible de charger cette diapositive »</td>
+                    <td>Réseau ou cache image ; réessayez Actualiser ; vérifiez le fichier côté Athena.</td>
+                </tr>
+                <tr>
+                    <td>Menu « Consulter le briefing » absent</td>
+                    <td>Init du grand écran non collé, ou objet trop loin ; le menu joueur reste disponible.</td>
+                </tr>
+                <tr>
+                    <td>Écran mural noir</td>
+                    <td>Nom de variable différent du script ; indice 0 incorrect ; aucune diapo visible ; mission sans le pack.</td>
+                </tr>
+                <tr>
+                    <td>Mauvaise face texturée</td>
+                    <td>Changez le <code>0</code> en <code>1</code> (variable + ligne <code>[nom, 1] spawn</code>).</td>
+                </tr>
+                <tr>
+                    <td>Ancienne image après changement Athena</td>
+                    <td>Bouton Actualiser, ou relancer la mission.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="site-docs__callout">
+        <strong>Rappel.</strong> Sur les captures Eden typiques : le grand écran porte l’action ; l’écran de salle s’appelle
+        <code>briefingScreen1</code> et porte le script de texture. Le nom dans <code>[briefingScreen1, 0]</code> doit correspondre à un objet
+        réellement nommé ainsi dans la mission.
+    </div>
+</section>
+
 <section id="recrutement-et-enrolement" class="site-docs__section">
     <h2>Recrutement &amp; enrôlement</h2>
     <p class="site-docs__lead">

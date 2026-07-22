@@ -1,6 +1,6 @@
 /*
     Ferme le menu hub puis ouvre la vue demandée (ou exécute l'action rapide).
-    params: ["chat"|"cas"|"briefing"|"phone"|"manifest"|"ping"|"medical"]
+    params: ["chat"|"cas"|"briefing"|"phone"|"manifest"|"ping"|"medical"|"webbrowser"|...]
 */
     params [["_view", ""]];
 if (_view isEqualTo "") exitWith {};
@@ -15,6 +15,10 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
     switch (_view) do {
+        case "webbrowser";
+        case "tablet": {
+            [] call comspec_overwatch_connect_fnc_webBrowserShow;
+        };
         case "chat": {
             createDialog "COMSPEC_Chat_Dialog";
         };
@@ -30,27 +34,40 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
         case "account": {
             [] call comspec_overwatch_connect_fnc_accountLinkShow;
         };
+        case "callsign": {
+            [] call comspec_overwatch_connect_fnc_callsignDialogShow;
+        };
+        case "orders": {
+            [] call comspec_overwatch_connect_fnc_orderInboxShow;
+        };
         case "manifest": {
             createDialog "COMSPEC_FlightManifest_Dialog";
         };
         case "ping": {
             [player, "PING", getPos player, "Point d'interet", "INFANTRY"] call comspec_overwatch_connect_fnc_sendIntel;
-            systemChat "Point d'intérêt transmis.";
+            ["Point d'intérêt transmis.", "ping", "info"] call comspec_overwatch_connect_fnc_announce;
         };
         case "medical": {
-            private _state = [player] call comspec_overwatch_connect_fnc_getMedicalState;
-            private _parts = _state splitString "|";
-            private _health = if (count _parts >= 1) then { _parts select 0 } else { "stable" };
-            private _blood = if (count _parts >= 2) then { _parts select 1 } else { "?" };
-            private _hr = if (count _parts >= 4) then { _parts select 3 } else { "?" };
-            private _status = switch (_health) do {
-                case "cardiac_arrest": { "Arrêt cardiaque" };
-                case "unconscious": { "Inconscient" };
-                case "wounded": { "Blessé" };
-                default { "Stable" };
+            if ([] call comspec_overwatch_connect_fnc_canTriageMedical) then {
+                [] call comspec_overwatch_connect_fnc_medicalInboxShow;
+            } else {
+                private _state = [player] call comspec_overwatch_connect_fnc_getMedicalState;
+                private _parts = _state splitString "|";
+                private _health = if (count _parts >= 1) then { _parts select 0 } else { "stable" };
+                private _blood = if (count _parts >= 2) then { _parts select 1 } else { "?" };
+                private _hr = if (count _parts >= 4) then { _parts select 3 } else { "?" };
+                private _status = switch (_health) do {
+                    case "cardiac_arrest": { "Arrêt cardiaque" };
+                    case "unconscious": { "Inconscient" };
+                    case "wounded": { "Blessé" };
+                    default { "Stable" };
+                };
+                [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
+                systemChat "Bilan de santé transmis.";
             };
-            [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
-            systemChat "Bilan de santé transmis.";
+        };
+        case "forcesync": {
+            [] call comspec_overwatch_connect_fnc_forceSyncData;
         };
         default {};
     };

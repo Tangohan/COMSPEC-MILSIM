@@ -8,7 +8,8 @@ private _veh = vehicle player;
 private _display = uiNamespace getVariable ["COMSPEC_FlightManifest_Display", displayNull];
 if (isNull _display) exitWith {};
 
-private _callsign = _veh getVariable ["COMSPEC_Callsign", groupId (group player)];
+private _callsign = _veh getVariable ["COMSPEC_Callsign", ""];
+if (_callsign isEqualTo "") then { _callsign = [] call comspec_overwatch_connect_fnc_getCallsign; };
 if (_callsign == "") then { _callsign = groupId (group player); };
 if (_callsign == "") then { _callsign = "PILOT"; };
 
