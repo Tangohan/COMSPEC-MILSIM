@@ -22,13 +22,16 @@ if (_remain > 0) exitWith {
     false
 };
 
+// Marquer le cooldown avant tout, y compris en cas d'échec (terminal absent) — sinon un joueur
+// sans S7 Android peut spammer le bouton sans aucune limite (message répété en boucle).
+missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
+
 if (!([player] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {
     ["Équipez le téléphone S7 Android", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
 private _result = [player, true] call comspec_overwatch_connect_fnc_updatePosition;
-missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
 
 private _ok = (_result isEqualTo "ok");
 if (_ok) then {
