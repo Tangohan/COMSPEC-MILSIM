@@ -583,7 +583,29 @@ class AtakApiController
             ], 403);
         }
 
+        if ($this->tenantAtakConfigRepository->isMaintenanceEnabled($id) && !$this->canBypassAtakMaintenance()) {
+            $message = $this->tenantAtakConfigRepository->getMaintenanceMessage($id);
+            if ($message === '') {
+                $message = 'La carte tactique est temporairement en maintenance. Réessayez plus tard.';
+            }
+
+            return Response::json([
+                'error' => 'maintenance',
+                'message' => $message,
+            ], 503);
+        }
+
         return $id;
+    }
+
+    private function canBypassAtakMaintenance(): bool
+    {
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return false;
+        }
+
+        return function_exists('can') && can('admin.access');
     }
 
     private function mapId(Request $request, bool $fromBody = false): int

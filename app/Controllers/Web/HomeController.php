@@ -914,6 +914,11 @@ class HomeController
 
     public function tacmap(Request $request, array $params = []): Response
     {
+        $maint = $this->atakMaintenanceResponseIfBlocked();
+        if ($maint !== null) {
+            return $maint;
+        }
+
         return Response::view('tacmap', array_merge($this->buildOperationalMapPageData(), [
             'title' => 'TACMAP — Athena',
         ]));
@@ -921,9 +926,39 @@ class HomeController
 
     public function overwatch(Request $request, array $params = []): Response
     {
+        $maint = $this->atakMaintenanceResponseIfBlocked();
+        if ($maint !== null) {
+            return $maint;
+        }
+
         return Response::view('overwatch.index', array_merge($this->buildOperationalMapPageData(), [
             'title' => 'COMSPEC Overwatch — Situation & commandement',
         ]));
+    }
+
+    private function atakMaintenanceResponseIfBlocked(): ?Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return null;
+        }
+        $canAdmin = function_exists('can') && can('admin.access');
+        if ($canAdmin) {
+            return null;
+        }
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\TenantAtakConfigRepository::class);
+        } catch (\Throwable) {
+            $repo = new \App\Repositories\TenantAtakConfigRepository();
+        }
+        if (!$repo->isMaintenanceEnabled($tenantId)) {
+            return null;
+        }
+
+        return Response::view('atak-maintenance', [
+            'maintenanceMessage' => $repo->getMaintenanceMessage($tenantId),
+            'canAccessAdminAtakConfig' => false,
+        ]);
     }
 
     /**

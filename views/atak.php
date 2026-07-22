@@ -55,6 +55,7 @@ if ($atakMapConfig) {
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
@@ -83,13 +84,18 @@ if ($atakMapConfig) {
   </script>
 </head>
 <body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'comfortable')) ?>">
-  <div id="atak-boot-overlay" class="atak-boot-overlay" role="status" aria-live="polite" aria-busy="true">
-    <div class="atak-boot-inner">
-      <div class="atak-boot-spinner" aria-hidden="true"></div>
-      <p class="atak-boot-label">Chargement de la Tacmap…</p>
-      <p class="atak-boot-hint">Les informations affichées correspondent uniquement à la communauté à laquelle vous êtes connecté.</p>
-    </div>
+  <?php
+  $baseUrl = $base;
+  $haloLoaderHint = 'Préparation de la carte tactique…';
+  $haloLoaderSeenKey = 'athena-halo-loader-atak';
+  require base_path('views/partials/halo_loader.php');
+  ?>
+  <?php if (!empty($atakMaintenanceActive) && !empty($canAccessAdminAtakConfig)): ?>
+  <div class="atak-maint-banner" role="status" style="position:relative;z-index:40;padding:0.65rem 1rem;background:#78350f;color:#fffbeb;font-size:0.85rem;text-align:center;">
+    Mode maintenance actif — les opérateurs ne voient pas cette carte.
+    <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" style="color:#fde68a;font-weight:700;margin-left:0.5rem;">Gérer</a>
   </div>
+  <?php endif; ?>
   <header class="atak-header">
     <div class="atak-header-brand">
       <div class="atak-logo-wrap">
@@ -772,16 +778,10 @@ if ($atakMapConfig) {
         }
       };
 
-      var bootOverlay = document.getElementById('atak-boot-overlay');
       var bootDismissed = false;
       function dismissAtakBoot() {
         if (bootDismissed) return;
         bootDismissed = true;
-        if (bootOverlay) {
-          bootOverlay.classList.add('atak-boot-overlay--hidden');
-          bootOverlay.setAttribute('aria-busy', 'false');
-          bootOverlay.setAttribute('aria-hidden', 'true');
-        }
         setTimeout(function () {
           try {
             if (window.ATAKMap && window.ATAKMap.getMap) {

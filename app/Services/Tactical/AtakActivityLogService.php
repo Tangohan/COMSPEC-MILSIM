@@ -815,6 +815,88 @@ final class AtakActivityLogService
         return base_path('storage/cache/atak-activity/t' . $tenantId . '_m' . $mapId . '.json');
     }
 
+    /**
+     * Tous les journaux d’activité de la communauté (par théâtre).
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function exportAllForTenant(int $tenantId): array
+    {
+        if ($tenantId < 1) {
+            return [];
+        }
+        $out = [];
+        foreach ($this->filesForTenant($tenantId) as $mapId => $path) {
+            $data = $this->readFile($path);
+            if ($data === []) {
+                continue;
+            }
+            $out['map_' . $mapId] = $data;
+        }
+
+        return $out;
+    }
+
+    /** Nombre total d’événements (actifs + archivés) pour la communauté. */
+    public function countAllForTenant(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $total = 0;
+        foreach ($this->filesForTenant($tenantId) as $path) {
+            $data = $this->readFile($path);
+            $events = $data['events'] ?? [];
+            if (is_array($events)) {
+                $total += count($events);
+            }
+        }
+
+        return $total;
+    }
+
+    /** Supprime tous les fichiers journal de la communauté. Retourne le nombre de fichiers effacés. */
+    public function purgeAllForTenant(int $tenantId): int
+    {
+        if ($tenantId < 1) {
+            return 0;
+        }
+        $removed = 0;
+        foreach ($this->filesForTenant($tenantId) as $path) {
+            if (is_file($path) && @unlink($path)) {
+                $removed++;
+            }
+        }
+
+        return $removed;
+    }
+
+    /**
+     * @return array<int, string> mapId => path
+     */
+    private function filesForTenant(int $tenantId): array
+    {
+        $dir = base_path('storage/cache/atak-activity');
+        if (!is_dir($dir)) {
+            return [];
+        }
+        $prefix = 't' . $tenantId . '_m';
+        $out = [];
+        foreach (glob($dir . '/' . $prefix . '*.json') ?: [] as $path) {
+            $base = basename((string) $path, '.json');
+            if (!str_starts_with($base, $prefix)) {
+                continue;
+            }
+            $mapId = (int) substr($base, strlen($prefix));
+            if ($mapId < 1) {
+                continue;
+            }
+            $out[$mapId] = (string) $path;
+        }
+
+        return $out;
+    }
+
     private function normalizeKey(string $key): string
     {
         $key = trim($key);

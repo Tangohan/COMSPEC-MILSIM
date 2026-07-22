@@ -1,0 +1,17 @@
+name = "cTab Advanced"
+prefix = "ctab"
+author = "cTab Authors, see https://github.com/jetelain/cTab"
+template = "cba"
+mainprefix = "z"
+folder_optionals = false
+sig_version = 3
+
+[version]
+path = "addons/main/script_version.hpp"
+git_hash = 4
+
+[files]
+include = [
+    "mod.cpp",
+    "ctab_icon.paa"
+]
