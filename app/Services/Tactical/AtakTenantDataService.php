@@ -13,7 +13,10 @@ use PDO;
  */
 final class AtakTenantDataService
 {
-    /** Tables opérationnelles scopées par tenant_id. */
+    /**
+     * Tables opérationnelles scopées par tenant_id.
+     * Exclut atak_intel (journal legacy global, sans tenant_id) et atak_operator_ids (indicatifs liés).
+     */
     private const TENANT_TABLES = [
         'atak_medical_alert_triage',
         'atak_orders',
@@ -25,12 +28,12 @@ final class AtakTenantDataService
         'atak_intel_photos',
         'atak_designator_targets',
         'atak_sigint_reports',
-        'atak_intel',
         'atak_last_activity',
         'atak_air_assets',
         'atak_map_shapes',
         'atak_laser_codes',
         'atak_layers',
+        'recon_images',
     ];
 
     public function __construct(
@@ -54,7 +57,7 @@ final class AtakTenantDataService
 
         $tables = [];
         foreach (self::TENANT_TABLES as $table) {
-            if (!$this->tableExists($table)) {
+            if (!$this->isTenantScopedTable($table)) {
                 continue;
             }
             $stmt = $this->pdo->prepare('SELECT * FROM `' . $table . '` WHERE tenant_id = ?');
@@ -86,7 +89,7 @@ final class AtakTenantDataService
         $tables = [];
 
         foreach (self::TENANT_TABLES as $table) {
-            if (!$this->tableExists($table)) {
+            if (!$this->isTenantScopedTable($table)) {
                 continue;
             }
             $stmt = $this->pdo->prepare('DELETE FROM `' . $table . '` WHERE tenant_id = ?');
@@ -113,7 +116,7 @@ final class AtakTenantDataService
             'activity_events' => $this->activityLog->countAllForTenant($tenantId),
         ];
         foreach (self::TENANT_TABLES as $table) {
-            if (!$this->tableExists($table)) {
+            if (!$this->isTenantScopedTable($table)) {
                 continue;
             }
             $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `' . $table . '` WHERE tenant_id = ?');
@@ -126,32 +129,57 @@ final class AtakTenantDataService
 
     private function purgeIntelPhotoFiles(int $tenantId): int
     {
-        if (!$this->tableExists('atak_intel_photos')) {
-            return 0;
-        }
-        $stmt = $this->pdo->prepare('SELECT path, filename FROM atak_intel_photos WHERE tenant_id = ?');
-        $stmt->execute([$tenantId]);
         $removed = 0;
         $uploadRoot = base_path('public/uploads');
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $rel = trim((string) ($row['path'] ?? ''));
-            $candidates = [];
-            if ($rel !== '') {
-                $candidates[] = $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+
+        if ($this->isTenantScopedTable('atak_intel_photos')) {
+            $stmt = $this->pdo->prepare('SELECT path, filename FROM atak_intel_photos WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $rel = trim((string) ($row['path'] ?? ''));
+                $candidates = [];
+                if ($rel !== '') {
+                    $candidates[] = $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+                }
+                $fn = trim((string) ($row['filename'] ?? ''));
+                if ($fn !== '') {
+                    $candidates[] = $uploadRoot . '/intel/' . basename($fn);
+                }
+                foreach ($candidates as $path) {
+                    if (is_file($path) && @unlink($path)) {
+                        $removed++;
+                        break;
+                    }
+                }
             }
-            $fn = trim((string) ($row['filename'] ?? ''));
-            if ($fn !== '') {
-                $candidates[] = $uploadRoot . '/intel/' . basename($fn);
-            }
-            foreach ($candidates as $path) {
-                if (is_file($path) && @unlink($path)) {
-                    $removed++;
-                    break;
+        }
+
+        if ($this->isTenantScopedTable('recon_images')) {
+            $stmt = $this->pdo->prepare('SELECT image_path, thumb_path FROM recon_images WHERE tenant_id = ?');
+            $stmt->execute([$tenantId]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                foreach (['image_path', 'thumb_path'] as $col) {
+                    $rel = trim((string) ($row[$col] ?? ''));
+                    if ($rel === '') {
+                        continue;
+                    }
+                    $path = str_starts_with($rel, '/') || preg_match('#^[A-Za-z]:\\\\#', $rel)
+                        ? $rel
+                        : $uploadRoot . '/' . ltrim(str_replace('\\', '/', $rel), '/');
+                    if (is_file($path) && @unlink($path)) {
+                        $removed++;
+                    }
                 }
             }
         }
 
         return $removed;
+    }
+
+    /** Table présente et bien scopée par tenant_id (évite les schémas legacy hors sync). */
+    private function isTenantScopedTable(string $table): bool
+    {
+        return $this->tableExists($table) && $this->columnExists($table, 'tenant_id');
     }
 
     private function purgeSessionCache(int $tenantId): void
@@ -192,5 +220,27 @@ final class AtakTenantDataService
         }
 
         return $cache[$table];
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+                 LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+            $cache[$key] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$key] = false;
+        }
+
+        return $cache[$key];
     }
 }
