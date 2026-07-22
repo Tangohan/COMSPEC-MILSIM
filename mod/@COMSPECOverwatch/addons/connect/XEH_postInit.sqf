@@ -78,6 +78,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ];
 
     player addAction [
+        "<t color='#7dffb3'>Je vais bien (annuler mon alerte)</t>",
+        { [] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert; },
+        nil, 5.85, false, true, "",
+        "(missionNamespace getVariable ['comspec_overwatch_enabled', true]) && {count ([] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert) > 0}"
+    ];
+
+    player addAction [
         "<t color='#7fffd4'>Mon indicatif</t>",
         { [] call comspec_overwatch_connect_fnc_callsignDialogShow; },
         nil, 5.7, false, true, "",

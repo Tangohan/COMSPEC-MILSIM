@@ -43,6 +43,8 @@ class CfgFunctions {
             class medicalInboxOnLoad {};
             class medicalTriage {};
             class pollMedicalAlerts {};
+            class hasOwnActiveMedicalAlert {};
+            class selfCancelMedicalAlert {};
             class getAircraftType {};
             class fillFlightManifest {};
             class submitFlightManifest {};
@@ -130,6 +132,7 @@ class CfgFunctions {
             class webBrowserOnLoad {};
             class webBrowserPageLoaded {};
             class webBrowserJSDialog {};
+            class placeMarkerFromTablet {};
             class webBrowserOpenAthena {};
             class webBrowserOpenSystem {};
             class webBrowserJsEscape {};

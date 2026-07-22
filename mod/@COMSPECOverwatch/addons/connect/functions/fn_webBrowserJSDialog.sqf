@@ -4,6 +4,7 @@
       open:chat|briefing|phone|account|orders|hub|cas|callsign|athena
       refresh | close | classic | toggle:quiet
       radio:monitor|<canal>|<radioId> | radio:focus|<indicatif>
+      marker:place|<wx>|<wy> (double-clic sur la vue radar)
 */
 params ["_ctrl", "_isConfirmDialog", "_message"];
 
@@ -100,6 +101,17 @@ switch (true) do {
         missionNamespace setVariable ["COMSPEC_RadioProximityList", _fresh, false];
         if (!isNull _ctrl) then {
             [_ctrl] call comspec_overwatch_connect_fnc_webBrowserPageLoaded;
+        };
+    };
+    case ((_cmd select [0, 12]) isEqualTo "marker:place"): {
+        // marker:place|<wx>|<wy> — position monde déjà résolue côté JS (inverse de plotPositions).
+        private _rest = _cmd select [12, (count _cmd) - 12];
+        if ((_rest select [0, 1]) isEqualTo "|") then { _rest = _rest select [1, (count _rest) - 1]; };
+        private _parts = _rest splitString "|";
+        if (count _parts >= 2) then {
+            private _wx = parseNumber (_parts select 0);
+            private _wy = parseNumber (_parts select 1);
+            [_wx, _wy] call comspec_overwatch_connect_fnc_placeMarkerFromTablet;
         };
     };
     default {

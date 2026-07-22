@@ -3,11 +3,15 @@ window.ATAKMedicalAlerts = (function () {
   'use strict';
 
   var lastFingerprint = '';
+  var lastToastedAlertKey = '';
   var pollTimer = null;
   var lastData = null;
   var LS_PREFIX = 'atak_medical_dismissed_v1_';
   var boundUi = false;
   var ACTIVE_WINDOW_MS = 30 * 60 * 1000;
+  // Toast/son : uniquement pour une alerte réellement fraîche (pas un vieux message de tchat
+  // rejoué par un rechargement de page ou un resync après reconnexion).
+  var TOAST_MAX_AGE_MS = 2 * 60 * 1000;
   var canTriageCached = null;
 
   var TRIAGE_OPTIONS = [
@@ -597,20 +601,25 @@ window.ATAKMedicalAlerts = (function () {
     // Le son peut être coupé (silence / volume 0) : l’UI s’affiche quand même.
     if (alerts.length) {
       var latest = alerts[alerts.length - 1];
-      var prevEmpty = !prev || prev === '' || prev.indexOf('"a":[]') >= 0;
-      var isNew = prevEmpty || (prev && prev !== fp);
-      if (isNew && latest && latest.severity === 'critical') {
-        // Évite de toast-er à chaque poll : seulement si l’empreinte des alertes a changé
-        // et qu’il y a au moins une alerte de plus / différente (déjà garanti par fp !== prev).
-        if (prev) {
-          showToast(
-            latest.summary || latest.label,
-            latest.kind,
-            latest.label || latest.summary,
-            latest.heart_rate != null ? latest.heart_rate : null
-          );
-        }
+      var latestKey = alertKey(latest);
+      // fp change pour plein de raisons qui n'ont rien à voir avec « nouvelle alerte » (statut
+      // d'une unité, triage, fenêtre active qui glisse...) : ne rejouer le toast/son que si
+      // l'alerte critique la plus récente n'est pas celle déjà signalée la dernière fois.
+      var isNew = !!prev && latestKey !== lastToastedAlertKey;
+      // Un rechargement de page remet lastToastedAlertKey à zéro : sans garde d'âge, la plus
+      // récente alerte encore visible (même vieille d'une session précédente) rejouerait le
+      // toast/son au premier chargement. On ne sonne que pour du vraiment récent.
+      var latestAgeMs = Date.now() - parseCreatedAtMs(latest && latest.created_at);
+      var isRecent = !isNaN(latestAgeMs) && latestAgeMs >= 0 && latestAgeMs < TOAST_MAX_AGE_MS;
+      if (isNew && isRecent && latest && latest.severity === 'critical') {
+        showToast(
+          latest.summary || latest.label,
+          latest.kind,
+          latest.label || latest.summary,
+          latest.heart_rate != null ? latest.heart_rate : null
+        );
       }
+      if (latest && latest.severity === 'critical') lastToastedAlertKey = latestKey;
     }
     var badge = document.getElementById('atak-medical-tab-badge')
       || document.getElementById('overwatch-medical-tab-badge');
@@ -785,8 +794,25 @@ window.ATAKMedicalAlerts = (function () {
     };
   }
 
+  /**
+   * Signature de contenu stable entre sources (API / tchat / activité) pour un même événement
+   * réel : call_sign+kind+grid ne dépend pas de l’id (différent selon la table d’origine).
+   */
+  function contentSignature(a) {
+    if (a && a.call_sign && a.kind && a.grid) {
+      return String(a.call_sign).trim().toUpperCase() + '|' + a.kind + '|' + String(a.grid).trim();
+    }
+    return '';
+  }
+
+  /** Un id numérique d’une vraie ligne d’alerte API (pas un id de tchat/activité de secours). */
+  function hasApiAlertId(a) {
+    return !!(a && a.id != null && a.id !== '' && !a.source);
+  }
+
   function mergeAlerts(primary, secondary) {
     var byKey = {};
+    var sigToKey = {};
     var order = [];
     function put(a) {
       if (!a) return;
@@ -798,17 +824,24 @@ window.ATAKMedicalAlerts = (function () {
           a.client_key = 'act:' + String(a.activity_id);
         }
       }
-      var k = alertKey(a);
+      // Même événement vu par 2 sources (API + tchat, ou tchat + activité) : même signature de
+      // contenu → une seule carte au lieu de deux (l’id/tchat/activité diffère selon la table).
+      var sig = contentSignature(a);
+      var k = (sig && sigToKey[sig]) || alertKey(a);
+      if (sig && !sigToKey[sig]) sigToKey[sig] = k;
       if (!byKey[k]) {
         order.push(k);
         byKey[k] = a;
       } else {
-        byKey[k] = Object.assign({}, byKey[k], a, {
-          triage: (a.triage && a.triage.status && a.triage.status !== 'a_secourir')
-            ? a.triage
-            : (byKey[k].triage || a.triage),
-          client_key: byKey[k].client_key || a.client_key || k
-        });
+        var existing = byKey[k];
+        var merged = Object.assign({}, existing, a);
+        // Garder l’id de la vraie ligne API (triage) même si une source tchat/activité arrive après.
+        if (hasApiAlertId(existing) && !hasApiAlertId(a)) merged.id = existing.id;
+        merged.triage = (a.triage && a.triage.status && a.triage.status !== 'a_secourir')
+          ? a.triage
+          : (existing.triage || a.triage);
+        merged.client_key = existing.client_key || a.client_key || k;
+        byKey[k] = merged;
       }
     }
     (primary || []).forEach(put);

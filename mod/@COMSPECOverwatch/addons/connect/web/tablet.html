@@ -422,6 +422,9 @@
   var seenAlertIds = {};
   var unread = 0;
   var quiet = false;
+  // Dernière projection radar (plotPositions) : sert à convertir un double-clic sur la vue
+  // en position monde réelle pour la pose de marqueur.
+  var lastProjection = null;
 
   var TYPE_LABEL = {
     link: "Liaison",
@@ -502,6 +505,7 @@
       if (dy > span) span = dy;
     }
     span = Math.max(span * 1.25, 40);
+    lastProjection = { originX: originX, originY: originY, span: span };
     var out = [];
     for (i = 0; i < units.length; i++) {
       var unit = units[i];
@@ -779,6 +783,25 @@
       document.getElementById("map-hint").textContent = boot.mapHint;
     }
   };
+
+  // Double-clic sur la vue radar (hors contact existant) : pose un marqueur à cet endroit,
+  // en inversant la projection self-centrée de plotPositions vers une position monde réelle.
+  // Même convention que la carte web (double-clic / double-tap pour poser un marqueur).
+  var stageEl = document.getElementById("stage");
+  if (stageEl) {
+    stageEl.addEventListener("dblclick", function (ev) {
+      if (ev.target && ev.target.closest && ev.target.closest(".contact-dot")) return;
+      if (!lastProjection) return;
+      var rect = stageEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var px = ((ev.clientX - rect.left) / rect.width) * 100;
+      var py = ((ev.clientY - rect.top) / rect.height) * 100;
+      var wx = lastProjection.originX + ((px - 50) / 40) * lastProjection.span;
+      var wy = lastProjection.originY - ((py - 50) / 40) * lastProjection.span;
+      send("marker:place|" + wx.toFixed(1) + "|" + wy.toFixed(1));
+      document.getElementById("footer-msg").textContent = "Marqueur placé…";
+    });
+  }
 
   document.addEventListener("click", function (ev) {
     var viewBtn = ev.target.closest("[data-view]");
