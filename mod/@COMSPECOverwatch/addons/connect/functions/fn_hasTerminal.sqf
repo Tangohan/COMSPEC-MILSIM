@@ -13,7 +13,7 @@ private _mode = missionNamespace getVariable ["comspec_overwatch_terminal_mode",
 
 private _matchAny = {
     params ["_pool", "_classes"];
-    (_pool findIf { private _it = _x; (_classes findIf { _it isEqualTo _x || {_it isKindOf _x} }) >= 0 }) >= 0
+    (_pool findIf { _x in _classes }) >= 0
 };
 
 if (_mode in [0, 2]) then {
