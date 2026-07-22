@@ -12,6 +12,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\UserUiPreferencesRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Tactical\AtakTokenService;
@@ -27,8 +28,10 @@ class AtakController
         private UserRepository $userRepository,
         private FeatureGateService $featureGate,
         private ?TacticalGameLinkRepository $gameLinkRepository = null,
+        private ?UserUiPreferencesRepository $userUiPreferencesRepository = null,
     ) {
         $this->gameLinkRepository ??= new TacticalGameLinkRepository();
+        $this->userUiPreferencesRepository ??= new UserUiPreferencesRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -79,7 +82,13 @@ class AtakController
                 $personnelUrl = url('personnel/' . $userId);
                 $effective = $callsign !== '' ? $callsign : $legacyArma;
                 if ($effective !== '') {
-                    $atakCallsignToUser[strtoupper($effective)] = ['userId' => $userId, 'url' => $personnelUrl];
+                    $avatar = trim((string) ($u['avatar_url'] ?? ''));
+                    $atakCallsignToUser[strtoupper($effective)] = [
+                        'userId' => $userId,
+                        'url' => $personnelUrl,
+                        'avatarUrl' => $avatar !== '' ? $avatar : null,
+                        'displayName' => trim((string) ($u['display_name'] ?? '')),
+                    ];
                 }
             }
         }
@@ -112,6 +121,7 @@ class AtakController
             $currentUser['arma_callsign'] = $uCall !== '' ? $uCall : ($legacy !== '' ? $legacy : null);
         }
         $atakUserForJs = null;
+        $atakUiPrefs = ['theme' => 'system', 'density' => 'comfortable'];
         if ($currentUser) {
             $atakUserForJs = [
                 'displayName' => $currentUser['display_name'] ?? '',
@@ -119,14 +129,47 @@ class AtakController
                 'steamId' => $currentUser['steam_id'] ?? null,
                 'armaCallsign' => $currentUser['arma_callsign'] ?? null,
             ];
+            if ($tenantId) {
+                $atakUiPrefs = $this->userUiPreferencesRepository->getOrDefaults((int) $currentUser['id'], $tenantId);
+            }
         }
 
         $atakModDownloadUrl = null;
         if ($tenantId) {
             $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
             if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod/download');
+                $atakModDownloadUrl = url('atak/mod');
             }
+        }
+
+        $atakCaps = [
+            'loggedIn' => (bool) $currentUser,
+            'canViewPersonnel' => function_exists('can')
+                && (can('personnel.profile.view') || can('admin.access') || can('admin.organization')),
+            'canLinkPersonnel' => function_exists('can')
+                && (can('personnel.profile.update') || can('admin.access') || can('admin.organization')),
+            'canRenameUnit' => (bool) $currentUser,
+            /** Staff / état-major : peut retirer n’importe quel contact (fantômes inclus). */
+            'canDeleteUnitStaff' => (bool) $currentUser && function_exists('can')
+                && (can('admin.access') || can('admin.organization')),
+            /** Tout compte connecté peut retirer son propre contact (indicatif). */
+            'canDeleteOwnUnit' => (bool) $currentUser,
+            'canPing' => true,
+            'canTriageMedical' => (bool) $currentUser && function_exists('can')
+                && (can('operations.medical.manage')
+                    || can('operations.medical.view')
+                    || can('admin.access')
+                    || can('admin.organization')
+                    || can('personnel.profile.view')
+                    || can('personnel.profile.update')),
+        ];
+        if (!$currentUser) {
+            $atakCaps['canViewPersonnel'] = false;
+            $atakCaps['canLinkPersonnel'] = false;
+            $atakCaps['canRenameUnit'] = false;
+            $atakCaps['canDeleteUnitStaff'] = false;
+            $atakCaps['canDeleteOwnUnit'] = false;
+            $atakCaps['canTriageMedical'] = false;
         }
 
         return Response::view('atak', [
@@ -145,8 +188,10 @@ class AtakController
             'atakWorkspaces' => $atakWorkspaces,
             'atakDefaultMapId' => $atakDefaultMapId,
             'atakCallsignToUser' => $atakCallsignToUser,
+            'atakCaps' => $atakCaps,
             'currentUser' => $currentUser,
             'atakUserForJs' => $atakUserForJs,
+            'atakUiPrefs' => $atakUiPrefs,
             'canAccessAdminAtakConfig' => function_exists('can') && can('admin.access'),
             'atakModDownloadUrl' => $atakModDownloadUrl,
             'gameLinkCreateUrl' => url('atak/game-link'),
@@ -218,7 +263,7 @@ class AtakController
         }
         $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
         if (!is_file($modPath) || !is_readable($modPath)) {
-            return Response::redirect(url('atak'));
+            return Response::redirect(url('atak/mod'));
         }
         $name = 'COMSPEC-Overwatch.zip';
         $response = new \App\Core\Response();
@@ -236,6 +281,80 @@ class AtakController
         return $response;
     }
 
+    /**
+     * Page membre : présentation + téléchargement du pack Overwatch.
+     */
+    public function modPage(Request $request, array $params = []): Response
+    {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+
+        $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
+        $hasMod = is_file($modPath) && is_readable($modPath);
+        $sizeLabel = null;
+        $updatedAt = null;
+        $version = null;
+        if ($hasMod) {
+            $bytes = (int) filesize($modPath);
+            if ($bytes < 1024) {
+                $sizeLabel = $bytes . ' o';
+            } elseif ($bytes < 1024 * 1024) {
+                $sizeLabel = number_format($bytes / 1024, 1, ',', ' ') . ' Ko';
+            } else {
+                $sizeLabel = number_format($bytes / (1024 * 1024), 1, ',', ' ') . ' Mo';
+            }
+            $updatedAt = date('d/m/Y H:i', (int) filemtime($modPath));
+            if (class_exists(\ZipArchive::class)) {
+                $zip = new \ZipArchive();
+                if ($zip->open($modPath, \ZipArchive::RDONLY) === true) {
+                    for ($i = 0; $i < $zip->numFiles; $i++) {
+                        $name = $zip->getNameIndex($i);
+                        if ($name === false) {
+                            continue;
+                        }
+                        $norm = str_replace('\\', '/', $name);
+                        if (!preg_match('#(^|/)mod\.cpp$#i', $norm)) {
+                            continue;
+                        }
+                        $content = $zip->getFromIndex($i);
+                        if (is_string($content)
+                            && (
+                                preg_match('/version\s*=\s*"([^"]+)"/i', $content, $m)
+                                || preg_match('/version\s*=\s*\'([^\']+)\'/i', $content, $m)
+                                || preg_match('/version\s*=\s*([0-9][0-9.\-]*)/i', $content, $m)
+                            )
+                        ) {
+                            $version = trim($m[1]);
+                        }
+                        break;
+                    }
+                    $zip->close();
+                }
+            }
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'atak.mod',
+            'title' => 'Télécharger le pack Overwatch',
+            'hasMod' => $hasMod,
+            'modSizeLabel' => $sizeLabel,
+            'modUpdatedAt' => $updatedAt,
+            'modVersion' => $version,
+            'modDownloadUrl' => $hasMod ? url('atak/mod/download') : null,
+            'atakSetupUrl' => url('atak/setup'),
+            'atakUrl' => url('atak'),
+            'docsUrl' => url('documentation') . '#diapositives-briefing-eden',
+            'canManageMod' => function_exists('can') && (can('admin.access') || can('admin.organization')),
+            'adminModUrl' => url('admin/atak-mod'),
+        ]);
+    }
+
     public function setup(Request $request, array $params = []): Response
     {
         $block = $this->requireAtakFeature();
@@ -251,7 +370,7 @@ class AtakController
         if ($tenantId) {
             $modPath = dirname(__DIR__, 2) . '/../storage/atak-mod/' . $tenantId . '/comspec-overwatch.zip';
             if (is_file($modPath) && is_readable($modPath)) {
-                $atakModDownloadUrl = url('atak/mod/download');
+                $atakModDownloadUrl = url('atak/mod');
             }
         }
 
@@ -279,6 +398,60 @@ class AtakController
         return Response::view('layout.main', [
             'content' => 'atak-tuto',
             'title' => 'Tutoriel — Mod Arma COMSPEC Overwatch',
+        ]);
+    }
+
+    /**
+     * Page dédiée — journal de liaison (recherche, filtres, historique archivé).
+     */
+    public function liaison(Request $request, array $params = []): Response
+    {
+        $block = $this->requireAtakFeature();
+        if ($block !== null) {
+            return $block;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $config = $tenantId ? $this->atakConfigRepository->getByTenantId($tenantId) : null;
+        $nodeUrl = atak_client_base_url($config);
+        $jwtSecret = isset($config['jwt_secret']) && $config['jwt_secret'] !== '' ? $config['jwt_secret'] : null;
+        $token = $this->atakTokenService->generate($jwtSecret);
+
+        $atakMap = $tenantId ? $this->atakMapRepository->getDefaultForTenant($tenantId) : $this->atakMapRepository->getBySlug('altis');
+        $atakMapsList = $this->atakMapRepository->getAll();
+        $atakWorkspaces = [];
+        foreach ($atakMapsList as $m) {
+            $atakWorkspaces[] = [
+                'mapId' => (int) ($m['id'] ?? 0),
+                'label' => $m['label'] ?? $m['slug'] ?? ('Carte ' . ($m['id'] ?? '')),
+            ];
+        }
+        if ($atakWorkspaces === []) {
+            $atakWorkspaces[] = ['mapId' => 1, 'label' => 'Principal'];
+        }
+        $atakDefaultMapId = $atakMap ? (int) ($atakMap['id'] ?? 1) : 1;
+
+        $mapQuery = $request->query('mapId');
+        if ($mapQuery !== null && $mapQuery !== '') {
+            $mid = (int) $mapQuery;
+            if ($mid > 0) {
+                $atakDefaultMapId = $mid;
+            }
+        }
+
+        $demoAllowed = false;
+        try {
+            $activityLog = new \App\Services\Tactical\AtakActivityLogService();
+            $demoAllowed = $activityLog->isDemoSeedAllowed();
+        } catch (\Throwable) {
+            $demoAllowed = false;
+        }
+
+        return Response::view('atak-liaison', [
+            'atakToken' => $token,
+            'nodeAtakUrl' => $nodeUrl,
+            'atakWorkspaces' => $atakWorkspaces,
+            'atakDefaultMapId' => $atakDefaultMapId,
+            'demoSeedAllowed' => $demoAllowed,
         ]);
     }
 }

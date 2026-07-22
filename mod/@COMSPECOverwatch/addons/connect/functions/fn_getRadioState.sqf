@@ -2,6 +2,7 @@
     Retourne une chaîne "radioType|frequency|channel" pour cache / comparaison.
     TFAR: TFAR_fnc_activeSwRadio, TFAR_fnc_currentSwFrequency
     ACRE: acre_api_fnc_getCurrentRadioList
+    Pour speaking / TX : getRadioTxState.
 */
 params ["_unit"];
 private _out = "N/A|N/A|N/A";
@@ -25,8 +26,16 @@ if (isClass (configFile >> "CfgPatches" >> "tfar_core")) then {
                     _ch = str ([_r] call acre_api_fnc_getRadioChannel);
                 };
                 if (!isNil "acre_api_fnc_getChannelData") then {
-                    private _data = [_r, ([_r] call acre_api_fnc_getRadioChannel)] call acre_api_fnc_getChannelData;
-                    if (!isNil "_data" && {count _data > 0}) then { _freq = str (_data select 0); };
+                    private _data = [_r] call acre_api_fnc_getChannelData;
+                    if (isNil "_data" || {!(_data isEqualType [])}) then {
+                        // Ancienne signature éventuelle (radio, canal)
+                        if (!isNil "acre_api_fnc_getRadioChannel") then {
+                            _data = [_r, ([_r] call acre_api_fnc_getRadioChannel)] call acre_api_fnc_getChannelData;
+                        };
+                    };
+                    if (!isNil "_data" && {_data isEqualType []} && {count _data > 0}) then {
+                        _freq = str (_data select 0);
+                    };
                 };
                 _out = "ACRE|" + _freq + "|" + _ch;
             };

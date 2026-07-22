@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Tactical;
 
 /**
- * Journal d’activité ATAK léger (fichier JSON par théâtre), pour l’affichage
- * « Activité de liaison » sur la Tacmap. Pas d’historique long terme.
+ * Journal d’activité ATAK (fichier JSON par théâtre).
+ * Fenêtre active pour le panneau latéral ; historique archivé conservé pour la page dédiée.
+ * Compat lecture : entrées sans `archived_at` = non archivées.
  */
 final class AtakActivityLogService
 {
-    private const MAX_EVENTS = 120;
+    /** Capacité totale (actifs + archivés) par fichier théâtre. */
+    private const MAX_EVENTS = 5000;
     private const POSITION_THROTTLE_SEC = 15;
     private const INIT_THROTTLE_SEC = 90;
     private const SESSION_TTL_SEC = 7200;
@@ -30,6 +32,36 @@ final class AtakActivityLogService
     public const TYPE_NINE_LINE = 'nine_line';
     public const TYPE_LASER = 'laser';
     public const TYPE_INTEL = 'intel';
+    /** Ordre C2 (émission web ou réception jeu). */
+    public const TYPE_ORDER = 'order';
+    /** Tentative de liaison / clé d’accès (succès ou échec). */
+    public const TYPE_AUTH = 'auth';
+    /** Connexion téléphone (QR / code court). */
+    public const TYPE_PHONE = 'phone';
+    /** Joueur quitte Arma / la mission — présence ATAK hors ligne. */
+    public const TYPE_DISCONNECT = 'disconnect';
+
+    /** Carte « virtuelle » pour les événements d’auth / téléphone non liés à un théâtre. */
+    public const AUTH_MAP_ID = 1;
+
+    /** Types regroupés pour filtres UI (clé filtre → types techniques). */
+    public const FILTER_GROUPS = [
+        'connexion' => [self::TYPE_CLIENT_INIT, self::TYPE_DISCONNECT, self::TYPE_AUTH, self::TYPE_PHONE],
+        'indicatif' => [self::TYPE_CALLSIGN_CHANGE],
+        'position' => [self::TYPE_POSITION],
+        'tchat' => [self::TYPE_CHAT],
+        'ping' => [self::TYPE_PING],
+        'tactique' => [
+            self::TYPE_MARKER,
+            self::TYPE_DESIGNATOR,
+            self::TYPE_SIGINT,
+            self::TYPE_FLIGHT,
+            self::TYPE_NINE_LINE,
+            self::TYPE_LASER,
+            self::TYPE_INTEL,
+            self::TYPE_ORDER,
+        ],
+    ];
 
     /**
      * Enregistre une entrée générique (libellé déjà lisible).
@@ -75,10 +107,133 @@ final class AtakActivityLogService
             $events = [];
         }
         $events[] = $event;
-        if (count($events) > self::MAX_EVENTS) {
-            $events = array_slice($events, -self::MAX_EVENTS);
+        $data['events'] = $this->trimEvents($events);
+    }
+
+    /**
+     * Conserve les plus récents ; privilégie la purge des archivés les plus anciens.
+     *
+     * @param list<mixed> $events
+     * @return list<array<string, mixed>>
+     */
+    private function trimEvents(array $events): array
+    {
+        $normalized = [];
+        foreach ($events as $e) {
+            if (is_array($e)) {
+                $normalized[] = $e;
+            }
         }
-        $data['events'] = $events;
+        if (count($normalized) <= self::MAX_EVENTS) {
+            return $normalized;
+        }
+        $active = [];
+        $archived = [];
+        foreach ($normalized as $e) {
+            if ($this->isArchived($e)) {
+                $archived[] = $e;
+            } else {
+                $active[] = $e;
+            }
+        }
+        $overflow = count($normalized) - self::MAX_EVENTS;
+        if ($overflow > 0 && $archived !== []) {
+            $drop = min($overflow, count($archived));
+            $archived = array_slice($archived, $drop);
+            $overflow -= $drop;
+        }
+        if ($overflow > 0 && $active !== []) {
+            $active = array_slice($active, $overflow);
+        }
+        $merged = array_merge($archived, $active);
+        usort($merged, static function (array $a, array $b): int {
+            return ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
+        });
+
+        return $merged;
+    }
+
+    /** @param array<string, mixed> $e */
+    private function isArchived(array $e): bool
+    {
+        $raw = $e['archived_at'] ?? null;
+
+        return is_string($raw) && $raw !== '';
+    }
+
+    /**
+     * Archive tous les événements actifs (ne supprime pas — journal d’audit).
+     * Retourne le nombre d’entrées marquées.
+     */
+    public function archiveAll(int $tenantId, int $mapId): int
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return 0;
+        }
+        $count = 0;
+        $now = date('c');
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($now, &$count): void {
+            $events = $data['events'] ?? [];
+            if (!is_array($events)) {
+                return;
+            }
+            foreach ($events as &$e) {
+                if (!is_array($e) || $this->isArchived($e)) {
+                    continue;
+                }
+                $e['archived_at'] = $now;
+                $count++;
+            }
+            unset($e);
+            $data['events'] = $events;
+        });
+
+        return $count;
+    }
+
+    /**
+     * Tentative de connexion / liaison (code, Steam, clé) — libellé métier uniquement.
+     * Ne jamais passer de secrets dans $meta.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function recordAuthAttempt(
+        int $tenantId,
+        bool $success,
+        string $label,
+        array $meta = [],
+        ?string $actor = null,
+        int $mapId = self::AUTH_MAP_ID
+    ): void {
+        if ($tenantId < 1 || $label === '') {
+            return;
+        }
+        $safeMeta = [];
+        foreach (['reason', 'path_hint', 'method'] as $k) {
+            if (isset($meta[$k]) && is_string($meta[$k]) && $meta[$k] !== '') {
+                $safeMeta[$k] = $meta[$k];
+            }
+        }
+        $safeMeta['ok'] = $success;
+        $this->record($tenantId, $mapId > 0 ? $mapId : self::AUTH_MAP_ID, self::TYPE_AUTH, $label, $actor, $safeMeta);
+    }
+
+    /**
+     * Connexion téléphone réussie (QR scanné ou code saisi).
+     */
+    public function recordPhonePaired(int $tenantId, ?string $actor = null): void
+    {
+        if ($tenantId < 1) {
+            return;
+        }
+        $this->record(
+            $tenantId,
+            self::AUTH_MAP_ID,
+            self::TYPE_PHONE,
+            'Téléphone connecté — briefing accessible',
+            $actor,
+            ['ok' => true]
+        );
     }
 
     /**
@@ -112,6 +267,38 @@ final class AtakActivityLogService
                 : 'Client ATAK initialisé';
             $this->appendEvent($data, self::TYPE_CLIENT_INIT, $label, $call !== '' ? $call : null);
         });
+    }
+
+    /**
+     * Déconnexion explicite (sortie Arma / mission) : retire la session client.
+     * Retourne l’indicatif résolu (body ou session) pour marquer l’unité hors ligne.
+     */
+    public function recordDisconnect(int $tenantId, int $mapId, string $clientKey, ?string $callSign = null): string
+    {
+        $clientKey = $this->normalizeKey($clientKey);
+        $call = $callSign !== null ? trim($callSign) : '';
+        $resolved = $call;
+        if ($tenantId < 1 || $mapId < 1) {
+            return $resolved;
+        }
+        $now = time();
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($clientKey, $call, $now, &$resolved): void {
+            $sessions = $this->pruneSessions($data['sessions'] ?? [], $now);
+            if ($clientKey !== '' && isset($sessions[$clientKey]) && is_array($sessions[$clientKey])) {
+                $prevCall = trim((string) ($sessions[$clientKey]['call_sign'] ?? ''));
+                if ($resolved === '' && $prevCall !== '') {
+                    $resolved = $prevCall;
+                }
+                unset($sessions[$clientKey]);
+            }
+            $data['sessions'] = $sessions;
+            $label = $resolved !== ''
+                ? 'Déconnexion jeu — ' . $resolved
+                : 'Déconnexion jeu';
+            $this->appendEvent($data, self::TYPE_DISCONNECT, $label, $resolved !== '' ? $resolved : null);
+        });
+
+        return $resolved;
     }
 
     /**
@@ -163,52 +350,328 @@ final class AtakActivityLogService
     }
 
     /**
-     * @return list<array{id: int, type: string, label: string, actor: ?string, at: string, meta?: array}>
+     * Liste récente pour le panneau (exclut les archivés par défaut).
+     *
+     * @return list<array{id: int, type: string, label: string, actor: ?string, at: string, archived?: bool, meta?: array}>
      */
-    public function listRecent(int $tenantId, int $mapId, int $limit = 50, ?int $afterId = null): array
+    public function listRecent(int $tenantId, int $mapId, int $limit = 50, ?int $afterId = null, bool $includeArchived = false): array
     {
-        $limit = max(1, min(100, $limit));
+        $result = $this->listFiltered($tenantId, $mapId, [
+            'limit' => $limit,
+            'after_id' => $afterId,
+            'include_archived' => $includeArchived,
+            'archived_only' => false,
+        ]);
+
+        return $result['events'];
+    }
+
+    /**
+     * Liste paginée / filtrée pour la page dédiée (dépasse la fenêtre panneau).
+     *
+     * @param array{
+     *   limit?: int,
+     *   before_id?: int|null,
+     *   after_id?: int|null,
+     *   type?: string|list<string>|null,
+     *   q?: string|null,
+     *   from?: string|null,
+     *   to?: string|null,
+     *   include_archived?: bool,
+     *   archived_only?: bool
+     * } $opts
+     * @return array{events: list<array<string, mixed>>, total: int, has_more: bool}
+     */
+    public function listFiltered(int $tenantId, int $mapId, array $opts = []): array
+    {
+        $limit = max(1, min(200, (int) ($opts['limit'] ?? 50)));
+        $beforeId = isset($opts['before_id']) && $opts['before_id'] !== null && $opts['before_id'] !== ''
+            ? (int) $opts['before_id']
+            : null;
+        $afterId = isset($opts['after_id']) && $opts['after_id'] !== null && $opts['after_id'] !== ''
+            ? (int) $opts['after_id']
+            : null;
+        $includeArchived = !empty($opts['include_archived']);
+        $archivedOnly = !empty($opts['archived_only']);
+        $q = isset($opts['q']) ? trim((string) $opts['q']) : '';
+        $fromTs = $this->parseBoundTs(isset($opts['from']) ? (string) $opts['from'] : null, false);
+        $toTs = $this->parseBoundTs(isset($opts['to']) ? (string) $opts['to'] : null, true);
+        $typeFilter = $this->resolveTypeFilter($opts['type'] ?? null);
+
         $path = $this->path($tenantId, $mapId);
         $data = $this->readFile($path);
         $events = $data['events'] ?? [];
         if (!is_array($events)) {
-            return [];
+            return ['events' => [], 'total' => 0, 'has_more' => false];
         }
-        if ($afterId !== null && $afterId > 0) {
-            $events = array_values(array_filter(
-                $events,
-                static fn ($e) => is_array($e) && (int) ($e['id'] ?? 0) > $afterId
-            ));
-        }
-        $events = array_slice($events, -$limit);
 
-        $out = [];
+        $filtered = [];
         foreach ($events as $e) {
             if (!is_array($e)) {
                 continue;
             }
-            $item = [
-                'id' => (int) ($e['id'] ?? 0),
-                'type' => (string) ($e['type'] ?? ''),
-                'label' => (string) ($e['label'] ?? ''),
-                'actor' => isset($e['actor']) && is_string($e['actor']) && $e['actor'] !== '' ? $e['actor'] : null,
-                'at' => (string) ($e['at'] ?? ''),
-            ];
-            if (isset($e['meta']) && is_array($e['meta']) && $e['meta'] !== []) {
-                // Ne pas exposer de clés techniques brutes côté UI : uniquement from/to d’indicatif.
-                $meta = [];
-                if (isset($e['meta']['from'], $e['meta']['to'])) {
-                    $meta['from'] = (string) $e['meta']['from'];
-                    $meta['to'] = (string) $e['meta']['to'];
-                }
-                if ($meta !== []) {
-                    $item['meta'] = $meta;
+            $archived = $this->isArchived($e);
+            if ($archivedOnly && !$archived) {
+                continue;
+            }
+            if (!$includeArchived && !$archivedOnly && $archived) {
+                continue;
+            }
+            $id = (int) ($e['id'] ?? 0);
+            if ($afterId !== null && $afterId > 0 && $id <= $afterId) {
+                continue;
+            }
+            if ($beforeId !== null && $beforeId > 0 && $id >= $beforeId) {
+                continue;
+            }
+            $type = (string) ($e['type'] ?? '');
+            if ($typeFilter !== null && !in_array($type, $typeFilter, true)) {
+                continue;
+            }
+            $at = (string) ($e['at'] ?? '');
+            $atTs = $at !== '' ? strtotime($at) : false;
+            if ($fromTs !== null && ($atTs === false || $atTs < $fromTs)) {
+                continue;
+            }
+            if ($toTs !== null && ($atTs === false || $atTs > $toTs)) {
+                continue;
+            }
+            if ($q !== '') {
+                $hay = mb_strtolower(
+                    (string) ($e['label'] ?? '') . ' ' . (string) ($e['actor'] ?? '') . ' ' . $type,
+                    'UTF-8'
+                );
+                if (!str_contains($hay, mb_strtolower($q, 'UTF-8'))) {
+                    continue;
                 }
             }
-            $out[] = $item;
+            $filtered[] = $e;
         }
 
-        return array_reverse($out);
+        usort($filtered, static function (array $a, array $b): int {
+            return ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0));
+        });
+
+        $total = count($filtered);
+        $slice = array_slice($filtered, 0, $limit);
+        $hasMore = $total > $limit;
+
+        $out = [];
+        foreach ($slice as $e) {
+            $item = $this->normalizeEventForApi($e);
+            if ($item !== null) {
+                $out[] = $item;
+            }
+        }
+
+        return ['events' => $out, 'total' => $total, 'has_more' => $hasMore];
+    }
+
+    /**
+     * @param array<string, mixed> $e
+     * @return array{id: int, type: string, label: string, actor: ?string, at: string, archived?: bool, meta?: array}|null
+     */
+    private function normalizeEventForApi(array $e): ?array
+    {
+        $id = (int) ($e['id'] ?? 0);
+        $label = (string) ($e['label'] ?? '');
+        if ($id < 1 && $label === '') {
+            return null;
+        }
+        $item = [
+            'id' => $id,
+            'type' => (string) ($e['type'] ?? ''),
+            'label' => $label,
+            'actor' => isset($e['actor']) && is_string($e['actor']) && $e['actor'] !== '' ? $e['actor'] : null,
+            'at' => (string) ($e['at'] ?? ''),
+        ];
+        if ($this->isArchived($e)) {
+            $item['archived'] = true;
+            $item['archived_at'] = (string) $e['archived_at'];
+        }
+        if (isset($e['meta']) && is_array($e['meta']) && $e['meta'] !== []) {
+            $meta = [];
+            if (isset($e['meta']['from'], $e['meta']['to'])) {
+                $meta['from'] = (string) $e['meta']['from'];
+                $meta['to'] = (string) $e['meta']['to'];
+            }
+            if (array_key_exists('ok', $e['meta'])) {
+                $meta['ok'] = (bool) $e['meta']['ok'];
+            }
+            if (isset($e['meta']['reason']) && is_string($e['meta']['reason'])) {
+                $meta['reason'] = (string) $e['meta']['reason'];
+            }
+            if ($meta !== []) {
+                $item['meta'] = $meta;
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * @param string|list<string>|null $type
+     * @return list<string>|null
+     */
+    private function resolveTypeFilter(mixed $type): ?array
+    {
+        if ($type === null || $type === '' || $type === []) {
+            return null;
+        }
+        $raw = is_array($type) ? $type : (preg_split('/\s*,\s*/', (string) $type) ?: []);
+        $out = [];
+        foreach ($raw as $t) {
+            $t = trim((string) $t);
+            if ($t === '') {
+                continue;
+            }
+            if (isset(self::FILTER_GROUPS[$t])) {
+                foreach (self::FILTER_GROUPS[$t] as $mapped) {
+                    $out[] = $mapped;
+                }
+                continue;
+            }
+            $out[] = $t;
+        }
+        $out = array_values(array_unique($out));
+
+        return $out === [] ? null : $out;
+    }
+
+    private function parseBoundTs(?string $raw, bool $endOfDay): ?int
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+        $raw = trim($raw);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+            $raw .= $endOfDay ? ' 23:59:59' : ' 00:00:00';
+        }
+        $ts = strtotime($raw);
+
+        return $ts === false ? null : $ts;
+    }
+
+    /**
+     * Seed de démo dense (multi-jours / multi-types) — uniquement hors production, ou flag explicite debug.
+     * N’écrit pas si le journal a déjà des événements (sauf $force).
+     */
+    public function seedDemoEvents(int $tenantId, int $mapId, bool $force = false): int
+    {
+        if ($tenantId < 1 || $mapId < 1 || !$this->isDemoSeedAllowed()) {
+            return 0;
+        }
+        $path = $this->path($tenantId, $mapId);
+        $existing = $this->readFile($path);
+        $events = $existing['events'] ?? [];
+        if (!$force && is_array($events) && count($events) > 0) {
+            return 0;
+        }
+
+        $samples = $this->demoSampleBlueprint();
+        $added = 0;
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($samples, $force, &$added): void {
+            if (!$force && is_array($data['events'] ?? null) && count($data['events']) > 0) {
+                return;
+            }
+            if ($force) {
+                $data['events'] = [];
+                $data['next_id'] = 1;
+            }
+            $now = time();
+            foreach ($samples as $row) {
+                $id = (int) ($data['next_id'] ?? 1);
+                $data['next_id'] = $id + 1;
+                $offsetSec = (int) ($row['offset_sec'] ?? 0);
+                $event = [
+                    'id' => $id,
+                    'type' => (string) $row['type'],
+                    'label' => (string) $row['label'],
+                    'actor' => isset($row['actor']) ? (string) $row['actor'] : null,
+                    'at' => date('c', $now - $offsetSec),
+                ];
+                if (!empty($row['archived'])) {
+                    $event['archived_at'] = date('c', $now - max(60, $offsetSec - 3600));
+                }
+                $data['events'][] = $event;
+                $added++;
+            }
+        });
+
+        return $added;
+    }
+
+    public function isDemoSeedAllowed(): bool
+    {
+        $env = strtolower(trim((string) (function_exists('env') ? env('APP_ENV', 'production') : ($_ENV['APP_ENV'] ?? 'production'))));
+        if (in_array($env, ['local', 'development', 'dev', 'testing'], true)) {
+            return true;
+        }
+        $debug = function_exists('env')
+            ? filter_var((string) env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN)
+            : filter_var((string) ($_ENV['APP_DEBUG'] ?? false), FILTER_VALIDATE_BOOLEAN);
+
+        return $debug && $env !== 'production';
+    }
+
+    /**
+     * @return list<array{type: string, label: string, actor?: string, offset_sec: int, archived?: bool}>
+     */
+    private function demoSampleBlueprint(): array
+    {
+        $day = 86400;
+        $rows = [
+            ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 120],
+            ['type' => self::TYPE_POSITION, 'label' => 'Position envoyée — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 90],
+            ['type' => self::TYPE_CHAT, 'label' => 'Message radio — « En position, secteur nord »', 'actor' => 'HAWK-1', 'offset_sec' => 75],
+            ['type' => self::TYPE_PING, 'label' => 'Ping carte — HAWK-1', 'actor' => 'HAWK-1', 'offset_sec' => 60],
+            ['type' => self::TYPE_CALLSIGN_CHANGE, 'label' => 'Indicatif mis à jour — VIPER → VIPER-2', 'actor' => 'VIPER-2', 'offset_sec' => 40],
+            ['type' => self::TYPE_ORDER, 'label' => 'Ordre émis — Se déplacer (VIPER-2)', 'actor' => 'PC', 'offset_sec' => 30],
+            ['type' => self::TYPE_PHONE, 'label' => 'Téléphone connecté — briefing accessible', 'actor' => 'Opérateur', 'offset_sec' => 20],
+            ['type' => self::TYPE_AUTH, 'label' => 'Liaison en jeu réussie — code accepté', 'actor' => 'HAWK-1', 'offset_sec' => 15],
+            ['type' => self::TYPE_NINE_LINE, 'label' => '9-Line CAS transmise', 'actor' => 'JTAC-1', 'offset_sec' => 10],
+            ['type' => self::TYPE_DISCONNECT, 'label' => 'Déconnexion jeu — GHOST-3', 'actor' => 'GHOST-3', 'offset_sec' => 5],
+            // Hier
+            ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — RAVEN', 'actor' => 'RAVEN', 'offset_sec' => $day + 3600],
+            ['type' => self::TYPE_MARKER, 'label' => 'Marqueur placé — Point d’intérêt', 'actor' => 'RAVEN', 'offset_sec' => $day + 3400],
+            ['type' => self::TYPE_INTEL, 'label' => 'Renseignement reçu — photo CTAB', 'actor' => 'RAVEN', 'offset_sec' => $day + 3200],
+            ['type' => self::TYPE_LASER, 'label' => 'Code laser synchronisé', 'actor' => 'JTAC-1', 'offset_sec' => $day + 3000],
+            ['type' => self::TYPE_FLIGHT, 'label' => 'Manifeste de vol reçu — ANGEL-1', 'actor' => 'ANGEL-1', 'offset_sec' => $day + 2800],
+            ['type' => self::TYPE_CHAT, 'label' => 'Message radio — « RTB dans 5 »', 'actor' => 'ANGEL-1', 'offset_sec' => $day + 2600],
+            // J-2
+            ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — WOLF', 'actor' => 'WOLF', 'offset_sec' => 2 * $day + 7200],
+            ['type' => self::TYPE_POSITION, 'label' => 'Position envoyée — WOLF', 'actor' => 'WOLF', 'offset_sec' => 2 * $day + 7000],
+            ['type' => self::TYPE_DESIGNATOR, 'label' => 'Désignateur laser actif', 'actor' => 'WOLF', 'offset_sec' => 2 * $day + 6800],
+            ['type' => self::TYPE_SIGINT, 'label' => 'Zone SIGINT signalée', 'actor' => 'WOLF', 'offset_sec' => 2 * $day + 6600],
+            ['type' => self::TYPE_AUTH, 'label' => 'Liaison en jeu refusée — compte non autorisé', 'actor' => null, 'offset_sec' => 2 * $day + 6400],
+            // J-3 (dont quelques archivés pour tester le toggle)
+            ['type' => self::TYPE_CLIENT_INIT, 'label' => 'Connexion établie — FALCON', 'actor' => 'FALCON', 'offset_sec' => 3 * $day + 1000, 'archived' => true],
+            ['type' => self::TYPE_CHAT, 'label' => 'Message radio — « Check-in secteur Est »', 'actor' => 'FALCON', 'offset_sec' => 3 * $day + 900, 'archived' => true],
+            ['type' => self::TYPE_PING, 'label' => 'Ping carte — FALCON', 'actor' => 'FALCON', 'offset_sec' => 3 * $day + 800, 'archived' => true],
+            ['type' => self::TYPE_ORDER, 'label' => 'Ordre émis — Tenir la position', 'actor' => 'PC', 'offset_sec' => 3 * $day + 700, 'archived' => true],
+            ['type' => self::TYPE_DISCONNECT, 'label' => 'Déconnexion jeu — FALCON', 'actor' => 'FALCON', 'offset_sec' => 3 * $day + 600, 'archived' => true],
+        ];
+
+        // Densifier aujourd’hui / hier avec des positions intercalées
+        for ($i = 0; $i < 18; $i++) {
+            $actor = ($i % 2 === 0) ? 'HAWK-1' : 'VIPER-2';
+            $rows[] = [
+                'type' => self::TYPE_POSITION,
+                'label' => 'Position envoyée — ' . $actor,
+                'actor' => $actor,
+                'offset_sec' => 200 + ($i * 45),
+            ];
+        }
+        for ($i = 0; $i < 12; $i++) {
+            $rows[] = [
+                'type' => self::TYPE_POSITION,
+                'label' => 'Position envoyée — RAVEN',
+                'actor' => 'RAVEN',
+                'offset_sec' => $day + 2000 + ($i * 120),
+            ];
+        }
+
+        return $rows;
     }
 
     public function clientKeyFromRequest(): string

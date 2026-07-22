@@ -18,6 +18,9 @@ window.ATAKMap = (function () {
   var config;
   var baseTileLayer = null;
   var tileFailCount = 0;
+  var invalidateTimer = null;
+  var mapResizeObserver = null;
+  var lastMapSizeKey = '';
 
   function buildConfigFromAtakMapConfig(raw) {
     if (!raw || !raw.tilePattern) return null;
@@ -40,7 +43,27 @@ window.ATAKMap = (function () {
     };
   }
 
+  function scheduleInvalidateSize() {
+    if (!map) return;
+    clearTimeout(invalidateTimer);
+    invalidateTimer = setTimeout(function () {
+      if (!map) return;
+      try { map.invalidateSize({ animate: false }); } catch (err) {}
+    }, 140);
+  }
+
   function destroy() {
+    if (mapResizeObserver) {
+      try { mapResizeObserver.disconnect(); } catch (e) {}
+      mapResizeObserver = null;
+    }
+    clearTimeout(invalidateTimer);
+    invalidateTimer = null;
+    lastMapSizeKey = '';
+    if (window._atakMapResizeHandler) {
+      window.removeEventListener('resize', window._atakMapResizeHandler);
+      window._atakMapResizeHandler = null;
+    }
     if (!map) return;
     map.remove();
     map = null;
@@ -116,11 +139,11 @@ window.ATAKMap = (function () {
     airAssetsById = {};
 
     map.setView(config.center, config.defaultZoom);
-    L.control.scale({ maxWidth: 200, imperial: false }).addTo(map);
+    L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition atak-map-hud');
-    gridEl.innerHTML = '<div class="atak-map-hud__row"><span class="atak-map-hud__k">GRID</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
-      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">NET</span> <span class="atak-map-hud__v atak-map-hud__ok">LINK</span></div>';
+    gridEl.innerHTML = '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
+      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Réseau</span> <span class="atak-map-hud__v atak-map-hud__ok" data-hud-net>En liaison</span></div>';
     map.getContainer().appendChild(gridEl);
     map.on('mousemove', function (e) {
       var lat = Math.round(e.latlng.lat);
@@ -128,6 +151,25 @@ window.ATAKMap = (function () {
       var v = gridEl.querySelector('[data-hud-grid]');
       if (v) v.textContent = lng + ' ' + lat;
     });
+    // Recalcule la taille Leaflet après layout flex (carte + tiroir effectifs).
+    // Debounce + seuil de taille : évite une boucle reflow / tremblement plein écran.
+    setTimeout(scheduleInvalidateSize, 0);
+    window._atakMapResizeHandler = function () { scheduleInvalidateSize(); };
+    window.addEventListener('resize', window._atakMapResizeHandler);
+    if (typeof ResizeObserver !== 'undefined') {
+      mapResizeObserver = new ResizeObserver(function (entries) {
+        var cr = entries && entries[0] && entries[0].contentRect;
+        if (!cr) return;
+        var w = Math.round(cr.width);
+        var h = Math.round(cr.height);
+        if (w < 2 || h < 2) return;
+        var key = w + 'x' + h;
+        if (key === lastMapSizeKey) return;
+        lastMapSizeKey = key;
+        scheduleInvalidateSize();
+      });
+      try { mapResizeObserver.observe(el); } catch (e) {}
+    }
 
     window.ATAKMap._map = map;
     try {
@@ -170,22 +212,38 @@ window.ATAKMap = (function () {
   }
 
   function buildManualMarkerIcon(data) {
+    data = data || {};
+    var nato = window.NatoSidcIcons;
+    var useMil = data.sidc || data.icon === 'milsymbol' || data.symbolMode === 'tactical';
+    if (useMil && nato && nato.leafletDivIcon) {
+      var px = markerSizePx(data.size);
+      return nato.leafletDivIcon(L, {
+        sidc: data.sidc,
+        affiliation: data.affiliation || 'friend',
+        functionid: data.functionid,
+        scheme: data.scheme,
+        battledimension: data.battledimension,
+        callSign: data.label || data.symbolName || '',
+        showLabel: !!(data.label || data.symbolName),
+        size: Math.max(28, Math.min(px + 8, 48)),
+      });
+    }
     var color = data.color || '#34d399';
     var kind = data.icon || data.symbol || 'dot';
-    var px = markerSizePx(data.size);
+    var px2 = markerSizePx(data.size);
     var html;
     if (kind === 'pin') {
-      html = '<span class="atak-micon atak-micon--pin" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+      html = '<span class="atak-micon atak-micon--pin" style="--m-color:' + color + ';--m-size:' + px2 + 'px"></span>';
     } else if (kind === 'flag') {
-      html = '<span class="atak-micon atak-micon--flag" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+      html = '<span class="atak-micon atak-micon--flag" style="--m-color:' + color + ';--m-size:' + px2 + 'px"></span>';
     } else if (kind === 'warning') {
-      html = '<span class="atak-micon atak-micon--warning" style="--m-color:' + color + ';--m-size:' + px + 'px">!</span>';
+      html = '<span class="atak-micon atak-micon--warning" style="--m-color:' + color + ';--m-size:' + px2 + 'px">!</span>';
     } else if (kind === 'target') {
-      html = '<span class="atak-micon atak-micon--target" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+      html = '<span class="atak-micon atak-micon--target" style="--m-color:' + color + ';--m-size:' + px2 + 'px"></span>';
     } else {
-      html = '<span class="atak-micon atak-micon--dot" style="--m-color:' + color + ';--m-size:' + px + 'px"></span>';
+      html = '<span class="atak-micon atak-micon--dot" style="--m-color:' + color + ';--m-size:' + px2 + 'px"></span>';
     }
-    var box = Math.max(px + 8, 22);
+    var box = Math.max(px2 + 8, 22);
     return L.divIcon({
       className: 'atak-marker-icon',
       html: html,
@@ -195,13 +253,22 @@ window.ATAKMap = (function () {
   }
 
   function markerPopupHtml(data, lng, lat) {
-    var label = data.label || data.text || data.message || data.name || 'Marqueur';
+    var label = data.label || data.text || data.message || data.name || data.symbolName || 'Marqueur';
     var author = data.author || data.createdBy || '';
     var desc = data.description || data.desc || '';
     var gx = Math.round(Number(lng));
     var gy = Math.round(Number(lat));
     var html = '<div class="atak-marker-popup">';
     html += '<strong>' + escapeHtml(label) + '</strong>';
+    if (data.symbolName || data.affiliation) {
+      var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
+        ? window.MilstdCatalog.affiliationLabelFr(data.affiliation)
+        : '';
+      var symLine = [];
+      if (data.symbolName) symLine.push(escapeHtml(data.symbolName));
+      if (affFr) symLine.push(escapeHtml(affFr));
+      if (symLine.length) html += '<div class="atak-marker-popup__symbol">' + symLine.join(' · ') + '</div>';
+    }
     html += '<div class="atak-marker-popup__coords">Grille ' + gx + ' / ' + gy + '</div>';
     if (desc) html += '<p class="atak-marker-popup__desc">' + escapeHtml(desc) + '</p>';
     if (author) html += '<span class="atak-marker-popup__author">' + escapeHtml(author) + '</span>';
@@ -613,22 +680,57 @@ window.ATAKMap = (function () {
     }).catch(function () {});
   }
 
+  function bindUnitMarkerContextMenu(marker) {
+    if (!marker || marker._atakUnitCtxBound) return;
+    marker._atakUnitCtxBound = true;
+    marker.on('contextmenu', function (e) {
+      if (!e || !e.originalEvent) return;
+      L.DomEvent.preventDefault(e);
+      L.DomEvent.stopPropagation(e);
+      try { e.originalEvent.stopImmediatePropagation(); } catch (err) {}
+      var unit = marker._atakUnit || {};
+      var oe = e.originalEvent;
+      window.dispatchEvent(new CustomEvent('atak:unit-contextmenu', {
+        detail: {
+          unit: unit,
+          clientX: oe.clientX,
+          clientY: oe.clientY,
+          latlng: e.latlng || null
+        }
+      }));
+    });
+  }
+
   function setUnitsMarkers(list) {
     if (!map) return;
     if (!unitsLayer) unitsLayer = L.layerGroup().addTo(map);
     var nato = window.NatoSidcIcons;
     var seen = {};
+    var ORIGIN_EPS = 0.5;
+    function isValidPos(x, y) {
+      if (isNaN(x) || isNaN(y)) return false;
+      if (Math.abs(x) < ORIGIN_EPS && Math.abs(y) < ORIGIN_EPS) return false;
+      return true;
+    }
+    function unitLive(u) {
+      if (window.ATAKUnits && window.ATAKUnits.resolveLiveStatus) {
+        return window.ATAKUnits.resolveLiveStatus(u);
+      }
+      return String((u && u.status) || '').toLowerCase();
+    }
     (Array.isArray(list) ? list : []).forEach(function (u) {
+      var live = unitLive(u);
+      if (live === 'offline') return;
       var id = 'unit_' + (u.id != null ? u.id : (u.call_sign || Math.random()));
-      seen[id] = true;
       var x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
       var y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
-      if (isNaN(x) || isNaN(y)) {
+      if (!isValidPos(x, y)) {
         var gridRef = String(u.grid_ref || '').trim().split(/\s+/);
         x = parseFloat(gridRef[0]);
         y = parseFloat(gridRef[1]);
       }
-      if (isNaN(x) || isNaN(y)) return;
+      if (!isValidPos(x, y)) return;
+      seen[id] = true;
       var applied = applyOffset(y, x);
       var latlng = L.latLng(applied[0], applied[1]);
       var extra = {};
@@ -643,38 +745,106 @@ window.ATAKMap = (function () {
       if (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia') {
         healthClass = 'nato-sidc--critical';
       }
-      var iconOpts = {
-        affiliation: aff,
-        role: u.role || extra.role || '',
-        callSign: u.call_sign || '',
-        heading: u.heading,
-        showLabel: true,
-        size: 34,
-        health: health,
-        className: healthClass,
-      };
-      var icon = nato && nato.leafletDivIcon
-        ? nato.leafletDivIcon(L, iconOpts)
-        : L.divIcon({
-            className: 'atak-unit-fallback ' + healthClass,
-            html: '<span style="background:#3b82f6;color:#fff;padding:2px 5px;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>',
-            iconSize: [70, 20],
-            iconAnchor: [35, 10],
+      var emitting = (window.ATAKRadio && window.ATAKRadio.isEmitting)
+        ? window.ATAKRadio.isEmitting(extra)
+        : (extra.radio_tx === true || extra.radio_tx === 1 || extra.radio_tx === 'true' ||
+          extra.radio_speaking === true || extra.radio_speaking === 1 || extra.radio_speaking === 'true');
+      var radioCh = extra.radio_channel != null ? String(extra.radio_channel) : '';
+      var onMonNet = window.ATAKRadio && window.ATAKRadio.isMonitoredChannel
+        ? window.ATAKRadio.isMonitoredChannel(radioCh)
+        : false;
+      if (emitting) {
+        healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--emitting';
+      }
+      if (onMonNet) {
+        healthClass = (healthClass ? healthClass + ' ' : '') + 'nato-sidc--radio-listen';
+      }
+      var roleText = String(u.role || extra.role || '').trim();
+      var callsignKey = String(u.call_sign || '').toUpperCase().trim();
+      var profile = (window.ATAK_CALLSIGN_TO_USER && callsignKey)
+        ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
+        : null;
+      var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
+      var iconSig = [
+        aff, roleText, health, healthClass, u.call_sign || '', headingRounded,
+        profile && profile.avatarUrl ? profile.avatarUrl : '',
+        extra.sidc || u.sidc || '',
+        emitting ? '1' : '0',
+        radioCh,
+        onMonNet ? '1' : '0'
+      ].join('|');
+      var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
+      var existing = unitsById[id];
+      if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
+        existing._atakUnit = u;
+        return;
+      }
+      var icon = null;
+      if (!existing || existing._atakIconSig !== iconSig) {
+        if (profile && profile.avatarUrl) {
+          icon = L.divIcon({
+            className: 'atak-unit-avatar-marker' +
+              (emitting ? ' atak-unit-avatar-marker--emit' : '') +
+              (onMonNet ? ' atak-unit-avatar-marker--listen' : ''),
+            html: '<div class="atak-unit-avatar-marker__inner">' +
+              '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt=""/>' +
+              (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '') +
+              (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '') +
+              '<span class="atak-unit-avatar-marker__label">' + String(u.call_sign || '').slice(0, 12).replace(/</g, '&lt;') + '</span>' +
+              '</div>',
+            iconSize: [48, 52],
+            iconAnchor: [24, 20],
           });
-      if (!unitsById[id]) {
+        } else {
+          var iconOpts = {
+            affiliation: aff,
+            role: roleText,
+            sidc: extra.sidc || u.sidc || '',
+            callSign: u.call_sign || '',
+            heading: headingRounded === '' ? u.heading : headingRounded,
+            showLabel: true,
+            size: 34,
+            health: health,
+            className: healthClass,
+            emitting: emitting,
+            listening: onMonNet,
+          };
+          icon = nato && nato.leafletDivIcon
+            ? nato.leafletDivIcon(L, iconOpts)
+            : L.divIcon({
+                className: 'atak-unit-fallback ' + healthClass,
+                html: '<span style="background:#3b82f6;color:#fff;padding:2px 5px;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
+                  (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : ''),
+                iconSize: [70, 28],
+                iconAnchor: [35, 10],
+              });
+        }
+      }
+      if (!existing) {
         var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
+        marker._atakUnit = u;
+        marker._atakIconSig = iconSig;
+        marker._atakPosSig = posSig;
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
           window.ATAKUnitPopup.bindUnit(marker, u);
         } else {
           marker.bindPopup('<strong>' + (u.call_sign || '—') + '</strong><br/>' + (u.role || '') + '<br/>' + (u.grid_ref || ''));
         }
+        bindUnitMarkerContextMenu(marker);
         marker.addTo(unitsLayer);
         unitsById[id] = marker;
       } else {
-        unitsById[id].setLatLng(latlng);
-        unitsById[id].setIcon(icon);
+        existing._atakUnit = u;
+        if (existing._atakPosSig !== posSig) {
+          existing.setLatLng(latlng);
+          existing._atakPosSig = posSig;
+        }
+        if (icon && existing._atakIconSig !== iconSig) {
+          existing.setIcon(icon);
+          existing._atakIconSig = iconSig;
+        }
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindUnit) {
-          window.ATAKUnitPopup.bindUnit(unitsById[id], u);
+          window.ATAKUnitPopup.bindUnit(existing, u);
         }
       }
     });
@@ -718,9 +888,13 @@ window.ATAKMap = (function () {
             iconSize: [20, 20],
             iconAnchor: [10, 10],
           });
+      var iconSig = [aff, a.aircraft_type || '', a.model || '', a.callsign || '', status].join('|');
+      var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       if (!airAssetsById[id]) {
         var marker = L.marker(latlng, { icon: icon, zIndexOffset: 500 });
         marker._atakAirId = id;
+        marker._atakIconSig = iconSig;
+        marker._atakPosSig = posSig;
         marker.addTo(airAssetsLayer);
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindAir) {
           window.ATAKUnitPopup.bindAir(marker, a);
@@ -729,10 +903,17 @@ window.ATAKMap = (function () {
         }
         airAssetsById[id] = marker;
       } else {
-        airAssetsById[id].setLatLng(latlng);
-        airAssetsById[id].setIcon(icon);
+        var existingAir = airAssetsById[id];
+        if (existingAir._atakPosSig !== posSig) {
+          existingAir.setLatLng(latlng);
+          existingAir._atakPosSig = posSig;
+        }
+        if (existingAir._atakIconSig !== iconSig) {
+          existingAir.setIcon(icon);
+          existingAir._atakIconSig = iconSig;
+        }
         if (window.ATAKUnitPopup && window.ATAKUnitPopup.bindAir) {
-          window.ATAKUnitPopup.bindAir(airAssetsById[id], a);
+          window.ATAKUnitPopup.bindAir(existingAir, a);
         }
       }
     });

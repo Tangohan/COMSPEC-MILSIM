@@ -23,13 +23,6 @@ window.ATAKContextMenu = (function () {
     { value: '#a78bfa', label: 'Violet' },
     { value: '#f8fafc', label: 'Blanc' }
   ];
-  var MARKER_ICONS = [
-    { value: 'dot', label: 'Point' },
-    { value: 'pin', label: 'Épingle' },
-    { value: 'flag', label: 'Drapeau' },
-    { value: 'warning', label: 'Alerte' },
-    { value: 'target', label: 'Cible' }
-  ];
   var MARKER_SIZES = [
     { value: 'sm', label: 'Petit' },
     { value: 'md', label: 'Moyen' },
@@ -292,8 +285,8 @@ window.ATAKContextMenu = (function () {
       '<input type="text" class="atak-input-modal__field" id="atak-marker-label" maxlength="80" placeholder="Ex. point de ralliement" autocomplete="off" /></label>' +
       '<label class="atak-marker-form__label">Description' +
       '<textarea class="atak-marker-form__textarea" id="atak-marker-desc" maxlength="300" rows="2" placeholder="Précisions utiles pour l’équipe (optionnel)"></textarea></label>' +
-      '<fieldset class="atak-marker-form__fieldset"><legend>Couleur</legend><div class="atak-marker-form__choices" id="atak-marker-colors"></div></fieldset>' +
-      '<fieldset class="atak-marker-form__fieldset"><legend>Icône</legend><div class="atak-marker-form__choices" id="atak-marker-icons"></div></fieldset>' +
+      '<div id="atak-marker-symbol-host"></div>' +
+      '<fieldset class="atak-marker-form__fieldset" id="atak-marker-color-fieldset"><legend>Couleur (repère simple)</legend><div class="atak-marker-form__choices" id="atak-marker-colors"></div></fieldset>' +
       '<fieldset class="atak-marker-form__fieldset"><legend>Taille</legend><div class="atak-marker-form__choices" id="atak-marker-sizes"></div></fieldset>' +
       '<div class="atak-input-modal__actions">' +
       '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-marker-cancel>Annuler</button>' +
@@ -302,20 +295,32 @@ window.ATAKContextMenu = (function () {
     document.body.appendChild(markerFormEl);
 
     document.getElementById('atak-marker-colors').innerHTML = optionButtons('color', MARKER_COLORS, '#34d399');
-    document.getElementById('atak-marker-icons').innerHTML = optionButtons('icon', MARKER_ICONS, 'pin');
     document.getElementById('atak-marker-sizes').innerHTML = optionButtons('size', MARKER_SIZES, 'md');
+    if (window.ATAKSymbolPicker && window.ATAKSymbolPicker.mount) {
+      window.ATAKSymbolPicker.mount(document.getElementById('atak-marker-symbol-host'));
+    }
 
     function cancel() { closeMarkerForm(null); }
     markerFormEl.querySelectorAll('[data-atak-marker-cancel]').forEach(function (el) {
       el.addEventListener('click', cancel);
     });
     document.getElementById('atak-marker-ok').addEventListener('click', function () {
-      closeMarkerForm(readMarkerForm());
+      var vals = readMarkerForm();
+      if (vals.symbolMode === 'tactical' && !vals.sidc) {
+        if (window.ATAKShowError) window.ATAKShowError('Choisissez un symbole tactique dans la liste.');
+        return;
+      }
+      closeMarkerForm(vals);
     });
     document.getElementById('atak-marker-label').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        closeMarkerForm(readMarkerForm());
+        var vals = readMarkerForm();
+        if (vals.symbolMode === 'tactical' && !vals.sidc) {
+          if (window.ATAKShowError) window.ATAKShowError('Choisissez un symbole tactique dans la liste.');
+          return;
+        }
+        closeMarkerForm(vals);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         closeMarkerForm(null);
@@ -328,15 +333,35 @@ window.ATAKContextMenu = (function () {
     var labelEl = document.getElementById('atak-marker-label');
     var descEl = document.getElementById('atak-marker-desc');
     var color = (markerFormEl.querySelector('input[name="color"]:checked') || {}).value || '#34d399';
-    var icon = (markerFormEl.querySelector('input[name="icon"]:checked') || {}).value || 'pin';
     var size = (markerFormEl.querySelector('input[name="size"]:checked') || {}).value || 'md';
-    return {
+    var sym = window.ATAKSymbolPicker && window.ATAKSymbolPicker.readValue
+      ? window.ATAKSymbolPicker.readValue()
+      : { symbolMode: 'simple', icon: 'pin' };
+    var out = {
       label: labelEl ? labelEl.value : '',
       description: descEl ? descEl.value : '',
       color: color,
-      icon: icon,
-      size: size
+      icon: sym.icon || 'pin',
+      size: size,
+      symbolMode: sym.symbolMode || 'simple'
     };
+    if (sym.symbolMode === 'tactical' && sym.sidc) {
+      out.icon = 'milsymbol';
+      out.sidc = sym.sidc;
+      out.affiliation = sym.affiliation;
+      out.symbolId = sym.symbolId;
+      out.symbolName = sym.symbolName;
+      out.symbolFamily = sym.symbolFamily;
+      out.functionid = sym.functionid;
+      out.scheme = sym.scheme;
+      out.battledimension = sym.battledimension;
+      // Couleur d’affiliation indicative pour listes / historique
+      if (sym.affiliation === 'hostile') out.color = '#ef4444';
+      else if (sym.affiliation === 'neutral') out.color = '#22c55e';
+      else if (sym.affiliation === 'unknown') out.color = '#eab308';
+      else out.color = '#60a5fa';
+    }
+    return out;
   }
 
   function openMarkerForm(latlng, defaults, mode) {
@@ -354,17 +379,16 @@ window.ATAKContextMenu = (function () {
     if (labelEl) labelEl.value = defaults.label != null ? String(defaults.label) : 'Marqueur';
     if (descEl) descEl.value = defaults.description != null ? String(defaults.description) : '';
     var colorVal = defaults.color || '#34d399';
-    var iconVal = defaults.icon || 'pin';
     var sizeVal = defaults.size || 'md';
     var colorDef = markerFormEl.querySelector('input[name="color"][value="' + colorVal + '"]') ||
       markerFormEl.querySelector('input[name="color"][value="#34d399"]');
-    var iconDef = markerFormEl.querySelector('input[name="icon"][value="' + iconVal + '"]') ||
-      markerFormEl.querySelector('input[name="icon"][value="pin"]');
     var sizeDef = markerFormEl.querySelector('input[name="size"][value="' + sizeVal + '"]') ||
       markerFormEl.querySelector('input[name="size"][value="md"]');
     if (colorDef) colorDef.checked = true;
-    if (iconDef) iconDef.checked = true;
     if (sizeDef) sizeDef.checked = true;
+    if (window.ATAKSymbolPicker && window.ATAKSymbolPicker.reset) {
+      window.ATAKSymbolPicker.reset(defaults);
+    }
     markerFormEl.hidden = false;
     markerFormEl.setAttribute('aria-hidden', 'false');
     setTimeout(function () {
@@ -717,7 +741,7 @@ window.ATAKContextMenu = (function () {
   function createMarkerAt(latlng, opts) {
     opts = opts || {};
     var base = getApiBase();
-    var label = (opts.label || '').trim() || 'Marqueur';
+    var label = (opts.label || '').trim() || (opts.symbolName || 'Marqueur');
     var markerData = {
       pos: [latlng.lng, latlng.lat],
       label: label,
@@ -729,6 +753,20 @@ window.ATAKContextMenu = (function () {
       author: getAuthor(),
       created_at: new Date().toISOString()
     };
+    if (opts.sidc) {
+      markerData.sidc = opts.sidc;
+      markerData.affiliation = opts.affiliation || 'friend';
+      markerData.symbolMode = 'tactical';
+      markerData.symbolId = opts.symbolId || null;
+      markerData.symbolName = opts.symbolName || null;
+      markerData.symbolFamily = opts.symbolFamily || null;
+      markerData.functionid = opts.functionid || null;
+      markerData.scheme = opts.scheme || null;
+      markerData.battledimension = opts.battledimension || null;
+      markerData.icon = 'milsymbol';
+    } else {
+      markerData.symbolMode = opts.symbolMode || 'simple';
+    }
     var localId = 'local_m_' + Date.now();
     if (window.ATAKMap && window.ATAKMap.addOrUpdateMarker) {
       window.ATAKMap.addOrUpdateMarker({ id: localId, layerId: 1, data: markerData });
@@ -855,21 +893,47 @@ window.ATAKContextMenu = (function () {
         ll = L.latLng(data.pos[1], data.pos[0]);
       }
       openMarkerForm(ll || { lat: 0, lng: 0 }, {
-        label: data.label || 'Marqueur',
+        label: data.label || data.symbolName || 'Marqueur',
         description: data.description || '',
         color: data.color || '#34d399',
         icon: data.icon || 'pin',
-        size: data.size || 'md'
+        size: data.size || 'md',
+        sidc: data.sidc || null,
+        affiliation: data.affiliation || 'friend',
+        symbolMode: data.symbolMode || (data.sidc ? 'tactical' : 'simple'),
+        symbolId: data.symbolId || null,
+        symbolFamily: data.symbolFamily || null,
+        symbolName: data.symbolName || null
       }, 'edit').then(function (opts) {
         if (!opts) return;
         if (!window.ATAKMap || !window.ATAKMap.updateMarkerById) return;
-        window.ATAKMap.updateMarkerById(feature.id, {
-          label: (opts.label || '').trim() || 'Marqueur',
+        var patch = {
+          label: (opts.label || '').trim() || opts.symbolName || 'Marqueur',
           description: (opts.description || '').trim(),
           color: opts.color,
           icon: opts.icon,
-          size: opts.size
-        }).then(function () {
+          size: opts.size,
+          symbolMode: opts.symbolMode || 'simple'
+        };
+        if (opts.sidc) {
+          patch.sidc = opts.sidc;
+          patch.affiliation = opts.affiliation;
+          patch.symbolId = opts.symbolId;
+          patch.symbolName = opts.symbolName;
+          patch.symbolFamily = opts.symbolFamily;
+          patch.functionid = opts.functionid;
+          patch.scheme = opts.scheme;
+          patch.battledimension = opts.battledimension;
+          patch.icon = 'milsymbol';
+        } else {
+          patch.sidc = null;
+          patch.affiliation = null;
+          patch.symbolId = null;
+          patch.symbolName = null;
+          patch.symbolFamily = null;
+          patch.functionid = null;
+        }
+        window.ATAKMap.updateMarkerById(feature.id, patch).then(function () {
           if (window.ATAKShowNotification) window.ATAKShowNotification('Marqueur mis à jour.');
         }).catch(function () {
           if (window.ATAKShowError) window.ATAKShowError('Impossible de modifier le marqueur.');

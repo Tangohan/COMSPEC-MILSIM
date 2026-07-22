@@ -24,20 +24,20 @@
 
 [
     "comspec_overwatch_update_interval", "SLIDER",
-    ["Fréquence (sec)", "Délai PLI"],
-    "COMSPEC Overwatch", [1, 60, 5, 0]
+    ["Fréquence (sec)", "Délai entre les cycles de synchronisation généraux (plus long = moins de charge)"],
+    "COMSPEC Overwatch", [1, 600, 10, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_position_interval", "SLIDER",
-    ["Intervalle position (s)", "PerFrameHandler position"],
-    "COMSPEC Overwatch", [0.1, 2, 0.25, 2]
+    ["Intervalle position (s)", "Temps entre deux vérifications de position (plus long = moins de requêtes)"],
+    "COMSPEC Overwatch", [1, 60, 3, 2]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_batch_interval", "SLIDER",
-    ["Batching réseau (s)", "Envoi positions max 1/s"],
-    "COMSPEC Overwatch", [0.5, 5, 1, 1]
+    ["Batching réseau (s)", "Délai minimum entre deux envois de position vers Athena (plus long = moins de requêtes)"],
+    "COMSPEC Overwatch", [1, 60, 3, 1]
 ] call CBA_fnc_addSetting;
 
 [
@@ -59,12 +59,6 @@
 ] call CBA_fnc_addSetting;
 
 [
-    "comspec_overwatch_require_terminal", "CHECKBOX",
-    ["Exiger un terminal", "Ne remonter la position que si le joueur a GPS/carte/Android/cTab ou un rôle de commandement"],
-    "COMSPEC Overwatch", false
-] call CBA_fnc_addSetting;
-
-[
     "comspec_overwatch_vehicle_mode", "CHECKBOX",
     ["Détail véhicule", "Envoyer orientation 3D et vitesse quand le joueur est en véhicule"],
     "COMSPEC Overwatch", true
@@ -80,6 +74,54 @@
     "comspec_overwatch_profile_enabled", "CHECKBOX",
     ["Profiler (debug)", "Mesure le temps d'exécution des boucles/PerFrameHandlers critiques (position, CAS, marqueurs). Rapport visible via le panneau de debug. Coût nul quand désactivé."],
     "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_notif_sound", "LIST",
+    ["Son des notifications", "Joué en même temps que les alertes (messagerie, ordres, liaison…). Les urgences médicales (inconscient / arrêt cardiaque) utilisent un son dédié, y compris en mode « Silencieux (vibration) ». Seul « Muet » coupe tout. Le Mode discret ne coupe pas ces sons."],
+    "COMSPEC Overwatch",
+    [
+        ["silent_vib", "stalker", "health", "mute"],
+        ["Silencieux (vibration)", "Stalker", "Alerte santé", "Muet"],
+        0
+    ],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_webbrowser_enabled", "CHECKBOX",
+    ["Tablette avancée (écran intégré)", "Ouvre la tablette Overwatch avec l’écran tactique Chromium (inspiré cTab). Désactivez pour forcer la vue classique."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_quiet_mode", "CHECKBOX",
+    ["Mode discret — masquer les alertes à l’écran", "Cache les bandeaux et messages système Overwatch en jeu. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Muet. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_athena_link_help", "CHECKBOX",
+    ["Rappel Windows — lier mon compte Athena", "Au lancement, si votre compte n’est pas encore lié, affiche une alerte Windows avec la marche à suivre. Décochez pour ne plus voir ce rappel (vous pouvez aussi choisir « Non » dans l’alerte)."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_radio_proximity_enabled", "CHECKBOX",
+    ["Surveillance radio à proximité", "Détecte qui émet près de vous (ou de l’opérateur surveillé) et remonte l’état vers Athena. Nécessite un module radio (ACRE2 ou TFAR). Sans module : pastilles grisées."],
+    "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_radio_proximity_radius", "SLIDER",
+    ["Rayon radio proximité (m)", "Contacts et émissions listés dans ce rayon autour de l’opérateur de référence"],
+    "COMSPEC Overwatch", [10, 300, 75, 0]
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_radio_proximity_interval", "SLIDER",
+    ["Intervalle scan radio (s)", "Fréquence de mise à jour de la liste de proximité (cache local tablette, sans spam réseau)"],
+    "COMSPEC Overwatch", [1, 10, 2, 1]
 ] call CBA_fnc_addSetting;
 
 // IDs v2 : l’ancien comspec_open_chat était enregistré sur K seul (sans Ctrl).
@@ -116,6 +158,8 @@ missionNamespace setVariable ["COMSPEC_lastRadio", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedical", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
 missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
+missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
 missionNamespace setVariable ["COMSPEC_PositionTrail", [], true];
 missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, true];
 
@@ -134,3 +178,17 @@ missionNamespace setVariable ["COMSPEC_IntelHeatmap", createHashMap, true];
 missionNamespace setVariable ["COMSPEC_RadioReplay", [], true];
 missionNamespace setVariable ["COMSPEC_Comms_Channel", "SQUAD", true];
 missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", true];
+missionNamespace setVariable ["COMSPEC_OrdersSeen", [], false];
+
+// Restaure l’indicatif profil dès le preInit (avant les lectures CAS / recon)
+private _savedCallsign = trim (profileNamespace getVariable ["COMSPEC_Callsign", ""]);
+if (!(_savedCallsign isEqualTo "")) then {
+    missionNamespace setVariable ["COMSPEC_Callsign", _savedCallsign, false];
+};
+
+// Rôle tactique + file d’alertes tablette
+private _savedRole = trim (profileNamespace getVariable ["COMSPEC_Role", ""]);
+if (!(_savedRole isEqualTo "")) then {
+    missionNamespace setVariable ["COMSPEC_Role", _savedRole, false];
+};
+missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];

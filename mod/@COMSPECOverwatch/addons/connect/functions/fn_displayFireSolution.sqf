@@ -3,5 +3,7 @@ params [["_data", "", ["",""]]];
 if (_data isEqualTo "") exitWith {};
 
 private _str = if (_data isEqualType "") then { _data } else { str _data };
-["COMSPEC_Info", ["Solution de tir reçue — voir détail dans le journal."]] call BIS_fnc_showNotification;
-hintSilent ("Fire solution: " + (_str select [0, 80]));
+["COMSPEC_Info", ["Solution de tir reçue — voir détail dans le journal."]] call comspec_overwatch_connect_fnc_showNotification;
+if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+    hintSilent ("Fire solution: " + (_str select [0, 80]));
+};

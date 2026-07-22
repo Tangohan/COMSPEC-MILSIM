@@ -30,11 +30,11 @@ window.ATAKUnitPopup = (function () {
     return {};
   }
 
-  function statusLabelFr(status) {
+    function statusLabelFr(status) {
     var s = String(status || '').toLowerCase().trim();
     if (s === 'linked') return 'En liaison';
     if (s === 'delayed') return 'Signal différé';
-    if (s === 'offline') return 'Hors ligne';
+    if (s === 'offline') return 'Hors liaison';
     if (s === 'in-flight' || s === 'in_flight') return 'En vol';
     if (s === 'suspect') return 'À vérifier';
     if (!s) return '';
@@ -102,13 +102,21 @@ window.ATAKUnitPopup = (function () {
   }
 
   function formatGrid(u, extra) {
-    var g = (u && u.grid_ref) || (extra && extra.grid_ref) || '';
-    g = String(g).trim();
-    if (g) return g;
     var x = u && u.pos_x != null ? parseFloat(u.pos_x) : NaN;
     var y = u && u.pos_y != null ? parseFloat(u.pos_y) : NaN;
-    if (!isNaN(x) && !isNaN(y)) return Math.round(x) + ' ' + Math.round(y);
-    return '';
+    if (isNaN(x) || isNaN(y)) {
+      var g = (u && u.grid_ref) || (extra && extra.grid_ref) || '';
+      var parts = String(g).trim().split(/\s+/);
+      if (parts.length >= 2) {
+        x = parseFloat(parts[0]);
+        y = parseFloat(parts[1]);
+      }
+    }
+    if (isNaN(x) || isNaN(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return '';
+    var g2 = (u && u.grid_ref) || (extra && extra.grid_ref) || '';
+    g2 = String(g2).trim();
+    if (g2 && g2 !== '0 0') return g2;
+    return Math.round(x) + ' ' + Math.round(y);
   }
 
   function row(label, value, tone) {
@@ -175,6 +183,13 @@ window.ATAKUnitPopup = (function () {
       row('Coordonnées', grid) +
       row('Cap', heading) +
       row('Radio', radio) +
+      (extra.radio_channel != null && String(extra.radio_channel) !== ''
+        ? row('Canal', String(extra.radio_channel))
+        : '') +
+      ((extra.radio_tx === true || extra.radio_tx === 1 || extra.radio_tx === 'true' ||
+        extra.radio_speaking === true || extra.radio_speaking === 1 || extra.radio_speaking === 'true')
+        ? row('Émission', 'Émet', 'warn')
+        : '') +
       row('Carburant', fuel) +
       row('Munitions', ammo) +
       row('Dernière MAJ', updated);

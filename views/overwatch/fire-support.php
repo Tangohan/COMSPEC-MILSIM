@@ -27,7 +27,7 @@
         <span class="text-slate-600">Temps de vol</span><span id="fs-tof" class="font-mono font-bold">—</span>
       </div>
       <div class="flex flex-wrap gap-2 mt-3">
-        <button type="button" id="fire-support-transmit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold uppercase">Transmit to Gunline</button>
+        <button type="button" id="fire-support-transmit" class="px-2 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold uppercase">Émettre</button>
         <button type="button" id="fire-support-save" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold uppercase">Save Fire Mission</button>
         <button type="button" id="fire-support-marker" class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold uppercase">Create Target Marker</button>
       </div>

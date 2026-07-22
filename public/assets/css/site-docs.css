@@ -723,3 +723,131 @@
   word-break: break-word;
   font-family: ui-monospace, 'Cascadia Code', monospace;
 }
+
+/* --- Enrichissements guide (slides Eden, lecture confort) --- */
+.site-docs__hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(5, 150, 105, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(2, 132, 199, 0.06), transparent 50%);
+  border-radius: 0 0 1rem 1rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.site-docs__gallery {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 1.75rem;
+}
+
+@media (min-width: 720px) {
+  .site-docs__gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.site-docs__figure {
+  margin: 0;
+  border: 1px solid var(--docs-line);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(10, 37, 64, 0.06);
+}
+
+.site-docs__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 16rem;
+  object-fit: cover;
+  object-position: top left;
+  background: #0f172a;
+}
+
+.site-docs__figure figcaption {
+  padding: 0.65rem 0.85rem 0.8rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--docs-muted);
+  border-top: 1px solid var(--docs-line);
+  background: var(--docs-wash);
+}
+
+.site-docs__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem 1rem;
+  margin: 1.75rem 0;
+  padding: 1.15rem 1.1rem 1.25rem;
+  border: 1px solid var(--docs-line);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.site-docs__step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--docs-accent);
+  color: #fff;
+  font-family: var(--docs-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.site-docs__step-body {
+  min-width: 0;
+}
+
+.site-docs__step-body h3 {
+  margin-top: 0.15rem;
+}
+
+.site-docs__code {
+  margin: 0.85rem 0 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #1e293b;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', monospace;
+}
+
+.site-docs__code code {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  padding: 0;
+  white-space: pre;
+}
+
+.site-docs__sidebar {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 1023px) {
+  .site-docs__sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.site-docs__main code:not(.site-docs__code code) {
+  font-size: 0.85em;
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}

@@ -1,6 +1,6 @@
 /*
     Peuple la vue "Effectifs" de la tablette (idc 9314) avec la liste des unités en liaison
-    (callsign + référence de grille). Best effort — silencieux en cas d'échec, ne doit jamais
+    (callsign + rôle + référence de grille). Best effort — silencieux en cas d'échec, ne doit jamais
     gêner le reste du dialog. Appelé en spawn depuis fn_deviceToggleView.sqf.
 
     Params (optionnel) : [_display] — défaut : recherche du dialog tablette (idd 9973).
@@ -24,10 +24,12 @@ private _maxRows = 8;
 private _lines = [];
 {
     if (_forEachIndex >= _maxRows) exitWith {};
-    _x params ["_callsign", "_gx", "_gy"];
+    _x params ["_callsign", "_gx", "_gy", ["_isSelf", false], ["_wx", 0], ["_wy", 0], ["_role", ""]];
+    private _roleTxt = if (_role isEqualTo "") then { "Opérateur" } else { _role };
+    private _you = if (_isSelf) then { " <t color='#2dd4a8'>(vous)</t>" } else { "" };
     _lines pushBack format [
-        "<t size='0.46' color='#d0dce8'>%1</t>  <t size='0.44' color='#5a9e88'>%2 %3</t>",
-        _callsign, round _gx, round _gy
+        "<t size='0.46' color='#d0dce8'>%1%2</t><br/><t size='0.40' color='#8aa0b4'>%3</t>  <t size='0.44' color='#5a9e88'>%4 %5</t>",
+        _callsign, _you, _roleTxt, round _gx, round _gy
     ];
 } forEach _rows;
 if (count _rows > _maxRows) then {

@@ -8,6 +8,8 @@ declare(strict_types=1);
  * @var array<string,mixed>|null $mission_briefing
  * @var array<string,mixed>|null $modpack
  * @var string|null $atakModDownloadUrl
+ * @var bool $can_view_atak_operators
+ * @var int|null $atak_operators_linked_count
  * @var list<array<string,mixed>> $my_enlistments_pending
  * @var list<array<string,mixed>> $staff_enlistments_pending
  * @var list<array<string,mixed>> $my_applications_all
@@ -84,6 +86,10 @@ if (is_array($gr)) {
 $modpack = $modpack ?? null;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $hasPack = !empty($mbModpack['has_pack']) || (is_array($modpack) && !empty($modpack['id']));
+$canViewAtakOperators = !empty($can_view_atak_operators);
+$atakOperatorsLinkedCount = isset($atak_operators_linked_count) && $atak_operators_linked_count !== null
+    ? (int) $atak_operators_linked_count
+    : null;
 
 $pe = $personnelExtras ?? null;
 $matricule = is_array($pe) ? ($pe['service_number'] ?? null) : null;
@@ -373,6 +379,9 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <a href="<?= url('publier') ?>" class="dash-idstrip__text-btn">Publier</a>
                     <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
                     <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">Demande à l’encadrement</a>
+                    <?php if ($canViewAtakOperators): ?>
+                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">Effectifs en liaison<?php if ($atakOperatorsLinkedCount !== null): ?> (<?= (int) $atakOperatorsLinkedCount ?>)<?php endif; ?></a>
+                    <?php endif; ?>
                 </div>
                 <?php
                 $dashShowCommunitySwitch = $dashCtxCommunity && count($communityMemberships ?? []) > 1;
@@ -405,6 +414,36 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <?php endif; ?>
             </div>
         </section>
+
+        <?php if ($canViewAtakOperators): ?>
+        <section class="dash-apps-full" aria-labelledby="dash-atak-operators-heading">
+            <p id="dash-atak-operators-heading" class="cc-section-label dash-apps-full__label">Liaison tactique</p>
+            <a
+                href="<?= url('back-office/atak/operateurs') ?>"
+                class="cc-card group flex flex-wrap items-center justify-between gap-4 overflow-hidden p-5 no-underline transition hover:border-emerald-300 hover:bg-emerald-50/40 sm:p-6"
+            >
+                <div class="min-w-0 flex-1">
+                    <p class="cc-kicker cc-kicker--primary">État-major</p>
+                    <h2 class="cc-card__title mt-1">Effectifs en liaison</h2>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                        Consultez le tableur des opérateurs actuellement connectés à la carte tactique.
+                    </p>
+                </div>
+                <div class="flex shrink-0 items-center gap-4">
+                    <?php if ($atakOperatorsLinkedCount !== null): ?>
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800/70">En liaison</p>
+                        <p class="mt-0.5 text-2xl font-black tabular-nums text-emerald-900"><?= (int) $atakOperatorsLinkedCount ?></p>
+                    </div>
+                    <?php endif; ?>
+                    <span class="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-800 group-hover:underline">
+                        Ouvrir le tableur
+                        <span aria-hidden="true">→</span>
+                    </span>
+                </div>
+            </a>
+        </section>
+        <?php endif; ?>
 
         <?php if (is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0): ?>
         <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
@@ -751,14 +790,26 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                         <p class="text-sm leading-relaxed text-white/70">Aucun pack publié pour cette communauté. Parcourez les packs ou ouvrez la carte tactique.</p>
                         <a href="<?= url('modpacks') ?>" class="cc-btn cc-btn-primary">Parcourir les packs</a>
                     <?php endif; ?>
-                    <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                    <div class="grid grid-cols-2 gap-2 border-t border-white/10 pt-4<?= $canViewAtakOperators ? ' sm:grid-cols-3' : '' ?>">
                         <a href="<?= url('atak') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
                             <p class="text-xs font-black uppercase text-white">ATAK</p>
                             <p class="mt-0.5 text-[10px] text-white/50">Carte tactique</p>
                         </a>
+                        <?php if ($canViewAtakOperators): ?>
+                        <a href="<?= url('back-office/atak/operateurs') ?>" class="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-3 text-center transition hover:bg-emerald-500/20">
+                            <p class="text-xs font-black uppercase text-emerald-200">Effectifs</p>
+                            <p class="mt-0.5 text-[10px] text-white/50">
+                                <?php if ($atakOperatorsLinkedCount !== null): ?>
+                                    <?= (int) $atakOperatorsLinkedCount ?> en liaison
+                                <?php else: ?>
+                                    Tableur
+                                <?php endif; ?>
+                            </p>
+                        </a>
+                        <?php endif; ?>
                         <?php if ($atakModDownloadUrl): ?>
                         <a href="<?= htmlspecialchars((string) $atakModDownloadUrl, ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-center transition hover:bg-white/10">
-                            <p class="text-xs font-black uppercase text-white">Mod ATAK</p>
+                            <p class="text-xs font-black uppercase text-white">Pack Overwatch</p>
                             <p class="mt-0.5 text-[10px] text-white/50">Télécharger</p>
                         </a>
                         <?php else: ?>

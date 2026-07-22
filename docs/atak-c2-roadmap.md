@@ -79,18 +79,45 @@ Pistes d’évolution pour transformer le mod Arma et l’interface ATAK en outi
 
 ---
 
-## 5. Intégration radio (TFAR / ACRE)
+## 5. Intégration radio (TFAR / ACRE) — livré (MVP)
 
-**Objectif :** Afficher sur le dashboard Athena la fréquence radio actuelle de chaque opérateur.
+**Objectif :** Afficher qui émet / sur quel réseau près d’un opérateur, et permettre de surveiller un canal **en jeu**.
 
-- **TFAR :** Variables / API TFAR pour récupérer la fréquence active du joueur.
-- **ACRE :** Idem selon l’API ACRE.
-- Envoyer dans le payload PLI (ou champ dédié) : `radio_freq`, `radio_lr`, etc.
-- Côté ATAK : afficher la fréquence dans le tooltip ou un panneau « Radios » pour faciliter la coordination des appuis.
+### Ce qui marche
 
-**Implémentation :**
-- SQF : détection du mod (TFAR / ACRE) et récupération des fréquences (voir doc des mods).
-- Ajout des champs au payload BFT ou à un message dédié ; API + front pour affichage.
+| Capacité | Avec ACRE2 | Avec TFAR | Sans module |
+|----------|------------|-----------|-------------|
+| Pastille « Émet » (Tacmap + tablette) | Oui (`isBroadcasting` / `isSpeaking`) | Oui (`tf_isSpeaking`) | Non — message « Module radio non détecté » |
+| Canal / réseau dans `extra` BFT | Oui | Fréquence SW | Champs absents / vides |
+| Liste proximité (rayon CBA) | Oui (scan local) | Oui (speaking) | UI grisée |
+| Surveiller le réseau (écoute audio) | Oui en jeu : bascule canal radio active ; spectateur ACRE si déjà en mode observation | Intention + message (régler la freq) | Impossible |
+
+### Limites honnêtes
+
+- **Pas d’écoute audio dans le navigateur** (`/atak`) : métadonnées seulement (pastilles, canal, distance, suivi de canal). Un éventuel WebRTC est hors scope.
+- Sur `/atak`, « Surveiller ce réseau » = **suivi qui émet** (highlight + toast/bip), pas de bascule audio. La bascule canal / écoute se fait **en jeu** (tablette Overwatch).
+- Relais = **même réseau radio** (canal), pas un flux audio 3D monde séparé côté Athena.
+- Canal distant ACRE : best-effort via événements `acre_remoteStartedSpeaking` (cache radioId/canal) ; sinon canal local uniquement.
+- Pas de stream serveur : enrichissement du payload `POST /api/atak/position` → `extra.radio_*`.
+
+### Où voir les pastilles
+
+- Tacmap `/atak` : marqueurs BFT + pastille orange « Émet », vitals Effectifs, onglet **Radio** (proximité + surveillance de canal web).
+- Tablette Overwatch HTML : pastilles sur contacts + vue **Radio** (Surveiller ce réseau → audio en jeu).
+
+### Settings CBA (groupe COMSPEC Overwatch)
+
+- `Surveillance radio à proximité` (défaut : oui)
+- `Rayon radio proximité (m)` (défaut : **75**, plage 10–300)
+- `Intervalle scan radio (s)` (défaut : **2**, plage 1–10)
+
+### Retest
+
+1. Charger Overwatch + ACRE2 (ou TFAR) → PTT → pastille « Émet » sur Tacmap sous ~1–2 s.
+2. Sans ACRE/TFAR → onglet Radio affiche « Module radio non détecté » ; option masquer l’onglet.
+3. `/atak` → Radio → « Surveiller ce réseau » → badge À l’écoute ; PTT sur ce canal → toast + bip.
+4. Tablette → Radio → « Surveiller ce réseau » bascule le canal (ACRE) ; notification en jeu.
+5. Régler le rayon (UI web ou CBA) et vérifier la liste proximité.
 
 ---
 

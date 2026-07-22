@@ -154,7 +154,11 @@ $boNavContentMod = str_starts_with($p, 'admin/content-moderation');
 $boNavDocs = str_starts_with($p, 'documents/gestion') || $p === 'documents/gestion';
 $boNavModpacks = str_starts_with($p, 'admin/modpacks');
 $boNavForumConfig = str_starts_with($p, 'admin/forum-config');
-$boNavAtak = str_starts_with($p, 'admin/atak-config');
+$boNavAtak = str_starts_with($p, 'admin/atak-config')
+    || str_starts_with($p, 'back-office/atak/fire-teams')
+    || str_starts_with($p, 'back-office/atak/operateurs')
+    || str_starts_with($p, 'back-office/atak/briefing-slides');
+$boNavAtakOperators = str_starts_with($p, 'back-office/atak/operateurs');
 $canMurOperationnel = $gate->allows('operational.board.view')
     || $gate->allows('operational.board.edit')
     || $gate->allows('admin.organization')
@@ -321,6 +325,8 @@ $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiel
         : null,
     ['label' => 'Groupes', 'href' => url('back-office/groups'), 'hint' => 'Regroupements', 'active' => $boNavGroups],
     ['label' => 'Équipes', 'href' => url('back-office/teams'), 'hint' => 'Équipes opérationnelles', 'active' => $boNavTeams],
+    ['label' => 'Équipes de feu', 'href' => url('back-office/atak/fire-teams'), 'hint' => 'Mission ATAK & organigramme', 'active' => str_starts_with($p, 'back-office/atak/fire-teams')],
+    ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur opérateurs connectés', 'active' => $boNavAtakOperators],
     ['label' => 'Catégories', 'href' => url('back-office/categories'), 'hint' => 'Rubriques du forum', 'active' => $boNavCats],
     ['label' => 'Référentiel des grades', 'href' => url('back-office/referentiels/grades'), 'hint' => 'Grades et insignes', 'active' => $boNavGrades],
     $canOrgStructure
@@ -329,7 +335,7 @@ $coreTiles[] = $tile('organisation', 'Organisation', 'Structure et référentiel
     ($canTenantModules || $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support'))
         ? ['label' => 'Ancienneté', 'href' => url('back-office/organisation/anciennete'), 'hint' => 'Fiches et RH', 'active' => $boNavSeniority]
         : null,
-]), 'structure', $boNavEff || $boNavEffWorkspace || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority, 'orbat effectifs structure équipes groupes grades postes ancienneté organigramme bureau rh');
+]), 'structure', $boNavEff || $boNavEffWorkspace || $boNavStructureHub || $boNavGroups || $boNavTeams || $boNavAtakOperators || $boNavCats || $boNavGrades || $boNavPositions || $boNavSeniority, 'orbat effectifs structure équipes groupes grades postes ancienneté organigramme bureau rh liaison atak');
 
 if ($canCommsSection) {
     $coreTiles[] = $tile('comms', 'Communications', 'Messages et diffusion', 'default', null, $links([
@@ -447,8 +453,11 @@ if ($canTenantModules) {
         $canCoopCatalog
             ? ['label' => 'Annonces coopération', 'href' => url('back-office/cooperation/announcements'), 'hint' => 'Publications', 'active' => $boNavCoopAnnouncements]
             : null,
-        ['label' => 'Cartographie & ATAK', 'href' => url('admin/atak-config'), 'hint' => 'Carte tactique', 'active' => $boNavAtak],
-    ]), 'tools', $boNavModpacks || $boNavForumConfig || $boNavForumMissionPriority || $boNavCoop || $boNavAtak, 'modpack forum coopération atak carte tacmap mission inter-unité');
+        ['label' => 'Cartographie & ATAK', 'href' => url('admin/atak-config'), 'hint' => 'Carte tactique', 'active' => str_starts_with($p, 'admin/atak-config')],
+        ['label' => 'Effectifs en liaison', 'href' => url('back-office/atak/operateurs'), 'hint' => 'Tableur opérateurs connectés', 'active' => $boNavAtakOperators],
+        ['label' => 'Équipes de feu', 'href' => url('back-office/atak/fire-teams'), 'hint' => 'Mission et organigramme', 'active' => str_starts_with($p, 'back-office/atak/fire-teams')],
+        ['label' => 'Diapositives briefing', 'href' => url('back-office/atak/briefing-slides'), 'hint' => 'Briefing en jeu', 'active' => str_starts_with($p, 'back-office/atak/briefing-slides')],
+    ]), 'tools', $boNavModpacks || $boNavForumConfig || $boNavForumMissionPriority || $boNavCoop || $boNavAtak, 'modpack forum coopération atak carte tacmap mission inter-unité fire team briefing opérateurs liaison');
 }
 
 if ($gate->allows('admin.system') || $gate->allows('site.support')) {

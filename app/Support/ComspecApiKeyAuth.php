@@ -6,12 +6,18 @@ namespace App\Support;
 
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TenantAtakConfigRepository;
+use App\Services\Tactical\AtakActivityLogService;
 
 /**
  * Clé partagée pour les intégrations ATAK / C2 (en-têtes X_COMSPEC_KEY, X_ATAK_TOKEN, Bearer).
+ * Accepte la clé plateforme (env) ou une clé d’accès générée par communauté (admin ATAK).
  */
 final class ComspecApiKeyAuth
 {
+    /** @var int|null Tenant résolu via clé de communauté (dernière requête validée). */
+    private static ?int $matchedTenantId = null;
+
     public static function isAppProduction(): bool
     {
         $e = strtolower(trim((string) (($_ENV['APP_ENV'] ?? getenv('APP_ENV')) ?: '')));
@@ -19,7 +25,7 @@ final class ComspecApiKeyAuth
         return $e === 'production' || $e === 'prod';
     }
 
-    /** Secret attendu (vide = pas configuré). */
+    /** Secret plateforme attendu (vide = pas configuré côté env). */
     public static function expectedSecret(): string
     {
         $s = (string) (($_ENV['X_COMSPEC_KEY'] ?? null) ?: (getenv('X_COMSPEC_KEY') ?: ''));
@@ -31,19 +37,68 @@ final class ComspecApiKeyAuth
         return $s;
     }
 
-    public static function requestPresentsValidKey(): bool
+    /**
+     * Clé à renvoyer au mod lors d’une liaison réussie pour une communauté.
+     * Préfère la clé générée en admin ; sinon la clé plateforme.
+     */
+    public static function secretForTenant(int $tenantId): string
     {
-        $secret = self::expectedSecret();
-        if ($secret === '') {
-            return false;
+        if ($tenantId > 0) {
+            try {
+                $tenantKey = (new TenantAtakConfigRepository())->getAccessKey($tenantId);
+                if ($tenantKey !== '') {
+                    return $tenantKey;
+                }
+            } catch (\Throwable) {
+                // Fall through to platform secret.
+            }
         }
+
+        return self::expectedSecret();
+    }
+
+    /** Tenant reconnu via clé de communauté (null si clé plateforme ou échec). */
+    public static function matchedTenantId(): ?int
+    {
+        return self::$matchedTenantId;
+    }
+
+    public static function extractPresentedKey(): string
+    {
         $header = $_SERVER['HTTP_X_COMSPEC_KEY'] ?? $_SERVER['HTTP_X_ATAK_TOKEN'] ?? null;
-        if (is_string($header) && $header !== '' && hash_equals($secret, $header)) {
-            return true;
+        if (is_string($header) && $header !== '') {
+            return trim($header);
         }
         $auth = (string) ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
         if (str_starts_with($auth, 'Bearer ')) {
-            return hash_equals($secret, trim(substr($auth, 7)));
+            return trim(substr($auth, 7));
+        }
+
+        return '';
+    }
+
+    public static function requestPresentsValidKey(): bool
+    {
+        self::$matchedTenantId = null;
+        $presented = self::extractPresentedKey();
+        if ($presented === '') {
+            return false;
+        }
+
+        $secret = self::expectedSecret();
+        if ($secret !== '' && hash_equals($secret, $presented)) {
+            return true;
+        }
+
+        try {
+            $tenantId = (new TenantAtakConfigRepository())->findTenantIdByAccessKey($presented);
+            if ($tenantId !== null) {
+                self::$matchedTenantId = $tenantId;
+
+                return true;
+            }
+        } catch (\Throwable) {
+            // Ignore DB errors — fall through to false.
         }
 
         return false;
@@ -54,21 +109,25 @@ final class ComspecApiKeyAuth
      */
     public static function armaInlineAuthOk(): bool
     {
-        $secret = self::expectedSecret();
-        if ($secret === '') {
-            if (self::isAppProduction() || self::tacticalStrictFromEnv()) {
-                return false;
-            }
+        $presented = self::extractPresentedKey();
+        $platform = self::expectedSecret();
+        $strict = self::isAppProduction() || self::tacticalStrictFromEnv();
 
+        if ($presented !== '') {
+            return self::requestPresentsValidKey();
+        }
+
+        if ($platform === '' && !$strict) {
             return true;
         }
 
-        return self::requestPresentsValidKey();
+        return false;
     }
 
     /**
-     * Production ou TACTICAL_API_STRICT=true : clé obligatoire sur les chemins protégés ; 503 si non configurée, 401 si invalide.
-     * Hors production sans strict : ouvert si aucun secret n’est défini ; sinon clé requise.
+     * Production ou TACTICAL_API_STRICT=true : clé obligatoire sur les chemins protégés.
+     * Accepte la clé plateforme (env) ou une clé de communauté générée en admin.
+     * Hors production sans strict : ouvert si aucune clé n’est présentée et qu’aucune clé plateforme n’est définie.
      */
     public static function enforceForTacticalPath(string $path): ?Response
     {
@@ -76,33 +135,27 @@ final class ComspecApiKeyAuth
         if (!self::pathRequiresProtection($path, $cfg)) {
             return null;
         }
-        $secret = self::expectedSecret();
-        $strict = self::isAppProduction() || self::tacticalStrictFromEnv();
-
-        if ($strict) {
-            if ($secret === '') {
-                return Response::json([
-                    'error' => 'api_key_not_configured',
-                    'message' => 'Définissez X_COMSPEC_KEY (ou ATAK_INTEL_SECRET) dans l’environnement pour les API tactiques.',
-                ], 503);
-            }
-
-            if (self::requestPresentsValidKey()) {
-                return null;
-            }
-
-            return self::authenticatedBrowserSessionMayAccessTactical() ? null : self::json401();
-        }
-
-        if ($secret === '') {
-            return null;
-        }
 
         if (self::requestPresentsValidKey()) {
             return null;
         }
 
-        return self::authenticatedBrowserSessionMayAccessTactical() ? null : self::json401();
+        if (self::authenticatedBrowserSessionMayAccessTactical()) {
+            return null;
+        }
+
+        $presented = self::extractPresentedKey();
+        $platform = self::expectedSecret();
+        $strict = self::isAppProduction() || self::tacticalStrictFromEnv();
+
+        // Dev local : pas de clé plateforme et rien présenté → ouvert.
+        if (!$strict && $platform === '' && $presented === '') {
+            return null;
+        }
+
+        self::logAuthFailure($path, $presented !== '' ? 'invalid_key' : 'missing_key');
+
+        return self::json401();
     }
 
     /**
@@ -146,8 +199,81 @@ final class ComspecApiKeyAuth
     {
         return Response::json([
             'error' => 'unauthorized',
-            'message' => 'En-tête X_COMSPEC_KEY, X_ATAK_TOKEN ou Authorization: Bearer requis avec la clé configurée.',
+            'message' => 'Clé d’accès refusée. Vérifiez la clé fournie par votre administrateur (configuration ATAK).',
         ], 401);
+    }
+
+    private static function logAuthFailure(string $path, string $reason): void
+    {
+        try {
+            $tenantId = self::guessTenantIdForLog();
+            if ($tenantId < 1) {
+                return;
+            }
+            $pathHint = self::pathHintForLog($path);
+            if ($pathHint === 'connexion_telephone') {
+                $label = $reason === 'missing_key'
+                    ? 'Connexion téléphone refusée — compte non lié (clé manquante)'
+                    : 'Connexion téléphone refusée — clé d’accès incorrecte';
+            } else {
+                $label = $reason === 'missing_key'
+                    ? 'Tentative de connexion refusée — clé d’accès manquante'
+                    : 'Tentative de connexion refusée — clé d’accès incorrecte';
+            }
+            (new AtakActivityLogService())->recordAuthAttempt(
+                $tenantId,
+                false,
+                $label,
+                [
+                    'reason' => $reason,
+                    // Jamais la clé elle-même ; uniquement un aperçu du chemin métier.
+                    'path_hint' => $pathHint,
+                ]
+            );
+        } catch (\Throwable) {
+            // Best-effort.
+        }
+    }
+
+    private static function guessTenantIdForLog(): int
+    {
+        $matched = self::$matchedTenantId;
+        if ($matched !== null && $matched > 0) {
+            return $matched;
+        }
+        Session::start();
+        $sid = Session::get('tenant_id');
+        if ($sid !== null && $sid !== '' && (int) $sid > 0) {
+            return (int) $sid;
+        }
+        $q = $_GET['tenant_id'] ?? null;
+        if ($q !== null && $q !== '' && (int) $q > 0) {
+            return (int) $q;
+        }
+        $env = getenv('ATAK_DEFAULT_TENANT_ID') ?: getenv('APP_ATAK_DEFAULT_TENANT_ID');
+        if ($env !== false && $env !== null && $env !== '' && (int) $env > 0) {
+            return (int) $env;
+        }
+
+        return 0;
+    }
+
+    private static function pathHintForLog(string $path): string
+    {
+        if (str_contains($path, 'phone-pairing')) {
+            return 'connexion_telephone';
+        }
+        if (str_contains($path, 'client-init')) {
+            return 'initialisation';
+        }
+        if (str_contains($path, 'disconnect')) {
+            return 'deconnexion';
+        }
+        if (str_contains($path, 'units') || str_contains($path, 'position')) {
+            return 'position';
+        }
+
+        return 'api_tactique';
     }
 
     /** @param array<string, mixed> $cfg */

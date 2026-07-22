@@ -9,11 +9,90 @@ use PDO;
 
 class AtakDataRepository
 {
+    /** Délai sans position au-delà duquel une unité « linked » est considérée hors liaison. */
+    public const UNIT_LIVE_TTL_SECONDS = 180;
+
+    /** Origine (0,0) = position non reçue / parse raté — jamais une vraie case jouable. */
+    private const POS_ORIGIN_EPS = 0.5;
+
     private PDO $pdo;
+
+    private ?bool $hasPosColumns = null;
 
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasPosColumns(): bool
+    {
+        if ($this->hasPosColumns !== null) {
+            return $this->hasPosColumns;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_units' AND COLUMN_NAME = 'pos_x' LIMIT 1"
+            );
+            $this->hasPosColumns = (bool) ($st && $st->fetchColumn());
+        } catch (\Throwable) {
+            $this->hasPosColumns = false;
+        }
+
+        return $this->hasPosColumns;
+    }
+
+    /** @return array{0: ?float, 1: ?float} */
+    public static function parseGridRef(?string $gridRef): array
+    {
+        $parts = preg_split('/\s+/', trim((string) $gridRef), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (count($parts) < 2) {
+            return [null, null];
+        }
+        $x = is_numeric($parts[0]) ? (float) $parts[0] : null;
+        $y = is_numeric($parts[1]) ? (float) $parts[1] : null;
+
+        return [$x, $y];
+    }
+
+    public static function isValidMapPosition(?float $x, ?float $y): bool
+    {
+        if ($x === null || $y === null || !is_finite($x) || !is_finite($y)) {
+            return false;
+        }
+        if (abs($x) < self::POS_ORIGIN_EPS && abs($y) < self::POS_ORIGIN_EPS) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Statut métier : linked uniquement si pas offline et last update récente.
+     */
+    public static function resolveLiveStatus(?string $dbStatus, ?string $updatedAt, ?int $now = null): string
+    {
+        $status = strtolower(trim((string) $dbStatus));
+        if ($status === 'offline') {
+            return 'offline';
+        }
+        $now ??= time();
+        $ts = $updatedAt !== null && $updatedAt !== '' ? strtotime($updatedAt) : false;
+        if ($ts === false) {
+            return 'offline';
+        }
+        $age = $now - $ts;
+        if ($age > self::UNIT_LIVE_TTL_SECONDS) {
+            return 'offline';
+        }
+        if ($age > (int) (self::UNIT_LIVE_TTL_SECONDS * 0.6)) {
+            return 'delayed';
+        }
+        if ($status === 'delayed') {
+            return 'delayed';
+        }
+
+        return 'linked';
     }
 
     public function getMarkers(int $tenantId, int $mapId, ?string $since = null): array
@@ -110,9 +189,80 @@ class AtakDataRepository
 
     public function getUnits(int $tenantId, int $mapId): array
     {
+        $this->markStaleUnitsOffline($tenantId, $mapId);
         $stmt = $this->pdo->prepare('SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY call_sign');
         $stmt->execute([$tenantId, $mapId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $now = time();
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->normalizeUnitRow($row, $now);
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function normalizeUnitRow(array $row, ?int $now = null): array
+    {
+        $now ??= time();
+        $dbStatus = isset($row['status']) ? (string) $row['status'] : '';
+        $posX = isset($row['pos_x']) && $row['pos_x'] !== null && $row['pos_x'] !== ''
+            ? (float) $row['pos_x']
+            : null;
+        $posY = isset($row['pos_y']) && $row['pos_y'] !== null && $row['pos_y'] !== ''
+            ? (float) $row['pos_y']
+            : null;
+        if (!self::isValidMapPosition($posX, $posY)) {
+            [$gx, $gy] = self::parseGridRef(isset($row['grid_ref']) ? (string) $row['grid_ref'] : null);
+            if (self::isValidMapPosition($gx, $gy)) {
+                $posX = $gx;
+                $posY = $gy;
+            } else {
+                $posX = null;
+                $posY = null;
+            }
+        }
+        $live = self::resolveLiveStatus(
+            $dbStatus,
+            isset($row['updated_at']) ? (string) $row['updated_at'] : null,
+            $now
+        );
+        // Pas de position carte valide → ne pas afficher « En liaison ».
+        if (($live === 'linked' || $live === 'delayed') && !self::isValidMapPosition($posX, $posY)) {
+            $live = 'offline';
+        }
+        $row['pos_x'] = $posX;
+        $row['pos_y'] = $posY;
+        $row['db_status'] = $dbStatus;
+        $row['status'] = $live;
+        if (!self::isValidMapPosition($posX, $posY)) {
+            $row['grid_ref'] = '';
+        } elseif (trim((string) ($row['grid_ref'] ?? '')) === '' || trim((string) $row['grid_ref']) === '0 0') {
+            $row['grid_ref'] = (string) round($posX) . ' ' . round($posY);
+        }
+
+        return $row;
+    }
+
+    /**
+     * Passe en offline les unités encore « linked » sans mise à jour récente.
+     */
+    public function markStaleUnitsOffline(int $tenantId, int $mapId): int
+    {
+        $ttl = self::UNIT_LIVE_TTL_SECONDS;
+        $stmt = $this->pdo->prepare(
+            'UPDATE atak_units SET status = ?
+             WHERE tenant_id = ? AND map_id = ?
+               AND status = ?
+               AND (updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
+        );
+        $stmt->execute(['offline', $tenantId, $mapId, 'linked']);
+
+        return $stmt->rowCount();
     }
 
     /**
@@ -120,18 +270,82 @@ class AtakDataRepository
      */
     public function upsertUnitPosition(int $tenantId, int $mapId, string $callSign, float $posX, float $posY, ?float $heading, string $role, string $extraJson): array
     {
-        $gridRef = (string) round($posX) . ' ' . round($posY);
-        $stmt = $this->pdo->prepare('SELECT id FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
+        $validPos = self::isValidMapPosition($posX, $posY);
+        $gridRef = $validPos ? ((string) round($posX) . ' ' . round($posY)) : '';
+        $stmt = $this->pdo->prepare('SELECT id, grid_ref, pos_x, pos_y FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?');
         $stmt->execute([$tenantId, $mapId, $callSign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         $created = false;
+        $unitId = 0;
+        $hasPos = $this->hasPosColumns();
+
         if ($existing) {
-            $this->pdo->prepare('UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ? WHERE id = ?')->execute([$gridRef, $heading, $role, $extraJson, $existing['id']]);
+            $unitId = (int) $existing['id'];
+            // Conserver la dernière position valide si le payload est 0,0 / invalide.
+            $storeX = $posX;
+            $storeY = $posY;
+            $storeGrid = $gridRef;
+            if (!$validPos) {
+                $prevX = isset($existing['pos_x']) && $existing['pos_x'] !== null ? (float) $existing['pos_x'] : null;
+                $prevY = isset($existing['pos_y']) && $existing['pos_y'] !== null ? (float) $existing['pos_y'] : null;
+                if (!self::isValidMapPosition($prevX, $prevY)) {
+                    [$prevX, $prevY] = self::parseGridRef(isset($existing['grid_ref']) ? (string) $existing['grid_ref'] : null);
+                }
+                if (self::isValidMapPosition($prevX, $prevY)) {
+                    $storeX = $prevX;
+                    $storeY = $prevY;
+                    $storeGrid = (string) round($prevX) . ' ' . round($prevY);
+                } else {
+                    $storeX = null;
+                    $storeY = null;
+                    $storeGrid = '';
+                }
+            }
+            if ($hasPos) {
+                $this->pdo->prepare(
+                    'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, pos_x = ?, pos_y = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $storeX, $storeY, $unitId]);
+            } else {
+                $this->pdo->prepare(
+                    'UPDATE atak_units SET grid_ref = ?, heading = ?, role = ?, extra = ?, status = ?, updated_at = NOW() WHERE id = ?'
+                )->execute([$storeGrid, $heading, $role, $extraJson, 'linked', $unitId]);
+            }
         } else {
-            $this->pdo->prepare('INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute([$tenantId, $mapId, $callSign, $role, 'linked', $gridRef, $heading, $extraJson]);
+            if ($hasPos) {
+                $this->pdo->prepare(
+                    'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, pos_x, pos_y, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                )->execute([
+                    $tenantId,
+                    $mapId,
+                    $callSign,
+                    $role,
+                    'linked',
+                    $validPos ? $gridRef : '',
+                    $heading,
+                    $validPos ? $posX : null,
+                    $validPos ? $posY : null,
+                    $extraJson,
+                ]);
+            } else {
+                $this->pdo->prepare(
+                    'INSERT INTO atak_units (tenant_id, map_id, call_sign, role, status, grid_ref, heading, extra, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())'
+                )->execute([$tenantId, $mapId, $callSign, $role, 'linked', $validPos ? $gridRef : '', $heading, $extraJson]);
+            }
             $created = true;
+            $unitId = (int) $this->pdo->lastInsertId();
         }
         $this->setLastActivity($tenantId, $mapId);
+
+        // ID militaire stable (best-effort, migration v2)
+        if ($unitId > 0) {
+            try {
+                $opIds = new AtakOperatorIdRepository();
+                if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
+                    $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, null);
+                }
+            } catch (\Throwable) {
+            }
+        }
 
         return ['created' => $created];
     }
@@ -155,11 +369,21 @@ class AtakDataRepository
         return $row->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function updateUnit(int $tenantId, int $id, array $data): ?array
+    public function getUnitById(int $tenantId, int $id): ?array
     {
+        if ($tenantId < 1 || $id < 1) {
+            return null;
+        }
         $stmt = $this->pdo->prepare('SELECT * FROM atak_units WHERE tenant_id = ? AND id = ?');
         $stmt->execute([$tenantId, $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    public function updateUnit(int $tenantId, int $id, array $data): ?array
+    {
+        $row = $this->getUnitById($tenantId, $id);
         if (!$row) {
             return null;
         }
@@ -177,9 +401,31 @@ class AtakDataRepository
         }
         $params[] = $id;
         $this->pdo->prepare('UPDATE atak_units SET ' . implode(', ', $updates) . ' WHERE id = ?')->execute($params);
-        $stmt = $this->pdo->prepare('SELECT * FROM atak_units WHERE id = ?');
-        $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $this->getUnitById($tenantId, $id);
+    }
+
+    public function deleteUnit(int $tenantId, int $id): bool
+    {
+        if ($tenantId < 1 || $id < 1) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM atak_units WHERE tenant_id = ? AND id = ?');
+        $stmt->execute([$tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function getChatMessageById(int $tenantId, int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM atak_chat_messages WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $stmt->execute([$id, $tenantId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
     }
 
     public function getChatMessages(int $tenantId, int $mapId, int $limit = 100): array
@@ -200,27 +446,80 @@ class AtakDataRepository
 
     /**
      * Alertes / bilans médicaux dérivés du tchat ATAK (préfixe ALERTE MÉDICALE ou WIA).
+     * Filtre la fenêtre active (30 min depuis created_at, horloge MySQL) sauf si $includeExpired.
      *
      * @return list<array<string, mixed>>
      */
-    public function getMedicalAlertsFromChat(int $tenantId, int $mapId, int $limit = 50): array
+    public function getMedicalAlertsFromChat(int $tenantId, int $mapId, int $limit = 50, bool $includeExpired = false): array
     {
         $limit = max(1, min($limit, 200));
         // On lit un volume plus large puis on filtre côté PHP (préfixe accentué / WIA).
         $scan = min(500, max(100, $limit * 5));
-        $rows = $this->getChatMessages($tenantId, $mapId, $scan);
+        $windowSec = \App\Support\MedicalAlertParser::ACTIVE_WINDOW_SECONDS;
+        // Fenêtre métier + marge fuseau (UTC ↔ Paris) — alignée sur MedicalAlertParser::isWithinActiveWindow.
+        $scanWindowSec = $windowSec + (3 * 3600);
+        // Filtre sur l’horloge MySQL (même référence que created_at) — évite les faux hors-délai PHP↔DB.
+        $rows = !$includeExpired
+            ? $this->getChatMessagesSince($tenantId, $mapId, $scan, $scanWindowSec)
+            : $this->getChatMessages($tenantId, $mapId, $scan);
+        $out = $this->enrichMedicalRows($rows, $includeExpired);
+        // Fallback : si DATE_SUB a tout exclu (décalage horloge), rescanner les N derniers messages.
+        if ($out === [] && !$includeExpired) {
+            $fallbackRows = $this->getChatMessages($tenantId, $mapId, $scan);
+            $out = $this->enrichMedicalRows($fallbackRows, false);
+        }
+        if (count($out) > $limit) {
+            $out = array_slice($out, -$limit);
+        }
+        return $out;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function enrichMedicalRows(array $rows, bool $includeExpired): array
+    {
         $out = [];
         foreach ($rows as $row) {
             $enriched = \App\Support\MedicalAlertParser::enrichChatRow(is_array($row) ? $row : []);
             if ($enriched === null) {
                 continue;
             }
+            if (!$includeExpired) {
+                $created = isset($enriched['created_at']) ? (string) $enriched['created_at'] : '';
+                if (!\App\Support\MedicalAlertParser::isWithinActiveWindow($created)) {
+                    continue;
+                }
+            }
             $out[] = $enriched;
         }
-        if (count($out) > $limit) {
-            $out = array_slice($out, -$limit);
-        }
+
         return $out;
+    }
+
+    /**
+     * Messages tchat récents selon l’horloge MySQL (évite les faux hors-délai PHP↔DB).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getChatMessagesSince(int $tenantId, int $mapId, int $limit, int $withinSeconds): array
+    {
+        $limit = max(1, min($limit, 500));
+        $withinSeconds = max(60, min($withinSeconds, 48 * 3600));
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_chat_messages
+             WHERE tenant_id = ? AND map_id = ?
+               AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+             ORDER BY created_at DESC
+             LIMIT ' . (int) $limit
+        );
+        $stmt->bindValue(1, $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $mapId, PDO::PARAM_INT);
+        $stmt->bindValue(3, $withinSeconds, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /**
@@ -407,10 +706,29 @@ class AtakDataRepository
     /** @return list<array{call_sign: string, updated_at: string}> */
     public function getActiveUnitsSummary(int $tenantId, int $mapId, int $limit = 20): array
     {
-        $stmt = $this->pdo->prepare('SELECT call_sign, updated_at FROM atak_units WHERE tenant_id = ? AND map_id = ? ORDER BY updated_at DESC LIMIT ' . (int) $limit);
-        $stmt->execute([$tenantId, $mapId]);
+        $stmt = $this->pdo->prepare('SELECT call_sign, updated_at FROM atak_units WHERE tenant_id = ? AND map_id = ? AND status = ? ORDER BY updated_at DESC LIMIT ' . (int) $limit);
+        $stmt->execute([$tenantId, $mapId, 'linked']);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn ($r) => ['call_sign' => $r['call_sign'] ?? '', 'updated_at' => $r['updated_at'] ?? ''], $rows);
+    }
+
+    /**
+     * Marque une unité hors ligne (sortie Arma) sans supprimer l’historique de position.
+     * Comparaison d’indicatif insensible à la casse (Operateur / OPERATEUR).
+     */
+    public function markUnitOfflineByCallSign(int $tenantId, int $mapId, string $callSign): bool
+    {
+        $callSign = trim($callSign);
+        if ($callSign === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE atak_units SET status = ?, updated_at = NOW()
+             WHERE tenant_id = ? AND map_id = ? AND LOWER(call_sign) = LOWER(?)'
+        );
+        $stmt->execute(['offline', $tenantId, $mapId, $callSign]);
+
+        return $stmt->rowCount() > 0;
     }
 
     private const AIR_ASSET_TTL_SECONDS = 30;

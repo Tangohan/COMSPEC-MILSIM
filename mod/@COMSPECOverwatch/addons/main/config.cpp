@@ -18,8 +18,8 @@ class CfgMods {
         name = "COMSPEC Overwatch";
         picture = "";
         actionName = "Website";
-        action = "https://github.com";
-        overview = "Liaison Arma 3 vers l'overlay ATAK / Tacmap COMSPEC.";
+        action = "https://athena.ttrd.fr/public";
+        overview = "Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
         tooltip = "COMSPEC Overwatch";
         author = "COMSPEC";
     };

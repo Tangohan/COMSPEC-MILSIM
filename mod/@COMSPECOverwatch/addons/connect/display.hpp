@@ -185,7 +185,7 @@ class COMSPEC_Chat_Dialog {
             text = "";
             x = 0.26 * safezoneW + safezoneX;
             y = 0.68 * safezoneH + safezoneY;
-            w = 0.3 * safezoneW;
+            w = 0.22 * safezoneW;
             h = 0.038 * safezoneH;
             colorBackground[] = {0.08, 0.1, 0.14, 0.95};
             colorText[] = {1, 1, 1, 1};
@@ -193,6 +193,17 @@ class COMSPEC_Chat_Dialog {
             sizeEx = 0.036;
             autocomplete = "";
             onKeyDown = "if ((_this select 1) == 28) then { [] call comspec_overwatch_connect_fnc_submitChat; };";
+        };
+
+        class PhotoButton: RscButton {
+            idc = 1415;
+            text = "Photo";
+            x = 0.49 * safezoneW + safezoneX;
+            y = 0.68 * safezoneH + safezoneY;
+            w = 0.07 * safezoneW;
+            h = 0.038 * safezoneH;
+            colorBackground[] = {0.14, 0.18, 0.28, 0.95};
+            action = "[] call comspec_overwatch_connect_fnc_submitChatPhoto;";
         };
 
         class AirOpsButton: RscButton {

@@ -674,7 +674,11 @@ CREATE TABLE IF NOT EXISTS `tenant_atak_config` (
   `arma_server_host` varchar(255) DEFAULT NULL,
   `arma_server_port` smallint unsigned DEFAULT NULL,
   `arma_mod_credentials` text DEFAULT NULL,
+  `access_key` varchar(128) DEFAULT NULL,
+  `access_key_prefix` varchar(16) DEFAULT NULL,
+  `access_key_generated_at` datetime DEFAULT NULL,
   `instructions` text DEFAULT NULL,
+  `default_map_slug` varchar(50) DEFAULT 'altis',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`tenant_id`),
@@ -750,15 +754,19 @@ CREATE TABLE IF NOT EXISTS `atak_units` (
   `tenant_id` int unsigned NOT NULL,
   `map_id` int unsigned NOT NULL DEFAULT 1,
   `call_sign` varchar(255) NOT NULL,
+  `military_id` varchar(32) DEFAULT NULL,
   `role` varchar(255) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'linked',
   `grid_ref` varchar(100) DEFAULT NULL,
   `heading` decimal(10,4) DEFAULT NULL,
+  `pos_x` decimal(15,4) DEFAULT NULL,
+  `pos_y` decimal(15,4) DEFAULT NULL,
   `extra` json DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
   KEY `map_callsign` (`map_id`,`call_sign`),
+  KEY `idx_atak_units_tenant_military` (`tenant_id`,`military_id`),
   CONSTRAINT `atak_units_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -772,6 +780,24 @@ CREATE TABLE IF NOT EXISTS `atak_chat_messages` (
   PRIMARY KEY (`id`),
   KEY `tenant_map` (`tenant_id`,`map_id`),
   CONSTRAINT `atak_chat_messages_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_medical_alert_triage` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `chat_message_id` int unsigned NOT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'a_secourir',
+  `status_by` varchar(120) DEFAULT NULL,
+  `status_note` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_medical_triage_chat` (`chat_message_id`),
+  KEY `idx_medical_triage_tenant_map` (`tenant_id`,`map_id`),
+  KEY `idx_medical_triage_status` (`tenant_id`,`status`),
+  CONSTRAINT `fk_medical_triage_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_medical_triage_chat` FOREIGN KEY (`chat_message_id`) REFERENCES `atak_chat_messages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `atak_pings` (
@@ -813,6 +839,60 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   KEY `assigned_aircraft` (`assigned_aircraft`),
   CONSTRAINT `atak_nine_line_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_orders` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `map_id` int unsigned NOT NULL DEFAULT 1,
+  `external_id` varchar(64) NOT NULL,
+  `parent_external_id` varchar(64) DEFAULT NULL,
+  `order_type` varchar(32) NOT NULL DEFAULT 'MOVE',
+  `target` varchar(128) DEFAULT NULL,
+  `target_type` varchar(32) NOT NULL DEFAULT 'all',
+  `target_ref` varchar(128) DEFAULT NULL,
+  `target_label` varchar(160) DEFAULT NULL,
+  `payload` text,
+  `priority` varchar(32) NOT NULL DEFAULT 'IMPORTANT',
+  `issuer` varchar(128) NOT NULL,
+  `issuer_user_id` int unsigned DEFAULT NULL,
+  `status` varchar(32) NOT NULL DEFAULT 'PENDING',
+  `note` varchar(500) DEFAULT NULL,
+  `status_by` varchar(128) DEFAULT NULL,
+  `ack_at` datetime DEFAULT NULL,
+  `ack_by` varchar(128) DEFAULT NULL,
+  `cancelled_at` datetime DEFAULT NULL,
+  `cancelled_by` varchar(128) DEFAULT NULL,
+  `deliver_at` datetime DEFAULT NULL,
+  `ack_deadline_at` datetime DEFAULT NULL,
+  `radio_sim` tinyint(1) NOT NULL DEFAULT 1,
+  `sim_state` varchar(32) NOT NULL DEFAULT 'delivered',
+  `sim_latency_sec` smallint unsigned NOT NULL DEFAULT 0,
+  `sim_event` varchar(64) DEFAULT NULL,
+  `source` enum('game','web') NOT NULL DEFAULT 'web',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_atak_orders_tenant_map_ext` (`tenant_id`,`map_id`,`external_id`),
+  KEY `idx_atak_orders_tenant_map_updated` (`tenant_id`,`map_id`,`updated_at`),
+  KEY `idx_atak_orders_tenant_status` (`tenant_id`,`map_id`,`status`),
+  CONSTRAINT `atak_orders_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `atak_operator_ids` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `user_id` int unsigned DEFAULT NULL,
+  `call_sign` varchar(128) DEFAULT NULL,
+  `military_id` varchar(32) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_atak_opid_tenant_mid` (`tenant_id`,`military_id`),
+  UNIQUE KEY `uniq_atak_opid_tenant_user` (`tenant_id`,`user_id`),
+  KEY `idx_atak_opid_tenant_callsign` (`tenant_id`,`call_sign`),
+  CONSTRAINT `fk_atak_opid_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_atak_opid_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `atak_intel_photos` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
@@ -1301,6 +1381,21 @@ CREATE TABLE IF NOT EXISTS `member_departures` (
   CONSTRAINT `member_departures_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `member_departures_initiator_fk` FOREIGN KEY (`initiated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Connexion téléphone ATAK (QR / code court en jeu → briefing mobile sans compte).
+CREATE TABLE IF NOT EXISTS `tactical_phone_pairings` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `tenant_id` int unsigned NOT NULL,
+  `token` char(32) NOT NULL,
+  `code` varchar(8) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `paired_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tpp_token` (`token`),
+  KEY `idx_tpp_tenant_code_expires` (`tenant_id`,`code`,`expires_at`),
+  CONSTRAINT `tpp_tenant_fk` FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Diapositives de briefing tactique (consommées in-game via l'extension Arma : /api/atak/briefing-slides).
 CREATE TABLE IF NOT EXISTS `tactical_briefing_slides` (

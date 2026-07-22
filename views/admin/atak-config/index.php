@@ -6,6 +6,14 @@ $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
 $hostHint = htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'votre-domaine.fr', ENT_QUOTES, 'UTF-8');
 $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
+$tenantId = (int) ($tenantId ?? 0);
+$platformKeyConfigured = !empty($platformKeyConfigured);
+$accessKeyPrefix = (string) ($accessKeyPrefix ?? '');
+$accessKeyGeneratedAt = $accessKeyGeneratedAt ?? null;
+$hasTenantAccessKey = !empty($hasTenantAccessKey);
+$newAccessKeyPlain = is_string($newAccessKeyPlain ?? null) ? $newAccessKeyPlain : null;
+$authEvents = is_array($authEvents ?? null) ? $authEvents : [];
+$portalBaseUrl = (string) ($portalBaseUrl ?? rtrim(url(''), '/'));
 ?>
 <div class="max-w-6xl mx-auto px-6 py-10">
     <header class="mb-8">
@@ -23,6 +31,19 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
         <p class="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
+    <?php if ($newAccessKeyPlain): ?>
+        <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4">
+            <p class="text-sm font-bold text-amber-950 mb-1">Nouvelle clé d’accès — à copier immédiatement</p>
+            <p class="text-xs text-amber-900 mb-3 leading-relaxed">
+                Cette valeur ne sera plus affichée en entier après avoir quitté cette page. Communiquez-la uniquement aux opérateurs autorisés (paramètres du mod Overwatch, ou via la liaison «&nbsp;Connexion en jeu&nbsp;» qui la récupère automatiquement).
+            </p>
+            <div class="flex flex-wrap items-center gap-2">
+                <code id="atak-new-access-key" class="flex-1 min-w-[12rem] rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm font-mono text-slate-900 break-all"><?= htmlspecialchars($newAccessKeyPlain) ?></code>
+                <button type="button" class="px-3 py-2 text-sm font-semibold rounded-lg bg-amber-900 text-white hover:bg-amber-800" onclick="navigator.clipboard.writeText(document.getElementById('atak-new-access-key').textContent); this.textContent='Copié';">Copier</button>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <a href="<?= htmlspecialchars(url('back-office/atak/briefing-slides'), ENT_QUOTES, 'UTF-8') ?>" class="mb-8 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40">
         <span>
             <span class="block text-sm font-bold text-slate-900">Diapositives de briefing tactique</span>
@@ -32,7 +53,116 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
     </a>
 
     <div class="grid lg:grid-cols-12 gap-8 items-start">
-        <div class="lg:col-span-8">
+        <div class="lg:col-span-8 space-y-6">
+            <div class="border border-emerald-200 rounded-xl p-5 bg-emerald-50/40 shadow-sm">
+                <h2 class="text-sm font-bold text-emerald-950 mb-4">Accès mod Overwatch (Arma&nbsp;3)</h2>
+                <p class="text-xs text-emerald-900/80 mb-4 leading-relaxed">
+                    Ces informations permettent au mod de se connecter à votre communauté. Les joueurs peuvent aussi obtenir automatiquement l’adresse et la clé via «&nbsp;Connexion en jeu&nbsp;» (code ou Steam) sur la Tacmap.
+                </p>
+                <div class="grid sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Identifiant de communauté</label>
+                        <div class="flex gap-2">
+                            <input type="text" readonly id="atak-tenant-id" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white font-mono" value="<?= (int) $tenantId ?>" />
+                            <button type="button" class="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50" onclick="navigator.clipboard.writeText(document.getElementById('atak-tenant-id').value); this.textContent='OK';">Copier</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5">À indiquer dans les options du mod si votre plateforme héberge plusieurs communautés.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Adresse du portail (mod)</label>
+                        <div class="flex gap-2">
+                            <input type="text" readonly id="atak-portal-url" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white font-mono" value="<?= htmlspecialchars($portalBaseUrl, ENT_QUOTES, 'UTF-8') ?>" />
+                            <button type="button" class="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50" onclick="navigator.clipboard.writeText(document.getElementById('atak-portal-url').value); this.textContent='OK';">Copier</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5">Sans slash final. Exemple&nbsp;: https://<?= $hostHint ?>/public</p>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-white p-4 mb-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-medium text-slate-800">Clé d’accès</p>
+                            <?php if ($hasTenantAccessKey): ?>
+                                <p class="text-xs text-slate-600 mt-1">
+                                    Clé active&nbsp;: <span class="font-mono"><?= htmlspecialchars($accessKeyPrefix !== '' ? $accessKeyPrefix . '…' : '••••••••') ?></span>
+                                    <?php if ($accessKeyGeneratedAt): ?>
+                                        <span class="text-slate-400">— générée le <?= htmlspecialchars(date('d/m/Y H:i', strtotime((string) $accessKeyGeneratedAt))) ?></span>
+                                    <?php endif; ?>
+                                </p>
+                            <?php elseif ($platformKeyConfigured): ?>
+                                <p class="text-xs text-slate-600 mt-1">Aucune clé spécifique à votre communauté&nbsp;: la clé plateforme est utilisée pour le moment. Générez une clé dédiée pour isoler l’accès de votre communauté.</p>
+                            <?php else: ?>
+                                <p class="text-xs text-amber-800 mt-1">Aucune clé configurée. Générez-en une pour activer la liaison jeu et la connexion téléphone.</p>
+                            <?php endif; ?>
+                        </div>
+                        <form action="<?= $baseUrl ?>/admin/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus pour le mod tant que les joueurs n’auront pas relancé une liaison.');">
+                            <?= \App\Core\Csrf::field() ?>
+                            <button type="submit" class="px-4 py-2 bg-emerald-800 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
+                                <?= $hasTenantAccessKey ? 'Régénérer la clé' : 'Générer une clé d’accès' ?>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside leading-relaxed">
+                    <li>Après génération, les joueurs peuvent utiliser <strong>Connexion en jeu</strong> sur la Tacmap (code) — la clé est transmise automatiquement.</li>
+                    <li>Sinon, coller manuellement l’adresse + la clé (+ identifiant de communauté) dans les options du mod.</li>
+                    <li>La connexion téléphone (QR) nécessite une liaison déjà établie en jeu.</li>
+                </ul>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+                <h2 class="text-sm font-bold text-slate-800 mb-3">Tentatives de connexion récentes</h2>
+                <p class="text-xs text-slate-500 mb-3">Liaisons en jeu, refus de clé, et connexions téléphone. Les secrets ne sont jamais affichés.</p>
+                <?php
+                $shownAuth = 0;
+                foreach ($authEvents as $ev) {
+                    $type = (string) ($ev['type'] ?? '');
+                    if (!in_array($type, ['auth', 'phone', 'client_init'], true)) {
+                        continue;
+                    }
+                    $shownAuth++;
+                }
+                ?>
+                <?php if ($shownAuth === 0): ?>
+                    <p class="text-sm text-slate-500">Aucune tentative enregistrée pour le moment.</p>
+                <?php else: ?>
+                    <ul class="divide-y divide-slate-100 text-sm">
+                        <?php foreach ($authEvents as $ev): ?>
+                            <?php
+                            $type = (string) ($ev['type'] ?? '');
+                            if (!in_array($type, ['auth', 'phone', 'client_init'], true)) {
+                                continue;
+                            }
+                            $ok = true;
+                            if ($type === 'auth') {
+                                if (isset($ev['meta']['ok'])) {
+                                    $ok = (bool) $ev['meta']['ok'];
+                                } elseif (isset($ev['meta']['reason']) && !in_array((string) $ev['meta']['reason'], ['ok', 'key_regenerated'], true)) {
+                                    $ok = false;
+                                }
+                            }
+                            $at = (string) ($ev['at'] ?? '');
+                            $atLabel = $at !== '' ? date('d/m H:i', strtotime($at)) : '—';
+                            ?>
+                            <li class="py-2.5 flex gap-3 items-start">
+                                <span class="mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 <?= $ok ? 'bg-emerald-500' : 'bg-red-500' ?>" aria-hidden="true"></span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-slate-800"><?= htmlspecialchars((string) ($ev['label'] ?? '')) ?></p>
+                                    <p class="text-xs text-slate-500 mt-0.5">
+                                        <?= htmlspecialchars($atLabel) ?>
+                                        <?php if (!empty($ev['actor'])): ?>
+                                            — <?= htmlspecialchars((string) $ev['actor']) ?>
+                                        <?php endif; ?>
+                                    </p>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <p class="text-xs text-slate-500 mt-3">
+                    Le détail live est aussi visible sur la <a href="<?= $baseUrl ?>/atak" class="underline font-medium text-slate-700">Tacmap</a> (panneau Activité de liaison).
+                </p>
+            </div>
+
             <form action="<?= $baseUrl ?>/admin/atak-config" method="post" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
 
@@ -93,11 +223,11 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
                 </div>
 
                 <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
-                    <h2 class="text-sm font-bold text-slate-800 mb-4">Identifiants et texte d’aide mod</h2>
+                    <h2 class="text-sm font-bold text-slate-800 mb-4">Texte d’aide pour le mod</h2>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Bloc libre (clés, consignes techniques pour le mod)</label>
-                        <textarea name="arma_mod_credentials" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono" placeholder="Ex.&nbsp;: consignes d’accès, rappels de version du modpack, paramètres à recopier dans le jeu…"><?= htmlspecialchars($config['arma_mod_credentials'] ?? '') ?></textarea>
-                        <p class="text-xs text-slate-500 mt-1.5">Affiché aux membres sur la Tacmap (section configuration jeu). Rédigez ce que votre équipe doit recopier ou conserver confidentiellement.</p>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Consignes affichées aux opérateurs</label>
+                        <textarea name="arma_mod_credentials" rows="5" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex.&nbsp;: version du modpack, canaux radio, rappels d’équipe…"><?= htmlspecialchars($config['arma_mod_credentials'] ?? '') ?></textarea>
+                        <p class="text-xs text-slate-500 mt-1.5">Affiché aux membres sur la Tacmap (section configuration jeu). Ne collez pas de secrets ici — utilisez la section «&nbsp;Clé d’accès&nbsp;» ci-dessus.</p>
                     </div>
                 </div>
 
@@ -141,6 +271,8 @@ $defaultMapSlug = $config['default_map_slug'] ?? 'altis';
                 <h2 class="text-sm font-bold text-emerald-950 mb-2">Navigation rapide</h2>
                 <ul class="text-sm space-y-2">
                     <li><a href="<?= $baseUrl ?>/overwatch" class="text-emerald-900 underline font-medium hover:no-underline">Vue C2 Overwatch</a></li>
+                    <li><a href="<?= $baseUrl ?>/back-office/atak/fire-teams" class="text-emerald-900 underline font-medium hover:no-underline">Équipes de feu</a></li>
+                    <li><a href="<?= $baseUrl ?>/back-office/atak/briefing-slides" class="text-emerald-900 underline font-medium hover:no-underline">Diapositives de briefing</a></li>
                     <li><a href="<?= $baseUrl ?>/atak/setup" class="text-emerald-900 underline font-medium hover:no-underline">Assistant mod Arma</a></li>
                     <li><a href="<?= $baseUrl ?>/atak/tuto" class="text-emerald-900 underline font-medium hover:no-underline">Tutoriel mod détaillé</a></li>
                     <li><a href="<?= $baseUrl ?>/dashboard" class="text-emerald-900 underline font-medium hover:no-underline">Tableau de bord</a></li>

@@ -48,5 +48,7 @@ private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, 
 "COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
 
 ["OnOrderIssued", _order] call comspec_overwatch_connect_fnc_publishEvent;
+// Diffusion multi-clients (le bus d’évènements local ne traverse pas le réseau)
+[_order] remoteExecCall ["comspec_overwatch_connect_fnc_receiveOrder", 0, false];
 
 _order
