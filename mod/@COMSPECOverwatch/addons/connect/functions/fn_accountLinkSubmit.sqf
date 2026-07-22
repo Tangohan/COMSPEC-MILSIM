@@ -66,7 +66,7 @@ if (_prefix != "OK") exitWith {
         case "busy_retry": { "Échange en cours côté module — réessayez dans une seconde." };
         case "code_invalid_or_expired": { "Code invalide, déjà utilisé ou expiré — générez-en un nouveau sur Athena." };
         case "code_already_used": { "Ce code a déjà été utilisé — générez-en un nouveau sur Athena." };
-        case "code_expired": { "Ce code a expiré — générez-en un nouveau sur Athena (valable 15 min)." };
+        case "code_expired": { "Ce code a expiré — générez-en un nouveau sur Athena (valable 30 min)." };
         case "invalid_code": { "Code manquant ou trop court." };
         case "not_found": { "Athena n’a pas trouvé cette ressource. Vérifiez l’adresse (…/public) ou générez un nouveau code." };
         case "timeout": { "Délai dépassé — vérifiez votre réseau." };
