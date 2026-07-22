@@ -94,6 +94,42 @@ window.ATAKMedicalAlerts = (function () {
     return '<span class="atak-medical-chat-flag" title="Assistance médicale">' + escapeHtml(parsed.summary || body) + '</span>';
   }
 
+  var audioCtx = null;
+
+  function getAudioCtx() {
+    var Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    if (!audioCtx) audioCtx = new Ctor();
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(function () {});
+    return audioCtx;
+  }
+
+  // Première interaction utilisateur : débloque l’audio (autoplay policy des navigateurs).
+  ['pointerdown', 'keydown'].forEach(function (evt) {
+    document.addEventListener(evt, function () { getAudioCtx(); }, { once: true, passive: true });
+  });
+
+  // Bip synthétisé (pas de fichier audio externe à charger/oublier) : deux tons descendants,
+  // reconnaissables comme une alerte critique sans dépendre d’un asset qui peut manquer.
+  function playAlertSound() {
+    var ctx = getAudioCtx();
+    if (!ctx || ctx.state !== 'running') return;
+    [880, 660].forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      var start = ctx.currentTime + i * 0.22;
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.22);
+    });
+  }
+
   function showToast(summary) {
     var toast = document.getElementById('atak-notification-toast')
       || document.getElementById('atak-medical-toast')
@@ -207,6 +243,7 @@ window.ATAKMedicalAlerts = (function () {
         var latest = alerts[alerts.length - 1];
         if (latest && latest.severity === 'critical') {
           showToast(latest.summary || latest.label);
+          playAlertSound();
         }
       }
     }
@@ -256,6 +293,7 @@ window.ATAKMedicalAlerts = (function () {
     var parsed = (msg && msg.medical) || parseMessage(body);
     if (!parsed) return;
     showToast(parsed.summary || parsed.label);
+    if (parsed.severity === 'critical') playAlertSound();
     fetchAlerts();
   }
 

@@ -43,6 +43,10 @@ private _msg = format [
 // Canal chat ATAK (même voie que le bilan santé manuel WIA)
 [player, "CHAT", _msg, "", "INFANTRY", 0.95] call comspec_overwatch_connect_fnc_sendIntel;
 
+// Alerte sonore locale (même classe CfgSounds vanilla que fn_warnDangerZoneEntry, déjà utilisée
+// dans ce mod — évite de référencer un son custom potentiellement absent du build).
+if (_kindNorm == "cardiac_arrest") then { playSound "Alarm"; };
+
 private _alert = createHashMapFromArray [
     ["kind", toUpper _kindNorm],
     ["unit", _callSign],
