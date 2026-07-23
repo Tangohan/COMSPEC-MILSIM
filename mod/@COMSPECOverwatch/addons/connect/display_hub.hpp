@@ -26,7 +26,7 @@ class COMSPEC_Hub_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='1.05' align='center' color='#e8f4f0'>COMSPEC Overwatch</t>";
+            text = "<t font='RobotoCondensedBold' size='1.05' align='center' color='#e8f4f0'>COMSPEC Overwatch</t><t align='center' size='0.55' color='#e8b84a'>  ·  BÊTA</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.095 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
@@ -125,7 +125,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnAccount: RscButton {
             idc = 9113;
-            text = "Compte Athena (saisir un code)";
+            text = "Connexion Athena";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.378 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;

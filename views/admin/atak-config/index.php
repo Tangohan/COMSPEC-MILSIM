@@ -375,6 +375,7 @@ foreach ($dataSummary as $k => $v) {
                     <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer</button>
                     <a href="<?= $baseUrl ?>/admin/atak-mod" class="px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">Fichier du mod (upload)</a>
                     <a href="<?= $baseUrl ?>/admin/atak-mod-blocks" class="px-4 py-2.5 border border-rose-200 bg-rose-50/70 text-rose-950 text-sm font-medium rounded-lg hover:bg-rose-100">Restrictions d’accès au mod</a>
+                    <a href="<?= $baseUrl ?>/admin/atak-beta" class="px-4 py-2.5 border border-amber-200 bg-amber-50/70 text-amber-950 text-sm font-medium rounded-lg hover:bg-amber-100">Accès anticipé</a>
                     <a href="<?= $baseUrl ?>/atak" class="px-4 py-2.5 border border-emerald-200 text-emerald-900 text-sm font-medium rounded-lg bg-emerald-50/80 hover:bg-emerald-50">Ouvrir la Tacmap</a>
                     <a href="<?= $baseUrl ?>/admin" class="px-4 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Retour administration</a>
                 </div>
@@ -388,7 +389,7 @@ foreach ($dataSummary as $k => $v) {
                     Outre la carte et les marqueurs synchronisés avec le jeu, les membres ont accès aux modules suivants (selon les droits et l’activation de l’offre)&nbsp;:
                 </p>
                 <ul class="text-xs text-slate-700 space-y-2 list-disc list-inside leading-relaxed">
-                    <li><span class="font-medium text-slate-800">Cams &amp; renseignement visuel</span> — photos CTAB et flux associés depuis Arma.</li>
+                    <li><span class="font-medium text-slate-800">Cams &amp; renseignement visuel</span> — photos terrain, aperçus caméra casque et drone depuis Arma.</li>
                     <li><span class="font-medium text-slate-800">Messagerie tactique</span> — échanges en direct entre opérateurs connectés.</li>
                     <li><span class="font-medium text-slate-800">Pings</span> — signalements sur la carte.</li>
                     <li><span class="font-medium text-slate-800">JTAC / 9-line</span> — saisie et suivi des demandes d’appui aérien.</li>

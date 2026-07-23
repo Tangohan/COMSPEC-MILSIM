@@ -24,9 +24,7 @@ if (_isLocal) then {
     ["BDA", _summary, if ((count _pos) >= 2) then { _pos } else { getPos player }] call comspec_overwatch_connect_fnc_sendTacticalAlert;
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
     ["Bilan des degats envoye vers Athena"] call comspec_overwatch_connect_fnc_appendModuleLog;
-    if (!isNil "cTab_fnc_addNotification") then {
-        ["ATHENA", "Bilan des dégâts transmis à Athena.", 4] call cTab_fnc_addNotification;
-    };
+    ["ATHENA", "Bilan des dégâts transmis à Athena.", 4] call comspec_overwatch_connect_fnc_addScreenToast;
 } else {
     private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
     if (!(_inbox isEqualType [])) then { _inbox = []; };

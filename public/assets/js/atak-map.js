@@ -25,6 +25,23 @@ window.ATAKMap = (function () {
   var lastMapSizeKey = '';
   var UNIT_MARKER_PRIORITY_KEY = 'atak_unit_marker_priority';
   var UNIT_MARKER_PRIORITY_DEFAULT = 'nato';
+  var DISPLAY_PREFS_KEY = 'atak_map_display_prefs';
+  var DISPLAY_PREFS_DEFAULT = {
+    styleMode: 'nato',
+    iconSize: 16,
+    labelSize: 7,
+    showFtFrame: true,
+    positionDelayEnabled: false,
+    positionDelayMs: 2000,
+    packetLossEnabled: false,
+    packetLossPercent: 25
+  };
+  var displayPrefsCache = null;
+  var lastUnitsListForMap = null;
+  var unitPosQueues = {};
+  var unitPosDisplayed = {};
+  var unitPosLiveSeen = {};
+  var posSimFlushTimer = null;
 
   function normalizeUnitMarkerPriority(v) {
     return v === 'avatar' ? 'avatar' : UNIT_MARKER_PRIORITY_DEFAULT;
@@ -47,23 +64,330 @@ window.ATAKMap = (function () {
     return next;
   }
 
+  function clampNum(n, min, max, fallback) {
+    var v = Number(n);
+    if (isNaN(v)) return fallback;
+    if (v < min) return min;
+    if (v > max) return max;
+    return v;
+  }
+
+  function normalizeStyleMode(v) {
+    if (v === 'dot' || v === 'team_dot') return v;
+    return 'nato';
+  }
+
+  function normalizeDisplayPrefs(raw) {
+    var src = raw && typeof raw === 'object' ? raw : {};
+    return {
+      styleMode: normalizeStyleMode(src.styleMode),
+      iconSize: clampNum(src.iconSize, 8, 48, DISPLAY_PREFS_DEFAULT.iconSize),
+      labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
+      showFtFrame: src.showFtFrame !== false,
+      positionDelayEnabled: !!src.positionDelayEnabled,
+      positionDelayMs: Math.round(clampNum(src.positionDelayMs, 500, 10000, DISPLAY_PREFS_DEFAULT.positionDelayMs)),
+      packetLossEnabled: !!src.packetLossEnabled,
+      packetLossPercent: Math.round(clampNum(src.packetLossPercent, 5, 80, DISPLAY_PREFS_DEFAULT.packetLossPercent))
+    };
+  }
+
+  function getDisplayPrefs() {
+    if (displayPrefsCache) return displayPrefsCache;
+    try {
+      var raw = localStorage.getItem(DISPLAY_PREFS_KEY);
+      displayPrefsCache = normalizeDisplayPrefs(raw ? JSON.parse(raw) : null);
+    } catch (e) {
+      displayPrefsCache = normalizeDisplayPrefs(null);
+    }
+    return displayPrefsCache;
+  }
+
+  function saveDisplayPrefs(prefs) {
+    displayPrefsCache = normalizeDisplayPrefs(prefs);
+    try {
+      localStorage.setItem(DISPLAY_PREFS_KEY, JSON.stringify(displayPrefsCache));
+    } catch (e) {}
+    return displayPrefsCache;
+  }
+
+  function patchDisplayPrefs(patch) {
+    var next = saveDisplayPrefs(Object.assign({}, getDisplayPrefs(), patch || {}));
+    applyDisplayPrefsToMapDom();
+    ensurePosSimFlushTimer();
+    if (patch && (patch.positionDelayEnabled === false || patch.packetLossEnabled === false
+        || patch.positionDelayMs != null || patch.packetLossPercent != null)) {
+      if (!next.positionDelayEnabled && !next.packetLossEnabled) {
+        clearPosSimState();
+      }
+    }
+    refreshUnitMarkerIcons();
+    return next;
+  }
+
+  function applyDisplayPrefsToMapDom() {
+    var p = getDisplayPrefs();
+    var mapEl = document.getElementById('atak-map');
+    if (!mapEl) return;
+    mapEl.style.setProperty('--atak-unit-label-size', p.labelSize + 'px');
+    mapEl.style.setProperty('--atak-unit-icon-size', p.iconSize + 'px');
+    var frame = Math.max(14, Math.round(p.iconSize * 1.55));
+    mapEl.style.setProperty('--atak-ft-frame-size', frame + 'px');
+    if (p.showFtFrame) mapEl.classList.remove('atak-map--hide-ft-frames');
+    else mapEl.classList.add('atak-map--hide-ft-frames');
+  }
+
+  function clearPosSimState() {
+    unitPosQueues = {};
+    unitPosDisplayed = {};
+    unitPosLiveSeen = {};
+  }
+
+  function ensurePosSimFlushTimer() {
+    var p = getDisplayPrefs();
+    var need = p.positionDelayEnabled && p.positionDelayMs > 0;
+    if (need && !posSimFlushTimer) {
+      posSimFlushTimer = setInterval(function () {
+        if (lastUnitsListForMap) setUnitsMarkers(lastUnitsListForMap);
+      }, 200);
+    } else if (!need && posSimFlushTimer) {
+      clearInterval(posSimFlushTimer);
+      posSimFlushTimer = null;
+    }
+  }
+
+  function resolveSimulatedLatLng(id, liveLatlng, existingMarker) {
+    var p = getDisplayPrefs();
+    var delayOn = p.positionDelayEnabled && p.positionDelayMs > 0;
+    var lossOn = p.packetLossEnabled && p.packetLossPercent > 0;
+    var liveKey = Math.round(liveLatlng.lat * 10) / 10 + ',' + Math.round(liveLatlng.lng * 10) / 10;
+    var liveChanged = unitPosLiveSeen[id] !== liveKey;
+    if (!delayOn && !lossOn) {
+      if (unitPosQueues[id]) delete unitPosQueues[id];
+      unitPosLiveSeen[id] = liveKey;
+      unitPosDisplayed[id] = { lat: liveLatlng.lat, lng: liveLatlng.lng };
+      return liveLatlng;
+    }
+    var isFirst = !unitPosDisplayed[id] && !existingMarker;
+    if (lossOn && liveChanged && !isFirst && Math.random() * 100 < p.packetLossPercent) {
+      // Mise à jour « perdue » : on mémorise la position live pour ne pas rejouer le tirage,
+      // mais on conserve l’affichage précédent.
+      unitPosLiveSeen[id] = liveKey;
+      if (unitPosDisplayed[id]) {
+        return L.latLng(unitPosDisplayed[id].lat, unitPosDisplayed[id].lng);
+      }
+      if (existingMarker) return existingMarker.getLatLng();
+      return liveLatlng;
+    }
+    if (liveChanged) unitPosLiveSeen[id] = liveKey;
+    if (!delayOn) {
+      if (liveChanged || !unitPosDisplayed[id]) {
+        unitPosDisplayed[id] = { lat: liveLatlng.lat, lng: liveLatlng.lng };
+      }
+      return L.latLng(unitPosDisplayed[id].lat, unitPosDisplayed[id].lng);
+    }
+    if (!unitPosQueues[id]) unitPosQueues[id] = [];
+    var q = unitPosQueues[id];
+    if (liveChanged) {
+      q.push({ t: Date.now(), lat: liveLatlng.lat, lng: liveLatlng.lng });
+      if (q.length > 48) q.splice(0, q.length - 48);
+    }
+    if (isFirst) {
+      unitPosDisplayed[id] = { lat: liveLatlng.lat, lng: liveLatlng.lng };
+      return liveLatlng;
+    }
+    var cutoff = Date.now() - p.positionDelayMs;
+    var best = null;
+    var bestIdx = -1;
+    for (var i = 0; i < q.length; i++) {
+      if (q[i].t <= cutoff) {
+        best = q[i];
+        bestIdx = i;
+      }
+    }
+    if (bestIdx > 0) q.splice(0, bestIdx);
+    if (best) {
+      unitPosDisplayed[id] = { lat: best.lat, lng: best.lng };
+      return L.latLng(best.lat, best.lng);
+    }
+    if (unitPosDisplayed[id]) {
+      return L.latLng(unitPosDisplayed[id].lat, unitPosDisplayed[id].lng);
+    }
+    if (existingMarker) return existingMarker.getLatLng();
+    unitPosDisplayed[id] = { lat: liveLatlng.lat, lng: liveLatlng.lng };
+    return liveLatlng;
+  }
+
+  function buildDotIcon(callSign, color, size, labelPx) {
+    var d = Math.max(6, Math.round(size * 0.7));
+    var safeColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#22c55e';
+    var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    var w = Math.max(d + 4, 48);
+    var h = d + 4 + Math.round(labelPx) + 4;
+    return L.divIcon({
+      className: 'atak-unit-dot-marker',
+      html: '<div class="atak-unit-dot-wrap">' +
+        '<span class="atak-unit-dot" style="width:' + d + 'px;height:' + d + 'px;background:' + safeColor + ';"></span>' +
+        '<span class="atak-unit-dot-label">' + label + '</span>' +
+        '</div>',
+      iconSize: [w, h],
+      iconAnchor: [w / 2, d / 2 + 2],
+    });
+  }
+
   function refreshUnitMarkerIcons() {
     Object.keys(unitsById).forEach(function (k) {
       if (unitsById[k]) unitsById[k]._atakIconSig = '';
     });
     if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
       setUnitsMarkers(window.ATAKUnits.getUnits());
+    } else if (lastUnitsListForMap) {
+      setUnitsMarkers(lastUnitsListForMap);
     }
   }
 
-  function bindUnitMarkerPriorityUi() {
+  function syncDisplayPrefsUi() {
+    var p = getDisplayPrefs();
+    var styleEl = document.getElementById('atak-unit-style-mode');
+    if (styleEl) styleEl.value = p.styleMode;
+    var iconEl = document.getElementById('atak-unit-icon-size');
+    var iconVal = document.getElementById('atak-unit-icon-size-val');
+    if (iconEl) {
+      iconEl.value = String(p.iconSize);
+      iconEl.setAttribute('aria-valuenow', String(p.iconSize));
+    }
+    if (iconVal) iconVal.textContent = String(p.iconSize);
+    var labelEl = document.getElementById('atak-unit-label-size');
+    var labelVal = document.getElementById('atak-unit-label-size-val');
+    if (labelEl) {
+      labelEl.value = String(p.labelSize);
+      labelEl.setAttribute('aria-valuenow', String(p.labelSize));
+    }
+    if (labelVal) labelVal.textContent = String(p.labelSize);
+    var ftEl = document.getElementById('atak-unit-ft-frame');
+    if (ftEl) ftEl.checked = !!p.showFtFrame;
+    var delayEn = document.getElementById('atak-pos-delay-enabled');
+    var delaySec = document.getElementById('atak-pos-delay-sec');
+    var delayVal = document.getElementById('atak-pos-delay-sec-val');
+    if (delayEn) delayEn.checked = !!p.positionDelayEnabled;
+    if (delaySec) {
+      delaySec.value = String(p.positionDelayMs / 1000);
+      delaySec.disabled = !p.positionDelayEnabled;
+      delaySec.setAttribute('aria-valuenow', String(p.positionDelayMs / 1000));
+    }
+    if (delayVal) delayVal.textContent = (p.positionDelayMs / 1000) + ' s';
+    var lossEn = document.getElementById('atak-pos-loss-enabled');
+    var lossPct = document.getElementById('atak-pos-loss-pct');
+    var lossVal = document.getElementById('atak-pos-loss-pct-val');
+    if (lossEn) lossEn.checked = !!p.packetLossEnabled;
+    if (lossPct) {
+      lossPct.value = String(p.packetLossPercent);
+      lossPct.disabled = !p.packetLossEnabled;
+      lossPct.setAttribute('aria-valuenow', String(p.packetLossPercent));
+    }
+    if (lossVal) lossVal.textContent = p.packetLossPercent + ' %';
+    var pri = document.getElementById('atak-unit-marker-priority');
+    if (pri) {
+      pri.value = getUnitMarkerPriority();
+      pri.disabled = p.styleMode !== 'nato';
+    }
+  }
+
+  function bindDisplayPrefsUi() {
+    var root = document.getElementById('atak-display-prefs');
+    if (!root || root._atakDisplayBound) return;
+    root._atakDisplayBound = true;
+    syncDisplayPrefsUi();
+    applyDisplayPrefsToMapDom();
+    ensurePosSimFlushTimer();
+
     var select = document.getElementById('atak-unit-marker-priority');
-    if (!select || select._atakBound) return;
-    select._atakBound = true;
-    select.value = getUnitMarkerPriority();
-    select.addEventListener('change', function () {
-      setUnitMarkerPriority(select.value);
-    });
+    if (select && !select._atakBound) {
+      select._atakBound = true;
+      select.addEventListener('change', function () {
+        setUnitMarkerPriority(select.value);
+      });
+    }
+
+    function onStyleChange() {
+      var el = document.getElementById('atak-unit-style-mode');
+      if (!el) return;
+      patchDisplayPrefs({ styleMode: el.value });
+      syncDisplayPrefsUi();
+    }
+    var styleEl = document.getElementById('atak-unit-style-mode');
+    if (styleEl) styleEl.addEventListener('change', onStyleChange);
+
+    function onIconSize() {
+      var el = document.getElementById('atak-unit-icon-size');
+      if (!el) return;
+      var n = parseInt(el.value, 10);
+      patchDisplayPrefs({ iconSize: n });
+      syncDisplayPrefsUi();
+    }
+    var iconEl = document.getElementById('atak-unit-icon-size');
+    if (iconEl) {
+      iconEl.addEventListener('input', onIconSize);
+      iconEl.addEventListener('change', onIconSize);
+    }
+
+    function onLabelSize() {
+      var el = document.getElementById('atak-unit-label-size');
+      if (!el) return;
+      var n = parseInt(el.value, 10);
+      patchDisplayPrefs({ labelSize: n });
+      syncDisplayPrefsUi();
+    }
+    var labelEl = document.getElementById('atak-unit-label-size');
+    if (labelEl) {
+      labelEl.addEventListener('input', onLabelSize);
+      labelEl.addEventListener('change', onLabelSize);
+    }
+
+    var ftEl = document.getElementById('atak-unit-ft-frame');
+    if (ftEl) {
+      ftEl.addEventListener('change', function () {
+        patchDisplayPrefs({ showFtFrame: !!ftEl.checked });
+      });
+    }
+
+    var delayEn = document.getElementById('atak-pos-delay-enabled');
+    if (delayEn) {
+      delayEn.addEventListener('change', function () {
+        patchDisplayPrefs({ positionDelayEnabled: !!delayEn.checked });
+        syncDisplayPrefsUi();
+      });
+    }
+    function onDelaySec() {
+      var el = document.getElementById('atak-pos-delay-sec');
+      if (!el) return;
+      var sec = parseFloat(el.value);
+      patchDisplayPrefs({ positionDelayMs: Math.round(sec * 1000) });
+      syncDisplayPrefsUi();
+    }
+    var delaySec = document.getElementById('atak-pos-delay-sec');
+    if (delaySec) {
+      delaySec.addEventListener('input', onDelaySec);
+      delaySec.addEventListener('change', onDelaySec);
+    }
+
+    var lossEn = document.getElementById('atak-pos-loss-enabled');
+    if (lossEn) {
+      lossEn.addEventListener('change', function () {
+        patchDisplayPrefs({ packetLossEnabled: !!lossEn.checked });
+        syncDisplayPrefsUi();
+      });
+    }
+    function onLossPct() {
+      var el = document.getElementById('atak-pos-loss-pct');
+      if (!el) return;
+      patchDisplayPrefs({ packetLossPercent: parseInt(el.value, 10) });
+      syncDisplayPrefsUi();
+    }
+    var lossPct = document.getElementById('atak-pos-loss-pct');
+    if (lossPct) {
+      lossPct.addEventListener('input', onLossPct);
+      lossPct.addEventListener('change', onLossPct);
+    }
   }
 
   function buildConfigFromAtakMapConfig(raw) {
@@ -130,6 +454,12 @@ window.ATAKMap = (function () {
     unitsById = {};
     baseTileLayer = null;
     tileFailCount = 0;
+    if (posSimFlushTimer) {
+      clearInterval(posSimFlushTimer);
+      posSimFlushTimer = null;
+    }
+    clearPosSimState();
+    lastUnitsListForMap = null;
   }
 
   function init(mapId) {
@@ -226,6 +556,8 @@ window.ATAKMap = (function () {
     }
 
     window.ATAKMap._map = map;
+    applyDisplayPrefsToMapDom();
+    ensurePosSimFlushTimer();
     try {
       window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map, mapId: mapId } }));
     } catch (e) {}
@@ -885,6 +1217,9 @@ window.ATAKMap = (function () {
   function setUnitsMarkers(list) {
     if (!map) return;
     if (!unitsLayer) unitsLayer = L.layerGroup().addTo(map);
+    lastUnitsListForMap = Array.isArray(list) ? list : [];
+    applyDisplayPrefsToMapDom();
+    var prefs = getDisplayPrefs();
     var nato = window.NatoSidcIcons;
     var seen = {};
     var ORIGIN_EPS = 0.5;
@@ -913,7 +1248,9 @@ window.ATAKMap = (function () {
       if (!isValidPos(x, y)) return;
       seen[id] = true;
       var applied = applyOffset(y, x);
-      var latlng = L.latLng(applied[0], applied[1]);
+      var liveLatlng = L.latLng(applied[0], applied[1]);
+      var existing = unitsById[id];
+      var latlng = resolveSimulatedLatLng(id, liveLatlng, existing);
       var extra = {};
       try {
         if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');
@@ -947,8 +1284,15 @@ window.ATAKMap = (function () {
         : null;
       var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
       var markerPriority = getUnitMarkerPriority();
-      var preferAvatar = markerPriority === 'avatar' && profile && profile.avatarUrl;
+      var preferAvatar = prefs.styleMode === 'nato' && markerPriority === 'avatar' && profile && profile.avatarUrl;
+      var ftColor = String(u.fire_team_color || '').trim();
+      var safeFt = ftColor.replace(/[^#A-Fa-f0-9]/g, '');
+      if (!/^#[0-9A-Fa-f]{6}$/.test(safeFt)) safeFt = '';
       var iconSig = [
+        prefs.styleMode,
+        prefs.iconSize,
+        prefs.labelSize,
+        prefs.showFtFrame ? '1' : '0',
         markerPriority,
         aff, roleText, health, healthClass, u.call_sign || '', headingRounded,
         preferAvatar ? profile.avatarUrl : '',
@@ -957,29 +1301,32 @@ window.ATAKMap = (function () {
         radioCh,
         onMonNet ? '1' : '0',
         u.fire_team_id || '',
-        u.fire_team_color || ''
+        safeFt
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
-      var existing = unitsById[id];
       if (existing && existing._atakIconSig === iconSig && existing._atakPosSig === posSig) {
         existing._atakUnit = u;
         return;
       }
       var icon = null;
       if (!existing || existing._atakIconSig !== iconSig) {
-        if (preferAvatar) {
+        if (prefs.styleMode === 'dot' || prefs.styleMode === 'team_dot') {
+          var dotColor = prefs.styleMode === 'team_dot' && safeFt ? safeFt : '#22c55e';
+          icon = buildDotIcon(u.call_sign || '', dotColor, prefs.iconSize, prefs.labelSize);
+        } else if (preferAvatar) {
+          var av = Math.max(12, Math.round(prefs.iconSize));
           icon = L.divIcon({
             className: 'atak-unit-avatar-marker' +
               (emitting ? ' atak-unit-avatar-marker--emit' : '') +
               (onMonNet ? ' atak-unit-avatar-marker--listen' : ''),
             html: '<div class="atak-unit-avatar-marker__inner">' +
-              '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt=""/>' +
+              '<img src="' + String(profile.avatarUrl).replace(/"/g, '&quot;') + '" alt="" style="width:' + av + 'px;height:' + av + 'px;"/>' +
               (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : '') +
               (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '') +
               '<span class="atak-unit-avatar-marker__label">' + String(u.call_sign || '').slice(0, 12).replace(/</g, '&lt;') + '</span>' +
               '</div>',
-            iconSize: [32, 36],
-            iconAnchor: [16, 14],
+            iconSize: [Math.max(av + 8, 48), av + 8 + prefs.labelSize],
+            iconAnchor: [Math.max(av + 8, 48) / 2, av / 2],
           });
         } else {
           var iconOpts = {
@@ -989,7 +1336,7 @@ window.ATAKMap = (function () {
             callSign: u.call_sign || '',
             heading: headingRounded === '' ? u.heading : headingRounded,
             showLabel: true,
-            size: 16,
+            size: prefs.iconSize,
             health: health,
             className: healthClass,
             emitting: emitting,
@@ -999,19 +1346,15 @@ window.ATAKMap = (function () {
             ? nato.leafletDivIcon(L, iconOpts)
             : L.divIcon({
                 className: 'atak-unit-fallback ' + healthClass,
-                html: '<span style="background:#3b82f6;color:#fff;padding:1px 4px;font-size:8px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
+                html: '<span style="background:#3b82f6;color:#fff;padding:1px 4px;font-size:' + prefs.labelSize + 'px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
                   (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : ''),
                 iconSize: [56, 20],
                 iconAnchor: [28, 8],
               });
         }
-        var ftColor = String(u.fire_team_color || '').trim();
-        if (ftColor && icon && icon.options) {
-          var safeFt = ftColor.replace(/[^#A-Fa-f0-9]/g, '');
-          if (/^#[0-9A-Fa-f]{6}$/.test(safeFt)) {
-            icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
-            icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
-          }
+        if (prefs.showFtFrame && safeFt && prefs.styleMode === 'nato' && icon && icon.options) {
+          icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
+          icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
         }
       }
       if (!existing) {
@@ -1046,6 +1389,9 @@ window.ATAKMap = (function () {
       if (!seen[k]) {
         unitsLayer.removeLayer(unitsById[k]);
         delete unitsById[k];
+        delete unitPosQueues[k];
+        delete unitPosDisplayed[k];
+        delete unitPosLiveSeen[k];
       }
     });
   }
@@ -1120,9 +1466,9 @@ window.ATAKMap = (function () {
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindUnitMarkerPriorityUi);
+    document.addEventListener('DOMContentLoaded', bindDisplayPrefsUi);
   } else {
-    bindUnitMarkerPriorityUi();
+    bindDisplayPrefsUi();
   }
 
   return {
@@ -1147,6 +1493,8 @@ window.ATAKMap = (function () {
     setUnitsMarkers: setUnitsMarkers,
     getUnitMarkerPriority: getUnitMarkerPriority,
     setUnitMarkerPriority: setUnitMarkerPriority,
+    getDisplayPrefs: getDisplayPrefs,
+    patchDisplayPrefs: patchDisplayPrefs,
     refreshUnitMarkerIcons: refreshUnitMarkerIcons,
     removeMarker: removeMarker,
     addOrUpdateLayer: addOrUpdateLayer,

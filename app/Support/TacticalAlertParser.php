@@ -40,62 +40,67 @@ final class TacticalAlertParser
      */
     public static function parse(?string $body): ?array
     {
-        $body = trim((string) $body);
-        if ($body === '') {
-            return null;
-        }
-
-        $body = self::stripCommsPrefix($body);
-        $upper = mb_strtoupper($body);
-
-        if (!str_starts_with($upper, 'ALERTE TACTIQUE') && !str_starts_with($upper, 'ALERTE TACTIQUE|')) {
-            // Réglages d’affichage camps (pas une alerte, mais même canal)
-            return null;
-        }
-
-        $parts = array_map('trim', explode('|', $body));
-        // [0]=préfixe [1]=kind [2]=callsign [3]=grid [4]=x [5]=y [6]=summary…
-        $kindRaw = strtoupper((string) ($parts[1] ?? 'TIC'));
-        $kind = self::normalizeKind($kindRaw);
-        $callSign = (string) ($parts[2] ?? '');
-        $grid = (string) ($parts[3] ?? '');
-        $posX = self::parseCoord($parts[4] ?? null);
-        $posY = self::parseCoord($parts[5] ?? null);
-        $summary = trim(implode(' — ', array_slice($parts, 6)));
-        if ($summary === '') {
-            $summary = self::kindLabelFr($kind) . ($callSign !== '' ? ' — ' . $callSign : '');
-            if ($grid !== '') {
-                $summary .= ' — Grille ' . $grid;
+        try {
+            $body = trim((string) $body);
+            if ($body === '') {
+                return null;
             }
-        }
 
-        $salute = null;
-        if ($kind === 'salute') {
-            $salute = self::parseSaluteFields(array_slice($parts, 6));
-            if ($salute !== null) {
-                $built = self::formatSaluteSummary($salute);
-                if ($built !== '') {
-                    $summary = $built;
+            $body = self::stripCommsPrefix($body);
+            $upper = mb_strtoupper($body);
+
+            if (!str_starts_with($upper, 'ALERTE TACTIQUE') && !str_starts_with($upper, 'ALERTE TACTIQUE|')) {
+                // Réglages d’affichage camps (pas une alerte, mais même canal)
+                return null;
+            }
+
+            $parts = array_map('trim', explode('|', $body));
+            // [0]=préfixe [1]=kind [2]=callsign [3]=grid [4]=x [5]=y [6]=summary…
+            $kindRaw = strtoupper((string) ($parts[1] ?? 'TIC'));
+            $kind = self::normalizeKind($kindRaw);
+            $callSign = (string) ($parts[2] ?? '');
+            $grid = (string) ($parts[3] ?? '');
+            $posX = self::parseCoord($parts[4] ?? null);
+            $posY = self::parseCoord($parts[5] ?? null);
+            $summary = trim(implode(' — ', array_slice($parts, 6)));
+            if ($summary === '') {
+                $summary = self::kindLabelFr($kind) . ($callSign !== '' ? ' — ' . $callSign : '');
+                if ($grid !== '') {
+                    $summary .= ' — Grille ' . $grid;
                 }
             }
-        }
 
-        $out = [
-            'is_tactical' => true,
-            'kind' => $kind,
-            'kind_label' => self::kindLabelFr($kind),
-            'call_sign' => $callSign,
-            'grid' => $grid,
-            'pos_x' => $posX,
-            'pos_y' => $posY,
-            'summary' => $summary,
-            'severity' => self::severityForKind($kind),
-        ];
-        if ($salute !== null) {
-            $out['salute'] = $salute;
-        }
+            $salute = null;
+            if ($kind === 'salute') {
+                $salute = self::parseSaluteFields(array_slice($parts, 6));
+                if ($salute !== null) {
+                    $built = self::formatSaluteSummary($salute);
+                    if ($built !== '') {
+                        $summary = $built;
+                    }
+                }
+            }
 
-        return $out;
+            $out = [
+                'is_tactical' => true,
+                'kind' => $kind,
+                'kind_label' => self::kindLabelFr($kind),
+                'call_sign' => $callSign,
+                'grid' => $grid,
+                'pos_x' => $posX,
+                'pos_y' => $posY,
+                'summary' => $summary,
+                'severity' => self::severityForKind($kind),
+            ];
+            if ($salute !== null) {
+                $out['salute'] = $salute;
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            // Ligne chat malformée / regex invalide : ne pas faire échouer l’endpoint.
+            return null;
+        }
     }
 
     /**
@@ -149,7 +154,8 @@ final class TacticalAlertParser
             if ($part === '') {
                 continue;
             }
-            if (preg_match('/^([A-Za-zÀ-ü]+)\s*[:=]\s*(.*)$/u', $part, $m)) {
+            // Délimiteur ~ pour éviter toute fermeture précoce sur « / ».
+            if (preg_match('~^([\p{L}]+)\s*[:=]\s*(.*)$~u', $part, $m) === 1) {
                 $k = mb_strtoupper(trim($m[1]));
                 $v = trim($m[2]);
                 if (isset($keyMap[$k])) {
@@ -161,7 +167,7 @@ final class TacticalAlertParser
         // Ancien gabarit brut « Taille — Activité — … » sans valeurs → pas de structure.
         if (!$found) {
             $joined = implode(' — ', $parts);
-            if (preg_match('/^Taille\s*[—\-]/s*Activit/iu', $joined)) {
+            if (preg_match('~^Taille\s*[-\x{2014}]+\s*Activit~iu', $joined) === 1) {
                 return [
                     'size' => '',
                     'activity' => '',
@@ -340,10 +346,10 @@ final class TacticalAlertParser
     private static function stripCommsPrefix(string $body): string
     {
         if (preg_match(
-            '/^\[\d{1,2}:\d{2}:\d{2}\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\s*([\s\S]+)$/u',
+            '~^\[\d{1,2}:\d{2}:\d{2}\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\[[A-Za-z0-9_]+\]\s*([\s\S]+)$~u',
             $body,
             $m
-        )) {
+        ) === 1) {
             return trim((string) ($m[1] ?? $body));
         }
 

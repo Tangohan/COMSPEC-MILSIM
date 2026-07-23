@@ -158,16 +158,22 @@ window.ATAKUnitPopup = (function () {
     var grid = formatGrid(u, extra);
     var updated = formatTimeAgo(u.updated_at || extra.updated_at || u.last_update);
     var parent = extra.parent || extra.parent_callsign || extra.group || extra.groupe || '';
-    var radio = extra.radio_freq != null && extra.radio_freq !== ''
-      ? String(extra.radio_freq)
-      : (extra.radio != null && extra.radio !== '' ? String(extra.radio) : '');
+    var radio = '';
+    if (extra.toc_radio != null && String(extra.toc_radio).trim() !== '') {
+      radio = String(extra.toc_radio).trim();
+    } else if (extra.radio_freq != null && extra.radio_freq !== '') {
+      radio = String(extra.radio_freq);
+    } else if (extra.radio != null && extra.radio !== '') {
+      radio = String(extra.radio);
+    }
     var fuel = extra.fuel !== undefined && extra.fuel !== null && extra.fuel !== ''
       ? String(extra.fuel) + (String(extra.fuel).indexOf('%') >= 0 ? '' : ' %')
       : '';
     var ammo = extra.ammo != null && extra.ammo !== '' && String(extra.ammo).toLowerCase() !== 'n/a'
       ? String(extra.ammo)
       : '';
-    var notes = extra.notes || extra.note || '';
+    var notes = extra.toc_note || extra.notes || extra.note || '';
+    var vehicle = extra.toc_vehicle != null ? String(extra.toc_vehicle).trim() : '';
     var side = extra.side || u.side || '';
 
     var tone = statusTone(statusRaw) || healthTone(healthRaw);
@@ -182,7 +188,8 @@ window.ATAKUnitPopup = (function () {
       row('Groupe', parent) +
       row('Coordonnées', grid) +
       row('Cap', heading) +
-      row('Radio', radio) +
+      row('Fréquence radio', radio) +
+      (vehicle ? row('Véhicule', vehicle) : '') +
       (extra.radio_channel != null && String(extra.radio_channel) !== ''
         ? row('Canal', String(extra.radio_channel))
         : '') +

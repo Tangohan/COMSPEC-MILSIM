@@ -35,8 +35,8 @@ window.ATAKLiaisonPage = (function () {
   function typeClass(t) {
     return (window.ATAKActivity && ATAKActivity.typeClass) ? ATAKActivity.typeClass(t) : '';
   }
-  function typeLabelFr(t) {
-    return (window.ATAKActivity && ATAKActivity.typeLabelFr) ? ATAKActivity.typeLabelFr(t) : 'Activité';
+  function typeLabelFr(t, ev) {
+    return (window.ATAKActivity && ATAKActivity.typeLabelFr) ? ATAKActivity.typeLabelFr(t, ev) : 'Activité';
   }
   function formatTime(iso) {
     return (window.ATAKActivity && ATAKActivity.formatTime) ? ATAKActivity.formatTime(iso) : '—';
@@ -95,7 +95,9 @@ window.ATAKLiaisonPage = (function () {
     li.className = 'atak-activity-item ' + typeClass(type);
     if (ev.archived) li.className += ' atak-activity-item--archived';
     li.setAttribute('data-id', String(ev.id || ''));
-    var actor = ev.actor ? '<span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span>' : '';
+    var actorHtml = ev.actor
+      ? '<p class="atak-activity-actor-line"><span class="atak-activity-actor-k">Par</span> <span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span></p>'
+      : '';
     var archivedTag = ev.archived
       ? '<span class="atak-activity-archived-tag">Archivé</span>'
       : '';
@@ -103,14 +105,14 @@ window.ATAKLiaisonPage = (function () {
       '<span class="atak-activity-rail" aria-hidden="true"></span>' +
       '<div class="atak-activity-body">' +
         '<div class="atak-activity-top">' +
-          '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + '</span>' +
+          '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type, ev)) + archivedTag + '</span>' +
           '<div class="atak-activity-top-actions">' +
             '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
-            '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Voir les détails" aria-label="Voir les détails de l’événement">i</button>' +
+            '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Ouvrir la fiche" aria-label="Ouvrir la fiche de l’événement">Fiche</button>' +
           '</div>' +
         '</div>' +
-        '<div class="atak-activity-label">' + escapeHtml(ev.label || '') + '</div>' +
-        actor + archivedTag +
+        '<p class="atak-activity-label">' + escapeHtml(ev.label || '') + '</p>' +
+        actorHtml +
       '</div>';
     var btn = li.querySelector('[data-activity-info]');
     if (btn) {
@@ -142,7 +144,15 @@ window.ATAKLiaisonPage = (function () {
       if (day !== lastDay) {
         var h = document.createElement('li');
         h.className = 'atak-activity-day';
-        h.innerHTML = '<span class="atak-activity-day-label">' + escapeHtml(dayLabelFr(ev.at)) + '</span>';
+        var dayKey = dayKeyFromIso(ev.at);
+        var todayKey = (function () {
+          var d = new Date();
+          return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        })();
+        var hint = dayKey === todayKey
+          ? '<span class="atak-activity-day-hint">Derniers événements de la session</span>'
+          : '<span class="atak-activity-day-hint">Événements de cette journée</span>';
+        h.innerHTML = '<span class="atak-activity-day-label">' + escapeHtml(dayLabelFr(ev.at)) + '</span>' + hint;
         frag.appendChild(h);
         lastDay = day;
       }

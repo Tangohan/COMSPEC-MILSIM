@@ -7,12 +7,15 @@ window.ATAKMedicalAlerts = (function () {
   var pollTimer = null;
   var lastData = null;
   var LS_PREFIX = 'atak_medical_dismissed_v1_';
+  var LS_FILTER = 'atak_medical_filter_v1';
   var boundUi = false;
   var ACTIVE_WINDOW_MS = 30 * 60 * 1000;
   // Toast/son : uniquement pour une alerte réellement fraîche (pas un vieux message de tchat
   // rejoué par un rechargement de page ou un resync après reconnexion).
   var TOAST_MAX_AGE_MS = 2 * 60 * 1000;
   var canTriageCached = null;
+  /** Filtre onglets : urgences | suivi | autres */
+  var activeFilter = 'urgences';
 
   var TRIAGE_OPTIONS = [
     { value: 'a_secourir', label: 'À secourir' },
@@ -200,6 +203,150 @@ window.ATAKMedicalAlerts = (function () {
     if (k === 'wounded' || k === 'injured' || k === 'medical_alert') return 40;
     if (k === 'wia_report') return 30;
     return 10;
+  }
+
+  /**
+   * Catégorie d’affichage (onglets Assistances).
+   * - urgences : arrêt cardiaque / hors combat
+   * - suivi : au sol / inconscient (détections auto souvent bruyantes)
+   * - autres : bilans WIA, blessés, reste
+   */
+  function alertCategory(a) {
+    var k = String((a && a.kind) || '').toLowerCase();
+    if (k === 'cardiac_arrest' || k === 'cardiac-arrest' || k === 'death' || k === 'dead' || k === 'kia') {
+      return 'urgences';
+    }
+    if (k === 'unconscious' || k === 'incapacitated' || k === 'down') {
+      return 'suivi';
+    }
+    var label = String((a && (a.label || a.summary || a.body)) || '').toLowerCase();
+    if (
+      label.indexOf('arrêt cardiaque') >= 0
+      || label.indexOf('arret cardiaque') >= 0
+      || label.indexOf('rythme à zéro') >= 0
+      || label.indexOf('rythme a zero') >= 0
+      || /\bkia\b/.test(label)
+      || label.indexOf('hors combat') >= 0
+    ) {
+      return 'urgences';
+    }
+    if (label.indexOf('inconscient') >= 0 || label.indexOf('au sol') >= 0 || label.indexOf('immobile') >= 0) {
+      return 'suivi';
+    }
+    return 'autres';
+  }
+
+  function unitCategory(u) {
+    var h = String((u && (u.health || u.health_label)) || '').toLowerCase();
+    if (
+      h === 'cardiac_arrest' || h === 'cardiac-arrest' || h === 'dead' || h === 'kia'
+      || h.indexOf('arrêt cardiaque') >= 0 || h.indexOf('arret cardiaque') >= 0
+      || h.indexOf('hors combat') >= 0
+    ) {
+      return 'urgences';
+    }
+    if (
+      h === 'unconscious' || h === 'incapacitated' || h === 'down' || h === 'critical'
+      || h.indexOf('inconscient') >= 0 || h.indexOf('au sol') >= 0
+    ) {
+      return 'suivi';
+    }
+    return 'autres';
+  }
+
+  function readStoredFilter() {
+    try {
+      var v = localStorage.getItem(LS_FILTER);
+      if (v === 'urgences' || v === 'suivi' || v === 'autres') return v;
+    } catch (e) { /* ignore */ }
+    return 'urgences';
+  }
+
+  function writeStoredFilter(f) {
+    try { localStorage.setItem(LS_FILTER, f); } catch (e) { /* ignore */ }
+  }
+
+  function applyCategoryFilter(data, filter) {
+    var f = filter || activeFilter || 'urgences';
+    var alerts = ((data && data.alerts) || []).filter(function (a) {
+      return alertCategory(a) === f;
+    });
+    var units = ((data && data.criticalUnits) || []).filter(function (u) {
+      return unitCategory(u) === f;
+    });
+    var emergency = 0;
+    alerts.forEach(function (a) {
+      if ((a.severity || '') === 'critical' && !(a.triage && a.triage.is_resolved)) emergency++;
+    });
+    units.forEach(function (u) {
+      if ((u.severity || '') === 'critical') emergency++;
+    });
+    return {
+      mapId: data && data.mapId,
+      alerts: alerts,
+      criticalUnits: units,
+      counts: {
+        alerts: alerts.length,
+        criticalUnits: units.length,
+        emergency: emergency
+      },
+      can_triage: !!(data && data.can_triage),
+      triage_statuses: (data && data.triage_statuses) || TRIAGE_OPTIONS,
+      _raw: data && data._raw,
+      _filter: f,
+      _categoryCounts: countByCategory(data)
+    };
+  }
+
+  function countByCategory(data) {
+    var out = { urgences: 0, suivi: 0, autres: 0 };
+    ((data && data.alerts) || []).forEach(function (a) {
+      var c = alertCategory(a);
+      if (out[c] != null) out[c]++;
+    });
+    ((data && data.criticalUnits) || []).forEach(function (u) {
+      var c = unitCategory(u);
+      if (out[c] != null) out[c]++;
+    });
+    return out;
+  }
+
+  function updateSubtabUi(counts) {
+    var root = document.getElementById('atak-medical-subtabs');
+    if (!root) return;
+    root.querySelectorAll('[data-medical-filter]').forEach(function (btn) {
+      var f = btn.getAttribute('data-medical-filter') || '';
+      var on = f === activeFilter;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    var c = counts || {};
+    ['urgences', 'suivi', 'autres'].forEach(function (key) {
+      var el = root.querySelector('[data-medical-count="' + key + '"]');
+      if (!el) return;
+      var n = Number(c[key]) || 0;
+      el.textContent = n > 0 ? String(n) : '';
+      el.hidden = n <= 0;
+    });
+  }
+
+  function emptyStateForFilter(filter) {
+    if (filter === 'suivi') {
+      return '<div class="atak-empty-state atak-medical-empty">' +
+        '<div class="atak-empty-state-icon" aria-hidden="true">✚</div>' +
+        '<p class="atak-empty-state-title">Aucune détection au sol</p>' +
+        '<p class="atak-empty-state-text">Les détections automatiques « au sol / inconscient » (parfois de faux positifs) s’affichent ici pour vérification.</p></div>';
+    }
+    if (filter === 'autres') {
+      return '<div class="atak-empty-state atak-medical-empty">' +
+        '<div class="atak-empty-state-icon" aria-hidden="true">✚</div>' +
+        '<p class="atak-empty-state-title">Aucun bilan</p>' +
+        '<p class="atak-empty-state-text">Les bilans de santé et les autres signalements médicaux apparaîtront ici.</p></div>';
+    }
+    return '<div class="atak-empty-state atak-medical-empty">' +
+      '<div class="atak-empty-state-icon" aria-hidden="true">✚</div>' +
+      '<p class="atak-empty-state-title">Aucune urgence</p>' +
+      '<p class="atak-empty-state-text">Les arrêts cardiaques et urgences confirmées s’afficheront ici.</p></div>';
   }
 
   /** Une carte active par indicatif — conserve la sévérité max. */
@@ -589,6 +736,16 @@ window.ATAKMedicalAlerts = (function () {
       '</div>';
   }
 
+  function buildTriageSelectHtml(alertId, status) {
+    return '<select class="atak-medical-triage-select" data-medical-action="triage-select" data-alert-id="' +
+      escapeHtml(String(alertId)) + '" aria-label="Statut de secours" title="Statut de secours">' +
+      TRIAGE_OPTIONS.map(function (o) {
+        var sel = status === o.value ? ' selected' : '';
+        return '<option value="' + escapeHtml(o.value) + '"' + sel + '>' + escapeHtml(o.label) + '</option>';
+      }).join('') +
+      '</select>';
+  }
+
   function renderList(data) {
     var list = document.getElementById('atak-medical-list')
       || document.getElementById('overwatch-medical-list');
@@ -596,12 +753,11 @@ window.ATAKMedicalAlerts = (function () {
     if (!list) return;
     var alerts = (data && data.alerts) || [];
     var units = (data && data.criticalUnits) || [];
+    var filter = (data && data._filter) || activeFilter;
     updateClearAllVisibility(data);
+    updateSubtabUi((data && data._categoryCounts) || countByCategory(data));
     if (!alerts.length && !units.length) {
-      list.innerHTML = '<div class="atak-empty-state atak-medical-empty">' +
-        '<div class="atak-empty-state-icon" aria-hidden="true">✚</div>' +
-        '<p class="atak-empty-state-title">Aucune assistance</p>' +
-        '<p class="atak-empty-state-text">Les demandes médicales en cours s’afficheront ici. Les alertes masquées restent dans le journal Liaison et le tchat.</p></div>';
+      list.innerHTML = emptyStateForFilter(filter);
       return;
     }
     var html = '';
@@ -609,58 +765,92 @@ window.ATAKMedicalAlerts = (function () {
       html += '<div class="atak-medical-section-title">Unités à secourir</div>';
       html += units.map(function (u) {
         var sev = u.severity === 'critical' ? 'critical' : 'attention';
-        var uk = escapeHtml(unitKey(u));
-        return '<div class="atak-medical-item atak-medical-' + sev + '" data-callsign="' + escapeHtml(u.call_sign || '') + '">' +
-          '<div class="atak-medical-item-main">' +
-          '<div class="atak-medical-item-title">' + escapeHtml(u.call_sign || '—') + '</div>' +
-          '<div class="atak-medical-item-label">' + escapeHtml(u.health_label || kindLabelFr(u.health)) + '</div>' +
-          (u.grid_ref ? '<div class="atak-medical-item-meta">Grille ' + escapeHtml(u.grid_ref) + '</div>' : '') +
-          '</div>' +
+        var ukRaw = unitKey(u);
+        var uk = escapeHtml(ukRaw);
+        var healthLabel = escapeHtml(u.health_label || kindLabelFr(u.health));
+        var gridBit = u.grid_ref ? escapeHtml(u.grid_ref) : '';
+        var previewParts = [healthLabel];
+        if (gridBit) previewParts.push(gridBit);
+        return '<details class="atak-medical-item atak-medical-' + sev + '" data-callsign="' + escapeHtml(u.call_sign || '') + '"'
+          + ' data-atak-collapse="med-unit-' + uk + '" data-atak-collapse-default="0">' +
+          '<summary class="atak-medical-item-sum">' +
+          '<span class="atak-medical-item-sum-main">' +
+          '<span class="atak-medical-item-title">' + escapeHtml(u.call_sign || '—') + '</span>' +
+          '<span class="atak-medical-item-sum-preview">' + previewParts.join(' · ') + '</span>' +
+          '</span>' +
+          '<span class="atak-medical-item-side atak-medical-item-side--sum">' +
           '<button type="button" class="atak-medical-dismiss" data-medical-action="dismiss-unit" data-dismiss-key="' + uk + '" title="Masquer cette alerte" aria-label="Masquer cette alerte">✕</button>' +
-          '</div>';
+          '</span>' +
+          '</summary>' +
+          '<div class="atak-medical-item-body">' +
+          '<div class="atak-medical-item-meta">' + healthLabel + (gridBit ? ' · Grille ' + gridBit : '') + '</div>' +
+          '</div>' +
+          '</details>';
       }).join('');
     }
     if (alerts.length) {
-      html += '<div class="atak-medical-section-title">Alertes reçues</div>';
+      html += '<div class="atak-medical-section-title">' +
+        (filter === 'suivi' ? 'Détections automatiques' : (filter === 'autres' ? 'Bilans et signalements' : 'Alertes reçues')) +
+        '</div>';
       var allowTriage = canTriage() || !!(data && data.can_triage);
       html += alerts.slice().reverse().slice(0, 25).map(function (a) {
         var sev = a.severity === 'critical' ? 'critical' : (a.severity === 'attention' ? 'attention' : 'urgent');
         var t = a.created_at ? String(a.created_at).replace('T', ' ').substring(0, 19) : '';
-        var ak = escapeHtml(alertKey(a));
+        var akRaw = alertKey(a);
+        var ak = escapeHtml(akRaw);
         var status = triageStatusOf(a);
         var statusLabel = triageLabelOf(a);
-        var triageBtns = '';
         var alertId = a.id != null && a.id !== '' ? a.id : (a.chat_id != null ? a.chat_id : null);
+        var cs = a.call_sign ? String(a.call_sign) : '';
+        var title = escapeHtml(cs || kindLabelFr(a.kind));
+        var kindBit = escapeHtml(kindLabelFr(a.kind));
+        var detailLabel = escapeHtml(a.label || a.summary || '');
+        var gridBit = a.grid ? escapeHtml(a.grid) : '';
+        var previewParts = [];
+        if (cs) previewParts.push(kindBit);
+        if (gridBit) previewParts.push(gridBit);
+        var triageCtrl = '';
         if (allowTriage && alertId != null && alertId !== '') {
-          triageBtns = '<label class="atak-medical-triage-indicate">' +
-            '<span class="atak-medical-triage-indicate-label">Indiquer</span>' +
-            '<select class="atak-medical-triage-select" data-medical-action="triage-select" data-alert-id="' +
-            escapeHtml(String(alertId)) + '" aria-label="Indiquer le statut de secours">' +
-            TRIAGE_OPTIONS.map(function (o) {
-              var sel = status === o.value ? ' selected' : '';
-              return '<option value="' + escapeHtml(o.value) + '"' + sel + '>' + escapeHtml(o.label) + '</option>';
-            }).join('') +
-            '</select></label>';
+          triageCtrl = buildTriageSelectHtml(alertId, status);
+        } else {
+          triageCtrl = '<span class="atak-medical-triage-badge is-' + escapeHtml(status) + '">' + escapeHtml(statusLabel) + '</span>';
         }
-        return '<div class="atak-medical-item atak-medical-' + sev + '">' +
-          '<div class="atak-medical-item-main">' +
-          '<div class="atak-medical-item-title">' + escapeHtml(kindLabelFr(a.kind)) + (a.call_sign ? ' — ' + escapeHtml(a.call_sign) : '') + '</div>' +
-          '<div class="atak-medical-item-label">' + escapeHtml(a.label || a.summary || '') + '</div>' +
-          '<div class="atak-medical-item-meta">' + escapeHtml(t) + (a.grid ? ' · Grille ' + escapeHtml(a.grid) : '') + '</div>' +
-          '</div>' +
-          '<div class="atak-medical-item-side">' +
-          (triageBtns
-            ? triageBtns
-            : '<span class="atak-medical-triage-badge is-' + escapeHtml(status) + '">' + escapeHtml(statusLabel) + '</span>') +
+        // Évite de répéter le titre (indicatif) dans le détail si le libellé est redondant.
+        var showDetail = detailLabel && detailLabel !== title && detailLabel.indexOf(title) !== 0;
+        return '<details class="atak-medical-item atak-medical-' + sev + '"'
+          + ' data-atak-collapse="med-alert-' + ak + '" data-atak-collapse-default="0">' +
+          '<summary class="atak-medical-item-sum">' +
+          '<span class="atak-medical-item-sum-main">' +
+          '<span class="atak-medical-item-title">' + title + '</span>' +
+          (previewParts.length
+            ? '<span class="atak-medical-item-sum-preview">' + previewParts.join(' · ') + '</span>'
+            : '') +
+          '</span>' +
+          '<span class="atak-medical-item-side atak-medical-item-side--sum">' +
+          triageCtrl +
           '<button type="button" class="atak-medical-dismiss" data-medical-action="dismiss-alert" data-dismiss-key="' + ak + '" title="Masquer cette alerte" aria-label="Masquer cette alerte">✕</button>' +
+          '</span>' +
+          '</summary>' +
+          '<div class="atak-medical-item-body">' +
+          (showDetail ? '<div class="atak-medical-item-label">' + detailLabel + '</div>' : '') +
+          '<div class="atak-medical-item-meta">' +
+          (cs ? kindBit + (t || gridBit ? ' · ' : '') : '') +
+          escapeHtml(t) +
+          (gridBit ? (t || cs ? ' · ' : '') + 'Grille ' + gridBit : '') +
           '</div>' +
-          '</div>';
+          '</div>' +
+          '</details>';
       }).join('');
     }
     list.innerHTML = html;
+    if (window.ATAKCollapse && typeof window.ATAKCollapse.bind === 'function') {
+      window.ATAKCollapse.bind(list);
+    }
     list.querySelectorAll('[data-callsign]').forEach(function (el) {
       el.addEventListener('click', function (ev) {
         if (ev.target && ev.target.closest && ev.target.closest('[data-medical-action]')) return;
+        // Ne pas recentrer si l’utilisateur ne fait que déplier / replier la carte.
+        if (ev.target && ev.target.closest && ev.target.closest('summary')) return;
         var cs = el.getAttribute('data-callsign');
         if (!cs) return;
         if (typeof window.focusUnitByCallsign === 'function') {
@@ -679,18 +869,40 @@ window.ATAKMedicalAlerts = (function () {
 
   function apply(data) {
     lastData = data || { alerts: [], criticalUnits: [], counts: {} };
-    var visible = filterData(lastData);
+    var baseVisible = filterData(lastData);
+    var visible = applyCategoryFilter(baseVisible, activeFilter);
     var fp = JSON.stringify({
       a: (visible.alerts || []).map(function (x) { return x.id || x.summary; }),
       u: (visible.criticalUnits || []).map(function (x) { return (x.call_sign || '') + ':' + (x.health || ''); }),
-      e: (visible.counts && visible.counts.emergency) || 0
+      e: (visible.counts && visible.counts.emergency) || 0,
+      f: activeFilter,
+      c: visible._categoryCounts || {}
     });
     if (fp === lastFingerprint) return;
     var prev = lastFingerprint;
     lastFingerprint = fp;
-    renderBanner(visible);
+    // Bannière : urgences + au sol (pas les seuls bilans du filtre actif).
+    var bannerData = {
+      alerts: (baseVisible.alerts || []).filter(function (a) {
+        var c = alertCategory(a);
+        return c === 'urgences' || c === 'suivi';
+      }),
+      criticalUnits: (baseVisible.criticalUnits || []).filter(function (u) {
+        var c = unitCategory(u);
+        return c === 'urgences' || c === 'suivi';
+      }),
+      counts: { emergency: 0 }
+    };
+    bannerData.counts.emergency = bannerData.alerts.filter(function (a) {
+      return (a.severity || '') === 'critical';
+    }).length + bannerData.criticalUnits.filter(function (u) {
+      return (u.severity || '') === 'critical';
+    }).length;
+    renderBanner(bannerData);
     renderList(visible);
-    var alerts = visible.alerts || [];
+    // Toast : urgences critiques uniquement (évite le bruit « au sol »).
+    var toastPool = applyCategoryFilter(baseVisible, 'urgences');
+    var alerts = toastPool.alerts || [];
     // Toast dès qu’une nouvelle alerte critique apparaît (y compris 1er peuplement après vide).
     // Le son peut être coupé (silence / volume 0) : l’UI s’affiche quand même.
     if (alerts.length) {
@@ -718,7 +930,8 @@ window.ATAKMedicalAlerts = (function () {
     var badge = document.getElementById('atak-medical-tab-badge')
       || document.getElementById('overwatch-medical-tab-badge');
     if (badge) {
-      var n = (visible.counts && visible.counts.emergency) || 0;
+      var cat = countByCategory(baseVisible);
+      var n = (Number(cat.urgences) || 0) + (Number(cat.suivi) || 0);
       badge.textContent = n > 0 ? String(n) : '';
       badge.hidden = n <= 0;
     }
@@ -733,11 +946,14 @@ window.ATAKMedicalAlerts = (function () {
     var btn = ev.target && ev.target.closest ? ev.target.closest('[data-medical-action]') : null;
     if (!btn) return;
     var action = btn.getAttribute('data-medical-action');
-    // Le select « Indiquer » gère son propre change ; ignorer le click bullé.
-    if (action === 'triage-select') return;
+    // Le select de triage gère son propre change ; empêcher le repli/dépli de la carte.
+    if (action === 'triage-select') {
+      ev.stopPropagation();
+      return;
+    }
     ev.preventDefault();
     ev.stopPropagation();
-    var visible = filterData(lastData || {});
+    var visible = applyCategoryFilter(filterData(lastData || {}), activeFilter);
     if (action === 'triage') {
       var alertId = btn.getAttribute('data-alert-id') || '';
       var status = btn.getAttribute('data-triage-status') || '';
@@ -852,14 +1068,36 @@ window.ATAKMedicalAlerts = (function () {
   function bindUi() {
     if (boundUi) return;
     boundUi = true;
+    activeFilter = readStoredFilter();
     document.addEventListener('click', onDismissClick);
     document.addEventListener('change', onTriageSelectChange);
+    document.addEventListener('click', function (ev) {
+      var tab = ev.target && ev.target.closest
+        ? ev.target.closest('#atak-medical-subtabs [data-medical-filter]')
+        : null;
+      if (!tab) return;
+      ev.preventDefault();
+      var f = tab.getAttribute('data-medical-filter') || 'urgences';
+      if (f !== 'urgences' && f !== 'suivi' && f !== 'autres') f = 'urgences';
+      if (f === activeFilter) return;
+      activeFilter = f;
+      writeStoredFilter(f);
+      lastFingerprint = '';
+      refreshFromLast();
+    });
+    // Empêche le <details> de basculer quand on clique le select / ✕ dans le résumé.
+    document.addEventListener('mousedown', function (ev) {
+      var el = ev.target && ev.target.closest
+        ? ev.target.closest('[data-medical-action="triage-select"], .atak-medical-dismiss, .atak-medical-triage-select')
+        : null;
+      if (el) ev.stopPropagation();
+    }, true);
     var clearBtn = document.getElementById('atak-medical-clear-all');
     if (clearBtn && !clearBtn._atakBound) {
       clearBtn._atakBound = true;
       clearBtn.addEventListener('click', function () {
         if (!lastData) return;
-        var visible = filterData(lastData);
+        var visible = applyCategoryFilter(filterData(lastData), activeFilter);
         var n = (visible.alerts || []).length + (visible.criticalUnits || []).length;
         if (n <= 0) return;
         if (!window.confirm('Masquer toutes les alertes affichées ? Elles resteront consultables dans le journal Liaison et le tchat.')) {

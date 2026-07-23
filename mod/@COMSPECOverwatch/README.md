@@ -3,7 +3,7 @@
 Mod Arma 3 pour la liaison avec Athena (carte tactique / ATAK). Envoi de la position du joueur et outils terrain (messagerie, tablette, téléphone, ordres…).
 
 - Description Steam Workshop (BBCode prêt à coller) : [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md)
-- **Changelog** : [CHANGELOG.md](CHANGELOG.md) — version courante **1.1.5**
+- **Changelog** : [CHANGELOG.md](CHANGELOG.md) — version courante **1.1.7**
 - Crédits & sources (cTab, SIT, ctav-b2, etc.) : [CREDITS.md](CREDITS.md)
 - **Diffusion Workshop (checklist)** : [PACKAGING.md](PACKAGING.md)
 - **Sécurité / limites anti-copie** : [SECURITY.md](SECURITY.md)
@@ -22,6 +22,7 @@ Pour l’icône **Athena** dans cTab (inbox alertes/ordres/BDA/photos + envoi ra
 - Dual-send avec ATAK Enhanced (alertes, BDA, messages de groupe, photos) ; poll Athena → inbox cTab ; ordres C2 sans forcer la tablette Chromium si l’app est ouverte
 - Ponts lecture seule vers le navigateur : météo mission, contacts Drone Ops, marqueurs utilisateur cTab, itinéraires Route, plans HAHO/HALO, métadonnées Wave Relay / MPU-5
 - Chaque pont est un **module** activable / désactivable dans l’admin Athena (« Configuration ATAK »). Le jeu synchronise l’état ; l’app Athena cTab (onglet Modules / Journal modules) et la tablette (Apps → Modules & journal) affichent l’état et le journal des données.
+- **Connexion Athena** : icône sur l’écran **Desktop** du téléphone ATAK Enhanced (à côté du raccourci Elevation), bouton dans l’app Athena, et entrée Hub (touche K). Ouvre l’UI de liaison (code / Steam) avec barre de transmission + latence en ms. Dépend de `cTab_Android_dlg` (ATAK Enhanced / BCE) ; sans pack téléphone, utiliser K → Connexion Athena.
 
 Sans cTab/BCE, le cœur Overwatch (`main` + `connect`) fonctionne seul ; `atak_athena` ne se charge simplement pas.
 

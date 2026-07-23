@@ -18,18 +18,62 @@ if (_cs isEqualTo "") then { _cs = name player; };
 
 private _hasBda = !isNil "Iceman_fnc_bda_receive" || {!isNil { missionNamespace getVariable "Iceman_ATAK_BDA_reports" }};
 private _hasPhoto = !isNil "Iceman_fnc_photo_getRecords";
+
+// Onglets : idle / actif (teal Athena)
+private _tabIdle = [0.06, 0.1, 0.12, 0.92];
+private _tabActive = [0.08, 0.32, 0.28, 0.96];
+private _tabMap = [
+    ["all", 9740],
+    ["bda", 9741],
+    ["photo", 9742],
+    ["order", 9743],
+    ["modules", 9744]
+];
+{
+    _x params ["_id", "_idc"];
+    private _ctrl = _group controlsGroupCtrl _idc;
+    if (!isNull _ctrl) then {
+        private _col = if (_tab isEqualTo _id) then { _tabActive } else { _tabIdle };
+        _ctrl ctrlSetBackgroundColor _col;
+    };
+} forEach _tabMap;
+
 private _statusTxt = if (_linked) then {
+    private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
+    private _msPart = if (_ms >= 0) then { format [" · <t color='#9aa4aa'>%1 ms</t>", _ms] } else { "" };
+    private _bdaPart = if (_hasBda) then { "<t color='#7dffb0'>BDA prêt</t>" } else { "<t color='#6a7c90'>BDA —</t>" };
+    private _photoPart = if (_hasPhoto) then { "<t color='#7dffb0'>Photos prêtes</t>" } else { "<t color='#6a7c90'>Photos —</t>" };
     format [
-        "<t color='#7dffb0'>Athena</t> · %1 · BDA %2 · Photos %3",
+        "<t color='#7dffb0'>●</t> <t color='#e8f4f0'>%1</t>%2<br/><t size='0.9'>%3 · %4</t>",
         _cs,
-        if (_hasBda) then { "<t color='#7dffb0'>OK</t>" } else { "<t color='#888'>—</t>" },
-        if (_hasPhoto) then { "<t color='#7dffb0'>OK</t>" } else { "<t color='#888'>—</t>" }
+        _msPart,
+        _bdaPart,
+        _photoPart
     ]
 } else {
-    "<t color='#ffd27a'>Liaison Athena en attente</t> — tablette pour lier le compte"
+    "<t color='#ffd27a'>● Liaison en attente</t><br/><t size='0.9' color='#8aa0b4'>Utilisez Connexion ci-dessous ou l’icône Desktop</t>"
 };
 if (!isNull _statusCtrl) then {
     _statusCtrl ctrlSetStructuredText parseText _statusTxt;
+};
+
+// Zone Feedback (retours photo / actions) — hors bandeau carte
+private _fbCtrl = _group controlsGroupCtrl 9712;
+if (!isNull _fbCtrl) then {
+    private _fbData = missionNamespace getVariable ["COMSPEC_Athena_PanelFeedback", []];
+    if ((_fbData isEqualType []) && {(count _fbData) >= 3} && {diag_tickTime < (_fbData select 2)}) then {
+        _fbCtrl ctrlShow true;
+        _fbCtrl ctrlSetBackgroundColor (_fbData select 1);
+        _fbCtrl ctrlSetStructuredText parseText (_fbData select 0);
+        _fbCtrl ctrlSetFade 0;
+        _fbCtrl ctrlCommit 0;
+    } else {
+        if ((_fbData isEqualType []) && {(count _fbData) > 0}) then {
+            missionNamespace setVariable ["COMSPEC_Athena_PanelFeedback", nil, false];
+        };
+        _fbCtrl ctrlSetStructuredText parseText "";
+        _fbCtrl ctrlShow false;
+    };
 };
 
 // Entrées : [kind, title, detail, sortKey, meta]
@@ -54,15 +98,16 @@ if (!(_alerts isEqualType [])) then { _alerts = []; };
         case "GROUP": { "alert" };
         default { "alert" };
     };
-    private _title = format ["[%1] %2", _label, if (_from isEqualTo "") then { _cs } else { _from }];
+    private _fromTxt = if (_from isEqualTo "") then { _cs } else { _from };
+    private _title = format ["%1 · %2", _label, _fromTxt];
     if (_grid isNotEqualTo "") then { _title = _title + format [" · %1", _grid]; };
     private _detail = format [
-        "<t color='#ffd27a'>%1</t><br/>De : %2<br/>Grille : %3<br/>Heure : %4<br/><br/>%5",
+        "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
         _label,
         if (_from isEqualTo "") then { "—" } else { _from },
         if (_grid isEqualTo "") then { "—" } else { _grid },
         if (_time isEqualTo "") then { "—" } else { _time },
-        _summary
+        if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
     ];
     _entries pushBack [_entryKind, _title, _detail, _time, []];
 } forEach _alerts;
@@ -82,9 +127,9 @@ if (!(_bdaReports isEqualType [])) then { _bdaReports = []; };
     private _plain = _body;
     _plain = [_plain, "<br/>", " | "] call BIS_fnc_replaceString;
     _plain = [_plain, "<br>", " | "] call BIS_fnc_replaceString;
-    private _title = format ["[BDA ATAK] %1 · %2", _senderName, _grid];
+    private _title = format ["BDA · %1 · %2", _senderName, _grid];
     private _detail = format [
-        "<t color='#ff9a4a'>Bilan des dégâts (ATAK Enhanced)</t><br/>De : %1<br/>Grille : %2<br/>Heure : %3<br/><br/>%4<br/><br/><t color='#9aa4aa'>Déjà synchro réseau cTab — remontée Athena à l’envoi.</t>",
+        "<t color='#e0a060'>Bilan des dégâts</t><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Heure</t>  %3<br/><br/>%4",
         _senderName, _grid, _time, _plain
     ];
     _entries pushBack ["bda", _title, _detail, _time, []];
@@ -101,9 +146,9 @@ if (!(_groupMsgs isEqualType [])) then { _groupMsgs = []; };
     private _gId = _x select 2;
     private _gGrid = _x select 3;
     private _gText = _x select 4;
-    private _title = format ["[Groupe] %1 · %2", _gSender, _gGrid];
+    private _title = format ["Groupe · %1 · %2", _gSender, _gGrid];
     private _detail = format [
-        "<t color='#c8e6c9'>Message de groupe</t><br/>De : %1<br/>Groupe : %2<br/>Grille : %3<br/>Heure : %4<br/><br/>%5",
+        "<t color='#c8e6c9'>Message de groupe</t><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Groupe</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/><br/>%5",
         _gSender,
         if (_gId isEqualTo "") then { "—" } else { _gId },
         if (_gGrid isEqualTo "") then { "—" } else { _gGrid },
@@ -126,10 +171,16 @@ if (!isNil "Iceman_fnc_photo_getRecords") then {
             private _grid = _x select 8;
             private _src = _x select 1;
             if (_filePath isEqualTo "" && {_src isEqualTo "received"}) then { continue };
-            private _title = format ["[Photo] %1 · %2", _fileName, _grid];
+            private _srcLabel = switch (_src) do {
+                case "received": { "Reçue" };
+                case "local";
+                case "captured": { "Locale" };
+                default { "ATAK" };
+            };
+            private _title = format ["Photo · %1 · %2", _fileName, _grid];
             private _detail = format [
-                "<t color='#a8d8ff'>Photo ATAK Enhanced</t><br/>Auteur : %1<br/>Grille : %2<br/>Nom : %3<br/>Source : %4<br/><br/>Sélectionnez puis « Photo → Athena » pour remonter.",
-                _author, _grid, _fileName, _src
+                "<t size='0.85' color='#c8e8ff'>Photo</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><t color='#8aa0b4'>Source</t>  %4<br/><br/><t color='#b8c8d4'>Sélectionnez puis utilisez « Photo Athena » pour remonter.</t>",
+                _author, _grid, _fileName, _srcLabel
             ];
             _entries pushBack ["photo", _title, _detail, _fileName, [_filePath, _fileName]];
         } forEach _records;
@@ -157,11 +208,17 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     };
     private _issuer = _x getOrDefault ["issuer", "C2"];
     private _prio = _x getOrDefault ["priority", "IMPORTANT"];
+    private _prioLabel = switch (toUpper _prio) do {
+        case "URGENT": { "Urgent" };
+        case "ROUTINE": { "Routine" };
+        default { "Important" };
+    };
     private _payload = _x getOrDefault ["payload", ""];
-    private _title = format ["[Ordre] %1 · %2", _typeLabel, _issuer];
+    private _title = format ["Ordre · %1 · %2", _typeLabel, _issuer];
     private _detail = format [
-        "<t color='#7eb8ff'>Ordre</t> — %1<br/>Priorité : %2<br/>Émetteur : %3<br/>Cible : %4<br/><br/>%5",
-        _typeLabel, _prio, _issuer, _x getOrDefault ["target", "—"], _payload
+        "<t color='#7eb8ff'>Ordre</t> — %1<br/><t color='#8aa0b4'>Priorité</t>  %2<br/><t color='#8aa0b4'>Émetteur</t>  %3<br/><t color='#8aa0b4'>Cible</t>  %4<br/>%5",
+        _typeLabel, _prioLabel, _issuer, _x getOrDefault ["target", "—"],
+        if (_payload isEqualTo "") then { "" } else { format ["<br/>%1", _payload] }
     ];
     _entries pushBack ["order", _title, _detail, _id, []];
 } forEach _orders;
@@ -181,7 +238,7 @@ if (_tab isEqualTo "modules") then {
         _entries pushBack [
             "modules",
             "En attente de synchronisation",
-            "<t color='#9aa4aa'>Les modules seront listés dès que la liaison Athena aura récupéré le réglage de la communauté.</t>",
+            "<t color='#8aa0b4'>Les modules apparaîtront dès que la liaison Athena aura récupéré le réglage de la communauté.</t>",
             "0",
             []
         ];
@@ -191,10 +248,12 @@ if (_tab isEqualTo "modules") then {
             private _en = _mods getOrDefault [_id, true];
             private _lab = _labels getOrDefault [_id, _id];
             private _stateTxt = if (_en) then { "Actif" } else { "Désactivé" };
+            private _dot = if (_en) then { "<t color='#7dffb0'>●</t>" } else { "<t color='#ff9a4a'>●</t>" };
             private _color = if (_en) then { "#7dffb0" } else { "#ff9a4a" };
-            private _title = format ["[%1] %2", _stateTxt, _lab];
+            private _title = format ["%1  %2", if (_en) then { "●" } else { "○" }, _lab];
             private _detail = format [
-                "<t color='%1'>%2</t><br/>Module : %3<br/><br/>Réglable depuis l’administration Athena (Configuration ATAK).",
+                "%1 <t color='%2'>%3</t><br/><t color='#8aa0b4'>Module</t>  %4<br/><br/><t color='#9aa4aa'>Réglable depuis l’administration Athena (Configuration ATAK).</t>",
+                _dot,
                 _color,
                 _stateTxt,
                 _lab
@@ -210,10 +269,17 @@ if (_tab isEqualTo "modules") then {
     if ((count _mlog) > 0) then {
         for "_i" from ((count _mlog) - 1) to _start step -1 do {
             private _line = _mlog select _i;
+            private _short = _line;
+            if ((count _short) > 48) then {
+                _short = (_short select [0, 45]) + "…";
+            };
             _entries pushBack [
                 "modules",
-                format ["Journal · %1", _line],
-                format ["<t color='#c8e6c9'>Donnée / module</t><br/><br/>%1", _line],
+                format ["Journal · %1", _short],
+                format [
+                    "<t color='#5a9e88'>Journal des modules</t><br/><t color='#8aa0b4'>Événement synchronisé</t><br/><br/>%1",
+                    _line
+                ],
                 format ["log%1", _i],
                 []
             ];
@@ -235,12 +301,13 @@ if (!isNull _listCtrl) then {
         private _idx = _listCtrl lbAdd _title;
         _listCtrl lbSetData [_idx, str _forEachIndex];
         _listCtrl lbSetTooltip [_idx, _title];
+        // Couleurs listes — sobres, lisibles sur fond sombre
         switch (_kind) do {
-            case "order": { _listCtrl lbSetColor [_idx, [0.5, 0.75, 1, 1]]; };
-            case "bda": { _listCtrl lbSetColor [_idx, [1, 0.6, 0.3, 1]]; };
-            case "photo": { _listCtrl lbSetColor [_idx, [0.65, 0.85, 1, 1]]; };
-            case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.9, 0.6, 1]]; };
-            default { _listCtrl lbSetColor [_idx, [1, 0.85, 0.45, 1]]; };
+            case "order": { _listCtrl lbSetColor [_idx, [0.55, 0.78, 0.92, 1]]; };
+            case "bda": { _listCtrl lbSetColor [_idx, [0.92, 0.72, 0.48, 1]]; };
+            case "photo": { _listCtrl lbSetColor [_idx, [0.7, 0.84, 0.9, 1]]; };
+            case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.88, 0.68, 1]]; };
+            default { _listCtrl lbSetColor [_idx, [0.95, 0.86, 0.62, 1]]; };
         };
     } forEach _entries;
     _listCtrl setVariable ["COMSPEC_Athena_Entries", _entries];
@@ -253,12 +320,21 @@ if (!isNull _listCtrl) then {
         if (!isNull _detailCtrl) then {
             private _empty = switch (_tab) do {
                 case "bda": { "Aucun bilan des dégâts pour le moment." };
-                case "photo": { "Aucune photo ATAK — capturez depuis l’app Photos." };
-                case "order": { "Aucun ordre Athena." };
+                case "photo": { "Aucune photo à afficher — capturez d’abord depuis l’app Photos d’ATAK." };
+                case "order": { "Aucun ordre reçu pour le moment." };
                 case "modules": { "Aucun module synchronisé pour le moment." };
-                default { "Aucune alerte, ordre, BDA ni photo." };
+                default { "Aucune alerte, ordre, bilan ni photo pour le moment." };
             };
-            _detailCtrl ctrlSetStructuredText parseText format ["<t color='#9aa4aa'>%1</t>", _empty];
+            private _hint = if (_tab isEqualTo "photo") then {
+                "Ouvrez Photos sur ATAK, prenez une vue, puis revenez ici pour la remonter."
+            } else {
+                "Sélectionnez une entrée du journal ci-dessus."
+            };
+            _detailCtrl ctrlSetStructuredText parseText format [
+                "<t size='0.88' color='#e8f4f0'>%1</t><br/><br/><t color='#9aa4aa'>%2</t>",
+                _empty,
+                _hint
+            ];
         };
     };
 };

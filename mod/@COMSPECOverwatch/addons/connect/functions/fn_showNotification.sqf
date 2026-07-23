@@ -3,7 +3,8 @@
     Usage identique à BIS_fnc_showNotification :
       ["COMSPEC_Info", ["Message"]] call comspec_overwatch_connect_fnc_showNotification;
 
-    En mode discret : pas de bandeau BIS — redirection vers la tablette HTML.
+    Bandeau BIS uniquement si « Afficher les notifications à l’écran » (et hors mode discret / milsim).
+    Le journal tablette HTML et le son restent actifs selon leurs réglages.
 */
 params ["_template", ["_args", []]];
 
@@ -40,14 +41,12 @@ if (!(_msg isEqualTo "")) then {
     [_type, _title, _msg, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
 };
 
-private _quiet = missionNamespace getVariable ["comspec_overwatch_quiet_mode", false];
-private _milsim = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
-if (!_quiet && {!_milsim}) then {
+if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
     [_template, _args] call BIS_fnc_showNotification;
 };
 
 // Son dédié pour l’urgence médicale (mort / inconscient), ordres, sinon bip de préférence.
-// Mode discret : pas de bandeau BIS ci-dessus, mais le son CBA est conservé (sauf Muet).
+// Sans bandeau BIS ci-dessus (réglage OFF / discret / milsim), le son CBA est conservé (sauf Muet).
 private _soundEvent = "";
 if (_type isEqualTo "medical") then {
     if (

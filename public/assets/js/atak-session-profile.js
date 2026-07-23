@@ -140,19 +140,19 @@ window.ATAKSessionProfile = (function () {
     window.ATAK_SESSION_PROFILE = null;
   }
 
-  /** Suggestions depuis le compte Athena (permissions, libellés). */
+  /** Suggestions depuis le dossier effectifs / compte (injectées côté serveur). */
   function detectSuggestions() {
-    var caps = window.ATAK_CAPS || {};
     var hints = window.ATAK_PROFILE_HINTS || {};
     var role = hints.suggestedRole || 'operator';
     if (!ROLES[role]) role = 'operator';
     var specs = Array.isArray(hints.suggestedSpecialties)
       ? hints.suggestedSpecialties.filter(function (s) { return !!SPECIALTIES[s]; })
       : [];
-    if (caps.canTriageMedical && specs.indexOf('medic') === -1) {
-      specs.push('medic');
-    }
-    return { role: role, specialties: specs };
+    return {
+      role: role,
+      specialties: specs,
+      fromPersonnel: !!hints.hasSuggestionBasis
+    };
   }
 
   function hasSpecialty(id) {
@@ -318,9 +318,16 @@ window.ATAKSessionProfile = (function () {
             }).join(', ')
         );
       }
-      hintEl.textContent = parts.length
-        ? parts.join(' — ') + '. Vous pouvez tout modifier avant de continuer.'
-        : 'Sélectionnez votre rôle. Les spécialités débloquent des outils (médecin, radio, JTAC).';
+      if (parts.length && (suggested.fromPersonnel || suggested.role !== 'operator' || suggested.specialties.length)) {
+        var basis = suggested.fromPersonnel
+          ? ' d’après votre affectation et vos rôles métier'
+          : '';
+        hintEl.textContent =
+          parts.join(' — ') + basis + '. Vous pouvez tout modifier avant de continuer.';
+      } else {
+        hintEl.textContent =
+          'Sélectionnez votre rôle. Les spécialités débloquent des outils (médecin, radio, JTAC).';
+      }
     }
   }
 
@@ -421,7 +428,7 @@ window.ATAKSessionProfile = (function () {
       if (title) title.textContent = 'Connexion ATAK';
       if (lead) {
         lead.textContent =
-          'Cadre de session, choix du rôle, puis liaison avec le théâtre — comme à l’ouverture d’un parcours.';
+          'Préparez votre entrée sur la carte tactique : rôle et spécialités pour cette session, puis liaison optionnelle avec Arma pour synchroniser le théâtre.';
       }
       if (nextBtn) nextBtn.textContent = 'Continuer';
     }

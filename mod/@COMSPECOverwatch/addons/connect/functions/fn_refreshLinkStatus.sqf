@@ -65,5 +65,8 @@ if (_prefix == "OK") then {
 
 missionNamespace setVariable ["COMSPEC_LinkState", _state, false];
 missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
+if (_state isEqualTo "linked" || {_prefix == "OK"}) then {
+    [] call comspec_overwatch_connect_fnc_measureLatency;
+};
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 _state

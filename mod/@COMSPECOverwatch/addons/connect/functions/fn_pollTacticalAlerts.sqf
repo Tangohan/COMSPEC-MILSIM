@@ -99,9 +99,9 @@ missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
 
 if (_added > 0) then {
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
-    if ((count _notifyTitles) > 0 && {!isNil "cTab_fnc_addNotification"}) then {
+    if ((count _notifyTitles) > 0) then {
         private _title = _notifyTitles select ((count _notifyTitles) - 1);
-        ["ATHENA", _title, 6] call cTab_fnc_addNotification;
+        ["ATHENA", _title, 6] call comspec_overwatch_connect_fnc_addScreenToast;
     };
 };
 

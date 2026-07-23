@@ -60,10 +60,7 @@ private _msg = format ["Nouvel ordre — %1 (%2) · de %3", _typeLabel, _prioLab
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
 ["COMSPEC_OrderReceived", [_order]] call CBA_fnc_localEvent;
-if (
-    !(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])
-    && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
-) then {
+if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
     systemChat format ["[COMSPEC] %1", _msg];
 };
 
@@ -72,7 +69,10 @@ private _athenaGroup = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", con
 private _athenaOpen = !isNull _athenaGroup && {ctrlShown _athenaGroup};
 if (_athenaOpen) exitWith {};
 
-// Sinon ouvre la tablette sur les ordres (plus de dialog 9975)
+// Sinon ouvre la tablette sur les ordres (plus de dialog 9975) — hors mode ATAK-only
+if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", false]) exitWith {};
+if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {};
+
 if (isNull (findDisplay 9974)) then {
     0 spawn {
         uiSleep 0.15;

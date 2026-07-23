@@ -294,7 +294,8 @@ $dossierNavItems = [
     ['id' => 'couverture-dossier', 'label' => 'En-tête candidat', 'num' => '05', 'show' => true],
     ['id' => 'portail-candidat', 'label' => 'Portail candidat', 'num' => '06', 'show' => !$isDossierClos],
     ['id' => 'identite-reception', 'label' => 'Identité & réception', 'num' => '07', 'show' => true],
-    ['id' => 'rattachement-membre', 'label' => 'Rattachement', 'num' => '08', 'show' => $statusRaw === 'reviewed' && !$isDossierClos],
+    // Acceptée = dossier clos pour l’instruction, mais le rattachement membre reste actionnable.
+    ['id' => 'rattachement-membre', 'label' => 'Rattachement', 'num' => '08', 'show' => $statusRaw === 'reviewed'],
     ['id' => 'instruction-dossier', 'label' => 'Décision', 'num' => '09', 'show' => $statusRaw === 'submitted' && !$isDossierClos],
     ['id' => 'journal-dossier', 'label' => 'Journal', 'num' => '10', 'show' => !$isDossierClos],
 ];
@@ -325,7 +326,11 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                         <span class="text-sm font-bold text-white"><?= htmlspecialchars($statusLabel ?: '—', ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                     <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
-                        La décision est rendue et a été transmise au candidat. Pour l’alléger, cette fiche n’affiche plus que l’essentiel : identité, dates, décision et lien de suivi.
+                        <?php if ($statusRaw === 'reviewed'): ?>
+                            La candidature est acceptée. Cette fiche est allégée : identité, décision, suivi candidat, et le rattachement au compte membre si besoin.
+                        <?php else: ?>
+                            La décision est rendue et a été transmise au candidat. Pour l’alléger, cette fiche n’affiche plus que l’essentiel : identité, dates, décision et lien de suivi.
+                        <?php endif; ?>
                     </p>
                     <div class="mt-4 grid gap-3 sm:grid-cols-3">
                         <div class="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
@@ -349,6 +354,11 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                     <?php endif; ?>
                     <?php if ($candidatePortalSuiviUrl !== null): ?>
                         <a href="<?= htmlspecialchars($candidatePortalSuiviUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-white/40 bg-white/10 px-4 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-white/20">Voir le suivi candidat (portail)</a>
+                    <?php endif; ?>
+                    <?php if ($statusRaw === 'reviewed'): ?>
+                        <a href="#rattachement-membre" class="mt-3 inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border-2 border-white/50 bg-white px-4 text-xs font-black uppercase tracking-wide text-emerald-900 shadow-sm transition hover:bg-emerald-50">
+                            <?= $submitterId > 0 ? 'Vérifier le rattachement membre' : 'Rattacher la personne' ?>
+                        </a>
                     <?php endif; ?>
                 </section>
                 <?php endif; ?>
@@ -1052,6 +1062,9 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                         <p class="text-xs leading-relaxed text-slate-600">Soumission avec compte — aucun avis de poste précis au dépôt.</p>
                                     <?php endif; ?>
                                     <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">Canal : <?= htmlspecialchars($submittedViaHuman, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php elseif ($statusRaw === 'reviewed'): ?>
+                                    <p class="text-sm leading-relaxed text-amber-900">Aucun compte lié pour le moment.</p>
+                                    <a href="#rattachement-membre" class="inline-flex text-sm font-bold text-sky-900 underline decoration-sky-700/30 underline-offset-2 transition hover:decoration-sky-800">Rattacher la personne</a>
                                 <?php elseif ($linkedRo !== null): ?>
                                     <p class="text-sm leading-relaxed text-slate-700">Candidature reçue sans compte au moment du dépôt — dossier relié à un avis de poste.</p>
                                 <?php else: ?>
@@ -1155,7 +1168,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 </div>
             </section>
 
-            <?php if ($statusRaw === 'reviewed' && !$isDossierClos): ?>
+            <?php if ($statusRaw === 'reviewed'): ?>
             <section id="rattachement-membre" class="scroll-mt-28 overflow-hidden rounded-2xl border border-sky-200/90 bg-white shadow-sm">
                 <div class="border-b border-sky-100 bg-sky-50/90 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-sky-800/80">Après décision</p>
@@ -1164,18 +1177,26 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 <div class="p-6">
                     <?php if (!empty($membershipRepairHint)): ?>
                         <p class="text-sm leading-relaxed text-sky-950"><?= htmlspecialchars((string) $membershipRepairHint) ?></p>
+                    <?php elseif ($submitterId > 0): ?>
+                        <p class="text-sm leading-relaxed text-sky-900/90">
+                            Un compte est déjà lié à ce dossier. Si le membre ne voit pas encore votre communauté comme prévu, vous pouvez relancer l’alignement.
+                        </p>
                     <?php else: ?>
                         <p class="text-sm leading-relaxed text-sky-900/90">
-                            Si le membre ne voit pas encore votre communauté comme prévu, vous pouvez relancer l’alignement du compte sur cette organisation.
+                            Aucun compte n’est encore lié à cette candidature. Relancez le rattachement pour créer le compte ou le connecter à un compte existant avec la même adresse e-mail.
                         </p>
                     <?php endif; ?>
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $id . '/finalize-membership')) ?>" class="mt-5">
                         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
                         <button type="submit" class="enlist-membership-repair-btn inline-flex min-h-[2.75rem] items-center justify-center rounded-xl px-6 py-2.5 text-sm font-bold shadow-md transition">
-                            Forcer le rattachement au compte de la communauté
+                            <?= $submitterId > 0 ? 'Relancer le rattachement au compte de la communauté' : 'Rattacher la personne à la communauté' ?>
                         </button>
                     </form>
-                    <p class="mt-3 text-xs text-sky-800/80">Aucun nouvel e-mail automatique. Le membre peut se connecter s’il avait déjà un accès.</p>
+                    <p class="mt-3 text-xs text-sky-800/80">
+                        <?= $submitterId > 0
+                            ? 'Aucun nouvel e-mail automatique. Le membre peut se connecter s’il avait déjà un accès.'
+                            : 'Si un nouveau compte est créé, un e-mail d’activation du mot de passe pourra être envoyé selon la configuration.' ?>
+                    </p>
                 </div>
             </section>
             <?php endif; ?>

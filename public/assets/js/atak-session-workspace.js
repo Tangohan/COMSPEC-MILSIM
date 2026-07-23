@@ -38,9 +38,31 @@ window.ATAKSessionWorkspace = (function () {
       panelExpanded = false;
       panel.classList.remove('is-notes-wide', 'is-notes-expanded');
       updateExpandBtn();
+      if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.applyWidth === 'function') {
+        try {
+          var raw = localStorage.getItem('atak_panel_left_w_v1');
+          var px = raw ? parseInt(raw, 10) : 0;
+          if (px > 0) window.ATAKPanelChrome.applyWidth('left', px, false);
+          else {
+            panel.style.width = '';
+            panel.style.minWidth = '';
+            panel.style.removeProperty('--atak-left-w');
+            panel.classList.remove('is-resized');
+          }
+        } catch (e) {
+          panel.style.width = '';
+          panel.style.minWidth = '';
+        }
+      } else {
+        panel.style.width = '';
+        panel.style.minWidth = '';
+      }
       setTimeout(refreshMapSize, 220);
       return;
     }
+    panel.style.width = '';
+    panel.style.minWidth = '';
+    panel.style.removeProperty('--atak-left-w');
     panel.classList.add('is-notes-wide');
     panel.classList.toggle('is-notes-expanded', panelExpanded);
     panel.classList.remove('collapsed');

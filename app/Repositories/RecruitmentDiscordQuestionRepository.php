@@ -22,6 +22,24 @@ final class RecruitmentDiscordQuestionRepository
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+        $this->ensureSchema();
+    }
+
+    /**
+     * Applique la migration Discord si absente (déploiement code avant run-migrations).
+     */
+    private function ensureSchema(): void
+    {
+        if (self::$tableExists === true) {
+            return;
+        }
+        try {
+            require_once dirname(__DIR__, 2) . '/bootstrap/discord_recruitment_migration.php';
+            ensure_discord_recruitment_schema($this->pdo);
+            self::$tableExists = null;
+        } catch (\Throwable) {
+            // Laisser tableExists() renvoyer false et l’UI afficher le bandeau.
+        }
     }
 
     /**
@@ -31,11 +49,15 @@ final class RecruitmentDiscordQuestionRepository
     public function tableExists(): bool
     {
         if (self::$tableExists === null) {
-            $st = $this->pdo->prepare(
-                "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_discord_questions' LIMIT 1"
-            );
-            $st->execute();
-            self::$tableExists = (bool) $st->fetchColumn();
+            try {
+                $st = $this->pdo->prepare(
+                    "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'recruitment_discord_questions' LIMIT 1"
+                );
+                $st->execute();
+                self::$tableExists = (bool) $st->fetchColumn();
+            } catch (\Throwable) {
+                self::$tableExists = false;
+            }
         }
 
         return self::$tableExists;

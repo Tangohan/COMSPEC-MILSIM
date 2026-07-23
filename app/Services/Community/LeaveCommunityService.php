@@ -233,7 +233,7 @@ final class LeaveCommunityService
         } else {
             try {
                 $roleId = $this->roleRepository->getIdBySlug($defaultTid, 'member') ?? 0;
-                $this->userRepository->cloneUserToTenant($sourceUserId, $defaultTid, max(0, $roleId), 0);
+                $this->userRepository->cloneUserToTenant($sourceUserId, $defaultTid, max(0, $roleId), null);
                 if ($this->authService->switchToTenant($defaultTid)) {
                     return;
                 }

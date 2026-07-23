@@ -95,14 +95,50 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_screen_notifications", "CHECKBOX",
+    ["Afficher les notifications à l’écran", "Affiche les bandeaux Overwatch et les lignes de chat système (ex. « Alerte médicale transmise… ») en bas à gauche de la carte. Désactivé par défaut pour une immersion plus calme. Les sons suivent le réglage « Son des notifications ». Les alertes restent disponibles dans la tablette (cloche / journal Alertes)."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_quiet_mode", "CHECKBOX",
-    ["Mode discret — masquer les alertes à l’écran", "Cache les bandeaux et messages système Overwatch en jeu. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Muet. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
+    ["Mode discret — masquer les alertes à l’écran", "Masque temporairement les bandeaux lorsque « Afficher les notifications à l’écran » est activé. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Muet. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_milsim_ui", "CHECKBOX",
-    ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages système de confort et les bandeaux / chat Overwatch. La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
+    ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages système de confort et les bandeaux / chat Overwatch (même si « Afficher les notifications à l’écran » est activé). La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_require_item", "CHECKBOX",
+    ["Exiger un équipement pour synchroniser et ouvrir l’interface", "Si activé : la synchronisation Athena et l’ouverture de l’interface Overwatch ne fonctionnent que si vous portez l’équipement choisi ci-dessous. Si désactivé : sync et interface restent disponibles sans objet précis."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_required_item", "LIST",
+    ["Équipement requis", "Objet d’inventaire nécessaire lorsque l’exigence d’équipement est activée. Sans effet si l’exigence est désactivée."],
+    "COMSPEC Overwatch",
+    [
+        ["ItemAndroid", "ItemcTab", "ItemMicroDAGR", "ACE_microDAGR", "ItemGPS", "ItemWatch"],
+        ["Téléphone Android (cTab / ATAK)", "Tablette cTab", "MicroDAGR (cTab)", "MicroDAGR (ACE)", "GPS", "Montre"],
+        0
+    ],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_required_item_custom", "EDITBOX",
+    ["Équipement personnalisé (optionnel)", "Laisser vide pour utiliser la liste ci-dessus. Sinon, indiquez le nom technique de l’objet fourni par votre pack d’équipement (remplace alors le choix de la liste)."],
+    "COMSPEC Overwatch", ""
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_atak_ui_only", "CHECKBOX",
+    ["Interface Overwatch uniquement via ATAK Enhanced", "Désactive la tablette Overwatch hors d’ATAK Enhanced (touche K, menus ACE associés, ouverture automatique). La liaison Athena, la synchronisation et les fonctions dans ATAK Enhanced restent actives."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
@@ -159,7 +195,7 @@
 [
     "COMSPEC Overwatch", "comspec_menu_hub", ["Tablette Athena", "Ouvrir la tablette Athena Overwatch (K)"],
     {
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { [] call comspec_overwatch_connect_fnc_webBrowserShow; };
         true
     },
@@ -171,7 +207,7 @@
 [
     "COMSPEC Overwatch", "comspec_menu_chat", ["Messagerie", "Ouvrir la messagerie dans la tablette Athena (Ctrl+K)"],
     {
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { ["chat"] call comspec_overwatch_connect_fnc_openTabletView; };
         true
     },
@@ -184,7 +220,7 @@
 [
     "COMSPEC Overwatch", "comspec_menu_hub_csk", ["Applications tablette", "Ouvrir le menu Applications de la tablette Athena (Ctrl+Shift+K)"],
     {
-        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { ["apps"] call comspec_overwatch_connect_fnc_openTabletView; };
         true
     },
@@ -211,11 +247,25 @@ missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, true];
 missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
 missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", -1e9, false];
 
+[
+    "comspec_overwatch_athena_feed_snapshot", "CHECKBOX",
+    ["Aperçus caméra automatiques", "Envoie périodiquement un aperçu (capture d’écran) de votre caméra casque ou drone connecté vers le panneau Cams Athena. Désactivé par défaut — utilisez plutôt les actions ACE ou une photo ATAK. Pas de vidéo en direct."],
+    ["COMSPEC Overwatch", "Cams"], false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_athena_feed_interval", "SLIDER",
+    ["Intervalle aperçus (s)", "Délai minimum entre deux aperçus automatiques casque / drone"],
+    ["COMSPEC Overwatch", "Cams"], [15, 120, 35, 0]
+] call CBA_fnc_addSetting;
+
 // Badges UI — liaison Athena
 missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
 missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", -1, false];
 missionNamespace setVariable ["COMSPEC_LastHealthOk", -1, false];
+missionNamespace setVariable ["COMSPEC_LastLatencyMs", -1, false];
+missionNamespace setVariable ["COMSPEC_LastLatencyAt", -1, false];
 
 // Bus d'évènements + C2 + Intel Engine
 missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, true];

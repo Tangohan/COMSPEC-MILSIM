@@ -6,7 +6,7 @@ window.ATAKUnits = (function () {
   /** Empreinte du dernier rendu liste/table — évite rebuild DOM à chaque poll. */
   var lastRenderFp = '';
   /** Aligné sur AtakDataRepository::UNIT_LIVE_TTL_SECONDS (sec). */
-  var LIVE_TTL_MS = 180 * 1000;
+  var LIVE_TTL_MS = 120 * 1000;
   var ORIGIN_EPS = 0.5;
 
   function getApiBase() {
@@ -83,6 +83,42 @@ window.ATAKUnits = (function () {
     if (raw && raw !== '0 0') return raw;
     var c = parseCoords(u);
     return Math.round(c.x) + ' ' + Math.round(c.y);
+  }
+
+  function tocNotesFromExtra(ex) {
+    ex = ex || {};
+    return {
+      radio: String(ex.toc_radio || '').trim(),
+      vehicle: String(ex.toc_vehicle || '').trim(),
+      note: String(ex.toc_note || '').trim()
+    };
+  }
+
+  function displayRadio(ex) {
+    var toc = tocNotesFromExtra(ex);
+    if (toc.radio) return toc.radio;
+    if (ex.radio_freq !== undefined && ex.radio_freq !== '') return String(ex.radio_freq);
+    if (ex.radio !== undefined && ex.radio !== '') return String(ex.radio);
+    return '';
+  }
+
+  function notesCellHtml(ex) {
+    var toc = tocNotesFromExtra(ex);
+    var chips = [];
+    var radio = displayRadio(ex);
+    if (radio) {
+      chips.push('<span class="atak-note-chip atak-note-chip--radio" title="Fréquence radio">' + esc(radio) + '</span>');
+    }
+    if (toc.vehicle) {
+      chips.push('<span class="atak-note-chip atak-note-chip--vehicle" title="Véhicule">' + esc(toc.vehicle) + '</span>');
+    }
+    if (toc.note) {
+      chips.push('<span class="atak-note-chip atak-note-chip--note" title="Note">' + esc(toc.note) + '</span>');
+    }
+    if (!chips.length) {
+      return '<span class="atak-drawer-muted">—</span>';
+    }
+    return '<div class="atak-note-chips">' + chips.join('') + '</div>';
   }
 
   function unitBadgeHtml(u, ex) {
@@ -204,7 +240,7 @@ window.ATAKUnits = (function () {
     if (!body) return;
     updateTableCount(list.length);
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="6" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>';
+      body.innerHTML = '<tr><td colspan="8" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>';
       return;
     }
     body.innerHTML = list.map(function (u) {
@@ -232,20 +268,24 @@ window.ATAKUnits = (function () {
           + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
           + esc(ftLabel) + '</span>')
         : '<span class="atak-drawer-muted">—</span>';
-      return '<tr class="atak-drawer-row' + (ftColor ? ' atak-drawer-row--ft' : '') + '" tabindex="0" role="button" title="' + (posOk ? 'Centrer la carte sur ce contact' : 'Position non disponible') + '"' +
+      var toc = tocNotesFromExtra(ex);
+      return '<tr class="atak-drawer-row' + (ftColor ? ' atak-drawer-row--ft' : '') + (toc.radio || toc.vehicle || toc.note ? ' atak-drawer-row--notes' : '') + '" tabindex="0" role="button" title="' + (posOk ? 'Centrer la carte sur ce contact' : 'Position non disponible') + '"' +
         ' data-unit-id="' + esc(u.id || '') + '"' +
         ' data-callsign="' + esc(u.call_sign || '') + '"' +
         ' data-grid="' + esc(gridRaw) + '"' +
         ' data-x="' + esc(posOk ? c.x : '') + '"' +
         ' data-y="' + esc(posOk ? c.y : '') + '"' +
         (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '') + '>' +
-        '<td class="atak-drawer-cs">' + esc(u.call_sign || '—') +
-        ' <button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button></td>' +
+        '<td class="atak-drawer-cs"><span class="atak-drawer-cs-text">' + esc(u.call_sign || '—') + '</span></td>' +
         '<td' + (roleRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(roleText) + '</td>' +
         '<td>' + ftCell + '</td>' +
         '<td><span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
-        '<td' + (hasHeading ? '' : ' class="atak-drawer-muted"') + '>' + esc(heading) + '</td>' +
-        '<td' + (gridRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(grid) + '</td>' +
+        '<td class="atak-drawer-hdg' + (hasHeading ? '' : ' atak-drawer-muted') + '">' + esc(heading) + '</td>' +
+        '<td class="atak-drawer-grid' + (gridRaw ? '' : ' atak-drawer-muted') + '">' + esc(grid) + '</td>' +
+        '<td class="atak-drawer-notes">' + notesCellHtml(ex) + '</td>' +
+        '<td class="atak-drawer-actions">' +
+        '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
+        '</td>' +
         '</tr>';
     }).join('');
 
@@ -280,13 +320,14 @@ window.ATAKUnits = (function () {
       var battery = ex.battery != null ? ex.battery : (u.battery != null ? u.battery : '');
       var fuel = ex.fuel !== undefined && ex.fuel !== '' ? ex.fuel : '';
       var ammo = ex.ammo !== undefined && ex.ammo !== '' && ex.ammo !== 'n/a' ? ex.ammo : '';
-      var radio = ex.radio_freq !== undefined && ex.radio_freq !== '' ? ex.radio_freq : '';
+      var radio = displayRadio(ex);
       var radioTx = (ex.radio_tx === true || ex.radio_tx === 1 || ex.radio_tx === 'true' || ex.radio_speaking === true || ex.radio_speaking === 1 || ex.radio_speaking === 'true') ? '1' : '0';
       var radioCh = ex.radio_channel != null ? ex.radio_channel : '';
       var monCh = (window.ATAKRadio && window.ATAKRadio.getMonitorState)
         ? ((window.ATAKRadio.getMonitorState() || {}).channel || '')
         : '';
       var heading = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
+      var toc = tocNotesFromExtra(ex);
       return [
         u.id || '',
         u.call_sign || '',
@@ -305,7 +346,10 @@ window.ATAKUnits = (function () {
         monCh,
         u.fire_team_id || '',
         u.fire_team_label || '',
-        u.fire_team_color || ''
+        u.fire_team_color || '',
+        toc.radio,
+        toc.vehicle,
+        toc.note
       ].join('\t');
     }).join('\n');
   }
@@ -320,7 +364,17 @@ window.ATAKUnits = (function () {
         var t = filterText.toLowerCase();
         var ex = parseExtra(u);
         var role = (u.role || ex.role || '').toLowerCase();
-        return (u.call_sign && u.call_sign.toLowerCase().indexOf(t) >= 0) || role.indexOf(t) >= 0;
+        var toc = tocNotesFromExtra(ex);
+        var hay = [
+          u.call_sign || '',
+          role,
+          u.fire_team_label || '',
+          toc.radio,
+          toc.vehicle,
+          toc.note,
+          displayRadio(ex)
+        ].join(' ').toLowerCase();
+        return hay.indexOf(t) >= 0;
       }
       return true;
     });
@@ -358,7 +412,8 @@ window.ATAKUnits = (function () {
       var battery = ex.battery != null ? ex.battery : (u.battery != null ? u.battery : null);
       var fuel = ex.fuel !== undefined && ex.fuel !== '' ? ex.fuel : null;
       var ammo = ex.ammo !== undefined && ex.ammo !== '' && ex.ammo !== 'n/a' ? ex.ammo : null;
-      var radio = ex.radio_freq !== undefined && ex.radio_freq !== '' ? ex.radio_freq : null;
+      var radio = displayRadio(ex) || null;
+      var toc = tocNotesFromExtra(ex);
 
       var vitals = [];
       var hTone = vitalTone('health', health);
@@ -380,6 +435,12 @@ window.ATAKUnits = (function () {
       }
       if (radio != null) {
         vitals.push('<span class="atak-unit-vital">Radio ' + esc(radio) + '</span>');
+      }
+      if (toc.vehicle) {
+        vitals.push('<span class="atak-unit-vital">Véhicule ' + esc(toc.vehicle) + '</span>');
+      }
+      if (toc.note) {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--note" title="' + esc(toc.note) + '">Note</span>');
       }
       var emitting = (window.ATAKRadio && window.ATAKRadio.isEmitting)
         ? window.ATAKRadio.isEmitting(ex)
@@ -487,6 +548,32 @@ window.ATAKUnits = (function () {
     } catch (e) {}
   }
 
+  /** Passe un contact en hors liaison côté UI (après Couper la liaison / TTL). */
+  function setUnitOfflineLocal(id) {
+    if (id == null || id === '') return;
+    var sid = String(id);
+    var changed = false;
+    for (var i = 0; i < units.length; i++) {
+      if (String(units[i].id) === sid) {
+        units[i] = Object.assign({}, units[i], { status: 'offline', db_status: 'offline' });
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) return;
+    lastRenderFp = '';
+    render();
+    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
+      window.ATAKMap.setUnitsMarkers(units);
+    }
+    if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
+      window.ATAKRadio.onUnitsUpdated();
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
+    } catch (e) {}
+  }
+
   function getUnits() {
     return units.slice();
   }
@@ -517,6 +604,7 @@ window.ATAKUnits = (function () {
     getUnitById: getUnitById,
     getUnits: getUnits,
     removeUnitLocal: removeUnitLocal,
+    setUnitOfflineLocal: setUnitOfflineLocal,
     forceRender: forceRender,
     hasValidPosition: hasValidPosition,
     resolveLiveStatus: resolveLiveStatus,

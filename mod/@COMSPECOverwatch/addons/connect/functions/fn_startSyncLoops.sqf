@@ -141,8 +141,36 @@ private _casPollInterval = 10;
     params ["_alert"];
     // Mode milsim : aucune annonce in-game pour les anomalies de suivi.
     if (missionNamespace getVariable ["comspec_overwatch_milsim_ui", false]) exitWith {};
-    private _kind = _alert getOrDefault ["kind", "ANOMALY"];
-    [format ["Anomalie détectée : %1", _kind], "system", "warn"] call comspec_overwatch_connect_fnc_announce;
+    private _kind = toUpper (_alert getOrDefault ["kind", "ANOMALY"]);
+    private _unit = _alert getOrDefault ["unit", ""];
+    private _msg = switch (_kind) do {
+        case "IMMOBILE": {
+            private _dur = _alert getOrDefault ["duration", 0];
+            private _mins = round (_dur / 60);
+            if (_unit isEqualTo "") then {
+                format ["Suivi — opérateur immobile depuis environ %1 min (détection automatique, à vérifier).", _mins max 1]
+            } else {
+                format ["Suivi — %1 semble immobile depuis environ %2 min (détection automatique, à vérifier).", _unit, _mins max 1]
+            };
+        };
+        case "INCOHERENT_MOVE": {
+            private _dist = round (_alert getOrDefault ["distance", 0]);
+            if (_unit isEqualTo "") then {
+                format ["Suivi — déplacement brusque détecté (~%1 m). Peut être un faux positif (téléportation, véhicule).", _dist]
+            } else {
+                format ["Suivi — %1 : déplacement brusque (~%2 m). Peut être un faux positif (téléportation, véhicule).", _unit, _dist]
+            };
+        };
+        default {
+            if (_unit isEqualTo "") then {
+                "Suivi — anomalie de position détectée (détection automatique)."
+            } else {
+                format ["Suivi — %1 : anomalie de position (détection automatique).", _unit]
+            };
+        };
+    };
+    // Journal tablette toujours ; chat / bandeau seulement si notifs écran activées.
+    [_msg, "system", "warn"] call comspec_overwatch_connect_fnc_announce;
 }] call comspec_overwatch_connect_fnc_registerEventHandler;
 
 [] spawn comspec_overwatch_connect_fnc_playtimeTracker;

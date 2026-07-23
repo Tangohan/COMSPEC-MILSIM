@@ -39,10 +39,26 @@ window.ATAKOpsStatus = (function () {
     var el = document.getElementById('atak-logistics-body');
     if (!el) return;
     var rows = (data && data.rows) || [];
+    var section = document.getElementById('atak-logistics-section');
     if (!rows.length) {
-      el.innerHTML = '<div class="atak-empty-state"><p class="atak-empty-state-title">Aucune donnée logistique</p>'
+      el.innerHTML = '<div class="atak-empty-state atak-empty-state--compact"><p class="atak-empty-state-title">Aucune donnée logistique</p>'
         + '<p class="atak-empty-state-text">Le carburant et les munitions remontés depuis le jeu apparaîtront ici.</p></div>';
+      if (section) {
+        section.classList.add('atak-collapse--empty');
+        var sum = section.querySelector('.atak-collapse-sum');
+        if (sum && !sum.querySelector('.atak-collapse-badge')) {
+          var badge = document.createElement('span');
+          badge.className = 'atak-collapse-badge';
+          badge.textContent = 'Vide';
+          sum.appendChild(badge);
+        }
+      }
       return;
+    }
+    if (section) {
+      section.classList.remove('atak-collapse--empty');
+      var oldBadge = section.querySelector('.atak-collapse-badge');
+      if (oldBadge) oldBadge.remove();
     }
     el.innerHTML = '<table class="atak-ops-table"><thead><tr><th>Indicatif</th><th>Équipe</th><th>Carburant</th><th>Munitions</th><th>Grille</th></tr></thead><tbody>'
       + rows.map(function (r) {

@@ -7,6 +7,7 @@ params [["_markerName", ""], ["_deleted", false]];
 if (_markerName isEqualTo "") exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith {};
+if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
 
 if ((_markerName select [0, 1]) == "_") exitWith {};
 

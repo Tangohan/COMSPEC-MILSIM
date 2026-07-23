@@ -113,10 +113,44 @@ if ($isPublicAsset && !str_contains($requestPath, '..')) {
             'mp4' => 'video/mp4',
         ];
         $mime = $mimes[$ext] ?? (function_exists('mime_content_type') ? (mime_content_type($realFile) ?: 'application/octet-stream') : 'application/octet-stream');
+        $size = (int) filesize($realFile);
         header('Content-Type: ' . $mime);
         header('X-Content-Type-Options: nosniff');
         header('Cache-Control: public, max-age=604800');
-        header('Content-Length: ' . (string) filesize($realFile));
+        header('Accept-Ranges: bytes');
+
+        $rangeHeader = (string) ($_SERVER['HTTP_RANGE'] ?? '');
+        if ($rangeHeader !== '' && preg_match('/^bytes=(\d*)-(\d*)$/', $rangeHeader, $rm) === 1 && $size > 0) {
+            $start = $rm[1] !== '' ? (int) $rm[1] : 0;
+            $end = $rm[2] !== '' ? (int) $rm[2] : ($size - 1);
+            if ($start > $end || $start >= $size) {
+                http_response_code(416);
+                header('Content-Range: bytes */' . $size);
+                exit;
+            }
+            $end = min($end, $size - 1);
+            $length = $end - $start + 1;
+            http_response_code(206);
+            header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
+            header('Content-Length: ' . (string) $length);
+            $fh = fopen($realFile, 'rb');
+            if ($fh !== false) {
+                fseek($fh, $start);
+                $remaining = $length;
+                while ($remaining > 0 && !feof($fh)) {
+                    $chunk = fread($fh, min(8192, $remaining));
+                    if ($chunk === false) {
+                        break;
+                    }
+                    echo $chunk;
+                    $remaining -= strlen($chunk);
+                }
+                fclose($fh);
+            }
+            exit;
+        }
+
+        header('Content-Length: ' . (string) $size);
         readfile($realFile);
         exit;
     }

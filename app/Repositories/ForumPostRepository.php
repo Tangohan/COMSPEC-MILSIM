@@ -183,7 +183,12 @@ class ForumPostRepository
              LEFT JOIN user_profiles up ON up.user_id = u.id
              $gradeJoin
              LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
-             LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
+             LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.id = (
+                 SELECT pj2.id FROM personnel_profile_job_roles pj2
+                 WHERE pj2.user_id = u.id AND pj2.tenant_id = u.tenant_id
+                 ORDER BY pj2.is_primary DESC, pj2.sort_order ASC, pj2.id ASC
+                 LIMIT 1
+             )
              LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id
              LEFT JOIN units un ON un.id = pp.primary_unit_id
              $upsJoin

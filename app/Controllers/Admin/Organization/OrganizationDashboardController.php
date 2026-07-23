@@ -209,6 +209,7 @@ class OrganizationDashboardController
             'orgTrainingFeedCompletionAnalytics' => $orgTrainingFeedCompletionAnalytics,
             'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
             'orgAnnounceItems' => $orgAnnounceItems,
+            'skipGlobalAlertBanners' => true,
             'tenantName' => $tenantName,
             'initialSetupBanner' => $initialSetupBanner,
         ]);

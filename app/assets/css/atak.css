@@ -63,6 +63,17 @@ body.atak-page {
   margin-left: 0.25rem;
 }
 
+.atak-header .atak-beta-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1a1208;
+  background: #e8b84a;
+  padding: 0.1rem 0.35rem;
+  margin-left: 0.15rem;
+}
+
 .atak-header .atak-zulu {
   font-variant-numeric: tabular-nums;
   font-size: 0.8rem;

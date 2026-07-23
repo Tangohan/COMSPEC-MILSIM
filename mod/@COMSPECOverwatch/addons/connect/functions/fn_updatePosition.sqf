@@ -23,6 +23,12 @@ private _fnc_skip = {
     diag_log format ["[COMSPEC] UpdatePosition skip: %1 (state=%2)", _reason, getClientStateNumber];
 };
 
+// Équipement requis (réglage CBA) — bloque sync position si manquant
+if !([_unit] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
+    if (!_force) then { ["no_terminal"] call _fnc_skip; };
+    if (_force) then { "" } else { nil }
+};
+
 // Hors mission active — pas de POST position (sauf forçage manuel hub)
 // BI : 9=BRIEFING SHOWN, 10=BRIEFING READ (en jeu), 11+=fini/débrief ; SP=0 ("NONE")
 private _clientState = getClientStateNumber;
@@ -231,6 +237,18 @@ _modVersion = (_modVersion splitString """" joinString "");
 if (!(_modVersion isEqualTo "")) then {
     _vehJson = _vehJson + format [",""mod_version"":""%1""", _modVersion];
 };
+// Handshake mods compagnons (cTab / ATAK Enhanced) → pastilles transmission Tacmap
+private _modsDetect = [] call comspec_overwatch_connect_fnc_detectLoadedMods;
+if (!(_modsDetect isEqualType createHashMap)) then { _modsDetect = createHashMap; };
+private _hasCtab = _modsDetect getOrDefault ["has_ctab", false];
+private _hasEnhanced = _modsDetect getOrDefault ["has_atak_enhanced", false];
+private _hasAthenaCtab = _modsDetect getOrDefault ["has_athena_ctab", false];
+_vehJson = _vehJson + format [
+    ",""mod_athena"":true,""has_ctab"":%1,""has_atak_enhanced"":%2,""has_athena_ctab"":%3",
+    if (_hasCtab) then { "true" } else { "false" },
+    if (_hasEnhanced) then { "true" } else { "false" },
+    if (_hasAthenaCtab) then { "true" } else { "false" }
+];
 _vehJson = _vehJson + "}";
 
 private _steamUid = getPlayerUID player;

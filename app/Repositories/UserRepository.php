@@ -166,6 +166,59 @@ class UserRepository
         return self::$tableExistsCache[$table];
     }
 
+    /**
+     * Jointure fonction métier : une seule ligne par membre (évite le dédoublement
+     * quand plusieurs pivots ont encore is_primary = 1).
+     *
+     * @return array{join: string, select_as_primary_role: string, select_as_job_role_display: string}
+     */
+    private function primaryJobRoleJoinFragments(string $userAlias = 'u'): array
+    {
+        $empty = [
+            'join' => '',
+            'select_as_primary_role' => "'' AS primary_role",
+            'select_as_job_role_display' => "'' AS job_role_display",
+        ];
+        if (!$this->tableExists('personnel_profile_job_roles') || !$this->tableExists('personnel_job_roles')) {
+            return $empty;
+        }
+
+        $displayExpr = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), '')))";
+
+        return [
+            'join' => 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.id = (
+                    SELECT pj2.id FROM personnel_profile_job_roles pj2
+                    WHERE pj2.user_id = ' . $userAlias . '.id AND pj2.tenant_id = ' . $userAlias . '.tenant_id
+                    ORDER BY pj2.is_primary DESC, pj2.sort_order ASC, pj2.id ASC
+                    LIMIT 1
+                )
+                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = ' . $userAlias . '.tenant_id',
+            'select_as_primary_role' => $displayExpr . ' AS primary_role',
+            'select_as_job_role_display' => $displayExpr . ' AS job_role_display',
+        ];
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function dedupeRowsByUserId(array $rows): array
+    {
+        $unique = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1 || isset($unique[$id])) {
+                continue;
+            }
+            $unique[$id] = $row;
+        }
+
+        return array_values($unique);
+    }
+
     private function hasUserUnitsTable(): bool
     {
         if (self::$hasUserUnitsTable === null) {
@@ -1009,25 +1062,19 @@ class UserRepository
             }
         }
 
-        $jobRoleJoin = '';
-        $jobRoleSelect = "'' AS primary_role";
-        if ($this->tableExists('personnel_profile_job_roles') && $this->tableExists('personnel_job_roles')) {
-            $jobRoleJoin = 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
-                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
-            $jobRoleSelect = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), ''))) AS primary_role";
-        }
+        $jobRole = $this->primaryJobRoleJoinFragments('u');
 
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code,
-                       pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRoleSelect . ',
+                       pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRole['select_as_primary_role'] . ',
                        pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, pp.deployable,
                        pex.service_number, pex.date_of_enlistment
                 FROM users u
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 LEFT JOIN personnel_extras pex ON pex.user_id = u.id
                 ' . $gc['join'] . '
-                ' . $jobRoleJoin . '
+                ' . $jobRole['join'] . '
                 LEFT JOIN units un ON un.id = pp.primary_unit_id AND un.tenant_id = u.tenant_id
                 WHERE ' . implode(' AND ', $where) . '
                 ORDER BY u.display_name ASC
@@ -1037,7 +1084,7 @@ class UserRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
     /**
@@ -1054,13 +1101,9 @@ class UserRepository
         }
         $gc = $this->getGradesConfigForDirectory();
         $ph = implode(',', array_fill(0, count($userIds), '?'));
-        $jobRoleJoin = '';
-        $jobRoleSelect = "'' AS job_role_display";
-        if ($this->tableExists('personnel_profile_job_roles') && $this->tableExists('personnel_job_roles')) {
-            $jobRoleJoin = 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
-                LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
-            $jobRoleSelect = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), ''))) AS job_role_display";
-        }
+        $jobRole = $this->primaryJobRoleJoinFragments('u');
+        $jobRoleJoin = $jobRole['join'];
+        $jobRoleSelect = $jobRole['select_as_job_role_display'];
         $hasPa = $this->tableExists('personnel_assignments');
         $hasUu = $this->hasUserUnitsTable();
         $unitParts = [];
@@ -1142,7 +1185,7 @@ class UserRepository
         }
         unset($row);
 
-        return $rows;
+        return $this->dedupeRowsByUserId($rows);
     }
 
     private function personnelProfilesHasColumn(string $column): bool

@@ -83,7 +83,8 @@ window.ATAKActivity = (function () {
     }
   }
 
-  function typeLabelFr(type) {
+  function typeLabelFr(type, ev) {
+    var labelHint = String((ev && ev.label) || '');
     switch (type) {
       case 'client_init': return 'Connexion';
       case 'disconnect': return 'Déconnexion';
@@ -91,22 +92,35 @@ window.ATAKActivity = (function () {
       case 'position': return 'Position';
       case 'auth': return 'Accès';
       case 'phone': return 'Briefing';
-      case 'chat': return 'Tchat';
-      case 'ping': return 'Ping';
+      case 'chat': return 'Radio';
+      case 'ping': return 'Repère';
       case 'marker': return 'Marqueur';
       case 'intel': return 'Renseignement';
       case 'nine_line': return '9-Line';
       case 'medevac': return 'MEDEVAC';
-      case 'tactical_alert': return 'Situation';
-      case 'toc_note': return 'TOC';
-      case 'fire_team': return 'Fire team';
+      case 'tactical_alert':
+        if (/réglages|affichage/i.test(labelHint)) return 'Carte';
+        return 'Alerte';
+      case 'toc_note': return 'Note TOC';
+      case 'fire_team': return 'Équipe';
       case 'designator': return 'Désignateur';
       case 'laser': return 'Laser';
       case 'flight': return 'Vol';
-      case 'sigint': return 'SIGINT';
+      case 'sigint': return 'Écoute';
       case 'order': return 'Ordre';
       default: return 'Activité';
     }
+  }
+
+  /** Résumé d’une ligne, coupé sur un mot (pas au milieu). */
+  function summaryLine(text, maxLen) {
+    var s = String(text || '').replace(/\s+/g, ' ').trim();
+    var limit = maxLen > 0 ? maxLen : 96;
+    if (s.length <= limit) return s;
+    var cut = s.slice(0, limit);
+    var sp = cut.lastIndexOf(' ');
+    if (sp >= Math.floor(limit * 0.55)) cut = cut.slice(0, sp);
+    return cut.replace(/[.,;:–—-]+$/, '') + '…';
   }
 
   function formatTime(iso) {
@@ -211,7 +225,9 @@ window.ATAKActivity = (function () {
     if (stale) li.className += ' atak-activity-item--stale';
     li.setAttribute('data-id', String(ev.id || ''));
     li.setAttribute('data-day', dayKeyFromIso(ev.at));
-    var actor = ev.actor ? '<span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span>' : '';
+    var actorHtml = ev.actor
+      ? '<p class="atak-activity-actor-line"><span class="atak-activity-actor-k">Par</span> <span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span></p>'
+      : '';
     var staleTag = stale ? '<span class="atak-activity-stale-tag">Ancien</span>' : '';
     var archivedTag = ev.archived ? '<span class="atak-activity-archived-tag">Archivé</span>' : '';
     var ftChip = '';
@@ -222,34 +238,67 @@ window.ATAKActivity = (function () {
       var colorStyle = ftColor ? (' style="--ft-color:' + escapeHtml(ftColor) + ';border-color:' + escapeHtml(ftColor) + ';color:' + escapeHtml(ftColor) + '"') : '';
       ftChip = '<span class="atak-ft-chip"' + colorStyle + '>'
         + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
-        + escapeHtml(ftLabel || 'Fire team')
+        + escapeHtml(ftLabel || 'Équipe')
         + '</span>';
     }
     if (type === 'fire_team' && ftColor) {
       li.style.setProperty('--ft-color', ftColor);
       li.className += ' atak-activity-item--fire-team';
     }
+    var labelText = String(ev.label || '').trim();
+    var labelPreview = summaryLine(labelText, 110);
+    var actorStr = String(ev.actor || '').trim();
+    var actorRedundant = !!(actorStr && labelText.toLowerCase().indexOf(actorStr.toLowerCase()) >= 0);
+    var needsExpand = labelText.length > labelPreview.length || !!ftChip || (!!actorStr && !actorRedundant);
+    var foldKey = 'act-' + String(ev.id || (ev.at || '') + '-' + type);
+    var typeFr = typeLabelFr(type, ev);
     li.innerHTML =
       '<span class="atak-activity-rail" aria-hidden="true"></span>' +
-      '<div class="atak-activity-body">' +
-        '<div class="atak-activity-top">' +
-          '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + staleTag + archivedTag + '</span>' +
-          '<div class="atak-activity-top-actions">' +
-            '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
-            '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Voir les détails" aria-label="Voir les détails de l’événement">i</button>' +
+      '<details class="atak-activity-fold' + (needsExpand ? '' : ' atak-activity-fold--plain') + '" data-atak-collapse="' + escapeHtml(foldKey) + '" data-atak-collapse-default="0">' +
+        '<summary class="atak-activity-fold-sum"' + (needsExpand ? '' : ' tabindex="-1"') + '>' +
+          '<div class="atak-activity-top">' +
+            '<span class="atak-activity-type">' + escapeHtml(typeFr) + staleTag + archivedTag + '</span>' +
+            '<div class="atak-activity-top-actions">' +
+              '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
+              '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Ouvrir la fiche" aria-label="Ouvrir la fiche de l’événement">Fiche</button>' +
+            '</div>' +
           '</div>' +
+          (labelPreview
+            ? '<p class="atak-activity-label atak-activity-label--preview">' + escapeHtml(labelPreview) + '</p>'
+            : '<p class="atak-activity-label atak-activity-label--preview atak-activity-label--empty">Événement sans résumé</p>') +
+          (needsExpand
+            ? '<span class="atak-activity-fold-hint"><span class="atak-activity-fold-hint-open">Voir le détail</span><span class="atak-activity-fold-hint-close">Masquer</span></span>'
+            : '') +
+        '</summary>' +
+        '<div class="atak-activity-fold-body">' +
+          (labelText
+            ? '<p class="atak-activity-label">' + escapeHtml(labelText) + '</p>'
+            : '') +
+          ftChip +
+          actorHtml +
         '</div>' +
-        '<div class="atak-activity-label">' + escapeHtml(ev.label || '') + '</div>' +
-        ftChip +
-        actor +
-      '</div>';
-    var btn = li.querySelector('[data-activity-info]');
-    if (btn) {
-      btn.addEventListener('click', function (e) {
+      '</details>';
+    var infoBtns = li.querySelectorAll('[data-activity-info]');
+    for (var bi = 0; bi < infoBtns.length; bi++) {
+      infoBtns[bi].addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
         openEventDetails(ev);
       });
+    }
+    var fold = li.querySelector('.atak-activity-fold');
+    if (fold && needsExpand && window.ATAKCollapse && typeof window.ATAKCollapse.apply === 'function') {
+      window.ATAKCollapse.apply(fold, foldKey, false);
+    }
+    if (fold && !needsExpand) {
+      fold.open = false;
+      var sum = fold.querySelector('summary');
+      if (sum) {
+        sum.addEventListener('click', function (e) {
+          if (e.target && e.target.closest && e.target.closest('[data-activity-info]')) return;
+          e.preventDefault();
+        });
+      }
     }
     return li;
   }
@@ -262,6 +311,10 @@ window.ATAKActivity = (function () {
     user_id: 'Identifiant compte',
     steam_uid: 'Identifiant Steam',
     mod_version: 'Version Overwatch',
+    has_ctab: 'Tablette cTab',
+    has_atak_enhanced: 'ATAK Enhanced',
+    has_athena_ctab: 'Application Athena (cTab)',
+    mod_athena: 'Mod Athena',
     tenant_id: 'Communauté (n°)',
     map_id: 'Théâtre (n°)',
     grid: 'Grille',
@@ -286,7 +339,7 @@ window.ATAKActivity = (function () {
     path_hint: 'Chemin',
     action: 'Action',
     fire_team_id: 'Équipe (n°)',
-    fire_team_label: 'Fire team',
+    fire_team_label: 'Équipe',
     fire_team_color: 'Couleur d’équipe',
     fire_team_kind: 'Type d’équipe',
     member_callsign: 'Membre',
@@ -308,6 +361,9 @@ window.ATAKActivity = (function () {
 
   function formatMetaValue(key, value) {
     if (key === 'ok') return value ? 'Réussi' : 'Échec';
+    if (key === 'has_ctab' || key === 'has_atak_enhanced' || key === 'has_athena_ctab' || key === 'mod_athena') {
+      return value ? 'Oui' : 'Non';
+    }
     if (key === 'action') {
       var a = String(value || '');
       var actionFr = {
@@ -354,7 +410,7 @@ window.ATAKActivity = (function () {
       '<div class="atak-activity-details-backdrop" data-activity-details-close="1"></div>' +
       '<div class="atak-activity-details-panel">' +
         '<div class="atak-activity-details-head">' +
-          '<h2 id="atak-activity-details-title" class="atak-activity-details-title">Détail de l’événement</h2>' +
+          '<h2 id="atak-activity-details-title" class="atak-activity-details-title">Fiche de l’événement</h2>' +
           '<button type="button" class="atak-activity-details-close" data-activity-details-close="1" aria-label="Fermer">×</button>' +
         '</div>' +
         '<div class="atak-activity-details-body" id="atak-activity-details-body"></div>' +
@@ -384,10 +440,10 @@ window.ATAKActivity = (function () {
     if (!body) return;
     var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
     var rows = [];
-    rows.push({ label: 'Type', value: typeLabelFr(ev.type || '') });
+    rows.push({ label: 'Catégorie', value: typeLabelFr(ev.type || '', ev) });
     rows.push({ label: 'Résumé', value: ev.label || '—' });
-    rows.push({ label: 'Acteur', value: ev.actor || '—' });
-    rows.push({ label: 'Horodatage', value: formatTime(ev.at) + (ev.at ? ' (' + String(ev.at) + ')' : '') });
+    rows.push({ label: 'Auteur', value: ev.actor || '—' });
+    rows.push({ label: 'Heure', value: formatTime(ev.at) });
     if (ev.archived) {
       rows.push({ label: 'État', value: 'Archivé' });
     }
@@ -426,7 +482,7 @@ window.ATAKActivity = (function () {
     var hasMeta = Object.keys(meta).length > 0;
     html +=
       '<details class="atak-activity-details-tech"' + (hasMeta ? '' : ' open') + '>' +
-        '<summary>Détail technique</summary>' +
+        '<summary>Informations avancées (support)</summary>' +
         '<pre class="atak-activity-details-json">' + escapeHtml(JSON.stringify({
           id: ev.id,
           type: ev.type,
@@ -452,7 +508,17 @@ window.ATAKActivity = (function () {
     var li = document.createElement('li');
     li.className = 'atak-activity-day';
     li.setAttribute('data-day-header', dayKeyFromIso(iso));
-    li.innerHTML = '<span class="atak-activity-day-label">' + escapeHtml(dayLabelFr(iso)) + '</span>';
+    var key = dayKeyFromIso(iso);
+    var today = ymdLocal(new Date());
+    var hint = '';
+    if (key === today) {
+      hint = '<span class="atak-activity-day-hint">Derniers événements de la session</span>';
+    } else if (key !== 'unknown') {
+      hint = '<span class="atak-activity-day-hint">Événements de cette journée</span>';
+    }
+    li.innerHTML =
+      '<span class="atak-activity-day-label">' + escapeHtml(dayLabelFr(iso)) + '</span>' +
+      hint;
     return li;
   }
 
@@ -496,6 +562,8 @@ window.ATAKActivity = (function () {
     var fresh = [];
     for (var i = 0; i < incoming.length; i++) {
       var ev = incoming[i];
+      // Sync BFT « Position envoyée » : bruit de fond, hors panneau Activité.
+      if (ev && String(ev.type || '') === 'position') continue;
       var id = ev && ev.id != null ? Number(ev.id) : 0;
       var key = eventKey(ev);
       if (!id || knownIds[key]) continue;

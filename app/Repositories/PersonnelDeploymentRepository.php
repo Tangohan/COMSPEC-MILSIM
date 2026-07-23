@@ -109,7 +109,13 @@ final class PersonnelDeploymentRepository
         $jobRoleJoin = '';
         $jobRoleSelect = "'' AS primary_role";
         if ($this->tableExists('personnel_profile_job_roles') && $this->tableExists('personnel_job_roles')) {
-            $jobRoleJoin = 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.user_id = u.id AND pjrole.tenant_id = u.tenant_id AND pjrole.is_primary = 1
+            // Une seule fonction par membre (évite le dédoublement si plusieurs is_primary).
+            $jobRoleJoin = 'LEFT JOIN personnel_profile_job_roles pjrole ON pjrole.id = (
+                    SELECT pj2.id FROM personnel_profile_job_roles pj2
+                    WHERE pj2.user_id = u.id AND pj2.tenant_id = u.tenant_id
+                    ORDER BY pj2.is_primary DESC, pj2.sort_order ASC, pj2.id ASC
+                    LIMIT 1
+                )
                 LEFT JOIN personnel_job_roles pjr ON pjr.id = pjrole.personnel_job_role_id AND pjr.tenant_id = u.tenant_id';
             $jobRoleSelect = "TRIM(CONCAT(COALESCE(pjr.name, ''), IF(pjrole.role_detail IS NOT NULL AND pjrole.role_detail <> '', CONCAT(' — ', pjrole.role_detail), ''))) AS primary_role";
         }

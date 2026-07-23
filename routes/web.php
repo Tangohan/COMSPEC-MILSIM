@@ -922,6 +922,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->post('/admin/atak-mod-blocks/add', [AdminAtakModBlocklistController::class, 'add'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod-blocks/revoke', [AdminAtakModBlocklistController::class, 'revoke'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/api/admin/atak-mod-blocks/members', [AdminAtakModBlocklistController::class, 'searchMembers'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak-beta', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
@@ -1022,6 +1023,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/back-office/ressources/atak-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-config')), $tenantResMw);
     $router->get('/back-office/ressources/atak-mod', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod')), $tenantResMw);
     $router->get('/back-office/ressources/atak-mod-blocks', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod-blocks')), $tenantResMw);
+    $router->get('/back-office/ressources/atak-beta', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-beta')), $tenantResMw);
     $router->get('/back-office/ressources/forum-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/forum-config')), $tenantResMw);
     $router->get('/back-office/ressources/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url()), $interteamMw);
     $router->get('/back-office/ressources/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url()), $interteamMw);
@@ -1274,6 +1276,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
@@ -1320,6 +1323,7 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
     $router->get('/api/units', [AtakApiController::class, 'unitsIndex']);
     $router->post('/api/units', [AtakApiController::class, 'unitsStore']);
     $router->patch('/api/units/{id}', [AtakApiController::class, 'unitsUpdate']);
+    $router->post('/api/units/{id}/disconnect', [AtakApiController::class, 'unitsDisconnect']);
     $router->delete('/api/units/{id}', [AtakApiController::class, 'unitsDelete']);
     $router->get('/api/atak/personnel', [AtakApiController::class, 'personnelDirectory']);
     $router->post('/api/atak/position', [AtakApiController::class, 'position']);
@@ -1334,6 +1338,8 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
     $router->post('/api/atak/mission-settings', [AtakApiController::class, 'missionSettings']);
     $router->get('/api/atak/weather', [AtakApiController::class, 'weather']);
     $router->post('/api/atak/weather', [AtakApiController::class, 'weather']);
+    $router->get('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
+    $router->post('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
     $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
 $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);

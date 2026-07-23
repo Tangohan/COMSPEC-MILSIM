@@ -32,6 +32,24 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         };
         [] call comspec_overwatch_connect_fnc_showAthenaLinkHelp;
     };
+
+    // Repli : note d’accès anticipé si le menu principal n’a pas pu l’afficher
+    // + enrichissement Steam une fois le joueur disponible en mission
+    0 spawn {
+        uiSleep 3;
+        if (profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false]) then {
+            private _needSend = !(profileNamespace getVariable ["comspec_overwatch_beta_registered", false]);
+            private _steamNow = if (!isNull player) then { getPlayerUID player } else { "" };
+            if (!_needSend && {(count _steamNow) >= 15} && {!(profileNamespace getVariable ["comspec_overwatch_beta_has_steam", false])}) then {
+                _needSend = true;
+            };
+            if (_needSend) then {
+                [] call comspec_overwatch_connect_fnc_registerBetaClient;
+            };
+        } else {
+            [] call comspec_overwatch_connect_fnc_showBetaAccessNote;
+        };
+    };
     missionNamespace setVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime, false];
 
     // Indicatif : profil local puis, si liaison Athena, alignement depuis le compte
@@ -70,6 +88,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).
+    // Si le client crash ou quitte sans Unload : le portail expire la liaison (TTL heartbeat).
     missionNamespace setVariable ["COMSPEC_DisconnectSent", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];

@@ -113,9 +113,14 @@ final class EnlistmentAcceptanceProvisioningService
             if ($byMail && $this->roleSlugNeedsPromotion($tenantId, (int) $byMail['id'])) {
                 return 'Un compte existe avec le même e-mail mais en accès limité : finalisez pour le passer membre et lier la candidature.';
             }
+            if ($byMail) {
+                return 'Un compte existe déjà avec cet e-mail dans la communauté : rattachez-le à cette candidature.';
+            }
+
+            return 'Aucun compte n’est encore lié à cette candidature acceptée : rattachez la personne pour créer le compte membre.';
         }
 
-        return null;
+        return 'E-mail de candidature manquant : impossible de rattacher automatiquement. Complétez le dossier ou créez le membre à la main.';
     }
 
     /**
@@ -375,7 +380,7 @@ final class EnlistmentAcceptanceProvisioningService
         }
 
         try {
-            $newId = $this->userRepository->cloneUserToTenant($submitterId, $tenantId, $memberRoleId, 0);
+            $newId = $this->userRepository->cloneUserToTenant($submitterId, $tenantId, $memberRoleId, null);
         } catch (Throwable $e) {
             return [
                 'ok' => false,

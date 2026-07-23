@@ -26,6 +26,7 @@ use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Repositories\AtakBetaRegistrationRepository;
 use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
@@ -66,6 +67,7 @@ class AtakApiController
         private ?FireTeamRepository $fireTeamRepository = null,
         private ?AtakOperatorIdRepository $operatorIdRepository = null,
         private ?AtakMedicalTriageRepository $medicalTriageRepository = null,
+        private ?AtakBetaRegistrationRepository $betaRegistrationRepository = null,
         ?AtakArmaWriteGuard $armaGuard = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
@@ -78,6 +80,7 @@ class AtakApiController
         $this->orderRepository ??= new AtakOrderRepository();
         $this->orderTemplateRepository ??= new AtakOrderTemplateRepository();
         $this->fireTeamRepository ??= new FireTeamRepository();
+        $this->betaRegistrationRepository ??= new AtakBetaRegistrationRepository();
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
         $this->armaGuard = $armaGuard ?? new AtakArmaWriteGuard($this->userRepository, $this->activityLog);
@@ -933,7 +936,158 @@ class AtakApiController
             $meta['affiliation'] = $affiliation;
         }
 
+        $flagKeys = ['has_ctab', 'has_atak_enhanced', 'has_athena_ctab', 'mod_athena'];
+        foreach ($flagKeys as $fk) {
+            $raw = $body[$fk] ?? (is_array($extra) ? ($extra[$fk] ?? null) : null);
+            if ($raw === null) {
+                continue;
+            }
+            if ($this->truthyFlag($raw)) {
+                $meta[$fk] = true;
+            } elseif ($raw === false || $raw === 0 || $raw === '0' || $raw === 'false') {
+                $meta[$fk] = false;
+            }
+        }
+
         return $meta;
+    }
+
+    private function truthyFlag(mixed $raw): bool
+    {
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        if (is_int($raw) || is_float($raw)) {
+            return ((int) $raw) === 1;
+        }
+        if (is_string($raw)) {
+            $v = strtolower(trim($raw));
+
+            return in_array($v, ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
+    }
+
+    /**
+     * États des canaux de transmission pour le bandeau ATAK.
+     * linked = en liaison · present = détecté récemment · absent = non détecté.
+     *
+     * @param list<array<string, mixed>> $units
+     * @return array{
+     *   site: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string,count:int},
+     *   athena: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string},
+     *   ctab: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string},
+     *   atak_enhanced: array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string}
+     * }
+     */
+    private function buildTransmissionSources(int $tenantId, int $mapId, ?int $armaAgo, array $units): array
+    {
+        $webCount = count($this->activityLog->listWebPresence($tenantId, $mapId));
+        $detect = $this->activityLog->getModDetection($tenantId, $mapId);
+
+        $ctabFresh = false;
+        $ctabSeen = false;
+        $enhancedFresh = false;
+        $enhancedSeen = false;
+        $athenaFresh = false;
+        foreach ($units as $u) {
+            if (!is_array($u)) {
+                continue;
+            }
+            $status = (string) ($u['status'] ?? '');
+            if ($status !== 'linked' && $status !== 'delayed') {
+                continue;
+            }
+            $fresh = $status === 'linked';
+            $extra = [];
+            $raw = $u['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            if ($this->truthyFlag($extra['mod_athena'] ?? null) || trim((string) ($extra['mod_version'] ?? '')) !== '') {
+                if ($fresh) {
+                    $athenaFresh = true;
+                }
+            }
+            if ($this->truthyFlag($extra['has_ctab'] ?? null)) {
+                if ($fresh) {
+                    $ctabFresh = true;
+                } else {
+                    $ctabSeen = true;
+                }
+            }
+            if (
+                $this->truthyFlag($extra['has_atak_enhanced'] ?? null)
+                || $this->truthyFlag($extra['wr_mpu5'] ?? null)
+            ) {
+                if ($fresh) {
+                    $enhancedFresh = true;
+                } else {
+                    $enhancedSeen = true;
+                }
+            }
+        }
+
+        $siteState = $webCount > 0 ? 'linked' : 'absent';
+
+        $athenaState = 'absent';
+        if ($athenaFresh || ($armaAgo !== null && $armaAgo <= 90)) {
+            $athenaState = 'linked';
+        } elseif (($detect['athena_at'] ?? 0) > 0 || ($armaAgo !== null && $armaAgo <= 600)) {
+            $athenaState = 'present';
+        }
+
+        $ctabState = 'absent';
+        if ($ctabFresh) {
+            $ctabState = 'linked';
+        } elseif ($ctabSeen || ($detect['ctab_at'] ?? 0) > 0) {
+            $ctabState = 'present';
+        }
+
+        $enhancedState = 'absent';
+        if ($enhancedFresh) {
+            $enhancedState = 'linked';
+        } elseif ($enhancedSeen || ($detect['atak_enhanced_at'] ?? 0) > 0) {
+            $enhancedState = 'present';
+        }
+
+        return [
+            'site' => $this->transmissionSourceRow('site', 'Sur le site', 'On the site', $siteState, $webCount),
+            'athena' => $this->transmissionSourceRow('athena', 'Mod Athena', 'Athena mod', $athenaState),
+            'ctab' => $this->transmissionSourceRow('ctab', 'cTab', 'cTab', $ctabState),
+            'atak_enhanced' => $this->transmissionSourceRow('atak_enhanced', 'ATAK Enhanced', 'ATAK Enhanced', $enhancedState),
+        ];
+    }
+
+    /**
+     * @return array{id:string,label:string,label_en:string,state:string,state_label:string,state_label_en:string,count?:int}
+     */
+    private function transmissionSourceRow(string $id, string $labelFr, string $labelEn, string $state, ?int $count = null): array
+    {
+        [$stateFr, $stateEn] = match ($state) {
+            'linked' => ['En liaison', 'Linked'],
+            'present' => ['Présent', 'Present'],
+            default => ['Absent', 'Absent'],
+        };
+        $row = [
+            'id' => $id,
+            'label' => $labelFr,
+            'label_en' => $labelEn,
+            'state' => $state,
+            'state_label' => $stateFr,
+            'state_label_en' => $stateEn,
+        ];
+        if ($count !== null) {
+            $row['count'] = $count;
+        }
+
+        return $row;
     }
 
     private function authArma(): bool
@@ -1019,6 +1173,74 @@ class AtakApiController
     }
 
     /**
+     * Inscription accès anticipé (bêta) — premier lancement du mod Overwatch.
+     * Route publique rate-limitée ; l’adresse réseau est prise côté serveur.
+     */
+    public function betaRegister(Request $request, array $params = []): Response
+    {
+        $body = $this->jsonBody($request);
+        $steamRaw = trim((string) ($body['steam_uid'] ?? $body['steam_id'] ?? ''));
+        $playerUid = trim((string) ($body['player_uid'] ?? $body['uid'] ?? ''));
+        $playerName = trim((string) ($body['player_name'] ?? $body['name'] ?? ''));
+        $armaBuild = trim((string) ($body['arma_build'] ?? $body['arma_id'] ?? ''));
+        $armaBranch = trim((string) ($body['arma_branch'] ?? ''));
+        $modVersion = trim((string) ($body['mod_version'] ?? ''));
+        $extVersion = trim((string) ($body['extension_version'] ?? ''));
+        $acknowledged = !empty($body['acknowledged']) || !empty($body['ack']);
+
+        $steam = SteamId::normalize($steamRaw !== '' ? $steamRaw : null);
+        if ($steam === null && $steamRaw !== '' && SteamId::normalize($playerUid) !== null) {
+            $steam = SteamId::normalize($playerUid);
+        }
+        if ($playerUid === '' && $steam !== null) {
+            $playerUid = $steam;
+        }
+
+        // Au moins un repère joueur ou un build : évite le spam vide.
+        if ($steam === null && $playerUid === '' && $armaBuild === '' && $playerName === '') {
+            return Response::json([
+                'error' => 'missing_identity',
+                'message' => 'Informations insuffisantes pour enregistrer l’accès anticipé.',
+            ], 400);
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
+        }
+        $ip = trim((string) $ip);
+        if (strlen($ip) > 45) {
+            $ip = substr($ip, 0, 45);
+        }
+
+        try {
+            $result = $this->betaRegistrationRepository->upsert([
+                'steam_uid' => $steam,
+                'player_uid' => $playerUid !== '' ? $playerUid : null,
+                'player_name' => $playerName !== '' ? $playerName : null,
+                'client_ip' => $ip !== '' ? $ip : null,
+                'arma_build' => $armaBuild !== '' ? $armaBuild : null,
+                'arma_branch' => $armaBranch !== '' ? $armaBranch : null,
+                'mod_version' => $modVersion !== '' ? $modVersion : null,
+                'extension_version' => $extVersion !== '' ? $extVersion : null,
+                'acknowledged' => $acknowledged,
+            ]);
+        } catch (\Throwable $e) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer l’accès pour le moment. Réessayez plus tard.',
+            ], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'created' => $result['created'],
+            'id' => $result['id'],
+        ]);
+    }
+
+    /**
      * Journal d’activité de liaison (init client, indicatifs, messages / positions).
      * Consommé par le panneau « Activité de liaison » et la page dédiée.
      *
@@ -1076,6 +1298,11 @@ class AtakApiController
                 'include_archived' => $includeArchived || $archivedOnly,
                 'archived_only' => $archivedOnly,
             ];
+            // Sync BFT hors journal par défaut (sauf filtre explicite « position »).
+            $typeStr = is_string($type) ? strtolower($type) : '';
+            if ($typeStr === '' || (!str_contains($typeStr, 'position') && $typeStr !== AtakActivityLogService::TYPE_POSITION)) {
+                $opts['exclude_types'] = [AtakActivityLogService::TYPE_POSITION];
+            }
             $result = $this->activityLog->listFiltered($tenantId, $mapId, $opts);
             $events = $result['events'];
 
@@ -1698,6 +1925,16 @@ class AtakApiController
                 'steam_uid' => $steam,
             ], $callSign !== '' ? $callSign : null)
         );
+        try {
+            // client-init = toujours le mod Athena ; cTab / Enhanced si le handshake les annonce.
+            $this->activityLog->touchModDetection($tenantId, $mapId, [
+                'mod_athena' => true,
+                'has_ctab' => $this->truthyFlag($body['has_ctab'] ?? false),
+                'has_atak_enhanced' => $this->truthyFlag($body['has_atak_enhanced'] ?? false),
+                'has_athena_ctab' => $this->truthyFlag($body['has_athena_ctab'] ?? false),
+            ]);
+        } catch (\Throwable) {
+        }
 
         $payload = ['ok' => true];
         if ($sessionToken !== '') {
@@ -1785,12 +2022,15 @@ class AtakApiController
             static fn ($u) => is_array($u) && (string) ($u['status'] ?? '') === 'linked'
         ));
         $activeCallSigns = $this->atak->getActiveUnitsSummary($tenantId, $mapId, 15);
+        $transmissions = $this->buildTransmissionSources($tenantId, $mapId, $ago, $units);
+
         return Response::json([
             'sockets' => 0,
             'lastArmaActivity' => $last,
             'lastArmaActivityAgo' => $ago,
             'unitsCount' => $unitsCount,
             'activeCallSigns' => $activeCallSigns,
+            'transmissions' => $transmissions,
         ]);
     }
 
@@ -1983,6 +2223,7 @@ class AtakApiController
         $tenantId = $r;
         $mapId = $this->mapId($request);
         $rows = $this->atak->getUnits($tenantId, $mapId);
+        $this->logStaleUnitDisconnects($tenantId, $mapId);
         $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
         if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
             foreach ($rows as &$row) {
@@ -2179,6 +2420,32 @@ class AtakApiController
         }
         unset($patch['callsign']);
 
+        // Alias explicites → clés TOC stockées dans extra (sans toucher radio_freq jeu).
+        $tocAliases = [
+            'toc_radio' => ['toc_radio', 'tocRadio', 'frequence_radio', 'fréquence radio'],
+            'toc_vehicle' => ['toc_vehicle', 'tocVehicle', 'vehicule', 'véhicule'],
+            'toc_note' => ['toc_note', 'tocNote', 'note_libre'],
+        ];
+        $hasTocPatch = false;
+        foreach ($tocAliases as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                if (array_key_exists($alias, $patch)) {
+                    $patch[$canonical] = $patch[$alias];
+                    $hasTocPatch = true;
+                    break;
+                }
+            }
+        }
+        foreach (['tocRadio', 'frequence_radio', 'fréquence radio', 'tocVehicle', 'vehicule', 'véhicule', 'tocNote', 'note_libre'] as $alias) {
+            unset($patch[$alias]);
+        }
+        if ($hasTocPatch && $sessionUser === null) {
+            return Response::json([
+                'error' => 'unauthorized',
+                'message' => 'Connectez-vous pour modifier les notes du contact.',
+            ], 401);
+        }
+
         $prevCall = trim((string) ($before['call_sign'] ?? ''));
         $row = $this->atak->updateUnit($tenantId, $id, $patch);
         if ($row === null) {
@@ -2270,6 +2537,142 @@ class AtakApiController
         $r->setStatusCode(204);
 
         return $r;
+    }
+
+    /**
+     * Couper la liaison ATAK depuis la carte (opérateur concerné ou état-major).
+     * Ne supprime pas le contact : statut hors liaison + journal Déconnexion.
+     */
+    public function unitsDisconnect(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $sessionUser = $this->sessionUserBrief();
+        if ($sessionUser === null) {
+            return Response::json([
+                'error' => 'unauthorized',
+                'message' => 'Connectez-vous pour couper la liaison d’un contact.',
+            ], 401);
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+        $before = $this->atak->getUnitById($tenantId, $id);
+        if ($before === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+        if (!$this->canDeleteUnitOnTacmap($before, $sessionUser)) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Vous n’avez pas l’autorisation de couper cette liaison. Réservé à l’état-major, à l’administration, ou à l’opérateur concerné.',
+            ], 403);
+        }
+
+        $callSign = trim((string) ($before['call_sign'] ?? ''));
+        $mapId = (int) ($before['map_id'] ?? $this->mapId($request, true));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+
+        $this->atak->markUnitOfflineById($tenantId, $id);
+        if ($callSign !== '') {
+            try {
+                $this->atak->markUnitOfflineByCallSign($tenantId, $mapId, $callSign);
+            } catch (\Throwable) {
+            }
+            try {
+                $this->autoResolveOpenMedicalAlertsForCallSign(
+                    $tenantId,
+                    $mapId,
+                    $callSign,
+                    'Liaison coupée — alertes actives clôturées'
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        $actor = $sessionUser['callsign'] !== '' ? $sessionUser['callsign'] : $sessionUser['displayName'];
+        $selfCut = $callSign !== '' && $sessionUser['callsign'] !== ''
+            && strcasecmp($callSign, $sessionUser['callsign']) === 0;
+        $label = $selfCut
+            ? ('Liaison coupée' . ($callSign !== '' ? ' — ' . $callSign : ''))
+            : ('Liaison coupée par ' . ($actor !== '' ? $actor : 'état-major')
+                . ($callSign !== '' ? ' — ' . $callSign : ''));
+        $this->activityLog?->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_DISCONNECT,
+            $label,
+            $actor !== '' ? $actor : null,
+            [
+                'unit_id' => $id,
+                'call_sign' => $callSign,
+                'source' => 'web',
+                'reason' => 'manual',
+            ]
+        );
+
+        $row = $this->atak->getUnitById($tenantId, $id);
+        if (is_array($row)) {
+            $row['status'] = 'offline';
+            $row['db_status'] = 'offline';
+        }
+
+        return Response::json([
+            'ok' => true,
+            'message' => 'Liaison coupée' . ($callSign !== '' ? ' — ' . $callSign : '') . '.',
+            'unit' => $row,
+        ]);
+    }
+
+    /**
+     * Journalise les déconnexions détectées par expiration du heartbeat (TTL).
+     */
+    private function logStaleUnitDisconnects(int $tenantId, int $mapId): void
+    {
+        $expired = $this->atak->drainStaleDisconnects($tenantId, $mapId);
+        if ($expired === []) {
+            return;
+        }
+        foreach ($expired as $u) {
+            $callSign = trim((string) ($u['call_sign'] ?? ''));
+            $unitId = (int) ($u['id'] ?? 0);
+            $label = $callSign !== ''
+                ? 'Déconnexion — ' . $callSign . ' (plus de signal)'
+                : 'Déconnexion (plus de signal)';
+            try {
+                $this->activityLog?->record(
+                    $tenantId,
+                    $mapId,
+                    AtakActivityLogService::TYPE_DISCONNECT,
+                    $label,
+                    $callSign !== '' ? $callSign : null,
+                    [
+                        'unit_id' => $unitId,
+                        'call_sign' => $callSign,
+                        'source' => 'ttl',
+                        'reason' => 'stale',
+                        'ttl_seconds' => AtakDataRepository::UNIT_LIVE_TTL_SECONDS,
+                    ]
+                );
+            } catch (\Throwable) {
+            }
+            if ($callSign !== '') {
+                try {
+                    $this->autoResolveOpenMedicalAlertsForCallSign(
+                        $tenantId,
+                        $mapId,
+                        $callSign,
+                        'Opérateur hors liaison — alertes actives clôturées'
+                    );
+                } catch (\Throwable) {
+                }
+            }
+        }
     }
 
     /**
@@ -2370,12 +2773,36 @@ class AtakApiController
             return true;
         }
         $unitCall = trim((string) ($unit['call_sign'] ?? ''));
-        $userCall = trim((string) ($sessionUser['callsign'] ?? ''));
-        if ($unitCall === '' || $userCall === '') {
+        if ($unitCall === '') {
             return false;
         }
+        $aliases = [];
+        $userCall = trim((string) ($sessionUser['callsign'] ?? ''));
+        if ($userCall !== '') {
+            $aliases[] = $userCall;
+        }
+        // Repli : indicatif plateforme / profil si la session est incomplète.
+        $uid = (int) ($sessionUser['userId'] ?? 0);
+        if ($uid > 0) {
+            try {
+                $fresh = $this->userRepository->findById($uid, (int) (Session::get('tenant_id') ?? 0))
+                    ?? $this->userRepository->findById($uid);
+                if (is_array($fresh)) {
+                    $cs = trim((string) ($fresh['callsign'] ?? ''));
+                    if ($cs !== '') {
+                        $aliases[] = $cs;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+        foreach ($aliases as $alias) {
+            if (strcasecmp($unitCall, $alias) === 0) {
+                return true;
+            }
+        }
 
-        return strcasecmp($unitCall, $userCall) === 0;
+        return false;
     }
 
     /** @param array<string, mixed> $user */
@@ -2507,6 +2934,16 @@ class AtakApiController
         }
         if ($steamNorm !== null && $steamNorm !== '') {
             $extra['steam_uid'] = $steamNorm;
+        }
+        try {
+            $this->activityLog->touchModDetection($tenantId, $mapId, [
+                'mod_athena' => $this->truthyFlag($extra['mod_athena'] ?? true),
+                'has_ctab' => $this->truthyFlag($extra['has_ctab'] ?? false),
+                'has_atak_enhanced' => $this->truthyFlag($extra['has_atak_enhanced'] ?? false)
+                    || $this->truthyFlag($extra['wr_mpu5'] ?? false),
+                'has_athena_ctab' => $this->truthyFlag($extra['has_athena_ctab'] ?? false),
+            ]);
+        } catch (\Throwable) {
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
         $healthNow = strtolower(trim((string) ($extra['health'] ?? $body['health'] ?? '')));
@@ -2757,6 +3194,114 @@ class AtakApiController
             'mapId' => $mapId,
             'weather' => $svc->get($tenantId, $mapId),
         ]);
+    }
+
+    /**
+     * Roster caméras casque / drone (aperçus photo, pas de flux vidéo temps réel).
+     */
+    public function videoFeeds(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakVideoFeedsService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+
+        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $body = $this->jsonBody($request);
+            $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
+            if ($mapId < 1) {
+                $mapId = self::DEFAULT_MAP_ID;
+            }
+            $feeds = $body['feeds'] ?? [];
+            if (!is_array($feeds)) {
+                $feeds = [];
+            }
+            $reporter = trim((string) ($body['callsign'] ?? $body['call_sign'] ?? $body['reporter'] ?? ''));
+            if ($reporter === '' && is_array($actor)) {
+                $reporter = trim((string) ($actor['callsign'] ?? $actor['call_sign'] ?? ''));
+            }
+            $saved = $svc->put($tenantId, $mapId, $feeds, $reporter);
+            $saved = $this->attachFeedSnapshots($tenantId, $saved);
+
+            return Response::json(['ok' => true] + $saved);
+        }
+
+        $mapId = $this->mapId($request);
+        $payload = $svc->get($tenantId, $mapId);
+        $payload = $this->attachFeedSnapshots($tenantId, $payload);
+
+        return Response::json($payload);
+    }
+
+    /**
+     * Attache la dernière capture recon à chaque flux (par id de feed ou auteur + type).
+     *
+     * @param array{mapId?: int, feeds: list<array<string, mixed>>, updated_at?: string} $payload
+     * @return array{mapId?: int, feeds: list<array<string, mixed>>, updated_at?: string}
+     */
+    private function attachFeedSnapshots(int $tenantId, array $payload): array
+    {
+        $feeds = $payload['feeds'] ?? [];
+        if (!is_array($feeds) || $feeds === []) {
+            return $payload;
+        }
+        $ids = [];
+        foreach ($feeds as $f) {
+            if (is_array($f) && trim((string) ($f['id'] ?? '')) !== '') {
+                $ids[] = (string) $f['id'];
+            }
+        }
+        $snap = $this->reconRepo->latestSnapshots($tenantId, $ids, 120);
+        $byFeed = $snap['by_feed'] ?? [];
+        $byAuthor = $snap['by_author_device'] ?? [];
+        foreach ($feeds as &$feed) {
+            if (!is_array($feed)) {
+                continue;
+            }
+            $id = trim((string) ($feed['id'] ?? ''));
+            $row = ($id !== '' && isset($byFeed[$id])) ? $byFeed[$id] : null;
+            if ($row === null) {
+                $cs = strtoupper(trim((string) ($feed['callsign'] ?? '')));
+                $kind = strtolower(trim((string) ($feed['kind'] ?? 'helmet')));
+                $device = match ($kind) {
+                    'drone', 'uav' => 'DRONE',
+                    'vehicle' => 'UAV',
+                    default => 'HELMET',
+                };
+                $key = $cs . ':' . $device;
+                $row = ($cs !== '' && isset($byAuthor[$key])) ? $byAuthor[$key] : null;
+            }
+            if (is_array($row)) {
+                $feed['snapshot_url'] = '/uploads/recon/' . basename((string) ($row['image_path'] ?? ''));
+                $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
+                $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
+                $feed['snapshot_caption'] = $row['caption'] ?? null;
+            } else {
+                $feed['snapshot_url'] = null;
+                $feed['snapshot_id'] = null;
+                $feed['snapshot_at'] = null;
+                $feed['snapshot_caption'] = null;
+            }
+            $feed['kind_label'] = match (strtolower((string) ($feed['kind'] ?? ''))) {
+                'drone', 'uav' => 'Caméra drone',
+                'vehicle' => 'Caméra véhicule',
+                default => 'Caméra casque',
+            };
+        }
+        unset($feed);
+        $payload['feeds'] = $feeds;
+
+        return $payload;
     }
 
     /**
@@ -3364,7 +3909,7 @@ class AtakApiController
                 $tenantId,
                 $mapId,
                 AtakActivityLogService::TYPE_TACTICAL_ALERT,
-                'Réglages d’affichage carte mis à jour',
+                'Affichage des camps mis à jour sur la carte',
                 (string) $author,
                 $saved
             );
@@ -5280,12 +5825,32 @@ class AtakApiController
         $author = $request->query('author');
         $dateFrom = $request->query('date_from');
         $dateTo = $request->query('date_to');
+        $deviceType = $request->query('device_type') ?? $request->query('device');
         $limit = min((int) ($request->query('limit') ?: 100), 200);
         $rows = $this->reconRepo->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
+        if (is_string($deviceType) && $deviceType !== '') {
+            $want = strtoupper($deviceType);
+            $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
+                return strtoupper((string) ($row['device_type'] ?? '')) === $want;
+            }));
+        }
         foreach ($rows as &$r) {
             $r['url'] = '/uploads/recon/' . basename($r['image_path']);
+            $r['device_label'] = $this->reconDeviceLabel((string) ($r['device_type'] ?? 'CTAB'));
         }
+        unset($r);
         return Response::json($rows);
+    }
+
+    private function reconDeviceLabel(string $deviceType): string
+    {
+        return match (strtoupper(trim($deviceType))) {
+            'HELMET', 'HCAM' => 'Caméra casque',
+            'DRONE' => 'Caméra drone',
+            'UAV', 'VEHICLE' => 'Caméra aérienne',
+            'CTAB', 'TABLET' => 'Photo tablette',
+            default => 'Photo terrain',
+        };
     }
 
     public function reconImagesStore(Request $request, array $params = []): Response
@@ -5314,15 +5879,27 @@ class AtakApiController
             @mkdir($dir, 0755, true);
         }
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'jpg';
-        $filename = 'recon_' . date('YmdHis') . '_' . ($_POST['author'] ?? 'unknown') . '.' . $ext;
+        $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($file['tmp_name'], $path)) {
             return Response::json(['error' => 'Save failed'], 500);
         }
+        $rawDevice = (string) ($_POST['device_type'] ?? $_POST['device'] ?? 'CTAB');
+        $deviceNorm = strtoupper(trim($rawDevice));
+        if (in_array($deviceNorm, ['HCAM', 'HELMET_CAM'], true)) {
+            $deviceNorm = 'HELMET';
+        } elseif ($deviceNorm === 'VEHICLE') {
+            $deviceNorm = 'UAV';
+        }
+        $feedId = trim((string) ($_POST['feed_id'] ?? $_POST['feedId'] ?? ''));
+        $unitName = $_POST['unit_name'] ?? $_POST['unitName'] ?? null;
+        if (($unitName === null || $unitName === '') && $feedId !== '') {
+            $unitName = $feedId;
+        }
         $data = [
             'image_path' => 'recon/' . $filename,
             'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
-            'unit_name' => $_POST['unit_name'] ?? $_POST['unitName'] ?? null,
+            'unit_name' => $unitName,
             'side' => $_POST['side'] ?? 'WEST',
             'mission_id' => $_POST['mission_id'] ?? $_POST['missionId'] ?? null,
             'caption' => $_POST['caption'] ?? null,
@@ -5332,11 +5909,20 @@ class AtakApiController
             'grid_ref' => $_POST['grid_ref'] ?? $_POST['grid'] ?? null,
             'heading' => isset($_POST['heading']) ? (float) $_POST['heading'] : null,
             'altitude' => isset($_POST['altitude']) ? (float) $_POST['altitude'] : null,
-            'device_type' => $_POST['device_type'] ?? $_POST['device'] ?? 'CTAB',
+            'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
             'captured_at' => isset($_POST['capturedAt']) ? (int) $_POST['capturedAt'] : time(),
         ];
         $row = $this->reconRepo->create($tenantId, $data);
         $row['url'] = '/uploads/recon/' . $filename;
+        $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+        $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_INTEL,
+            $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
+            (string) ($data['author_callsign'] ?? '')
+        );
         return Response::json($row, 201);
     }
 

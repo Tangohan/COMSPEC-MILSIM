@@ -1283,6 +1283,10 @@ class Container
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
                 self::get(UserRepository::class)
             ),
+            \App\Repositories\AtakBetaRegistrationRepository::class => new \App\Repositories\AtakBetaRegistrationRepository(),
+            \App\Controllers\Admin\AdminAtakBetaRegistrationsController::class => new \App\Controllers\Admin\AdminAtakBetaRegistrationsController(
+                self::get(\App\Repositories\AtakBetaRegistrationRepository::class)
+            ),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumBannedWordRepository::class),
@@ -1916,6 +1920,7 @@ class Container
                 fireTeamRepository: self::get(\App\Repositories\FireTeamRepository::class),
                 operatorIdRepository: self::get(\App\Repositories\AtakOperatorIdRepository::class),
                 medicalTriageRepository: self::get(\App\Repositories\AtakMedicalTriageRepository::class),
+                betaRegistrationRepository: self::get(\App\Repositories\AtakBetaRegistrationRepository::class),
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),

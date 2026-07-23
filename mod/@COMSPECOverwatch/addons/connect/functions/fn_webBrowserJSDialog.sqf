@@ -84,7 +84,9 @@ switch (true) do {
                     "ExecJS",
                     format ["if(window.COMSPEC_setView){window.COMSPEC_setView('%1');}", _safe]
                 ];
-                if !(_view isEqualTo "bft") then {
+                if (_view isEqualTo "bft") then {
+                    [] call comspec_overwatch_connect_fnc_webBrowserMapShow;
+                } else {
                     [_view] call comspec_overwatch_connect_fnc_webBrowserMapHide;
                 };
             } else {
@@ -101,7 +103,9 @@ switch (true) do {
                 "ExecJS",
                 format ["if(window.COMSPEC_setView){window.COMSPEC_setView('%1');}", _safe]
             ];
-            if !(_view isEqualTo "bft") then {
+            if (_view isEqualTo "bft") then {
+                [] call comspec_overwatch_connect_fnc_webBrowserMapShow;
+            } else {
                 [_view] call comspec_overwatch_connect_fnc_webBrowserMapHide;
             };
         } else {

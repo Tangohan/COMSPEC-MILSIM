@@ -2941,6 +2941,14 @@ try {
     echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/atak_beta_registrations_migration.php';
+try {
+    echo "Migration atak_beta_registrations (accès anticipé Overwatch)...\n";
+    run_atak_beta_registrations_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_beta_registrations : ' . $e->getMessage() . "\n";
+}
+
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
 try {
     echo "Migration tenant_atak_access_key (clé d’accès Overwatch par communauté)...\n";

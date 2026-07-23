@@ -368,9 +368,11 @@ private _safeFooter = [_footer] call comspec_overwatch_connect_fnc_webBrowserJsE
 
 private _safeHint = [_mapHint] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 private _safeOct = [_myOct] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+private _latencyMs = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
+if (!(_latencyMs isEqualType 0)) then { _latencyMs = -1; };
 
 private _js = format [
-    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]}}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
+    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]},latencyMs:%21}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
     _safeCallsign,
     _safeRole,
     _state,
@@ -390,7 +392,8 @@ private _js = format [
     _radioRadius,
     _radioMon,
     _radioMonCh,
-    _radioProxJs joinString ","
+    _radioProxJs joinString ",",
+    _latencyMs
 ];
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];
@@ -438,4 +441,20 @@ if (
     [] call comspec_overwatch_connect_fnc_webBrowserMapCenter;
 };
 
+// Première ouverture : basculer vers la carte Arma (le HTML n’a qu’un fond beige de secours)
+if (!(missionNamespace getVariable ["COMSPEC_WebBrowser_MapAutoOpened", false])) then {
+    private _pending = toLower (missionNamespace getVariable ["COMSPEC_TabletPendingView", "bft"]);
+    if (_pending isEqualTo "" || {_pending isEqualTo "bft"}) then {
+        missionNamespace setVariable ["COMSPEC_WebBrowser_MapAutoOpened", true];
+        [] spawn {
+            uiSleep 0.35;
+            if (isNull (findDisplay 9974)) exitWith {};
+            if (missionNamespace getVariable ["COMSPEC_WebBrowser_MapVisible", false]) exitWith {};
+            private _v = toLower (missionNamespace getVariable ["COMSPEC_TabletPendingView", "bft"]);
+            if (_v isEqualTo "" || {_v isEqualTo "bft"}) then {
+                [] call comspec_overwatch_connect_fnc_webBrowserMapShow;
+            };
+        };
+    };
+};
 

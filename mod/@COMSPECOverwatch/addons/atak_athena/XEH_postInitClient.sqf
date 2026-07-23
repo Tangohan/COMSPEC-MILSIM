@@ -1,5 +1,8 @@
 if (!hasInterface) exitWith {};
 
+// Icône Connexion Athena sur l’écran Desktop ATAK Enhanced
+[] call comspec_overwatch_atak_athena_fnc_athena_installDesktopShortcut;
+
 // Dual-send : alertes Iceman → Athena
 ["Iceman_ATAK_Alerts", {
     _this call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanAlert;
@@ -67,3 +70,13 @@ if (!hasInterface) exitWith {};
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [] call comspec_overwatch_atak_athena_fnc_athena_bridgeJump;
 }, 12, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeVideoFeeds;
+}, 10, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_snapshotVideoFeed;
+}, 20, []] call CBA_fnc_addPerFrameHandler;

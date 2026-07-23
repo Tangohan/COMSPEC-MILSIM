@@ -46,6 +46,15 @@
     letter-spacing: 0.04em;
   }
   .osd .brand { color: var(--accent); font-weight: 700; letter-spacing: 0.08em; }
+  .osd .beta-tag {
+    color: #1a1208;
+    background: #e8b84a;
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 1px 6px;
+    margin-left: 6px;
+  }
   .osd .sep { color: var(--line); }
   .osd .muted { color: var(--muted); }
   .osd .status-dot {
@@ -253,6 +262,32 @@
     color: var(--good); text-align: center; padding: 18px 8px;
     font-family: "Roboto Condensed", "Segoe UI", sans-serif;
   }
+  .acc-tx-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--text);
+  }
+  .acc-tx-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #8899aa;
+    flex: 0 0 auto;
+  }
+  .acc-tx-dot.ok { background: #34d399; }
+  .acc-tx-dot.wait { background: #fbbf24; }
+  .acc-tx-dot.bad { background: #f87171; }
+  .acc-tx-ms {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
   .tac-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0;
   }
@@ -296,8 +331,35 @@
   .panel-toolbar {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
     padding: 4px 0 8px;
+  }
+  .panel-toolbar .alerts-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-right: auto;
+  }
+  .alerts-filter-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    background: var(--panel2);
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .alerts-filter-btn:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+  .alerts-filter-btn.is-active {
+    color: var(--text);
+    border-color: var(--accent);
+    background: rgba(45, 212, 168, 0.12);
   }
   .panel-toolbar .btn-clear {
     font-size: 10px;
@@ -1029,6 +1091,7 @@
   <!-- OSD Athena -->
   <header class="osd athena-only">
     <span class="brand">ATHENA · OVERWATCH</span>
+    <span class="beta-tag" title="Programme d’accès anticipé">BÊTA</span>
     <span class="sep">|</span>
     <span id="osd-time" class="muted">--:--:--</span>
     <span class="sep">|</span>
@@ -1085,7 +1148,7 @@
         <div class="contacts" id="contacts"></div>
         <div class="stage-overlay" id="stage-empty">
           <div class="title">Aucun contact affiché</div>
-          <div class="sub" id="stage-empty-sub">Ouverture de la carte terrain… Si rien n’apparaît, utilisez F1 / Carte. Sinon Hub → Transmettre ma position.</div>
+          <div class="sub" id="stage-empty-sub">Ouverture de la carte terrain… Si le fond reste beige, appuyez sur « Carte terrain » en bas de l’écran. Sinon Hub → Transmettre ma position.</div>
         </div>
       </div>
       <div class="panel-view" id="view-radio">
@@ -1106,7 +1169,15 @@
         <div id="orders-feed"></div>
       </div>
       <div class="panel-view" id="view-alerts">
-        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="alerts" title="Vider le journal d’alertes local">Vider</button></div>
+        <div class="panel-toolbar">
+          <div class="alerts-filter" id="alerts-filter" role="tablist" aria-label="Filtrer le journal d’alertes">
+            <button type="button" class="alerts-filter-btn is-active" data-alert-filter="all" role="tab" aria-selected="true">Toutes</button>
+            <button type="button" class="alerts-filter-btn" data-alert-filter="medical" role="tab" aria-selected="false">Médical</button>
+            <button type="button" class="alerts-filter-btn" data-alert-filter="suivi" role="tab" aria-selected="false">Suivi</button>
+            <button type="button" class="alerts-filter-btn" data-alert-filter="autres" role="tab" aria-selected="false">Autres</button>
+          </div>
+          <button type="button" class="btn-clear" data-clear="alerts" title="Vider le journal d’alertes local">Vider</button>
+        </div>
         <div class="feed-empty" id="alerts-empty">Aucune alerte pour le moment. Les notifications Overwatch s’affichent ici, surtout en mode discret.</div>
         <div id="alerts-feed"></div>
       </div>
@@ -1306,7 +1377,12 @@
       </div>
 
       <div class="panel-view" id="view-account">
-        <p class="form-hint">Liez votre compte Athena avec un code court (généré sur le portail), ou laissez le code vide pour tenter la liaison via Steam.</p>
+        <p class="form-hint">Liez votre compte Athena avec un code (généré sur le portail via Connexion en jeu), ou laissez le code vide pour vous identifier via Steam déjà lié à votre profil.</p>
+        <div class="acc-tx-bar" id="acc-tx-bar" role="status" aria-live="polite">
+          <span class="acc-tx-dot" id="acc-tx-dot"></span>
+          <span id="acc-tx-label">Transmission · en attente…</span>
+          <span class="acc-tx-ms" id="acc-tx-ms">— ms</span>
+        </div>
         <div class="form-stack">
           <div class="form-field">
             <label for="acc-code">Code de liaison</label>
@@ -1317,7 +1393,7 @@
             <input type="text" id="acc-steam" maxlength="64" placeholder="Laissé vide = joueur actuel" autocomplete="off">
           </div>
           <div class="form-actions">
-            <button class="btn primary" type="button" id="acc-link">Établir la liaison</button>
+            <button class="btn primary" type="button" id="acc-link">Valider la liaison</button>
             <button class="btn" type="button" data-cmd="open:athena">Ouvrir le portail</button>
           </div>
         </div>
@@ -1487,6 +1563,7 @@
   var seenAlertIds = {};
   var unread = 0;
   var quiet = false;
+  var alertFilter = "all";
   var lastUnits = [];
   var lastProjection = null;
   var measureMode = false;
@@ -1553,18 +1630,71 @@
     medical: "Médical",
     order: "Ordre",
     ping: "Signal",
-    system: "Système"
+    system: "Système",
+    tactical: "Situation"
   };
+
+  function alertBucket(a) {
+    var t = String((a && a.type) || "system").toLowerCase();
+    if (t === "medical") return "medical";
+    var blob = (String((a && a.title) || "") + " " + String((a && a.body) || "")).toLowerCase();
+    if (
+      blob.indexOf("suivi") >= 0
+      || blob.indexOf("immobile") >= 0
+      || blob.indexOf("immobil") >= 0
+      || blob.indexOf("anomalie") >= 0
+      || blob.indexOf("déplacement brusque") >= 0
+      || blob.indexOf("deplacement brusque") >= 0
+      || blob.indexOf("faux positif") >= 0
+    ) {
+      return "suivi";
+    }
+    return "autres";
+  }
+
+  function filteredAlerts() {
+    if (alertFilter === "all") return alerts.slice();
+    var out = [];
+    for (var i = 0; i < alerts.length; i++) {
+      if (alertBucket(alerts[i]) === alertFilter) out.push(alerts[i]);
+    }
+    return out;
+  }
+
+  function updateAlertFilterUi() {
+    var root = document.getElementById("alerts-filter");
+    if (!root) return;
+    var btns = root.querySelectorAll("[data-alert-filter]");
+    for (var i = 0; i < btns.length; i++) {
+      var f = btns[i].getAttribute("data-alert-filter") || "all";
+      var on = f === alertFilter;
+      btns[i].classList.toggle("is-active", on);
+      btns[i].setAttribute("aria-selected", on ? "true" : "false");
+    }
+  }
+
+  function emptyAlertMessage() {
+    if (alertFilter === "medical") return "Aucune alerte médicale pour le moment.";
+    if (alertFilter === "suivi") {
+      return "Aucune détection de suivi (immobile, déplacement brusque…). Ces messages sont souvent des faux positifs à vérifier.";
+    }
+    if (alertFilter === "autres") return "Aucune autre alerte pour le moment.";
+    return "Aucune alerte pour le moment. Les notifications Overwatch s’affichent ici, surtout en mode discret.";
+  }
 
   function send(cmd) {
     var msg = "COMSPEC|" + cmd;
+    // alert() déclenche JSDialog de façon fiable ; A3API.SendAlert est parfois un no-op
+    // (dans ce cas map:show ne bascule jamais vers la carte terrain Arma).
+    try {
+      alert(msg);
+      return;
+    } catch (e2) {}
     try {
       if (window.A3API && typeof A3API.SendAlert === "function") {
         A3API.SendAlert(msg);
-        return;
       }
     } catch (e) {}
-    try { alert(msg); } catch (e2) {}
   }
 
   function escapeHtml(s) {
@@ -1687,6 +1817,29 @@
     setFooterMsg(currentSkin === "fbcb2" ? "Suivi des forces · réseau prêt" : "Vue Athena");
   }
 
+  function updateAccountTxBar(data) {
+    data = data || {};
+    var labelEl = document.getElementById("acc-tx-label");
+    var msEl = document.getElementById("acc-tx-ms");
+    var dotEl = document.getElementById("acc-tx-dot");
+    if (!labelEl || !msEl || !dotEl) return;
+    var status = data.status || "offline";
+    var label = data.statusLabel || "Hors liaison";
+    var txLabel = status === "linked"
+      ? "Transmission active"
+      : (status === "connecting" ? "Connexion en cours…" : "Transmission coupée");
+    labelEl.textContent = txLabel + (label ? (" · " + label) : "");
+    var ms = data.latencyMs;
+    if (ms != null && ms >= 0 && !isNaN(Number(ms))) {
+      msEl.textContent = Math.round(Number(ms)) + " ms";
+    } else {
+      msEl.textContent = "— ms";
+    }
+    dotEl.className = "acc-tx-dot" + (
+      status === "linked" ? " ok" : (status === "connecting" ? " wait" : " bad")
+    );
+  }
+
   function setOsd(data) {
     data = data || {};
     document.getElementById("osd-time").textContent = data.time || "--:--:--";
@@ -1705,6 +1858,7 @@
     var dot = document.getElementById("osd-dot");
     dot.className = "status-dot" + (status === "linked" ? " ok" : (status === "connecting" ? " wait" : ""));
     document.getElementById("osd-status").textContent = label;
+    updateAccountTxBar(data);
 
     var unitName = document.getElementById("fbcb2-unit-name");
     if (unitName) unitName.textContent = "UNITÉ: " + (data.callsign || "—");
@@ -1970,17 +2124,21 @@
   function renderAlerts() {
     var feed = document.getElementById("alerts-feed");
     var empty = document.getElementById("alerts-empty");
-    if (!alerts.length) {
+    updateAlertFilterUi();
+    var list = filteredAlerts();
+    if (!list.length) {
       feed.innerHTML = "";
       empty.style.display = "block";
+      empty.textContent = emptyAlertMessage();
       return;
     }
     empty.style.display = "none";
     var html = "";
-    for (var i = alerts.length - 1; i >= 0; i--) {
-      var a = alerts[i];
+    for (var i = list.length - 1; i >= 0; i--) {
+      var a = list[i];
       var prio = a.priority || "info";
       var typeLabel = TYPE_LABEL[a.type] || "Système";
+      if (alertBucket(a) === "suivi") typeLabel = "Suivi";
       var stale = isWallStale(a.receivedAt) || isMissionTsStale(a.ts);
       html += '<div class="alert-row ' + escapeHtml(prio) + (stale ? " stale" : "") + '"><div class="bar"></div><div>' +
         '<div class="meta">' + escapeHtml(typeLabel) +
@@ -2201,9 +2359,11 @@
     // Carte Arma native (le Chromium masque tout contrôle dessous → bascule navigateur ↔ carte)
     if (currentView === "bft") {
       requestNativeMap(true);
+    } else {
+      requestNativeMap(false);
     }
   }
-  // Appelé depuis SQF après fermeture carte : ne pas redemander la carte si vue = bft (Menus)
+  // Appelé depuis SQF (Menus / MapHide) : appliquer la vue HTML sans redemander la carte
   window.COMSPEC_setView = applyView;
 
   function handleFbcb2(action) {
@@ -2459,6 +2619,15 @@
     if (fbcb2) {
       ev.preventDefault();
       handleFbcb2(fbcb2.getAttribute("data-fbcb2"));
+      return;
+    }
+    var alertFlt = ev.target.closest("[data-alert-filter]");
+    if (alertFlt) {
+      ev.preventDefault();
+      var nf = alertFlt.getAttribute("data-alert-filter") || "all";
+      if (nf !== "all" && nf !== "medical" && nf !== "suivi" && nf !== "autres") nf = "all";
+      alertFilter = nf;
+      renderAlerts();
       return;
     }
     var viewBtn = ev.target.closest("[data-view]");

@@ -7,6 +7,7 @@ private _version = [] call comspec_overwatch_connect_fnc_getModVersion;
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
 private _lastSync = missionNamespace getVariable ["COMSPEC_LastPositionSync", -1];
+private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
 
 private _syncLabel = switch (_state) do {
     case "linked": { "Lié à Athena" };
@@ -39,12 +40,16 @@ if (_lastSync >= 0) then {
     _ago = "Position · pas encore envoyée";
 };
 
+if (_ms >= 0) then {
+    _ago = format ["%1 · %2 ms", _ago, _ms];
+};
+
 if (_detail != "" && {_state != "linked"}) then {
     _ago = _detail;
 };
 
 private _versionHtml = format [
-    "<t align='left' size='0.62' color='#8aa0b4'>Mod  <t color='#c8d8e8'>%1</t></t>",
+    "<t align='left' size='0.62' color='#8aa0b4'>Mod  <t color='#c8d8e8'>%1</t>  <t color='#e8b84a'>BÊTA</t></t>",
     _version
 ];
 private _syncHtml = format [

@@ -390,6 +390,8 @@ if (_connectOk) then {
 
     ["Compte lie — liaison Athena etablie.", "#7dffb0"] call _setStatus;
     ["COMSPEC_Info", ["Compte Athena connecte."]] call comspec_overwatch_connect_fnc_showNotification;
+    [] call comspec_overwatch_connect_fnc_measureLatency;
+    [] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;
 
     0 spawn {
         uiSleep 0.5;
@@ -398,7 +400,8 @@ if (_connectOk) then {
 
     [] call comspec_overwatch_connect_fnc_updateLinkDiary;
     uiSleep 0.8;
-    if (!isNull (uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull])) then { closeDialog 0; };
+    private _linkDisp = uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull];
+    if (!isNull _linkDisp) then { _linkDisp closeDisplay 1; };
 } else {
     // Filet : si Connect a quand meme echoue, retenter le chemin classique (profil).
     [] call comspec_overwatch_connect_fnc_connect;
@@ -412,7 +415,8 @@ if (_connectOk) then {
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         uiSleep 0.8;
-        if (!isNull (uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull])) then { closeDialog 0; };
+        private _linkDisp2 = uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull];
+        if (!isNull _linkDisp2) then { _linkDisp2 closeDisplay 1; };
     } else {
         private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
         private _msg = if (_detail isEqualTo "") then {

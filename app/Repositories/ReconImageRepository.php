@@ -89,4 +89,49 @@ class ReconImageRepository
         }
         return $this->get($tenantId, $id);
     }
+
+    /**
+     * Dernière image par feed (unit_name = feed_id) ou par couple auteur + type d’appareil.
+     *
+     * @param list<string> $feedIds
+     * @return array<string, array<string, mixed>> keyed by feed_id or "device:AUTHOR:TYPE"
+     */
+    public function latestSnapshots(int $tenantId, array $feedIds = [], int $limit = 80): array
+    {
+        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ' . (int) $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$tenantId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $byFeed = [];
+        $byAuthorDevice = [];
+        $feedSet = [];
+        foreach ($feedIds as $fid) {
+            $fid = trim((string) $fid);
+            if ($fid !== '') {
+                $feedSet[$fid] = true;
+            }
+        }
+        foreach ($rows as $row) {
+            $unit = trim((string) ($row['unit_name'] ?? ''));
+            if ($unit !== '' && !isset($byFeed[$unit])) {
+                if ($feedSet === [] || isset($feedSet[$unit])) {
+                    $byFeed[$unit] = $row;
+                }
+            }
+            $author = strtoupper(trim((string) ($row['author_callsign'] ?? '')));
+            $device = strtoupper(trim((string) ($row['device_type'] ?? 'CTAB')));
+            if ($author !== '') {
+                $key = $author . ':' . $device;
+                if (!isset($byAuthorDevice[$key])) {
+                    $byAuthorDevice[$key] = $row;
+                }
+            }
+        }
+
+        return [
+            'by_feed' => $byFeed,
+            'by_author_device' => $byAuthorDevice,
+            'recent' => $rows,
+        ];
+    }
 }

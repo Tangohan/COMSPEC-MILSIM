@@ -9,8 +9,12 @@ use PDO;
 
 class AtakDataRepository
 {
-    /** Délai sans position au-delà duquel une unité « linked » est considérée hors liaison. */
-    public const UNIT_LIVE_TTL_SECONDS = 180;
+    /**
+     * Délai sans position / heartbeat au-delà duquel une unité en liaison
+     * est considérée hors liaison (effetifs, carte, journal).
+     * Aligné sur public/assets/js/atak-units.js (LIVE_TTL_MS).
+     */
+    public const UNIT_LIVE_TTL_SECONDS = 120;
 
     /** Origine (0,0) = position non reçue / parse raté — jamais une vraie case jouable. */
     private const POS_ORIGIN_EPS = 0.5;
@@ -18,6 +22,9 @@ class AtakDataRepository
     private PDO $pdo;
 
     private ?bool $hasPosColumns = null;
+
+    /** @var array<string, list<array{id: int, call_sign: string}>> */
+    private array $pendingStaleDisconnects = [];
 
     public function __construct()
     {
@@ -400,7 +407,14 @@ class AtakDataRepository
 
     public function getUnits(int $tenantId, int $mapId): array
     {
-        $this->markStaleUnitsOffline($tenantId, $mapId);
+        $expired = $this->markStaleUnitsOffline($tenantId, $mapId);
+        if ($expired !== []) {
+            $key = $tenantId . ':' . $mapId;
+            $this->pendingStaleDisconnects[$key] = array_merge(
+                $this->pendingStaleDisconnects[$key] ?? [],
+                $expired
+            );
+        }
         // age_seconds sur l’horloge MySQL (même référence que updated_at / markStale).
         $stmt = $this->pdo->prepare(
             'SELECT *, TIMESTAMPDIFF(SECOND, updated_at, NOW()) AS age_seconds
@@ -415,6 +429,36 @@ class AtakDataRepository
         }
 
         return $this->suppressAlertGhostUnits($out);
+    }
+
+    /**
+     * Unités passées hors liaison par TTL depuis le dernier drain (pour journaliser).
+     *
+     * @return list<array{id: int, call_sign: string}>
+     */
+    public function drainStaleDisconnects(int $tenantId, int $mapId): array
+    {
+        $key = $tenantId . ':' . $mapId;
+        $out = $this->pendingStaleDisconnects[$key] ?? [];
+        unset($this->pendingStaleDisconnects[$key]);
+        if ($out === []) {
+            return [];
+        }
+        // Dédupliquer par id (plusieurs getUnits dans la même requête PHP).
+        $seen = [];
+        $unique = [];
+        foreach ($out as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $seen[$id] = true;
+            }
+            $unique[] = $row;
+        }
+
+        return $unique;
     }
 
     /**
@@ -734,20 +778,89 @@ class AtakDataRepository
     }
 
     /**
-     * Passe en offline les unités encore « linked » sans mise à jour récente.
+     * Passe hors liaison les unités encore en liaison / signal différé sans heartbeat récent.
+     *
+     * @return list<array{id: int, call_sign: string}> Unités effectivement basculées (pour journal).
      */
-    public function markStaleUnitsOffline(int $tenantId, int $mapId): int
+    public function markStaleUnitsOffline(int $tenantId, int $mapId): array
     {
         $ttl = self::UNIT_LIVE_TTL_SECONDS;
+        $select = $this->pdo->prepare(
+            'SELECT id, call_sign FROM atak_units
+             WHERE tenant_id = ? AND map_id = ?
+               AND status IN (?, ?)
+               AND (updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
+        );
+        $select->execute([$tenantId, $mapId, 'linked', 'delayed']);
+        $rows = $select->fetchAll(PDO::FETCH_ASSOC);
+        if ($rows === []) {
+            return [];
+        }
         $stmt = $this->pdo->prepare(
             'UPDATE atak_units SET status = ?
              WHERE tenant_id = ? AND map_id = ?
-               AND status = ?
+               AND status IN (?, ?)
                AND (updated_at IS NULL OR updated_at < (NOW() - INTERVAL ' . (int) $ttl . ' SECOND))'
         );
-        $stmt->execute(['offline', $tenantId, $mapId, 'linked']);
+        $stmt->execute(['offline', $tenantId, $mapId, 'linked', 'delayed']);
+        $out = [];
+        foreach ($rows as $r) {
+            $out[] = [
+                'id' => (int) ($r['id'] ?? 0),
+                'call_sign' => trim((string) ($r['call_sign'] ?? '')),
+            ];
+        }
 
-        return $stmt->rowCount();
+        return $out;
+    }
+
+    /**
+     * Clés TOC (notes effectifs) à préserver lors d’un upsert position jeu.
+     * @return list<string>
+     */
+    public static function tocExtraKeys(): array
+    {
+        return ['toc_radio', 'toc_vehicle', 'toc_note'];
+    }
+
+    /**
+     * @param array<string, mixed>|null $existingExtra
+     * @param array<string, mixed> $incomingExtra
+     * @return array<string, mixed>
+     */
+    public static function mergePreservedTocExtra(?array $existingExtra, array $incomingExtra): array
+    {
+        if (!is_array($existingExtra) || $existingExtra === []) {
+            return $incomingExtra;
+        }
+        foreach (self::tocExtraKeys() as $key) {
+            if (!array_key_exists($key, $existingExtra)) {
+                continue;
+            }
+            // Le jeu n’envoie pas ces clés : on les conserve.
+            if (!array_key_exists($key, $incomingExtra)) {
+                $incomingExtra[$key] = $existingExtra[$key];
+            }
+        }
+
+        return $incomingExtra;
+    }
+
+    /**
+     * @param mixed $raw
+     * @return array<string, mixed>
+     */
+    public static function decodeExtra($raw): array
+    {
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -762,8 +875,8 @@ class AtakDataRepository
         $hasPos = $this->hasPosColumns();
         $stmt = $this->pdo->prepare(
             $hasPos
-                ? 'SELECT id, grid_ref, pos_x, pos_y FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
-                : 'SELECT id, grid_ref FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+                ? 'SELECT id, grid_ref, pos_x, pos_y, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
+                : 'SELECT id, grid_ref, extra FROM atak_units WHERE tenant_id = ? AND map_id = ? AND call_sign = ?'
         );
         $stmt->execute([$tenantId, $mapId, $callSign]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -772,6 +885,13 @@ class AtakDataRepository
 
         if ($existing) {
             $unitId = (int) $existing['id'];
+            // Conserver notes TOC (fréquence / véhicule / note) écrites depuis la Tacmap.
+            $incomingExtra = self::decodeExtra($extraJson);
+            $mergedExtra = self::mergePreservedTocExtra(self::decodeExtra($existing['extra'] ?? null), $incomingExtra);
+            $extraJson = json_encode($mergedExtra, JSON_UNESCAPED_UNICODE);
+            if ($extraJson === false) {
+                $extraJson = '{}';
+            }
             // Conserver la dernière position valide si le payload est 0,0 / invalide.
             $storeX = $posX;
             $storeY = $posY;
@@ -940,13 +1060,44 @@ class AtakDataRepository
         if (!$row) {
             return null;
         }
+        // Fusion notes TOC dans extra (sans écraser la télémétrie jeu).
+        if (array_key_exists('toc_radio', $data) || array_key_exists('toc_vehicle', $data) || array_key_exists('toc_note', $data)) {
+            $extra = self::decodeExtra($row['extra'] ?? null);
+            if (array_key_exists('extra', $data)) {
+                $incoming = is_array($data['extra']) ? $data['extra'] : self::decodeExtra($data['extra']);
+                $extra = array_merge($extra, $incoming);
+            }
+            foreach (self::tocExtraKeys() as $key) {
+                if (!array_key_exists($key, $data)) {
+                    continue;
+                }
+                $val = trim((string) ($data[$key] ?? ''));
+                if ($val === '') {
+                    unset($extra[$key]);
+                } else {
+                    // Limites raisonnables pour l’affichage effectifs.
+                    $max = $key === 'toc_note' ? 500 : 80;
+                    if (function_exists('mb_substr')) {
+                        $val = mb_substr($val, 0, $max);
+                    } else {
+                        $val = substr($val, 0, $max);
+                    }
+                    $extra[$key] = $val;
+                }
+            }
+            $data['extra'] = $extra;
+            unset($data['toc_radio'], $data['toc_vehicle'], $data['toc_note']);
+        } elseif (array_key_exists('extra', $data) && is_array($data['extra'])) {
+            // Merge shallow pour ne pas perdre les clés TOC si le client envoie un extra partiel.
+            $data['extra'] = array_merge(self::decodeExtra($row['extra'] ?? null), $data['extra']);
+        }
         $fields = ['call_sign', 'role', 'status', 'grid_ref', 'heading', 'extra'];
         $updates = [];
         $params = [];
         foreach ($fields as $f) {
             if (array_key_exists($f, $data)) {
                 $updates[] = "{$f} = ?";
-                $params[] = is_array($data[$f] ?? null) ? json_encode($data[$f]) : ($data[$f] ?? $row[$f]);
+                $params[] = is_array($data[$f] ?? null) ? json_encode($data[$f], JSON_UNESCAPED_UNICODE) : ($data[$f] ?? $row[$f]);
             }
         }
         if ($updates === []) {

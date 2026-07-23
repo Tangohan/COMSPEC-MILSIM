@@ -558,7 +558,8 @@ public static class Extension
         return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
     }
 
-    // --- MessageBox Win32 (alerte liaison Athena) ---
+    // --- MessageBox Win32 (alerte liaison Athena / note bêta) ---
+    private const uint MbOk = 0x00000000;
     private const uint MbYesNo = 0x00000004;
     private const uint MbIconInformation = 0x00000040;
     private const uint MbSetForeground = 0x00010000;
@@ -570,6 +571,9 @@ public static class Extension
 
     private static readonly object AthenaHelpLock = new();
     private static bool _athenaHelpShowing;
+
+    private static readonly object BetaNoteLock = new();
+    private static bool _betaNoteShowing;
 
     /// <summary>
     /// Affiche une alerte Windows (MessageBox) avec la marche à suivre pour lier Athena.
@@ -621,10 +625,58 @@ public static class Extension
         }
     }
 
+    /// <summary>
+    /// Note d’accès anticipé (bêta) — affichée au 1er lancement (menu principal).
+    /// Retour : OK|ack | OK|busy | ERR|…
+    /// </summary>
+    private static string ShowBetaAccessNoteMessageBox()
+    {
+        lock (BetaNoteLock)
+        {
+            if (_betaNoteShowing)
+                return "OK|busy";
+            _betaNoteShowing = true;
+        }
+
+        try
+        {
+            const string title = "COMSPEC Overwatch — Accès anticipé";
+            const string body =
+                "Bienvenue dans l’accès anticipé de COMSPEC Overwatch.\n\n" +
+                "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
+                "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
+                "En poursuivant, vous acceptez d’utiliser ce pack dans le cadre de tests " +
+                "avec la plateforme Athena, et vous comprenez que des informations techniques " +
+                "limitées (identifiant Steam, adresse réseau, version du pack) peuvent être " +
+                "enregistrées pour gérer cet accès anticipé.\n\n" +
+                "Utilisez ce pack de façon responsable pendant les sessions organisées.\n\n" +
+                "OK = j’ai lu et j’accepte (ce message ne réapparaîtra plus)";
+
+            MessageBoxW(
+                IntPtr.Zero,
+                body,
+                title,
+                MbOk | MbIconInformation | MbSetForeground | MbTopmost);
+
+            return "OK|ack";
+        }
+        catch
+        {
+            return "ERR|messagebox_failed";
+        }
+        finally
+        {
+            lock (BetaNoteLock)
+            {
+                _betaNoteShowing = false;
+            }
+        }
+    }
+
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 1.16");
+            Output(output, outputSize, "COMSPECExtension 1.17");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -897,13 +949,19 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.16";
+            return "OK|COMSPECExtension 1.17";
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
         if (function is "ShowAthenaLinkHelp")
         {
             return ShowAthenaLinkHelpMessageBox();
+        }
+
+        // Note d’accès anticipé (bêta) — 1er lancement menu principal.
+        if (function is "ShowBetaAccessNote")
+        {
+            return ShowBetaAccessNoteMessageBox();
         }
 
         // Dernier échec d'un envoi fire-and-forget (position, tchat, marqueurs...). Ces envois
@@ -1142,6 +1200,66 @@ public static class Extension
                 // Séparateur | (pas tab) — même format que RedeemGameLink.
                 var simplified = baseUrl + "|" + apiKey + "|" + tenantId;
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            catch (Exception ex)
+            {
+                return FormatCaughtError(ex);
+            }
+        }
+
+        // Inscription accès anticipé (bêta) — URL en argument, pas de clé API.
+        // args: baseUrl, steamUid, playerUid, playerName, modVersion, armaBuild, armaBranch, extensionVersion, acknowledged(0|1)
+        if (function == "RegisterBeta" && args.Length >= 1)
+        {
+            using var betaCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var betaToken = betaCts.Token;
+            var baseUrl = NormalizeBaseUrl(args[0]);
+            if (baseUrl.Length == 0) return "ERR|invalid_url";
+            if (!TryBuildRequestUri(baseUrl, "/api/atak/beta-register", out var betaUri, out var betaUriErr) || betaUri is null)
+                return "ERR|" + betaUriErr;
+
+            var steamUid = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+            var playerUid = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+            var playerName = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+            var modVersion = args.Length > 4 ? (args[4] ?? "").Trim() : "";
+            var armaBuild = args.Length > 5 ? (args[5] ?? "").Trim() : "";
+            var armaBranch = args.Length > 6 ? (args[6] ?? "").Trim() : "";
+            var extVersion = args.Length > 7 ? (args[7] ?? "").Trim() : "1.17";
+            var ackRaw = args.Length > 8 ? (args[8] ?? "1").Trim() : "1";
+            var acknowledged = ackRaw is not ("0" or "false" or "no");
+
+            if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
+                steamNorm = steamUid;
+            if (steamNorm.Length == 0 && TryNormalizeSteamUid(playerUid, out var fromPlayer))
+                steamNorm = fromPlayer;
+
+            try
+            {
+                var payload =
+                    $"{{\"steam_uid\":\"{EscapeJson(steamNorm)}\"," +
+                    $"\"player_uid\":\"{EscapeJson(playerUid)}\"," +
+                    $"\"player_name\":\"{EscapeJson(playerName)}\"," +
+                    $"\"mod_version\":\"{EscapeJson(modVersion)}\"," +
+                    $"\"arma_build\":\"{EscapeJson(armaBuild)}\"," +
+                    $"\"arma_branch\":\"{EscapeJson(armaBranch)}\"," +
+                    $"\"extension_version\":\"{EscapeJson(extVersion)}\"," +
+                    $"\"acknowledged\":{(acknowledged ? "true" : "false")}}}";
+                using var content = new StringContent(payload, Encoding.UTF8);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                using var req = new HttpRequestMessage(HttpMethod.Post, betaUri) { Content = content };
+                var resp = HttpClient.SendAsync(req, betaToken).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, betaToken);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var httpCode = (int)resp.StatusCode;
+                    if (httpCode == 429) return "ERR|rate_limited";
+                    if (httpCode == 400) return "ERR|invalid";
+                    if (httpCode == 503) return "ERR|http_503";
+                    return "ERR|http_" + httpCode;
+                }
+                // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
+                _baseUrl = baseUrl;
+                return "OK|registered";
             }
             catch (Exception ex)
             {
@@ -2370,6 +2488,66 @@ public static class Extension
                 return;
             }
 
+            if (function == "SendVideoFeeds" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            {
+                var feedsJson = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(feedsJson)) return;
+                EnqueueOrSend(_baseUrl + "/api/atak/video-feeds", feedsJson);
+                return;
+            }
+
+            if (function == "UploadLatestScreenshot" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            {
+                // args: author, device_type, caption, feed_id, pos_x, pos_y, pos_z, grid, heading, unit_name, side, mission_id, maxAgeSec
+                var author = args[0] ?? "Unknown";
+                var device = args.Length > 1 ? (args[1] ?? "HELMET") : "HELMET";
+                var caption = args.Length > 2 ? (args[2] ?? "") : "";
+                var feedId = args.Length > 3 ? (args[3] ?? "") : "";
+                var posX = args.Length > 4 ? (args[4] ?? "") : "";
+                var posY = args.Length > 5 ? (args[5] ?? "") : "";
+                var posZ = args.Length > 6 ? (args[6] ?? "") : "";
+                var grid = args.Length > 7 ? (args[7] ?? "") : "";
+                var heading = args.Length > 8 ? (args[8] ?? "") : "";
+                var unitName = args.Length > 9 ? (args[9] ?? "") : "";
+                var side = args.Length > 10 ? (args[10] ?? "WEST") : "WEST";
+                var missionId = args.Length > 11 ? (args[11] ?? "") : "";
+                var maxAgeSec = 45;
+                if (args.Length > 12 && int.TryParse(args[12], out var parsedAge) && parsedAge > 0)
+                    maxAgeSec = Math.Min(parsedAge, 180);
+                try
+                {
+                    var shot = FindNewestScreenshot(TimeSpan.FromSeconds(maxAgeSec));
+                    if (shot == null || !File.Exists(shot)) return;
+                    var fi = new FileInfo(shot);
+                    if (fi.Length > 5 * 1024 * 1024) return;
+                    var bytes = File.ReadAllBytes(shot);
+                    var multipart = new MultipartFormDataContent();
+                    multipart.Add(new StringContent("1"), "mapId");
+                    multipart.Add(new StringContent(author), "author");
+                    multipart.Add(new StringContent(device), "device_type");
+                    if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
+                    if (!string.IsNullOrEmpty(feedId)) multipart.Add(new StringContent(feedId), "feed_id");
+                    if (!string.IsNullOrEmpty(posX)) multipart.Add(new StringContent(posX), "pos_x");
+                    if (!string.IsNullOrEmpty(posY)) multipart.Add(new StringContent(posY), "pos_y");
+                    if (!string.IsNullOrEmpty(posZ)) multipart.Add(new StringContent(posZ), "pos_z");
+                    if (!string.IsNullOrEmpty(grid)) multipart.Add(new StringContent(grid), "grid_ref");
+                    if (!string.IsNullOrEmpty(heading)) multipart.Add(new StringContent(heading), "heading");
+                    var unit = !string.IsNullOrEmpty(unitName) ? unitName : feedId;
+                    if (!string.IsNullOrEmpty(unit)) multipart.Add(new StringContent(unit), "unit_name");
+                    multipart.Add(new StringContent(side), "side");
+                    if (!string.IsNullOrEmpty(missionId)) multipart.Add(new StringContent(missionId), "mission_id");
+                    multipart.Add(new StringContent(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()), "capturedAt");
+                    var fileContent = new ByteArrayContent(bytes);
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                    multipart.Add(fileContent, "image", Path.GetFileName(shot) ?? "feed.jpg");
+                    var reconReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/recon/images") { Content = multipart };
+                    AttachApiKeyHeader(reconReq);
+                    _ = HttpClient.SendAsync(reconReq);
+                }
+                catch { }
+                return;
+            }
+
             if (function == "UploadImage" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
                 var path = args[0] ?? "";
@@ -2474,9 +2652,12 @@ public static class Extension
                     if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
                     if (!string.IsNullOrEmpty(unitName)) multipart.Add(new StringContent(unitName), "unit_name");
                     multipart.Add(new StringContent(side), "side");
-                    if (!string.IsNullOrEmpty(missionId)) multipart.Add(new StringContent(missionId), "mission_id");
+                    if (!string.IsNullOrEmpty(missionId))                     multipart.Add(new StringContent(missionId), "mission_id");
                     multipart.Add(new StringContent(device), "device_type");
                     if (!string.IsNullOrEmpty(capturedAt)) multipart.Add(new StringContent(capturedAt), "capturedAt");
+                    // feed_id optionnel (args[14]) pour lier l’aperçu au roster Cams
+                    var feedId = args.Length > 14 ? (args[14] ?? "") : "";
+                    if (!string.IsNullOrEmpty(feedId)) multipart.Add(new StringContent(feedId), "feed_id");
                     var fileContent = new ByteArrayContent(bytes);
                     fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                     multipart.Add(fileContent, "image", Path.GetFileName(path) ?? "recon.jpg");
@@ -2528,6 +2709,79 @@ public static class Extension
         catch
         {
             // ignore
+        }
+    }
+
+    /// <summary>
+    /// Cherche la capture d’écran Arma la plus récente (dossier Screenshots du profil).
+    /// </summary>
+    private static string? FindNewestScreenshot(TimeSpan maxAge)
+    {
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs) || !Directory.Exists(docs)) return null;
+            var dirs = new List<string>();
+            void AddIfExists(string p)
+            {
+                if (!string.IsNullOrWhiteSpace(p) && Directory.Exists(p) && !dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
+                    dirs.Add(p);
+            }
+            AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
+            var other = Path.Combine(docs, "Arma 3 - Other Profiles");
+            if (Directory.Exists(other))
+            {
+                foreach (var profileDir in Directory.EnumerateDirectories(other))
+                    AddIfExists(Path.Combine(profileDir, "Screenshots"));
+            }
+            // OneDrive Documents (souvent le vrai dossier utilisateur)
+            try
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                if (!string.IsNullOrWhiteSpace(userProfile))
+                {
+                    AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
+                    AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles"));
+                }
+            }
+            catch { }
+
+            FileInfo? best = null;
+            var cutoff = DateTime.UtcNow - maxAge;
+            foreach (var dir in dirs)
+            {
+                IEnumerable<string> files;
+                try
+                {
+                    files = Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)
+                        .Where(f =>
+                        {
+                            var ext = Path.GetExtension(f);
+                            return ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                || ext.Equals(".png", StringComparison.OrdinalIgnoreCase);
+                        });
+                }
+                catch { continue; }
+                foreach (var f in files)
+                {
+                    try
+                    {
+                        var fi = new FileInfo(f);
+                        if (!fi.Exists) continue;
+                        var writeUtc = fi.LastWriteTimeUtc;
+                        if (writeUtc < cutoff) continue;
+                        if (best == null || writeUtc > best.LastWriteTimeUtc)
+                            best = fi;
+                    }
+                    catch { }
+                }
+            }
+            return best?.FullName;
+        }
+        catch
+        {
+            return null;
         }
     }
 

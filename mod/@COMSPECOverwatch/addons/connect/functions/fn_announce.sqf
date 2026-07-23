@@ -1,9 +1,10 @@
 /*
-    Annonce métier : journal HTML + (sauf mode discret / milsim) chat système.
+    Annonce métier : journal HTML + (si notifications à l’écran) chat système.
     Params: [_message, _type, _priority, _forceGameUi]
       type     : link | medical | order | ping | system | tactical
       priority : info | warn | critical
-      forceGameUi : true pour toujours afficher le chat (dialogues critiques ; ignoré en mode milsim)
+      forceGameUi : réservé (compat) — le chat système suit toujours
+                    « Afficher les notifications à l’écran » (défaut OFF).
 */
 params [
     ["_message", "", [""]],
@@ -28,16 +29,16 @@ private _title = _titles getOrDefault [toLower _type, "Overwatch"];
 
 [_type, _title, _message, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
 
-private _quiet = missionNamespace getVariable ["comspec_overwatch_quiet_mode", false];
+// Chat système (systemChat) : même porte que les bandeaux — défaut OFF.
+// Mode milsim : pas de chat « confort » (anomalies / infos / signalements).
 private _milsim = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
-// Mode milsim : pas de chat système « confort » (anomalies / infos), même avec forceGameUi.
 if (_milsim && {(toLower _type) in ["system", "ping", "tactical"]}) exitWith {};
-if ((!_quiet && {!_milsim}) || {_forceGameUi && {!_milsim}}) then {
-    private _prefix = switch (toLower _type) do {
-        case "link": { "[Athena] " };
-        case "medical": { "[COMSPEC] " };
-        case "tactical": { "[Situation] " };
-        default { "[COMSPEC] " };
-    };
-    systemChat (_prefix + _message);
+if !([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) exitWith {};
+
+private _prefix = switch (toLower _type) do {
+    case "link": { "[Athena] " };
+    case "medical": { "[COMSPEC] " };
+    case "tactical": { "[Situation] " };
+    default { "[COMSPEC] " };
 };
+systemChat (_prefix + _message);

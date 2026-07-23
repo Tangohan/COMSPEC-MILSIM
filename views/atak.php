@@ -15,6 +15,7 @@ $atakCaps = $atakCaps ?? [
     'canViewPersonnel' => false,
     'canLinkPersonnel' => false,
     'canRenameUnit' => false,
+    'canEditUnitNotes' => false,
     'canDeleteUnitStaff' => false,
     'canDeleteOwnUnit' => false,
     'canPing' => true,
@@ -25,6 +26,9 @@ $atakUiPrefs = $atakUiPrefs ?? ['theme' => 'system', 'density' => 'compact'];
 $canAccessAdminAtakConfig = $canAccessAdminAtakConfig ?? false;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
+$atakPopoutRaw = isset($_GET['popout']) ? strtolower(trim((string) $_GET['popout'])) : '';
+$atakPopout = ($atakPopoutRaw === 'left' || $atakPopoutRaw === 'right') ? $atakPopoutRaw : '';
+$atakPopoutTab = isset($_GET['tab']) ? preg_replace('/[^a-z0-9_-]/i', '', (string) $_GET['tab']) : '';
 $atakMapConfigForJs = null;
 if ($atakMapConfig) {
   $c = $atakMapConfig['config'] ?? [];
@@ -51,7 +55,10 @@ if ($atakMapConfig) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>COMSPEC ATAK | Carte tactique Arma 3</title>
+  <title><?= $atakPopout === 'left' ? 'Panneau ATAK' : ($atakPopout === 'right' ? 'Effectifs ATAK' : 'COMSPEC ATAK | Carte tactique Arma 3') ?></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
@@ -69,11 +76,14 @@ if ($atakMapConfig) {
     window.ATAK_DEFAULT_MAP_ID = <?= (int)$atakDefaultMapId ?>;
     window.ATAK_NODE_URL = <?= json_encode($nodeAtakUrl ?? '') ?>;
     window.ATAK_CALLSIGN_TO_USER = <?= json_encode($atakCallsignToUser) ?>;
+    window.ATAK_POPOUT = <?= json_encode($atakPopout !== '' ? $atakPopout : null) ?>;
+    window.ATAK_POPOUT_TAB = <?= json_encode($atakPopoutTab !== '' ? $atakPopoutTab : null) ?>;
     window.ATAK_CAPS = <?= json_encode($atakCaps ?? [
         'loggedIn' => false,
         'canViewPersonnel' => false,
         'canLinkPersonnel' => false,
         'canRenameUnit' => false,
+        'canEditUnitNotes' => false,
         'canDeleteUnitStaff' => false,
         'canDeleteOwnUnit' => false,
         'canPing' => true,
@@ -83,10 +93,11 @@ if ($atakMapConfig) {
     window.ATAK_PROFILE_HINTS = <?= json_encode($atakProfileHints ?? [
         'suggestedRole' => 'operator',
         'suggestedSpecialties' => [],
+        'hasSuggestionBasis' => false,
     ]) ?>;
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?>">
+<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?><?= $atakPopout !== '' ? ' atak-popout atak-popout--' . htmlspecialchars($atakPopout, ENT_QUOTES, 'UTF-8') : '' ?>">
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
@@ -104,6 +115,7 @@ if ($atakMapConfig) {
       <div class="atak-logo-wrap">
         <span class="atak-logo">ATHENA</span>
         <span class="atak-overwatch">ATAK</span>
+        <span class="atak-beta-badge" title="Programme d’accès anticipé">BÊTA</span>
       </div>
       <span class="atak-header-tagline" title="État de la liaison">Liaison</span>
       <div class="atak-header-chips" aria-label="État de la carte">
@@ -179,7 +191,7 @@ if ($atakMapConfig) {
         <span class="atak-os-metric-key">Latence</span>
         <span class="atak-os-metric-value" id="atak-metric-latency-value">—</span>
       </li>
-      <li class="atak-os-metric" id="atak-metric-loss" title="Pertes de paquets (indisponible tant que le mod ne remonte pas cette mesure)">
+      <li class="atak-os-metric" id="atak-metric-loss" title="Pertes de paquets (indisponible tant que le jeu ne remonte pas cette mesure)">
         <span class="atak-os-metric-key">Pertes de paquets</span>
         <span class="atak-os-metric-value" id="atak-metric-loss-value">—</span>
       </li>
@@ -188,7 +200,28 @@ if ($atakMapConfig) {
         <span class="atak-os-metric-value" id="atak-metric-theatre-value">En attente</span>
       </li>
     </ul>
-    <p class="atak-os-strip-hint">Liaison jeu : <strong>Connexion en jeu</strong> → code → touche <strong>K</strong> → Compte Athena.</p>
+    <p class="atak-os-strip-hint">Liaison jeu : <strong>Connexion en jeu</strong> → code → téléphone ATAK (<strong>Desktop</strong> → <strong>Connexion Athena</strong>) ou touche <strong>K</strong>.</p>
+  </div>
+  <div class="atak-tx-strip" role="status" aria-live="polite" aria-label="Canaux de transmission">
+    <p class="atak-tx-strip-lead">Transmission</p>
+    <ul class="atak-tx-chips">
+      <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-site" data-state="absent" title="Transmission depuis le portail web">
+        <span class="atak-tx-chip-key">Sur le site</span>
+        <span class="atak-tx-chip-value" id="atak-tx-site-value">Absent</span>
+      </li>
+      <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-athena" data-state="absent" title="Mod Athena (Overwatch) en jeu">
+        <span class="atak-tx-chip-key">Mod Athena</span>
+        <span class="atak-tx-chip-value" id="atak-tx-athena-value">Absent</span>
+      </li>
+      <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-ctab" data-state="absent" title="Tablette cTab détectée en jeu">
+        <span class="atak-tx-chip-key">cTab</span>
+        <span class="atak-tx-chip-value" id="atak-tx-ctab-value">Absent</span>
+      </li>
+      <li class="atak-tx-chip atak-tx-chip--absent" id="atak-tx-atak_enhanced" data-state="absent" title="ATAK Enhanced détecté en jeu">
+        <span class="atak-tx-chip-key">ATAK Enhanced</span>
+        <span class="atak-tx-chip-value" id="atak-tx-atak_enhanced-value">Absent</span>
+      </li>
+    </ul>
   </div>
 
   <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
@@ -204,7 +237,7 @@ if ($atakMapConfig) {
           <h3 class="atak-account-section-title">Connexion en jeu</h3>
           <span class="atak-pill atak-pill--ok">30 min · usage unique</span>
         </div>
-        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>. Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
+        <p class="atak-game-link-hint">Générez un code, puis saisissez-le dans Arma : téléphone ATAK Enhanced → écran <strong>Desktop</strong> → <strong>Connexion Athena</strong> (ou touche <strong>K</strong> → <strong>Connexion Athena</strong>). Le code expire après 30 minutes et ne peut être utilisé qu’une fois.</p>
         <button type="button" class="atak-game-link-btn" id="atak-game-link-btn">Générer un code</button>
         <div class="atak-game-link-result" id="atak-game-link-result" hidden>
           <p class="atak-game-link-code-label">Votre code</p>
@@ -288,13 +321,36 @@ if ($atakMapConfig) {
       <?php endif; ?>
       <section class="atak-account-section" id="atak-display-prefs">
         <h3 class="atak-account-section-title">Affichage</h3>
-        <p class="atak-game-link-hint">Choisissez ce qui apparaît en priorité sur les unités de la carte. Mémorisé sur cet appareil.</p>
+        <p class="atak-game-link-hint">Apparence des positions sur la carte et simulations de liaison. Mémorisé sur cet appareil.</p>
+        <label class="atak-sound-pref-label" for="atak-unit-style-mode">
+          <span class="atak-sound-pref-key">Apparence des positions</span>
+          <select id="atak-unit-style-mode" class="atak-header-select atak-sound-pref-select" title="Style des marqueurs d’unités sur la carte">
+            <option value="nato" selected>Symbole OTAN ou photo</option>
+            <option value="dot">Point simple</option>
+            <option value="team_dot">Point couleur d’équipe</option>
+          </select>
+        </label>
         <label class="atak-sound-pref-label" for="atak-unit-marker-priority">
-          <span class="atak-sound-pref-key">Priorité marqueur</span>
-          <select id="atak-unit-marker-priority" class="atak-header-select atak-sound-pref-select" title="Symbole affiché sur les unités de la carte">
+          <span class="atak-sound-pref-key">Priorité symbole / photo</span>
+          <select id="atak-unit-marker-priority" class="atak-header-select atak-sound-pref-select" title="Quand l’apparence est en symbole OTAN ou photo">
             <option value="nato" selected>Symbole OTAN</option>
             <option value="avatar">Photo de profil</option>
           </select>
+        </label>
+        <label class="atak-sound-pref-label" for="atak-unit-icon-size">
+          <span class="atak-sound-pref-key">Taille des icônes <span class="atak-sound-pref-val" id="atak-unit-icon-size-val">16</span></span>
+          <input type="range" id="atak-unit-icon-size" class="atak-sound-pref-slider" min="8" max="48" step="1" value="16" title="Taille des icônes sur la carte" aria-valuemin="8" aria-valuemax="48" aria-valuenow="16" />
+        </label>
+        <label class="atak-sound-pref-label" for="atak-unit-label-size">
+          <span class="atak-sound-pref-key">Taille des libellés <span class="atak-sound-pref-val" id="atak-unit-label-size-val">7</span></span>
+          <input type="range" id="atak-unit-label-size" class="atak-sound-pref-slider" min="6" max="16" step="1" value="7" title="Taille des indicatifs sous les marqueurs" aria-valuemin="6" aria-valuemax="16" aria-valuenow="7" />
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-unit-ft-frame">
+          <span class="atak-sound-pref-key">Cadre d’équipe</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-unit-ft-frame" checked />
+            <span>Afficher le cadre coloré autour des unités d’une équipe de feu</span>
+          </span>
         </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-hide-panel-hints">
           <span class="atak-sound-pref-key">Textes d’aide</span>
@@ -302,6 +358,30 @@ if ($atakMapConfig) {
             <input type="checkbox" id="atak-hide-panel-hints" />
             <span>Masquer les aides des panneaux</span>
           </span>
+        </label>
+        <h4 class="atak-account-section-subtitle">Simulation de liaison</h4>
+        <p class="atak-game-link-hint">Pour l’entraînement : ralentir ou faire « sauter » certaines mises à jour de position sur la carte uniquement (la liste Effectifs reste à jour).</p>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-pos-delay-enabled">
+          <span class="atak-sound-pref-key">Retard de position</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-pos-delay-enabled" />
+            <span>Retarder l’affichage des positions sur la carte</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label" for="atak-pos-delay-sec">
+          <span class="atak-sound-pref-key">Durée du retard <span class="atak-sound-pref-val" id="atak-pos-delay-sec-val">2 s</span></span>
+          <input type="range" id="atak-pos-delay-sec" class="atak-sound-pref-slider" min="0.5" max="10" step="0.5" value="2" title="Retard appliqué aux positions" aria-valuemin="0.5" aria-valuemax="10" aria-valuenow="2" disabled />
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-pos-loss-enabled">
+          <span class="atak-sound-pref-key">Pertes de liaison</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-pos-loss-enabled" />
+            <span>Simuler des pertes de liaison (certaines positions ne s’actualisent pas)</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label" for="atak-pos-loss-pct">
+          <span class="atak-sound-pref-key">Intensité des pertes <span class="atak-sound-pref-val" id="atak-pos-loss-pct-val">25 %</span></span>
+          <input type="range" id="atak-pos-loss-pct" class="atak-sound-pref-slider" min="5" max="80" step="5" value="25" title="Part des mises à jour de position ignorées" aria-valuemin="5" aria-valuemax="80" aria-valuenow="25" disabled />
         </label>
       </section>
       <section class="atak-account-section" id="atak-sound-prefs">
@@ -418,6 +498,22 @@ if ($atakMapConfig) {
             <span class="atak-health-label">Mod en jeu</span>
             <span class="atak-health-cell" id="health-arma">—</span>
           </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Sur le site</span>
+            <span class="atak-health-cell atak-health-muted" id="health-tx-site">Absent</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">Mod Athena</span>
+            <span class="atak-health-cell atak-health-muted" id="health-tx-athena">Absent</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">cTab</span>
+            <span class="atak-health-cell atak-health-muted" id="health-tx-ctab">Absent</span>
+          </div>
+          <div class="atak-health-card">
+            <span class="atak-health-label">ATAK Enhanced</span>
+            <span class="atak-health-cell atak-health-muted" id="health-tx-atak_enhanced">Absent</span>
+          </div>
         </div>
       </details>
       <details class="atak-details">
@@ -503,7 +599,7 @@ if ($atakMapConfig) {
           <p class="atak-session-hub__kicker" id="atak-session-hub-kicker">Préambule</p>
           <h2 id="atak-session-profile-title" class="atak-session-hub__title">Connexion ATAK</h2>
           <p class="atak-session-hub__lead" id="atak-session-hub-lead">
-            Cadre de session, choix du rôle, puis liaison avec le théâtre — comme à l’ouverture d’un parcours.
+            Préparez votre entrée sur la carte tactique : rôle et spécialités pour cette session, puis liaison optionnelle avec Arma pour synchroniser le théâtre.
           </p>
           <div class="atak-session-hub__actions">
             <button type="button" class="atak-session-hub__btn atak-session-hub__btn--primary" id="atak-hub-welcome-next">Continuer</button>
@@ -589,7 +685,7 @@ if ($atakMapConfig) {
           <p class="atak-session-hub__kicker">Liaison</p>
           <h2 class="atak-session-hub__title">Lier le jeu (facultatif)</h2>
           <p class="atak-session-hub__lead">
-            Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena</strong>.
+            Générez un code, puis saisissez-le dans Arma : téléphone ATAK → <strong>Desktop</strong> → <strong>Connexion Athena</strong> (ou touche <strong>K</strong>).
             Vous pourrez aussi le faire plus tard depuis le compte.
           </p>
           <div class="atak-session-hub__link-box">
@@ -639,6 +735,12 @@ if ($atakMapConfig) {
 
   <div class="atak-main">
     <aside class="atak-panel-left" id="atak-panel-left">
+      <div class="atak-panel-dock" id="atak-panel-left-dock" hidden>
+        <p class="atak-panel-dock-title">Panneau détaché</p>
+        <p class="atak-panel-dock-text">Ouvert dans une autre fenêtre.</p>
+        <button type="button" class="atak-panel-chrome-btn" data-atak-popout-focus="left">Revenir au panneau</button>
+        <button type="button" class="atak-panel-chrome-btn atak-panel-chrome-btn--ghost" data-atak-popout-restore="left">Réintégrer ici</button>
+      </div>
       <div class="atak-left-rail">
       <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
         <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams"><span class="atak-tab-label">Cams</span></button>
@@ -671,15 +773,21 @@ if ($atakMapConfig) {
       </section>
       </div>
       <div class="atak-left-body">
+      <div class="atak-panel-chrome" id="atak-panel-left-chrome" role="toolbar" aria-label="Contrôles du panneau">
+        <span class="atak-panel-chrome-label">Panneau</span>
+        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-left-popout" data-atak-popout="left" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
+      </div>
       <div class="atak-tabs-content active" id="tab-cams">
-        <div class="atak-cams-list" id="atak-cams-list">
-          <div class="atak-empty-state">
-            <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
-            <p class="atak-empty-state-title">Aucun flux</p>
-            <p class="atak-empty-state-text">Les photos CTAB envoyées depuis Arma apparaîtront ici.</p>
+        <div class="atak-cams-panel">
+          <div class="atak-cams-list" id="atak-cams-list">
+            <div class="atak-empty-state">
+              <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
+              <p class="atak-empty-state-title">Aucun aperçu pour l’instant</p>
+              <p class="atak-empty-state-text">Les caméras casque et drones détectés en jeu, ainsi que les photos envoyées depuis la tablette, apparaîtront ici.</p>
+            </div>
           </div>
+          <div id="atak-intel-photos" class="atak-intel-photos"></div>
         </div>
-        <div id="atak-intel-photos"></div>
       </div>
       <div class="atak-tabs-content" id="tab-markers">
         <div class="atak-markers-list" id="atak-markers-list">
@@ -803,10 +911,15 @@ if ($atakMapConfig) {
       </div>
       <div class="atak-tabs-content" id="tab-medical">
         <div class="atak-medical-head">
-          <p class="atak-panel-hint">Alertes transmises depuis le théâtre (combattant au sol, rythme cardiaque à zéro) et unités à secourir. Les alertes disparaissent automatiquement après 30 minutes. Masquer une alerte la retire de cet écran uniquement — le journal Liaison et le tchat restent inchangés. Le triage (Traité, KIA, Annulé…) est réservé aux médecins et responsables d’effectifs.</p>
+          <p class="atak-panel-hint">Alertes transmises depuis le théâtre et unités à secourir. Utilisez les onglets pour séparer les urgences confirmées, les détections automatiques « au sol » (parfois de faux positifs) et les bilans. Les alertes disparaissent après 30 minutes. Masquer retire l’affichage ici uniquement — le journal Liaison et le tchat restent inchangés. Le triage est réservé aux médecins et responsables d’effectifs.</p>
           <div class="atak-medical-toolbar">
             <button type="button" class="atak-hints-toggle" data-atak-hints-toggle title="Masquer ou réafficher les textes d’aide des panneaux">Masquer les aides</button>
             <button type="button" class="atak-medical-clear-all" id="atak-medical-clear-all" title="Masquer toutes les alertes affichées" hidden>Tout masquer</button>
+          </div>
+          <div class="atak-medical-subtabs" id="atak-medical-subtabs" role="tablist" aria-label="Filtrer les assistances">
+            <button type="button" class="atak-medical-subtab is-active" role="tab" aria-selected="true" data-medical-filter="urgences" title="Arrêt cardiaque et urgences confirmées">Urgences <span class="atak-medical-subtab-count" data-medical-count="urgences" hidden></span></button>
+            <button type="button" class="atak-medical-subtab" role="tab" aria-selected="false" data-medical-filter="suivi" title="Détections automatiques au sol / immobilisation — à vérifier">Au sol / suivi <span class="atak-medical-subtab-count" data-medical-count="suivi" hidden></span></button>
+            <button type="button" class="atak-medical-subtab" role="tab" aria-selected="false" data-medical-filter="autres" title="Bilans de santé et autres signalements">Bilans et autres <span class="atak-medical-subtab-count" data-medical-count="autres" hidden></span></button>
           </div>
         </div>
         <div class="atak-medical-list" id="atak-medical-list">
@@ -816,17 +929,22 @@ if ($atakMapConfig) {
             <p class="atak-empty-state-text">Les demandes médicales en cours s’afficheront ici.</p>
           </div>
         </div>
-        <section class="atak-ops-section" aria-labelledby="atak-medevac-title">
-          <h3 class="atak-ops-section-title" id="atak-medevac-title">9-Line MEDEVAC</h3>
-          <p class="atak-panel-hint">Format US d’évacuation sanitaire — distinct de la 9-line d’appui aérien (onglet JTAC).</p>
-          <button type="button" class="atak-ops-btn" id="atak-medevac-new">Nouvelle demande MEDEVAC</button>
-          <div id="atak-medevac-form-fields" class="atak-ops-form" style="display:none;"></div>
-          <div class="atak-medevac-list" id="atak-medevac-list"></div>
-        </section>
+        <details class="atak-collapse atak-ops-section" data-atak-collapse="medical-medevac" data-atak-collapse-default="1" open>
+          <summary class="atak-collapse-sum" id="atak-medevac-title">9-Line MEDEVAC</summary>
+          <div class="atak-collapse-body">
+            <p class="atak-panel-hint">Format US d’évacuation sanitaire — distinct de la 9-line d’appui aérien (onglet JTAC).</p>
+            <button type="button" class="atak-ops-btn" id="atak-medevac-new">Nouvelle demande MEDEVAC</button>
+            <div id="atak-medevac-form-fields" class="atak-ops-form" style="display:none;"></div>
+            <div class="atak-medevac-list" id="atak-medevac-list"></div>
+          </div>
+        </details>
       </div>
       <div class="atak-tabs-content" id="tab-radio">
         <div class="atak-radio-head" id="atak-radio-head">
-          <p class="atak-panel-hint">Qui émet près d’un opérateur en liaison, et sur quel réseau. L’écoute audio se fait en jeu ; ici vous suivez qui émet (pastilles, liste, alertes). Sur la tablette Overwatch, « Surveiller ce réseau » bascule aussi le canal radio actif.</p>
+          <details class="atak-collapse atak-collapse--hint" data-atak-collapse="radio-help" data-atak-collapse-default="0">
+            <summary class="atak-collapse-sum atak-collapse-sum--subtle">Aide radio</summary>
+            <p class="atak-panel-hint">Qui émet près d’un opérateur en liaison, et sur quel réseau. L’écoute audio se fait en jeu ; ici vous suivez qui émet (pastilles, liste, alertes). Sur la tablette Overwatch, « Surveiller ce réseau » bascule aussi le canal radio actif.</p>
+          </details>
           <div class="atak-radio-toolbar">
             <label class="atak-radio-field">
               <span>Opérateur de référence</span>
@@ -863,53 +981,55 @@ if ($atakMapConfig) {
             <p class="atak-empty-state-text">Les contacts en liaison apparaîtront ici avec leur état d’émission.</p>
           </div>
         </div>
-        <section class="atak-ops-section" aria-labelledby="atak-pace-title">
-          <h3 class="atak-ops-section-title" id="atak-pace-title">Plan PACE</h3>
-          <p class="atak-panel-hint">Primaire · Alternatif · Contingence · Urgence — plan de fréquences redondant pour le théâtre.</p>
-          <p class="atak-pace-meta" id="atak-pace-meta"></p>
-          <div class="atak-pace-grid">
-            <fieldset class="atak-pace-slot">
-              <legend>Primaire</legend>
-              <label class="atak-ops-field">Libellé <input id="atak-pace-primary-label" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Fréquence <input id="atak-pace-primary-freq" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Réseau <input id="atak-pace-primary-net" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Notes <input id="atak-pace-primary-notes" type="text" autocomplete="off" /></label>
-            </fieldset>
-            <fieldset class="atak-pace-slot">
-              <legend>Alternatif</legend>
-              <label class="atak-ops-field">Libellé <input id="atak-pace-alternate-label" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Fréquence <input id="atak-pace-alternate-freq" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Réseau <input id="atak-pace-alternate-net" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Notes <input id="atak-pace-alternate-notes" type="text" autocomplete="off" /></label>
-            </fieldset>
-            <fieldset class="atak-pace-slot">
-              <legend>Contingence</legend>
-              <label class="atak-ops-field">Libellé <input id="atak-pace-contingency-label" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Fréquence <input id="atak-pace-contingency-freq" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Réseau <input id="atak-pace-contingency-net" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Notes <input id="atak-pace-contingency-notes" type="text" autocomplete="off" /></label>
-            </fieldset>
-            <fieldset class="atak-pace-slot">
-              <legend>Urgence</legend>
-              <label class="atak-ops-field">Libellé <input id="atak-pace-emergency-label" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Fréquence <input id="atak-pace-emergency-freq" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Réseau <input id="atak-pace-emergency-net" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">Notes <input id="atak-pace-emergency-notes" type="text" autocomplete="off" /></label>
-            </fieldset>
-          </div>
-          <div class="atak-pace-team-add">
-            <p class="atak-panel-hint">Ajouter / mettre à jour une équipe</p>
-            <label class="atak-ops-field">Équipe <input id="atak-pace-team-name" type="text" placeholder="Ex. Alpha" autocomplete="off" /></label>
-            <div class="atak-pace-team-freqs">
-              <label class="atak-ops-field">P <input id="atak-pace-team-p" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">A <input id="atak-pace-team-a" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">C <input id="atak-pace-team-c" type="text" autocomplete="off" /></label>
-              <label class="atak-ops-field">E <input id="atak-pace-team-e" type="text" autocomplete="off" /></label>
+        <details class="atak-collapse atak-ops-section" data-atak-collapse="radio-pace" data-atak-collapse-default="0">
+          <summary class="atak-collapse-sum" id="atak-pace-title">Plan PACE</summary>
+          <div class="atak-collapse-body">
+            <p class="atak-panel-hint">Primaire · Alternatif · Contingence · Urgence — plan de fréquences redondant pour le théâtre.</p>
+            <p class="atak-pace-meta" id="atak-pace-meta"></p>
+            <div class="atak-pace-grid">
+              <fieldset class="atak-pace-slot">
+                <legend>Primaire</legend>
+                <label class="atak-ops-field">Libellé <input id="atak-pace-primary-label" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Fréquence <input id="atak-pace-primary-freq" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Réseau <input id="atak-pace-primary-net" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Notes <input id="atak-pace-primary-notes" type="text" autocomplete="off" /></label>
+              </fieldset>
+              <fieldset class="atak-pace-slot">
+                <legend>Alternatif</legend>
+                <label class="atak-ops-field">Libellé <input id="atak-pace-alternate-label" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Fréquence <input id="atak-pace-alternate-freq" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Réseau <input id="atak-pace-alternate-net" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Notes <input id="atak-pace-alternate-notes" type="text" autocomplete="off" /></label>
+              </fieldset>
+              <fieldset class="atak-pace-slot">
+                <legend>Contingence</legend>
+                <label class="atak-ops-field">Libellé <input id="atak-pace-contingency-label" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Fréquence <input id="atak-pace-contingency-freq" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Réseau <input id="atak-pace-contingency-net" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Notes <input id="atak-pace-contingency-notes" type="text" autocomplete="off" /></label>
+              </fieldset>
+              <fieldset class="atak-pace-slot">
+                <legend>Urgence</legend>
+                <label class="atak-ops-field">Libellé <input id="atak-pace-emergency-label" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Fréquence <input id="atak-pace-emergency-freq" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Réseau <input id="atak-pace-emergency-net" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">Notes <input id="atak-pace-emergency-notes" type="text" autocomplete="off" /></label>
+              </fieldset>
             </div>
+            <div class="atak-pace-team-add">
+              <p class="atak-panel-hint">Ajouter / mettre à jour une équipe</p>
+              <label class="atak-ops-field">Équipe <input id="atak-pace-team-name" type="text" placeholder="Ex. Alpha" autocomplete="off" /></label>
+              <div class="atak-pace-team-freqs">
+                <label class="atak-ops-field">P <input id="atak-pace-team-p" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">A <input id="atak-pace-team-a" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">C <input id="atak-pace-team-c" type="text" autocomplete="off" /></label>
+                <label class="atak-ops-field">E <input id="atak-pace-team-e" type="text" autocomplete="off" /></label>
+              </div>
+            </div>
+            <div id="atak-pace-teams"></div>
+            <button type="button" class="atak-ops-btn" id="atak-pace-save">Enregistrer le plan PACE</button>
           </div>
-          <div id="atak-pace-teams"></div>
-          <button type="button" class="atak-ops-btn" id="atak-pace-save">Enregistrer le plan PACE</button>
-        </section>
+        </details>
       </div>
       <div class="atak-tabs-content" id="tab-notes" role="tabpanel">
         <div class="atak-notes-toolbar">
@@ -978,46 +1098,57 @@ if ($atakMapConfig) {
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-etat" role="tabpanel">
-        <section class="atak-ops-section" aria-labelledby="atak-perstat-title">
-          <h3 class="atak-ops-section-title" id="atak-perstat-title">PERSTAT</h3>
-          <p class="atak-panel-hint">État du personnel agrégé (RAS / WIA / KIA) à partir des positions et alertes médicales — sans ressaisie.</p>
-          <div id="atak-perstat-body"></div>
-        </section>
-        <section class="atak-ops-section" aria-labelledby="atak-logistics-title">
-          <h3 class="atak-ops-section-title" id="atak-logistics-title">Suivi logistique</h3>
-          <p class="atak-panel-hint">Carburant et munitions remontés automatiquement depuis le jeu, triés du plus critique au plus confortable.</p>
-          <div id="atak-logistics-body"></div>
-        </section>
-        <section class="atak-ops-section" aria-labelledby="atak-salute-title">
-          <h3 class="atak-ops-section-title" id="atak-salute-title">Compte rendu SALUTE</h3>
-          <p class="atak-panel-hint">Taille · Activité · Localisation · Unité · Heure · Équipement — un champ par ligne.</p>
-          <div class="atak-ops-form atak-salute-form">
-            <label class="atak-ops-field">Taille (Size) <input id="atak-salute-size" type="text" autocomplete="off" placeholder="Ex. 2 véhicules, ~8 pax" /></label>
-            <label class="atak-ops-field">Activité (Activity) <input id="atak-salute-activity" type="text" autocomplete="off" placeholder="Ex. en déplacement vers le nord" /></label>
-            <label class="atak-ops-field">Localisation (Location) <input id="atak-salute-location" type="text" autocomplete="off" placeholder="Ex. carrefour sud du village" /></label>
-            <label class="atak-ops-field">Unité (Unit) <input id="atak-salute-unit" type="text" autocomplete="off" placeholder="Ex. infanterie motorisée" /></label>
-            <label class="atak-ops-field">Heure (Time) <input id="atak-salute-time" type="text" autocomplete="off" placeholder="Ex. 1412 Z" /></label>
-            <label class="atak-ops-field">Équipement (Equipment) <input id="atak-salute-equipment" type="text" autocomplete="off" placeholder="Ex. RPG, mitrailleuse" /></label>
-            <label class="atak-ops-field">Grille (facultatif) <input id="atak-salute-grid" type="text" autocomplete="off" placeholder="Ex. 14500 16820" /></label>
-            <button type="button" class="atak-ops-btn" id="atak-salute-submit">Transmettre le SALUTE</button>
-            <p class="atak-salute-feedback" id="atak-salute-feedback" hidden></p>
+        <details class="atak-collapse atak-ops-section" data-atak-collapse="etat-perstat" data-atak-collapse-default="1" open>
+          <summary class="atak-collapse-sum" id="atak-perstat-title">PERSTAT</summary>
+          <div class="atak-collapse-body">
+            <p class="atak-panel-hint">État du personnel agrégé (RAS / WIA / KIA) à partir des positions et alertes médicales — sans ressaisie.</p>
+            <div id="atak-perstat-body"></div>
           </div>
-        </section>
+        </details>
+        <details class="atak-collapse atak-ops-section" id="atak-logistics-section" data-atak-collapse="etat-logistics" data-atak-collapse-default="0">
+          <summary class="atak-collapse-sum" id="atak-logistics-title">Suivi logistique</summary>
+          <div class="atak-collapse-body">
+            <p class="atak-panel-hint">Carburant et munitions remontés automatiquement depuis le jeu, triés du plus critique au plus confortable.</p>
+            <div id="atak-logistics-body"></div>
+          </div>
+        </details>
+        <details class="atak-collapse atak-ops-section" data-atak-collapse="etat-salute" data-atak-collapse-default="0">
+          <summary class="atak-collapse-sum" id="atak-salute-title">Compte rendu SALUTE</summary>
+          <div class="atak-collapse-body">
+            <p class="atak-panel-hint">Taille · Activité · Localisation · Unité · Heure · Équipement — un champ par ligne.</p>
+            <div class="atak-ops-form atak-salute-form">
+              <label class="atak-ops-field">Taille (Size) <input id="atak-salute-size" type="text" autocomplete="off" placeholder="Ex. 2 véhicules, ~8 pax" /></label>
+              <label class="atak-ops-field">Activité (Activity) <input id="atak-salute-activity" type="text" autocomplete="off" placeholder="Ex. en déplacement vers le nord" /></label>
+              <label class="atak-ops-field">Localisation (Location) <input id="atak-salute-location" type="text" autocomplete="off" placeholder="Ex. carrefour sud du village" /></label>
+              <label class="atak-ops-field">Unité (Unit) <input id="atak-salute-unit" type="text" autocomplete="off" placeholder="Ex. infanterie motorisée" /></label>
+              <label class="atak-ops-field">Heure (Time) <input id="atak-salute-time" type="text" autocomplete="off" placeholder="Ex. 1412 Z" /></label>
+              <label class="atak-ops-field">Équipement (Equipment) <input id="atak-salute-equipment" type="text" autocomplete="off" placeholder="Ex. RPG, mitrailleuse" /></label>
+              <label class="atak-ops-field">Grille (facultatif) <input id="atak-salute-grid" type="text" autocomplete="off" placeholder="Ex. 14500 16820" /></label>
+              <button type="button" class="atak-ops-btn" id="atak-salute-submit">Transmettre le SALUTE</button>
+              <p class="atak-salute-feedback" id="atak-salute-feedback" hidden></p>
+            </div>
+          </div>
+        </details>
       </div>
       <div class="atak-tabs-content" id="tab-liaison" role="tabpanel">
         <div class="atak-activity-panel">
-          <section class="atak-web-presence" aria-labelledby="atak-web-presence-title">
-            <h3 class="atak-web-presence-title" id="atak-web-presence-title">Sur le site</h3>
-            <p class="atak-web-presence-intro">Opérateurs connectés à la carte Athena depuis le portail.</p>
-            <ul class="atak-web-presence-list" id="atak-web-presence-list" aria-live="polite"></ul>
-            <p class="atak-web-presence-empty" id="atak-web-presence-empty">En attente de liaison</p>
-          </section>
+          <details class="atak-collapse atak-web-presence" data-atak-collapse="liaison-presence" data-atak-collapse-default="1" open>
+            <summary class="atak-collapse-sum" id="atak-web-presence-title">Sur le site</summary>
+            <div class="atak-collapse-body">
+              <p class="atak-web-presence-intro">Opérateurs connectés à la carte Athena depuis le portail.</p>
+              <ul class="atak-web-presence-list" id="atak-web-presence-list" aria-live="polite"></ul>
+              <p class="atak-web-presence-empty" id="atak-web-presence-empty">En attente de liaison</p>
+            </div>
+          </details>
+          <details class="atak-collapse atak-activity-journal" data-atak-collapse="liaison-journal" data-atak-collapse-default="1" open>
+            <summary class="atak-collapse-sum">Journal TOC</summary>
+            <div class="atak-collapse-body">
           <div class="atak-activity-head">
-            <p class="atak-activity-intro">Journal d’opérations : connexions, ordres, alertes et notes manuelles du commandement.</p>
+            <p class="atak-activity-intro">Chronologie de la session : qui se connecte, les alertes du terrain, les ordres et les notes du TOC.</p>
             <div class="atak-activity-toolbar">
               <div class="atak-activity-meta" id="atak-activity-meta" hidden>
                 <span class="atak-pill atak-pill--ok" id="atak-activity-meta-count">0</span>
-                <span class="atak-activity-meta-label" id="atak-activity-meta-label">événements récents</span>
+                <span class="atak-activity-meta-label" id="atak-activity-meta-label">dans le journal</span>
               </div>
               <div class="atak-activity-actions">
                 <a class="atak-activity-link" id="atak-activity-fullscreen" href="<?= $base ?>/atak/liaison">Voir tout</a>
@@ -1037,9 +1168,12 @@ if ($atakMapConfig) {
             <p class="atak-empty-state-title">Journal en attente</p>
             <p class="atak-empty-state-text">Connexions, indicatifs et échanges apparaîtront ici dès qu’un joueur est en liaison avec la carte.</p>
           </div>
+            </div>
+          </details>
         </div>
       </div>
       </div>
+      <div class="atak-resize-handle atak-resize-handle--left" data-atak-resize="left" role="separator" aria-orientation="vertical" aria-label="Élargir le panneau" title="Élargir le panneau — double-clic pour réinitialiser" tabindex="0"></div>
     </aside>
 
     <div class="atak-map-wrap">
@@ -1062,7 +1196,7 @@ if ($atakMapConfig) {
           <span class="atak-drawer__count" id="atak-effectifs-count" hidden></span>
         </div>
         <div class="atak-drawer__body" id="atak-effectifs-drawer-body">
-          <table>
+          <table class="atak-effectifs-table">
             <colgroup>
               <col class="atak-col-cs" />
               <col class="atak-col-role" />
@@ -1070,19 +1204,23 @@ if ($atakMapConfig) {
               <col class="atak-col-link" />
               <col class="atak-col-hdg" />
               <col class="atak-col-grid" />
+              <col class="atak-col-notes" />
+              <col class="atak-col-actions" />
             </colgroup>
             <thead>
               <tr>
                 <th scope="col">Indicatif</th>
                 <th scope="col">Rôle</th>
-                <th scope="col">Fire team</th>
+                <th scope="col">Équipe</th>
                 <th scope="col">Liaison</th>
                 <th scope="col">Cap</th>
                 <th scope="col">Grille</th>
+                <th scope="col">Notes</th>
+                <th scope="col"><span class="atak-sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody id="atak-units-table-body">
-              <tr><td colspan="6" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>
+              <tr><td colspan="8" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>
             </tbody>
           </table>
         </div>
@@ -1090,6 +1228,17 @@ if ($atakMapConfig) {
     </div>
 
     <aside class="atak-panel-right" id="atak-panel-right">
+      <div class="atak-resize-handle atak-resize-handle--right" data-atak-resize="right" role="separator" aria-orientation="vertical" aria-label="Élargir le panneau" title="Élargir le panneau — double-clic pour réinitialiser" tabindex="0"></div>
+      <div class="atak-panel-dock" id="atak-panel-right-dock" hidden>
+        <p class="atak-panel-dock-title">Effectifs détachés</p>
+        <p class="atak-panel-dock-text">Ouverts dans une autre fenêtre.</p>
+        <button type="button" class="atak-panel-chrome-btn" data-atak-popout-focus="right">Revenir au panneau</button>
+        <button type="button" class="atak-panel-chrome-btn atak-panel-chrome-btn--ghost" data-atak-popout-restore="right">Réintégrer ici</button>
+      </div>
+      <div class="atak-panel-chrome atak-panel-chrome--right" id="atak-panel-right-chrome" role="toolbar" aria-label="Contrôles des effectifs">
+        <span class="atak-panel-chrome-label">Effectifs</span>
+        <button type="button" class="atak-panel-chrome-btn" id="atak-panel-right-popout" data-atak-popout="right" title="Ouvrir dans une autre fenêtre">Ouvrir dans une autre fenêtre</button>
+      </div>
       <div class="atak-air-assets-header">
         <div class="atak-air-assets-title">Appui aérien</div>
       </div>
@@ -1103,7 +1252,7 @@ if ($atakMapConfig) {
           <div class="atak-units-title">Effectifs</div>
         </div>
         <div class="atak-filter">
-          <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif ou rôle…" />
+          <input type="text" id="atak-units-filter" placeholder="Filtrer par indicatif, rôle, notes…" />
           <button type="button" class="btn-live active" id="atak-filter-live">En liaison</button>
           <button type="button" class="btn-all" id="atak-filter-all">Tous</button>
         </div>
@@ -1139,6 +1288,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js"></script>
   <script src="<?= $base ?>/assets/js/atak-orders.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-collapse.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medical-alerts.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medevac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
@@ -1152,12 +1302,14 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-salute.js"></script>
   <script src="<?= $base ?>/assets/js/atak-ops-status.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-panel-chrome.js"></script>
   <script>
     (function () {
       var HINTS_KEY = 'atak_hide_panel_hints';
@@ -1284,14 +1436,16 @@ if ($atakMapConfig) {
           }
         } catch (e) {}
       }
-      ATAKMap.init(mapId);
+      if (!window.ATAK_POPOUT) {
+        ATAKMap.init(mapId);
+      }
       if (mapSelect && window.ATAK_MAPS_CONFIGS) {
         mapSelect.addEventListener('change', function () {
           var slug = this.value;
           if (!slug || !window.ATAK_MAPS_CONFIGS[slug]) return;
           window.ATAK_MAP_CONFIG = window.ATAK_MAPS_CONFIGS[slug];
           try { localStorage.setItem('atak_map_slug', slug); } catch (e) {}
-          ATAKMap.init(mapId);
+          if (!window.ATAK_POPOUT) ATAKMap.init(mapId);
         });
       }
 
@@ -1360,7 +1514,8 @@ if ($atakMapConfig) {
         if (window.ATAKJTAC && window.ATAKJTAC.fetchCas) ATAKJTAC.fetchCas();
         else if (window.ATAKJTAC) ATAKJTAC.fetchNineLines();
         if (window.ATAKCams) {
-          if (window.ATAKCams.fetchReconImages) ATAKCams.fetchReconImages();
+          if (window.ATAKCams.refresh) ATAKCams.refresh();
+          else if (window.ATAKCams.fetchReconImages) ATAKCams.fetchReconImages();
           else ATAKCams.fetchIntelPhotos();
         }
         if (window.ATAKAirAssets) ATAKAirAssets.fetchAirAssets();
@@ -1452,6 +1607,9 @@ if ($atakMapConfig) {
             chip.classList.toggle('atak-chip--warn', ago != null && ago > 60);
           }
           refreshLiaisonMetrics(ago);
+          if (d.transmissions && window.ATAKTransmissions && typeof window.ATAKTransmissions.render === 'function') {
+            window.ATAKTransmissions.render(d.transmissions);
+          }
         }).catch(function () {
           refreshLiaisonMetrics(null);
         });
@@ -1522,6 +1680,9 @@ if ($atakMapConfig) {
               li.textContent = name;
               listEl.appendChild(li);
             });
+            if (window.ATAKTransmissions && typeof window.ATAKTransmissions.refresh === 'function') {
+              window.ATAKTransmissions.refresh();
+            }
           })
           .catch(function () {});
       }
@@ -1749,6 +1910,9 @@ if ($atakMapConfig) {
             ? d.activeCallSigns.map(function (u) { return u.call_sign || ''; }).filter(Boolean).slice(0, 10).join(' · ')
             : '—';
           if (activeCallsignsEl) activeCallsignsEl.textContent = calls;
+          if (d.transmissions && window.ATAKTransmissions && typeof window.ATAKTransmissions.render === 'function') {
+            window.ATAKTransmissions.render(d.transmissions);
+          }
           updateSummary();
         }).catch(function () {
           if (armaEl) armaEl.textContent = '—';
@@ -1825,7 +1989,7 @@ if ($atakMapConfig) {
               unlockLinkBtn('Générer un nouveau code', 0);
               if (codeEl) codeEl.textContent = res.body.code;
               if (metaEl) {
-                metaEl.textContent = res.body.hint || 'Dans Arma : touche K → Compte Athena (saisir un code), puis entrez ce code.';
+                metaEl.textContent = res.body.hint || 'Dans Arma : téléphone ATAK → Desktop → Connexion Athena (ou touche K), puis entrez ce code.';
               }
               if (resultEl) resultEl.hidden = false;
             })

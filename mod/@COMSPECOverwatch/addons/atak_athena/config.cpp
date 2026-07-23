@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0;
-        versionStr = "1.0.0";
-        versionAr[] = {1, 0, 0};
+        version = 1.0.4;
+        versionStr = "1.0.4";
+        versionAr[] = {1, 0, 4};
     };
 };
 
@@ -37,6 +37,7 @@ class CfgFunctions
             class athena_selectInbox {};
             class athena_selectTab {};
             class athena_sendPhoto {};
+            class athena_setPanelFeedback {};
             class athena_bridgeIcemanAlert {};
             class athena_bridgeIcemanBda {};
             class athena_bridgeIcemanPhoto {};
@@ -49,6 +50,10 @@ class CfgFunctions
             class athena_bridgeCtabMarkers {};
             class athena_bridgeRoute {};
             class athena_bridgeJump {};
+            class athena_bridgeVideoFeeds {};
+            class athena_snapshotVideoFeed {};
+            class athena_installDesktopShortcut {};
+            class athena_showLinkDialog {};
         };
     };
 };

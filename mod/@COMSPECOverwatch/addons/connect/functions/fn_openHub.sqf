@@ -4,4 +4,4 @@
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
-["apps"] call comspec_overwatch_connect_fnc_openTabletView;
+["apps", false] call comspec_overwatch_connect_fnc_openTabletView;

@@ -66,7 +66,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
         case "account": {
 
-            ["account"] call comspec_overwatch_connect_fnc_openTabletView;
+            [] call comspec_overwatch_connect_fnc_accountLinkShow;
 
         };
 
@@ -120,7 +120,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
                 [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
 
-                systemChat "Bilan de santé transmis.";
+                if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
+                    systemChat "Bilan de santé transmis.";
+                };
 
                 ["status"] call comspec_overwatch_connect_fnc_openTabletView;
 

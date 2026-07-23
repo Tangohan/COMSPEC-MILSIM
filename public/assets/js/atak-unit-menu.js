@@ -2,8 +2,10 @@
 window.ATAKUnitMenu = (function () {
   var menuEl = null;
   var selectEl = null;
+  var notesEl = null;
   var activeUnit = null;
   var selectResolve = null;
+  var notesResolve = null;
   var longPressTimer = null;
   var longPressTarget = null;
 
@@ -21,6 +23,23 @@ window.ATAKUnitMenu = (function () {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function parseExtra(u) {
+    try {
+      return typeof u.extra === 'string' ? JSON.parse(u.extra) : (u.extra || {});
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function tocFromUnit(unit) {
+    var ex = parseExtra(unit || {});
+    return {
+      radio: String(ex.toc_radio || '').trim(),
+      vehicle: String(ex.toc_vehicle || '').trim(),
+      note: String(ex.toc_note || '').trim()
+    };
   }
 
   function gridLabel(unit) {
@@ -118,9 +137,13 @@ window.ATAKUnitMenu = (function () {
     var canCenter = hasValidPos(unit);
     var canPing = c.canPing !== false && canCenter;
     var canRename = !!c.canRenameUnit;
+    var canNotes = !!c.canEditUnitNotes || !!c.canRenameUnit || !!c.loggedIn;
     var canView = !!c.canViewPersonnel;
     var canLink = !!c.canLinkPersonnel;
     var canDelete = canDeleteUnit(unit);
+    var liveStatus = unitLiveStatus(unit);
+    var inLiaison = liveStatus === 'linked' || liveStatus === 'delayed';
+    var canDisconnect = canDeleteUnit(unit) && inLiaison;
     var html = '';
 
     html += menuItem('center', 'Centrer sur la carte', {
@@ -133,6 +156,12 @@ window.ATAKUnitMenu = (function () {
     });
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
 
+    html += menuItem('notes', 'Notes du contact…', {
+      disabled: !canNotes,
+      title: canNotes
+        ? 'Fréquence radio, véhicule et note visibles par tous les opérateurs'
+        : 'Connexion requise pour modifier les notes'
+    });
     html += menuItem('rename', 'Renommer l’indicatif', {
       disabled: !canRename,
       title: canRename ? '' : 'Connexion requise pour renommer'
@@ -169,6 +198,15 @@ window.ATAKUnitMenu = (function () {
     }
 
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
+    html += menuItem('disconnect', 'Couper la liaison', {
+      danger: true,
+      disabled: !canDisconnect,
+      title: canDisconnect
+        ? 'Marquer ce contact hors liaison (carte et effectifs)'
+        : (!inLiaison
+          ? 'Ce contact n’est plus en liaison'
+          : 'Réservé à l’état-major, à l’administration, ou à l’opérateur concerné')
+    });
     html += menuItem('delete', 'Supprimer', {
       danger: true,
       disabled: !canDelete,
@@ -178,6 +216,13 @@ window.ATAKUnitMenu = (function () {
     });
 
     return html;
+  }
+
+  function unitLiveStatus(unit) {
+    if (window.ATAKUnits && window.ATAKUnits.resolveLiveStatus) {
+      return window.ATAKUnits.resolveLiveStatus(unit);
+    }
+    return String((unit && unit.status) || '').toLowerCase();
   }
 
   function ownCallsigns() {
@@ -222,6 +267,89 @@ window.ATAKUnitMenu = (function () {
     }
     var v = window.prompt(title + (hint ? '\n' + hint : ''), defaultValue || '');
     return Promise.resolve(v);
+  }
+
+  function ensureNotesModal() {
+    if (notesEl) return notesEl;
+    notesEl = document.createElement('div');
+    notesEl.id = 'atak-unit-notes-modal';
+    notesEl.className = 'atak-input-modal';
+    notesEl.hidden = true;
+    notesEl.setAttribute('aria-hidden', 'true');
+    notesEl.innerHTML =
+      '<div class="atak-input-modal__backdrop" data-atak-notes-cancel></div>' +
+      '<div class="atak-input-modal__box atak-unit-notes-modal" role="dialog" aria-modal="true" aria-labelledby="atak-unit-notes-title">' +
+      '<h3 class="atak-input-modal__title" id="atak-unit-notes-title">Notes du contact</h3>' +
+      '<p class="atak-input-modal__hint" id="atak-unit-notes-hint">Visible par tous les opérateurs de la session carte.</p>' +
+      '<label class="atak-unit-notes-field">' +
+      '<span>Fréquence radio</span>' +
+      '<input type="text" id="atak-unit-notes-radio" class="atak-input-modal__field" maxlength="80" autocomplete="off" placeholder="Ex. 78,5 ou NET ALPHA" />' +
+      '</label>' +
+      '<label class="atak-unit-notes-field">' +
+      '<span>Véhicule</span>' +
+      '<input type="text" id="atak-unit-notes-vehicle" class="atak-input-modal__field" maxlength="80" autocomplete="off" placeholder="Ex. Hunter, HEMTT, UH-80" />' +
+      '</label>' +
+      '<label class="atak-unit-notes-field">' +
+      '<span>Note</span>' +
+      '<textarea id="atak-unit-notes-note" class="atak-input-modal__field atak-input-modal__field--area" maxlength="500" rows="3" placeholder="Consignes, matériel, remarque…"></textarea>' +
+      '</label>' +
+      '<div class="atak-input-modal__actions">' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-notes-cancel>Annuler</button>' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--primary" id="atak-unit-notes-save">Enregistrer</button>' +
+      '</div></div>';
+    document.body.appendChild(notesEl);
+    notesEl.querySelectorAll('[data-atak-notes-cancel]').forEach(function (el) {
+      el.addEventListener('click', function () { closeNotes(null); });
+    });
+    document.getElementById('atak-unit-notes-save').addEventListener('click', function () {
+      closeNotes({
+        toc_radio: (document.getElementById('atak-unit-notes-radio') || {}).value || '',
+        toc_vehicle: (document.getElementById('atak-unit-notes-vehicle') || {}).value || '',
+        toc_note: (document.getElementById('atak-unit-notes-note') || {}).value || ''
+      });
+    });
+    notesEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeNotes(null);
+      }
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        document.getElementById('atak-unit-notes-save').click();
+      }
+    });
+    return notesEl;
+  }
+
+  function openNotesModal(unit) {
+    ensureNotesModal();
+    var toc = tocFromUnit(unit);
+    var hint = document.getElementById('atak-unit-notes-hint');
+    if (hint) {
+      hint.textContent = (unit && unit.call_sign ? unit.call_sign + ' — ' : '') +
+        'Fréquence, véhicule et note visibles par tous les opérateurs de la session.';
+    }
+    var radio = document.getElementById('atak-unit-notes-radio');
+    var vehicle = document.getElementById('atak-unit-notes-vehicle');
+    var note = document.getElementById('atak-unit-notes-note');
+    if (radio) radio.value = toc.radio;
+    if (vehicle) vehicle.value = toc.vehicle;
+    if (note) note.value = toc.note;
+    notesEl.hidden = false;
+    notesEl.setAttribute('aria-hidden', 'false');
+    setTimeout(function () { if (radio) radio.focus(); }, 30);
+    return new Promise(function (resolve) {
+      notesResolve = resolve;
+    });
+  }
+
+  function closeNotes(value) {
+    if (!notesEl) return;
+    notesEl.hidden = true;
+    notesEl.setAttribute('aria-hidden', 'true');
+    var cb = notesResolve;
+    notesResolve = null;
+    if (cb) cb(value);
   }
 
   function ensureSelectModal() {
@@ -379,6 +507,25 @@ window.ATAKUnitMenu = (function () {
     });
   }
 
+  function disconnectUnit(unitId) {
+    var base = getApiBase();
+    return fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/disconnect', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var err = new Error((body && body.message) || 'disconnect_failed');
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    });
+  }
+
   function rememberLink(callsign, linked) {
     if (!linked || !linked.userId) return;
     if (!window.ATAK_CALLSIGN_TO_USER) window.ATAK_CALLSIGN_TO_USER = {};
@@ -456,6 +603,33 @@ window.ATAKUnitMenu = (function () {
       if (fiche && fiche.url) {
         window.open(fiche.url, '_blank', 'noopener');
       }
+      return;
+    }
+
+    if (action === 'notes') {
+      var cNotes = caps();
+      if (!(cNotes.canEditUnitNotes || cNotes.canRenameUnit || cNotes.loggedIn)) return;
+      if (!unit.id) {
+        if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — impossible d’ajouter des notes.');
+        return;
+      }
+      openNotesModal(unit).then(function (vals) {
+        if (!vals) return;
+        patchUnit(unit.id, {
+          toc_radio: String(vals.toc_radio || '').trim(),
+          toc_vehicle: String(vals.toc_vehicle || '').trim(),
+          toc_note: String(vals.toc_note || '').trim()
+        }).then(function () {
+          if (window.ATAKShowNotification) {
+            window.ATAKShowNotification('Notes enregistrées' + (unit.call_sign ? ' — ' + unit.call_sign : ''));
+          }
+          refreshUnits();
+        }).catch(function (err) {
+          if (window.ATAKShowError) {
+            window.ATAKShowError((err && err.body && err.body.message) || 'Impossible d’enregistrer les notes.');
+          }
+        });
+      });
       return;
     }
 
@@ -541,6 +715,43 @@ window.ATAKUnitMenu = (function () {
             window.ATAKShowError((err && err.body && err.body.message) || 'Impossible de lier la fiche.');
           }
         });
+      });
+      return;
+    }
+
+    if (action === 'disconnect') {
+      if (!canDeleteUnit(unit)) return;
+      var live = unitLiveStatus(unit);
+      if (live !== 'linked' && live !== 'delayed') {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Ce contact n’est déjà plus en liaison.');
+        }
+        return;
+      }
+      if (!unit.id) {
+        if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — impossible de couper la liaison.');
+        return;
+      }
+      var discLabel = unit.call_sign ? String(unit.call_sign) : 'cet opérateur';
+      if (!window.confirm('Couper la liaison ATAK ?\n\n' + discLabel + ' passera hors liaison sur la carte et dans les effectifs (le contact reste dans la liste « Tous »).')) {
+        return;
+      }
+      disconnectUnit(unit.id).then(function () {
+        if (window.ATAKUnits && window.ATAKUnits.setUnitOfflineLocal) {
+          window.ATAKUnits.setUnitOfflineLocal(unit.id);
+        } else {
+          refreshUnits();
+        }
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Liaison coupée' + (unit.call_sign ? ' — ' + unit.call_sign : ''));
+        }
+        if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+          try { window.ATAKSounds.playEvent('disconnect'); } catch (e) {}
+        }
+      }).catch(function (err) {
+        if (window.ATAKShowError) {
+          window.ATAKShowError((err && err.body && err.body.message) || 'Impossible de couper la liaison.');
+        }
       });
       return;
     }
@@ -648,6 +859,10 @@ window.ATAKUnitMenu = (function () {
 
   function onKeyDown(e) {
     if (e.key !== 'Escape') return;
+    if (notesEl && !notesEl.hidden) {
+      closeNotes(null);
+      return;
+    }
     if (selectEl && !selectEl.hidden) {
       closeSelect(null);
       return;

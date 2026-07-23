@@ -29,6 +29,11 @@ final class AtakBridgeModulesService
                 'description' => 'Partage les contacts repérés via Drone Ops sur la carte et la tablette.',
             ],
             [
+                'id' => 'video_feeds',
+                'label' => 'Caméras casque et drone',
+                'description' => 'Annonce les caméras casque / drones disponibles et remonte les aperçus photo vers le panneau Cams.',
+            ],
+            [
                 'id' => 'ctab_markers',
                 'label' => 'Marqueurs cTab',
                 'description' => 'Synchronise les repères placés sur la tablette cTab vers la carte web.',

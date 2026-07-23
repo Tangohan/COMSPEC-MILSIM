@@ -5,7 +5,7 @@ params [["_kind", "TIC", [""]]];
 
 if (!hasInterface) exitWith {};
 if (isNil "comspec_overwatch_connect_fnc_sendTacticalAlert") exitWith {
-    ["ATHENA", "Module Overwatch indisponible.", 5] call cTab_fnc_addNotification;
+    ["ATHENA", "Module Overwatch indisponible.", 5] call comspec_overwatch_connect_fnc_addScreenToast;
 };
 
 private _kindKey = toUpper (trim _kind);
@@ -33,6 +33,6 @@ private _label = switch (_kindKey) do {
     case "BDA": { "Bilan des dégâts" };
     default { "Alerte" };
 };
-["ATHENA", format ["%1 transmis vers Athena.", _label], 4] call cTab_fnc_addNotification;
+["ATHENA", format ["%1 transmis vers Athena.", _label], 4] call comspec_overwatch_connect_fnc_addScreenToast;
 
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;

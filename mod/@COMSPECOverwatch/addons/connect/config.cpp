@@ -7,9 +7,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings"};
         author = "COMSPEC";
-        version = 1.15;
-        versionStr = "1.1.5";
-        versionAr[] = {1, 1, 5};
+        version = 1.20;
+        versionStr = "1.2.0";
+        versionAr[] = {1, 2, 0};
     };
 };
 
@@ -106,7 +106,12 @@ class CfgFunctions {
             class accountLinkShow {};
             class accountLinkOnLoad {};
             class accountLinkSubmit {};
+            class measureLatency {};
+            class refreshAccountLinkStatusBar {};
             class showAthenaLinkHelp {};
+            class showBetaAccessNote {};
+            class registerBetaClient {};
+            class onMainMenuLoad {};
             class getCallsign {};
             class setCallsign {};
             class syncCallsignFromAthena {};
@@ -114,6 +119,8 @@ class CfgFunctions {
             class callsignDialogOnLoad {};
             class callsignDialogSubmit {};
             class playAtakNotification {};
+            class shouldShowScreenNotification {};
+            class addScreenToast {};
             class showNotification {};
             class announce {};
             class pushHtmlAlert {};
@@ -123,6 +130,7 @@ class CfgFunctions {
             class extensionStatus {};
             class extensionLoadHint {};
             class getModVersion {};
+            class detectLoadedMods {};
             class refreshLinkStatus {};
             class updateStatusBadges {};
             class chatDialogOnLoad {};
@@ -159,6 +167,7 @@ class CfgFunctions {
             class updateLinkDiary {};
             class extensionCallback {};
             class hasTerminal {};
+            class canOpenOverwatchUi {};
             class syncMapMarker {};
             class gridPosition {};
             class formatHeading {};

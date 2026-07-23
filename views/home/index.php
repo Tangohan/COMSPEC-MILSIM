@@ -63,18 +63,22 @@ foreach ($heroClipGroups as $candidates) {
     $present = $resolvedStem !== null;
     $slotStem = $resolvedStem ?? $candidates[0];
     $sources = [];
+    $encodeStem = static function (string $stem): string {
+        // Conserve les tirets ; encode uniquement les caractères réellement réservés.
+        return rawurlencode($stem);
+    };
     if ($present) {
         if ($hasWebm) {
-            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($slotStem) . '.webm', 'type' => 'video/webm'];
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.webm', 'type' => 'video/webm'];
         }
         if ($hasMp4) {
-            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($slotStem) . '.mp4', 'type' => 'video/mp4'];
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.mp4', 'type' => 'video/mp4'];
         }
     } else {
         // Chemins attendus : actifs dès dépôt des fichiers (le JS sonde aussi côté client).
         foreach ($candidates as $stem) {
-            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($stem) . '.webm', 'type' => 'video/webm'];
-            $sources[] = ['url' => $heroVideoUrlBase . '/' . rawurlencode($stem) . '.mp4', 'type' => 'video/mp4'];
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($stem) . '.webm', 'type' => 'video/webm'];
+            $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($stem) . '.mp4', 'type' => 'video/mp4'];
         }
     }
 
@@ -737,7 +741,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             'unmute' => __('home.unmute'),
             'newsletterLoading' => __('home.newsletter_loading'),
             'newsletterSubmit' => __('home.newsletter_submit'),
-        ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}' ?>;
 
         function toggleMenu() {
             document.body.classList.toggle('drawer-open');
@@ -762,7 +766,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var VOL_KEY = 'athena_immersive_vol';
             var IMAGE_INTERVAL_MS = 6000;
             var VIDEO_MAX_MS = 18000;
-            var PROBE_TIMEOUT_MS = 4500;
+            var PROBE_TIMEOUT_MS = 12000;
             var dlg = document.getElementById('immersive-consent');
             var btnLater = document.getElementById('btn-enable-immersive');
             var imageRoot = document.getElementById('heroImageSlides');
@@ -970,7 +974,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         nextVideo.muted = true;
                         nextVideo.volume = 0;
                         withSound = false;
-                        nextVideo.play().catch(function () {});
+                        nextVideo.play().catch(function () {
+                            // Lecture impossible (fichier absent / MIME) → retour aux images.
+                            if (mode === 'videos') {
+                                enableImageMode();
+                            }
+                        });
                         syncAvUi();
                     });
                 }
@@ -1106,6 +1115,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     var onFail = function () { finish(false); };
                     video.addEventListener('loadeddata', onReady, { once: true });
                     video.addEventListener('canplay', onReady, { once: true });
+                    video.addEventListener('loadedmetadata', onReady, { once: true });
                     video.addEventListener('error', onFail, { once: true });
                     Array.prototype.forEach.call(video.querySelectorAll('source'), function (source) {
                         source.addEventListener('error', function () {
@@ -1113,10 +1123,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         }, { once: true });
                     });
                     window.setTimeout(function () {
-                        finish(video.readyState >= 2);
+                        // HAVE_METADATA (1) suffit pour lancer une lecture muted.
+                        finish(video.readyState >= 1);
                     }, PROBE_TIMEOUT_MS);
                     try {
                         video.muted = true;
+                        video.setAttribute('playsinline', '');
                         video.load();
                     } catch (e) {
                         finish(false);

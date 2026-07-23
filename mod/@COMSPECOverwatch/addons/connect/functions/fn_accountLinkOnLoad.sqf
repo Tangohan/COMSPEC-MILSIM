@@ -1,5 +1,5 @@
 /*
-    Préremplit le dialog de liaison compte (URL + Steam depuis profil / jeu).
+    Préremplit le dialog Connexion Athena et démarre la barre de transmission / ms.
 */
 if (!hasInterface) exitWith {};
 
@@ -34,9 +34,24 @@ if (!isNull _steamCtrl) then { _steamCtrl ctrlSetText _steam; };
 private _status = _display displayCtrl 9203;
 if (!isNull _status) then {
     private _hint = if (_steam isEqualTo "") then {
-        "Collez votre identifiant Steam (visible sur Athena → profil), ou générez un code."
+        "Collez votre identifiant Steam (profil Athena), ou générez un code sur le portail."
     } else {
-        "Steam prérempli — cliquez Établir, ou saisissez un code."
+        "Steam prérempli — validez la liaison, ou saisissez un code."
     };
     _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#6a7c90'>%1</t>", _hint];
+};
+
+[] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;
+
+private _token = diag_tickTime;
+missionNamespace setVariable ["COMSPEC_AccountLink_StatusToken", _token, false];
+[_token] spawn {
+    params ["_token"];
+    while {
+        (missionNamespace getVariable ["COMSPEC_AccountLink_StatusToken", -1]) isEqualTo _token
+        && {!isNull (uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull])}
+    } do {
+        [] call comspec_overwatch_connect_fnc_refreshAccountLinkStatusBar;
+        uiSleep 2.5;
+    };
 };

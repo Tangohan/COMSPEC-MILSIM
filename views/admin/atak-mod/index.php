@@ -105,6 +105,7 @@ $version = (string) ($modMeta['version'] ?? '');
                     <button type="submit" class="bo-atak-mod__btn bo-atak-mod__btn--primary">Vérifier et publier</button>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-config', ENT_QUOTES, 'UTF-8') ?>">Réglages ATAK</a>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-mod-blocks', ENT_QUOTES, 'UTF-8') ?>">Restrictions mod</a>
+                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-beta', ENT_QUOTES, 'UTF-8') ?>">Accès anticipé</a>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/atak', ENT_QUOTES, 'UTF-8') ?>">Ouvrir ATAK</a>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin', ENT_QUOTES, 'UTF-8') ?>">Retour admin</a>
                 </div>

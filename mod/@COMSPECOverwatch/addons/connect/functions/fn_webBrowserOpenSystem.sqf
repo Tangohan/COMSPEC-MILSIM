@@ -30,7 +30,7 @@ private _display = findDisplay 9974;
 if (!isNull _display) then {
     private _hint = _display displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#7dffb3'>Ouverture du portail…</t>";
+        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#7dffb3'>Ouverture sur le PC…</t>";
     };
 };
 

@@ -1,8 +1,8 @@
 @echo off
 title COMSPEC Overwatch - Build
 set "MOD_NAME=@COMSPECOverwatch"
-set "ARMA_PATH=D:\SteamLibrary\steamapps\common\Arma 3"
-set "BUILDER_PATH=D:\SteamLibrary\steamapps\common\Arma 3 Tools\AddonBuilder\AddonBuilder.exe"
+set "ARMA_PATH=F:\SteamLibrary\steamapps\common\Arma 3"
+set "BUILDER_PATH=F:\SteamLibrary\steamapps\common\Arma 3 Tools\AddonBuilder\AddonBuilder.exe"
 set "PROJECT_DIR=%~dp0"
 set "OUTPUT_DIR=%PROJECT_DIR%%MOD_NAME%"
 set "BUILD_LOG=%PROJECT_DIR%build_log.txt"
@@ -79,8 +79,8 @@ if exist "%PROJECT_DIR%%MOD_NAME%\addons\atak_athena\config.cpp" (
     )
 )
 
-:: 4. DLL a la racine du mod (Native AOT ~5 Mo — jamais le stub managé ~30 Ko)
-::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) — pack Workshop : workshop-pack.ps1
+:: 4. DLL a la racine du mod (Native AOT ~5 Mo ??? jamais le stub manag?? ~30 Ko)
+::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) ??? pack Workshop : workshop-pack.ps1
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64...
 set "DLL_SRC="
@@ -117,7 +117,7 @@ echo [DEPLOY] Synchronisation avec le dossier Arma 3... >> "%BUILD_LOG%"
 echo [DEPLOY] Synchronisation avec le dossier Arma 3...
 set "WORKSHOP_MOD=%ARMA_PATH%\!Workshop\%MOD_NAME%"
 set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
-set "WORKSHOP_CONTENT=D:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
+set "WORKSHOP_CONTENT=F:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
 
 if exist "%ARMA_PATH%" (
     for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%") do (

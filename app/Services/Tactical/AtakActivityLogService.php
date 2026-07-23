@@ -13,7 +13,6 @@ final class AtakActivityLogService
 {
     /** Capacité totale (actifs + archivés) par fichier théâtre. */
     private const MAX_EVENTS = 5000;
-    private const POSITION_THROTTLE_SEC = 15;
     private const INIT_THROTTLE_SEC = 90;
     private const SESSION_TTL_SEC = 7200;
     /** Présence des visiteurs web sur la Tacmap (TTL court). */
@@ -21,6 +20,9 @@ final class AtakActivityLogService
 
     /** Présence des clients téléphone / ATAK pendant le briefing. */
     private const BRIEFING_PRESENCE_TTL_SEC = 75;
+
+    /** Dernière détection mods compagnons (cTab / ATAK Enhanced) — fenêtre « présent ». */
+    private const MOD_DETECT_PRESENT_TTL_SEC = 600;
 
     /** Types internes → libellés métier (FR). */
     public const TYPE_CLIENT_INIT = 'client_init';
@@ -410,7 +412,10 @@ final class AtakActivityLogService
     }
 
     /**
-     * Position reçue : détecte init / changement d’indicatif / envoi (throttlé).
+     * Position BFT reçue : journalise connexion / changement d’indicatif uniquement.
+     * Les sync / heartbeats ne créent plus d’événements « Position envoyée » (spam journal).
+     * La carte Effectifs reste à jour via upsertUnitPosition ; la géo des photos reste
+     * sur l’entrée renseignement, sans événement POSITION.
      *
      * @param array<string, mixed> $meta
      */
@@ -430,7 +435,6 @@ final class AtakActivityLogService
                 : null;
             $prevCall = is_array($prev) ? trim((string) ($prev['call_sign'] ?? '')) : '';
             $lastInit = is_array($prev) ? (int) ($prev['last_init_at'] ?? 0) : 0;
-            $lastPos = is_array($prev) ? (int) ($prev['last_position_at'] ?? 0) : 0;
 
             if ($prevCall !== '' && strcasecmp($prevCall, $callSign) !== 0) {
                 $this->appendEvent($data, self::TYPE_CALLSIGN_CHANGE, 'Indicatif mis à jour — ' . $prevCall . ' → ' . $callSign, $callSign, array_merge($safeMeta, [
@@ -443,17 +447,12 @@ final class AtakActivityLogService
                 $lastInit = $now;
             }
 
-            if ($lastPos === 0 || ($now - $lastPos) >= self::POSITION_THROTTLE_SEC) {
-                $this->appendEvent($data, self::TYPE_POSITION, 'Position envoyée — ' . $callSign, $callSign, $safeMeta);
-                $lastPos = $now;
-            }
-
             if ($clientKey !== '') {
                 $sessions[$clientKey] = [
                     'call_sign' => $callSign,
                     'last_init_at' => $lastInit > 0 ? $lastInit : $now,
                     'last_seen_at' => $now,
-                    'last_position_at' => $lastPos,
+                    'last_position_at' => $now,
                 ];
             }
             $data['sessions'] = $sessions;
@@ -461,7 +460,7 @@ final class AtakActivityLogService
     }
 
     /**
-     * Liste récente pour le panneau (exclut les archivés par défaut).
+     * Liste récente pour le panneau (exclut archivés + sync BFT « position »).
      *
      * @return list<array{id: int, type: string, label: string, actor: ?string, at: string, archived?: bool, meta?: array}>
      */
@@ -472,6 +471,8 @@ final class AtakActivityLogService
             'after_id' => $afterId,
             'include_archived' => $includeArchived,
             'archived_only' => false,
+            // Heartbeats BFT historiques : hors panneau Activité (filtre « position » page dédiée OK).
+            'exclude_types' => [self::TYPE_POSITION],
         ]);
 
         return $result['events'];
@@ -485,6 +486,7 @@ final class AtakActivityLogService
      *   before_id?: int|null,
      *   after_id?: int|null,
      *   type?: string|list<string>|null,
+     *   exclude_types?: list<string>|null,
      *   q?: string|null,
      *   from?: string|null,
      *   to?: string|null,
@@ -508,6 +510,23 @@ final class AtakActivityLogService
         $fromTs = $this->parseBoundTs(isset($opts['from']) ? (string) $opts['from'] : null, false);
         $toTs = $this->parseBoundTs(isset($opts['to']) ? (string) $opts['to'] : null, true);
         $typeFilter = $this->resolveTypeFilter($opts['type'] ?? null);
+        $excludeTypes = [];
+        if (isset($opts['exclude_types']) && is_array($opts['exclude_types'])) {
+            foreach ($opts['exclude_types'] as $ex) {
+                $ex = trim((string) $ex);
+                if ($ex !== '') {
+                    $excludeTypes[] = $ex;
+                }
+            }
+            $excludeTypes = array_values(array_unique($excludeTypes));
+        }
+        // Si le filtre demande explicitement « position », ne pas l’exclure.
+        if ($typeFilter !== null && $excludeTypes !== []) {
+            $excludeTypes = array_values(array_filter(
+                $excludeTypes,
+                static fn (string $t): bool => !in_array($t, $typeFilter, true)
+            ));
+        }
 
         $path = $this->path($tenantId, $mapId);
         $data = $this->readFile($path);
@@ -536,6 +555,9 @@ final class AtakActivityLogService
                 continue;
             }
             $type = (string) ($e['type'] ?? '');
+            if ($excludeTypes !== [] && in_array($type, $excludeTypes, true)) {
+                continue;
+            }
             if ($typeFilter !== null && !in_array($type, $typeFilter, true)) {
                 continue;
             }
@@ -851,6 +873,72 @@ final class AtakActivityLogService
         usort($out, static function (array $a, array $b): int {
             return strcasecmp($a['label'], $b['label']);
         });
+
+        return $out;
+    }
+
+    /**
+     * Mémorise la détection des mods compagnons remontée par le jeu (handshake position).
+     *
+     * @param array{has_ctab?: bool, has_atak_enhanced?: bool, has_athena_ctab?: bool, mod_athena?: bool} $flags
+     */
+    public function touchModDetection(int $tenantId, int $mapId, array $flags): void
+    {
+        if ($tenantId < 1 || $mapId < 1) {
+            return;
+        }
+        $hasCtab = !empty($flags['has_ctab']);
+        $hasEnhanced = !empty($flags['has_atak_enhanced']);
+        $hasAthenaCtab = !empty($flags['has_athena_ctab']);
+        $hasAthena = !empty($flags['mod_athena']) || $hasCtab || $hasEnhanced || $hasAthenaCtab;
+        if (!$hasAthena && !$hasCtab && !$hasEnhanced) {
+            return;
+        }
+        $now = time();
+        $this->mutate($tenantId, $mapId, function (array &$data) use ($now, $hasAthena, $hasCtab, $hasEnhanced, $hasAthenaCtab): void {
+            $mods = is_array($data['mod_detection'] ?? null) ? $data['mod_detection'] : [];
+            if ($hasAthena) {
+                $mods['athena_at'] = $now;
+            }
+            if ($hasCtab) {
+                $mods['ctab_at'] = $now;
+            }
+            if ($hasEnhanced) {
+                $mods['atak_enhanced_at'] = $now;
+            }
+            if ($hasAthenaCtab) {
+                $mods['athena_ctab_at'] = $now;
+            }
+            $data['mod_detection'] = $mods;
+        });
+    }
+
+    /**
+     * Horodatages de dernière détection mods (secondes Unix), 0 si inconnu / expiré.
+     *
+     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int}
+     */
+    public function getModDetection(int $tenantId, int $mapId): array
+    {
+        $empty = [
+            'athena_at' => 0,
+            'ctab_at' => 0,
+            'atak_enhanced_at' => 0,
+            'athena_ctab_at' => 0,
+        ];
+        if ($tenantId < 1 || $mapId < 1) {
+            return $empty;
+        }
+        $data = $this->readFile($this->path($tenantId, $mapId));
+        $mods = is_array($data['mod_detection'] ?? null) ? $data['mod_detection'] : [];
+        $now = time();
+        $out = $empty;
+        foreach (array_keys($empty) as $key) {
+            $at = (int) ($mods[$key] ?? 0);
+            if ($at > 0 && ($now - $at) <= self::MOD_DETECT_PRESENT_TTL_SEC) {
+                $out[$key] = $at;
+            }
+        }
 
         return $out;
     }

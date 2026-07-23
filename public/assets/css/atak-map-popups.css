@@ -149,7 +149,7 @@
   border: 1px solid rgba(42, 42, 53, 0.9);
   color: #f8fafc !important;
   text-shadow: none !important;
-  font-size: 7px !important;
+  font-size: var(--atak-unit-label-size, 7px) !important;
   font-weight: 700 !important;
   letter-spacing: 0.03em;
   max-width: 56px;
