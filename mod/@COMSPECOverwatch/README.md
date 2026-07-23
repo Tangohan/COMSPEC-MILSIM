@@ -13,6 +13,15 @@ Mod Arma 3 pour la liaison avec Athena (carte tactique / ATAK). Envoi de la posi
 - Arma 3
 - **CBA A3** (Community Base Addons)
 
+### Optionnel — app Athena dans ATAK Enhanced (cTab)
+
+Pour l’icône **Athena** dans cTab (inbox alertes/ordres + envoi rapide + tablette complète) :
+
+- **cTab** / cTab+ et **BCE** (comme pour ATAK Enhancements by Iceman)
+- PBO `addons/atak_athena.pbo` (embarqué dans le build si AddonBuilder réussit)
+
+Sans cTab/BCE, le cœur Overwatch (`main` + `connect`) fonctionne seul ; `atak_athena` ne se charge simplement pas.
+
 ## Installation
 
 1. Télécharger le mod (archive .zip ou dossier `@COMSPECOverwatch`).

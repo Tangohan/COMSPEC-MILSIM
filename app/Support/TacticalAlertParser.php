@@ -22,6 +22,7 @@ final class TacticalAlertParser
         'frago',
         'salute',
         'eagle_down',
+        'bda',
     ];
 
     /**
@@ -293,6 +294,7 @@ final class TacticalAlertParser
             'frago' => 'Ordre fragmentaire',
             'salute' => 'Compte rendu SALUTE',
             'eagle_down' => 'Opérateur à terre',
+            'bda' => 'Bilan des dégâts',
             default => 'Alerte',
         };
     }
@@ -301,7 +303,7 @@ final class TacticalAlertParser
     {
         return match (self::normalizeKind($kind)) {
             'eagle_down', 'tic' => 'critical',
-            'frago' => 'high',
+            'frago', 'bda' => 'high',
             'salute' => 'medium',
             'tic_clear' => 'info',
             default => 'medium',
@@ -330,6 +332,7 @@ final class TacticalAlertParser
             'FRAGO' => 'frago',
             'SALUTE' => 'salute',
             'EAGLE_DOWN', 'EAGLEDOWN', 'PANIC' => 'eagle_down',
+            'BDA', 'BDA_REPORT', 'BDAREPORT' => 'bda',
             default => 'tic',
         };
     }

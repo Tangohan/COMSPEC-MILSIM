@@ -41,7 +41,7 @@ if not exist "%OUTPUT_DIR%\addons" mkdir "%OUTPUT_DIR%\addons"
 
 :: 3. Compilation des PBO
 echo [BUILD] Compilation de comspec_overwatch_main... >> "%BUILD_LOG%"
-echo [BUILD] Compilation de comspec_overwatch_main..."
+echo [BUILD] Compilation de comspec_overwatch_main...
 if not exist "%PROJECT_DIR%%MOD_NAME%\addons\main" (
     echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\main >> "%BUILD_LOG%"
     echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\main
@@ -55,7 +55,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo [BUILD] Compilation de comspec_overwatch_connect... >> "%BUILD_LOG%"
-echo [BUILD] Compilation de comspec_overwatch_connect..."
+echo [BUILD] Compilation de comspec_overwatch_connect...
 if not exist "%PROJECT_DIR%%MOD_NAME%\addons\connect" (
     echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\connect >> "%BUILD_LOG%"
     echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\connect
@@ -68,16 +68,27 @@ if %ERRORLEVEL% NEQ 0 (
     goto :build_fail
 )
 
+:: Bridge optionnel ATAK Enhanced (cTab/BCE) - ignore si AddonBuilder echoue
+if exist "%PROJECT_DIR%%MOD_NAME%\addons\atak_athena\config.cpp" (
+    echo [BUILD] Compilation de comspec_overwatch_atak_athena... >> "%BUILD_LOG%"
+    echo [BUILD] Compilation de comspec_overwatch_atak_athena...
+    "%BUILDER_PATH%" "%PROJECT_DIR%%MOD_NAME%\addons\atak_athena" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_athena >> "%BUILD_LOG%" 2>&1
+    if %ERRORLEVEL% NEQ 0 (
+        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore.
+    )
+)
+
 :: 4. DLL a la racine du mod (Native AOT ~5 Mo — jamais le stub managé ~30 Ko)
 ::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) — pack Workshop : workshop-pack.ps1
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64...
-if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" (
-    copy /Y "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
-) else if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" (
-    copy /Y "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
-) else if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" (
-    copy /Y "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
+set "DLL_SRC="
+if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll"
+if not defined DLL_SRC if exist "%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll" set "DLL_SRC=%DOTNET_BUILD_DIR%\COMSPECExtension_x64.dll"
+if not defined DLL_SRC if exist "%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll" set "DLL_SRC=%OUTPUT_DIR%\net8.0\win-x64\native\COMSPECExtension_x64.dll"
+if defined DLL_SRC (
+    copy /Y "%DLL_SRC%" "%OUTPUT_DIR%\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
 ) else (
     echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET. >> "%BUILD_LOG%"
     echo [WARN] DLL Native AOT non trouvee. Verifiez la compilation .NET.
@@ -85,15 +96,17 @@ if exist "%DOTNET_PUBLISH_DIR%\COMSPECExtension_x64.dll" (
 :: Nettoyage artefacts de debug / publish accidentels a la racine du mod
 if exist "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" del /F /Q "%OUTPUT_DIR%\COMSPECExtension_x64.pdb" >> "%BUILD_LOG%" 2>&1
 if exist "%OUTPUT_DIR%\net8.0" (
-    echo [CLEAN] Suppression net8.0\ du dossier mod (ne pas shipper). >> "%BUILD_LOG%"
+    echo [CLEAN] Suppression dossier net8.0 du mod - ne pas shipper. >> "%BUILD_LOG%"
     rmdir /S /Q "%OUTPUT_DIR%\net8.0" >> "%BUILD_LOG%" 2>&1
 )
 if exist "%PROJECT_DIR%mod.cpp" (
-    copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\" >> "%BUILD_LOG%" 2>&1
-) else if exist "%OUTPUT_DIR%\mod.cpp" (
-    echo [INFO] mod.cpp deja present dans le mod. >> "%BUILD_LOG%"
+    copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\mod.cpp" >> "%BUILD_LOG%" 2>&1
 ) else (
-    echo [WARN] mod.cpp introuvable a la racine mod\ — verifiez @COMSPECOverwatch\mod.cpp >> "%BUILD_LOG%"
+    if exist "%OUTPUT_DIR%\mod.cpp" (
+        echo [INFO] mod.cpp deja present dans le mod. >> "%BUILD_LOG%"
+    ) else (
+        echo [WARN] mod.cpp introuvable - verifiez le mod.cpp du dossier mod. >> "%BUILD_LOG%"
+    )
 )
 
 :: 5. Deploiement vers Arma 3
@@ -112,12 +125,13 @@ if exist "%ARMA_PATH%" (
             echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
             echo [DEPLOY] Cible: %%~T
             if not exist "%%~T\addons" mkdir "%%~T\addons"
-            :: Retirer sources loose + artefacts qui cassent le prefixe PBO
             if exist "%%~T\addons\connect" rd /s /q "%%~T\addons\connect"
             if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
+            if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
             if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
             copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
             copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1
         ) else (
@@ -147,7 +161,9 @@ echo   Workshop   : executer workshop-pack.ps1 avant upload Steam
 echo                (ne pas publier les .sqf / net8.0 / .pdb)
 echo   Log complet : %BUILD_LOG%
 echo ===========================================================
+if /I "%COMSPEC_BUILD_NOPAUSE%"=="1" goto :build_done
 pause
+:build_done
 del "%TMP_OUT%" 2>nul
 exit /b 0
 
@@ -159,6 +175,8 @@ echo ===========================================================
 echo   BUILD EN ECHEC - Verifiez les messages ci-dessus
 echo   Log complet : %BUILD_LOG%
 echo ===========================================================
+if /I "%COMSPEC_BUILD_NOPAUSE%"=="1" goto :fail_done
 pause
+:fail_done
 del "%TMP_OUT%" 2>nul
 exit /b 1

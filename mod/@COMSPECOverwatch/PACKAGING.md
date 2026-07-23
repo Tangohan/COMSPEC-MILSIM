@@ -9,7 +9,7 @@ Checklist pour **ne jamais** publier les sources de travail sur le Steam Worksho
 | `mod.cpp` | racine |
 | `meta.cpp` | racine (si présent) |
 | `CREDITS.md` | racine (crédits + licences) |
-| `main.pbo`, `connect.pbo` | `addons/` |
+| `main.pbo`, `connect.pbo`, `atak_athena.pbo` (optionnel) | `addons/` |
 | `*.bisign` | `addons/` (si signature BI) |
 | `*.bikey` | `keys/` (clé **publique** seulement) |
 | `COMSPECExtension_x64.dll` | racine (Native AOT, typiquement ~5 Mo) |
@@ -17,7 +17,7 @@ Checklist pour **ne jamais** publier les sources de travail sur le Steam Worksho
 
 ## Interdits (ne jamais uploader)
 
-- Dossier `addons/connect/` ou `addons/main/` **décompressés** (`.sqf`, `.hpp`, `config.cpp`, `$PBOPREFIX$`)
+- Dossier `addons/connect/`, `addons/main/` ou `addons/atak_athena/` **décompressés** (`.sqf`, `.hpp`, `config.cpp`, `$PBOPREFIX$`)
 - `mod/Sources/`, `mod/COMSPECExtension/` (`Extension.cs`, `obj/`, `bin/`)
 - `net8.0/`, `*.pdb`, `*.exp`, `*.lib`, `*.deps.json`
 - `.env`, secrets, `*.biprivatekey` (clé **privée** de signature)

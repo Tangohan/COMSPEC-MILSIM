@@ -38,6 +38,41 @@ class BlockedIndicatorRepository
         return hash('sha256', $ip);
     }
 
+    public static function hashSteam(string $steamUid): string
+    {
+        return hash('sha256', trim($steamUid));
+    }
+
+    public static function hintSteam(string $steamUid): string
+    {
+        $s = trim($steamUid);
+        if (strlen($s) < 4) {
+            return 'Steam …';
+        }
+
+        return 'Steam …' . substr($s, -4);
+    }
+
+    public static function hintIp(string $ip): string
+    {
+        $ip = trim($ip);
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+        if (str_contains($ip, ':')) {
+            // IPv6 : garder un préfixe court
+            $parts = explode(':', $ip);
+
+            return 'Réseau …' . substr(end($parts) ?: '', -4);
+        }
+        $octets = explode('.', $ip);
+        if (count($octets) === 4) {
+            return 'Réseau ' . $octets[0] . '.' . $octets[1] . '.*.' . $octets[3];
+        }
+
+        return 'Réseau …' . substr($ip, -4);
+    }
+
     public function isEmailBlockedForTenant(int $tenantId, string $email): bool
     {
         return $this->isEmailBlocked($tenantId, $email) || $this->isEmailBlockedGlobally($email);
@@ -81,6 +116,55 @@ class BlockedIndicatorRepository
         $h = self::hashIp($ip);
 
         return $this->rowActiveExists('ip', $h, 'global', null);
+    }
+
+    public function isSteamBlockedForContext(?int $tenantId, string $steamUid): bool
+    {
+        if ($this->isSteamBlockedGlobally($steamUid)) {
+            return true;
+        }
+        if ($tenantId !== null && $tenantId > 0) {
+            return $this->isSteamBlocked($tenantId, $steamUid);
+        }
+
+        return false;
+    }
+
+    public function isSteamBlocked(int $tenantId, string $steamUid): bool
+    {
+        $h = self::hashSteam($steamUid);
+
+        return $this->rowActiveExists('steam', $h, 'tenant', $tenantId);
+    }
+
+    public function isSteamBlockedGlobally(string $steamUid): bool
+    {
+        $h = self::hashSteam($steamUid);
+
+        return $this->rowActiveExists('steam', $h, 'global', null);
+    }
+
+    /**
+     * Blocages actifs destinés au mod Arma (Steam + IP) pour une communauté (+ globaux).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveModBlocksForTenant(int $tenantId, int $limit = 200): array
+    {
+        $lim = max(1, min(500, $limit));
+        $st = $this->pdo->prepare(
+            "SELECT * FROM blocked_indicators
+             WHERE indicator_type IN ('steam', 'ip')
+             AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())
+             AND (
+                (scope = 'tenant' AND tenant_id = ?)
+                OR scope = 'global'
+             )
+             ORDER BY id DESC LIMIT {$lim}"
+        );
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     private function rowActiveExists(string $indicatorType, string $valueHash, string $scope, ?int $tenantId): bool
@@ -256,11 +340,12 @@ class BlockedIndicatorRepository
         ?string $reason,
         ?\DateTimeInterface $expiresAt,
         ?int $createdByUserId,
-        ?int $moderationActionId
+        ?int $moderationActionId,
+        ?string $displayHint = null
     ): int {
         $st = $this->pdo->prepare(
-            'INSERT INTO blocked_indicators (tenant_id, indicator_type, value_hash, scope, reason, expires_at, created_at, revoked_at, created_by_user_id, moderation_action_id)
-             VALUES (?, ?, ?, ?, ?, ?, NOW(), NULL, ?, ?)'
+            'INSERT INTO blocked_indicators (tenant_id, indicator_type, value_hash, scope, reason, display_hint, expires_at, created_at, revoked_at, created_by_user_id, moderation_action_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NULL, ?, ?)'
         );
         $st->execute([
             $scope === 'global' ? null : $tenantId,
@@ -268,6 +353,7 @@ class BlockedIndicatorRepository
             $valueHash,
             $scope,
             $reason,
+            $displayHint !== null && $displayHint !== '' ? mb_substr($displayHint, 0, 64) : null,
             $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
             $createdByUserId,
             $moderationActionId,

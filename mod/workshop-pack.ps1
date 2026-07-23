@@ -102,6 +102,13 @@ if (Test-Path -LiteralPath $credits) {
 Write-Step "Copie PBO"
 Copy-Item -LiteralPath $pboMain -Destination (Join-Path $OutDir "addons\main.pbo") -Force
 Copy-Item -LiteralPath $pboConnect -Destination (Join-Path $OutDir "addons\connect.pbo") -Force
+$pboAthena = Join-Path $SourceMod "addons\atak_athena.pbo"
+if (Test-Path -LiteralPath $pboAthena) {
+    Copy-Item -LiteralPath $pboAthena -Destination (Join-Path $OutDir "addons\atak_athena.pbo") -Force
+    Write-Host "  + atak_athena.pbo (pont cTab / ATAK Enhanced)"
+} else {
+    Write-Host "  (atak_athena.pbo absent — pont cTab non packagé)"
+}
 
 # Signatures BI optionnelles (si présentes à côté des PBO)
 Get-ChildItem -LiteralPath (Join-Path $SourceMod "addons") -Filter "*.bisign" -ErrorAction SilentlyContinue |

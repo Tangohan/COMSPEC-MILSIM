@@ -328,6 +328,7 @@ foreach ($dataSummary as $k => $v) {
                 <div class="flex flex-wrap gap-2 pt-1">
                     <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer</button>
                     <a href="<?= $baseUrl ?>/admin/atak-mod" class="px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">Fichier du mod (upload)</a>
+                    <a href="<?= $baseUrl ?>/admin/atak-mod-blocks" class="px-4 py-2.5 border border-rose-200 bg-rose-50/70 text-rose-950 text-sm font-medium rounded-lg hover:bg-rose-100">Restrictions d’accès au mod</a>
                     <a href="<?= $baseUrl ?>/atak" class="px-4 py-2.5 border border-emerald-200 text-emerald-900 text-sm font-medium rounded-lg bg-emerald-50/80 hover:bg-emerald-50">Ouvrir la Tacmap</a>
                     <a href="<?= $baseUrl ?>/admin" class="px-4 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Retour administration</a>
                 </div>

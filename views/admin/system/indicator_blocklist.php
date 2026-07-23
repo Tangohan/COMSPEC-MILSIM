@@ -1,7 +1,11 @@
 <?php
 /** @var list<array<string, mixed>> $blocklistRows */
 $indicatorKindLabel = static function (string $t): string {
-    return $t === 'ip' ? 'Adresse réseau' : 'Adresse e-mail';
+    return match ($t) {
+        'ip' => 'Adresse réseau',
+        'steam' => 'Identifiant Steam',
+        default => 'Adresse e-mail',
+    };
 };
 ?>
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10">
@@ -15,9 +19,10 @@ $indicatorKindLabel = static function (string $t): string {
             <summary class="cursor-pointer font-semibold text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-slate-300 rounded">Comment ça fonctionne ?</summary>
             <ul class="mt-3 space-y-2 list-disc pl-5 text-slate-600">
                 <li><strong class="text-slate-800">Adresse e-mail</strong> : refuse la connexion, l’inscription et les candidatures qui utilisent cette adresse, sur <em>toutes</em> les communautés.</li>
-                <li><strong class="text-slate-800">Adresse réseau</strong> : refuse les connexions (et certains parcours d’accès) depuis cette adresse telle qu’observée par l’hébergement — attention aux réseaux partagés ou mandataires.</li>
+                <li><strong class="text-slate-800">Adresse réseau</strong> : refuse les connexions (et l’accès au mod Arma) depuis cette adresse telle qu’observée par l’hébergement — attention aux réseaux partagés ou mandataires.</li>
+                <li><strong class="text-slate-800">Identifiant Steam</strong> : refuse l’accès au mod Arma (liaison et synchronisation) pour ce joueur, sur toutes les communautés.</li>
                 <li>Les entrées peuvent être <strong class="text-slate-800">sans fin</strong> ou <strong class="text-slate-800">temporaires</strong> (date de fin automatique).</li>
-                <li>Le tableau ci-dessous n’affiche pas les valeurs complètes (e-mail, réseau) pour limiter l’exposition ; l’historique d’audit garde la trace des actions des opérateurs site.</li>
+                <li>Le tableau ci-dessous n’affiche pas les valeurs complètes pour limiter l’exposition ; l’historique d’audit garde la trace des actions des opérateurs site.</li>
             </ul>
         </details>
         <a href="<?= url('admin') ?>" class="inline-block mt-4 text-sm text-slate-600 hover:underline">Retour au centre opérateur site</a>
@@ -36,6 +41,7 @@ $indicatorKindLabel = static function (string $t): string {
                 <select name="indicator_kind" id="blocklist-indicator-kind" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
                     <option value="email">Adresse e-mail</option>
                     <option value="ip">Adresse réseau</option>
+                    <option value="steam">Identifiant Steam (mod)</option>
                 </select>
             </div>
             <div class="md:col-span-2 rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-4"
@@ -84,6 +90,7 @@ $indicatorKindLabel = static function (string $t): string {
                     <tr>
                         <th class="text-left p-2">Réf.</th>
                         <th class="text-left p-2">Type</th>
+                        <th class="text-left p-2">Repère</th>
                         <th class="text-left p-2">Fin</th>
                         <th class="text-left p-2">Motif</th>
                         <th class="text-left p-2"></th>
@@ -94,6 +101,7 @@ $indicatorKindLabel = static function (string $t): string {
                     <tr class="border-t border-slate-100 bg-white">
                         <td class="p-2">#<?= (int) ($b['id'] ?? 0) ?></td>
                         <td class="p-2"><?= htmlspecialchars($indicatorKindLabel((string) ($b['indicator_type'] ?? ''))) ?></td>
+                        <td class="p-2"><?= htmlspecialchars(trim((string) ($b['display_hint'] ?? '')) !== '' ? (string) $b['display_hint'] : '—') ?></td>
                         <td class="p-2"><?= !empty($b['expires_at']) ? htmlspecialchars((string) $b['expires_at']) : '—' ?></td>
                         <td class="p-2"><?= htmlspecialchars(trim((string) ($b['reason'] ?? '')) !== '' ? (string) $b['reason'] : '—') ?></td>
                         <td class="p-2">
@@ -166,11 +174,20 @@ $indicatorKindLabel = static function (string $t): string {
             btn.appendChild(t2);
             btn.appendChild(t3);
             btn.addEventListener('click', function () {
-                target.value = u.email;
-                kind.value = 'email';
+                if (kind.value === 'steam') {
+                    if (!u.steam_id) {
+                        setStatus('Ce compte n’a pas d’identifiant Steam lié. Choisissez un autre compte ou saisissez-le à la main.', true);
+                        return;
+                    }
+                    target.value = u.steam_id;
+                    setStatus('Le champ « Valeur » a été rempli avec l’identifiant Steam. Contrôlez avant d’enregistrer.', false);
+                } else {
+                    target.value = u.email;
+                    kind.value = 'email';
+                    setStatus('Le champ « Valeur » a été rempli avec l’adresse de connexion choisie. Contrôlez avant d’enregistrer.', false);
+                }
                 hidePanel();
                 input.value = '';
-                setStatus('Le champ « Valeur » a été rempli avec l’adresse de connexion choisie. Contrôlez avant d’enregistrer.', false);
             });
             panel.appendChild(btn);
         });

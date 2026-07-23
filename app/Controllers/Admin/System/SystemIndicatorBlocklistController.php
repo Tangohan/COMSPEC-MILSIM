@@ -75,6 +75,15 @@ final class SystemIndicatorBlocklistController
                     $reason !== '' ? $reason : null,
                     $expiresAt
                 );
+            } elseif ($kind === 'steam') {
+                $this->indicatorBlocklistService->addSteamBlock(
+                    $actorId,
+                    'global',
+                    null,
+                    $raw,
+                    $reason !== '' ? $reason : null,
+                    $expiresAt
+                );
             } else {
                 Session::flash('error', 'Type d’entrée non reconnu.');
 

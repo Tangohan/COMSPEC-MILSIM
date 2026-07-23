@@ -19,6 +19,7 @@ if ($sys || $org || $support) {
 if ($sys || $org || $support) {
     $links[] = ['href' => url('back-office/ressources/modpacks'), 'label' => 'Modpacks', 'desc' => 'Packs mods de la communauté sélectionnée'];
     $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour ce tenant'];
+    $links[] = ['href' => url('back-office/ressources/atak-mod-blocks'), 'label' => 'Restrictions d’accès au mod', 'desc' => 'Bloquer un Steam ou une adresse réseau côté Overwatch'];
     $links[] = ['href' => url('back-office/ressources/atak-mod'), 'label' => 'Mod ATAK (Overwatch)', 'desc' => 'Fichiers mod côté communauté'];
     $links[] = ['href' => url('back-office/ressources/forum-config'), 'label' => 'Configuration forum', 'desc' => 'Canaux, modération technique, filtres'];
     $links[] = ['href' => cooperation_mission_index_url(), 'label' => 'Coopérations inter-unités', 'desc' => 'Propositions, validation mutuelle, espace commun sur le brief et coordination opérationnelle'];

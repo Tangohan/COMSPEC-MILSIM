@@ -58,6 +58,7 @@ use App\Controllers\Admin\AdminBriefingSlidesController;
 use App\Controllers\Admin\AdminFireTeamsController;
 use App\Controllers\Admin\AdminAtakOperatorsController;
 use App\Controllers\Admin\AdminAtakModController;
+use App\Controllers\Admin\AdminAtakModBlocklistController;
 use App\Controllers\Api\FireTeamApiController;
 use App\Controllers\Admin\AdminConfigurationController;
 use App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController;
@@ -208,6 +209,7 @@ return function (Router $router) {
     $mwCourrier = [AuthMiddleware::class, CourrierModuleSanctionMiddleware::class];
 
     $router->get('/', [HomeController::class, 'index']);
+    $router->get('/locale/{locale}', [\App\Controllers\Web\LocaleController::class, 'switch']);
     $router->get('/robots.txt', [SeoController::class, 'robots']);
     $router->get('/sitemap.xml', [SeoController::class, 'sitemap']);
     $router->post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
@@ -908,6 +910,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak-mod-blocks', [AdminAtakModBlocklistController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-blocks/add', [AdminAtakModBlocklistController::class, 'add'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-blocks/revoke', [AdminAtakModBlocklistController::class, 'revoke'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/api/admin/atak-mod-blocks/members', [AdminAtakModBlocklistController::class, 'searchMembers'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
@@ -1007,6 +1013,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/back-office/ressources/modpacks/{id}/edit', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/modpacks/' . ($p['id'] ?? '') . '/edit')), $tenantResMw);
     $router->get('/back-office/ressources/atak-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-config')), $tenantResMw);
     $router->get('/back-office/ressources/atak-mod', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod')), $tenantResMw);
+    $router->get('/back-office/ressources/atak-mod-blocks', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/atak-mod-blocks')), $tenantResMw);
     $router->get('/back-office/ressources/forum-config', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('admin/forum-config')), $tenantResMw);
     $router->get('/back-office/ressources/interteam-missions', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_index_url()), $interteamMw);
     $router->get('/back-office/ressources/interteam-missions/create', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(cooperation_mission_create_url()), $interteamMw);

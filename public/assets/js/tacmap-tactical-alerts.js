@@ -1,5 +1,5 @@
 /**
- * Panneau alertes tactiques Tacmap (Contact, fin de contact, FRAGO, SALUTE, opérateur à terre).
+ * Panneau alertes tactiques Tacmap (Contact, fin de contact, FRAGO, SALUTE, opérateur à terre, bilan des dégâts).
  */
 (function (global) {
   'use strict';

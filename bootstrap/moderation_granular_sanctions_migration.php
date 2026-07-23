@@ -63,6 +63,14 @@ function run_moderation_granular_sanctions_migration(PDO $pdo): void
         } catch (Throwable) {
         }
     }
+
+    if (!$hasColumn($pdo, 'blocked_indicators', 'display_hint')) {
+        try {
+            $pdo->exec("ALTER TABLE blocked_indicators ADD COLUMN display_hint varchar(64) DEFAULT NULL COMMENT 'Masked hint for admins (Steam/IP)' AFTER reason");
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] blocked_indicators.display_hint : ' . $e->getMessage() . "\n";
+        }
+    }
 }
 
 function ensure_moderation_granular_sanctions_schema(PDO $pdo): void
@@ -71,9 +79,26 @@ function ensure_moderation_granular_sanctions_schema(PDO $pdo): void
     if ($done) {
         return;
     }
-    $stJson = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'restrictions_json' LIMIT 1");
-    $stScope = $pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'moderation_actions' AND COLUMN_NAME = 'sanction_scope' LIMIT 1");
-    if ($stJson && $stJson->fetchColumn() && $stScope && $stScope->fetchColumn()) {
+    $hasColumn = static function (PDO $pdo, string $table, string $column): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
+
+    $needsRun = false;
+    if (!$hasColumn($pdo, 'moderation_actions', 'restrictions_json')) {
+        $needsRun = true;
+    }
+    if (!$hasColumn($pdo, 'moderation_actions', 'sanction_scope')) {
+        $needsRun = true;
+    }
+    if (!$hasColumn($pdo, 'blocked_indicators', 'display_hint')) {
+        $needsRun = true;
+    }
+    if (!$needsRun) {
         $done = true;
 
         return;

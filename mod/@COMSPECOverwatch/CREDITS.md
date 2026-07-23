@@ -56,7 +56,15 @@ Dossier local : `mod/Sources/ctav-b2`
 | Licence d’origine cTab | GNU GPL v2 (pas de LICENSE séparée dans ce dossier local) |
 | Steam Workshop | https://steamcommunity.com/sharedfiles/filedetails/?id=2511318948 |
 
-### Assets repris dans `@COMSPECOverwatch` (GPL v2 — crédits obligatoires)
+## cTab / ATAK Enhanced (optionnel)
+
+| Élément | Détail |
+|--------|--------|
+| Addon | `addons/atak_athena` — app Athena native dans cTab |
+| Dépendances | cTab, ctab_core, BCE_Core, BCE_cTab (+ Overwatch connect) |
+| Inspiration | Pattern `ATAK_APPs` (Iceman) — code original COMSPEC, dual-send via CBA |
+| Réseau | Inchangé : COMSPECExtension → REST Athena (pas de WaveRelay) |
+
 
 Textures / modèles copiés depuis le Workshop NSWDG (`Addons/cTab/img` + `data`), renommés avec préfixe `comspec_*` pour éviter les collisions avec le mod cTab :
 

@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\UserRepository;
+use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Security\FileRateLimiter;
 use App\Services\Tactical\AtakActivityLogService;
 
@@ -25,6 +26,7 @@ final class AtakArmaWriteGuard
         private UserRepository $users = new UserRepository(),
         private ?AtakActivityLogService $activityLog = null,
         private FileRateLimiter $limiter = new FileRateLimiter(),
+        private ?IndicatorBlocklistService $blocklist = null,
     ) {
         $this->activityLog ??= new AtakActivityLogService();
     }
@@ -121,6 +123,11 @@ final class AtakArmaWriteGuard
                 'error' => 'steam_required',
                 'message' => 'Identifiant Steam requis. Mettez à jour le mod Overwatch, puis reconnectez-vous.',
             ], 403);
+        }
+
+        $modBlock = $this->assertModNotBlocked($tenantId, $steam);
+        if ($modBlock instanceof Response) {
+            return $modBlock;
         }
 
         $rate = $this->checkRateLimit($tenantId, $steam, $apiKey);
@@ -251,6 +258,48 @@ final class AtakArmaWriteGuard
         }
 
         return null;
+    }
+
+    /**
+     * Refuse l’accès mod si Steam ou adresse réseau sont restreints (communauté + plateforme).
+     */
+    public function assertModNotBlocked(int $tenantId, ?string $steamUid, ?string $clientIp = null): ?Response
+    {
+        $blocklist = $this->blocklist;
+        if ($blocklist === null) {
+            try {
+                $blocklist = \App\Core\Container::get(IndicatorBlocklistService::class);
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+        $ip = $clientIp ?? $this->clientIp();
+        $check = $blocklist->checkModAccessBlock($tenantId > 0 ? $tenantId : null, $steamUid, $ip);
+        if (!$check['blocked']) {
+            return null;
+        }
+        $reason = $check['reason'] === 'ip' ? 'mod_ip_blocked' : 'mod_steam_blocked';
+        $message = $check['reason'] === 'ip'
+            ? 'Accès au mod refusé depuis cette adresse réseau. Contactez un administrateur de la communauté.'
+            : 'Accès au mod refusé pour cet identifiant Steam. Contactez un administrateur de la communauté.';
+        $this->log($tenantId, false, 'Accès jeu refusé — restriction mod', [
+            'reason' => $reason,
+        ]);
+
+        return Response::json([
+            'error' => $reason,
+            'message' => $message,
+        ], 403);
+    }
+
+    public function clientIp(): string
+    {
+        $ip = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
+        if (str_contains($ip, ',')) {
+            $ip = trim(explode(',', $ip)[0]);
+        }
+
+        return trim($ip);
     }
 
     /** @param array<string, mixed> $meta */

@@ -37,6 +37,7 @@ final class SystemUserLookupApiController
                 'email' => (string) ($u['email'] ?? ''),
                 'display_name' => trim((string) ($u['display_name'] ?? '')),
                 'callsign' => trim((string) ($u['callsign'] ?? '')),
+                'steam_id' => trim((string) ($u['steam_id'] ?? '')),
                 'community' => trim((string) ($u['tenant_name'] ?? '')),
                 'account_state' => $stateLabel,
             ];

@@ -1257,6 +1257,12 @@ class Container
                 )
             ),
             \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
+            \App\Controllers\Admin\AdminAtakModBlocklistController::class => new \App\Controllers\Admin\AdminAtakModBlocklistController(
+                self::get(\App\Services\Auth\AuthService::class),
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+                self::get(UserRepository::class)
+            ),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
                 self::get(\App\Repositories\ForumBannedWordRepository::class),

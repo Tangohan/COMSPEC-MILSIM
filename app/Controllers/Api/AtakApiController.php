@@ -509,6 +509,10 @@ class AtakApiController
         }
 
         $steamUid = SteamId::normalize((string) ($body['steam_uid'] ?? $body['player_uid'] ?? $body['steam_id'] ?? ''));
+        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steamUid);
+        if ($modBlock instanceof Response) {
+            return $modBlock;
+        }
         if ($steamUid !== null) {
             $user = $this->userRepository->findById($userId, $tenantId);
             if (is_array($user)) {
@@ -607,6 +611,11 @@ class AtakApiController
                 'error' => 'account_disabled',
                 'message' => 'Ce compte Athena n’est pas autorisé à se lier.',
             ], 403);
+        }
+
+        $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steamUid);
+        if ($modBlock instanceof Response) {
+            return $modBlock;
         }
 
         $config = $this->tenantAtakConfigRepository->getByTenantId($tenantId);
@@ -1658,6 +1667,10 @@ class AtakApiController
                     'error' => 'account_disabled',
                     'message' => 'Ce compte Athena n’est pas autorisé.',
                 ], 403);
+            }
+            $modBlock = $this->armaGuard->assertModNotBlocked($tenantId, $steam);
+            if ($modBlock instanceof Response) {
+                return $modBlock;
             }
             if ($callSign === '') {
                 $fromProfile = trim((string) ($user['callsign'] ?? ''));

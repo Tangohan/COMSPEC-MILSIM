@@ -57,7 +57,8 @@ final class IndicatorBlocklistService
             $reason,
             $expiresAt,
             $actorUserId,
-            $moderationActionId
+            $moderationActionId,
+            null
         );
         $new = [
             'indicator_id' => $id,
@@ -90,8 +91,8 @@ final class IndicatorBlocklistService
         ?\DateTimeImmutable $expiresAt
     ): int {
         $ip = trim($ip);
-        if ($ip === '' || strlen($ip) > 45) {
-            throw new \InvalidArgumentException('Adresse IP invalide.');
+        if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            throw new \InvalidArgumentException('Adresse réseau invalide.');
         }
         if ($scope === 'tenant' && ($tenantId === null || $tenantId < 1)) {
             throw new \InvalidArgumentException('Organisation requise pour une liste noire locale.');
@@ -106,7 +107,8 @@ final class IndicatorBlocklistService
             $reason,
             $expiresAt,
             $actorUserId,
-            null
+            null,
+            BlockedIndicatorRepository::hintIp($ip)
         );
         $new = [
             'indicator_id' => $id,
@@ -125,6 +127,84 @@ final class IndicatorBlocklistService
         );
 
         return $id;
+    }
+
+    /**
+     * @param 'tenant'|'global' $scope
+     */
+    public function addSteamBlock(
+        int $actorUserId,
+        string $scope,
+        ?int $tenantId,
+        string $steamUid,
+        ?string $reason,
+        ?\DateTimeImmutable $expiresAt
+    ): int {
+        $normalized = \App\Support\SteamId::normalize($steamUid);
+        if ($normalized === null) {
+            throw new \InvalidArgumentException('Identifiant Steam non reconnu. Indiquez le numéro Steam du joueur (profil ou jeu).');
+        }
+        if ($scope === 'tenant' && ($tenantId === null || $tenantId < 1)) {
+            throw new \InvalidArgumentException('Organisation requise pour une restriction locale.');
+        }
+        $hash = BlockedIndicatorRepository::hashSteam($normalized);
+        $tid = $scope === 'global' ? null : $tenantId;
+        $id = $this->blockedIndicatorRepository->add(
+            'steam',
+            $hash,
+            $scope,
+            $tid,
+            $reason,
+            $expiresAt,
+            $actorUserId,
+            null,
+            BlockedIndicatorRepository::hintSteam($normalized)
+        );
+        $new = [
+            'indicator_id' => $id,
+            'indicator_type' => 'steam',
+            'scope' => $scope,
+            'tenant_id' => $tid,
+        ];
+        $this->auditService->logChange(
+            AuditAction::MODERATION_ACTION,
+            $tenantId ?? 0,
+            $actorUserId,
+            'blocked_indicator',
+            $id,
+            [],
+            $new,
+        );
+
+        return $id;
+    }
+
+    public function isSteamBlockedForContext(?int $tenantId, string $steamUid): bool
+    {
+        $normalized = \App\Support\SteamId::normalize($steamUid);
+        if ($normalized === null) {
+            return false;
+        }
+
+        return $this->blockedIndicatorRepository->isSteamBlockedForContext($tenantId, $normalized);
+    }
+
+    /**
+     * Accès mod Arma refusé si Steam et/ou adresse réseau sont restreints (communauté + plateforme).
+     *
+     * @return array{blocked: bool, reason: 'steam'|'ip'|null}
+     */
+    public function checkModAccessBlock(?int $tenantId, ?string $steamUid, ?string $clientIp): array
+    {
+        if ($steamUid !== null && $steamUid !== '' && $this->isSteamBlockedForContext($tenantId, $steamUid)) {
+            return ['blocked' => true, 'reason' => 'steam'];
+        }
+        $ip = trim((string) $clientIp);
+        if ($ip !== '' && $this->isIpBlockedForLogin($tenantId, $ip)) {
+            return ['blocked' => true, 'reason' => 'ip'];
+        }
+
+        return ['blocked' => false, 'reason' => null];
     }
 
     public function revokeIndicator(int $actorUserId, int $indicatorId, ?int $tenantIdForTenantScope): bool

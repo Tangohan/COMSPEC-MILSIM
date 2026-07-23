@@ -773,6 +773,8 @@ class UserRepository
         $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'preferred_grade_format' LIMIT 1");
         $hasGradeColumns = $stmt && $stmt->fetch();
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
+        // 0 / '' ne sont pas des FK valides : MySQL refuse grade_id=0 (contrainte users_grade_id_fk).
+        $data['grade_id'] = $this->normalizeOptionalGradeId($data['grade_id'] ?? null);
         $athenaIdentifier = $hasAthenaIdentifier
             ? trim((string) ($data['athena_identifier'] ?? ''))
             : '';
@@ -1329,6 +1331,9 @@ class UserRepository
         foreach ($allowed as $key) {
             if (array_key_exists($key, $data)) {
                 $value = $data[$key];
+                if ($key === 'grade_id') {
+                    $value = $this->normalizeOptionalGradeId($value);
+                }
                 if ($key === 'steam_id' && $value !== null && $value !== '') {
                     $normalized = \App\Support\SteamId::normalize((string) $value);
                     if ($normalized === null) {
@@ -1498,18 +1503,53 @@ class UserRepository
         $term = '%' . $q . '%';
         $limit = max(1, min(30, $limit));
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $sql = 'SELECT u.id, u.email, u.display_name, u.callsign, t.name AS tenant_name, u.status
+        $sql = 'SELECT u.id, u.email, u.display_name, u.callsign, u.steam_id, t.name AS tenant_name, u.status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
              WHERE (
                  u.email LIKE ?
                  OR u.display_name LIKE ?
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
+                 OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> \'\' AND u.steam_id LIKE ?)
              ) AND ' . $pack['sql'] . '
              ORDER BY t.name ASC, u.email ASC
              LIMIT ' . $limit;
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(array_merge([$term, $term, $term], $pack['params']));
+        $stmt->execute(array_merge([$term, $term, $term, $term], $pack['params']));
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Membres d’une communauté pour l’écran « restrictions mod » (Steam lié).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function searchMembersForModBlocklist(int $tenantId, string $query, int $limit = 20): array
+    {
+        $q = trim($query);
+        $len = function_exists('mb_strlen') ? mb_strlen($q) : strlen($q);
+        if ($tenantId < 1 || $len < 2) {
+            return [];
+        }
+        $q = function_exists('mb_substr') ? mb_substr($q, 0, 120) : substr($q, 0, 120);
+        $term = '%' . $q . '%';
+        $limit = max(1, min(30, $limit));
+        $pack = $this->technicalAccountExclusionPredicate('u');
+        $sql = 'SELECT u.id, u.display_name, u.callsign, u.email, u.steam_id, u.status
+             FROM users u
+             WHERE u.tenant_id = ?
+             AND ' . $pack['sql'] . '
+             AND (
+                 u.display_name LIKE ?
+                 OR u.email LIKE ?
+                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
+                 OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> \'\' AND u.steam_id LIKE ?)
+             )
+             ORDER BY u.display_name ASC
+             LIMIT ' . $limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId], $pack['params'], [$term, $term, $term, $term]));
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1766,7 +1806,7 @@ class UserRepository
      *
      * @return int Nouvel id utilisateur
      */
-    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, int $gradeId): int
+    public function cloneUserToTenant(int $sourceUserId, int $newTenantId, int $roleId, ?int $gradeId = null): int
     {
         $u = $this->findById($sourceUserId, null);
         if (!$u) {
@@ -1781,7 +1821,7 @@ class UserRepository
             'display_name' => $u['display_name'] ?? null,
             'callsign' => $u['callsign'] ?? null,
             'role_id' => $roleId,
-            'grade_id' => $gradeId,
+            'grade_id' => $this->normalizeOptionalGradeId($gradeId),
             'status' => 'active',
         ];
         if ($this->hasProfileSlugColumn()) {
@@ -1806,6 +1846,19 @@ class UserRepository
         }
 
         return $newId;
+    }
+
+    /**
+     * Convertit 0 / chaî / chaîes négatives en NULL (FK grades.id).
+     */
+    private function normalizeOptionalGradeId(mixed $gradeId): ?int
+    {
+        if ($gradeId === null || $gradeId === '') {
+            return null;
+        }
+        $id = (int) $gradeId;
+
+        return $id > 0 ? $id : null;
     }
 
     public function countActiveMembers(int $tenantId): int
