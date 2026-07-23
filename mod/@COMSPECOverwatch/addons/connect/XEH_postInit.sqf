@@ -49,31 +49,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         }] call CBA_fnc_addEventHandler;
     };
 
+    // Une seule entrée molette : tout le reste (briefing, téléphone, tablette,
+    // indicatif, ordres...) est déjà accessible depuis ce menu (touche K) — inutile de
+    // dupliquer chaque écran en action séparée, ça noyait le menu contextuel Arma.
     player addAction [
-        "<t color='#7fffd4'>Tableau de briefing</t>",
-        { [] call comspec_overwatch_connect_fnc_openBriefingBoard; },
+        "<t color='#7fffd4'>Menu Overwatch (K)</t>",
+        { 0 spawn { [] call comspec_overwatch_connect_fnc_openHub; }; },
         nil, 6, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Connecter mon téléphone</t>",
-        { [] call comspec_overwatch_connect_fnc_phoneConnectShow; },
-        nil, 5.9, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Ma tablette Athena</t>",
-        { [] call comspec_overwatch_connect_fnc_webBrowserShow; },
-        nil, 5.8, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#8aa0b4'>Tablette (vue classique)</t>",
-        { if (isNull (findDisplay 9973)) then { createDialog 'COMSPEC_Device_Dialog'; }; },
-        nil, 5.75, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
@@ -82,20 +64,6 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         { [] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert; },
         nil, 5.85, false, true, "",
         "(missionNamespace getVariable ['comspec_overwatch_enabled', true]) && {count ([] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert) > 0}"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Mon indicatif</t>",
-        { [] call comspec_overwatch_connect_fnc_callsignDialogShow; },
-        nil, 5.7, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#ffb070'>Ordres reçus</t>",
-        { [] call comspec_overwatch_connect_fnc_orderInboxShow; },
-        nil, 5.6, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
