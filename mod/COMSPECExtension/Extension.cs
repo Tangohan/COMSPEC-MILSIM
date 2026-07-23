@@ -527,7 +527,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 1.16");
+            Output(output, outputSize, "COMSPECExtension 1.17");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -786,7 +786,7 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.16";
+            return "OK|COMSPECExtension 1.17";
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
