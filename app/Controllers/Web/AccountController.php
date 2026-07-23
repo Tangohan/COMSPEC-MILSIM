@@ -374,10 +374,15 @@ class AccountController
                     $updateUser['profile_slug'] = $ps;
                 }
                 $this->userRepository->update($uid, $tenantId, $updateUser);
+                $language = strtolower(trim((string) $request->input('language')));
+                if (!\App\Services\I18n\LocaleService::isSupported($language)) {
+                    $language = 'fr';
+                }
                 $this->userProfileRepository->upsert($uid, [
                     'timezone' => trim((string) $request->input('timezone')),
-                    'language' => trim((string) $request->input('language')),
+                    'language' => $language,
                 ]);
+                (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
                     'first_name' => trim((string) $request->input('first_name')),
                     'last_name' => trim((string) $request->input('last_name')),

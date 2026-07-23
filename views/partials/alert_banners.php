@@ -5,6 +5,9 @@ use App\Core\Container;
 use App\Services\Alerts\AlertPresentationService;
 
 $alertBanners = $alertBanners ?? null;
+if (!empty($skipGlobalAlertBanners)) {
+    return;
+}
 if ($alertBanners === null) {
     try {
         $alertBanners = Container::get(AlertPresentationService::class)->forCurrentRequest();

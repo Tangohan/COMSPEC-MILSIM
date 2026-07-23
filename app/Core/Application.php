@@ -31,6 +31,12 @@ class Application
         $runner = fn (\App\Core\Request $req): \App\Core\Response => $this->router->dispatch();
         $global = [
             new \App\Middleware\RequestIdMiddleware(),
+        ];
+        // Locale UI : optionnelle si le déploiement n’a pas encore poussé le middleware / catalogues.
+        if (class_exists(\App\Middleware\LocaleMiddleware::class)) {
+            $global[] = new \App\Middleware\LocaleMiddleware();
+        }
+        $global = array_merge($global, [
             new \App\Middleware\AntiScraperMiddleware(),
             new \App\Middleware\RequestTelemetryMiddleware(),
             new \App\Middleware\ComspecTacticalApiMiddleware(),
@@ -38,7 +44,7 @@ class Application
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
             \App\Core\Container::get(\App\Middleware\DemoNdaGateMiddleware::class),
-        ];
+        ]);
         foreach (array_reverse($global) as $mw) {
             $next = $runner;
             $runner = fn (\App\Core\Request $req): \App\Core\Response => $mw($req, $next);

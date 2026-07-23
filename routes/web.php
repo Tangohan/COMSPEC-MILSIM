@@ -12,6 +12,7 @@ use App\Controllers\Web\EquipmentController;
 use App\Controllers\Web\TrainingController;
 use App\Controllers\Web\TrainingCompetencyController;
 use App\Controllers\Web\AtakController;
+use App\Controllers\Web\AtakSupportController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\AccountPrivacyController;
 use App\Controllers\Web\HrCharterController;
@@ -261,6 +262,10 @@ return function (Router $router) {
     $router->get('/join', [JoinController::class, 'show']);
     $router->post('/community/resolve-code', [JoinController::class, 'resolve']);
     $router->get('/platform/upgrade', [HomeController::class, 'platformUpgrade'], [AuthMiddleware::class]);
+    $router->get('/soutenir-atak', [AtakSupportController::class, 'index']);
+    $router->get('/soutenir-atak/connexion', [AtakSupportController::class, 'loginGate']);
+    $router->post('/soutenir-atak/checkout', [AtakSupportController::class, 'checkout'], [AuthMiddleware::class]);
+    $router->get('/soutenir-atak/merci', [AtakSupportController::class, 'thanks']);
     $router->get('/platform/invite-unit', [ReferralInviteController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/invitations/accept', [InvitationAcceptController::class, 'show']);
     $router->post('/invitations/accept', [InvitationAcceptController::class, 'accept']);

@@ -209,6 +209,7 @@ $renderTable = static function (
                             <th>Candidat</th>
                             <th>Statut</th>
                             <th>Étape</th>
+                            <th>Rattachement administratif</th>
                             <th>Poste visé</th>
                             <?php if ($crossTenant): ?>
                                 <th>Communauté</th>
@@ -281,6 +282,13 @@ $renderTable = static function (
                                 </td>
                                 <td><span class="das-badge <?= htmlspecialchars($meta['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?></span></td>
                                 <td class="das-sheet__muted"><?= htmlspecialchars($step, ENT_QUOTES, 'UTF-8') ?></td>
+                                <td>
+                                    <?php if ($memberLinked): ?>
+                                        <span class="das-badge das-badge--emerald" title="Compte membre rattaché à la candidature">Ok</span>
+                                    <?php else: ?>
+                                        <span class="das-badge das-badge--rose" title="Aucun compte membre rattaché">NoK</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="das-sheet__muted das-sheet__truncate" title="<?= htmlspecialchars($opening, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($opening, ENT_QUOTES, 'UTF-8') ?></td>
                                 <?php if ($crossTenant): ?>
                                     <td class="das-sheet__muted"><?= htmlspecialchars($community, ENT_QUOTES, 'UTF-8') ?></td>

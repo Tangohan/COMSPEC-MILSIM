@@ -49,6 +49,7 @@ $year = (int) date('Y');
                     <li><a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>">Overwatch</a></li>
                     <li><a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>">Tacmap</a></li>
                     <li><a href="<?= htmlspecialchars(url('equipment'), ENT_QUOTES, 'UTF-8') ?>">Fiches matériel</a></li>
+                    <li><a href="<?= htmlspecialchars(url('soutenir-atak'), ENT_QUOTES, 'UTF-8') ?>">Soutenir ATAK</a></li>
                 </ul>
             </details>
 

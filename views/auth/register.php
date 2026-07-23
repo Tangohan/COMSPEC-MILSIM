@@ -1,6 +1,6 @@
 <?php
 $base = url('');
-$title = $title ?? 'Créer un compte';
+$title = $title ?? __('auth.title_register');
 $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
 $old = is_array($register_old ?? null) ? $register_old : [];
 $prefillCc = (string) ($prefill_community_code ?? ($old['community_code'] ?? ''));
@@ -16,7 +16,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
 };
 ?>
 <!DOCTYPE html>
-<html lang="fr" class="h-full">
+<html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -154,12 +154,15 @@ $val = static function (array $old, string $key, string $default = '') : string 
 <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(52,211,153,0.07),transparent_50%)]" aria-hidden="true"></div>
 
 <header class="relative z-20 border-b border-white/5 bg-black/80 backdrop-blur-md">
-    <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between px-5 md:px-8">
-        <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-white/45 transition hover:text-white">Retour</a>
+    <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between gap-3 px-5 md:px-8">
+        <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-white/45 transition hover:text-white"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="text-[11px] font-black uppercase tracking-[0.32em] text-white">
             <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?>
         </a>
-        <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-emerald-400/90 transition hover:text-emerald-300">Connexion</a>
+        <div class="flex items-center gap-3">
+            <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
+            <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-emerald-400/90 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
+        </div>
     </div>
 </header>
 
@@ -167,18 +170,17 @@ $val = static function (array $old, string $key, string $default = '') : string 
     <aside class="login-visual relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-end" aria-hidden="true">
         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
         <div class="relative z-10 p-10 xl:p-14">
-            <p class="hi-kicker text-emerald-400/90">Nouveau compte</p>
+            <p class="hi-kicker text-emerald-400/90"><?= htmlspecialchars(__('auth.register_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
             <p class="hi-display mt-4 text-[clamp(3rem,6vw,5.5rem)] text-white leading-none">
                 <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-400">.</span>
             </p>
             <p class="hi-body mt-6 max-w-md text-white/65">
-                Trois étapes courtes : votre identité administrative, votre accès, puis la validation.
-                Le personnage se complète plus tard dans le recrutement.
+                <?= htmlspecialchars(__('auth.register_aside'), ENT_QUOTES, 'UTF-8') ?>
             </p>
             <ol class="mt-10 space-y-3 text-sm text-white/55">
-                <li class="flex gap-3"><span class="font-black text-emerald-400">01</span> Identité administrative (privée)</li>
-                <li class="flex gap-3"><span class="font-black text-emerald-400">02</span> E-mail, pseudo et mot de passe</li>
-                <li class="flex gap-3"><span class="font-black text-emerald-400">03</span> Confirmation et création</li>
+                <li class="flex gap-3"><span class="font-black text-emerald-400">01</span> <?= htmlspecialchars(__('auth.register_step1'), ENT_QUOTES, 'UTF-8') ?></li>
+                <li class="flex gap-3"><span class="font-black text-emerald-400">02</span> <?= htmlspecialchars(__('auth.register_step2'), ENT_QUOTES, 'UTF-8') ?></li>
+                <li class="flex gap-3"><span class="font-black text-emerald-400">03</span> <?= htmlspecialchars(__('auth.register_step3'), ENT_QUOTES, 'UTF-8') ?></li>
             </ol>
         </div>
     </aside>
@@ -186,14 +188,14 @@ $val = static function (array $old, string $key, string $default = '') : string 
     <section class="relative flex flex-col justify-center px-5 py-10 sm:px-8 md:px-12 lg:px-16 xl:px-20">
         <div class="mx-auto w-full max-w-lg">
             <div class="mb-8">
-                <p class="hi-kicker text-emerald-400/90">Inscription</p>
-                <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Créer mon compte</h1>
+                <p class="hi-kicker text-emerald-400/90"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></p>
+                <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl"><?= htmlspecialchars(__('auth.register_heading'), ENT_QUOTES, 'UTF-8') ?></h1>
                 <p class="mt-3 text-sm leading-relaxed text-white/55">
-                    Environ deux minutes. Un e-mail de confirmation vous sera envoyé ensuite.
+                    <?= htmlspecialchars(__('auth.register_sub'), ENT_QUOTES, 'UTF-8') ?>
                 </p>
             </div>
 
-            <nav class="mb-8" aria-label="Étapes d’inscription">
+            <nav class="mb-8" aria-label="<?= htmlspecialchars(__('auth.steps_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <div class="flex items-center gap-2">
                     <span class="reg-step-dot" :class="step > 1 ? 'is-done' : (step === 1 ? 'is-active' : '')" aria-current="<?= $startStep === 1 ? 'step' : 'false' ?>">1</span>
                     <span class="reg-step-line" :class="step > 1 ? 'is-done' : ''" aria-hidden="true"></span>
@@ -202,9 +204,9 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <span class="reg-step-dot" :class="step === 3 ? 'is-active' : ''">3</span>
                 </div>
                 <p class="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
-                    <span x-show="step === 1">Identité</span>
-                    <span x-show="step === 2" x-cloak>Compte</span>
-                    <span x-show="step === 3" x-cloak>Validation</span>
+                    <span x-show="step === 1"><?= htmlspecialchars(__('auth.step_identity'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span x-show="step === 2" x-cloak><?= htmlspecialchars(__('auth.step_account'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span x-show="step === 3" x-cloak><?= htmlspecialchars(__('auth.step_validation'), ENT_QUOTES, 'UTF-8') ?></span>
                 </p>
             </nav>
 
@@ -221,7 +223,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <?= \App\Core\Csrf::field() ?>
 
                     <div x-show="step === 1" x-ref="step1" x-transition.opacity.duration.200ms>
-                        <p class="mb-1 text-sm font-bold text-white">Qui êtes-vous ?</p>
+                        <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_who'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             Ces informations restent administratives. Elles ne remplacent pas votre pseudo public.
                         </p>
@@ -241,31 +243,31 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                        class="login-field">
                             </div>
                             <div>
-                                <label class="login-label" for="legal_birth_date">Date de naissance <span class="normal-case tracking-normal text-white/30">(facultatif)</span></label>
+                                <label class="login-label" for="legal_birth_date"><?= htmlspecialchars(__('auth.register_birth'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="legal_birth_date" type="date" name="legal_birth_date" autocomplete="bday"
                                        value="<?= $val($old, 'legal_birth_date') ?>"
                                        class="login-field">
                             </div>
                             <div>
-                                <label class="login-label" for="legal_country">Pays <span class="normal-case tracking-normal text-white/30">(facultatif)</span></label>
+                                <label class="login-label" for="legal_country">Pays <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="legal_country" type="text" name="legal_country" maxlength="100"
                                        autocomplete="country-name" placeholder="ex. France"
                                        value="<?= $val($old, 'legal_country') ?>"
                                        class="login-field">
                             </div>
                             <div class="sm:col-span-2">
-                                <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30">(facultatif)</span></label>
+                                <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"
                                        placeholder="Votre pseudo Discord"
                                        value="<?= $val($old, 'discord_handle') ?>"
                                        class="login-field">
                             </div>
                         </div>
-                        <button type="button" @click="next()" class="hi-cta hi-cta-solid mt-6 w-full justify-center">Continuer</button>
+                        <button type="button" @click="next()" class="hi-cta hi-cta-solid mt-6 w-full justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
                     </div>
 
                     <div x-show="step === 2" x-ref="step2" x-cloak x-transition.opacity.duration.200ms>
-                        <p class="mb-1 text-sm font-bold text-white">Accès à la plateforme</p>
+                        <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_access'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             E-mail de connexion, pseudo visible et mot de passe.
                             <?php if ($prefillSlug !== ''): ?>
@@ -277,59 +279,59 @@ $val = static function (array $old, string $key, string $default = '') : string 
 
                         <div class="space-y-4">
                             <div>
-                                <label class="login-label" for="community_code">Code d’invitation <span class="normal-case tracking-normal text-white/30">(facultatif)</span></label>
+                                <label class="login-label" for="community_code"><?= htmlspecialchars(__('auth.register_invite'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="community_code" type="text" name="community_code" maxlength="64" autocomplete="off"
                                        placeholder="Si vous en avez reçu un"
                                        value="<?= htmlspecialchars($prefillCc, ENT_QUOTES, 'UTF-8') ?>"
                                        class="login-field uppercase tracking-wide placeholder:normal-case placeholder:tracking-normal">
                             </div>
                             <div>
-                                <label class="login-label" for="email">Adresse e-mail</label>
+                                <label class="login-label" for="email"><?= htmlspecialchars(__('auth.email'), ENT_QUOTES, 'UTF-8') ?></label>
                                 <input id="email" type="email" name="email" data-lowercase="email" required autocomplete="email"
-                                       placeholder="vous@exemple.fr"
+                                       placeholder="<?= htmlspecialchars(__('auth.placeholder_email'), ENT_QUOTES, 'UTF-8') ?>"
                                        value="<?= $val($old, 'email') ?>"
                                        class="login-field">
                             </div>
                             <div>
-                                <label class="login-label" for="display_name">Pseudo affiché</label>
+                                <label class="login-label" for="display_name"><?= htmlspecialchars(__('auth.register_display_name'), ENT_QUOTES, 'UTF-8') ?></label>
                                 <input id="display_name" type="text" name="display_name" required minlength="2" maxlength="100"
                                        autocomplete="nickname" placeholder="Visible par les autres membres"
                                        value="<?= $val($old, 'display_name') ?>"
                                        class="login-field">
                             </div>
                             <div>
-                                <label class="login-label" for="steam_profile">Profil Steam <span class="normal-case tracking-normal text-white/30">(facultatif)</span></label>
+                                <label class="login-label" for="steam_profile"><?= htmlspecialchars(__('auth.register_steam'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
                                 <input id="steam_profile" type="text" name="steam_profile" maxlength="512" autocomplete="off"
                                        placeholder="Lien de votre profil Steam"
                                        value="<?= $val($old, 'steam_profile') ?>"
                                        class="login-field">
-                                <p class="mt-1.5 text-xs text-white/35">Lien de profil Steam, numéro en jeu, ou identifiant Steam classique.</p>
+                                <p class="mt-1.5 text-xs text-white/35"><?= htmlspecialchars(__('auth.register_steam_hint'), ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label class="login-label" for="password">Mot de passe</label>
+                                    <label class="login-label" for="password"><?= htmlspecialchars(__('auth.password'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
                                         <input :type="showPassword ? 'text' : 'password'" id="password" name="password" required minlength="8"
                                                autocomplete="new-password" placeholder="8 caractères minimum"
                                                class="login-field pr-12">
                                         <button type="button" @click="showPassword = !showPassword"
                                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-white/40 hover:text-white/80"
-                                                :aria-label="showPassword ? 'Masquer' : 'Afficher'">
+                                                :aria-label="showPassword ? <?= json_encode(__('auth.hide_password'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(__('auth.show_password'), JSON_UNESCAPED_UNICODE) ?>">
                                             <svg x-show="!showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <svg x-show="showPassword" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                         </button>
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="login-label" for="password_confirmation">Confirmation</label>
+                                    <label class="login-label" for="password_confirmation"><?= htmlspecialchars(__('auth.register_password_confirm'), ENT_QUOTES, 'UTF-8') ?></label>
                                     <div class="relative">
                                         <input :type="showPassword2 ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" required minlength="8"
                                                autocomplete="new-password" placeholder="Retapez le mot de passe"
                                                class="login-field pr-12"
-                                               @input="if ($el.value && document.getElementById('password').value !== $el.value) { $el.setCustomValidity('Les deux mots de passe doivent être identiques.'); } else { $el.setCustomValidity(''); }">
+                                               @input="if ($el.value && document.getElementById('password').value !== $el.value) { $el.setCustomValidity(<?= json_encode(__('auth.flash_passwords_mismatch'), JSON_UNESCAPED_UNICODE) ?>); } else { $el.setCustomValidity(''); }">
                                         <button type="button" @click="showPassword2 = !showPassword2"
                                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-white/40 hover:text-white/80"
-                                                :aria-label="showPassword2 ? 'Masquer' : 'Afficher'">
+                                                :aria-label="showPassword2 ? <?= json_encode(__('auth.hide_password'), JSON_UNESCAPED_UNICODE) ?> : <?= json_encode(__('auth.show_password'), JSON_UNESCAPED_UNICODE) ?>">
                                             <svg x-show="!showPassword2" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <svg x-show="showPassword2" x-cloak class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                         </button>
@@ -339,13 +341,13 @@ $val = static function (array $old, string $key, string $default = '') : string 
                         </div>
 
                         <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
-                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]">Retour</button>
-                            <button type="button" @click="next()" class="hi-cta hi-cta-solid w-full flex-1 justify-center">Continuer</button>
+                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></button>
+                            <button type="button" @click="next()" class="hi-cta hi-cta-solid w-full flex-1 justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
                         </div>
                     </div>
 
                     <div x-show="step === 3" x-ref="step3" x-cloak x-transition.opacity.duration.200ms>
-                        <p class="mb-1 text-sm font-bold text-white">Dernière étape</p>
+                        <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_last_step'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             Confirmez les règles du compte, puis validez. Vous pourrez ensuite confirmer votre e-mail.
                         </p>
@@ -355,24 +357,24 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                 <input type="checkbox" name="accept_identity_split" value="1" required
                                        class="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/40"
                                        <?= !empty($old['accept_identity_split']) ? 'checked' : '' ?>>
-                                <span>Je comprends que mon identité administrative est séparée du pseudo affiché, et que mon personnage se complète plus tard (candidature ou fiche personnelle).</span>
+                                <span><?= htmlspecialchars(__('auth.register_identity_note'), ENT_QUOTES, 'UTF-8') ?></span>
                             </label>
                             <label class="flex items-start gap-3 text-sm leading-relaxed text-white/70">
                                 <input type="checkbox" name="accept_terms" value="1" required
                                        class="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/40"
                                        <?= !empty($old['accept_terms']) ? 'checked' : '' ?>>
                                 <span>
-                                    J’accepte les
-                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener">conditions d’utilisation</a>
-                                    et la
-                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener">politique de données personnelles</a>.
+                                    <?= htmlspecialchars(__('auth.register_accept_prefix'), ENT_QUOTES, 'UTF-8') ?>
+                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_terms'), ENT_QUOTES, 'UTF-8') ?></a>
+                                    <?= htmlspecialchars(__('auth.register_accept_and'), ENT_QUOTES, 'UTF-8') ?>
+                                    <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#rgpd" class="font-semibold text-emerald-400 hover:underline" target="_blank" rel="noopener"><?= htmlspecialchars(__('auth.register_privacy'), ENT_QUOTES, 'UTF-8') ?></a>.
                                 </span>
                             </label>
                         </div>
 
                         <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
-                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]">Retour</button>
-                            <button type="submit" class="hi-cta hi-cta-solid w-full flex-1 justify-center">Créer mon compte</button>
+                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></button>
+                            <button type="submit" class="hi-cta hi-cta-solid w-full flex-1 justify-center"><?= htmlspecialchars(__('auth.register_submit'), ENT_QUOTES, 'UTF-8') ?></button>
                         </div>
                     </div>
                 </form>
@@ -380,12 +382,12 @@ $val = static function (array $old, string $key, string $default = '') : string 
 
             <div class="mt-8 space-y-3 text-center text-sm text-white/50">
                 <p>
-                    Déjà un compte ?
-                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-400 transition hover:text-emerald-300">Connexion</a>
+                    <?= htmlspecialchars(__('auth.register_have_account'), ENT_QUOTES, 'UTF-8') ?>
+                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-emerald-400 transition hover:text-emerald-300"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
                 </p>
                 <p class="text-xs leading-relaxed text-white/40">
-                    Vous avez seulement un code d’accès ?
-                    <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white">Rejoindre une communauté</a>
+                    <?= htmlspecialchars(__('auth.invite_code'), ENT_QUOTES, 'UTF-8') ?>
+                    <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white"><?= htmlspecialchars(__('auth.join_community'), ENT_QUOTES, 'UTF-8') ?></a>
                 </p>
             </div>
 

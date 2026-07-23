@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Repositories\PendingCommunityCreateRepository;
 use App\Repositories\ReferralRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Billing\AtakDonationFulfillmentService;
 use App\Services\Community\TenantBootstrapService;
 use App\Support\Stripe\StripeWebhookSignature;
 use App\Support\Stripe\WebhookSignatureException;
@@ -18,6 +19,7 @@ use JsonException;
  * Webhook Stripe — configure STRIPE_WEBHOOK_SECRET et l’URL dans le dashboard Stripe.
  * Vérification de signature sans SDK (HMAC-SHA256, voir StripeWebhookSignature).
  * Met à jour plan_slug / subscription sur tenants via metadata.tenant_id.
+ * Traite aussi les dons ATAK (metadata.kind = atak_donation).
  */
 class StripeWebhookController
 {
@@ -25,7 +27,8 @@ class StripeWebhookController
         private TenantRepository $tenantRepository,
         private ReferralRepository $referralRepository,
         private PendingCommunityCreateRepository $pendingCommunityRepository,
-        private TenantBootstrapService $tenantBootstrapService
+        private TenantBootstrapService $tenantBootstrapService,
+        private AtakDonationFulfillmentService $atakDonationFulfillment
     ) {}
 
     public function handle(Request $request, array $params = []): Response
@@ -64,7 +67,16 @@ class StripeWebhookController
 
         if ($type === 'checkout.session.completed' && $obj !== null) {
             $meta = (array) ($obj->metadata ?? []);
-            if (!empty($meta['pending_community_token'])) {
+            if (($meta['kind'] ?? '') === 'atak_donation') {
+                $sessionId = isset($obj->id) && is_string($obj->id) ? $obj->id : '';
+                if ($sessionId !== '') {
+                    try {
+                        $this->atakDonationFulfillment->fulfillByCheckoutSessionId($sessionId, $obj);
+                    } catch (\Throwable) {
+                        // Ne pas faire échouer le webhook : Stripe retentera ; la page merci peut aussi finaliser.
+                    }
+                }
+            } elseif (!empty($meta['pending_community_token'])) {
                 $this->processPendingCommunityCheckout($obj);
             } else {
                 $tenantId = isset($meta['tenant_id']) ? (int) $meta['tenant_id'] : 0;

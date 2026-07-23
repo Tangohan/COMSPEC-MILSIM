@@ -3013,6 +3013,22 @@ try {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
 }
 
+$atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
+try {
+    echo "Migration atak_donations (financement ATAK)...\n";
+    $atakDonationsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_donations : ' . $e->getMessage() . "\n";
+}
+
+$atakForumChannelsSeed = require $root . '/bootstrap/atak_forum_channels_seed.php';
+try {
+    echo "Seed forum ATAK / COMSPEC (changelogs, FAQ, retours)...\n";
+    $atakForumChannelsSeed($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_forum_channels_seed : ' . $e->getMessage() . "\n";
+}
+
 $trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
 try {
     echo "Migration training_groups (cohortes de formation)...\n";

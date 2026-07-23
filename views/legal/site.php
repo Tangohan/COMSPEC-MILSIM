@@ -16,7 +16,13 @@ $hostName = trim((string) env('APP_HOSTING_NAME', ''));
 $hostAddr = trim((string) env('APP_HOSTING_ADDRESS', ''));
 $hostPhone = trim((string) env('APP_HOSTING_PHONE', ''));
 ?>
-<h1>Politique et conditions</h1>
+<?php if (function_exists('locale') && locale() === 'en'): ?>
+<div class="legal-callout legal-callout-tip">
+    <strong>Note</strong> —
+    <?= htmlspecialchars(__('legal.binding_fr_notice'), ENT_QUOTES, 'UTF-8') ?>
+</div>
+<?php endif; ?>
+<h1><?= htmlspecialchars(__('legal.hub_title'), ENT_QUOTES, 'UTF-8') ?></h1>
 <p class="legal-updated">Dernière mise à jour : <?= htmlspecialchars($updatedAt, ENT_QUOTES, 'UTF-8') ?></p>
 
 <p>

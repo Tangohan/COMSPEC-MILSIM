@@ -24,8 +24,10 @@ declare(strict_types=1);
  * @var bool $show_founder_trial_banner
  * @var string|null $founder_trial_ends_at
  * @var array<string,mixed>|null $currentUser
- * @var array<string,mixed>|null $personnelExtras
- * @var array<string,mixed>|null $grade
+ * @var list<array<string,mixed>> $dashboard_effectifs_rows
+ * @var bool $can_view_personnel_directory
+ * @var bool $can_open_effectifs_workspace
+ * @var bool $dashboard_is_default_tenant
  * @var int $currentTid
  */
 
@@ -656,6 +658,18 @@ if (is_array($modpack) && !empty($modpack['id'])) {
         <section class="dash-apps-full !pt-0" aria-labelledby="dash-applications-heading">
             <p id="dash-applications-heading" class="cc-section-label dash-apps-full__label">Candidatures</p>
             <?php require base_path('views/partials/dashboard_applications_table.php'); ?>
+        </section>
+        <?php endif; ?>
+
+        <?php
+        $canViewPersonnelDirectory = !empty($can_view_personnel_directory);
+        $dashboardEffectifsRows = is_array($dashboard_effectifs_rows ?? null) ? $dashboard_effectifs_rows : [];
+        $hasEffectifsTable = $canViewPersonnelDirectory && empty($dashboard_is_default_tenant);
+        ?>
+        <?php if ($hasEffectifsTable): ?>
+        <section class="dash-apps-full !pt-0" aria-labelledby="dash-effectifs-heading">
+            <p id="dash-effectifs-heading" class="cc-section-label dash-apps-full__label">Effectifs</p>
+            <?php require base_path('views/partials/dashboard_effectifs_table.php'); ?>
         </section>
         <?php endif; ?>
 

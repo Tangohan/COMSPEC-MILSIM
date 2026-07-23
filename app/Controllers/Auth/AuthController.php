@@ -116,7 +116,7 @@ class AuthController
             return Response::redirect(url('login/select-community'));
         }
         return Response::view('auth.login', [
-            'title' => 'Connexion',
+            'title' => __('auth.title_login'),
         ]);
     }
 
@@ -126,7 +126,7 @@ class AuthController
             return Response::redirect(url('login'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('error', __('auth.flash_session_expired'));
             return Response::redirect(url('login'));
         }
         Session::forget('pending_community_selection');
@@ -134,7 +134,7 @@ class AuthController
         $email = strtolower(trim((string) $request->input('email')));
         $password = (string) $request->input('password');
         if ($email === '' || $password === '') {
-            Session::flash('error', 'Email et mot de passe requis.');
+            Session::flash('error', __('auth.flash_email_password_required'));
             return Response::redirect(url('login'));
         }
 
@@ -166,7 +166,7 @@ class AuthController
                 substr($email, 0, 120)
             );
             $this->loginSecurityNotifications->onFailedLogin($request, $email);
-            Session::flash('error', 'Identifiants incorrects ou compte inactif.');
+            Session::flash('error', __('auth.flash_invalid_credentials'));
             return Response::redirect(url('login'));
         }
 
@@ -177,7 +177,7 @@ class AuthController
         ));
         if ($matchesAfterBlocklist === []) {
             Session::forget('pending_verification_email');
-            Session::flash('error', 'Votre accès est restreint pour cette communauté ou depuis cet équipement.');
+            Session::flash('error', __('auth.flash_access_restricted'));
             return Response::redirect(url('login'));
         }
         $matches = $matchesAfterBlocklist;
@@ -186,13 +186,13 @@ class AuthController
             $row = $matches[0];
             if (($row['status'] ?? '') === 'pending_verification') {
                 Session::set('pending_verification_email', $email);
-                Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter (lien envoyé à l’inscription).');
+                Session::flash('error', __('auth.flash_confirm_email'));
                 return Response::redirect(url('login'));
             }
             Session::forget('pending_verification_email');
             $user = $this->userRepository->findById((int) $row['id'], (int) $row['tenant_id']);
             if (!$user) {
-                Session::flash('error', 'Compte introuvable.');
+                Session::flash('error', __('auth.flash_account_not_found'));
                 return Response::redirect(url('login'));
             }
             if ($this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
@@ -213,7 +213,7 @@ class AuthController
         $pick = $this->filterCommunityCandidates($pick);
 
         if ($pick === []) {
-            Session::flash('error', 'Aucune communauté disponible pour cette connexion. Si le problème persiste, contactez un administrateur.');
+            Session::flash('error', __('auth.flash_no_community'));
             return Response::redirect(url('login'));
         }
 
@@ -221,15 +221,15 @@ class AuthController
             $only = $pick[0];
             $user = $this->userRepository->findById((int) $only['user_id'], (int) $only['tenant_id']);
             if (!$user) {
-                Session::flash('error', 'Compte introuvable.');
+                Session::flash('error', __('auth.flash_account_not_found'));
                 return Response::redirect(url('login'));
             }
             if (($user['status'] ?? '') === 'pending_verification') {
-                Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter (lien envoyé à l’inscription).');
+                Session::flash('error', __('auth.flash_confirm_email'));
                 return Response::redirect(url('login'));
             }
             if (!in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
-                Session::flash('error', 'Compte indisponible.');
+                Session::flash('error', __('auth.flash_account_unavailable'));
                 return Response::redirect(url('login'));
             }
             if (($user['status'] ?? '') === 'active' && $this->loginSecurityOtpService->isLoginEmailOtpRequired($user)) {
@@ -256,26 +256,26 @@ class AuthController
         }
         $pending = Session::get('pending_community_selection');
         if (!is_array($pending) || empty($pending['candidates'])) {
-            Session::flash('error', 'Reconnectez-vous pour choisir une communauté.');
+            Session::flash('error', __('auth.flash_reconnect_choose'));
             return Response::redirect(url('login'));
         }
         if ((int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_community_selection');
-            Session::flash('error', 'Délai dépassé. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_timeout'));
             return Response::redirect(url('login'));
         }
 
         $candidates = $this->filterCommunityCandidates($pending['candidates']);
         if ($candidates === []) {
             Session::forget('pending_community_selection');
-            Session::flash('error', 'Aucune communauté à afficher. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_no_community_display'));
             return Response::redirect(url('login'));
         }
         $pending['candidates'] = $candidates;
         Session::set('pending_community_selection', $pending);
 
         return Response::view('auth.select-community', [
-            'title' => 'Choisir une communauté',
+            'title' => __('auth.title_select_community'),
             'email' => (string) ($pending['email'] ?? ''),
             'candidates' => $candidates,
         ]);
@@ -287,7 +287,7 @@ class AuthController
             return Response::redirect(url('login/select-community'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('error', __('auth.flash_session_expired'));
             return Response::redirect(url('login/select-community'));
         }
         if ($this->authService->check()) {
@@ -295,19 +295,19 @@ class AuthController
         }
         $pending = Session::get('pending_community_selection');
         if (!is_array($pending) || empty($pending['candidates'])) {
-            Session::flash('error', 'Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_reconnect'));
             return Response::redirect(url('login'));
         }
         if ((int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_community_selection');
-            Session::flash('error', 'Délai dépassé. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_timeout'));
             return Response::redirect(url('login'));
         }
 
         $allowed = $this->filterCommunityCandidates($pending['candidates']);
         if ($allowed === []) {
             Session::forget('pending_community_selection');
-            Session::flash('error', 'Session invalide. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_invalid_session'));
             return Response::redirect(url('login'));
         }
 
@@ -320,25 +320,25 @@ class AuthController
             }
         }
         if ($chosen === null) {
-            Session::flash('error', 'Choix invalide.');
+            Session::flash('error', __('auth.flash_invalid_choice'));
             return Response::redirect(url('login/select-community'));
         }
         $user = $this->userRepository->findById((int) $chosen['user_id'], $tenantId);
         if (!$user || !in_array(($user['status'] ?? ''), ['active', 'pending_verification'], true)) {
             Session::forget('pending_community_selection');
-            Session::flash('error', 'Compte indisponible.');
+            Session::flash('error', __('auth.flash_account_unavailable'));
             return Response::redirect(url('login'));
         }
         if (($user['status'] ?? '') === 'pending_verification') {
             Session::forget('pending_community_selection');
             Session::set('pending_verification_email', strtolower(trim((string) ($pending['email'] ?? ''))));
-            Session::flash('error', 'Confirmez votre adresse e-mail avant de vous connecter.');
+            Session::flash('error', __('auth.flash_confirm_email'));
             return Response::redirect(url('login'));
         }
 
         $emailNorm = strtolower(trim((string) ($pending['email'] ?? '')));
         if (!$this->loginAllowedForTenantAndClient($tenantId, $emailNorm, $request)) {
-            Session::flash('error', 'Cette communauté n’est pas accessible avec votre compte ou depuis cet équipement pour le moment.');
+            Session::flash('error', __('auth.flash_community_inaccessible'));
 
             return Response::redirect(url('login/select-community'));
         }
@@ -360,13 +360,13 @@ class AuthController
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_login_security_otp');
-            Session::flash('error', 'Ce code a expiré. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_code_expired'));
 
             return Response::redirect(url('login'));
         }
 
         return Response::view('auth.login-otp', [
-            'title' => 'Double vérification',
+            'title' => __('auth.title_otp'),
             'emailMasked' => (string) ($pending['email_masked'] ?? '—'),
             'expiresAt' => (int) ($pending['expires_at'] ?? 0),
         ]);
@@ -375,14 +375,14 @@ class AuthController
     public function verifyLoginOtp(Request $request, array $params = []): Response
     {
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('error', __('auth.flash_session_expired'));
 
             return Response::redirect(url('login/otp'));
         }
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {
             Session::forget('pending_login_security_otp');
-            Session::flash('error', 'Ce code a expiré. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_code_expired'));
 
             return Response::redirect(url('login'));
         }
@@ -391,7 +391,7 @@ class AuthController
         $userId = (int) ($pending['user_id'] ?? 0);
         $tenantId = (int) ($pending['tenant_id'] ?? 0);
         if ($code === '' || strlen($code) !== 6 || $stored === '') {
-            Session::flash('error', 'Code invalide.');
+            Session::flash('error', __('auth.flash_invalid_code'));
 
             return Response::redirect(url('login/otp'));
         }
@@ -399,14 +399,14 @@ class AuthController
         // On retrouve le token exact en vérifiant les jetons valides de l’utilisateur.
         $row = $this->emailTokenRepository->findValidByHash($stored);
         if (!$row || (string) ($row['purpose'] ?? '') !== EmailTokenPurpose::LOGIN_SECURITY_OTP || (int) ($row['user_id'] ?? 0) !== $userId) {
-            Session::flash('error', 'Code invalide ou expiré.');
+            Session::flash('error', __('auth.flash_invalid_or_expired_code'));
 
             return Response::redirect(url('login/otp'));
         }
         $nonce = (string) ($row['nonce'] ?? '');
         $candidateHash = hash('sha256', $code . '|' . $nonce);
         if (!hash_equals((string) $row['token_hash'], $candidateHash)) {
-            Session::flash('error', 'Code incorrect.');
+            Session::flash('error', __('auth.flash_wrong_code'));
 
             return Response::redirect(url('login/otp'));
         }
@@ -414,7 +414,7 @@ class AuthController
         Session::forget('pending_login_security_otp');
         $user = $this->userRepository->findById($userId, $tenantId);
         if (!$user || ($user['status'] ?? '') !== 'active') {
-            Session::flash('error', 'Compte indisponible.');
+            Session::flash('error', __('auth.flash_account_unavailable'));
 
             return Response::redirect(url('login'));
         }
@@ -425,26 +425,26 @@ class AuthController
     public function resendLoginOtp(Request $request, array $params = []): Response
     {
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée. Réessayez.');
+            Session::flash('error', __('auth.flash_session_expired'));
 
             return Response::redirect(url('login/otp'));
         }
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending)) {
-            Session::flash('error', 'Aucune vérification en cours. Reconnectez-vous.');
+            Session::flash('error', __('auth.flash_no_verification'));
 
             return Response::redirect(url('login'));
         }
         $generated = (int) ($pending['generated_at'] ?? 0);
         if ($generated > 0 && (time() - $generated) < LoginSecurityOtpService::RESEND_INTERVAL_SEC) {
-            Session::flash('error', 'Attendez quelques secondes avant de renvoyer un code.');
+            Session::flash('error', __('auth.flash_wait_resend'));
 
             return Response::redirect(url('login/otp'));
         }
         $user = $this->userRepository->findById((int) ($pending['user_id'] ?? 0), (int) ($pending['tenant_id'] ?? 0));
         if (!$user) {
             Session::forget('pending_login_security_otp');
-            Session::flash('error', 'Compte introuvable.');
+            Session::flash('error', __('auth.flash_account_not_found'));
 
             return Response::redirect(url('login'));
         }
@@ -471,7 +471,7 @@ class AuthController
         $error = Session::getFlash('error');
         $success = Session::getFlash('success');
         return Response::view('auth.forgot-password', [
-            'title' => 'Mot de passe oublié',
+            'title' => __('auth.title_forgot'),
             'error' => $error,
             'success' => $success,
         ]);
@@ -483,19 +483,19 @@ class AuthController
             return Response::redirect(url('forgot-password'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', __('auth.flash_session_expired'));
             return Response::redirect(url('forgot-password'));
         }
         $email = trim((string) $request->input('email'));
         $v = new Validator(['email' => $email], ['email' => 'required|email']);
         if (!$v->validate()) {
-            Session::flash('error', 'Adresse email invalide.');
+            Session::flash('error', __('auth.flash_invalid_email'));
             return Response::redirect(url('forgot-password'));
         }
 
         $tenant = $this->tenantRepository->getDefaultTenant();
         if (!$tenant) {
-            Session::flash('error', 'Service indisponible.');
+            Session::flash('error', __('auth.flash_service_unavailable'));
             return Response::redirect(url('forgot-password'));
         }
         $user = $this->userRepository->findByEmail((int) $tenant['id'], $email);
@@ -515,7 +515,7 @@ class AuthController
                 (int) $user['id']
             );
         }
-        Session::flash('success', 'Si cette adresse est connue, un lien de réinitialisation a été envoyé.');
+        Session::flash('success', __('auth.flash_reset_sent'));
         return Response::redirect(url('forgot-password'));
     }
 
@@ -526,18 +526,18 @@ class AuthController
         }
         $token = trim((string) ($request->query('token') ?? $request->input('token') ?? ''));
         if ($token === '') {
-            Session::flash('error', 'Lien invalide ou expiré.');
+            Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));
         }
         $hash = hash('sha256', $token);
         $reset = $this->passwordResetRepository->findValidByToken($hash);
         if (!$reset) {
-            Session::flash('error', 'Lien invalide ou expiré.');
+            Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));
         }
         $error = Session::getFlash('error');
         return Response::view('auth.reset-password', [
-            'title' => 'Nouveau mot de passe',
+            'title' => __('auth.title_reset'),
             'token' => $token,
             'error' => $error,
         ]);
@@ -549,14 +549,14 @@ class AuthController
             return Response::redirect(url('forgot-password'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée.');
+            Session::flash('error', __('auth.flash_session_expired'));
             return Response::redirect(url('forgot-password'));
         }
         $token = trim((string) $request->input('token'));
         $hash = hash('sha256', $token);
         $reset = $this->passwordResetRepository->findValidByToken($hash);
         if (!$reset) {
-            Session::flash('error', 'Lien invalide ou expiré.');
+            Session::flash('error', __('auth.flash_link_invalid'));
             return Response::redirect(url('forgot-password'));
         }
         $new = $request->input('password');
@@ -566,7 +566,7 @@ class AuthController
             ['password' => 'required|min:8', 'password_confirmation' => 'required']
         );
         if (!$v->validate() || $new !== $confirm) {
-            Session::flash('error', 'Les deux mots de passe doivent être identiques (min. 8 caractères).');
+            Session::flash('error', __('auth.flash_passwords_mismatch'));
             return Response::redirect(url('reset-password') . '?token=' . $token);
         }
         $passwordHash = password_hash((string) $new, PASSWORD_ARGON2ID);
@@ -584,7 +584,7 @@ class AuthController
             'user',
             (int) $reset['user_id']
         );
-        Session::flash('success', 'Mot de passe réinitialisé. Connectez-vous.');
+        Session::flash('success', __('auth.flash_password_reset_ok'));
         return Response::redirect(url('login'));
     }
 }

@@ -19,6 +19,9 @@
                     <a href="<?= url('enlistment') ?>" class="inline-flex items-center justify-center rounded-2xl border border-white/20 px-6 py-3.5 text-xs font-black uppercase tracking-[0.2em] text-emerald-200/95 transition hover:text-white">
                         Enrôlement
                     </a>
+                    <a href="<?= url('soutenir-atak') ?>" class="inline-flex items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-6 py-3.5 text-xs font-black uppercase tracking-[0.2em] text-emerald-200 transition hover:bg-emerald-500/25 hover:text-white">
+                        Soutenir ATAK
+                    </a>
                 </div>
             </div>
             <div class="grid gap-0 sm:grid-cols-3 sm:divide-x sm:divide-slate-100">

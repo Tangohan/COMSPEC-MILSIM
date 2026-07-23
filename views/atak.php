@@ -140,6 +140,7 @@ if ($atakMapConfig) {
       </label>
       <?php endif; ?>
       <a href="<?= url('overwatch') ?>" class="atak-header-link" title="Carte C2 Overwatch">Overwatch</a>
+      <a href="<?= url('soutenir-atak') ?>" class="atak-header-link" title="Participer au financement ATAK">Soutenir</a>
       <a href="<?= url('dashboard') ?>" class="atak-header-link">Tableau de bord</a>
       <?php if ($currentUser): ?>
       <button type="button" class="atak-session-profile-chip" id="atak-session-profile-change" title="Modifier le profil de session" hidden>
@@ -289,6 +290,13 @@ if ($atakMapConfig) {
             <option value="avatar">Photo de profil</option>
           </select>
         </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-hide-panel-hints">
+          <span class="atak-sound-pref-key">Textes d’aide</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-hide-panel-hints" />
+            <span>Masquer les aides des panneaux</span>
+          </span>
+        </label>
       </section>
       <section class="atak-account-section" id="atak-sound-prefs">
         <h3 class="atak-account-section-title">Son des alertes</h3>
@@ -372,6 +380,7 @@ if ($atakMapConfig) {
       <div class="atak-game-config-footer">
         <a href="<?= url('atak/setup') ?>" class="atak-game-config-link">Assistant Mod Arma (installation, config, vérification)</a>
         <a href="<?= url('atak/tuto') ?>" class="atak-game-config-link">Guide complet — Tuto mod Arma</a>
+        <a href="<?= url('soutenir-atak') ?>" class="atak-game-config-link">Soutenir le financement ATAK</a>
       </div>
     </div>
   </aside>
@@ -667,6 +676,7 @@ if ($atakMapConfig) {
         <div class="atak-medical-head">
           <p class="atak-panel-hint">Alertes transmises depuis le théâtre (combattant au sol, rythme cardiaque à zéro) et unités à secourir. Les alertes disparaissent automatiquement après 30 minutes. Masquer une alerte la retire de cet écran uniquement — le journal Liaison et le tchat restent inchangés. Le triage (Traité, KIA, Annulé…) est réservé aux médecins et responsables d’effectifs.</p>
           <div class="atak-medical-toolbar">
+            <button type="button" class="atak-hints-toggle" data-atak-hints-toggle title="Masquer ou réafficher les textes d’aide des panneaux">Masquer les aides</button>
             <button type="button" class="atak-medical-clear-all" id="atak-medical-clear-all" title="Masquer toutes les alertes affichées" hidden>Tout masquer</button>
           </div>
         </div>
@@ -773,38 +783,40 @@ if ($atakMapConfig) {
         </section>
       </div>
       <div class="atak-tabs-content" id="tab-notes" role="tabpanel">
-        <p class="atak-panel-hint">Bloc-notes et tableurs <strong>temporaires</strong> pour cette carte : ils ne remplacent pas le tableur opérateurs du back-office. Enregistrement automatique après modification.</p>
+        <div class="atak-notes-toolbar">
+          <p class="atak-panel-hint atak-notes-toolbar-hint">Bloc-notes et tableurs <strong>temporaires</strong> pour cette carte. Enregistrement automatique.</p>
+          <div class="atak-notes-toolbar-actions">
+            <button type="button" class="atak-ops-btn" id="atak-notes-expand" title="Élargir le panneau pour afficher les colonnes">Agrandir</button>
+            <button type="button" class="atak-ops-btn" id="atak-notes-save">Enregistrer</button>
+          </div>
+        </div>
         <p class="atak-pace-meta" id="atak-notes-meta"></p>
 
-        <section class="atak-ops-section" aria-labelledby="atak-notepad-title">
-          <h3 class="atak-ops-section-title" id="atak-notepad-title">Bloc-notes</h3>
-          <textarea id="atak-notepad" class="atak-notepad" rows="8" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
-        </section>
+        <details class="atak-notes-block" open>
+          <summary class="atak-notes-block-sum" id="atak-notepad-title">Bloc-notes</summary>
+          <textarea id="atak-notepad" class="atak-notepad" rows="6" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
+        </details>
 
-        <section class="atak-ops-section" aria-labelledby="atak-soi-sheet-title">
-          <h3 class="atak-ops-section-title" id="atak-soi-sheet-title">SOI — consignes radio</h3>
-          <p class="atak-panel-hint">Tableau type liste de réseaux (Organization Net List) : réseau/canal, indicatif, suffixe, fréquences, rôle. Complète le plan PACE de l’onglet Radio.</p>
+        <details class="atak-notes-block" open>
+          <summary class="atak-notes-block-sum" id="atak-soi-sheet-title">SOI — consignes radio</summary>
+          <p class="atak-panel-hint">Liste de réseaux (Organization Net List) : canal, indicatif, suffixe, fréquences, rôle. Complète le plan PACE (onglet Radio).</p>
           <div id="atak-sheet-soi" class="atak-sheet-wrap"></div>
           <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="soi">Ajouter une ligne</button>
-        </section>
+        </details>
 
-        <section class="atak-ops-section" aria-labelledby="atak-eta-sheet-title">
-          <h3 class="atak-ops-section-title" id="atak-eta-sheet-title">Suivi ETA alliés</h3>
+        <details class="atak-notes-block" open>
+          <summary class="atak-notes-block-sum" id="atak-eta-sheet-title">Suivi ETA alliés</summary>
           <p class="atak-panel-hint">Heures d’arrivée estimées des forces amies / alliées sur le théâtre.</p>
           <div id="atak-sheet-eta" class="atak-sheet-wrap"></div>
           <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="eta">Ajouter une ligne</button>
-        </section>
+        </details>
 
-        <section class="atak-ops-section" aria-labelledby="atak-allied-sheet-title">
-          <h3 class="atak-ops-section-title" id="atak-allied-sheet-title">Identifiants ATAK alliés</h3>
+        <details class="atak-notes-block" open>
+          <summary class="atak-notes-block-sum" id="atak-allied-sheet-title">Identifiants ATAK alliés</summary>
           <p class="atak-panel-hint">Carnet manuel pour des unités hors de votre communauté (pas le registre interne des opérateurs Athena).</p>
           <div id="atak-sheet-allied" class="atak-sheet-wrap"></div>
           <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="allied_ids">Ajouter une ligne</button>
-        </section>
-
-        <div class="atak-notes-actions">
-          <button type="button" class="atak-ops-btn" id="atak-notes-save">Enregistrer maintenant</button>
-        </div>
+        </details>
       </div>
       <div class="atak-tabs-content" id="tab-pings">
         <div class="atak-pings-list" id="atak-pings-list">
@@ -1017,6 +1029,48 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-sounds.js"></script>
   <script>
     (function () {
+      var HINTS_KEY = 'atak_hide_panel_hints';
+
+      function hintsHidden() {
+        try {
+          return localStorage.getItem(HINTS_KEY) === '1';
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function setHintsHidden(hidden) {
+        try {
+          if (hidden) localStorage.setItem(HINTS_KEY, '1');
+          else localStorage.removeItem(HINTS_KEY);
+        } catch (e) {}
+        document.body.classList.toggle('atak-hints-hidden', !!hidden);
+        var cb = document.getElementById('atak-hide-panel-hints');
+        if (cb) cb.checked = !!hidden;
+        document.querySelectorAll('[data-atak-hints-toggle]').forEach(function (btn) {
+          btn.textContent = hidden ? 'Afficher les aides' : 'Masquer les aides';
+          btn.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+        });
+      }
+
+      function toggleHints() {
+        setHintsHidden(!document.body.classList.contains('atak-hints-hidden'));
+      }
+
+      setHintsHidden(hintsHidden());
+      var cbInit = document.getElementById('atak-hide-panel-hints');
+      if (cbInit) {
+        cbInit.addEventListener('change', function () {
+          setHintsHidden(!!cbInit.checked);
+        });
+      }
+      document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-atak-hints-toggle]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        toggleHints();
+      });
+
       window.ATAKShowError = function (msg) {
         var el = document.getElementById('atak-error-toast');
         if (!el) return;
@@ -1290,6 +1344,9 @@ if ($atakMapConfig) {
           if (content) content.classList.add('active');
           if (window.ATAKActivity && typeof window.ATAKActivity.setLiaisonTabActive === 'function') {
             window.ATAKActivity.setLiaisonTabActive(tab === 'liaison');
+          }
+          if (window.ATAKSessionWorkspace && typeof window.ATAKSessionWorkspace.setPanelWide === 'function') {
+            window.ATAKSessionWorkspace.setPanelWide(tab === 'notes');
           }
         });
       });

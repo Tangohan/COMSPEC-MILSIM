@@ -183,6 +183,20 @@ class Container
                 self::get(\App\Repositories\ReferralRepository::class),
                 self::get(\App\Repositories\PendingCommunityCreateRepository::class),
                 self::get(\App\Services\Community\TenantBootstrapService::class),
+                self::get(\App\Services\Billing\AtakDonationFulfillmentService::class),
+            ),
+            \App\Repositories\AtakDonationRepository::class => new \App\Repositories\AtakDonationRepository(),
+            \App\Services\Billing\AtakDonationFulfillmentService::class => new \App\Services\Billing\AtakDonationFulfillmentService(
+                self::get(\App\Repositories\AtakDonationRepository::class),
+                self::get(\App\Repositories\BadgeRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Services\Billing\StripeCheckoutService::class),
+            ),
+            \App\Controllers\Web\AtakSupportController::class => new \App\Controllers\Web\AtakSupportController(
+                self::get(\App\Repositories\AtakDonationRepository::class),
+                self::get(\App\Services\Billing\StripeCheckoutService::class),
+                self::get(\App\Services\Billing\AtakDonationFulfillmentService::class),
+                self::get(UserRepository::class),
             ),
             UserRepository::class => new UserRepository(),
             AuthService::class => new AuthService(

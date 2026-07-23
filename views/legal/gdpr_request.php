@@ -13,16 +13,14 @@ $success = Session::getFlash('success');
 $mailto = legal_public_contact_email();
 $legalSite = url('legal/site');
 ?>
-<h1>Exercer vos droits sur vos données</h1>
-<p class="legal-updated">Demande relative à vos données personnelles</p>
+<h1><?= htmlspecialchars(__('legal.rights_title'), ENT_QUOTES, 'UTF-8') ?></h1>
+<p class="legal-updated"><?= htmlspecialchars(__('legal.gdpr_subtitle'), ENT_QUOTES, 'UTF-8') ?></p>
 
 <p>
-    Envoyez une demande relative à vos données personnelles (accès, rectification, effacement, opposition, limitation, portabilité, retrait du consentement).
-    Nous vous répondrons sur l’adresse e-mail que vous indiquez ci-dessous.
+    <?= htmlspecialchars(__('legal.gdpr_intro_1'), ENT_QUOTES, 'UTF-8') ?>
 </p>
 <p>
-    Pour faciliter le traitement, décrivez votre demande de manière précise.
-    Une vérification d’identité peut être demandée lorsque nécessaire.
+    <?= htmlspecialchars(__('legal.gdpr_intro_2'), ENT_QUOTES, 'UTF-8') ?>
 </p>
 
 <?php if ($error): ?>
@@ -49,14 +47,14 @@ $legalSite = url('legal/site');
     <?= Csrf::field() ?>
 
     <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
-        <label for="company_website">Laissez ce champ vide</label>
+        <label for="company_website"><?= htmlspecialchars(__('legal.gdpr_honeypot'), ENT_QUOTES, 'UTF-8') ?></label>
         <input type="text" name="company_website" id="company_website" value="" tabindex="-1" autocomplete="off">
     </div>
 
     <div style="margin-bottom:1.25rem">
-        <label for="request_kind">Type de demande</label>
+        <label for="request_kind"><?= htmlspecialchars(__('legal.gdpr_kind'), ENT_QUOTES, 'UTF-8') ?></label>
         <select name="request_kind" id="request_kind" required>
-            <option value="" disabled selected>Choisissez…</option>
+            <option value="" disabled selected><?= htmlspecialchars(__('legal.gdpr_kind_choose'), ENT_QUOTES, 'UTF-8') ?></option>
             <?php foreach ($gdprRequestKinds as $key => $label): ?>
                 <option value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
             <?php endforeach; ?>
@@ -64,28 +62,27 @@ $legalSite = url('legal/site');
     </div>
 
     <div style="margin-bottom:1.25rem">
-        <label for="from_email">Adresse e-mail de réponse</label>
-        <input type="email" name="from_email" id="from_email" required maxlength="254" autocomplete="email" placeholder="vous@exemple.com">
+        <label for="from_email"><?= htmlspecialchars(__('legal.gdpr_email'), ENT_QUOTES, 'UTF-8') ?></label>
+        <input type="email" name="from_email" id="from_email" required maxlength="254" autocomplete="email" placeholder="<?= htmlspecialchars(__('auth.placeholder_email'), ENT_QUOTES, 'UTF-8') ?>">
     </div>
 
     <div style="margin-bottom:1.25rem">
-        <label for="full_name">Nom ou pseudonyme utilisé sur le portail <span style="font-weight:400;color:var(--legal-muted)">(facultatif)</span></label>
+        <label for="full_name"><?= htmlspecialchars(__('legal.gdpr_name'), ENT_QUOTES, 'UTF-8') ?> <span style="font-weight:400;color:var(--legal-muted)"><?= htmlspecialchars(__('legal.gdpr_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
         <input type="text" name="full_name" id="full_name" maxlength="160" autocomplete="name">
     </div>
 
     <div style="margin-bottom:1.25rem">
-        <label for="community_hint">Communauté concernée <span style="font-weight:400;color:var(--legal-muted)">(facultatif)</span></label>
-        <input type="text" name="community_hint" id="community_hint" maxlength="200" placeholder="Nom de l’unité ou indice pour vous identifier">
+        <label for="community_hint"><?= htmlspecialchars(__('legal.gdpr_community'), ENT_QUOTES, 'UTF-8') ?> <span style="font-weight:400;color:var(--legal-muted)"><?= htmlspecialchars(__('legal.gdpr_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
+        <input type="text" name="community_hint" id="community_hint" maxlength="200" placeholder="<?= htmlspecialchars(__('legal.gdpr_community_ph'), ENT_QUOTES, 'UTF-8') ?>">
     </div>
 
     <div style="margin-bottom:1.5rem">
-        <label for="message">Votre demande</label>
-        <textarea name="message" id="message" required rows="6" maxlength="4000" minlength="10" placeholder="Décrivez précisément ce que vous souhaitez (par exemple : obtenir une copie de vos données, corriger une information, supprimer votre compte…)."></textarea>
-        <p style="margin:.5rem 0 0;font-size:.75rem;color:var(--legal-muted)">Minimum 10 caractères, maximum 4&nbsp;000.</p>
+        <label for="message"><?= htmlspecialchars(__('legal.gdpr_message'), ENT_QUOTES, 'UTF-8') ?></label>
+        <textarea name="message" id="message" required rows="6" maxlength="4000" minlength="10" placeholder="<?= htmlspecialchars(__('legal.gdpr_intro_2'), ENT_QUOTES, 'UTF-8') ?>"></textarea>
     </div>
 
     <button type="submit" class="legal-btn" <?= $privacyInboxConfigured ? '' : 'disabled style="opacity:.4;cursor:not-allowed"' ?>>
-        Envoyer la demande
+        <?= htmlspecialchars(__('legal.gdpr_submit'), ENT_QUOTES, 'UTF-8') ?>
     </button>
 </form>
 

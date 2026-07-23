@@ -267,10 +267,10 @@ require base_path('views/partials/account/shell_open.php');
                     <p class="account-hub__hint">Choisissez dans la liste proposée, ou saisissez un fuseau standard (ex. Europe/Paris).</p>
                 </div>
                 <div>
-                    <label class="account-hub__label" for="language">Langue</label>
+                    <label class="account-hub__label" for="language"><?= htmlspecialchars(__('common.language'), ENT_QUOTES, 'UTF-8') ?></label>
                     <select name="language" id="language">
-                        <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>>Français</option>
-                        <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>>English</option>
+                        <option value="fr" <?= ($profile['language'] ?? '') === 'fr' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_fr'), ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="en" <?= ($profile['language'] ?? '') === 'en' ? 'selected' : '' ?>><?= htmlspecialchars(__('common.language_en'), ENT_QUOTES, 'UTF-8') ?></option>
                     </select>
                 </div>
             </div>

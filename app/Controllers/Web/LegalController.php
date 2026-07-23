@@ -20,13 +20,13 @@ final class LegalController
     private static function gdprRequestKindLabels(): array
     {
         return [
-            'access' => 'Accès à vos données',
-            'rectification' => 'Rectification',
-            'erasure' => 'Effacement',
-            'restriction' => 'Limitation du traitement',
-            'portability' => 'Portabilité',
-            'objection' => 'Opposition',
-            'other' => 'Autre demande',
+            'access' => __('legal.kind_access'),
+            'rectification' => __('legal.kind_rectification'),
+            'erasure' => __('legal.kind_erasure'),
+            'restriction' => __('legal.kind_restriction'),
+            'portability' => __('legal.kind_portability'),
+            'objection' => __('legal.kind_objection'),
+            'other' => __('legal.kind_other'),
         ];
     }
 
@@ -35,7 +35,7 @@ final class LegalController
     {
         return Response::view('layout.legal', [
             'content' => 'legal.site',
-            'title' => 'Politique et conditions',
+            'title' => __('legal.hub_title'),
             'legalActivePage' => 'site',
         ]);
     }
@@ -69,7 +69,7 @@ final class LegalController
     {
         return Response::view('layout.legal', [
             'content' => 'legal.gdpr_request',
-            'title' => 'Exercer vos droits sur vos données',
+            'title' => __('legal.rights_title'),
             'legalActivePage' => 'droits',
             'gdprRequestKinds' => self::gdprRequestKindLabels(),
             'privacyInboxConfigured' => privacy_request_inbox_email() !== null,
@@ -82,21 +82,21 @@ final class LegalController
             return Response::redirect(url('demande-donnees'));
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Votre session a expiré. Merci de réessayer.');
+            Session::flash('error', __('legal.flash_session'));
 
             return Response::redirect(url('demande-donnees'));
         }
 
         $honeypot = trim((string) $request->input('company_website', ''));
         if ($honeypot !== '') {
-            Session::flash('success', 'Votre demande a bien été transmise.');
+            Session::flash('success', __('legal.flash_sent'));
 
             return Response::redirect(url('demande-donnees'));
         }
 
         $to = privacy_request_inbox_email();
         if ($to === null) {
-            Session::flash('error', 'L’envoi en ligne n’est pas disponible pour le moment. Utilisez les coordonnées publiées dans les mentions légales ou contactez les administrateurs de votre communauté.');
+            Session::flash('error', __('legal.flash_unavailable'));
 
             return Response::redirect(url('demande-donnees'));
         }
@@ -104,14 +104,14 @@ final class LegalController
         $kinds = self::gdprRequestKindLabels();
         $kind = (string) $request->input('request_kind', '');
         if (!isset($kinds[$kind])) {
-            Session::flash('error', 'Choisissez un type de demande dans la liste.');
+            Session::flash('error', __('legal.flash_kind'));
 
             return Response::redirect(url('demande-donnees'));
         }
 
         $email = trim((string) $request->input('from_email', ''));
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            Session::flash('error', 'Indiquez une adresse e-mail valide pour que nous puissions vous répondre.');
+            Session::flash('error', __('legal.flash_email'));
 
             return Response::redirect(url('demande-donnees'));
         }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$title = $title ?? 'Politique et conditions';
+$title = $title ?? __('legal.hub_title');
 $content = $content ?? 'legal.site';
 $baseUrl = url('');
 $brand = email_brand_name();
@@ -9,7 +9,7 @@ $legalActivePage = $legalActivePage ?? 'site';
 $legalActiveSection = $legalActiveSection ?? '';
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= htmlspecialchars(html_lang(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,14 +42,17 @@ $legalActiveSection = $legalActiveSection ?? '';
 
         <footer class="legal-footer">
             <div class="legal-footer-inner">
-                <nav class="legal-footer-nav" aria-label="Liens utiles">
-                    <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>">Accueil</a>
-                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#' : url('legal/site'), ENT_QUOTES, 'UTF-8') ?>">Légal</a>
-                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#cgu' : url('legal/site') . '#cgu', ENT_QUOTES, 'UTF-8') ?>">CGU / CGV</a>
-                    <a href="<?= htmlspecialchars(url('demande-donnees'), ENT_QUOTES, 'UTF-8') ?>">Vos droits</a>
-                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>">Connexion</a>
+                <nav class="legal-footer-nav" aria-label="<?= htmlspecialchars(__('legal.footer_aria'), ENT_QUOTES, 'UTF-8') ?>">
+                    <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.home'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#' : url('legal/site'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.legal'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars($legalActivePage === 'site' ? '#cgu' : url('legal/site') . '#cgu', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.cgu_cgv'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars(url('demande-donnees'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.your_rights'), ENT_QUOTES, 'UTF-8') ?></a>
+                    <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
                 </nav>
-                <p class="legal-footer-copy">© <?= date('Y') ?> <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?> · Documentation juridique</p>
+                <div class="legal-footer-copy" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem">
+                    <p style="margin:0">© <?= date('Y') ?> <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars(__('legal.footer_copy'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php $localeSwitcherVariant = 'light'; require base_path('views/partials/language_switcher.php'); ?>
+                </div>
             </div>
         </footer>
     </div>

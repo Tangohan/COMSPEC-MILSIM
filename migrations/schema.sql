@@ -344,6 +344,25 @@ CREATE TABLE IF NOT EXISTS `user_badges` (
   CONSTRAINT `ub_badge_fk` FOREIGN KEY (`badge_id`) REFERENCES `badges` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS `atak_donations` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `tenant_id` int unsigned DEFAULT NULL,
+  `amount_cents` int unsigned NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'eur',
+  `stripe_checkout_session_id` varchar(255) DEFAULT NULL,
+  `stripe_payment_intent_id` varchar(255) DEFAULT NULL,
+  `status` varchar(24) NOT NULL DEFAULT 'pending',
+  `badge_granted` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `paid_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_atak_donation_session` (`stripe_checkout_session_id`),
+  KEY `idx_atak_donation_user` (`user_id`),
+  KEY `idx_atak_donation_status` (`status`),
+  CONSTRAINT `fk_atak_donation_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `certifications` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,

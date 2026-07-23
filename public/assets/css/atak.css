@@ -35,7 +35,7 @@ body.atak-page {
   flex-direction: column;
 }
 
-/* Pr√©f√©rences compte ‚Äî densit√© / contraste l√©ger */
+/* PrÈfÈrences compte ó densitÈ / contraste lÈger */
 body.atak-page.atak-density-compact {
   --atak-header-h: 34px;
   --atak-os-strip-h: 24px;
@@ -1351,6 +1351,43 @@ body.atak-page.atak-theme-light {
   color: var(--atak-muted);
   line-height: 1.35;
 }
+body.atak-hints-hidden .atak-panel-hint {
+  display: none !important;
+}
+.atak-hints-toggle {
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  color: var(--atak-muted, #94a3b8);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.atak-hints-toggle:hover {
+  color: #e2e8f0;
+  border-color: rgba(110, 231, 183, 0.45);
+}
+.atak-sound-pref-label--check {
+  align-items: flex-start;
+}
+.atak-sound-pref-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  color: var(--atak-fog, #c8d5cc);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.atak-sound-pref-check input {
+  margin: 0;
+}
 
 .atak-error-toast {
   display: none;
@@ -1505,7 +1542,7 @@ body.atak-page.atak-theme-light {
   background: rgba(52, 211, 153, 0.08);
 }
 
-/* Reglages alertes ‚Äî bas du rail vertical */
+/* Reglages alertes ó bas du rail vertical */
 .atak-rail-audio {
   margin-top: auto;
   padding: 0.45rem 0.2rem 0.25rem;
@@ -2309,7 +2346,7 @@ body.atak-theme-light .atak-chat-messages {
   box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.25);
 }
 
-/* Radio proximitÔøΩ */
+/* Radio proximitù */
 .atak-radio-head { padding: 0.55rem 0.65rem 0.35rem; }
 .atak-radio-toolbar {
   display: flex;
@@ -2469,7 +2506,7 @@ body.atak-theme-light .atak-chat-messages {
   50% { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.55); }
 }
 
-/* Assistances m√©dicales */
+/* Assistances mÈdicales */
 .atak-medical-banner {
   position: relative;
   z-index: 1200;
@@ -2722,7 +2759,7 @@ body.atak-theme-light .atak-chat-messages {
   background: rgba(220, 38, 38, 0.14);
 }
 .atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
-/* .atak-medical-tab-badge : styles unifiÔøΩs via .atak-tab-badge */
+/* .atak-medical-tab-badge : styles unifiùs via .atak-tab-badge */
 .nato-sidc-stack.nato-sidc--wounded .nato-sidc-label,
 .nato-sidc-wrap.nato-sidc--wounded {
   filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.85));
@@ -2781,7 +2818,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-air-asset-pilot { font-size: 0.65rem; color: var(--atak-muted); margin-top: 0.25rem; }
 
 /* Leaflet dark override */
-/* Masquer le zoom Leaflet natif : remplac√© par la barre d‚Äôoutils */
+/* Masquer le zoom Leaflet natif : remplacÈ par la barre díoutils */
 .atak-map-wrap .leaflet-control-zoom { display: none !important; }
 
 .atak-map-wrap .leaflet-control-scale {
@@ -2845,7 +2882,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-hud__measure { color: #fbbf24 !important; letter-spacing: 0.02em; }
 .atak-map-hud__row[hidden] { display: none !important; }
 
-/* Barre d‚Äôoutils carte (style tablette TAK) */
+/* Barre díoutils carte (style tablette TAK) */
 .atak-map-tools {
   position: absolute;
   top: 8px;
@@ -3002,8 +3039,8 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   color: #1f2933 !important;
 }
 
-/* Tableau des effectifs : hauteur verrouillÔøΩe sous la carte.
-   ÔøΩvite le tremblement Leaflet (reflow carte ? tiroir) quand le polling
+/* Tableau des effectifs : hauteur verrouillùe sous la carte.
+   ùvite le tremblement Leaflet (reflow carte ? tiroir) quand le polling
    reconstruit le tbody ou que le nombre de lignes change. */
 .atak-drawer {
   position: relative;
@@ -3540,7 +3577,7 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   margin-top: 0.15rem;
 }
 
-/* Saisie (ping / libellÔøΩ) ? thÔøΩme sombre ATAK */
+/* Saisie (ping / libellù) ? thùme sombre ATAK */
 .atak-input-modal {
   position: fixed;
   inset: 0;
@@ -4652,7 +4689,7 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 
 .atak-notepad {
   width: 100%;
-  min-height: 9rem;
+  min-height: 7rem;
   margin-top: 0.35rem;
   padding: 0.55rem 0.65rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -4668,24 +4705,90 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
   outline: none;
   border-color: rgba(45, 212, 168, 0.45);
 }
+.atak-notes-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.35rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.35rem 0.15rem 0.45rem;
+  background: linear-gradient(180deg, var(--atak-panel-alt) 70%, transparent);
+}
+.atak-notes-toolbar-hint {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+.atak-notes-toolbar-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.atak-notes-block {
+  margin: 0.35rem 0 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 4px;
+  background: rgba(8, 12, 18, 0.35);
+  padding: 0 0.55rem 0.55rem;
+}
+.atak-notes-block-sum {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.55rem 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--atak-accent, #34d399);
+  font-family: var(--atak-font-tactical);
+  user-select: none;
+}
+.atak-notes-block-sum::-webkit-details-marker { display: none; }
+.atak-notes-block-sum::before {
+  content: "? ";
+  color: var(--atak-muted);
+  font-weight: 400;
+}
+.atak-notes-block:not([open]) .atak-notes-block-sum::before {
+  content: "? ";
+}
 .atak-sheet-wrap {
   overflow-x: auto;
   margin: 0.35rem 0 0.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+.atak-panel-left.is-notes-wide .atak-sheet-wrap {
+  overflow-x: visible;
+}
+.atak-sheet-table {
+  width: 100%;
+  min-width: 640px;
+  table-layout: fixed;
+}
+.atak-panel-left.is-notes-wide .atak-sheet-table,
+.atak-panel-left.is-notes-expanded .atak-sheet-table {
+  min-width: 0;
+}
+.atak-sheet-table th {
+  white-space: nowrap;
 }
 .atak-sheet-table .atak-sheet-input {
   width: 100%;
-  min-width: 4.5rem;
+  min-width: 0;
   appearance: none;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 3px;
   background: rgba(15, 23, 32, 0.9);
   color: var(--atak-text, #e2e8f0);
   font-size: 0.7rem;
-  padding: 0.22rem 0.3rem;
+  padding: 0.28rem 0.35rem;
   font-family: inherit;
 }
 .atak-sheet-table select.atak-sheet-input {
-  min-width: 6.5rem;
+  min-width: 0;
 }
 .atak-sheet-del {
   appearance: none;
@@ -4710,6 +4813,33 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 }
 #atak-notes-dirty:not([hidden]) {
   color: #fbbf24;
+}
+
+/* Panneau Notes ùlargi / plein format */
+.atak-panel-left.is-notes-wide {
+  width: min(56vw, 760px);
+  min-width: min(56vw, 760px);
+  max-width: 86vw;
+  z-index: 28;
+  box-shadow: 10px 0 28px rgba(0, 0, 0, 0.4);
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+.atak-panel-left.is-notes-expanded {
+  width: min(94vw, 1180px);
+  min-width: min(94vw, 1180px);
+  max-width: 96vw;
+  z-index: 35;
+}
+.atak-panel-left.is-notes-wide #tab-notes,
+.atak-panel-left.is-notes-expanded #tab-notes {
+  padding: 0.35rem 0.55rem 0.85rem;
+}
+@media (max-width: 900px) {
+  .atak-panel-left.is-notes-wide,
+  .atak-panel-left.is-notes-expanded {
+    width: min(92vw, 100%);
+    min-width: min(92vw, 100%);
+  }
 }
 
 .atak-medevac-card {
@@ -4875,7 +5005,7 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 }
 .atak-col-ft { width: 5.5rem; }
 
-/* --- DÈconnexion Arma (session web encore ouverte) --- */
+/* --- Dùconnexion Arma (session web encore ouverte) --- */
 .atak-arma-offline-modal { z-index: 100060; }
 .atak-arma-offline-card { border-color: rgba(248, 113, 113, 0.35); }
 .atak-arma-offline-actions { justify-content: stretch; }

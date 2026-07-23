@@ -172,6 +172,8 @@ if ($useAthenaHeader) {
                         <?php require base_path('views/partials/portal_alerts_bell.php'); ?>
                     <?php endif; ?>
 
+                    <?php $localeSwitcherVariant = 'light'; require base_path('views/partials/language_switcher.php'); ?>
+
                     <?php if ($loggedIn): ?>
                         <a href="<?= htmlspecialchars($baseUrl) ?>/account"
                            class="group hidden items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-slate-50 sm:flex">

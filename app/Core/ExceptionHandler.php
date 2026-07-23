@@ -33,6 +33,13 @@ class ExceptionHandler
 
     public static function handle(Throwable $e): void
     {
+        try {
+            if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleService::class)) {
+                (new \App\Services\I18n\LocaleService())->boot();
+            }
+        } catch (Throwable) {
+        }
+
         $debug = (bool) config('app.debug', false);
         $logPath = base_path('storage/logs/app.log');
 
@@ -57,7 +64,7 @@ class ExceptionHandler
             http_response_code(500);
             echo json_encode([
                 'error' => 'server_error',
-                'message' => 'Une erreur est survenue. Merci de réessayer plus tard.',
+                'message' => function_exists('__') ? __('errors.json_server_error') : 'Une erreur est survenue. Merci de réessayer plus tard.',
             ], JSON_UNESCAPED_UNICODE);
 
             return;

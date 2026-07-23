@@ -104,6 +104,65 @@ if (!function_exists('config')) {
     }
 }
 
+if (!function_exists('locale')) {
+    /** Locale UI courante (`fr` | `en`). */
+    function locale(): string
+    {
+        $cached = $GLOBALS['__app_locale'] ?? null;
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        return \App\Services\I18n\LocaleService::normalize((string) config('app.locale', 'fr'));
+    }
+}
+
+if (!function_exists('html_lang')) {
+    /** Valeur de l’attribut HTML `lang`. */
+    function html_lang(): string
+    {
+        return locale() === 'en' ? 'en' : 'fr';
+    }
+}
+
+if (!function_exists('__')) {
+    /**
+     * Traduction UI (catalogues lang/{locale}/*.php).
+     *
+     * @param array<string, scalar|null> $replace Placeholders `:name`
+     */
+    function __(string $key, array $replace = [], ?string $locale = null): string
+    {
+        $translator = $GLOBALS['__app_translator'] ?? null;
+        if (!$translator instanceof \App\Services\I18n\Translator) {
+            $translator = new \App\Services\I18n\Translator();
+            $translator->setLocale(locale());
+            $GLOBALS['__app_translator'] = $translator;
+        }
+
+        return $translator->get($key, $replace, $locale);
+    }
+}
+
+if (!function_exists('locale_switch_url')) {
+    /** URL pour basculer la langue puis revenir à la page courante (ou un chemin donné). */
+    function locale_switch_url(string $locale, ?string $redirectPath = null): string
+    {
+        $locale = \App\Services\I18n\LocaleService::normalize($locale);
+        if ($redirectPath === null) {
+            $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/');
+            $prefix = rtrim((string) env('APP_BASE_PATH', ''), '/');
+            if ($prefix !== '' && str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix)) ?: '/';
+            }
+            $qs = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_QUERY) ?: '');
+            $redirectPath = $qs !== '' ? ($path . '?' . $qs) : $path;
+        }
+
+        return url('locale/' . rawurlencode($locale)) . '?redirect=' . rawurlencode($redirectPath);
+    }
+}
+
 if (!function_exists('app_environment_label_fr')) {
     /**
      * Libellé français pour APP_ENV (cohérent admin système / paramètres).

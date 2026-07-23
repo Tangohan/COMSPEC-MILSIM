@@ -61,4 +61,80 @@ class BadgeRepository
 
         return $out;
     }
+
+    /**
+     * Crée (si besoin) le badge « Donateur ATAK » pour le tenant et l’attribue au membre.
+     * Idempotent grâce à uk_user_badge / uk_badges_tenant_slug.
+     */
+    public function ensureAndGrantDonorAtak(int $tenantId, int $userId, ?int $grantedByUserId = null): bool
+    {
+        return $this->ensureAndGrant(
+            $tenantId,
+            $userId,
+            'donateur-atak',
+            'Donateur ATAK',
+            'A soutenu le financement du module ATAK sur Athena.',
+            null,
+            $grantedByUserId
+        );
+    }
+
+    /**
+     * @return bool true si attribution effectuée ou déjà présente
+     */
+    public function ensureAndGrant(
+        int $tenantId,
+        int $userId,
+        string $slug,
+        string $name,
+        ?string $description = null,
+        ?string $iconUrl = null,
+        ?int $grantedByUserId = null
+    ): bool {
+        if ($tenantId < 1 || $userId < 1 || $slug === '') {
+            return false;
+        }
+        try {
+            $badgeId = $this->ensureBadgeId($tenantId, $slug, $name, $description, $iconUrl);
+            if ($badgeId < 1) {
+                return false;
+            }
+            $stmt = $this->pdo->prepare(
+                'INSERT IGNORE INTO user_badges (tenant_id, user_id, badge_id, granted_at, granted_by_user_id)
+                 VALUES (?, ?, ?, NOW(), ?)'
+            );
+            $stmt->execute([
+                $tenantId,
+                $userId,
+                $badgeId,
+                $grantedByUserId !== null && $grantedByUserId > 0 ? $grantedByUserId : null,
+            ]);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function ensureBadgeId(
+        int $tenantId,
+        string $slug,
+        string $name,
+        ?string $description,
+        ?string $iconUrl
+    ): int {
+        $find = $this->pdo->prepare('SELECT id FROM badges WHERE tenant_id = ? AND slug = ? LIMIT 1');
+        $find->execute([$tenantId, $slug]);
+        $existing = $find->fetchColumn();
+        if ($existing !== false) {
+            return (int) $existing;
+        }
+        $ins = $this->pdo->prepare(
+            'INSERT INTO badges (tenant_id, slug, name, description, icon_url, created_at)
+             VALUES (?, ?, ?, ?, ?, NOW())'
+        );
+        $ins->execute([$tenantId, $slug, $name, $description, $iconUrl]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
 }

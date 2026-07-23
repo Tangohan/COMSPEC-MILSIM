@@ -184,6 +184,9 @@ class HomeController
         $canViewAtakOperators = false;
         $atakOperatorsLinkedCount = null;
         $dashboardIsDefaultTenant = false;
+        $dashboardEffectifsRows = [];
+        $canViewPersonnelDirectory = false;
+        $canOpenEffectifsWorkspace = false;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
@@ -271,6 +274,17 @@ class HomeController
                         );
                     } catch (\Throwable) {
                         $staffApplicationsAll = [];
+                    }
+                }
+
+                $canViewPersonnelDirectory = $gate->allows('personnel.profile.view');
+                $canOpenEffectifsWorkspace = \App\Support\EffectifsLmsAccess::allows($gate);
+                if ($canViewPersonnelDirectory && !$dashboardIsDefaultTenant) {
+                    try {
+                        $dashboardEffectifsRows = \App\Core\Container::get(\App\Repositories\UserRepository::class)
+                            ->listPersonnelDirectoryRich($tid, '', 40);
+                    } catch (\Throwable) {
+                        $dashboardEffectifsRows = [];
                     }
                 }
 
@@ -515,6 +529,9 @@ class HomeController
             'email_alerts_disabled_count' => $emailAlertsDisabledCount,
             'can_view_atak_operators' => $canViewAtakOperators,
             'atak_operators_linked_count' => $atakOperatorsLinkedCount,
+            'dashboard_effectifs_rows' => $dashboardEffectifsRows,
+            'can_view_personnel_directory' => $canViewPersonnelDirectory,
+            'can_open_effectifs_workspace' => $canOpenEffectifsWorkspace,
         ]);
     }
 
