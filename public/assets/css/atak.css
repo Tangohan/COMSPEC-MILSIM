@@ -35,7 +35,7 @@ body.atak-page {
   flex-direction: column;
 }
 
-/* PrÈfÈrences compte ó densitÈ / contraste lÈger */
+/* Prùfùrences compte ù densitù / contraste lùger */
 body.atak-page.atak-density-compact {
   --atak-header-h: 34px;
   --atak-os-strip-h: 24px;
@@ -69,9 +69,10 @@ body.atak-page.atak-theme-light {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.55rem;
-  padding: 0 0.55rem 0 0.65rem;
+  gap: 0.45rem;
+  padding: 0 0.45rem 0 0.55rem;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .atak-header-brand {
@@ -79,6 +80,7 @@ body.atak-page.atak-theme-light {
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
+  flex: 0 1 auto;
 }
 
 .atak-header .atak-logo-wrap {
@@ -110,6 +112,7 @@ body.atak-page.atak-theme-light {
   gap: 0.28rem;
   flex-wrap: nowrap;
   min-width: 0;
+  overflow: hidden;
 }
 
 .atak-chip {
@@ -124,6 +127,8 @@ body.atak-page.atak-theme-light {
   line-height: 1.15;
   white-space: nowrap;
   color: var(--atak-text);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .atak-chip-key {
@@ -132,12 +137,15 @@ body.atak-page.atak-theme-light {
   letter-spacing: 0.05em;
   font-weight: 600;
   font-size: 0.52rem;
+  flex-shrink: 0;
 }
 
 .atak-chip-value,
 .atak-chip-label {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .atak-chip--live {
@@ -147,6 +155,17 @@ body.atak-page.atak-theme-light {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.62rem;
+  flex-shrink: 0;
+}
+
+.atak-chip--weather {
+  border-color: color-mix(in srgb, #38bdf8 45%, var(--atak-border));
+  background: rgba(56, 189, 248, 0.08);
+  max-width: min(14rem, 26vw);
+}
+
+.atak-chip--weather .atak-chip-value {
+  color: #bae6fd;
 }
 
 .atak-chip--ok {
@@ -171,6 +190,15 @@ body.atak-page.atak-theme-light {
   font-weight: 500;
 }
 
+.atak-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .atak-header .atak-zulu {
   font-variant-numeric: tabular-nums;
   font-size: 0.62rem;
@@ -186,7 +214,18 @@ body.atak-page.atak-theme-light {
 .atak-header-links {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1px;
+}
+
+.atak-header-links > * {
   flex-shrink: 0;
 }
 
@@ -304,6 +343,14 @@ body.atak-page.atak-theme-light {
 .atak-btn-phone-link:hover {
   background: rgba(45, 212, 191, 0.12);
   border-color: #5eead4;
+}
+
+body.atak-theme-light .atak-chip--weather {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: color-mix(in srgb, #0ea5e9 40%, var(--atak-border));
+}
+body.atak-theme-light .atak-chip--weather .atak-chip-value {
+  color: #0369a1;
 }
 
 .atak-os-strip {
@@ -1542,7 +1589,7 @@ body.atak-hints-hidden .atak-panel-hint {
   background: rgba(52, 211, 153, 0.08);
 }
 
-/* Reglages alertes ó bas du rail vertical */
+/* Reglages alertes ù bas du rail vertical */
 .atak-rail-audio {
   margin-top: auto;
   padding: 0.45rem 0.2rem 0.25rem;
@@ -2439,13 +2486,21 @@ body.atak-theme-light .atak-chat-messages {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   font-size: 0.82rem;
+}
+.atak-radio-card__head strong {
+  margin-right: 0.15rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .atak-radio-card__meta {
   margin-top: 0.25rem;
   font-size: 0.7rem;
   color: var(--atak-muted);
+  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 .atak-radio-card__actions {
   display: flex;
@@ -2454,12 +2509,14 @@ body.atak-theme-light .atak-chat-messages {
   margin-top: 0.45rem;
 }
 .atak-radio-pill {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 0.12rem 0.4rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 999px;
+  flex-shrink: 0;
+  line-height: 1.2;
 }
 .atak-radio-pill--tx {
   color: #1c1008;
@@ -2469,6 +2526,14 @@ body.atak-theme-light .atak-chat-messages {
 .atak-radio-pill--listen {
   color: #052e16;
   background: #4ade80;
+}
+.atak-radio-pill--wr {
+  color: #0c4a6e;
+  background: #7dd3fc;
+}
+.atak-radio-pill--gw {
+  color: #1e1b4b;
+  background: #a5b4fc;
 }
 .atak-radio-btn {
   appearance: none;
@@ -2506,7 +2571,7 @@ body.atak-theme-light .atak-chat-messages {
   50% { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.55); }
 }
 
-/* Assistances mÈdicales */
+/* Assistances mùdicales */
 .atak-medical-banner {
   position: relative;
   z-index: 1200;
@@ -2758,6 +2823,52 @@ body.atak-theme-light .atak-chat-messages {
   border-left-color: #dc2626;
   background: rgba(220, 38, 38, 0.14);
 }
+.atak-chat-msg-tactical {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid #f59e0b;
+  padding: 0.25rem 0.45rem 0.35rem;
+  border-radius: 2px;
+  border-bottom-color: transparent;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.atak-chat-msg-tactical-critical {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+.atak-chat-msg-group {
+  background: rgba(34, 197, 94, 0.08);
+  border-left: 3px solid #22c55e;
+  padding: 0.25rem 0.45rem 0.35rem;
+  border-radius: 2px;
+  border-bottom-color: transparent;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.atak-chat-talert-badge,
+.atak-chat-group-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.08rem 0.3rem;
+  border-radius: 0.25rem;
+  margin: 0 0.2rem 0.15rem 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.atak-chat-talert-badge {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+.atak-chat-group-badge {
+  background: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+}
 .atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
 /* .atak-medical-tab-badge : styles unifiùs via .atak-tab-badge */
 .nato-sidc-stack.nato-sidc--wounded .nato-sidc-label,
@@ -2818,7 +2929,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-air-asset-pilot { font-size: 0.65rem; color: var(--atak-muted); margin-top: 0.25rem; }
 
 /* Leaflet dark override */
-/* Masquer le zoom Leaflet natif : remplacÈ par la barre díoutils */
+/* Masquer le zoom Leaflet natif : remplacù par la barre dùoutils */
 .atak-map-wrap .leaflet-control-zoom { display: none !important; }
 
 .atak-map-wrap .leaflet-control-scale {
@@ -2882,7 +2993,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-hud__measure { color: #fbbf24 !important; letter-spacing: 0.02em; }
 .atak-map-hud__row[hidden] { display: none !important; }
 
-/* Barre díoutils carte (style tablette TAK) */
+/* Barre dùoutils carte (style tablette TAK) */
 .atak-map-tools {
   position: absolute;
   top: 8px;
@@ -4065,15 +4176,39 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   color: var(--atak-muted);
 }
 
+@media (max-width: 1100px) {
+  .atak-chip--weather { max-width: 9.5rem; }
+}
+
 @media (max-width: 900px) {
   .atak-header {
     flex-wrap: wrap;
     height: auto;
     min-height: var(--atak-header-h);
-    padding: 0.45rem 0.75rem;
+    max-height: none;
+    padding: 0.4rem 0.65rem;
+    overflow: visible;
+    row-gap: 0.35rem;
   }
-  .atak-header-brand { width: 100%; }
-  .atak-zulu { order: 3; }
+  .atak-header-brand {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .atak-header-chips {
+    flex: 1 1 auto;
+    overflow-x: auto;
+  }
+  .atak-header-meta {
+    order: 2;
+    flex: 0 0 auto;
+  }
+  .atak-header-links {
+    order: 3;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 100%;
+  }
+  .atak-chip--weather { max-width: 12rem; }
 }
 
 
@@ -4456,129 +4591,491 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Profil de session ATAK */
-body.atak-session-profile-locked .atak-main,
-body.atak-session-profile-locked .atak-os-strip,
-body.atak-session-profile-locked .atak-header-links .atak-btn-game-link,
-body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
-  pointer-events: none;
-  filter: blur(1.5px);
-  opacity: 0.55;
+/* Hub de connexion initiale ù profils de session (esprit prùambule LMS) */
+body.atak-session-profile-locked {
+  overflow: hidden;
 }
-.atak-session-profile-overlay {
+body.atak-session-profile-locked .atak-header,
+body.atak-session-profile-locked .atak-os-strip,
+body.atak-session-profile-locked .atak-main,
+body.atak-session-profile-locked .atak-medical-banner,
+body.atak-session-profile-locked .atak-account-overlay,
+body.atak-session-profile-locked .atak-account-panel {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.atak-session-hub {
   position: fixed;
   inset: 0;
   z-index: 100050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  background: #050505;
+  color: #e8e8ed;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
 }
-.atak-session-profile-overlay[hidden] { display: none !important; }
-.atak-session-profile-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(6, 10, 16, 0.82);
+.atak-session-hub:not([hidden]) {
+  display: block;
+  opacity: 1;
+  visibility: visible;
 }
-.atak-session-profile-card {
+.atak-session-hub[hidden] { display: none !important; }
+
+.atak-session-hub__stage {
   position: relative;
-  width: min(28rem, calc(100vw - 1.5rem));
-  max-height: min(90vh, 40rem);
-  overflow: auto;
-  padding: 1.25rem 1.35rem 1.1rem;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 10px;
-  background: linear-gradient(165deg, #121820 0%, #0b1016 100%);
-  color: var(--atak-text, #e2e8f0);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
 }
-.atak-session-profile-title {
-  margin: 0 0 0.45rem;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.atak-session-profile-lead,
-.atak-session-profile-suggest {
-  margin: 0 0 0.85rem;
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: var(--atak-muted, #94a3b8);
-}
-.atak-session-profile-suggest {
-  padding: 0.55rem 0.65rem;
-  border-left: 3px solid #3b82f6;
-  background: rgba(59, 130, 246, 0.08);
-  color: #bfdbfe;
-}
-.atak-session-profile-fieldset {
-  margin: 0 0 1rem;
-  padding: 0.65rem 0.75rem 0.35rem;
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 8px;
-}
-.atak-session-profile-fieldset legend {
-  padding: 0 0.35rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #93c5fd;
-}
-.atak-session-profile-option {
+
+.atak-session-hub__visual {
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, 100% 0, 78% 100%, 0 100%);
+  background:
+    linear-gradient(145deg, rgba(52, 211, 153, 0.22) 0%, transparent 48%),
+    linear-gradient(165deg, #122033 0%, #050505 52%, #0a1f18 100%);
   display: flex;
-  gap: 0.65rem;
-  align-items: flex-start;
-  margin: 0 0 0.55rem;
-  padding: 0.45rem 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(1.5rem, 4vw, 3rem);
 }
-.atak-session-profile-option:hover {
-  background: rgba(255, 255, 255, 0.04);
+
+.atak-session-hub__visual-glow {
+  position: absolute;
+  inset: -20% 10% auto -10%;
+  height: 55%;
+  background: radial-gradient(ellipse at center, rgba(52, 211, 153, 0.28), transparent 70%);
+  pointer-events: none;
 }
-.atak-session-profile-option input {
-  margin-top: 0.2rem;
+
+.atak-session-hub__brand {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin-bottom: 0.45rem;
 }
-.atak-session-profile-option strong {
-  display: block;
-  font-size: 0.9rem;
+.atak-session-hub__brand-main {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f8fafc;
 }
-.atak-session-profile-option small {
-  display: block;
-  margin-top: 0.15rem;
-  font-size: 0.75rem;
-  color: var(--atak-muted, #94a3b8);
-  line-height: 1.35;
+.atak-session-hub__brand-sub {
+  font-size: clamp(0.75rem, 1.4vw, 1rem);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #34d399;
 }
-.atak-session-profile-actions {
+.atak-session-hub__visual-tagline {
+  position: relative;
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.72);
+  max-width: 18rem;
+  line-height: 1.45;
+}
+
+.atak-session-hub__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2.75rem);
+  padding-left: clamp(1rem, 3vw, 2rem);
+  overflow: auto;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(5, 5, 5, 0.55) 8%,
+    rgba(5, 5, 5, 0.94) 28%,
+    rgba(6, 40, 28, 0.45) 100%
+  );
+}
+
+.atak-session-hub__progress {
+  list-style: none;
+  margin: 0 0 0.35rem;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+  max-width: 36rem;
+}
+.atak-session-hub__progress[hidden] { display: none !important; }
+.atak-session-hub__progress li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.7);
+}
+.atak-session-hub__progress li span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: rgba(226, 232, 240, 0.75);
+  background: rgba(15, 23, 42, 0.45);
+}
+.atak-session-hub__progress li.is-active {
+  color: #a7f3d0;
+}
+.atak-session-hub__progress li.is-active span {
+  border-color: rgba(52, 211, 153, 0.7);
+  background: rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+.atak-session-hub__progress li.is-done {
+  color: rgba(167, 243, 208, 0.75);
+}
+.atak-session-hub__progress li.is-done span {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.atak-session-hub__step[hidden] { display: none !important; }
+.atak-session-hub__step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 36rem;
+  animation: atak-hub-step-in 0.28s ease;
+}
+@keyframes atak-hub-step-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.atak-session-hub__link-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.4);
+  max-width: 28rem;
+}
+.atak-session-hub__link-result[hidden] { display: none !important; }
+.atak-session-hub__link-label {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.85);
+}
+.atak-session-hub__link-code {
+  margin: 0.25rem 0 0.35rem;
+  font-size: 1.65rem;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+.atak-session-hub__link-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(226, 232, 240, 0.65);
+}
+.atak-session-hub__link-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #fca5a5;
+}
+.atak-session-hub__link-error[hidden] { display: none !important; }
+
+.atak-session-hub--resume .atak-session-hub__progress,
+.atak-session-hub--edit .atak-session-hub__progress {
+  display: none !important;
+}
+
+.atak-session-hub__kicker {
+  margin: 0 0 0.4rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.85);
+}
+.atak-session-hub__title {
+  margin: 0 0 0.55rem;
+  font-size: clamp(1.35rem, 2.6vw, 2.1rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: #f8fafc;
+}
+.atak-session-hub__lead {
+  margin: 0;
+  max-width: 32rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.atak-session-hub__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.45);
+  max-width: 28rem;
+}
+.atak-session-hub__avatar {
+  flex-shrink: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #052e1a;
+  background: linear-gradient(145deg, #6ee7b7, #34d399);
+}
+.atak-session-hub__identity-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.atak-session-hub__identity-text strong {
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atak-session-hub__identity-text span {
+  font-size: 0.72rem;
+  color: rgba(226, 232, 240, 0.65);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atak-session-hub__suggest {
+  margin: 0;
+  max-width: 32rem;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #34d399;
+  background: rgba(52, 211, 153, 0.08);
+  color: #a7f3d0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.atak-session-hub__suggest:empty { display: none; }
+
+.atak-session-hub__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 36rem;
+}
+.atak-session-hub__fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.atak-session-hub__legend {
+  margin: 0 0 0.55rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.9);
+}
+.atak-session-hub__legend-opt {
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  text-transform: none;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.atak-session-hub__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.atak-session-hub__roles {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 0.55rem;
+}
+.atak-session-hub__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.4);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.atak-session-hub__card:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.06);
+}
+.atak-session-hub__card.is-selected,
+.atak-session-hub__card:has(input:checked) {
+  border-color: rgba(52, 211, 153, 0.7);
+  background: rgba(52, 211, 153, 0.12);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.25), 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+.atak-session-hub__card-ico {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: rgba(52, 211, 153, 0.14);
+  color: #6ee7b7;
+  font-size: 0.95rem;
+}
+.atak-session-hub__card-body {
+  min-width: 0;
+}
+.atak-session-hub__card-body strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+.atak-session-hub__card-body small {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+.atak-session-hub__specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.atak-session-hub__spec {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.75rem 0.7rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.7rem;
+  background: rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  min-height: 5.5rem;
+}
+.atak-session-hub__spec:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+.atak-session-hub__spec.is-selected,
+.atak-session-hub__spec:has(input:checked) {
+  border-color: rgba(96, 165, 250, 0.7);
+  background: rgba(59, 130, 246, 0.14);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+.atak-session-hub__spec-ico {
+  font-size: 0.95rem;
+  color: #93c5fd;
+}
+.atak-session-hub__spec-body strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.atak-session-hub__spec-body small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: rgba(226, 232, 240, 0.6);
+}
+
+.atak-session-hub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   justify-content: flex-end;
   margin-top: 0.35rem;
 }
-.atak-session-profile-btn {
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: 6px;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+.atak-session-hub__btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  padding: 0.7rem 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--atak-text, #e2e8f0);
+  text-decoration: none;
+  transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
 }
-.atak-session-profile-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
+a.atak-session-hub__btn {
+  box-sizing: border-box;
 }
-.atak-session-profile-btn--primary {
-  border-color: #2563eb;
-  background: #1d4ed8;
-  color: #fff;
+.atak-session-hub__btn--ghost {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: transparent;
+  color: rgba(226, 232, 240, 0.85);
 }
-.atak-session-profile-btn--primary:hover {
-  background: #1e40af;
+.atak-session-hub__btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
+.atak-session-hub__btn--primary {
+  border: 0;
+  color: #042f1c;
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 55%, #10b981 100%);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.28);
+}
+.atak-session-hub__btn--primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.atak-session-hub--edit .atak-session-hub__visual {
+  clip-path: none;
+}
+.atak-session-hub--edit .atak-session-hub__stage {
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+}
+
 .atak-session-profile-chip {
   display: inline-flex;
   align-items: center;
@@ -4610,6 +5107,52 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
   font-weight: 600;
 }
 .atak-tab[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  .atak-session-hub__stage,
+  .atak-session-hub--edit .atak-session-hub__stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(9rem, 28vh) minmax(0, 1fr);
+  }
+  .atak-session-hub__visual,
+  .atak-session-hub--edit .atak-session-hub__visual {
+    clip-path: none;
+    justify-content: center;
+    padding: 1.25rem 1.25rem 1rem;
+  }
+  .atak-session-hub__panel {
+    padding: 1.1rem 1.1rem 1.5rem;
+    background: linear-gradient(180deg, rgba(5, 5, 5, 0.92), rgba(6, 28, 22, 0.96));
+  }
+  .atak-session-hub__specs {
+    grid-template-columns: 1fr;
+  }
+  .atak-session-hub__spec {
+    flex-direction: row;
+    align-items: center;
+    min-height: 0;
+  }
+  .atak-session-hub__actions {
+    justify-content: stretch;
+  }
+  .atak-session-hub__btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atak-session-hub,
+  .atak-session-hub__btn--primary {
+    transition: none;
+  }
+  .atak-session-hub__btn--primary:hover {
+    transform: none;
+  }
+  .atak-session-hub__step {
+    animation: none;
+  }
+}
 
 /* --- Ops C2 : MEDEVAC, PACE, PERSTAT, SALUTE, TOC --- */
 .atak-ops-section {
@@ -5006,10 +5549,71 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 .atak-col-ft { width: 5.5rem; }
 
 /* --- Dùconnexion Arma (session web encore ouverte) --- */
-.atak-arma-offline-modal { z-index: 100060; }
+.atak-session-profile-overlay.atak-arma-offline-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 1;
+  visibility: visible;
+  background: transparent;
+}
+.atak-session-profile-overlay.atak-arma-offline-modal[hidden] { display: none !important; }
+.atak-arma-offline-modal .atak-session-profile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.82);
+}
+.atak-arma-offline-modal .atak-session-profile-card {
+  position: relative;
+  width: min(28rem, calc(100vw - 1.5rem));
+  padding: 1.25rem 1.35rem 1.1rem;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 10px;
+  background: linear-gradient(165deg, #121820 0%, #0b1016 100%);
+  color: var(--atak-text, #e2e8f0);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+.atak-arma-offline-modal .atak-session-profile-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.atak-arma-offline-modal .atak-session-profile-lead {
+  margin: 0 0 0.95rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--atak-muted, #94a3b8);
+}
+.atak-arma-offline-modal .atak-session-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: stretch;
+}
+.atak-arma-offline-modal .atak-session-profile-btn {
+  flex: 1 1 auto;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--atak-text, #e2e8f0);
+}
+.atak-arma-offline-modal .atak-session-profile-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.atak-arma-offline-modal .atak-session-profile-btn--primary {
+  border-color: #2563eb;
+  background: #1d4ed8;
+  color: #fff;
+}
 .atak-arma-offline-card { border-color: rgba(248, 113, 113, 0.35); }
-.atak-arma-offline-actions { justify-content: stretch; }
-.atak-arma-offline-actions .atak-session-profile-btn { flex: 1 1 auto; }
 .atak-arma-offline-btn-clear {
   border-color: #b91c1c !important;
   background: #991b1b !important;

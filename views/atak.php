@@ -115,9 +115,15 @@ if ($atakMapConfig) {
           <span class="atak-chip-key">Liaison</span>
           <span class="atak-chip-value" id="atak-chip-liaison-value">En attente</span>
         </span>
+        <span class="atak-chip atak-chip--weather" id="atak-weather" title="Météo mission" hidden>
+          <span class="atak-chip-key">Météo</span>
+          <span class="atak-chip-value" id="atak-weather-value">—</span>
+        </span>
       </div>
     </div>
-    <div class="atak-zulu" id="atak-zulu" title="Heure Zulu">--:--:-- Z</div>
+    <div class="atak-header-meta" aria-label="Horloge et résumé">
+      <div class="atak-zulu" id="atak-zulu" title="Heure Zulu">--:--:-- Z</div>
+    </div>
     <div class="atak-header-links">
       <?php if (count($atakWorkspaces) > 1): ?>
       <label class="atak-header-select-wrap">
@@ -444,66 +450,189 @@ if ($atakMapConfig) {
   <div class="atak-medical-banner" id="atak-medical-banner" role="alert" aria-live="assertive" hidden></div>
 
   <?php if ($currentUser): ?>
-  <div class="atak-session-profile-overlay" id="atak-session-profile-overlay" role="dialog" aria-modal="true" aria-labelledby="atak-session-profile-title" hidden>
-    <div class="atak-session-profile-backdrop" aria-hidden="true"></div>
-    <div class="atak-session-profile-card">
-      <h2 id="atak-session-profile-title" class="atak-session-profile-title">Profil de session ATAK</h2>
-      <p class="atak-session-profile-lead">Indiquez votre rôle pour cette session. Les spécialités débloquent des outils supplémentaires. Le choix est mémorisé sur cet appareil et reste modifiable à tout moment.</p>
-      <p class="atak-session-profile-suggest" id="atak-session-profile-suggest" role="status"></p>
-      <form id="atak-session-profile-form" class="atak-session-profile-form">
-        <fieldset class="atak-session-profile-fieldset">
-          <legend>Rôle</legend>
-          <label class="atak-session-profile-option">
-            <input type="radio" name="atak-session-role" value="commander" />
-            <span>
-              <strong>Commandant d’unité</strong>
-              <small>Pilote les ordres et la manœuvre d’ensemble.</small>
-            </span>
-          </label>
-          <label class="atak-session-profile-option">
-            <input type="radio" name="atak-session-role" value="deputy" />
-            <span>
-              <strong>Commandant adjoint</strong>
-              <small>Appuie le commandant ; mêmes outils de conduite.</small>
-            </span>
-          </label>
-          <label class="atak-session-profile-option">
-            <input type="radio" name="atak-session-role" value="operator" checked />
-            <span>
-              <strong>Exécutant</strong>
-              <small>Suit les ordres reçus et remonte la situation.</small>
-            </span>
-          </label>
-        </fieldset>
-        <fieldset class="atak-session-profile-fieldset">
-          <legend>Spécialités (facultatif)</legend>
-          <label class="atak-session-profile-option" for="atak-spec-medic">
-            <input type="checkbox" id="atak-spec-medic" value="medic" />
-            <span>
-              <strong>Médecin</strong>
-              <small>Assistances, triage et choix médicaux.</small>
-            </span>
-          </label>
-          <label class="atak-session-profile-option" for="atak-spec-radio">
-            <input type="checkbox" id="atak-spec-radio" value="radio" />
-            <span>
-              <strong>Transmetteur</strong>
-              <small>Radio proximité et suivi des émissions.</small>
-            </span>
-          </label>
-          <label class="atak-session-profile-option" for="atak-spec-jtac">
-            <input type="checkbox" id="atak-spec-jtac" value="jtac" />
-            <span>
-              <strong>JTAC</strong>
-              <small>Appui aérien et 9-line.</small>
-            </span>
-          </label>
-        </fieldset>
-        <div class="atak-session-profile-actions">
-          <button type="button" class="atak-session-profile-btn atak-session-profile-btn--ghost" id="atak-session-profile-reset">Repartir des suggestions</button>
-          <button type="submit" class="atak-session-profile-btn atak-session-profile-btn--primary">Continuer</button>
+  <?php
+    $hubDisplayName = trim((string) ($currentUser['display_name'] ?? ''));
+    $hubCallsign = trim((string) ($currentUser['callsign'] ?? $currentUser['arma_callsign'] ?? ''));
+    $hubEmail = trim((string) ($currentUser['email'] ?? ''));
+    $hubInitial = mb_strtoupper(mb_substr($hubDisplayName !== '' ? $hubDisplayName : ($hubCallsign !== '' ? $hubCallsign : 'A'), 0, 1));
+    $hubGameLinkUrl = $gameLinkCreateUrl ?? url('atak/game-link');
+  ?>
+  <div
+    class="atak-session-hub"
+    id="atak-session-profile-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="atak-session-profile-title"
+    data-game-link-url="<?= htmlspecialchars($hubGameLinkUrl, ENT_QUOTES, 'UTF-8') ?>"
+    hidden
+  >
+    <div class="atak-session-hub__stage">
+      <div class="atak-session-hub__visual" aria-hidden="true">
+        <div class="atak-session-hub__visual-glow"></div>
+        <div class="atak-session-hub__brand">
+          <span class="atak-session-hub__brand-main">ATHENA</span>
+          <span class="atak-session-hub__brand-sub">ATAK</span>
         </div>
-      </form>
+        <p class="atak-session-hub__visual-tagline">Carte tactique · liaison théâtre</p>
+      </div>
+
+      <div class="atak-session-hub__panel">
+        <ol class="atak-session-hub__progress" id="atak-session-hub-progress" aria-label="Étapes de connexion">
+          <li class="is-active" data-step-dot="welcome"><span>1</span> Préambule</li>
+          <li data-step-dot="profile"><span>2</span> Profil</li>
+          <li data-step-dot="link"><span>3</span> Liaison</li>
+        </ol>
+
+        <div class="atak-session-hub__identity" id="atak-session-hub-identity">
+          <span class="atak-session-hub__avatar" aria-hidden="true"><?= htmlspecialchars($hubInitial, ENT_QUOTES, 'UTF-8') ?></span>
+          <div class="atak-session-hub__identity-text">
+            <strong id="atak-session-hub-name"><?= htmlspecialchars($hubDisplayName !== '' ? $hubDisplayName : 'Opérateur', ENT_QUOTES, 'UTF-8') ?></strong>
+            <span id="atak-session-hub-meta">
+              <?php if ($hubCallsign !== ''): ?>
+                Indicatif <?= htmlspecialchars($hubCallsign, ENT_QUOTES, 'UTF-8') ?>
+              <?php elseif ($hubEmail !== ''): ?>
+                <?= htmlspecialchars($hubEmail, ENT_QUOTES, 'UTF-8') ?>
+              <?php else: ?>
+                Compte Athena
+              <?php endif; ?>
+            </span>
+          </div>
+        </div>
+
+        <section class="atak-session-hub__step is-active" data-hub-step="welcome" aria-labelledby="atak-session-profile-title">
+          <p class="atak-session-hub__kicker" id="atak-session-hub-kicker">Préambule</p>
+          <h2 id="atak-session-profile-title" class="atak-session-hub__title">Connexion ATAK</h2>
+          <p class="atak-session-hub__lead" id="atak-session-hub-lead">
+            Cadre de session, choix du rôle, puis liaison avec le théâtre — comme à l’ouverture d’un parcours.
+          </p>
+          <div class="atak-session-hub__actions">
+            <button type="button" class="atak-session-hub__btn atak-session-hub__btn--primary" id="atak-hub-welcome-next">Continuer</button>
+          </div>
+        </section>
+
+        <section class="atak-session-hub__step" data-hub-step="profile" hidden>
+          <p class="atak-session-hub__kicker">Profil</p>
+          <h2 class="atak-session-hub__title" id="atak-hub-profile-title">Votre rôle de session</h2>
+          <p class="atak-session-hub__lead">Les spécialités ouvrent les outils adaptés (assistances, radio, appui aérien). Tout reste modifiable ensuite.</p>
+          <p class="atak-session-hub__suggest" id="atak-session-profile-suggest" role="status"></p>
+
+          <form id="atak-session-profile-form" class="atak-session-hub__form">
+            <fieldset class="atak-session-hub__fieldset">
+              <legend class="atak-session-hub__legend">Votre rôle</legend>
+              <div class="atak-session-hub__roles" role="radiogroup" aria-label="Rôle de session">
+                <label class="atak-session-hub__card" data-role-card="commander">
+                  <input type="radio" class="atak-session-hub__sr" name="atak-session-role" value="commander" />
+                  <span class="atak-session-hub__card-ico" aria-hidden="true">▣</span>
+                  <span class="atak-session-hub__card-body">
+                    <strong>Commandant d’unité</strong>
+                    <small>Pilote les ordres et la manœuvre d’ensemble.</small>
+                  </span>
+                </label>
+                <label class="atak-session-hub__card" data-role-card="deputy">
+                  <input type="radio" class="atak-session-hub__sr" name="atak-session-role" value="deputy" />
+                  <span class="atak-session-hub__card-ico" aria-hidden="true">◈</span>
+                  <span class="atak-session-hub__card-body">
+                    <strong>Commandant adjoint</strong>
+                    <small>Appuie le commandant ; mêmes outils de conduite.</small>
+                  </span>
+                </label>
+                <label class="atak-session-hub__card" data-role-card="operator">
+                  <input type="radio" class="atak-session-hub__sr" name="atak-session-role" value="operator" checked />
+                  <span class="atak-session-hub__card-ico" aria-hidden="true">◎</span>
+                  <span class="atak-session-hub__card-body">
+                    <strong>Exécutant</strong>
+                    <small>Suit les ordres reçus et remonte la situation.</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="atak-session-hub__fieldset">
+              <legend class="atak-session-hub__legend">Spécialités <span class="atak-session-hub__legend-opt">(facultatif)</span></legend>
+              <div class="atak-session-hub__specs">
+                <label class="atak-session-hub__spec" for="atak-spec-medic" data-spec-card="medic">
+                  <input type="checkbox" class="atak-session-hub__sr" id="atak-spec-medic" value="medic" />
+                  <span class="atak-session-hub__spec-ico" aria-hidden="true">✚</span>
+                  <span class="atak-session-hub__spec-body">
+                    <strong>Médecin</strong>
+                    <small>Assistances et triage</small>
+                  </span>
+                </label>
+                <label class="atak-session-hub__spec" for="atak-spec-radio" data-spec-card="radio">
+                  <input type="checkbox" class="atak-session-hub__sr" id="atak-spec-radio" value="radio" />
+                  <span class="atak-session-hub__spec-ico" aria-hidden="true">◎</span>
+                  <span class="atak-session-hub__spec-body">
+                    <strong>Transmetteur</strong>
+                    <small>Radio proximité</small>
+                  </span>
+                </label>
+                <label class="atak-session-hub__spec" for="atak-spec-jtac" data-spec-card="jtac">
+                  <input type="checkbox" class="atak-session-hub__sr" id="atak-spec-jtac" value="jtac" />
+                  <span class="atak-session-hub__spec-ico" aria-hidden="true">✈</span>
+                  <span class="atak-session-hub__spec-body">
+                    <strong>JTAC</strong>
+                    <small>Appui aérien</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="atak-session-hub__actions">
+              <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-session-profile-reset">Repartir des suggestions</button>
+              <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-profile-back" hidden>Retour</button>
+              <button type="submit" class="atak-session-hub__btn atak-session-hub__btn--primary" id="atak-session-profile-submit">Continuer</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="atak-session-hub__step" data-hub-step="link" hidden>
+          <p class="atak-session-hub__kicker">Liaison</p>
+          <h2 class="atak-session-hub__title">Lier le jeu (facultatif)</h2>
+          <p class="atak-session-hub__lead">
+            Générez un code, puis saisissez-le dans Arma : touche <strong>K</strong> → <strong>Compte Athena</strong>.
+            Vous pourrez aussi le faire plus tard depuis le compte.
+          </p>
+          <div class="atak-session-hub__link-box">
+            <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-game-link-btn">Générer un code</button>
+            <div class="atak-session-hub__link-result" id="atak-hub-game-link-result" hidden>
+              <p class="atak-session-hub__link-label">Votre code</p>
+              <p class="atak-session-hub__link-code" id="atak-hub-game-link-code">————</p>
+              <p class="atak-session-hub__link-meta" id="atak-hub-game-link-meta"></p>
+              <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-game-link-copy">Copier</button>
+            </div>
+            <p class="atak-session-hub__link-error" id="atak-hub-game-link-error" hidden></p>
+          </div>
+          <div class="atak-session-hub__actions">
+            <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-link-back">Retour</button>
+            <button type="button" class="atak-session-hub__btn atak-session-hub__btn--primary" id="atak-hub-enter">Entrer dans la session</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <?php else: ?>
+  <div class="atak-session-hub atak-session-hub--guest" id="atak-session-guest-hub" role="dialog" aria-modal="true" aria-labelledby="atak-guest-hub-title" hidden>
+    <div class="atak-session-hub__stage">
+      <div class="atak-session-hub__visual" aria-hidden="true">
+        <div class="atak-session-hub__visual-glow"></div>
+        <div class="atak-session-hub__brand">
+          <span class="atak-session-hub__brand-main">ATHENA</span>
+          <span class="atak-session-hub__brand-sub">ATAK</span>
+        </div>
+        <p class="atak-session-hub__visual-tagline">Carte tactique · liaison théâtre</p>
+      </div>
+      <div class="atak-session-hub__panel">
+        <p class="atak-session-hub__kicker">Connexion</p>
+        <h2 id="atak-guest-hub-title" class="atak-session-hub__title">Bienvenue sur ATAK</h2>
+        <p class="atak-session-hub__lead">
+          Connectez-vous pour mémoriser votre profil de session, lier Arma et débloquer les outils de votre rôle.
+          Vous pouvez aussi consulter la carte en invité.
+        </p>
+        <div class="atak-session-hub__actions">
+          <a class="atak-session-hub__btn atak-session-hub__btn--primary" href="<?= htmlspecialchars(url('login') . '?redirect=' . rawurlencode(url('atak')), ENT_QUOTES, 'UTF-8') ?>">Se connecter</a>
+          <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-guest-continue">Continuer en invité</button>
+        </div>
+      </div>
     </div>
   </div>
   <?php endif; ?>
@@ -1006,6 +1135,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-map-tools.js"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>
+  <script src="<?= $base ?>/assets/js/tacmap-tactical-alerts.js"></script>
+  <script src="<?= $base ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js"></script>
   <script src="<?= $base ?>/assets/js/atak-orders.js"></script>
   <script src="<?= $base ?>/assets/js/atak-medical-alerts.js"></script>
@@ -1237,6 +1368,13 @@ if ($atakMapConfig) {
         if (window.ATAKLaserCodes) ATAKLaserCodes.fetchLaserCodes();
         if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
         else if (window.ATAKMarkers && window.ATAKMarkers.renderFromMap) window.ATAKMarkers.renderFromMap();
+        if (window.TacmapWeather) {
+          var wEl = document.getElementById('atak-weather');
+          var wVal = document.getElementById('atak-weather-value');
+          var mid = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
+          var ab = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
+          TacmapWeather.poll(ab || (window.ATAK_API_BASE || ''), mid, wEl, { compact: true, valueEl: wVal });
+        }
         refreshLiaisonChipQuiet();
       }
       var lastMeasuredLatencyMs = null;
