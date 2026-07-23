@@ -149,12 +149,22 @@ window.ATAKSounds = (function () {
     if (!meta || !meta.file) return null;
     return getAudioByFile(meta.file, cacheKey('pref', prefKey));
   }
-  function tryVibrate() {
+  /**
+   * Vibration appareil.
+   * - mute : jamais
+   * - silent_vib : toujours (remplace le son)
+   * - modes audibles : uniquement si opts.priority (ordres / CONTACT / URGENT / médical critique)
+   * Le mode discret jeu (comspec_overwatch_quiet_mode) n’est pas consulté ici — comme pour les sons.
+   */
+  function tryVibrate(opts) {
+    opts = opts || {};
     if (pref === 'mute') return false;
-    if (pref !== 'silent_vib' && !(PREFS[pref] && PREFS[pref].vibrate)) return false;
+    var priority = !!opts.priority;
+    if (pref !== 'silent_vib' && !(PREFS[pref] && PREFS[pref].vibrate) && !priority) return false;
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return false;
     try {
-      return !!navigator.vibrate(VIBRATE_PATTERN);
+      var pattern = priority ? [40, 50, 40, 50, 80] : VIBRATE_PATTERN;
+      return !!navigator.vibrate(pattern);
     } catch (e) {
       return false;
     }
@@ -273,7 +283,7 @@ window.ATAKSounds = (function () {
   }
   /**
    * Alerte générique (bip radio / activité).
-   * Modes silence : pas de son ; vibration uniquement si « silence avec vibration ».
+   * Modes silence : pas de son ; vibration si « silence avec vibration » ou opts.priority.
    */
   function play(opts) {
     opts = opts || {};
@@ -282,18 +292,23 @@ window.ATAKSounds = (function () {
       var nowSilent = Date.now();
       if (!opts.force && nowSilent - lastPlayAt < COOLDOWN_MS) return false;
       lastPlayAt = nowSilent;
-      return tryVibrate();
+      return tryVibrate(opts);
     }
     var meta = PREFS[pref];
-    if (!meta || !meta.file) return false;
+    if (!meta || !meta.file) {
+      if (opts.priority) return tryVibrate(opts);
+      return false;
+    }
     var now = Date.now();
     if (!opts.force && now - lastPlayAt < COOLDOWN_MS) return false;
     lastPlayAt = now;
-    return playAudio(getAudio(pref));
+    var ok = playAudio(getAudio(pref));
+    if (opts.priority) tryVibrate(opts);
+    return ok;
   }
   /**
    * Son d’événement (démarrage, déconnexion, inconscient, mort).
-   * Modes silence : pas de son (vibration éventuelle en silent_vib).
+   * Modes silence : pas de son (vibration en silent_vib ; critique = priority).
    */
   function playEvent(name, opts) {
     opts = opts || {};
@@ -306,10 +321,14 @@ window.ATAKSounds = (function () {
     if (!opts.force && now - (lastEventAt[eventKey] || 0) < cool) return false;
     lastEventAt[eventKey] = now;
     lastPlayAt = now;
+    var isCritical = eventKey === 'unconscious' || eventKey === 'death';
+    var vibOpts = isCritical ? Object.assign({}, opts, { priority: true }) : opts;
     if (pref === 'silent_vib') {
-      return tryVibrate();
+      return tryVibrate(vibOpts);
     }
-    return playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
+    var ok = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
+    if (isCritical || opts.priority) tryVibrate(vibOpts);
+    return ok;
   }
   /** Types d’activité de liaison qui méritent un son (pas le bruit de fond position). */
   function shouldPlayForActivity(type) {
@@ -329,6 +348,7 @@ window.ATAKSounds = (function () {
       case 'flight':
       case 'sigint':
       case 'order':
+      case 'tactical_alert':
         return true;
       default:
         return false;
@@ -336,10 +356,18 @@ window.ATAKSounds = (function () {
   }
   /** Joue le son adapté à un type d’activité (événement dédié si connu). */
   function playForActivity(type, opts) {
+    opts = opts || {};
     var t = String(type || '');
     if (t === 'client_init') return playEvent('start', opts);
     if (t === 'disconnect') return playEvent('disconnect', opts);
+    if (t === 'order' || t === 'tactical_alert') {
+      return play(Object.assign({}, opts, { priority: true }));
+    }
     return play(opts);
+  }
+  /** Ordre / message prioritaire (CONTACT, URGENT) : son + vibration (sauf mute). */
+  function playPriority(opts) {
+    return play(Object.assign({}, opts || {}, { priority: true }));
   }
   function setVolumeInputs(val) {
     var rail = document.getElementById('atak-alert-volume');
@@ -470,6 +498,8 @@ window.ATAKSounds = (function () {
     play: play,
     playEvent: playEvent,
     playForActivity: playForActivity,
+    playPriority: playPriority,
+    tryVibrate: tryVibrate,
     unlock: unlock,
     shouldPlayForActivity: shouldPlayForActivity
   };

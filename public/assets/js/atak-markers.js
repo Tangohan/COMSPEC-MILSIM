@@ -76,6 +76,9 @@ window.ATAKMarkers = (function () {
           functionid: d.functionid,
           size: 20,
         });
+      } else if (window.ArmaMapMarkers && window.ArmaMapMarkers.isArmaStyleMarker && window.ArmaMapMarkers.isArmaStyleMarker(d)
+        && window.ArmaMapMarkers.listBadgeHtml) {
+        thumb = window.ArmaMapMarkers.listBadgeHtml(d);
       }
       return '<div class="atak-marker-item" data-id="' + escapeHtml(item.id) + '">' +
         '<button type="button" class="atak-marker-item__main" data-focus="' + escapeHtml(item.id) + '">' +

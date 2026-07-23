@@ -136,7 +136,7 @@ class AtakController
             $currentUser['arma_callsign'] = $uCall !== '' ? $uCall : ($legacy !== '' ? $legacy : null);
         }
         $atakUserForJs = null;
-        $atakUiPrefs = ['theme' => 'system', 'density' => 'comfortable'];
+        $atakUiPrefs = ['theme' => 'system', 'density' => 'compact'];
         $atakProfileHints = [
             'suggestedRole' => 'operator',
             'suggestedSpecialties' => [],

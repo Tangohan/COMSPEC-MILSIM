@@ -58,7 +58,8 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             if (_isUnconscious) then {
                 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
             } else {
-                // Réveil réel uniquement — évite le reset « flicker » qui republiait l’alerte
+                // Réveil réel : clôturer l’alerte côté Athena (silent) + reset verrou local.
+                [true] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert;
                 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
             };
         }] call CBA_fnc_addEventHandler;

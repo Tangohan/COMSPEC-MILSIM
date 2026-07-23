@@ -4,8 +4,9 @@
 // Bezel / icônes : assets device (cTab NSWDG) — ne pas retirer CT_WEBBROWSER ni idc 9401.
 #include "display_device_macros.hpp"
 
-class COMSPEC_RscWebBrowser {
-    type = 106; // CT_WEBBROWSER
+// Hérite de RscWebBrowser (A3) pour les props obligatoires (colorBackground, colorText, …).
+// Ne pas redéfinir type=106 seul : Arma exige colorBackground sur CT_WEBBROWSER.
+class COMSPEC_RscWebBrowser: RscWebBrowser {
     idc = -1;
     deletable = 0;
     style = 0;
@@ -13,6 +14,8 @@ class COMSPEC_RscWebBrowser {
     y = 0;
     w = 0.3;
     h = 0.3;
+    colorBackground[] = {0.02, 0.04, 0.06, 1};
+    colorText[] = {1, 1, 1, 1};
     // 1 = autorise aussi les URL externes (invite joueur native Arma). Requis pour la carte Athena.
     // Attention : allowExternalURL est expérimental (souvent Development only) — fallback = Navigateur système.
     // Contenu local chargé via LoadFile au onLoad (pas de prompt tant qu'on reste local).

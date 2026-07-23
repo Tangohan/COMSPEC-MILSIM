@@ -415,7 +415,7 @@ window.ATAKOrders = (function () {
           renderList(orders);
           updateBadge(pending);
           if (window.ATAKShowNotification && pending > 0 && data._notify) {
-            window.ATAKShowNotification('Nouvel ordre en attente');
+            window.ATAKShowNotification('Nouvel ordre en attente', { priority: true });
           }
         } else {
           updateBadge(pending);

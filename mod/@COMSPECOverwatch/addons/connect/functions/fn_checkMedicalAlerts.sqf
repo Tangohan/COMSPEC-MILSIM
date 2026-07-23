@@ -1,6 +1,7 @@
 /*
     Surveille l'état médical local et déclenche les alertes KO / FC=0.
     Appelé depuis le PFH position et depuis les événements ACE.
+    Au rétablissement (conscient / stable), clôture l’alerte active côté Athena.
 */
 params [["_unit", player, [objNull]]];
 if (!hasInterface) exitWith {};
@@ -18,13 +19,20 @@ private _health = if (count _parts >= 1) then { _parts select 0 } else { "stable
 private _hr = if (count _parts >= 4) then { parseNumber (_parts select 3) } else { 80 };
 private _cardiac = (count _parts >= 5) && {(_parts select 4) == "1"};
 
-// Remise à zéro du verrou uniquement via ace_unconscious (réveil) / self-cancel —
-// un reset ici sur un flicker ACE « wounded/stable » republiait la même alerte en boucle.
-
 if (_cardiac || {_health == "cardiac_arrest"}) then {
     [_unit, "cardiac_arrest"] call comspec_overwatch_connect_fnc_reportMedicalAlert;
 } else {
     if (_health == "unconscious") then {
         [_unit, "unconscious"] call comspec_overwatch_connect_fnc_reportMedicalAlert;
+    } else {
+        // Rétabli (stable / blessé debout) : clôturer l’alerte KO restante.
+        // Ne pas se contenter de resetter le verrou — sinon la bannière ATAK reste CRITIQUE.
+        if (_health in ["stable", "wounded"]) then {
+            private _last = missionNamespace getVariable ["COMSPEC_lastMedicalAlertKind", ""];
+            private _own = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
+            if (!(_last isEqualTo "") || {count _own > 0}) then {
+                [true] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert;
+            };
+        };
     };
 };

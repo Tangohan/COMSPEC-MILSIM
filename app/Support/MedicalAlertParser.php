@@ -293,6 +293,23 @@ final class MedicalAlertParser
         ], true);
     }
 
+    /**
+     * Opérateur rétabli (conscient) : l’alerte KO / arrêt cardiaque peut être clôturée.
+     * Inclut « blessé » encore debout — ce n’est plus une urgence « au sol ».
+     */
+    public static function isRecoveredHealth(?string $health): bool
+    {
+        $x = strtolower(trim((string) $health));
+
+        return in_array($x, [
+            'ok',
+            'stable',
+            'healthy',
+            'wounded',
+            'injured',
+        ], true);
+    }
+
     public static function normalizeTriageStatus(?string $status): string
     {
         $x = strtolower(trim((string) $status));

@@ -35,7 +35,7 @@ class UserUiPreferencesRepository
         if ($row) {
             return [
                 'theme' => (string) ($row['theme'] ?? 'system'),
-                'density' => (string) ($row['density'] ?? 'comfortable'),
+                'density' => (string) ($row['density'] ?? 'compact'),
                 'sidebar_collapsed' => (bool) ($row['sidebar_collapsed'] ?? false),
                 'dashboard_layout_json' => $this->decodeJsonColumn($row['dashboard_layout_json'] ?? null),
                 'favorite_modules_json' => $this->decodeJsonColumn($row['favorite_modules_json'] ?? null),
@@ -44,7 +44,7 @@ class UserUiPreferencesRepository
 
         return [
             'theme' => 'system',
-            'density' => 'comfortable',
+            'density' => 'compact',
             'sidebar_collapsed' => false,
             'dashboard_layout_json' => null,
             'favorite_modules_json' => null,
@@ -97,7 +97,7 @@ class UserUiPreferencesRepository
         }
 
         $theme = (string) ($data['theme'] ?? 'system');
-        $density = (string) ($data['density'] ?? 'comfortable');
+        $density = (string) ($data['density'] ?? 'compact');
         $collapsed = isset($data['sidebar_collapsed']) ? (int) (bool) $data['sidebar_collapsed'] : 0;
         $stmt = $this->pdo->prepare(
             'INSERT INTO user_ui_preferences (user_id, tenant_id, theme, density, sidebar_collapsed, dashboard_layout_json, favorite_modules_json, created_at)

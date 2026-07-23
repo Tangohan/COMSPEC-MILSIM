@@ -21,7 +21,7 @@ $atakCaps = $atakCaps ?? [
 ];
 $currentUser = $currentUser ?? null;
 $atakUserForJs = $atakUserForJs ?? null;
-$atakUiPrefs = $atakUiPrefs ?? ['theme' => 'system', 'density' => 'comfortable'];
+$atakUiPrefs = $atakUiPrefs ?? ['theme' => 'system', 'density' => 'compact'];
 $canAccessAdminAtakConfig = $canAccessAdminAtakConfig ?? false;
 $atakModDownloadUrl = $atakModDownloadUrl ?? null;
 $hasGameConfig = $atakConfig && ($atakConfig['arma_server_host'] ?? $atakConfig['arma_mod_credentials'] ?? $atakConfig['instructions'] ?? null);
@@ -86,7 +86,7 @@ if ($atakMapConfig) {
     ]) ?>;
   </script>
 </head>
-<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'comfortable')) ?>">
+<body class="atak-page atak-theme-<?= htmlspecialchars((string) ($atakUiPrefs['theme'] ?? 'system')) ?> atak-density-<?= htmlspecialchars((string) ($atakUiPrefs['density'] ?? 'compact')) ?>">
   <?php
   $baseUrl = $base;
   $haloLoaderHint = 'Préparation de la carte tactique…';
@@ -279,6 +279,17 @@ if ($atakMapConfig) {
       <p>Connectez-vous pour générer un code de liaison et voir vos données de compte.</p>
       <p><a href="<?= url('login') ?>">Se connecter</a></p>
       <?php endif; ?>
+      <section class="atak-account-section" id="atak-display-prefs">
+        <h3 class="atak-account-section-title">Affichage</h3>
+        <p class="atak-game-link-hint">Choisissez ce qui apparaît en priorité sur les unités de la carte. Mémorisé sur cet appareil.</p>
+        <label class="atak-sound-pref-label" for="atak-unit-marker-priority">
+          <span class="atak-sound-pref-key">Priorité marqueur</span>
+          <select id="atak-unit-marker-priority" class="atak-header-select atak-sound-pref-select" title="Symbole affiché sur les unités de la carte">
+            <option value="nato" selected>Symbole OTAN</option>
+            <option value="avatar">Photo de profil</option>
+          </select>
+        </label>
+      </section>
       <section class="atak-account-section" id="atak-sound-prefs">
         <h3 class="atak-account-section-title">Son des alertes</h3>
         <p class="atak-game-link-hint">Sons d’événements (démarrage, déconnexion, inconscient, mort) + alertes courantes. Le volume et les modes silence sont aussi réglables dans la barre latérale.</p>
@@ -856,8 +867,12 @@ if ($atakMapConfig) {
         clearTimeout(el._toastTimer);
         el._toastTimer = setTimeout(function () { el.classList.remove('show'); }, 4000);
         opts = opts || {};
-        if (opts.silent !== true && window.ATAKSounds && typeof window.ATAKSounds.play === 'function') {
-          window.ATAKSounds.play();
+        if (opts.silent !== true && window.ATAKSounds) {
+          if (opts.priority && typeof window.ATAKSounds.playPriority === 'function') {
+            window.ATAKSounds.playPriority();
+          } else if (typeof window.ATAKSounds.play === 'function') {
+            window.ATAKSounds.play();
+          }
         }
       };
 

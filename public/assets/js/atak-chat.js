@@ -241,8 +241,29 @@ window.ATAKChat = (function () {
     var dedupe = 'mention:' + author.toUpperCase();
     if (!consumeMentionToast(dedupe)) return;
     var msg = author + ' vous a mentionné dans le journal radio.';
+    var parsed = parseCommsBody(m.body || '');
+    var prio = parsed && (parsed.priority === 'URGENT' || parsed.priority === 'CONTACT');
     if (window.ATAKShowNotification) {
-      window.ATAKShowNotification(msg);
+      window.ATAKShowNotification(msg, prio ? { priority: true } : undefined);
+    }
+  }
+
+  function notifyPriorityComms(list) {
+    var arr = Array.isArray(list) ? list : [];
+    var seen = getMentionSeenId();
+    var newestPrio = null;
+    for (var i = 0; i < arr.length; i++) {
+      var m = arr[i];
+      var id = messageId(m);
+      if (id > 0 && id <= seen) continue;
+      var parsed = parseCommsBody((m && m.body) || '');
+      if (!parsed) continue;
+      if (parsed.priority !== 'URGENT' && parsed.priority !== 'CONTACT') continue;
+      if (!newestPrio || id > messageId(newestPrio)) newestPrio = m;
+    }
+    if (!newestPrio) return;
+    if (window.ATAKSounds && typeof window.ATAKSounds.playPriority === 'function') {
+      window.ATAKSounds.playPriority();
     }
   }
 
@@ -364,7 +385,8 @@ window.ATAKChat = (function () {
         if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.ingestFromChatMessages === 'function') {
           window.ATAKMedicalAlerts.ingestFromChatMessages(list);
         }
-        // Premier chargement : mémoriser sans toast. Ensuite : notifier les nouvelles mentions.
+        // Premier chargement : mémoriser sans toast. Ensuite : priorités puis mentions.
+        if (prevFp !== '') notifyPriorityComms(list);
         scanMentionsForMe(list, { notify: prevFp !== '' });
         if (window.ATAKLastChatError) window.ATAKLastChatError(null);
       })

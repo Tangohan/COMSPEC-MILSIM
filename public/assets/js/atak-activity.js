@@ -185,19 +185,34 @@ window.ATAKActivity = (function () {
     updateBadge();
   }
 
+  function isStaleEvent(ev) {
+    if (!ev || !ev.at) return false;
+    var windowSec = (typeof window.ATAK_ACTIVITY_STALE_SECONDS === 'number' && window.ATAK_ACTIVITY_STALE_SECONDS > 0)
+      ? window.ATAK_ACTIVITY_STALE_SECONDS
+      : (30 * 60); // aligné MedicalAlertParser::ACTIVE_WINDOW_SECONDS
+    var d = new Date(String(ev.at).replace(' ', 'T') + (String(ev.at).indexOf('Z') >= 0 || String(ev.at).indexOf('+') >= 0 ? '' : 'Z'));
+    if (isNaN(d.getTime())) d = new Date(ev.at);
+    if (isNaN(d.getTime())) return false;
+    return (Date.now() - d.getTime()) > (windowSec * 1000);
+  }
+
   function renderItem(ev) {
     var type = ev.type || '';
     var li = document.createElement('li');
     li.className = 'atak-activity-item ' + typeClass(type);
     if (ev.archived) li.className += ' atak-activity-item--archived';
+    var stale = !ev.archived && isStaleEvent(ev);
+    if (stale) li.className += ' atak-activity-item--stale';
     li.setAttribute('data-id', String(ev.id || ''));
     li.setAttribute('data-day', dayKeyFromIso(ev.at));
     var actor = ev.actor ? '<span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span>' : '';
+    var staleTag = stale ? '<span class="atak-activity-stale-tag">Ancien</span>' : '';
+    var archivedTag = ev.archived ? '<span class="atak-activity-archived-tag">Archivé</span>' : '';
     li.innerHTML =
       '<span class="atak-activity-rail" aria-hidden="true"></span>' +
       '<div class="atak-activity-body">' +
         '<div class="atak-activity-top">' +
-          '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + '</span>' +
+          '<span class="atak-activity-type">' + escapeHtml(typeLabelFr(type)) + staleTag + archivedTag + '</span>' +
           '<div class="atak-activity-top-actions">' +
             '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
             '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Voir les détails" aria-label="Voir les détails de l’événement">i</button>' +

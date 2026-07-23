@@ -586,6 +586,9 @@
         return withinWindow(u.updated_at || u.created_at);
       });
       var alerts = (Array.isArray(chatAlerts) ? chatAlerts : []).filter(function (a) {
+        if (a && a.triage && a.triage.is_resolved) return false;
+        var st = a && a.triage && a.triage.status ? String(a.triage.status) : '';
+        if (st === 'traite' || st === 'kia' || st === 'annule') return false;
         return withinWindow(a && a.created_at);
       });
       if (!critical.length && !alerts.length) {

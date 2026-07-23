@@ -145,6 +145,60 @@ class AtakDataRepository
     }
 
     /**
+     * Retrouve une unité BFT via steam_uid stocké dans extra (JSON).
+     * Utile pour rattacher une alerte médicale émise sous le nom profil au bon indicatif.
+     */
+    public function findUnitBySteamUid(int $tenantId, int $mapId, string $steamUid): ?array
+    {
+        $steamUid = trim($steamUid);
+        if ($steamUid === '') {
+            return null;
+        }
+        $units = $this->getUnits($tenantId, $mapId);
+        $best = null;
+        $bestUpdated = 0;
+        foreach ($units as $unit) {
+            $extra = [];
+            $raw = $unit['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $uid = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
+            if ($uid === '' || strcasecmp($uid, $steamUid) !== 0) {
+                continue;
+            }
+            $ts = strtotime((string) ($unit['updated_at'] ?? '')) ?: 0;
+            if ($best === null || $ts >= $bestUpdated) {
+                $best = $unit;
+                $bestUpdated = $ts;
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Marque hors-ligne une unité fantôme (ex. alerte médicale sous le mauvais indicatif).
+     */
+    public function markUnitOfflineById(int $tenantId, int $unitId): void
+    {
+        if ($unitId <= 0) {
+            return;
+        }
+        try {
+            $this->pdo->prepare(
+                'UPDATE atak_units SET status = ?, updated_at = NOW() WHERE tenant_id = ? AND id = ?'
+            )->execute(['offline', $tenantId, $unitId]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /**
      * Statut métier : linked uniquement si pas offline et last update récente.
      *
      * Préférer $ageSeconds (TIMESTAMPDIFF MySQL) pour éviter les faux hors-ligne
@@ -334,7 +388,187 @@ class AtakDataRepository
             $out[] = $this->normalizeUnitRow($row, $now);
         }
 
+        return $this->suppressAlertGhostUnits($out);
+    }
+
+    /**
+     * Retire les unités fantômes (alerte médicale / nom profil Athena)
+     * quand un contact BFT réel existe déjà (même Steam, même compte, ou position très proche).
+     *
+     * Cas typique : N-10 (indicatif jeu) + Noopy (display_name Athena) pour le même joueur.
+     *
+     * @param list<array<string, mixed>> $units
+     * @return list<array<string, mixed>>
+     */
+    private function suppressAlertGhostUnits(array $units): array
+    {
+        if (count($units) < 2) {
+            return $units;
+        }
+
+        $parsed = [];
+        foreach ($units as $idx => $unit) {
+            $extra = [];
+            $raw = $unit['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $px = isset($unit['pos_x']) && $unit['pos_x'] !== null && $unit['pos_x'] !== '' ? (float) $unit['pos_x'] : null;
+            $py = isset($unit['pos_y']) && $unit['pos_y'] !== null && $unit['pos_y'] !== '' ? (float) $unit['pos_y'] : null;
+            $parsed[$idx] = [
+                'unit' => $unit,
+                'extra' => $extra,
+                'src' => (string) ($extra['source'] ?? ''),
+                'steam' => strtolower(trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''))),
+                'role' => strtolower(trim((string) ($unit['role'] ?? $extra['role'] ?? ''))),
+                'cs' => strtoupper(trim((string) ($unit['call_sign'] ?? ''))),
+                'status' => strtolower(trim((string) ($unit['status'] ?? ''))),
+                'px' => self::isValidMapPosition($px, $py) ? $px : null,
+                'py' => self::isValidMapPosition($px, $py) ? $py : null,
+                'ts' => strtotime((string) ($unit['updated_at'] ?? '')) ?: 0,
+                'score' => $this->unitPresenceScore($unit, $extra),
+            ];
+        }
+
+        $drop = [];
+        $n = count($parsed);
+        for ($i = 0; $i < $n; $i++) {
+            if (isset($drop[$i])) {
+                continue;
+            }
+            for ($j = $i + 1; $j < $n; $j++) {
+                if (isset($drop[$j])) {
+                    continue;
+                }
+                $a = $parsed[$i];
+                $b = $parsed[$j];
+                $sameSteam = $a['steam'] !== '' && $a['steam'] === $b['steam'];
+                $near = false;
+                if ($a['px'] !== null && $b['px'] !== null) {
+                    $dx = $a['px'] - $b['px'];
+                    $dy = $a['py'] - $b['py'];
+                    $near = ($dx * $dx + $dy * $dy) <= (120.0 * 120.0); // ≤ 120 m
+                }
+                if (!$sameSteam && !$near) {
+                    continue;
+                }
+
+                // Même présence physique / Steam : garder le contact le plus « réel ».
+                $aGhost = $this->unitLooksLikeAccountGhost($a);
+                $bGhost = $this->unitLooksLikeAccountGhost($b);
+                if ($aGhost && !$bGhost) {
+                    $drop[$i] = true;
+                    continue;
+                }
+                if ($bGhost && !$aGhost) {
+                    $drop[$j] = true;
+                    continue;
+                }
+                if ($a['score'] === $b['score']) {
+                    // À score égal : garder le plus frais.
+                    if ($a['ts'] >= $b['ts']) {
+                        if ($bGhost || $b['src'] === 'medical_chat' || $b['src'] === 'tactical_alert') {
+                            $drop[$j] = true;
+                        }
+                    } else {
+                        if ($aGhost || $a['src'] === 'medical_chat' || $a['src'] === 'tactical_alert') {
+                            $drop[$i] = true;
+                        }
+                    }
+                    continue;
+                }
+                if ($a['score'] > $b['score'] && ($bGhost || $sameSteam || $near)) {
+                    $drop[$j] = true;
+                } elseif ($b['score'] > $a['score'] && ($aGhost || $sameSteam || $near)) {
+                    $drop[$i] = true;
+                }
+            }
+        }
+
+        if ($drop === []) {
+            return $units;
+        }
+        $out = [];
+        foreach ($parsed as $idx => $row) {
+            if (!isset($drop[$idx])) {
+                $out[] = $row['unit'];
+            }
+        }
+
         return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $unit
+     * @param array<string, mixed> $extra
+     */
+    private function unitPresenceScore(array $unit, array $extra): int
+    {
+        $score = 0;
+        $status = strtolower(trim((string) ($unit['status'] ?? '')));
+        if ($status === 'linked') {
+            $score += 40;
+        } elseif ($status === 'delayed') {
+            $score += 10;
+        }
+        $steam = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
+        if ($steam !== '') {
+            $score += 25;
+        }
+        $src = (string) ($extra['source'] ?? '');
+        if ($src === 'medical_chat' || $src === 'tactical_alert') {
+            $score -= 30;
+        }
+        $role = strtolower(trim((string) ($unit['role'] ?? $extra['role'] ?? '')));
+        if ($role !== '' && $role !== 'operator') {
+            $score += 20;
+        } elseif ($role === 'operator') {
+            $score -= 5;
+        }
+        if (isset($extra['ammo']) || isset($extra['radio']) || isset($extra['radio_freq']) || isset($extra['fuel'])) {
+            $score += 15;
+        }
+        $ts = strtotime((string) ($unit['updated_at'] ?? '')) ?: 0;
+        if ($ts > 0) {
+            $age = time() - $ts;
+            if ($age < 0) {
+                $age = 0;
+            }
+            if ($age < 30) {
+                $score += 10;
+            } elseif ($age < 90) {
+                $score += 5;
+            }
+        }
+
+        return $score;
+    }
+
+    /**
+     * @param array{src:string,role:string,status:string,steam:string,extra:array<string,mixed>} $row
+     */
+    private function unitLooksLikeAccountGhost(array $row): bool
+    {
+        if ($row['src'] === 'medical_chat' || $row['src'] === 'tactical_alert') {
+            return true;
+        }
+        // Créé sous le nom profil / compte : rôle générique, sans télémétrie jeu.
+        $extra = $row['extra'];
+        $hasTelemetry = isset($extra['ammo']) || isset($extra['radio']) || isset($extra['radio_freq'])
+            || isset($extra['fuel']) || isset($extra['steam_uid']) || isset($extra['steamId']);
+        if ($row['role'] === 'operator' && !$hasTelemetry && in_array($row['status'], ['delayed', 'offline', 'linked'], true)) {
+            // Sans steam + operator = très souvent le fantôme « compte Athena ».
+            if ($row['steam'] === '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -771,6 +1005,27 @@ class AtakDataRepository
     public function getUnitsWithCriticalHealth(int $tenantId, int $mapId): array
     {
         $units = $this->getUnits($tenantId, $mapId);
+        // Index Steam → indicatifs BFT « réels » (hors source alerte seule).
+        $steamToBft = [];
+        foreach ($units as $unit) {
+            $extra = [];
+            $raw = $unit['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $src = (string) ($extra['source'] ?? '');
+            $steam = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
+            if ($steam === '' || $src === 'medical_chat' || $src === 'tactical_alert') {
+                continue;
+            }
+            $steamToBft[strtolower($steam)] = true;
+        }
+
         $out = [];
         foreach ($units as $unit) {
             $extra = [];
@@ -785,6 +1040,61 @@ class AtakDataRepository
             }
             $health = (string) ($extra['health'] ?? $unit['health'] ?? '');
             if (!\App\Support\MedicalAlertParser::isCriticalHealth($health)) {
+                continue;
+            }
+            // Fantôme alerte médicale / tactique alors qu’un BFT Steam existe déjà.
+            $src = (string) ($extra['source'] ?? '');
+            $steam = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? ''));
+            if (
+                ($src === 'medical_chat' || $src === 'tactical_alert')
+                && $steam !== ''
+                && isset($steamToBft[strtolower($steam)])
+            ) {
+                continue;
+            }
+            // Même heuristique proximité (fantômes sans steam_uid).
+            if ($src === 'medical_chat' || $src === 'tactical_alert') {
+                $gpx = isset($unit['pos_x']) && $unit['pos_x'] !== null && $unit['pos_x'] !== '' ? (float) $unit['pos_x'] : null;
+                $gpy = isset($unit['pos_y']) && $unit['pos_y'] !== null && $unit['pos_y'] !== '' ? (float) $unit['pos_y'] : null;
+                if (self::isValidMapPosition($gpx, $gpy)) {
+                    $near = false;
+                    foreach ($units as $other) {
+                        if (($other['id'] ?? null) === ($unit['id'] ?? null)) {
+                            continue;
+                        }
+                        $oExtra = [];
+                        $oRaw = $other['extra'] ?? null;
+                        if (is_string($oRaw) && $oRaw !== '') {
+                            $od = json_decode($oRaw, true);
+                            if (is_array($od)) {
+                                $oExtra = $od;
+                            }
+                        } elseif (is_array($oRaw)) {
+                            $oExtra = $oRaw;
+                        }
+                        $oSrc = (string) ($oExtra['source'] ?? '');
+                        if ($oSrc === 'medical_chat' || $oSrc === 'tactical_alert') {
+                            continue;
+                        }
+                        $ox = isset($other['pos_x']) && $other['pos_x'] !== null && $other['pos_x'] !== '' ? (float) $other['pos_x'] : null;
+                        $oy = isset($other['pos_y']) && $other['pos_y'] !== null && $other['pos_y'] !== '' ? (float) $other['pos_y'] : null;
+                        if (!self::isValidMapPosition($ox, $oy)) {
+                            continue;
+                        }
+                        $dx = $gpx - $ox;
+                        $dy = $gpy - $oy;
+                        if (($dx * $dx + $dy * $dy) <= (100.0 * 100.0)) {
+                            $near = true;
+                            break;
+                        }
+                    }
+                    if ($near) {
+                        continue;
+                    }
+                }
+            }
+            // Unité offline : ne pas la lister comme à secourir.
+            if (strtolower(trim((string) ($unit['status'] ?? ''))) === 'offline') {
                 continue;
             }
             $out[] = [

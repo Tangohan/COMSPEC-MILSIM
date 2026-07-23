@@ -65,17 +65,36 @@ if (_record getOrDefault ["x", -1] >= 0) then {
 
 switch (_type) do {
     case "PING": {
-        "COMSPECExtension" callExtension ["SendPing", [name _unit, str (_data select 0), str (_data select 1), _extra]];
+        private _author = if (_unit isEqualTo player) then {
+            [] call comspec_overwatch_connect_fnc_getCallsign
+        } else {
+            name _unit
+        };
+        if (_author isEqualTo "") then { _author = name _unit; };
+        "COMSPECExtension" callExtension ["SendPing", [_author, str (_data select 0), str (_data select 1), _extra]];
     };
     case "CHAT": {
-        "COMSPECExtension" callExtension ["SendChat", [name _unit, _data]];
+        // Auteur = indicatif tactique (évite doublon NewPI vs N-10 sur alertes médicales).
+        private _author = if (_unit isEqualTo player) then {
+            [] call comspec_overwatch_connect_fnc_getCallsign
+        } else {
+            name _unit
+        };
+        if (_author isEqualTo "") then { _author = name _unit; };
+        "COMSPECExtension" callExtension ["SendChat", [_author, _data]];
     };
     case "PHOTO": {
         "COMSPECExtension" callExtension ["UploadImage", [_data, _extra]];
     };
     default {
+        private _author = if (_unit isEqualTo player) then {
+            [] call comspec_overwatch_connect_fnc_getCallsign
+        } else {
+            name _unit
+        };
+        if (_author isEqualTo "") then { _author = name _unit; };
         private _payload = format ["INTEL|%1|%2|%3|%4", _type, _source, _score, _data];
-        "COMSPECExtension" callExtension ["SendChat", [name _unit, _payload]];
+        "COMSPECExtension" callExtension ["SendChat", [_author, _payload]];
     };
 };
 

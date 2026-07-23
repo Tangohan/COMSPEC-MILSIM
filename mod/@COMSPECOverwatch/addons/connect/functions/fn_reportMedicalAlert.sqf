@@ -48,7 +48,14 @@ private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _parts = _state splitString "|";
 private _blood = if (count _parts >= 2) then { _parts select 1 } else { "?" };
 private _hr = if (count _parts >= 4) then { _parts select 3 } else { "?" };
-private _callSign = name _unit;
+// Toujours l’indicatif tactique COMSPEC (pas name profil) — sinon Athena crée une 2ᵉ unité fantôme.
+private _callSign = if (_unit isEqualTo player) then {
+    [] call comspec_overwatch_connect_fnc_getCallsign
+} else {
+    private _remote = trim (_unit getVariable ["COMSPEC_Callsign", ""]);
+    if (_remote isEqualTo "") then { name _unit } else { _remote }
+};
+if (_callSign isEqualTo "") then { _callSign = name _unit; };
 private _pos = getPos _unit;
 private _grid = mapGridPosition _unit;
 

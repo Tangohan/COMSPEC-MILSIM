@@ -11,13 +11,14 @@
   --atak-success: #22c55e;
   --atak-success-glow: rgba(34, 197, 94, 0.5);
   --atak-warning: #eab308;
-  --atak-left-w: 340px;
-  --atak-right-w: 310px;
-  --atak-header-h: 48px;
-  --atak-os-strip-h: 38px;
+  --atak-left-w: 300px;
+  --atak-right-w: 280px;
+  --atak-header-h: 36px;
+  --atak-os-strip-h: 26px;
   --atak-font-tactical: ui-monospace, "Cascadia Mono", "Segoe UI Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --atak-chat-tag: #e8e8ed;
   --atak-chat-abs: #5c5c68;
+  --atak-ui-scale: 0.92;
 }
 
 * { box-sizing: border-box; }
@@ -27,21 +28,27 @@ body.atak-page {
   background: var(--atak-bg);
   color: var(--atak-text);
   font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12.5px;
   height: 100vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Pr?f?rences compte ? densit? / contraste l?ger (sans reinventer toute la tablette) */
+/* Préférences compte — densité / contraste léger */
 body.atak-page.atak-density-compact {
-  --atak-header-h: 42px;
-  --atak-left-w: 300px;
-  --atak-right-w: 280px;
-  font-size: 13px;
+  --atak-header-h: 34px;
+  --atak-os-strip-h: 24px;
+  --atak-left-w: 280px;
+  --atak-right-w: 260px;
+  font-size: 12px;
 }
 body.atak-page.atak-density-comfortable {
-  font-size: 14px;
+  --atak-header-h: 40px;
+  --atak-os-strip-h: 30px;
+  --atak-left-w: 320px;
+  --atak-right-w: 300px;
+  font-size: 13px;
 }
 body.atak-page.atak-theme-light {
   --atak-bg: #f4f6f8;
@@ -62,37 +69,37 @@ body.atak-page.atak-theme-light {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0 1rem 0 1.1rem;
+  gap: 0.55rem;
+  padding: 0 0.55rem 0 0.65rem;
   flex-shrink: 0;
 }
 
 .atak-header-brand {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
 .atak-header .atak-logo-wrap {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: 0.28rem;
   flex-shrink: 0;
 }
 
 .atak-header .atak-logo {
   font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.1em;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--atak-text);
 }
 
 .atak-header .atak-overwatch {
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--atak-accent);
   text-transform: uppercase;
 }
@@ -100,21 +107,21 @@ body.atak-page.atak-theme-light {
 .atak-header-chips {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  gap: 0.28rem;
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
 .atak-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.22rem 0.5rem;
+  gap: 0.25rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 999px;
   border: 1px solid var(--atak-border);
   background: rgba(255, 255, 255, 0.03);
-  font-size: 0.65rem;
-  line-height: 1.2;
+  font-size: 0.58rem;
+  line-height: 1.15;
   white-space: nowrap;
   color: var(--atak-text);
 }
@@ -122,9 +129,9 @@ body.atak-page.atak-theme-light {
 .atak-chip-key {
   color: var(--atak-muted);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-weight: 600;
-  font-size: 0.58rem;
+  font-size: 0.52rem;
 }
 
 .atak-chip-value,
@@ -166,26 +173,26 @@ body.atak-page.atak-theme-light {
 
 .atak-header .atak-zulu {
   font-variant-numeric: tabular-nums;
-  font-size: 0.78rem;
+  font-size: 0.62rem;
   color: var(--atak-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   flex-shrink: 0;
-  padding: 0.25rem 0.55rem;
+  padding: 0.1rem 0.35rem;
   border: 1px solid var(--atak-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.25);
 }
 
 .atak-header-links {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.4rem;
   flex-shrink: 0;
 }
 
 .atak-header-link {
   color: var(--atak-muted);
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   text-decoration: none;
   transition: color 0.15s;
 }
@@ -197,19 +204,19 @@ body.atak-page.atak-theme-light {
 .atak-header-select-wrap {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.25rem;
 }
 
 .atak-header-select-label {
-  font-size: 0.68rem;
+  font-size: 0.52rem;
   color: var(--atak-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .atak-header-select {
-  font-size: 0.72rem;
-  padding: 0.25rem 0.45rem;
+  font-size: 0.6rem;
+  padding: 0.12rem 0.3rem;
   background: var(--atak-panel-alt);
   border: 1px solid var(--atak-border);
   border-radius: 4px;
@@ -253,9 +260,9 @@ body.atak-page.atak-theme-light {
   background: var(--atak-panel-alt);
   border: 1px solid var(--atak-border);
   color: var(--atak-text);
-  font-size: 0.72rem;
-  padding: 0.3rem 0.55rem;
-  border-radius: 4px;
+  font-size: 0.62rem;
+  padding: 0.18rem 0.4rem;
+  border-radius: 3px;
   cursor: pointer;
 }
 .atak-btn-account:hover {
@@ -265,16 +272,16 @@ body.atak-page.atak-theme-light {
 .atak-btn-account--config {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.28rem;
 }
 .atak-btn-game-link {
   background: var(--atak-accent);
   border: 1px solid var(--atak-accent);
   color: #0a1210;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 0.32rem 0.7rem;
-  border-radius: 4px;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
   cursor: pointer;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -286,10 +293,10 @@ body.atak-page.atak-theme-light {
   background: transparent;
   border: 1px solid rgba(45, 212, 191, 0.55);
   color: #5eead4;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 0.32rem 0.7rem;
-  border-radius: 4px;
+  padding: 0.18rem 0.5rem;
+  border-radius: 3px;
   cursor: pointer;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -302,24 +309,27 @@ body.atak-page.atak-theme-light {
 .atak-os-strip {
   flex-shrink: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.45rem 1.1rem;
+  gap: 0.35rem 0.75rem;
   min-height: var(--atak-os-strip-h);
-  padding: 0.4rem 1rem;
+  max-height: var(--atak-os-strip-h);
+  padding: 0 0.65rem;
   background: linear-gradient(90deg, rgba(52, 211, 153, 0.1), transparent 58%);
   border-bottom: 1px solid var(--atak-border);
-  font-size: 0.72rem;
-  line-height: 1.35;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  overflow: hidden;
 }
 .atak-os-strip-lead {
   margin: 0;
   color: var(--atak-text);
+  font-size: 0.62rem;
 }
 .atak-os-metrics {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.45rem;
+  gap: 0.3rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -329,24 +339,24 @@ body.atak-page.atak-theme-light {
 .atak-os-metric {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35rem;
-  padding: 0.18rem 0.5rem;
+  gap: 0.25rem;
+  padding: 0.06rem 0.35rem;
   border: 1px solid var(--atak-border);
-  border-radius: 4px;
+  border-radius: 3px;
   background: rgba(0, 0, 0, 0.22);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .atak-os-metric-key {
   color: var(--atak-muted);
-  font-size: 0.58rem;
+  font-size: 0.5rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .atak-os-metric-value {
   color: var(--atak-text);
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -356,8 +366,12 @@ body.atak-page.atak-theme-light {
 .atak-os-strip-hint {
   margin: 0;
   color: var(--atak-muted);
-  flex: 1 1 12rem;
+  flex: 1 1 auto;
   min-width: 0;
+  font-size: 0.58rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .atak-os-strip strong { color: var(--atak-accent); font-weight: 700; }
 @media (max-width: 720px) {
@@ -873,13 +887,13 @@ body.atak-page.atak-theme-light {
   align-items: center;
   justify-content: center;
   width: fit-content;
-  padding: 0.15rem 0.45rem;
+  padding: 0.06rem 0.3rem;
   border-radius: 999px;
   border: 1px solid var(--atak-border);
   background: rgba(255, 255, 255, 0.04);
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: var(--atak-muted);
   white-space: nowrap;
 }
@@ -1016,6 +1030,13 @@ body.atak-page.atak-theme-light {
 .atak-activity-item--archived .atak-activity-body {
   opacity: 0.72;
 }
+.atak-activity-item--stale .atak-activity-body {
+  opacity: 0.55;
+}
+.atak-activity-item--stale .atak-activity-label {
+  color: var(--atak-muted);
+}
+.atak-activity-stale-tag,
 .atak-activity-archived-tag {
   display: inline-block;
   margin-top: 0.25rem;
@@ -2165,40 +2186,40 @@ body.atak-theme-light .atak-chat-messages {
   padding: 0.5rem;
 }
 .atak-unit-card {
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  margin-bottom: 0.35rem;
   background: var(--atak-bg);
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid var(--atak-border);
   cursor: pointer;
 }
 .atak-unit-card:hover { border-color: var(--atak-accent); }
 .atak-unit-card.linked { border-left: 3px solid var(--atak-success); }
 .atak-unit-card.delayed { border-left: 3px solid var(--atak-warning); }
-.atak-unit-callsign-wrap { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
-.atak-unit-callsign { font-size: 0.7rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.05em; }
+.atak-unit-callsign-wrap { display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; flex-wrap: wrap; }
+.atak-unit-callsign { font-size: 0.62rem; color: var(--atak-accent); text-transform: uppercase; letter-spacing: 0.04em; }
 .atak-unit-mid {
-  font-size: 0.62rem;
+  font-size: 0.55rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   color: var(--atak-muted);
   text-transform: none;
-  margin-left: 0.25rem;
+  margin-left: 0.2rem;
 }
-.atak-unit-fiche-link { font-size: 0.65rem; color: var(--atak-muted); text-decoration: none; padding: 0.15rem 0.35rem; border: 1px solid var(--atak-border); border-radius: 4px; white-space: nowrap; }
+.atak-unit-fiche-link { font-size: 0.55rem; color: var(--atak-muted); text-decoration: none; padding: 0.1rem 0.28rem; border: 1px solid var(--atak-border); border-radius: 3px; white-space: nowrap; }
 .atak-unit-fiche-link:hover { color: var(--atak-accent); border-color: var(--atak-accent); }
-.atak-unit-role { font-weight: 700; font-size: 0.8rem; }
-.atak-unit-status { font-size: 0.65rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 999px; }
+.atak-unit-role { font-weight: 700; font-size: 0.7rem; }
+.atak-unit-status { font-size: 0.55rem; text-transform: uppercase; padding: 0.1rem 0.3rem; border-radius: 999px; }
 .atak-unit-status.linked { background: rgba(34, 197, 94, 0.2); color: var(--atak-success); }
 .atak-unit-status.delayed { background: rgba(234, 179, 8, 0.2); color: var(--atak-warning); }
 .atak-unit-status.offline { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 .atak-unit-meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.65rem;
-  margin-top: 0.35rem;
+  gap: 0.25rem 0.45rem;
+  margin-top: 0.25rem;
 }
-.atak-unit-grid, .atak-unit-heading { font-size: 0.75rem; color: var(--atak-muted); margin-top: 0; }
+.atak-unit-grid, .atak-unit-heading { font-size: 0.62rem; color: var(--atak-muted); margin-top: 0; }
 .atak-unit-vitals {
   display: flex;
   flex-wrap: wrap;
@@ -2448,39 +2469,63 @@ body.atak-theme-light .atak-chat-messages {
   50% { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.55); }
 }
 
-/* Assistances m�dicales */
+/* Assistances médicales */
 .atak-medical-banner {
   position: relative;
   z-index: 1200;
   background: linear-gradient(90deg, rgba(127, 29, 29, 0.95), rgba(153, 27, 27, 0.9));
   border-bottom: 1px solid rgba(248, 113, 113, 0.45);
   color: #fee2e2;
-  padding: 0.55rem 0.9rem;
-  font-size: 0.85rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.68rem;
+  line-height: 1.25;
 }
 .atak-medical-banner[hidden] { display: none !important; }
 .atak-medical-banner-inner {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.85rem;
+  flex-wrap: nowrap;
+  gap: 0.35rem 0.55rem;
   align-items: center;
-  padding-right: 1.75rem;
+  padding-right: 1.4rem;
   position: relative;
+  overflow: hidden;
+}
+.atak-medical-banner-inner > strong {
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 .atak-medical-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.45rem;
+  padding: 0.04rem 0.32rem;
   border-radius: 999px;
   background: rgba(254, 226, 226, 0.2);
   border: 1px solid rgba(254, 202, 202, 0.45);
-  font-size: 0.7rem;
+  font-size: 0.55rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
 }
-.atak-medical-banner-msg { font-weight: 600; }
-.atak-medical-banner-units { color: #fecaca; font-size: 0.78rem; }
+.atak-medical-banner-msg {
+  font-weight: 600;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.atak-medical-banner-units {
+  color: #fecaca;
+  font-size: 0.6rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 28%;
+}
 .atak-medical-head {
   display: flex;
   flex-direction: column;
@@ -4309,14 +4354,14 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 .atak-session-profile-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  max-width: 16rem;
-  padding: 0.28rem 0.55rem;
+  gap: 0.25rem;
+  max-width: 11rem;
+  padding: 0.1rem 0.4rem;
   border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.65);
   color: var(--atak-text, #e2e8f0);
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   cursor: pointer;
 }
 .atak-session-profile-chip[hidden] { display: none !important; }

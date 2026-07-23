@@ -143,17 +143,29 @@ window.ATAKMedicalAlerts = (function () {
     var windowMs = (data && data.active_window_seconds)
       ? (Number(data.active_window_seconds) * 1000)
       : ACTIVE_WINDOW_MS;
-    var alerts = ((data && data.alerts) || []).filter(function (a) {
-      if (isAlertDismissed(a, state)) return false;
-      // Alertes issues de l’API (id numérique) : déjà bornées par l’horloge MySQL — ne pas
-      // re-filtrer au fuseau navigateur (Date.parse UTC vs datetime naïf).
-      if (a && a.id != null && a.id !== '' && !isNaN(Number(a.id))) return true;
-      return isWithinActiveWindow(a && a.created_at, now, windowMs);
-    });
     var units = ((data && data.criticalUnits) || []).filter(function (u) {
       if (isUnitDismissed(u, state)) return false;
       var ts = (u && (u.updated_at || u.created_at)) || '';
       return isWithinActiveWindow(ts, now, windowMs);
+    });
+    // Indicatifs déjà en « Unités à secourir » → pas de doublon dans « Alertes reçues ».
+    var unitCs = {};
+    units.forEach(function (u) {
+      var cs = String((u && u.call_sign) || '').trim().toUpperCase();
+      if (cs) unitCs[cs] = true;
+    });
+    var alerts = ((data && data.alerts) || []).filter(function (a) {
+      if (isAlertDismissed(a, state)) return false;
+      // Alertes clôturées (Traité / KIA / Annulé) : hors bannière et liste active.
+      if (a && a.triage && a.triage.is_resolved) return false;
+      var status = triageStatusOf(a);
+      if (status === 'traite' || status === 'kia' || status === 'annule') return false;
+      var acs = String((a && a.call_sign) || '').trim().toUpperCase();
+      if (acs && unitCs[acs]) return false;
+      // Alertes issues de l’API (id numérique) : déjà bornées par l’horloge MySQL — ne pas
+      // re-filtrer au fuseau navigateur (Date.parse UTC vs datetime naïf).
+      if (a && a.id != null && a.id !== '' && !isNaN(Number(a.id))) return true;
+      return isWithinActiveWindow(a && a.created_at, now, windowMs);
     });
     var emergency = 0;
     alerts.forEach(function (a) {
@@ -490,15 +502,22 @@ window.ATAKMedicalAlerts = (function () {
       return;
     }
     var latest = alerts[alerts.length - 1] || null;
+    var latestCs = String((latest && latest.call_sign) || '').trim().toUpperCase();
     var unitBits = units.slice(0, 3).map(function (u) {
       return escapeHtml((u.call_sign || '?') + ' · ' + (u.health_label || u.health || ''));
+    }).filter(function (bit, idx) {
+      // Évite le doublon « NewPl — Arrêt… » + « N-10 · Arrêt · NewPl · Arrêt ».
+      var cs = String((units[idx] && units[idx].call_sign) || '').trim().toUpperCase();
+      if (latestCs && cs === latestCs) return false;
+      return true;
     }).join(' · ');
+    var msg = latest ? String(latest.summary || latest.label || '').trim() : '';
     banner.hidden = false;
     banner.innerHTML =
       '<div class="atak-medical-banner-inner">' +
-      '<strong>Assistances médicales</strong>' +
+      '<strong>Médical</strong>' +
       (emergency ? ' <span class="atak-medical-badge">' + emergency + ' critique(s)</span>' : '') +
-      (latest ? '<span class="atak-medical-banner-msg">' + escapeHtml(latest.summary || latest.label || '') + '</span>' : '') +
+      (msg ? '<span class="atak-medical-banner-msg">' + escapeHtml(msg) + '</span>' : '') +
       (unitBits ? '<span class="atak-medical-banner-units">' + unitBits + '</span>' : '') +
       '<button type="button" class="atak-medical-dismiss atak-medical-dismiss--banner" data-medical-action="clear-all" title="Masquer ces alertes" aria-label="Masquer ces alertes">✕</button>' +
       '</div>';

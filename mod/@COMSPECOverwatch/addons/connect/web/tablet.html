@@ -241,6 +241,51 @@
   .alert-row .meta { font-size: 10px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
   .alert-row .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
   .alert-row .body { font-size: 12px; color: #c5d6e2; line-height: 1.35; }
+  .alert-row.stale,
+  .feed-line.stale,
+  .order-row.stale {
+    opacity: 0.48;
+  }
+  .alert-row.stale .title,
+  .feed-line.stale,
+  .order-row.stale {
+    color: var(--muted);
+  }
+  .stale-badge {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+    padding: 1px 6px;
+    vertical-align: middle;
+  }
+  .panel-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 4px 0 8px;
+  }
+  .panel-toolbar .btn-clear {
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    background: var(--panel2);
+    color: var(--muted);
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }
+  .panel-toolbar .btn-clear:hover {
+    color: var(--text);
+    border-color: var(--accent);
+  }
 
   .status-card {
     border: 1px solid var(--line); border-radius: 6px;
@@ -1020,14 +1065,17 @@
         <div id="radio-feed"></div>
       </div>
       <div class="panel-view" id="view-chat">
+        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="chat" title="Vider l’historique local du tchat">Vider</button></div>
         <div class="feed-empty" id="chat-empty">Aucune conversation récente. Ouvrez la messagerie complète depuis le Hub, ou attendez un message.</div>
         <div id="chat-feed"></div>
       </div>
       <div class="panel-view" id="view-orders">
+        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="orders" title="Vider l’affichage local des ordres">Vider</button></div>
         <div class="feed-empty" id="orders-empty">Aucun ordre en attente pour vous.</div>
         <div id="orders-feed"></div>
       </div>
       <div class="panel-view" id="view-alerts">
+        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="alerts" title="Vider le journal d’alertes local">Vider</button></div>
         <div class="feed-empty" id="alerts-empty">Aucune alerte pour le moment. Les notifications Overwatch s’affichent ici, surtout en mode discret.</div>
         <div id="alerts-feed"></div>
       </div>
@@ -1259,6 +1307,11 @@
   var radarZoom = 1;
   var autoCenter = true;
   var SKIN_KEY = "comspec_tablet_skin";
+  /** Fenêtre de fraîcheur (s) — alignée MedicalAlertParser::ACTIVE_WINDOW_SECONDS (30 min). Surchargeable via boot.activeWindowSeconds. */
+  var STALE_WINDOW_SEC = 30 * 60;
+  var chatLines = [];
+  var orderRows = [];
+  var alertMissionAnchorTs = 0;
 
   function worldFromStageEvent(ev) {
     var stage = document.getElementById("stage");
@@ -1632,11 +1685,41 @@
     updateStatusLights();
   }
 
+  function resolveStaleWindow(bootData) {
+    var n = bootData && bootData.activeWindowSeconds != null
+      ? parseInt(bootData.activeWindowSeconds, 10)
+      : STALE_WINDOW_SEC;
+    if (isNaN(n) || n < 60) n = 30 * 60;
+    STALE_WINDOW_SEC = n;
+  }
+
+  function isWallStale(receivedAtMs) {
+    if (!receivedAtMs) return false;
+    return (Date.now() - Number(receivedAtMs)) > (STALE_WINDOW_SEC * 1000);
+  }
+
+  function isMissionTsStale(ts) {
+    if (ts == null || alertMissionAnchorTs <= 0) return false;
+    return (alertMissionAnchorTs - Number(ts)) > STALE_WINDOW_SEC;
+  }
+
+  function staleBadgeHtml() {
+    return '<span class="stale-badge">Ancien</span>';
+  }
+
   function renderChat(lines) {
-    lines = lines || [];
+    if (Array.isArray(lines)) {
+      var now = Date.now();
+      chatLines = lines.map(function (line, idx) {
+        if (line && typeof line === "object") return line;
+        // Boot : lignes plus anciennes = reçues plus tôt (approximation)
+        var ageBias = Math.max(0, lines.length - 1 - idx) * 60 * 1000;
+        return { text: String(line || ""), receivedAt: now - ageBias };
+      });
+    }
     var feed = document.getElementById("chat-feed");
     var empty = document.getElementById("chat-empty");
-    if (!lines.length) {
+    if (!chatLines.length) {
       feed.innerHTML = "";
       empty.style.display = "block";
       empty.textContent = (boot && boot.status === "linked")
@@ -1646,17 +1729,31 @@
     }
     empty.style.display = "none";
     var html = "";
-    for (var i = 0; i < lines.length; i++) {
-      html += '<div class="feed-line">' + escapeHtml(lines[i]) + "</div>";
+    for (var i = 0; i < chatLines.length; i++) {
+      var row = chatLines[i];
+      var stale = isWallStale(row.receivedAt);
+      html += '<div class="feed-line' + (stale ? " stale" : "") + '">' +
+        escapeHtml(row.text || "") +
+        (stale ? staleBadgeHtml() : "") +
+        "</div>";
     }
     feed.innerHTML = html;
   }
 
   function renderOrders(orders) {
-    orders = orders || [];
+    if (Array.isArray(orders)) {
+      var now = Date.now();
+      orderRows = orders.map(function (o, idx) {
+        var copy = Object.assign({}, o || {});
+        if (copy.receivedAt == null) {
+          copy.receivedAt = now - Math.max(0, orders.length - 1 - idx) * 60 * 1000;
+        }
+        return copy;
+      });
+    }
     var feed = document.getElementById("orders-feed");
     var empty = document.getElementById("orders-empty");
-    if (!orders.length) {
+    if (!orderRows.length) {
       feed.innerHTML = "";
       empty.style.display = "block";
       empty.textContent = "Aucun ordre en attente pour vous.";
@@ -1664,10 +1761,11 @@
     }
     empty.style.display = "none";
     var html = "";
-    for (var i = 0; i < orders.length; i++) {
-      var o = orders[i];
-      html += '<div class="order-row"><span class="st">' + escapeHtml(o.status || "À traiter") +
-        '</span><span>' + escapeHtml(o.type || "Ordre") +
+    for (var i = 0; i < orderRows.length; i++) {
+      var o = orderRows[i];
+      var stale = isWallStale(o.receivedAt);
+      html += '<div class="order-row' + (stale ? " stale" : "") + '"><span class="st">' + escapeHtml(o.status || "À traiter") +
+        '</span><span>' + escapeHtml(o.type || "Ordre") + (stale ? staleBadgeHtml() : "") +
         '</span><span class="issuer">' + escapeHtml(o.issuer || "") + "</span></div>";
     }
     feed.innerHTML = html;
@@ -1687,8 +1785,12 @@
       var a = alerts[i];
       var prio = a.priority || "info";
       var typeLabel = TYPE_LABEL[a.type] || "Système";
-      html += '<div class="alert-row ' + escapeHtml(prio) + '"><div class="bar"></div><div>' +
-        '<div class="meta">' + escapeHtml(typeLabel) + (prio === "critical" ? " · Critique" : (prio === "warn" ? " · Attention" : "")) + '</div>' +
+      var stale = isWallStale(a.receivedAt) || isMissionTsStale(a.ts);
+      html += '<div class="alert-row ' + escapeHtml(prio) + (stale ? " stale" : "") + '"><div class="bar"></div><div>' +
+        '<div class="meta">' + escapeHtml(typeLabel) +
+          (prio === "critical" ? " · Critique" : (prio === "warn" ? " · Attention" : "")) +
+          (stale ? staleBadgeHtml() : "") +
+        '</div>' +
         '<div class="title">' + escapeHtml(a.title || "Alerte") + '</div>' +
         '<div class="body">' + escapeHtml(a.body || "") + '</div>' +
         '</div></div>';
@@ -1713,7 +1815,12 @@
     if (!a || !a.id) return;
     if (seenAlertIds[a.id]) return;
     seenAlertIds[a.id] = true;
-    alerts.push(a);
+    var entry = Object.assign({}, a);
+    if (entry.receivedAt == null) entry.receivedAt = Date.now();
+    if (entry.ts != null && Number(entry.ts) > alertMissionAnchorTs) {
+      alertMissionAnchorTs = Number(entry.ts);
+    }
+    alerts.push(entry);
     if (alerts.length > 40) alerts = alerts.slice(alerts.length - 40);
     if (!fromBoot) {
       if (currentView !== "alerts") unread += 1;
@@ -1721,6 +1828,29 @@
       showToast(a);
     }
     if (currentView === "alerts") renderAlerts();
+  }
+
+  function clearLocalPanel(kind) {
+    if (kind === "chat") {
+      chatLines = [];
+      renderChat();
+      setFooterMsg("Journal de messagerie vidé (local)");
+      return;
+    }
+    if (kind === "orders") {
+      orderRows = [];
+      renderOrders();
+      setFooterMsg("Liste d’ordres vidée (local)");
+      return;
+    }
+    if (kind === "alerts") {
+      alerts = [];
+      seenAlertIds = {};
+      unread = 0;
+      updateBell();
+      renderAlerts();
+      setFooterMsg("Journal d’alertes vidé (local)");
+    }
   }
 
   function applyView(view) {
@@ -1865,6 +1995,7 @@
   window.COMSPEC_onBoot = function (data) {
     boot = data || {};
     quiet = !!boot.quiet;
+    resolveStaleWindow(boot);
     setOsd(boot);
     updateQuietBtn();
     renderUnits(boot.units || []);
@@ -1872,6 +2003,12 @@
     renderOrders(boot.orders || []);
     renderRadio(boot.radio || {});
     var incoming = boot.alerts || [];
+    alertMissionAnchorTs = 0;
+    for (var j = 0; j < incoming.length; j++) {
+      if (incoming[j] && incoming[j].ts != null && Number(incoming[j].ts) > alertMissionAnchorTs) {
+        alertMissionAnchorTs = Number(incoming[j].ts);
+      }
+    }
     for (var i = 0; i < incoming.length; i++) {
       ingestAlert(incoming[i], true);
     }
@@ -1952,6 +2089,12 @@
     if (viewBtn) {
       ev.preventDefault();
       setView(viewBtn.getAttribute("data-view"));
+      return;
+    }
+    var clearBtn = ev.target.closest("[data-clear]");
+    if (clearBtn) {
+      ev.preventDefault();
+      clearLocalPanel(clearBtn.getAttribute("data-clear"));
       return;
     }
     var t = ev.target.closest("[data-cmd]");

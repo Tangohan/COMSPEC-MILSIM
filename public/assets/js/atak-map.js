@@ -23,6 +23,48 @@ window.ATAKMap = (function () {
   var invalidateTimer = null;
   var mapResizeObserver = null;
   var lastMapSizeKey = '';
+  var UNIT_MARKER_PRIORITY_KEY = 'atak_unit_marker_priority';
+  var UNIT_MARKER_PRIORITY_DEFAULT = 'nato';
+
+  function normalizeUnitMarkerPriority(v) {
+    return v === 'avatar' ? 'avatar' : UNIT_MARKER_PRIORITY_DEFAULT;
+  }
+
+  function getUnitMarkerPriority() {
+    try {
+      return normalizeUnitMarkerPriority(localStorage.getItem(UNIT_MARKER_PRIORITY_KEY));
+    } catch (e) {
+      return UNIT_MARKER_PRIORITY_DEFAULT;
+    }
+  }
+
+  function setUnitMarkerPriority(v) {
+    var next = normalizeUnitMarkerPriority(v);
+    try {
+      localStorage.setItem(UNIT_MARKER_PRIORITY_KEY, next);
+    } catch (e) {}
+    refreshUnitMarkerIcons();
+    return next;
+  }
+
+  function refreshUnitMarkerIcons() {
+    Object.keys(unitsById).forEach(function (k) {
+      if (unitsById[k]) unitsById[k]._atakIconSig = '';
+    });
+    if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
+      setUnitsMarkers(window.ATAKUnits.getUnits());
+    }
+  }
+
+  function bindUnitMarkerPriorityUi() {
+    var select = document.getElementById('atak-unit-marker-priority');
+    if (!select || select._atakBound) return;
+    select._atakBound = true;
+    select.value = getUnitMarkerPriority();
+    select.addEventListener('change', function () {
+      setUnitMarkerPriority(select.value);
+    });
+  }
 
   function buildConfigFromAtakMapConfig(raw) {
     if (!raw || !raw.tilePattern) return null;
@@ -881,9 +923,12 @@ window.ATAKMap = (function () {
         ? window.ATAK_CALLSIGN_TO_USER[callsignKey]
         : null;
       var headingRounded = u.heading != null && u.heading !== '' ? Math.round(Number(u.heading)) : '';
+      var markerPriority = getUnitMarkerPriority();
+      var preferAvatar = markerPriority === 'avatar' && profile && profile.avatarUrl;
       var iconSig = [
+        markerPriority,
         aff, roleText, health, healthClass, u.call_sign || '', headingRounded,
-        profile && profile.avatarUrl ? profile.avatarUrl : '',
+        preferAvatar ? profile.avatarUrl : '',
         extra.sidc || u.sidc || '',
         emitting ? '1' : '0',
         radioCh,
@@ -897,7 +942,7 @@ window.ATAKMap = (function () {
       }
       var icon = null;
       if (!existing || existing._atakIconSig !== iconSig) {
-        if (profile && profile.avatarUrl) {
+        if (preferAvatar) {
           icon = L.divIcon({
             className: 'atak-unit-avatar-marker' +
               (emitting ? ' atak-unit-avatar-marker--emit' : '') +
@@ -919,7 +964,7 @@ window.ATAKMap = (function () {
             callSign: u.call_sign || '',
             heading: headingRounded === '' ? u.heading : headingRounded,
             showLabel: true,
-            size: 34,
+            size: 28,
             health: health,
             className: healthClass,
             emitting: emitting,
@@ -1041,6 +1086,12 @@ window.ATAKMap = (function () {
     });
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindUnitMarkerPriorityUi);
+  } else {
+    bindUnitMarkerPriorityUi();
+  }
+
   return {
     init: init,
     destroy: destroy,
@@ -1061,6 +1112,9 @@ window.ATAKMap = (function () {
     updateMarkerById: updateMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
+    getUnitMarkerPriority: getUnitMarkerPriority,
+    setUnitMarkerPriority: setUnitMarkerPriority,
+    refreshUnitMarkerIcons: refreshUnitMarkerIcons,
     removeMarker: removeMarker,
     addOrUpdateLayer: addOrUpdateLayer,
     removeLayer: removeLayer,

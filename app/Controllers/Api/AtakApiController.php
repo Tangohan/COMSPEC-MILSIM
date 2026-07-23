@@ -1983,6 +1983,13 @@ class AtakApiController
             $extra['steam_uid'] = $steamNorm;
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
+        $healthNow = strtolower(trim((string) ($extra['health'] ?? $body['health'] ?? '')));
+        if (MedicalAlertParser::isRecoveredHealth($healthNow)) {
+            try {
+                $this->autoResolveOpenMedicalAlertsForCallSign($tenantId, $mapId, (string) $callSign);
+            } catch (\Throwable) {
+            }
+        }
         try {
             $this->activityLog->recordFromPosition(
                 $tenantId,
@@ -2087,6 +2094,7 @@ class AtakApiController
         $limit = (int) ($request->query('limit') ?: 40);
         $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
+        $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
         $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId);
         $emergencyCount = 0;
         foreach ($alerts as $a) {
@@ -2327,6 +2335,158 @@ class AtakApiController
         return $alerts;
     }
 
+    /**
+     * Si l’effectif correspondant est rétabli et en liaison, clôturer les alertes KO non triagées.
+     * Évite la bannière CRITIQUE alors que l’onglet Effectifs affiche déjà « État stable ».
+     *
+     * @param list<array<string, mixed>> $alerts
+     * @return list<array<string, mixed>>
+     */
+    private function reconcileMedicalAlertsWithUnitHealth(int $tenantId, int $mapId, array $alerts): array
+    {
+        if ($alerts === []) {
+            return $alerts;
+        }
+
+        $unitsByCallSign = $this->buildUnitHealthByCallSign($tenantId, $mapId);
+        if ($unitsByCallSign === []) {
+            return $alerts;
+        }
+
+        $canPersist = $this->medicalTriageRepository && $this->medicalTriageRepository->tablesReady();
+        $out = [];
+        foreach ($alerts as $a) {
+            if (!is_array($a)) {
+                continue;
+            }
+            if (!empty($a['triage']['is_resolved'])) {
+                // Conservées pour historique court côté API ; le JS les masque déjà.
+                $out[] = $a;
+                continue;
+            }
+            $cs = mb_strtoupper(trim((string) ($a['call_sign'] ?? '')));
+            if ($cs === '') {
+                $cs = mb_strtoupper(trim((string) ($a['author'] ?? '')));
+            }
+            $recoveredLinked = false;
+            if ($cs !== '' && isset($unitsByCallSign[$cs])) {
+                $unit = $unitsByCallSign[$cs];
+                $status = (string) ($unit['status'] ?? '');
+                $recoveredLinked = in_array($status, ['linked', 'delayed'], true)
+                    && MedicalAlertParser::isRecoveredHealth($unit['health'] ?? null);
+            }
+            if (!$recoveredLinked) {
+                $out[] = $a;
+                continue;
+            }
+            $chatId = (int) ($a['id'] ?? 0);
+            if ($canPersist && $chatId > 0) {
+                $triage = $this->medicalTriageRepository->upsert(
+                    $tenantId,
+                    $mapId,
+                    $chatId,
+                    'annule',
+                    (string) ($a['call_sign'] ?? $cs),
+                    'Rétablissement constaté — opérateur à nouveau opérationnel'
+                );
+                if (is_array($triage)) {
+                    $a['triage'] = $triage;
+                }
+            } else {
+                $a['triage'] = [
+                    'status' => 'annule',
+                    'status_label' => MedicalAlertParser::triageLabelFr('annule'),
+                    'status_by' => (string) ($a['call_sign'] ?? $cs),
+                    'status_note' => 'Rétablissement constaté — opérateur à nouveau opérationnel',
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'is_resolved' => true,
+                ];
+            }
+            $out[] = $a;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Clôture les alertes médicales ouvertes d’un indicatif (ex. après position « stable »).
+     */
+    private function autoResolveOpenMedicalAlertsForCallSign(int $tenantId, int $mapId, string $callSign): void
+    {
+        $callSign = trim($callSign);
+        if ($callSign === '' || !$this->medicalTriageRepository || !$this->medicalTriageRepository->tablesReady()) {
+            return;
+        }
+        static $lastAttempt = [];
+        $debounceKey = $tenantId . ':' . $mapId . ':' . mb_strtoupper($callSign);
+        $now = time();
+        if (isset($lastAttempt[$debounceKey]) && ($now - $lastAttempt[$debounceKey]) < 12) {
+            return;
+        }
+        $lastAttempt[$debounceKey] = $now;
+
+        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, 40);
+        $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
+        $csUp = mb_strtoupper($callSign);
+        foreach ($alerts as $a) {
+            if (!empty($a['triage']['is_resolved'])) {
+                continue;
+            }
+            $ecs = mb_strtoupper(trim((string) ($a['call_sign'] ?? '')));
+            if ($ecs === '') {
+                $ecs = mb_strtoupper(trim((string) ($a['author'] ?? '')));
+            }
+            if ($ecs !== $csUp) {
+                continue;
+            }
+            $chatId = (int) ($a['id'] ?? 0);
+            if ($chatId < 1) {
+                continue;
+            }
+            $this->medicalTriageRepository->upsert(
+                $tenantId,
+                $mapId,
+                $chatId,
+                'annule',
+                $callSign,
+                'Rétablissement constaté — opérateur à nouveau opérationnel'
+            );
+        }
+    }
+
+    /**
+     * @return array<string, array{health: string, status: string}>
+     */
+    private function buildUnitHealthByCallSign(int $tenantId, int $mapId): array
+    {
+        $out = [];
+        foreach ($this->atak->getUnits($tenantId, $mapId) as $unit) {
+            if (!is_array($unit)) {
+                continue;
+            }
+            $cs = mb_strtoupper(trim((string) ($unit['call_sign'] ?? '')));
+            if ($cs === '') {
+                continue;
+            }
+            $extra = [];
+            $raw = $unit['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $out[$cs] = [
+                'health' => (string) ($extra['health'] ?? $unit['health'] ?? ''),
+                'status' => (string) ($unit['status'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
     private function canTriageMedicalAlerts(): bool
     {
         // Compte connecté : le profil de session (spécialité Médecin) gouverne l’UI.
@@ -2347,7 +2507,8 @@ class AtakApiController
         mixed $posX,
         mixed $posY,
         ?string $grid,
-        array $extraPatch
+        array $extraPatch,
+        ?string $steamUid = null
     ): void {
         $callSign = trim($callSign);
         if ($callSign === '') {
@@ -2366,11 +2527,56 @@ class AtakApiController
         if ($gridTrim !== '') {
             $extraPatch['grid'] = $gridTrim;
         }
+        $steamNorm = $steamUid !== null && $steamUid !== '' ? SteamId::normalize($steamUid) : '';
+        if ($steamNorm !== '') {
+            $extraPatch['steam_uid'] = $steamNorm;
+        }
+
+        // Rattacher au BFT réel (Steam) plutôt que créer un fantôme sous le nom profil.
+        $resolvedCallSign = $callSign;
+        $bySteam = null;
+        if ($steamNorm !== '') {
+            try {
+                $bySteam = $this->atak->findUnitBySteamUid($tenantId, $mapId, $steamNorm);
+            } catch (\Throwable) {
+                $bySteam = null;
+            }
+        }
+        if (is_array($bySteam)) {
+            $steamCs = trim((string) ($bySteam['call_sign'] ?? ''));
+            if ($steamCs !== '' && strcasecmp($steamCs, $callSign) !== 0) {
+                $resolvedCallSign = $steamCs;
+                // Fantôme déjà créé sous le mauvais indicatif → hors ligne.
+                $ghost = null;
+                try {
+                    $ghost = $this->atak->getUnitByCallSign($tenantId, $mapId, $callSign);
+                } catch (\Throwable) {
+                    $ghost = null;
+                }
+                if (is_array($ghost)) {
+                    $ghostId = (int) ($ghost['id'] ?? 0);
+                    $ghostExtra = [];
+                    $rawG = $ghost['extra'] ?? null;
+                    if (is_string($rawG) && $rawG !== '') {
+                        $decodedG = json_decode($rawG, true);
+                        if (is_array($decodedG)) {
+                            $ghostExtra = $decodedG;
+                        }
+                    } elseif (is_array($rawG)) {
+                        $ghostExtra = $rawG;
+                    }
+                    $ghostSrc = (string) ($ghostExtra['source'] ?? '');
+                    if ($ghostId > 0 && ($ghostSrc === 'medical_chat' || $ghostSrc === 'tactical_alert')) {
+                        $this->atak->markUnitOfflineById($tenantId, $ghostId);
+                    }
+                }
+            }
+        }
 
         $role = 'operator';
         $mergedExtra = $extraPatch;
         try {
-            $existing = $this->atak->getUnitByCallSign($tenantId, $mapId, $callSign);
+            $existing = $this->atak->getUnitByCallSign($tenantId, $mapId, $resolvedCallSign);
             if (is_array($existing)) {
                 $prevRole = trim((string) ($existing['role'] ?? ''));
                 if ($prevRole !== '') {
@@ -2396,7 +2602,7 @@ class AtakApiController
             $this->atak->upsertUnitPosition(
                 $tenantId,
                 $mapId,
-                $callSign,
+                $resolvedCallSign,
                 $px,
                 $py,
                 null,
@@ -2559,6 +2765,16 @@ class AtakApiController
                 if ($mcs === '') {
                     $mcs = trim((string) $author);
                 }
+                // Si l’alerte porte encore le nom profil alors qu’un indicatif tactique BFT existe, rattacher.
+                $preferredCs = trim((string) ($chatActivityMeta['call_sign'] ?? $chatActivityMeta['profile_callsign'] ?? ''));
+                $steamForMed = is_array($gameActor) ? ($gameActor['steam_uid'] ?? null) : ($chatActivityMeta['steam_uid'] ?? null);
+                if ($preferredCs !== '' && strcasecmp($mcs, $preferredCs) !== 0) {
+                    $hasPreferred = $this->atak->getUnitByCallSign($tenantId, $mapId, $preferredCs) !== null;
+                    $hasMcs = $mcs !== '' && $this->atak->getUnitByCallSign($tenantId, $mapId, $mcs) !== null;
+                    if ($hasPreferred && (!$hasMcs || strcasecmp($mcs, trim((string) $author)) === 0)) {
+                        $mcs = $preferredCs;
+                    }
+                }
                 $this->upsertUnitFromAlertMessage(
                     $tenantId,
                     $mapId,
@@ -2570,7 +2786,8 @@ class AtakApiController
                         'source' => 'medical_chat',
                         'health' => (string) ($medical['kind'] ?? 'unconscious'),
                         'affiliation' => 'friend',
-                    ]
+                    ],
+                    is_string($steamForMed) ? $steamForMed : null
                 );
             }
         } elseif (
