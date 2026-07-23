@@ -503,6 +503,7 @@
     var intervals = [];
     var mapIntervals = [];
     var lastUnits = [];
+    var lastUnitsRaw = [];
     var selectedUnitId = null;
     var syncLock = false;
     var trailTracker = createUnitTrailTracker({ maxPoints: TRAIL_MAX_POINTS });
@@ -879,14 +880,15 @@
     }
 
     function renderRosterAndTable(units) {
-      lastUnits = units || [];
+      var view = units || [];
+      lastUnits = view;
       var roster = getEl(els.roster);
       var tbody = getEl(els.tableBody);
       if (roster) {
-        if (!lastUnits.length) {
+        if (!view.length) {
           roster.innerHTML = '<p class="text-sm text-slate-500 px-2">Aucune position remontée pour ce théâtre. Vérifiez la liaison en jeu ou l’outil Overwatch.</p>';
         } else {
-          roster.innerHTML = lastUnits.map(function (u) {
+          roster.innerHTML = view.map(function (u) {
             var st = statusLabelFr(u.status);
             var rawH = unitHealthRaw(u);
             var hLabel = '';
@@ -987,6 +989,10 @@
         var src = String(ex.source || '');
         if (src === 'medical_chat' || src === 'tactical_alert') return true;
         var role = String(u.role || ex.role || '').toLowerCase();
+        var steam = steamOf(u);
+        var hasTelemetry = !!(ex.ammo || ex.radio || ex.radio_freq || ex.fuel || ex.steam_uid || ex.steamId);
+        // Compte Athena (ex. Newp1) : rôle générique, sans télémétrie / sans Steam.
+        if (role === 'operator' && !hasTelemetry && steam === '') return true;
         var health = String(ex.health || u.health || '').toLowerCase();
         if (statusOf(u) === 'offline' && role === 'operator' &&
           (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia')) {
@@ -1000,10 +1006,29 @@
         else if (statusOf(u) === 'delayed') s += 10;
         if (steamOf(u)) s += 25;
         if (isGhost(u)) s -= 30;
-        var role = String(u.role || '').toLowerCase();
+        var ex = parseExtra(u);
+        var role = String(u.role || ex.role || '').toLowerCase();
         if (role && role !== 'operator') s += 20;
         else if (role === 'operator') s -= 5;
+        if (ex.ammo || ex.radio || ex.radio_freq || ex.fuel) s += 15;
         return s;
+      }
+      function nearOf(a, b, maxDist) {
+        var ax = a.pos_x != null ? parseFloat(a.pos_x) : NaN;
+        var ay = a.pos_y != null ? parseFloat(a.pos_y) : NaN;
+        var bx = b.pos_x != null ? parseFloat(b.pos_x) : NaN;
+        var by = b.pos_y != null ? parseFloat(b.pos_y) : NaN;
+        if (isNaN(ax) || isNaN(ay) || isNaN(bx) || isNaN(by)) return false;
+        var dx = ax - bx;
+        var dy = ay - by;
+        return (dx * dx + dy * dy) <= (maxDist * maxDist);
+      }
+      function preferA(a, b) {
+        if (isLive(a) && !isLive(b)) return true;
+        if (isLive(b) && !isLive(a)) return false;
+        if (isGhost(a) && !isGhost(b)) return false;
+        if (isGhost(b) && !isGhost(a)) return true;
+        return score(a) >= score(b);
       }
       var drop = {};
       var i, j;
@@ -1015,24 +1040,26 @@
           var b = list[j];
           var sa = steamOf(a);
           var sb = steamOf(b);
-          var sameSteam = sa && sa === sb;
-          var ax = a.pos_x != null ? parseFloat(a.pos_x) : NaN;
-          var ay = a.pos_y != null ? parseFloat(a.pos_y) : NaN;
-          var bx = b.pos_x != null ? parseFloat(b.pos_x) : NaN;
-          var by = b.pos_y != null ? parseFloat(b.pos_y) : NaN;
-          var near = false;
-          if (!isNaN(ax) && !isNaN(ay) && !isNaN(bx) && !isNaN(by)) {
-            var dx = ax - bx;
-            var dy = ay - by;
-            near = (dx * dx + dy * dy) <= (400 * 400);
+          var sameSteam = !!(sa && sa === sb);
+          var nearClose = nearOf(a, b, 120);
+          var nearWide = nearOf(a, b, 400);
+          var ga = isGhost(a);
+          var gb = isGhost(b);
+          // Même Steam → une seule ligne.
+          if (sameSteam) {
+            if (preferA(a, b)) drop[j] = true;
+            else drop[i] = true;
+            continue;
           }
-          if (!sameSteam && !(near && (isGhost(a) || isGhost(b)))) continue;
-          if (sameSteam || (near && (isGhost(a) || isGhost(b)))) {
-            if (isLive(a) && !isLive(b)) { drop[j] = true; continue; }
-            if (isLive(b) && !isLive(a)) { drop[i] = true; continue; }
-            if (isGhost(a) && !isGhost(b)) { drop[i] = true; continue; }
-            if (isGhost(b) && !isGhost(a)) { drop[j] = true; continue; }
-            if (score(a) >= score(b)) drop[j] = true;
+          // Fantôme compte/alerte à proximité d’un BFT.
+          if (nearWide && (ga || gb)) {
+            if (preferA(a, b)) drop[j] = true;
+            else drop[i] = true;
+            continue;
+          }
+          // Très proche : garder le contact le plus « réel ».
+          if (nearClose) {
+            if (preferA(a, b)) drop[j] = true;
             else drop[i] = true;
           }
         }
@@ -1044,8 +1071,8 @@
       if (!layerGroups.units || !map) return;
       layerGroups.units.clearLayers();
       var nato = window.NatoSidcIcons;
-      var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(units || [])).filter(function (u) {
-        // Hors liaison : pas de marqueur (évite le fantôme Newp1 figé sur la carte).
+      // Liste déjà dédoublonnée / filtrée — hors liaison : pas de marqueur fantôme.
+      var filtered = (units || []).filter(function (u) {
         var st = String((u && u.status) || '').toLowerCase();
         return st === 'linked' || st === 'delayed';
       });
@@ -1108,10 +1135,11 @@
           syncLock = false;
           state.syncStatus = 'ok';
           state.lastSyncAt = Date.now();
-          lastUnits = rows || [];
-          var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
+          var list = Array.isArray(rows) ? rows : (rows && Array.isArray(rows.units) ? rows.units : []);
+          lastUnitsRaw = dedupeUnitsForMap(list);
+          var filtered = filterUnitsByAffiliation(lastUnitsRaw);
           state.unitsCount = filtered.length;
-          renderUnitsOnMap(lastUnits);
+          renderUnitsOnMap(filtered);
           renderRosterAndTable(filtered);
           if (medicalPanelEnabled) {
             fetchMedicalChatAlerts().then(function (alerts) {
@@ -1339,10 +1367,10 @@
       el.checked = !!state.affiliations[key];
       el.addEventListener('change', function () {
         state.affiliations[key] = el.checked;
-        if (lastUnits.length) {
-          var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
+        if (lastUnitsRaw.length) {
+          var filtered = filterUnitsByAffiliation(lastUnitsRaw);
           state.unitsCount = filtered.length;
-          renderUnitsOnMap(lastUnits);
+          renderUnitsOnMap(filtered);
           renderRosterAndTable(filtered);
           updateUnitCountEl();
         }
@@ -1433,10 +1461,10 @@
           if (h) h.checked = !!state.affiliations.hostile;
           if (u) u.checked = !!state.affiliations.unknown;
           if (n) n.checked = !!state.affiliations.neutral;
-          if (lastUnits.length) {
-            var filteredAff = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
+          if (lastUnitsRaw.length) {
+            var filteredAff = filterUnitsByAffiliation(lastUnitsRaw);
             state.unitsCount = filteredAff.length;
-            renderUnitsOnMap(lastUnits);
+            renderUnitsOnMap(filteredAff);
             renderRosterAndTable(filteredAff);
             updateUnitCountEl();
           }

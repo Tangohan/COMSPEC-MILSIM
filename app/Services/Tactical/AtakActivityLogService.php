@@ -45,6 +45,12 @@ final class AtakActivityLogService
     public const TYPE_DISCONNECT = 'disconnect';
     /** Alerte tactique structurée (Contact, FRAGO, SALUTE, etc.). */
     public const TYPE_TACTICAL_ALERT = 'tactical_alert';
+    /** Entrée manuelle du journal d’opérations (TOC). */
+    public const TYPE_TOC_NOTE = 'toc_note';
+    /** Demande MEDEVAC 9-line. */
+    public const TYPE_MEDEVAC = 'medevac';
+    /** Équipe de feu (création, attribution, dissolution, couleur). */
+    public const TYPE_FIRE_TEAM = 'fire_team';
 
     /** Carte « virtuelle » pour les événements d’auth / téléphone non liés à un théâtre. */
     public const AUTH_MAP_ID = 1;
@@ -66,6 +72,9 @@ final class AtakActivityLogService
             self::TYPE_INTEL,
             self::TYPE_ORDER,
             self::TYPE_TACTICAL_ALERT,
+            self::TYPE_TOC_NOTE,
+            self::TYPE_MEDEVAC,
+            self::TYPE_FIRE_TEAM,
         ],
     ];
 

@@ -527,7 +527,15 @@ window.ATAKOrders = (function () {
     list.forEach(function (item) {
       var opt = document.createElement('option');
       opt.value = String(item.id == null ? '' : item.id);
-      opt.textContent = String(item.label == null ? item.id : item.label);
+      var label = String(item.label == null ? item.id : item.label);
+      var color = String(item.color || '').trim();
+      if (type === 'fire_team' && /^#[0-9A-Fa-f]{6}$/i.test(color)) {
+        opt.textContent = '● ' + label;
+        opt.style.color = color;
+        opt.setAttribute('data-ft-color', color);
+      } else {
+        opt.textContent = label;
+      }
       sel.appendChild(opt);
     });
 
@@ -742,7 +750,12 @@ window.ATAKOrders = (function () {
           renderList(orders);
           updateBadge(pending);
           if (window.ATAKShowNotification && pending > 0 && data._notify) {
-            window.ATAKShowNotification('Nouvel ordre en attente', { priority: true });
+            var high = false;
+            for (var hi = 0; hi < incoming.length; hi++) {
+              var pr = String((incoming[hi] && incoming[hi].priority) || '').toUpperCase();
+              if (pr === 'URGENT' || pr === 'CONTACT') { high = true; break; }
+            }
+            window.ATAKShowNotification('Nouvel ordre en attente', { order: true, highPriority: high });
           }
         } else {
           updateBadge(pending);

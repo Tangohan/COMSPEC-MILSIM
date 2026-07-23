@@ -1163,6 +1163,360 @@ class AtakApiController
         ]);
     }
 
+    /** Entrée manuelle du journal d’opérations (TOC). */
+    public function activityStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return Response::json(['error' => 'Authentification requise'], 401);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $note = trim((string) ($body['note'] ?? $body['label'] ?? $body['text'] ?? ''));
+        if ($note === '') {
+            return Response::json(['error' => 'Texte requis', 'message' => 'Saisissez le contenu de l’entrée de journal.'], 422);
+        }
+        if (mb_strlen($note) > 500) {
+            $note = mb_substr($note, 0, 500);
+        }
+        $actor = trim((string) ($body['author'] ?? ''));
+        if ($actor === '') {
+            $user = $this->userRepository->findById($userId);
+            $actor = is_array($user)
+                ? (trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? 'Commandement')))
+                : 'Commandement';
+        }
+        $label = 'TOC — ' . $note;
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            $label,
+            $actor,
+            ['source' => 'manual']
+        );
+
+        return Response::json(['ok' => true, 'message' => 'Entrée ajoutée au journal.'], 201);
+    }
+
+    public function soiPaceIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $repo = new \App\Repositories\AtakSoiPaceRepository();
+
+        return Response::json($repo->get($r, $this->mapId($request)));
+    }
+
+    public function soiPaceStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return Response::json(['error' => 'Authentification requise'], 401);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $user = $this->userRepository->findById($userId);
+        $actor = is_array($user)
+            ? (trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? '')))
+            : '';
+        $repo = new \App\Repositories\AtakSoiPaceRepository();
+        $plan = $repo->save($tenantId, $mapId, $body, $actor !== '' ? $actor : null);
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            'Plan de fréquences PACE mis à jour',
+            $actor !== '' ? $actor : null,
+            ['source' => 'soi_pace']
+        );
+
+        return Response::json($plan);
+    }
+
+    public function medevacIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $status = $request->query('status');
+
+        return Response::json($this->casRepo->listMedevac($r, $this->mapId($request), is_string($status) ? $status : null));
+    }
+
+    public function medevacStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $author = trim((string) ($body['author'] ?? $body['callsign'] ?? ''));
+        if ($author === '') {
+            $userId = (int) (Session::get('user_id') ?? 0);
+            $user = $userId > 0 ? $this->userRepository->findById($userId) : null;
+            $author = is_array($user)
+                ? (trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? 'MEDEVAC')))
+                : 'MEDEVAC';
+        }
+        try {
+            $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'migration_required') {
+                return Response::json([
+                    'error' => 'migration_required',
+                    'message' => 'Mise à jour base de données requise pour les demandes MEDEVAC. Lancez les migrations.',
+                ], 503);
+            }
+            throw $e;
+        }
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_MEDEVAC,
+            'Demande MEDEVAC envoyée — ' . $author,
+            $author
+        );
+
+        return Response::json($row, 201);
+    }
+
+    public function medevacStatus(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+        $status = strtoupper(trim((string) ($body['status'] ?? '')));
+        $row = $this->casRepo->updateCasStatus($r, $id, $status);
+        if ($row === null) {
+            return Response::json(['error' => 'Introuvable', 'message' => 'Cette demande MEDEVAC est introuvable.'], 404);
+        }
+
+        return Response::json($row);
+    }
+
+    /** Compte rendu SALUTE structuré → canal messagerie + journal. */
+    public function saluteStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $callSign = trim((string) ($body['call_sign'] ?? $body['callsign'] ?? $body['author'] ?? ''));
+        if ($callSign === '') {
+            $userId = (int) (Session::get('user_id') ?? 0);
+            $user = $userId > 0 ? $this->userRepository->findById($userId) : null;
+            $callSign = is_array($user)
+                ? (trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? 'Observateur')))
+                : 'Observateur';
+        }
+        $fields = [
+            'size' => (string) ($body['size'] ?? $body['S'] ?? ''),
+            'activity' => (string) ($body['activity'] ?? $body['A'] ?? ''),
+            'location' => (string) ($body['location'] ?? $body['L'] ?? ''),
+            'unit' => (string) ($body['unit'] ?? $body['U'] ?? ''),
+            'time' => (string) ($body['time'] ?? $body['T'] ?? ''),
+            'equipment' => (string) ($body['equipment'] ?? $body['E'] ?? ''),
+        ];
+        $filled = array_filter($fields, static fn ($v) => trim($v) !== '');
+        if ($filled === []) {
+            return Response::json(['error' => 'Champs requis', 'message' => 'Renseignez au moins un champ du compte rendu SALUTE.'], 422);
+        }
+        $grid = trim((string) ($body['grid'] ?? ''));
+        $posX = $body['pos_x'] ?? $body['x'] ?? null;
+        $posY = $body['pos_y'] ?? $body['y'] ?? null;
+        $saluteBody = TacticalAlertParser::buildSaluteBody($fields);
+        $msg = 'ALERTE TACTIQUE|SALUTE|' . $callSign . '|' . $grid . '|'
+            . ($posX !== null && $posX !== '' ? (string) $posX : '') . '|'
+            . ($posY !== null && $posY !== '' ? (string) $posY : '') . '|'
+            . $saluteBody;
+        $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg);
+        $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
+        $summary = is_array($parsed) ? (string) ($parsed['summary'] ?? 'SALUTE') : 'SALUTE';
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_TACTICAL_ALERT,
+            'SALUTE — ' . $summary,
+            $callSign,
+            ['kind' => 'salute']
+        );
+        if (is_array($row) && is_array($parsed)) {
+            $row['tactical'] = $parsed;
+        }
+
+        return Response::json($row ?: ['ok' => true], 201);
+    }
+
+    /** Synthèse PERSTAT (KIA / WIA / RAS) à partir des unités et alertes médicales. */
+    public function perstatIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $units = $this->atak->getUnits($tenantId, $mapId);
+        $teams = [];
+        $totals = ['ras' => 0, 'wia' => 0, 'kia' => 0, 'offline' => 0, 'total' => 0];
+
+        foreach ($units as $u) {
+            $cs = trim((string) ($u['call_sign'] ?? ''));
+            if ($cs === '') {
+                continue;
+            }
+            $team = $this->perstatTeamKey($cs);
+            if (!isset($teams[$team])) {
+                $teams[$team] = ['team' => $team, 'ras' => 0, 'wia' => 0, 'kia' => 0, 'offline' => 0, 'total' => 0, 'members' => []];
+            }
+            $extra = [];
+            $raw = $u['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $d = json_decode($raw, true);
+                if (is_array($d)) {
+                    $extra = $d;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $health = strtolower(trim((string) ($extra['health'] ?? $u['health'] ?? 'ok')));
+            $status = strtolower(trim((string) ($u['status'] ?? '')));
+            $bucket = 'ras';
+            if (in_array($health, ['dead', 'kia'], true)) {
+                $bucket = 'kia';
+            } elseif (in_array($health, ['wounded', 'injured', 'unconscious', 'cardiac_arrest', 'cardiac-arrest'], true)) {
+                $bucket = 'wia';
+            } elseif ($status === 'offline') {
+                $bucket = 'offline';
+            }
+            $teams[$team][$bucket]++;
+            $teams[$team]['total']++;
+            $teams[$team]['members'][] = [
+                'call_sign' => $cs,
+                'role' => (string) ($u['role'] ?? ''),
+                'status' => $status,
+                'health' => $health,
+                'bucket' => $bucket,
+            ];
+            $totals[$bucket]++;
+            $totals['total']++;
+        }
+        ksort($teams);
+
+        return Response::json([
+            'totals' => $totals,
+            'teams' => array_values($teams),
+            'generated_at' => gmdate('c'),
+        ]);
+    }
+
+    /** Agrégat logistique fuel / munitions depuis les positions BFT. */
+    public function logisticsSnapshot(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $units = $this->atak->getUnits($r, $this->mapId($request));
+        $rows = [];
+        foreach ($units as $u) {
+            $status = strtolower(trim((string) ($u['status'] ?? '')));
+            if ($status === 'offline') {
+                continue;
+            }
+            $extra = [];
+            $raw = $u['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $d = json_decode($raw, true);
+                if (is_array($d)) {
+                    $extra = $d;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $fuelRaw = $extra['fuel'] ?? null;
+            $ammoRaw = $extra['ammo'] ?? null;
+            $fuel = null;
+            if ($fuelRaw !== null && $fuelRaw !== '' && is_numeric($fuelRaw)) {
+                $fuel = (float) $fuelRaw;
+            }
+            $ammo = ($ammoRaw !== null && $ammoRaw !== '' && strtolower((string) $ammoRaw) !== 'n/a')
+                ? (string) $ammoRaw
+                : null;
+            if ($fuel === null && $ammo === null) {
+                continue;
+            }
+            $cs = trim((string) ($u['call_sign'] ?? ''));
+            $rows[] = [
+                'call_sign' => $cs,
+                'team' => $this->perstatTeamKey($cs),
+                'role' => (string) ($u['role'] ?? ''),
+                'fuel' => $fuel,
+                'ammo' => $ammo,
+                'status' => $status,
+                'grid_ref' => (string) ($u['grid_ref'] ?? ''),
+                'updated_at' => (string) ($u['updated_at'] ?? ''),
+                'fuel_level' => $fuel === null ? 'unknown' : ($fuel <= 15 ? 'critical' : ($fuel <= 35 ? 'low' : 'ok')),
+            ];
+        }
+        usort($rows, static function (array $a, array $b): int {
+            $fa = $a['fuel'] ?? 999;
+            $fb = $b['fuel'] ?? 999;
+
+            return $fa <=> $fb;
+        });
+
+        return Response::json([
+            'rows' => $rows,
+            'count' => count($rows),
+            'generated_at' => gmdate('c'),
+        ]);
+    }
+
+    private function perstatTeamKey(string $callSign): string
+    {
+        $cs = trim($callSign);
+        if ($cs === '') {
+            return 'Autres';
+        }
+        if (preg_match('/^([A-Za-z]+)/', $cs, $m)) {
+            return strtoupper($m[1]);
+        }
+        if (str_contains($cs, '-')) {
+            return strtoupper(explode('-', $cs, 2)[0]);
+        }
+
+        return 'Autres';
+    }
+
     /**
      * @param list<array<string, mixed>> $primary
      * @param list<array<string, mixed>> $extra
@@ -1594,7 +1948,90 @@ class AtakApiController
             ));
         }
 
+        $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
+
         return Response::json($rows);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function enrichUnitsWithFireTeams(int $tenantId, array $rows): array
+    {
+        $ftRepo = $this->fireTeamRepository ?? new FireTeamRepository();
+        if (!$ftRepo->tablesReady() || $rows === []) {
+            return $rows;
+        }
+        $byCallsign = [];
+        $byUser = [];
+        try {
+            $teams = $ftRepo->listForTenant($tenantId, []);
+        } catch (\Throwable) {
+            return $rows;
+        }
+        foreach ($teams as $team) {
+            if (empty($team['is_active'])) {
+                continue;
+            }
+            $info = [
+                'id' => (int) ($team['id'] ?? 0),
+                'label' => trim((string) ($team['label'] ?? '')),
+                'color' => strtoupper(trim((string) ($team['color'] ?? '#2563EB'))) ?: '#2563EB',
+            ];
+            foreach ($team['members'] ?? [] as $member) {
+                if (!is_array($member)) {
+                    continue;
+                }
+                $cs = strtoupper(trim((string) ($member['effective_callsign'] ?? $member['callsign'] ?? '')));
+                if ($cs !== '' && !isset($byCallsign[$cs])) {
+                    $byCallsign[$cs] = $info;
+                }
+                $uid = (int) ($member['user_id'] ?? 0);
+                if ($uid > 0 && !isset($byUser[$uid])) {
+                    $byUser[$uid] = $info;
+                }
+            }
+        }
+        if ($byCallsign === [] && $byUser === []) {
+            return $rows;
+        }
+
+        // Index callsign Athena → user_id pour rattacher via compte lié.
+        $callsignToUser = [];
+        try {
+            foreach ($this->userRepository->allForTenant($tenantId) as $u) {
+                $cs = strtoupper(trim((string) ($u['callsign'] ?? '')));
+                $uid = (int) ($u['id'] ?? 0);
+                if ($cs !== '' && $uid > 0) {
+                    $callsignToUser[$cs] = $uid;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $cs = strtoupper(trim((string) ($row['call_sign'] ?? '')));
+            $ft = ($cs !== '' && isset($byCallsign[$cs])) ? $byCallsign[$cs] : null;
+            if ($ft === null && $cs !== '' && isset($callsignToUser[$cs])) {
+                $uid = $callsignToUser[$cs];
+                if (isset($byUser[$uid])) {
+                    $ft = $byUser[$uid];
+                }
+            }
+            if ($ft === null) {
+                continue;
+            }
+            $row['fire_team_id'] = $ft['id'];
+            $row['fire_team_label'] = $ft['label'];
+            $row['fire_team_color'] = $ft['color'];
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function unitsStore(Request $request, array $params = []): Response
@@ -3437,6 +3874,7 @@ class AtakApiController
                     'id' => (string) $id,
                     'label' => $label . ' (' . $suffix . ')',
                     'kind' => $kind,
+                    'color' => strtoupper(trim((string) ($team['color'] ?? '#2563EB'))) ?: '#2563EB',
                 ];
             }
         }
@@ -4567,7 +5005,7 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $assignedTo = $request->query('assignedTo') ?? $request->query('assigned_to');
         $status = $request->query('status');
-        $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status);
+        $rows = $this->casRepo->listCas($tenantId, $mapId, $assignedTo, $status, CasNineLineRepository::KIND_CAS);
         return Response::json($rows);
     }
 

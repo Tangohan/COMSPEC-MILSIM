@@ -35,7 +35,11 @@ final class AdminFireTeamsController
         private UnitRepository $unitRepository,
         private UserRepository $userRepository,
         private AtakMapRepository $atakMapRepository,
+        private ?\App\Services\Tactical\FireTeamActivityLogger $ftActivity = null,
     ) {
+        $this->ftActivity ??= new \App\Services\Tactical\FireTeamActivityLogger(
+            new \App\Services\Tactical\AtakActivityLogService()
+        );
     }
 
     public function index(Request $request, array $params = []): Response
@@ -162,6 +166,15 @@ final class AdminFireTeamsController
         }
 
         $this->applyMembersFromRequest($request, (int) $team['id'], $tenantId);
+        $team = $this->fireTeams->findByIdForTenant((int) $team['id'], $tenantId) ?? $team;
+        $this->ftActivity?->record(
+            $tenantId,
+            $team,
+            'created',
+            'Équipe de feu créée — ' . (string) ($team['label'] ?? $label),
+            $this->ftActivity->actorFromSession(),
+            ['member_count' => (int) ($team['member_count'] ?? count($team['members'] ?? []))]
+        );
         Session::flash('success', 'Équipe de feu créée.');
 
         return Response::redirect(url('back-office/atak/fire-teams/' . (int) $team['id']));
@@ -235,6 +248,19 @@ final class AdminFireTeamsController
             return Response::redirect(url('back-office/atak/fire-teams/' . $id));
         }
 
+        $before = $this->fireTeams->findByIdForTenant($id, $tenantId);
+        $beforeMembers = [];
+        if (is_array($before)) {
+            foreach (($before['members'] ?? []) as $m) {
+                if (is_array($m)) {
+                    $uid = (int) ($m['user_id'] ?? 0);
+                    if ($uid > 0) {
+                        $beforeMembers[$uid] = true;
+                    }
+                }
+            }
+        }
+
         $team = $this->fireTeams->update($id, $tenantId, [
             'label' => $label,
             'color' => (string) $request->input('color', '#2563EB'),
@@ -251,6 +277,58 @@ final class AdminFireTeamsController
         }
 
         $this->applyMembersFromRequest($request, $id, $tenantId);
+        $team = $this->fireTeams->findByIdForTenant($id, $tenantId) ?? $team;
+
+        $afterMembers = [];
+        foreach (($team['members'] ?? []) as $m) {
+            if (is_array($m)) {
+                $uid = (int) ($m['user_id'] ?? 0);
+                if ($uid > 0) {
+                    $afterMembers[$uid] = trim((string) ($m['effective_callsign'] ?? $m['display_name'] ?? ''));
+                }
+            }
+        }
+        $added = array_diff_key($afterMembers, $beforeMembers);
+        $removed = array_diff_key($beforeMembers, $afterMembers);
+        $colorBefore = is_array($before) ? strtoupper((string) ($before['color'] ?? '')) : '';
+        $colorAfter = strtoupper((string) ($team['color'] ?? ''));
+
+        if ($added !== [] || $removed !== []) {
+            $bits = [];
+            foreach ($added as $name) {
+                if ($name !== '') {
+                    $bits[] = 'rejoint : ' . $name;
+                }
+            }
+            foreach ($removed as $name) {
+                $bits[] = 'quitté : ' . ($name !== '' ? $name : 'membre');
+            }
+            $this->ftActivity?->record(
+                $tenantId,
+                $team,
+                'roster_changed',
+                'Composition fire team — ' . (string) ($team['label'] ?? '') . ($bits !== [] ? ' (' . implode(', ', $bits) . ')' : ''),
+                $this->ftActivity->actorFromSession(),
+                ['added' => count($added), 'removed' => count($removed)]
+            );
+        } elseif ($colorBefore !== '' && $colorAfter !== '' && $colorBefore !== $colorAfter) {
+            $this->ftActivity?->record(
+                $tenantId,
+                $team,
+                'color_changed',
+                'Couleur d’équipe mise à jour — ' . (string) ($team['label'] ?? ''),
+                $this->ftActivity->actorFromSession()
+            );
+        } else {
+            $this->ftActivity?->record(
+                $tenantId,
+                $team,
+                'updated',
+                'Équipe de feu mise à jour — ' . (string) ($team['label'] ?? ''),
+                $this->ftActivity->actorFromSession()
+            );
+        }
+
         Session::flash('success', 'Équipe mise à jour.');
 
         return Response::redirect(url('back-office/atak/fire-teams/' . $id));
@@ -269,7 +347,17 @@ final class AdminFireTeamsController
             return Response::redirect(url('back-office/atak/fire-teams/' . $id));
         }
 
+        $before = $this->fireTeams->findByIdForTenant($id, $tenantId);
         if ($this->fireTeams->dissolve($id, $tenantId)) {
+            if (is_array($before)) {
+                $this->ftActivity?->record(
+                    $tenantId,
+                    $before,
+                    'dissolved',
+                    'Équipe de feu dissoute — ' . (string) ($before['label'] ?? ''),
+                    $this->ftActivity->actorFromSession()
+                );
+            }
             Session::flash('success', 'Équipe dissoute. Elle n’apparaît plus comme active pour la mission.');
         } else {
             Session::flash('error', 'Impossible de dissoudre cette équipe.');

@@ -81,7 +81,7 @@ final class RegisterController
 
             return Response::redirect(url('register'));
         }
-        $email = trim((string) $request->input('email'));
+        $email = strtolower(trim((string) $request->input('email')));
         $password = (string) $request->input('password');
         $confirm = (string) $request->input('password_confirmation');
         $displayName = trim((string) $request->input('display_name'));
@@ -206,6 +206,16 @@ final class RegisterController
             $flashBack('Cette adresse e-mail ne peut pas être utilisée.', 2);
 
             return Response::redirect(url('register'));
+        }
+        // Un même e-mail ne doit pas créer un 2ᵉ « identité » (autre mot de passe) sur une autre communauté.
+        // Rejoindre une communauté se fait après connexion (invitation / candidature / code).
+        if ($this->userRepository->emailExistsGlobally($email)) {
+            $flashBack(
+                'Un compte existe déjà avec cette adresse e-mail. Connectez-vous, puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.',
+                2
+            );
+
+            return Response::redirect(url('login'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
             $flashBack('Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.', 2);

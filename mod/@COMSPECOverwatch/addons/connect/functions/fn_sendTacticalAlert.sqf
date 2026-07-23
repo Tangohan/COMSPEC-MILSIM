@@ -45,7 +45,19 @@ if (_callSign isEqualTo "") then { _callSign = name player; };
 private _summary = if ((trim _body) isEqualTo "") then {
     format ["%1 — %2 — Grille %3", _kindLabel, _callSign, _grid]
 } else {
-    format ["%1 — %2 — Grille %3 — %4", _kindLabel, _callSign, _grid, trim _body]
+    // SALUTE structuré (S=…|A=…) : ne pas dupliquer le gabarit dans le résumé.
+    if (_kindKey isEqualTo "SALUTE" && {(_body find "S=") >= 0 || {(_body find "A=") >= 0}}) then {
+        format ["%1 — %2 — Grille %3 — %4", _kindLabel, _callSign, _grid, trim _body]
+    } else {
+        format ["%1 — %2 — Grille %3 — %4", _kindLabel, _callSign, _grid, trim _body]
+    }
+};
+
+// Pour SALUTE structuré : le corps remplace le résumé libre (parts 6+).
+private _payloadTail = if (_kindKey isEqualTo "SALUTE" && {(trim _body) isNotEqualTo ""}) then {
+    trim _body
+} else {
+    _summary
 };
 
 // toFixed : séparateur décimal point (évite « 1850,12 » localisé que PHP is_numeric refuse).
@@ -59,7 +71,7 @@ private _msg = format [
     _grid,
     _posX,
     _posY,
-    _summary
+    _payloadTail
 ];
 
 [player, "CHAT", _msg, "", "INFANTRY", 0.95] call comspec_overwatch_connect_fnc_sendIntel;

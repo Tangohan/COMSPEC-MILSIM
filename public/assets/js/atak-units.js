@@ -204,7 +204,7 @@ window.ATAKUnits = (function () {
     if (!body) return;
     updateTableCount(list.length);
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="5" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="atak-drawer-empty">Aucun contact en liaison pour le moment.</td></tr>';
       return;
     }
     body.innerHTML = list.map(function (u) {
@@ -225,15 +225,24 @@ window.ATAKUnits = (function () {
       var grid = gridRaw || '—';
       var c = parseCoords(u);
       var posOk = hasValidPosition(u);
-      return '<tr class="atak-drawer-row" tabindex="0" role="button" title="' + (posOk ? 'Centrer la carte sur ce contact' : 'Position non disponible') + '"' +
+      var ftLabel = String(u.fire_team_label || '').trim();
+      var ftColor = String(u.fire_team_color || '').trim();
+      var ftCell = ftLabel
+        ? ('<span class="atak-ft-chip atak-ft-chip--sm"' + (ftColor ? ' style="--ft-color:' + esc(ftColor) + ';border-color:' + esc(ftColor) + ';color:' + esc(ftColor) + '"' : '') + '>'
+          + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
+          + esc(ftLabel) + '</span>')
+        : '<span class="atak-drawer-muted">—</span>';
+      return '<tr class="atak-drawer-row' + (ftColor ? ' atak-drawer-row--ft' : '') + '" tabindex="0" role="button" title="' + (posOk ? 'Centrer la carte sur ce contact' : 'Position non disponible') + '"' +
         ' data-unit-id="' + esc(u.id || '') + '"' +
         ' data-callsign="' + esc(u.call_sign || '') + '"' +
         ' data-grid="' + esc(gridRaw) + '"' +
         ' data-x="' + esc(posOk ? c.x : '') + '"' +
-        ' data-y="' + esc(posOk ? c.y : '') + '">' +
+        ' data-y="' + esc(posOk ? c.y : '') + '"' +
+        (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '') + '>' +
         '<td class="atak-drawer-cs">' + esc(u.call_sign || '—') +
         ' <button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button></td>' +
         '<td' + (roleRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(roleText) + '</td>' +
+        '<td>' + ftCell + '</td>' +
         '<td><span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span></td>' +
         '<td' + (hasHeading ? '' : ' class="atak-drawer-muted"') + '>' + esc(heading) + '</td>' +
         '<td' + (gridRaw ? '' : ' class="atak-drawer-muted"') + '>' + esc(grid) + '</td>' +
@@ -293,7 +302,10 @@ window.ATAKUnits = (function () {
         radio,
         radioTx,
         radioCh,
-        monCh
+        monCh,
+        u.fire_team_id || '',
+        u.fire_team_label || '',
+        u.fire_team_color || ''
       ].join('\t');
     }).join('\n');
   }
@@ -404,14 +416,26 @@ window.ATAKUnits = (function () {
       var natoBadge = unitBadgeHtml(u, ex);
       var c = parseCoords(u);
       var posOk = hasValidPosition(u);
-      return '<div class="' + cardClass + '" data-unit-id="' + esc(u.id || '') + '" data-callsign="' + esc(u.call_sign || '') + '" data-grid="' + esc(gridRaw) + '" data-x="' + esc(posOk ? c.x : '') + '" data-y="' + esc(posOk ? c.y : '') + '" title="' + esc(tooltip) + '">' +
+      var ftLabel = String(u.fire_team_label || '').trim();
+      var ftColor = String(u.fire_team_color || '').trim();
+      if (ftColor) {
+        cardClass += ' atak-unit-card--ft';
+      }
+      var ftBadge = ftLabel
+        ? ('<span class="atak-ft-chip"' + (ftColor ? ' style="--ft-color:' + esc(ftColor) + ';border-color:' + esc(ftColor) + ';color:' + esc(ftColor) + '"' : '') + '>'
+          + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
+          + esc(ftLabel) + '</span>')
+        : '';
+      return '<div class="' + cardClass + '" data-unit-id="' + esc(u.id || '') + '" data-callsign="' + esc(u.call_sign || '') + '" data-grid="' + esc(gridRaw) + '" data-x="' + esc(posOk ? c.x : '') + '" data-y="' + esc(posOk ? c.y : '') + '"'
+        + (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '')
+        + ' title="' + esc(tooltip) + '">' +
         '<div class="atak-unit-callsign-wrap">' +
         '<div class="atak-unit-callsign">' + natoBadge + esc(u.call_sign || '—') + '</div>' +
         '<span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span>' +
         (userLink ? userLink : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
         '</div>' +
-        '<div class="atak-unit-role">' + esc(roleText) + '</div>' +
+        '<div class="atak-unit-role">' + esc(roleText) + ftBadge + '</div>' +
         '<div class="atak-unit-vitals">' + vitals.join('') + '</div>' +
         '<div class="atak-unit-meta-row">' +
         '<div class="atak-unit-grid">Coord. ' + esc(grid) + '</div>' +

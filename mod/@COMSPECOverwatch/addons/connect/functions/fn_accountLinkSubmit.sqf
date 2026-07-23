@@ -1,6 +1,6 @@
 /*
 
-    Lit URL + Steam + code du dialog.
+    Lit URL + Steam + code du dialog — ou params tablette [_url, _code, _steam].
 
     Code vide → liaison par Steam (champ 9206 ou getPlayerUID).
 
@@ -8,23 +8,31 @@
 
 */
 
+params [
+    ["_urlIn", "", [""]],
+    ["_codeIn", "", [""]],
+    ["_steamIn", "", [""]]
+];
+
 if (!hasInterface) exitWith {};
 
 
 
 private _display = uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull];
 
-if (isNull _display) exitWith {};
+private _fromTablet = ((trim _urlIn) isNotEqualTo "") || ((trim _codeIn) isNotEqualTo "") || ((trim _steamIn) isNotEqualTo "");
+
+if (isNull _display && {!_fromTablet}) exitWith {};
 
 
 
-private _urlCtrl = _display displayCtrl 9201;
+private _urlCtrl = if (!isNull _display) then { _display displayCtrl 9201 } else { controlNull };
 
-private _codeCtrl = _display displayCtrl 9202;
+private _codeCtrl = if (!isNull _display) then { _display displayCtrl 9202 } else { controlNull };
 
-private _status = _display displayCtrl 9203;
+private _status = if (!isNull _display) then { _display displayCtrl 9203 } else { controlNull };
 
-private _steamCtrl = _display displayCtrl 9206;
+private _steamCtrl = if (!isNull _display) then { _display displayCtrl 9206 } else { controlNull };
 
 
 
@@ -44,14 +52,28 @@ private _stripQuotes = {
     _s
 };
 
-private _url = if (!isNull _urlCtrl) then { [ctrlText _urlCtrl] call _stripQuotes } else { "" };
-private _code = if (!isNull _codeCtrl) then { toUpper (trim (ctrlText _codeCtrl)) } else { "" };
-private _steamManual = if (!isNull _steamCtrl) then { trim (ctrlText _steamCtrl) } else { "" };
+private _url = if ((trim _urlIn) isNotEqualTo "") then {
+    [trim _urlIn] call _stripQuotes
+} else {
+    if (!isNull _urlCtrl) then { [ctrlText _urlCtrl] call _stripQuotes } else { "" }
+};
+private _code = if ((trim _codeIn) isNotEqualTo "") then {
+    toUpper (trim _codeIn)
+} else {
+    if (!isNull _codeCtrl) then { toUpper (trim (ctrlText _codeCtrl)) } else { "" }
+};
+private _steamManual = if ((trim _steamIn) isNotEqualTo "") then {
+    trim _steamIn
+} else {
+    if (!isNull _steamCtrl) then { trim (ctrlText _steamCtrl) } else { "" }
+};
 
 private _setStatus = {
     params ["_text", ["_color", "#8aa0b4"]];
     if (!isNull _status) then {
         _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='%1'>%2</t>", _color, _text];
+    } else {
+        ["COMSPEC_Info", [_text]] call comspec_overwatch_connect_fnc_showNotification;
     };
 };
 
@@ -368,7 +390,7 @@ if (_connectOk) then {
 
     [] call comspec_overwatch_connect_fnc_updateLinkDiary;
     uiSleep 0.8;
-    closeDialog 0;
+    if (!isNull (uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull])) then { closeDialog 0; };
 } else {
     // Filet : si Connect a quand meme echoue, retenter le chemin classique (profil).
     [] call comspec_overwatch_connect_fnc_connect;
@@ -382,7 +404,7 @@ if (_connectOk) then {
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         uiSleep 0.8;
-        closeDialog 0;
+        if (!isNull (uiNamespace getVariable ["COMSPEC_AccountLink_Display", displayNull])) then { closeDialog 0; };
     } else {
         private _detail = missionNamespace getVariable ["COMSPEC_LinkDetail", ""];
         private _msg = if (_detail isEqualTo "") then {

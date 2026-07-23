@@ -1,9 +1,7 @@
-/*
-    Ouvre le dialog de connexion compte Athena (code de liaison).
-*/
-if (!hasInterface) exitWith {};
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-
-if (isNull (findDisplay 9972)) then {
-    createDialog "COMSPEC_AccountLink_Dialog";
-};
+/*
+    Ouvre la vue Compte de la tablette Athena (plus de dialog 9200).
+*/
+if (!hasInterface) exitWith {};
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+["account"] call comspec_overwatch_connect_fnc_openTabletView;

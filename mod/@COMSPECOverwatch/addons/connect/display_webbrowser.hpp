@@ -244,19 +244,21 @@ class COMSPEC_WebBrowser_Dialog {
             h = 0.036 * safezoneH;
             sizeEx = 0.028;
             colorBackground[] = {0.06, 0.14, 0.2, 0.95};
-            action = "closeDialog 0; createDialog 'COMSPEC_Device_Dialog';";
+            // Petit modèle désactivé temporairement
+            show = 0;
+            action = "closeDialog 0; [] call comspec_overwatch_connect_fnc_openClassicTablet;";
         };
 
         class BtnHub: RscButton {
             idc = 9405;
-            text = "Hub";
+            text = "Apps";
             x = safezoneX + 0.21 * safezoneW;
             y = safezoneY + 0.88 * safezoneH;
             w = 0.1 * safezoneW;
             h = 0.036 * safezoneH;
             sizeEx = 0.028;
             colorBackground[] = {0.06, 0.14, 0.2, 0.95};
-            action = "closeDialog 0; [] call comspec_overwatch_connect_fnc_openHub;";
+            action = "['apps'] call comspec_overwatch_connect_fnc_openTabletView;";
         };
 
         // Contournement Stable : openURL hors du Chromium embarqué (pas de prompt allowExternalURL).

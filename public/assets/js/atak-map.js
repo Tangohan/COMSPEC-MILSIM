@@ -940,7 +940,9 @@ window.ATAKMap = (function () {
         extra.sidc || u.sidc || '',
         emitting ? '1' : '0',
         radioCh,
-        onMonNet ? '1' : '0'
+        onMonNet ? '1' : '0',
+        u.fire_team_id || '',
+        u.fire_team_color || ''
       ].join('|');
       var posSig = Math.round(latlng.lat * 10) / 10 + ',' + Math.round(latlng.lng * 10) / 10;
       var existing = unitsById[id];
@@ -987,6 +989,14 @@ window.ATAKMap = (function () {
                 iconSize: [56, 20],
                 iconAnchor: [28, 8],
               });
+        }
+        var ftColor = String(u.fire_team_color || '').trim();
+        if (ftColor && icon && icon.options) {
+          var safeFt = ftColor.replace(/[^#A-Fa-f0-9]/g, '');
+          if (/^#[0-9A-Fa-f]{6}$/.test(safeFt)) {
+            icon.options.className = (icon.options.className || '') + ' atak-ft-marker';
+            icon.options.html = '<div class="atak-ft-marker-wrap" style="--ft-color:' + safeFt + '">' + (icon.options.html || '') + '</div>';
+          }
         }
       }
       if (!existing) {

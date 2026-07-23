@@ -117,7 +117,7 @@ class COMSPEC_Device_Dialog {
             h = 0.032 * safezoneW;
             sizeEx = 0.028;
             colorBackground[] = {0.06, 0.14, 0.2, 0.95};
-            action = "closeDialog 0; createDialog 'COMSPEC_Hub_Dialog';";
+            action = "closeDialog 0; ['apps'] call comspec_overwatch_connect_fnc_openTabletView;";
         };
 
         class DeviceBtnWeb: RscButton {

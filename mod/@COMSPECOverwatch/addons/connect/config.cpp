@@ -25,6 +25,8 @@ class CfgFunctions {
             class sendFactionSettings {};
             class sendTacticalAlert {};
             class tacticalAlertDialogShow {};
+            class saluteDialogShow {};
+            class saluteDialogSubmit {};
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
@@ -34,6 +36,9 @@ class CfgFunctions {
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};
+            class openTabletView {};
+            class tabletChatSend {};
+            class tabletFlightManifestSend {};
             class hubSelect {};
             class getRadioState {};
             class getRadioTxState {};
@@ -132,6 +137,7 @@ class CfgFunctions {
             class deviceToggleView {};
             class getUnitsList {};
             class showDeviceRoster {};
+            class openClassicTablet {};
             class webBrowserAvailable {};
             class webBrowserShow {};
             class webBrowserOnLoad {};
@@ -231,6 +237,16 @@ class CfgSounds {
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_death.ogg", 1, 1, 50};
         titles[] = {};
     };
+    class COMSPEC_ATAK_Order {
+        name = "Ordre reçu";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_simple.ogg", 1, 1, 50};
+        titles[] = {};
+    };
+    class COMSPEC_ATAK_OrderPrio {
+        name = "Ordre prioritaire";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_prio.ogg", 1, 1, 50};
+        titles[] = {};
+    };
 };
 
 #include "ui_base.hpp"
@@ -242,6 +258,7 @@ class CfgSounds {
 #include "display_phone_connect.hpp"
 #include "display_account_link.hpp"
 #include "display_callsign.hpp"
+#include "display_salute.hpp"
 #include "display_order_inbox.hpp"
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"

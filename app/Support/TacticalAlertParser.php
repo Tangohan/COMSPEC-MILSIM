@@ -68,7 +68,18 @@ final class TacticalAlertParser
             }
         }
 
-        return [
+        $salute = null;
+        if ($kind === 'salute') {
+            $salute = self::parseSaluteFields(array_slice($parts, 6));
+            if ($salute !== null) {
+                $built = self::formatSaluteSummary($salute);
+                if ($built !== '') {
+                    $summary = $built;
+                }
+            }
+        }
+
+        $out = [
             'is_tactical' => true,
             'kind' => $kind,
             'kind_label' => self::kindLabelFr($kind),
@@ -79,6 +90,115 @@ final class TacticalAlertParser
             'summary' => $summary,
             'severity' => self::severityForKind($kind),
         ];
+        if ($salute !== null) {
+            $out['salute'] = $salute;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Construit le corps messagerie pour un SALUTE structuré.
+     *
+     * @param array{size?:string,activity?:string,location?:string,unit?:string,time?:string,equipment?:string} $fields
+     */
+    public static function buildSaluteBody(array $fields): string
+    {
+        $map = [
+            'S' => trim((string) ($fields['size'] ?? $fields['S'] ?? '')),
+            'A' => trim((string) ($fields['activity'] ?? $fields['A'] ?? '')),
+            'L' => trim((string) ($fields['location'] ?? $fields['L'] ?? '')),
+            'U' => trim((string) ($fields['unit'] ?? $fields['U'] ?? '')),
+            'T' => trim((string) ($fields['time'] ?? $fields['T'] ?? '')),
+            'E' => trim((string) ($fields['equipment'] ?? $fields['E'] ?? '')),
+        ];
+        $chunks = [];
+        foreach ($map as $k => $v) {
+            $chunks[] = $k . '=' . str_replace(['|', "\n", "\r"], ['/', ' ', ''], $v);
+        }
+
+        return implode('|', $chunks);
+    }
+
+    /**
+     * @param list<string> $parts
+     * @return array{size:string,activity:string,location:string,unit:string,time:string,equipment:string}|null
+     */
+    public static function parseSaluteFields(array $parts): ?array
+    {
+        $out = [
+            'size' => '',
+            'activity' => '',
+            'location' => '',
+            'unit' => '',
+            'time' => '',
+            'equipment' => '',
+        ];
+        $keyMap = [
+            'S' => 'size', 'SIZE' => 'size', 'TAILLE' => 'size',
+            'A' => 'activity', 'ACTIVITY' => 'activity', 'ACTIVITE' => 'activity', 'ACTIVITÉ' => 'activity',
+            'L' => 'location', 'LOCATION' => 'location', 'LOCALISATION' => 'location',
+            'U' => 'unit', 'UNIT' => 'unit', 'UNITE' => 'unit', 'UNITÉ' => 'unit',
+            'T' => 'time', 'TIME' => 'time', 'HEURE' => 'time',
+            'E' => 'equipment', 'EQUIPMENT' => 'equipment', 'EQUIPEMENT' => 'equipment', 'ÉQUIPEMENT' => 'equipment',
+        ];
+        $found = false;
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+            if ($part === '') {
+                continue;
+            }
+            if (preg_match('/^([A-Za-zÀ-ü]+)\s*[:=]\s*(.*)$/u', $part, $m)) {
+                $k = mb_strtoupper(trim($m[1]));
+                $v = trim($m[2]);
+                if (isset($keyMap[$k])) {
+                    $out[$keyMap[$k]] = $v;
+                    $found = true;
+                }
+            }
+        }
+        // Ancien gabarit brut « Taille — Activité — … » sans valeurs → pas de structure.
+        if (!$found) {
+            $joined = implode(' — ', $parts);
+            if (preg_match('/^Taille\s*[—\-]/s*Activit/iu', $joined)) {
+                return [
+                    'size' => '',
+                    'activity' => '',
+                    'location' => '',
+                    'unit' => '',
+                    'time' => '',
+                    'equipment' => '',
+                ];
+            }
+
+            return null;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array{size?:string,activity?:string,location?:string,unit?:string,time?:string,equipment?:string} $salute
+     */
+    public static function formatSaluteSummary(array $salute): string
+    {
+        $labels = [
+            'size' => 'Taille',
+            'activity' => 'Activité',
+            'location' => 'Localisation',
+            'unit' => 'Unité',
+            'time' => 'Heure',
+            'equipment' => 'Équipement',
+        ];
+        $bits = [];
+        foreach ($labels as $k => $lab) {
+            $v = trim((string) ($salute[$k] ?? ''));
+            if ($v !== '') {
+                $bits[] = $lab . ' : ' . $v;
+            }
+        }
+
+        return implode(' · ', $bits);
     }
 
     private static function parseCoord(mixed $raw): ?float

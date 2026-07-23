@@ -149,13 +149,18 @@
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
-// IDs v2 : l’ancien comspec_open_chat était enregistré sur K seul (sans Ctrl).
-// CBA conserve les binds du profil joueur — sans nouvel ID, Ctrl+K ne s’applique jamais.
+// Raccourcis (CBA — personnalisables dans Options > Contrôles > Extension Addon)
+// K           → Tablette Athena
+// Ctrl+K      → Messagerie
+// Ctrl+Shift+K → Ancien menu hub (vues Overwatch)
+//
+// IDs : comspec_menu_hub ouvrait le hub sur K — on le réutilise pour la tablette
+// afin que les joueurs qui ont déjà K restent sur la bonne action.
 [
-    "COMSPEC Overwatch", "comspec_menu_hub", ["Menu ATAK", "Ouvrir le menu des vues Overwatch (K)"],
+    "COMSPEC Overwatch", "comspec_menu_hub", ["Tablette Athena", "Ouvrir la tablette Athena Overwatch (K)"],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-        0 spawn { [] call comspec_overwatch_connect_fnc_openHub; };
+        0 spawn { [] call comspec_overwatch_connect_fnc_webBrowserShow; };
         true
     },
     "",
@@ -164,14 +169,27 @@
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch", "comspec_menu_chat", ["Messagerie", "Ouvrir directement la messagerie (Ctrl+K)"],
+    "COMSPEC Overwatch", "comspec_menu_chat", ["Messagerie", "Ouvrir la messagerie dans la tablette Athena (Ctrl+K)"],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-        0 spawn { createDialog "COMSPEC_Chat_Dialog"; };
+        0 spawn { ["chat"] call comspec_overwatch_connect_fnc_openTabletView; };
         true
     },
     "",
     [0x25, [false, true, false]], // Ctrl+DIK_K  — [shift, ctrl, alt]
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
+// ID v2 : l’ancien menu hub était sur K — maintenant Ctrl+Shift+K → Apps tablette
+[
+    "COMSPEC Overwatch", "comspec_menu_hub_csk", ["Applications tablette", "Ouvrir le menu Applications de la tablette Athena (Ctrl+Shift+K)"],
+    {
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        0 spawn { ["apps"] call comspec_overwatch_connect_fnc_openTabletView; };
+        true
+    },
+    "",
+    [0x25, [true, true, false]], // Ctrl+Shift+DIK_K
     false, 0, false
 ] call CBA_fnc_addKeybind;
 
@@ -222,3 +240,6 @@ if (!(_savedRole isEqualTo "")) then {
     missionNamespace setVariable ["COMSPEC_Role", _savedRole, false];
 };
 missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
+
+// Petit modèle (vue classique idd 9973) — désactivé temporairement (bascule auto coupait la tablette Athena).
+missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false, false];

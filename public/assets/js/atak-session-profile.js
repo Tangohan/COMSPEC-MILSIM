@@ -374,6 +374,7 @@ window.ATAKSessionProfile = (function () {
     onReady: onReady,
     get: function () { return state; },
     save: save,
+    clear: clearStored,
     showEditor: function () { showOverlay(true); },
     applyGating: applyGating,
     canAccessTab: canAccessTab,

@@ -2981,6 +2981,14 @@ try {
     echo '  [ATTENTION] atak_orders_since : ' . $e->getMessage() . "\n";
 }
 
+$atakNineLineKindMigrate = require $root . '/bootstrap/atak_nine_line_mission_kind_migration.php';
+try {
+    echo "Migration atak_nine_line.mission_kind (CAS vs MEDEVAC)...\n";
+    $atakNineLineKindMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_nine_line_mission_kind : ' . $e->getMessage() . "\n";
+}
+
 $atakOrderTemplatesMigrate = require $root . '/bootstrap/atak_order_templates_migration.php';
 try {
     echo "Migration atak_order_templates (modèles d’ordres personnalisés)...\n";

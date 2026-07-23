@@ -46,7 +46,7 @@ if (!_quiet && {!_milsim}) then {
     [_template, _args] call BIS_fnc_showNotification;
 };
 
-// Son dédié pour l’urgence médicale (mort / inconscient), sinon bip de préférence.
+// Son dédié pour l’urgence médicale (mort / inconscient), ordres, sinon bip de préférence.
 // Mode discret : pas de bandeau BIS ci-dessus, mais le son CBA est conservé (sauf Muet).
 private _soundEvent = "";
 if (_type isEqualTo "medical") then {
@@ -67,6 +67,14 @@ if (_type isEqualTo "medical") then {
     } else {
         if ((_msgLow find "inconscient") >= 0 || {(_msgLow find "au sol") >= 0}) then {
             _soundEvent = "unconscious";
+        };
+    };
+} else {
+    if (_type isEqualTo "order") then {
+        if ((_msgLow find "urgent") >= 0 || {(_msgLow find "contact") >= 0}) then {
+            _soundEvent = "order_priority";
+        } else {
+            _soundEvent = "order";
         };
     };
 };

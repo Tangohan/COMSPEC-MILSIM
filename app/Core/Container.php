@@ -1235,7 +1235,10 @@ class Container
                 self::get(\App\Repositories\FireTeamRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\AtakMapRepository::class)
+                self::get(\App\Repositories\AtakMapRepository::class),
+                new \App\Services\Tactical\FireTeamActivityLogger(
+                    self::get(\App\Services\Tactical\AtakActivityLogService::class)
+                )
             ),
             \App\Controllers\Admin\AdminAtakOperatorsController::class => new \App\Controllers\Admin\AdminAtakOperatorsController(
                 self::get(\App\Repositories\AtakDataRepository::class),
@@ -1248,7 +1251,10 @@ class Container
             \App\Controllers\Api\FireTeamApiController::class => new \App\Controllers\Api\FireTeamApiController(
                 self::get(\App\Repositories\FireTeamRepository::class),
                 self::get(TenantRepository::class),
-                self::get(\App\Repositories\UnitRepository::class)
+                self::get(\App\Repositories\UnitRepository::class),
+                new \App\Services\Tactical\FireTeamActivityLogger(
+                    self::get(\App\Services\Tactical\AtakActivityLogService::class)
+                )
             ),
             \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(

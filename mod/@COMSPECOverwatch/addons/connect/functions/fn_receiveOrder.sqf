@@ -66,10 +66,12 @@ if (
     systemChat format ["[COMSPEC] %1", _msg];
 };
 
-// Ouvre la boîte aux ordres si pas déjà un dialog critique ouvert
-if (isNull (findDisplay 9975) && {isNull (findDisplay 9969)} && {isNull (findDisplay 9999)}) then {
+// Ouvre la tablette sur les ordres (plus de dialog 9975)
+if (isNull (findDisplay 9974)) then {
     0 spawn {
         uiSleep 0.15;
-        [] call comspec_overwatch_connect_fnc_orderInboxShow;
+        ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
     };
+} else {
+    ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
 };

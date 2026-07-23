@@ -10,6 +10,13 @@ private _mainAction = [
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions"], _mainAction] call ace_interact_menu_fnc_addActionToObject;
 
+private _tabletAction = [
+    "COMSPEC_Tablet", "Ouvrir tablette Athena", "", {
+        ["bft"] call comspec_overwatch_connect_fnc_openTabletView;
+    }, _condEnabled, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _tabletAction] call ace_interact_menu_fnc_addActionToObject;
+
 private _pingAction = [
     "COMSPEC_Ping", "Envoyer Ping", "", {
         [player, "PING", getPos player, "Point d'interet", "INFANTRY"] call comspec_overwatch_connect_fnc_sendIntel;
@@ -37,16 +44,16 @@ private _medAction = [
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _medAction] call ace_interact_menu_fnc_addActionToObject;
 
-
 private _medInboxAction = [
     "COMSPEC_MedInbox", "Alertes médicales (triage)", "", {
-        [] call comspec_overwatch_connect_fnc_medicalInboxShow;
+        ["medical"] call comspec_overwatch_connect_fnc_openTabletView;
     }, {
         (missionNamespace getVariable ["comspec_overwatch_enabled", true])
         && {[] call comspec_overwatch_connect_fnc_canTriageMedical}
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _medInboxAction] call ace_interact_menu_fnc_addActionToObject;
+
 private _orderMenu = [
     "COMSPEC_OrderMenu", "Ordres C2", "", {}, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
@@ -54,8 +61,6 @@ private _orderMenu = [
 
 {
     _x params ["_id", "_label", "_type"];
-    // Signature ACE createAction : … condition, insertChildren (CODE→[]), customParams
-    // Bug précédent : [_type] était passé en insertChildren → « Erreur générique » au self-interact.
     private _a = [
         _id,
         _label,
@@ -81,15 +86,15 @@ private _orderMenu = [
 ];
 
 private _casAction = [
-    "COMSPEC_CAS", "Ouvrir CAS 9-Line", "", {
-        [] call comspec_overwatch_connect_fnc_openCASDialog;
+    "COMSPEC_CAS", "Appui aérien (tablette)", "", {
+        ["cas"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _casAction] call ace_interact_menu_fnc_addActionToObject;
 
 private _manifestAction = [
-    "COMSPEC_Manifest", "Flight Manifest", "", {
-        createDialog "COMSPEC_FlightManifest_Dialog";
+    "COMSPEC_Manifest", "Flight Manifest (tablette)", "", {
+        ["manifest"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _manifestAction] call ace_interact_menu_fnc_addActionToObject;
@@ -109,15 +114,15 @@ private _laserAction = [
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _laserAction] call ace_interact_menu_fnc_addActionToObject;
 
 private _callsignAction = [
-    "COMSPEC_Callsign", "Mon indicatif", "", {
-        [] call comspec_overwatch_connect_fnc_callsignDialogShow;
+    "COMSPEC_Callsign", "Mon indicatif (tablette)", "", {
+        ["callsign"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _callsignAction] call ace_interact_menu_fnc_addActionToObject;
 
 private _ordersAction = [
-    "COMSPEC_OrderInbox", "Ordres reçus", "", {
-        [] call comspec_overwatch_connect_fnc_orderInboxShow;
+    "COMSPEC_OrderInbox", "Ordres reçus (tablette)", "", {
+        ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _ordersAction] call ace_interact_menu_fnc_addActionToObject;

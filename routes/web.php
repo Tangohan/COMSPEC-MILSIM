@@ -1262,7 +1262,16 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
+    $router->post('/api/atak/activity', [AtakApiController::class, 'activityStore']);
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);
+    $router->get('/api/atak/soi', [AtakApiController::class, 'soiPaceIndex']);
+    $router->post('/api/atak/soi', [AtakApiController::class, 'soiPaceStore']);
+    $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
+    $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
+    $router->post('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacStatus']);
+    $router->post('/api/atak/salute', [AtakApiController::class, 'saluteStore']);
+    $router->get('/api/atak/perstat', [AtakApiController::class, 'perstatIndex']);
+    $router->get('/api/atak/logistics', [AtakApiController::class, 'logisticsSnapshot']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->post('/api/atak/disconnect', [AtakApiController::class, 'disconnect']);
 $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);

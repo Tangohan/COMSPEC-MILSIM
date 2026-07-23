@@ -1,9 +1,7 @@
-/*
-    Ouvre le dialog de saisie d’indicatif (idd 9977).
-*/
-if (!hasInterface) exitWith {};
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
-
-if (isNull (findDisplay 9977)) then {
-    createDialog "COMSPEC_Callsign_Dialog";
-};
+/*
+    Ouvre la vue Indicatif / rôle dans la tablette Athena.
+*/
+if (!hasInterface) exitWith {};
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+["callsign"] call comspec_overwatch_connect_fnc_openTabletView;

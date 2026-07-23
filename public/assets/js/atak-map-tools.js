@@ -120,6 +120,20 @@ window.ATAKMapTools = (function () {
     return { x: x, y: y };
   }
 
+  function unitSteamId(u) {
+    if (!u) return '';
+    var top = String(u.steam_id || u.steamId || '').trim();
+    if (top) return top;
+    var ex = u.extra;
+    if (typeof ex === 'string') {
+      try { ex = JSON.parse(ex || '{}'); } catch (e) { ex = {}; }
+    }
+    if (ex && typeof ex === 'object') {
+      return String(ex.steam_uid || ex.steam_id || ex.steamId || '').trim();
+    }
+    return '';
+  }
+
   function findSelfUnit() {
     var user = window.ATAK_USER || {};
     var callsigns = [];
@@ -138,7 +152,7 @@ window.ATAKMapTools = (function () {
     if (steam) {
       for (i = 0; i < units.length; i++) {
         var u2 = units[i];
-        var sid = String(u2.steam_id || u2.steamId || '').trim();
+        var sid = unitSteamId(u2);
         if (sid && sid === steam) return u2;
       }
     }
@@ -447,6 +461,7 @@ window.ATAKMapTools = (function () {
   return {
     goToGrid: goToGrid,
     centerOnSelf: centerOnSelf,
+    findSelfUnit: findSelfUnit,
     setFollow: setFollow,
     startMeasure: startMeasure,
     setNvg: setNvg,

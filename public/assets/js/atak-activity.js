@@ -75,6 +75,9 @@ window.ATAKActivity = (function () {
       case 'sigint':
       case 'order':
       case 'tactical_alert':
+      case 'toc_note':
+      case 'medevac':
+      case 'fire_team':
         return 'atak-activity-item--tactical';
       default: return '';
     }
@@ -93,7 +96,10 @@ window.ATAKActivity = (function () {
       case 'marker': return 'Marqueur';
       case 'intel': return 'Renseignement';
       case 'nine_line': return '9-Line';
+      case 'medevac': return 'MEDEVAC';
       case 'tactical_alert': return 'Situation';
+      case 'toc_note': return 'TOC';
+      case 'fire_team': return 'Fire team';
       case 'designator': return 'Désignateur';
       case 'laser': return 'Laser';
       case 'flight': return 'Vol';
@@ -208,6 +214,21 @@ window.ATAKActivity = (function () {
     var actor = ev.actor ? '<span class="atak-activity-actor">' + escapeHtml(ev.actor) + '</span>' : '';
     var staleTag = stale ? '<span class="atak-activity-stale-tag">Ancien</span>' : '';
     var archivedTag = ev.archived ? '<span class="atak-activity-archived-tag">Archivé</span>' : '';
+    var ftChip = '';
+    var meta = ev.meta && typeof ev.meta === 'object' ? ev.meta : {};
+    var ftColor = String(meta.fire_team_color || '').trim();
+    var ftLabel = String(meta.fire_team_label || '').trim();
+    if (type === 'fire_team' || ftColor || ftLabel) {
+      var colorStyle = ftColor ? (' style="--ft-color:' + escapeHtml(ftColor) + ';border-color:' + escapeHtml(ftColor) + ';color:' + escapeHtml(ftColor) + '"') : '';
+      ftChip = '<span class="atak-ft-chip"' + colorStyle + '>'
+        + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
+        + escapeHtml(ftLabel || 'Fire team')
+        + '</span>';
+    }
+    if (type === 'fire_team' && ftColor) {
+      li.style.setProperty('--ft-color', ftColor);
+      li.className += ' atak-activity-item--fire-team';
+    }
     li.innerHTML =
       '<span class="atak-activity-rail" aria-hidden="true"></span>' +
       '<div class="atak-activity-body">' +
@@ -219,6 +240,7 @@ window.ATAKActivity = (function () {
           '</div>' +
         '</div>' +
         '<div class="atak-activity-label">' + escapeHtml(ev.label || '') + '</div>' +
+        ftChip +
         actor +
       '</div>';
     var btn = li.querySelector('[data-activity-info]');
@@ -261,24 +283,54 @@ window.ATAKActivity = (function () {
     source: 'Origine',
     kind: 'Type',
     method: 'Méthode',
-    path_hint: 'Chemin'
+    path_hint: 'Chemin',
+    action: 'Action',
+    fire_team_id: 'Équipe (n°)',
+    fire_team_label: 'Fire team',
+    fire_team_color: 'Couleur d’équipe',
+    fire_team_kind: 'Type d’équipe',
+    member_callsign: 'Membre',
+    member_user_id: 'Membre (compte)',
+    member_role: 'Rôle dans l’équipe',
+    member_count: 'Effectif',
+    added: 'Ajouts',
+    removed: 'Retraits'
   };
 
   var META_PRIMARY_ORDER = [
     'display_name', 'user_id', 'call_sign', 'callsign', 'profile_callsign',
     'steam_uid', 'mod_version', 'tenant_id', 'map_id', 'grid', 'grid_ref',
     'role', 'group_name', 'pos_x', 'pos_y', 'asl_z', 'heading', 'health',
-    'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'source', 'side', 'affiliation'
+    'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'source', 'side', 'affiliation',
+    'action', 'fire_team_label', 'fire_team_color', 'member_callsign', 'member_role',
+    'member_count', 'added', 'removed'
   ];
 
   function formatMetaValue(key, value) {
     if (key === 'ok') return value ? 'Réussi' : 'Échec';
+    if (key === 'action') {
+      var a = String(value || '');
+      var actionFr = {
+        created: 'Création',
+        updated: 'Mise à jour',
+        color_changed: 'Changement de couleur',
+        dissolved: 'Dissolution',
+        member_added: 'Attribution',
+        member_updated: 'Changement de membre',
+        member_removed: 'Retrait',
+        roster_changed: 'Changement d’effectif'
+      };
+      return actionFr[a] || a || '—';
+    }
     if (key === 'source') {
       var s = String(value || '');
       if (s === 'arma') return 'Jeu Arma';
       if (s === 'phone') return 'Téléphone';
       if (s === 'admin') return 'État-major';
       return s || '—';
+    }
+    if (key === 'fire_team_color' && typeof value === 'string' && /^#[0-9A-Fa-f]{6}$/.test(value.trim())) {
+      return value.trim().toUpperCase();
     }
     if (Array.isArray(value)) {
       return value.map(function (v) { return String(v); }).filter(Boolean).join(', ') || '—';
@@ -481,6 +533,12 @@ window.ATAKActivity = (function () {
       window.ATAKMedicalAlerts.ingestFromActivityEvents(fresh);
     }
 
+    try {
+      window.dispatchEvent(new CustomEvent('atak:activity-fresh', {
+        detail: { events: fresh, incremental: !!playSound }
+      }));
+    } catch (eAct) {}
+
     if (liaisonTabActive && lastId > 0) {
       setLastSeenId(lastId);
       updateBadge();
@@ -660,6 +718,43 @@ window.ATAKActivity = (function () {
           return;
         }
         clearJournal();
+      });
+    }
+    var tocForm = document.getElementById('atak-toc-form');
+    if (tocForm && !tocForm._atakBound) {
+      tocForm._atakBound = true;
+      tocForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var input = document.getElementById('atak-toc-note');
+        var note = input ? String(input.value || '').trim() : '';
+        if (!note) {
+          if (window.ATAKShowError) window.ATAKShowError('Saisissez le texte de l’entrée TOC.');
+          return;
+        }
+        var base = getApiBase();
+        if (!base) return;
+        var btn = document.getElementById('atak-toc-submit');
+        if (btn) btn.disabled = true;
+        fetch(base + '/api/atak/activity', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ mapId: getMapId(), note: note })
+        })
+          .then(function (r) {
+            if (!r.ok) throw new Error('toc');
+            return r.json();
+          })
+          .then(function () {
+            if (input) input.value = '';
+            return fetchActivity(false);
+          })
+          .catch(function () {
+            if (window.ATAKShowError) window.ATAKShowError('Impossible d’ajouter l’entrée au journal.');
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
       });
     }
   }

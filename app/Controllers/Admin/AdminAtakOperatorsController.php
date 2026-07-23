@@ -284,6 +284,7 @@ final class AdminAtakOperatorsController
                 'unit_group_label' => is_array($ft) ? (string) ($ft['unit_name'] ?? '') : '',
                 'fire_team_label' => is_array($ft) ? (string) ($ft['label'] ?? '') : '',
                 'fire_team_id' => is_array($ft) ? (int) ($ft['id'] ?? 0) : 0,
+                'fire_team_color' => is_array($ft) ? (string) ($ft['color'] ?? '') : '',
                 'linked_user_id' => $linkedUserId,
                 'linked_display_name' => $linkedDisplay,
                 'linked_url' => $linkedUrl,
@@ -441,6 +442,7 @@ final class AdminAtakOperatorsController
                 'id' => (int) ($team['id'] ?? 0),
                 'label' => trim((string) ($team['label'] ?? '')),
                 'unit_name' => trim((string) ($team['unit_name'] ?? '')),
+                'color' => strtoupper(trim((string) ($team['color'] ?? '#2563EB'))) ?: '#2563EB',
             ];
             foreach ($team['members'] ?? [] as $member) {
                 if (!is_array($member)) {

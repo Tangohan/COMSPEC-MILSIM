@@ -65,61 +65,8 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         }] call CBA_fnc_addEventHandler;
     };
 
-    player addAction [
-        "<t color='#7fffd4'>Tableau de briefing</t>",
-        { [] call comspec_overwatch_connect_fnc_openBriefingBoard; },
-        nil, 6, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Connecter mon téléphone</t>",
-        { [] call comspec_overwatch_connect_fnc_phoneConnectShow; },
-        nil, 5.9, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Ma tablette Athena</t>",
-        { [] call comspec_overwatch_connect_fnc_webBrowserShow; },
-        nil, 5.8, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#8aa0b4'>Tablette (vue classique)</t>",
-        { if (isNull (findDisplay 9973)) then { createDialog 'COMSPEC_Device_Dialog'; }; },
-        nil, 5.75, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7dffb3'>Je vais bien (annuler mon alerte)</t>",
-        { [] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert; },
-        nil, 5.85, false, true, "",
-        "(missionNamespace getVariable ['comspec_overwatch_enabled', true]) && {count ([] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert) > 0}"
-    ];
-
-    player addAction [
-        "<t color='#ff9080'>Signaler une situation</t>",
-        { [] call comspec_overwatch_connect_fnc_tacticalAlertDialogShow; },
-        nil, 5.82, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#7fffd4'>Mon indicatif</t>",
-        { [] call comspec_overwatch_connect_fnc_callsignDialogShow; },
-        nil, 5.7, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
-
-    player addAction [
-        "<t color='#ffb070'>Ordres reçus</t>",
-        { [] call comspec_overwatch_connect_fnc_orderInboxShow; },
-        nil, 5.6, false, true, "",
-        "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
-    ];
+    // Plus d’entrées dans le menu molette : tablette = K, hub = Ctrl+Shift+K, messagerie = Ctrl+K.
+    // (Les outils restent accessibles via le hub / ACE / tablette.)
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).

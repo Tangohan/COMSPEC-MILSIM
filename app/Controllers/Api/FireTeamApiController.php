@@ -26,7 +26,11 @@ final class FireTeamApiController
         private FireTeamRepository $fireTeams,
         private TenantRepository $tenantRepository,
         private UnitRepository $unitRepository,
+        private ?\App\Services\Tactical\FireTeamActivityLogger $ftActivity = null,
     ) {
+        $this->ftActivity ??= new \App\Services\Tactical\FireTeamActivityLogger(
+            new \App\Services\Tactical\AtakActivityLogService()
+        );
     }
 
     public function index(Request $request, array $params = []): Response
@@ -147,6 +151,15 @@ final class FireTeamApiController
             }
         }
 
+        $this->ftActivity?->record(
+            $r,
+            $team,
+            'created',
+            'Équipe de feu créée — ' . (string) ($team['label'] ?? ''),
+            $this->ftActivity->actorFromSession(),
+            ['member_count' => (int) ($team['member_count'] ?? count($team['members'] ?? []))]
+        );
+
         return Response::json(['ok' => true, 'fire_team' => $this->serializeTeam($team)], 201);
     }
 
@@ -176,6 +189,12 @@ final class FireTeamApiController
             return Response::json(['error' => 'not_found_or_dissolved'], 404);
         }
 
+        $action = array_key_exists('color', $data) ? 'color_changed' : 'updated';
+        $label = array_key_exists('color', $data)
+            ? ('Couleur d’équipe mise à jour — ' . (string) ($team['label'] ?? ''))
+            : ('Équipe de feu mise à jour — ' . (string) ($team['label'] ?? ''));
+        $this->ftActivity?->record($r, $team, $action, $label, $this->ftActivity->actorFromSession());
+
         return Response::json(['ok' => true, 'fire_team' => $this->serializeTeam($team)]);
     }
 
@@ -186,10 +205,20 @@ final class FireTeamApiController
             return $r;
         }
         $id = (int) ($params['id'] ?? 0);
+        $before = $id > 0 ? $this->fireTeams->findByIdForTenant($id, $r) : null;
         if (!$this->fireTeams->dissolve($id, $r)) {
             return Response::json(['error' => 'not_found'], 404);
         }
-        $team = $this->fireTeams->findByIdForTenant($id, $r);
+        $team = $this->fireTeams->findByIdForTenant($id, $r) ?? $before;
+        if (is_array($team)) {
+            $this->ftActivity?->record(
+                $r,
+                $team,
+                'dissolved',
+                'Équipe de feu dissoute — ' . (string) ($team['label'] ?? ''),
+                $this->ftActivity->actorFromSession()
+            );
+        }
 
         return Response::json(['ok' => true, 'fire_team' => $team ? $this->serializeTeam($team) : null]);
     }
@@ -225,6 +254,22 @@ final class FireTeamApiController
         if (!$member) {
             return Response::json(['error' => 'member_add_failed', 'message' => 'Impossible d’ajouter ce membre.'], 400);
         }
+        $team = $this->fireTeams->findByIdForTenant($teamId, $r);
+        if (is_array($team)) {
+            $who = trim((string) ($member['effective_callsign'] ?? $member['callsign'] ?? $member['display_name'] ?? ''));
+            $this->ftActivity?->record(
+                $r,
+                $team,
+                'member_added',
+                'Attribution fire team — ' . ($who !== '' ? $who : 'membre') . ' → ' . (string) ($team['label'] ?? ''),
+                $this->ftActivity->actorFromSession(),
+                [
+                    'member_callsign' => (string) ($member['effective_callsign'] ?? $member['callsign'] ?? ''),
+                    'member_user_id' => (int) ($member['user_id'] ?? 0),
+                    'member_role' => (string) ($member['role'] ?? ''),
+                ]
+            );
+        }
 
         return Response::json(['ok' => true, 'member' => $this->serializeMember($member)], 201);
     }
@@ -252,6 +297,21 @@ final class FireTeamApiController
         if (!$member) {
             return Response::json(['error' => 'not_found'], 404);
         }
+        $team = $this->fireTeams->findByIdForTenant($teamId, $r);
+        if (is_array($team) && (isset($patch['role']) || isset($patch['callsign']))) {
+            $who = trim((string) ($member['effective_callsign'] ?? $member['callsign'] ?? $member['display_name'] ?? ''));
+            $this->ftActivity?->record(
+                $r,
+                $team,
+                'member_updated',
+                'Changement fire team — ' . ($who !== '' ? $who : 'membre') . ' (' . (string) ($team['label'] ?? '') . ')',
+                $this->ftActivity->actorFromSession(),
+                [
+                    'member_callsign' => (string) ($member['effective_callsign'] ?? $member['callsign'] ?? ''),
+                    'member_role' => (string) ($member['role'] ?? ''),
+                ]
+            );
+        }
 
         return Response::json(['ok' => true, 'member' => $this->serializeMember($member)]);
     }
@@ -264,8 +324,28 @@ final class FireTeamApiController
         }
         $teamId = (int) ($params['id'] ?? 0);
         $memberId = (int) ($params['memberId'] ?? $params['member_id'] ?? 0);
+        $team = $this->fireTeams->findByIdForTenant($teamId, $r);
+        $removedLabel = '';
+        if (is_array($team)) {
+            foreach (($team['members'] ?? []) as $m) {
+                if (is_array($m) && (int) ($m['id'] ?? 0) === $memberId) {
+                    $removedLabel = trim((string) ($m['effective_callsign'] ?? $m['callsign'] ?? $m['display_name'] ?? ''));
+                    break;
+                }
+            }
+        }
         if (!$this->fireTeams->removeMember($teamId, $memberId, $r)) {
             return Response::json(['error' => 'not_found'], 404);
+        }
+        if (is_array($team)) {
+            $this->ftActivity?->record(
+                $r,
+                $team,
+                'member_removed',
+                'Retrait fire team — ' . ($removedLabel !== '' ? $removedLabel : 'membre') . ' ← ' . (string) ($team['label'] ?? ''),
+                $this->ftActivity->actorFromSession(),
+                ['member_callsign' => $removedLabel]
+            );
         }
 
         return Response::json(['ok' => true]);

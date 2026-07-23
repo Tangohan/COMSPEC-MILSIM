@@ -32,19 +32,7 @@ if (isNull _ctrl) exitWith {
 
     };
 
-    [_display] spawn {
-
-        params ["_d"];
-
-        uiSleep 0.4;
-
-        if (!isNull _d) then { closeDialog 0; };
-
-        uiSleep 0.05;
-
-        if (isNull (findDisplay 9973)) then { createDialog "COMSPEC_Device_Dialog"; };
-
-    };
+    // Petit modèle classique désactivé temporairement — on laisse l’écran ouvert avec l’erreur.
 
 };
 

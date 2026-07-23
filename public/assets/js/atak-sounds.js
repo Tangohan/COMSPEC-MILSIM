@@ -19,7 +19,9 @@ window.ATAKSounds = (function () {
     start: { file: 'atak_start.ogg', cooldown: 2500 },
     disconnect: { file: 'atak_disconnect.ogg', cooldown: 2500 },
     unconscious: { file: 'atak_alert_2.ogg', cooldown: 4000 },
-    death: { file: 'atak_death.ogg', cooldown: 4000 }
+    death: { file: 'atak_death.ogg', cooldown: 4000 },
+    order: { file: 'roger_simple.ogg', cooldown: 1200 },
+    order_priority: { file: 'roger_prio.ogg', cooldown: 1200 }
   };
   var DEFAULT_PREF = 'stalker';
   var DEFAULT_AUDIBLE = 'stalker';
@@ -61,6 +63,7 @@ window.ATAKSounds = (function () {
     if (n === 'crash') return 'disconnect';
     if (n === 'boot' || n === 'connect' || n === 'client_init') return 'start';
     if (n === 'cardiac_arrest' || n === 'kia' || n === 'dead' || n === 'killed') return 'death';
+    if (n === 'order_prio' || n === 'order-priority' || n === 'urgent_order') return 'order_priority';
     if (EVENTS[n]) return n;
     return '';
   }
@@ -322,12 +325,19 @@ window.ATAKSounds = (function () {
     lastEventAt[eventKey] = now;
     lastPlayAt = now;
     var isCritical = eventKey === 'unconscious' || eventKey === 'death';
-    var vibOpts = isCritical ? Object.assign({}, opts, { priority: true }) : opts;
+    var isOrder = eventKey === 'order' || eventKey === 'order_priority';
+    var vibOpts = (isCritical || isOrder) ? Object.assign({}, opts, { priority: true }) : opts;
     if (pref === 'silent_vib') {
+      // Ordres : toujours le roger (comme les urgences médicales en jeu).
+      if (isOrder || isCritical) {
+        var okSilent = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
+        tryVibrate(vibOpts);
+        return okSilent;
+      }
       return tryVibrate(vibOpts);
     }
     var ok = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
-    if (isCritical || opts.priority) tryVibrate(vibOpts);
+    if (isCritical || isOrder || opts.priority) tryVibrate(vibOpts);
     return ok;
   }
   /** Types d’activité de liaison qui méritent un son (pas le bruit de fond position). */
@@ -360,14 +370,25 @@ window.ATAKSounds = (function () {
     var t = String(type || '');
     if (t === 'client_init') return playEvent('start', opts);
     if (t === 'disconnect') return playEvent('disconnect', opts);
-    if (t === 'order' || t === 'tactical_alert') {
-      return play(Object.assign({}, opts, { priority: true }));
+    if (t === 'order') {
+      return playEvent(opts.highPriority ? 'order_priority' : 'order', opts);
+    }
+    if (t === 'tactical_alert') {
+      return playEvent(opts.highPriority ? 'order_priority' : 'order', opts);
     }
     return play(opts);
   }
-  /** Ordre / message prioritaire (CONTACT, URGENT) : son + vibration (sauf mute). */
+  /** Ordre prioritaire (URGENT / CONTACT) : roger_prio + vibration (sauf mute). */
   function playPriority(opts) {
-    return play(Object.assign({}, opts || {}, { priority: true }));
+    return playEvent('order_priority', Object.assign({}, opts || {}, { priority: true }));
+  }
+  /** Ordre standard : roger_simple. */
+  function playOrder(opts) {
+    opts = opts || {};
+    if (opts.highPriority || opts.priority === 'URGENT' || opts.priority === 'CONTACT') {
+      return playPriority(opts);
+    }
+    return playEvent('order', opts);
   }
   function setVolumeInputs(val) {
     var rail = document.getElementById('atak-alert-volume');
@@ -498,6 +519,7 @@ window.ATAKSounds = (function () {
     play: play,
     playEvent: playEvent,
     playForActivity: playForActivity,
+    playOrder: playOrder,
     playPriority: playPriority,
     tryVibrate: tryVibrate,
     unlock: unlock,

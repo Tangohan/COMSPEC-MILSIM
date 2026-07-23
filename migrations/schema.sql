@@ -820,6 +820,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `tenant_id` int unsigned NOT NULL,
   `map_id` int unsigned NOT NULL DEFAULT 1,
+  `mission_kind` varchar(32) NOT NULL DEFAULT 'cas',
   `mission_id` varchar(128) DEFAULT NULL,
   `author` varchar(255) NOT NULL,
   `assigned_aircraft` varchar(128) DEFAULT NULL,

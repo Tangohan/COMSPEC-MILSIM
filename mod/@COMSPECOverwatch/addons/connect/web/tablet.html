@@ -224,10 +224,39 @@
     padding: 8px 0;
     border-bottom: 1px solid rgba(30,53,69,0.55);
     font-size: 12px;
+    align-items: center;
   }
   .order-row .st { color: var(--accent); font-weight: 600; }
   .order-row .issuer { color: var(--muted); }
-
+  .order-actions { display: flex; gap: 4px; flex-wrap: wrap; grid-column: 1 / -1; margin-top: 4px; }
+  .order-actions .btn { min-height: 28px; padding: 4px 8px; font-size: 11px; }
+  .composer {
+    display: flex; gap: 8px; margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--line); align-items: stretch;
+  }
+  .composer input, .form-field input, .form-field textarea, .form-field select {
+    flex: 1; min-width: 0; appearance: none;
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; font-size: 13px; font-family: inherit;
+  }
+  .composer input:focus, .form-field input:focus, .form-field textarea:focus {
+    outline: none; border-color: var(--accent-dim);
+  }
+  .form-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field label { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+  .form-hint { font-size: 12px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
+  .form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .phone-code {
+    font-size: 42px; font-weight: 700; letter-spacing: 0.18em;
+    color: var(--good); text-align: center; padding: 18px 8px;
+    font-family: "Roboto Condensed", "Segoe UI", sans-serif;
+  }
+  .tac-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0;
+  }
+  .tac-grid .btn { min-height: 44px; }
   .alert-row {
     display: grid;
     grid-template-columns: 8px 1fr;
@@ -1040,14 +1069,13 @@
       <button class="app" data-view="alerts" type="button"><span class="ico">⚠</span>Alertes</button>
       <button class="app" data-view="chat" type="button"><span class="ico">✉</span>Messagerie</button>
       <button class="app" data-view="orders" type="button"><span class="ico">☰</span>Ordres</button>
-      <button class="app" data-cmd="open:briefing" type="button"><span class="ico">▤</span>Briefing</button>
-      <button class="app" data-cmd="open:cas" type="button"><span class="ico">✈</span>Appui aérien</button>
-      <button class="app" data-cmd="open:phone" type="button"><span class="ico">☎</span>Téléphone</button>
-      <button class="app" data-cmd="open:account" type="button"><span class="ico">◎</span>Compte</button>
-      <button class="app" data-cmd="open:callsign" type="button"><span class="ico">✦</span>Mon rôle</button>
-      <button class="app" data-cmd="open:hub" type="button"><span class="ico">◆</span>Hub</button>
+      <button class="app" data-view="briefing" type="button"><span class="ico">▤</span>Briefing</button>
+      <button class="app" data-view="cas" type="button"><span class="ico">✈</span>Appui aérien</button>
+      <button class="app" data-view="phone" type="button"><span class="ico">☎</span>Téléphone</button>
+      <button class="app" data-view="account" type="button"><span class="ico">◎</span>Compte</button>
+      <button class="app" data-view="callsign" type="button"><span class="ico">✦</span>Mon rôle</button>
+      <button class="app" data-view="apps" type="button"><span class="ico">◆</span>Apps</button>
     </nav>
-
     <section class="main">
       <div class="map-chrome athena-only">
         <h1 id="main-title">SUIVI DES FORCES</h1>
@@ -1066,10 +1094,13 @@
       </div>
       <div class="panel-view" id="view-chat">
         <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="chat" title="Vider l’historique local du tchat">Vider</button></div>
-        <div class="feed-empty" id="chat-empty">Aucune conversation récente. Ouvrez la messagerie complète depuis le Hub, ou attendez un message.</div>
+        <div class="feed-empty" id="chat-empty">Aucune conversation récente. Saisissez un message ci-dessous.</div>
         <div id="chat-feed"></div>
-      </div>
-      <div class="panel-view" id="view-orders">
+        <div class="composer">
+          <input type="text" id="chat-input" maxlength="280" placeholder="Message… (#CONTACT #SITREP #URGENT)" autocomplete="off">
+          <button class="btn primary" type="button" id="chat-send">Envoyer</button>
+        </div>
+      </div>      <div class="panel-view" id="view-orders">
         <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="orders" title="Vider l’affichage local des ordres">Vider</button></div>
         <div class="feed-empty" id="orders-empty">Aucun ordre en attente pour vous.</div>
         <div id="orders-feed"></div>
@@ -1117,35 +1148,55 @@
       </div>
       <div class="panel-view" id="view-apps">
         <div class="apps-menu">
-          <button class="fbcb2-app primary" type="button" data-cmd="open:briefing">
+          <button class="fbcb2-app primary" type="button" data-view="briefing">
             <span class="app-ico">▤</span>
             Briefing
             <span class="app-sub">Ordre de mission</span>
           </button>
-          <button class="fbcb2-app" type="button" data-cmd="open:cas">
+          <button class="fbcb2-app" type="button" data-view="cas">
             <span class="app-ico">✈</span>
             Appui aérien
             <span class="app-sub">Demande CAS</span>
           </button>
-          <button class="fbcb2-app" type="button" data-cmd="open:phone">
+          <button class="fbcb2-app" type="button" data-view="phone">
             <span class="app-ico">☎</span>
             Téléphone
             <span class="app-sub">Pairage terrain</span>
           </button>
-          <button class="fbcb2-app" type="button" data-cmd="open:account">
+          <button class="fbcb2-app" type="button" data-view="account">
             <span class="app-ico">◎</span>
             Compte
             <span class="app-sub">Profil Athena</span>
           </button>
-          <button class="fbcb2-app" type="button" data-cmd="open:callsign">
+          <button class="fbcb2-app" type="button" data-view="callsign">
             <span class="app-ico">✦</span>
             Mon rôle
             <span class="app-sub">Indicatif / fonction</span>
           </button>
-          <button class="fbcb2-app" type="button" data-cmd="open:hub">
-            <span class="app-ico">◆</span>
-            Centre ops
-            <span class="app-sub">Hub tactique</span>
+          <button class="fbcb2-app" type="button" data-view="tactical">
+            <span class="app-ico">⚠</span>
+            Alertes tactiques
+            <span class="app-sub">Contact · SALUTE · FRAGO</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-view="medical">
+            <span class="app-ico">✚</span>
+            Médical
+            <span class="app-sub">Bilan · triage</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-view="manifest">
+            <span class="app-ico">✈</span>
+            Manifest de vol
+            <span class="app-sub">Aéronef</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="action:ping">
+            <span class="app-ico">◉</span>
+            Point d’intérêt
+            <span class="app-sub">Signaler ma position</span>
+          </button>
+          <button class="fbcb2-app" type="button" data-cmd="action:forcesync">
+            <span class="app-ico">⇄</span>
+            Transmettre
+            <span class="app-sub">Position &amp; données</span>
           </button>
           <button class="fbcb2-app wide" type="button" data-cmd="open:athena">
             <span class="app-ico">▣</span>
@@ -1153,8 +1204,7 @@
             <span class="app-sub">Situation forces · navigateur</span>
           </button>
         </div>
-      </div>
-      <div class="panel-view" id="view-help">
+      </div>      <div class="panel-view" id="view-help">
         <div class="help-block">
           <h3>Vue Commande</h3>
           <p>Console embarquée inspirée des systèmes de commandement de bataille (suivi des forces bleues). La carte topo centrale affiche vos unités en liaison, comme un poste véhicule de type Appliqué.</p>
@@ -1182,8 +1232,130 @@
           <p>Utilisez « Athena » en haut à droite pour retrouver l’interface Overwatch classique.</p>
         </div>
       </div>
-    </section>
 
+      <div class="panel-view" id="view-callsign">
+        <p class="form-hint">Indiquez votre indicatif radio et votre fonction sur le terrain. Ces informations apparaissent sur la carte et dans les messages.</p>
+        <div class="form-stack">
+          <div class="form-field">
+            <label for="cs-input">Indicatif</label>
+            <input type="text" id="cs-input" maxlength="32" placeholder="ex. ALPHA-1" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="role-input">Fonction</label>
+            <input type="text" id="role-input" maxlength="48" placeholder="ex. Chef d’équipe" autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="cs-save">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-cas">
+        <p class="form-hint">Demande d’appui aérien simplifiée. La grille est prise à votre position actuelle.</p>
+        <div class="form-stack">
+          <div class="form-field">
+            <label for="cas-type">Type</label>
+            <select id="cas-type">
+              <option value="CAS">Appui aérien rapproché</option>
+              <option value="RECON">Reconnaissance aérienne</option>
+              <option value="QRF">Renfort rapide</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="cas-note">Précisions</label>
+            <textarea id="cas-note" rows="3" maxlength="200" placeholder="Objectif, menace, restrictions…"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="cas-send">Transmettre la demande</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-briefing">
+        <p class="form-hint">Consultez l’ordre de mission et les diapositives sur le portail Athena. La tablette reste ouverte.</p>
+        <div class="form-actions">
+          <button class="btn primary" type="button" data-cmd="open:athena">Ouvrir le portail Athena</button>
+          <button class="btn" type="button" data-cmd="refresh">Actualiser</button>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-phone">
+        <p class="form-hint">Saisissez ce code sur la page de connexion téléphone Athena pour lier votre appareil terrain.</p>
+        <div class="phone-code" id="phone-code">······</div>
+        <p class="form-hint" id="phone-hint">Chargement du code…</p>
+        <div class="form-actions">
+          <button class="btn primary" type="button" data-cmd="phone:refresh">Nouveau code</button>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-account">
+        <p class="form-hint">Liez votre compte Athena avec un code court (généré sur le portail), ou laissez le code vide pour tenter la liaison via Steam.</p>
+        <div class="form-stack">
+          <div class="form-field">
+            <label for="acc-code">Code de liaison</label>
+            <input type="text" id="acc-code" maxlength="12" placeholder="Code à 6 caractères" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="acc-steam">Identifiant Steam (optionnel)</label>
+            <input type="text" id="acc-steam" maxlength="64" placeholder="Laissé vide = joueur actuel" autocomplete="off">
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="acc-link">Établir la liaison</button>
+            <button class="btn" type="button" data-cmd="open:athena">Ouvrir le portail</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-medical">
+        <p class="form-hint">Transmettez votre bilan de santé, ou consultez les alertes médicales si vous êtes habilité au triage.</p>
+        <div class="form-actions">
+          <button class="btn primary" type="button" data-cmd="action:medical">Transmettre mon bilan</button>
+          <button class="btn" type="button" data-view="alerts">Voir les alertes</button>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-tactical">
+        <p class="form-hint">Signalez une situation tactique. Votre position et grille sont jointes automatiquement.</p>
+        <div class="tac-grid">
+          <button class="btn" type="button" data-cmd="tactical:send|TIC|">Contact</button>
+          <button class="btn" type="button" data-cmd="tactical:send|TIC_CLEAR|">Fin de contact</button>
+          <button class="btn" type="button" data-cmd="tactical:send|FRAGO|Situation — Mission — Exécution — Soutien — Commandement">Ordre fragmentaire</button>
+          <button class="btn danger" type="button" data-cmd="tactical:send|EAGLE_DOWN|Opérateur nécessite assistance immédiate">Opérateur à terre</button>
+        </div>
+        <div class="form-stack">
+          <div class="form-field"><label for="sal-s">Taille (S)</label><input id="sal-s" type="text" maxlength="80"></div>
+          <div class="form-field"><label for="sal-a">Activité (A)</label><input id="sal-a" type="text" maxlength="80"></div>
+          <div class="form-field"><label for="sal-l">Localisation (L)</label><input id="sal-l" type="text" maxlength="80"></div>
+          <div class="form-field"><label for="sal-u">Unité (U)</label><input id="sal-u" type="text" maxlength="80"></div>
+          <div class="form-field"><label for="sal-t">Heure (T)</label><input id="sal-t" type="text" maxlength="80"></div>
+          <div class="form-field"><label for="sal-e">Équipement (E)</label><input id="sal-e" type="text" maxlength="80"></div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="salute-send">Envoyer SALUTE</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-view" id="view-manifest">
+        <p class="form-hint">Déclarez votre aéronef pour le suivi de vol. Les données véhicule sont détectées automatiquement.</p>
+        <div class="form-stack">
+          <div class="form-field">
+            <label for="mf-laser">Code laser</label>
+            <input type="text" id="mf-laser" maxlength="8" value="1688" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="mf-auth">Code d’authentification</label>
+            <input type="text" id="mf-auth" maxlength="16" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="mf-pax">Nombre d’appareils</label>
+            <input type="number" id="mf-pax" min="1" max="99" value="1">
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="mf-send">Transmettre le manifest</button>
+          </div>
+        </div>
+      </div>
+    </section>
     <aside class="side athena-only">
       <div class="side-head" id="side-head">EFFECTIFS EN LIAISON</div>
       <div class="roster" id="roster">
@@ -1210,10 +1382,9 @@
         <button class="btn" type="button" id="btn-measure" title="Mesurer une distance sur le radar (2 clics)">Mesurer</button>
         <button class="btn" type="button" data-cmd="refresh">Actualiser</button>
         <button class="btn" id="btn-quiet" type="button" data-cmd="toggle:quiet">Mode discret</button>
-        <button class="btn" type="button" data-cmd="open:callsign">Modifier mon rôle</button>
+        <button class="btn" type="button" data-view="callsign">Modifier mon rôle</button>
         <button class="btn primary" type="button" data-cmd="open:athena">Carte Athena</button>
-        <button class="btn danger" type="button" data-cmd="close">Fermer</button>
-      </div>
+        <button class="btn danger" type="button" data-cmd="close">Fermer</button>      </div>
     </aside>
 
     <!-- Rail droit FBCB2 -->
@@ -1764,13 +1935,21 @@
     for (var i = 0; i < orderRows.length; i++) {
       var o = orderRows[i];
       var stale = isWallStale(o.receivedAt);
+      var oid = o.id || "";
       html += '<div class="order-row' + (stale ? " stale" : "") + '"><span class="st">' + escapeHtml(o.status || "À traiter") +
         '</span><span>' + escapeHtml(o.type || "Ordre") + (stale ? staleBadgeHtml() : "") +
-        '</span><span class="issuer">' + escapeHtml(o.issuer || "") + "</span></div>";
+        '</span><span class="issuer">' + escapeHtml(o.issuer || "") + "</span>";
+      if (oid) {
+        html += '<div class="order-actions">' +
+          '<button class="btn" type="button" data-cmd="order:status|' + escapeHtml(oid) + '|ACK">Accusé</button>' +
+          '<button class="btn" type="button" data-cmd="order:status|' + escapeHtml(oid) + '|EXEC">En cours</button>' +
+          '<button class="btn danger" type="button" data-cmd="order:status|' + escapeHtml(oid) + '|FAILED">Échec</button>' +
+          "</div>";
+      }
+      html += "</div>";
     }
     feed.innerHTML = html;
   }
-
   function renderAlerts() {
     var feed = document.getElementById("alerts-feed");
     var empty = document.getElementById("alerts-empty");
@@ -1869,13 +2048,15 @@
     }
 
     var stage = document.getElementById("stage");
-    var panels = ["chat", "orders", "alerts", "radio", "status", "apps", "help"];
+    var panels = [
+      "chat", "orders", "alerts", "radio", "status", "apps", "help",
+      "callsign", "cas", "briefing", "phone", "account", "medical", "tactical", "manifest"
+    ];
     stage.classList.toggle("hidden", currentView !== "bft");
     for (var p = 0; p < panels.length; p++) {
       var el = document.getElementById("view-" + panels[p]);
       if (el) el.classList.toggle("active", currentView === panels[p]);
     }
-
     var tools = document.querySelectorAll(".fbcb2-tool[data-view]");
     for (var ti = 0; ti < tools.length; ti++) {
       tools[ti].classList.toggle("on", tools[ti].getAttribute("data-view") === currentView);
@@ -1888,11 +2069,11 @@
     if (currentView === "chat") {
       if (title) title.textContent = "MESSAGERIE";
       if (sideHead) sideHead.textContent = "JOURNAL DE LIAISON";
-      if (hint) hint.textContent = "Aperçu local · messagerie complète via Hub";
+      if (hint) hint.textContent = "Envoi direct depuis la tablette";
     } else if (currentView === "orders") {
       if (title) title.textContent = "ORDRES";
       if (sideHead) sideHead.textContent = "ORDRES REÇUS";
-      if (hint) hint.textContent = "Aperçu · boîte complète via le menu Ordres";
+      if (hint) hint.textContent = "Accuser réception · marquer en cours ou échec";
     } else if (currentView === "alerts") {
       if (title) title.textContent = "ALERTES";
       if (sideHead) sideHead.textContent = "JOURNAL D’ALERTES";
@@ -1914,18 +2095,54 @@
     } else if (currentView === "apps") {
       if (title) title.textContent = "APPLICATIONS";
       if (sideHead) sideHead.textContent = "RACCOURCIS";
-      if (hint) hint.textContent = "Briefing, appui, compte, hub…";
+      if (hint) hint.textContent = "Toutes les actions passent par la tablette";
     } else if (currentView === "help") {
       if (title) title.textContent = "AIDE";
       if (sideHead) sideHead.textContent = "AIDE COMMANDE";
       if (hint) hint.textContent = "Console type Appliqué · suivi des forces";
+    } else if (currentView === "callsign") {
+      if (title) title.textContent = "MON RÔLE";
+      if (sideHead) sideHead.textContent = "IDENTITÉ";
+      if (hint) hint.textContent = "Indicatif et fonction";
+      var csEl = document.getElementById("cs-input");
+      var roleEl = document.getElementById("role-input");
+      if (csEl && boot && boot.callsign) csEl.value = boot.callsign;
+      if (roleEl && boot && boot.role) roleEl.value = boot.role;
+    } else if (currentView === "cas") {
+      if (title) title.textContent = "APPUI AÉRIEN";
+      if (sideHead) sideHead.textContent = "DEMANDE CAS";
+      if (hint) hint.textContent = "Demande simplifiée depuis la tablette";
+    } else if (currentView === "briefing") {
+      if (title) title.textContent = "BRIEFING";
+      if (sideHead) sideHead.textContent = "ORDRE DE MISSION";
+      if (hint) hint.textContent = "Diapositives et documents via Athena";
+    } else if (currentView === "phone") {
+      if (title) title.textContent = "TÉLÉPHONE";
+      if (sideHead) sideHead.textContent = "PAIRAGE";
+      if (hint) hint.textContent = "Code pour lier votre téléphone";
+      send("phone:refresh");
+    } else if (currentView === "account") {
+      if (title) title.textContent = "COMPTE";
+      if (sideHead) sideHead.textContent = "LIAISON ATHENA";
+      if (hint) hint.textContent = "Code court ou Steam";
+    } else if (currentView === "medical") {
+      if (title) title.textContent = "MÉDICAL";
+      if (sideHead) sideHead.textContent = "SANTÉ";
+      if (hint) hint.textContent = "Bilan et alertes";
+    } else if (currentView === "tactical") {
+      if (title) title.textContent = "ALERTES TACTIQUES";
+      if (sideHead) sideHead.textContent = "SIGNALEMENT";
+      if (hint) hint.textContent = "Contact · SALUTE · FRAGO";
+    } else if (currentView === "manifest") {
+      if (title) title.textContent = "MANIFEST DE VOL";
+      if (sideHead) sideHead.textContent = "AÉRONEF";
+      if (hint) hint.textContent = "Déclaration de vol";
     } else {
       if (title) title.textContent = "SUIVI DES FORCES";
       if (sideHead) sideHead.textContent = "EFFECTIFS EN LIAISON";
       if (hint && boot && boot.mapHint) hint.textContent = boot.mapHint;
     }
   }
-
   function setView(view) {
     applyView(view || "bft");
     // Carte Arma native (le Chromium masque tout contrôle dessous → bascule navigateur ↔ carte)
@@ -2060,6 +2277,111 @@
       setFooterMsg(measureMode
         ? "Mode mesure — cliquez deux points sur le radar"
         : "Mode mesure désactivé");
+    });
+  }
+
+  window.COMSPEC_setPhoneInfo = function (info) {
+    var codeEl = document.getElementById("phone-code");
+    var hintEl = document.getElementById("phone-hint");
+    if (!info || !info.ok) {
+      if (codeEl) codeEl.textContent = "——";
+      if (hintEl) hintEl.textContent = (info && info.error) ? info.error : "Code indisponible pour le moment.";
+      return;
+    }
+    if (codeEl) codeEl.textContent = info.code || "——";
+    if (hintEl) {
+      hintEl.textContent = info.expires
+        ? "Saisissez ce code sur Athena · expire bientôt"
+        : "Saisissez ce code sur la page de connexion téléphone Athena.";
+    }
+  };
+
+  function sendChat() {
+    var inp = document.getElementById("chat-input");
+    if (!inp) return;
+    var txt = (inp.value || "").trim();
+    if (!txt) return;
+    send("chat:send|" + txt.replace(/\|/g, "/"));
+    inp.value = "";
+    setFooterMsg("Message transmis…");
+  }
+
+  var chatSendBtn = document.getElementById("chat-send");
+  if (chatSendBtn) chatSendBtn.addEventListener("click", function (ev) {
+    ev.preventDefault();
+    sendChat();
+  });
+  var chatInput = document.getElementById("chat-input");
+  if (chatInput) {
+    chatInput.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        sendChat();
+      }
+    });
+  }
+
+  var csSave = document.getElementById("cs-save");
+  if (csSave) {
+    csSave.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var cs = ((document.getElementById("cs-input") || {}).value || "").trim();
+      var role = ((document.getElementById("role-input") || {}).value || "").trim();
+      if (!cs) {
+        setFooterMsg("Indiquez un indicatif");
+        return;
+      }
+      send("callsign:set|" + cs.replace(/\|/g, "-") + "|" + role.replace(/\|/g, "-"));
+      setFooterMsg("Profil enregistré…");
+    });
+  }
+
+  var casSend = document.getElementById("cas-send");
+  if (casSend) {
+    casSend.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var t = ((document.getElementById("cas-type") || {}).value || "CAS");
+      var n = ((document.getElementById("cas-note") || {}).value || "").trim().replace(/\|/g, "/");
+      send("cas:send|" + t + "|" + n);
+      setFooterMsg("Demande d’appui transmise…");
+    });
+  }
+
+  var accLink = document.getElementById("acc-link");
+  if (accLink) {
+    accLink.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var code = ((document.getElementById("acc-code") || {}).value || "").trim();
+      var steam = ((document.getElementById("acc-steam") || {}).value || "").trim();
+      send("account:link||" + code.replace(/\|/g, "") + "|" + steam.replace(/\|/g, ""));
+      setFooterMsg("Liaison en cours…");
+    });
+  }
+
+  var saluteSend = document.getElementById("salute-send");
+  if (saluteSend) {
+    saluteSend.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var ids = ["sal-s", "sal-a", "sal-l", "sal-u", "sal-t", "sal-e"];
+      var parts = [];
+      for (var i = 0; i < ids.length; i++) {
+        var el = document.getElementById(ids[i]);
+        parts.push(((el && el.value) || "").trim().replace(/\|/g, "/"));
+      }
+      send("salute:send|" + parts.join("|"));
+      setFooterMsg("SALUTE transmis…");
+    });
+  }
+
+  var mfSend = document.getElementById("mf-send");
+  if (mfSend) {
+    mfSend.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var laser = ((document.getElementById("mf-laser") || {}).value || "1688").trim();
+      var auth = ((document.getElementById("mf-auth") || {}).value || "").trim();
+      var pax = ((document.getElementById("mf-pax") || {}).value || "1").trim();
+      send("manifest:send|" + laser.replace(/\|/g, "") + "|" + auth.replace(/\|/g, "") + "|" + pax.replace(/\|/g, ""));
+      setFooterMsg("Manifest transmis…");
     });
   }
 

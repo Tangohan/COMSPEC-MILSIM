@@ -420,6 +420,38 @@ final class EnlistmentAcceptanceProvisioningService
      */
     private function createFreshTenantUser(int $tenantId, int $enlistmentId, array $row, string $email, int $actorUserId): array
     {
+        $email = strtolower(trim($email));
+
+        // Si l’e-mail existe déjà ailleurs : cloner (même mot de passe) plutôt que créer une 2ᵉ identité.
+        $global = $this->userRepository->findFirstByEmailGlobal($email);
+        if ($global) {
+            $srcId = (int) ($global['id'] ?? 0);
+            $srcTenant = (int) ($global['tenant_id'] ?? 0);
+            if ($srcId > 0 && $srcTenant === $tenantId) {
+                if (!$this->enlistmentRepository->linkSubmitterUserId($tenantId, $enlistmentId, $srcId)) {
+                    return [
+                        'ok' => false,
+                        'message' => 'Impossible de lier la candidature au compte existant.',
+                        'staff_summary' => '',
+                        'candidate_scenario' => 'existing',
+                        'warn' => null,
+                    ];
+                }
+                $this->promoteGuestOrInviteToMember($tenantId, $srcId);
+
+                return [
+                    'ok' => true,
+                    'message' => null,
+                    'staff_summary' => 'Compte déjà présent dans la communauté : candidature liée, rôle membre appliqué.',
+                    'candidate_scenario' => 'existing',
+                    'warn' => null,
+                ];
+            }
+            if ($srcId > 0) {
+                return $this->syncFromSubmitterUserId($tenantId, $enlistmentId, $srcId, $email, $actorUserId);
+            }
+        }
+
         if (!$this->featureGateService->canAddMember($tenantId)) {
             return [
                 'ok' => false,

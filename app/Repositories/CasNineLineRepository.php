@@ -12,19 +12,50 @@ class CasNineLineRepository
     private const VALID_STATUSES = [
         'DRAFT', 'SUBMITTED', 'ACKNOWLEDGED', 'CHECKING', 'TARGET_ACQUIRED',
         'INBOUND', 'CLEARED_HOT', 'ENGAGED', 'BDA_PENDING', 'COMPLETE', 'ABORTED',
+        // MEDEVAC
+        'REQUESTED', 'LAUNCHED', 'ON_SCENE', 'CANCELLED',
     ];
 
+    public const KIND_CAS = 'cas';
+    public const KIND_MEDEVAC = 'medevac';
+
     private PDO $pdo;
+    private ?bool $hasMissionKind = null;
 
     public function __construct()
     {
         $this->pdo = Database::getPdo();
     }
 
-    public function listCas(int $tenantId, int $mapId, ?string $assignedTo = null, ?string $status = null): array
+    private function hasMissionKindColumn(): bool
+    {
+        if ($this->hasMissionKind !== null) {
+            return $this->hasMissionKind;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['atak_nine_line', 'mission_kind']);
+            $this->hasMissionKind = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->hasMissionKind = false;
+        }
+
+        return $this->hasMissionKind;
+    }
+
+    public function listCas(int $tenantId, int $mapId, ?string $assignedTo = null, ?string $status = null, string $kind = self::KIND_CAS): array
     {
         $sql = 'SELECT * FROM atak_nine_line WHERE tenant_id = ? AND map_id = ?';
         $params = [$tenantId, $mapId];
+        if ($this->hasMissionKindColumn()) {
+            $sql .= ' AND mission_kind = ?';
+            $params[] = $kind === self::KIND_MEDEVAC ? self::KIND_MEDEVAC : self::KIND_CAS;
+        } elseif ($kind === self::KIND_MEDEVAC) {
+            return [];
+        }
         if ($assignedTo !== null && $assignedTo !== '') {
             $sql .= ' AND assigned_aircraft = ?';
             $params[] = $assignedTo;
@@ -40,6 +71,11 @@ class CasNineLineRepository
         return array_map([$this, 'normalizeCasRow'], $rows);
     }
 
+    public function listMedevac(int $tenantId, int $mapId, ?string $status = null): array
+    {
+        return $this->listCas($tenantId, $mapId, null, $status, self::KIND_MEDEVAC);
+    }
+
     public function getCas(int $tenantId, int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
@@ -50,6 +86,19 @@ class CasNineLineRepository
 
     public function createCas(int $tenantId, int $mapId, string $author, array $payload): array
     {
+        return $this->createMission($tenantId, $mapId, $author, $payload, self::KIND_CAS);
+    }
+
+    public function createMedevac(int $tenantId, int $mapId, string $author, array $payload): array
+    {
+        return $this->createMission($tenantId, $mapId, $author, $payload, self::KIND_MEDEVAC);
+    }
+
+    private function createMission(int $tenantId, int $mapId, string $author, array $payload, string $kind): array
+    {
+        if ($kind === self::KIND_MEDEVAC && !$this->hasMissionKindColumn()) {
+            throw new \RuntimeException('migration_required');
+        }
         $missionId = $payload['missionId'] ?? $payload['mission_id'] ?? null;
         $assignedAircraft = $payload['assigned_aircraft'] ?? $payload['assignedAircraft'] ?? null;
         $lines = $payload['lines'] ?? $payload;
@@ -62,16 +111,27 @@ class CasNineLineRepository
         $line7 = $lines['line7'] ?? $payload['line7'] ?? '';
         $line8 = $lines['line8'] ?? $payload['line8'] ?? '';
         $line9 = $lines['line9'] ?? $payload['line9'] ?? '';
-        $status = 'SUBMITTED';
+        $status = $kind === self::KIND_MEDEVAC ? 'REQUESTED' : 'SUBMITTED';
 
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO atak_nine_line (tenant_id, map_id, mission_id, author, assigned_aircraft, line1, line2, line3, line4, line5, line6, line7, line8, line9, lines_checked, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)'
-        );
-        $stmt->execute([
-            $tenantId, $mapId, $missionId, $author, $assignedAircraft,
-            $line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9,
-            $status,
-        ]);
+        if ($this->hasMissionKindColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO atak_nine_line (tenant_id, map_id, mission_kind, mission_id, author, assigned_aircraft, line1, line2, line3, line4, line5, line6, line7, line8, line9, lines_checked, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)'
+            );
+            $stmt->execute([
+                $tenantId, $mapId, $kind, $missionId, $author, $assignedAircraft,
+                $line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9,
+                $status,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO atak_nine_line (tenant_id, map_id, mission_id, author, assigned_aircraft, line1, line2, line3, line4, line5, line6, line7, line8, line9, lines_checked, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)'
+            );
+            $stmt->execute([
+                $tenantId, $mapId, $missionId, $author, $assignedAircraft,
+                $line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9,
+                $status,
+            ]);
+        }
         $id = (int) $this->pdo->lastInsertId();
         $row = $this->getCas($tenantId, $id);
         return $row ?? [];
@@ -160,6 +220,9 @@ class CasNineLineRepository
         }
         $row['missionId'] = $row['mission_id'] ?? null;
         $row['assignedAircraft'] = $row['assigned_aircraft'] ?? null;
+        $kind = strtolower(trim((string) ($row['mission_kind'] ?? self::KIND_CAS)));
+        $row['mission_kind'] = $kind === self::KIND_MEDEVAC ? self::KIND_MEDEVAC : self::KIND_CAS;
+        $row['missionKind'] = $row['mission_kind'];
         return $row;
     }
 }

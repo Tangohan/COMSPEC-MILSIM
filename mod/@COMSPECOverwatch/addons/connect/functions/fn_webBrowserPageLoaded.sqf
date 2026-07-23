@@ -248,13 +248,17 @@ private _myCallsign = _callsign;
 
     };
 
+    private _oid = _order getOrDefault ["id", ""];
+
+    private _safeOid = [_oid] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+
     private _safeIssuer = [_issuer] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
     private _safeType = [_typeLabel] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
     private _safeSt = [_statusLabelO] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
 
-    _orderJs pushBack format ["{type:'%1',status:'%2',issuer:'%3'}", _safeType, _safeSt, _safeIssuer];
+    _orderJs pushBack format ["{id:'%1',type:'%2',status:'%3',issuer:'%4'}", _safeOid, _safeType, _safeSt, _safeIssuer];
 
     if ((count _orderJs) >= 8) exitWith {};
 
