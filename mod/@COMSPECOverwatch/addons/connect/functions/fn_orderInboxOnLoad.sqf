@@ -39,12 +39,18 @@ private _shown = [];
     private _status = _order getOrDefault ["status", "PENDING"];
     private _prio = _order getOrDefault ["priority", "IMPORTANT"];
 
-    private _typeLabel = switch (toUpper _type) do {
-        case "HOLD": { "Tenir" };
-        case "RECON": { "Recon" };
-        case "CAS": { "CAS" };
-        case "QRF": { "QRF" };
-        default { "Mouvement" };
+    private _typeLabelCustom = trim (_order getOrDefault ["typeLabel", ""]);
+    private _typeLabel = if (_typeLabelCustom != "") then {
+        _typeLabelCustom
+    } else {
+        switch (toUpper _type) do {
+            case "HOLD": { "Tenir" };
+            case "RECON": { "Recon" };
+            case "CAS": { "CAS" };
+            case "QRF": { "QRF" };
+            case "CUSTOM": { "Perso." };
+            default { "Mouvement" };
+        };
     };
     private _statusLabel = switch (toUpper _status) do {
         case "ACK": { "Accusé" };

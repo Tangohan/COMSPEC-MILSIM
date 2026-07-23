@@ -1,9 +1,9 @@
 /*
-    Annonce métier : journal HTML + (sauf mode discret) chat système.
+    Annonce métier : journal HTML + (sauf mode discret / milsim) chat système.
     Params: [_message, _type, _priority, _forceGameUi]
       type     : link | medical | order | ping | system | tactical
       priority : info | warn | critical
-      forceGameUi : true pour toujours afficher le chat (dialogues critiques)
+      forceGameUi : true pour toujours afficher le chat (dialogues critiques ; ignoré en mode milsim)
 */
 params [
     ["_message", "", [""]],
@@ -29,7 +29,10 @@ private _title = _titles getOrDefault [toLower _type, "Overwatch"];
 [_type, _title, _message, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
 
 private _quiet = missionNamespace getVariable ["comspec_overwatch_quiet_mode", false];
-if (!_quiet || {_forceGameUi}) then {
+private _milsim = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
+// Mode milsim : pas de chat système « confort » (anomalies / infos), même avec forceGameUi.
+if (_milsim && {(toLower _type) in ["system", "ping", "tactical"]}) exitWith {};
+if ((!_quiet && {!_milsim}) || {_forceGameUi && {!_milsim}}) then {
     private _prefix = switch (toLower _type) do {
         case "link": { "[Athena] " };
         case "medical": { "[COMSPEC] " };

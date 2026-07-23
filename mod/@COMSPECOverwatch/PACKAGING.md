@@ -103,3 +103,5 @@ Le binaire Native AOT peut contenir un chemin du type `E:\...\COMSPECExtension\.
 - [SECURITY.md](SECURITY.md) — limites, licences, gate Athena  
 - [CREDITS.md](CREDITS.md) — cTab GPL vs parties COMSPEC  
 - [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md) — texte à coller sur Workshop (ne pas l’inclure dans le pack)  
+- [CHANGELOG.md](CHANGELOG.md) — historique des versions (dépôt ; coller le résumé « Nouveautés » sur Steam si besoin)  
+

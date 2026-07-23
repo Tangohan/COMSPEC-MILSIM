@@ -7,11 +7,23 @@ window.ATAKOrders = (function () {
   var canIssue = false;
   var recipientsCache = null;
   var recipientsLoading = false;
+  /** @type {Array<{id:string,label:string,default_payload:string,source?:string}>} */
+  var customTemplates = [];
+  var templatesLoaded = false;
+  var serverTemplatesReady = false;
   /** @type {Record<string, object>} cache local pour merge delta (?since=) */
   var ordersById = {};
   /** Curseur datetime SQL du dernier poll (null = snapshot complet) */
   var ordersSince = null;
   var currentMapIdForOrders = null;
+
+  var BUILTIN_TYPES = {
+    MOVE: 'Se déplacer',
+    HOLD: 'Tenir la position',
+    RECON: 'Reconnaissance',
+    CAS: 'Appui aérien',
+    QRF: 'Force de réaction'
+  };
 
   function getApiBase() {
     if (window.ATAKSocket && window.ATAKSocket.getApiBase) return window.ATAKSocket.getApiBase();
@@ -52,14 +64,326 @@ window.ATAKOrders = (function () {
     };
   }
 
-  function typeLabelFr(type) {
-    switch (String(type || '').toUpperCase()) {
-      case 'HOLD': return 'Tenir la position';
-      case 'RECON': return 'Reconnaissance';
-      case 'CAS': return 'Appui aérien';
-      case 'QRF': return 'Force de réaction';
-      default: return 'Se déplacer';
+  function typeLabelFr(type, customLabel) {
+    var t = String(type || '').toUpperCase();
+    if (BUILTIN_TYPES[t]) return BUILTIN_TYPES[t];
+    var custom = String(customLabel || '').trim();
+    if (t === 'CUSTOM' || t.indexOf('CUSTOM_') === 0 || t.indexOf('TPL_') === 0) {
+      return custom || 'Ordre personnalisé';
     }
+    return custom || 'Se déplacer';
+  }
+
+  function templatesStorageKey() {
+    var u = window.ATAK_USER || {};
+    var tid = u.tenantId != null ? String(u.tenantId) : '0';
+    var uid = u.id != null ? String(u.id) : 'anon';
+    return 'atak_order_templates_v1_' + tid + '_' + uid;
+  }
+
+  function loadLocalTemplates() {
+    try {
+      var raw = localStorage.getItem(templatesStorageKey());
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(function (t) {
+        return {
+          id: String(t.id || ''),
+          label: String(t.label || '').trim(),
+          default_payload: String(t.default_payload || t.defaultPayload || '').trim(),
+          source: t.source === 'server' ? 'server' : 'local'
+        };
+      }).filter(function (t) { return t.id && t.label; });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveLocalTemplates(list) {
+    customTemplates = Array.isArray(list) ? list : [];
+    try {
+      localStorage.setItem(templatesStorageKey(), JSON.stringify(customTemplates.map(function (t) {
+        return {
+          id: t.id,
+          label: t.label,
+          default_payload: t.default_payload || '',
+          source: t.source === 'server' ? 'server' : 'local'
+        };
+      })));
+    } catch (e) {}
+  }
+
+  function findTemplate(id) {
+    var sid = String(id || '');
+    for (var i = 0; i < customTemplates.length; i++) {
+      if (String(customTemplates[i].id) === sid) return customTemplates[i];
+    }
+    return null;
+  }
+
+  function fillTypeSelect(preserveSelection) {
+    var sel = document.getElementById('atak-order-type');
+    var group = document.getElementById('atak-order-type-custom');
+    if (!sel || !group) return;
+    var prev = preserveSelection ? String(sel.value || '') : '';
+    group.innerHTML = '';
+    if (!customTemplates.length) {
+      group.hidden = true;
+    } else {
+      group.hidden = false;
+      customTemplates.forEach(function (t) {
+        var opt = document.createElement('option');
+        opt.value = 'tpl:' + t.id;
+        opt.textContent = t.label;
+        group.appendChild(opt);
+      });
+    }
+    if (prev) {
+      sel.value = prev;
+      if (sel.value !== prev && prev.indexOf('tpl:') === 0) {
+        sel.value = 'MOVE';
+      }
+    }
+    updateTemplateDeleteVisibility();
+  }
+
+  function updateTemplateDeleteVisibility() {
+    var sel = document.getElementById('atak-order-type');
+    var btn = document.getElementById('atak-order-tpl-delete-btn');
+    if (!btn) return;
+    var v = sel ? String(sel.value || '') : '';
+    btn.hidden = v.indexOf('tpl:') !== 0;
+  }
+
+  function applyTemplateToForm(template) {
+    if (!template) return;
+    var payloadEl = document.getElementById('atak-order-payload');
+    if (payloadEl && template.default_payload) {
+      payloadEl.value = template.default_payload;
+    }
+  }
+
+  function resolveIssueType() {
+    var typeEl = document.getElementById('atak-order-type');
+    var raw = typeEl ? String(typeEl.value || 'MOVE') : 'MOVE';
+    if (raw.indexOf('tpl:') === 0) {
+      var tpl = findTemplate(raw.slice(4));
+      return {
+        type: 'CUSTOM',
+        type_label: tpl ? tpl.label : 'Ordre personnalisé',
+        template: tpl
+      };
+    }
+    return {
+      type: raw || 'MOVE',
+      type_label: '',
+      template: null
+    };
+  }
+
+  function loadTemplates(force) {
+    if (templatesLoaded && !force) {
+      return Promise.resolve(customTemplates);
+    }
+    var local = loadLocalTemplates();
+    customTemplates = local.slice();
+    fillTypeSelect(true);
+
+    var base = getApiBase();
+    if (!base) {
+      templatesLoaded = true;
+      return Promise.resolve(customTemplates);
+    }
+    return fetch(base + '/api/atak/orders/templates', {
+      credentials: 'include',
+      cache: 'no-store'
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('templates ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        serverTemplatesReady = !!(data && data.persisted);
+        var serverList = (data && Array.isArray(data.templates)) ? data.templates : [];
+        if (serverTemplatesReady) {
+          var fromServer = serverList.map(function (t) {
+            return {
+              id: String(t.id),
+              label: String(t.label || '').trim(),
+              default_payload: String(t.default_payload || '').trim(),
+              source: 'server'
+            };
+          }).filter(function (t) { return t.id && t.label; });
+          // Conservatoire : garder les modèles purement locaux (créés avant migration)
+          var localOnly = local.filter(function (t) {
+            return t.source !== 'server' && String(t.id).charAt(0) === 'L';
+          });
+          customTemplates = fromServer.concat(localOnly);
+          saveLocalTemplates(customTemplates);
+        } else if (!customTemplates.length && local.length) {
+          customTemplates = local;
+        }
+        templatesLoaded = true;
+        fillTypeSelect(true);
+        return customTemplates;
+      })
+      .catch(function () {
+        serverTemplatesReady = false;
+        customTemplates = local;
+        templatesLoaded = true;
+        fillTypeSelect(true);
+        return customTemplates;
+      });
+  }
+
+  function showTplForm(show) {
+    var form = document.getElementById('atak-orders-tpl-form');
+    if (!form) return;
+    form.hidden = !show;
+    if (show) {
+      var labelEl = document.getElementById('atak-order-tpl-label');
+      var payloadTplEl = document.getElementById('atak-order-tpl-payload');
+      var payloadEl = document.getElementById('atak-order-payload');
+      var typeEl = document.getElementById('atak-order-type');
+      if (labelEl) {
+        var resolved = resolveIssueType();
+        labelEl.value = resolved.template
+          ? resolved.template.label
+          : (typeEl && BUILTIN_TYPES[typeEl.value] ? '' : '');
+        labelEl.focus();
+      }
+      if (payloadTplEl) {
+        payloadTplEl.value = payloadEl ? String(payloadEl.value || '') : '';
+      }
+    }
+  }
+
+  function createTemplateFromForm() {
+    var labelEl = document.getElementById('atak-order-tpl-label');
+    var payloadTplEl = document.getElementById('atak-order-tpl-payload');
+    var label = labelEl ? String(labelEl.value || '').trim() : '';
+    var defaultPayload = payloadTplEl ? String(payloadTplEl.value || '').trim() : '';
+    if (!label) {
+      if (window.ATAKShowError) window.ATAKShowError('Indiquez un nom pour ce modèle d’ordre.');
+      return;
+    }
+
+    var base = getApiBase();
+    var finishLocal = function (tpl) {
+      var next = customTemplates.filter(function (t) { return String(t.id) !== String(tpl.id); });
+      next.push(tpl);
+      saveLocalTemplates(next);
+      fillTypeSelect(false);
+      var sel = document.getElementById('atak-order-type');
+      if (sel) sel.value = 'tpl:' + tpl.id;
+      updateTemplateDeleteVisibility();
+      showTplForm(false);
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Modèle enregistré.');
+    };
+
+    if (base) {
+      fetch(base + '/api/atak/orders/templates', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: label,
+          default_payload: defaultPayload
+        })
+      })
+        .then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; });
+        })
+        .then(function (res) {
+          if (res.ok && res.data && res.data.template) {
+            serverTemplatesReady = true;
+            var t = res.data.template;
+            finishLocal({
+              id: String(t.id),
+              label: String(t.label || label),
+              default_payload: String(t.default_payload || defaultPayload),
+              source: 'server'
+            });
+            return;
+          }
+          if (res.status === 503 || (res.data && res.data.error === 'not_migrated')) {
+            serverTemplatesReady = false;
+            finishLocal({
+              id: 'L' + Date.now().toString(36),
+              label: label,
+              default_payload: defaultPayload,
+              source: 'local'
+            });
+            return;
+          }
+          if (window.ATAKShowError) {
+            window.ATAKShowError((res.data && res.data.message) || 'Impossible d’enregistrer le modèle.');
+          }
+        })
+        .catch(function () {
+          finishLocal({
+            id: 'L' + Date.now().toString(36),
+            label: label,
+            default_payload: defaultPayload,
+            source: 'local'
+          });
+        });
+      return;
+    }
+
+    finishLocal({
+      id: 'L' + Date.now().toString(36),
+      label: label,
+      default_payload: defaultPayload,
+      source: 'local'
+    });
+  }
+
+  function deleteSelectedTemplate() {
+    var sel = document.getElementById('atak-order-type');
+    var raw = sel ? String(sel.value || '') : '';
+    if (raw.indexOf('tpl:') !== 0) return;
+    var id = raw.slice(4);
+    var tpl = findTemplate(id);
+    if (!tpl) return;
+    if (!window.confirm('Retirer le modèle « ' + tpl.label + ' » ?')) return;
+
+    var finish = function () {
+      customTemplates = customTemplates.filter(function (t) { return String(t.id) !== String(id); });
+      saveLocalTemplates(customTemplates);
+      fillTypeSelect(false);
+      if (sel) sel.value = 'MOVE';
+      updateTemplateDeleteVisibility();
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Modèle retiré.');
+    };
+
+    var base = getApiBase();
+    if (base && tpl.source === 'server') {
+      fetch(base + '/api/atak/orders/templates/' + encodeURIComponent(id) + '/delete', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      })
+        .then(function (r) {
+          return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+        })
+        .then(function (res) {
+          if (!res.ok) {
+            if (window.ATAKShowError) {
+              window.ATAKShowError((res.data && res.data.message) || 'Impossible de retirer le modèle.');
+            }
+            return;
+          }
+          finish();
+        })
+        .catch(function () {
+          if (window.ATAKShowError) window.ATAKShowError('Impossible de retirer le modèle.');
+        });
+      return;
+    }
+    finish();
   }
 
   function priorityLabelFr(p) {
@@ -138,6 +462,9 @@ window.ATAKOrders = (function () {
         var typeEl = document.getElementById('atak-order-target-type');
         fillTargetOptions(typeEl ? typeEl.value : 'all', true);
       });
+    }
+    if (visible) {
+      loadTemplates(false);
     }
   }
 
@@ -431,14 +758,15 @@ window.ATAKOrders = (function () {
       if (window.ATAKShowError) window.ATAKShowError('Connectez-vous pour émettre un ordre.');
       return;
     }
-    var typeEl = document.getElementById('atak-order-type');
     var prioEl = document.getElementById('atak-order-priority');
     var targetTypeEl = document.getElementById('atak-order-target-type');
     var targetRefEl = document.getElementById('atak-order-target-ref');
     var payloadEl = document.getElementById('atak-order-payload');
     var radioEl = document.getElementById('atak-order-radio-sim');
 
-    var type = typeEl ? typeEl.value : 'MOVE';
+    var resolved = resolveIssueType();
+    var type = resolved.type || 'MOVE';
+    var typeLabel = resolved.type_label || '';
     var priority = prioEl ? prioEl.value : 'IMPORTANT';
     var targetType = targetTypeEl ? targetTypeEl.value : 'all';
     var targetRef = targetRefEl ? String(targetRefEl.value || '').trim() : '';
@@ -471,6 +799,7 @@ window.ATAKOrders = (function () {
       body: JSON.stringify({
         mapId: getMapId(),
         type: type,
+        type_label: typeLabel,
         priority: priority,
         target_type: targetType,
         target_ref: targetRef,
@@ -562,6 +891,35 @@ window.ATAKOrders = (function () {
         });
       });
     }
+    var orderTypeEl = document.getElementById('atak-order-type');
+    if (orderTypeEl && !orderTypeEl._boundTpl) {
+      orderTypeEl._boundTpl = true;
+      orderTypeEl.addEventListener('change', function () {
+        updateTemplateDeleteVisibility();
+        var resolved = resolveIssueType();
+        if (resolved.template) applyTemplateToForm(resolved.template);
+      });
+    }
+    var saveBtn = document.getElementById('atak-order-tpl-save-btn');
+    if (saveBtn && !saveBtn._bound) {
+      saveBtn._bound = true;
+      saveBtn.addEventListener('click', function () { showTplForm(true); });
+    }
+    var cancelBtn = document.getElementById('atak-order-tpl-cancel-btn');
+    if (cancelBtn && !cancelBtn._bound) {
+      cancelBtn._bound = true;
+      cancelBtn.addEventListener('click', function () { showTplForm(false); });
+    }
+    var confirmBtn = document.getElementById('atak-order-tpl-confirm-btn');
+    if (confirmBtn && !confirmBtn._bound) {
+      confirmBtn._bound = true;
+      confirmBtn.addEventListener('click', function () { createTemplateFromForm(); });
+    }
+    var deleteBtn = document.getElementById('atak-order-tpl-delete-btn');
+    if (deleteBtn && !deleteBtn._bound) {
+      deleteBtn._bound = true;
+      deleteBtn.addEventListener('click', function () { deleteSelectedTemplate(); });
+    }
     var list = document.getElementById('atak-orders-list');
     if (list && !list._bound) {
       list._bound = true;
@@ -602,6 +960,7 @@ window.ATAKOrders = (function () {
     fetchOrders: fetchOrders,
     startPolling: startPolling,
     loadRecipients: loadRecipients,
+    loadTemplates: loadTemplates,
     parseOrderChatBody: parseOrderChatBody,
     formatChatBody: formatChatBody,
     typeLabelFr: typeLabelFr

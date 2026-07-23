@@ -2981,6 +2981,14 @@ try {
     echo '  [ATTENTION] atak_orders_since : ' . $e->getMessage() . "\n";
 }
 
+$atakOrderTemplatesMigrate = require $root . '/bootstrap/atak_order_templates_migration.php';
+try {
+    echo "Migration atak_order_templates (modèles d’ordres personnalisés)...\n";
+    $atakOrderTemplatesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_order_templates : ' . $e->getMessage() . "\n";
+}
+
 $atakUnitsPositionMigrate = require $root . '/bootstrap/atak_units_position_migration.php';
 try {
     echo "Migration atak_units_position (coordonnées carte pos_x / pos_y)...\n";

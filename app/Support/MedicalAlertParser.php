@@ -310,6 +310,72 @@ final class MedicalAlertParser
         ], true);
     }
 
+    /**
+     * Rang de sévérité pour regrouper les alertes d’un même indicatif
+     * (arrêt cardiaque > inconscient > blessé…).
+     */
+    public static function kindSeverityRank(?string $kind): int
+    {
+        $k = strtolower(trim((string) $kind));
+
+        return match ($k) {
+            'cardiac_arrest', 'cardiac-arrest', 'death', 'dead', 'kia' => 100,
+            'unconscious' => 80,
+            'critical', 'incapacitated', 'down' => 70,
+            'wounded', 'injured', 'medical_alert' => 40,
+            'wia_report' => 30,
+            default => 10,
+        };
+    }
+
+    /**
+     * Une seule alerte active par indicatif : conserve la sévérité max.
+     * Les alertes déjà clôturées sont renvoyées telles quelles (historique API).
+     *
+     * @param list<array<string, mixed>> $alerts
+     * @return list<array<string, mixed>>
+     */
+    public static function collapseToHighestSeverityPerCallSign(array $alerts): array
+    {
+        $bestByCs = [];
+        $passthrough = [];
+        foreach ($alerts as $a) {
+            if (!is_array($a)) {
+                continue;
+            }
+            $resolved = !empty($a['triage']['is_resolved'])
+                || self::isResolvedTriage(isset($a['triage']['status']) ? (string) $a['triage']['status'] : null);
+            if ($resolved) {
+                $passthrough[] = $a;
+                continue;
+            }
+            $cs = mb_strtoupper(trim((string) ($a['call_sign'] ?? '')));
+            if ($cs === '') {
+                $cs = mb_strtoupper(trim((string) ($a['author'] ?? '')));
+            }
+            if ($cs === '') {
+                $passthrough[] = $a;
+                continue;
+            }
+            $rank = self::kindSeverityRank(isset($a['kind']) ? (string) $a['kind'] : null);
+            $created = (string) ($a['created_at'] ?? '');
+            if (!isset($bestByCs[$cs])) {
+                $bestByCs[$cs] = ['alert' => $a, 'rank' => $rank, 'created' => $created];
+                continue;
+            }
+            $cur = $bestByCs[$cs];
+            if ($rank > $cur['rank'] || ($rank === $cur['rank'] && $created > $cur['created'])) {
+                $bestByCs[$cs] = ['alert' => $a, 'rank' => $rank, 'created' => $created];
+            }
+        }
+        $collapsed = [];
+        foreach ($bestByCs as $entry) {
+            $collapsed[] = $entry['alert'];
+        }
+
+        return array_merge($passthrough, $collapsed);
+    }
+
     public static function normalizeTriageStatus(?string $status): string
     {
         $x = strtolower(trim((string) $status));

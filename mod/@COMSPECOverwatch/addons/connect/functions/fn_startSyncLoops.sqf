@@ -122,6 +122,8 @@ private _casPollInterval = 10;
 
 ["OnTrackingAnomaly", {
     params ["_alert"];
+    // Mode milsim : aucune annonce in-game pour les anomalies de suivi.
+    if (missionNamespace getVariable ["comspec_overwatch_milsim_ui", false]) exitWith {};
     private _kind = _alert getOrDefault ["kind", "ANOMALY"];
     [format ["Anomalie détectée : %1", _kind], "system", "warn"] call comspec_overwatch_connect_fnc_announce;
 }] call comspec_overwatch_connect_fnc_registerEventHandler;

@@ -1309,6 +1309,10 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
 $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
 $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
 $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);
+$router->get('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesIndex']);
+$router->post('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesStore']);
+$router->delete('/api/atak/orders/templates/{id}', [AtakApiController::class, 'ordersTemplatesDelete']);
+$router->post('/api/atak/orders/templates/{id}/delete', [AtakApiController::class, 'ordersTemplatesDelete']);
 $router->patch('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
 $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
     $router->get('/api/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);

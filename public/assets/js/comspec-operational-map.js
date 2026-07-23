@@ -591,6 +591,9 @@
         if (st === 'traite' || st === 'kia' || st === 'annule') return false;
         return withinWindow(a && a.created_at);
       });
+      if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.collapseAlertsByCallsign === 'function') {
+        alerts = window.ATAKMedicalAlerts.collapseAlertsByCallsign(alerts);
+      }
       if (!critical.length && !alerts.length) {
         root.innerHTML = '<p class="text-sm" style="color:var(--tm-muted)">Aucune urgence détectée pour l’instant.</p>';
         return;

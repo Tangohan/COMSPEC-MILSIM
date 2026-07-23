@@ -3,6 +3,7 @@
 Mod Arma 3 pour la liaison avec Athena (carte tactique / ATAK). Envoi de la position du joueur et outils terrain (messagerie, tablette, téléphone, ordres…).
 
 - Description Steam Workshop (BBCode prêt à coller) : [STEAM_DESCRIPTION.md](STEAM_DESCRIPTION.md)
+- **Changelog** : [CHANGELOG.md](CHANGELOG.md) — version courante **1.1.5**
 - Crédits & sources (cTab, SIT, ctav-b2, etc.) : [CREDITS.md](CREDITS.md)
 - **Diffusion Workshop (checklist)** : [PACKAGING.md](PACKAGING.md)
 - **Sécurité / limites anti-copie** : [SECURITY.md](SECURITY.md)

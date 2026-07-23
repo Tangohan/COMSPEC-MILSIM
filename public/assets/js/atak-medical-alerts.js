@@ -148,6 +148,7 @@ window.ATAKMedicalAlerts = (function () {
       var ts = (u && (u.updated_at || u.created_at)) || '';
       return isWithinActiveWindow(ts, now, windowMs);
     });
+    units = collapseUnitsByCallsign(units);
     // Indicatifs déjà en « Unités à secourir » → pas de doublon dans « Alertes reçues ».
     var unitCs = {};
     units.forEach(function (u) {
@@ -167,6 +168,7 @@ window.ATAKMedicalAlerts = (function () {
       if (a && a.id != null && a.id !== '' && !isNaN(Number(a.id))) return true;
       return isWithinActiveWindow(a && a.created_at, now, windowMs);
     });
+    alerts = collapseAlertsByCallsign(alerts);
     var emergency = 0;
     alerts.forEach(function (a) {
       if ((a.severity || '') === 'critical' && !(a.triage && a.triage.is_resolved)) emergency++;
@@ -187,6 +189,70 @@ window.ATAKMedicalAlerts = (function () {
       triage_statuses: (data && data.triage_statuses) || TRIAGE_OPTIONS,
       _raw: data
     };
+  }
+
+  /** Rang sévérité : arrêt cardiaque > inconscient > blessé… */
+  function kindSeverityRank(kind) {
+    var k = String(kind || '').toLowerCase();
+    if (k === 'cardiac_arrest' || k === 'cardiac-arrest' || k === 'death' || k === 'dead' || k === 'kia') return 100;
+    if (k === 'unconscious') return 80;
+    if (k === 'critical' || k === 'incapacitated' || k === 'down') return 70;
+    if (k === 'wounded' || k === 'injured' || k === 'medical_alert') return 40;
+    if (k === 'wia_report') return 30;
+    return 10;
+  }
+
+  /** Une carte active par indicatif — conserve la sévérité max. */
+  function collapseAlertsByCallsign(alerts) {
+    var best = {};
+    var noCs = [];
+    var order = [];
+    (alerts || []).forEach(function (a) {
+      if (!a) return;
+      var cs = String((a.call_sign || a.author || '')).trim().toUpperCase();
+      if (!cs) {
+        noCs.push(a);
+        return;
+      }
+      var rank = kindSeverityRank(a.kind);
+      var created = String(a.created_at || '');
+      if (!best[cs]) {
+        order.push(cs);
+        best[cs] = { alert: a, rank: rank, created: created };
+        return;
+      }
+      var cur = best[cs];
+      if (rank > cur.rank || (rank === cur.rank && created > cur.created)) {
+        best[cs] = { alert: a, rank: rank, created: created };
+      }
+    });
+    return order.map(function (cs) { return best[cs].alert; }).concat(noCs);
+  }
+
+  function collapseUnitsByCallsign(units) {
+    var best = {};
+    var order = [];
+    var orphans = [];
+    (units || []).forEach(function (u) {
+      if (!u) return;
+      var cs = String(u.call_sign || '').trim().toUpperCase();
+      if (!cs) {
+        orphans.push(u);
+        return;
+      }
+      var rank = kindSeverityRank(u.health);
+      var updated = String(u.updated_at || u.created_at || '');
+      if (!best[cs]) {
+        order.push(cs);
+        best[cs] = { unit: u, rank: rank, updated: updated };
+        return;
+      }
+      var cur = best[cs];
+      if (rank > cur.rank || (rank === cur.rank && updated > cur.updated)) {
+        best[cs] = { unit: u, rank: rank, updated: updated };
+      }
+    });
+    return order.map(function (cs) { return best[cs].unit; }).concat(orphans);
   }
 
   /** Parse un datetime MySQL naïf (sans TZ) en heure locale navigateur. */
@@ -856,6 +922,21 @@ window.ATAKMedicalAlerts = (function () {
     return !!(a && a.id != null && a.id !== '' && !a.source);
   }
 
+  /** Préfère un triage clôturé / non défaut lors de la fusion multi-sources. */
+  function preferTriage(existing, incoming) {
+    var a = existing || null;
+    var b = incoming || null;
+    if (!a) return b;
+    if (!b) return a;
+    if (b.is_resolved && !a.is_resolved) return b;
+    if (a.is_resolved && !b.is_resolved) return a;
+    var as = String(a.status || 'a_secourir');
+    var bs = String(b.status || 'a_secourir');
+    if (bs !== 'a_secourir' && as === 'a_secourir') return b;
+    if (as !== 'a_secourir' && bs === 'a_secourir') return a;
+    return b.status ? b : a;
+  }
+
   function mergeAlerts(primary, secondary) {
     var byKey = {};
     var sigToKey = {};
@@ -883,9 +964,7 @@ window.ATAKMedicalAlerts = (function () {
         var merged = Object.assign({}, existing, a);
         // Garder l’id de la vraie ligne API (triage) même si une source tchat/activité arrive après.
         if (hasApiAlertId(existing) && !hasApiAlertId(a)) merged.id = existing.id;
-        merged.triage = (a.triage && a.triage.status && a.triage.status !== 'a_secourir')
-          ? a.triage
-          : (existing.triage || a.triage);
+        merged.triage = preferTriage(existing.triage, a.triage);
         merged.client_key = existing.client_key || a.client_key || k;
         byKey[k] = merged;
       }
@@ -1122,6 +1201,8 @@ window.ATAKMedicalAlerts = (function () {
     ingestFromActivityEvents: ingestFromActivityEvents,
     apply: apply,
     kindLabelFr: kindLabelFr,
+    kindSeverityRank: kindSeverityRank,
+    collapseAlertsByCallsign: collapseAlertsByCallsign,
     dismissAlert: dismissAlert,
     dismissUnit: dismissUnit,
     dismissAllVisible: dismissAllVisible,

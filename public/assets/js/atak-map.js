@@ -188,7 +188,11 @@ window.ATAKMap = (function () {
     L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     var gridEl = L.DomUtil.create('div', 'leaflet-grid-mouseposition atak-map-hud');
-    gridEl.innerHTML = '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
+    gridEl.innerHTML =
+      '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Grille</span> <span class="atak-map-hud__v" data-hud-grid>0 0</span></div>'
+      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Échelle</span> <span class="atak-map-hud__v" data-hud-zoom>Z' + map.getZoom() + '</span></div>'
+      + '<div class="atak-map-hud__row" data-hud-measure-row hidden><span class="atak-map-hud__k">Mesure</span> <span class="atak-map-hud__v atak-map-hud__measure" data-hud-measure>—</span></div>'
+      + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Contacts</span> <span class="atak-map-hud__v" data-hud-contacts>—</span></div>'
       + '<div class="atak-map-hud__row"><span class="atak-map-hud__k">Réseau</span> <span class="atak-map-hud__v atak-map-hud__ok" data-hud-net>En liaison</span></div>';
     map.getContainer().appendChild(gridEl);
     map.on('mousemove', function (e) {
@@ -196,6 +200,10 @@ window.ATAKMap = (function () {
       var lng = Math.round(e.latlng.lng);
       var v = gridEl.querySelector('[data-hud-grid]');
       if (v) v.textContent = lng + ' ' + lat;
+    });
+    map.on('zoomend', function () {
+      var z = gridEl.querySelector('[data-hud-zoom]');
+      if (z) z.textContent = 'Z' + map.getZoom();
     });
     // Recalcule la taille Leaflet après layout flex (carte + tiroir effectifs).
     // Debounce + seuil de taille : évite une boucle reflow / tremblement plein écran.
@@ -953,8 +961,8 @@ window.ATAKMap = (function () {
               (onMonNet && !emitting ? '<span class="atak-unit-listen-badge">Réseau</span>' : '') +
               '<span class="atak-unit-avatar-marker__label">' + String(u.call_sign || '').slice(0, 12).replace(/</g, '&lt;') + '</span>' +
               '</div>',
-            iconSize: [48, 52],
-            iconAnchor: [24, 20],
+            iconSize: [32, 36],
+            iconAnchor: [16, 14],
           });
         } else {
           var iconOpts = {
@@ -964,7 +972,7 @@ window.ATAKMap = (function () {
             callSign: u.call_sign || '',
             heading: headingRounded === '' ? u.heading : headingRounded,
             showLabel: true,
-            size: 28,
+            size: 16,
             health: health,
             className: healthClass,
             emitting: emitting,
@@ -974,10 +982,10 @@ window.ATAKMap = (function () {
             ? nato.leafletDivIcon(L, iconOpts)
             : L.divIcon({
                 className: 'atak-unit-fallback ' + healthClass,
-                html: '<span style="background:#3b82f6;color:#fff;padding:2px 5px;font-size:10px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
+                html: '<span style="background:#3b82f6;color:#fff;padding:1px 4px;font-size:8px;border-radius:2px;">' + (u.call_sign || '?') + '</span>' +
                   (emitting ? '<span class="atak-unit-emit-badge">Émet</span>' : ''),
-                iconSize: [70, 28],
-                iconAnchor: [35, 10],
+                iconSize: [56, 20],
+                iconAnchor: [28, 8],
               });
         }
       }

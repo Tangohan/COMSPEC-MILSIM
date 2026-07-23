@@ -24,6 +24,7 @@ switch (_function) do {
         if (
             !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
             && {!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])}
+            && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
         ) then {
             systemChat format ["[Athena] Connecte a %1", _label];
             ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
@@ -36,7 +37,10 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+        if (
+            !(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])
+            && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
+        ) then {
             systemChat format ["[Athena] %1", _msg];
         };
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
@@ -53,7 +57,10 @@ switch (_function) do {
             "Athena est saturé — synchronisation ralentie quelques instants."
         };
         [format ["[Athena] %1 (pause %2 s)", _msg, round _next], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+        if (
+            !(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])
+            && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
+        ) then {
             systemChat format ["[Athena] Synchronisation ralentie (%1 s).", round _next];
         };
     };

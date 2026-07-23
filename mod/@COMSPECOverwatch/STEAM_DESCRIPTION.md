@@ -27,11 +27,21 @@ Conçu pour les unités milsim et les missions où l’image tactique doit être
 [*] [b]Téléphone[/b] — couplez votre mobile (QR) pour suivre la situation hors du clavier.
 [*] [b]Messagerie[/b] — échanges rapides avec le dispositif (Ctrl+K par défaut).
 [*] [b]Indicatif[/b] — définissez / synchronisez votre callsign.
-[*] [b]Ordres reçus[/b] — boîte de réception des ordres transmis depuis Athena.
+[*] [b]Ordres reçus[/b] — boîte de réception des ordres transmis depuis Athena (modèles personnalisés possibles).
+[*] [b]Messagerie avancée[/b] — mentions @ pour interpeller un opérateur.
 [*] [b]Appui aérien[/b] — demande type « 9 lignes ».
 [*] [b]Briefing[/b] — tableau de briefing et diapositives préparées côté Athena.
 [*] [b]Opérations aériennes[/b] — manifeste de vol / suivi ops air.
-[*] [b]Terrain[/b] — signaler un point d’intérêt, transmettre un bilan de santé.
+[*] [b]Terrain[/b] — signaler un point d’intérêt, transmettre un bilan de santé ; alertes médicales fiables.
+[*] [b]Carte & marqueurs[/b] — outils Tacmap, marqueurs OTAN, carte native sur la tablette.
+[/list]
+
+[h1]Nouveautés 1.1.5[/h1]
+[list]
+[*] Positions plus stables sur Athena (y compris locales FR).
+[*] Statut En liaison plus juste ; QR téléphone stabilisé.
+[*] Alertes médicales : moins de doublons, nettoyage à la déco / au réveil.
+[*] Ordres : modèles personnalisés ; tablette et carte améliorées.
 [/list]
 
 [h1]Prérequis[/h1]
@@ -105,9 +115,17 @@ Conçu pour les unités milsim et les missions où l’image tactique est partag
 - **Tablette Overwatch** — écran tactique
 - **Téléphone** — couplage mobile (QR)
 - **Messagerie** (Ctrl+K)
-- **Indicatif**, **ordres reçus**, **appui aérien (9 lignes)**
-- **Briefing**, **opérations aériennes**
-- **Point d’intérêt**, **bilan de santé**
+- **Indicatif**, **ordres reçus** (modèles personnalisés), **mentions @**
+- **Appui aérien (9 lignes)**, **briefing**, **opérations aériennes**
+- **Point d’intérêt**, **bilan de santé**, **outils Tacmap** / marqueurs OTAN
+
+#### Nouveautés 1.1.5
+
+- Positions plus stables ; statut En liaison ; QR téléphone
+- Alertes médicales nettoyées (doublons / déconnexion)
+- Ordres custom, tablette et carte native améliorées
+
+Détail : [CHANGELOG.md](CHANGELOG.md)
 
 #### Prérequis
 

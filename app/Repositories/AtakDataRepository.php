@@ -490,6 +490,79 @@ class AtakDataRepository
             }
         }
 
+        // Pass 2 : même Steam → un seul contact ; ou fantôme proche d’un BFT live.
+        for ($i = 0; $i < $n; $i++) {
+            if (isset($drop[$i])) {
+                continue;
+            }
+            for ($j = $i + 1; $j < $n; $j++) {
+                if (isset($drop[$j])) {
+                    continue;
+                }
+                $a = $parsed[$i];
+                $b = $parsed[$j];
+                $sameSteam = $a['steam'] !== '' && $a['steam'] === $b['steam'];
+                $near = false;
+                if ($a['px'] !== null && $b['px'] !== null) {
+                    $dx = $a['px'] - $b['px'];
+                    $dy = $a['py'] - $b['py'];
+                    $near = ($dx * $dx + $dy * $dy) <= (400.0 * 400.0);
+                }
+                $aGhost = $this->unitLooksLikeAccountGhost($a);
+                $bGhost = $this->unitLooksLikeAccountGhost($b);
+                // Même joueur (Steam) : toujours une seule ligne.
+                if ($sameSteam) {
+                    $aLive = in_array($a['status'], ['linked', 'delayed'], true);
+                    $bLive = in_array($b['status'], ['linked', 'delayed'], true);
+                    if ($aLive && !$bLive) {
+                        $drop[$j] = true;
+                        continue;
+                    }
+                    if ($bLive && !$aLive) {
+                        $drop[$i] = true;
+                        continue;
+                    }
+                    if ($a['score'] !== $b['score']) {
+                        if ($a['score'] > $b['score']) {
+                            $drop[$j] = true;
+                        } else {
+                            $drop[$i] = true;
+                        }
+                        continue;
+                    }
+                    if ($a['ts'] >= $b['ts']) {
+                        $drop[$j] = true;
+                    } else {
+                        $drop[$i] = true;
+                    }
+                    continue;
+                }
+                // Pas le même Steam : ne retirer que si l’un est un fantôme compte/alerte à proximité.
+                if (!$near || (!$aGhost && !$bGhost)) {
+                    continue;
+                }
+                $aLive = in_array($a['status'], ['linked', 'delayed'], true);
+                $bLive = in_array($b['status'], ['linked', 'delayed'], true);
+                if ($aGhost && !$bGhost) {
+                    $drop[$i] = true;
+                    continue;
+                }
+                if ($bGhost && !$aGhost) {
+                    $drop[$j] = true;
+                    continue;
+                }
+                if ($aLive && !$bLive) {
+                    $drop[$j] = true;
+                } elseif ($bLive && !$aLive) {
+                    $drop[$i] = true;
+                } elseif ($a['score'] >= $b['score']) {
+                    $drop[$j] = true;
+                } else {
+                    $drop[$i] = true;
+                }
+            }
+        }
+
         if ($drop === []) {
             return $units;
         }
@@ -731,7 +804,69 @@ class AtakDataRepository
             }
         }
 
+        // Même Steam / même joueur sous un autre indicatif (ex. Newp1 → N-10) → retirer le fantôme.
+        try {
+            $extraArr = json_decode($extraJson, true);
+            if (!is_array($extraArr)) {
+                $extraArr = [];
+            }
+            $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
+            if ($steam !== '') {
+                $this->retireSteamSiblingUnits($tenantId, $mapId, $callSign, $steam);
+            }
+        } catch (\Throwable) {
+        }
+
         return ['created' => $created];
+    }
+
+    /**
+     * Passe hors-ligne les autres lignes atak_units du même Steam (indicatif différent).
+     */
+    public function retireSteamSiblingUnits(int $tenantId, int $mapId, string $keepCallSign, string $steamUid): int
+    {
+        $steamUid = trim($steamUid);
+        $keepCallSign = trim($keepCallSign);
+        if ($tenantId < 1 || $mapId < 1 || $steamUid === '' || $keepCallSign === '') {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id, call_sign, extra, status FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+        );
+        $stmt->execute([$tenantId, $mapId]);
+        $retired = 0;
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $cs = trim((string) ($row['call_sign'] ?? ''));
+            if ($cs === '' || strcasecmp($cs, $keepCallSign) === 0) {
+                continue;
+            }
+            $extra = [];
+            $raw = $row['extra'] ?? null;
+            if (is_string($raw) && $raw !== '') {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $extra = $decoded;
+                }
+            } elseif (is_array($raw)) {
+                $extra = $raw;
+            }
+            $uid = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
+            if ($uid === '' || strcasecmp($uid, $steamUid) !== 0) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
+            if ($status === 'offline') {
+                continue;
+            }
+            $this->markUnitOfflineById($tenantId, $id);
+            $retired++;
+        }
+
+        return $retired;
     }
 
     public function addUnit(int $tenantId, int $mapId, array $data): array

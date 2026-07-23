@@ -302,6 +302,25 @@ final class AdminAtakOperatorsController
             $rows[] = $row;
         }
 
+        $beforeDedup = count($rows);
+        $rows = $this->suppressAccountNameDuplicates($tenantId, $rows);
+        // Ajuste les pastilles si un fantôme « compte Athena » a été retiré de l’affichage.
+        if (count($rows) < $beforeDedup) {
+            $stats['linked'] = 0;
+            $stats['delayed'] = 0;
+            $stats['offline'] = 0;
+            foreach ($rows as $r) {
+                $st = (string) ($r['status'] ?? '');
+                if ($st === 'linked') {
+                    $stats['linked']++;
+                } elseif ($st === 'delayed') {
+                    $stats['delayed']++;
+                } else {
+                    $stats['offline']++;
+                }
+            }
+            $stats['total'] = $stats['linked'] + $stats['delayed'] + $stats['offline'];
+        }
         $stats['shown'] = count($rows);
 
         return [
@@ -312,6 +331,62 @@ final class AdminAtakOperatorsController
             'filter' => $filter,
             'q' => $q,
         ];
+    }
+
+    /**
+     * Si une ligne a pour indicatif le nom du compte lié d’une autre ligne (ex. Noopy vs N-10),
+     * on ne garde que le contact jeu (celui qui a un compte lié).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function suppressAccountNameDuplicates(int $tenantId, array $rows): array
+    {
+        if (count($rows) < 2) {
+            return $rows;
+        }
+        $byLinkedName = [];
+        foreach ($rows as $idx => $row) {
+            $dn = strtoupper(trim((string) ($row['linked_display_name'] ?? '')));
+            if ($dn !== '' && (int) ($row['linked_user_id'] ?? 0) > 0) {
+                $byLinkedName[$dn] = $idx;
+            }
+        }
+        if ($byLinkedName === []) {
+            return $rows;
+        }
+        $drop = [];
+        foreach ($rows as $idx => $row) {
+            $cs = strtoupper(trim((string) ($row['call_sign'] ?? '')));
+            if ($cs === '' || !isset($byLinkedName[$cs])) {
+                continue;
+            }
+            $keeperIdx = $byLinkedName[$cs];
+            if ($keeperIdx === $idx) {
+                continue;
+            }
+            // Fantôme = même nom que le compte d’un autre contact, sans lien compte.
+            if ((int) ($row['linked_user_id'] ?? 0) > 0) {
+                continue;
+            }
+            $drop[$idx] = true;
+            $ghostId = (int) ($row['id'] ?? 0);
+            if ($ghostId > 0) {
+                try {
+                    $this->atak->markUnitOfflineById($tenantId, $ghostId);
+                } catch (\Throwable) {
+                }
+            }
+        }
+        if ($drop === []) {
+            return $rows;
+        }
+
+        return array_values(array_filter(
+            $rows,
+            static fn ($r, $i): bool => !isset($drop[$i]),
+            ARRAY_FILTER_USE_BOTH
+        ));
     }
 
     /**

@@ -11,6 +11,7 @@ use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakMedicalTriageRepository;
 use App\Repositories\AtakOperatorIdRepository;
 use App\Repositories\AtakOrderRepository;
+use App\Repositories\AtakOrderTemplateRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
@@ -61,6 +62,7 @@ class AtakApiController
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
         private ?\App\Repositories\UnitRepository $unitRepository = null,
         private ?AtakOrderRepository $orderRepository = null,
+        private ?AtakOrderTemplateRepository $orderTemplateRepository = null,
         private ?FireTeamRepository $fireTeamRepository = null,
         private ?AtakOperatorIdRepository $operatorIdRepository = null,
         private ?AtakMedicalTriageRepository $medicalTriageRepository = null,
@@ -74,6 +76,7 @@ class AtakApiController
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
         $this->unitRepository ??= new \App\Repositories\UnitRepository();
         $this->orderRepository ??= new AtakOrderRepository();
+        $this->orderTemplateRepository ??= new AtakOrderTemplateRepository();
         $this->fireTeamRepository ??= new FireTeamRepository();
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
@@ -1258,8 +1261,11 @@ class AtakApiController
             }
             if ($callSign === '') {
                 $fromProfile = trim((string) ($user['callsign'] ?? ''));
+                // Ne jamais utiliser display_name (ex. Newp1) : ça crée un 2ᵉ contact fantôme
+                // à côté de l’indicatif tactique (N-10). Fallback stable par compte.
                 if ($fromProfile === '') {
-                    $fromProfile = trim((string) ($user['display_name'] ?? ''));
+                    $uid = (int) ($user['id'] ?? 0);
+                    $fromProfile = $uid > 0 ? sprintf('U-%05d', $uid) : '';
                 }
                 if ($fromProfile !== '') {
                     $callSign = $fromProfile;
@@ -1330,6 +1336,16 @@ class AtakApiController
         if ($resolved !== '') {
             try {
                 $this->atak->markUnitOfflineByCallSign($tenantId, $mapId, $resolved);
+            } catch (\Throwable) {
+            }
+            // Hors liaison : masquer les alertes actives (bannière / À secourir), archive intacte.
+            try {
+                $this->autoResolveOpenMedicalAlertsForCallSign(
+                    $tenantId,
+                    $mapId,
+                    $resolved,
+                    'Opérateur hors liaison — alertes actives clôturées'
+                );
             } catch (\Throwable) {
             }
         }
@@ -1906,19 +1922,33 @@ class AtakApiController
         $steamNorm = $actor['steam_uid'] ?? null;
         if ($callSign === '' || strcasecmp($callSign, 'Unknown') === 0 || strcasecmp($callSign, 'Inconnu') === 0) {
             if ($steamNorm !== null && $steamNorm !== '') {
-                $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steamNorm)
-                    ?? $this->userRepository->findBySteamId($steamNorm);
-                if (is_array($user)) {
-                    $fromProfile = trim((string) ($user['callsign'] ?? ''));
-                    if ($fromProfile === '') {
-                        $fromProfile = trim((string) ($user['display_name'] ?? ''));
+                // Réutiliser l’indicatif BFT déjà connu pour ce Steam (évite Newp1 + N-10).
+                try {
+                    $bySteam = $this->atak->findUnitBySteamUidRaw($tenantId, $mapId, $steamNorm);
+                } catch (\Throwable) {
+                    $bySteam = null;
+                }
+                if (is_array($bySteam)) {
+                    $steamCs = trim((string) ($bySteam['call_sign'] ?? ''));
+                    if ($steamCs !== '' && strcasecmp($steamCs, 'Unknown') !== 0 && strcasecmp($steamCs, 'Inconnu') !== 0) {
+                        $callSign = $steamCs;
                     }
-                    if ($fromProfile === '') {
-                        $uid = (int) ($user['id'] ?? 0);
-                        $fromProfile = $uid > 0 ? sprintf('U-%05d', $uid) : '';
-                    }
-                    if ($fromProfile !== '') {
-                        $callSign = $fromProfile;
+                }
+            }
+            if ($callSign === '' || strcasecmp($callSign, 'Unknown') === 0 || strcasecmp($callSign, 'Inconnu') === 0) {
+                if ($steamNorm !== null && $steamNorm !== '') {
+                    $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steamNorm)
+                        ?? $this->userRepository->findBySteamId($steamNorm);
+                    if (is_array($user)) {
+                        $fromProfile = trim((string) ($user['callsign'] ?? ''));
+                        // Jamais display_name : source classique des fantômes « Newp1 ».
+                        if ($fromProfile === '') {
+                            $uid = (int) ($user['id'] ?? 0);
+                            $fromProfile = $uid > 0 ? sprintf('U-%05d', $uid) : '';
+                        }
+                        if ($fromProfile !== '') {
+                            $callSign = $fromProfile;
+                        }
                     }
                 }
             }
@@ -2095,6 +2125,7 @@ class AtakApiController
         $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
         $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
+        $alerts = MedicalAlertParser::collapseToHighestSeverityPerCallSign($alerts);
         $criticalUnits = $this->atak->getUnitsWithCriticalHealth($tenantId, $mapId);
         $emergencyCount = 0;
         foreach ($alerts as $a) {
@@ -2336,8 +2367,9 @@ class AtakApiController
     }
 
     /**
-     * Si l’effectif correspondant est rétabli et en liaison, clôturer les alertes KO non triagées.
-     * Évite la bannière CRITIQUE alors que l’onglet Effectifs affiche déjà « État stable ».
+     * Si l’effectif correspondant est rétabli et en liaison, ou hors ligne, clôturer les alertes KO non triagées.
+     * Évite la bannière CRITIQUE alors que l’onglet Effectifs affiche déjà « État stable »,
+     * et retire les alertes actives après déconnexion / absence de liaison.
      *
      * @param list<array<string, mixed>> $alerts
      * @return list<array<string, mixed>>
@@ -2368,14 +2400,20 @@ class AtakApiController
             if ($cs === '') {
                 $cs = mb_strtoupper(trim((string) ($a['author'] ?? '')));
             }
-            $recoveredLinked = false;
+            $shouldResolve = false;
+            $note = 'Rétablissement constaté — opérateur à nouveau opérationnel';
             if ($cs !== '' && isset($unitsByCallSign[$cs])) {
                 $unit = $unitsByCallSign[$cs];
-                $status = (string) ($unit['status'] ?? '');
-                $recoveredLinked = in_array($status, ['linked', 'delayed'], true)
-                    && MedicalAlertParser::isRecoveredHealth($unit['health'] ?? null);
+                $status = strtolower(trim((string) ($unit['status'] ?? '')));
+                if ($status === 'offline') {
+                    $shouldResolve = true;
+                    $note = 'Opérateur hors liaison — alertes actives clôturées';
+                } elseif (in_array($status, ['linked', 'delayed'], true)
+                    && MedicalAlertParser::isRecoveredHealth($unit['health'] ?? null)) {
+                    $shouldResolve = true;
+                }
             }
-            if (!$recoveredLinked) {
+            if (!$shouldResolve) {
                 $out[] = $a;
                 continue;
             }
@@ -2387,7 +2425,7 @@ class AtakApiController
                     $chatId,
                     'annule',
                     (string) ($a['call_sign'] ?? $cs),
-                    'Rétablissement constaté — opérateur à nouveau opérationnel'
+                    $note
                 );
                 if (is_array($triage)) {
                     $a['triage'] = $triage;
@@ -2397,7 +2435,7 @@ class AtakApiController
                     'status' => 'annule',
                     'status_label' => MedicalAlertParser::triageLabelFr('annule'),
                     'status_by' => (string) ($a['call_sign'] ?? $cs),
-                    'status_note' => 'Rétablissement constaté — opérateur à nouveau opérationnel',
+                    'status_note' => $note,
                     'updated_at' => date('Y-m-d H:i:s'),
                     'is_resolved' => true,
                 ];
@@ -2409,16 +2447,20 @@ class AtakApiController
     }
 
     /**
-     * Clôture les alertes médicales ouvertes d’un indicatif (ex. après position « stable »).
+     * Clôture les alertes médicales ouvertes d’un indicatif (ex. après position « stable » ou déconnexion).
      */
-    private function autoResolveOpenMedicalAlertsForCallSign(int $tenantId, int $mapId, string $callSign): void
-    {
+    private function autoResolveOpenMedicalAlertsForCallSign(
+        int $tenantId,
+        int $mapId,
+        string $callSign,
+        string $note = 'Rétablissement constaté — opérateur à nouveau opérationnel'
+    ): void {
         $callSign = trim($callSign);
         if ($callSign === '' || !$this->medicalTriageRepository || !$this->medicalTriageRepository->tablesReady()) {
             return;
         }
         static $lastAttempt = [];
-        $debounceKey = $tenantId . ':' . $mapId . ':' . mb_strtoupper($callSign);
+        $debounceKey = $tenantId . ':' . $mapId . ':' . mb_strtoupper($callSign) . ':' . md5($note);
         $now = time();
         if (isset($lastAttempt[$debounceKey]) && ($now - $lastAttempt[$debounceKey]) < 12) {
             return;
@@ -2449,7 +2491,65 @@ class AtakApiController
                 $chatId,
                 'annule',
                 $callSign,
-                'Rétablissement constaté — opérateur à nouveau opérationnel'
+                $note !== '' ? $note : 'Rétablissement constaté — opérateur à nouveau opérationnel'
+            );
+        }
+    }
+
+    /**
+     * Escalade médicale : clôture les alertes ouvertes moins graves du même indicatif
+     * (ex. inconscient quand un arrêt cardiaque vient d’être journalisé).
+     */
+    private function resolveLowerSeverityMedicalAlertsForCallSign(
+        int $tenantId,
+        int $mapId,
+        string $callSign,
+        string $newKind,
+        string $by = ''
+    ): void {
+        $callSign = trim($callSign);
+        $newKind = strtolower(trim($newKind));
+        if ($callSign === '' || $newKind === ''
+            || !$this->medicalTriageRepository || !$this->medicalTriageRepository->tablesReady()) {
+            return;
+        }
+        $newRank = MedicalAlertParser::kindSeverityRank($newKind);
+        if ($newRank < 1) {
+            return;
+        }
+        $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, 40);
+        $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
+        $csUp = mb_strtoupper($callSign);
+        $by = trim($by) !== '' ? trim($by) : $callSign;
+        foreach ($alerts as $a) {
+            if (!empty($a['triage']['is_resolved'])) {
+                continue;
+            }
+            $ecs = mb_strtoupper(trim((string) ($a['call_sign'] ?? '')));
+            if ($ecs === '') {
+                $ecs = mb_strtoupper(trim((string) ($a['author'] ?? '')));
+            }
+            if ($ecs !== $csUp) {
+                continue;
+            }
+            $oldKind = strtolower(trim((string) ($a['kind'] ?? '')));
+            if ($oldKind === $newKind) {
+                continue;
+            }
+            if (MedicalAlertParser::kindSeverityRank($oldKind) >= $newRank) {
+                continue;
+            }
+            $chatId = (int) ($a['id'] ?? 0);
+            if ($chatId < 1) {
+                continue;
+            }
+            $this->medicalTriageRepository->upsert(
+                $tenantId,
+                $mapId,
+                $chatId,
+                'annule',
+                $by,
+                'Remplacée par une alerte plus grave — ' . MedicalAlertParser::healthLabelFr($newKind)
             );
         }
     }
@@ -2734,7 +2834,10 @@ class AtakApiController
                     $tenantId,
                     $mapId,
                     AtakActivityLogService::TYPE_ORDER,
-                    'Ordre reçu du théâtre — ' . $this->orderTypeLabelFr((string) ($orderRow['order_type'] ?? '')),
+                    'Ordre reçu du théâtre — ' . $this->orderTypeLabelFr(
+                        (string) ($orderRow['order_type'] ?? ''),
+                        (string) ($orderRow['type_label'] ?? '')
+                    ),
                     (string) ($orderRow['issuer'] ?? $author)
                 );
             }
@@ -2743,6 +2846,20 @@ class AtakApiController
         $medical = MedicalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         if ($medical !== null) {
             $row['medical'] = $medical;
+            $mcs = trim((string) ($medical['call_sign'] ?? ''));
+            if ($mcs === '') {
+                $mcs = trim((string) $author);
+            }
+            // Si l’alerte porte encore le nom profil alors qu’un indicatif tactique BFT existe, rattacher.
+            $preferredCs = trim((string) ($chatActivityMeta['call_sign'] ?? $chatActivityMeta['profile_callsign'] ?? ''));
+            $steamForMed = is_array($gameActor) ? ($gameActor['steam_uid'] ?? null) : ($chatActivityMeta['steam_uid'] ?? null);
+            if ($preferredCs !== '' && strcasecmp($mcs, $preferredCs) !== 0) {
+                $hasPreferred = $this->atak->getUnitByCallSign($tenantId, $mapId, $preferredCs) !== null;
+                $hasMcs = $mcs !== '' && $this->atak->getUnitByCallSign($tenantId, $mapId, $mcs) !== null;
+                if ($hasPreferred && (!$hasMcs || strcasecmp($mcs, trim((string) $author)) === 0)) {
+                    $mcs = $preferredCs;
+                }
+            }
             if (!$medicalDup) {
                 $medMeta = $chatActivityMeta;
                 $medKind = trim((string) ($medical['kind'] ?? ''));
@@ -2761,20 +2878,6 @@ class AtakApiController
                     $medMeta
                 );
                 // Coords (POS… ou grille) → atak_units pour effectifs / carte web.
-                $mcs = trim((string) ($medical['call_sign'] ?? ''));
-                if ($mcs === '') {
-                    $mcs = trim((string) $author);
-                }
-                // Si l’alerte porte encore le nom profil alors qu’un indicatif tactique BFT existe, rattacher.
-                $preferredCs = trim((string) ($chatActivityMeta['call_sign'] ?? $chatActivityMeta['profile_callsign'] ?? ''));
-                $steamForMed = is_array($gameActor) ? ($gameActor['steam_uid'] ?? null) : ($chatActivityMeta['steam_uid'] ?? null);
-                if ($preferredCs !== '' && strcasecmp($mcs, $preferredCs) !== 0) {
-                    $hasPreferred = $this->atak->getUnitByCallSign($tenantId, $mapId, $preferredCs) !== null;
-                    $hasMcs = $mcs !== '' && $this->atak->getUnitByCallSign($tenantId, $mapId, $mcs) !== null;
-                    if ($hasPreferred && (!$hasMcs || strcasecmp($mcs, trim((string) $author)) === 0)) {
-                        $mcs = $preferredCs;
-                    }
-                }
                 $this->upsertUnitFromAlertMessage(
                     $tenantId,
                     $mapId,
@@ -2789,6 +2892,17 @@ class AtakApiController
                     ],
                     is_string($steamForMed) ? $steamForMed : null
                 );
+            }
+            // Escalade (ex. inconscient → arrêt cardiaque) : clôturer les alertes moins graves.
+            try {
+                $this->resolveLowerSeverityMedicalAlertsForCallSign(
+                    $tenantId,
+                    $mapId,
+                    $mcs,
+                    (string) ($medical['kind'] ?? ''),
+                    $mcs
+                );
+            } catch (\Throwable) {
             }
         } elseif (
             // Déjà journalisé métier (ordre / alerte tactique / réglages camps) : pas de doublon « Message envoyé ».
@@ -3004,8 +3118,125 @@ class AtakApiController
                 'structured_targets' => $this->orderRepository->v2ColumnsReady(),
                 'radio_sim' => $this->orderRepository->v2ColumnsReady(),
                 'since' => true,
+                'custom_templates' => $this->orderTemplateRepository?->tablesReady() ?? false,
             ],
         ]);
+    }
+
+    /**
+     * Modèles d’ordres personnalisés du tenant (libellé + consignes par défaut).
+     */
+    public function ordersTemplatesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour gérer vos modèles d’ordres.',
+            ], 403);
+        }
+        $templates = $this->orderTemplateRepository && $this->orderTemplateRepository->tablesReady()
+            ? $this->orderTemplateRepository->listForTenant($r)
+            : [];
+
+        return Response::json([
+            'ok' => true,
+            'templates' => $templates,
+            'persisted' => $this->orderTemplateRepository?->tablesReady() ?? false,
+        ]);
+    }
+
+    /**
+     * Créer un modèle d’ordre personnalisé.
+     */
+    public function ordersTemplatesStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour enregistrer un modèle d’ordre.',
+            ], 403);
+        }
+        if (!$this->orderTemplateRepository || !$this->orderTemplateRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les modèles d’ordres ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+
+        $body = $this->jsonBody($request);
+        $label = trim((string) ($body['label'] ?? $body['name'] ?? ''));
+        if ($label === '') {
+            return Response::json([
+                'error' => 'label_required',
+                'message' => 'Indiquez un nom pour ce modèle d’ordre.',
+            ], 400);
+        }
+        $defaultPayload = trim((string) ($body['default_payload'] ?? $body['payload'] ?? $body['defaultPayload'] ?? ''));
+        $user = $this->sessionUserBrief();
+        $createdBy = isset($user['userId']) ? (int) $user['userId'] : null;
+
+        $row = $this->orderTemplateRepository->create($r, $label, $defaultPayload, $createdBy);
+        if (!$row) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer ce modèle d’ordre.',
+            ], 500);
+        }
+
+        return Response::json(['ok' => true, 'template' => $row], 201);
+    }
+
+    /**
+     * Supprimer un modèle d’ordre personnalisé.
+     */
+    public function ordersTemplatesDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour supprimer un modèle d’ordre.',
+            ], 403);
+        }
+        if (!$this->orderTemplateRepository || !$this->orderTemplateRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les modèles d’ordres ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+
+        $id = (int) ($params['id'] ?? $request->query('id') ?? 0);
+        if ($id < 1) {
+            $body = $this->jsonBody($request);
+            $id = (int) ($body['id'] ?? 0);
+        }
+        if ($id < 1) {
+            return Response::json([
+                'error' => 'invalid_id',
+                'message' => 'Modèle introuvable.',
+            ], 400);
+        }
+
+        $ok = $this->orderTemplateRepository->deleteForTenant($r, $id);
+        if (!$ok) {
+            return Response::json([
+                'error' => 'not_found',
+                'message' => 'Ce modèle d’ordre n’existe pas ou a déjà été retiré.',
+            ], 404);
+        }
+
+        return Response::json(['ok' => true]);
     }
 
     /**
@@ -3335,6 +3566,7 @@ class AtakApiController
             'external_id' => $externalId,
             'parent_external_id' => (string) ($body['parent_external_id'] ?? $body['parentId'] ?? ''),
             'order_type' => (string) ($body['order_type'] ?? $body['type'] ?? 'MOVE'),
+            'type_label' => (string) ($body['type_label'] ?? $body['typeLabel'] ?? ''),
             'target' => $resolved['target'],
             'target_type' => $targetType,
             'target_ref' => $resolved['target_ref'],
@@ -3355,7 +3587,10 @@ class AtakApiController
             $r,
             $mapId,
             AtakActivityLogService::TYPE_ORDER,
-            'Ordre émis — ' . $this->orderTypeLabelFr((string) ($row['order_type'] ?? '')),
+            'Ordre émis — ' . $this->orderTypeLabelFr(
+                (string) ($row['order_type'] ?? ''),
+                (string) ($row['type_label'] ?? '')
+            ),
             $issuer
         );
 
@@ -3675,7 +3910,7 @@ class AtakApiController
             'db_id' => (int) ($row['id'] ?? 0),
             'parent_id' => (string) ($row['parent_external_id'] ?? ''),
             'type' => $type,
-            'type_label' => $this->orderTypeLabelFr($type),
+            'type_label' => $this->orderTypeLabelFr($type, (string) ($row['type_label'] ?? '')),
             'target' => (string) ($row['target'] ?? ''),
             'target_type' => $targetType,
             'target_type_label' => $this->orderTargetTypeLabelFr($targetType),
@@ -3714,14 +3949,22 @@ class AtakApiController
         ];
     }
 
-    private function orderTypeLabelFr(string $type): string
+    private function orderTypeLabelFr(string $type, string $customLabel = ''): string
     {
-        return match (strtoupper($type)) {
+        $customLabel = trim($customLabel);
+        $upper = strtoupper($type);
+        return match ($upper) {
             'HOLD' => 'Tenir la position',
             'RECON' => 'Reconnaissance',
             'CAS' => 'Appui aérien',
             'QRF' => 'Force de réaction',
-            default => 'Se déplacer',
+            'CUSTOM' => $customLabel !== '' ? $customLabel : 'Ordre personnalisé',
+            'MOVE' => 'Se déplacer',
+            default => $customLabel !== ''
+                ? $customLabel
+                : ((str_starts_with($upper, 'CUSTOM') || str_starts_with($upper, 'TPL_'))
+                    ? 'Ordre personnalisé'
+                    : 'Se déplacer'),
         };
     }
 

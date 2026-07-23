@@ -41,7 +41,8 @@ if (!(_msg isEqualTo "")) then {
 };
 
 private _quiet = missionNamespace getVariable ["comspec_overwatch_quiet_mode", false];
-if (!_quiet) then {
+private _milsim = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
+if (!_quiet && {!_milsim}) then {
     [_template, _args] call BIS_fnc_showNotification;
 };
 

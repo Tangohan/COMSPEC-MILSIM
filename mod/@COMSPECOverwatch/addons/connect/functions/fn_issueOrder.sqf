@@ -9,7 +9,7 @@ params [
     ["_parentOrderId", ""]
 ];
 
-private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF"];
+private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF", "CUSTOM"];
 if !(_orderType in _validTypes) then { _orderType = "MOVE"; };
 
 private _id = format ["ORD-%1-%2", round (serverTime * 1000), floor random 9999];

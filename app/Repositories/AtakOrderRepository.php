@@ -22,7 +22,7 @@ use PDO;
  */
 class AtakOrderRepository
 {
-    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF'];
+    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'CUSTOM'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
     public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
     public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo'];
@@ -222,6 +222,7 @@ class AtakOrderRepository
      *   external_id: string,
      *   parent_external_id?: string|null,
      *   order_type?: string,
+     *   type_label?: string|null,
      *   target?: string|null,
      *   target_type?: string,
      *   target_ref?: string|null,
@@ -251,6 +252,10 @@ class AtakOrderRepository
         }
 
         $type = $this->normalizeType((string) ($data['order_type'] ?? 'MOVE'));
+        $typeLabel = mb_substr(trim((string) ($data['type_label'] ?? '')), 0, 120);
+        if ($type === 'CUSTOM' && $typeLabel === '') {
+            $typeLabel = 'Ordre personnalisé';
+        }
         $priority = $this->normalizePriority((string) ($data['priority'] ?? 'IMPORTANT'));
         $status = $this->normalizeStatus((string) ($data['status'] ?? 'PENDING'));
         $issuer = mb_substr(trim((string) ($data['issuer'] ?? 'Inconnu')), 0, 128);
@@ -337,6 +342,7 @@ class AtakOrderRepository
                     (int) $existing['id'],
                 ]);
             }
+            $this->persistTypeLabel((int) $existing['id'], $type, $typeLabel);
 
             return $this->findByExternalId($tenantId, $mapId, $externalId);
         }
@@ -395,7 +401,36 @@ class AtakOrderRepository
             ]);
         }
 
-        return $this->findByExternalId($tenantId, $mapId, $externalId);
+        $created = $this->findByExternalId($tenantId, $mapId, $externalId);
+        if (is_array($created)) {
+            $this->persistTypeLabel((int) ($created['id'] ?? 0), $type, $typeLabel);
+            $refreshed = $this->findByExternalId($tenantId, $mapId, $externalId);
+            if (is_array($refreshed)) {
+                return $refreshed;
+            }
+        }
+
+        return $created;
+    }
+
+    private function persistTypeLabel(int $orderId, string $type, string $typeLabel): void
+    {
+        if ($orderId < 1 || !$this->hasColumn('type_label')) {
+            return;
+        }
+        $value = $typeLabel;
+        if ($type !== 'CUSTOM' && !str_starts_with($type, 'CUSTOM_') && !str_starts_with($type, 'TPL_')) {
+            // Les types prédéfinis gardent leur libellé calculé ; on n’écrase pas.
+            if ($value === '') {
+                return;
+            }
+        }
+        $this->pdo->prepare(
+            'UPDATE atak_orders SET type_label = ? WHERE id = ?'
+        )->execute([
+            $value !== '' ? $value : null,
+            $orderId,
+        ]);
     }
 
     /**
@@ -612,8 +647,20 @@ class AtakOrderRepository
     public function normalizeType(string $type): string
     {
         $t = strtoupper(trim($type));
+        if (in_array($t, self::TYPES, true)) {
+            return $t;
+        }
+        // Codes modèles personnalisés (ex. CUSTOM_AB12, TPL_9)
+        if (preg_match('/^(CUSTOM|TPL)_[A-Z0-9_]{1,24}$/', $t) === 1) {
+            return mb_substr($t, 0, 32);
+        }
 
-        return in_array($t, self::TYPES, true) ? $t : 'MOVE';
+        return 'MOVE';
+    }
+
+    public function typeLabelColumnReady(): bool
+    {
+        return $this->hasColumn('type_label');
     }
 
     public function normalizePriority(string $priority): string

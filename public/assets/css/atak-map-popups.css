@@ -138,24 +138,25 @@
   line-height: 1.4;
 }
 
-/* Labels d’unités sur la carte — contraste renforcé */
+/* Labels d’unités sur la carte — contraste renforcé, discrets */
 .nato-sidc-label {
   pointer-events: none;
   display: inline-block;
-  margin-top: 1px;
-  padding: 1px 5px;
-  border-radius: 3px;
+  margin-top: 0;
+  padding: 0 3px;
+  border-radius: 2px;
   background: rgba(10, 10, 15, 0.72);
   border: 1px solid rgba(42, 42, 53, 0.9);
   color: #f8fafc !important;
   text-shadow: none !important;
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.04em;
-  max-width: 96px;
+  font-size: 7px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+  max-width: 56px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.25;
 }
 
 @media (max-width: 640px) {

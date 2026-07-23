@@ -13,7 +13,10 @@ if (count _info < 4) exitWith {
         _err = "Connexion téléphone indisponible pour le moment (réseau ou plateforme).";
     };
     ["COMSPEC_Warning", [_err]] call comspec_overwatch_connect_fnc_showNotification;
-    if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+    if (
+        !(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])
+        && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
+    ) then {
         systemChat ("[COMSPEC] " + _err);
     };
 };

@@ -35,12 +35,18 @@ _seen pushBack _id;
 if (count _seen > 80) then { _seen deleteRange [0, (count _seen) - 80]; };
 missionNamespace setVariable ["COMSPEC_OrdersSeen", _seen, false];
 
-private _typeLabel = switch (toUpper _type) do {
-    case "HOLD": { "Tenir la position" };
-    case "RECON": { "Reconnaissance" };
-    case "CAS": { "Appui aérien" };
-    case "QRF": { "Force de réaction" };
-    default { "Se déplacer" };
+private _typeLabelCustom = trim (_order getOrDefault ["typeLabel", ""]);
+private _typeLabel = if (_typeLabelCustom != "") then {
+    _typeLabelCustom
+} else {
+    switch (toUpper _type) do {
+        case "HOLD": { "Tenir la position" };
+        case "RECON": { "Reconnaissance" };
+        case "CAS": { "Appui aérien" };
+        case "QRF": { "Force de réaction" };
+        case "CUSTOM": { "Ordre personnalisé" };
+        default { "Se déplacer" };
+    };
 };
 
 private _prioLabel = switch (toUpper _priority) do {
@@ -53,7 +59,10 @@ private _prioLabel = switch (toUpper _priority) do {
 private _msg = format ["Nouvel ordre — %1 (%2) · de %3", _typeLabel, _prioLabel, _issuer];
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
-if (!(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])) then {
+if (
+    !(missionNamespace getVariable ["comspec_overwatch_quiet_mode", false])
+    && {!(missionNamespace getVariable ["comspec_overwatch_milsim_ui", false])}
+) then {
     systemChat format ["[COMSPEC] %1", _msg];
 };
 

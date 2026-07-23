@@ -7,9 +7,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings"};
         author = "COMSPEC";
-        version = 1.14;
-        versionStr = "1.1.4";
-        versionAr[] = {1, 1, 4};
+        version = 1.15;
+        versionStr = "1.1.5";
+        versionAr[] = {1, 1, 5};
     };
 };
 

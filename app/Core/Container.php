@@ -1859,6 +1859,7 @@ class Container
             \App\Repositories\TacticalBriefingSlideCommentRepository::class => new \App\Repositories\TacticalBriefingSlideCommentRepository(),
             \App\Repositories\TacticalPhonePairingRepository::class => new \App\Repositories\TacticalPhonePairingRepository(),
             \App\Repositories\AtakOrderRepository::class => new \App\Repositories\AtakOrderRepository(),
+            \App\Repositories\AtakOrderTemplateRepository::class => new \App\Repositories\AtakOrderTemplateRepository(),
             \App\Repositories\AtakOperatorIdRepository::class => new \App\Repositories\AtakOperatorIdRepository(),
             \App\Repositories\AtakMedicalTriageRepository::class => new \App\Repositories\AtakMedicalTriageRepository(),
             \App\Services\Tactical\AtakActivityLogService::class => new \App\Services\Tactical\AtakActivityLogService(),
@@ -1879,6 +1880,7 @@ class Container
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\AtakOrderRepository::class),
+                self::get(\App\Repositories\AtakOrderTemplateRepository::class),
                 self::get(\App\Repositories\FireTeamRepository::class),
                 self::get(\App\Repositories\AtakOperatorIdRepository::class),
                 self::get(\App\Repositories\AtakMedicalTriageRepository::class)

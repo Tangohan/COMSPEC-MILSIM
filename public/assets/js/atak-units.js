@@ -122,6 +122,9 @@ window.ATAKUnits = (function () {
       if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
         window.ATAKRadio.onUnitsUpdated();
       }
+      try {
+        window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
+      } catch (e) {}
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible de charger les unités.');
       render();
@@ -137,6 +140,9 @@ window.ATAKUnits = (function () {
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
+    } catch (e) {}
   }
 
   function vitalTone(kind, value) {
@@ -452,6 +458,9 @@ window.ATAKUnits = (function () {
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }
+    try {
+      window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
+    } catch (e) {}
   }
 
   function getUnits() {

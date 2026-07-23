@@ -1,5 +1,5 @@
 /**
- * Rendu marqueurs Arma (CfgMarkers vanilla) — mil_*/hd_*, NATO b_/o_/n_/c_*, flags, Contact_*.
+ * Rendu marqueurs Arma (CfgMarkers vanilla) — mil_* / hd_*, NATO b_/o_/n_/c_*, flags, Contact_*.
  * Aligné patterns cTabIRL (classname → icône + dir) sans copier leur code.
  * Partagé ATAK / TACMAP.
  */

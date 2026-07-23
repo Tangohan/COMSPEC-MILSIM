@@ -101,6 +101,12 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_milsim_ui", "CHECKBOX",
+    ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages système de confort et les bandeaux / chat Overwatch. La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
+    "COMSPEC Overwatch", false
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_athena_link_help", "CHECKBOX",
     ["Rappel Windows — lier mon compte Athena", "Au lancement, si votre compte n’est pas encore lié, affiche une alerte Windows avec la marche à suivre. Décochez pour ne plus voir ce rappel (vous pouvez aussi choisir « Non » dans l’alerte)."],
     "COMSPEC Overwatch", true
@@ -184,6 +190,8 @@ missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
 missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
 missionNamespace setVariable ["COMSPEC_PositionTrail", [], true];
 missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, true];
+missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
+missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", -1e9, false];
 
 // Badges UI — liaison Athena
 missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];

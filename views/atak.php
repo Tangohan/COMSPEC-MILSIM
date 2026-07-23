@@ -181,7 +181,7 @@ if ($atakMapConfig) {
         <span class="atak-os-metric-value" id="atak-metric-theatre-value">En attente</span>
       </li>
     </ul>
-    <p class="atak-os-strip-hint">Lier le mod : bouton <strong>Connexion en jeu</strong> → <strong>Générer un code</strong> → en jeu touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>.</p>
+    <p class="atak-os-strip-hint">Liaison jeu : <strong>Connexion en jeu</strong> → code → touche <strong>K</strong> → Compte Athena.</p>
   </div>
 
   <div class="atak-account-overlay" id="atak-account-overlay" aria-hidden="true"></div>
@@ -587,11 +587,14 @@ if ($atakMapConfig) {
             <label class="atak-orders-field">
               <span>Type d’ordre</span>
               <select id="atak-order-type">
-                <option value="MOVE">Se déplacer</option>
-                <option value="HOLD">Tenir la position</option>
-                <option value="RECON">Reconnaissance</option>
-                <option value="CAS">Appui aérien</option>
-                <option value="QRF">Force de réaction</option>
+                <optgroup label="Types courants" id="atak-order-type-builtin">
+                  <option value="MOVE">Se déplacer</option>
+                  <option value="HOLD">Tenir la position</option>
+                  <option value="RECON">Reconnaissance</option>
+                  <option value="CAS">Appui aérien</option>
+                  <option value="QRF">Force de réaction</option>
+                </optgroup>
+                <optgroup label="Mes modèles" id="atak-order-type-custom" hidden></optgroup>
               </select>
             </label>
             <label class="atak-orders-field">
@@ -628,6 +631,26 @@ if ($atakMapConfig) {
               <input type="checkbox" id="atak-order-radio-sim" checked />
               <span>Conditions radio réalistes (délai, brouillage fictif)</span>
             </label>
+            <div class="atak-orders-templates atak-orders-field--wide" id="atak-orders-templates">
+              <div class="atak-orders-templates-actions">
+                <button type="button" class="atak-order-tpl-btn" id="atak-order-tpl-save-btn">Enregistrer comme modèle</button>
+                <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-order-tpl-delete-btn" hidden>Retirer ce modèle</button>
+              </div>
+              <div class="atak-orders-tpl-form" id="atak-orders-tpl-form" hidden>
+                <label class="atak-orders-field">
+                  <span>Nom du modèle</span>
+                  <input type="text" id="atak-order-tpl-label" maxlength="120" placeholder="Ex. Sécuriser le périmètre" />
+                </label>
+                <label class="atak-orders-field">
+                  <span>Consignes par défaut</span>
+                  <input type="text" id="atak-order-tpl-payload" maxlength="400" placeholder="Texte prérempli à l’émission (facultatif)" />
+                </label>
+                <div class="atak-orders-templates-actions">
+                  <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--primary" id="atak-order-tpl-confirm-btn">Enregistrer le modèle</button>
+                  <button type="button" class="atak-order-tpl-btn" id="atak-order-tpl-cancel-btn">Annuler</button>
+                </div>
+              </div>
+            </div>
           </div>
           <button type="button" class="atak-order-issue-submit" id="atak-order-issue-btn">Émettre l’ordre</button>
         </div>
@@ -756,6 +779,17 @@ if ($atakMapConfig) {
     </aside>
 
     <div class="atak-map-wrap">
+      <div class="atak-map-tools" id="atak-map-tools" role="toolbar" aria-label="Outils de la carte">
+        <button type="button" class="atak-map-tools__btn" data-tool="goto" title="Aller à une grille (G)">Grille</button>
+        <button type="button" class="atak-map-tools__btn" data-tool="me" title="Centrer sur ma position (H)">Moi</button>
+        <button type="button" class="atak-map-tools__btn" data-tool="follow" title="Suivre ma position (F)" aria-pressed="false">Suivre</button>
+        <span class="atak-map-tools__sep" aria-hidden="true"></span>
+        <button type="button" class="atak-map-tools__btn" data-tool="measure" title="Mesurer une distance (M)" aria-pressed="false">Mesurer</button>
+        <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-in" title="Zoom avant">+</button>
+        <button type="button" class="atak-map-tools__btn atak-map-tools__btn--icon" data-tool="zoom-out" title="Zoom arrière">−</button>
+        <span class="atak-map-tools__sep" aria-hidden="true"></span>
+        <button type="button" class="atak-map-tools__btn" data-tool="nvg" title="Vision nocturne (N)" aria-pressed="false">NVG</button>
+      </div>
       <div id="atak-map"></div>
 
       <div class="atak-drawer atak-drawer--fixed" id="atak-effectifs-drawer">
@@ -832,6 +866,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-map-tools.js"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js"></script>
   <script src="<?= $base ?>/assets/js/atak-chat.js"></script>
@@ -962,6 +997,12 @@ if ($atakMapConfig) {
           statusEl.classList.add('offline', 'atak-chip--off');
           statusEl.classList.remove('atak-chip--live');
           if (label) label.textContent = 'Hors ligne';
+        }
+        var hudNet = document.querySelector('[data-hud-net]');
+        if (hudNet) {
+          hudNet.textContent = online ? 'En liaison' : 'Coupée';
+          hudNet.classList.toggle('atak-map-hud__ok', !!online);
+          hudNet.classList.toggle('atak-map-hud__bad', !online);
         }
       }
       ATAKSocket.connect({

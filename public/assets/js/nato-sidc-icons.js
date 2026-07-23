@@ -117,9 +117,17 @@ window.NatoSidcIcons = (function () {
     try {
       var sidc = resolveSidc(opts);
       var size = opts.size || 36;
+      // Évite double libellé : si showLabel HTML, ne pas graver le callsign dans milsymbol
+      // (sinon la boîte SVG grossit beaucoup au-delà de `size`).
+      var designation = '';
+      if (opts.uniqueDesignation != null && opts.uniqueDesignation !== '') {
+        designation = opts.uniqueDesignation;
+      } else if (opts.showLabel === false) {
+        designation = opts.callSign || opts.label || '';
+      }
       var symOpts = {
         size: size,
-        uniqueDesignation: opts.uniqueDesignation || opts.callSign || opts.label || '',
+        uniqueDesignation: designation,
       };
       var heading = parseFloat(opts.heading);
       if (!isNaN(heading)) symOpts.direction = heading;
@@ -217,8 +225,8 @@ window.NatoSidcIcons = (function () {
         anchorY = mil.anchor.y != null ? mil.anchor.y : iconH / 2;
       }
     }
-    var w = Math.max(iconW, showLabel ? 72 : iconW);
-    var h = showLabel ? iconH + 14 : iconH;
+    var w = Math.max(iconW, showLabel ? Math.max(48, size * 3) : iconW);
+    var h = showLabel ? iconH + 12 : iconH;
     return L.divIcon({
       className: 'nato-sidc-icon',
       html: svgMarkup(opts),
