@@ -4650,6 +4650,68 @@ body.atak-session-profile-locked .atak-header-links .atak-btn-phone-link {
 .atak-ops-table tr.is-warn td { color: #fbbf24; }
 .atak-ops-table tr.is-crit td { color: #f87171; font-weight: 700; }
 
+.atak-notepad {
+  width: 100%;
+  min-height: 9rem;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 4px;
+  background: rgba(8, 12, 18, 0.75);
+  color: var(--atak-text, #e2e8f0);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  resize: vertical;
+  font-family: inherit;
+}
+.atak-notepad:focus {
+  outline: none;
+  border-color: rgba(45, 212, 168, 0.45);
+}
+.atak-sheet-wrap {
+  overflow-x: auto;
+  margin: 0.35rem 0 0.5rem;
+}
+.atak-sheet-table .atak-sheet-input {
+  width: 100%;
+  min-width: 4.5rem;
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 3px;
+  background: rgba(15, 23, 32, 0.9);
+  color: var(--atak-text, #e2e8f0);
+  font-size: 0.7rem;
+  padding: 0.22rem 0.3rem;
+  font-family: inherit;
+}
+.atak-sheet-table select.atak-sheet-input {
+  min-width: 6.5rem;
+}
+.atak-sheet-del {
+  appearance: none;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: transparent;
+  color: #f87171;
+  border-radius: 3px;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.atak-sheet-del:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+.atak-notes-actions {
+  margin: 0.75rem 0 1.25rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+#atak-notes-dirty:not([hidden]) {
+  color: #fbbf24;
+}
+
 .atak-medevac-card {
   margin: 0.45rem 0;
   padding: 0.55rem 0.65rem;

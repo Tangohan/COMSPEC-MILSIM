@@ -509,6 +509,7 @@ if ($atakMapConfig) {
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" title="Ordres"><span class="atak-tab-label">Ordres</span> <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="medical" title="Assistances"><span class="atak-tab-label">Assistances</span> <span class="atak-tab-badge atak-medical-tab-badge" id="atak-medical-tab-badge" hidden></span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="radio" title="Radio proximité"><span class="atak-tab-label">Radio</span> <span class="atak-tab-badge" id="atak-radio-tab-badge" hidden></span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="notes" title="Notes de session et tableurs temporaires"><span class="atak-tab-label">Notes</span> <span class="atak-tab-badge" id="atak-notes-dirty" hidden>·</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="pings" title="Pings"><span class="atak-tab-label">Pings</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="jtac" title="JTAC"><span class="atak-tab-label">JTAC</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="etat" title="État du personnel et logistique"><span class="atak-tab-label">État</span></button>
@@ -771,6 +772,40 @@ if ($atakMapConfig) {
           <button type="button" class="atak-ops-btn" id="atak-pace-save">Enregistrer le plan PACE</button>
         </section>
       </div>
+      <div class="atak-tabs-content" id="tab-notes" role="tabpanel">
+        <p class="atak-panel-hint">Bloc-notes et tableurs <strong>temporaires</strong> pour cette carte : ils ne remplacent pas le tableur opérateurs du back-office. Enregistrement automatique après modification.</p>
+        <p class="atak-pace-meta" id="atak-notes-meta"></p>
+
+        <section class="atak-ops-section" aria-labelledby="atak-notepad-title">
+          <h3 class="atak-ops-section-title" id="atak-notepad-title">Bloc-notes</h3>
+          <textarea id="atak-notepad" class="atak-notepad" rows="8" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
+        </section>
+
+        <section class="atak-ops-section" aria-labelledby="atak-soi-sheet-title">
+          <h3 class="atak-ops-section-title" id="atak-soi-sheet-title">SOI — consignes radio</h3>
+          <p class="atak-panel-hint">Tableau type liste de réseaux (Organization Net List) : réseau/canal, indicatif, suffixe, fréquences, rôle. Complète le plan PACE de l’onglet Radio.</p>
+          <div id="atak-sheet-soi" class="atak-sheet-wrap"></div>
+          <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="soi">Ajouter une ligne</button>
+        </section>
+
+        <section class="atak-ops-section" aria-labelledby="atak-eta-sheet-title">
+          <h3 class="atak-ops-section-title" id="atak-eta-sheet-title">Suivi ETA alliés</h3>
+          <p class="atak-panel-hint">Heures d’arrivée estimées des forces amies / alliées sur le théâtre.</p>
+          <div id="atak-sheet-eta" class="atak-sheet-wrap"></div>
+          <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="eta">Ajouter une ligne</button>
+        </section>
+
+        <section class="atak-ops-section" aria-labelledby="atak-allied-sheet-title">
+          <h3 class="atak-ops-section-title" id="atak-allied-sheet-title">Identifiants ATAK alliés</h3>
+          <p class="atak-panel-hint">Carnet manuel pour des unités hors de votre communauté (pas le registre interne des opérateurs Athena).</p>
+          <div id="atak-sheet-allied" class="atak-sheet-wrap"></div>
+          <button type="button" class="atak-ops-btn atak-sheet-add" data-sheet="allied_ids">Ajouter une ligne</button>
+        </section>
+
+        <div class="atak-notes-actions">
+          <button type="button" class="atak-ops-btn" id="atak-notes-save">Enregistrer maintenant</button>
+        </div>
+      </div>
       <div class="atak-tabs-content" id="tab-pings">
         <div class="atak-pings-list" id="atak-pings-list">
           <div class="atak-empty-state">
@@ -965,6 +1000,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-medevac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-workspace.js"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js"></script>
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js"></script>

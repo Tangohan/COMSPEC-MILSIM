@@ -1266,6 +1266,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);
     $router->get('/api/atak/soi', [AtakApiController::class, 'soiPaceIndex']);
     $router->post('/api/atak/soi', [AtakApiController::class, 'soiPaceStore']);
+    $router->get('/api/atak/session-workspace', [AtakApiController::class, 'sessionWorkspaceIndex']);
+    $router->post('/api/atak/session-workspace', [AtakApiController::class, 'sessionWorkspaceStore']);
     $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
     $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
     $router->post('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacStatus']);

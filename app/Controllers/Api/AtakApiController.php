@@ -1252,6 +1252,52 @@ class AtakApiController
         return Response::json($plan);
     }
 
+    /** Espace de travail temporaire (bloc-notes + tableurs SOI / ETA / ID alliés) — scopé à la carte. */
+    public function sessionWorkspaceIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $repo = new \App\Repositories\AtakSessionWorkspaceRepository();
+
+        return Response::json($repo->get($r, $this->mapId($request)));
+    }
+
+    public function sessionWorkspaceStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $userId = (int) (Session::get('user_id') ?? 0);
+        if ($userId < 1) {
+            return Response::json(['error' => 'Authentification requise'], 401);
+        }
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+        $user = $this->userRepository->findById($userId);
+        $actor = is_array($user)
+            ? (trim((string) ($user['callsign'] ?? '')) ?: trim((string) ($user['display_name'] ?? '')))
+            : '';
+        $repo = new \App\Repositories\AtakSessionWorkspaceRepository();
+        $workspace = $repo->save($tenantId, $mapId, $body, $actor !== '' ? $actor : null);
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            'Notes de session mises à jour',
+            $actor !== '' ? $actor : null,
+            ['source' => 'session_workspace']
+        );
+
+        return Response::json($workspace);
+    }
+
     public function medevacIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
