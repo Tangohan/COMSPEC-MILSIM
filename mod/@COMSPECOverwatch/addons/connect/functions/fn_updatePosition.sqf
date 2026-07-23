@@ -186,6 +186,27 @@ _vehJson = _vehJson + format [
     if (_radioModuleOk) then { "true" } else { "false" },
     _escRid
 ];
+// Métadonnées Wave Relay / MPU-5 (ATAK Enhanced) — lecture seule des variables joueur
+if (
+    (["wave_relay"] call comspec_overwatch_connect_fnc_isModModuleEnabled)
+    && {_unit getVariable ["Iceman_WR_hasMPU5", false]}
+) then {
+    private _wrTg = _unit getVariable ["Iceman_WR_activeTG", -1];
+    private _wrFreq = str (_unit getVariable ["Iceman_WR_frequency", ""]);
+    private _wrNode = str (_unit getVariable ["Iceman_WR_nodeId", ""]);
+    private _wrGw = _unit getVariable ["Iceman_WR_gateway", false];
+    private _wrBridge = _unit getVariable ["Iceman_WR_bridgeActive", false];
+    _wrFreq = (_wrFreq splitString """" joinString "");
+    _wrNode = (_wrNode splitString """" joinString "");
+    _vehJson = _vehJson + format [
+        ",""wr_mpu5"":true,""wr_tg"":%1,""wr_freq"":""%2"",""wr_node"":""%3"",""wr_gateway"":%4,""wr_bridge"":%5",
+        _wrTg,
+        _wrFreq,
+        _wrNode,
+        if (_wrGw) then { "true" } else { "false" },
+        if (_wrBridge) then { "true" } else { "false" }
+    ];
+};
 // Camp / affiliation (filtres Tacmap — fusionné dans extra via la DLL existante)
 private _side = side group _unit;
 private _sideStr = switch (_side) do {

@@ -176,6 +176,9 @@ public static class Extension
                 return "ERR|unauthorized";
             if (code is 403)
             {
+                var modBlock = MapModAccessBlockError(respBody);
+                if (modBlock != null)
+                    return modBlock;
                 if (respBody.Contains("steam_not_linked", StringComparison.OrdinalIgnoreCase))
                     return "ERR|steam_not_linked";
                 if (respBody.Contains("account_disabled", StringComparison.OrdinalIgnoreCase))
@@ -288,7 +291,17 @@ public static class Extension
                     else if ((int)resp.StatusCode == 401)
                         InvokeCallback("Error", "Acces refuse (cle Athena)");
                     else if ((int)resp.StatusCode == 403)
-                        InvokeCallback("Error", "Communaute Athena manquante — refaites la liaison");
+                    {
+                        var body403 = "";
+                        try { body403 = ReadContentUtf8(resp, CancellationToken.None); } catch { /* ignore */ }
+                        var modBlock = MapModAccessBlockError(body403);
+                        if (modBlock == "ERR|mod_steam_blocked")
+                            InvokeCallback("Error", "Acces mod refuse — identifiant Steam restreint");
+                        else if (modBlock == "ERR|mod_ip_blocked")
+                            InvokeCallback("Error", "Acces mod refuse — adresse reseau restreinte");
+                        else
+                            InvokeCallback("Error", "Communaute Athena manquante — refaites la liaison");
+                    }
                     else
                         InvokeCallback("Error", "HTTP " + (int)resp.StatusCode);
                 }
@@ -835,6 +848,20 @@ public static class Extension
         return Encoding.UTF8.GetString(bytes);
     }
 
+    /// <summary>
+    /// Restriction admin (Steam / adresse réseau) → code SQF dédié (pas un faux unauthorized).
+    /// </summary>
+    private static string? MapModAccessBlockError(string? respBody)
+    {
+        if (string.IsNullOrEmpty(respBody))
+            return null;
+        if (respBody.Contains("mod_steam_blocked", StringComparison.OrdinalIgnoreCase))
+            return "ERR|mod_steam_blocked";
+        if (respBody.Contains("mod_ip_blocked", StringComparison.OrdinalIgnoreCase))
+            return "ERR|mod_ip_blocked";
+        return null;
+    }
+
     private static string FormatCaughtError(Exception ex)
     {
         // Messages stables pour SQF (pas de '|' qui casse le split).
@@ -988,6 +1015,9 @@ public static class Extension
                 if (!resp.IsSuccessStatusCode)
                 {
                     var httpCode = (int)resp.StatusCode;
+                    var modBlockRedeem = MapModAccessBlockError(respBody);
+                    if (modBlockRedeem != null)
+                        return modBlockRedeem;
                     if (httpCode == 404)
                     {
                         if (respBody.Contains("code_already_used", StringComparison.Ordinal))
@@ -1076,6 +1106,9 @@ public static class Extension
                     if (httpCode == 400) return "ERR|invalid_steam";
                     if (httpCode == 401 || httpCode == 403)
                     {
+                        var modBlockSteam = MapModAccessBlockError(respBody);
+                        if (modBlockSteam != null)
+                            return modBlockSteam;
                         // Route absente sur un portail pas à jour → middleware clé API.
                         if (respBody.Contains("unauthorized", StringComparison.OrdinalIgnoreCase)
                             || respBody.Contains("X_COMSPEC", StringComparison.OrdinalIgnoreCase)
@@ -1259,6 +1292,22 @@ public static class Extension
                 var safe = respBody.Replace("|", "_").Replace("\n", " ").Replace("\r", "");
                 return "OK|" + (safe.Length > MaxOutputBytes - 4 ? safe.Substring(0, MaxOutputBytes - 4) : safe);
             }
+            // Modules pont ATAK Enhanced / cTab (activables admin).
+            // Lignes : id\tenabled(0|1)\tlabel
+            if (function == "GetModModules")
+            {
+                var resp = SendGet(_baseUrl + "/api/atak/mod-modules", token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var respBody = ReadContentUtf8(resp, token);
+                var simplified = SimplifyModModulesJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
@@ -1310,6 +1359,27 @@ public static class Extension
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Alertes tactiques Athena (Contact / FRAGO / BDA / …) → inbox cTab.
+            // Lignes : id\tkind\tkind_label\tcall_sign\tgrid\tsummary\tcreated_at\tseverity
+            if (function == "GetTacticalAlerts")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "40";
+                var url = _baseUrl + "/api/atak/tactical-alerts?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=" + Uri.EscapeDataString(limit);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplifiedTac = SimplifyTacticalAlertsJson(respBody);
+                return "OK|" + (simplifiedTac.Length > MaxOutputBytes - 4 ? simplifiedTac.Substring(0, MaxOutputBytes - 4) : simplifiedTac);
             }
             // Alertes médicales actives (≤ 30 min) + triage.
             // Lignes : id\tkind\tcall_sign\tlabel\tgrid\tcreated_at\ttriage_status\ttriage_label\tseverity
@@ -1690,6 +1760,106 @@ public static class Extension
     /// Lignes équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
     /// Lignes membre : M\tteamId\tcallsign\trole\tdisplayName
     /// </summary>
+    /// <summary>
+    /// Simplifie GET /api/atak/tactical-alerts pour SQF.
+    /// Lignes : id\tkind\tkind_label\tcall_sign\tgrid\tsummary\tcreated_at\tseverity
+    /// </summary>
+    /// <summary>
+    /// Simplifie GET /api/atak/mod-modules pour SQF.
+    /// Lignes : id\tenabled(0|1)\tlabel
+    /// </summary>
+    private static string SimplifyModModulesJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+
+            if (doc.RootElement.TryGetProperty("catalog", out var catalog) && catalog.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var el in catalog.EnumerateArray())
+                {
+                    var id = el.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
+                    if (string.IsNullOrEmpty(id)) continue;
+                    var enabled = true;
+                    if (el.TryGetProperty("enabled", out var en))
+                    {
+                        enabled = en.ValueKind == JsonValueKind.True
+                            || (en.ValueKind == JsonValueKind.Number && en.GetInt32() != 0)
+                            || (en.ValueKind == JsonValueKind.String && (en.GetString() == "1" || string.Equals(en.GetString(), "true", StringComparison.OrdinalIgnoreCase)));
+                    }
+                    var label = el.TryGetProperty("label", out var lb) ? (lb.GetString() ?? id) : id;
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Clean(id)).Append('\t').Append(enabled ? "1" : "0").Append('\t').Append(Clean(label));
+                }
+                return sb.ToString();
+            }
+
+            if (doc.RootElement.TryGetProperty("modules", out var modules) && modules.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var prop in modules.EnumerateObject())
+                {
+                    var enabled = prop.Value.ValueKind == JsonValueKind.True
+                        || (prop.Value.ValueKind == JsonValueKind.Number && prop.Value.GetInt32() != 0);
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(Clean(prop.Name)).Append('\t').Append(enabled ? "1" : "0").Append('\t').Append(Clean(prop.Name));
+                }
+            }
+            return sb.ToString();
+        }
+        catch
+        {
+            return "";
+        }
+    }
+    private static string SimplifyTacticalAlertsJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("alerts", out var alerts) || alerts.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            foreach (var el in alerts.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i)
+                    ? (i.ValueKind == JsonValueKind.Number ? i.GetInt32().ToString() : (i.GetString() ?? ""))
+                    : "";
+                if (string.IsNullOrEmpty(id) || id == "0") continue;
+                var kind = el.TryGetProperty("kind", out var k) ? (k.GetString() ?? "tic") : "tic";
+                var kindLabel = el.TryGetProperty("kind_label", out var kl) ? (kl.GetString() ?? "") : "";
+                var callSign = el.TryGetProperty("call_sign", out var cs) ? (cs.GetString() ?? "") : "";
+                if (string.IsNullOrEmpty(callSign) && el.TryGetProperty("author", out var au))
+                    callSign = au.GetString() ?? "";
+                var grid = el.TryGetProperty("grid", out var g) ? (g.GetString() ?? "") : "";
+                var summary = el.TryGetProperty("summary", out var sm) ? (sm.GetString() ?? "") : "";
+                if (summary.Length > 160) summary = summary.Substring(0, 160);
+                var created = "";
+                if (el.TryGetProperty("created_at", out var ca))
+                {
+                    created = ca.ValueKind == JsonValueKind.Number
+                        ? ca.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : (ca.GetString() ?? "");
+                }
+                var severity = el.TryGetProperty("severity", out var sev) ? (sev.GetString() ?? "") : "";
+                sb.Append(Clean(id)).Append('\t')
+                  .Append(Clean(kind)).Append('\t')
+                  .Append(Clean(kindLabel)).Append('\t')
+                  .Append(Clean(callSign)).Append('\t')
+                  .Append(Clean(grid)).Append('\t')
+                  .Append(Clean(summary)).Append('\t')
+                  .Append(Clean(created)).Append('\t')
+                  .Append(Clean(severity)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     /// <summary>
     /// Simplifie GET /api/atak/orders pour SQF.
     /// Lignes : id\ttype\ttarget\tpriority\tissuer\tstatus\tpayload\ttarget_type\ttarget_ref\taliases
@@ -2189,6 +2359,14 @@ public static class Extension
                     ? "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"deleted\":true}"
                     : "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"markerData\":" + markerDataRaw + "}";
                 EnqueueOrSend(_baseUrl + "/api/atak/marker", payload);
+                return;
+            }
+
+            if (function == "SendWeather" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
+            {
+                var weatherJson = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(weatherJson)) return;
+                EnqueueOrSend(_baseUrl + "/api/atak/weather", weatherJson);
                 return;
             }
 

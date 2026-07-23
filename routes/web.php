@@ -898,6 +898,7 @@ return function (Router $router) {
     $router->post('/admin/atak-config', [AdminAtakConfigController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1331,6 +1332,10 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
     $router->get('/api/atak/tactical-alerts', [AtakApiController::class, 'tacticalAlertsIndex']);
     $router->get('/api/atak/mission-settings', [AtakApiController::class, 'missionSettings']);
     $router->post('/api/atak/mission-settings', [AtakApiController::class, 'missionSettings']);
+    $router->get('/api/atak/weather', [AtakApiController::class, 'weather']);
+    $router->post('/api/atak/weather', [AtakApiController::class, 'weather']);
+    $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
+    $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
 $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
 $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
 $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);

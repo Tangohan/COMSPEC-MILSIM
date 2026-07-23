@@ -395,6 +395,42 @@ private _js = format [
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];
 
+// Modules pont + journal données
+private _modJs = [];
+private _mods = missionNamespace getVariable ["COMSPEC_AthenaModules", createHashMap];
+private _modLabels = missionNamespace getVariable ["COMSPEC_AthenaModuleLabels", createHashMap];
+if (_mods isEqualType createHashMap) then {
+    {
+        private _id = _x;
+        private _en = _mods getOrDefault [_id, true];
+        private _lab = if (_modLabels isEqualType createHashMap) then { _modLabels getOrDefault [_id, _id] } else { _id };
+        private _safeId = [_id] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+        private _safeLab = [_lab] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+        _modJs pushBack format [
+            "{id:'%1',label:'%2',enabled:%3}",
+            _safeId,
+            _safeLab,
+            if (_en) then { "true" } else { "false" }
+        ];
+    } forEach (keys _mods);
+};
+private _mlogJs = [];
+private _mlog = missionNamespace getVariable ["COMSPEC_ModuleLog", []];
+if (_mlog isEqualType []) then {
+    private _mStart = (count _mlog) - 30;
+    if (_mStart < 0) then { _mStart = 0; };
+    for "_i" from _mStart to ((count _mlog) - 1) do {
+        private _safeL = [_mlog select _i] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+        _mlogJs pushBack format ["'%1'", _safeL];
+    };
+};
+private _modBoot = format [
+    "if(window.COMSPEC_BOOT){window.COMSPEC_BOOT.modules=[%1];window.COMSPEC_BOOT.moduleLog=[%2];} if(window.COMSPEC_renderModules){window.COMSPEC_renderModules();}",
+    _modJs joinString ",",
+    _mlogJs joinString ","
+];
+_ctrl ctrlWebBrowserAction ["ExecJS", _modBoot];
+
 if (
     missionNamespace getVariable ["COMSPEC_WebBrowser_MapVisible", false]
     && {missionNamespace getVariable ["COMSPEC_WebBrowser_MapAutoCenter", true]}

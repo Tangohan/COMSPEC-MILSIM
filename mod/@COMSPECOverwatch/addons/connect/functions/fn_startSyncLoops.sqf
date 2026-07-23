@@ -9,6 +9,7 @@ if (missionNamespace getVariable ["COMSPEC_SyncLoopsStarted", false]) exitWith {
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
 [] call comspec_overwatch_connect_fnc_sendFactionSettings;
+[] call comspec_overwatch_connect_fnc_pollModModules;
 
 private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
 if (!(_interval isEqualType 0)) then { _interval = 2; };
@@ -79,9 +80,25 @@ private _casPollInterval = 10;
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollTacticalAlerts;
+    }, [], "pollTacticalAlerts"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 10, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollMapShapes;
     }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 10, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollModModules;
+    }, [], "pollModModules"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 45, []] call CBA_fnc_addPerFrameHandler;
 
 ["OnOrderIssued", {
     params ["_order"];

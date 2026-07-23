@@ -90,6 +90,29 @@ if (!(_bdaReports isEqualType [])) then { _bdaReports = []; };
     _entries pushBack ["bda", _title, _detail, _time, []];
 } forEach _bdaReports;
 
+// --- Messages de groupe ATAK Enhanced ---
+private _groupMsgs = missionNamespace getVariable ["Iceman_ATAK_Group_messages", []];
+if (!(_groupMsgs isEqualType [])) then { _groupMsgs = []; };
+{
+    if (!(_x isEqualType [])) then { continue };
+    if ((count _x) < 5) then { continue };
+    private _gTime = _x select 0;
+    private _gSender = _x select 1;
+    private _gId = _x select 2;
+    private _gGrid = _x select 3;
+    private _gText = _x select 4;
+    private _title = format ["[Groupe] %1 · %2", _gSender, _gGrid];
+    private _detail = format [
+        "<t color='#c8e6c9'>Message de groupe</t><br/>De : %1<br/>Groupe : %2<br/>Grille : %3<br/>Heure : %4<br/><br/>%5",
+        _gSender,
+        if (_gId isEqualTo "") then { "—" } else { _gId },
+        if (_gGrid isEqualTo "") then { "—" } else { _gGrid },
+        if (_gTime isEqualTo "") then { "—" } else { _gTime },
+        _gText
+    ];
+    _entries pushBack ["alert", _title, _detail, _gTime, []];
+} forEach _groupMsgs;
+
 // --- Photos locales Photo Library ---
 if (!isNil "Iceman_fnc_photo_getRecords") then {
     private _records = call Iceman_fnc_photo_getRecords;
@@ -105,7 +128,7 @@ if (!isNil "Iceman_fnc_photo_getRecords") then {
             if (_filePath isEqualTo "" && {_src isEqualTo "received"}) then { continue };
             private _title = format ["[Photo] %1 · %2", _fileName, _grid];
             private _detail = format [
-                "<t color='#a8d8ff'>Photo ATAK Enhanced</t><br/>Auteur : %1<br/>Grille : %2<br/>Fichier : %3<br/>Source : %4<br/><br/>Sélectionnez puis « Photo → Athena » pour remonter.",
+                "<t color='#a8d8ff'>Photo ATAK Enhanced</t><br/>Auteur : %1<br/>Grille : %2<br/>Nom : %3<br/>Source : %4<br/><br/>Sélectionnez puis « Photo → Athena » pour remonter.",
                 _author, _grid, _fileName, _src
             ];
             _entries pushBack ["photo", _title, _detail, _fileName, [_filePath, _fileName]];
@@ -145,8 +168,61 @@ if (!(_orders isEqualType [])) then { _orders = []; };
 
 reverse _entries;
 
+// --- Onglet Modules : état + journal données ---
+if (_tab isEqualTo "modules") then {
+    _entries = [];
+    private _mods = missionNamespace getVariable ["COMSPEC_AthenaModules", createHashMap];
+    private _labels = missionNamespace getVariable ["COMSPEC_AthenaModuleLabels", createHashMap];
+    if (!(_mods isEqualType createHashMap)) then { _mods = createHashMap; };
+    if (!(_labels isEqualType createHashMap)) then { _labels = createHashMap; };
+
+    private _ids = keys _mods;
+    if ((count _ids) == 0) then {
+        _entries pushBack [
+            "modules",
+            "En attente de synchronisation",
+            "<t color='#9aa4aa'>Les modules seront listés dès que la liaison Athena aura récupéré le réglage de la communauté.</t>",
+            "0",
+            []
+        ];
+    } else {
+        {
+            private _id = _x;
+            private _en = _mods getOrDefault [_id, true];
+            private _lab = _labels getOrDefault [_id, _id];
+            private _stateTxt = if (_en) then { "Actif" } else { "Désactivé" };
+            private _color = if (_en) then { "#7dffb0" } else { "#ff9a4a" };
+            private _title = format ["[%1] %2", _stateTxt, _lab];
+            private _detail = format [
+                "<t color='%1'>%2</t><br/>Module : %3<br/><br/>Réglable depuis l’administration Athena (Configuration ATAK).",
+                _color,
+                _stateTxt,
+                _lab
+            ];
+            _entries pushBack ["modules", _title, _detail, _id, []];
+        } forEach _ids;
+    };
+
+    private _mlog = missionNamespace getVariable ["COMSPEC_ModuleLog", []];
+    if (!(_mlog isEqualType [])) then { _mlog = []; };
+    private _start = (count _mlog) - 25;
+    if (_start < 0) then { _start = 0; };
+    if ((count _mlog) > 0) then {
+        for "_i" from ((count _mlog) - 1) to _start step -1 do {
+            private _line = _mlog select _i;
+            _entries pushBack [
+                "modules",
+                format ["Journal · %1", _line],
+                format ["<t color='#c8e6c9'>Donnée / module</t><br/><br/>%1", _line],
+                format ["log%1", _i],
+                []
+            ];
+        };
+    };
+};
+
 // Filtre onglet
-if (_tab isNotEqualTo "all") then {
+if (_tab isNotEqualTo "all" && {_tab isNotEqualTo "modules"}) then {
     _entries = _entries select { (_x select 0) isEqualTo _tab };
 };
 
@@ -163,6 +239,7 @@ if (!isNull _listCtrl) then {
             case "order": { _listCtrl lbSetColor [_idx, [0.5, 0.75, 1, 1]]; };
             case "bda": { _listCtrl lbSetColor [_idx, [1, 0.6, 0.3, 1]]; };
             case "photo": { _listCtrl lbSetColor [_idx, [0.65, 0.85, 1, 1]]; };
+            case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.9, 0.6, 1]]; };
             default { _listCtrl lbSetColor [_idx, [1, 0.85, 0.45, 1]]; };
         };
     } forEach _entries;
@@ -178,6 +255,7 @@ if (!isNull _listCtrl) then {
                 case "bda": { "Aucun bilan des dégâts pour le moment." };
                 case "photo": { "Aucune photo ATAK — capturez depuis l’app Photos." };
                 case "order": { "Aucun ordre Athena." };
+                case "modules": { "Aucun module synchronisé pour le moment." };
                 default { "Aucune alerte, ordre, BDA ni photo." };
             };
             _detailCtrl ctrlSetStructuredText parseText format ["<t color='#9aa4aa'>%1</t>", _empty];

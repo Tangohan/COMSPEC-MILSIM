@@ -1188,6 +1188,11 @@
             Manifest de vol
             <span class="app-sub">Aéronef</span>
           </button>
+          <button class="fbcb2-app" type="button" data-view="modules">
+            <span class="app-ico">☰</span>
+            Modules &amp; journal
+            <span class="app-sub">État · données échangées</span>
+          </button>
           <button class="fbcb2-app" type="button" data-cmd="action:ping">
             <span class="app-ico">◉</span>
             Point d’intérêt
@@ -1204,7 +1209,19 @@
             <span class="app-sub">Situation forces · navigateur</span>
           </button>
         </div>
-      </div>      <div class="panel-view" id="view-help">
+      </div>
+      <div class="panel-view" id="view-modules">
+        <div class="fbcb2-tile">
+          <div class="tile-h">Modules de la communauté</div>
+          <div class="tile-b" id="modules-list">Synchronisation en cours…</div>
+        </div>
+        <div class="fbcb2-tile">
+          <div class="tile-h">Journal des données</div>
+          <div class="tile-b" id="modules-log" style="max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;line-height:1.35">Aucun échange enregistré pour le moment.</div>
+        </div>
+        <button class="btn primary" type="button" data-cmd="refresh" style="width:100%;min-height:48px;margin-top:4px">Actualiser</button>
+      </div>
+      <div class="panel-view" id="view-help">
         <div class="help-block">
           <h3>Vue Commande</h3>
           <p>Console embarquée inspirée des systèmes de commandement de bataille (suivi des forces bleues). La carte topo centrale affiche vos unités en liaison, comme un poste véhicule de type Appliqué.</p>
@@ -2050,7 +2067,7 @@
     var stage = document.getElementById("stage");
     var panels = [
       "chat", "orders", "alerts", "radio", "status", "apps", "help",
-      "callsign", "cas", "briefing", "phone", "account", "medical", "tactical", "manifest"
+      "callsign", "cas", "briefing", "phone", "account", "medical", "tactical", "manifest", "modules"
     ];
     stage.classList.toggle("hidden", currentView !== "bft");
     for (var p = 0; p < panels.length; p++) {
@@ -2137,12 +2154,48 @@
       if (title) title.textContent = "MANIFEST DE VOL";
       if (sideHead) sideHead.textContent = "AÉRONEF";
       if (hint) hint.textContent = "Déclaration de vol";
+    } else if (currentView === "modules") {
+      if (title) title.textContent = "MODULES";
+      if (sideHead) sideHead.textContent = "ÉTAT & JOURNAL";
+      if (hint) hint.textContent = "Fonctions activées · données échangées";
+      renderModules();
     } else {
       if (title) title.textContent = "SUIVI DES FORCES";
       if (sideHead) sideHead.textContent = "EFFECTIFS EN LIAISON";
       if (hint && boot && boot.mapHint) hint.textContent = boot.mapHint;
     }
   }
+
+  function renderModules() {
+    var listEl = document.getElementById("modules-list");
+    var logEl = document.getElementById("modules-log");
+    var mods = (boot && boot.modules) ? boot.modules : [];
+    var log = (boot && boot.moduleLog) ? boot.moduleLog : [];
+    if (listEl) {
+      if (!mods.length) {
+        listEl.textContent = "En attente de synchronisation avec Athena…";
+      } else {
+        var html = "";
+        for (var i = 0; i < mods.length; i++) {
+          var m = mods[i] || {};
+          var on = !!m.enabled;
+          html += '<div style="margin:0 0 6px 0"><strong style="color:' + (on ? "#0a7a3e" : "#9a5b00") + '">' +
+            (on ? "Actif" : "Désactivé") + "</strong> — " + escapeHtml(m.label || m.id || "?") + "</div>";
+        }
+        listEl.innerHTML = html;
+      }
+    }
+    if (logEl) {
+      if (!log.length) {
+        logEl.textContent = "Aucun échange enregistré pour le moment.";
+      } else {
+        var lines = [];
+        for (var j = log.length - 1; j >= 0; j--) lines.push(String(log[j] || ""));
+        logEl.textContent = lines.join("\n");
+      }
+    }
+  }
+  window.COMSPEC_renderModules = renderModules;
   function setView(view) {
     applyView(view || "bft");
     // Carte Arma native (le Chromium masque tout contrôle dessous → bascule navigateur ↔ carte)
@@ -2230,6 +2283,7 @@
       ingestAlert(incoming[i], true);
     }
     renderAlerts();
+    if (typeof renderModules === "function") renderModules();
     setFooterMsg(boot.footer || "Synchronisé");
     if (boot.mapHint && currentView === "bft") {
       var hint = document.getElementById("map-hint");

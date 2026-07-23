@@ -227,6 +227,14 @@ if (_prefix != "OK") exitWith {
 
         case "account_disabled": { "Ce compte Athena n’est pas autorisé à se lier." };
 
+        case "mod_steam_blocked": {
+            "Accès au mod refusé pour cet identifiant Steam. Contactez un administrateur de la communauté."
+        };
+
+        case "mod_ip_blocked": {
+            "Accès au mod refusé depuis cette adresse réseau. Contactez un administrateur de la communauté."
+        };
+
         case "code_invalid_or_expired": { "Code invalide, déjà utilisé ou expiré — générez-en un nouveau sur Athena." };
 
         case "code_already_used": { "Ce code a déjà été utilisé — générez-en un nouveau sur Athena." };

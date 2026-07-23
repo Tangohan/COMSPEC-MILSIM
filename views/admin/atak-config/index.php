@@ -74,6 +74,52 @@ foreach ($dataSummary as $k => $v) {
         <span class="text-sm font-bold text-emerald-700">Ouvrir →</span>
     </a>
 
+    <?php
+    $bridgeModules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
+    $bridgeModulesUpdatedAt = (string) ($bridgeModulesUpdatedAt ?? '');
+    ?>
+    <div class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+        <h2 class="text-sm font-bold text-slate-800 mb-1">Modules ATAK Enhanced / cTab</h2>
+        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+            Chaque fonctionnalité partagée entre le jeu et la carte tactique peut être activée ou désactivée pour votre communauté.
+            Les opérateurs en liaison voient l’état des modules et un journal des données dans la tablette Athena et l’application Athena du cTab.
+        </p>
+        <?php if ($bridgeModulesUpdatedAt !== ''): ?>
+            <p class="text-xs text-slate-400 mb-3">Dernière mise à jour : <?= htmlspecialchars($bridgeModulesUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <form action="<?= $baseUrl ?>/admin/atak-config/modules" method="post" class="space-y-3">
+            <?= \App\Core\Csrf::field() ?>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <?php foreach ($bridgeModules as $mod): ?>
+                    <?php
+                    $mid = (string) ($mod['id'] ?? '');
+                    $mlabel = (string) ($mod['label'] ?? $mid);
+                    $mdesc = (string) ($mod['description'] ?? '');
+                    $menabled = !empty($mod['enabled']);
+                    if ($mid === '') {
+                        continue;
+                    }
+                    ?>
+                    <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3 cursor-pointer hover:border-emerald-300">
+                        <input type="hidden" name="module_<?= htmlspecialchars($mid, ENT_QUOTES, 'UTF-8') ?>" value="0" />
+                        <input type="checkbox" name="module_<?= htmlspecialchars($mid, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300" <?= $menabled ? 'checked' : '' ?> />
+                        <span>
+                            <span class="block text-sm font-medium text-slate-800"><?= htmlspecialchars($mlabel, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if ($mdesc !== ''): ?>
+                                <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= htmlspecialchars($mdesc, ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <div class="pt-2">
+                <button type="submit" class="inline-flex px-4 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
+                    Enregistrer les modules
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div class="grid lg:grid-cols-12 gap-8 items-start">
         <div class="lg:col-span-8 space-y-6">
             <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">

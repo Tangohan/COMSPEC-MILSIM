@@ -71,7 +71,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             idc = 9740;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
             y = QUOTE(COMSPEC_ATHENA_H(1.1));
-            w = QUOTE(COMSPEC_ATHENA_W(0.7));
+            w = QUOTE(COMSPEC_ATHENA_W(0.54));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
             text = "Tout";
             colorBackground[] = {0.18, 0.22, 0.28, 0.9};
@@ -81,9 +81,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabBda: BCE_RscButtonMenu
         {
             idc = 9741;
-            x = QUOTE(COMSPEC_ATHENA_W(0.82));
+            x = QUOTE(COMSPEC_ATHENA_W(0.66));
             y = QUOTE(COMSPEC_ATHENA_H(1.1));
-            w = QUOTE(COMSPEC_ATHENA_W(0.7));
+            w = QUOTE(COMSPEC_ATHENA_W(0.54));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
             text = "BDA";
             colorBackground[] = {0.4, 0.22, 0.1, 0.9};
@@ -93,9 +93,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabPhoto: BCE_RscButtonMenu
         {
             idc = 9742;
-            x = QUOTE(COMSPEC_ATHENA_W(1.56));
+            x = QUOTE(COMSPEC_ATHENA_W(1.24));
             y = QUOTE(COMSPEC_ATHENA_H(1.1));
-            w = QUOTE(COMSPEC_ATHENA_W(0.7));
+            w = QUOTE(COMSPEC_ATHENA_W(0.54));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
             text = "Photos";
             colorBackground[] = {0.15, 0.3, 0.45, 0.9};
@@ -105,13 +105,25 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabOrder: BCE_RscButtonMenu
         {
             idc = 9743;
-            x = QUOTE(COMSPEC_ATHENA_W(2.3));
+            x = QUOTE(COMSPEC_ATHENA_W(1.82));
             y = QUOTE(COMSPEC_ATHENA_H(1.1));
-            w = QUOTE(COMSPEC_ATHENA_W(0.62));
+            w = QUOTE(COMSPEC_ATHENA_W(0.54));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
             text = "Ordres";
             colorBackground[] = {0.12, 0.28, 0.4, 0.9};
             onButtonClick = "['order'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
+            class Attributes { align = "center"; valign = "middle"; };
+        };
+        class TabModules: BCE_RscButtonMenu
+        {
+            idc = 9744;
+            x = QUOTE(COMSPEC_ATHENA_W(2.4));
+            y = QUOTE(COMSPEC_ATHENA_H(1.1));
+            w = QUOTE(COMSPEC_ATHENA_W(0.52));
+            h = QUOTE(COMSPEC_ATHENA_H(0.42));
+            text = "Modules";
+            colorBackground[] = {0.22, 0.35, 0.22, 0.9};
+            onButtonClick = "['modules'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
             class Attributes { align = "center"; valign = "middle"; };
         };
 
@@ -121,7 +133,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
             y = QUOTE(COMSPEC_ATHENA_H(1.58));
             w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(2.05));
+            h = QUOTE(COMSPEC_ATHENA_H(1.85));
             colorBackground[] = {0, 0, 0, 0.35};
             sizeEx = 0.026;
             onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectInbox";
@@ -131,9 +143,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9711;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(3.7));
+            y = QUOTE(COMSPEC_ATHENA_H(3.5));
             w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(1.15));
+            h = QUOTE(COMSPEC_ATHENA_H(1.0));
             text = "";
             colorBackground[] = {0, 0, 0, 0.28};
             class Attributes
@@ -151,33 +163,57 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9720;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(4.95));
+            y = QUOTE(COMSPEC_ATHENA_H(4.6));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "Contact";
             colorBackground[] = {0.55, 0.18, 0.12, 0.85};
             onButtonClick = "['TIC'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
             class Attributes { align = "center"; valign = "middle"; };
         };
+        class BtnClear: BCE_RscButtonMenu
+        {
+            idc = 9724;
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            y = QUOTE(COMSPEC_ATHENA_H(4.6));
+            w = QUOTE(COMSPEC_ATHENA_W(1.38));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
+            text = "Fin contact";
+            colorBackground[] = {0.2, 0.45, 0.25, 0.85};
+            onButtonClick = "['TIC_CLEAR'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+            class Attributes { align = "center"; valign = "middle"; };
+        };
         class BtnFrago: BCE_RscButtonMenu
         {
             idc = 9721;
-            x = QUOTE(COMSPEC_ATHENA_W(1.54));
-            y = QUOTE(COMSPEC_ATHENA_H(4.95));
+            x = QUOTE(COMSPEC_ATHENA_W(0.08));
+            y = QUOTE(COMSPEC_ATHENA_H(5.1));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "FRAGO";
             colorBackground[] = {0.2, 0.35, 0.45, 0.85};
             onButtonClick = "['FRAGO'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
+            class Attributes { align = "center"; valign = "middle"; };
+        };
+        class BtnBda: BCE_RscButtonMenu
+        {
+            idc = 9725;
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            y = QUOTE(COMSPEC_ATHENA_H(5.1));
+            w = QUOTE(COMSPEC_ATHENA_W(1.38));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
+            text = "BDA";
+            colorBackground[] = {0.5, 0.28, 0.1, 0.9};
+            onButtonClick = "['BDA'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
             class Attributes { align = "center"; valign = "middle"; };
         };
         class BtnSalute: BCE_RscButtonMenu
         {
             idc = 9722;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(5.48));
+            y = QUOTE(COMSPEC_ATHENA_H(5.6));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "SALUTE";
             colorBackground[] = {0.25, 0.4, 0.28, 0.85};
             onButtonClick = "['SALUTE'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
@@ -187,9 +223,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9723;
             x = QUOTE(COMSPEC_ATHENA_W(1.54));
-            y = QUOTE(COMSPEC_ATHENA_H(5.48));
+            y = QUOTE(COMSPEC_ATHENA_H(5.6));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "Op. à terre";
             colorBackground[] = {0.65, 0.12, 0.12, 0.9};
             onButtonClick = "['EAGLE_DOWN'] call comspec_overwatch_atak_athena_fnc_athena_sendQuick";
@@ -200,9 +236,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9732;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(6.02));
+            y = QUOTE(COMSPEC_ATHENA_H(6.1));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "Photo → Athena";
             colorBackground[] = {0.15, 0.35, 0.55, 0.9};
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendPhoto";
@@ -212,9 +248,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9731;
             x = QUOTE(COMSPEC_ATHENA_W(1.54));
-            y = QUOTE(COMSPEC_ATHENA_H(6.02));
+            y = QUOTE(COMSPEC_ATHENA_H(6.1));
             w = QUOTE(COMSPEC_ATHENA_W(1.38));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
             text = "Actualiser";
             colorBackground[] = {0.15, 0.15, 0.18, 0.85};
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_refresh";
@@ -225,12 +261,24 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9730;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
-            y = QUOTE(COMSPEC_ATHENA_H(6.55));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
-            h = QUOTE(COMSPEC_ATHENA_H(0.48));
-            text = "Tablette complète Athena";
+            y = QUOTE(COMSPEC_ATHENA_H(6.6));
+            w = QUOTE(COMSPEC_ATHENA_W(1.38));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
+            text = "Tablette Athena";
             colorBackground[] = {0.12, 0.45, 0.35, 0.9};
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_openTablet";
+            class Attributes { align = "center"; valign = "middle"; };
+        };
+        class BtnModulesLog: BCE_RscButtonMenu
+        {
+            idc = 9733;
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            y = QUOTE(COMSPEC_ATHENA_H(6.6));
+            w = QUOTE(COMSPEC_ATHENA_W(1.38));
+            h = QUOTE(COMSPEC_ATHENA_H(0.44));
+            text = "Journal modules";
+            colorBackground[] = {0.22, 0.35, 0.22, 0.9};
+            onButtonClick = "['modules'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
             class Attributes { align = "center"; valign = "middle"; };
         };
     };

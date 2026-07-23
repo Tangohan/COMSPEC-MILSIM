@@ -8,6 +8,59 @@ window.ATAKSessionWorkspace = (function () {
     { v: 'cancelled', l: 'Annulé' }
   ];
 
+  var panelExpanded = false;
+
+  function refreshMapSize() {
+    try {
+      var m = window.ATAKMap && typeof window.ATAKMap.getMap === 'function'
+        ? window.ATAKMap.getMap()
+        : (window.ATAKMap && window.ATAKMap._map);
+      if (m && typeof m.invalidateSize === 'function') {
+        m.invalidateSize({ animate: false });
+      }
+    } catch (e) {}
+  }
+
+  function updateExpandBtn() {
+    var btn = document.getElementById('atak-notes-expand');
+    if (!btn) return;
+    btn.textContent = panelExpanded ? 'Réduire' : 'Agrandir';
+    btn.title = panelExpanded
+      ? 'Revenir à la largeur Notes standard'
+      : 'Élargir encore le panneau (presque plein écran)';
+    btn.setAttribute('aria-pressed', panelExpanded ? 'true' : 'false');
+  }
+
+  function setPanelWide(on) {
+    var panel = document.getElementById('atak-panel-left');
+    if (!panel) return;
+    if (!on) {
+      panelExpanded = false;
+      panel.classList.remove('is-notes-wide', 'is-notes-expanded');
+      updateExpandBtn();
+      setTimeout(refreshMapSize, 220);
+      return;
+    }
+    panel.classList.add('is-notes-wide');
+    panel.classList.toggle('is-notes-expanded', panelExpanded);
+    panel.classList.remove('collapsed');
+    updateExpandBtn();
+    setTimeout(refreshMapSize, 220);
+  }
+
+  function toggleExpanded() {
+    var panel = document.getElementById('atak-panel-left');
+    if (!panel || !panel.classList.contains('is-notes-wide')) {
+      panelExpanded = true;
+      setPanelWide(true);
+      return;
+    }
+    panelExpanded = !panelExpanded;
+    panel.classList.toggle('is-notes-expanded', panelExpanded);
+    updateExpandBtn();
+    setTimeout(refreshMapSize, 220);
+  }
+
   var state = {
     notepad: '',
     soi: [],
@@ -275,6 +328,11 @@ window.ATAKSessionWorkspace = (function () {
     root.addEventListener('click', function (ev) {
       var t = ev.target;
       if (!t) return;
+      if (t.id === 'atak-notes-expand' || (t.closest && t.closest('#atak-notes-expand'))) {
+        ev.preventDefault();
+        toggleExpanded();
+        return;
+      }
       if (t.id === 'atak-notes-save' || (t.closest && t.closest('#atak-notes-save'))) {
         ev.preventDefault();
         if (state.saveTimer) clearTimeout(state.saveTimer);
@@ -296,6 +354,7 @@ window.ATAKSessionWorkspace = (function () {
   function init() {
     bind();
     load();
+    updateExpandBtn();
   }
 
   if (document.readyState === 'loading') {
@@ -304,5 +363,11 @@ window.ATAKSessionWorkspace = (function () {
     init();
   }
 
-  return { load: load, save: save, init: init };
+  return {
+    load: load,
+    save: save,
+    init: init,
+    setPanelWide: setPanelWide,
+    toggleExpanded: toggleExpanded
+  };
 })();

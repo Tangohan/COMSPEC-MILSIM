@@ -67,7 +67,12 @@ if (
     systemChat format ["[COMSPEC] %1", _msg];
 };
 
-// Ouvre la tablette sur les ordres (plus de dialog 9975)
+// Si l’app Athena cTab est ouverte : rester sur le panneau (pas de Chromium forcé).
+private _athenaGroup = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+private _athenaOpen = !isNull _athenaGroup && {ctrlShown _athenaGroup};
+if (_athenaOpen) exitWith {};
+
+// Sinon ouvre la tablette sur les ordres (plus de dialog 9975)
 if (isNull (findDisplay 9974)) then {
     0 spawn {
         uiSleep 0.15;

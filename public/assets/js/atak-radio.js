@@ -423,7 +423,9 @@ window.ATAKRadio = (function () {
       monitorState ? JSON.stringify(monitorState) : '',
       monTxCount,
       displayItems.map(function (it) {
-        return (it.unit.call_sign || '') + '|' + it.dist + '|' + (it.emitting ? 1 : 0) + '|' + it.channel + '|' + it.freq;
+        var ex = it.extra || {};
+        return (it.unit.call_sign || '') + '|' + it.dist + '|' + (it.emitting ? 1 : 0) + '|' + it.channel + '|' + it.freq +
+          '|' + (ex.wr_mpu5 ? 1 : 0) + '|' + (ex.wr_tg != null ? ex.wr_tg : '') + '|' + (ex.wr_gateway ? 1 : 0);
       }).join(';')
     ].join('\n');
     if (fp === lastFp) return;
@@ -447,6 +449,7 @@ window.ATAKRadio = (function () {
 
     listEl.innerHTML = displayItems.map(function (it) {
       var cs = it.unit.call_sign || '—';
+      var ex = it.extra || {};
       var netLabel = (it.net === 'ACRE' || it.net === 'TFAR') ? 'Réseau radio' : (it.net && it.net !== 'none' ? it.net : '—');
       var ch = it.channel ? ('Canal ' + it.channel) : 'Canal —';
       var freq = it.freq && it.freq !== 'N/A' ? it.freq : '';
@@ -456,12 +459,29 @@ window.ATAKRadio = (function () {
       var cardCls = 'atak-radio-card' +
         (it.emitting ? ' atak-radio-card--tx' : '') +
         (onMon ? ' atak-radio-card--listen' : '');
+      var wrPills = '';
+      if (truthyFlag(ex.wr_mpu5)) {
+        wrPills += '<span class="atak-radio-pill atak-radio-pill--wr" title="Wave Relay / MPU-5">MPU-5</span>';
+        if (ex.wr_tg != null && Number(ex.wr_tg) >= 0) {
+          wrPills += '<span class="atak-radio-pill" title="Talkgroup actif">TG ' + esc(String(ex.wr_tg)) + '</span>';
+        }
+        if (truthyFlag(ex.wr_gateway)) {
+          wrPills += '<span class="atak-radio-pill atak-radio-pill--gw" title="Passerelle Wave Relay">Passerelle</span>';
+        }
+        if (truthyFlag(ex.wr_bridge)) {
+          wrPills += '<span class="atak-radio-pill atak-radio-pill--gw" title="Pont radio actif">Pont radio</span>';
+        }
+        if (ex.wr_freq) {
+          freq = String(ex.wr_freq);
+        }
+      }
       return (
         '<article class="' + cardCls + '">' +
         '<div class="atak-radio-card__head">' +
         '<strong>' + esc(cs) + '</strong>' +
         (it.emitting ? '<span class="atak-radio-pill atak-radio-pill--tx">Émet</span>' : '') +
         (onMon ? '<span class="atak-radio-pill atak-radio-pill--listen">À l’écoute</span>' : '') +
+        wrPills +
         '</div>' +
         '<div class="atak-radio-card__meta">' +
         esc(String(it.dist)) + ' m · ' + esc(netLabel) + ' · ' + esc(ch) +

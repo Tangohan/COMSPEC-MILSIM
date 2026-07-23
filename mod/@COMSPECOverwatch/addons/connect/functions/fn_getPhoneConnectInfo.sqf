@@ -27,6 +27,8 @@ if (_prefix != "OK") exitWith {
         case "not_connected": { "Liaison Athena non établie — liez votre compte (touche K → Compte Athena) ou vérifiez l’URL du mod, puis réessayez." };
         case "not_found": { "Adresse Athena incorrecte ou service indisponible (page introuvable). Utilisez https://athena.ttrd.fr/public sans slash final." };
         case "unauthorized": { "Accès refusé — liez votre compte Athena en jeu, ou renseignez la clé d’accès fournie par votre admin." };
+        case "mod_steam_blocked": { "Accès au mod refusé pour cet identifiant Steam — contactez un administrateur de la communauté." };
+        case "mod_ip_blocked": { "Accès au mod refusé depuis cette adresse réseau — contactez un administrateur de la communauté." };
         case "no_tenant": { "Communauté non reconnue — reliez votre compte Athena en jeu (code de liaison), puis réessayez « Connecter mon téléphone »." };
         case "not_enabled": { "Connexion téléphone pas encore activée sur le serveur — contactez un administrateur Athena." };
         case "unavailable": { "Connexion téléphone temporairement indisponible — réessayez dans un instant." };

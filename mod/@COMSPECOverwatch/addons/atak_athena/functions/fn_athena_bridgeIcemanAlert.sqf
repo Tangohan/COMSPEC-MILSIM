@@ -6,6 +6,7 @@
 params ["_kind", "_sender", "_pos", ["_msgBody", ""], ["_time", ""], ["_kindText", ""]];
 
 if (!hasInterface) exitWith {};
+if (!(["iceman_alerts"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 
 // Miroir Athena→Iceman en cours : ne rien faire (anti-boucle)
 if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false]) exitWith {};
@@ -37,6 +38,7 @@ if (_isLocalSender) then {
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", true, false];
     [_kindKey, _summary, if ((count _pos) >= 2) then { _pos } else { getPos player }] call comspec_overwatch_connect_fnc_sendTacticalAlert;
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
+    [format ["Alerte %1 envoyee vers Athena", _label]] call comspec_overwatch_connect_fnc_appendModuleLog;
 } else {
     private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
     if (!(_inbox isEqualType [])) then { _inbox = []; };

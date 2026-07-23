@@ -642,6 +642,21 @@ window.ATAKMap = (function () {
     if (m) {
       var raw = m[1].toLowerCase();
       var rest = rawMsg.slice(m[0].length);
+      if (raw.indexOf('drone') >= 0 || raw.indexOf('isr') >= 0) {
+        var dLabel = 'Contact ISR';
+        var dColor = '#f97316';
+        if (raw.indexOf('eny') >= 0 || raw.indexOf('hostile') >= 0) {
+          dLabel = 'ISR adversaire';
+          dColor = '#ef4444';
+        } else if (raw.indexOf('civ') >= 0) {
+          dLabel = 'ISR civil';
+          dColor = '#22c55e';
+        } else if (raw.indexOf('unk') >= 0) {
+          dLabel = 'ISR inconnu';
+          dColor = '#eab308';
+        }
+        return { kind: 'drone', label: dLabel, color: dColor, rest: rest };
+      }
       if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('médical') >= 0) return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
       if (raw.indexOf('ralli') >= 0 || raw.indexOf('rally') >= 0) return { kind: 'rally', label: 'Ralliement', color: '#22c55e', rest: rest };

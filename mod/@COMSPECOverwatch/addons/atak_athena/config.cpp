@@ -44,6 +44,11 @@ class CfgFunctions
             class athena_bridgeComspecSent {};
             class athena_onOrderReceived {};
             class athena_refresh {};
+            class athena_bridgeWeather {};
+            class athena_bridgeDroneContacts {};
+            class athena_bridgeCtabMarkers {};
+            class athena_bridgeRoute {};
+            class athena_bridgeJump {};
         };
     };
 };

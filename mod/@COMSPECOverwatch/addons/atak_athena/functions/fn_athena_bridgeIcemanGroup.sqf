@@ -5,6 +5,7 @@
 params ["_sender", ["_groupId", ""], ["_text", ""], ["_pos", []], ["_time", ""]];
 
 if (!hasInterface) exitWith {};
+if (!(["iceman_group"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false]) exitWith {};
 if (isNull _sender || {!(_sender isEqualTo player)}) exitWith {};
 if ((trim _text) isEqualTo "") exitWith {};
@@ -22,6 +23,7 @@ private _msg = format ["GROUPE|%1|%2|%3|%4", _groupId, _cs, _grid, trim _text];
 missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", true, false];
 [player, "CHAT", _msg, "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;
 missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
+["Message de groupe envoye vers Athena"] call comspec_overwatch_connect_fnc_appendModuleLog;
 
 private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
 if (!(_inbox isEqualType [])) then { _inbox = []; };

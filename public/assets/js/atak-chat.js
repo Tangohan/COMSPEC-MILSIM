@@ -302,13 +302,27 @@ window.ATAKChat = (function () {
     var medicalHtml = (!orderHtml && medical && window.ATAKMedicalAlerts && window.ATAKMedicalAlerts.formatChatBody)
       ? window.ATAKMedicalAlerts.formatChatBody(bodyRaw)
       : null;
+    var tactical = (!orderHtml && !medical && window.TacmapTacticalAlerts && window.TacmapTacticalAlerts.parseChatBody)
+      ? window.TacmapTacticalAlerts.parseChatBody(bodyRaw)
+      : null;
+    var tacticalHtml = (!orderHtml && !medicalHtml && tactical && window.TacmapTacticalAlerts.formatChatBody)
+      ? window.TacmapTacticalAlerts.formatChatBody(bodyRaw)
+      : null;
+    var groupMsg = (!orderHtml && !medical && !tactical && window.TacmapTacticalAlerts && window.TacmapTacticalAlerts.parseGroupBody)
+      ? window.TacmapTacticalAlerts.parseGroupBody(bodyRaw)
+      : null;
+    var groupHtml = (!orderHtml && !medicalHtml && !tacticalHtml && groupMsg && window.TacmapTacticalAlerts.formatGroupChatBody)
+      ? window.TacmapTacticalAlerts.formatGroupChatBody(bodyRaw)
+      : null;
 
     var cls = 'atak-chat-msg'
       + (orderHtml ? ' atak-chat-msg-order' : '')
       + (medical ? ' atak-chat-msg-medical' + (medical.severity === 'critical' ? ' atak-chat-msg-medical-critical' : '') : '')
+      + (tactical ? ' atak-chat-msg-tactical' + (tactical.severity === 'critical' ? ' atak-chat-msg-tactical-critical' : '') : '')
+      + (groupMsg ? ' atak-chat-msg-group' : '')
       + (mentionedMe ? ' atak-chat-msg-mention' : '');
 
-    var parsed = (!orderHtml && !medicalHtml) ? parseCommsBody(bodyRaw) : null;
+    var parsed = (!orderHtml && !medicalHtml && !tacticalHtml && !groupHtml) ? parseCommsBody(bodyRaw) : null;
     var line1Tags = '';
     var line2 = '';
 
@@ -318,6 +332,12 @@ window.ATAKChat = (function () {
     } else if (medicalHtml) {
       line1Tags = tagHtml('MED');
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(medicalHtml) + '</div>';
+    } else if (tacticalHtml) {
+      line1Tags = tagHtml('CTAB');
+      line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(tacticalHtml) + '</div>';
+    } else if (groupHtml) {
+      line1Tags = tagHtml('GROUPE');
+      line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(groupHtml) + '</div>';
     } else if (parsed) {
       line1Tags = tagHtml(parsed.relative) + tagHtml(parsed.channel);
       line2 =

@@ -1,6 +1,6 @@
 /*
     Ouvre la tablette Athena (9974) et bascule sur une vue HTML.
-    Params: [_view] — bft|chat|orders|alerts|radio|status|apps|help|callsign|cas|briefing|phone|account|medical|tactical|manifest
+    Params: [_view] — bft|chat|orders|alerts|radio|status|apps|help|callsign|cas|briefing|phone|account|medical|tactical|manifest|modules
 */
 params [["_view", "bft", [""]]];
 

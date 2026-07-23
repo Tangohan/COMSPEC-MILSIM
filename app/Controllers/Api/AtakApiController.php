@@ -765,7 +765,7 @@ class AtakApiController
         if ($this->tenantAtakConfigRepository->isMaintenanceEnabled($id) && !$this->canBypassAtakMaintenance()) {
             $message = $this->tenantAtakConfigRepository->getMaintenanceMessage($id);
             if ($message === '') {
-                $message = 'La carte tactique est temporairement en maintenance. Réessayez plus tard.';
+                $message = 'L’accès à la carte est suspendu pour le moment. Réessayez plus tard.';
             }
 
             return Response::json([
@@ -2717,6 +2717,97 @@ class AtakApiController
         return Response::json([
             'mapId' => $mapId,
             'settings' => $svc->get($tenantId, $mapId),
+        ]);
+    }
+
+    /**
+     * Météo mission (snapshot ATAK Enhanced Weather → bandeau Tacmap / ATAK).
+     */
+    public function weather(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\MissionWeatherService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+
+        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $body = $this->jsonBody($request);
+            $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request, true));
+            if ($mapId < 1) {
+                $mapId = self::DEFAULT_MAP_ID;
+            }
+            $saved = $svc->put($tenantId, $mapId, $body);
+
+            return Response::json(['ok' => true, 'mapId' => $mapId, 'weather' => $saved]);
+        }
+
+        $mapId = $this->mapId($request);
+
+        return Response::json([
+            'mapId' => $mapId,
+            'weather' => $svc->get($tenantId, $mapId),
+        ]);
+    }
+
+    /**
+     * Modules pont ATAK Enhanced / cTab (activables par communauté).
+     */
+    public function modModules(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakBridgeModulesService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+
+        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+            $isGame = ComspecApiKeyAuth::extractPresentedKey() !== '';
+            if ($isGame) {
+                return Response::json([
+                    'error' => 'forbidden',
+                    'message' => 'Les modules se règlent depuis l’administration web.',
+                ], 403);
+            }
+            if (!function_exists('can') || !can('admin.access')) {
+                return Response::json(['error' => 'Forbidden'], 403);
+            }
+            $body = $this->jsonBody($request);
+            $incoming = is_array($body['modules'] ?? null) ? $body['modules'] : $body;
+            $boolMap = [];
+            foreach ($svc->catalog() as $row) {
+                $id = $row['id'];
+                if (array_key_exists($id, $incoming)) {
+                    $boolMap[$id] = (bool) $incoming[$id];
+                }
+            }
+            $saved = $svc->put($tenantId, $boolMap);
+
+            return Response::json([
+                'ok' => true,
+                'modules' => $saved['modules'],
+                'catalog' => $svc->catalogWithState($tenantId),
+                'updated_at' => $saved['updated_at'],
+            ]);
+        }
+
+        $state = $svc->get($tenantId);
+
+        return Response::json([
+            'modules' => $state['modules'],
+            'catalog' => $svc->catalogWithState($tenantId),
+            'updated_at' => $state['updated_at'],
         ]);
     }
 

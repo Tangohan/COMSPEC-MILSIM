@@ -263,6 +263,14 @@ if (_prefix == "OK") then {
                     _detail = "Compte Athena non autorise";
                     _logMsg = "Ce compte Athena n'est pas autorise.";
                 };
+                case "mod_steam_blocked": {
+                    _detail = "Acces mod refuse — Steam restreint";
+                    _logMsg = "Acces au mod refuse pour cet identifiant Steam. Contactez un administrateur de la communaute.";
+                };
+                case "mod_ip_blocked": {
+                    _detail = "Acces mod refuse — reseau restreint";
+                    _logMsg = "Acces au mod refuse depuis cette adresse reseau. Contactez un administrateur de la communaute.";
+                };
                 case "invalid_steam": {
                     _detail = "Identifiant Steam invalide";
                     _logMsg = "Identifiant Steam non reconnu — relancez la liaison.";
@@ -298,6 +306,9 @@ if (_prefix == "OK") then {
     };
     missionNamespace setVariable ["COMSPEC_LinkDetail", _detail, false];
     [format ["[Athena] %1", _logMsg]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    if (_payload in ["mod_steam_blocked", "mod_ip_blocked"]) then {
+        ["COMSPEC_Warning", [_logMsg]] call comspec_overwatch_connect_fnc_showNotification;
+    };
 };
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 

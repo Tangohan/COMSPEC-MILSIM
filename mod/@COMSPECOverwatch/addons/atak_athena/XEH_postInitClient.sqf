@@ -41,3 +41,29 @@ if (!hasInterface) exitWith {};
         [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
     };
 }] call CBA_fnc_addEventHandler;
+
+// Ponts ATAK Enhanced / cTab → Athena (hors features COMSPEC natives)
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeWeather;
+}, 45, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeDroneContacts;
+}, 8, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+}, 6, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeRoute;
+}, 10, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeJump;
+}, 12, []] call CBA_fnc_addPerFrameHandler;

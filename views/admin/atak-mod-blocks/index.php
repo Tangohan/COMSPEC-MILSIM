@@ -11,6 +11,19 @@ $typeLabel = static function (string $t): string {
 $scopeLabel = static function (string $s): string {
     return $s === 'global' ? 'Toute la plateforme' : 'Cette communauté';
 };
+$expiresLabel = static function (mixed $raw): string {
+    $s = trim((string) $raw);
+    if ($s === '') {
+        return 'Sans fin';
+    }
+    try {
+        $dt = new \DateTimeImmutable($s);
+
+        return $dt->format('d/m/Y H:i');
+    } catch (\Throwable) {
+        return $s;
+    }
+};
 ?>
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-10">
     <header>
@@ -18,7 +31,7 @@ $scopeLabel = static function (string $s): string {
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Restrictions d’accès au mod</h1>
         <p class="mt-3 text-sm text-slate-600 leading-relaxed max-w-2xl">
             Empêchez un joueur ou une adresse réseau d’utiliser le pack Overwatch / ATAK avec votre communauté :
-            liaison de compte, synchronisation et envois depuis le jeu seront refusés.
+            liaison de compte, synchronisation et envois depuis le jeu seront refusés, avec un message explicite côté mod.
         </p>
         <div class="mt-4 flex flex-wrap gap-3 text-sm">
             <a href="<?= htmlspecialchars(url('admin/atak-mod'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Pack Overwatch</a>
@@ -126,7 +139,7 @@ $scopeLabel = static function (string $s): string {
                                 <td class="p-3 font-medium text-slate-800"><?= htmlspecialchars($typeLabel($type), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="p-3 text-slate-600"><?= htmlspecialchars($hint !== '' ? $hint : '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="p-3 text-slate-600"><?= htmlspecialchars($scopeLabel($scope), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="p-3 text-slate-600"><?= !empty($b['expires_at']) ? htmlspecialchars((string) $b['expires_at'], ENT_QUOTES, 'UTF-8') : '—' ?></td>
+                                <td class="p-3 text-slate-600"><?= htmlspecialchars($expiresLabel($b['expires_at'] ?? null), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="p-3 text-slate-600"><?= htmlspecialchars(trim((string) ($b['reason'] ?? '')) !== '' ? (string) $b['reason'] : '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="p-3 text-right">
                                     <?php if ($canRevoke): ?>

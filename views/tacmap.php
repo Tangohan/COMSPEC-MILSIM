@@ -47,6 +47,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
@@ -86,7 +88,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
         <span class="tacmap-kpi" id="tacmap-zulu" title="Heure Zulu">—:—:— Z</span>
         <span class="tacmap-kpi" id="tacmap-theatre-label" title="Théâtre">—</span>
         <span class="tacmap-kpi" id="tacmap-unit-count" title="Positions">—</span>
-        <span class="text-xs text-[color:var(--tm-muted)] max-w-[12rem] truncate" id="tacmap-platform-status">Vérification…</span>
+        <span class="tacmap-kpi tacmap-kpi--weather" id="tacmap-weather" title="Météo mission" hidden>—</span>
+        <span class="text-xs text-[color:var(--tm-muted)] max-w-[10rem] truncate" id="tacmap-platform-status">Vérification…</span>
         <span class="text-xs text-[color:var(--tm-muted)]" id="tacmap-sync-meta">—</span>
         <button type="button" class="tacmap-btn" id="tacmap-theme-toggle" title="Basculer jour / nuit">Nuit</button>
         <button type="button" class="tacmap-btn" id="tacmap-toggle-left" title="Liste des unités">Effectifs</button>
@@ -114,41 +117,54 @@ $pageTitle = $title ?? 'TACMAP — Athena';
       </aside>
 
       <main class="tacmap-map-stage">
-        <div class="tacmap-map-toolbar">
-          <label><input type="checkbox" id="tacmap-layer-units" checked /> Unités</label>
-          <label><input type="checkbox" id="tacmap-layer-trails" checked /> Tracés de déplacement</label>
-          <label><input type="checkbox" id="tacmap-layer-danger" checked /> Zones à signaler</label>
-          <label><input type="checkbox" id="tacmap-layer-drawings" checked /> Tracés dessinés</label>
-          <label><input type="checkbox" id="tacmap-layer-markers" checked /> Repères</label>
-          <label><input type="checkbox" id="tacmap-layer-pings" checked /> Pings</label>
-          <label><input type="checkbox" id="tacmap-layer-sigint" /> Veille radio</label>
-          <label><input type="checkbox" id="tacmap-layer-intel" /> Indices fusionnés</label>
-          <label><input type="checkbox" id="tacmap-layer-air" checked /> Aéronefs</label>
-          <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Analyse terrain</label>
-          <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
+        <div class="tacmap-map-toolbar" id="tacmap-map-toolbar">
+          <div class="tacmap-map-toolbar__group" aria-label="Calques principaux">
+            <label><input type="checkbox" id="tacmap-layer-units" checked /> Unités</label>
+            <label><input type="checkbox" id="tacmap-layer-trails" checked /> Tracés</label>
+            <label><input type="checkbox" id="tacmap-layer-markers" checked /> Repères</label>
+            <label><input type="checkbox" id="tacmap-layer-pings" checked /> Pings</label>
+            <label><input type="checkbox" id="tacmap-layer-air" checked /> Aéronefs</label>
+          </div>
+          <div class="tacmap-map-toolbar__group" aria-label="Calques cTab">
+            <span class="tacmap-map-toolbar__tag">cTab</span>
+            <label><input type="checkbox" id="tacmap-layer-tactical" checked /> Signalements</label>
+            <label><input type="checkbox" id="tacmap-layer-recon" checked /> Photos</label>
+          </div>
+          <div class="tacmap-map-toolbar__group" aria-label="Autres calques">
+            <label><input type="checkbox" id="tacmap-layer-danger" checked /> Zones</label>
+            <label><input type="checkbox" id="tacmap-layer-drawings" checked /> Dessins</label>
+            <label><input type="checkbox" id="tacmap-layer-sigint" /> Veille radio</label>
+            <label><input type="checkbox" id="tacmap-layer-intel" /> Indices</label>
+            <label><input type="checkbox" id="tacmap-layer-elevation" checked /> Terrain</label>
+            <label><input type="checkbox" id="tacmap-layer-route" checked /> Itinéraire</label>
+          </div>
         </div>
         <div class="tacmap-tools-bar" id="tacmap-tools-bar">
           <span class="tacmap-tools-bar__label">Outils</span>
-          <button type="button" class="tacmap-btn" id="tacmap-tool-viewshed" title="Zone visible depuis un point">Zone visible</button>
-          <button type="button" class="tacmap-btn" id="tacmap-tool-heatmap" title="Carte des hauteurs">Hauteurs</button>
-          <button type="button" class="tacmap-btn" id="tacmap-tool-route-foot" title="Itinéraire à pied">Itinéraire à pied</button>
-          <button type="button" class="tacmap-btn" id="tacmap-tool-route-veh" title="Itinéraire véhicule">Itinéraire véhicule</button>
-          <label class="tacmap-tools-bar__field">Rayon (m)
-            <input type="number" id="tacmap-tool-radius" min="100" max="3000" value="500" />
-          </label>
-          <label class="tacmap-tools-bar__field">Vitesse (km/h)
-            <input type="number" id="tacmap-tool-speed" min="1" max="120" value="5" />
-          </label>
-          <button type="button" class="tacmap-btn" id="tacmap-tool-clear">Effacer analyses</button>
+          <div class="tacmap-tools-bar__actions">
+            <button type="button" class="tacmap-btn" id="tacmap-tool-viewshed" title="Zone visible depuis un point">Zone visible</button>
+            <button type="button" class="tacmap-btn" id="tacmap-tool-heatmap" title="Carte des hauteurs">Hauteurs</button>
+            <button type="button" class="tacmap-btn" id="tacmap-tool-route-foot" title="Itinéraire à pied">À pied</button>
+            <button type="button" class="tacmap-btn" id="tacmap-tool-route-veh" title="Itinéraire véhicule">Véhicule</button>
+            <label class="tacmap-tools-bar__field">Rayon
+              <input type="number" id="tacmap-tool-radius" min="100" max="3000" value="500" />
+            </label>
+            <label class="tacmap-tools-bar__field">Vitesse
+              <input type="number" id="tacmap-tool-speed" min="1" max="120" value="5" />
+            </label>
+            <button type="button" class="tacmap-btn" id="tacmap-tool-clear">Effacer</button>
+          </div>
           <span class="tacmap-tools-bar__hint" id="tacmap-tool-hint"></span>
           <span class="tacmap-tools-bar__eta" id="tacmap-tool-eta"></span>
         </div>
         <div class="tacmap-faction-bar" id="tacmap-faction-bar">
           <span class="tacmap-tools-bar__label">Affichage</span>
-          <label><input type="checkbox" id="tacmap-show-friend" checked /> Alliés</label>
-          <label><input type="checkbox" id="tacmap-show-hostile" checked /> Adversaire</label>
-          <label><input type="checkbox" id="tacmap-show-unknown" checked /> Indépendants</label>
-          <label><input type="checkbox" id="tacmap-show-neutral" checked /> Civils</label>
+          <div class="tacmap-tools-bar__actions">
+            <label><input type="checkbox" id="tacmap-show-friend" checked /> Alliés</label>
+            <label><input type="checkbox" id="tacmap-show-hostile" checked /> Adversaire</label>
+            <label><input type="checkbox" id="tacmap-show-unknown" checked /> Indépendants</label>
+            <label><input type="checkbox" id="tacmap-show-neutral" checked /> Civils</label>
+          </div>
         </div>
         <div id="tacmap-map"></div>
 
@@ -186,9 +202,15 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             </div>
           </section>
           <section>
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Signalements</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Signalements (cTab / Athena)</p>
             <div id="tacmap-tactical-list">
               <p class="text-sm text-[color:var(--tm-muted)]">Aucun signalement récent.</p>
+            </div>
+          </section>
+          <section>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-[color:var(--tm-muted)] mb-2">Photos de terrain</p>
+            <div id="tacmap-recon-list">
+              <p class="text-sm text-[color:var(--tm-muted)]">Aucune photo de terrain récente.</p>
             </div>
           </section>
           <section>
@@ -280,6 +302,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             theatreLabel: 'tacmap-theatre-label',
             syncBadge: 'tacmap-sync-badge',
             platformStatus: 'tacmap-platform-status',
+            weatherBanner: 'tacmap-weather',
             unitCount: 'tacmap-unit-count',
             syncMeta: 'tacmap-sync-meta',
             roster: 'tacmap-roster',
@@ -296,9 +319,12 @@ $pageTitle = $title ?? 'TACMAP — Athena';
             layerSigint: 'tacmap-layer-sigint',
             layerIntel: 'tacmap-layer-intel',
             layerAir: 'tacmap-layer-air',
+            layerTactical: 'tacmap-layer-tactical',
+            layerRecon: 'tacmap-layer-recon',
             layerElevation: 'tacmap-layer-elevation',
             layerRoute: 'tacmap-layer-route',
             tacticalList: 'tacmap-tactical-list',
+            reconList: 'tacmap-recon-list',
             toolViewshed: 'tacmap-tool-viewshed',
             toolHeatmap: 'tacmap-tool-heatmap',
             toolRouteFoot: 'tacmap-tool-route-foot',

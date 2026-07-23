@@ -89,6 +89,7 @@ class CfgFunctions {
             class receiveOrder {};
             class orderConcernsPlayer {};
             class pollOrders {};
+            class pollTacticalAlerts {};
             class orderInboxShow {};
             class orderInboxOnLoad {};
             class orderRespond {};
@@ -126,6 +127,9 @@ class CfgFunctions {
             class updateStatusBadges {};
             class chatDialogOnLoad {};
             class appendLinkLog {};
+            class appendModuleLog {};
+            class isModModuleEnabled {};
+            class pollModModules {};
             class portalLabel {};
             class toggleLogCategory {};
             class showDebugInfo {};

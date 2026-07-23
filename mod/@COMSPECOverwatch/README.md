@@ -15,10 +15,13 @@ Mod Arma 3 pour la liaison avec Athena (carte tactique / ATAK). Envoi de la posi
 
 ### Optionnel — app Athena dans ATAK Enhanced (cTab)
 
-Pour l’icône **Athena** dans cTab (inbox alertes/ordres + envoi rapide + tablette complète) :
+Pour l’icône **Athena** dans cTab (inbox alertes/ordres/BDA/photos + envoi rapide + tablette complète) :
 
 - **cTab** / cTab+ et **BCE** (comme pour ATAK Enhancements by Iceman)
 - PBO `addons/atak_athena.pbo` (embarqué dans le build si AddonBuilder réussit)
+- Dual-send avec ATAK Enhanced (alertes, BDA, messages de groupe, photos) ; poll Athena → inbox cTab ; ordres C2 sans forcer la tablette Chromium si l’app est ouverte
+- Ponts lecture seule vers le navigateur : météo mission, contacts Drone Ops, marqueurs utilisateur cTab, itinéraires Route, plans HAHO/HALO, métadonnées Wave Relay / MPU-5
+- Chaque pont est un **module** activable / désactivable dans l’admin Athena (« Configuration ATAK »). Le jeu synchronise l’état ; l’app Athena cTab (onglet Modules / Journal modules) et la tablette (Apps → Modules & journal) affichent l’état et le journal des données.
 
 Sans cTab/BCE, le cœur Overwatch (`main` + `connect`) fonctionne seul ; `atak_athena` ne se charge simplement pas.
 

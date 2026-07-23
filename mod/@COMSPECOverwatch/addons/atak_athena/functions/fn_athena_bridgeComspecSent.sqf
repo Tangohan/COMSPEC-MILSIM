@@ -10,6 +10,7 @@ params [
 ];
 
 if (!hasInterface) exitWith {};
+if (!(["comspec_mirror"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false]) exitWith {};
 
 if ((count _pos) < 2) then { _pos = getPos player; };

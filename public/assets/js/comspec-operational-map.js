@@ -309,6 +309,21 @@
     if (m) {
       var raw = m[1].toLowerCase();
       var rest = rawMsg.slice(m[0].length);
+      if (raw.indexOf('drone') >= 0 || raw.indexOf('isr') >= 0) {
+        var dLabel = 'Contact ISR';
+        var dColor = '#f97316';
+        if (raw.indexOf('eny') >= 0 || raw.indexOf('hostile') >= 0) {
+          dLabel = 'ISR adversaire';
+          dColor = '#ef4444';
+        } else if (raw.indexOf('civ') >= 0) {
+          dLabel = 'ISR civil';
+          dColor = '#22c55e';
+        } else if (raw.indexOf('unk') >= 0) {
+          dLabel = 'ISR inconnu';
+          dColor = '#eab308';
+        }
+        return { kind: 'drone', label: dLabel, color: dColor, rest: rest };
+      }
       if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('medecin') >= 0 || raw.indexOf('médecin') >= 0 || raw.indexOf('bless') >= 0) {
         return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
@@ -488,6 +503,8 @@
         air: true,
         elevation: true,
         route: true,
+        tactical: true,
+        recon: true,
       },
       affiliations: {
         friend: true,
@@ -530,7 +547,8 @@
       [['units', layerGroups.units], ['trails', layerGroups.trails], ['danger', layerGroups.dangerZones], ['drawings', layerGroups.drawings],
         ['markers', layerGroups.markers], ['pings', layerGroups.pings], ['sigint', layerGroups.sigint],
         ['intel', layerGroups.intel], ['air', layerGroups.air],
-        ['elevation', layerGroups.elevation], ['route', layerGroups.route]].forEach(function (pair) {
+        ['elevation', layerGroups.elevation], ['route', layerGroups.route],
+        ['tactical', layerGroups.tactical], ['recon', layerGroups.recon]].forEach(function (pair) {
         var key = pair[0];
         var lg = pair[1];
         if (!lg) return;
@@ -739,6 +757,76 @@
           .catch(function () {});
       }
       if (state.layers.danger) loadDangerZones();
+      if (state.layers.tactical) refreshTacticalPanel();
+      else if (layerGroups.tactical) layerGroups.tactical.clearLayers();
+      if (state.layers.recon) refreshReconPanel();
+      else if (layerGroups.recon) layerGroups.recon.clearLayers();
+    }
+
+    function renderTacticalMarkers(alerts) {
+      if (!layerGroups.tactical || !map) return;
+      layerGroups.tactical.clearLayers();
+      if (!state.layers.tactical) return;
+      (alerts || []).forEach(function (a) {
+        if (!window.TacmapTacticalAlerts || !window.TacmapTacticalAlerts.hasMapPos(a)) return;
+        var x = parseFloat(a.pos_x);
+        var y = parseFloat(a.pos_y);
+        var latlng = L.latLng(y, x);
+        var kind = String(a.kind || '').toLowerCase();
+        var color = kind === 'eagle_down' || kind === 'tic' ? '#ef4444'
+          : (kind === 'bda' ? '#ea580c' : (kind === 'tic_clear' ? '#22c55e' : '#f59e0b'));
+        var label = escapeHtml(a.kind_label || 'Alerte');
+        var icon = L.divIcon({
+          className: 'tacmap-talert-marker',
+          html: '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:1.6rem;height:1.6rem;padding:0 4px;border-radius:999px;background:' +
+            color + ';color:#fff;font-size:9px;font-weight:700;box-shadow:0 0 0 2px rgba(0,0,0,.35);">' +
+            (kind === 'bda' ? 'BDA' : (kind === 'eagle_down' ? '!' : 'S')) + '</span>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+        var popup = '<strong>' + label + '</strong><br/>' +
+          escapeHtml(a.call_sign || a.author || '') +
+          (a.grid ? '<br/>Grille ' + escapeHtml(a.grid) : '') +
+          (a.summary ? '<br/>' + escapeHtml(String(a.summary).slice(0, 160)) : '');
+        L.marker(latlng, { icon: icon, zIndexOffset: 350 })
+          .bindPopup(popup)
+          .addTo(layerGroups.tactical);
+      });
+    }
+
+    function renderReconMarkers(photos) {
+      if (!layerGroups.recon || !map) return;
+      layerGroups.recon.clearLayers();
+      if (!state.layers.recon) return;
+      var origin = String(apiBase || '').replace(/\/$/, '').replace(/\/api(?:\/atak)?$/, '');
+      (photos || []).forEach(function (p) {
+        if (!window.TacmapRecon || !window.TacmapRecon.hasPos(p)) return;
+        var x = parseFloat(p.pos_x);
+        var y = parseFloat(p.pos_y);
+        var latlng = L.latLng(y, x);
+        var src = window.TacmapRecon.resolveUrl(apiBase, p);
+        if (src && src.charAt(0) === '/' && origin) src = origin + src;
+        var author = escapeHtml(p.author_callsign || p.author || 'Recon');
+        var icon = L.divIcon({
+          className: 'tacmap-recon-marker',
+          html: '<span style="display:inline-block;width:1.5rem;height:1.5rem;border-radius:4px;background:#0ea5e9;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);"></span>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+        var html = '<strong>Photo terrain</strong><br/>' + author +
+          (p.grid_ref || p.grid ? '<br/>Grille ' + escapeHtml(p.grid_ref || p.grid) : '') +
+          (src ? '<br/><img src="' + escapeHtml(src) + '" alt="" style="max-width:160px;max-height:100px;margin-top:6px;border-radius:4px;" />' : '');
+        L.marker(latlng, { icon: icon, zIndexOffset: 340 })
+          .bindPopup(html)
+          .addTo(layerGroups.recon);
+      });
+    }
+
+    function focusMapPos(x, y) {
+      if (!map || isNaN(x) || isNaN(y)) return;
+      try {
+        map.setView(L.latLng(y, x), Math.max(map.getZoom(), 5), { animate: true });
+      } catch (e) {}
     }
 
     function updateSyncBadge() {
@@ -1212,6 +1300,8 @@
         layerGroups.air = L.layerGroup();
         layerGroups.elevation = L.layerGroup();
         layerGroups.route = L.layerGroup();
+        layerGroups.tactical = L.layerGroup();
+        layerGroups.recon = L.layerGroup();
         map.on('contextmenu', function (e) {
           if (L.DomEvent) L.DomEvent.preventDefault(e);
           if (e.originalEvent) e.originalEvent.preventDefault();
@@ -1360,6 +1450,8 @@
     bindLayerCheckbox(els.layerAir, 'air');
     bindLayerCheckbox(els.layerElevation, 'elevation');
     bindLayerCheckbox(els.layerRoute, 'route');
+    bindLayerCheckbox(els.layerTactical, 'tactical');
+    bindLayerCheckbox(els.layerRecon, 'recon');
 
     function bindAffCheckbox(id, key) {
       var el = getEl(id);
@@ -1435,10 +1527,34 @@
     }
     wireToolButtons();
 
+    function refreshWeatherBanner() {
+      var el = getEl(els.weatherBanner);
+      if (!el || !window.TacmapWeather) return;
+      window.TacmapWeather.poll(apiBase, state.currentMapId, el, { compact: true });
+    }
+
     function refreshTacticalPanel() {
       var listEl = getEl(els.tacticalList);
       if (!listEl || !window.TacmapTacticalAlerts) return;
-      window.TacmapTacticalAlerts.poll(apiBase, state.currentMapId, listEl);
+      window.TacmapTacticalAlerts.poll(apiBase, state.currentMapId, listEl, {
+        onAlerts: function (alerts) {
+          renderTacticalMarkers(alerts);
+        },
+        onLocate: focusMapPos,
+      });
+    }
+
+    function refreshReconPanel() {
+      var listEl = getEl(els.reconList);
+      if (!listEl || !window.TacmapRecon) return;
+      window.TacmapRecon.poll(apiBase, state.currentMapId, listEl, {
+        tenantId: tenantId,
+        missionId: getMissionId(),
+        onPhotos: function (photos) {
+          renderReconMarkers(photos);
+        },
+        onLocate: focusMapPos,
+      });
     }
 
     function loadMissionSettings() {
@@ -1484,8 +1600,12 @@
     refreshPlatformHealth();
     intervals.push(setInterval(refreshPlatformHealth, 60000));
     intervals.push(setInterval(refreshTacticalPanel, Math.max(syncMs, 8000)));
+    intervals.push(setInterval(refreshReconPanel, Math.max(syncMs, 12000)));
+    intervals.push(setInterval(refreshWeatherBanner, Math.max(syncMs, 20000)));
     loadMissionSettings();
     refreshTacticalPanel();
+    refreshReconPanel();
+    refreshWeatherBanner();
 
     var initialSlug = (mapSel && mapSel.value) || ctx.defaultMapSlug || 'altis';
     applyBaseLayer(initialSlug);

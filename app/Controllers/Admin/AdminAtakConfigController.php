@@ -12,6 +12,7 @@ use App\Repositories\AtakMapRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakTenantDataService;
+use App\Services\Tactical\AtakBridgeModulesService;
 use App\Support\ComspecApiKeyAuth;
 
 class AdminAtakConfigController
@@ -51,6 +52,9 @@ class AdminAtakConfigController
         $maintenanceMessage = ($maintenanceSchemaReady && is_array($config))
             ? trim((string) ($config['maintenance_message'] ?? ''))
             : '';
+        $modulesSvc = new AtakBridgeModulesService();
+        $bridgeModules = $modulesSvc->catalogWithState($tenantId);
+        $bridgeModulesUpdatedAt = $modulesSvc->get($tenantId)['updated_at'] ?? '';
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -70,6 +74,8 @@ class AdminAtakConfigController
             'maintenanceEnabled' => $maintenanceEnabled,
             'maintenanceMessage' => $maintenanceMessage,
             'purgeConfirmPhrase' => self::PURGE_CONFIRM_PHRASE,
+            'bridgeModules' => $bridgeModules,
+            'bridgeModulesUpdatedAt' => $bridgeModulesUpdatedAt,
         ]);
     }
 
@@ -127,6 +133,31 @@ class AdminAtakConfigController
             ['reason' => 'key_regenerated', 'method' => 'admin'],
             null
         );
+
+        return Response::redirect(url('admin/atak-config'));
+    }
+
+    /** Active ou désactive les modules pont ATAK Enhanced / cTab. */
+    public function storeModules(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $svc = new AtakBridgeModulesService();
+        $boolMap = [];
+        foreach ($svc->catalog() as $row) {
+            $id = $row['id'];
+            $boolMap[$id] = (string) $request->input('module_' . $id, '0') === '1';
+        }
+        $svc->put((int) $tenantId, $boolMap);
+        Session::flash('success', 'Modules ATAK Enhanced / cTab enregistrés. Les joueurs en liaison récupèrent le réglage sous environ une minute.');
 
         return Response::redirect(url('admin/atak-config'));
     }

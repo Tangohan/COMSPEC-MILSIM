@@ -5,6 +5,7 @@
 params ["_sender", "_pos", ["_bodyHtml", ""], ["_time", ""]];
 
 if (!hasInterface) exitWith {};
+if (!(["iceman_bda"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_AthenaBridge_SuppressMirror", false]) exitWith {};
 
 private _from = if (isNull _sender) then { "—" } else { name _sender };
@@ -22,6 +23,7 @@ if (_isLocal) then {
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", true, false];
     ["BDA", _summary, if ((count _pos) >= 2) then { _pos } else { getPos player }] call comspec_overwatch_connect_fnc_sendTacticalAlert;
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
+    ["Bilan des degats envoye vers Athena"] call comspec_overwatch_connect_fnc_appendModuleLog;
     if (!isNil "cTab_fnc_addNotification") then {
         ["ATHENA", "Bilan des dégâts transmis à Athena.", 4] call cTab_fnc_addNotification;
     };

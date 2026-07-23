@@ -5,6 +5,7 @@
 params [["_filePath", ""], ["_fileName", ""]];
 
 if (!hasInterface) exitWith {};
+if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) exitWith {};
 if (_filePath isEqualTo "") exitWith {};
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {};
 
@@ -20,6 +21,7 @@ if (_fileName isNotEqualTo "") then {
 };
 
 [_filePath, _caption] call comspec_overwatch_connect_fnc_captureReconImage;
+[format ["Photo envoyee vers Athena (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
 
 private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
 if (!(_inbox isEqualType [])) then { _inbox = []; };
