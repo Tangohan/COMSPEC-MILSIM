@@ -115,6 +115,8 @@ $bootstrapFiles = [
     'arma_playtime_migration.php',
     'personnel_org_history_migration.php',
     'personnel_stage_bilans_migration.php',
+    'personnel_absences_migration.php',
+    'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
     'personnel_profile_rp_identity_migration.php',
     'user_deletion_request_migration.php',
@@ -209,6 +211,7 @@ run_seniority_engine_migration($pdo);
 run_arma_playtime_migration($pdo);
 run_personnel_org_history_migration($pdo);
 run_personnel_stage_bilans_migration($pdo);
+run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
 run_user_deletion_request_migration($pdo);
@@ -234,6 +237,11 @@ try {
     run_roles_organic_architecture_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] roles_organic_architecture : ' . $e->getMessage() . "\n";
+}
+try {
+    run_positions_admin_category_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] positions_admin_category : ' . $e->getMessage() . "\n";
 }
 $sitePlatformRolesPath = $root . '/bootstrap/site_platform_roles_migration.php';
 if (is_file($sitePlatformRolesPath)) {

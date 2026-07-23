@@ -11,6 +11,33 @@ $testerCommunities = is_array($rhTesterCommunities ?? null) ? $rhTesterCommuniti
 $rolloutRows = is_array($rhRolloutRows ?? null) ? $rhRolloutRows : [];
 $greetingName = trim((string) ($rhGreetingName ?? ''));
 $rhWorkspaceCsrf = htmlspecialchars((string) ($rhWorkspaceCsrf ?? ''), ENT_QUOTES, 'UTF-8');
+$absencesSchemaReady = !empty($rhAbsencesSchemaReady);
+$personnelAbsences = is_array($rhPersonnelAbsences ?? null) ? $rhPersonnelAbsences : [];
+$activeAbsences = is_array($rhActiveAbsences ?? null) ? $rhActiveAbsences : [];
+$absenceReasonLabels = is_array($rhAbsenceReasonLabels ?? null) ? $rhAbsenceReasonLabels : [];
+
+$formatAbsenceDate = static function (?string $ymd): string {
+    if ($ymd === null || $ymd === '') {
+        return '';
+    }
+    $ts = strtotime($ymd);
+
+    return $ts !== false ? date('d/m/Y', $ts) : $ymd;
+};
+
+$absencePeriodLabel = static function (array $row) use ($formatAbsenceDate): string {
+    $start = $formatAbsenceDate((string) ($row['starts_on'] ?? ''));
+    $endRaw = $row['ends_on'] ?? null;
+    if ($endRaw === null || $endRaw === '') {
+        return $start !== '' ? ('À partir du ' . $start . ' — durée non précisée') : 'Durée non précisée';
+    }
+    $end = $formatAbsenceDate((string) $endRaw);
+    if ($start !== '' && $end !== '' && $start === $end) {
+        return 'Le ' . $start;
+    }
+
+    return ($start !== '' ? $start : '…') . ' → ' . ($end !== '' ? $end : '…');
+};
 
 $todoItems = [];
 if ($trainingAllowed && $charterReady && !$charterAccepted) {
@@ -77,6 +104,11 @@ $cDoss = $statusToneClasses($statusDossierTone);
                     Ma fiche personnelle
                     <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                 </a>
+                <?php if ($absencesSchemaReady): ?>
+                    <a href="#absences" class="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+                        Déclarer une absence
+                    </a>
+                <?php endif; ?>
                 <?php if ($trainingAllowed): ?>
                     <a href="<?= htmlspecialchars(url('formations'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
                         Catalogue des formations
@@ -89,6 +121,21 @@ $cDoss = $statusToneClasses($statusDossierTone);
             </div>
         </div>
     </header>
+
+    <?php
+    $rhFlashSuccess = \App\Core\Session::getFlash('success');
+    $rhFlashError = \App\Core\Session::getFlash('error');
+    ?>
+    <?php if ($rhFlashSuccess || $rhFlashError): ?>
+    <div class="mx-auto max-w-6xl space-y-3 px-4 pt-8 sm:px-6 lg:px-8">
+        <?php if ($rhFlashSuccess): ?>
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 text-sm font-medium text-emerald-900 shadow-sm" role="status"><?= htmlspecialchars((string) $rhFlashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($rhFlashError): ?>
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-sm" role="alert"><?= htmlspecialchars((string) $rhFlashError, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <main id="contenu-espace-rh" class="mx-auto max-w-6xl space-y-10 px-4 pt-10 sm:px-6 sm:pt-12 lg:px-8" tabindex="-1">
         <section class="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-6" aria-labelledby="rh-status-heading">
@@ -124,6 +171,145 @@ $cDoss = $statusToneClasses($statusDossierTone);
                 </div>
             </div>
         </section>
+
+        <?php if ($absencesSchemaReady): ?>
+        <section id="absences" class="scroll-mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm sm:p-8" aria-labelledby="rh-absences-heading">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 id="rh-absences-heading" class="text-sm font-bold text-slate-900">Déclarer une absence</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-slate-600">Informez l’encadrement de votre indisponibilité, avec une période datée ou sans durée précisée (jusqu’à ce que vous l’interrompiez).</p>
+                </div>
+                <?php if ($activeAbsences !== []): ?>
+                    <span class="inline-flex shrink-0 items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-950 ring-1 ring-amber-200/80">Absence en cours</span>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($activeAbsences !== []): ?>
+                <div class="mt-6 space-y-3" role="status">
+                    <?php foreach ($activeAbsences as $active): ?>
+                        <?php
+                        $aReason = (string) ($active['reason'] ?? 'autre');
+                        $aReasonLabel = (string) ($absenceReasonLabels[$aReason] ?? 'Autre');
+                        $aNote = trim((string) ($active['note'] ?? ''));
+                        ?>
+                        <div class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-amber-950"><?= htmlspecialchars($absencePeriodLabel($active), ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="mt-1 text-xs text-amber-900/80"><?= htmlspecialchars($aReasonLabel, ENT_QUOTES, 'UTF-8') ?><?php if ($aNote !== ''): ?> — <?= htmlspecialchars($aNote, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+                            </div>
+                            <form method="post" action="<?= htmlspecialchars(url('personnel/mon-espace-rh/absences/annuler'), ENT_QUOTES, 'UTF-8') ?>" class="shrink-0">
+                                <input type="hidden" name="_csrf_token" value="<?= $rhWorkspaceCsrf ?>">
+                                <input type="hidden" name="absence_id" value="<?= (int) ($active['id'] ?? 0) ?>">
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-950 shadow-sm transition hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">Interrompre</button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="<?= htmlspecialchars(url('personnel/mon-espace-rh/absences'), ENT_QUOTES, 'UTF-8') ?>" class="mt-8 space-y-6" id="rh-absence-form">
+                <input type="hidden" name="_csrf_token" value="<?= $rhWorkspaceCsrf ?>">
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <div>
+                        <label for="absence_starts_on" class="mb-1.5 block text-xs font-bold text-slate-600">Date de début</label>
+                        <input type="date" id="absence_starts_on" name="starts_on" required value="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none transition focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10">
+                    </div>
+                    <div>
+                        <label for="absence_reason" class="mb-1.5 block text-xs font-bold text-slate-600">Motif</label>
+                        <select id="absence_reason" name="reason" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none transition focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10">
+                            <?php foreach ($absenceReasonLabels as $reasonValue => $reasonLabel): ?>
+                                <option value="<?= htmlspecialchars((string) $reasonValue, ENT_QUOTES, 'UTF-8') ?>"<?= (string) $reasonValue === 'personnel' ? ' selected' : '' ?>><?= htmlspecialchars((string) $reasonLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <fieldset class="space-y-3">
+                    <legend class="text-xs font-bold text-slate-600">Durée</legend>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <label class="inline-flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-800 has-[:checked]:border-violet-300 has-[:checked]:bg-violet-50/80">
+                            <input type="radio" name="has_duration" value="1" class="mt-1" checked data-absence-duration="dated">
+                            <span>
+                                <span class="block font-semibold">Période datée</span>
+                                <span class="mt-0.5 block text-xs text-slate-600">Vous connaissez la date de retour.</span>
+                            </span>
+                        </label>
+                        <label class="inline-flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-800 has-[:checked]:border-violet-300 has-[:checked]:bg-violet-50/80">
+                            <input type="radio" name="has_duration" value="0" class="mt-1" data-absence-duration="open">
+                            <span>
+                                <span class="block font-semibold">Sans durée précisée</span>
+                                <span class="mt-0.5 block text-xs text-slate-600">Jusqu’à ce que vous interrompiez l’absence.</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div id="absence-ends-wrap" class="max-w-sm">
+                        <label for="absence_ends_on" class="mb-1.5 block text-xs font-bold text-slate-600">Date de fin</label>
+                        <input type="date" id="absence_ends_on" name="ends_on" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none transition focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10">
+                    </div>
+                </fieldset>
+
+                <div>
+                    <label for="absence_note" class="mb-1.5 block text-xs font-bold text-slate-600">Précision (facultatif)</label>
+                    <textarea id="absence_note" name="note" rows="2" maxlength="500" class="w-full resize-y rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 shadow-inner outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900/10" placeholder="Ex. : indisponible les soirs de semaine jusqu’à nouvel ordre"></textarea>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">Enregistrer l’absence</button>
+                    <p class="text-xs text-slate-500">Visible sur votre fiche pour l’encadrement autorisé.</p>
+                </div>
+            </form>
+
+            <?php if ($personnelAbsences !== []): ?>
+                <div class="mt-10 border-t border-slate-100 pt-8">
+                    <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Historique récent</h3>
+                    <ul class="mt-4 divide-y divide-slate-100">
+                        <?php foreach ($personnelAbsences as $row): ?>
+                            <?php
+                            $st = (string) ($row['status'] ?? 'active');
+                            $rKey = (string) ($row['reason'] ?? 'autre');
+                            $rLab = (string) ($absenceReasonLabels[$rKey] ?? 'Autre');
+                            $isActiveRow = $st === 'active';
+                            $today = date('Y-m-d');
+                            $starts = (string) ($row['starts_on'] ?? '');
+                            $ends = $row['ends_on'] ?? null;
+                            $coversToday = $isActiveRow && $starts <= $today && ($ends === null || $ends === '' || (string) $ends >= $today);
+                            $statusLabel = !$isActiveRow ? 'Annulée' : ($coversToday ? 'En cours' : ($starts > $today ? 'À venir' : 'Terminée'));
+                            $statusTone = !$isActiveRow ? 'text-slate-500 bg-slate-100' : ($coversToday ? 'text-amber-950 bg-amber-100' : ($starts > $today ? 'text-sky-900 bg-sky-100' : 'text-emerald-900 bg-emerald-100'));
+                            ?>
+                            <li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-slate-900"><?= htmlspecialchars($absencePeriodLabel($row), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="mt-0.5 text-xs text-slate-600"><?= htmlspecialchars($rLab, ENT_QUOTES, 'UTF-8') ?></p>
+                                </div>
+                                <span class="inline-flex w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold <?= htmlspecialchars($statusTone, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+        </section>
+        <script>
+        (function () {
+            var form = document.getElementById('rh-absence-form');
+            if (!form) return;
+            var wrap = document.getElementById('absence-ends-wrap');
+            var ends = document.getElementById('absence_ends_on');
+            function sync() {
+                var dated = form.querySelector('input[name="has_duration"][value="1"]');
+                var on = dated && dated.checked;
+                if (wrap) wrap.classList.toggle('hidden', !on);
+                if (ends) {
+                    ends.required = !!on;
+                    if (!on) ends.value = '';
+                }
+            }
+            form.querySelectorAll('input[name="has_duration"]').forEach(function (el) {
+                el.addEventListener('change', sync);
+            });
+            sync();
+        })();
+        </script>
+        <?php endif; ?>
 
         <?php if ($dossierMissing !== []): ?>
         <section class="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-6 sm:p-8" aria-labelledby="rh-dossier-heading">

@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\HrCharterRepository;
+use App\Repositories\PersonnelAbsenceRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PlatformModuleReleaseRepository;
 use App\Repositories\UserRepository;
@@ -31,6 +32,7 @@ final class RhWorkspaceController
         private SeniorityEnrollmentBootstrapService $seniorityEnrollmentBootstrapService,
         private SeniorityDossierInferenceSyncService $seniorityDossierInferenceSyncService,
         private UserRepository $userRepository,
+        private PersonnelAbsenceRepository $personnelAbsenceRepository,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -86,6 +88,14 @@ final class RhWorkspaceController
             $greetingName = trim((string) ($user['callsign'] ?? ''));
         }
 
+        $absencesSchemaReady = $this->personnelAbsenceRepository->tableExists();
+        $personnelAbsences = $absencesSchemaReady
+            ? $this->personnelAbsenceRepository->listForUser($tenantId, $userId, 40)
+            : [];
+        $activeAbsences = $absencesSchemaReady
+            ? $this->personnelAbsenceRepository->listActiveForUser($tenantId, $userId)
+            : [];
+
         return Response::view('layout.main', [
             'title' => 'Espace RH et formations',
             'content' => 'personnel.rh_workspace',
@@ -98,7 +108,102 @@ final class RhWorkspaceController
             'rhTesterCommunities' => $testerCommunities,
             'rhRolloutRows' => $rolloutRows,
             'rhWorkspaceCsrf' => Csrf::token(),
+            'rhAbsencesSchemaReady' => $absencesSchemaReady,
+            'rhPersonnelAbsences' => $personnelAbsences,
+            'rhActiveAbsences' => $activeAbsences,
+            'rhAbsenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
         ]);
+    }
+
+    public function storeAbsence(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+        if (!$this->personnelAbsenceRepository->tableExists()) {
+            Session::flash('error', 'L’enregistrement des absences n’est pas encore disponible. Contactez l’encadrement si le problème persiste.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+
+        $startsOn = trim((string) $request->input('starts_on', ''));
+        $hasDuration = (string) $request->input('has_duration', '0') === '1';
+        $endsOn = $hasDuration ? trim((string) $request->input('ends_on', '')) : null;
+        if ($endsOn === '') {
+            $endsOn = null;
+        }
+        $reason = trim((string) $request->input('reason', PersonnelAbsenceRepository::REASON_AUTRE));
+        $note = trim((string) $request->input('note', ''));
+
+        if ($startsOn === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $startsOn)) {
+            Session::flash('error', 'Indiquez une date de début valide.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+        if ($hasDuration && ($endsOn === null || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endsOn))) {
+            Session::flash('error', 'Indiquez une date de fin, ou choisissez une absence sans durée précisée.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+        if ($endsOn !== null && $endsOn < $startsOn) {
+            Session::flash('error', 'La date de fin doit être postérieure ou égale à la date de début.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+
+        $id = $this->personnelAbsenceRepository->create(
+            $tenantId,
+            $userId,
+            $startsOn,
+            $endsOn,
+            $reason,
+            $note !== '' ? $note : null,
+            $userId
+        );
+        if ($id === null) {
+            Session::flash('error', 'L’absence n’a pas pu être enregistrée. Vérifiez les dates puis réessayez.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+
+        Session::flash('success', $endsOn === null
+            ? 'Absence enregistrée sans durée précisée. Vous pourrez l’interrompre quand vous serez de retour.'
+            : 'Absence enregistrée pour la période indiquée.');
+
+        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+    }
+
+    public function cancelAbsence(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        $tenantId = (int) Session::get('tenant_id');
+        $userId = (int) Session::get('user_id');
+        if (!$user || $tenantId < 1 || $userId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Votre session a expiré. Rechargez la page puis réessayez.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+        $absenceId = (int) $request->input('absence_id', 0);
+        if ($absenceId < 1 || !$this->personnelAbsenceRepository->cancel($tenantId, $userId, $absenceId)) {
+            Session::flash('error', 'Cette absence n’a pas pu être annulée. Elle est peut-être déjà clôturée.');
+
+            return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
+        }
+
+        Session::flash('success', 'Absence annulée. Vous êtes de nouveau indiqué comme disponible.');
+
+        return Response::redirect(url('personnel/mon-espace-rh') . '#absences');
     }
 
     public function refreshFromDossier(Request $request, array $params = []): Response

@@ -406,6 +406,8 @@ return function (Router $router) {
     $router->get('/personnel/me/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);
     $router->get('/personnel/tutorials', [PersonnelController::class, 'tutorials'], [AuthMiddleware::class]);
     $router->post('/personnel/mon-espace-rh/actualiser', [RhWorkspaceController::class, 'refreshFromDossier'], [AuthMiddleware::class]);
+    $router->post('/personnel/mon-espace-rh/absences', [RhWorkspaceController::class, 'storeAbsence'], [AuthMiddleware::class]);
+    $router->post('/personnel/mon-espace-rh/absences/annuler', [RhWorkspaceController::class, 'cancelAbsence'], [AuthMiddleware::class]);
     $router->get('/personnel/mon-espace-rh', [RhWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}', [PersonnelController::class, 'show'], [AuthMiddleware::class]);
     $router->get('/personnel/{id}/edit', [PersonnelController::class, 'edit'], [AuthMiddleware::class]);

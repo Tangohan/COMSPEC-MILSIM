@@ -456,17 +456,22 @@ $formatDateFr = static function (?string $raw): string {
             <?php if (!$isServiceAccount && $positionsList !== []): ?>
             <section class="bo-user-edit__panel" aria-labelledby="sec-positions">
                 <h2 id="sec-positions" class="bo-user-edit__panel-title">Poste organisationnel</h2>
-                <p class="bo-user-edit__panel-lead">Affectation de fonction (distincte des rôles). <a href="<?= htmlspecialchars(url('back-office/positions'), ENT_QUOTES, 'UTF-8') ?>">Gérer les postes</a></p>
+                <p class="bo-user-edit__panel-lead">Titre dans l’organisation (opérationnel, état-major ou administratif) — distinct des habilitations d’accès. <a href="<?= htmlspecialchars(url('back-office/positions'), ENT_QUOTES, 'UTF-8') ?>">Gérer les postes</a></p>
                 <?php if ($userActivePositions !== []): ?>
                 <ul class="bo-user-edit__pos-list">
                     <?php foreach ($userActivePositions as $up):
                         $startFr = $formatDateFr((string) ($up['starts_at'] ?? ''));
                         $endFr = $formatDateFr((string) ($up['ends_at'] ?? ''));
+                        $upCat = (string) ($up['position_category'] ?? '');
+                        $upCatLabel = $upCat !== '' ? \App\Repositories\PositionRepository::categoryLabel($upCat) : '';
                     ?>
                     <li>
                         <span class="bo-user-edit__pos-dot" aria-hidden="true"></span>
                         <span>
                             <?= htmlspecialchars((string) ($up['position_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                            <?php if ($upCatLabel !== ''): ?>
+                                <span class="bo-user-edit__muted"> (<?= htmlspecialchars($upCatLabel, ENT_QUOTES, 'UTF-8') ?>)</span>
+                            <?php endif; ?>
                             <?php if ($startFr !== ''): ?> — depuis <?= htmlspecialchars($startFr, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
                             <?php if ($endFr !== ''): ?> jusqu’au <?= htmlspecialchars($endFr, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
                         </span>
@@ -482,8 +487,15 @@ $formatDateFr = static function (?string $raw): string {
                         <label for="position_id" class="bo-user-edit__label">Poste</label>
                         <select id="position_id" name="position_id" required class="bo-user-edit__select">
                             <option value="">Choisir un poste</option>
-                            <?php foreach ($positionsList as $pos): ?>
-                            <option value="<?= (int) ($pos['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($pos['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php foreach ($positionsList as $pos):
+                                $posCat = (string) ($pos['category'] ?? '');
+                                $posCatLabel = $posCat !== '' ? \App\Repositories\PositionRepository::categoryLabel($posCat) : '';
+                                $posLabel = (string) ($pos['name'] ?? '');
+                                if ($posCatLabel !== '') {
+                                    $posLabel .= ' — ' . $posCatLabel;
+                                }
+                            ?>
+                            <option value="<?= (int) ($pos['id'] ?? 0) ?>"><?= htmlspecialchars($posLabel, ENT_QUOTES, 'UTF-8') ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

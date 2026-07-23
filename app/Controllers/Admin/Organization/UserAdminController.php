@@ -849,7 +849,48 @@ class UserAdminController
             return Response::redirect($editUrl);
         }
         $ok = $this->positionRepository->assignUser($tenantId, $id, $positionId, $startsAt, $endsAt !== '' ? $endsAt : null, $actorUserId);
-        Session::flash($ok ? 'success' : 'error', $ok ? 'Affectation de poste enregistrée.' : 'Impossible d’enregistrer l’affectation.');
+        if (!$ok) {
+            Session::flash('error', 'Impossible d’enregistrer l’affectation.');
+
+            return Response::redirect($editUrl);
+        }
+
+        $positionRow = $this->positionRepository->findForTenant($tenantId, $positionId);
+        $packApplied = false;
+        $setId = (int) ($positionRow['default_role_set_id'] ?? 0);
+        if ($setId > 0) {
+            $extraIds = $this->roleSetRepository->roleIdsForSet($tenantId, $setId);
+            if ($extraIds !== []) {
+                $canApply = true;
+                foreach ($extraIds as $rid) {
+                    if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
+                        $canApply = false;
+                        break;
+                    }
+                }
+                if ($canApply) {
+                    $current = $this->userRepository->listOrganizationRoleIdsForUser($id);
+                    if ($current === [] && !empty($user['role_id'])) {
+                        $current = [(int) $user['role_id']];
+                    }
+                    $merged = array_values(array_unique(array_merge($current, $extraIds)));
+                    try {
+                        $this->userRepository->syncOrganizationRoles($id, $tenantId, $merged, $actorUserId);
+                        $packApplied = true;
+                    } catch (\InvalidArgumentException) {
+                        $packApplied = false;
+                    }
+                }
+            }
+        }
+
+        $msg = 'Affectation de poste enregistrée.';
+        if ($packApplied) {
+            $msg .= ' Le pack d’habilitations associé au poste a également été appliqué.';
+        } elseif ($setId > 0) {
+            $msg .= ' Le pack d’habilitations associé n’a pas pu être appliqué automatiquement : vérifiez-le dans la section dédiée.';
+        }
+        Session::flash('success', $msg);
 
         return Response::redirect($editUrl);
     }

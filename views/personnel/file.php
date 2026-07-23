@@ -46,6 +46,16 @@ $rpDossierNeedsAttention = $rpDossierNeedsAttention ?? false;
 $latestEnlistment = $latestEnlistment ?? null;
 $communityRoleLabelRaw = isset($communityRoleLabel) && is_string($communityRoleLabel) ? trim($communityRoleLabel) : '';
 $communityRoleLabel = $communityRoleLabelRaw !== '' ? $communityRoleLabelRaw : null;
+$personnelOrgPositions = is_array($personnelOrgPositions ?? null) ? $personnelOrgPositions : [];
+$personnelPrimaryPositionLabel = isset($personnelPrimaryPositionLabel) && is_string($personnelPrimaryPositionLabel)
+    ? trim($personnelPrimaryPositionLabel)
+    : '';
+if ($personnelPrimaryPositionLabel === '' && $personnelOrgPositions !== []) {
+    $personnelPrimaryPositionLabel = trim((string) ($personnelOrgPositions[0]['position_name'] ?? ''));
+}
+$personnelPrimaryPositionLabel = $personnelPrimaryPositionLabel !== '' ? $personnelPrimaryPositionLabel : null;
+$orgPositionDisplayLabel = $personnelPrimaryPositionLabel ?? $communityRoleLabel;
+$orgPositionDisplayKind = $personnelPrimaryPositionLabel !== null ? 'position' : ($communityRoleLabel !== null ? 'role' : null);
 $qualificationIssuerLabels = is_array($qualificationIssuerLabels ?? null) ? $qualificationIssuerLabels : [];
 $personnelOrgHistory = is_array($personnelOrgHistory ?? null) ? $personnelOrgHistory : [];
 $personnelOrgHistorySection = !empty($personnelOrgHistorySection ?? null);
@@ -60,6 +70,11 @@ $personnelStageBilans = is_array($personnelStageBilans ?? null) ? $personnelStag
 $personnelRecruitmentBilans = is_array($personnelRecruitmentBilans ?? null) ? $personnelRecruitmentBilans : [];
 $bilanStageOptions = is_array($bilanStageOptions ?? null) ? $bilanStageOptions : [];
 $personnelStageBilansSchemaReady = !empty($personnelStageBilansSchemaReady ?? false);
+$canViewAbsences = !empty($canViewAbsences ?? false);
+$personnelAbsences = is_array($personnelAbsences ?? null) ? $personnelAbsences : [];
+$personnelActiveAbsences = is_array($personnelActiveAbsences ?? null) ? $personnelActiveAbsences : [];
+$personnelAbsencesSchemaReady = !empty($personnelAbsencesSchemaReady ?? false);
+$personnelAbsenceReasonLabels = is_array($personnelAbsenceReasonLabels ?? null) ? $personnelAbsenceReasonLabels : [];
 $personnelFileInitialTab = trim((string) ($_GET['tab'] ?? ''));
 $personnelFileAllowedTabs = ['resume', 'seniorite', 'ops', 'formation', 'logistique', 'historique', 'bilans', 'administratif', 'tableau'];
 if (!in_array($personnelFileInitialTab, $personnelFileAllowedTabs, true)) {
@@ -477,6 +492,45 @@ $personnelFileShell = $personnelFileIsRhFull
     <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
         <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
             <?= htmlspecialchars($personnelModerationMemberBrief, ENT_QUOTES, 'UTF-8') ?>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php if ($canViewAbsences && $personnelActiveAbsences !== []): ?>
+    <div class="<?= htmlspecialchars($personnelFileShell, ENT_QUOTES, 'UTF-8') ?> pt-6">
+        <div class="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm" role="status">
+            <p class="font-semibold">Absence en cours</p>
+            <ul class="mt-2 space-y-1.5">
+                <?php foreach ($personnelActiveAbsences as $absRow): ?>
+                    <?php
+                    $absStart = (string) ($absRow['starts_on'] ?? '');
+                    $absEnd = $absRow['ends_on'] ?? null;
+                    $absStartTs = $absStart !== '' ? strtotime($absStart) : false;
+                    $absStartFr = $absStartTs !== false ? date('d/m/Y', $absStartTs) : $absStart;
+                    if ($absEnd === null || $absEnd === '') {
+                        $absPeriod = $absStartFr !== '' ? ('À partir du ' . $absStartFr . ' — durée non précisée') : 'Durée non précisée';
+                    } else {
+                        $absEndTs = strtotime((string) $absEnd);
+                        $absEndFr = $absEndTs !== false ? date('d/m/Y', $absEndTs) : (string) $absEnd;
+                        $absPeriod = $absStartFr . ' → ' . $absEndFr;
+                    }
+                    $absReasonKey = (string) ($absRow['reason'] ?? 'autre');
+                    $absReasonLab = (string) ($personnelAbsenceReasonLabels[$absReasonKey] ?? 'Autre');
+                    $absNote = trim((string) ($absRow['note'] ?? ''));
+                    ?>
+                    <li>
+                        <?= htmlspecialchars($absPeriod, ENT_QUOTES, 'UTF-8') ?>
+                        <span class="text-amber-900/80"> — <?= htmlspecialchars($absReasonLab, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php if ($absNote !== ''): ?>
+                            <span class="block text-xs text-amber-900/75 mt-0.5"><?= htmlspecialchars($absNote, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if (!empty($personnelIsSelf)): ?>
+                <p class="mt-3 text-xs">
+                    <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>#absences" class="font-semibold text-amber-950 underline decoration-amber-300 underline-offset-2 hover:decoration-amber-600">Gérer mes absences dans l’espace RH</a>
+                </p>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
@@ -933,10 +987,13 @@ $personnelFileShell = $personnelFileIsRhFull
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Incorporation</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900"><?= $enlistmentFormatted ? htmlspecialchars($enlistmentFormatted) : '—' ?></p>
                             </div>
-                            <?php if ($communityRoleLabel !== null): ?>
+                            <?php if ($orgPositionDisplayLabel !== null): ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Rôle dans la communauté</p>
-                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($communityRoleLabel) ?></p>
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500"><?= $orgPositionDisplayKind === 'position' ? 'Poste organisationnel' : 'Profil dans la communauté' ?></p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($orgPositionDisplayLabel) ?></p>
+                                <?php if ($orgPositionDisplayKind === 'position' && $communityRoleLabel !== null && $communityRoleLabel !== $orgPositionDisplayLabel): ?>
+                                <p class="mt-1 text-[11px] text-slate-500">Profil d’accès : <?= htmlspecialchars($communityRoleLabel) ?></p>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                             <?php if ($steamId !== null): ?>
@@ -1105,8 +1162,11 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php if ($showLegacyServiceNumber): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Ancienne référence dossier</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($legacyServiceNumber) ?></p></div>
                         <?php endif; ?>
-                        <?php if ($communityRoleLabel !== null): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle dans la communauté</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($communityRoleLabel) ?></p></div>
+                        <?php if ($orgPositionDisplayLabel !== null): ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= $orgPositionDisplayKind === 'position' ? 'Poste organisationnel' : 'Profil dans la communauté' ?></p>
+                            <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($orgPositionDisplayLabel) ?></p>
+                        </div>
                         <?php endif; ?>
                         <?php if ($steamId !== null): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Identifiant Steam</p><p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($steamId) ?></p></div>
@@ -1681,14 +1741,82 @@ $personnelFileShell = $personnelFileIsRhFull
                 </div>
 
                 <div class="space-y-8" x-show="tab === 'administratif'" x-cloak>
+                <?php if ($canViewAbsences && $personnelAbsencesSchemaReady): ?>
+                <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+                        <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900">Absences déclarées</h2>
+                        <?php if (!empty($personnelIsSelf)): ?>
+                            <a href="<?= htmlspecialchars(url('personnel/mon-espace-rh'), ENT_QUOTES, 'UTF-8') ?>#absences" class="text-xs font-semibold text-emerald-700 underline decoration-emerald-600/30 underline-offset-2 hover:text-emerald-900">Déclarer ou interrompre</a>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($personnelAbsences === []): ?>
+                        <p class="text-sm text-slate-600">Aucune absence enregistrée pour le moment.</p>
+                    <?php else: ?>
+                        <ul class="divide-y divide-slate-100">
+                            <?php foreach (array_slice($personnelAbsences, 0, 12) as $absHist): ?>
+                                <?php
+                                $hStart = (string) ($absHist['starts_on'] ?? '');
+                                $hEnd = $absHist['ends_on'] ?? null;
+                                $hStartTs = $hStart !== '' ? strtotime($hStart) : false;
+                                $hStartFr = $hStartTs !== false ? date('d/m/Y', $hStartTs) : $hStart;
+                                if ($hEnd === null || $hEnd === '') {
+                                    $hPeriod = $hStartFr !== '' ? ('À partir du ' . $hStartFr . ' — durée non précisée') : 'Durée non précisée';
+                                } else {
+                                    $hEndTs = strtotime((string) $hEnd);
+                                    $hEndFr = $hEndTs !== false ? date('d/m/Y', $hEndTs) : (string) $hEnd;
+                                    $hPeriod = $hStartFr . ' → ' . $hEndFr;
+                                }
+                                $hReason = (string) ($personnelAbsenceReasonLabels[(string) ($absHist['reason'] ?? 'autre')] ?? 'Autre');
+                                $hStatus = (string) ($absHist['status'] ?? 'active');
+                                $hToday = date('Y-m-d');
+                                $hActive = $hStatus === 'active' && $hStart <= $hToday && ($hEnd === null || $hEnd === '' || (string) $hEnd >= $hToday);
+                                $hLabel = $hStatus !== 'active' ? 'Annulée' : ($hActive ? 'En cours' : ($hStart > $hToday ? 'À venir' : 'Terminée'));
+                                ?>
+                                <li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($hPeriod, ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="text-xs text-slate-600"><?= htmlspecialchars($hReason, ENT_QUOTES, 'UTF-8') ?></p>
+                                    </div>
+                                    <span class="text-[10px] font-black uppercase tracking-wider <?= $hActive ? 'text-amber-700' : 'text-slate-500' ?>"><?= htmlspecialchars($hLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </section>
+                <?php endif; ?>
                 <section class="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
                     <h2 class="text-xs font-black uppercase tracking-[0.35em] text-slate-900 mb-4">Compte & accès</h2>
                     <div class="grid gap-4 md:grid-cols-2">
                         <?php if ($accountCreatedDisplay !== null): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Membre depuis</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($accountCreatedDisplay) ?></p></div>
                         <?php endif; ?>
-                        <?php if ($communityRoleLabel !== null): ?>
-                        <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Rôle dans la communauté</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($communityRoleLabel) ?></p></div>
+                        <?php if ($orgPositionDisplayLabel !== null): ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1"><?= $orgPositionDisplayKind === 'position' ? 'Poste organisationnel' : 'Profil dans la communauté' ?></p>
+                            <p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($orgPositionDisplayLabel) ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($personnelOrgPositions !== []): ?>
+                        <div class="md:col-span-2">
+                            <p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-2">Affectations de poste actives</p>
+                            <ul class="space-y-1.5">
+                                <?php foreach ($personnelOrgPositions as $opRow):
+                                    $opName = trim((string) ($opRow['position_name'] ?? ''));
+                                    $opCat = (string) ($opRow['position_category'] ?? '');
+                                    $opCatLab = $opCat !== '' ? \App\Repositories\PositionRepository::categoryLabel($opCat) : '';
+                                    if ($opName === '') {
+                                        continue;
+                                    }
+                                ?>
+                                <li class="text-sm text-slate-800">
+                                    <span class="font-semibold"><?= htmlspecialchars($opName, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($opCatLab !== ''): ?>
+                                        <span class="text-slate-500"> — <?= htmlspecialchars($opCatLab, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
                         <?php endif; ?>
                         <?php if ($steamId !== null): ?>
                         <div><p class="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-1">Identifiant Steam</p><p class="text-sm font-semibold text-slate-900"><?= htmlspecialchars($steamId) ?></p></div>

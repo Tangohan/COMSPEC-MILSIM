@@ -40,6 +40,8 @@ use App\Repositories\ArmaPlaytimeRepository;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\PersonnelStageBilanRepository;
+use App\Repositories\PersonnelAbsenceRepository;
+use App\Repositories\PositionRepository;
 use App\Repositories\EnlistmentRecruitmentEngagementRepository;
 use App\Repositories\BadgeRepository;
 use App\Services\Personnel\RoleplayFollowupNotificationService;
@@ -208,6 +210,8 @@ class PersonnelController
         private PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository,
         private RoleplayFollowupNotificationService $roleplayFollowupNotificationService,
         private PersonnelStageBilanRepository $personnelStageBilanRepository,
+        private PersonnelAbsenceRepository $personnelAbsenceRepository,
+        private PositionRepository $positionRepository,
         private EnlistmentRecruitmentEngagementRepository $enlistmentRecruitmentEngagementRepository,
         private BadgeRepository $badgeRepository,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
@@ -579,6 +583,16 @@ class PersonnelController
             }
         }
 
+        $personnelOrgPositions = $this->positionRepository->listActiveForUser((int) $tenantId, $uid);
+        $personnelPrimaryPositionLabel = null;
+        if ($personnelOrgPositions !== []) {
+            $primaryPos = $personnelOrgPositions[0];
+            $pn = trim((string) ($primaryPos['position_name'] ?? ''));
+            if ($pn !== '') {
+                $personnelPrimaryPositionLabel = $pn;
+            }
+        }
+
         $personnelOrgHistory = [];
         $personnelOrgHistorySection = ($isSelf || $canStaffView);
         $personnelOrgHistorySchemaReady = $personnelOrgHistorySection && $this->personnelOrgHistoryRepository->schemaReady();
@@ -618,6 +632,14 @@ class PersonnelController
             } else {
                 $qualificationIssuerLabels[$issuerUserId] = 'Référent inconnu';
             }
+        }
+
+        $canViewAbsences = $isSelf || $canStaffView || $canStaffEdit;
+        $personnelAbsences = [];
+        $personnelActiveAbsences = [];
+        if ($canViewAbsences && $this->personnelAbsenceRepository->tableExists()) {
+            $personnelAbsences = $this->personnelAbsenceRepository->listForUser((int) $tenantId, $uid, 40);
+            $personnelActiveAbsences = $this->personnelAbsenceRepository->listActiveForUser((int) $tenantId, $uid);
         }
 
         $canViewBilans = $isSelf || $canStaffView || $canStaffEdit;
@@ -719,6 +741,8 @@ class PersonnelController
             'personnelOrgHistorySchemaReady' => $personnelOrgHistorySchemaReady,
             'personnelIsSelf' => $isSelf,
             'communityRoleLabel' => $communityRoleLabel,
+            'personnelOrgPositions' => $personnelOrgPositions,
+            'personnelPrimaryPositionLabel' => $personnelPrimaryPositionLabel,
             'qualificationIssuerLabels' => $qualificationIssuerLabels,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'roleplayEligibility' => $roleplayEligibility,
@@ -730,6 +754,11 @@ class PersonnelController
             'personnelRecruitmentBilans' => $personnelRecruitmentBilans,
             'bilanStageOptions' => $bilanStageOptions,
             'personnelStageBilansSchemaReady' => $this->personnelStageBilanRepository->tableExists(),
+            'canViewAbsences' => $canViewAbsences,
+            'personnelAbsences' => $personnelAbsences,
+            'personnelActiveAbsences' => $personnelActiveAbsences,
+            'personnelAbsencesSchemaReady' => $this->personnelAbsenceRepository->tableExists(),
+            'personnelAbsenceReasonLabels' => PersonnelAbsenceRepository::REASON_LABELS,
             'canAccessRhView' => $canAccessRhView,
             'personnelViewMode' => $personnelViewMode,
         ]);

@@ -558,6 +558,7 @@ class Container
                 self::get(\App\Services\Platform\FeatureGateService::class),
                 self::get(\App\Repositories\HrCharterRepository::class),
             ),
+            \App\Repositories\PersonnelAbsenceRepository::class => new \App\Repositories\PersonnelAbsenceRepository(),
             \App\Controllers\Web\RhWorkspaceController::class => new \App\Controllers\Web\RhWorkspaceController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Platform\FeatureGateService::class),
@@ -567,6 +568,8 @@ class Container
                 self::get(\App\Repositories\PersonnelAssignmentRepository::class),
                 self::get(\App\Services\Personnel\SeniorityEnrollmentBootstrapService::class),
                 self::get(\App\Services\Personnel\SeniorityDossierInferenceSyncService::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\PersonnelAbsenceRepository::class),
             ),
             \App\Controllers\Admin\System\PlatformDeploymentAdminController::class => new \App\Controllers\Admin\System\PlatformDeploymentAdminController(
                 self::get(\App\Repositories\PlatformModuleReleaseRepository::class),
@@ -659,6 +662,8 @@ class Container
                 self::get(\App\Repositories\PersonnelRoleplayTimelineRepository::class),
                 self::get(\App\Services\Personnel\RoleplayFollowupNotificationService::class),
                 self::get(\App\Repositories\PersonnelStageBilanRepository::class),
+                self::get(\App\Repositories\PersonnelAbsenceRepository::class),
+                self::get(\App\Repositories\PositionRepository::class),
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
                 self::get(\App\Repositories\BadgeRepository::class),
                 self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
@@ -823,7 +828,8 @@ class Container
                 self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\OrganizationPositionsController::class => new \App\Controllers\Admin\Organization\OrganizationPositionsController(
-                self::get(\App\Repositories\PositionRepository::class)
+                self::get(\App\Repositories\PositionRepository::class),
+                self::get(\App\Repositories\RoleSetRepository::class),
             ),
             \App\Repositories\RecruitmentOpeningRepository::class => new \App\Repositories\RecruitmentOpeningRepository(),
             \App\Services\Recruitment\RecruitmentOpeningForumPublisher::class => new \App\Services\Recruitment\RecruitmentOpeningForumPublisher(),
