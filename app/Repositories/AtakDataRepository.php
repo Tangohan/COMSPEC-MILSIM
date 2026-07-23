@@ -150,14 +150,27 @@ class AtakDataRepository
      */
     public function findUnitBySteamUid(int $tenantId, int $mapId, string $steamUid): ?array
     {
+        return $this->findUnitBySteamUidRaw($tenantId, $mapId, $steamUid, true);
+    }
+
+    /**
+     * Scan brut (sans filtre fantômes) pour retrouver / retirer les frères Steam.
+     *
+     * @param bool $preferLive Si true, privilégie linked/delayed puis le plus récent.
+     */
+    public function findUnitBySteamUidRaw(int $tenantId, int $mapId, string $steamUid, bool $preferLive = true): ?array
+    {
         $steamUid = trim($steamUid);
-        if ($steamUid === '') {
+        if ($steamUid === '' || $tenantId < 1 || $mapId < 1) {
             return null;
         }
-        $units = $this->getUnits($tenantId, $mapId);
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_units WHERE tenant_id = ? AND map_id = ?'
+        );
+        $stmt->execute([$tenantId, $mapId]);
         $best = null;
-        $bestUpdated = 0;
-        foreach ($units as $unit) {
+        $bestScore = -999999;
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $unit) {
             $extra = [];
             $raw = $unit['extra'] ?? null;
             if (is_string($raw) && $raw !== '') {
@@ -172,10 +185,23 @@ class AtakDataRepository
             if ($uid === '' || strcasecmp($uid, $steamUid) !== 0) {
                 continue;
             }
+            $status = strtolower(trim((string) ($unit['status'] ?? '')));
             $ts = strtotime((string) ($unit['updated_at'] ?? '')) ?: 0;
-            if ($best === null || $ts >= $bestUpdated) {
+            $score = $ts;
+            if ($preferLive) {
+                if ($status === 'linked') {
+                    $score += 1_000_000_000;
+                } elseif ($status === 'delayed') {
+                    $score += 500_000_000;
+                }
+                $role = strtolower(trim((string) ($unit['role'] ?? '')));
+                if ($role !== '' && $role !== 'operator') {
+                    $score += 10_000;
+                }
+            }
+            if ($best === null || $score >= $bestScore) {
                 $best = $unit;
-                $bestUpdated = $ts;
+                $bestScore = $score;
             }
         }
 
@@ -637,6 +663,14 @@ class AtakDataRepository
         if ($row['role'] === 'operator' && !$hasTelemetry && in_array($row['status'], ['delayed', 'offline', 'linked'], true)) {
             // Sans steam + operator = très souvent le fantôme « compte Athena ».
             if ($row['steam'] === '') {
+                return true;
+            }
+        }
+        // Hors liaison + rôle générique + santé critique : souvent un fantôme d’alerte médicale
+        // figé sous le nom de compte (Newp1) alors que le BFT vit sous N-10.
+        if ($row['status'] === 'offline' && $row['role'] === 'operator') {
+            $health = strtolower(trim((string) ($extra['health'] ?? '')));
+            if (in_array($health, ['unconscious', 'cardiac_arrest', 'cardiac-arrest', 'dead', 'kia'], true)) {
                 return true;
             }
         }

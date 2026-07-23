@@ -960,11 +960,96 @@
       });
     }
 
+    /** Retire les fantômes compte/alerte encore présents dans le payload. */
+    function dedupeUnitsForMap(units) {
+      var list = Array.isArray(units) ? units.slice() : [];
+      if (list.length < 2) return list;
+      function parseExtra(u) {
+        try {
+          if (typeof u.extra === 'string') return JSON.parse(u.extra || '{}') || {};
+          if (u.extra && typeof u.extra === 'object') return u.extra;
+        } catch (e) {}
+        return {};
+      }
+      function steamOf(u) {
+        var ex = parseExtra(u);
+        return String(ex.steam_uid || ex.steamId || ex.player_uid || '').trim().toLowerCase();
+      }
+      function statusOf(u) {
+        return String((u && u.status) || '').toLowerCase();
+      }
+      function isLive(u) {
+        var s = statusOf(u);
+        return s === 'linked' || s === 'delayed';
+      }
+      function isGhost(u) {
+        var ex = parseExtra(u);
+        var src = String(ex.source || '');
+        if (src === 'medical_chat' || src === 'tactical_alert') return true;
+        var role = String(u.role || ex.role || '').toLowerCase();
+        var health = String(ex.health || u.health || '').toLowerCase();
+        if (statusOf(u) === 'offline' && role === 'operator' &&
+          (health === 'unconscious' || health === 'cardiac_arrest' || health === 'cardiac-arrest' || health === 'dead' || health === 'kia')) {
+          return true;
+        }
+        return false;
+      }
+      function score(u) {
+        var s = 0;
+        if (statusOf(u) === 'linked') s += 40;
+        else if (statusOf(u) === 'delayed') s += 10;
+        if (steamOf(u)) s += 25;
+        if (isGhost(u)) s -= 30;
+        var role = String(u.role || '').toLowerCase();
+        if (role && role !== 'operator') s += 20;
+        else if (role === 'operator') s -= 5;
+        return s;
+      }
+      var drop = {};
+      var i, j;
+      for (i = 0; i < list.length; i++) {
+        if (drop[i]) continue;
+        for (j = i + 1; j < list.length; j++) {
+          if (drop[j]) continue;
+          var a = list[i];
+          var b = list[j];
+          var sa = steamOf(a);
+          var sb = steamOf(b);
+          var sameSteam = sa && sa === sb;
+          var ax = a.pos_x != null ? parseFloat(a.pos_x) : NaN;
+          var ay = a.pos_y != null ? parseFloat(a.pos_y) : NaN;
+          var bx = b.pos_x != null ? parseFloat(b.pos_x) : NaN;
+          var by = b.pos_y != null ? parseFloat(b.pos_y) : NaN;
+          var near = false;
+          if (!isNaN(ax) && !isNaN(ay) && !isNaN(bx) && !isNaN(by)) {
+            var dx = ax - bx;
+            var dy = ay - by;
+            near = (dx * dx + dy * dy) <= (400 * 400);
+          }
+          if (!sameSteam && !(near && (isGhost(a) || isGhost(b)))) continue;
+          if (sameSteam || (near && (isGhost(a) || isGhost(b)))) {
+            if (isLive(a) && !isLive(b)) { drop[j] = true; continue; }
+            if (isLive(b) && !isLive(a)) { drop[i] = true; continue; }
+            if (isGhost(a) && !isGhost(b)) { drop[i] = true; continue; }
+            if (isGhost(b) && !isGhost(a)) { drop[j] = true; continue; }
+            if (score(a) >= score(b)) drop[j] = true;
+            else drop[i] = true;
+          }
+        }
+      }
+      return list.filter(function (_u, idx) { return !drop[idx]; });
+    }
+
     function renderUnitsOnMap(units) {
       if (!layerGroups.units || !map) return;
       layerGroups.units.clearLayers();
       var nato = window.NatoSidcIcons;
-      filterUnitsByAffiliation(units || []).forEach(function (u) {
+      var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(units || [])).filter(function (u) {
+        // Hors liaison : pas de marqueur (évite le fantôme Newp1 figé sur la carte).
+        var st = String((u && u.status) || '').toLowerCase();
+        return st === 'linked' || st === 'delayed';
+      });
+      filtered.forEach(function (u) {
         var x = u.pos_x != null && u.pos_x !== '' ? parseFloat(u.pos_x) : NaN;
         var y = u.pos_y != null && u.pos_y !== '' ? parseFloat(u.pos_y) : NaN;
         if (isNaN(x) || isNaN(y)) {
@@ -1024,7 +1109,7 @@
           state.syncStatus = 'ok';
           state.lastSyncAt = Date.now();
           lastUnits = rows || [];
-          var filtered = filterUnitsByAffiliation(lastUnits);
+          var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
           state.unitsCount = filtered.length;
           renderUnitsOnMap(lastUnits);
           renderRosterAndTable(filtered);
@@ -1255,7 +1340,7 @@
       el.addEventListener('change', function () {
         state.affiliations[key] = el.checked;
         if (lastUnits.length) {
-          var filtered = filterUnitsByAffiliation(lastUnits);
+          var filtered = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
           state.unitsCount = filtered.length;
           renderUnitsOnMap(lastUnits);
           renderRosterAndTable(filtered);
@@ -1349,8 +1434,11 @@
           if (u) u.checked = !!state.affiliations.unknown;
           if (n) n.checked = !!state.affiliations.neutral;
           if (lastUnits.length) {
+            var filteredAff = dedupeUnitsForMap(filterUnitsByAffiliation(lastUnits));
+            state.unitsCount = filteredAff.length;
             renderUnitsOnMap(lastUnits);
-            renderRosterAndTable(filterUnitsByAffiliation(lastUnits));
+            renderRosterAndTable(filteredAff);
+            updateUnitCountEl();
           }
         })
         .catch(function () {});
