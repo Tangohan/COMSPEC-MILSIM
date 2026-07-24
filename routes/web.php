@@ -1344,6 +1344,47 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->get('/api/atak/air-assets', [AtakApiController::class, 'airAssetsIndex']);
     $router->patch('/api/atak/air-assets/{callsign}/pilot-status', [AtakApiController::class, 'airAssetsPilotStatus']);
 
+    // API ATAK — Nouvelles features Phase 1
+    // Rapports tactiques (SPOTREP, SITREP, SALUTE, CONTACT)
+    $router->get('/api/atak/reports', [AtakApiController::class, 'tacticalReportsIndex']);
+    $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
+    $router->get('/api/atak/reports/{id}', [AtakApiController::class, 'tacticalReportsShow']);
+    $router->post('/api/atak/reports/{id}/acknowledge', [AtakApiController::class, 'tacticalReportsAcknowledge']);
+    
+    // Points d'Intérêt tactiques
+    $router->get('/api/atak/poi', [AtakApiController::class, 'poiIndex']);
+    $router->post('/api/atak/poi', [AtakApiController::class, 'poiStore']);
+    $router->put('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    $router->patch('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    
+    // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
+    $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
+    $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);
+    $router->post('/api/atak/zones/check-position', [AtakApiController::class, 'tacticalZonesCheckPosition']);
+    $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
+
+    // API ATAK — Nouvelles features Phase 2
+    // MEDEVAC 9-Line étendu avec triage TCCC
+    $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
+    $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
+    $router->get('/api/atak/medevac/{id}', [AtakApiController::class, 'medevacShow']);
+    $router->patch('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacUpdateStatus']);
+    $router->post('/api/atak/medevac/{id}/assign', [AtakApiController::class, 'medevacAssignAsset']);
+    $router->post('/api/atak/medevac/{id}/patients', [AtakApiController::class, 'medevacAddPatient']);
+    
+    // QRF (Quick Reaction Force)
+    $router->get('/api/atak/qrf', [AtakApiController::class, 'qrfIndex']);
+    $router->post('/api/atak/qrf', [AtakApiController::class, 'qrfStore']);
+    $router->post('/api/atak/qrf/{id}/assign', [AtakApiController::class, 'qrfAssign']);
+    $router->post('/api/atak/qrf/{id}/position', [AtakApiController::class, 'qrfUpdatePosition']);
+    $router->post('/api/atak/qrf/{id}/sitrep', [AtakApiController::class, 'qrfAddSitrep']);
+    
+    // Véhicules et assets lourds
+    $router->get('/api/atak/vehicles', [AtakApiController::class, 'vehiclesIndex']);
+    $router->post('/api/atak/vehicles', [AtakApiController::class, 'vehiclesUpsert']);
+    $router->post('/api/atak/vehicles/{id}/service', [AtakApiController::class, 'vehiclesServiceRequest']);
+    $router->get('/api/atak/vehicles/service-requests', [AtakApiController::class, 'vehiclesServiceRequests']);
+
     // API C2 — Fire Support
     $router->post('/api/fire-support/calculate', [FireSupportController::class, 'calculate']);
     $router->get('/api/fire-support/units', [FireSupportController::class, 'units']);

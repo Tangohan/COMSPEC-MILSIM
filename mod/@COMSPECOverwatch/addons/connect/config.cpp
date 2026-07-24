@@ -13,6 +13,13 @@ class CfgPatches {
     };
 };
 
+// CBA Extended Event Handlers
+class Extended_PostInit_EventHandlers {
+    class comspec_overwatch_connect {
+        clientInit = "call compile preprocessFileLineNumbers '\z\comspec_overwatch\addons\connect\XEH_postInitClient.sqf'";
+    };
+};
+
 // Format obligatoire Tag > Category > Function (file = dossier des fn_*.sqf).
 class CfgFunctions {
     class comspec_overwatch_connect {
@@ -98,6 +105,19 @@ class CfgFunctions {
             class showAthenaLinkHelp {};
             class getCallsign {};
             class setCallsign {};
+            
+            // ATAK Phase 1 & 2 - Nouvelles fonctions
+            class submitTacticalReport {};
+            class createPOI {};
+            class requestMEDEVAC {};
+            class requestQRF {};
+            class updateVehicleTracking {};
+            class requestVehicleService {};
+            class initVehicleTracking {};
+            class initATAKMenu {};
+            class initATAK {};
+            class hashMapToJson {};
+            class formatTimestamp {};
             class syncCallsignFromAthena {};
             class callsignDialogShow {};
             class callsignDialogOnLoad {};
