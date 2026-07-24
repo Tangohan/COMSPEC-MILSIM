@@ -27,7 +27,7 @@ if (_remain > 0) exitWith {
 missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
 
 if (!([player] call comspec_overwatch_connect_fnc_hasTerminal)) exitWith {
-    ["Équipez le téléphone S7 Android", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    ["Equip S7 Android phone", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
@@ -38,7 +38,7 @@ if (_ok) then {
     ["Position et données transmises.", "link", "info", true] call comspec_overwatch_connect_fnc_announce;
 } else {
     private _msg = switch (_result) do {
-        case "no_android": { "Équipez le téléphone S7 Android" };
+        case "no_android": { "Equip S7 Android phone" };
         case "origin": { "Position non valide — déplacez-vous un peu." };
         case "dead": { "Impossible de transmettre (opérateur hors service)." };
         default { "Transmission impossible pour le moment." };

@@ -38,9 +38,9 @@ missionNamespace setVariable ["COMSPEC_OrdersSeen", _seen, false];
 private _typeLabel = switch (toUpper _type) do {
     case "HOLD": { "Tenir la position" };
     case "RECON": { "Reconnaissance" };
-    case "CAS": { "Appui aérien" };
-    case "QRF": { "Force de réaction" };
-    default { "Se déplacer" };
+    case "CAS": { "Air support" };
+    case "QRF": { "Quick reaction force" };
+    default { "Move" };
 };
 
 private _prioLabel = switch (toUpper _priority) do {

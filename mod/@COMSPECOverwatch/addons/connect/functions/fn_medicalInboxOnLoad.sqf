@@ -31,14 +31,14 @@ private _shown = [];
 
     private _kind = _x getOrDefault ["kind", "medical_alert"];
     private _callSign = _x getOrDefault ["call_sign", ""];
-    private _label = _x getOrDefault ["label", "Assistance médicale"];
+    private _label = _x getOrDefault ["label", "Medical assistance"];
     private _grid = _x getOrDefault ["grid", ""];
     private _status = _x getOrDefault ["triage_status", "a_secourir"];
-    private _statusLabel = _x getOrDefault ["triage_label", "À secourir"];
+    private _statusLabel = _x getOrDefault ["triage_label", "To rescue"];
     private _created = _x getOrDefault ["created_at", ""];
 
     private _kindLabel = switch (toLower _kind) do {
-        case "cardiac_arrest": { "Arrêt cardiaque" };
+        case "cardiac_arrest": { "Cardiac arrest" };
         case "unconscious": { "Inconscient" };
         case "wia_report": { "Bilan santé" };
         default { "Assistance" };

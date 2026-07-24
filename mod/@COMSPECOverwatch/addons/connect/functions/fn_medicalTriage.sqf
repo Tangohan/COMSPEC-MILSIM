@@ -55,11 +55,11 @@ if (_prefix != "OK") exitWith {
 };
 
 private _label = switch (_statusNorm) do {
-    case "en_cours": { "En cours" };
-    case "traite": { "Traité" };
+    case "en_cours": { "In progress" };
+    case "traite": { "Treated" };
     case "kia": { "KIA" };
-    case "annule": { "Annulé" };
-    default { "À secourir" };
+    case "annule": { "Cancelled" };
+    default { "To rescue" };
 };
 
 private _alerts = missionNamespace getVariable ["COMSPEC_MedicalAlerts", []];

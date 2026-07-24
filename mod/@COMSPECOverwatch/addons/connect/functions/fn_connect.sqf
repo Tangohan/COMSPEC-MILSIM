@@ -73,7 +73,7 @@ if (_tenant isEqualTo "") then {
 _url = [_url] call _cleanSecret;
 if (_url isEqualTo "") exitWith {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena non renseignée", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Athena address not specified", false];
     ["[Athena] Pas d'adresse portail — utilisez Compte Athena (code) ou les reglages CBA."] call comspec_overwatch_connect_fnc_appendLinkLog;
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 };

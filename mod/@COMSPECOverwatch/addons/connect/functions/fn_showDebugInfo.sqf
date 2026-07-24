@@ -26,7 +26,7 @@ if (_lastPostErrRaw isEqualType "" && {(_lastPostErrRaw select [0, 3]) == "OK|"}
             private _code = _errParts select 0;
             private _path = _errParts select 1;
             private _age = _errParts select 2;
-            private _codeLabel = if (_code == "0") then { "pas de réponse (réseau/DNS/TLS)" } else {
+            private _codeLabel = if (_code == "0") then { "no response (network/DNS/TLS)" } else {
                 if (_code == "-1") then { "erreur locale avant envoi" } else { format ["HTTP %1", _code] }
             };
             _lastPostErrLabel = format ["%1 sur %2 (il y a %3 s)", _codeLabel, _path, _age];
@@ -38,7 +38,7 @@ private _extStatus = [] call comspec_overwatch_connect_fnc_extensionStatus;
 _extStatus params ["_extOk", "_extCode", "_ping", ["_extErr", 0]];
 private _extLabel = if (!_extOk) then {
     if (_extCode isEqualTo "not_loaded") then {
-        format ["NON CHARGÉE (réponse vide, err Arma %1 — souvent BattlEye / mauvais dossier mod, PAS un test de taille DLL)", _extErr]
+        format ["NON CHARGÉE (réponse vide, err Arma %1 — often BattlEye / wrong mod folder, NOT a DLL size test)", _extErr]
     } else {
         format ["RÉPONSE INVALIDE : %1", _ping]
     }
@@ -53,10 +53,10 @@ private _lines = [
     format ["[Debug] Extension status : %1 (err Arma %2)", _extCode, missionNamespace getVariable ["COMSPEC_LastExtError", _extErr]],
     format ["[Debug] Overwatch activé : %1", if (_enabled) then { "oui" } else { "non" }],
     format ["[Debug] URL portail : %1", if (_url == "") then { "(vide)" } else { _url }],
-    format ["[Debug] Tenant : %1", if (_tenant == "") then { "(défaut)" } else { _tenant }],
-    format ["[Debug] Clé API : %1", if (_keyLen > 0) then { format ["renseignée (%1 car.)", _keyLen] } else { "(absente — liez le compte via un code Athena)" }],
+    format ["[Debug] Tenant : %1", if (_tenant == "") then { "(default)" } else { _tenant }],
+    format ["[Debug] Clé API : %1", if (_keyLen > 0) then { format ["renseignée (%1 car.)", _keyLen] } else { "(absent — link account via Athena code)" }],
     format ["[Debug] État liaison : %1%2", _state, if (_detail != "") then { format [" — %1", _detail] } else { "" }],
-    format ["[Debug] Dernière position envoyée : %1", if (_lastSync >= 0) then { format ["il y a %1 s", round (diag_tickTime - _lastSync)] } else { "jamais" }],
+    format ["[Debug] Dernière position envoyée : %1", if (_lastSync >= 0) then { format ["il y a %1 s", round (diag_tickTime - _lastSync)] } else { "never" }],
     format ["[Debug] Dernier échec d'envoi (position/tchat/marqueurs…) : %1", _lastPostErrLabel]
 ];
 

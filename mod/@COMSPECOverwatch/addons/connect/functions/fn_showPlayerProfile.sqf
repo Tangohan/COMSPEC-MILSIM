@@ -30,10 +30,10 @@ if (_label == "") exitWith {
     // plutôt que de disparaître sans trace.
     if (_errorCode != "") then {
         private _reason = switch (_errorCode) do {
-            case "not_linked": { "compte non retrouvé pour ce SteamID (relier via Connexion en jeu)" };
-            case "no_tenant": { "communauté non identifiée (relier via Connexion en jeu)" };
-            case "unauthorized": { "clé Athena refusée" };
-            case "invalid_response": { "réponse Athena invalide" };
+            case "not_linked": { "account not found for this SteamID (link via In-game connection)" };
+            case "no_tenant": { "community not identified (link via In-game connection)" };
+            case "unauthorized": { "Athena key refused" };
+            case "invalid_response": { "invalid Athena response" };
             default { _errorCode };
         };
         [format ["[Athena] Profil compte indisponible : %1", _reason]] call comspec_overwatch_connect_fnc_appendLinkLog;
@@ -68,7 +68,7 @@ if (!isNull _nameCtrl) then {
     private _activityLabel = if (_playtimeHours != "") then {
         format ["%1h de jeu — vu le %2", _playtimeHours, if (_lastSeenAt != "") then { _lastSeenAt } else { "—" }]
     } else {
-        "Activité non suivie"
+        "Activity not tracked"
     };
     _lines pushBack format ["<t size='0.42' color='#5a6c7e'>%1</t>", _activityLabel];
     _nameCtrl ctrlSetStructuredText parseText (_lines joinString "<br/>");

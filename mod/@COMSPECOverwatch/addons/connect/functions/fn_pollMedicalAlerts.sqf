@@ -31,7 +31,7 @@ private _alerts = [];
     private _grid = _cols select 4;
     private _created = _cols select 5;
     private _triageStatus = if ((count _cols) > 6) then { _cols select 6 } else { "a_secourir" };
-    private _triageLabel = if ((count _cols) > 7) then { _cols select 7 } else { "À secourir" };
+    private _triageLabel = if ((count _cols) > 7) then { _cols select 7 } else { "To rescue" };
     private _severity = if ((count _cols) > 8) then { _cols select 8 } else { "urgent" };
 
     private _hm = createHashMapFromArray [
@@ -58,7 +58,7 @@ private _seen = missionNamespace getVariable ["COMSPEC_MedicalAlertsSeen", []];
     _seen pushBack _id;
     if ((_a getOrDefault ["severity", ""]) isEqualTo "critical") then {
         private _cs = _a getOrDefault ["call_sign", ""];
-        private _lb = _a getOrDefault ["label", "Assistance médicale"];
+        private _lb = _a getOrDefault ["label", "Medical assistance"];
         private _kind = toLower (_a getOrDefault ["kind", ""]);
         private _msg = if (_cs isEqualTo "") then { _lb } else { format ["%1 — %2", _cs, _lb] };
         // Message enrichi du kind pour que showNotification choisisse death / unconscious

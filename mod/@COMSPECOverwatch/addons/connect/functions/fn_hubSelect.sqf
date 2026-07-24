@@ -57,9 +57,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
                 private _blood = if (count _parts >= 2) then { _parts select 1 } else { "?" };
                 private _hr = if (count _parts >= 4) then { _parts select 3 } else { "?" };
                 private _status = switch (_health) do {
-                    case "cardiac_arrest": { "Arrêt cardiaque" };
+                    case "cardiac_arrest": { "Cardiac arrest" };
                     case "unconscious": { "Inconscient" };
-                    case "wounded": { "Blessé" };
+                    case "wounded": { "Wounded" };
                     default { "Stable" };
                 };
                 [player, "CHAT", format ["WIA|%1|sang≈%2%%|FC=%3", _status, _blood, _hr], "", "INFANTRY", 0.9] call comspec_overwatch_connect_fnc_sendIntel;

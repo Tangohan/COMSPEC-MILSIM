@@ -42,7 +42,7 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
             ["COMSPEC_Info", [format ["Réseau radio surveillé — canal %1", _chNum]]] call comspec_overwatch_connect_fnc_showNotification;
             _ok = true;
         } else {
-            ["COMSPEC_Warning", ["Impossible de basculer sur ce réseau radio"]] call comspec_overwatch_connect_fnc_showNotification;
+            ["COMSPEC_Warning", ["Unable to switch to this radio network"]] call comspec_overwatch_connect_fnc_showNotification;
         };
     };
 } else {
@@ -50,10 +50,10 @@ if (isClass (configFile >> "CfgPatches" >> "acre_main")) then {
         // Best-effort TFAR : mémoriser l’intention ; la freq exacte dépend du radio actif
         missionNamespace setVariable ["COMSPEC_RadioMonitorChannel", str _channel, false];
         missionNamespace setVariable ["COMSPEC_RadioMonitorActive", true, false];
-        ["COMSPEC_Info", ["Surveillance réseau enregistrée — réglez la fréquence sur votre radio"]] call comspec_overwatch_connect_fnc_showNotification;
+        ["COMSPEC_Info", ["Network monitoring registered — set frequency on your radio"]] call comspec_overwatch_connect_fnc_showNotification;
         _ok = true;
     } else {
-        ["COMSPEC_Warning", ["Module radio non détecté"]] call comspec_overwatch_connect_fnc_showNotification;
+        ["COMSPEC_Warning", ["Radio module not detected"]] call comspec_overwatch_connect_fnc_showNotification;
     };
 };
 
