@@ -50,49 +50,49 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     };
 
     player addAction [
-        "<t color='#7fffd4'>Tableau de briefing</t>",
+        "<t color='#7fffd4'>Briefing board</t>",
         { [] call comspec_overwatch_connect_fnc_openBriefingBoard; },
         nil, 6, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     player addAction [
-        "<t color='#7fffd4'>Connecter mon téléphone</t>",
+        "<t color='#7fffd4'>Connect my phone</t>",
         { [] call comspec_overwatch_connect_fnc_phoneConnectShow; },
         nil, 5.9, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     player addAction [
-        "<t color='#7fffd4'>Ma tablette Athena</t>",
+        "<t color='#7fffd4'>My Athena tablet</t>",
         { [] call comspec_overwatch_connect_fnc_webBrowserShow; },
         nil, 5.8, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     player addAction [
-        "<t color='#8aa0b4'>Tablette (vue classique)</t>",
+        "<t color='#8aa0b4'>Tablet (classic view)</t>",
         { if (isNull (findDisplay 9973)) then { createDialog 'COMSPEC_Device_Dialog'; }; },
         nil, 5.75, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     player addAction [
-        "<t color='#7dffb3'>Je vais bien (annuler mon alerte)</t>",
+        "<t color='#7dffb3'>I'm fine (cancel my alert)</t>",
         { [] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert; },
         nil, 5.85, false, true, "",
         "(missionNamespace getVariable ['comspec_overwatch_enabled', true]) && {count ([] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert) > 0}"
     ];
 
     player addAction [
-        "<t color='#7fffd4'>Mon indicatif</t>",
+        "<t color='#7fffd4'>My callsign</t>",
         { [] call comspec_overwatch_connect_fnc_callsignDialogShow; },
         nil, 5.7, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
     ];
 
     player addAction [
-        "<t color='#ffb070'>Ordres reçus</t>",
+        "<t color='#ffb070'>Received orders</t>",
         { [] call comspec_overwatch_connect_fnc_orderInboxShow; },
         nil, 5.6, false, true, "",
         "missionNamespace getVariable ['comspec_overwatch_enabled', true]"
@@ -141,7 +141,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
                 missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
                 missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
                 [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-                ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call comspec_overwatch_connect_fnc_showNotification;
+                ["COMSPEC_Info", ["New CAS request received"]] call comspec_overwatch_connect_fnc_showNotification;
                 ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
             };
         }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
@@ -210,7 +210,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     ["OnTrackingAnomaly", {
         params ["_alert"];
         private _kind = _alert getOrDefault ["kind", "ANOMALY"];
-        [format ["Anomalie détectée : %1", _kind], "system", "warn"] call comspec_overwatch_connect_fnc_announce;
+        [format ["Anomaly detected: %1", _kind], "system", "warn"] call comspec_overwatch_connect_fnc_announce;
     }] call comspec_overwatch_connect_fnc_registerEventHandler;
 
     [] spawn comspec_overwatch_connect_fnc_playtimeTracker;

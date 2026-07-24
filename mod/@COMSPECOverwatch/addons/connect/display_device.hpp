@@ -88,7 +88,7 @@ class COMSPEC_Device_Dialog {
             h = 0.095 * safezoneW;
         };
 
-        // Vue "Effectifs" (BFT léger) : mêmes coordonnées que le bloc profil,
+        // "Units" view (light BFT): same coordinates as profile block,
         // basculée avec lui (fn_deviceToggleView.sqf).
         class DeviceRosterTitle: RscStructuredText {
             idc = 9315;

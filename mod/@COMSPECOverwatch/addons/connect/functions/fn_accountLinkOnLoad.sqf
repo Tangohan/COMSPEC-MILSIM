@@ -34,9 +34,9 @@ if (!isNull _steamCtrl) then { _steamCtrl ctrlSetText _steam; };
 private _status = _display displayCtrl 9203;
 if (!isNull _status) then {
     private _hint = if (_steam isEqualTo "") then {
-        "Collez votre identifiant Steam (visible sur Athena → profil), ou générez un code."
+        "Paste your Steam ID (visible on Athena → profile), or generate a code."
     } else {
-        "Steam prérempli — cliquez Établir, ou saisissez un code."
+        "Steam pre-filled — click Establish, or enter a code."
     };
     _status ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#6a7c90'>%1</t>", _hint];
 };
