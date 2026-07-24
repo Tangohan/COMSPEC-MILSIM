@@ -4177,4 +4177,520 @@ class AtakApiController
             'count' => count($alerts)
         ]);
     }
+
+    // =============================================================================
+    // NOUVELLES FEATURES ATAK - Phase 2
+    // =============================================================================
+
+    // --- MEDEVAC 9-Line étendu avec triage TCCC ---
+
+    /**
+     * Liste les demandes MEDEVAC
+     * GET /api/atak/medevac
+     */
+    public function medevacIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        
+        $filters = [
+            'status' => $request->get('status'),
+            'priority' => $request->get('priority'),
+            'golden_hour_critical' => $request->get('golden_hour_critical'),
+            'only_active' => $request->get('only_active') !== null,
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 100,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $medevacs = $repo->listForContext($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        
+        return Response::json([
+            'medevacs' => $medevacs,
+            'count' => count($medevacs)
+        ]);
+    }
+
+    /**
+     * Crée une demande MEDEVAC
+     * POST /api/atak/medevac
+     */
+    public function medevacStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        
+        // Génération numéro MEDEVAC
+        $medevacNumber = $body['medevac_number'] ?? $repo->generateMedevacNumber($tenantId, $mapId);
+
+        $data = array_merge($body, [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+            'medevac_number' => $medevacNumber,
+            'requested_by_user_id' => $actor['user_id'] ?? null,
+            'requested_by_callsign' => $body['requested_by_callsign'] ?? $actor['callsign'] ?? null,
+        ]);
+
+        $medevacId = $repo->create($data);
+        
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            'MEDEVAC_REQUEST',
+            sprintf('MEDEVAC demandé : %s - T1:%d T2:%d T3:%d T4:%d', 
+                $medevacNumber,
+                $data['patients_t1_urgent'] ?? 0,
+                $data['patients_t2_urgent'] ?? 0,
+                $data['patients_t3_delayed'] ?? 0,
+                $data['patients_t4_expectant'] ?? 0
+            ),
+            $data['requested_by_callsign'] ?? 'Unknown'
+        );
+
+        $medevac = $repo->findById($medevacId);
+        
+        return Response::json($medevac, 201);
+    }
+
+    /**
+     * Récupère une demande MEDEVAC
+     * GET /api/atak/medevac/:id
+     */
+    public function medevacShow(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        $medevac = $repo->findById($id);
+        
+        if (!$medevac) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
+        
+        // Récupérer les patients
+        $medevac['patients'] = $repo->getPatients($id);
+        
+        return Response::json($medevac);
+    }
+
+    /**
+     * Met à jour le statut d'une MEDEVAC
+     * PATCH /api/atak/medevac/:id/status
+     */
+    public function medevacUpdateStatus(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+        $newStatus = $body['status'] ?? null;
+        
+        if (!$newStatus) {
+            return Response::json(['error' => 'Status required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        $success = $repo->updateStatus($id, $newStatus, $body['message'] ?? null);
+        
+        if (!$success) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
+        
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Assigne un asset à une MEDEVAC
+     * POST /api/atak/medevac/:id/assign
+     */
+    public function medevacAssignAsset(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+        
+        $assetCallsign = $body['asset_callsign'] ?? null;
+        if (!$assetCallsign) {
+            return Response::json(['error' => 'asset_callsign required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        $success = $repo->assignAsset($id, $assetCallsign, $actor['user_id'] ?? null);
+        
+        if (!$success) {
+            return Response::json(['error' => 'MEDEVAC not found'], 404);
+        }
+        
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Ajoute un patient à une MEDEVAC
+     * POST /api/atak/medevac/:id/patients
+     */
+    public function medevacAddPatient(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+
+        $repo = new \App\Repositories\AtakMedevacRepository();
+        $patientId = $repo->addPatient($id, $body);
+        
+        return Response::json(['patient_id' => $patientId], 201);
+    }
+
+    // --- QRF (Quick Reaction Force) ---
+
+    /**
+     * Liste les demandes QRF
+     * GET /api/atak/qrf
+     */
+    public function qrfIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakQrfRepository();
+        
+        $filters = [
+            'status' => $request->get('status'),
+            'priority' => $request->get('priority'),
+            'only_active' => $request->get('only_active') !== null,
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 100,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $qrfs = $repo->listForContext($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        
+        return Response::json([
+            'qrfs' => $qrfs,
+            'count' => count($qrfs)
+        ]);
+    }
+
+    /**
+     * Crée une demande QRF
+     * POST /api/atak/qrf
+     */
+    public function qrfStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakQrfRepository();
+        
+        // Génération numéro QRF
+        $qrfNumber = $body['qrf_number'] ?? $repo->generateQrfNumber($tenantId, $mapId);
+
+        $data = array_merge($body, [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+            'qrf_number' => $qrfNumber,
+            'requesting_user_id' => $actor['user_id'] ?? null,
+            'requesting_callsign' => $body['requesting_callsign'] ?? $actor['callsign'] ?? null,
+        ]);
+
+        $qrfId = $repo->create($data);
+        
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            'QRF_REQUEST',
+            sprintf('QRF demandé : %s - %s - %s', 
+                $qrfNumber,
+                $data['threat_type'] ?? 'UNKNOWN',
+                $data['requesting_unit'] ?? 'Unknown'
+            ),
+            $data['requesting_callsign'] ?? 'Unknown'
+        );
+
+        $qrf = $repo->findById($qrfId);
+        
+        return Response::json($qrf, 201);
+    }
+
+    /**
+     * Assigne une QRF à une demande
+     * POST /api/atak/qrf/:id/assign
+     */
+    public function qrfAssign(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+        
+        $qrfUnit = $body['qrf_unit'] ?? null;
+        $qrfCallsign = $body['qrf_callsign'] ?? null;
+        
+        if (!$qrfUnit || !$qrfCallsign) {
+            return Response::json(['error' => 'qrf_unit and qrf_callsign required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakQrfRepository();
+        $success = $repo->assignQrf($id, $qrfUnit, $qrfCallsign, $actor['user_id'] ?? null);
+        
+        if (!$success) {
+            return Response::json(['error' => 'QRF request not found'], 404);
+        }
+        
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Met à jour position QRF
+     * POST /api/atak/qrf/:id/position
+     */
+    public function qrfUpdatePosition(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+        
+        $posX = $body['pos_x'] ?? null;
+        $posY = $body['pos_y'] ?? null;
+        
+        if ($posX === null || $posY === null) {
+            return Response::json(['error' => 'pos_x and pos_y required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakQrfRepository();
+        $success = $repo->updateQrfPosition($id, (float) $posX, (float) $posY, $body['eta'] ?? null);
+        
+        if (!$success) {
+            return Response::json(['error' => 'QRF request not found'], 404);
+        }
+        
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Ajoute une mise à jour SITREP à une QRF
+     * POST /api/atak/qrf/:id/sitrep
+     */
+    public function qrfAddSitrep(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+
+        $repo = new \App\Repositories\AtakQrfRepository();
+        $updateId = $repo->addSitrepUpdate($id, array_merge($body, [
+            'updated_by_user_id' => $actor['user_id'] ?? null,
+            'updated_by_callsign' => $actor['callsign'] ?? null,
+        ]));
+        
+        return Response::json(['update_id' => $updateId], 201);
+    }
+
+    // --- Véhicules et assets lourds ---
+
+    /**
+     * Liste les véhicules trackés
+     * GET /api/atak/vehicles
+     */
+    public function vehiclesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakVehicleTrackingRepository();
+        
+        $filters = [
+            'vehicle_class' => $request->get('vehicle_class'),
+            'side' => $request->get('side'),
+            'status' => $request->get('status'),
+            'fuel_critical' => $request->get('fuel_critical'),
+            'damaged' => $request->get('damaged'),
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 200,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $vehicles = $repo->listActive($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        
+        return Response::json([
+            'vehicles' => $vehicles,
+            'count' => count($vehicles)
+        ]);
+    }
+
+    /**
+     * Met à jour ou crée un véhicule (upsert)
+     * POST /api/atak/vehicles
+     */
+    public function vehiclesUpsert(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakVehicleTrackingRepository();
+        
+        $data = array_merge($body, [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+        ]);
+
+        $vehicleId = $repo->upsert($data);
+        $vehicle = $repo->findById($vehicleId);
+        
+        return Response::json($vehicle);
+    }
+
+    /**
+     * Crée une demande de service véhicule
+     * POST /api/atak/vehicles/:id/service
+     */
+    public function vehiclesServiceRequest(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+
+        $repo = new \App\Repositories\AtakVehicleTrackingRepository();
+        $serviceId = $repo->createServiceRequest($id, array_merge($body, [
+            'requested_by_callsign' => $actor['callsign'] ?? null,
+        ]));
+        
+        return Response::json(['service_request_id' => $serviceId], 201);
+    }
+
+    /**
+     * Liste les demandes de service en attente
+     * GET /api/atak/vehicles/service-requests
+     */
+    public function vehiclesServiceRequests(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakVehicleTrackingRepository();
+        $requests = $repo->listPendingServiceRequests($tenantId, $mapId);
+        
+        return Response::json([
+            'service_requests' => $requests,
+            'count' => count($requests)
+        ]);
+    }
 }

@@ -1363,6 +1363,28 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->post('/api/atak/zones/check-position', [AtakApiController::class, 'tacticalZonesCheckPosition']);
     $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
 
+    // API ATAK — Nouvelles features Phase 2
+    // MEDEVAC 9-Line étendu avec triage TCCC
+    $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
+    $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
+    $router->get('/api/atak/medevac/{id}', [AtakApiController::class, 'medevacShow']);
+    $router->patch('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacUpdateStatus']);
+    $router->post('/api/atak/medevac/{id}/assign', [AtakApiController::class, 'medevacAssignAsset']);
+    $router->post('/api/atak/medevac/{id}/patients', [AtakApiController::class, 'medevacAddPatient']);
+    
+    // QRF (Quick Reaction Force)
+    $router->get('/api/atak/qrf', [AtakApiController::class, 'qrfIndex']);
+    $router->post('/api/atak/qrf', [AtakApiController::class, 'qrfStore']);
+    $router->post('/api/atak/qrf/{id}/assign', [AtakApiController::class, 'qrfAssign']);
+    $router->post('/api/atak/qrf/{id}/position', [AtakApiController::class, 'qrfUpdatePosition']);
+    $router->post('/api/atak/qrf/{id}/sitrep', [AtakApiController::class, 'qrfAddSitrep']);
+    
+    // Véhicules et assets lourds
+    $router->get('/api/atak/vehicles', [AtakApiController::class, 'vehiclesIndex']);
+    $router->post('/api/atak/vehicles', [AtakApiController::class, 'vehiclesUpsert']);
+    $router->post('/api/atak/vehicles/{id}/service', [AtakApiController::class, 'vehiclesServiceRequest']);
+    $router->get('/api/atak/vehicles/service-requests', [AtakApiController::class, 'vehiclesServiceRequests']);
+
     // API C2 — Fire Support
     $router->post('/api/fire-support/calculate', [FireSupportController::class, 'calculate']);
     $router->get('/api/fire-support/units', [FireSupportController::class, 'units']);
