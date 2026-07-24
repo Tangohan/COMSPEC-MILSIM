@@ -1,0 +1,225 @@
+/* COMSPEC ATAK - Effets visuels roleplay */
+
+/* Effet glitch sur éléments */
+.atak-glitch {
+  animation: atak-glitch-anim 0.2s linear;
+}
+
+@keyframes atak-glitch-anim {
+  0%, 100% {
+    transform: translate(0);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-2px, 1px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(2px, -1px);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translate(-1px, -2px);
+    opacity: 0.85;
+  }
+}
+
+/* Interférences sur la carte */
+.atak-interference {
+  position: relative;
+}
+
+.atak-interference::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  animation: atak-scan 0.5s linear;
+}
+
+@keyframes atak-scan {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Message d'erreur de connexion */
+.atak-roleplay-error {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 10000;
+  background: rgba(220, 38, 38, 0.95);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 4px solid #991b1b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.atak-roleplay-error--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.atak-roleplay-error-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.atak-roleplay-error-text {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* Clignotement pour indicateurs de qualité */
+.atak-blink-warn {
+  animation: atak-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes atak-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Indicateur métrique en alerte */
+.atak-metric-warn {
+  color: #f59e0b !important;
+  font-weight: 600;
+}
+
+/* Badge avertissement capteur */
+.atak-sensor-warning {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Unité avec données dégradées */
+.atak-unit-degraded {
+  opacity: 0.7;
+  position: relative;
+}
+
+.atak-unit-degraded::after {
+  content: '?';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  background: #f59e0b;
+  color: #000;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1f2937;
+}
+
+/* Unité avec position obsolète */
+.atak-unit-obsolete {
+  opacity: 0.6;
+  filter: grayscale(30%);
+  animation: atak-fade-pulse 2s ease-in-out infinite;
+}
+
+@keyframes atak-fade-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.4; }
+}
+
+.atak-obsolete-badge {
+  display: inline-block;
+  background: rgba(251, 191, 36, 0.2);
+  color: #f59e0b;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  animation: atak-blink 2s ease-in-out infinite;
+}
+
+/* Marqueur qui "saute" sur la carte */
+.atak-marker-jump {
+  animation: atak-marker-jump-anim 0.3s ease-out;
+}
+
+@keyframes atak-marker-jump-anim {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-10px, -15px); }
+  50% { transform: translate(5px, -8px); }
+  75% { transform: translate(-3px, -3px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Unité temporairement cachée */
+.atak-unit-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Popup unité avec statut capteur */
+.atak-unit-popup-sensor-status {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #f59e0b;
+}
+
+.atak-unit-popup-sensor-status::before {
+  content: '⚠ ';
+  font-weight: bold;
+}
+
+/* Mode thème clair (si implémenté) */
+@media (prefers-color-scheme: light) {
+  .atak-roleplay-error {
+    background: rgba(239, 68, 68, 0.95);
+    border-left-color: #dc2626;
+  }
+  
+  .atak-sensor-warning {
+    background: rgba(251, 191, 36, 0.2);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+  
+  .atak-unit-popup-sensor-status {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+}

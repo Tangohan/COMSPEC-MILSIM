@@ -1,0 +1,309 @@
+/* COMSPEC ATAK - Effets roleplay pour tablette cTab ingame */
+
+/* Overlay de déconnexion plein écran */
+.atak-disconnect-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  animation: atak-fade-in 0.3s ease-out;
+}
+
+.atak-disconnect-content {
+  text-align: center;
+  color: #fff;
+  max-width: 400px;
+  padding: 30px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+}
+
+.atak-disconnect-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: atak-pulse-red 1.5s ease-in-out infinite;
+}
+
+.atak-disconnect-content h2 {
+  color: #ff4444;
+  font-size: 24px;
+  margin: 0 0 15px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.atak-disconnect-content p {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+.atak-disconnect-content small {
+  color: #999;
+  font-size: 14px;
+}
+
+@keyframes atak-pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* Avertissement de zone (coin supérieur droit) */
+.atak-zone-warning {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(20, 20, 20, 0.9);
+  border: 2px solid #ffaa00;
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: atak-slide-in 0.3s ease-out;
+}
+
+.atak-zone-icon {
+  font-size: 24px;
+  animation: atak-pulse 2s ease-in-out infinite;
+}
+
+.atak-zone-text {
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.atak-zone-text strong {
+  color: #ffaa00;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.atak-zone-text small {
+  color: #ccc;
+  font-size: 12px;
+}
+
+@keyframes atak-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes atak-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Effet de glitch sur la carte */
+.atak-glitch {
+  animation: atak-glitch-anim 0.3s steps(2, end);
+}
+
+@keyframes atak-glitch-anim {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+/* Overlay d'interférence avec scan lines */
+.atak-interference-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  z-index: 1000;
+  display: none;
+}
+
+@keyframes atak-scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+/* Effet de corruption de données */
+.atak-corrupted {
+  animation: atak-corrupt 0.5s steps(3) infinite;
+}
+
+@keyframes atak-corrupt {
+  0% { filter: none; }
+  33% { filter: invert(1); }
+  66% { filter: hue-rotate(180deg); }
+  100% { filter: none; }
+}
+
+/* Marqueurs dégradés (signal faible) */
+.leaflet-marker-icon.atak-degraded {
+  opacity: 0.6;
+  filter: grayscale(30%);
+}
+
+/* Animation fade-in */
+@keyframes atak-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Effet de bruit/static sur la carte */
+.atak-static-noise {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence baseFrequency="0.9" numOctaves="3" /></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.3"/></svg>');
+  opacity: 0.2;
+  z-index: 1001;
+  animation: atak-noise-anim 0.5s infinite;
+}
+
+@keyframes atak-noise-anim {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+}
+
+/* Style pour tablette cTab (écran sombre) */
+@media (prefers-color-scheme: dark) {
+  .atak-disconnect-overlay {
+    background: rgba(0, 0, 0, 0.95);
+  }
+  
+  .atak-zone-warning {
+    background: rgba(10, 10, 10, 0.95);
+  }
+}
+
+/* Écran cassé / éteint */
+.atak-broken-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+
+.atak-broken-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atak-broken-text {
+  text-align: center;
+  color: #666;
+  z-index: 2;
+}
+
+.atak-broken-text h2 {
+  font-size: 32px;
+  margin: 0 0 20px 0;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.atak-broken-text p {
+  font-size: 18px;
+  margin: 10px 0;
+  color: #666;
+}
+
+.atak-broken-text small {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Effet d'écran fissuré */
+.atak-screen-cracks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.3) 49%, rgba(255,255,255,0.3) 51%, transparent 52%),
+    linear-gradient(-45deg, transparent 48%, rgba(255,255,255,0.2) 49%, rgba(255,255,255,0.2) 51%, transparent 52%),
+    linear-gradient(30deg, transparent 48%, rgba(255,255,255,0.1) 49%, rgba(255,255,255,0.1) 51%, transparent 52%);
+  background-size: 100px 100px, 80px 80px, 120px 120px;
+  background-position: 0 0, 20px 20px, 40px 40px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.atak-screen-destroyed .atak-broken-text h2 {
+  color: #ff4444;
+}
+
+.atak-screen-destroyed {
+  background: #111;
+}
+
+/* Animation de clignotement pour rallumage */
+.atak-broken-screen:not(.atak-screen-destroyed) {
+  cursor: pointer;
+  animation: atak-power-pulse 2s ease-in-out infinite;
+}
+
+@keyframes atak-power-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Adaptation pour petits écrans (tablette) */
+@media (max-width: 768px) {
+  .atak-disconnect-content {
+    max-width: 90%;
+    padding: 20px;
+  }
+  
+  .atak-disconnect-content h2 {
+    font-size: 20px;
+  }
+  
+  .atak-zone-warning {
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .atak-broken-text h2 {
+    font-size: 24px;
+  }
+  
+  .atak-broken-text p {
+    font-size: 16px;
+  }
+}

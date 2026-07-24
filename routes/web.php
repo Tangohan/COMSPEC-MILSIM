@@ -891,6 +891,9 @@ return function (Router $router) {
     $router->post('/admin/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1259,6 +1262,7 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);

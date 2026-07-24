@@ -2,7 +2,7 @@
 class COMSPEC_Hub_Dialog {
     idd = 9969;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile;";
+    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile; [] spawn {while {!isNull (uiNamespace getVariable ['COMSPEC_Hub_Display', displayNull])} do {[] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay; uiSleep 1;}};";
     onUnload = "uiNamespace setVariable ['COMSPEC_Hub_Display', displayNull];";
 
     class Controls {
@@ -308,6 +308,63 @@ class COMSPEC_Hub_Dialog {
             y = 0.89 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
             h = 0.018 * safezoneH;
+        };
+        
+        // === CONTRÔLES ROLEPLAY ===
+        
+        // Overlay écran cassé/éteint (plein écran)
+        class RoleplayScreenBroken: RscStructuredText {
+            idc = 9203;
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.08 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.89 * safezoneH;
+            colorBackground[] = {0, 0, 0, 0.95};
+            show = 0;
+        };
+        
+        // Overlay déconnexion (centre)
+        class RoleplayDisconnect: RscStructuredText {
+            idc = 9200;
+            x = 0.36 * safezoneW + safezoneX;
+            y = 0.4 * safezoneH + safezoneY;
+            w = 0.28 * safezoneW;
+            h = 0.15 * safezoneH;
+            colorBackground[] = {0.1, 0.1, 0.1, 0.9};
+            show = 0;
+        };
+        
+        // Avertissement zone (coin supérieur droit)
+        class RoleplayZoneWarning: RscStructuredText {
+            idc = 9201;
+            x = 0.6 * safezoneW + safezoneX;
+            y = 0.1 * safezoneH + safezoneY;
+            w = 0.12 * safezoneW;
+            h = 0.06 * safezoneH;
+            colorBackground[] = {0.1, 0.1, 0.1, 0.8};
+            show = 0;
+        };
+        
+        // Indicateur packet loss (bas)
+        class RoleplayPacketLoss: RscStructuredText {
+            idc = 9202;
+            x = 0.42 * safezoneW + safezoneX;
+            y = 0.85 * safezoneH + safezoneY;
+            w = 0.16 * safezoneW;
+            h = 0.03 * safezoneH;
+            colorBackground[] = {0.1, 0.1, 0.1, 0.7};
+            show = 0;
+        };
+        
+        // Effet glitch (plein écran, transparent)
+        class RoleplayGlitch: RscText {
+            idc = 9204;
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.08 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.89 * safezoneH;
+            colorBackground[] = {0.8, 0, 0, 0};
+            show = 0;
         };
     };
 };

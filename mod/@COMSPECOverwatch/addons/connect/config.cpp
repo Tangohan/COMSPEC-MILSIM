@@ -160,6 +160,31 @@ class CfgFunctions {
             class extensionCallback {};
             class hasTerminal {};
             class syncMapMarker {};
+            class trackPacketLoss {};
+            class recordPacketSent {};
+            class recordPacketReceived {};
+            class getPacketLossStats {};
+            class handlePositionUpdateCallback {};
+            class simulateNetworkDisconnect {};
+            class isNetworkDisconnected {};
+            class getNetworkDisconnectInfo {};
+            class playRoleplaySound {};
+            class injectRoleplayEffectsInBrowser {};
+            class checkAtakDamage {};
+            class isAtakFunctional {};
+            class repairAtak {};
+            class addAtakRepairAction {};
+            class updateAtakEnhancedRoleplay {};
+            class playAtakEnhancedSound {};
+            class createRoleplayZone {};
+            class deleteRoleplayZone {};
+            class getPlayerRoleplayZone {};
+            class applyZoneEffects {};
+            class listRoleplayZones {};
+            class moduleNoCoverage {};
+            class moduleInterference {};
+            class moduleDegraded {};
+            class moduleJammer {};
         };
     };
 };
@@ -241,6 +266,18 @@ class CfgSounds {
     };
 };
 
+// Catégorie Zeus/Eden pour modules roleplay
+class CfgFactionClasses
+{
+    class NO_CATEGORY;
+    class COMSPEC_Roleplay : NO_CATEGORY
+    {
+        displayName = "COMSPEC Roleplay";
+        priority = 2;
+        side = 7;
+    };
+};
+
 #include "ui_base.hpp"
 #include "display.hpp"
 #include "display_hub.hpp"
@@ -254,4 +291,7 @@ class CfgSounds {
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
+
+// Modules Zeus/Eden roleplay
+#include "modules\module_roleplay_zone.hpp"
 #include "CfgEventHandlers.hpp"

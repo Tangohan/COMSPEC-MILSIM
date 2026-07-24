@@ -34,6 +34,33 @@ if (!_force && {diag_tickTime < _backoffUntil}) exitWith {
     ["api_backoff"] call _fnc_skip;
 };
 
+// Roleplay : bloquer envois pendant déconnexion simulée
+if (!_force && {[] call comspec_overwatch_connect_fnc_isNetworkDisconnected}) exitWith {
+    ["network_disconnected_roleplay"] call _fnc_skip;
+    
+    // Afficher info déconnexion (une seule fois)
+    if (!(missionNamespace getVariable ["COMSPEC_DisconnectHintShown", false])) then {
+        missionNamespace setVariable ["COMSPEC_DisconnectHintShown", true, false];
+        private _info = [] call comspec_overwatch_connect_fnc_getNetworkDisconnectInfo;
+        private _remaining = _info get "remaining_seconds";
+        hintSilent format ["Liaison ATAK perdue - Reconnexion dans %1s", _remaining];
+    };
+};
+
+// Roleplay : bloquer envois si zone "no_coverage"
+private _zoneEffects = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+if (!_force && {!isNil "_zoneEffects"}) then {
+    if (_zoneEffects getOrDefault ["force_disconnect", false]) exitWith {
+        ["zone_no_coverage"] call _fnc_skip;
+    };
+};
+
+// Réalisme ATAK : bloquer envois si device détruit
+private _atakStatus = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
+if (!_force && {!(_atakStatus get "can_send")}) exitWith {
+    ["atak_destroyed"] call _fnc_skip;
+};
+
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 
@@ -179,9 +206,27 @@ if ((count _steamUid) < 15) then {
     _steamUid = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 };
 
+// Tracking packet loss - enregistrer l'envoi
+private _requestId = [format ["pos_%1", time]] call comspec_overwatch_connect_fnc_recordPacketSent;
+
+// Inclure les stats de packet loss dans le payload (toutes les 10 secondes)
+private _lastStatsTime = missionNamespace getVariable ["COMSPEC_LastPacketStatsTime", -999];
+private _packetLossStats = "";
+if ((time - _lastStatsTime) > 10) then {
+    missionNamespace setVariable ["COMSPEC_LastPacketStatsTime", time, false];
+    private _stats = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
+    _packetLossStats = format [
+        ",""packet_loss"":%1,""packets_sent"":%2,""packets_received"":%3",
+        _stats get "packet_loss_percent",
+        _stats get "packets_sent_window",
+        _stats get "packets_received_window"
+    ];
+};
+
 "COMSPECExtension" callExtension ["UpdatePosition", [
     str (_reportedPos select 0), str (_reportedPos select 1), str _heading,
-    _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson, _steamUid, _groupName
+    _callSign, _role, _health, _fuel, _ammo, _radioFreq, _vehJson, _steamUid, _groupName,
+    _packetLossStats, _requestId
 ]];
 
 private _trail = missionNamespace getVariable ["COMSPEC_PositionTrail", []];
