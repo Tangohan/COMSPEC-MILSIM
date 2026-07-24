@@ -1,201 +1,99 @@
-# Comparaison détaillée : COMSPEC Overwatch vs CTAB, SIT 1erGTD et ATAK
+# COMSPEC Overwatch — Comparaison avec CTAB, SIT et ATAK
 
+**Version** : 1.0  
 **Date** : 24 juillet 2026  
-**Version** : 1.0
+**Public** : Décideurs, responsables technique, administrateurs d'unité  
+**Style** : Documentation produit comparative, positionnement marché
 
 ---
 
-## Table des matières
+## 1. Présentation du document
 
-1. [Présentation générale](#1-présentation-générale)
-2. [COMSPEC Overwatch — Fonctionnalités complètes](#2-comspec-overwatch--fonctionnalités-complètes)
-3. [CTAB (Commander's Tactical Tablet)](#3-ctab-commanders-tactical-tablet)
-4. [SIT 1erGTD / cTab IRL](#4-sit-1ergtd--ctab-irl)
-5. [ATAK (Android Tactical Assault Kit)](#5-atak-android-tactical-assault-kit)
-6. [Tableau comparatif synthétique](#6-tableau-comparatif-synthétique)
-7. [Avantages distinctifs de COMSPEC](#7-avantages-distinctifs-de-comspec)
-8. [Conclusion et recommandations](#8-conclusion-et-recommandations)
+### 1.1 Objectif
 
----
+Ce document compare **COMSPEC Overwatch** avec les principales solutions de commandement et contrôle (C2) pour Arma 3 : **CTAB** (Commander's Tactical Tablet), **SIT 1erGTD** (cTab IRL) et **ATAK** (Android Tactical Assault Kit). L'objectif est d'aider les unités MILSIM à comprendre le positionnement unique de COMSPEC et à choisir la solution adaptée à leurs besoins.
 
-## 1. Présentation générale
+### 1.2 Public visé
 
-### Vue d'ensemble des solutions
+- **Décideurs d'unité** : Commandants, chefs d'état-major cherchant une solution C2
+- **Responsables technique** : Administrateurs système, gestionnaires d'infrastructure
+- **Administrateurs d'unité** : Responsables de la configuration et du déploiement
 
-Ces quatre solutions visent à améliorer le commandement et le contrôle (C2) dans les opérations militaires simulées, principalement dans Arma 3. Chacune apporte des capacités de visualisation tactique, de coordination et de liaison entre le terrain et le commandement.
+### 1.3 Périmètre
 
-| Solution | Type | Plateforme | Orientation |
-|----------|------|-----------|-------------|
-| **COMSPEC Overwatch** | Mod Arma 3 + plateforme web complète | Arma 3 → navigateur web (Athena) | Écosystème MILSIM complet intégré |
-| **CTAB** | Mod Arma 3 standalone | Arma 3 uniquement (tablette en jeu) | Outils tactiques individuels en jeu |
-| **SIT 1erGTD / cTab IRL** | Extension CTAB + webapp | Arma 3 + mobile/navigateur | Liaison téléphone mobile |
-| **ATAK** (réel) | Application militaire tactique | Android (application native) | Solution militaire professionnelle |
+- **Solutions analysées** : COMSPEC Overwatch, CTAB, SIT 1erGTD, ATAK réel
+- **Critères** : Fonctionnalités, architecture, usage opérationnel, coût (temps/ressources)
+- **Hors périmètre** : Détails d'implémentation technique interne
 
 ---
 
-## 2. COMSPEC Overwatch — Fonctionnalités complètes
+## 2. Vue d'ensemble des solutions
 
-### 2.1 Architecture globale
+### 2.1 Positionnement marché
 
-COMSPEC Overwatch n'est pas simplement un mod Arma 3 : c'est un **écosystème complet** qui intègre :
+Ces quatre solutions visent à améliorer le commandement et le contrôle dans les opérations militaires simulées (principalement Arma 3). Chacune répond à des besoins différents selon la maturité et l'ambition de l'unité.
 
-- **Mod Arma 3** (client en jeu)
-- **Extension native** (.NET/C# avec interopérabilité SQF)
-- **Plateforme web Athena** (portail communautaire + C2)
-- **API tactiques** temps réel
-- **Base de données centralisée** multi-tenant
 
-### 2.2 Fonctionnalités du mod Arma 3
+| Solution | Type | Plateforme | Orientation | Public cible |
+|----------|------|-----------|-------------|--------------|
+| **COMSPEC Overwatch** | Plateforme MILSIM complète | Arma 3 + Web | Écosystème intégré (RH + Formation + C2) | Unités établies, communautés organisées |
+| **CTAB** | Mod Arma 3 standalone | Arma 3 uniquement | Tablette tactique en jeu | Joueurs casual/MILSIM, découverte |
+| **SIT 1erGTD** | Extension CTAB + webapp | Arma 3 + mobile/navigateur | Visualisation mobile légère | Petites unités, usage occasionnel |
+| **ATAK** (réel) | Application militaire tactique | Android (natif) | Solution professionnelle forces armées | Militaires en opérations réelles |
 
-#### 2.2.1 Connexion et authentification
+### 2.2 Philosophies produit
 
-| Fonctionnalité | Description | Fonctions SQF clés |
-|----------------|-------------|-------------------|
-| **Liaison compte Athena** | Code de liaison à usage unique généré sur le site, saisi en jeu | `fn_accountLinkShow`, `fn_accountLinkSubmit` |
-| **Synchronisation indicatif** | L'indicatif Arma est synchronisé avec le compte Athena | `fn_getCallsign`, `fn_setCallsign`, `fn_syncCallsignFromAthena` |
-| **Session persistante** | Reconnexion automatique avec jetons stockés | `fn_connect`, `fn_disconnect` |
-| **Authentification multi-tenant** | Support de plusieurs communautés/organisations | Configuration CBA par tenant ID |
+#### COMSPEC Overwatch : Plateforme unifiée
 
-#### 2.2.2 Positionnement et suivi tactique
+**Vision** : Fournir un **écosystème complet** pour gérer une unité MILSIM de A à Z, du recrutement à l'après-action, en passant par la formation et les opérations.
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Position temps réel** | Envoi périodique de la position du joueur vers Athena | `fn_updatePosition` |
-| **Suivi d'activité** | Compteur de temps de jeu et métadonnées de session | `fn_playtimeTracker` |
-| **Synchronisation forcée** | Mise à jour immédiate des données critiques | `fn_forceSyncData` |
-| **Profil joueur** | Affichage du profil Athena intégré en jeu | `fn_showPlayerProfile`, `fn_getPlayerAvatarInfo` |
+**Principe** : Un seul système, une seule source de vérité, tous les modules interconnectés.
 
-#### 2.2.3 Communications et messagerie
+#### CTAB : Outil tactique autonome
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Tchat tactique** | Messagerie intégrée avec l'overlay Athena | `fn_submitChat`, `fn_chatDialogOnLoad` |
-| **Photos de situation** | Envoi de captures d'écran vers le flux intel | `fn_submitChatPhoto` |
-| **Notifications sonores** | Alertes audio ATAK pour messages critiques | `fn_playAtakNotification`, `fn_showNotification` |
-| **Messages formatés** | Templates de communication standardisés | `fn_formatCommsMessage` |
-| **Alertes HTML** | Pop-ups riches en jeu | `fn_pushHtmlAlert` |
+**Vision** : Offrir une **tablette tactique** immersive en jeu, sans dépendance externe.
 
-#### 2.2.4 Renseignement et reconnaissance
+**Principe** : Simplicité, légèreté, focus sur l'expérience joueur individuelle.
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Rapports intel structurés** | Types : INFANTRY, VEHICLE, ARMOR, AIR_DEFENSE | `fn_sendIntel` |
-| **Captures photo terrain** | Screenshots géolocalisés envoyés au C2 | `fn_captureReconImage` |
-| **Intégration ACE** | Menu ACE Self Actions pour rapports terrain | `fn_initACE` |
-| **Intel temps réel** | Flux de renseignement vers l'overlay | API `/api/atak/intel` |
+#### SIT 1erGTD : Extension mobile de CTAB
 
-#### 2.2.5 Appui aérien et feu (CAS/JTAC)
+**Vision** : Permettre au **commandement déporté** de suivre la mission depuis un écran secondaire (mobile/tablette).
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Demandes CAS 9-Line** | Formulaire complet des 9 lignes réglementaires | `fn_openCASDialog`, `fn_receiveCASRequest` |
-| **Suivi état CAS** | Accusés de réception, statuts pilote | `fn_updateCASState`, `fn_sendCASAck`, `fn_sendCASStatus` |
-| **Validation 9-Line** | Vérification automatique des champs obligatoires | `fn_checkCASLine` |
-| **Codes laser** | Synchronisation des codes désignateur | `fn_syncLaserCode` |
-| **Demandes solutions de tir** | Calculs balistiques pour artillerie | `fn_requestFireSolution`, `fn_receiveFireSolution`, `fn_displayFireSolution` |
-| **Réponse pilote** | Interface pilote pour missions CAS | `fn_pilotResponse` |
+**Principe** : Extension de CTAB avec liaison web minimale, sans infrastructure lourde.
 
-#### 2.2.6 Opérations aériennes
+#### ATAK : Standard militaire professionnel
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Flight Manifest** | Déclaration d'aéronefs et équipages | `fn_fillFlightManifest`, `fn_submitFlightManifest` |
-| **Détection type aéronef** | Identification automatique du véhicule | `fn_getAircraftType` |
-| **Suivi air assets** | Liste temps réel des moyens aériens | Affiché sur overlay Athena |
+**Vision** : Solution **certifiée pour opérations réelles**, référence mondiale pour C2 mobile.
 
-#### 2.2.7 Santé et médical (TCCC)
+**Principe** : Fiabilité, sécurité, interopérabilité militaire.
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Alertes médicales** | Rapports de blessures vers le commandement | `fn_reportMedicalAlert`, `fn_checkMedicalAlerts` |
-| **Triage médical** | Interface de catégorisation des blessés | `fn_medicalTriage`, `fn_canTriageMedical` |
-| **Boîte de réception médicale** | Suivi des alertes actives | `fn_medicalInboxShow`, `fn_medicalInboxOnLoad` |
-| **État médical** | Récupération des données ACE Medical | `fn_getMedicalState` |
-| **Polling alertes** | Mise à jour périodique des alertes | `fn_pollMedicalAlerts` |
-| **Annulation auto** | Joueur peut annuler sa propre alerte | `fn_selfCancelMedicalAlert` |
-| **Vérification alerte active** | Détection d'alerte en cours pour le joueur | `fn_hasOwnActiveMedicalAlert` |
+---
 
-#### 2.2.8 Ordres et chaîne de commandement
+## 3. COMSPEC Overwatch — Solution complète
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Réception ordres** | Transmission d'ordres depuis le commandement | `fn_receiveOrder`, `fn_pollOrders` |
-| **Boîte de réception ordres** | Interface consultation ordres reçus | `fn_orderInboxShow`, `fn_orderInboxOnLoad` |
-| **Émission ordres** | Création et diffusion d'ordres | `fn_issueOrder` |
-| **Suivi statut** | Accusés de lecture, exécution | `fn_updateOrderStatus`, `fn_orderRespond` |
-| **Filtrage destinataire** | Vérification si ordre concerne le joueur | `fn_orderConcernsPlayer` |
+### 3.1 Positionnement produit
 
-#### 2.2.9 Cartographie et marqueurs
+**COMSPEC Overwatch n'est pas un simple mod C2** : c'est une **plateforme de gestion d'unité militaire simulée** qui intègre :
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Synchronisation marqueurs** | Bidirectionnelle Arma ↔ Athena | `fn_syncMapMarker` |
-| **Formes tactiques** | Zones, polygones, lignes | `fn_receiveMapShape`, `fn_deleteMapShape`, `fn_pollMapShapes` |
-| **Zones de danger** | Alertes zones sensibles/interdites | `fn_receiveDangerZone`, `fn_updateDangerZone`, `fn_deleteDangerZone` |
-| **Détection entrée zone** | Alerte automatique joueur | `fn_checkPlayerInDangerZone`, `fn_warnDangerZoneEntry` |
+- 🎓 **Système de formation** (LMS) avec parcours, certifications, studio de création
+- 📋 **Gestion RH** : ORBAT, dossiers opérateurs, grades, progression
+- 📄 **Gestion documentaire** : Bibliothèque, courrier officiel, workflow de validation
+- 💬 **Forum communautaire** : Discussions, modération, partage
+- 🗓️ **Événements** : Calendrier, pointage, rappels
+- 📧 **Recrutement** : Formulaires publics, gestion candidatures
+- 🎯 **C2 tactique** : Mod Arma + carte web temps réel
+- 🏢 **Multi-tenant** : Support de plusieurs organisations isolées
 
-#### 2.2.10 IFF (Identification Friend or Foe)
+### 3.2 Fonctionnalités C2 (mod Arma + web)
 
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Défis IFF** | Système question/réponse identification | `fn_receiveIFFChallenge`, `fn_submitIFFResponse` |
-| **Marqueurs IFF** | État visuel sur carte selon réponse | `fn_updateIFFMarkerState` |
+#### 3.2.1 Liaison terrain ↔ commandement
 
-#### 2.2.11 Briefing et planification
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Diapositives briefing** | Affichage slides préparés sur Athena | `fn_getBriefingSlides`, `fn_downloadBriefingSlide` |
-| **Tableau briefing** | Interface présentation en jeu | `fn_openBriefingBoard`, `fn_briefingBoardShow`, `fn_briefingBoardStep` |
-| **Rafraîchissement** | Mise à jour des slides depuis serveur | `fn_refreshBriefingSlides` |
-
-#### 2.2.12 Logistique
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **État logistique** | Rapport munitions/carburant/équipement | `fn_sendLogisticsStatus` |
-| **Équipes de feu** | Récupération des fire teams | `fn_getFireTeams` |
-| **Rôle unitaire** | Définition du rôle tactique | `fn_setUnitRole` |
-
-#### 2.2.13 Radio et communications
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **État radio** | Détection TFAR/ACRE, fréquences | `fn_getRadioState`, `fn_getRadioTxState` |
-| **Proximité radio** | Détection des joueurs à portée | `fn_scanRadioProximity` |
-| **Surveillance réseau** | Monitoring des canaux actifs | `fn_monitorRadioNet`, `fn_initRadioMonitor` |
-
-#### 2.2.14 Interface et appareils
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Menu hub central** | Point d'accès à toutes les fonctions | `fn_openHub`, `fn_hubSelect` |
-| **Tablette tactique** | Interface type tablette en jeu | `fn_showDeviceView`, `fn_deviceToggleView` |
-| **Couplage téléphone** | QR code pour liaison mobile | `fn_getPhoneConnectInfo`, `fn_phoneConnectShow` |
-| **Navigateur web intégré** | Consultation Athena en jeu | `fn_webBrowserShow`, `fn_webBrowserOpenAthena`, `fn_webBrowserOpenSystem` |
-| **Gestion navigateur** | Callbacks, JavaScript, dialogues | `fn_webBrowserOnLoad`, `fn_webBrowserPageLoaded`, `fn_webBrowserJSDialog`, `fn_webBrowserJsEscape`, `fn_webBrowserAvailable` |
-| **Liste de présence** | Roster des joueurs connectés | `fn_showDeviceRoster` |
-
-#### 2.2.15 Administration et diagnostic
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Extension native** | Vérification DLL .NET chargée | `fn_extensionStatus`, `fn_extensionCallback`, `fn_extResult` |
-| **Journal de liaison** | Logs de connexion Athena | `fn_appendLinkLog`, `fn_updateLinkDiary` |
-| **Aide liaison** | Guide intégré pour connexion | `fn_showAthenaLinkHelp` |
-| **Indicateurs de statut** | Badges visuels état système | `fn_updateStatusBadges` |
-| **Info de débogage** | Diagnostics techniques | `fn_showDebugInfo` |
-| **Logs catégorisés** | Filtrage des traces par type | `fn_toggleLogCategory` |
-| **Profiling performance** | Mesure temps d'exécution | `fn_profileWrap` |
-
-#### 2.2.16 Événements et système
-
-| Fonctionnalité | Description | Fonctions |
-|----------------|-------------|-----------|
-| **Gestionnaire d'événements** | System d'événements personnalisés | `fn_registerEventHandler`, `fn_publishEvent` |
-| **Annonces système** | Notifications broadcast | `fn_announce` |
-
-### 2.3 Plateforme web Athena (portail COMSPEC)
+| Fonctionnalité | Description | Avantage opérationnel |
+|----------------|-------------|----------------------|
+| **Position temps réel** | Envoi automatique position joueur | Conscience situationnelle continue |
+| **Connexion sécurisée** | Code liaison à usage unique (30 min) | Authentification simple et sûre |
+| **Synchronisation indicatif** | Callsign bidirectionnel Arma ↔ web | Cohérence identification |
+| **Multi-contextes** | Support plusieurs serveurs/missions | Flexibilité opérationnelle |
 
 #### 2.3.1 Overlay tactique (Tacmap/ATAK)
 
