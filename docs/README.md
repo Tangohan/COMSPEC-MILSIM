@@ -31,6 +31,15 @@ Bienvenue dans la documentation complète des features ATAK pour COMSPEC Overwat
 | **[Documentation ATAK Web](ATAK-WEB-DOCUMENTATION-PRODUIT.md)** | Features interface web | Product, Utilisateurs |
 | **[Athena Mythologie](ATHENA-MYTHOLOGIE.md)** | Philosophie produit | Marketing, Communication |
 
+### 🎮 Documentation Roleplay/Troll
+
+| Document | Description | Pour qui |
+|----------|-------------|----------|
+| **[Index Roleplay](INDEX-DOCS-ROLEPLAY-TROLL.md)** | Point d'entrée, navigation | Tout le monde |
+| **[Guide technique complet](MOD-FONCTIONNALITES-ROLEPLAY-TROLL.md)** | Système complet, architecture | Développeurs, Admins |
+| **[Résumé fun](FONCTIONNALITES-TROLL-RESUME.md)** | Top 5 trolls, scénarios | MJ, Zeus, Joueurs |
+| **[Guide Zeus rapide](GUIDE-ZEUS-ROLEPLAY-RAPIDE.md)** | Cheat sheet, commandes | Zeus/MJ en mission |
+
 ### 📢 Versions forum/Discord
 
 | Document | Description |
@@ -84,6 +93,27 @@ Bienvenue dans la documentation complète des features ATAK pour COMSPEC Overwat
 
 ---
 
+### "Je veux utiliser les fonctionnalités roleplay/troll"
+
+1. **Découverte rapide** : [Résumé fun](FONCTIONNALITES-TROLL-RESUME.md) (15min)
+2. **Guide opérationnel** : [Guide Zeus rapide](GUIDE-ZEUS-ROLEPLAY-RAPIDE.md) (30min)
+3. **Documentation complète** : [Guide technique](MOD-FONCTIONNALITES-ROLEPLAY-TROLL.md) (2h)
+
+**Points d'entrée selon profil** :
+- **Joueur curieux** → [Résumé fun](FONCTIONNALITES-TROLL-RESUME.md)
+- **Zeus/MJ en mission** → [Guide Zeus rapide](GUIDE-ZEUS-ROLEPLAY-RAPIDE.md)
+- **Admin/configurateur** → [Guide technique](MOD-FONCTIONNALITES-ROLEPLAY-TROLL.md)
+- **Développeur mod** → [Index complet](INDEX-DOCS-ROLEPLAY-TROLL.md)
+
+**Fonctionnalités disponibles** :
+- 💥 Système de dommages ATAK (3 niveaux)
+- 📡 Zones géographiques roleplay (4 types)
+- 🌐 Déconnexions réseau aléatoires
+- 🎨 Effets visuels et sonores immersifs
+- 🔧 Système de réparation ACE
+
+---
+
 ### "Je veux connaître les prochaines étapes"
 
 1. **Roadmap** : [Proposition features](NOUVELLES-FEATURES-ATAK-MOD.md)
@@ -125,11 +155,17 @@ Documentation produit
 ├── Mythologie          : 1 fichier (200 lignes)
 └── Proposition         : 1 fichier (900 lignes)
 
+Documentation Roleplay/Troll
+├── Index navigation    : 1 fichier (327 lignes)
+├── Guide technique     : 1 fichier (714 lignes)
+├── Résumé fun          : 1 fichier (298 lignes)
+└── Guide Zeus rapide   : 1 fichier (453 lignes)
+
 Versions forum          : 3 fichiers (800 lignes)
 CHANGELOG               : 1 fichier (400 lignes)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TOTAL                   : 12 fichiers (6 750 lignes)
+TOTAL                   : 16 fichiers (8 542 lignes)
 ```
 
 ---
@@ -139,6 +175,7 @@ TOTAL                   : 12 fichiers (6 750 lignes)
 ### Dernière mise à jour : 24 juillet 2026
 
 **Ajouts récents** :
+- ✅ Documentation Roleplay/Troll complète (4 documents, 1792 lignes)
 - ✅ Quick Start Integration (nouveau)
 - ✅ Plan de tests complet (nouveau)
 - ✅ État d'avancement détaillé (nouveau)
