@@ -97,7 +97,7 @@ class COMSPEC_WebBrowser_Dialog {
 
         class BtnClassic: RscButton {
             idc = 9404;
-            text = "Vue classique";
+            text = "Classic view";
             x = safezoneX + 0.07 * safezoneW;
             y = safezoneY + 0.88 * safezoneH;
             w = 0.13 * safezoneW;
@@ -122,7 +122,7 @@ class COMSPEC_WebBrowser_Dialog {
         // Contournement Stable : openURL hors du Chromium embarqué (pas de prompt allowExternalURL).
         class BtnSystemBrowser: RscButton {
             idc = 9407;
-            text = "Navigateur système";
+            text = "System browser";
             x = safezoneX + 0.32 * safezoneW;
             y = safezoneY + 0.88 * safezoneH;
             w = 0.18 * safezoneW;
@@ -134,7 +134,7 @@ class COMSPEC_WebBrowser_Dialog {
 
         class BtnClose: RscButton {
             idc = 9406;
-            text = "Fermer";
+            text = "Close";
             x = safezoneX + 0.81 * safezoneW;
             y = safezoneY + 0.88 * safezoneH;
             w = 0.12 * safezoneW;

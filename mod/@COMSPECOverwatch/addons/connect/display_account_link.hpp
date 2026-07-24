@@ -26,7 +26,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Connecter mon compte Athena</t>";
+            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Connect my Athena account</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.195 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -35,7 +35,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#8aa0b4'>Collez votre identifiant Steam (profil Athena), ou laissez-le vide en multijoueur. Sinon : code Connexion en jeu (30 min).</t>";
+            text = "<t align='center' size='0.55' color='#8aa0b4'>Paste your Steam ID (Athena profile), or leave it empty in multiplayer. Otherwise: In-game connection code (30 min).</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.228 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -44,7 +44,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class UrlLabel: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>ADRESSE DU PORTAIL</t>";
+            text = "<t size='0.55' color='#5a9e88'>PORTAL ADDRESS</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.285 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -64,7 +64,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class SteamLabel: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>IDENTIFIANT STEAM (profil Athena)</t>";
+            text = "<t size='0.55' color='#5a9e88'>STEAM ID (Athena profile)</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.348 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -84,7 +84,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class CodeLabel: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>CODE DE LIAISON (optionnel)</t>";
+            text = "<t size='0.55' color='#5a9e88'>PAIRING CODE (optional)</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.412 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -114,7 +114,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class BtnConnect: RscButton {
             idc = 9204;
-            text = "Établir la liaison";
+            text = "Establish connection";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.55 * safezoneH + safezoneY;
             w = 0.195 * safezoneW;
@@ -126,7 +126,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class BtnClose: RscButton {
             idc = 9205;
-            text = "Fermer";
+            text = "Close";
             x = 0.545 * safezoneW + safezoneX;
             y = 0.55 * safezoneH + safezoneY;
             w = 0.115 * safezoneW;
@@ -138,7 +138,7 @@ class COMSPEC_AccountLink_Dialog {
 
         class Footer: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.48' color='#4a5c6e'>En éditeur : collez le Steam du profil Athena. En multijoueur : détection auto possible.</t>";
+            text = "<t align='center' size='0.48' color='#4a5c6e'>In editor: paste Steam ID from Athena profile. In multiplayer: auto-detection possible.</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.605 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;

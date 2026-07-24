@@ -185,7 +185,7 @@ class CfgNotifications {
 class CfgSounds {
     sounds[] = {};
     class COMSPEC_ATAK_SilentVib {
-        name = "Silencieux (vibration)";
+        name = "Silent (vibration)";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_silencieux_vibration.ogg", 1, 1, 50};
         titles[] = {};
     };
@@ -195,27 +195,27 @@ class CfgSounds {
         titles[] = {};
     };
     class COMSPEC_ATAK_Health {
-        name = "Alerte santé";
+        name = "Health alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_no_activyt_health.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Start {
-        name = "Démarrage ATAK";
+        name = "ATAK startup";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_start.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Disconnect {
-        name = "Déconnexion ATAK";
+        name = "ATAK disconnect";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_disconnect.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Unconscious {
-        name = "Alerte inconscient";
+        name = "Unconscious alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_alert_2.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Death {
-        name = "Alerte mort";
+        name = "Death alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_death.ogg", 1, 1, 50};
         titles[] = {};
     };

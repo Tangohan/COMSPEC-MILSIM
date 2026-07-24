@@ -61,7 +61,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceStatus: RscStructuredText {
             idc = 9312;
-            text = "<t align='right' size='0.68' color='#ff8a7a'>●  Hors liaison</t>";
+            text = "<t align='right' size='0.68' color='#ff8a7a'>●  Not connected</t>";
             x = safezoneX + 0.495 * safezoneW;
             y = safezoneY + 0.5 * safezoneH - 0.138 * safezoneW;
             w = 0.235 * safezoneW;
@@ -81,7 +81,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceProfileName: RscStructuredText {
             idc = 9303;
-            text = "<t size='0.62' color='#7a8c9e'>Compte non lié</t>";
+            text = "<t size='0.62' color='#7a8c9e'>Account not linked</t>";
             x = safezoneX + 0.354 * safezoneW;
             y = safezoneY + 0.5 * safezoneH - 0.082 * safezoneW;
             w = 0.376 * safezoneW;
@@ -92,7 +92,7 @@ class COMSPEC_Device_Dialog {
         // basculée avec lui (fn_deviceToggleView.sqf).
         class DeviceRosterTitle: RscStructuredText {
             idc = 9315;
-            text = "<t size='0.58' color='#5a9e88'>EFFECTIFS EN LIAISON</t>";
+            text = "<t size='0.58' color='#5a9e88'>CONNECTED UNITS</t>";
             x = safezoneX + 0.247 * safezoneW;
             y = safezoneY + 0.5 * safezoneH - 0.082 * safezoneW;
             w = 0.483 * safezoneW;
@@ -110,7 +110,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceBtnHub: RscButton {
             idc = 9304;
-            text = "Hub complet";
+            text = "Full hub";
             x = safezoneX + 0.247 * safezoneW;
             y = safezoneY + 0.5 * safezoneH + 0.074 * safezoneW;
             w = 0.12 * safezoneW;
@@ -122,7 +122,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceBtnWeb: RscButton {
             idc = 9307;
-            text = "Écran tactique";
+            text = "Tactical screen";
             x = safezoneX + 0.375 * safezoneW;
             y = safezoneY + 0.5 * safezoneH + 0.074 * safezoneW;
             w = 0.14 * safezoneW;
@@ -134,7 +134,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceBtnRoster: RscButton {
             idc = 9306;
-            text = "Effectifs";
+            text = "Units";
             x = safezoneX + 0.523 * safezoneW;
             y = safezoneY + 0.5 * safezoneH + 0.074 * safezoneW;
             w = 0.1 * safezoneW;
@@ -146,7 +146,7 @@ class COMSPEC_Device_Dialog {
 
         class DeviceBtnClose: RscButton {
             idc = 9305;
-            text = "Fermer";
+            text = "Close";
             x = safezoneX + 0.631 * safezoneW;
             y = safezoneY + 0.5 * safezoneH + 0.074 * safezoneW;
             w = 0.099 * safezoneW;

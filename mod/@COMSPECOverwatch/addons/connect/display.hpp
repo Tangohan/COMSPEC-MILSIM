@@ -25,7 +25,7 @@ class COMSPEC_Chat_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='0.95' color='#e8f4f0'>Messagerie Overwatch</t>";
+            text = "<t font='RobotoCondensedBold' size='0.95' color='#e8f4f0'>Overwatch Messaging</t>";
             x = 0.26 * safezoneW + safezoneX;
             y = 0.175 * safezoneH + safezoneY;
             w = 0.48 * safezoneW;
@@ -43,7 +43,7 @@ class COMSPEC_Chat_Dialog {
 
         class SyncBadge: RscStructuredText {
             idc = 1396;
-            text = "<t align='right' size='0.62' color='#ff8a7a'>●  Hors liaison</t>";
+            text = "<t align='right' size='0.62' color='#ff8a7a'>●  Not connected</t>";
             x = 0.48 * safezoneW + safezoneX;
             y = 0.205 * safezoneH + safezoneY;
             w = 0.26 * safezoneW;
@@ -61,7 +61,7 @@ class COMSPEC_Chat_Dialog {
 
         class ServerUrl: RscText {
             idc = 1399;
-            text = "Portail : —";
+            text = "Portal: —";
             x = 0.26 * safezoneW + safezoneX;
             y = 0.248 * safezoneH + safezoneY;
             w = 0.3 * safezoneW;
@@ -72,7 +72,7 @@ class COMSPEC_Chat_Dialog {
 
         class UserIp: RscText {
             idc = 1398;
-            text = "Votre adresse : —";
+            text = "Your address: —";
             x = 0.56 * safezoneW + safezoneX;
             y = 0.248 * safezoneH + safezoneY;
             w = 0.18 * safezoneW;
@@ -120,7 +120,7 @@ class COMSPEC_Chat_Dialog {
 
         class LogLabel: RscStructuredText {
             idc = -1;
-            text = "<t color='#8aa0d8' size='0.65'>Journal de liaison</t>";
+            text = "<t color='#8aa0d8' size='0.65'>Connection log</t>";
             x = 0.26 * safezoneW + safezoneX;
             y = 0.462 * safezoneH + safezoneY;
             w = 0.3 * safezoneW;
@@ -132,7 +132,7 @@ class COMSPEC_Chat_Dialog {
         // fn_chatDialogOnLoad selon l'état sauvegardé.
         class LogFilterLiaison: RscButton {
             idc = 1411;
-            text = "Liaison : affiché";
+            text = "Connection: shown";
             x = 0.56 * safezoneW + safezoneX;
             y = 0.462 * safezoneH + safezoneY;
             w = 0.06 * safezoneW;
@@ -144,7 +144,7 @@ class COMSPEC_Chat_Dialog {
 
         class LogFilterCas: RscButton {
             idc = 1412;
-            text = "CAS : affiché";
+            text = "CAS: shown";
             x = 0.625 * safezoneW + safezoneX;
             y = 0.462 * safezoneH + safezoneY;
             w = 0.06 * safezoneW;
@@ -156,7 +156,7 @@ class COMSPEC_Chat_Dialog {
 
         class LogFilterMedical: RscButton {
             idc = 1413;
-            text = "Médical : affiché";
+            text = "Medical: shown";
             x = 0.69 * safezoneW + safezoneX;
             y = 0.462 * safezoneH + safezoneY;
             w = 0.06 * safezoneW;
@@ -208,7 +208,7 @@ class COMSPEC_Chat_Dialog {
 
         class AirOpsButton: RscButton {
             idc = 1404;
-            text = "Ops. aériennes";
+            text = "Air ops";
             x = 0.57 * safezoneW + safezoneX;
             y = 0.68 * safezoneH + safezoneY;
             w = 0.1 * safezoneW;
@@ -219,7 +219,7 @@ class COMSPEC_Chat_Dialog {
 
         class SubmitButton: RscButton {
             idc = 1403;
-            text = "Envoyer";
+            text = "Send";
             x = 0.68 * safezoneW + safezoneX;
             y = 0.68 * safezoneH + safezoneY;
             w = 0.06 * safezoneW;

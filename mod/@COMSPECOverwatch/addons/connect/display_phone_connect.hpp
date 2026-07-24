@@ -50,7 +50,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class StatusLabel: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.5' color='#9ab0c0'>ATHENA · TÉLÉPHONE</t>";
+            text = "<t align='center' size='0.5' color='#9ab0c0'>ATHENA · PHONE</t>";
             x = COMSPEC_PHONE_PX(520);
             y = COMSPEC_PHONE_PY(718);
             w = COMSPEC_PHONE_PW(950);
@@ -68,7 +68,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='0.78' align='center' color='#e8f4f0'>Connexion téléphone</t>";
+            text = "<t font='RobotoCondensedBold' size='0.78' align='center' color='#e8f4f0'>Phone connection</t>";
             x = COMSPEC_PHONE_PX(470);
             y = COMSPEC_PHONE_PY(772);
             w = COMSPEC_PHONE_PW(1060);
@@ -77,7 +77,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.52' color='#b0c4d4'>Scannez le QR avec votre téléphone, ou saisissez le code sur la page de connexion.</t>";
+            text = "<t align='center' size='0.52' color='#b0c4d4'>Scan the QR code with your phone, or enter the code on the connection page.</t>";
             x = COMSPEC_PHONE_PX(470);
             y = COMSPEC_PHONE_PY(812);
             w = COMSPEC_PHONE_PW(1060);
@@ -113,7 +113,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class CodeLabel: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.5' color='#8ab89a'>CODE À SAISIR</t>";
+            text = "<t align='center' size='0.5' color='#8ab89a'>PAIRING CODE</t>";
             x = COMSPEC_PHONE_PX(470);
             y = COMSPEC_PHONE_PY(1125);
             w = COMSPEC_PHONE_PW(1060);
@@ -142,7 +142,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class RefreshButton: RscButton {
             idc = 9024;
-            text = "Nouveau code";
+            text = "New code";
             x = COMSPEC_PHONE_PX(490);
             y = COMSPEC_PHONE_PY(1255);
             w = COMSPEC_PHONE_PW(500);
@@ -154,7 +154,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
         class CloseButton: RscButton {
             idc = 9025;
-            text = "Fermer";
+            text = "Close";
             x = COMSPEC_PHONE_PX(1010);
             y = COMSPEC_PHONE_PY(1255);
             w = COMSPEC_PHONE_PW(500);

@@ -15,7 +15,7 @@ class COMSPEC_Briefing_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='0.9'>Tableau de briefing</t>";
+            text = "<t font='RobotoCondensedBold' size='0.9'>Briefing board</t>";
             x = 0.14 * safezoneW + safezoneX;
             y = 0.095 * safezoneH + safezoneY;
             w = 0.5 * safezoneW;
@@ -55,7 +55,7 @@ class COMSPEC_Briefing_Dialog {
 
         class PrevButton: RscButton {
             idc = 9010;
-            text = "< Précédente";
+            text = "< Previous";
             x = 0.14 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -65,7 +65,7 @@ class COMSPEC_Briefing_Dialog {
 
         class NextButton: RscButton {
             idc = 9011;
-            text = "Suivante >";
+            text = "Next >";
             x = 0.29 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -75,7 +75,7 @@ class COMSPEC_Briefing_Dialog {
 
         class RefreshButton: RscButton {
             idc = 9012;
-            text = "Actualiser";
+            text = "Refresh";
             x = 0.62 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.1 * safezoneW;
@@ -85,7 +85,7 @@ class COMSPEC_Briefing_Dialog {
 
         class CloseButton: RscButton {
             idc = 9013;
-            text = "Fermer";
+            text = "Close";
             x = 0.74 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.12 * safezoneW;
@@ -95,7 +95,7 @@ class COMSPEC_Briefing_Dialog {
 
         class PhoneConnectButton: RscButton {
             idc = 9014;
-            text = "Connecter mon téléphone";
+            text = "Connect my phone";
             x = 0.44 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.16 * safezoneW;

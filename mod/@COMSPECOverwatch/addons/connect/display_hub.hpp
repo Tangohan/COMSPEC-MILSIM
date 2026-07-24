@@ -35,7 +35,7 @@ class COMSPEC_Hub_Dialog {
 
         class Subtitle: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.62' color='#8aa0b4'>Centre opérationnel · touche K</t>";
+            text = "<t align='center' size='0.62' color='#8aa0b4'>Operations center · key K</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.125 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
@@ -53,7 +53,7 @@ class COMSPEC_Hub_Dialog {
 
         class SyncBadge: RscStructuredText {
             idc = 9111;
-            text = "<t align='right' size='0.62' color='#ff8a7a'>●  Hors liaison</t>";
+            text = "<t align='right' size='0.62' color='#ff8a7a'>●  Not connected</t>";
             x = 0.49 * safezoneW + safezoneX;
             y = 0.155 * safezoneH + safezoneY;
             w = 0.165 * safezoneW;
@@ -71,7 +71,7 @@ class COMSPEC_Hub_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#6a7c90'>Messagerie : Ctrl+K · Compte Athena : code depuis le site (Connexion en jeu)</t>";
+            text = "<t align='center' size='0.55' color='#6a7c90'>Messaging: Ctrl+K · Athena Account: code from website (In-game connection)</t>";
             x = 0.345 * safezoneW + safezoneX;
             y = 0.202 * safezoneH + safezoneY;
             w = 0.31 * safezoneW;
@@ -89,7 +89,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnChat: RscButton {
             idc = 9101;
-            text = "Messagerie";
+            text = "Messaging";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.258 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -101,7 +101,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnTabletWeb: RscButton {
             idc = 9118;
-            text = "Tablette Overwatch (écran tactique)";
+            text = "Overwatch Tablet (tactical screen)";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.298 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -113,7 +113,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnPhone: RscButton {
             idc = 9104;
-            text = "Connecter mon téléphone";
+            text = "Connect my phone";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.338 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -125,7 +125,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnAccount: RscButton {
             idc = 9113;
-            text = "Compte Athena (saisir un code)";
+            text = "Athena Account (enter a code)";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.378 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -137,7 +137,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnCallsign: RscButton {
             idc = 9116;
-            text = "Mon indicatif";
+            text = "My callsign";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.416 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -149,7 +149,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnOrders: RscButton {
             idc = 9117;
-            text = "Ordres reçus";
+            text = "Received orders";
             x = 0.505 * safezoneW + safezoneX;
             y = 0.416 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -161,7 +161,7 @@ class COMSPEC_Hub_Dialog {
 
         class SectionOps: RscStructuredText {
             idc = -1;
-            text = "<t size='0.52' color='#5a9e88'>OPÉRATIONS</t>";
+            text = "<t size='0.52' color='#5a9e88'>OPERATIONS</t>";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.458 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -170,7 +170,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnCAS: RscButton {
             idc = 9102;
-            text = "Appui aérien (9 lignes)";
+            text = "Close air support (9-line)";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.48 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -182,7 +182,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnBriefing: RscButton {
             idc = 9103;
-            text = "Tableau de briefing";
+            text = "Briefing board";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.518 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -194,7 +194,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnManifest: RscButton {
             idc = 9105;
-            text = "Opérations aériennes";
+            text = "Air operations";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.556 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -206,7 +206,7 @@ class COMSPEC_Hub_Dialog {
 
         class SectionField: RscStructuredText {
             idc = -1;
-            text = "<t size='0.52' color='#5a9e88'>TERRAIN</t>";
+            text = "<t size='0.52' color='#5a9e88'>FIELD</t>";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.598 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -215,7 +215,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnPing: RscButton {
             idc = 9106;
-            text = "Signaler un point d'intérêt";
+            text = "Report point of interest";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.62 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -227,7 +227,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnMedical: RscButton {
             idc = 9107;
-            text = "Transmettre le bilan de santé";
+            text = "Send health status";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.658 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -239,7 +239,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnForceSync: RscButton {
             idc = 9119;
-            text = "Transmettre ma position et mes données";
+            text = "Send my position and data";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.696 * safezoneH + safezoneY;
             w = 0.29 * safezoneW;
@@ -251,7 +251,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnRefreshLink: RscButton {
             idc = 9109;
-            text = "Vérifier la liaison";
+            text = "Check connection";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.738 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
