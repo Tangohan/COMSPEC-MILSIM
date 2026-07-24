@@ -62,12 +62,28 @@ Pour modifier les réglages manuellement :
 
 ## Raccourcis clavier (CBA)
 
+### Raccourcis par défaut
+
 | Action | Touche par défaut |
 |--------|-------------------|
 | Menu ATAK | **K** |
 | Messagerie | **Ctrl+K** |
-| Rapport Rapide | **Shift+R** |
-| POI Rapide | **Shift+P** |
+
+### Raccourcis ATAK tactiques (optionnels)
+
+**Les raccourcis tactiques sont désactivés par défaut** pour éviter les conflits avec d'autres mods (cTab, ATAK Enhanced, etc.).
+
+Pour les activer et les configurer :
+
+1. **ESC → Options → Commandes → Configurer les addons → COMSPEC Overwatch - ATAK**
+2. Activer dans **CBA Settings** : `Activer raccourcis ATAK`
+3. Configurer les touches pour chaque action :
+   - **Rapport Contact Rapide** : Soumettre CONTACT immédiat
+   - **POI Rapide** : Marquer position actuelle
+   - **MEDEVAC Rapide** : Demande évacuation urgente
+   - **QRF Rapide** : Demande renfort immédiat
+
+**Recommandation** : Si vous utilisez cTab ou ATAK Enhanced, laissez ces raccourcis désactivés et utilisez les menus ACE Interact.
 
 Si un raccourci ne répond pas : **ESC → Options → Commandes → Configurer les addons → COMSPEC Overwatch**, puis réassignez.  
 Les anciens profils pouvaient avoir « Messagerie » sur **K** seul (sans Ctrl) — les identifiants de raccourcis ont été renouvelés pour forcer les bons défauts.
