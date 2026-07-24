@@ -232,3 +232,14 @@ missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
     ["Effets visuels de dégradation", "Affiche des glitchs, parasites et messages d'erreur dans l'interface ATAK web quand la liaison se dégrade."],
     "COMSPEC Overwatch — Roleplay", true
 ] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_atak_realism", "LIST",
+    [
+        "Réalisme ATAK (dommages physiques)",
+        "Les blessures au torse peuvent endommager l'ATAK. Niveau 1 : peut s'éteindre (réparable). Niveau 2 : écran peut être détruit (connexion OK). Niveau 3 : ATAK peut être détruit (connexion coupée)."
+    ],
+    "COMSPEC Overwatch — Roleplay",
+    [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Extinction", "Niveau 2 : Écran détruit", "Niveau 3 : Destruction complète"], 0],
+    1
+] call CBA_fnc_addSetting;

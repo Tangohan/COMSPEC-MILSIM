@@ -201,6 +201,56 @@
     }
   };
 
+  // Affiche écran cassé / éteint
+  window.AtakRoleplayEffects.showBrokenScreen = function(type) {
+    let overlay = document.querySelector('.atak-broken-screen');
+    
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'atak-broken-screen';
+      document.body.appendChild(overlay);
+    }
+    
+    if (type === 'destroyed') {
+      // Écran détruit (fissures)
+      overlay.innerHTML = `
+        <div class="atak-broken-content">
+          <div class="atak-screen-cracks"></div>
+          <div class="atak-broken-text">
+            <h2>ÉCRAN ENDOMMAGÉ</h2>
+            <p>Connexion maintenue</p>
+            <small>Toolkit ACE requis pour réparer</small>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('atak-screen-destroyed');
+    } else if (type === 'powered_off') {
+      // ATAK éteint
+      overlay.innerHTML = `
+        <div class="atak-broken-content">
+          <div class="atak-broken-text">
+            <h2>ATAK ÉTEINT</h2>
+            <p>Appuyez pour rallumer</p>
+          </div>
+        </div>
+      `;
+      overlay.classList.remove('atak-screen-destroyed');
+      overlay.onclick = () => {
+        // Tenter de rallumer
+        window.AtakRoleplayEffects.hideBrokenScreen();
+      };
+    }
+    
+    overlay.style.display = 'flex';
+  };
+  
+  window.AtakRoleplayEffects.hideBrokenScreen = function() {
+    const overlay = document.querySelector('.atak-broken-screen');
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+  };
+
   // Auto-init : polling de l'état roleplay depuis Arma
   setInterval(() => {
     // L'état est injecté par fn_injectRoleplayEffectsInBrowser

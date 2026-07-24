@@ -150,6 +150,10 @@ class CfgFunctions {
             class getNetworkDisconnectInfo {};
             class playRoleplaySound {};
             class injectRoleplayEffectsInBrowser {};
+            class checkAtakDamage {};
+            class isAtakFunctional {};
+            class repairAtak {};
+            class addAtakRepairAction {};
             class createRoleplayZone {};
             class deleteRoleplayZone {};
             class getPlayerRoleplayZone {};

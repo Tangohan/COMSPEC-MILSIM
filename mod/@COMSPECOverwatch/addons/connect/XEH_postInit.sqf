@@ -224,6 +224,21 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     [{
         [] call comspec_overwatch_connect_fnc_applyZoneEffects;
     }, 2, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 2 secondes
+    
+    // Réalisme ATAK : Event handler pour les blessures
+    player addEventHandler ["Hit", {
+        params ["_unit", "_source", "_damage", "_instigator"];
+        // Vérifier dommages ATAK
+        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+    }];
+    
+    // Vérification périodique de l'état ATAK
+    [{
+        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+    }, 10, []] call CBA_fnc_addPerFrameHandler; // Toutes les 10 secondes
+    
+    // Ajouter actions ACE pour réparer l'ATAK
+    0 spawn comspec_overwatch_connect_fnc_addAtakRepairAction;
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).

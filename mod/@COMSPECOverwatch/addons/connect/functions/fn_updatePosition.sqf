@@ -55,6 +55,12 @@ if (!_force && {!isNil "_zoneEffects"}) then {
     };
 };
 
+// Réalisme ATAK : bloquer envois si device détruit
+private _atakStatus = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
+if (!_force && {!(_atakStatus get "can_send")}) exitWith {
+    ["atak_destroyed"] call _fnc_skip;
+};
+
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 
