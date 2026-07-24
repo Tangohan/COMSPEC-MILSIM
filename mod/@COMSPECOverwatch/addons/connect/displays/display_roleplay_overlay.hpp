@@ -12,40 +12,7 @@ class COMSPEC_RoleplayOverlay
     
     class ControlsBackground
     {
-        // Effet de parasites (scan lines)
-        class ScanLines: RscText
-        {
-            idc = 16801;
-            x = 0;
-            y = 0;
-            w = 1;
-            h = 1;
-            colorBackground[] = {0, 0, 0, 0};
-            // Texture procédurale pour l'instant (remplacer par PAA si besoin)
-            text = "#(argb,8,8,3)color(0.1,0.1,0.1,0.1)";
-        };
-        
-        // Overlay de glitch (flash rouge)
-        class GlitchOverlay: RscText
-        {
-            idc = 16802;
-            x = 0;
-            y = 0;
-            w = 1;
-            h = 1;
-            colorBackground[] = {0.8, 0, 0, 0};
-        };
-        
-        // Overlay de déconnexion (voile noir)
-        class DisconnectOverlay: RscText
-        {
-            idc = 16803;
-            x = 0;
-            y = 0;
-            w = 1;
-            h = 1;
-            colorBackground[] = {0, 0, 0, 0};
-        };
+        // Pas d'overlay visuel gênant - vision toujours claire
     };
     
     class Controls

@@ -21,15 +21,20 @@ Système d'affichage ingame dans Arma 3 pour visualiser l'état de la liaison AT
 
 #### Éléments affichés
 
+**⚠️ IMPORTANT** : Aucun filtre visuel gênant ! Vision toujours claire.
+
 | Élément | IDC | Position | Description |
 |---------|-----|----------|-------------|
-| Scan Lines | 16801 | Plein écran | Effet de parasites (lignes de balayage) |
-| Glitch Overlay | 16802 | Plein écran | Flash rouge lors de glitchs |
-| Disconnect Overlay | 16803 | Plein écran | Voile noir pendant déconnexion |
 | Network Quality | 16810 | Coin supérieur droit | Indicateur de qualité en temps réel |
 | Disconnect Message | 16811 | Centre écran | Message de déconnexion avec compte à rebours |
 | Packet Loss Indicator | 16812 | Bas de l'écran | Avertissement si perte > 5% |
 | Disconnect Progress | 16813 | Sous message | Barre de progression déconnexion |
+
+**Retirés volontairement** :
+- ❌ Parasites (scan lines)
+- ❌ Flash glitch rouge
+- ❌ Voile noir de déconnexion
+- ❌ Tout effet qui gêne la vue du joueur
 
 ---
 
@@ -61,38 +66,15 @@ Pertes: 0.5%
 - `DÉGRADÉE` : 5-10%
 - `CRITIQUE` : >10%
 
-### 2. Parasites (scan lines)
-
-**Condition d'affichage** :
-- Packet loss > 3%
-- OU déconnexion en cours
-
-**Intensité** :
-```sqf
-private _intensity = ((_packetLoss / 100) min 0.3) max 0.05;
-if (_isDisconnected) then { _intensity = 0.2; };
-```
-
-**Effet** : Texture procédurale semi-transparente sur tout l'écran
-
-### 3. Flash glitch (rouge)
-
-**Condition** :
-- Packet loss > 10%
-- ET probabilité 5% à chaque cycle (0.5s)
-
-**Durée** : 0.1 seconde
-
-**Effet** : Overlay rouge (0.8, 0, 0, 0.3) sur tout l'écran
-
-### 4. Overlay de déconnexion
+### 2. Message de déconnexion (centre écran)
 
 **Condition** : Déconnexion active
 
 **Composition** :
-- Voile noir semi-transparent (0.5 alpha)
-- Message central stylisé
-- Barre de progression
+- ✅ Message central stylisé avec ombre
+- ✅ Fond discret (0.8 alpha) limité au message
+- ✅ Barre de progression
+- ❌ PAS de voile noir plein écran
 
 **Message** :
 ```
@@ -106,7 +88,7 @@ Aucune donnée transmise
 - Colorée en rouge (0.8, 0.2, 0.2)
 - Calcul : `1 - (remaining / totalDuration)`
 
-### 5. Avertissement packet loss (bas écran)
+### 3. Avertissement packet loss (bas écran)
 
 **Condition** : Packet loss > 5% ET non déconnecté
 
@@ -203,6 +185,10 @@ if (missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", f
 
 ## 🎮 Expérience joueur
 
+### Principe : Indicateurs informatifs, vision claire
+
+**Philosophie** : Le joueur doit **toujours** avoir une vue dégagée pour jouer. Les effets roleplay sont **informatifs uniquement**, jamais gênants.
+
 ### Scénario type : Opération hostile
 
 **T=0** : Liaison normale
@@ -226,26 +212,27 @@ Pertes: 7.5%
 ⚠ Qualité de liaison dégradée
 7.5% de paquets perdus
 
-[Écran complet]
-→ Parasites légers apparaissent (scan lines)
-→ Flash rouge occasionnel
-[Son] "Bip d'erreur" aléatoire
+[Vue]
+→ Aucun filtre visuel
+→ Vision totalement claire
+→ Gameplay non affecté
 ```
 
 **T=10min** : Déconnexion complète
 ```
 [Son] Static radio + bip d'erreur
 
-[Centre écran - gros]
+[Centre écran - message compact]
 ⚠ LIAISON ATAK PERDUE ⚠
 Reconnexion dans 27s
 Aucune donnée transmise
 [=========>....] 65%
 
-[Écran complet]
-→ Voile noir 50% opacité
-→ Parasites intenses
-→ Plus aucun indicateur de qualité
+[Vue]
+→ Aucun voile noir
+→ Vision totalement claire
+→ Juste le message informatif
+→ Plus d'indicateur qualité (coin droit)
 
 [Hub ATAK]
 → Affiche "offline"
@@ -412,13 +399,13 @@ playSound "FD_CP_Clear_F";
 ### État dégradé
 ```
 ┌─────────────────────────────────┐
-│ ░░░░░░░░░░░░░░░░░░  [LIAISON ATAK│
+│                    [LIAISON ATAK│
 │                      DÉGRADÉE   │
 │                     Pertes: 7.5%│
 │                     93/100 reçus]│
-│  ░░[Parasites]░░                │
 │                                 │
-│         [Gameplay + scan lines] │
+│                                 │
+│      [Vue claire 100%]          │
 │                                 │
 │ [⚠ Qualité de liaison dégradée]│
 └─────────────────────────────────┘
@@ -427,17 +414,19 @@ playSound "FD_CP_Clear_F";
 ### Déconnexion
 ```
 ┌─────────────────────────────────┐
-│█████████████████████████████████│
-│█████████████████████████████████│
-│█████  ⚠ LIAISON ATAK PERDUE  ██│
-│█████  Reconnexion dans 15s   ██│
-│█████ Aucune donnée transmise ██│
-│█████ [=========>.......] 60% ██│
-│█████████████████████████████████│
-│█████████████████████████████████│
-│█████████████████████████████████│
+│                                 │
+│  ┌───────────────────────────┐ │
+│  │ ⚠ LIAISON ATAK PERDUE ⚠  │ │
+│  │  Reconnexion dans 15s    │ │
+│  │ Aucune donnée transmise  │ │
+│  │ [========>......] 60%    │ │
+│  └───────────────────────────┘ │
+│                                 │
+│      [Vue claire 100%]          │
 └─────────────────────────────────┘
 ```
+
+**Note** : Message compact avec fond discret, JAMAIS de voile plein écran.
 
 ---
 

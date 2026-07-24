@@ -16,24 +16,25 @@ private _disconnectInfo = [] call comspec_overwatch_connect_fnc_getNetworkDiscon
 private _isDisconnected = _disconnectInfo get "is_disconnected";
 
 // === GESTION DE LA DÉCONNEXION ===
+// Note : pas de voile noir, juste le message informatif
 private _disconnectOverlay = _display displayCtrl 16803;
 private _disconnectMsg = _display displayCtrl 16811;
 private _disconnectProgress = _display displayCtrl 16813;
 
 if (_isDisconnected) then {
-    // Afficher overlay de déconnexion
-    _disconnectOverlay ctrlShow true;
-    _disconnectOverlay ctrlSetBackgroundColor [0, 0, 0, 0.5];
+    // PAS d'overlay qui bloque la vue
+    _disconnectOverlay ctrlShow false;
     
-    // Message de déconnexion
+    // Message de déconnexion (sans fond opaque)
     private _remaining = _disconnectInfo get "remaining_seconds";
     private _msgText = format [
-        "<t align='center' size='1.2' color='#ff4444'>⚠ LIAISON ATAK PERDUE ⚠</t><br/>" +
-        "<t align='center' size='0.9' color='#ffffff'>Reconnexion dans <t color='#ff8888'>%1s</t></t><br/>" +
-        "<t align='center' size='0.7' color='#aaaaaa'>Aucune donnée transmise</t>",
+        "<t align='center' size='1.2' color='#ff4444' shadow='2'>⚠ LIAISON ATAK PERDUE ⚠</t><br/>" +
+        "<t align='center' size='0.9' color='#ffffff' shadow='2'>Reconnexion dans <t color='#ff8888'>%1s</t></t><br/>" +
+        "<t align='center' size='0.7' color='#aaaaaa' shadow='2'>Aucune donnée transmise</t>",
         _remaining
     ];
     _disconnectMsg ctrlSetStructuredText parseText _msgText;
+    _disconnectMsg ctrlSetBackgroundColor [0.1, 0.1, 0.1, 0.8]; // Fond discret
     _disconnectMsg ctrlShow true;
     
     // Barre de progression (inversée)
@@ -114,28 +115,10 @@ if (!_isDisconnected) then {
 };
 
 // === EFFETS VISUELS ===
+// DÉSACTIVÉS : Pas de parasites, pas de flash, pas de filtre sur la vue
+// Le joueur garde une vision claire en permanence
 private _scanLines = _display displayCtrl 16801;
 private _glitchOverlay = _display displayCtrl 16802;
 
-// Parasites (scan lines) - intensité selon packet loss
-private _packetLoss = _packetLossStats get "packet_loss_percent";
-if (_packetLoss > 3 || _isDisconnected) then {
-    private _intensity = ((_packetLoss / 100) min 0.3) max 0.05;
-    if (_isDisconnected) then { _intensity = 0.2; };
-    _scanLines ctrlSetBackgroundColor [1, 1, 1, _intensity];
-    _scanLines ctrlShow true;
-} else {
-    _scanLines ctrlShow false;
-};
-
-// Glitch flash (aléatoire si packet loss élevé)
-if (_packetLoss > 10 && {random 100 < 5}) then {
-    _glitchOverlay ctrlShow true;
-    _glitchOverlay ctrlSetBackgroundColor [0.8, 0, 0, 0.3];
-    
-    // Désactiver après 0.1s
-    [{
-        params ["_ctrl"];
-        _ctrl ctrlShow false;
-    }, [_glitchOverlay], 0.1] call CBA_fnc_waitAndExecute;
-};
+_scanLines ctrlShow false;
+_glitchOverlay ctrlShow false;

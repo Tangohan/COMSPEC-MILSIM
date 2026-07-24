@@ -28,11 +28,11 @@ if (isNull _display) exitWith {
     diag_log "[COMSPEC Roleplay] Échec création overlay";
 };
 
-// Cacher initialement tous les éléments
+// Cacher initialement les éléments informatifs (pas d'overlays visuels)
 {
     private _ctrl = _display displayCtrl _x;
     _ctrl ctrlShow false;
-} forEach [16801, 16802, 16803, 16810, 16811, 16812, 16813];
+} forEach [16810, 16811, 16812, 16813];
 
 diag_log "[COMSPEC Roleplay] Overlay initialisé";
 
