@@ -148,9 +148,8 @@ class CfgFunctions {
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
             class getNetworkDisconnectInfo {};
-            class initRoleplayOverlay {};
-            class updateRoleplayOverlay {};
             class playRoleplaySound {};
+            class injectRoleplayEffectsInBrowser {};
             class createRoleplayZone {};
             class deleteRoleplayZone {};
             class getPlayerRoleplayZone {};
@@ -161,18 +160,6 @@ class CfgFunctions {
             class moduleDegraded {};
             class moduleJammer {};
         };
-    };
-};
-
-// RscTitles pour les displays overlay
-class RscTitles {
-    class COMSPEC_RoleplayOverlay {
-        idd = 16800;
-        duration = 1e10;
-        fadein = 0;
-        fadeout = 0;
-        onLoad = "uiNamespace setVariable ['COMSPEC_RoleplayOverlay', _this select 0];";
-        onUnload = "uiNamespace setVariable ['COMSPEC_RoleplayOverlay', nil];";
     };
 };
 
@@ -278,9 +265,6 @@ class CfgFactionClasses
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
-
-// Displays roleplay
-#include "displays\display_roleplay_overlay.hpp"
 
 // Modules Zeus/Eden roleplay
 #include "modules\module_roleplay_zone.hpp"

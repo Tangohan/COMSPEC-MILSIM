@@ -220,12 +220,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_simulateNetworkDisconnect;
     }, 5, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 5 secondes
     
-    // Roleplay : Initialiser l'overlay UI ingame
-    if (missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", false]) then {
-        0 spawn comspec_overwatch_connect_fnc_initRoleplayOverlay;
-    };
-    
-    // Roleplay : PFH pour détecter les zones géographiques
+    // Roleplay : PFH pour détecter les zones géographiques (pas d'overlay UI ingame)
     [{
         [] call comspec_overwatch_connect_fnc_applyZoneEffects;
     }, 2, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 2 secondes
