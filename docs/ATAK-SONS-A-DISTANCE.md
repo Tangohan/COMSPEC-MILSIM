@@ -239,7 +239,9 @@ Pour l'utiliser :
 | Setting | Défaut | Description |
 |---------|--------|-------------|
 | Mode Troll Activé | ☐ OFF | Autoriser sons troll |
+| **Volume Sons Troll** | 50% | Volume sons troll (0-100%) |
 | Sons Réalistes Activés | ☐ OFF | Autoriser sons réalistes |
+| **Volume Sons Réalistes** | 80% | Volume sons réalistes (0-100%) |
 | Intervalle Polling (s) | 0 (OFF) | Fréquence check API (0 = désactivé) |
 
 **⚠️ IMPORTANT : Système désactivé par défaut !**
@@ -247,6 +249,12 @@ Pour l'utiliser :
 Pour activer :
 1. **Sons Réalistes** : ☑ Activer + Intervalle > 0 (recommandé : 5s)
 2. **Sons Troll** : ☑ Activer Mode Troll + Intervalle > 0
+3. **Ajuster volumes** : Sliders 0-100% (50% troll, 80% réaliste par défaut)
+
+**Volumes indépendants** :
+- Volume troll et réaliste séparés
+- Mettez à 0 pour mute un mode sans le désactiver
+- Volume API (1.0) × Volume Setting = Volume final
 
 **Note** : Même si activé côté joueur, le mode troll doit aussi être activé côté serveur.
 

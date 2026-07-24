@@ -147,8 +147,12 @@ if (_type isEqualTo "troll") then {
 if (count _position > 0) then {
     // Son 3D à position spécifique (réaliste uniquement)
     if (_type isEqualTo "realistic") then {
+        // Récupérer volume setting (0-100 → 0.0-1.0)
+        private _volumeSetting = (missionNamespace getVariable ["comspec_atak_realistic_volume", 80]) / 100;
+        private _finalVolume = _volume * _volumeSetting;
+        
         private _soundSource = "Land_HelipadEmpty_F" createVehicleLocal _position;
-        _soundSource say3D [_soundClass, _distance, 1, false];
+        _soundSource say3D [_soundClass, _distance, _finalVolume, false];
         
         // Nettoyer source après 10s
         [{
@@ -156,7 +160,7 @@ if (count _position > 0) then {
             deleteVehicle _src;
         }, [_soundSource], 10] call CBA_fnc_waitAndExecute;
         
-        diag_log format ["[COMSPEC ATAK] playRemoteSound: Son 3D '%1' joué à %2 (distance %3m)", _soundId, _position, _distance];
+        diag_log format ["[COMSPEC ATAK] playRemoteSound: Son 3D '%1' joué à %2 (distance %3m, volume %4)", _soundId, _position, _distance, _finalVolume];
         
         // Feedback visuel si proche
         if (player distance _position < 200) then {
@@ -165,14 +169,22 @@ if (count _position > 0) then {
             hint parseText format ["<t color='#ffa500'>🔊 Son distant</t><br/><t size='0.8'>Direction: %1°<br/>Distance: %2m</t>", round _dir, _dist];
         };
     } else {
-        // Troll : toujours 2D
-        playSound [_soundClass, _volume];
-        diag_log format ["[COMSPEC ATAK] playRemoteSound: Son troll '%1' joué (2D)", _soundId];
+        // Troll : toujours 2D avec volume setting
+        private _volumeSetting = (missionNamespace getVariable ["comspec_atak_troll_volume", 50]) / 100;
+        private _finalVolume = _volume * _volumeSetting;
+        playSound [_soundClass, _finalVolume];
+        diag_log format ["[COMSPEC ATAK] playRemoteSound: Son troll '%1' joué (2D, volume %2)", _soundId, _finalVolume];
     };
 } else {
     // Son 2D global (dans la tête du joueur)
-    playSound [_soundClass, _volume];
-    diag_log format ["[COMSPEC ATAK] playRemoteSound: Son 2D '%1' joué", _soundId];
+    private _volumeSetting = if (_type isEqualTo "troll") then {
+        (missionNamespace getVariable ["comspec_atak_troll_volume", 50]) / 100
+    } else {
+        (missionNamespace getVariable ["comspec_atak_realistic_volume", 80]) / 100
+    };
+    private _finalVolume = _volume * _volumeSetting;
+    playSound [_soundClass, _finalVolume];
+    diag_log format ["[COMSPEC ATAK] playRemoteSound: Son 2D '%1' joué (volume %2)", _soundId, _finalVolume];
 };
 
 // Notification selon type

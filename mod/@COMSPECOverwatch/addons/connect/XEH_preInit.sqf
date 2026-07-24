@@ -179,9 +179,21 @@
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_atak_troll_volume", "SLIDER",
+    ["Volume Sons Troll", "Volume des sons troll (0 = muet, 100 = maximum)."],
+    ["COMSPEC Overwatch", "ATAK Sons"], [0, 100, 50, 0]  // 50% par défaut
+] call CBA_fnc_addSetting;
+
+[
     "comspec_atak_realistic_sounds_enabled", "CHECKBOX",
     ["Sons Réalistes Activés", "Permet au commandement de jouer des sons réalistes 3D (explosions, radio, alertes)."],
     ["COMSPEC Overwatch", "ATAK Sons"], false  // DÉSACTIVÉ PAR DÉFAUT - Joueur choisit
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_atak_realistic_volume", "SLIDER",
+    ["Volume Sons Réalistes", "Volume des sons réalistes (0 = muet, 100 = maximum)."],
+    ["COMSPEC Overwatch", "ATAK Sons"], [0, 100, 80, 0]  // 80% par défaut
 ] call CBA_fnc_addSetting;
 
 [
