@@ -205,7 +205,7 @@
 // Raccourcis clavier ATAK
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
+    "COMSPEC Overwatch", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -218,7 +218,7 @@
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_poi", ["POI Rapide", "Marquer un Point d'Intérêt à position actuelle"],
+    "COMSPEC Overwatch", "comspec_atak_quick_poi", ["POI Rapide", "Marquer un Point d'Intérêt à position actuelle"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -231,7 +231,7 @@
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_medevac", ["MEDEVAC Rapide", "Demander évacuation médicale urgente"],
+    "COMSPEC Overwatch", "comspec_atak_quick_medevac", ["MEDEVAC Rapide", "Demander évacuation médicale urgente"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -244,7 +244,7 @@
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_qrf", ["QRF Rapide", "Demander renfort d'urgence"],
+    "COMSPEC Overwatch", "comspec_atak_quick_qrf", ["QRF Rapide", "Demander renfort d'urgence"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
