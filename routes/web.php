@@ -1344,6 +1344,25 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->get('/api/atak/air-assets', [AtakApiController::class, 'airAssetsIndex']);
     $router->patch('/api/atak/air-assets/{callsign}/pilot-status', [AtakApiController::class, 'airAssetsPilotStatus']);
 
+    // API ATAK — Nouvelles features Phase 1
+    // Rapports tactiques (SPOTREP, SITREP, SALUTE, CONTACT)
+    $router->get('/api/atak/reports', [AtakApiController::class, 'tacticalReportsIndex']);
+    $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
+    $router->get('/api/atak/reports/{id}', [AtakApiController::class, 'tacticalReportsShow']);
+    $router->post('/api/atak/reports/{id}/acknowledge', [AtakApiController::class, 'tacticalReportsAcknowledge']);
+    
+    // Points d'Intérêt tactiques
+    $router->get('/api/atak/poi', [AtakApiController::class, 'poiIndex']);
+    $router->post('/api/atak/poi', [AtakApiController::class, 'poiStore']);
+    $router->put('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    $router->patch('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    
+    // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
+    $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
+    $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);
+    $router->post('/api/atak/zones/check-position', [AtakApiController::class, 'tacticalZonesCheckPosition']);
+    $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
+
     // API C2 — Fire Support
     $router->post('/api/fire-support/calculate', [FireSupportController::class, 'calculate']);
     $router->get('/api/fire-support/units', [FireSupportController::class, 'units']);

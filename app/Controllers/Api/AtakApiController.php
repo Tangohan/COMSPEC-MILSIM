@@ -3718,4 +3718,463 @@ class AtakApiController
         }
         return Response::json($row);
     }
+
+    // =============================================================================
+    // NOUVELLES FEATURES ATAK - Phase 1
+    // =============================================================================
+
+    // --- Rapports tactiques structurés (SPOTREP, SITREP, SALUTE, CONTACT) ---
+
+    /**
+     * Liste les rapports tactiques pour un contexte
+     * GET /api/atak/reports
+     */
+    public function tacticalReportsIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakTacticalReportRepository();
+        
+        $filters = [
+            'report_type' => $request->get('report_type'),
+            'priority' => $request->get('priority'),
+            'status' => $request->get('status'),
+            'submitter_steam_id' => $request->get('submitter_steam_id'),
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 100,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $reports = $repo->listForContext($tenantId, $mapId, array_filter($filters));
+        
+        return Response::json([
+            'reports' => $reports,
+            'count' => count($reports)
+        ]);
+    }
+
+    /**
+     * Crée un nouveau rapport tactique
+     * POST /api/atak/reports
+     */
+    public function tacticalReportsStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakTacticalReportRepository();
+        
+        // Génération automatique du numéro de rapport si absent
+        $reportNumber = $body['report_number'] ?? null;
+        if (!$reportNumber && !empty($body['report_type'])) {
+            $reportNumber = $repo->generateReportNumber($tenantId, $mapId, $body['report_type']);
+        }
+
+        $data = [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+            'report_type' => $body['report_type'] ?? 'OTHER',
+            'report_number' => $reportNumber,
+            'priority' => $body['priority'] ?? 'ROUTINE',
+            'classification' => $body['classification'] ?? 'UNCLASSIFIED',
+            'submitter_user_id' => $actor['user_id'] ?? null,
+            'submitter_callsign' => $body['submitter_callsign'] ?? $actor['callsign'] ?? null,
+            'submitter_unit' => $body['submitter_unit'] ?? null,
+            'submitter_steam_id' => $body['submitter_steam_id'] ?? $actor['steam_id'] ?? null,
+            'pos_x' => $body['pos_x'] ?? null,
+            'pos_y' => $body['pos_y'] ?? null,
+            'grid_reference' => $body['grid_reference'] ?? null,
+            'location_description' => $body['location_description'] ?? null,
+            'dtg' => $body['dtg'] ?? null,
+            'event_timestamp' => $body['event_timestamp'] ?? null,
+            'structured_data' => $body['structured_data'] ?? [],
+            'summary' => $body['summary'] ?? null,
+            'details' => $body['details'] ?? null,
+            'remarks' => $body['remarks'] ?? null,
+            'visibility' => $body['visibility'] ?? 'ALL',
+            'distributed_to' => $body['distributed_to'] ?? null,
+        ];
+
+        $reportId = $repo->create($data);
+        
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            'TACTICAL_REPORT',
+            sprintf('Rapport %s soumis : %s', $data['report_type'], $data['summary'] ?? $reportNumber),
+            $data['submitter_callsign'] ?? 'Unknown'
+        );
+
+        $report = $repo->findById($reportId);
+        
+        return Response::json($report, 201);
+    }
+
+    /**
+     * Récupère un rapport tactique par ID
+     * GET /api/atak/reports/:id
+     */
+    public function tacticalReportsShow(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $repo = new \App\Repositories\AtakTacticalReportRepository();
+        $report = $repo->findById($id);
+        
+        if (!$report) {
+            return Response::json(['error' => 'Report not found'], 404);
+        }
+        
+        return Response::json($report);
+    }
+
+    /**
+     * Marque un rapport comme acquitté
+     * POST /api/atak/reports/:id/acknowledge
+     */
+    public function tacticalReportsAcknowledge(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $userId = $actor['user_id'] ?? null;
+        
+        if (!$userId) {
+            return Response::json(['error' => 'User ID required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakTacticalReportRepository();
+        $success = $repo->acknowledge($id, $userId);
+        
+        if (!$success) {
+            return Response::json(['error' => 'Report not found'], 404);
+        }
+        
+        return Response::json(['ok' => true]);
+    }
+
+    // --- Points d'Intérêt (POI) tactiques ---
+
+    /**
+     * Liste les POI pour un contexte
+     * GET /api/atak/poi
+     */
+    public function poiIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakPoiRepository();
+        
+        $filters = [
+            'category' => $request->get('category'),
+            'affiliation' => $request->get('affiliation'),
+            'status' => $request->get('status'),
+            'threat_level' => $request->get('threat_level'),
+            'is_visible' => $request->get('is_visible') !== null ? (bool) $request->get('is_visible') : null,
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 200,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $pois = $repo->listForContext($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        
+        return Response::json([
+            'pois' => $pois,
+            'count' => count($pois)
+        ]);
+    }
+
+    /**
+     * Crée un nouveau POI
+     * POST /api/atak/poi
+     */
+    public function poiStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakPoiRepository();
+        
+        $data = [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+            'poi_name' => $body['poi_name'] ?? 'POI',
+            'poi_code' => $body['poi_code'] ?? null,
+            'category' => $body['category'] ?? 'OTHER',
+            'affiliation' => $body['affiliation'] ?? 'UNKNOWN',
+            'certainty' => $body['certainty'] ?? 'TO_VERIFY',
+            'pos_x' => $body['pos_x'] ?? null,
+            'pos_y' => $body['pos_y'] ?? null,
+            'pos_z' => $body['pos_z'] ?? null,
+            'grid_reference' => $body['grid_reference'] ?? null,
+            'description' => $body['description'] ?? null,
+            'observed_activity' => $body['observed_activity'] ?? null,
+            'threat_level' => $body['threat_level'] ?? 'NONE',
+            'status' => $body['status'] ?? 'ACTIVE',
+            'source_type' => $body['source_type'] ?? null,
+            'source_reliability' => $body['source_reliability'] ?? 'UNKNOWN',
+            'reported_by_user_id' => $actor['user_id'] ?? null,
+            'reported_by_callsign' => $body['reported_by_callsign'] ?? $actor['callsign'] ?? null,
+            'properties' => $body['properties'] ?? [],
+            'icon_type' => $body['icon_type'] ?? null,
+            'marker_color' => $body['marker_color'] ?? null,
+            'visibility_level' => $body['visibility_level'] ?? 'PUBLIC',
+            'created_by_user_id' => $actor['user_id'] ?? null,
+        ];
+
+        $poiId = $repo->create($data);
+        
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            'POI_CREATED',
+            sprintf('POI créé : %s (%s)', $data['poi_name'], $data['category']),
+            $data['reported_by_callsign'] ?? 'Unknown'
+        );
+
+        $poi = $repo->findById($poiId);
+        
+        return Response::json($poi, 201);
+    }
+
+    /**
+     * Met à jour un POI
+     * PUT /api/atak/poi/:id
+     */
+    public function poiUpdate(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $body = $this->jsonBody($request);
+
+        $repo = new \App\Repositories\AtakPoiRepository();
+        $body['updated_by_user_id'] = $actor['user_id'] ?? null;
+        
+        $success = $repo->update($id, $body);
+        
+        if (!$success) {
+            return Response::json(['error' => 'POI not found'], 404);
+        }
+        
+        $poi = $repo->findById($id);
+        return Response::json($poi);
+    }
+
+    // --- Zones tactiques (LZ, DZ, Objectives, Danger Zones) ---
+
+    /**
+     * Liste les zones tactiques pour un contexte
+     * GET /api/atak/zones
+     */
+    public function tacticalZonesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakTacticalZoneRepository();
+        
+        $filters = [
+            'zone_type' => $request->get('zone_type'),
+            'status' => $request->get('status'),
+            'is_visible' => $request->get('is_visible') !== null ? (bool) $request->get('is_visible') : null,
+            'only_active' => $request->get('only_active') !== null,
+            'limit' => $request->get('limit') ? (int) $request->get('limit') : 200,
+            'offset' => $request->get('offset') ? (int) $request->get('offset') : 0,
+        ];
+
+        $zones = $repo->listForContext($tenantId, $mapId, array_filter($filters, fn($v) => $v !== null));
+        
+        return Response::json([
+            'zones' => $zones,
+            'count' => count($zones)
+        ]);
+    }
+
+    /**
+     * Crée une nouvelle zone tactique
+     * POST /api/atak/zones
+     */
+    public function tacticalZonesStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+
+        $repo = new \App\Repositories\AtakTacticalZoneRepository();
+        
+        $data = array_merge($body, [
+            'tenant_id' => $tenantId,
+            'context_id' => $mapId,
+            'created_by_user_id' => $actor['user_id'] ?? null,
+        ]);
+
+        $zoneId = $repo->create($data);
+        
+        $this->activityLog->record(
+            $tenantId,
+            $mapId,
+            'ZONE_CREATED',
+            sprintf('Zone créée : %s (%s)', $body['zone_name'] ?? 'Zone', $body['zone_type'] ?? 'OTHER'),
+            $actor['callsign'] ?? 'Unknown'
+        );
+
+        $zone = $repo->findById($zoneId);
+        
+        return Response::json($zone, 201);
+    }
+
+    /**
+     * Vérifie les zones contenant une position et génère des alertes
+     * POST /api/atak/zones/check-position
+     */
+    public function tacticalZonesCheckPosition(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $posX = $body['pos_x'] ?? null;
+        $posY = $body['pos_y'] ?? null;
+
+        if ($posX === null || $posY === null) {
+            return Response::json(['error' => 'pos_x and pos_y required'], 400);
+        }
+
+        $repo = new \App\Repositories\AtakTacticalZoneRepository();
+        $zones = $repo->findZonesContainingPosition($tenantId, $mapId, (float) $posX, (float) $posY);
+        
+        // Génération des alertes pour les zones avec alert_on_entry
+        $alerts = [];
+        foreach ($zones as $zone) {
+            if ($zone['alert_on_entry']) {
+                $alertId = $repo->createAlert((int) $zone['id'], [
+                    'alert_type' => 'ENTRY',
+                    'unit_callsign' => $body['callsign'] ?? null,
+                    'unit_steam_id' => $body['steam_id'] ?? null,
+                    'unit_pos_x' => $posX,
+                    'unit_pos_y' => $posY,
+                ]);
+                
+                $alerts[] = [
+                    'zone_id' => $zone['id'],
+                    'zone_name' => $zone['zone_name'],
+                    'zone_type' => $zone['zone_type'],
+                    'alert_message' => $zone['alert_message'],
+                    'alert_sound' => $zone['alert_sound'],
+                    'alert_id' => $alertId,
+                ];
+            }
+        }
+        
+        return Response::json([
+            'zones' => $zones,
+            'alerts' => $alerts,
+            'count' => count($zones)
+        ]);
+    }
+
+    /**
+     * Liste les alertes non acquittées
+     * GET /api/atak/zones/alerts
+     */
+    public function tacticalZonesAlerts(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+
+        $repo = new \App\Repositories\AtakTacticalZoneRepository();
+        $alerts = $repo->listUnacknowledgedAlerts($tenantId, $mapId);
+        
+        return Response::json([
+            'alerts' => $alerts,
+            'count' => count($alerts)
+        ]);
+    }
 }
