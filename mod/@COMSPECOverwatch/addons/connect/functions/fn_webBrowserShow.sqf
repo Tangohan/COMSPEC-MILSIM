@@ -16,7 +16,7 @@ if !([] call comspec_overwatch_connect_fnc_webBrowserAvailable) exitWith {
 
 private _ok = createDialog "COMSPEC_WebBrowser_Dialog";
 if (!_ok) exitWith {
-    ["COMSPEC_Warning", ["Écran tablette avancé indisponible — ouverture de la vue classique."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["Advanced tablet screen unavailable — opening classic view."]] call comspec_overwatch_connect_fnc_showNotification;
     if (isNull (findDisplay 9973)) then {
         createDialog "COMSPEC_Device_Dialog";
         ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
@@ -36,12 +36,12 @@ if (!_ok) exitWith {
         // Contrôle présent mais page lente — on laisse encore une chance
         private _hint = _display displayCtrl 9403;
         if (!isNull _hint) then {
-            _hint ctrlSetStructuredText parseText "<t align='right' size='0.55' color='#ffd27a'>Chargement prolongé…</t>";
+            _hint ctrlSetStructuredText parseText "<t align='right' size='0.55' color='#ffd27a'>Extended loading…</t>";
         };
     };
     closeDialog 0;
     uiSleep 0.05;
-    ["COMSPEC_Info", ["Basculé sur la tablette classique."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Info", ["Switched to classic tablet."]] call comspec_overwatch_connect_fnc_showNotification;
     if (isNull (findDisplay 9973)) then {
         createDialog "COMSPEC_Device_Dialog";
     };

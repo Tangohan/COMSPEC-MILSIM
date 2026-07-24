@@ -32,7 +32,7 @@ if (!isNull _display) then {
 
         } else {
 
-            "<t align='right' size='0.55' color='#7dffb3'>Écran tactique prêt</t>"
+            "<t align='right' size='0.55' color='#7dffb3'>Tactical screen ready</t>"
 
         };
 
@@ -62,13 +62,13 @@ private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 
 private _statusLabel = switch (_state) do {
 
-    case "linked": { "Lié à Athena" };
+    case "linked": { "Linked to Athena" };
 
-    case "connecting": { "Connexion…" };
+    case "connecting": { "Connecting…" };
 
-    case "disabled": { "Overwatch désactivé" };
+    case "disabled": { "Overwatch disabled" };
 
-    default { "Hors liaison" };
+    default { "Not connected" };
 
 };
 
@@ -214,7 +214,7 @@ private _myCallsign = _callsign;
 
         case "RECON": { "Recon" };
 
-        case "CAS": { "Appui aérien" };
+        case "CAS": { "Air support" };
 
         case "QRF": { "QRF" };
 
@@ -224,17 +224,17 @@ private _myCallsign = _callsign;
 
     private _statusLabelO = switch (toUpper _status) do {
 
-        case "ACK": { "Accusé" };
+        case "ACK": { "Acknowledged" };
 
-        case "EXEC": { "En cours" };
+        case "EXEC": { "In progress" };
 
-        case "FAILED": { "Échec" };
+        case "FAILED": { "Failed" };
 
-        case "DELIVERED": { "Reçu" };
+        case "DELIVERED": { "Delivered" };
 
-        case "CANCELLED": { "Annulé" };
+        case "CANCELLED": { "Cancelled" };
 
-        default { "À traiter" };
+        default { "Pending" };
 
     };
 
@@ -324,21 +324,21 @@ private _radioProxJs = [];
 
 private _footer = if ((count _units) == 0) then {
 
-    "Aucun contact — vérifiez la liaison"
+    "No contact — check connection"
 
 } else {
 
-    format ["%1 contact(s) synchronisé(s)", count _units]
+    format ["%1 contact(s) synchronized", count _units]
 
 };
 
 private _mapHint = if (_state isEqualTo "linked") then {
 
-    "Contacts en liaison · positions jeu + Athena"
+    "Connected contacts · in-game + Athena positions"
 
 } else {
 
-    "Contacts locaux · liez Athena pour le réseau"
+    "Local contacts · link Athena for network"
 
 };
 
