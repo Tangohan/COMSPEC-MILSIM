@@ -769,6 +769,7 @@ class CommunityController
         try {
             $paid = $this->parsePaidPlanChoice($planChoice);
             $referrerUserId = $this->resolveReferrerUserId((int) $user['id']);
+            $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) $request->input('tenant_type', 'full'));
             $optionsBase = [
                 'registration_mode' => (string) $request->input('registration_mode', 'milsim'),
                 'community_locked' => $request->input('community_locked') ? true : false,
@@ -778,6 +779,7 @@ class CommunityController
                 'public_page_layout' => ((string) $request->input('wizard_public_page_layout', 'legacy')) === 'showcase' ? 'showcase' : 'legacy',
                 'public_hero_subtitle' => trim((string) $request->input('wizard_public_hero_subtitle', '')),
                 'public_doctrine' => trim((string) $request->input('wizard_public_doctrine', '')),
+                'tenant_type' => $tenantType,
             ];
 
             $wizardRaw = $this->buildWizardFromRequest($request);

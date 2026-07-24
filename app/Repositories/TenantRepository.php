@@ -166,6 +166,12 @@ class TenantRepository
         $stmt->execute([$name, $tenantId]);
     }
 
+    public function getTenantType(int $tenantId): string
+    {
+        $tenant = $this->findById($tenantId);
+        return $tenant ? (string) ($tenant['tenant_type'] ?? 'full') : 'full';
+    }
+
     public function updateLogoUrl(int $tenantId, ?string $url): void
     {
         $url = $url !== null ? trim($url) : '';
@@ -187,10 +193,10 @@ class TenantRepository
     }
 
     /** @return int id du tenant créé */
-    public function create(string $name, string $slug, string $planSlug = 'free'): int
+    public function create(string $name, string $slug, string $planSlug = 'free', string $tenantType = 'full'): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO tenants (name, slug, plan_slug, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())');
-        $stmt->execute([$name, $slug, $planSlug]);
+        $stmt = $this->pdo->prepare('INSERT INTO tenants (name, slug, tenant_type, plan_slug, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())');
+        $stmt->execute([$name, $slug, $tenantType, $planSlug]);
         return (int) $this->pdo->lastInsertId();
     }
 

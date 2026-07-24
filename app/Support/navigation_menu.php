@@ -148,6 +148,23 @@ function navigation_menu_item_visible(array $item, bool $loggedIn): bool
     if (!empty($item['guest_only']) && $loggedIn) {
         return false;
     }
+
+    if ($loggedIn && !empty($item['module'])) {
+        $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+        if ($tenantId > 0) {
+            try {
+                $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
+                $tenant = $tenantRepo->findById($tenantId);
+                if ($tenant) {
+                    $tenantType = (string) ($tenant['tenant_type'] ?? 'full');
+                    if (!(\App\Services\Community\TenantTypeConfig::moduleAllowed($tenantType, (string) $item['module']))) {
+                        return false;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+    }
     if (!empty($item['auth_only']) && !$loggedIn) {
         return false;
     }
