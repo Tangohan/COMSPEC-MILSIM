@@ -142,7 +142,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
                 missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
                 [] call comspec_overwatch_connect_fnc_receiveCASRequest;
                 ["COMSPEC_Info", ["New CAS request received"]] call comspec_overwatch_connect_fnc_showNotification;
-                ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+                ["[CAS] New air support request received.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
             };
         }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
     }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;

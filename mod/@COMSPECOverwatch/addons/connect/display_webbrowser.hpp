@@ -80,7 +80,7 @@ class COMSPEC_WebBrowser_Dialog {
 
         class StatusHint: RscStructuredText {
             idc = 9403;
-            text = "<t align='right' size='0.55' color='#8aa0b4'>Chargement de l’écran…</t>";
+            text = "<t align='right' size='0.55' color='#8aa0b4'>Loading screen…</t>";
             x = safezoneX + 0.55 * safezoneW;
             y = safezoneY + 0.07 * safezoneH;
             w = 0.28 * safezoneW;

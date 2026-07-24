@@ -29,7 +29,7 @@ if (_path isEqualTo "") then {
     };
 };
 if (_path isEqualTo "") exitWith {
-    ["COMSPEC_Warning", ["Aucune image à envoyer — prenez une photo depuis le terminal Overwatch."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["No image to send — take a photo from Overwatch terminal."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 "COMSPECExtension" callExtension [

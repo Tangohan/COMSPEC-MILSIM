@@ -35,7 +35,7 @@ class COMSPEC_Callsign_Dialog {
 
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#8aa0b4'>Indicatif et rôle sous lesquels vous apparaissez auprès de l’équipe.</t>";
+            text = "<t align='center' size='0.55' color='#8aa0b4'>Callsign and role as they appear to the team.</t>";
             x = 0.36 * safezoneW + safezoneX;
             y = 0.29 * safezoneH + safezoneY;
             w = 0.28 * safezoneW;

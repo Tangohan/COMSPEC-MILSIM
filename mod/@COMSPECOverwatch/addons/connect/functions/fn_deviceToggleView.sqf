@@ -1,7 +1,7 @@
 /*
     Bascule la vue de la tablette Athena (dialog COMSPEC_Device_Dialog, idd 9973) entre "Profil"
     (photo + nom, idc 9302/9303) et "Effectifs" (BFT léger — callsign + grille, idc 9314/9315),
-    les deux occupant le même espace écran et n'étant donc jamais affichées ensemble.
+    les deux occupant le même espace écran et n'étant donc jamais shownes ensemble.
 
     Params : [_display, _mode] — _mode optionnel : "profile"/"roster" force la vue, sinon bascule
     par rapport à l'état actuel (utilisé par le bouton "Effectifs").

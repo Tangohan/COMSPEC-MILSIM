@@ -5,11 +5,11 @@
 */
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
-    ["Overwatch est désactivé.", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    ["Overwatch is disabled.", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 if (isNull player || {!alive player}) exitWith {
-    ["Impossible de transmettre (opérateur hors service).", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
+    ["Impossible de transmettre (operator out of service).", "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
@@ -40,7 +40,7 @@ if (_ok) then {
     private _msg = switch (_result) do {
         case "no_android": { "Equip S7 Android phone" };
         case "origin": { "Position non valide — déplacez-vous un peu." };
-        case "dead": { "Impossible de transmettre (opérateur hors service)." };
+        case "dead": { "Impossible de transmettre (operator out of service)." };
         default { "Transmission impossible pour le moment." };
     };
     [_msg, "link", "warn", true] call comspec_overwatch_connect_fnc_announce;

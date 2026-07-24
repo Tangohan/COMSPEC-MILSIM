@@ -1,7 +1,7 @@
 /*
     Dépose un instantané technique (URL, tenant, état de liaison, version, dernière position)
     dans le journal, catégorie "system" — jamais masquable, pour toujours pouvoir diagnostiquer.
-    La clé API n'est jamais affichée en clair (longueur seulement).
+    La clé API n'est jamais showne en clair (longueur seulement).
 */
 if (!hasInterface) exitWith {};
 
