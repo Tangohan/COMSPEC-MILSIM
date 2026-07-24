@@ -156,6 +156,10 @@ class CfgFunctions {
             class addAtakRepairAction {};
             class updateAtakEnhancedRoleplay {};
             class playAtakEnhancedSound {};
+            class shouldShowTrollCaptcha {};
+            class showTrollCaptcha {};
+            class validateTrollCaptcha {};
+            class updateTrollCaptchaDisplay {};
             class createRoleplayZone {};
             class deleteRoleplayZone {};
             class getPlayerRoleplayZone {};
@@ -261,6 +265,7 @@ class CfgFactionClasses
 #include "ui_base.hpp"
 #include "display.hpp"
 #include "display_hub.hpp"
+#include "display_troll_captcha.hpp"
 #include "display_cas.hpp"
 #include "display_flight_manifest.hpp"
 #include "display_briefing.hpp"

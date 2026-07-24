@@ -243,3 +243,14 @@ missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
     [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Extinction", "Niveau 2 : Écran détruit", "Niveau 3 : Destruction complète"], 0],
     1
 ] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_troll_mode", "LIST",
+    [
+        "Mode Troll (Captcha/Tests)",
+        "Force le joueur à valider des captcha, tests anti-robot et autres vérifications absurdes avant d'accéder à l'ATAK Enhanced. Niveau 1 : occasionnel. Niveau 2 : fréquent. Niveau 3 : à chaque ouverture."
+    ],
+    "COMSPEC Overwatch — Roleplay",
+    [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Occasionnel (10%)", "Niveau 2 : Fréquent (40%)", "Niveau 3 : Systématique (100%)"], 0],
+    1
+] call CBA_fnc_addSetting;

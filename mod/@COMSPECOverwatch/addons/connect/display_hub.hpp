@@ -2,7 +2,7 @@
 class COMSPEC_Hub_Dialog {
     idd = 9969;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile; [] spawn {while {!isNull (uiNamespace getVariable ['COMSPEC_Hub_Display', displayNull])} do {[] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay; uiSleep 1;}};";
+    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile; [] spawn {while {!isNull (uiNamespace getVariable ['COMSPEC_Hub_Display', displayNull])} do {[] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay; uiSleep 1;}}; if ([] call comspec_overwatch_connect_fnc_shouldShowTrollCaptcha) then {[{closeDialog 0; [] call comspec_overwatch_connect_fnc_showTrollCaptcha;}, [], 0.5] call CBA_fnc_waitAndExecute;};";
     onUnload = "uiNamespace setVariable ['COMSPEC_Hub_Display', displayNull];";
 
     class Controls {
