@@ -573,6 +573,22 @@ $jsHref = url('assets/js/community-enlistment.js');
                         </div>
                     </section>
 
+                    <!-- Code d'invitation (optionnel) -->
+                    <div class="ce-field-group">
+                        <label for="invite-code" class="ce-label">
+                            Code d'invitation (optionnel)
+                            <span class="ce-label-hint">Si vous avez reçu un code d'invitation, saisissez-le ici pour accélérer votre candidature</span>
+                        </label>
+                        <input type="text" 
+                               name="invite_code" 
+                               id="invite-code" 
+                               class="ce-input"
+                               placeholder="Ex: MIGRATION2026"
+                               maxlength="64"
+                               pattern="[A-Z0-9\-_]*"
+                               style="text-transform: uppercase;">
+                    </div>
+
                     <div class="ce-submit-zone">
                         <?php if ($requireAiAck): ?>
                             <div class="ce-ai-ack">

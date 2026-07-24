@@ -634,12 +634,64 @@ class EnlistmentController
             'discord_answers' => $answers,
         ];
 
+        // Gestion du code d'invitation
+        $inviteCode = trim((string) $request->input('invite_code', ''));
+        $inviteCodeData = null;
+        if ($inviteCode !== '' && $this->inviteCodeRepository->tablesExist()) {
+            $inviteCodeData = $this->inviteCodeRepository->findByCode($targetTenantId, $inviteCode);
+            if ($inviteCodeData === null) {
+                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'existe pas.');
+                return Response::redirect(url('enlistment/error'));
+            }
+
+            if (!$this->inviteCodeRepository->isCodeValid($targetTenantId, $inviteCode)) {
+                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
+                return Response::redirect(url('enlistment/error'));
+            }
+
+            // Appliquer les paramètres du code d'invitation
+            if (!empty($inviteCodeData['default_specialty']) && empty($payload['specialty'])) {
+                $payload['specialty'] = (string) $inviteCodeData['default_specialty'];
+            }
+
+            // Si le code accepte automatiquement, on change le statut
+            if (!empty($inviteCodeData['auto_accept'])) {
+                $payload['status'] = 'reviewed';
+            }
+        }
+
         try {
             $enlistmentId = $this->enlistmentRepository->create($targetTenantId, $payload);
         } catch (\Throwable) {
             Session::flash('enlistment_error', 'Une erreur technique a empêché l\'enregistrement de votre candidature. Veuillez réessayer ou contacter le support.');
 
             return Response::redirect(url('enlistment/error'));
+        }
+
+        // Enregistrer l'utilisation du code d'invitation
+        if ($inviteCodeData !== null && $enlistmentId > 0) {
+            $this->inviteCodeRepository->recordUse(
+                $targetTenantId,
+                (int) $inviteCodeData['id'],
+                $enlistmentId,
+                $inviteCode
+            );
+
+            // Logger dans la timeline
+            if ($this->enlistmentTimelineRepository->tableExists()) {
+                $codeLabel = trim((string) ($inviteCodeData['label'] ?? $inviteCode));
+                $autoAcceptNote = !empty($inviteCodeData['auto_accept']) ? ' (validation automatique)' : '';
+                $this->enlistmentTimelineRepository->append(
+                    $targetTenantId,
+                    $enlistmentId,
+                    'system',
+                    'reception',
+                    'Code d\'invitation utilisé',
+                    'Code : ' . $codeLabel . $autoAcceptNote,
+                    null,
+                    ['invite_code_id' => (int) $inviteCodeData['id']]
+                );
+            }
         }
 
         $this->enlistmentTimelineRepository->logIntakeFromSubmission($targetTenantId, $enlistmentId, null, 'guest');

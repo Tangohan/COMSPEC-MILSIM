@@ -38,6 +38,16 @@ CREATE TABLE IF NOT EXISTS `recruitment_invite_code_uses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Historique d\'utilisation des codes d\'invitation';
 
 -- Ajouter une colonne optionnelle à la table enlistments pour tracer le code utilisé
-ALTER TABLE `enlistments` 
-  ADD COLUMN `invite_code_id` INT UNSIGNED DEFAULT NULL COMMENT 'Code d\'invitation utilisé pour cette candidature' AFTER `recruitment_opening_id`,
-  ADD INDEX `idx_invite_code` (`invite_code_id`);
+-- (Vérifie d'abord si la colonne n'existe pas déjà)
+SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS 
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'enlistments' AND COLUMN_NAME = 'invite_code_id');
+
+SET @sql = IF(@col_exists = 0, 
+  'ALTER TABLE `enlistments` 
+   ADD COLUMN `invite_code_id` INT UNSIGNED DEFAULT NULL COMMENT "Code d\'invitation utilisé pour cette candidature" AFTER `recruitment_opening_id`,
+   ADD INDEX `idx_invite_code` (`invite_code_id`)',
+  'SELECT "Column invite_code_id already exists" AS message');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

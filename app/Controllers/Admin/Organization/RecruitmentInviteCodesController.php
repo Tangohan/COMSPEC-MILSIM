@@ -68,7 +68,7 @@ class RecruitmentInviteCodesController
 
         $openings = [];
         if ($this->recruitmentOpeningRepository->tablesExist()) {
-            $openings = $this->recruitmentOpeningRepository->listActiveForTenant((int) $tenantId);
+            $openings = $this->recruitmentOpeningRepository->listPublishedForTenant((int) $tenantId);
         }
 
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
@@ -230,7 +230,7 @@ class RecruitmentInviteCodesController
 
         $openings = [];
         if ($this->recruitmentOpeningRepository->tablesExist()) {
-            $openings = $this->recruitmentOpeningRepository->listActiveForTenant((int) $tenantId);
+            $openings = $this->recruitmentOpeningRepository->listPublishedForTenant((int) $tenantId);
         }
 
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
