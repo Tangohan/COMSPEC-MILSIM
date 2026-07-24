@@ -47,6 +47,14 @@ if (!_force && {[] call comspec_overwatch_connect_fnc_isNetworkDisconnected}) ex
     };
 };
 
+// Roleplay : bloquer envois si zone "no_coverage"
+private _zoneEffects = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+if (!_force && {!isNil "_zoneEffects"}) then {
+    if (_zoneEffects getOrDefault ["force_disconnect", false]) exitWith {
+        ["zone_no_coverage"] call _fnc_skip;
+    };
+};
+
 // Alertes KO / rythme cardiaque à zéro (chaque tick PFH, avant le filtre de batch position)
 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
 

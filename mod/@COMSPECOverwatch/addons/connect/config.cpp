@@ -151,6 +151,15 @@ class CfgFunctions {
             class initRoleplayOverlay {};
             class updateRoleplayOverlay {};
             class playRoleplaySound {};
+            class createRoleplayZone {};
+            class deleteRoleplayZone {};
+            class getPlayerRoleplayZone {};
+            class applyZoneEffects {};
+            class listRoleplayZones {};
+            class moduleNoCoverage {};
+            class moduleInterference {};
+            class moduleDegraded {};
+            class moduleJammer {};
         };
     };
 };
@@ -244,6 +253,18 @@ class CfgSounds {
     };
 };
 
+// Catégorie Zeus/Eden pour modules roleplay
+class CfgFactionClasses
+{
+    class NO_CATEGORY;
+    class COMSPEC_Roleplay : NO_CATEGORY
+    {
+        displayName = "COMSPEC Roleplay";
+        priority = 2;
+        side = 7;
+    };
+};
+
 #include "ui_base.hpp"
 #include "display.hpp"
 #include "display_hub.hpp"
@@ -260,4 +281,7 @@ class CfgSounds {
 
 // Displays roleplay
 #include "displays\display_roleplay_overlay.hpp"
+
+// Modules Zeus/Eden roleplay
+#include "modules\module_roleplay_zone.hpp"
 #include "CfgEventHandlers.hpp"

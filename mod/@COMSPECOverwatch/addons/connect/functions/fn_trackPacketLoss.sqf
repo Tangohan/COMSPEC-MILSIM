@@ -46,6 +46,13 @@ if (_sentCount > 0) then {
     _lossPercent = (_lostCount / _sentCount) * 100;
 };
 
+// Appliquer multiplicateur de zone si actif
+private _zoneEffects = missionNamespace getVariable ["COMSPEC_ZoneEffects", nil];
+if (!isNil "_zoneEffects") then {
+    private _multiplier = _zoneEffects getOrDefault ["packet_loss_multiplier", 1.0];
+    _lossPercent = (_lossPercent * _multiplier) min 100;
+};
+
 // Retourner les statistiques
 [
     _stats getOrDefault ["total_sent", 0],
