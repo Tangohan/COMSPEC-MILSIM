@@ -333,6 +333,7 @@ class TenantRepository
 SELECT t.id,
        t.name,
        t.slug,
+       t.tenant_type,
        t.created_at AS created_at,
        t.plan_slug,
        t.subscription_status,
@@ -358,6 +359,7 @@ SQL;
                 'id' => (int) ($row['id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
                 'slug' => (string) ($row['slug'] ?? ''),
+                'tenant_type' => (string) ($row['tenant_type'] ?? 'full'),
                 'created_at' => isset($row['created_at']) && $row['created_at'] !== null && $row['created_at'] !== ''
                     ? (string) $row['created_at']
                     : null,
