@@ -1,6 +1,6 @@
 [
     "comspec_overwatch_enabled", "CHECKBOX",
-    ["Activer Overwatch", "Liaison Athena"],
+    ["Enable Overwatch", "Athena connection"],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
@@ -12,47 +12,47 @@
 
 [
     "comspec_overwatch_api_key", "EDITBOX",
-    ["Clé d’accès Athena", "Fournie par l’admin (obligatoire en production). Laissée vide en local si le serveur n’exige pas de clé."],
+    ["Athena access key", "Provided by admin (required in production). Leave empty locally if server does not require key."],
     "COMSPEC Overwatch", ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_tenant_id", "EDITBOX",
-    ["Identifiant de communauté", "Laisser vide si le serveur Athena a déjà une communauté par défaut. Sinon, valeur numérique fournie par l’admin."],
+    ["Community identifier", "Leave empty if Athena server already has a default community. Otherwise, numeric value provided by admin."],
     "COMSPEC Overwatch", ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_update_interval", "SLIDER",
-    ["Fréquence (sec)", "Délai entre les cycles de synchronisation généraux (plus long = moins de charge)"],
+    ["Frequency (sec)", "Delay between general synchronization cycles (longer = less load)"],
     "COMSPEC Overwatch", [1, 600, 10, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_position_interval", "SLIDER",
-    ["Intervalle position (s)", "Temps entre deux vérifications de position (plus long = moins de requêtes)"],
+    ["Position interval (s)", "Time between two position checks (longer = fewer requests)"],
     "COMSPEC Overwatch", [1, 60, 3, 2]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_batch_interval", "SLIDER",
-    ["Batching réseau (s)", "Délai minimum entre deux envois de position vers Athena (plus long = moins de requêtes)"],
+    ["Network batching (s)", "Minimum delay between two position sends to Athena (longer = fewer requests)"],
     "COMSPEC Overwatch", [1, 60, 3, 1]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_position_threshold", "SLIDER",
-    ["Seuil distance (m)", "Envoi si déplacement > X m"],
+    ["Distance threshold (m)", "Send if movement > X m"],
     "COMSPEC Overwatch", [1, 50, 5, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_terminal_mode", "LIST",
-    ["Détection terminal (position)", "Comment reconnaître le téléphone tactique (S7 Android) pour autoriser la remontée de position. « Slot d’objet » = ItemAndroid équipé (comme un GPS/NVG). « Inventaire » = ItemAndroidMisc simplement transporté (objet cTab, sans effet si cTab n’est pas chargé). « Les deux » accepte l’un ou l’autre."],
+    ["Terminal detection (position)", "How to recognize tactical phone (S7 Android) to authorize position reporting. Object slot = ItemAndroid equipped (like GPS/NVG). Inventory = ItemAndroidMisc simply carried (cTab object). Both accepts either."],
     "COMSPEC Overwatch",
     [
         [0, 1, 2],
-        ["Slot d’objet uniquement (ItemAndroid)", "Présence en inventaire (ItemAndroidMisc)", "Les deux (par défaut)"],
+        ["Object slot only (ItemAndroid)", "Inventory presence (ItemAndroidMisc)", "Both (default)"],
         2
     ],
     false
@@ -60,41 +60,41 @@
 
 [
     "comspec_overwatch_playtime_enabled", "CHECKBOX",
-    ["Enregistrer le temps de jeu", "Envoie au portail le temps passé en mission (mod connecté)"],
+    ["Record playtime", "Sends time spent in mission to portal (mod connected)"],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_playtime_report_interval", "SLIDER",
-    ["Rapport temps de jeu (minutes)", "Fréquence d’envoi du cumul au portail"],
+    ["Playtime report (minutes)", "Frequency of cumulative send to portal"],
     "COMSPEC Overwatch", [2, 60, 5, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_vehicle_mode", "CHECKBOX",
-    ["Détail véhicule", "Envoyer orientation 3D et vitesse quand le joueur est en véhicule"],
+    ["Vehicle detail", "Send 3D orientation and speed when player is in vehicle"],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_sync_map_markers", "CHECKBOX",
-    ["Synchroniser les marqueurs carte", "Envoie vers Athena les marqueurs créés / modifiés / supprimés en jeu"],
+    ["Synchronize map markers", "Sends to Athena markers created / modified / deleted in game"],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_profile_enabled", "CHECKBOX",
-    ["Profiler (debug)", "Mesure le temps d'exécution des boucles/PerFrameHandlers critiques (position, CAS, marqueurs). Rapport visible via le panneau de debug. Coût nul quand désactivé."],
+    ["Profiler (debug)", "Measures execution time of critical loops/PerFrameHandlers (position, CAS, markers). Report visible via debug panel. Zero cost when disabled."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_notif_sound", "LIST",
-    ["Son des notifications", "Joué en même temps que les alertes (messagerie, ordres, liaison…). Les urgences médicales (inconscient / arrêt cardiaque) utilisent un son dédié, y compris en mode « Silencieux (vibration) ». Seul « Muet » coupe tout. Le Mode discret ne coupe pas ces sons."],
+    ["Notification sound", "Played at the same time as alerts (messaging, orders, connection…). Medical emergencies (unconscious / cardiac arrest) use dedicated sound, including in \"Silent (vibration)\" mode. Only \"Mute\" cuts everything. Discreet mode does not cut these sounds."],
     "COMSPEC Overwatch",
     [
         ["silent_vib", "stalker", "health", "mute"],
-        ["Silencieux (vibration)", "Stalker", "Alerte santé", "Muet"],
+        ["Silent (vibration)", "Stalker", "Health alert", "Mute"],
         0
     ],
     false
@@ -102,19 +102,19 @@
 
 [
     "comspec_overwatch_webbrowser_enabled", "CHECKBOX",
-    ["Tablette avancée (écran intégré)", "Ouvre la tablette Overwatch avec l’écran tactique Chromium (inspiré cTab). Désactivez pour forcer la vue classique."],
+    ["Advanced tablet (integrated screen)", "Opens Overwatch tablet with Chromium tactical screen (inspired by cTab). Disable to force classic view."],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_quiet_mode", "CHECKBOX",
-    ["Mode discret — masquer les alertes à l’écran", "Cache les bandeaux et messages système Overwatch en jeu. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Muet. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
+    ["Discreet mode - hide on-screen alerts", "Hides Overwatch banners and system messages in game. Sounds continue to play unless Mute. Alerts remain available in tablet. Connection screens remain usable."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_athena_link_help", "CHECKBOX",
-    ["Rappel Windows — lier mon compte Athena", "Au lancement, si votre compte n’est pas encore lié, affiche une alerte Windows avec la marche à suivre. Décochez pour ne plus voir ce rappel (vous pouvez aussi choisir « Non » dans l’alerte)."],
+    ["Windows reminder - link Athena account", "At launch, if account not yet linked, displays Windows alert with instructions. Uncheck to stop seeing this reminder."],
     "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
@@ -126,13 +126,13 @@
 
 [
     "comspec_overwatch_radio_proximity_radius", "SLIDER",
-    ["Rayon radio proximité (m)", "Contacts et émissions listés dans ce rayon autour de l’opérateur de référence"],
+    ["Radio proximity radius (m)", "Contacts and transmissions listed within this radius around reference operator"],
     "COMSPEC Overwatch", [10, 300, 75, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_radio_proximity_interval", "SLIDER",
-    ["Intervalle scan radio (s)", "Fréquence de mise à jour de la liste de proximité (cache local tablette, sans spam réseau)"],
+    ["Radio scan interval (s)", "Proximity list update frequency (local tablet cache, no network spam)"],
     "COMSPEC Overwatch", [1, 10, 2, 1]
 ] call CBA_fnc_addSetting;
 

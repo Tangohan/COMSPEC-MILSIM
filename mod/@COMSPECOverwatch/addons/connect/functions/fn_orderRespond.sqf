@@ -26,9 +26,9 @@ if (!_ok) exitWith {
 };
 
 private _label = switch (toUpper _status) do {
-    case "ACK": { "Ordre accusé réception" };
+    case "ACK": { "Order acknowledged" };
     case "EXEC": { "Ordre en cours d’exécution" };
-    case "FAILED": { "Ordre signalé en échec" };
+    case "FAILED": { "Order reported as failed" };
     default { "Statut d’ordre mis à jour" };
 };
 

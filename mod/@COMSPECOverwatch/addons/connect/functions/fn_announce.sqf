@@ -18,7 +18,7 @@ if (_message isEqualTo "") exitWith {};
 
 private _titles = createHashMapFromArray [
     ["link", "Liaison Athena"],
-    ["medical", "Alerte médicale"],
+    ["medical", "Medical alert"],
     ["order", "Ordre"],
     ["ping", "Signal"],
     ["system", "Overwatch"]

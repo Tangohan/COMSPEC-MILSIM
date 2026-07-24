@@ -31,6 +31,6 @@ if (_veh != player && {driver _veh == player}) then {
     _veh setVariable ["COMSPEC_Callsign", _callsign, true];
 };
 
-[format ["[Athena] Indicatif enregistré : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
+[format ["[Athena] Callsign registered : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 true

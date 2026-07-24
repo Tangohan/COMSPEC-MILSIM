@@ -24,9 +24,9 @@ if (!(_role isEqualTo "")) then {
 };
 
 private _msg = if (_role isEqualTo "") then {
-    format ["Indicatif enregistré : %1", _cs]
+    format ["Callsign registered : %1", _cs]
 } else {
-    format ["Identité enregistrée : %1 · %2", _cs, _role]
+    format ["Identity registered : %1 · %2", _cs, _role]
 };
 ["COMSPEC_Info", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 

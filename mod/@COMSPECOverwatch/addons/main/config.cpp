@@ -19,7 +19,7 @@ class CfgMods {
         picture = "";
         actionName = "Website";
         action = "https://athena.ttrd.fr/public";
-        overview = "Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
+        overview = "Connect Arma 3 to Athena: tactical map, messaging, tablet and phone.";
         tooltip = "COMSPEC Overwatch";
         author = "COMSPEC";
     };

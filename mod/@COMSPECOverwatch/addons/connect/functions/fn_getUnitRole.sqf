@@ -4,7 +4,7 @@
 */
 params [["_unit", objNull, [objNull]]];
 
-if (isNull _unit) exitWith { "Opérateur" };
+if (isNull _unit) exitWith { "Operator" };
 
 private _result = "";
 
@@ -67,7 +67,7 @@ private _teams = missionNamespace getVariable ["COMSPEC_FireTeams", []];
             private _roleFr = switch (toLower (trim _mRole)) do {
                 case "leader";
                 case "chef";
-                case "ftl": { "Chef d'équipe" };
+                case "ftl": { "Team leader" };
                 default { "Membre" };
             };
             if (!(_label isEqualTo "")) then {
@@ -85,4 +85,4 @@ if (!(_result isEqualTo "")) exitWith { _result };
 private _gid = trim (groupId (group _unit));
 if (!(_gid isEqualTo "") && {!((toLower _gid) in ["error", "grpnull"])}) exitWith { _gid };
 
-"Opérateur"
+"Operator"

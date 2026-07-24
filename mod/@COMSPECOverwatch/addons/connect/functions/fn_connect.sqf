@@ -28,7 +28,7 @@ private _urlLooksValid = {
 };
 if (!([_url] call _urlLooksValid)) then {
     if (!(_url isEqualTo "")) then {
-        [format ["[Athena] URL mémoire ignorée (%1) — repli profil / défaut.", _url]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        [format ["[Athena] Cached URL ignored (%1) — fallback profile / défaut.", _url]] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
     _url = [profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]] call _cleanSecret;
     if (!([_url] call _urlLooksValid)) then {
@@ -51,7 +51,7 @@ if (
     || {([_profileKey] call _keyLooksValid) && {(count _profileKey) > (count _key)}}
 ) then {
     if (!(_key isEqualTo "") && {!([_key] call _keyLooksValid)}) then {
-        [format ["[Athena] Cle memoire ignoree (%1 car.) — repli profil.", count _key]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        [format ["[Athena] Cle memoire ignoree (%1 car.) — fallback profile.", count _key]] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
     if ([_profileKey] call _keyLooksValid) then {
         _key = _profileKey;
@@ -73,7 +73,7 @@ if (_tenant isEqualTo "") then {
 _url = [_url] call _cleanSecret;
 if (_url isEqualTo "") exitWith {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena non renseignée", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Athena address not specified", false];
     ["[Athena] Pas d'adresse portail — utilisez Compte Athena (code) ou les reglages CBA."] call comspec_overwatch_connect_fnc_appendLinkLog;
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 };
@@ -201,7 +201,7 @@ if (_prefix == "OK") then {
             missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
             private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
             [format ["[Athena] Connecte a %1 — adresse client : %2", _label, _userIp]] call comspec_overwatch_connect_fnc_appendLinkLog;
-            [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
+            [format ["Connected to %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
             ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
             0 spawn {
@@ -222,7 +222,7 @@ if (_prefix == "OK") then {
             missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
             private _label = [_url] call comspec_overwatch_connect_fnc_portalLabel;
             [format ["[Athena] Liaison etablie avec %1 (adresse client indisponible).", _label]] call comspec_overwatch_connect_fnc_appendLinkLog;
-            [format ["Connecté à %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
+            [format ["Connected to %1", _label], "link", "info"] call comspec_overwatch_connect_fnc_announce;
             ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
             0 spawn {

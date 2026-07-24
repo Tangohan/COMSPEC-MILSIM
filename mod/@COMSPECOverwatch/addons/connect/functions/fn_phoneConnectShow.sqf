@@ -71,7 +71,7 @@ if (_qrPath != "") then {
         _ctrlFallback ctrlSetStructuredText parseText "";
         _ctrlFallback ctrlShow false;
     };
-    diag_log format ["[COMSPEC] QR téléphone affiché : %1", _qrPath];
+    diag_log format ["[COMSPEC] QR téléphone shown : %1", _qrPath];
 } else {
     if (!isNull _ctrlPic) then {
         _ctrlPic ctrlSetText "";
@@ -84,6 +84,6 @@ if (_qrPath != "") then {
             _code
         ];
     };
-    diag_log format ["[COMSPEC] Échec téléchargement QR téléphone (url=%1) — code affiché : %2", _qrImageUrl, _code];
+    diag_log format ["[COMSPEC] Échec téléchargement QR téléphone (url=%1) — code shown : %2", _qrImageUrl, _code];
     ["COMSPEC_Warning", [format ["QR indisponible — saisissez le code %1 sur votre téléphone.", _code]]] call comspec_overwatch_connect_fnc_showNotification;
 };

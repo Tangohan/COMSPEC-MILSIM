@@ -25,4 +25,4 @@ private _labels = createHashMapFromArray [
     ["medical", "Médical"]
 ];
 private _label = _labels getOrDefault [_category, _category];
-_ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "masqué" } else { "affiché" }];
+_ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }];

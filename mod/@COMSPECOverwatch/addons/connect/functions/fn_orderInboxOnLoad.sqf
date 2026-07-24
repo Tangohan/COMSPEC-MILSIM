@@ -47,12 +47,12 @@ private _shown = [];
         default { "Mouvement" };
     };
     private _statusLabel = switch (toUpper _status) do {
-        case "ACK": { "Accusé" };
-        case "EXEC": { "En cours" };
-        case "FAILED": { "Échec" };
-        case "DELIVERED": { "Reçu" };
-        case "CANCELLED": { "Annulé" };
-        default { "À traiter" };
+        case "ACK": { "Acknowledged" };
+        case "EXEC": { "In progress" };
+        case "FAILED": { "Failed" };
+        case "DELIVERED": { "Delivered" };
+        case "CANCELLED": { "Cancelled" };
+        default { "Pending" };
     };
 
     private _idx = _list lbAdd format ["[%1] %2 — %3 (%4)", _statusLabel, _typeLabel, _issuer, _prio];

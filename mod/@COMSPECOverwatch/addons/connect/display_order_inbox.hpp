@@ -26,7 +26,7 @@ class COMSPEC_OrderInbox_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Ordres reçus</t>";
+            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Received orders</t>";
             x = 0.3 * safezoneW + safezoneX;
             y = 0.195 * safezoneH + safezoneY;
             w = 0.4 * safezoneW;
@@ -55,7 +55,7 @@ class COMSPEC_OrderInbox_Dialog {
 
         class BtnAck: RscButton {
             idc = 9403;
-            text = "Accuser réception";
+            text = "Acknowledge";
             x = 0.3 * safezoneW + safezoneX;
             y = 0.56 * safezoneH + safezoneY;
             w = 0.125 * safezoneW;
@@ -66,7 +66,7 @@ class COMSPEC_OrderInbox_Dialog {
 
         class BtnExec: RscButton {
             idc = 9404;
-            text = "En cours";
+            text = "In progress";
             x = 0.435 * safezoneW + safezoneX;
             y = 0.56 * safezoneH + safezoneY;
             w = 0.1 * safezoneW;
@@ -77,7 +77,7 @@ class COMSPEC_OrderInbox_Dialog {
 
         class BtnFail: RscButton {
             idc = 9405;
-            text = "Échec";
+            text = "Failed";
             x = 0.545 * safezoneW + safezoneX;
             y = 0.56 * safezoneH + safezoneY;
             w = 0.08 * safezoneW;
@@ -88,7 +88,7 @@ class COMSPEC_OrderInbox_Dialog {
 
         class BtnClose: RscButton {
             idc = 9406;
-            text = "Fermer";
+            text = "Close";
             x = 0.635 * safezoneW + safezoneX;
             y = 0.56 * safezoneH + safezoneY;
             w = 0.065 * safezoneW;

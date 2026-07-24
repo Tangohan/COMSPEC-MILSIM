@@ -16,7 +16,7 @@ private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 
 if (_prefix != "OK") exitWith {
-    diag_log format ["[COMSPEC] Échec téléchargement diapositive %1 : %2", _id, _raw];
+    diag_log format ["[COMSPEC] Failed to download slide %1 : %2", _id, _raw];
     ""
 };
 

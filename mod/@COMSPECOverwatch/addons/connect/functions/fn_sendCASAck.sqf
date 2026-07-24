@@ -2,7 +2,7 @@
     Send Roger / ACK for current CAS.
 */
 private _id = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
-if (_id isEqualTo "") exitWith { ["COMSPEC_Warning", ["Aucune demande CAS sélectionnée"]] call comspec_overwatch_connect_fnc_showNotification; };
+if (_id isEqualTo "") exitWith { ["COMSPEC_Warning", ["No CAS request selected"]] call comspec_overwatch_connect_fnc_showNotification; };
 "COMSPECExtension" callExtension ["SendCASAck", [_id]];
 missionNamespace setVariable ["COMSPEC_CurrentCASStatus", "ACKNOWLEDGED"];
 ["COMSPEC_Info", ["Roger transmis"]] call comspec_overwatch_connect_fnc_showNotification;

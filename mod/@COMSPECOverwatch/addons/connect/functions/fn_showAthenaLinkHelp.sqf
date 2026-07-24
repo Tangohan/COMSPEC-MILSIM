@@ -14,7 +14,7 @@ if (profileNamespace getVariable ["comspec_overwatch_hide_athena_link_help", fal
     saveProfileNamespace;
 };
 
-// Déjà affiché cette session
+// Déjà shown cette session
 if (missionNamespace getVariable ["COMSPEC_AthenaLinkHelpShown", false]) exitWith {};
 
 // Compte déjà lié → silence
