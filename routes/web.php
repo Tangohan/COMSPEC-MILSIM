@@ -64,6 +64,7 @@ use App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController;
 use App\Controllers\Admin\AdminRecruitmentsController;
 use App\Controllers\Admin\RecruitmentWorkspaceController;
 use App\Controllers\Admin\EffectifsWorkspaceController;
+use App\Controllers\Admin\Organization\RecruitmentInviteCodesController;
 use App\Controllers\Admin\AdminDocumentsController;
 use App\Controllers\Admin\AdminTrainingController;
 use App\Controllers\Admin\AdminTrainingStudioController;
@@ -830,6 +831,16 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/{id}/recruteur-volontariat', [AdminRecruitmentsController::class, 'recruiterPick'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/referent', [AdminRecruitmentsController::class, 'assignReferent'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/bilan-equipe', [AdminRecruitmentsController::class, 'staffRetroSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    
+    // Routes pour les codes d'invitation de recrutement
+    $router->get('/back-office/recruitments/codes-invitation', [RecruitmentInviteCodesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/{id}', [RecruitmentInviteCodesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/{id}/modifier', [RecruitmentInviteCodesController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/{id}/modifier', [RecruitmentInviteCodesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/{id}/desactiver', [RecruitmentInviteCodesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    
     $router->get('/back-office/recruitment/offers', [RecruitmentOffersController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers/create', [RecruitmentOffersController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitment/offers/store', [RecruitmentOffersController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
