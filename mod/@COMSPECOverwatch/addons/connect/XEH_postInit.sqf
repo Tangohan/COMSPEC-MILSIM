@@ -219,6 +219,11 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     [{
         [] call comspec_overwatch_connect_fnc_simulateNetworkDisconnect;
     }, 5, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 5 secondes
+    
+    // Roleplay : Initialiser l'overlay UI ingame
+    if (missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", false]) then {
+        0 spawn comspec_overwatch_connect_fnc_initRoleplayOverlay;
+    };
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).

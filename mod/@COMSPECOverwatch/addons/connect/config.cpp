@@ -140,7 +140,30 @@ class CfgFunctions {
             class extensionCallback {};
             class hasTerminal {};
             class syncMapMarker {};
+            class trackPacketLoss {};
+            class recordPacketSent {};
+            class recordPacketReceived {};
+            class getPacketLossStats {};
+            class handlePositionUpdateCallback {};
+            class simulateNetworkDisconnect {};
+            class isNetworkDisconnected {};
+            class getNetworkDisconnectInfo {};
+            class initRoleplayOverlay {};
+            class updateRoleplayOverlay {};
+            class playRoleplaySound {};
         };
+    };
+};
+
+// RscTitles pour les displays overlay
+class RscTitles {
+    class COMSPEC_RoleplayOverlay {
+        idd = 16800;
+        duration = 1e10;
+        fadein = 0;
+        fadeout = 0;
+        onLoad = "uiNamespace setVariable ['COMSPEC_RoleplayOverlay', _this select 0];";
+        onUnload = "uiNamespace setVariable ['COMSPEC_RoleplayOverlay', nil];";
     };
 };
 
@@ -234,4 +257,7 @@ class CfgSounds {
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
+
+// Displays roleplay
+#include "displays\display_roleplay_overlay.hpp"
 #include "CfgEventHandlers.hpp"

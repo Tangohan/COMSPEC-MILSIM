@@ -39,6 +39,12 @@ if (_state getOrDefault ["is_disconnected", false]) then {
         hintSilent "Liaison ATAK rétablie";
         missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
         
+        // Reset du hint pour la prochaine déconnexion
+        missionNamespace setVariable ["COMSPEC_DisconnectHintShown", false, false];
+        
+        // Son de reconnexion
+        ["reconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
+        
         // Callback pour l'extension
         if (!isNil "comspec_overwatch_connect_fnc_extensionCallback") then {
             ["NetworkReconnected", ""] call comspec_overwatch_connect_fnc_extensionCallback;
@@ -70,6 +76,9 @@ if (_now >= _nextDisconnectAt) then {
     private _msg = format ["Perte de liaison ATAK (%1s)", _duration];
     hintSilent _msg;
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+    
+    // Son de déconnexion
+    ["disconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
     
     // Callback pour l'extension
     if (!isNil "comspec_overwatch_connect_fnc_extensionCallback") then {
