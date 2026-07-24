@@ -97,7 +97,7 @@ Lancer mission → ouvrir console debug (Shift+Tab) :
 2. Menu ACE Self-Interact → 📡 ATAK Tactique → 📍 Marquer POI → Cache d'armes
 3. Observer marker local temporaire (cercle rouge)
 
-**OU** : Raccourci rapide **Shift+P**
+**OU** : Raccourci rapide (si configuré dans CBA Settings)
 
 #### Vérification web
 

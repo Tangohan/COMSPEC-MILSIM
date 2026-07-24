@@ -34,7 +34,7 @@ if (isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {
     [] call comspec_overwatch_connect_fnc_initATAKMenu;
     diag_log "[COMSPEC ATAK] ACE Interact menus initialized";
 } else {
-    systemChat "⚠️ ACE Interact non détecté - utilisez fonctions directement";
+    systemChat "⚠️ ACE Interact non détecté - utilisez fonctions directement ou configurez raccourcis CBA";
     diag_log "[COMSPEC ATAK] WARNING: ACE Interact not found";
 };
 
@@ -49,18 +49,7 @@ player addEventHandler ["Respawn", {
     }, [], 2] call CBA_fnc_waitAndExecute;
 }];
 
-// 5. Raccourcis clavier (optionnel)
-["COMSPEC ATAK", "comspec_atak_quick_report", "Rapport Rapide", {
-    // Shift+R = Rapport contact rapide
-    ["CONTACT", "IMMEDIATE", "Contact", "Ennemi détecté"] call comspec_overwatch_connect_fnc_submitTacticalReport;
-}, {false}, [29, [true, false, false]]] call CBA_fnc_addKeybind; // Shift+R
-
-["COMSPEC ATAK", "comspec_atak_quick_poi", "POI Rapide", {
-    // Shift+P = POI rapide
-    ["POI observé", "OTHER", "UNKNOWN", "POSSIBLE", "Marqué depuis terrain"] call comspec_overwatch_connect_fnc_createPOI;
-}, {false}, [25, [true, false, false]]] call CBA_fnc_addKeybind; // Shift+P
-
-// 6. Boucle maintenance (toutes les 60s)
+// 5. Boucle maintenance (toutes les 60s)
 [{
     // Vérifier alertes critiques globales
     // Placeholder pour futures features (notifications polling, etc.)
@@ -68,7 +57,7 @@ player addEventHandler ["Respawn", {
 
 // Feedback final
 systemChat "✅ Système ATAK opérationnel";
-hint parseText "<t color='#00ff00' size='1.5' align='center'>COMSPEC ATAK</t><br/><t size='1'>Système tactique activé</t><br/><t size='0.8'>Menu: ACE Self-Interact<br/>Raccourcis: Shift+R / Shift+P</t>";
+hint parseText "<t color='#00ff00' size='1.5' align='center'>COMSPEC ATAK</t><br/><t size='1'>Système tactique activé</t><br/><t size='0.8'>Menu: ACE Self-Interact<br/>Raccourcis: Configurables dans CBA Settings</t>";
 
 diag_log "[COMSPEC ATAK] Initialization complete";
 

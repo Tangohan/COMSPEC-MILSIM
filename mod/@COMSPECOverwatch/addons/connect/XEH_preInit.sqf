@@ -162,6 +162,66 @@
     false, 0, false
 ] call CBA_fnc_addKeybind;
 
+// === ATAK Tactique - Raccourcis configurables ===
+
+[
+    "comspec_atak_enable_shortcuts", "CHECKBOX",
+    ["Activer raccourcis ATAK", "Active les raccourcis clavier rapides pour rapports et POI. Désactivez si conflit avec cTab ou autres mods."],
+    ["COMSPEC Overwatch", "ATAK Tactique"], false  // Désactivé par défaut
+] call CBA_fnc_addSetting;
+
+[
+    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
+    {
+        if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        ["CONTACT", "IMMEDIATE", "Contact ennemi", "Ennemi détecté"] call comspec_overwatch_connect_fnc_submitTacticalReport;
+        true
+    },
+    "",
+    [], // Pas de touche par défaut - utilisateur doit configurer
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
+[
+    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_poi", ["POI Rapide", "Marquer un Point d'Intérêt à position actuelle"],
+    {
+        if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        ["POI observé", "OTHER", "UNKNOWN", "POSSIBLE", "Marqué depuis terrain"] call comspec_overwatch_connect_fnc_createPOI;
+        true
+    },
+    "",
+    [], // Pas de touche par défaut - utilisateur doit configurer
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
+[
+    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_medevac", ["MEDEVAC Rapide", "Demander évacuation médicale urgente"],
+    {
+        if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        ["URGENT", 1, 0, 0, "POSSIBLE_ENEMY", "SMOKE", "GREEN"] call comspec_overwatch_connect_fnc_requestMEDEVAC;
+        true
+    },
+    "",
+    [], // Pas de touche par défaut
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
+[
+    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_qrf", ["QRF Rapide", "Demander renfort d'urgence"],
+    {
+        if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        ["TROOPS_IN_CONTACT", "IMMEDIATE", "Besoin renfort immédiat", "SQUAD", 0, "ENGAGED"] call comspec_overwatch_connect_fnc_requestQRF;
+        true
+    },
+    "",
+    [], // Pas de touche par défaut
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
 // Cache position / tracking tactique
 missionNamespace setVariable ["COMSPEC_lastPos", [0,0,0], true];
 missionNamespace setVariable ["COMSPEC_lastName", "", true];
