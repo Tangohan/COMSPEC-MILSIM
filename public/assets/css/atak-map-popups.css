@@ -1,13 +1,16 @@
 /* Popups Leaflet — thème tactique sombre Athena (ATAK / Overwatch / TACMAP) */
 
 .leaflet-popup.atak-map-popup .leaflet-popup-content-wrapper {
-  background: #12121a;
-  color: #e8e8ed;
-  border: 1px solid #2a2a35;
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(19, 22, 29, 0.98), rgba(13, 16, 21, 0.95));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f0f1f3;
+  border: 1px solid rgba(42, 47, 58, 0.9);
+  border-radius: 10px;
   box-shadow:
-    0 0 0 1px rgba(52, 211, 153, 0.08),
-    0 12px 28px rgba(0, 0, 0, 0.55);
+    0 0 0 1px rgba(16, 185, 129, 0.12),
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   padding: 0;
 }
 
@@ -71,11 +74,12 @@
 }
 
 .atak-unit-popup__callsign {
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #34d399;
+  color: #6ee7b7;
+  text-shadow: 0 0 12px rgba(110, 231, 183, 0.4);
   line-height: 1.2;
   word-break: break-word;
 }
@@ -142,17 +146,23 @@
 .nato-sidc-label {
   pointer-events: none;
   display: inline-block;
-  margin-top: 1px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(10, 10, 15, 0.72);
-  border: 1px solid rgba(42, 42, 53, 0.9);
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(11, 14, 19, 0.92), rgba(13, 16, 21, 0.88));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(42, 47, 58, 0.95);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: #f8fafc !important;
-  text-shadow: none !important;
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.04em;
-  max-width: 96px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
