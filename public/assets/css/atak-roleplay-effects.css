@@ -145,6 +145,51 @@
   border: 2px solid #1f2937;
 }
 
+/* Unité avec position obsolète */
+.atak-unit-obsolete {
+  opacity: 0.6;
+  filter: grayscale(30%);
+  animation: atak-fade-pulse 2s ease-in-out infinite;
+}
+
+@keyframes atak-fade-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.4; }
+}
+
+.atak-obsolete-badge {
+  display: inline-block;
+  background: rgba(251, 191, 36, 0.2);
+  color: #f59e0b;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  animation: atak-blink 2s ease-in-out infinite;
+}
+
+/* Marqueur qui "saute" sur la carte */
+.atak-marker-jump {
+  animation: atak-marker-jump-anim 0.3s ease-out;
+}
+
+@keyframes atak-marker-jump-anim {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-10px, -15px); }
+  50% { transform: translate(5px, -8px); }
+  75% { transform: translate(-3px, -3px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Unité temporairement cachée */
+.atak-unit-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+
 /* Popup unité avec statut capteur */
 .atak-unit-popup-sensor-status {
   margin-top: 8px;

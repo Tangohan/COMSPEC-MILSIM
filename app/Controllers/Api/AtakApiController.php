@@ -710,16 +710,61 @@ class AtakApiController
             return Response::json([
                 'network' => ['enabled' => false],
                 'sensor' => ['enabled' => false],
+                'measured_packet_loss' => null,
             ]);
         }
 
         $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
         $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
 
+        // Récupérer la dernière mesure de packet loss depuis les unités
+        $measuredLoss = $this->getMeasuredPacketLoss($tenantId);
+
         return Response::json([
             'network' => $networkStats,
             'sensor' => $sensorStats,
+            'measured_packet_loss' => $measuredLoss,
         ]);
+    }
+
+    /**
+     * Récupère la mesure réelle de packet loss depuis les données des unités.
+     */
+    private function getMeasuredPacketLoss(int $tenantId): ?array
+    {
+        $mapId = 1; // Par défaut
+        $units = $this->atak->getUnits($tenantId, $mapId);
+        
+        $latestMeasurement = null;
+        $latestTime = 0;
+        
+        foreach ($units as $unit) {
+            if (!isset($unit['extra'])) {
+                continue;
+            }
+            
+            $extra = is_string($unit['extra']) ? json_decode($unit['extra'], true) : $unit['extra'];
+            if (!is_array($extra)) {
+                continue;
+            }
+            
+            // Chercher les stats de packet loss
+            if (isset($extra['packet_loss']) && isset($extra['updated_at'])) {
+                $updateTime = strtotime($unit['updated_at'] ?? '');
+                if ($updateTime > $latestTime) {
+                    $latestTime = $updateTime;
+                    $latestMeasurement = [
+                        'packet_loss_percent' => (float) ($extra['packet_loss'] ?? 0),
+                        'packets_sent' => (int) ($extra['packets_sent'] ?? 0),
+                        'packets_received' => (int) ($extra['packets_received'] ?? 0),
+                        'unit_callsign' => $unit['call_sign'] ?? 'Unknown',
+                        'measured_at' => $unit['updated_at'] ?? null,
+                    ];
+                }
+            }
+        }
+        
+        return $latestMeasurement;
     }
 
     /**

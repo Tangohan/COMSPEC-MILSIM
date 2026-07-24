@@ -72,20 +72,41 @@
      * Met à jour les indicateurs de qualité réseau avec les effets roleplay.
      */
     updateNetworkQualityIndicators(quality, latency, packetLoss) {
-      if (!this.config.enabled) return;
-      
       const qualityEl = document.getElementById('atak-metric-quality-value');
       const latencyEl = document.getElementById('atak-metric-latency-value');
       const lossEl = document.getElementById('atak-metric-loss-value');
+      
+      if (!this.config.enabled) {
+        // Afficher les mesures réelles si disponibles
+        if (lossEl && packetLoss != null && packetLoss > 0) {
+          lossEl.textContent = packetLoss.toFixed(2) + ' %';
+          lossEl.classList.remove('atak-metric-warn');
+        }
+        return;
+      }
       
       if (qualityEl && this.config.disconnectRisk) {
         // Effet clignotant si risque de déconnexion
         qualityEl.classList.add('atak-blink-warn');
       }
       
-      if (lossEl && this.config.packetLoss > 0) {
-        lossEl.textContent = this.config.packetLoss.toFixed(2) + ' %';
-        lossEl.classList.add('atak-metric-warn');
+      if (lossEl) {
+        // Afficher soit la mesure réelle, soit la config simulée
+        const displayLoss = packetLoss != null && packetLoss > 0 
+          ? packetLoss 
+          : this.config.packetLoss;
+        
+        if (displayLoss > 0) {
+          const source = packetLoss != null ? '(mesuré)' : '(simulé)';
+          lossEl.textContent = displayLoss.toFixed(2) + ' % ' + source;
+          lossEl.classList.add('atak-metric-warn');
+          
+          // Tooltip avec détails
+          const parent = lossEl.parentElement;
+          if (parent && packetLoss != null) {
+            parent.title = `Mesure réelle depuis le mod Arma. ${this.config.measuredDetails || ''}`;
+          }
+        }
       }
     },
 
@@ -95,10 +116,39 @@
     degradeUnitData(units) {
       if (!this.config.enabled || !Array.isArray(units)) return units;
       
+      const now = Date.now();
+      const oldPositionsStore = this._oldPositions || new Map();
+      this._oldPositions = oldPositionsStore;
+      
       return units.map(unit => {
-        // Simuler occasionnellement des positions "sautées"
+        const unitId = unit.id || unit.call_sign;
+        
+        // Simuler perte de paquet - garder ancienne position
         if (this.config.packetLoss > 0 && Math.random() * 100 < this.config.packetLoss) {
-          return { ...unit, _roleplay_degraded: true };
+          const oldData = oldPositionsStore.get(unitId);
+          if (oldData && (now - oldData.timestamp < 30000)) {
+            // Utiliser l'ancienne position (max 30 secondes)
+            return {
+              ...oldData.unit,
+              _roleplay_degraded: true,
+              _roleplay_obsolete: true,
+              _roleplay_age: Math.floor((now - oldData.timestamp) / 1000)
+            };
+          }
+        }
+        
+        // Stocker la position actuelle pour réutilisation future
+        oldPositionsStore.set(unitId, {
+          unit: { ...unit },
+          timestamp: now
+        });
+        
+        // Simuler disparition temporaire (packet loss élevé)
+        if (this.config.packetLoss > 10 && Math.random() * 100 < (this.config.packetLoss / 2)) {
+          return {
+            ...unit,
+            _roleplay_hidden: true
+          };
         }
         
         // Appliquer des messages de statut capteur
@@ -111,6 +161,42 @@
         
         return unit;
       });
+    },
+
+    /**
+     * Applique un effet de "saut" visuel à un marqueur sur la carte.
+     */
+    applyMarkerJumpEffect(marker) {
+      if (!marker || !this.config.enabled) return;
+      
+      const element = marker.getElement ? marker.getElement() : null;
+      if (!element) return;
+      
+      // Animation de saut/glitch
+      element.classList.add('atak-marker-jump');
+      setTimeout(() => {
+        element.classList.remove('atak-marker-jump');
+      }, 300);
+    },
+
+    /**
+     * Marque une unité comme ayant une position obsolète.
+     */
+    markUnitAsObsolete(unitElement, ageSeconds) {
+      if (!unitElement || !this.config.enabled) return;
+      
+      unitElement.classList.add('atak-unit-obsolete');
+      unitElement.setAttribute('data-position-age', ageSeconds);
+      
+      // Ajouter un badge d'avertissement
+      const existing = unitElement.querySelector('.atak-obsolete-badge');
+      if (!existing) {
+        const badge = document.createElement('span');
+        badge.className = 'atak-obsolete-badge';
+        badge.textContent = `Données obsolètes (${ageSeconds}s)`;
+        badge.title = `Dernière position connue il y a ${ageSeconds} secondes`;
+        unitElement.appendChild(badge);
+      }
     },
 
     /**
@@ -144,6 +230,15 @@
           this.config.latencyRange = data.network?.latency_range || null;
           this.config.disconnectRisk = data.network?.disconnect_risk || false;
           this.config.sensorEnabled = data.sensor?.enabled || false;
+          
+          // Mesure réelle de packet loss
+          if (data.measured_packet_loss) {
+            this.config.measuredPacketLoss = data.measured_packet_loss.packet_loss_percent || 0;
+            this.config.measuredDetails = `${data.measured_packet_loss.packets_received || 0}/${data.measured_packet_loss.packets_sent || 0} paquets reçus`;
+            
+            // Mettre à jour l'affichage
+            this.updateNetworkQualityIndicators(null, null, this.config.measuredPacketLoss);
+          }
         }
       } catch (err) {
         console.warn('[atak-roleplay] Could not fetch roleplay stats:', err);

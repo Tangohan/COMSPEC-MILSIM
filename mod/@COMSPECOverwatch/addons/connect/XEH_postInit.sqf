@@ -215,6 +215,11 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 
     [] spawn comspec_overwatch_connect_fnc_playtimeTracker;
 
+    // Roleplay : PFH pour simuler les déconnexions réseau aléatoires
+    [{
+        [] call comspec_overwatch_connect_fnc_simulateNetworkDisconnect;
+    }, 5, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 5 secondes
+
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).
     missionNamespace setVariable ["COMSPEC_DisconnectSent", false, false];
