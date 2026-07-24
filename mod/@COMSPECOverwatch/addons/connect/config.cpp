@@ -98,6 +98,17 @@ class CfgFunctions {
             class showAthenaLinkHelp {};
             class getCallsign {};
             class setCallsign {};
+            
+            // ATAK Phase 1 & 2 - Nouvelles fonctions
+            class submitTacticalReport {};
+            class createPOI {};
+            class requestMEDEVAC {};
+            class requestQRF {};
+            class updateVehicleTracking {};
+            class requestVehicleService {};
+            class initVehicleTracking {};
+            class hashMapToJson {};
+            class formatTimestamp {};
             class syncCallsignFromAthena {};
             class callsignDialogShow {};
             class callsignDialogOnLoad {};
