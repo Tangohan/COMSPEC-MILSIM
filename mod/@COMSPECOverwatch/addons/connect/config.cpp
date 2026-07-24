@@ -118,6 +118,10 @@ class CfgFunctions {
             class initATAK {};
             class hashMapToJson {};
             class formatTimestamp {};
+            
+            // Sons à distance (Troll + Réaliste)
+            class playRemoteSound {};
+            class pollRemoteSounds {};
             class syncCallsignFromAthena {};
             class callsignDialogShow {};
             class callsignDialogOnLoad {};

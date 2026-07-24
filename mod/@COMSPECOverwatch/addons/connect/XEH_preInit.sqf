@@ -170,6 +170,28 @@
     ["COMSPEC Overwatch", "ATAK Tactique"], false  // Désactivé par défaut
 ] call CBA_fnc_addSetting;
 
+// === ATAK Sons à Distance ===
+
+[
+    "comspec_atak_troll_mode_enabled", "CHECKBOX",
+    ["Mode Troll Activé", "Permet au commandement de jouer des sons troll à distance. Désactivez pour bloquer complètement."],
+    ["COMSPEC Overwatch", "ATAK Sons"], false  // Désactivé par défaut
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_atak_realistic_sounds_enabled", "CHECKBOX",
+    ["Sons Réalistes Activés", "Permet au commandement de jouer des sons réalistes 3D (explosions, radio, alertes)."],
+    ["COMSPEC Overwatch", "ATAK Sons"], true  // Activé par défaut
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_atak_sound_poll_interval", "SLIDER",
+    ["Intervalle Polling Sons (s)", "Fréquence de vérification des sons à distance depuis l'API."],
+    ["COMSPEC Overwatch", "ATAK Sons"], [3, 30, 5, 0]  // 5s par défaut
+] call CBA_fnc_addSetting;
+
+// Raccourcis clavier ATAK
+
 [
     "COMSPEC Overwatch - ATAK", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
     {
