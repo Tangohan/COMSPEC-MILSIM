@@ -154,6 +154,8 @@ class CfgFunctions {
             class isAtakFunctional {};
             class repairAtak {};
             class addAtakRepairAction {};
+            class updateAtakEnhancedRoleplay {};
+            class playAtakEnhancedSound {};
             class createRoleplayZone {};
             class deleteRoleplayZone {};
             class getPlayerRoleplayZone {};
