@@ -1259,6 +1259,7 @@ return function (Router $router) {
     $router->get('/api/atak/ping', [AtakApiController::class, 'ping']);
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/activity/clear', [AtakApiController::class, 'activityClear']);

@@ -26,6 +26,7 @@ use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakGameSession;
 use App\Support\MedicalAlertParser;
@@ -39,6 +40,7 @@ class AtakApiController
     private ?array $jsonBodyCache = null;
 
     private AtakArmaWriteGuard $armaGuard;
+    private RoleplaySimulationService $roleplaySim;
 
     public function __construct(
         private AtakDataRepository $atak,
@@ -60,6 +62,7 @@ class AtakApiController
         private ?AtakOperatorIdRepository $operatorIdRepository = null,
         private ?AtakMedicalTriageRepository $medicalTriageRepository = null,
         ?AtakArmaWriteGuard $armaGuard = null,
+        ?RoleplaySimulationService $roleplaySim = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
         $this->phonePairingRepository ??= new TacticalPhonePairingRepository();
@@ -72,6 +75,7 @@ class AtakApiController
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
         $this->armaGuard = $armaGuard ?? new AtakArmaWriteGuard($this->userRepository, $this->activityLog);
+        $this->roleplaySim = $roleplaySim ?? new RoleplaySimulationService($this->tenantAtakConfigRepository);
     }
 
     /**
@@ -642,6 +646,35 @@ class AtakApiController
     }
 
     /**
+     * Applique les simulations roleplay (latence, déconnexion, packet loss).
+     * Retourne une Response d'erreur si la connexion est simulée comme perdue, null sinon.
+     */
+    private function applyRoleplayEffects(int $tenantId): ?Response
+    {
+        // Vérifier déconnexion simulée
+        if ($this->roleplaySim->shouldSimulateDisconnection($tenantId)) {
+            $message = $this->roleplaySim->getDisconnectionMessage($tenantId);
+            return Response::json([
+                'error' => 'connection_lost',
+                'message' => $message,
+            ], 503);
+        }
+
+        // Vérifier perte de paquet
+        if ($this->roleplaySim->shouldSimulatePacketLoss($tenantId)) {
+            return Response::json([
+                'error' => 'packet_lost',
+                'message' => 'Paquet perdu',
+            ], 503);
+        }
+
+        // Appliquer latence
+        $this->roleplaySim->applyNetworkLatency($tenantId);
+
+        return null;
+    }
+
+    /**
      * Garde écriture Arma : clé déjà vérifiée + Steam lié (si fourni) + session + anti-spoof.
      *
      * @return array{steam_uid: ?string, session_ok: bool}|Response
@@ -653,11 +686,39 @@ class AtakApiController
 
     public function ping(Request $request, array $params = []): Response
     {
+        // Pour le ping, on applique la latence mais pas les autres effets
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId !== null && $tenantId > 0) {
+            $this->roleplaySim->applyNetworkLatency($tenantId);
+        }
+        
         return Response::json([
             'ok' => true,
             'service' => 'atak',
             // Horodatage serveur (ms) pour mesurer la latence côté navigateur.
             'server_ms' => (int) round(microtime(true) * 1000),
+        ]);
+    }
+
+    /**
+     * Statistiques de simulation roleplay pour affichage UI.
+     */
+    public function roleplayStats(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId === null || $tenantId < 1) {
+            return Response::json([
+                'network' => ['enabled' => false],
+                'sensor' => ['enabled' => false],
+            ]);
+        }
+
+        $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
+        $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
+
+        return Response::json([
+            'network' => $networkStats,
+            'sensor' => $sensorStats,
         ]);
     }
 
@@ -1208,6 +1269,13 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
+        
+        // Simulation roleplay
+        $roleplayResponse = $this->applyRoleplayEffects($tenantId);
+        if ($roleplayResponse !== null) {
+            return $roleplayResponse;
+        }
+        
         $mapId = $this->mapId($request);
         $rows = $this->atak->getUnits($tenantId, $mapId);
         $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
@@ -1689,6 +1757,13 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
+        
+        // Simulation roleplay
+        $roleplayResponse = $this->applyRoleplayEffects($tenantId);
+        if ($roleplayResponse !== null) {
+            return $roleplayResponse;
+        }
+        
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 100);
         $rows = $this->atak->getChatMessages($tenantId, $mapId, min($limit, 500));
@@ -1706,6 +1781,12 @@ class AtakApiController
             return $r;
         }
         $tenantId = $r;
+        
+        // Simulation roleplay
+        $roleplayResponse = $this->applyRoleplayEffects($tenantId);
+        if ($roleplayResponse !== null) {
+            return $roleplayResponse;
+        }
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 40);
         $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));

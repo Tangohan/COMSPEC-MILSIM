@@ -204,3 +204,31 @@ if (!(_savedRole isEqualTo "")) then {
     missionNamespace setVariable ["COMSPEC_Role", _savedRole, false];
 };
 missionNamespace setVariable ["COMSPEC_HtmlAlerts", [], false];
+
+// ────────────────────────────────────────────────────────────────────────────
+// Roleplay et simulation
+// ────────────────────────────────────────────────────────────────────────────
+
+[
+    "comspec_overwatch_roleplay_enabled", "CHECKBOX",
+    ["Activer le mode roleplay", "Active les dysfonctionnements simulés (réseau, capteurs). Configuration détaillée via l'administration web du portail."],
+    "COMSPEC Overwatch — Roleplay", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_roleplay_network_failures", "CHECKBOX",
+    ["Simulations réseau", "Active les délais, pertes de paquets et déconnexions temporaires. Les paramètres (latence, taux de perte) sont configurés sur le portail."],
+    "COMSPEC Overwatch — Roleplay", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_roleplay_sensor_failures", "CHECKBOX",
+    ["Défauts capteurs médicaux", "Simule des dysfonctionnements du capteur de rythme cardiaque (valeurs manquantes, erronées ou nulles). Les taux de défaillance sont configurés sur le portail."],
+    "COMSPEC Overwatch — Roleplay", false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_roleplay_visual_effects", "CHECKBOX",
+    ["Effets visuels de dégradation", "Affiche des glitchs, parasites et messages d'erreur dans l'interface ATAK web quand la liaison se dégrade."],
+    "COMSPEC Overwatch — Roleplay", true
+] call CBA_fnc_addSetting;

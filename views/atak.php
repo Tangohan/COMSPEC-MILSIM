@@ -55,6 +55,7 @@ if ($atakMapConfig) {
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
@@ -755,6 +756,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script>
     (function () {
       window.ATAKShowError = function (msg) {
