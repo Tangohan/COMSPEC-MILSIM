@@ -208,24 +208,95 @@ $tenant = $tenant ?? [];
                         <div>
                             <h2 class="text-sm font-black text-slate-900 tracking-tight">Zones de dégradation géographique</h2>
                             <p class="mt-1 text-xs text-slate-600 leading-relaxed">
-                                Définit des zones sur la carte où la liaison est dégradée. Format JSON : liste de cercles ou polygones (à venir).
+                                Créez des zones via les modules Zeus/Eden in-game (section COMSPEC Roleplay). Types disponibles : sans couverture, interférence, dégradée, brouilleur.
                             </p>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="zones_enabled" class="sr-only peer" <?= ($config['zones_enabled'] ?? false) ? 'checked' : '' ?>>
-                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                            <span class="ml-3 text-sm font-medium text-slate-900">Activer</span>
-                        </label>
                     </div>
                 </div>
                 <div class="px-5 py-5">
-                    <label for="zones_config" class="block text-sm font-semibold text-slate-700 mb-2">
-                        Configuration JSON
-                    </label>
-                    <textarea name="zones_config" id="zones_config" rows="6" 
-                              class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                              placeholder='[{"center": [15000, 15000], "radius": 2000, "effect": "high_loss"}]'><?= htmlspecialchars((string) ($config['zones_config'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                    <p class="mt-1 text-xs text-slate-500">Format d'exemple — fonctionnalité à implémenter</p>
+                    <div class="rounded-lg border border-purple-200 bg-purple-50/50 px-4 py-3">
+                        <p class="text-xs text-purple-900 leading-relaxed">
+                            <strong>Configuration in-game uniquement</strong> — Utilisez les modules Zeus/Eden pour placer des zones de dégradation réseau sur la carte.
+                            Les joueurs verront des alertes et subiront des effets selon le type de zone (déconnexion, interférences, packet loss).
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mode Troll -->
+            <section class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/30 shadow-sm overflow-hidden">
+                <div class="px-5 py-4 border-b border-amber-100 bg-amber-50/80">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h2 class="text-sm font-black text-amber-900 tracking-tight flex items-center gap-2">
+                                🤖 Mode Troll (Captcha)
+                            </h2>
+                            <p class="mt-1 text-xs text-amber-800 leading-relaxed">
+                                Force les joueurs à valider des captcha, tests anti-robot et autres vérifications absurdes avant d'accéder à l'ATAK Enhanced in-game.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-5 py-5 space-y-4">
+                    <div class="rounded-lg border border-orange-200 bg-orange-50/50 px-4 py-3">
+                        <p class="text-xs text-orange-900 leading-relaxed mb-3">
+                            <strong>⚠ Configuration côté client uniquement</strong> — Les joueurs doivent activer le mode dans leurs paramètres CBA Arma :
+                        </p>
+                        <div class="bg-white rounded border border-orange-200 px-3 py-2 font-mono text-[11px] text-slate-800 space-y-1">
+                            <p><strong>Paramètre CBA :</strong> comspec_overwatch_troll_mode</p>
+                            <p class="text-slate-600">• 0 = Désactivé (par défaut)</p>
+                            <p class="text-slate-600">• 1 = Occasionnel (10% de chance)</p>
+                            <p class="text-slate-600">• 2 = Fréquent (40% de chance)</p>
+                            <p class="text-slate-600">• 3 = Systématique (100%, toujours)</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-xs font-bold text-amber-900">Types de captcha disponibles :</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">Vérification de l'âge</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">Confirmer une date de naissance aléatoire</p>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">Test anti-robot</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">"Êtes-vous un robot ?" et questions absurdes</p>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">Maths impossibles</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">Équations complexes ou pièges logiques</p>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">Sélection d'images</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">"Cliquez sur tous les feux tricolores"</p>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">CGU illisibles</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">847 pages de conditions générales absurdes</p>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <p class="text-xs font-semibold text-slate-900">Questions de sécurité</p>
+                                <p class="text-[11px] text-slate-600 mt-0.5">Informations impossibles à connaître</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg border border-red-200 bg-red-50/50 px-4 py-3">
+                        <p class="text-xs font-bold text-red-900 mb-1">Mécanisme de troll</p>
+                        <p class="text-[11px] text-red-800 leading-relaxed">
+                            30% de chance que même la bonne réponse soit refusée. Messages d'erreur variés : "Erreur 418 : Je suis une théière", "Réponse trop rapide", etc.
+                            Cooldown de 60s entre deux captchas.
+                        </p>
+                    </div>
+
+                    <div class="rounded-lg border border-blue-200 bg-blue-50/50 px-4 py-3">
+                        <p class="text-xs font-bold text-blue-900 mb-1">Cas d'usage recommandés</p>
+                        <p class="text-[11px] text-blue-800 leading-relaxed">
+                            <strong>Niveau 1 (Occasionnel) :</strong> Ajoute une touche d'humour rare sans gêner le gameplay<br/>
+                            <strong>Niveau 2 (Fréquent) :</strong> Pour des missions "funny" ou événements communautaires<br/>
+                            <strong>Niveau 3 (Systématique) :</strong> ⚠ Très contraignant — réservé aux sessions de test ou punitions humoristiques
+                        </p>
+                    </div>
                 </div>
             </section>
 
@@ -246,12 +317,64 @@ $tenant = $tenant ?? [];
             </div>
         </form>
 
-        <div class="rounded-lg border border-blue-100 bg-blue-50/50 px-5 py-4">
-            <h3 class="text-sm font-semibold text-blue-900 mb-2">Activation côté client</h3>
-            <p class="text-xs text-blue-800 leading-relaxed">
-                Les joueurs doivent activer le mode roleplay dans les paramètres CBA Arma (section <strong>COMSPEC Overwatch — Roleplay</strong>).
-                Les effets visuels web sont activés automatiquement si des simulations sont configurées.
-            </p>
+        <div class="rounded-lg border border-blue-100 bg-blue-50/50 px-5 py-4 space-y-3">
+            <div>
+                <h3 class="text-sm font-semibold text-blue-900 mb-2">📋 Activation côté client (CBA Settings)</h3>
+                <p class="text-xs text-blue-800 leading-relaxed mb-3">
+                    Les joueurs doivent configurer les paramètres CBA Arma dans la section <strong>COMSPEC Overwatch — Roleplay</strong> :
+                </p>
+                <div class="bg-white rounded border border-blue-200 px-4 py-3 space-y-2 text-xs">
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 font-bold">✓</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_roleplay_enabled</p>
+                            <p class="text-slate-600 text-[11px]">Active/désactive tous les effets roleplay (base)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 font-bold">✓</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_roleplay_network_failures</p>
+                            <p class="text-slate-600 text-[11px]">Active les simulations réseau (délais, packet loss, déconnexions)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 font-bold">✓</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_roleplay_sensor_failures</p>
+                            <p class="text-slate-600 text-[11px]">Active les défauts de capteur de rythme cardiaque</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 font-bold">✓</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_roleplay_visual_effects</p>
+                            <p class="text-slate-600 text-[11px]">Affiche les glitchs et parasites dans l'ATAK Enhanced in-game</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 font-bold">✓</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_atak_realism (0-3)</p>
+                            <p class="text-slate-600 text-[11px]">Niveau de dommages physiques à l'ATAK (blessures au torse)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="text-amber-600 font-bold">🤖</span>
+                        <div>
+                            <p class="font-semibold text-slate-900">comspec_overwatch_troll_mode (0-3)</p>
+                            <p class="text-slate-600 text-[11px]">Mode captcha troll (0=désactivé, 1=10%, 2=40%, 3=100%)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
+                <p class="text-[11px] text-emerald-900 leading-relaxed">
+                    <strong>Configuration recommandée pour démarrer :</strong> Activez uniquement <code class="bg-white px-1 py-0.5 rounded text-[10px]">roleplay_enabled</code> et 
+                    <code class="bg-white px-1 py-0.5 rounded text-[10px]">roleplay_network_failures</code>, puis ajustez les paramètres serveur ci-dessus.
+                </p>
+            </div>
         </div>
 
     </div>
