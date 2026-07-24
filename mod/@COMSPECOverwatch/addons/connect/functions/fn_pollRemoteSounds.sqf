@@ -1,7 +1,7 @@
 /*
  * Auteur: COMSPEC
  * Polling sons à distance depuis API
- * Appelé automatiquement toutes les 5 secondes
+ * Appelé automatiquement si intervalle > 0 dans CBA Settings
  * 
  * Endpoint: GET /api/atak/sounds/pending
  * Retour API: [
@@ -19,6 +19,12 @@
 
 // Vérifier si système activé
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+// Vérifier si polling activé (interval > 0)
+private _pollInterval = missionNamespace getVariable ["comspec_atak_sound_poll_interval", 0];
+if (_pollInterval <= 0) exitWith {
+    // Polling désactivé
+};
 
 // Vérifier interval (ne pas spammer)
 private _lastPoll = missionNamespace getVariable ["COMSPEC_LastSoundPoll", 0];

@@ -55,11 +55,17 @@ player addEventHandler ["Respawn", {
     // Placeholder pour futures features (notifications polling, etc.)
 }, 60] call CBA_fnc_addPerFrameHandler;
 
-// 6. Boucle polling sons à distance (intervalle configurable)
-private _soundPollInterval = missionNamespace getVariable ["comspec_atak_sound_poll_interval", 5];
-[{
-    [] call comspec_overwatch_connect_fnc_pollRemoteSounds;
-}, _soundPollInterval] call CBA_fnc_addPerFrameHandler;
+// 6. Boucle polling sons à distance (si activé via CBA Settings)
+private _soundPollInterval = missionNamespace getVariable ["comspec_atak_sound_poll_interval", 0];
+if (_soundPollInterval > 0) then {
+    [{
+        [] call comspec_overwatch_connect_fnc_pollRemoteSounds;
+    }, _soundPollInterval] call CBA_fnc_addPerFrameHandler;
+    
+    diag_log format ["[COMSPEC ATAK] Polling sons à distance activé (interval %1s)", _soundPollInterval];
+} else {
+    diag_log "[COMSPEC ATAK] Polling sons à distance DÉSACTIVÉ (interval = 0)";
+};
 
 // Feedback final
 systemChat "✅ Système ATAK opérationnel";

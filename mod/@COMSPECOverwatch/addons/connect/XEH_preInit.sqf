@@ -181,13 +181,13 @@
 [
     "comspec_atak_realistic_sounds_enabled", "CHECKBOX",
     ["Sons Réalistes Activés", "Permet au commandement de jouer des sons réalistes 3D (explosions, radio, alertes)."],
-    ["COMSPEC Overwatch", "ATAK Sons"], true  // Activé par défaut
+    ["COMSPEC Overwatch", "ATAK Sons"], false  // DÉSACTIVÉ PAR DÉFAUT - Joueur choisit
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_atak_sound_poll_interval", "SLIDER",
-    ["Intervalle Polling Sons (s)", "Fréquence de vérification des sons à distance depuis l'API."],
-    ["COMSPEC Overwatch", "ATAK Sons"], [3, 30, 5, 0]  // 5s par défaut
+    ["Intervalle Polling Sons (s)", "Fréquence de vérification des sons à distance depuis l'API. Mettre à 0 pour désactiver complètement."],
+    ["COMSPEC Overwatch", "ATAK Sons"], [0, 30, 0, 0]  // 0 par défaut = DÉSACTIVÉ
 ] call CBA_fnc_addSetting;
 
 // Raccourcis clavier ATAK

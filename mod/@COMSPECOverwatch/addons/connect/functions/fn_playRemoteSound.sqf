@@ -26,11 +26,27 @@ if (_soundId isEqualTo "") exitWith {
     false
 };
 
+// Vérifier si système sons activé globalement
+private _pollInterval = missionNamespace getVariable ["comspec_atak_sound_poll_interval", 0];
+if (_pollInterval <= 0) exitWith {
+    diag_log "[COMSPEC ATAK] playRemoteSound: Système sons désactivé (interval = 0)";
+    false
+};
+
 // Vérifier mode troll activé si son troll
 if (_type isEqualTo "troll") then {
     private _trollEnabled = missionNamespace getVariable ["comspec_atak_troll_mode_enabled", false];
     if (!_trollEnabled) exitWith {
         diag_log format ["[COMSPEC ATAK] playRemoteSound: Mode troll désactivé, son '%1' ignoré", _soundId];
+        false
+    };
+};
+
+// Vérifier mode réaliste activé si son réaliste
+if (_type isEqualTo "realistic") then {
+    private _realisticEnabled = missionNamespace getVariable ["comspec_atak_realistic_sounds_enabled", false];
+    if (!_realisticEnabled) exitWith {
+        diag_log format ["[COMSPEC ATAK] playRemoteSound: Mode réaliste désactivé, son '%1' ignoré", _soundId];
         false
     };
 };

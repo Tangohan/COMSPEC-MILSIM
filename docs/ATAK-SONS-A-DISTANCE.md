@@ -214,6 +214,24 @@ Backend (status=delivered)
 
 ## 🔧 Configuration
 
+### ⚠️ Activation Requise (OFF par Défaut)
+
+**Le système est COMPLÈTEMENT DÉSACTIVÉ par défaut.**
+
+Pour l'utiliser :
+1. **CBA Settings** → COMSPEC Overwatch → ATAK Sons
+2. ☑ **Sons Réalistes Activés** (ou Mode Troll)
+3. **Intervalle Polling** : Mettre à **5** secondes (ou plus)
+4. Redémarrer mission (ou wait settings update)
+
+**Pourquoi OFF par défaut ?**
+- Évite sons non désirés
+- Joueur contrôle total
+- Compatible avec tous mods
+- Opt-in explicite
+
+---
+
 ### CBA Settings Joueur
 
 **COMSPEC Overwatch → ATAK Sons**
@@ -221,8 +239,14 @@ Backend (status=delivered)
 | Setting | Défaut | Description |
 |---------|--------|-------------|
 | Mode Troll Activé | ☐ OFF | Autoriser sons troll |
-| Sons Réalistes Activés | ☑ ON | Autoriser sons réalistes |
-| Intervalle Polling (s) | 5 | Fréquence check API |
+| Sons Réalistes Activés | ☐ OFF | Autoriser sons réalistes |
+| Intervalle Polling (s) | 0 (OFF) | Fréquence check API (0 = désactivé) |
+
+**⚠️ IMPORTANT : Système désactivé par défaut !**
+
+Pour activer :
+1. **Sons Réalistes** : ☑ Activer + Intervalle > 0 (recommandé : 5s)
+2. **Sons Troll** : ☑ Activer Mode Troll + Intervalle > 0
 
 **Note** : Même si activé côté joueur, le mode troll doit aussi être activé côté serveur.
 
@@ -546,18 +570,25 @@ DROP EVENT evt_cleanup_remote_sounds;
 
 ## ✨ Résumé
 
-**Système sons à distance = Immersion + Fun**
+**Système sons à distance = Immersion + Fun (Opt-In)**
 
-- ✅ **2 modes** : Troll (opt-in) + Réaliste (par défaut)
+- ✅ **OFF par défaut** : Joueur active explicitement
+- ✅ **2 modes** : Troll (opt-in) + Réaliste (opt-in)
 - ✅ **50+ sons** : 15 troll + 35 réalistes
 - ✅ **Audio 3D** : Sons positionnés dans le monde
 - ✅ **Sécurité** : Cooldowns, limites, permissions
 - ✅ **Analytics** : Historique complet
-- ✅ **Polling auto** : Aucune action joueur requise
+- ✅ **Contrôle total** : Joueur choisit ce qu'il accepte
+
+**Activation** :
+1. CBA Settings → ATAK Sons
+2. Activer mode(s) désiré(s)
+3. Intervalle Polling > 0 (ex: 5s)
 
 **Utilisation recommandée** :
-- Mode Réaliste : Toujours ON (immersion missions)
-- Mode Troll : Events spéciaux, détente post-mission
+- Mode Réaliste : Missions immersives (si désiré)
+- Mode Troll : Events spéciaux (si désiré)
+- Désactivé : Par défaut (aucun son)
 
 ---
 
