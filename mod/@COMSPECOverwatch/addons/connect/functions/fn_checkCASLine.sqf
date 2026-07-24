@@ -7,4 +7,4 @@ if (_id isEqualTo "") exitWith { ["COMSPEC_Warning", ["No CAS request selected"]
 private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
 "COMSPECExtension" callExtension ["SendCASCheckLine", [_id, _lineKey, if (_checked) then {"true"} else {"false"}, _callsign]];
-["COMSPEC_Info", [format ["Ligne %1 %2", _lineKey, if (_checked) then {"validée"} else {"décochée"}]]] call comspec_overwatch_connect_fnc_showNotification;
+["COMSPEC_Info", [format ["Ligne %1 %2", _lineKey, if (_checked) then {"validated"} else {"unchecked"}]]] call comspec_overwatch_connect_fnc_showNotification;

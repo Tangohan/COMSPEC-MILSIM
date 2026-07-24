@@ -51,4 +51,4 @@ if (_path isEqualTo "") exitWith {
         _capturedAt
     ]
 ];
-["COMSPEC_Info", ["Image de recon envoyée"]] call comspec_overwatch_connect_fnc_showNotification;
+["COMSPEC_Info", ["Recon image sent"]] call comspec_overwatch_connect_fnc_showNotification;
