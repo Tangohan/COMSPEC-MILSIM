@@ -1,51 +1,233 @@
-# Documentation Athena / COMSPEC-MILSIM
+# 📚 Documentation COMSPEC ATAK
 
-Ce dossier regroupe la documentation du projet sous deux angles complémentaires.
-
-## Guide d’utilisation (public / utilisateurs)
-
-Destiné aux **membres**, **référents** et **administrateurs d’organisation** qui utilisent l’interface web au quotidien.  
-**Aucun jargon technique** (pas de fichiers serveur, noms de tables, etc.) — uniquement le fonctionnement fonctionnel du portail.
-
-| Document | Contenu |
-|----------|---------|
-| [Guide utilisateur — Sommaire](utilisateur/README.md) | Point d’entrée, navigation type « bibliothèque » |
-| [Premiers pas](utilisateur/premiers-pas.md) | Concepts : portail, communautés, session |
-| [Connexion et compte](utilisateur/connexion-et-compte.md) | Inscription, sécurité, préférences, profils |
-| [Communautés](utilisateur/communautes.md) | Pages publiques, création, bascule entre organisations |
-| [Navigation et tableau de bord](utilisateur/tableau-de-bord-et-navigation.md) | Menu, recherche, hub |
-| [Personnel et ORBAT](utilisateur/personnel-orbat.md) | Fiches, annuaire, structure |
-| [Documents](utilisateur/documents.md) | Consultation, gestion documentaire |
-| [Formations](utilisateur/formations.md) | Catalogue, parcours, quiz, attestations |
-| [Forum](utilisateur/forum.md) | Catégories, sujets, modération côté usage |
-| [Événements, pointage, messages](utilisateur/evenements-pointage-messages.md) | Calendrier, présence, fil de discussion interne |
-| [Courrier officiel](utilisateur/courrier-officiel.md) | Workflow, modèles, signatures |
-| [Équipement, modpacks, outils tactiques](utilisateur/equipement-modpacks-atak.md) | Ressources jeu, ATAK, cartes |
-| [Enrôlement et recrutement](utilisateur/enrolement-recrutement.md) | Candidatures, statuts |
-| [Dossier opérateur](utilisateur/dossier-operateur.md) | Synthèse admissibilité et qualifications |
-| [Back-office organisation](utilisateur/back-office-organisation.md) | Paramétrage communauté (pour profils autorisés) |
-| [Recherche et raccourcis](utilisateur/recherche-et-raccourcis.md) | Portail, clavier |
-| [FAQ](utilisateur/faq.md) | Questions fréquentes |
-| [Journal des révisions du guide](utilisateur/JOURNAL-GUIDE.md) | Jalons du guide intégré au portail |
-
-## Documentation technique (équipe projet / exploitation)
-
-Destinée aux **développeurs** et **exploitants** : architecture, configuration, sécurité, intégrations.
-
-| Document | Contenu |
-|----------|---------|
-| [Sommaire technique](technique/README.md) | Vue d’ensemble |
-| [Architecture applicative](technique/architecture.md) | MVC, routage, middlewares, multi-tenant |
-| [Structure du dépôt](technique/structure-du-depot.md) | Répertoires principaux |
-| [Configuration et déploiement](technique/configuration-et-deploiement.md) | Variables d’environnement, chemins |
-| [Modules fonctionnels (cartographie)](technique/modules-fonctionnels.md) | Fonctionnalités ↔ zones du code |
-| [Sécurité et permissions](technique/securite-et-permissions.md) | Authentification, rôles, API tactiques |
-| [Intégrations externes](technique/integrations.md) | Courriel, paiement, clients tactiques |
-| [Plan d’amélioration — Back-office TENANT](technique/plan-amelioration-back-office-tenant.md) | Audit et priorisation des améliorations du back-office organisation |
-| [Plan d’amélioration — Features Communautés](technique/plan-amelioration-features-communautes.md) | Audit et priorisation des évolutions communautaires plateforme |
-| [Plan d’amélioration — Admin site (Mod/Admin/Support)](technique/plan-amelioration-administration-site-mod-admin-support.md) | Audit et priorisation des évolutions de l’administration plateforme |
-| [Plan d’exécution — Admin site (Mod/Admin/Support)](technique/plan-execution-administration-site-mod-admin-support.md) | Plan opérationnel par rôle modération, support et administration |
+Bienvenue dans la documentation complète des features ATAK pour COMSPEC Overwatch.
 
 ---
 
-*Marque : **Athena** — portail SI pour communautés MILSIM et gestion opérationnelle.*
+## 🗺️ Navigation rapide
+
+### 🚀 Pour démarrer rapidement
+
+| Document | Description | Pour qui |
+|----------|-------------|----------|
+| **[Quick Start Integration](QUICK-START-INTEGRATION.md)** | Guide d'intégration rapide (30min) | Développeurs frontend/mod |
+| **[Plan de tests](PLAN-TESTS-ATAK.md)** | Tests manuels validation backend | DevOps, QA |
+| **[État d'avancement](ETAT-AVANCEMENT-ATAK.md)** | Progression globale projet | PM, Lead Dev |
+
+### 📖 Documentation technique
+
+| Document | Description | Pour qui |
+|----------|-------------|----------|
+| **[Guide intégration API](GUIDE-INTEGRATION-API-ATAK.md)** | 31 endpoints détaillés avec exemples | Développeurs |
+| **[Synthèse technique](SYNTHESE-TECHNIQUE-ATAK-PHASES-1-2.md)** | Architecture, sécurité, performance | Architectes, Lead Dev |
+| **[CHANGELOG](../CHANGELOG-ATAK.md)** | Historique modifications | Toute l'équipe |
+
+### 📋 Documentation produit
+
+| Document | Description | Pour qui |
+|----------|-------------|----------|
+| **[Proposition features](NOUVELLES-FEATURES-ATAK-MOD.md)** | 15 features sur 5 phases | Product, PM |
+| **[Comparaison produits](COMPARAISON-PRODUIT-COMSPEC-CTAB-SIT.md)** | COMSPEC vs CTAB/SIT/ATAK | Product, Marketing |
+| **[Documentation ATAK Web](ATAK-WEB-DOCUMENTATION-PRODUIT.md)** | Features interface web | Product, Utilisateurs |
+| **[Athena Mythologie](ATHENA-MYTHOLOGIE.md)** | Philosophie produit | Marketing, Communication |
+
+### 📢 Versions forum/Discord
+
+| Document | Description |
+|----------|-------------|
+| **[Comparaison (forum)](COMPARAISON-PRODUIT-VERSION-FORUM.md)** | Version sans URLs/tableaux |
+| **[ATAK Web (forum)](ATAK-WEB-VERSION-FORUM.md)** | Version narrative simplifiée |
+| **[Athena (forum)](ATHENA-MYTHOLOGIE-VERSION-FORUM.md)** | Version storytelling |
+
+---
+
+## 🎯 Par cas d'usage
+
+### "Je veux intégrer les API dans mon code"
+
+1. **Lis** : [Quick Start Integration](QUICK-START-INTEGRATION.md) (30min)
+2. **Réfère-toi à** : [Guide intégration API](GUIDE-INTEGRATION-API-ATAK.md)
+3. **Teste avec** : [Plan de tests](PLAN-TESTS-ATAK.md)
+
+**Exemples prêts à l'emploi** :
+- JavaScript/Leaflet → Quick Start, section "Intégration Web"
+- SQF/Arma → Quick Start, section "Intégration Mod"
+- Curl/API brute → Plan de tests
+
+---
+
+### "Je veux comprendre l'architecture"
+
+1. **Vue d'ensemble** : [Synthèse technique](SYNTHESE-TECHNIQUE-ATAK-PHASES-1-2.md)
+2. **Détails base de données** : Migrations SQL dans `/workspace/migrations/2026_07_24_*.sql`
+3. **Code source** : Repositories dans `/workspace/app/Repositories/Atak*.php`
+
+**Points d'entrée clés** :
+- Architecture système → Synthèse technique, section "Architecture"
+- Tables BDD → Synthèse technique, section "Base de données"
+- API REST → Guide intégration API, section "API REST"
+
+---
+
+### "Je veux déployer en production"
+
+1. **Checklist** : [Synthèse technique](SYNTHESE-TECHNIQUE-ATAK-PHASES-1-2.md), section "Migration et déploiement"
+2. **Tests validation** : [Plan de tests](PLAN-TESTS-ATAK.md)
+3. **Monitoring** : Synthèse technique, section "Monitoring"
+
+**Étapes déploiement** :
+1. Backup base de données
+2. Exécuter migrations SQL (001 → 006)
+3. Vérifier création tables/vues/triggers
+4. Lancer plan de tests (23 tests)
+5. Activer monitoring production
+
+---
+
+### "Je veux connaître les prochaines étapes"
+
+1. **Roadmap** : [Proposition features](NOUVELLES-FEATURES-ATAK-MOD.md)
+2. **Progression** : [État d'avancement](ETAT-AVANCEMENT-ATAK.md)
+3. **Historique** : [CHANGELOG](../CHANGELOG-ATAK.md)
+
+**Phases à venir** :
+- **Phase 3** : Waypoints, Timeline, Artillerie
+- **Phase 4** : UAV, IFF avancé, Météo
+- **Phase 5** : Replay, Certifications LMS, Caméras
+
+---
+
+### "Je veux présenter le projet"
+
+**Documentation produit** :
+- **Pitch interne** : [État d'avancement](ETAT-AVANCEMENT-ATAK.md) (vue exécutive)
+- **Comparaison concurrence** : [Comparaison produits](COMPARAISON-PRODUIT-COMSPEC-CTAB-SIT.md)
+- **Philosophie produit** : [Athena Mythologie](ATHENA-MYTHOLOGIE.md)
+
+**Pour communication externe** :
+- **Forum/Discord** : Versions forum adaptées (sans URLs/tableaux)
+- **Blog/Site** : Documentation ATAK Web (features interface)
+
+---
+
+## 📊 Statistiques documentation
+
+```
+Documentation technique
+├── Guides intégration : 2 fichiers (1 800 lignes)
+├── Architecture        : 1 fichier (600 lignes)
+├── Tests               : 1 fichier (700 lignes)
+└── État avancement     : 1 fichier (450 lignes)
+
+Documentation produit
+├── Comparaison         : 1 fichier (500 lignes)
+├── Features ATAK Web   : 1 fichier (400 lignes)
+├── Mythologie          : 1 fichier (200 lignes)
+└── Proposition         : 1 fichier (900 lignes)
+
+Versions forum          : 3 fichiers (800 lignes)
+CHANGELOG               : 1 fichier (400 lignes)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL                   : 12 fichiers (6 750 lignes)
+```
+
+---
+
+## 🔄 Mises à jour
+
+### Dernière mise à jour : 24 juillet 2026
+
+**Ajouts récents** :
+- ✅ Quick Start Integration (nouveau)
+- ✅ Plan de tests complet (nouveau)
+- ✅ État d'avancement détaillé (nouveau)
+- ✅ CHANGELOG structuré (nouveau)
+
+**À venir** :
+- ⏳ Vidéos tutoriels intégration
+- ⏳ Diagrammes architecture (Mermaid)
+- ⏳ FAQ développeurs
+- ⏳ Troubleshooting avancé
+
+---
+
+## 🤝 Contribution
+
+### Mettre à jour la documentation
+
+1. **Éditer** le fichier concerné (Markdown)
+2. **Commit** avec message descriptif
+3. **Push** sur branche feature
+4. **PR** vers `main` avec review
+
+### Conventions
+
+**Nommage fichiers** :
+- Technique : `MAJUSCULES-TIRETS.md`
+- Produit : `Majuscules-Tirets.md`
+- Forum : suffixe `-VERSION-FORUM.md`
+
+**Structure documents** :
+```markdown
+# Titre principal
+
+**Métadonnées** : Version, Date, Auteur
+
+---
+
+## Section 1
+[Contenu...]
+
+## Section 2
+[Contenu...]
+
+---
+
+*Footer avec date et auteur*
+```
+
+**Style** :
+- Titres : `#` H1, `##` H2, `###` H3
+- Code inline : `` `code` ``
+- Blocs code : ` ```language `
+- Listes : `-` ou `1.`
+- Tableaux : Markdown standard
+- Emojis : Modération (titres, listes importantes uniquement)
+
+---
+
+## 📞 Support
+
+**Questions documentation** :
+- Issues GitHub : Label `documentation`
+- Discord : Canal `#dev-atak`
+- Email : dev@comspec.fr
+
+**Corrections/améliorations** :
+- Typos → PR directe
+- Ajouts majeurs → Issue puis PR
+- Clarifications → Commentaires PR
+
+---
+
+## 🏆 Crédits
+
+**Documentation créée par** : Cloud Agent  
+**Date** : 24 juillet 2026  
+**Équipe** : Développement COMSPEC  
+**Repository** : [COMSPEC-MILSIM](https://github.com/Tangohan/COMSPEC-MILSIM)
+
+---
+
+## 📜 Licence
+
+Cette documentation est distribuée sous la même licence que le projet COMSPEC Overwatch.
+
+Certaines parties dérivées de :
+- **cTab/cTab+** (GPL v2) : Inspiration features tactiques
+- **ATAK** (Domaine public US Gov) : Concepts interface et fonctionnalités
+
+---
+
+*Dernière mise à jour : 24 juillet 2026*
