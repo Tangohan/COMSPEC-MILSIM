@@ -53,7 +53,8 @@ final class TenantBootstrapService
         $pdo->beginTransaction();
         try {
             $planSlug = $this->normalizePlanSlug((string) ($options['plan_slug'] ?? 'free'));
-            $tenantId = $this->tenantRepository->create($name, $slug, $planSlug);
+            $tenantType = TenantTypeConfig::normalizeType((string) ($options['tenant_type'] ?? 'full'));
+            $tenantId = $this->tenantRepository->create($name, $slug, $planSlug, $tenantType);
 
             $gov = \App\Services\Community\TenantDefaultRoleDefinitions::governanceRoles();
             $co = $gov[0];
@@ -73,22 +74,28 @@ final class TenantBootstrapService
 
             $gradeId = $this->resolveDefaultGradeIdForNewCommunity($pdo, $tenantId, $gradeSystemCode, $founderGradeId);
 
-            TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
-            TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
-            TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
-            TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
-            TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);
-            if ($wizard !== null) {
-                TenantSeedHelper::applyWizardCommunityRoles($pdo, $tenantId, $rolesTemplate);
-                $customRoles = $wizard['custom_roles'] ?? [];
-                if (is_array($customRoles) && $customRoles !== []) {
-                    TenantSeedHelper::applyWizardCustomRoles($pdo, $tenantId, $customRoles);
+            $seedConfig = TenantTypeConfig::getSeedConfig($tenantType);
+
+            if ($tenantType === TenantTypeConfig::TYPE_FULL) {
+                TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
+                TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                TenantSeedHelper::seedDocumentsEquipment($pdo, $tenantId);
+                TenantSeedHelper::ensureSystemAdminPermissions($pdo, $tenantId);
+                TenantSeedHelper::ensureTenantPermissionCatalog($pdo, $tenantId);
+                if ($wizard !== null) {
+                    TenantSeedHelper::applyWizardCommunityRoles($pdo, $tenantId, $rolesTemplate);
+                    $customRoles = $wizard['custom_roles'] ?? [];
+                    if (is_array($customRoles) && $customRoles !== []) {
+                        TenantSeedHelper::applyWizardCustomRoles($pdo, $tenantId, $customRoles);
+                    }
                 }
+                TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
+                (new \App\Services\Personnel\PersonnelJobRoleBootstrapService(
+                    new \App\Repositories\PersonnelJobRoleRepository()
+                ))->ensureDefaultsForTenant($pdo, $tenantId);
+            } else {
+                $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId, $tenantAdminRoleId);
             }
-            TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
-            (new \App\Services\Personnel\PersonnelJobRoleBootstrapService(
-                new \App\Repositories\PersonnelJobRoleRepository()
-            ))->ensureDefaultsForTenant($pdo, $tenantId);
 
             $st = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, permission_id FROM role_permissions WHERE role_id = ?');
             $st->execute([$communityOwnerRoleId, $tenantAdminRoleId]);
@@ -335,5 +342,54 @@ final class TenantBootstrapService
     private function isReservedCommunityCode(string $normalized): bool
     {
         return in_array($normalized, self::RESERVED_COMMUNITY_CODES, true);
+    }
+
+    /**
+     * Seeds minimaux pour les tenants simplifiés (effectifs ou ATAK).
+     */
+    private function seedSimplifiedTenant(PDO $pdo, int $tenantId, string $tenantType, int $communityOwnerRoleId, int $tenantAdminRoleId): void
+    {
+        $permissions = TenantTypeConfig::basePermissionsByType()[$tenantType] ?? [];
+        $roles = TenantTypeConfig::baseRolesByType()[$tenantType] ?? [];
+
+        $permIds = [];
+        foreach ($permissions as $p) {
+            $stmt = $pdo->prepare('INSERT INTO permissions (tenant_id, name, slug, module, scope, rbac_scope, created_at) VALUES (?, ?, ?, ?, \'community\', \'tenant\', NOW())');
+            $stmt->execute([$tenantId, $p['name'], $p['slug'], $p['module']]);
+            $permIds[$p['slug']] = (int) $pdo->lastInsertId();
+        }
+
+        foreach ($roles as $r) {
+            $stmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $stmt->execute([$tenantId, $r['slug']]);
+            if (!$stmt->fetch()) {
+                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
+                    ->execute([
+                        $tenantId,
+                        $r['name'],
+                        $r['slug'],
+                        $r['description'],
+                        $r['is_system'],
+                        $r['is_locked'],
+                        $r['role_layer'],
+                    ]);
+                $roleId = (int) $pdo->lastInsertId();
+
+                foreach ($permIds as $slug => $pid) {
+                    $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                    $link->execute([$roleId, $pid]);
+                }
+            }
+        }
+
+        foreach ($permIds as $pid) {
+            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+            $link->execute([$communityOwnerRoleId, $pid]);
+            $link->execute([$tenantAdminRoleId, $pid]);
+        }
+
+        if ($tenantType === TenantTypeConfig::TYPE_EFFECTIFS) {
+            TenantSeedHelper::ensurePersonnelPanelsAndMatricule($pdo, $tenantId);
+        }
     }
 }

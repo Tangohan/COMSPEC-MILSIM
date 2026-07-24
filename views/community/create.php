@@ -127,6 +127,22 @@ $renderPlanFeatures = static function (array $feat, array $limits, array $featur
                                 <input type="text" name="name" required maxlength="255" class="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="92e Régiment d'infanterie">
                             </div>
                             <div class="md:col-span-2">
+                                <label class="mb-2 block text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Type de communauté</label>
+                                <p class="mb-3 text-xs leading-relaxed text-slate-600">Choisissez le profil adapté à votre besoin. Les profils simplifiés donnent accès uniquement aux modules essentiels.</p>
+                                <div class="grid gap-3 md:grid-cols-3">
+                                    <?php
+                                    $tenantTypes = \App\Services\Community\TenantTypeConfig::availableTypes();
+                                    foreach ($tenantTypes as $typeSlug => $typeInfo):
+                                    ?>
+                                    <label class="flex cursor-pointer flex-col rounded-2xl border-2 border-slate-200 bg-white px-4 py-4 transition hover:border-emerald-500 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50">
+                                        <input type="radio" name="tenant_type" value="<?= htmlspecialchars($typeSlug, ENT_QUOTES, 'UTF-8') ?>" class="peer sr-only" <?= $typeSlug === 'full' ? 'checked' : '' ?>>
+                                        <span class="mb-1 text-sm font-black text-slate-900"><?= htmlspecialchars($typeInfo['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="text-xs leading-relaxed text-slate-600"><?= htmlspecialchars($typeInfo['description'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
                                 <label class="mb-3 flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                     <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
                                     <span class="text-sm font-semibold text-slate-800">Définir une <strong>adresse web personnalisée</strong> pour la communauté</span>
