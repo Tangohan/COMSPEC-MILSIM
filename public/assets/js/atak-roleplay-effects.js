@@ -3,6 +3,11 @@
 (function () {
   'use strict';
 
+  function atakApiUrl(path) {
+    var base = String(window.ATAK_API_BASE || window.APP_BASE_URL || '').replace(/\/$/, '');
+    return (base || '') + path;
+  }
+
   const RoleplayEffects = {
     config: {
       enabled: false,
@@ -218,7 +223,7 @@
      */
     async fetchRoleplayStats() {
       try {
-        const response = await fetch('/api/atak/roleplay-stats', {
+        const response = await fetch(atakApiUrl('/api/atak/roleplay-stats'), {
           credentials: 'include',
           cache: 'no-store',
         });

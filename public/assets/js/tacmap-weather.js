@@ -6,10 +6,9 @@
 
   function buildUrl(apiBase, mapId) {
     var base = String(apiBase || '').replace(/\/$/, '');
-    if (base.indexOf('/atak') >= 0) {
-      return base + '/weather?mapId=' + encodeURIComponent(mapId || 1);
-    }
-    return base + '/atak/weather?mapId=' + encodeURIComponent(mapId || 1);
+    // Normalise racine site (/public), /api ou anciennes bases /atak → /api/atak/weather
+    base = base.replace(/\/api(?:\/atak)?$/, '').replace(/\/atak$/, '');
+    return base + '/api/atak/weather?mapId=' + encodeURIComponent(mapId || 1);
   }
 
   function formatBanner(w) {

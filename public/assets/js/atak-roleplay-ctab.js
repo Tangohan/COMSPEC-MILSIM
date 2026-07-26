@@ -3,6 +3,11 @@
 (function () {
   'use strict';
 
+  function atakApiUrl(path) {
+    var base = String(window.ATAK_API_BASE || window.APP_BASE_URL || '').replace(/\/$/, '');
+    return (base || '') + path;
+  }
+
   // Exposition globale pour injection depuis Arma
   window.AtakRoleplayEffects = {
     /**
@@ -255,7 +260,7 @@
   setInterval(() => {
     // L'état est injecté par fn_injectRoleplayEffectsInBrowser
     // On peut aussi faire un fetch vers l'API
-    fetch('/api/atak/roleplay-stats', {
+    fetch(atakApiUrl('/api/atak/roleplay-stats'), {
       credentials: 'include',
       cache: 'no-store'
     })
