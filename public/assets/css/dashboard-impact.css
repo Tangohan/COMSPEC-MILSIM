@@ -1979,6 +1979,19 @@ body.dashboard-shell main {
   white-space: nowrap;
 }
 
+.dash-idstrip__label--with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.dash-idstrip__label--with-icon .dash-idstrip__btn-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 .dash-idstrip__value {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -2043,8 +2056,9 @@ body.dashboard-shell main {
 .dash-idstrip__text-btn {
   display: inline-flex;
   align-items: center;
+  gap: 0.32rem;
   height: 1.9rem;
-  padding: 0 0.45rem;
+  padding: 0 0.5rem 0 0.4rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
@@ -2056,6 +2070,13 @@ body.dashboard-shell main {
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dash-idstrip__btn-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: block;
 }
 
 .dash-idstrip__text-btn:hover {
@@ -2127,7 +2148,8 @@ body.dashboard-shell main {
 .dash-idstrip__chip {
   display: inline-flex;
   align-items: center;
-  max-width: 8.5rem;
+  gap: 0.28rem;
+  max-width: 9.5rem;
   padding: 0.2rem 0.45rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -2141,6 +2163,12 @@ body.dashboard-shell main {
   overflow: hidden;
   text-overflow: ellipsis;
   transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.dash-idstrip__chip .dash-idstrip__btn-icon {
+  width: 11px;
+  height: 11px;
+  opacity: 0.9;
 }
 
 .dash-idstrip__chip:hover {

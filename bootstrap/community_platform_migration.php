@@ -179,6 +179,8 @@ function run_community_platform_migration(PDO $pdo): void
     ]);
 
     $cols = [
+        // Profil communauté (Complet / Effectifs / ATAK) — aussi via bootstrap/tenant_type_migration.php
+        'tenant_type' => "ADD COLUMN tenant_type VARCHAR(32) NOT NULL DEFAULT 'full' COMMENT 'Profil communauté : full | effectifs | atak' AFTER slug",
         'owner_user_id' => "ADD COLUMN owner_user_id int unsigned DEFAULT NULL COMMENT 'Utilisateur propriétaire créateur' AFTER settings",
         'plan_slug' => "ADD COLUMN plan_slug varchar(50) NOT NULL DEFAULT 'free' AFTER owner_user_id",
         'stripe_customer_id' => "ADD COLUMN stripe_customer_id varchar(100) DEFAULT NULL AFTER plan_slug",
@@ -191,6 +193,15 @@ function run_community_platform_migration(PDO $pdo): void
         if ($check && !$check->fetch()) {
             echo "Ajout tenants.$col...\n";
             $pdo->exec("ALTER TABLE tenants $frag");
+        }
+    }
+
+    $idxType = $pdo->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND INDEX_NAME = 'idx_tenants_type'");
+    if ($idxType && !$idxType->fetch()) {
+        try {
+            $pdo->exec('ALTER TABLE tenants ADD KEY idx_tenants_type (tenant_type)');
+        } catch (PDOException) {
+            // ignore
         }
     }
 

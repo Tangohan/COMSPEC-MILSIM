@@ -148,7 +148,7 @@ window.ATAKUnits = (function () {
 
   function fetchUnits() {
     if (!isNodeConfigured()) return;
-    var url = getApiBase() + '/api/units?mapId=' + getMapId();
+    var url = getApiBase() + '/api/units?mapId=' + getMapId() + '&include_gateway=1';
     fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (data) {
       units = Array.isArray(data) ? data : (data.units || []);
       render();
@@ -367,6 +367,8 @@ window.ATAKUnits = (function () {
         var toc = tocNotesFromExtra(ex);
         var hay = [
           u.call_sign || '',
+          u.military_id || '',
+          u.bft_id || '',
           role,
           u.fire_team_label || '',
           toc.radio,
@@ -442,6 +444,11 @@ window.ATAKUnits = (function () {
       if (toc.note) {
         vitals.push('<span class="atak-unit-vital atak-unit-vital--note" title="' + esc(toc.note) + '">Note</span>');
       }
+      if (u.gateway_partner) {
+        vitals.push('<span class="atak-unit-vital atak-unit-vital--gateway" title="Contact via passerelle inter-équipes">'
+          + esc(u.gateway_peer_label || 'Allié') + '</span>');
+        cardClass += ' atak-unit-card--gateway';
+      }
       var emitting = (window.ATAKRadio && window.ATAKRadio.isEmitting)
         ? window.ATAKRadio.isEmitting(ex)
         : (ex.radio_tx === true || ex.radio_tx === 1 || ex.radio_tx === 'true' ||
@@ -475,6 +482,10 @@ window.ATAKUnits = (function () {
         ? '<a href="' + (window.ATAK_CALLSIGN_TO_USER[callsignKey].url || '') + '" class="atak-unit-fiche-link" onclick="event.stopPropagation();" title="Ouvrir la fiche personnel">Fiche</a>'
         : '';
       var natoBadge = unitBadgeHtml(u, ex);
+      var bftId = String(u.military_id || u.bft_id || ex.military_id || ex.bft_id || '').trim();
+      var bftLine = bftId
+        ? ('<div class="atak-unit-mid" title="Identifiant de suivi lié à cet indicatif">Suivi ' + esc(bftId) + '</div>')
+        : '';
       var c = parseCoords(u);
       var posOk = hasValidPosition(u);
       var ftLabel = String(u.fire_team_label || '').trim();
@@ -487,7 +498,7 @@ window.ATAKUnits = (function () {
           + (ftColor ? '<span class="atak-ft-chip-dot" aria-hidden="true"></span>' : '')
           + esc(ftLabel) + '</span>')
         : '';
-      return '<div class="' + cardClass + '" data-unit-id="' + esc(u.id || '') + '" data-callsign="' + esc(u.call_sign || '') + '" data-grid="' + esc(gridRaw) + '" data-x="' + esc(posOk ? c.x : '') + '" data-y="' + esc(posOk ? c.y : '') + '"'
+      return '<div class="' + cardClass + '" data-unit-id="' + esc(u.id || '') + '" data-callsign="' + esc(u.call_sign || '') + '" data-bft-id="' + esc(bftId) + '" data-grid="' + esc(gridRaw) + '" data-x="' + esc(posOk ? c.x : '') + '" data-y="' + esc(posOk ? c.y : '') + '"'
         + (ftColor ? ' style="--ft-color:' + esc(ftColor) + '"' : '')
         + ' title="' + esc(tooltip) + '">' +
         '<div class="atak-unit-callsign-wrap">' +
@@ -496,6 +507,7 @@ window.ATAKUnits = (function () {
         (userLink ? userLink : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
         '</div>' +
+        bftLine +
         '<div class="atak-unit-role">' + esc(roleText) + ftBadge + '</div>' +
         '<div class="atak-unit-vitals">' + vitals.join('') + '</div>' +
         '<div class="atak-unit-meta-row">' +

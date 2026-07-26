@@ -181,6 +181,7 @@ $modActionLabelFr = static function (string $t): string {
 </style>
 <?php
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
+$discordInviteMissing = !empty($discordInviteMissing);
 ?>
 <div class="min-h-0 flex-1 flex flex-col">
 <div
@@ -189,6 +190,21 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
     x-init="if (location.hash === '#rh') { tab = 'rh'; } else if (location.hash === '#watch') { tab = 'watch'; }"
 >
     <div class="org-dash__frame">
+
+        <?php if ($discordInviteMissing): ?>
+        <div class="org-dash__setup org-dash__setup--warn" role="alert">
+            <div class="org-dash__setup-inner">
+                <div class="org-dash__setup-copy">
+                    <p class="org-dash__setup-kicker">Recrutement Discord</p>
+                    <p class="org-dash__setup-title">Lien Discord manquant</p>
+                    <p class="org-dash__setup-lead">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</p>
+                </div>
+                <div class="org-dash__setup-actions">
+                    <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="org-dash__btn org-dash__btn--solid">Renseigner le lien</a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if ($setupBanner !== null): ?>
         <div class="org-dash__setup">
@@ -215,7 +231,7 @@ $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : nul
         </div>
         <?php endif; ?>
 
-        <header class="org-dash__hero<?= $setupBanner !== null ? ' org-dash__hero--after-setup' : '' ?>">
+        <header class="org-dash__hero<?= ($setupBanner !== null || $discordInviteMissing) ? ' org-dash__hero--after-setup' : '' ?>">
             <div class="org-dash__hero-inner">
                 <div>
                     <p class="org-dash__brand">Athena · État-major</p>

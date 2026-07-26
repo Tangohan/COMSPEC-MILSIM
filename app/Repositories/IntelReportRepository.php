@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\C2PillarsSchema;
 use PDO;
 
 class IntelReportRepository
@@ -13,6 +14,7 @@ class IntelReportRepository
 
     public function __construct()
     {
+        C2PillarsSchema::ensure();
         $this->pdo = Database::getPdo();
     }
 
@@ -101,6 +103,11 @@ class IntelReportRepository
         if ($status !== null && $status !== '') {
             $sql .= ' AND status = ?';
             $params[] = $status;
+        } else {
+            // Tableau de situation : masquer les signalements retirés ou obsolètes
+            $sql .= ' AND status NOT IN (?, ?)';
+            $params[] = 'DISMISSED';
+            $params[] = 'STALE';
         }
         $sql .= ' ORDER BY last_seen_at DESC';
         $stmt = $this->pdo->prepare($sql);
@@ -117,5 +124,18 @@ class IntelReportRepository
     public function markStale(int $id): void
     {
         $this->pdo->prepare('UPDATE intel_reports SET status = ? WHERE id = ?')->execute(['STALE', $id]);
+    }
+
+    /**
+     * Retire un signalement de la mission (suppression définitive ; événements en cascade).
+     */
+    public function deleteByIdForMission(int $id, string $missionId): bool
+    {
+        if ($id <= 0 || $missionId === '') {
+            return false;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM intel_reports WHERE id = ? AND mission_id = ?');
+        $stmt->execute([$id, $missionId]);
+        return $stmt->rowCount() > 0;
     }
 }

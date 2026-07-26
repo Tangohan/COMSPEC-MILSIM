@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\AtakModulesSchema;
 
 /**
  * Repository pour les demandes QRF (Quick Reaction Force)
@@ -15,6 +16,7 @@ class AtakQrfRepository
 
     public function __construct(?Database $db = null)
     {
+        AtakModulesSchema::ensure();
         $this->db = $db ?? Database::getInstance();
     }
 
@@ -23,6 +25,23 @@ class AtakQrfRepository
      */
     public function create(array $data): int
     {
+        $posX = AtakDataRepository::coerceFloat(
+            $data['contact_pos_x'] ?? $data['pos_x'] ?? $data['x'] ?? null
+        );
+        $posY = AtakDataRepository::coerceFloat(
+            $data['contact_pos_y'] ?? $data['pos_y'] ?? $data['y'] ?? null
+        );
+        if ($posX === null || $posY === null) {
+            $contact = $data['contact_pos'] ?? $data['pos'] ?? $data['position'] ?? null;
+            if (is_array($contact)) {
+                $posX ??= AtakDataRepository::coerceFloat($contact[0] ?? null);
+                $posY ??= AtakDataRepository::coerceFloat($contact[1] ?? null);
+            }
+        }
+        if ($posX === null || $posY === null) {
+            throw new \InvalidArgumentException('contact_pos_required');
+        }
+
         $sql = "INSERT INTO atak_qrf_requests (
             tenant_id, context_id, qrf_number, priority,
             contact_pos_x, contact_pos_y, grid_reference, location_description,
@@ -41,28 +60,44 @@ class AtakQrfRepository
             :requested_at, :urgency_expires_at
         )";
 
+        $requestingUnit = trim((string) ($data['requesting_unit'] ?? ''));
+        if ($requestingUnit === '') {
+            $requestingUnit = trim((string) ($data['requesting_callsign'] ?? 'Unité'));
+        }
+        if ($requestingUnit === '') {
+            $requestingUnit = 'Unité';
+        }
+
         $params = [
             'tenant_id' => $data['tenant_id'] ?? null,
             'context_id' => $data['context_id'] ?? null,
             'qrf_number' => $data['qrf_number'] ?? null,
-            'priority' => $data['priority'] ?? 'IMMEDIATE',
-            'contact_pos_x' => $data['contact_pos_x'] ?? null,
-            'contact_pos_y' => $data['contact_pos_y'] ?? null,
+            'priority' => $this->normalizePriority((string) ($data['priority'] ?? 'IMMEDIATE')),
+            'contact_pos_x' => $posX,
+            'contact_pos_y' => $posY,
             'grid_reference' => $data['grid_reference'] ?? null,
             'location_description' => $data['location_description'] ?? null,
-            'threat_type' => $data['threat_type'] ?? 'OTHER',
+            'threat_type' => $this->normalizeThreatType((string) ($data['threat_type'] ?? 'OTHER')),
             'threat_description' => $data['threat_description'] ?? null,
-            'enemy_strength' => $data['enemy_strength'] ?? 'UNKNOWN',
+            'enemy_strength' => $this->normalizeEnemyStrength((string) ($data['enemy_strength'] ?? 'UNKNOWN')),
             'enemy_disposition' => $data['enemy_disposition'] ?? null,
-            'requesting_unit' => $data['requesting_unit'] ?? null,
+            'requesting_unit' => $requestingUnit,
             'requesting_callsign' => $data['requesting_callsign'] ?? null,
             'requesting_user_id' => $data['requesting_user_id'] ?? null,
             'requesting_steam_id' => $data['requesting_steam_id'] ?? null,
             'friendly_strength' => $data['friendly_strength'] ?? null,
             'friendly_casualties' => $data['friendly_casualties'] ?? 0,
-            'friendly_status' => $data['friendly_status'] ?? 'PINNED',
-            'support_requested' => isset($data['support_requested']) ? json_encode($data['support_requested']) : null,
-            'enemy_weapons' => isset($data['enemy_weapons']) ? json_encode($data['enemy_weapons']) : null,
+            'friendly_status' => $this->normalizeFriendlyStatus((string) ($data['friendly_status'] ?? 'PINNED')),
+            'support_requested' => isset($data['support_requested'])
+                ? (is_string($data['support_requested'])
+                    ? $data['support_requested']
+                    : json_encode($data['support_requested'], JSON_UNESCAPED_UNICODE))
+                : null,
+            'enemy_weapons' => isset($data['enemy_weapons'])
+                ? (is_string($data['enemy_weapons'])
+                    ? $data['enemy_weapons']
+                    : json_encode($data['enemy_weapons'], JSON_UNESCAPED_UNICODE))
+                : null,
             'terrain_description' => $data['terrain_description'] ?? null,
             'best_approach' => $data['best_approach'] ?? null,
             'hazards' => $data['hazards'] ?? null,
@@ -71,6 +106,69 @@ class AtakQrfRepository
         ];
 
         return (int) $this->db->insert($sql, $params);
+    }
+
+    public function normalizePriority(string $priority): string
+    {
+        $p = strtoupper(trim($priority));
+        $allowed = ['ROUTINE', 'PRIORITY', 'IMMEDIATE', 'FLASH'];
+
+        return in_array($p, $allowed, true) ? $p : 'IMMEDIATE';
+    }
+
+    /**
+     * Alias jeu (ATTACK, TIC…) → ENUM SQL.
+     */
+    public function normalizeThreatType(string $threatType): string
+    {
+        $t = strtoupper(trim($threatType));
+        $map = [
+            'ATTACK' => 'INFANTRY',
+            'TROOPS_IN_CONTACT' => 'INFANTRY',
+            'TIC' => 'INFANTRY',
+            'CONTACT' => 'INFANTRY',
+            'IED_STRIKE' => 'OTHER',
+            'IED' => 'OTHER',
+            'VEHICLE' => 'ARMORED',
+            'ARMOR' => 'ARMORED',
+            'AIR' => 'AIRCRAFT',
+            'CAS' => 'AIRCRAFT',
+        ];
+        if (isset($map[$t])) {
+            $t = $map[$t];
+        }
+        $allowed = ['INFANTRY', 'ARMORED', 'AIRCRAFT', 'AMBUSH', 'OVERRUN', 'SURROUNDED', 'OTHER'];
+
+        return in_array($t, $allowed, true) ? $t : 'OTHER';
+    }
+
+    public function normalizeEnemyStrength(string $strength): string
+    {
+        $s = strtoupper(trim($strength));
+        $allowed = ['UNKNOWN', 'FIRE_TEAM', 'SQUAD', 'PLATOON', 'COMPANY', 'OVERWHELMING'];
+
+        return in_array($s, $allowed, true) ? $s : 'UNKNOWN';
+    }
+
+    /**
+     * Alias jeu (ENGAGED, SECURE…) → ENUM SQL.
+     */
+    public function normalizeFriendlyStatus(string $status): string
+    {
+        $s = strtoupper(trim($status));
+        $map = [
+            'ENGAGED' => 'PINNED',
+            'SECURE' => 'HOLDING',
+            'HOLD' => 'HOLDING',
+            'RETREATING' => 'FALLING_BACK',
+            'WITHDRAWING' => 'FALLING_BACK',
+        ];
+        if (isset($map[$s])) {
+            $s = $map[$s];
+        }
+        $allowed = ['HOLDING', 'PINNED', 'FALLING_BACK', 'SURROUNDED', 'OVERRUN'];
+
+        return in_array($s, $allowed, true) ? $s : 'PINNED';
     }
 
     /**

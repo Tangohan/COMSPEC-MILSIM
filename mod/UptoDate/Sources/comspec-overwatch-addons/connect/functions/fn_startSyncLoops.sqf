@@ -39,24 +39,64 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
     ];
 };
 
+// Relayer les marqueurs déjà présents (Marker Dropper / carte / file d’attente) après liaison Athena.
+[] spawn {
+    uiSleep 1.5;
+    [] call comspec_overwatch_connect_fnc_queueMapMarker; // flush pending
+    [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+    };
+};
+[{
+    if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+    [] call comspec_overwatch_connect_fnc_queueMapMarker;
+    [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
+}, 25, []] call CBA_fnc_addPerFrameHandler;
+
 private _casPollInterval = 10;
 [{
     params ["_args", "_pfhId"];
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        // Sans indicatif : ne pas interroger avec un fallback « Pilot » (faux positifs / 9-line vide)
         private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
-        if (_callsign isEqualTo "") then { _callsign = "Pilot"; };
-        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, "1"]]] call comspec_overwatch_connect_fnc_extResult;
+        if (_callsign isEqualTo "") exitWith {};
+        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+        if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
+        private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
         if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
         private _payload = _raw select [3, count _raw - 3];
+        private _trimmed = trim _payload;
+        // Liste vide / null : mémoriser pour ne pas retrigger, sans ouvrir le 9-line
+        if (
+            _trimmed isEqualTo ""
+            || {_trimmed isEqualTo "[]"}
+            || {_trimmed isEqualTo "null"}
+            || {_trimmed isEqualTo "{}"}
+        ) exitWith {
+            private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+            if (_payload != _lastEmpty) then {
+                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
+                // Remise à zéro locale — receiveCASRequest ignore les payloads vides
+                missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
+                missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
+            };
+        };
         private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
         if (_payload != "" && {_payload != _lastPayload}) then {
             missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
             missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
+            private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
             [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-            ["COMSPEC_Info", ["Nouvelle demande CAS reçue"]] call comspec_overwatch_connect_fnc_showNotification;
-            ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
+            // Notifier seulement quand une vraie nouvelle demande (nouvel id) a été acceptée
+            if (_newId != "" && {_newId != _prevId}) then {
+                ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
+                ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            };
         };
     }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
 }, _casPollInterval, []] call CBA_fnc_addPerFrameHandler;

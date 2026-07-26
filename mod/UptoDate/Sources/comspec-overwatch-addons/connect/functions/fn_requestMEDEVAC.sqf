@@ -1,22 +1,5 @@
 /*
- * Auteur: COMSPEC
  * Demande évacuation médicale MEDEVAC 9-Line
- *
- * Arguments:
- * 0: Priorité <STRING> - "URGENT", "PRIORITY", "ROUTINE"
- * 1: Patients T1 (urgent chirurgical) <NUMBER>
- * 2: Patients T2 (urgent) <NUMBER>
- * 3: Patients T3 (différé) <NUMBER>
- * 4: (Optional) Statut sécurité LZ <STRING> - "NO_ENEMY", "POSSIBLE_ENEMY", "ENEMY_IN_AREA", "HOT_LZ"
- * 5: (Optional) Marquage LZ <STRING> - "NONE", "SMOKE", "PANEL", "PYRO"
- * 6: (Optional) Couleur marquage <STRING> - "RED", "GREEN", "YELLOW", "PURPLE"
- * 7: (Optional) Position pickup <ARRAY> - [x, y] (défaut: joueur)
- *
- * Valeur de retour:
- * <BOOL> - true si succès
- *
- * Exemple:
- * ["URGENT", 1, 0, 2, "POSSIBLE_ENEMY", "SMOKE", "GREEN"] call comspec_overwatch_connect_fnc_requestMEDEVAC;
  */
 
 params [
@@ -27,32 +10,33 @@ params [
     ["_securityStatus", "NO_ENEMY", [""]],
     ["_lzMarking", "SMOKE", [""]],
     ["_lzMarkingColor", "GREEN", [""]],
-    ["_pickupPos", [], [[]]]
+    ["_pickupPos", [], [[]]],
+    ["_remarks", "", [""]],
+    ["_gridOverride", "", [""]]
 ];
 
-// Validation
+if (!hasInterface) exitWith { false };
+
 private _totalPatients = _patientsT1 + _patientsT2 + _patientsT3;
 if (_totalPatients isEqualTo 0) exitWith {
-    systemChat "❌ Au moins un patient requis";
+    ["Indiquez au moins un blessé pour la demande d'évacuation.", "medical", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
-// Position par défaut
 if (_pickupPos isEqualTo []) then {
     _pickupPos = getPosWorld player;
 };
 
-// Calculer patients litter vs ambulatory (simplifié: T1+T2 = litter, T3 = ambulatory)
 private _patientsLitter = _patientsT1 + _patientsT2;
 private _patientsAmbulatory = _patientsT3;
+private _pickupGrid = if (_gridOverride isNotEqualTo "") then { _gridOverride } else { mapGridPosition _pickupPos };
 
-// Préparer données 9-Line
 private _medevacData = createHashMap;
 _medevacData set ["priority", _priority];
-_medevacData set ["pickup_grid", mapGridPosition _pickupPos];
+_medevacData set ["pickup_grid", _pickupGrid];
 _medevacData set ["pickup_pos_x", _pickupPos select 0];
 _medevacData set ["pickup_pos_y", _pickupPos select 1];
-_medevacData set ["pickup_elevation", round((getPosASL player) select 2)];
+_medevacData set ["pickup_elevation", round ((getPosASL player) select 2)];
 private _radioFreq = "";
 if (!isNil "acre_api_fnc_getCurrentRadio" && {!isNil "acre_api_fnc_getRadioChannel"}) then {
     private _radio = [] call acre_api_fnc_getCurrentRadio;
@@ -74,50 +58,79 @@ _medevacData set ["lz_marking_color", _lzMarkingColor];
 _medevacData set ["patient_nationality", "FRIENDLY"];
 _medevacData set ["patient_status", "MILITARY"];
 _medevacData set ["nbc_contamination", "NONE"];
+_medevacData set ["remarks", _remarks];
 _medevacData set ["requested_by_callsign", name player];
 _medevacData set ["requested_by_unit", groupId (group player)];
+// Lignes 9-line lisibles côté TOC (historique atak_nine_line)
+_medevacData set ["line1", _pickupGrid];
+_medevacData set ["line2", format ["%1 / %2", _radioFreq, groupId (group player)]];
+_medevacData set ["line3", format ["A %1 / B %2 / C %3", _patientsT1, _patientsT2, _patientsT3]];
+_medevacData set ["line5", format ["L %1 / A %2", _patientsLitter, _patientsAmbulatory]];
+_medevacData set ["line6", _securityStatus];
+_medevacData set ["line7", format ["%1 %2", _lzMarking, _lzMarkingColor]];
+if (_remarks isNotEqualTo "") then {
+    _medevacData set ["line4", _remarks];
+};
 
-// Envoyer via extension
 private _jsonString = [_medevacData] call comspec_overwatch_connect_fnc_hashMapToJson;
-private _result = "COMSPECExtension" callExtension ["RequestMEDEVAC", [_jsonString]];
+private _parsed = [
+    "COMSPECExtension" callExtension ["RequestMEDEVAC", [_jsonString]]
+] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+_parsed params ["_ok", "", "_detail"];
 
-// Feedback
-if ((_result select 0) isEqualTo "OK") then {
-    systemChat "✅ MEDEVAC demandée, standby pour extraction";
-    
-    // Hint visuel important
-    hint parseText format [
-        "<t color='#ff3333' size='1.5' align='center'>MEDEVAC EN ROUTE</t><br/>" +
-        "<t size='1.1'>Marquez LZ avec %1 %2</t><br/>" +
-        "<t size='1.1'>Sécurisez périmètre</t><br/>" +
-        "<t size='1'>Patients: %3×T1 %4×T2 %5×T3</t>",
-        _lzMarking,
-        _lzMarkingColor,
-        _patientsT1,
-        _patientsT2,
-        _patientsT3
-    ];
-    
-    // Son alerte
+if (_ok) then {
+    ["Demande d'évacuation transmise — tenez la zone d'extraction.", "medical", "critical"] call comspec_overwatch_connect_fnc_announce;
+
+    private _markLabel = switch (toUpper _lzMarking) do {
+        case "SMOKE": { "fumée" };
+        case "PANEL": { "panneau" };
+        case "PYRO": { "signal pyrotechnique" };
+        default { "marquage" };
+    };
+    private _colorLabel = switch (toUpper _lzMarkingColor) do {
+        case "RED": { "rouge" };
+        case "GREEN": { "verte" };
+        case "YELLOW": { "jaune" };
+        case "PURPLE": { "violette" };
+        default { toLower _lzMarkingColor };
+    };
+
+    if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
+        hint parseText format [
+            "<t color='#ff3333' size='1.5' align='center'>ÉVACUATION DEMANDÉE</t><br/>" +
+            "<t size='1.1'>Marquez la zone avec %1 %2</t><br/>" +
+            "<t size='1.1'>Sécurisez le périmètre</t><br/>" +
+            "<t size='1'>Blessés : %3 urgents / %4 prioritaires / %5 différés</t>",
+            _markLabel,
+            _colorLabel,
+            _patientsT1,
+            _patientsT2,
+            _patientsT3
+        ];
+    };
+
     playSound "RadioAmbient1";
-    
-    // Marker LZ local
-    private _markerName = format ["medevac_lz_%1", time];
+
+    private _markerName = format ["medevac_lz_%1_%2", floor time, floor random 10000];
     private _marker = createMarkerLocal [_markerName, _pickupPos];
+    private _lzText = format ["LZ évacuation — %1 blessé(s)", _totalPatients];
     _marker setMarkerTypeLocal "hd_pickup";
     _marker setMarkerColorLocal "ColorRed";
-    _marker setMarkerTextLocal format ["MEDEVAC LZ - %1 patients", _totalPatients];
+    _marker setMarkerTextLocal _lzText;
     _marker setMarkerAlphaLocal 1.0;
-    
-    // Log activité
+    [_markerName, _pickupPos, "hd_pickup", "ColorRed", _lzText, "ace_medevac"] call comspec_overwatch_connect_fnc_sendLocalTacticalMarker;
+
     ["MEDEVAC_REQUESTED", createHashMapFromArray [
         ["priority", _priority],
         ["patients_total", _totalPatients],
         ["patients_t1", _patientsT1]
     ]] call comspec_overwatch_connect_fnc_publishEvent;
-    
+
     true
 } else {
-    systemChat format ["❌ Erreur demande MEDEVAC: %1", _result select 1];
+    [([
+        _detail,
+        "Impossible de transmettre la demande d'évacuation — vérifiez la liaison Athena."
+    ] call comspec_overwatch_connect_fnc_atakExtFailMessage), "medical", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };

@@ -13,6 +13,9 @@ public static class Extension
     // Timeout HttpClient = plafond global ; les appels sync utilisent aussi un CTS dédié.
     // 3 s était trop juste pour TLS+DNS sur le premier appel (redeem / whoami).
     private const int SyncTimeoutSeconds = 8;
+    /// <summary>PNG Quick Pictures ATAK souvent &gt; 5 Mo — plafond dédié aux uploads recon.</summary>
+    private const long MaxReconImageBytes = 20L * 1024 * 1024;
+    private const int UploadTimeoutSeconds = 60;
     private static string _baseUrl = "";
     private static string _apiKey = "";
     /// <summary>Tenant issu du redeem / Connect (requis par client-init côté portail).</summary>
@@ -23,7 +26,13 @@ public static class Extension
     private static string _modVersion = "";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
+    /// <summary>ID BFT (military_id) lié à l’indicatif — renvoyé par client-init / profil.</summary>
+    private static string _militaryId = "";
+    /// <summary>Indicatif tactique confirmé par Athena (client-init).</summary>
+    private static string _callSign = "";
     private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(SyncTimeoutSeconds) };
+    /// <summary>Client dédié aux photos (PNG volumineux + liaison dégradée).</summary>
+    private static readonly HttpClient UploadHttpClient = new() { Timeout = TimeSpan.FromSeconds(UploadTimeoutSeconds) };
     private static readonly ConcurrentQueue<(string Url, string Body)> PendingPosts = new();
     private static readonly int MaxQueueSize = 500;
     private static readonly object QueueDrainLock = new();
@@ -222,6 +231,26 @@ public static class Extension
                 var s = (su.GetString() ?? "").Trim();
                 if (TryNormalizeSteamUid(s, out var sn))
                     _steamUid = sn;
+            }
+            // Indicatif + ID BFT liés (même identité TOC / carte / terminal)
+            var cs = "";
+            if (root.TryGetProperty("call_sign", out var csEl))
+                cs = (csEl.GetString() ?? "").Trim();
+            if (cs.Length == 0 && root.TryGetProperty("callsign", out var cs2))
+                cs = (cs2.GetString() ?? "").Trim();
+            if (cs.Length > 0)
+                _callSign = cs;
+            var mid = "";
+            if (root.TryGetProperty("military_id", out var midEl))
+                mid = (midEl.GetString() ?? "").Trim();
+            if (mid.Length == 0 && root.TryGetProperty("bft_id", out var bftEl))
+                mid = (bftEl.GetString() ?? "").Trim();
+            if (mid.Length > 0)
+                _militaryId = mid;
+            if (_militaryId.Length > 0 || _callSign.Length > 0)
+            {
+                // SQF : COMSPEC_MilitaryId / éventuel sync indicatif
+                InvokeCallback("BftIdentity", _callSign + "\t" + _militaryId);
             }
         }
         catch { /* ignore */ }
@@ -630,7 +659,7 @@ public static class Extension
     }
 
     /// <summary>
-    /// Note d’accès anticipé (bêta) — affichée au 1er lancement (menu principal).
+    /// Note bêta publique — affichée au 1er lancement (menu principal).
     /// Retour : OK|ack | OK|busy | ERR|…
     /// </summary>
     private static string ShowBetaAccessNoteMessageBox()
@@ -644,17 +673,18 @@ public static class Extension
 
         try
         {
-            const string title = "COMSPEC Overwatch — Accès anticipé";
+            const string title = "COMSPEC Overwatch — Bêta publique";
             const string body =
-                "Bienvenue dans l’accès anticipé de COMSPEC Overwatch.\n\n" +
+                "Bienvenue dans la bêta publique de COMSPEC Overwatch.\n\n" +
                 "Ce pack est encore en phase de test. Certaines fonctions peuvent évoluer, " +
                 "être temporairement indisponibles ou se comporter de façon inattendue.\n\n" +
-                "En poursuivant, vous acceptez d’utiliser ce pack dans le cadre de tests " +
-                "avec la plateforme Athena, et vous comprenez que des informations techniques " +
-                "limitées (identifiant Steam, adresse réseau, version du pack) peuvent être " +
-                "enregistrées pour gérer cet accès anticipé.\n\n" +
+                "Pour signaler un problème en jeu : menu ACE → COMSPEC → Signaler un problème…\n" +
+                "Suivez les nouveautés et le journal des changements sur la page Steam Workshop.\n\n" +
+                "En continuant, des informations techniques limitées (identifiant Steam, " +
+                "version du pack, détails clients associés) peuvent être enregistrées pour " +
+                "faire tourner la bêta et Athena.\n\n" +
                 "Utilisez ce pack de façon responsable pendant les sessions organisées.\n\n" +
-                "OK = j’ai lu et j’accepte (ce message ne réapparaîtra plus)";
+                "OK = j’ai lu (ce message ne réapparaîtra plus)";
 
             MessageBoxW(
                 IntPtr.Zero,
@@ -1329,6 +1359,99 @@ public static class Extension
             }
         }
 
+        // Remontée erreurs / bugs Overwatch → Athena (URL en arg ou _baseUrl si déjà connecté).
+        // args: baseUrl, severity, channel, message, detail, fingerprint, source,
+        //       steamUid, playerUid, playerName, callsign, modVersion, armaBuild, extVersion, contextJson
+        if (function == "ReportDiag" && args.Length >= 4)
+        {
+            using var diagCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            var diagToken = diagCts.Token;
+            var baseUrl = NormalizeBaseUrl(args[0] ?? "");
+            if (baseUrl.Length == 0) baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
+            if (baseUrl.Length == 0) return "ERR|invalid_url";
+            if (!TryBuildRequestUri(baseUrl, "/api/atak/mod-report", out var diagUri, out var diagUriErr) || diagUri is null)
+                return "ERR|" + diagUriErr;
+
+            var severity = (args.Length > 1 ? args[1] : "error") ?? "error";
+            var channel = (args.Length > 2 ? args[2] : "Core") ?? "Core";
+            var message = (args.Length > 3 ? args[3] : "") ?? "";
+            var detail = args.Length > 4 ? (args[4] ?? "") : "";
+            var fingerprint = args.Length > 5 ? (args[5] ?? "") : "";
+            var source = args.Length > 6 ? (args[6] ?? "auto") : "auto";
+            var steamUid = args.Length > 7 ? (args[7] ?? "") : "";
+            var playerUid = args.Length > 8 ? (args[8] ?? "") : "";
+            var playerName = args.Length > 9 ? (args[9] ?? "") : "";
+            var callsign = args.Length > 10 ? (args[10] ?? "") : "";
+            var modVersion = args.Length > 11 ? (args[11] ?? "") : "";
+            var armaBuild = args.Length > 12 ? (args[12] ?? "") : "";
+            var extVersion = args.Length > 13 ? (args[13] ?? "") : "";
+            var contextJson = args.Length > 14 ? (args[14] ?? "") : "";
+
+            if (string.IsNullOrWhiteSpace(message)) return "ERR|missing_message";
+
+            if (!TryNormalizeSteamUid(steamUid, out var steamNorm) && steamUid.Length > 0)
+                steamNorm = steamUid;
+
+            try
+            {
+                var payload =
+                    $"{{\"severity\":\"{EscapeJson(severity.Trim())}\"," +
+                    $"\"channel\":\"{EscapeJson(channel.Trim())}\"," +
+                    $"\"message\":\"{EscapeJson(message.Trim())}\"," +
+                    $"\"detail\":\"{EscapeJson(detail)}\"," +
+                    $"\"fingerprint\":\"{EscapeJson(fingerprint)}\"," +
+                    $"\"source\":\"{EscapeJson(source.Trim())}\"," +
+                    $"\"steam_uid\":\"{EscapeJson(steamNorm)}\"," +
+                    $"\"player_uid\":\"{EscapeJson(playerUid.Trim())}\"," +
+                    $"\"player_name\":\"{EscapeJson(playerName.Trim())}\"," +
+                    $"\"callsign\":\"{EscapeJson(callsign.Trim())}\"," +
+                    $"\"mod_version\":\"{EscapeJson(modVersion.Trim())}\"," +
+                    $"\"arma_build\":\"{EscapeJson(armaBuild.Trim())}\"," +
+                    $"\"extension_version\":\"{EscapeJson(extVersion.Trim())}\"";
+                if (!string.IsNullOrWhiteSpace(contextJson))
+                {
+                    // contextJson already JSON object/array from SQF — embed raw if it looks valid
+                    var trimmed = contextJson.Trim();
+                    if ((trimmed.StartsWith('{') && trimmed.EndsWith('}'))
+                        || (trimmed.StartsWith('[') && trimmed.EndsWith(']')))
+                    {
+                        payload += $",\"context\":{trimmed}";
+                    }
+                    else
+                    {
+                        payload += $",\"context\":\"{EscapeJson(trimmed)}\"";
+                    }
+                }
+                payload += "}";
+
+                using var content = new StringContent(payload, Encoding.UTF8);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                using var req = new HttpRequestMessage(HttpMethod.Post, diagUri) { Content = content };
+                var resp = HttpClient.SendAsync(req, diagToken).GetAwaiter().GetResult();
+                var respBody = ReadContentUtf8(resp, diagToken);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var httpCode = (int)resp.StatusCode;
+                    if (httpCode == 429) return "ERR|rate_limited";
+                    if (httpCode == 400) return "ERR|invalid";
+                    if (httpCode == 503) return "ERR|http_503";
+                    return "ERR|http_" + httpCode;
+                }
+                var bodyNorm = respBody.Replace(" ", "", StringComparison.Ordinal);
+                if (bodyNorm.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) < 0
+                    && bodyNorm.IndexOf("\"ok\":1", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return "ERR|invalid_response";
+                }
+                _baseUrl = baseUrl;
+                return "OK|reported";
+            }
+            catch (Exception ex)
+            {
+                return FormatCaughtError(ex);
+            }
+        }
+
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         // Re-normalise au cas où une ancienne session a stocké une URL sans schéma.
         _baseUrl = NormalizeBaseUrl(_baseUrl);
@@ -1625,13 +1748,14 @@ public static class Extension
                 var simplified = SimplifyOrdersJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
-            // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?]
+            // Mise à jour statut ordre depuis le jeu. Args : [orderId, status, by, mapId?, note?]
             if (function == "UpdateOrderStatus" && args.Length >= 2)
             {
                 var orderId = (args[0] ?? "").Trim();
                 var status = (args[1] ?? "").Trim();
                 var by = args.Length > 2 ? (args[2] ?? "").Trim() : "";
                 var mapId = args.Length > 3 && !string.IsNullOrWhiteSpace(args[3]) ? args[3]!.Trim() : "1";
+                var note = args.Length > 4 ? (args[4] ?? "").Trim() : "";
                 if (orderId.Length == 0 || status.Length == 0) return "ERR|invalid";
                 if (!int.TryParse(mapId, out var mapIdNum)) mapIdNum = 1;
                 var url = _baseUrl + "/api/atak/orders/" + Uri.EscapeDataString(orderId) + "/status";
@@ -1641,7 +1765,10 @@ public static class Extension
                 var sessJson = _sessionToken.Length > 0
                     ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
                     : "";
-                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{mapIdNum}{steamJson}{sessJson}}}";
+                var noteJson = note.Length > 0
+                    ? $",\"note\":\"{EscapeJson(note)}\""
+                    : "";
+                var payload = $"{{\"status\":\"{EscapeJson(status)}\",\"by\":\"{EscapeJson(by)}\",\"mapId\":{mapIdNum}{noteJson}{steamJson}{sessJson}}}";
                 var resp = SendJsonPost(url, payload, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
@@ -1691,8 +1818,14 @@ public static class Extension
                 var tenantId = args.Length > 0 ? (args[0] ?? "") : "";
                 if (string.IsNullOrEmpty(tenantId))
                     tenantId = _tenantId;
-                var url = _baseUrl + "/api/atak/phone-pairing";
-                if (!string.IsNullOrEmpty(tenantId)) url += "?tenant_id=" + Uri.EscapeDataString(tenantId);
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/phone-pairing", out var phoneUri, out _) || phoneUri is null)
+                    return "ERR|invalid_url";
+                var url = phoneUri.AbsoluteUri;
+                if (!string.IsNullOrEmpty(tenantId))
+                {
+                    var sep = url.Contains('?', StringComparison.Ordinal) ? "&" : "?";
+                    url += sep + "tenant_id=" + Uri.EscapeDataString(tenantId);
+                }
                 var resp = SendGet(url, token);
                 var respBody = ReadContentUtf8(resp, token);
                 if (!resp.IsSuccessStatusCode)
@@ -1748,6 +1881,23 @@ public static class Extension
                 }
                 var simplified = SimplifyPlayerProfileJson(respBody);
                 if (simplified.Length == 0) return "ERR|invalid_response";
+                // Mémoriser military_id / callsign pour BFT ↔ indicatif
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("military_id", out var midEl))
+                    {
+                        var mid = (midEl.GetString() ?? "").Trim();
+                        if (mid.Length > 0) _militaryId = mid;
+                    }
+                    if (root.TryGetProperty("callsign", out var csEl))
+                    {
+                        var cs = (csEl.GetString() ?? "").Trim();
+                        if (cs.Length > 0) _callSign = cs;
+                    }
+                }
+                catch { /* ignore */ }
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // Télécharge une diapositive (image_url renvoyée par GetBriefingSlides) et la met en cache local ;
@@ -1860,6 +2010,19 @@ public static class Extension
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostVehicleServiceSync(json, token);
+            }
+            // Photos recon / intel : validation sync + envoi async (timeout upload dédié).
+            if (function == "UploadReconImage" && args.Length >= 2)
+            {
+                return BeginUploadReconImage(args);
+            }
+            if (function == "UploadLatestScreenshot" && args.Length >= 1)
+            {
+                return BeginUploadLatestScreenshot(args);
+            }
+            if (function == "UploadImage" && args.Length >= 1)
+            {
+                return BeginUploadIntelPhoto(args);
             }
         }
         catch (OperationCanceledException)
@@ -2389,8 +2552,9 @@ public static class Extension
             connectUrl = SanitizePhoneField(connectUrl);
             qrImageUrl = SanitizePhoneField(qrImageUrl);
             expiresAt = SanitizePhoneField(expiresAt);
-            // Code court obligatoire (alphanumérique) ; QR optionnel (téléchargement séparé).
+            // Code court obligatoire (alphanumérique) ; URL de connexion obligatoire ; QR optionnel.
             if (token.Length == 0 || code.Length < 4 || code.Length > 12) return "";
+            if (connectUrl.Length == 0) return "";
             if (code.Contains("://", StringComparison.Ordinal) || code.Contains('/') || code.Contains('.'))
                 return "";
             for (var i = 0; i < code.Length; i++)
@@ -2529,6 +2693,15 @@ public static class Extension
                 {
                     extra.Append(",\"group_name\":\"").Append(EscapeJson(groupName)).Append("\"");
                     extra.Append(",\"group\":\"").Append(EscapeJson(groupName)).Append("\"");
+                }
+                // ID BFT lié à l’indicatif (mémorisé à client-init / profil)
+                if (_militaryId.Length > 0
+                    && (string.IsNullOrWhiteSpace(vehicleJson)
+                        || (!vehicleJson.Contains("\"bft_id\"", StringComparison.Ordinal)
+                            && !vehicleJson.Contains("\"military_id\"", StringComparison.Ordinal))))
+                {
+                    extra.Append(",\"bft_id\":\"").Append(EscapeJson(_militaryId)).Append("\"");
+                    extra.Append(",\"military_id\":\"").Append(EscapeJson(_militaryId)).Append("\"");
                 }
                 if (aslZ.HasValue)
                 {
@@ -2730,78 +2903,13 @@ public static class Extension
 
             if (function == "UploadLatestScreenshot" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                // args: author, device_type, caption, feed_id, pos_x, pos_y, pos_z, grid, heading, unit_name, side, mission_id, maxAgeSec
-                var author = args[0] ?? "Unknown";
-                var device = args.Length > 1 ? (args[1] ?? "HELMET") : "HELMET";
-                var caption = args.Length > 2 ? (args[2] ?? "") : "";
-                var feedId = args.Length > 3 ? (args[3] ?? "") : "";
-                var posX = args.Length > 4 ? (args[4] ?? "") : "";
-                var posY = args.Length > 5 ? (args[5] ?? "") : "";
-                var posZ = args.Length > 6 ? (args[6] ?? "") : "";
-                var grid = args.Length > 7 ? (args[7] ?? "") : "";
-                var heading = args.Length > 8 ? (args[8] ?? "") : "";
-                var unitName = args.Length > 9 ? (args[9] ?? "") : "";
-                var side = args.Length > 10 ? (args[10] ?? "WEST") : "WEST";
-                var missionId = args.Length > 11 ? (args[11] ?? "") : "";
-                var maxAgeSec = 45;
-                if (args.Length > 12 && int.TryParse(args[12], out var parsedAge) && parsedAge > 0)
-                    maxAgeSec = Math.Min(parsedAge, 180);
-                try
-                {
-                    var shot = FindNewestScreenshot(TimeSpan.FromSeconds(maxAgeSec));
-                    if (shot == null || !File.Exists(shot)) return;
-                    var fi = new FileInfo(shot);
-                    if (fi.Length > 5 * 1024 * 1024) return;
-                    var bytes = File.ReadAllBytes(shot);
-                    var multipart = new MultipartFormDataContent();
-                    multipart.Add(new StringContent("1"), "mapId");
-                    multipart.Add(new StringContent(author), "author");
-                    multipart.Add(new StringContent(device), "device_type");
-                    if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
-                    if (!string.IsNullOrEmpty(feedId)) multipart.Add(new StringContent(feedId), "feed_id");
-                    if (!string.IsNullOrEmpty(posX)) multipart.Add(new StringContent(posX), "pos_x");
-                    if (!string.IsNullOrEmpty(posY)) multipart.Add(new StringContent(posY), "pos_y");
-                    if (!string.IsNullOrEmpty(posZ)) multipart.Add(new StringContent(posZ), "pos_z");
-                    if (!string.IsNullOrEmpty(grid)) multipart.Add(new StringContent(grid), "grid_ref");
-                    if (!string.IsNullOrEmpty(heading)) multipart.Add(new StringContent(heading), "heading");
-                    var unit = !string.IsNullOrEmpty(unitName) ? unitName : feedId;
-                    if (!string.IsNullOrEmpty(unit)) multipart.Add(new StringContent(unit), "unit_name");
-                    multipart.Add(new StringContent(side), "side");
-                    if (!string.IsNullOrEmpty(missionId)) multipart.Add(new StringContent(missionId), "mission_id");
-                    multipart.Add(new StringContent(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()), "capturedAt");
-                    var fileContent = new ByteArrayContent(bytes);
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-                    multipart.Add(fileContent, "image", Path.GetFileName(shot) ?? "feed.jpg");
-                    var reconReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/recon/images") { Content = multipart };
-                    AttachApiKeyHeader(reconReq);
-                    _ = HttpClient.SendAsync(reconReq);
-                }
-                catch { }
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadLatestScreenshot).
                 return;
             }
 
             if (function == "UploadImage" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                var path = args[0] ?? "";
-                var author = args.Length > 1 ? (args[1] ?? "Unknown") : "Unknown";
-                if (string.IsNullOrWhiteSpace(path)) return;
-                try
-                {
-                    if (!File.Exists(path)) return;
-                    var fi = new FileInfo(path);
-                    if (fi.Length > 5 * 1024 * 1024) return;
-                    var bytes = File.ReadAllBytes(path);
-                    var multipart = new MultipartFormDataContent();
-                    multipart.Add(new StringContent("1"), "mapId");
-                    multipart.Add(new StringContent(author), "author");
-                    var fileContent = new ByteArrayContent(bytes);
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-                    multipart.Add(fileContent, "photo", Path.GetFileName(path) ?? "photo.jpg");
-                    var photoReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/intel/photos") { Content = multipart };
-                    AttachApiKeyHeader(photoReq);
-                    _ = HttpClient.SendAsync(photoReq);
-                }
-                catch { }
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadIntelPhoto).
                 return;
             }
 
@@ -2851,53 +2959,7 @@ public static class Extension
 
             if (function == "UploadReconImage" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
-                var path = args[0] ?? "";
-                var author = args[1] ?? "Unknown";
-                if (string.IsNullOrWhiteSpace(path)) return;
-                try
-                {
-                    if (!File.Exists(path)) return;
-                    var fi = new FileInfo(path);
-                    if (fi.Length > 5 * 1024 * 1024) return;
-                    var bytes = File.ReadAllBytes(path);
-                    var multipart = new MultipartFormDataContent();
-                    multipart.Add(new StringContent("1"), "mapId");
-                    multipart.Add(new StringContent(author), "author");
-                    var posX = args.Length > 2 ? (args[2] ?? "") : "";
-                    var posY = args.Length > 3 ? (args[3] ?? "") : "";
-                    var posZ = args.Length > 4 ? (args[4] ?? "") : "";
-                    var grid = args.Length > 5 ? (args[5] ?? "") : "";
-                    var heading = args.Length > 6 ? (args[6] ?? "") : "";
-                    var altitude = args.Length > 7 ? (args[7] ?? "") : "";
-                    var caption = args.Length > 8 ? (args[8] ?? "") : "";
-                    var unitName = args.Length > 9 ? (args[9] ?? "") : "";
-                    var side = args.Length > 10 ? (args[10] ?? "WEST") : "WEST";
-                    var missionId = args.Length > 11 ? (args[11] ?? "") : "";
-                    var device = args.Length > 12 ? (args[12] ?? "CTAB") : "CTAB";
-                    var capturedAt = args.Length > 13 ? (args[13] ?? "") : "";
-                    if (!string.IsNullOrEmpty(posX)) multipart.Add(new StringContent(posX), "pos_x");
-                    if (!string.IsNullOrEmpty(posY)) multipart.Add(new StringContent(posY), "pos_y");
-                    if (!string.IsNullOrEmpty(posZ)) multipart.Add(new StringContent(posZ), "pos_z");
-                    if (!string.IsNullOrEmpty(grid)) multipart.Add(new StringContent(grid), "grid_ref");
-                    if (!string.IsNullOrEmpty(heading)) multipart.Add(new StringContent(heading), "heading");
-                    if (!string.IsNullOrEmpty(altitude)) multipart.Add(new StringContent(altitude), "altitude");
-                    if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
-                    if (!string.IsNullOrEmpty(unitName)) multipart.Add(new StringContent(unitName), "unit_name");
-                    multipart.Add(new StringContent(side), "side");
-                    if (!string.IsNullOrEmpty(missionId))                     multipart.Add(new StringContent(missionId), "mission_id");
-                    multipart.Add(new StringContent(device), "device_type");
-                    if (!string.IsNullOrEmpty(capturedAt)) multipart.Add(new StringContent(capturedAt), "capturedAt");
-                    // feed_id optionnel (args[14]) pour lier l’aperçu au roster Cams
-                    var feedId = args.Length > 14 ? (args[14] ?? "") : "";
-                    if (!string.IsNullOrEmpty(feedId)) multipart.Add(new StringContent(feedId), "feed_id");
-                    var fileContent = new ByteArrayContent(bytes);
-                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-                    multipart.Add(fileContent, "image", Path.GetFileName(path) ?? "recon.jpg");
-                    var reconReq = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/api/recon/images") { Content = multipart };
-                    AttachApiKeyHeader(reconReq);
-                    _ = HttpClient.SendAsync(reconReq);
-                }
-                catch { }
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadReconImage).
                 return;
             }
 
@@ -2945,54 +3007,455 @@ public static class Extension
     }
 
     /// <summary>
+    /// Valide + file un POST multipart recon. Retour SQF : OK|queued | ERR|…
+    /// </summary>
+    private static string BeginUploadReconImage(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
+        var author = args.Length > 1 ? (args[1] ?? "Unknown") : "Unknown";
+        var resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
+        if (resolved == null) return "ERR|file_not_found";
+        try
+        {
+            var fi = new FileInfo(resolved);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
+            if (fi.Length < 32) return "ERR|file_empty";
+            var bytes = File.ReadAllBytes(resolved);
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(author), "author");
+            AddOptionalForm(multipart, "pos_x", args, 2);
+            AddOptionalForm(multipart, "pos_y", args, 3);
+            AddOptionalForm(multipart, "pos_z", args, 4);
+            AddOptionalForm(multipart, "grid_ref", args, 5);
+            AddOptionalForm(multipart, "heading", args, 6);
+            AddOptionalForm(multipart, "altitude", args, 7);
+            AddOptionalForm(multipart, "caption", args, 8);
+            AddOptionalForm(multipart, "unit_name", args, 9);
+            multipart.Add(new StringContent(args.Length > 10 && !string.IsNullOrEmpty(args[10]) ? args[10]! : "WEST"), "side");
+            AddOptionalForm(multipart, "mission_id", args, 11);
+            multipart.Add(new StringContent(args.Length > 12 && !string.IsNullOrEmpty(args[12]) ? args[12]! : "CTAB"), "device_type");
+            AddOptionalForm(multipart, "capturedAt", args, 13);
+            AddOptionalForm(multipart, "feed_id", args, 14);
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileName = Path.GetFileName(resolved) ?? "recon.png";
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            multipart.Add(fileContent, "image", fileName);
+            return QueueMultipartUpload("/api/recon/images", multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
+    private static string BeginUploadLatestScreenshot(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var author = args.Length > 0 ? (args[0] ?? "Unknown") : "Unknown";
+        var device = args.Length > 1 ? (args[1] ?? "HELMET") : "HELMET";
+        var caption = args.Length > 2 ? (args[2] ?? "") : "";
+        var feedId = args.Length > 3 ? (args[3] ?? "") : "";
+        var posX = args.Length > 4 ? (args[4] ?? "") : "";
+        var posY = args.Length > 5 ? (args[5] ?? "") : "";
+        var posZ = args.Length > 6 ? (args[6] ?? "") : "";
+        var grid = args.Length > 7 ? (args[7] ?? "") : "";
+        var heading = args.Length > 8 ? (args[8] ?? "") : "";
+        var unitName = args.Length > 9 ? (args[9] ?? "") : "";
+        var side = args.Length > 10 ? (args[10] ?? "WEST") : "WEST";
+        var missionId = args.Length > 11 ? (args[11] ?? "") : "";
+        var maxAgeSec = 45;
+        if (args.Length > 12 && int.TryParse(args[12], out var parsedAge) && parsedAge > 0)
+            maxAgeSec = Math.Min(parsedAge, 180);
+        var shot = FindNewestScreenshot(TimeSpan.FromSeconds(maxAgeSec));
+        if (shot == null) return "ERR|file_not_found";
+        try
+        {
+            var fi = new FileInfo(shot);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
+            var bytes = File.ReadAllBytes(shot);
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(author), "author");
+            multipart.Add(new StringContent(device), "device_type");
+            if (!string.IsNullOrEmpty(caption)) multipart.Add(new StringContent(caption), "caption");
+            if (!string.IsNullOrEmpty(feedId)) multipart.Add(new StringContent(feedId), "feed_id");
+            if (!string.IsNullOrEmpty(posX)) multipart.Add(new StringContent(posX), "pos_x");
+            if (!string.IsNullOrEmpty(posY)) multipart.Add(new StringContent(posY), "pos_y");
+            if (!string.IsNullOrEmpty(posZ)) multipart.Add(new StringContent(posZ), "pos_z");
+            if (!string.IsNullOrEmpty(grid)) multipart.Add(new StringContent(grid), "grid_ref");
+            if (!string.IsNullOrEmpty(heading)) multipart.Add(new StringContent(heading), "heading");
+            var unit = !string.IsNullOrEmpty(unitName) ? unitName : feedId;
+            if (!string.IsNullOrEmpty(unit)) multipart.Add(new StringContent(unit), "unit_name");
+            multipart.Add(new StringContent(side), "side");
+            if (!string.IsNullOrEmpty(missionId)) multipart.Add(new StringContent(missionId), "mission_id");
+            multipart.Add(new StringContent(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()), "capturedAt");
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(shot, bytes));
+            multipart.Add(fileContent, "image", Path.GetFileName(shot) ?? "feed.png");
+            return QueueMultipartUpload("/api/recon/images", multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
+    private static string BeginUploadIntelPhoto(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
+        var author = args.Length > 1 ? (args[1] ?? "Unknown") : "Unknown";
+        var resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
+        if (resolved == null) return "ERR|file_not_found";
+        try
+        {
+            var fi = new FileInfo(resolved);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
+            var bytes = File.ReadAllBytes(resolved);
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent("1"), "mapId");
+            multipart.Add(new StringContent(author), "author");
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            multipart.Add(fileContent, "photo", Path.GetFileName(resolved) ?? "photo.png");
+            return QueueMultipartUpload("/api/intel/photos", multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
+    private static void AddOptionalForm(MultipartFormDataContent multipart, string name, string?[] args, int index)
+    {
+        if (args.Length <= index) return;
+        var v = args[index] ?? "";
+        if (string.IsNullOrEmpty(v)) return;
+        multipart.Add(new StringContent(v), name);
+    }
+
+    private static string GuessImageMediaType(string path, byte[] bytes)
+    {
+        if (bytes.Length >= 8
+            && bytes[0] == 0x89 && bytes[1] == (byte)'P' && bytes[2] == (byte)'N' && bytes[3] == (byte)'G')
+            return "image/png";
+        if (bytes.Length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            return "image/jpeg";
+        var ext = Path.GetExtension(path);
+        if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) return "image/png";
+        return "image/jpeg";
+    }
+
+    /// <summary>
+    /// Construit l’URL (préfixe /public conservé) et envoie en async avec suivi d’erreur.
+    /// </summary>
+    private static string QueueMultipartUpload(string relativeApiPath, MultipartFormDataContent multipart)
+    {
+        if (!TryBuildRequestUri(_baseUrl, relativeApiPath, out var uri, out var err) || uri is null)
+        {
+            try { multipart.Dispose(); } catch { /* ignore */ }
+            return "ERR|" + err;
+        }
+        var url = uri.AbsoluteUri;
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, url) { Content = multipart };
+            AttachApiKeyHeader(req);
+            _ = UploadHttpClient.SendAsync(req).ContinueWith(t =>
+            {
+                try
+                {
+                    HttpResponseMessage? resp = null;
+                    if (t.Status == TaskStatus.RanToCompletion)
+                        resp = t.Result;
+                    if (resp == null)
+                    {
+                        NotePostError(0, url);
+                        return;
+                    }
+                    var code = (int)resp.StatusCode;
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        NoteRateLimitCleared();
+                        return;
+                    }
+                    // Session périmée attachée en en-tête : oublier et retenter une fois sans jeton.
+                    if (code == 401 && _sessionToken.Length > 0)
+                    {
+                        _sessionToken = "";
+                        try
+                        {
+                            // Le contenu a déjà été consommé — pas de retry multipart ici.
+                            // Le soft-fail serveur (invalid_session_ignored) couvre le cas courant.
+                        }
+                        catch { /* ignore */ }
+                    }
+                    NotePostError(code, url);
+                }
+                catch
+                {
+                    NotePostError(-1, url);
+                }
+                finally
+                {
+                    try { req.Dispose(); } catch { /* ignore */ }
+                }
+            });
+            return "OK|queued";
+        }
+        catch
+        {
+            try { multipart.Dispose(); } catch { /* ignore */ }
+            NotePostError(-1, url);
+            return "ERR|network";
+        }
+    }
+
+    private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg"];
+
+    private static bool IsImageExtension(string? ext) =>
+        !string.IsNullOrEmpty(ext)
+        && ImageExtensions.Any(e => e.Equals(ext, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Résout un chemin BCE / Photo Library (absolu, relatif, ou nom seul) vers un fichier disque.
+    /// Gère : guillemets, chemins Arma « \Documents\… », jpg↔png, sous-dossiers Screenshots.
+    /// </summary>
+    private static string? ResolveLocalImagePath(string? raw, TimeSpan? newestFallback = null)
+    {
+        var path = (raw ?? "").Trim().Trim('"').Trim('\'');
+        if (path.Length == 0)
+            return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
+
+        path = path.Replace('/', '\\');
+
+        foreach (var candidate in ExpandLocalImageCandidates(path))
+        {
+            try
+            {
+                if (File.Exists(candidate))
+                    return Path.GetFullPath(candidate);
+            }
+            catch { /* ignore */ }
+        }
+
+        // Nom seul / mauvaise extension / mauvais profil → chercher dans les dossiers Screenshots.
+        var fileName = Path.GetFileName(path);
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            var byName = FindScreenshotByFileName(fileName);
+            if (byName != null)
+                return byName;
+        }
+
+        return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
+    }
+
+    /// <summary>
+    /// Variantes du chemin reçu (absolu Windows, préfixe Arma « \Documents\… », extension alternative).
+    /// </summary>
+    private static IEnumerable<string> ExpandLocalImageCandidates(string path)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var list = new List<string>();
+        void Add(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return;
+            if (!seen.Add(p)) return;
+            list.Add(p);
+            foreach (var alt in WithAlternateImageExtensions(p))
+            {
+                if (seen.Add(alt))
+                    list.Add(alt);
+            }
+        }
+
+        Add(path);
+
+        // Arma : chemin style "\Documents\Arma 3\Screenshots\foo.png" (racine lecteur ≠ UserProfile).
+        if (path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal))
+        {
+            var trimmed = path.TrimStart('\\');
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrWhiteSpace(userProfile))
+                Add(Path.Combine(userProfile, trimmed));
+
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (!string.IsNullOrWhiteSpace(docs)
+                && trimmed.StartsWith("Documents\\", StringComparison.OrdinalIgnoreCase))
+            {
+                Add(Path.Combine(docs, trimmed.Substring("Documents\\".Length)));
+            }
+
+            try
+            {
+                var root = Path.GetPathRoot(userProfile);
+                if (!string.IsNullOrWhiteSpace(root))
+                    Add(Path.Combine(root, trimmed));
+            }
+            catch { /* ignore */ }
+        }
+
+        // Relatif "Screenshots\foo.png" ou "ATAK\foo.png"
+        if (!Path.IsPathRooted(path)
+            || (path.StartsWith('\\') && !path.StartsWith("\\\\", StringComparison.Ordinal)))
+        {
+            var rel = path.TrimStart('\\');
+            foreach (var dir in EnumerateScreenshotDirs())
+            {
+                Add(Path.Combine(dir, Path.GetFileName(path)));
+                Add(Path.Combine(dir, rel));
+                try
+                {
+                    var profileRoot = Directory.GetParent(dir)?.FullName;
+                    if (!string.IsNullOrWhiteSpace(profileRoot))
+                        Add(Path.Combine(profileRoot, rel));
+                }
+                catch { /* ignore */ }
+            }
+        }
+
+        return list;
+    }
+
+    private static IEnumerable<string> WithAlternateImageExtensions(string filePath)
+    {
+        string? dir;
+        string name;
+        try
+        {
+            dir = Path.GetDirectoryName(filePath);
+            name = Path.GetFileName(filePath);
+        }
+        catch
+        {
+            yield break;
+        }
+        if (string.IsNullOrWhiteSpace(name)) yield break;
+        var stem = Path.GetFileNameWithoutExtension(name);
+        if (string.IsNullOrWhiteSpace(stem)) yield break;
+        foreach (var ext in ImageExtensions)
+        {
+            var altName = stem + ext;
+            if (altName.Equals(name, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.IsNullOrWhiteSpace(dir))
+                yield return altName;
+            else
+                yield return Path.Combine(dir, altName);
+        }
+    }
+
+    /// <summary>
+    /// Cherche un fichier image par nom (et stem .jpg↔.png) dans les dossiers Screenshots, y compris sous-dossiers.
+    /// </summary>
+    private static string? FindScreenshotByFileName(string fileName)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { fileName };
+        foreach (var alt in WithAlternateImageExtensions(fileName))
+            names.Add(Path.GetFileName(alt));
+
+        var stem = Path.GetFileNameWithoutExtension(fileName);
+        foreach (var dir in EnumerateScreenshotDirs())
+        {
+            foreach (var name in names)
+            {
+                try
+                {
+                    var direct = Path.Combine(dir, name);
+                    if (File.Exists(direct))
+                        return Path.GetFullPath(direct);
+                }
+                catch { /* ignore */ }
+            }
+
+            if (string.IsNullOrWhiteSpace(stem)) continue;
+            try
+            {
+                foreach (var f in Directory.EnumerateFiles(dir, stem + ".*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        if (!IsImageExtension(Path.GetExtension(f))) continue;
+                        if (!File.Exists(f)) continue;
+                        return Path.GetFullPath(f);
+                    }
+                    catch { /* ignore */ }
+                }
+            }
+            catch { /* ignore */ }
+        }
+        return null;
+    }
+
+    private static IEnumerable<string> EnumerateScreenshotDirs()
+    {
+        var dirs = new List<string>();
+        void AddIfExists(string p)
+        {
+            if (!string.IsNullOrWhiteSpace(p) && Directory.Exists(p)
+                && !dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
+                dirs.Add(p);
+        }
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (!string.IsNullOrWhiteSpace(docs))
+            {
+                AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
+                var other = Path.Combine(docs, "Arma 3 - Other Profiles");
+                if (Directory.Exists(other))
+                {
+                    foreach (var profileDir in Directory.EnumerateDirectories(other))
+                        AddIfExists(Path.Combine(profileDir, "Screenshots"));
+                }
+            }
+        }
+        catch { /* ignore */ }
+        try
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrWhiteSpace(userProfile))
+            {
+                AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
+                var odOther = Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles");
+                if (Directory.Exists(odOther))
+                {
+                    foreach (var profileDir in Directory.EnumerateDirectories(odOther))
+                        AddIfExists(Path.Combine(profileDir, "Screenshots"));
+                }
+            }
+        }
+        catch { /* ignore */ }
+        return dirs;
+    }
+
+    /// <summary>
     /// Cherche la capture d’écran Arma la plus récente (dossier Screenshots du profil).
     /// </summary>
     private static string? FindNewestScreenshot(TimeSpan maxAge)
     {
         try
         {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            if (string.IsNullOrWhiteSpace(docs) || !Directory.Exists(docs)) return null;
-            var dirs = new List<string>();
-            void AddIfExists(string p)
-            {
-                if (!string.IsNullOrWhiteSpace(p) && Directory.Exists(p) && !dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
-                    dirs.Add(p);
-            }
-            AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
-            var other = Path.Combine(docs, "Arma 3 - Other Profiles");
-            if (Directory.Exists(other))
-            {
-                foreach (var profileDir in Directory.EnumerateDirectories(other))
-                    AddIfExists(Path.Combine(profileDir, "Screenshots"));
-            }
-            // OneDrive Documents (souvent le vrai dossier utilisateur)
-            try
-            {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                if (!string.IsNullOrWhiteSpace(userProfile))
-                {
-                    AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
-                    AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles"));
-                }
-            }
-            catch { }
-
             FileInfo? best = null;
             var cutoff = DateTime.UtcNow - maxAge;
-            foreach (var dir in dirs)
+            foreach (var dir in EnumerateScreenshotDirs())
             {
                 IEnumerable<string> files;
                 try
                 {
-                    files = Directory.EnumerateFiles(dir, "*.*", SearchOption.TopDirectoryOnly)
-                        .Where(f =>
-                        {
-                            var ext = Path.GetExtension(f);
-                            return ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
-                                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
-                                || ext.Equals(".png", StringComparison.OrdinalIgnoreCase);
-                        });
+                    files = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories)
+                        .Where(f => IsImageExtension(Path.GetExtension(f)));
                 }
                 catch { continue; }
                 foreach (var f in files)

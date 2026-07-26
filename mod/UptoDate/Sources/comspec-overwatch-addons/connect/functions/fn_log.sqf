@@ -69,3 +69,12 @@ if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_fil
         };
     };
 };
+
+// Remontée Athena (erreurs / alertes uniquement, anti-spam côté reportDiag)
+if (hasInterface && {_levelNum <= 2} && {!isNil "comspec_overwatch_connect_fnc_reportDiag"}) then {
+    [_levelKey, _channel, _message, if (isNil "_detail") then { "" } else { str _detail }, "auto"] spawn {
+        params ["_lvl", "_ch", "_msg", "_det", "_src"];
+        uiSleep 0.05;
+        [_lvl, _ch, _msg, _det, _src] call comspec_overwatch_connect_fnc_reportDiag;
+    };
+};

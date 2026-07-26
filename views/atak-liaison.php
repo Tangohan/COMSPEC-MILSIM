@@ -11,7 +11,7 @@ $demoSeedAllowed = !empty($demoSeedAllowed);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Journal de liaison — ATAK</title>
-  <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak.css?v=202607261920" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;

@@ -96,6 +96,22 @@ try {
 echo "[OK] Connexion base : $name\n";
 $migrationFlush();
 
+/** Recrée $pdo si la session MySQL est morte (2006 / gone away). */
+$migrationEnsurePdo = static function () use (&$pdo, $dsn, $user, $pass, $migrationFlush): void {
+    try {
+        $pdo->query('SELECT 1');
+    } catch (Throwable) {
+        try {
+            $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            echo "  [INFO] Reconnexion MySQL OK\n";
+            $migrationFlush();
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
+            $migrationFlush();
+        }
+    }
+};
+
 echo "[→] Chargement des fichiers bootstrap (plateforme / RBAC)…\n";
 $migrationFlush();
 
@@ -210,6 +226,30 @@ if ($ensureAddedUsers === 0) {
 }
 $migrationFlush();
 
+// Profil communauté (Complet / Effectifs / ATAK) — critique pour CREATE communauté.
+// CREATE TABLE IF NOT EXISTS ne met jamais à jour une table déjà présente : combler tôt.
+$ensureTenantType = schema_ensure_columns($pdo, 'tenants', [
+    'tenant_type' => "`tenant_type` VARCHAR(32) NOT NULL DEFAULT 'full' COMMENT 'Profil communauté : full | effectifs | atak' AFTER `slug`",
+]);
+if ($ensureTenantType === 0) {
+    echo "  [OK] tenants : tenant_type déjà présente\n";
+} else {
+    echo "  [OK] tenants : tenant_type comblée ({$ensureTenantType})\n";
+}
+try {
+    $idxTt = $pdo->query(
+        "SELECT 1 FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND INDEX_NAME = 'idx_tenants_type' LIMIT 1"
+    );
+    if ($idxTt && !$idxTt->fetchColumn()) {
+        $pdo->exec('ALTER TABLE tenants ADD INDEX idx_tenants_type (tenant_type)');
+        echo "  [OK] index idx_tenants_type ajouté\n";
+    }
+} catch (Throwable $e) {
+    echo '  [ATTENTION] idx_tenants_type (ensure) : ' . $e->getMessage() . "\n";
+}
+$migrationFlush();
+
 // Extensions DDL (tableau opérationnel planning_*, ORBAT, tenant_email_*, app_maintenance, label_en rôles…).
 run_core_schema_extensions_migration($pdo, $root, $migrationFlush);
 
@@ -272,6 +312,38 @@ try {
     echo '  [ATTENTION] military_role_catalog_schema : ' . $e->getMessage() . "\n";
 }
 echo "Bootstrap plateforme OK (subscription_plans, tenants.*, RBAC 3 couches, community_invitations, moderation_*, security_*, community_code, referral_*…).\n";
+$migrationFlush();
+
+$tenantTypePath = $root . '/bootstrap/tenant_type_migration.php';
+echo "Migration tenant_type (profil communauté Complet / Effectifs / ATAK)...\n";
+$migrationFlush();
+if (!is_file($tenantTypePath)) {
+    echo "  [ATTENTION] Fichier absent : bootstrap/tenant_type_migration.php — déployez-le puis relancez (création de communauté bloquée sans tenants.tenant_type).\n";
+} else {
+    $tenantTypeMigrate = require $tenantTypePath;
+    try {
+        if (!is_callable($tenantTypeMigrate)) {
+            throw new RuntimeException('bootstrap/tenant_type_migration.php doit retourner une callable');
+        }
+        $tenantTypeMigrate($pdo);
+        // Confirmation finale lisible (OK / SKIP déjà loggés dans le bootstrap).
+        $hasTt = false;
+        try {
+            $stTt = $pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'tenant_type' LIMIT 1"
+            );
+            $hasTt = $stTt !== false && (bool) $stTt->fetchColumn();
+        } catch (Throwable) {
+            $hasTt = false;
+        }
+        echo $hasTt
+            ? "  [OK] tenant_type : colonne prête (création de communauté)\n"
+            : "  [ATTENTION] tenant_type : colonne toujours absente après migration\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] tenant_type : ' . $e->getMessage() . "\n";
+    }
+}
 $migrationFlush();
 
 // LMS formations : colonnes training_courses + tables engagement — exécuté tôt (idempotent). Anciennement en fin de fichier :
@@ -2025,6 +2097,14 @@ try {
     echo '  [ATTENTION] community_media : ' . $e->getMessage() . "\n";
 }
 
+$communityMediaReelsMigrate = require $root . '/bootstrap/community_media_reels_migration.php';
+try {
+    echo "Migration community_media reels (feed / social)...\n";
+    $communityMediaReelsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_media_reels : ' . $e->getMessage() . "\n";
+}
+
 $communityEventRsvpHistoryMigrate = require $root . '/bootstrap/community_event_rsvp_history_migration.php';
 try {
     echo "Migration community_event_rsvp_history...\n";
@@ -2832,79 +2912,73 @@ if ($stmt && $stmt->fetch()) {
         echo '  [ATTENTION] forum_reports.content_kind : ' . $e->getMessage() . "\n";
     }
 
-    echo "Migrations terminées.\n";
-    echo "\n--- Pipeline exécuté (résumé) ---\n";
-    echo "Schéma SQL (migrations/schema.sql) ; bootstrap plateforme et RBAC ; migrations LMS et annexes ; compléments seed (tenant default déjà présent).\n";
-    echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php setup-database.php en SSH pour une sortie complète.\n";
-    if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
-        require_once $root . '/bootstrap/migrations_full_post.php';
-        comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
-        comspec_print_post_migration_report($pdo, $root, $migrationFlush);
+    echo "Seed déjà présent — poursuite des migrations annexes (Discord, ATAK, etc.).\n";
+    $migrationFlush();
+} else {
+    echo "Insertion du tenant et admin par défaut...\n";
+    $pdo->exec("INSERT INTO tenants (name, slug, created_at, updated_at) VALUES ('Pas d''organisation', 'default', NOW(), NOW())");
+    $tenantId = (int) $pdo->lastInsertId();
+
+    $pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté', 1, 1, 'community', NOW())");
+    $communityOwnerRoleId = (int) $pdo->lastInsertId();
+    $pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Administrator', 'tenant_admin', 'Accès administration organisation', 1, 0, 'community', NOW())");
+    $tenantAdminRoleId = (int) $pdo->lastInsertId();
+    $roleId = $communityOwnerRoleId;
+
+    $pdo->exec("INSERT INTO grades (tenant_id, name, short_name, nato_code, rank_order, created_at) VALUES ($tenantId, 'Officer', 'OFR', 'OF-1', 10, NOW())");
+    $gradeId = (int) $pdo->lastInsertId();
+
+    $hash = password_hash('admin', PASSWORD_ARGON2ID);
+    $pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
+        ->execute([$tenantId, $hash, $roleId, $gradeId]);
+
+    $siteGlobalId = $pdo->query("SELECT id FROM roles WHERE tenant_id IS NULL AND slug = 'site_super_admin' LIMIT 1")->fetchColumn();
+    if ($siteGlobalId) {
+        $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
+            ->execute(['admin@athena.local', (int) $siteGlobalId]);
     }
-    exit(0);
-}
 
-echo "Insertion du tenant et admin par défaut...\n";
-$pdo->exec("INSERT INTO tenants (name, slug, created_at, updated_at) VALUES ('Pas d''organisation', 'default', NOW(), NOW())");
-$tenantId = (int) $pdo->lastInsertId();
+    $panels = [
+        ['État civil', 'etat-civil', 'Identité et état civil', 10],
+        ['Affectation', 'affectation', 'Unité, poste, affectation', 20],
+        ['Formation', 'formation', 'Parcours et qualifications', 30],
+        ['Sécurité / Clearance', 'securite', 'Niveaux de sécurité et habilitations', 40],
+        ['Santé / Aptitude', 'sante', 'Aptitude médicale et restrictions', 50],
+        ['Références / Notes', 'references-notes', 'Références et notes administratives', 60],
+    ];
+    foreach ($panels as $p) {
+        $pdo->prepare("INSERT INTO personnel_admin_panels (tenant_id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)")
+            ->execute([$tenantId, $p[0], $p[1], $p[2], $p[3]]);
+    }
+    $pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_pattern, next_number, updated_at) VALUES ($tenantId, 'ATH', '{prefix}-{seq:5}', 1, NOW())");
 
-$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Propriétaire communauté', 'community_owner', 'Gouvernance complète de la communauté', 1, 1, 'community', NOW())");
-$communityOwnerRoleId = (int) $pdo->lastInsertId();
-$pdo->exec("INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES ($tenantId, 'Administrator', 'tenant_admin', 'Accès administration organisation', 1, 0, 'community', NOW())");
-$tenantAdminRoleId = (int) $pdo->lastInsertId();
-$roleId = $communityOwnerRoleId;
+    $run_forum_seed($pdo, $tenantId);
+    $run_documents_seed($pdo, $tenantId);
 
-$pdo->exec("INSERT INTO grades (tenant_id, name, short_name, nato_code, rank_order, created_at) VALUES ($tenantId, 'Officer', 'OFR', 'OF-1', 10, NOW())");
-$gradeId = (int) $pdo->lastInsertId();
-
-$hash = password_hash('admin', PASSWORD_ARGON2ID);
-$pdo->prepare("INSERT INTO users (tenant_id, email, password_hash, display_name, callsign, role_id, grade_id, status, created_at, updated_at) VALUES (?, 'admin@athena.local', ?, 'Admin', 'ADMIN', ?, ?, 'active', NOW(), NOW())")
-    ->execute([$tenantId, $hash, $roleId, $gradeId]);
-
-$siteGlobalId = $pdo->query("SELECT id FROM roles WHERE tenant_id IS NULL AND slug = 'site_super_admin' LIMIT 1")->fetchColumn();
-if ($siteGlobalId) {
-    $pdo->prepare('INSERT IGNORE INTO site_role_assignments (email_normalized, role_id, created_at) VALUES (?, ?, NOW())')
-        ->execute(['admin@athena.local', (int) $siteGlobalId]);
-}
-
-$panels = [
-    ['État civil', 'etat-civil', 'Identité et état civil', 10],
-    ['Affectation', 'affectation', 'Unité, poste, affectation', 20],
-    ['Formation', 'formation', 'Parcours et qualifications', 30],
-    ['Sécurité / Clearance', 'securite', 'Niveaux de sécurité et habilitations', 40],
-    ['Santé / Aptitude', 'sante', 'Aptitude médicale et restrictions', 50],
-    ['Références / Notes', 'references-notes', 'Références et notes administratives', 60],
-];
-foreach ($panels as $p) {
-    $pdo->prepare("INSERT INTO personnel_admin_panels (tenant_id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)")
-        ->execute([$tenantId, $p[0], $p[1], $p[2], $p[3]]);
-}
-$pdo->exec("INSERT INTO tenant_matricule_config (tenant_id, prefix, format_pattern, next_number, updated_at) VALUES ($tenantId, 'ATH', '{prefix}-{seq:5}', 1, NOW())");
-
-$run_forum_seed($pdo, $tenantId);
-$run_documents_seed($pdo, $tenantId);
-
-try {
-    $allTenants = $pdo->query('SELECT id FROM tenants');
-    if ($allTenants) {
-        while ($trow = $allTenants->fetch(PDO::FETCH_ASSOC)) {
-            \App\Services\Community\TenantSeedHelper::ensureTenantPermissionCatalog($pdo, (int) $trow['id']);
+    try {
+        $allTenants = $pdo->query('SELECT id FROM tenants');
+        if ($allTenants) {
+            while ($trow = $allTenants->fetch(PDO::FETCH_ASSOC)) {
+                \App\Services\Community\TenantSeedHelper::ensureTenantPermissionCatalog($pdo, (int) $trow['id']);
+            }
         }
+        echo "Catalogue permissions tenant synchronisé.\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
     }
-    echo "Catalogue permissions tenant synchronisé.\n";
-} catch (Throwable $e) {
-    echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+
+    try {
+        \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
+        echo "Catalogue rôles militaires (seed tenant) OK.\n";
+    } catch (Throwable $e) {
+        echo '  [ATTENTION] military_role_catalog_sync (seed) : ' . $e->getMessage() . "\n";
+    }
+
+    echo "Seed OK. Compte : admin@athena.local / admin\n";
 }
 
-try {
-    \App\Services\Rbac\MilitaryRoleCatalogSyncService::syncAllTenants($pdo);
-    echo "Catalogue rôles militaires (seed tenant) OK.\n";
-} catch (Throwable $e) {
-    echo '  [ATTENTION] military_role_catalog_sync (seed) : ' . $e->getMessage() . "\n";
-}
-
-echo "Seed OK. Compte : admin@athena.local / admin\n";
-
+// ----- Migrations annexes (toujours, même si le tenant default existait déjà) -----
+// Avant : exit(0) dès que slug=default existait → discord_recruitment, ATAK, etc. ne tournaient jamais en prod.
 $discordRecruitmentMigrate = require $root . '/bootstrap/discord_recruitment_migration.php';
 try {
     echo "Migration discord_recruitment (recrutement via Discord)...\n";
@@ -2953,12 +3027,28 @@ try {
     echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/atak_map_gateway_migration.php';
+try {
+    echo "Migration atak_map_gateway (passerelle ATAK inter-équipes)...\n";
+    run_atak_map_gateway_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_map_gateway : ' . $e->getMessage() . "\n";
+}
+
 require_once $root . '/bootstrap/atak_beta_registrations_migration.php';
 try {
     echo "Migration atak_beta_registrations (accès anticipé Overwatch)...\n";
     run_atak_beta_registrations_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_beta_registrations : ' . $e->getMessage() . "\n";
+}
+
+require_once $root . '/bootstrap/atak_mod_reports_migration.php';
+try {
+    echo "Migration atak_mod_reports (rapports erreurs / bugs Overwatch)...\n";
+    run_atak_mod_reports_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_mod_reports : ' . $e->getMessage() . "\n";
 }
 
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
@@ -2977,29 +3067,55 @@ try {
     echo '  [ATTENTION] tenant_atak_maintenance : ' . $e->getMessage() . "\n";
 }
 
+$atakModulesSchemaMigrate = require $root . '/bootstrap/atak_modules_schema_migration.php';
+try {
+    echo "Migration atak_modules_schema (rapports, POI, zones, MEDEVAC, QRF, véhicules…)...\n";
+    $migrationFlush();
+    $atakModulesSchemaMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_modules_schema : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$c2PillarsMigrate = require $root . '/bootstrap/c2_pillars_migration.php';
+try {
+    echo "Migration c2_pillars (appui-feu, zones danger, logistique, intel, replay, IFF)...\n";
+    $migrationFlush();
+    $c2PillarsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] c2_pillars : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $tenantAtakExperienceMigrate = require $root . '/bootstrap/tenant_atak_experience_migration.php';
 try {
     echo "Migration tenant_atak_experience (expérience Overwatch par communauté)...\n";
+    $migrationFlush();
     $tenantAtakExperienceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_experience : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $tenantAtakRoleplayMigrate = require $root . '/bootstrap/tenant_atak_roleplay_config_migration.php';
 try {
     echo "Migration tenant_atak_roleplay (configuration roleplay — réseau, capteurs, liaison)...\n";
+    $migrationFlush();
     $tenantAtakRoleplayMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_roleplay : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $fireTeamsMigrate = require $root . '/bootstrap/fire_teams_migration.php';
 try {
     echo "Migration fire_teams (équipes de feu mission + organigramme)...\n";
+    $migrationFlush();
     $fireTeamsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] fire_teams : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakOrdersMigrate = require $root . '/bootstrap/atak_orders_migration.php';
 try {
@@ -3008,6 +3124,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakOrdersV2Migrate = require $root . '/bootstrap/atak_orders_v2_migration.php';
 try {
@@ -3016,6 +3133,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders_v2 : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakOrdersSinceMigrate = require $root . '/bootstrap/atak_orders_since_migration.php';
 try {
@@ -3024,6 +3142,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders_since : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakNineLineKindMigrate = require $root . '/bootstrap/atak_nine_line_mission_kind_migration.php';
 try {
@@ -3032,6 +3151,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_nine_line_mission_kind : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakOrderTemplatesMigrate = require $root . '/bootstrap/atak_order_templates_migration.php';
 try {
@@ -3040,6 +3160,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_order_templates : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakOrderTypesMigrate = require $root . '/bootstrap/atak_order_types_migration.php';
 try {
@@ -3048,6 +3169,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_order_types : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakUnitsPositionMigrate = require $root . '/bootstrap/atak_units_position_migration.php';
 try {
@@ -3056,6 +3178,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_units_position : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakMedicalTriageMigrate = require $root . '/bootstrap/atak_medical_triage_migration.php';
 try {
@@ -3064,6 +3187,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakDonationsMigrate = require $root . '/bootstrap/atak_donations_migration.php';
 try {
@@ -3072,6 +3196,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_donations : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $atakForumChannelsSeed = require $root . '/bootstrap/atak_forum_channels_seed.php';
 try {
@@ -3080,6 +3205,7 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_forum_channels_seed : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 $trainingGroupsMigrate = require $root . '/bootstrap/training_groups_migration.php';
 try {
@@ -3088,12 +3214,17 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_groups : ' . $e->getMessage() . "\n";
 }
+$migrationEnsurePdo();
 
 echo "\n--- Pipeline exécuté (résumé) ---\n";
-echo "Schéma SQL (migrations/schema.sql) ; ensure colonnes (atak_units.military_id/pos_x/pos_y) ; bootstrap : community_platform, unit_commander, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
+echo "Schéma SQL (migrations/schema.sql) ; ensure colonnes (atak_units.*, users.deleted_*, tenants.tenant_type) ; bootstrap : community_platform, unit_commander, tenant_type, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
 echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";
+echo "Annexes post-seed (toujours) : discord_recruitment, ATAK (access_key, maintenance, modules schema, c2_pillars, experience, roleplay, orders…), atak_donations, training_groups ;\n";
 echo "autoload (modération système) ; option TRAINING_ONBOARDING_ASSIGN_ALL ; seeds tenant default (forum, documents, permissions) si applicable.\n";
 echo "Migrations terminées.\n";
+if (PHP_SAPI !== 'cli') {
+    echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php run-migrations.php (ou php setup-database.php) en SSH pour une sortie complète.\n";
+}
 if (defined('COMSPEC_MIGRATIONS_WEB_FULL') && COMSPEC_MIGRATIONS_WEB_FULL) {
     require_once $root . '/bootstrap/migrations_full_post.php';
     comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);

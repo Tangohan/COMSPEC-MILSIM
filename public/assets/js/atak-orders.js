@@ -26,7 +26,8 @@ window.ATAKOrders = (function () {
     HOLD: 'Tenir la position',
     RECON: 'Reconnaissance',
     CAS: 'Appui aérien',
-    QRF: 'Force de réaction'
+    QRF: 'Force de réaction',
+    FRAGO: 'Ordre fragmentaire'
   };
 
   function getApiBase() {
@@ -35,8 +36,14 @@ window.ATAKOrders = (function () {
   }
 
   function getMapId() {
-    if (window.ATAKSocket && window.ATAKSocket.getMapId) return window.ATAKSocket.getMapId();
-    return (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0) ? window.ATAK_DEFAULT_MAP_ID : 1;
+    var mid = 1;
+    if (window.ATAKSocket && window.ATAKSocket.getMapId) {
+      mid = window.ATAKSocket.getMapId();
+    } else if (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0) {
+      mid = window.ATAK_DEFAULT_MAP_ID;
+    }
+    mid = parseInt(mid, 10);
+    return (!mid || mid < 1 || isNaN(mid)) ? 1 : mid;
   }
 
   function getAuthor() {
@@ -187,6 +194,7 @@ window.ATAKOrders = (function () {
     }
     updateTemplateDeleteVisibility();
     updateTypeDeleteVisibility();
+    syncInlineFragoMode();
   }
 
   function updateTypeDeleteVisibility() {
@@ -232,11 +240,170 @@ window.ATAKOrders = (function () {
         template: tpl
       };
     }
+    if (String(raw).toUpperCase() === 'FRAGO') {
+      return { type: 'FRAGO', type_label: 'Ordre fragmentaire', template: null };
+    }
     return {
       type: raw || 'MOVE',
-      type_label: '',
+      type_label: BUILTIN_TYPES[String(raw || '').toUpperCase()] || '',
       template: null
     };
+  }
+
+  function readFragoParts(prefix) {
+    prefix = prefix || 'atak-order-frago';
+    function val(suffix) {
+      var el = document.getElementById(prefix + '-' + suffix);
+      return el ? String(el.value || '').trim() : '';
+    }
+    return {
+      sit: val('sit'),
+      mis: val('mis'),
+      exe: val('exe'),
+      sup: val('sup'),
+      cmd: val('cmd')
+    };
+  }
+
+  function buildFragoPayload(parts) {
+    parts = parts || {};
+    var out = [];
+    if (parts.sit) out.push('Situation: ' + parts.sit);
+    if (parts.mis) out.push('Mission: ' + parts.mis);
+    if (parts.exe) out.push('Exécution: ' + parts.exe);
+    if (parts.sup) out.push('Soutien: ' + parts.sup);
+    if (parts.cmd) out.push('Commandement: ' + parts.cmd);
+    return out.join(' — ');
+  }
+
+  function parseFragoPayload(payload) {
+    var text = String(payload || '');
+    var map = { sit: '', mis: '', exe: '', sup: '', cmd: '' };
+    var re = /(Situation|Mission|Exécution|Execution|Soutien|Commandement)\s*:\s*([^—\-]+)/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var key = String(m[1] || '').toLowerCase();
+      var val = String(m[2] || '').trim();
+      if (key.indexOf('situ') === 0) map.sit = val;
+      else if (key.indexOf('miss') === 0) map.mis = val;
+      else if (key.indexOf('ex') === 0) map.exe = val;
+      else if (key.indexOf('sout') === 0) map.sup = val;
+      else if (key.indexOf('comm') === 0) map.cmd = val;
+    }
+    return map;
+  }
+
+  function fillFragoFields(prefix, parts) {
+    prefix = prefix || 'atak-order-frago';
+    parts = parts || {};
+    ['sit', 'mis', 'exe', 'sup', 'cmd'].forEach(function (k) {
+      var el = document.getElementById(prefix + '-' + k);
+      if (el) el.value = parts[k] || '';
+    });
+  }
+
+  function syncInlineFragoMode() {
+    var typeEl = document.getElementById('atak-order-type');
+    var isFrago = typeEl && String(typeEl.value || '').toUpperCase() === 'FRAGO';
+    var payloadWrap = document.getElementById('atak-order-payload-wrap');
+    var fragoWrap = document.getElementById('atak-order-frago-fields');
+    if (payloadWrap) payloadWrap.hidden = !!isFrago;
+    if (fragoWrap) fragoWrap.hidden = !isFrago;
+  }
+
+  function syncComposeFragoMode() {
+    var typeEl = document.getElementById('atak-compose-type');
+    var isFrago = typeEl && String(typeEl.value || '').toUpperCase() === 'FRAGO';
+    var payloadWrap = document.getElementById('atak-compose-payload-wrap');
+    var fragoWrap = document.getElementById('atak-compose-frago-fields');
+    var title = document.getElementById('atak-order-compose-title');
+    if (payloadWrap) payloadWrap.hidden = !!isFrago;
+    if (fragoWrap) fragoWrap.hidden = !isFrago;
+    if (title) title.textContent = isFrago ? 'Ordre fragmentaire' : 'Émettre un ordre';
+  }
+
+  function fillComposeTargetOptions(type, preserveSelection) {
+    var wrap = document.getElementById('atak-compose-target-wrap');
+    var sel = document.getElementById('atak-compose-target-ref');
+    var labelEl = document.getElementById('atak-compose-target-label');
+    if (!wrap || !sel) return;
+    if (!type || type === 'all') {
+      wrap.hidden = true;
+      sel.innerHTML = '<option value="">—</option>';
+      return;
+    }
+    wrap.hidden = false;
+    if (labelEl) labelEl.textContent = targetTypeLabel(type);
+    var prev = preserveSelection ? String(sel.value || '').trim() : '';
+    var list = recipientsForType(type);
+    if (!list.length) {
+      sel.innerHTML = '<option value="">' + escapeHtml(emptyRecipientMessage(type)) + '</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">Choisir…</option>';
+    list.forEach(function (item) {
+      var opt = document.createElement('option');
+      opt.value = String(item.id == null ? '' : item.id);
+      opt.textContent = String(item.label == null ? item.id : item.label);
+      sel.appendChild(opt);
+    });
+    if (prev) sel.value = prev;
+  }
+
+  function openComposeModal(opts) {
+    opts = opts || {};
+    if (!canIssue && !window.ATAK_CAN_ISSUE_ORDERS) {
+      if (window.ATAKShowError) window.ATAKShowError('Profil commandement requis pour émettre un ordre.');
+      return;
+    }
+    var modal = document.getElementById('atak-order-compose-modal');
+    if (!modal) return;
+    var typeEl = document.getElementById('atak-compose-type');
+    var prioEl = document.getElementById('atak-compose-priority');
+    var targetTypeEl = document.getElementById('atak-compose-target-type');
+    var payloadEl = document.getElementById('atak-compose-payload');
+    if (typeEl) typeEl.value = opts.type || (opts.frago ? 'FRAGO' : 'MOVE');
+    if (prioEl) prioEl.value = opts.priority || (opts.frago ? 'URGENT' : 'IMPORTANT');
+    if (targetTypeEl) targetTypeEl.value = opts.target_type || 'all';
+    if (payloadEl) payloadEl.value = opts.payload || '';
+    if (opts.frago || (opts.type && String(opts.type).toUpperCase() === 'FRAGO')) {
+      fillFragoFields('atak-compose-frago', opts.fragoParts || parseFragoPayload(opts.payload || ''));
+    } else {
+      fillFragoFields('atak-compose-frago', {});
+    }
+    syncComposeFragoMode();
+    loadRecipients().then(function () {
+      fillComposeTargetOptions(targetTypeEl ? targetTypeEl.value : 'all', false);
+      var refEl = document.getElementById('atak-compose-target-ref');
+      if (refEl && opts.target_ref) refEl.value = String(opts.target_ref);
+    });
+    modal.hidden = false;
+    document.body.classList.add('atak-order-compose-open');
+    var focusEl = document.getElementById(opts.frago ? 'atak-compose-frago-sit' : 'atak-compose-payload');
+    if (focusEl) setTimeout(function () { focusEl.focus(); }, 30);
+  }
+
+  function closeComposeModal() {
+    var modal = document.getElementById('atak-order-compose-modal');
+    if (modal) modal.hidden = true;
+    document.body.classList.remove('atak-order-compose-open');
+  }
+
+  function postOrder(payload) {
+    var base = getApiBase();
+    if (!base) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible.');
+      return Promise.reject(new Error('no_base'));
+    }
+    return fetch(base + '/api/atak/orders', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) {
+        return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+      });
   }
 
   function loadOrderTypes(force) {
@@ -601,6 +768,15 @@ window.ATAKOrders = (function () {
     }
   }
 
+  function priorityBadgeClass(p) {
+    switch (String(p || '').toUpperCase()) {
+      case 'URGENT': return 'atak-order-badge--prio-urgent';
+      case 'CONTACT': return 'atak-order-badge--prio-contact';
+      case 'ROUTINE': return 'atak-order-badge--prio-routine';
+      default: return 'atak-order-badge--prio-important';
+    }
+  }
+
   function statusLabelFr(s, isOverdue) {
     if (isOverdue && (String(s || '').toUpperCase() === 'PENDING' || String(s || '').toUpperCase() === 'DELIVERED')) {
       return 'En retard';
@@ -613,6 +789,70 @@ window.ATAKOrders = (function () {
       case 'CANCELLED': return 'Annulé';
       default: return 'Émis';
     }
+  }
+
+  function statusBadgeClass(s, isOverdue) {
+    var st = String(s || '').toUpperCase();
+    if (isOverdue && (st === 'PENDING' || st === 'DELIVERED')) return 'atak-order-badge--status-overdue';
+    switch (st) {
+      case 'DELIVERED': return 'atak-order-badge--status-delivered';
+      case 'ACK': return 'atak-order-badge--status-ack';
+      case 'EXEC': return 'atak-order-badge--status-exec';
+      case 'FAILED': return 'atak-order-badge--status-failed';
+      case 'CANCELLED': return 'atak-order-badge--status-cancelled';
+      default: return 'atak-order-badge--status-pending';
+    }
+  }
+
+  function targetBadgeClass(type) {
+    switch (String(type || '')) {
+      case 'user': return 'atak-order-badge--target-user';
+      case 'group': return 'atak-order-badge--target-group';
+      case 'fire_team': return 'atak-order-badge--target-ft';
+      case 'channel': return 'atak-order-badge--target-channel';
+      case 'solo': return 'atak-order-badge--target-solo';
+      default: return 'atak-order-badge--target-all';
+    }
+  }
+
+  function isOwnIssuedOrder(o) {
+    var me = String(getAuthor() || '').trim().toLowerCase();
+    if (!me) return false;
+    var issuer = String((o && o.issuer) || '').trim().toLowerCase();
+    return !!issuer && issuer === me;
+  }
+
+  function prefillIssueForm(o, asFrago) {
+    if (!canIssue && !window.ATAK_CAN_ISSUE_ORDERS) return;
+    if (asFrago) {
+      openComposeModal({
+        frago: true,
+        type: 'FRAGO',
+        priority: 'URGENT',
+        target_type: (o && o.target_type) || 'all',
+        target_ref: (o && o.target_ref) || '',
+        payload: '',
+        fragoParts: (function () {
+          var parentType = (o && (o.type_label || typeLabelFr(o.type))) || 'ordre';
+          var base = parseFragoPayload((o && o.payload) || '');
+          if (!base.sit) {
+            base.sit = 'Suite à « ' + parentType + ' »'
+              + ((o && o.payload) ? ' — ' + String(o.payload).slice(0, 120) : '');
+          }
+          return base;
+        })()
+      });
+      return;
+    }
+    openComposeModal({
+      type: (o && o.type) || 'MOVE',
+      priority: (o && o.priority) || 'IMPORTANT',
+      target_type: (o && o.target_type) || 'all',
+      target_ref: (o && o.target_ref) || '',
+      payload: (o && o.payload) || '',
+      frago: !!(o && String(o.type || '').toUpperCase() === 'FRAGO'),
+      fragoParts: parseFragoPayload((o && o.payload) || '')
+    });
   }
 
   function formatChatBody(body) {
@@ -672,6 +912,7 @@ window.ATAKOrders = (function () {
     if (visible) {
       loadTemplates(false);
       loadOrderTypes(false);
+      syncInlineFragoMode();
     }
   }
 
@@ -827,6 +1068,10 @@ window.ATAKOrders = (function () {
         if (canIssue && status !== 'EXEC') {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--cancel" data-order-action="CANCELLED" data-order-id="' + escapeHtml(id) + '">Annuler</button>');
         }
+        if (canIssue) {
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="reissue" data-order-id="' + escapeHtml(id) + '">Relancer</button>');
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="frago" data-order-id="' + escapeHtml(id) + '">FRAGO de suite</button>');
+        }
         if (btns.length) {
           actions = '<div class="atak-order-actions">' + btns.join('') + '</div>';
         }
@@ -843,16 +1088,30 @@ window.ATAKOrders = (function () {
           (o.cancelled_at ? ' · ' + escapeHtml(formatTime(o.cancelled_at)) : '') + '</div>';
       }
 
+      var ownBadge = isOwnIssuedOrder(o)
+        ? '<span class="atak-order-badge atak-order-badge--own">Émis par vous</span>'
+        : '';
+
       return (
         '<article class="atak-order-item ' + statusClass(status, isOverdue) + '" data-order-id="' + escapeHtml(id) + '">' +
           '<div class="atak-order-item-top">' +
             '<span class="atak-order-type">' + escapeHtml(o.type_label || typeLabelFr(o.type)) + '</span>' +
-            '<span class="atak-order-status">' + escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) + '</span>' +
+            '<span class="atak-order-badges">' +
+              '<span class="atak-order-badge ' + statusBadgeClass(status, isOverdue) + '">' +
+                escapeHtml(o.status_label || statusLabelFr(status, isOverdue)) +
+              '</span>' +
+              ownBadge +
+            '</span>' +
           '</div>' +
-          '<div class="atak-order-meta">' +
-            '<span>' + escapeHtml(o.priority_label || priorityLabelFr(o.priority)) + '</span>' +
-            '<span>' + escapeHtml(o.target_type_label || targetTypeLabel(o.target_type)) + ' · ' + escapeHtml(dest) + '</span>' +
-            '<span>' + escapeHtml(formatTime(o.updated_at || o.created_at)) + '</span>' +
+          '<div class="atak-order-meta atak-order-meta--badges">' +
+            '<span class="atak-order-badge ' + priorityBadgeClass(o.priority) + '">' +
+              escapeHtml(o.priority_label || priorityLabelFr(o.priority)) +
+            '</span>' +
+            '<span class="atak-order-badge ' + targetBadgeClass(o.target_type) + '" title="' + escapeHtml(dest) + '">' +
+              escapeHtml(o.target_type_label || targetTypeLabel(o.target_type)) +
+              (dest && String(o.target_type || '') !== 'all' ? ' · ' + escapeHtml(dest) : '') +
+            '</span>' +
+            '<span class="atak-order-badge atak-order-badge--time">' + escapeHtml(formatTime(o.updated_at || o.created_at)) + '</span>' +
           '</div>' +
           '<div class="atak-order-issuer">De ' + escapeHtml(o.issuer || '—') + '</div>' +
           radioLine +
@@ -881,6 +1140,11 @@ window.ATAKOrders = (function () {
     });
   }
 
+  function isTerminalSignal(o) {
+    var t = String((o && o.type) || '').toUpperCase();
+    return t === 'VIBRATE' || t === 'NOTIFY';
+  }
+
   function mergeOrdersDelta(incoming, isDelta) {
     incoming = Array.isArray(incoming) ? incoming : [];
     if (!isDelta) {
@@ -888,9 +1152,15 @@ window.ATAKOrders = (function () {
     }
     incoming.forEach(function (o) {
       if (!o || !o.id) return;
-      ordersById[String(o.id)] = o;
+      var id = String(o.id);
+      // Signaux terminal : pas des ordres C2 — hors panneau / compteurs
+      if (isTerminalSignal(o)) {
+        delete ordersById[id];
+        return;
+      }
+      ordersById[id] = o;
     });
-    return ordersSortedFromCache();
+    return ordersSortedFromCache().filter(function (o) { return !isTerminalSignal(o); });
   }
 
   function advanceOrdersSince(data, merged) {
@@ -995,7 +1265,18 @@ window.ATAKOrders = (function () {
       var opt = targetRefEl.options[targetRefEl.selectedIndex];
       if (opt && targetRef) targetLabel = String(opt.textContent || '').trim();
     }
-    var payload = payloadEl ? String(payloadEl.value || '').trim() : '';
+    var isFrago = String(type).toUpperCase() === 'FRAGO';
+    var payload = '';
+    if (isFrago) {
+      payload = buildFragoPayload(readFragoParts('atak-order-frago'));
+      if (!payload) {
+        if (window.ATAKShowError) window.ATAKShowError('Renseignez au moins une rubrique du FRAGO.');
+        return;
+      }
+      typeLabel = typeLabel || 'Ordre fragmentaire';
+    } else {
+      payload = payloadEl ? String(payloadEl.value || '').trim() : '';
+    }
     var radioSim = radioEl ? !!radioEl.checked : true;
 
     if (targetType !== 'all' && !targetRef) {
@@ -1007,31 +1288,18 @@ window.ATAKOrders = (function () {
       return;
     }
 
-    var base = getApiBase();
-    if (!base) {
-      if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible.');
-      return;
-    }
-    fetch(base + '/api/atak/orders', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mapId: getMapId(),
-        type: type,
-        type_label: typeLabel,
-        priority: priority,
-        target_type: targetType,
-        target_ref: targetRef,
-        target_label: targetLabel,
-        payload: payload,
-        issuer: getAuthor(),
-        radio_sim: radioSim
-      })
+    postOrder({
+      mapId: getMapId(),
+      type: type,
+      type_label: typeLabel,
+      priority: priority,
+      target_type: targetType,
+      target_ref: targetRef,
+      target_label: targetLabel,
+      payload: payload,
+      issuer: getAuthor(),
+      radio_sim: radioSim
     })
-      .then(function (r) {
-        return r.json().then(function (d) { return { ok: r.ok, data: d }; });
-      })
       .then(function (res) {
         if (!res.ok) {
           if (window.ATAKShowError) {
@@ -1040,11 +1308,83 @@ window.ATAKOrders = (function () {
           return;
         }
         if (payloadEl) payloadEl.value = '';
-        var msg = 'Ordre émis.';
+        fillFragoFields('atak-order-frago', {});
+        var msgOk = isFrago ? 'FRAGO émis.' : 'Ordre émis.';
         if (res.data && res.data.order && res.data.order.radio_sim && res.data.order.sim_latency_sec > 0) {
-          msg = 'Ordre émis — livraison radio estimée ~' + res.data.order.sim_latency_sec + ' s.';
+          msgOk = (isFrago ? 'FRAGO émis' : 'Ordre émis') + ' — livraison radio estimée ~' + res.data.order.sim_latency_sec + ' s.';
         }
-        if (window.ATAKShowNotification) window.ATAKShowNotification(msg);
+        if (window.ATAKShowNotification) window.ATAKShowNotification(msgOk);
+        resetOrdersCache();
+        fetchOrders();
+      })
+      .catch(function () {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible d’émettre l’ordre.');
+      });
+  }
+
+  function issueOrderFromCompose() {
+    if (!canIssue && !window.ATAK_CAN_ISSUE_ORDERS) {
+      if (window.ATAKShowError) window.ATAKShowError('Profil commandement requis pour émettre un ordre.');
+      return;
+    }
+    var typeEl = document.getElementById('atak-compose-type');
+    var prioEl = document.getElementById('atak-compose-priority');
+    var targetTypeEl = document.getElementById('atak-compose-target-type');
+    var targetRefEl = document.getElementById('atak-compose-target-ref');
+    var payloadEl = document.getElementById('atak-compose-payload');
+    var radioEl = document.getElementById('atak-compose-radio-sim');
+    var type = typeEl ? String(typeEl.value || 'MOVE') : 'MOVE';
+    var isFrago = type.toUpperCase() === 'FRAGO';
+    var typeLabel = BUILTIN_TYPES[type.toUpperCase()] || '';
+    var priority = prioEl ? prioEl.value : 'IMPORTANT';
+    var targetType = targetTypeEl ? targetTypeEl.value : 'all';
+    var targetRef = targetRefEl ? String(targetRefEl.value || '').trim() : '';
+    var targetLabel = '';
+    if (targetRefEl && targetRefEl.selectedIndex >= 0) {
+      var opt = targetRefEl.options[targetRefEl.selectedIndex];
+      if (opt && targetRef) targetLabel = String(opt.textContent || '').trim();
+    }
+    var payload = '';
+    if (isFrago) {
+      payload = buildFragoPayload(readFragoParts('atak-compose-frago'));
+      if (!payload) {
+        if (window.ATAKShowError) window.ATAKShowError('Renseignez au moins une rubrique du FRAGO.');
+        return;
+      }
+    } else {
+      payload = payloadEl ? String(payloadEl.value || '').trim() : '';
+    }
+    if (targetType !== 'all' && !targetRef) {
+      var available = recipientsForType(targetType);
+      var msg = available.length
+        ? 'Choisissez un destinataire dans la liste.'
+        : emptyRecipientMessage(targetType) + '.';
+      if (window.ATAKShowError) window.ATAKShowError(msg);
+      return;
+    }
+    postOrder({
+      mapId: getMapId(),
+      type: type,
+      type_label: typeLabel,
+      priority: priority,
+      target_type: targetType,
+      target_ref: targetRef,
+      target_label: targetLabel,
+      payload: payload,
+      issuer: getAuthor(),
+      radio_sim: radioEl ? !!radioEl.checked : true
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          if (window.ATAKShowError) {
+            window.ATAKShowError((res.data && res.data.message) || 'Impossible d’émettre l’ordre.');
+          }
+          return;
+        }
+        closeComposeModal();
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification(isFrago ? 'FRAGO émis.' : 'Ordre émis.');
+        }
         resetOrdersCache();
         fetchOrders();
       })
@@ -1059,15 +1399,22 @@ window.ATAKOrders = (function () {
     if (status === 'CANCELLED') {
       if (!window.confirm('Annuler cet ordre ?')) return;
     }
+    var cached = ordersById[String(orderId)] || null;
+    var payload = {
+      mapId: getMapId(),
+      status: status,
+      by: getAuthor(),
+      id: String(orderId),
+      external_id: String(orderId)
+    };
+    if (cached && cached.db_id) {
+      payload.db_id = cached.db_id;
+    }
     fetch(base + '/api/atak/orders/' + encodeURIComponent(orderId) + '/status', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mapId: getMapId(),
-        status: status,
-        by: getAuthor()
-      })
+      body: JSON.stringify(payload)
     })
       .then(function (r) {
         return r.json().then(function (d) { return { ok: r.ok, data: d }; });
@@ -1081,7 +1428,10 @@ window.ATAKOrders = (function () {
         }
         if (window.ATAKShowNotification) {
           if (status === 'ACK') window.ATAKShowNotification('Réception confirmée.');
+          else if (status === 'EXEC') window.ATAKShowNotification('Ordre passé en cours d’exécution.');
+          else if (status === 'FAILED') window.ATAKShowNotification('Ordre marqué en échec.');
           else if (status === 'CANCELLED') window.ATAKShowNotification('Ordre annulé.');
+          else window.ATAKShowNotification('Statut de l’ordre mis à jour.');
         }
         resetOrdersCache();
         fetchOrders();
@@ -1117,8 +1467,52 @@ window.ATAKOrders = (function () {
       orderTypeEl.addEventListener('change', function () {
         updateTemplateDeleteVisibility();
         updateTypeDeleteVisibility();
+        syncInlineFragoMode();
         var resolved = resolveIssueType();
         if (resolved.template) applyTemplateToForm(resolved.template);
+      });
+    }
+    var composeOpen = document.getElementById('atak-order-compose-open-btn');
+    if (composeOpen && !composeOpen._bound) {
+      composeOpen._bound = true;
+      composeOpen.addEventListener('click', function () { openComposeModal({}); });
+    }
+    var composeFrago = document.getElementById('atak-order-compose-frago-btn');
+    if (composeFrago && !composeFrago._bound) {
+      composeFrago._bound = true;
+      composeFrago.addEventListener('click', function () { openComposeModal({ frago: true }); });
+    }
+    var composeType = document.getElementById('atak-compose-type');
+    if (composeType && !composeType._bound) {
+      composeType._bound = true;
+      composeType.addEventListener('change', syncComposeFragoMode);
+    }
+    var composeTargetType = document.getElementById('atak-compose-target-type');
+    if (composeTargetType && !composeTargetType._bound) {
+      composeTargetType._bound = true;
+      composeTargetType.addEventListener('change', function () {
+        var t = composeTargetType.value;
+        loadRecipients().then(function () {
+          fillComposeTargetOptions(t, false);
+        });
+      });
+    }
+    var composeSend = document.getElementById('atak-compose-send-btn');
+    if (composeSend && !composeSend._bound) {
+      composeSend._bound = true;
+      composeSend.addEventListener('click', function () { issueOrderFromCompose(); });
+    }
+    var composeModal = document.getElementById('atak-order-compose-modal');
+    if (composeModal && !composeModal._bound) {
+      composeModal._bound = true;
+      composeModal.addEventListener('click', function (ev) {
+        var closer = ev.target && ev.target.closest ? ev.target.closest('[data-order-compose-close]') : null;
+        if (closer) closeComposeModal();
+      });
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && composeModal && !composeModal.hidden) {
+          closeComposeModal();
+        }
       });
     }
     var typeAddBtn = document.getElementById('atak-order-type-add-btn');
@@ -1165,6 +1559,15 @@ window.ATAKOrders = (function () {
     if (list && !list._bound) {
       list._bound = true;
       list.addEventListener('click', function (ev) {
+        var cmdBtn = ev.target && ev.target.closest ? ev.target.closest('[data-order-cmd]') : null;
+        if (cmdBtn) {
+          var cmd = cmdBtn.getAttribute('data-order-cmd');
+          var cid = cmdBtn.getAttribute('data-order-id');
+          var order = cid ? ordersById[String(cid)] : null;
+          if (order && cmd === 'reissue') prefillIssueForm(order, false);
+          else if (order && cmd === 'frago') prefillIssueForm(order, true);
+          return;
+        }
         var btn = ev.target && ev.target.closest ? ev.target.closest('[data-order-action]') : null;
         if (!btn) return;
         var action = btn.getAttribute('data-order-action');
@@ -1205,6 +1608,8 @@ window.ATAKOrders = (function () {
     loadOrderTypes: loadOrderTypes,
     parseOrderChatBody: parseOrderChatBody,
     formatChatBody: formatChatBody,
-    typeLabelFr: typeLabelFr
+    typeLabelFr: typeLabelFr,
+    openComposeModal: openComposeModal,
+    closeComposeModal: closeComposeModal
   };
 })();

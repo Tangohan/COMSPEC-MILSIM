@@ -36,7 +36,8 @@ window.ATAKSocket = (function () {
   function getMapId() { return mapId; }
 
   function setMapId(id) {
-    mapId = id != null ? Number(id) : 1;
+    var n = Number(id);
+    mapId = (id != null && !isNaN(n) && n > 0) ? n : 1;
   }
 
   return {

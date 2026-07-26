@@ -46,12 +46,15 @@ class IntelController
         $body = $this->jsonBody($request);
         $missionIdRaw = $body['missionId'] ?? $body['mission_id'] ?? $request->query('missionId') ?? $request->query('mission_id');
         if ($missionIdRaw !== null && (string) $missionIdRaw === '') {
-            return Response::json(['status' => 'error', 'message' => 'missionId vide'], 400);
+            return Response::json(['status' => 'error', 'message' => 'Identifiant de mission manquant.'], 400);
         }
         $missionId = $this->missionId($request, $body);
         $report = $this->intelFusion->ingestReport($missionId, $body);
         if (empty($report)) {
-            return Response::json(['status' => 'error', 'message' => 'Rejet (target_type invalide ou erreur)'], 400);
+            return Response::json([
+                'status' => 'error',
+                'message' => 'Type de cible non reconnu. Choisissez une option de la liste.',
+            ], 400);
         }
         $report['status'] = ((int) ($report['merged_count'] ?? 1)) > 1 ? 'merged' : 'ok';
         $report['reportId'] = (string) ($report['id'] ?? '');
@@ -65,5 +68,34 @@ class IntelController
         $status = $request->query('status');
         $list = $this->intelFusion->listFused($missionId, $status !== '' ? $status : null);
         return Response::json($list);
+    }
+
+    /**
+     * Supprime un signalement fusionné du tableau de situation.
+     * DELETE /api/intel/report/{id}
+     * POST  /api/intel/report/{id}/delete
+     */
+    public function delete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? $request->query('id') ?? 0);
+        if ($id <= 0) {
+            return Response::json([
+                'status' => 'error',
+                'message' => 'Signalement introuvable.',
+            ], 400);
+        }
+        $body = $this->jsonBody($request);
+        $missionId = $this->missionId($request, $body);
+        $ok = $this->intelFusion->deleteReport($missionId, $id);
+        if (!$ok) {
+            return Response::json([
+                'status' => 'error',
+                'message' => 'Ce signalement n’existe plus ou ne fait pas partie de cette mission.',
+            ], 404);
+        }
+        return Response::json([
+            'status' => 'ok',
+            'message' => 'Signalement retiré du tableau de situation.',
+        ]);
     }
 }

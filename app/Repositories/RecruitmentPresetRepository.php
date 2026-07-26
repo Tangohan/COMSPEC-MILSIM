@@ -79,6 +79,16 @@ class RecruitmentPresetRepository
         return $stmt->rowCount() > 0;
     }
 
+    /** RGPD / soft-delete : efface les préréglages de candidature (payload personnel). */
+    public function deleteAllForUser(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM recruitment_presets WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     private function decodePayload(mixed $raw): array
     {
         if (is_string($raw)) {

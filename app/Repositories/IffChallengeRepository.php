@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\C2PillarsSchema;
 use PDO;
 
 class IffChallengeRepository
@@ -13,6 +14,7 @@ class IffChallengeRepository
 
     public function __construct()
     {
+        C2PillarsSchema::ensure();
         $this->pdo = Database::getPdo();
     }
 

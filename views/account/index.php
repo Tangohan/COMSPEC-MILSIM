@@ -10,9 +10,6 @@ $db = $health['database'] ?? [];
 $api = $health['api'] ?? [];
 
 $prefUrl = url('account/preferences');
-$fn = trim((string) ($accountProfile['first_name'] ?? ''));
-$ln = trim((string) ($accountProfile['last_name'] ?? ''));
-$civilLine = trim($fn . ' ' . $ln);
 $callsign = trim((string) ($accountUser['callsign'] ?? ''));
 $displayNameVal = trim((string) ($accountUser['display_name'] ?? ''));
 $tz = trim((string) ($accountProfile['timezone'] ?? ''));
@@ -35,7 +32,7 @@ $canAtakAdmin = function_exists('can') && (can('admin.access') || can('admin.sys
 
 $accountNavKey = 'overview';
 $accountTitle = 'Mon compte';
-$accountLead = 'Identité civile, sécurité, apparence et préférences du portail — le dossier opérationnel (personnage, unité) reste sur votre fiche personnelle.';
+$accountLead = 'Sécurité, apparence et préférences du portail — le dossier opérationnel (personnage, unité) reste sur votre fiche personnelle.';
 require base_path('views/partials/account/shell_open.php');
 
 $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
@@ -114,8 +111,7 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
                 <p class="account-hub__stat-label">Identité portail</p>
                 <p class="account-hub__stat-value"><?= htmlspecialchars($displayNameVal !== '' ? $displayNameVal : 'Nom non renseigné', ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="account-hub__stat-meta">
-                    <?= htmlspecialchars($civilLine !== '' ? $civilLine : 'Prénom et nom à compléter', ENT_QUOTES, 'UTF-8') ?>
-                    <?php if ($callsign !== ''): ?><br>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php endif; ?>
+                    <?php if ($callsign !== ''): ?>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php else: ?>Indicatif non renseigné<?php endif; ?>
                 </p>
                 <p class="account-hub__stat-meta" style="margin-top:.55rem">
                     <a href="<?= htmlspecialchars($prefUrl, ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Modifier le profil</a>

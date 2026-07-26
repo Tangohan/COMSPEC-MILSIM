@@ -59,6 +59,7 @@ final class InvitationAdminController
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
             'canAdd' => $this->featureGate->canAddMember($tenantId),
             'inviteStatusCounts' => $inviteStatusCounts,
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -92,6 +93,7 @@ final class InvitationAdminController
             'canAdd' => $this->featureGate->canAddMember($tenantId),
             'inviteFilterStatus' => $statusFilter,
             'inviteStatusCounts' => $inviteStatusCounts,
+            'showPortalFooter' => false,
         ]);
     }
 

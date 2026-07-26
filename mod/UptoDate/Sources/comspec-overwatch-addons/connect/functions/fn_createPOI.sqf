@@ -1,23 +1,6 @@
 /*
- * Auteur: COMSPEC
- * Crée un Point d'Intérêt (POI) tactique
- *
- * Arguments:
- * 0: Nom POI <STRING>
- * 1: Catégorie <STRING> - "OBJECTIVE", "CACHE", "ENEMY_POSITION", "HVT", etc.
- * 2: Affiliation <STRING> - "FRIENDLY", "ENEMY", "NEUTRAL", "UNKNOWN"
- * 3: Certitude <STRING> - "CONFIRMED", "PROBABLE", "POSSIBLE", "DOUBTFUL"
- * 4: Description <STRING>
- * 5: (Optional) Position <ARRAY> - [x, y] (défaut: position curseur/joueur)
- * 6: (Optional) Niveau menace <STRING> - "NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"
- *
- * Valeur de retour:
- * <BOOL> - true si succès
- *
- * Exemple:
- * ["Cache d'armes", "CACHE", "ENEMY", "PROBABLE", "Bâtiment abandonné, activité suspecte", [], "MEDIUM"] call comspec_overwatch_connect_fnc_createPOI;
- */
-
+    Cree un point d'interet et l'envoie vers Athena.
+*/
 params [
     ["_poiName", "", [""]],
     ["_category", "OTHER", [""]],
@@ -28,26 +11,25 @@ params [
     ["_threatLevel", "LOW", [""]]
 ];
 
-// Validation
+if (!hasInterface) exitWith { false };
+
 if (_poiName isEqualTo "") exitWith {
-    systemChat "❌ Nom POI requis";
+    ["Indiquez un nom pour le point d'intérêt.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };
 
-// Position: curseur si dispo, sinon joueur
 if (_position isEqualTo []) then {
     private _cursorTarget = cursorTarget;
     if (!isNull _cursorTarget) then {
         _position = getPosWorld _cursorTarget;
     } else {
         _position = screenToWorld [0.5, 0.5];
-        if (_position isEqualTo [0,0,0]) then {
+        if (_position isEqualTo [0, 0, 0]) then {
             _position = getPosWorld player;
         };
     };
 };
 
-// Préparer données
 private _poiData = createHashMap;
 _poiData set ["poi_name", _poiName];
 _poiData set ["category", _category];
@@ -63,42 +45,44 @@ _poiData set ["source_reliability", "USUALLY_RELIABLE"];
 _poiData set ["reported_by_callsign", name player];
 _poiData set ["reported_by_unit", groupId (group player)];
 
-// Envoyer via extension
 private _jsonString = [_poiData] call comspec_overwatch_connect_fnc_hashMapToJson;
-private _result = "COMSPECExtension" callExtension ["CreatePOI", [_jsonString]];
+private _parsed = [
+    "COMSPECExtension" callExtension ["CreatePOI", [_jsonString]]
+] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+_parsed params ["_ok", "", "_detail"];
 
-// Feedback
-if ((_result select 0) isEqualTo "OK") then {
-    systemChat format ["✅ POI '%1' créé et partagé", _poiName];
-    
-    // Marker local temporaire (5min)
-    private _markerName = format ["poi_local_%1", time];
+if (_ok) then {
+    [format ["Point d'intérêt partagé : %1", _poiName], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+    private _markerName = format ["poi_local_%1_%2", floor time, floor random 10000];
     private _marker = createMarkerLocal [_markerName, _position];
-    _marker setMarkerTypeLocal "mil_warning";
-    
-    // Couleur selon affiliation
-    private _color = switch (_affiliation) do {
-        case "FRIENDLY": {"ColorBlue"};
-        case "ENEMY": {"ColorRed"};
-        case "NEUTRAL": {"ColorGreen"};
-        default {"ColorYellow"};
+    private _mType = switch (toUpper _category) do {
+        case "CACHE": { "mil_destroy" };
+        case "ENEMY_POSITION": { "o_inf" };
+        case "OBJECTIVE": { "mil_objective" };
+        default { "mil_warning" };
     };
+    private _color = switch (_affiliation) do {
+        case "FRIENDLY": { "ColorBlue" };
+        case "ENEMY": { "ColorRed" };
+        case "NEUTRAL": { "ColorGreen" };
+        default { "ColorYellow" };
+    };
+    if (_affiliation isEqualTo "ENEMY" && {_mType isEqualTo "mil_warning"}) then { _mType = "o_unknown"; };
+    _marker setMarkerTypeLocal _mType;
     _marker setMarkerColorLocal _color;
     _marker setMarkerTextLocal _poiName;
     _marker setMarkerAlphaLocal 0.8;
-    
-    // Effacer après 5min
-    [{deleteMarkerLocal _this}, _markerName, 300] call CBA_fnc_waitAndExecute;
-    
-    // Log activité
-    ["POI_CREATED", createHashMapFromArray [
-        ["name", _poiName],
-        ["category", _category],
-        ["affiliation", _affiliation]
-    ]] call comspec_overwatch_connect_fnc_publishEvent;
-    
+    [_markerName, _position, _mType, _color, _poiName, "ace_poi"] call comspec_overwatch_connect_fnc_sendLocalTacticalMarker;
+    [{
+        params ["_n"];
+        "COMSPECExtension" callExtension ["SendMarker", [_n, "{}", "1", "1"]];
+        deleteMarkerLocal _n;
+    }, [_markerName], 300] call CBA_fnc_waitAndExecute;
     true
 } else {
-    systemChat format ["❌ Erreur création POI: %1", _result select 1];
+    [([
+        _detail,
+        "Impossible de créer le point d'intérêt — vérifiez la liaison Athena."
+    ] call comspec_overwatch_connect_fnc_atakExtFailMessage), "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
     false
 };

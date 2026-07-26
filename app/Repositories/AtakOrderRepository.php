@@ -22,7 +22,10 @@ use PDO;
  */
 class AtakOrderRepository
 {
-    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'CUSTOM'];
+    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY'];
+
+    /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
+    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
     public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
     public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo'];
@@ -144,8 +147,10 @@ class AtakOrderRepository
         }
 
         $hasDeadline = $this->hasColumn('ack_deadline_at');
+        $signalExclude = "UPPER(COALESCE(order_type,'')) NOT IN ('VIBRATE','NOTIFY')";
         $overdueExpr = $hasDeadline
             ? "SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
+                    AND {$signalExclude}
                     AND ack_deadline_at IS NOT NULL AND ack_deadline_at < NOW() THEN 1 ELSE 0 END)"
             : '0';
 
@@ -153,10 +158,12 @@ class AtakOrderRepository
             $stmt = $this->pdo->prepare(
                 "SELECT
                     COUNT(*) AS total,
-                    SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED') THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
+                        AND {$signalExclude} THEN 1 ELSE 0 END) AS pending,
                     {$overdueExpr} AS overdue
                  FROM atak_orders
-                 WHERE tenant_id = ? AND map_id = ?"
+                 WHERE tenant_id = ? AND map_id = ?
+                   AND {$signalExclude}"
             );
             $stmt->execute([$tenantId, $mapId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -215,6 +222,71 @@ class AtakOrderRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findByPrimaryKey(int $tenantId, int $id): ?array
+    {
+        if (!$this->tablesReady() || $id < 1) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_orders WHERE tenant_id = ? AND id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Même référence métier sur une autre carte (décalage workspace / mapId client).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByExternalIdAnyMap(int $tenantId, string $externalId): ?array
+    {
+        if (!$this->tablesReady() || $externalId === '') {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_orders WHERE tenant_id = ? AND external_id = ?
+             ORDER BY updated_at DESC, id DESC LIMIT 1'
+        );
+        $stmt->execute([$tenantId, $externalId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
+     * Résout un ordre affiché côté client : id métier (external_id), id base, ou autre carte.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function resolveOrder(int $tenantId, int $mapId, string $id): ?array
+    {
+        $id = trim($id);
+        if ($id === '' || !$this->tablesReady()) {
+            return null;
+        }
+
+        $row = $this->findByExternalId($tenantId, $mapId, $id);
+        if ($row) {
+            return $row;
+        }
+
+        // Anciens clients / attributs HTML : clé primaire numérique au lieu de ORD-…
+        if (ctype_digit($id)) {
+            $row = $this->findByPrimaryKey($tenantId, (int) $id);
+            if ($row) {
+                return $row;
+            }
+        }
+
+        return $this->findByExternalIdAnyMap($tenantId, $id);
     }
 
     /**
@@ -280,6 +352,11 @@ class AtakOrderRepository
         }
 
         $radioSim = array_key_exists('radio_sim', $data) ? (bool) $data['radio_sim'] : true;
+        $isTerminalSignal = in_array($type, self::TERMINAL_SIGNAL_TYPES, true);
+        // Signaux terminal : livraison immédiate, pas de délai radio ni d’échéance ACK.
+        if ($isTerminalSignal) {
+            $radioSim = false;
+        }
         $simLatency = isset($data['sim_latency_sec']) ? (int) $data['sim_latency_sec'] : null;
         $simEvent = isset($data['sim_event']) ? trim((string) $data['sim_event']) : null;
         [$deliverAt, $simState, $simLatency, $simEvent] = $this->computeDeliveryPlan(
@@ -288,7 +365,7 @@ class AtakOrderRepository
             $simEvent,
             $source
         );
-        $ackDeadline = $this->computeAckDeadline($priority, $deliverAt);
+        $ackDeadline = $isTerminalSignal ? null : $this->computeAckDeadline($priority, $deliverAt);
 
         $existing = $this->findByExternalId($tenantId, $mapId, $externalId);
         if ($existing) {

@@ -33,8 +33,7 @@ player addEventHandler ["GetInMan", {
         }, 10, [_vehicle]] call CBA_fnc_addPerFrameHandler;
 
         _vehicle setVariable ["COMSPEC_TrackingHandle", _handle];
-        private _vehicleName = getText (configOf _vehicle >> "displayName");
-        systemChat format ["Suivi véhicule %1 activé", _vehicleName];
+        // Pas de systemChat : le suivi reste silencieux (journal / milsim).
     };
 }];
 
@@ -63,10 +62,5 @@ player addEventHandler ["Respawn", {
         [] call comspec_overwatch_connect_fnc_initVehicleTracking;
     }, [], 0.5] call CBA_fnc_waitAndExecute;
 }];
-
-if (!(missionNamespace getVariable ["COMSPEC_VehicleTrackingBootMsg", false])) then {
-    missionNamespace setVariable ["COMSPEC_VehicleTrackingBootMsg", true, false];
-    systemChat "Suivi véhicules initialisé";
-};
 
 true

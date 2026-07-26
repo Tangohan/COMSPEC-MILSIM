@@ -132,6 +132,24 @@ class OrganizationDashboardController
         }
 
         $orgAnnounceItems = [];
+        $discordInviteMissing = false;
+        try {
+            $settings = (new TenantRepository())->getSettings($tenantId);
+            $communityCfg = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+            $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($communityCfg);
+            if ($discordInviteMissing) {
+                $orgAnnounceItems[] = [
+                    'kind' => 'urgent',
+                    'category' => 'Configuration',
+                    'title' => 'Lien Discord manquant',
+                    'body' => 'Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.',
+                    'cta_label' => 'Renseigner le lien',
+                    'cta_url' => url('back-office/organisation/parametres') . '#contact',
+                ];
+            }
+        } catch (\Throwable) {
+            $discordInviteMissing = false;
+        }
         try {
             foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
                 $orgAnnounceItems[] = [
@@ -146,7 +164,7 @@ class OrganizationDashboardController
                 ];
             }
         } catch (\Throwable) {
-            $orgAnnounceItems = [];
+            // Les annonces publiées restent optionnelles ; l’alerte Discord ci-dessus est conservée.
         }
         try {
             $pinRows = (new \App\Repositories\TenantDashboardPinRepository())->listOrderedForTenant($tenantId);
@@ -212,6 +230,7 @@ class OrganizationDashboardController
             'skipGlobalAlertBanners' => true,
             'tenantName' => $tenantName,
             'initialSetupBanner' => $initialSetupBanner,
+            'discordInviteMissing' => $discordInviteMissing,
         ]);
     }
 
@@ -612,6 +631,7 @@ class OrganizationDashboardController
             'grades' => $gradeRepository->listForTenant($tenantId),
             'gradeCategories' => $gradeCategoryRepository->listActive(),
             'organizationRoleLabelMode' => $organizationRoleLabelMode,
+            'steamWebConfigured' => \App\Core\Container::get(\App\Services\Steam\SteamWebApiService::class)->isConfigured(),
         ]);
     }
 }

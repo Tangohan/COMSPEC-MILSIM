@@ -66,7 +66,7 @@ $baseUrl = url('');
             <h2 class="text-lg font-bold text-slate-900 mb-3">5 bis. Lier votre compte Athena (code en jeu)</h2>
             <ol class="list-decimal pl-6 text-slate-700 space-y-2 text-sm">
                 <li>Sur le site, ouvrez la page <a href="<?= $baseUrl ?>/atak" class="text-slate-900 underline">ATAK</a>.</li>
-                <li>Cliquez sur le bouton vert <strong>Connexion en jeu</strong> (en haut à droite).</li>
+                <li>Cliquez sur <strong>Lier le jeu</strong> (en haut à droite).</li>
                 <li>Appuyez sur <strong>Générer un code</strong>, puis copiez le code affiché (valable 30 minutes, usage unique).</li>
                 <li>Dans Arma, touche <strong>K</strong> → <strong>Compte Athena (saisir un code)</strong>, puis collez le code.</li>
             </ol>

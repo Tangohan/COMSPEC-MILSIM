@@ -71,6 +71,7 @@ if (!_bootstrapped) then {
             private _cs = _a getOrDefault ["call_sign", ""];
             private _lb = _a getOrDefault ["label", "Assistance médicale"];
             private _kind = toLower (_a getOrDefault ["kind", ""]);
+            private _grid = _a getOrDefault ["grid", ""];
             private _msg = if (_cs isEqualTo "") then { _lb } else { format ["%1 — %2", _cs, _lb] };
             private _toast = switch (_kind) do {
                 case "cardiac_arrest";
@@ -83,6 +84,45 @@ if (!_bootstrapped) then {
             };
             ["COMSPEC_Warning", [_toast]] call comspec_overwatch_connect_fnc_showNotification;
             [format ["[Médical] %1", _msg], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
+
+            // Miroir Athena / cTAB
+            private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
+            if (!(_inbox isEqualType [])) then { _inbox = []; };
+            _inbox pushBack [
+                "MEDICAL",
+                "Alerte médicale",
+                _msg,
+                _grid,
+                [daytime, "HH:MM"] call BIS_fnc_timeToString,
+                _cs
+            ];
+            if ((count _inbox) > 40) then { _inbox deleteRange [0, (count _inbox) - 40]; };
+            missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
+
+            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_pushNotification") then {
+                private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+                private _detail = format [
+                    "<t color='#ff9a4a'>Alerte médicale</t><br/><t color='#8aa0b4'>Blessé</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Heure</t>  %3<br/>%4",
+                    if (_cs isEqualTo "") then { "—" } else { _cs },
+                    if (_grid isEqualTo "") then { "—" } else { _grid },
+                    _timeStr,
+                    _lb
+                ];
+                [
+                    "alert",
+                    "Médical",
+                    _msg,
+                    _detail,
+                    _id,
+                    _timeStr
+                ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
+            };
+            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+                private _grp = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+                if (!isNull _grp && {ctrlShown _grp}) then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+                };
+            };
         };
     } forEach _alerts;
 };

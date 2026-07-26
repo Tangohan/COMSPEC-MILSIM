@@ -24,11 +24,13 @@ private _tabIdle = [0.06, 0.1, 0.12, 0.92];
 private _tabActive = [0.08, 0.32, 0.28, 0.96];
 private _tabMap = [
     ["all", 9740],
-    ["bda", 9741],
+    ["messages", 9741],
     ["photo", 9742],
     ["order", 9743],
-    ["modules", 9744],
-    ["notif", 9745]
+    ["bda", 9744],
+    ["urgences", 9745],
+    ["liaison", 9746],
+    ["modules", 9747]
 ];
 {
     _x params ["_id", "_idc"];
@@ -39,18 +41,18 @@ private _tabMap = [
     };
 } forEach _tabMap;
 
-// Compteur non lus + libellé onglet Notifs
+// Compteur non lus sur Urgences
 private _notifs = missionNamespace getVariable ["COMSPEC_Athena_Notifications", []];
 if (!(_notifs isEqualType [])) then { _notifs = []; };
 private _unreadCount = {_x select 5} count _notifs;
-private _tabNotifCtrl = _group controlsGroupCtrl 9745;
-if (!isNull _tabNotifCtrl) then {
+private _tabUrgCtrl = _group controlsGroupCtrl 9745;
+if (!isNull _tabUrgCtrl) then {
     private _tabTxt = if (_unreadCount > 0) then {
-        format ["Notifs (%1)", _unreadCount]
+        format ["Urgences (%1)", _unreadCount]
     } else {
-        "Notifs"
+        "Urgences"
     };
-    _tabNotifCtrl ctrlSetText _tabTxt;
+    _tabUrgCtrl ctrlSetText _tabTxt;
 };
 
 // Zone notifications (fil compact, plus récent en haut)
@@ -75,7 +77,10 @@ if (!isNull _notifCtrl) then {
             case "order": { [0.55, 0.78, 0.92, 1] };
             case "bda": { [0.92, 0.72, 0.48, 1] };
             case "photo": { [0.7, 0.84, 0.9, 1] };
-            case "group": { [0.75, 0.9, 0.75, 1] };
+            case "group";
+            case "messages";
+            case "notify": { [0.75, 0.9, 0.75, 1] };
+            case "vibrate": { [0.95, 0.8, 0.45, 1] };
             case "system": { [0.75, 0.82, 0.88, 1] };
             default { [0.95, 0.86, 0.62, 1] };
         };
@@ -102,17 +107,26 @@ if (!isNull _notifCtrl) then {
 private _statusTxt = if (_linked) then {
     private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
     private _msPart = if (_ms >= 0) then { format [" · <t color='#9aa4aa'>%1 ms</t>", _ms] } else { "" };
+    private _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
+    private _loss = _pkt getOrDefault ["packet_loss_percent", 0];
+    private _lossPart = format [" · <t color='#9aa4aa'>pertes %1%%</t>", (_loss toFixed 1)];
+    private _mapId = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
+    private _dataCh = ((floor ((abs _mapId) mod 11)) + 1);
+    private _dataMhz = 2400 + (_dataCh * 5);
+    private _freqPart = format [" · <t color='#9aa4aa'>%1 MHz</t>", _dataMhz];
     private _bdaPart = if (_hasBda) then { "<t color='#7dffb0'>BDA prêt</t>" } else { "<t color='#6a7c90'>BDA —</t>" };
     private _photoPart = if (_hasPhoto) then { "<t color='#7dffb0'>Photos prêtes</t>" } else { "<t color='#6a7c90'>Photos —</t>" };
     format [
-        "<t color='#7dffb0'>●</t> <t color='#e8f4f0'>%1</t>%2<br/><t size='0.9'>%3 · %4</t>",
+        "<t color='#7dffb0'>●</t> <t color='#e8f4f0'>%1</t>%2%3%4<br/><t size='0.9'>%5 · %6</t>",
         _cs,
         _msPart,
+        _lossPart,
+        _freqPart,
         _bdaPart,
         _photoPart
     ]
 } else {
-    "<t color='#ffd27a'>● Liaison en attente</t><br/><t size='0.9' color='#8aa0b4'>Utilisez Connexion ci-dessous ou l’icône Desktop</t>"
+    "<t color='#ffd27a'>● Liaison en attente</t><br/><t size='0.9' color='#8aa0b4'>Onglet Liaison ou icône Compte sur le bureau ATAK</t>"
 };
 if (!isNull _statusCtrl) then {
     _statusCtrl ctrlSetStructuredText parseText _statusTxt;
@@ -151,12 +165,17 @@ if (!(_alerts isEqualType [])) then { _alerts = []; };
         ["_summary", "", [""]],
         ["_grid", "", [""]],
         ["_time", "", [""]],
-        ["_from", "", [""]]
+        ["_from", "", [""]],
+        ["_alertId", "", [""]]
     ];
     private _entryKind = switch (toUpper _kind) do {
         case "BDA": { "bda" };
-        case "PHOTO": { "photo" };
-        case "GROUP": { "alert" };
+        case "PHOTO": { "alert" }; // journal « photo remontée » ≠ sélectionnable pour renvoi
+        case "HQ": { "messages" };
+        case "GROUP": { "messages" };
+        case "NOTIFY": { "messages" };
+        case "VIBRATE": { "alert" };
+        case "MEDICAL": { "medical" };
         default { "alert" };
     };
     private _fromTxt = if (_from isEqualTo "") then { _cs } else { _from };
@@ -170,7 +189,8 @@ if (!(_alerts isEqualType [])) then { _alerts = []; };
         if (_time isEqualTo "") then { "—" } else { _time },
         if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
     ];
-    _entries pushBack [_entryKind, _title, _detail, _time, []];
+    private _sortKey = if (_alertId isNotEqualTo "") then { _alertId } else { _time };
+    _entries pushBack [_entryKind, _title, _detail, _sortKey, []];
 } forEach _alerts;
 
 // --- BDA stockés par ATAK Enhanced (récupération locale) ---
@@ -216,37 +236,31 @@ if (!(_groupMsgs isEqualType [])) then { _groupMsgs = []; };
         if (_gTime isEqualTo "") then { "—" } else { _gTime },
         _gText
     ];
-    _entries pushBack ["alert", _title, _detail, _gTime, []];
+    _entries pushBack ["messages", _title, _detail, _gTime, []];
 } forEach _groupMsgs;
 
-// --- Photos locales Photo Library ---
-if (!isNil "Iceman_fnc_photo_getRecords") then {
-    private _records = call Iceman_fnc_photo_getRecords;
-    if (_records isEqualType []) then {
-        {
-            if (!(_x isEqualType [])) then { continue };
-            if ((count _x) < 9) then { continue };
-            private _filePath = _x select 2;
-            private _fileName = _x select 3;
-            private _author = _x select 4;
-            private _grid = _x select 8;
-            private _src = _x select 1;
-            if (_filePath isEqualTo "" && {_src isEqualTo "received"}) then { continue };
-            private _srcLabel = switch (_src) do {
-                case "received": { "Reçue" };
-                case "local";
-                case "captured": { "Locale" };
-                default { "ATAK" };
-            };
-            private _title = format ["Photo · %1 · %2", _fileName, _grid];
-            private _detail = format [
-                "<t size='0.85' color='#c8e8ff'>Photo</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><t color='#8aa0b4'>Source</t>  %4<br/><br/><t color='#b8c8d4'>Sélectionnez puis utilisez « Photo Athena » pour remonter.</t>",
-                _author, _grid, _fileName, _srcLabel
-            ];
-            _entries pushBack ["photo", _title, _detail, _fileName, [_filePath, _fileName]];
-        } forEach _records;
-    };
+// --- Photos sélectionnables (Photo Library + captures récentes / Quick Pictures) ---
+private _localPhotos = [];
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos") then {
+    _localPhotos = [] call comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos;
 };
+if (!(_localPhotos isEqualType [])) then { _localPhotos = []; };
+{
+    if (!(_x isEqualType [])) then { continue };
+    if ((count _x) < 1) then { continue };
+    private _filePath = _x select 0;
+    private _fileName = if ((count _x) > 1) then { _x select 1 } else { "" };
+    private _grid = if ((count _x) > 2) then { _x select 2 } else { mapGridPosition player };
+    private _author = if ((count _x) > 3) then { _x select 3 } else { name player };
+    if (_filePath isEqualTo "") then { continue };
+    private _short = if (_fileName isEqualTo "") then { "Capture" } else { _fileName };
+    private _title = format ["Photo · %1 · %2", _short, _grid];
+    private _detail = format [
+        "<t size='0.85' color='#c8e8ff'>Photo à remonter</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Sélectionnez cette ligne, puis appuyez sur « Envoyer la photo sélectionnée ».</t>",
+        _author, _grid, _short
+    ];
+    _entries pushBack ["photo", _title, _detail, _short, [_filePath, _short]];
+} forEach _localPhotos;
 
 // --- Ordres Athena ---
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
@@ -256,6 +270,8 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     private _id = _x getOrDefault ["id", ""];
     if (_id isEqualTo "") then { continue };
     private _type = _x getOrDefault ["type", "MOVE"];
+    // Signaux terminal déjà notifiés via onVibrate / onNotify — pas une ligne « ordre »
+    if ((toUpper _type) in ["VIBRATE", "NOTIFY"]) then { continue };
     private _typeLabel = trim (_x getOrDefault ["typeLabel", ""]);
     if (_typeLabel isEqualTo "") then {
         _typeLabel = switch (toUpper _type) do {
@@ -283,6 +299,41 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     ];
     _entries pushBack ["order", _title, _detail, _id, []];
 } forEach _orders;
+
+// --- Alertes médicales (triage) ---
+private _medAlerts = missionNamespace getVariable ["COMSPEC_MedicalAlerts", []];
+if (!(_medAlerts isEqualType [])) then { _medAlerts = []; };
+{
+    if (!(_x isEqualType createHashMap)) then { continue };
+    private _mid = _x getOrDefault ["id", ""];
+    if (_mid isEqualTo "") then { continue };
+    private _mcs = _x getOrDefault ["call_sign", ""];
+    private _mlb = _x getOrDefault ["label", "Assistance médicale"];
+    private _mgrid = _x getOrDefault ["grid", ""];
+    private _mcreated = _x getOrDefault ["created_at", ""];
+    private _mtriage = _x getOrDefault ["triage_label", "À secourir"];
+    private _mkind = toLower (_x getOrDefault ["kind", ""]);
+    private _kindFr = switch (_mkind) do {
+        case "cardiac_arrest";
+        case "cardiac-arrest";
+        case "death";
+        case "dead";
+        case "kia": { "Arrêt cardiaque" };
+        case "unconscious": { "Inconscient" };
+        default { "Médical" };
+    };
+    private _title = format ["Médical · %1 · %2", if (_mcs isEqualTo "") then { _kindFr } else { _mcs }, _mgrid];
+    private _detail = format [
+        "<t color='#ff9a4a'>Alerte médicale</t> — %1<br/><t color='#8aa0b4'>Blessé</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Triage</t>  %4<br/><t color='#8aa0b4'>Heure</t>  %5<br/>%6<br/><br/><t color='#b8c8d4'>Sélectionnez cette ligne, puis utilisez les boutons de triage (médecin ou chef d’équipe).</t>",
+        _kindFr,
+        if (_mcs isEqualTo "") then { "—" } else { _mcs },
+        if (_mgrid isEqualTo "") then { "—" } else { _mgrid },
+        _mtriage,
+        if (_mcreated isEqualTo "") then { "—" } else { _mcreated },
+        _mlb
+    ];
+    _entries pushBack ["medical", _title, _detail, _mid, [_mid]];
+} forEach _medAlerts;
 
 reverse _entries;
 
@@ -349,11 +400,30 @@ if (_tab isEqualTo "modules") then {
 };
 
 // Filtre onglet
-if (_tab isEqualTo "notif") then {
-    _entries = _entries select { (_x select 0) in ["order", "alert", "bda", "photo"] };
+if (_tab isEqualTo "urgences" || {_tab isEqualTo "notif"} || {_tab isEqualTo "alert"}) then {
+    _entries = _entries select { (_x select 0) in ["alert", "order", "medical", "messages"] };
 } else {
-    if (_tab isNotEqualTo "all" && {_tab isNotEqualTo "modules"}) then {
-        _entries = _entries select { (_x select 0) isEqualTo _tab };
+    if (_tab isEqualTo "liaison") then {
+        _entries = [
+            [
+                "liaison",
+                "Adresse mobile + code",
+                "<t color='#5a9e88'>Liaison téléphone</t><br/><t color='#b8c8d4'>Utilisez le bouton « Adresse mobile » pour afficher l’adresse dédiée et le code d’appariement de votre terminal.</t>",
+                "mobile",
+                []
+            ],
+            [
+                "liaison",
+                "Compte Athena",
+                "<t color='#5a9e88'>Compte</t><br/><t color='#b8c8d4'>Liez votre compte Athena (code ou Steam) via le bouton « Compte Athena ».</t>",
+                "account",
+                []
+            ]
+        ];
+    } else {
+        if (_tab isNotEqualTo "all" && {_tab isNotEqualTo "modules"}) then {
+            _entries = _entries select { (_x select 0) isEqualTo _tab };
+        };
     };
 };
 
@@ -371,6 +441,7 @@ if (!isNull _listCtrl) then {
             case "order": { _listCtrl lbSetColor [_idx, [0.55, 0.78, 0.92, 1]]; };
             case "bda": { _listCtrl lbSetColor [_idx, [0.92, 0.72, 0.48, 1]]; };
             case "photo": { _listCtrl lbSetColor [_idx, [0.7, 0.84, 0.9, 1]]; };
+            case "medical": { _listCtrl lbSetColor [_idx, [0.95, 0.55, 0.45, 1]]; };
             case "modules": { _listCtrl lbSetColor [_idx, [0.55, 0.88, 0.68, 1]]; };
             default { _listCtrl lbSetColor [_idx, [0.95, 0.86, 0.62, 1]]; };
         };
@@ -385,14 +456,16 @@ if (!isNull _listCtrl) then {
         if (!isNull _detailCtrl) then {
             private _empty = switch (_tab) do {
                 case "bda": { "Aucun bilan des dégâts pour le moment." };
-                case "photo": { "Aucune photo à afficher — capturez d’abord depuis l’app Photos d’ATAK." };
+                case "photo": { "Aucune photo à remonter pour le moment." };
                 case "order": { "Aucun ordre reçu pour le moment." };
+                case "urgences";
+                case "alert";
+                case "notif": { "Aucune urgence ni alerte médicale pour le moment." };
                 case "modules": { "Aucun module synchronisé pour le moment." };
-                case "notif": { "Aucune notification pour le moment." };
                 default { "Aucune alerte, ordre, bilan ni photo pour le moment." };
             };
             private _hint = switch (_tab) do {
-                case "photo": { "Ouvrez Photos sur ATAK, prenez une vue, puis revenez ici pour la remonter." };
+                case "photo": { "Ouvrez l’app Photos d’ATAK, prenez une vue (Quick Picture), puis revenez sur l’onglet Photos ici pour la sélectionner et l’envoyer." };
                 case "notif": { "Les nouveaux ordres et alertes apparaissent dans la zone ci-dessus." };
                 default { "Sélectionnez une entrée du journal ci-dessous." };
             };

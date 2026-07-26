@@ -25,6 +25,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Services\Auth\AuthService;
 use App\Services\Community\EnlistmentMilsimPackService;
+use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
@@ -83,8 +84,7 @@ class EnlistmentController
             return Response::view('enlistment.error', ['message' => 'Le recrutement est verrouillé pour cette communauté.', 'enlistmentRetryUrl' => $this->enlistmentFormUrl($tenant)]);
         }
 
-        $registrationModeRaw = (string) ($communityConfig['registration_mode'] ?? 'milsim');
-        $mode = in_array($registrationModeRaw, ['simple', 'discord'], true) ? $registrationModeRaw : 'milsim';
+        $mode = TenantCommunityProfileService::normalizeRegistrationMode($communityConfig['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM);
         $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
         $formAction = $this->enlistmentActionUrl($tenant);
         $targetTenantId = (int) $tenant['id'];
@@ -399,52 +399,44 @@ class EnlistmentController
                 'form_mode' => $isCompactAccount ? 'compact' : 'full',
             ];
         } else {
-            $identityKind = trim((string) $request->input('identity_kind', 'admin'));
-            if ($identityKind !== 'rp' && $identityKind !== 'admin') {
-                $identityKind = 'admin';
-            }
+            // Identité réelle désactivée : candidature invitée = personnage uniquement.
             $fullName = trim((string) $request->input('full_name'));
             if ($fullName === '') {
                 Session::flash('enlistment_error', 'Merci d’indiquer un nom pour la candidature.');
 
                 return Response::redirect(url('enlistment/error'));
             }
-            $legalFull = trim((string) $request->input('legal_full_name'));
-            if ($identityKind === 'rp') {
-                $guestFn = trim((string) $request->input('guest_rp_first_name'));
-                $guestLn = trim((string) $request->input('guest_rp_last_name'));
-                $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
-                $guestNat = trim((string) $request->input('guest_rp_nationality'));
-                $guestScene = trim((string) $request->input('guest_rp_scene_name'));
-                if ($guestFn === '' && $guestLn === '' && $fullName !== '') {
-                    $guestFn = $fullName;
-                    $guestLn = '';
-                    if (str_contains($fullName, ' ')) {
-                        $pos = strpos($fullName, ' ');
-                        $guestFn = trim(substr($fullName, 0, $pos));
-                        $guestLn = trim(substr($fullName, $pos));
-                    }
+            $guestFn = trim((string) $request->input('guest_rp_first_name'));
+            $guestLn = trim((string) $request->input('guest_rp_last_name'));
+            $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
+            $guestNat = trim((string) $request->input('guest_rp_nationality'));
+            $guestScene = trim((string) $request->input('guest_rp_scene_name'));
+            if ($guestFn === '' && $guestLn === '' && $fullName !== '') {
+                $guestFn = $fullName;
+                $guestLn = '';
+                if (str_contains($fullName, ' ')) {
+                    $pos = strpos($fullName, ' ');
+                    $guestFn = trim(substr($fullName, 0, $pos));
+                    $guestLn = trim(substr($fullName, $pos));
                 }
-                $pseudoPreset = [
-                    'payload_version' => RecruitmentPresetPayloadService::PAYLOAD_VERSION,
-                    'rp' => [
-                        'first_name' => $guestFn,
-                        'last_name' => $guestLn,
-                        'birth_date' => $guestBd,
-                        'nationality' => function_exists('mb_substr') ? mb_substr($guestNat, 0, 100) : substr($guestNat, 0, 100),
-                        'character_name' => function_exists('mb_substr') ? mb_substr($guestScene, 0, 150) : substr($guestScene, 0, 150),
-                    ],
-                    'admin_notes' => '',
-                    'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
-                ];
-                $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pseudoPreset, null);
-                $snap['identity_kind'] = 'rp';
-                $snap['legal_contact_name'] = $legalFull !== '' ? $legalFull : null;
-                $payload['recruitment_rp_snapshot'] = $snap;
-                $nameForSplit = $legalFull !== '' ? $legalFull : $fullName;
-            } else {
-                $nameForSplit = $fullName;
             }
+            $pseudoPreset = [
+                'payload_version' => RecruitmentPresetPayloadService::PAYLOAD_VERSION,
+                'rp' => [
+                    'first_name' => $guestFn,
+                    'last_name' => $guestLn,
+                    'birth_date' => $guestBd,
+                    'nationality' => function_exists('mb_substr') ? mb_substr($guestNat, 0, 100) : substr($guestNat, 0, 100),
+                    'character_name' => function_exists('mb_substr') ? mb_substr($guestScene, 0, 150) : substr($guestScene, 0, 150),
+                ],
+                'admin_notes' => '',
+                'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
+            ];
+            $snap = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pseudoPreset, null);
+            $snap['identity_kind'] = 'rp';
+            $snap['legal_contact_name'] = null;
+            $payload['recruitment_rp_snapshot'] = $snap;
+            $nameForSplit = $fullName;
             $first = $nameForSplit;
             $last = '';
             if ($nameForSplit !== '' && str_contains($nameForSplit, ' ')) {

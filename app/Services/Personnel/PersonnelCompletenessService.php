@@ -42,10 +42,6 @@ class PersonnelCompletenessService
         $roleSubLabel = trim((string) ($profile['role_sub_label'] ?? ''));
         $primaryUnitId = isset($profile['primary_unit_id']) ? (int) $profile['primary_unit_id'] : 0;
 
-        $up = $userProfile ?? [];
-        $civilOk = !empty(trim((string) ($up['first_name'] ?? '')))
-            && !empty(trim((string) ($up['last_name'] ?? '')));
-
         $hasUnit =
             ($unitName !== null && trim((string) $unitName) !== '')
             || !empty(trim((string) ($personnelExtras['squadron'] ?? '')))
@@ -73,7 +69,6 @@ class PersonnelCompletenessService
             'qualifications' => $hasQualOrCert,
             'readiness' => $hasReadiness,
             'contact_email' => !empty(trim((string) ($user['email'] ?? ''))),
-            'civil_identity' => $civilOk,
         ];
 
         $critical = [
@@ -122,7 +117,6 @@ class PersonnelCompletenessService
             'qualifications' => 'Qualification OU formation certifiée',
             'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
             'contact_email' => 'Email de contact',
-            'civil_identity' => 'Prénom & nom (dossier compte ou candidature)',
         ];
         $missingLabels = [];
         foreach ($base['details'] as $key => $ok) {
@@ -137,7 +131,7 @@ class PersonnelCompletenessService
 
     /**
      * Complétude dossier pour l’admin : version « communauté » sans doublons avec le bloc compte
-     * (e-mail, prénom/nom déjà suivis côté compte) ni jargon superflu ; version « plateforme » exhaustive.
+     * (e-mail déjà suivi côté compte) ni jargon superflu ; version « plateforme » exhaustive.
      *
      * @return array{score: int, sections_critiques: list<string>, details: array<string, bool>, missing_labels: list<string>}
      */
@@ -164,7 +158,6 @@ class PersonnelCompletenessService
             'qualifications' => 'Qualification OU formation certifiée',
             'readiness' => 'Disponibilité (score dossier ou formation certifiée)',
             'contact_email' => 'Email de contact',
-            'civil_identity' => 'Prénom & nom (dossier compte ou candidature)',
         ];
 
         $labelsCommunity = [
@@ -180,16 +173,13 @@ class PersonnelCompletenessService
             'qualifications' => 'Qualification ou parcours de formation certifié',
             'readiness' => 'Indicateur de disponibilité',
             'contact_email' => 'Email de contact',
-            'civil_identity' => 'Prénom & nom (dossier compte ou candidature)',
         ];
 
         $labels = $forPlatformOperator ? $labelsFull : $labelsCommunity;
 
         $details = $base['details'];
         if (!$forPlatformOperator) {
-            foreach (['contact_email', 'civil_identity'] as $ek) {
-                unset($details[$ek]);
-            }
+            unset($details['contact_email']);
         }
 
         $total = count($details);

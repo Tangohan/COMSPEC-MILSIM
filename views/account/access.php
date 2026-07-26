@@ -50,7 +50,7 @@ $requestedAboutMe = is_array($elevationRequestedAboutMe ?? null) ? $elevationReq
             <div class="account-hub__stat-grid">
                 <div class="account-hub__stat">
                     <p class="account-hub__stat-label">Votre compte</p>
-                    <p class="account-hub__stat-value">Identité civile</p>
+                    <p class="account-hub__stat-value">Compte de connexion</p>
                     <p class="account-hub__stat-meta">
                         Adresse e-mail, mot de passe, apparence du portail. Vous pouvez appartenir à plusieurs communautés ; chacune a ses propres accès.
                         <br><a href="<?= htmlspecialchars(url('account'), ENT_QUOTES, 'UTF-8') ?>">Vue d’ensemble →</a>

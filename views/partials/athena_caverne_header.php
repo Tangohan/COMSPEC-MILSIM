@@ -83,30 +83,59 @@ $recruitmentHref = function_exists('recruitment_workspace_url')
     ? recruitment_workspace_url()
     : url('back-office/ressources/recrutement');
 
+// Profil communauté (Complet / Effectifs / ATAK) — filtre la barre haute (sinon tous les modules restent visibles).
+$headerTenantType = function_exists('navigation_current_tenant_type')
+    ? navigation_current_tenant_type()
+    : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+$headerTypeLabel = \App\Services\Community\TenantTypeConfig::label($headerTenantType);
+$headerAllowsPath = static function (string $path) use ($headerTenantType): bool {
+    return \App\Services\Community\TenantTypeConfig::uriAllowed($headerTenantType, $path);
+};
+
 $navItems = [
-    ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard')],
-    ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub')],
-    ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum')],
-    ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations')],
-    ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel')],
+    ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => url('dashboard'), 'path' => 'dashboard'],
+    ['key' => 'hub', 'label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
+    ['key' => 'forum', 'label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'],
+    ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'],
+    ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'],
 ];
 if ($canRecruit) {
-    $navItems[] = ['key' => 'recrutement', 'label' => 'Recrutement', 'href' => $recruitmentHref];
+    $navItems[] = [
+        'key' => 'recrutement',
+        'label' => 'Recrutement',
+        'href' => $recruitmentHref,
+        'path' => 'back-office/ressources/recrutement',
+    ];
 }
 if ($canAdmin) {
-    $navItems[] = ['key' => 'admin', 'label' => 'Administration', 'href' => url('back-office')];
+    $navItems[] = ['key' => 'admin', 'label' => 'Administration', 'href' => url('back-office'), 'path' => 'back-office'];
+}
+$navItems = array_values(array_filter(
+    $navItems,
+    static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
+));
+
+if ($headerAllowsPath('atak') && !$headerAllowsPath('evenements')) {
+    $ctaHref = url('atak');
+    $ctaLabel = 'Ouvrir la carte';
+    $ctaActive = str_starts_with($currentPath, 'atak');
+} else {
+    $ctaHref = url('evenements');
+    $ctaLabel = 'Nouvelle manœuvre';
+    $ctaActive = $currentKey === 'events';
+}
+if (!$headerAllowsPath('evenements') && !$headerAllowsPath('atak')) {
+    $ctaHref = url('dashboard');
+    $ctaLabel = 'Tableau de bord';
+    $ctaActive = $currentKey === 'dashboard';
 }
 
-$ctaHref = url('evenements');
-$ctaLabel = 'Nouvelle manœuvre';
-$ctaActive = $currentKey === 'events';
-
 $espaceLinks = [
-    ['abbr' => 'DOC', 'label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents')],
-    ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements')],
-    ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat')],
-    ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak')],
-    ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations')],
+    ['abbr' => 'DOC', 'label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents'), 'path' => 'documents'],
+    ['abbr' => 'OPS', 'label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
+    ['abbr' => 'ORB', 'label' => 'ORBAT', 'desc' => 'Structure et effectifs', 'href' => url('orbat'), 'path' => 'orbat'],
+    ['abbr' => 'ATK', 'label' => 'ATAK', 'desc' => 'Carte tactique', 'href' => url('atak'), 'path' => 'atak'],
+    ['abbr' => 'FRM', 'label' => 'Formations', 'desc' => 'Catalogue et parcours', 'href' => url('formations'), 'path' => 'formations'],
 ];
 if ($canRecruit) {
     $espaceLinks[] = [
@@ -114,6 +143,7 @@ if ($canRecruit) {
         'label' => 'Recrutement',
         'desc' => 'Dossiers et offres',
         'href' => $recruitmentHref,
+        'path' => 'back-office/ressources/recrutement',
     ];
 }
 if ($canAdmin) {
@@ -122,27 +152,40 @@ if ($canAdmin) {
         'label' => 'Commandement',
         'desc' => 'Espace état-major',
         'href' => url('back-office'),
+        'path' => 'back-office',
     ];
 }
+$espaceLinks = array_values(array_filter(
+    $espaceLinks,
+    static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
+));
 
 $quickLinks = [
-    ['label' => 'Tableau de bord', 'href' => url('dashboard')],
-    ['label' => 'Hub', 'href' => url('hub')],
-    ['label' => 'Forum', 'href' => url('forum')],
-    ['label' => 'Formations', 'href' => url('formations')],
-    ['label' => 'Effectifs', 'href' => url('personnel')],
-    ['label' => 'Documents', 'href' => url('documents')],
-    ['label' => 'ATAK', 'href' => url('atak')],
-    ['label' => 'Manœuvres', 'href' => url('evenements')],
-    ['label' => 'Ma fiche', 'href' => url('personnel/me')],
-    ['label' => 'Compte', 'href' => url('account')],
+    ['label' => 'Tableau de bord', 'href' => url('dashboard'), 'path' => 'dashboard'],
+    ['label' => 'Hub', 'href' => url('hub'), 'path' => 'hub'],
+    ['label' => 'Forum', 'href' => url('forum'), 'path' => 'forum'],
+    ['label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'],
+    ['label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'],
+    ['label' => 'Documents', 'href' => url('documents'), 'path' => 'documents'],
+    ['label' => 'ATAK', 'href' => url('atak'), 'path' => 'atak'],
+    ['label' => 'Manœuvres', 'href' => url('evenements'), 'path' => 'evenements'],
+    ['label' => 'Ma fiche', 'href' => url('personnel/me'), 'path' => 'personnel/me'],
+    ['label' => 'Compte', 'href' => url('account'), 'path' => 'account'],
 ];
 if ($canRecruit) {
-    $quickLinks[] = ['label' => 'Recrutement', 'href' => $recruitmentHref];
+    $quickLinks[] = [
+        'label' => 'Recrutement',
+        'href' => $recruitmentHref,
+        'path' => 'back-office/ressources/recrutement',
+    ];
 }
 if ($canAdmin) {
-    $quickLinks[] = ['label' => 'Administration', 'href' => url('back-office')];
+    $quickLinks[] = ['label' => 'Administration', 'href' => url('back-office'), 'path' => 'back-office'];
 }
+$quickLinks = array_values(array_filter(
+    $quickLinks,
+    static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
+));
 
 $cu = $currentUser ?? null;
 if (!is_array($cu)) {
@@ -300,34 +343,44 @@ if ($affectationLabel !== null && strcasecmp($affectationLabel, $unitLabel) !== 
  * @var list<array{label:string,desc:string,href:string}>
  */
 $profileMenuItems = [
-    ['label' => 'Ma fiche', 'desc' => 'Identité, grade et fonction', 'href' => url('personnel/me')],
-    ['label' => 'Mes formations', 'desc' => 'Parcours et compétences', 'href' => url('formations/mes-formations')],
-    ['label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements')],
+    ['label' => 'Ma fiche', 'desc' => 'Identité, grade et fonction', 'href' => url('personnel/me'), 'path' => 'personnel/me'],
+    ['label' => 'Mes formations', 'desc' => 'Parcours et compétences', 'href' => url('formations/mes-formations'), 'path' => 'formations/mes-formations'],
+    ['label' => 'Manœuvres', 'desc' => 'Calendrier opérationnel', 'href' => url('evenements'), 'path' => 'evenements'],
 ];
 if ($canDocsMenu) {
-    $profileMenuItems[] = ['label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents')];
+    $profileMenuItems[] = ['label' => 'Documents', 'desc' => 'Ordres et références', 'href' => url('documents'), 'path' => 'documents'];
 }
 if ($canInvitationsMenu) {
-    $profileMenuItems[] = ['label' => 'Invitations', 'desc' => 'Codes d’accès à la communauté', 'href' => url('back-office/invitations/envoyees')];
+    $profileMenuItems[] = [
+        'label' => 'Invitations',
+        'desc' => 'Codes d’accès à la communauté',
+        'href' => url('back-office/invitations/envoyees'),
+        'path' => 'back-office/invitations/envoyees',
+    ];
 }
 if ($canAdmin) {
-    $profileMenuItems[] = ['label' => 'Commandement', 'desc' => 'Espace état-major', 'href' => url('back-office')];
+    $profileMenuItems[] = ['label' => 'Commandement', 'desc' => 'Espace état-major', 'href' => url('back-office'), 'path' => 'back-office'];
 }
-$profileMenuItems[] = ['label' => 'Paramètres', 'desc' => 'Compte et préférences', 'href' => url('account')];
-$profileMenuItems[] = ['label' => 'Couverture', 'desc' => 'Bandeau du menu session', 'href' => url('account/banner')];
+$profileMenuItems[] = ['label' => 'Paramètres', 'desc' => 'Compte et préférences', 'href' => url('account'), 'path' => 'account'];
+$profileMenuItems[] = ['label' => 'Couverture', 'desc' => 'Bandeau du menu session', 'href' => url('account/banner'), 'path' => 'account/banner'];
+$profileMenuItems = array_values(array_filter(
+    $profileMenuItems,
+    static fn (array $item): bool => $headerAllowsPath((string) ($item['path'] ?? ''))
+));
 ?>
 <nav
     class="athena-header"
     role="navigation"
     aria-label="Navigation principale"
     data-athena-header
+    data-tenant-type="<?= $h($headerTenantType) ?>"
 >
     <div class="athena-header__inner">
         <a href="<?= $h(url('dashboard')) ?>" class="athena-header__brand">
             <span class="athena-header__brand-mark" aria-hidden="true">A</span>
             <span class="athena-header__brand-text">
                 <span class="athena-header__brand-title">Athena<span class="athena-header__brand-dot">.</span></span>
-                <span class="athena-header__brand-sub"><?= $h($sectionLabel) ?> · <?= $h($unitLabel) ?></span>
+                <span class="athena-header__brand-sub"><?= $h($sectionLabel) ?> · <?= $h($unitLabel) ?><?php if ($headerTenantType !== \App\Services\Community\TenantTypeConfig::TYPE_FULL): ?> · <?= $h($headerTypeLabel) ?><?php endif; ?></span>
             </span>
         </a>
 

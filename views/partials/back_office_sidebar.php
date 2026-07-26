@@ -20,16 +20,52 @@ $canStructureRecruitmentHub = $gate->allows('organization.orbat.view')
     || $gate->allows('site.support');
 
 $tenantLabel = '';
+$tenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 try {
     $tid = (int) \App\Core\Session::get('tenant_id');
     if ($tid > 0) {
         $tr = (new \App\Repositories\TenantRepository())->findById($tid);
         if ($tr !== null) {
             $tenantLabel = trim((string) ($tr['name'] ?? ''));
+            $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+                (string) ($tr['tenant_type'] ?? 'full')
+            );
         }
     }
 } catch (\Throwable) {
 }
+
+$boModuleAllowed = static function (string $module) use ($tenantType): bool {
+    return \App\Services\Community\TenantTypeConfig::moduleAllowed($tenantType, $module);
+};
+$boHrefAllowed = static function (string $href) use ($tenantType): bool {
+    $path = $href;
+    if (preg_match('#^https?://#i', $href)) {
+        $parsed = parse_url($href, PHP_URL_PATH);
+        $path = is_string($parsed) ? $parsed : '';
+    }
+    $path = trim((string) $path, '/');
+    // Retirer préfixe éventuel (sous-dossier d’installation).
+    foreach (['public/', 'index.php/'] as $strip) {
+        if (str_starts_with($path, $strip)) {
+            $path = substr($path, strlen($strip));
+        }
+    }
+    // Si l’URL contient un chemin d’app plus long, prendre le segment métier connu.
+    if ($path !== '' && !\App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, $path)) {
+        // Essayer de retrouver un suffixe métier (back-office/..., atak/..., etc.).
+        foreach (['back-office/', 'admin/', 'formation/', 'formations/', 'documents/', 'forum/', 'atak/', 'personnel/', 'enlistment/'] as $needle) {
+            $pos = strpos($path, $needle);
+            if ($pos !== false) {
+                return \App\Services\Community\TenantTypeConfig::uriAllowed($tenantType, substr($path, $pos));
+            }
+        }
+
+        return false;
+    }
+
+    return true;
+};
 
 $canIntegrationsBo = false;
 try {
@@ -207,10 +243,13 @@ $icon = static function (string $key): string {
  * @param list<array{label:string,href:string,hint?:string,active?:bool,badge?:int|null,badgeTone?:string}|null> $items
  * @return list<array{label:string,href:string,hint?:string,active?:bool,badge?:int|null,badgeTone?:string}>
  */
-$links = static function (array $items): array {
+$links = static function (array $items) use ($boHrefAllowed): array {
     $out = [];
     foreach ($items as $item) {
         if (is_array($item) && isset($item['label'], $item['href']) && $item['href'] !== '') {
+            if (!$boHrefAllowed((string) $item['href'])) {
+                continue;
+            }
             $out[] = $item;
         }
     }
@@ -471,6 +510,17 @@ if ($gate->allows('admin.system') || $gate->allows('site.support')) {
     ]), 'admin', $boNavPlatformShell, 'plateforme admin site système newsletter alertes globales');
 }
 
+$filterEmptyTiles = static function (array $tiles): array {
+    return array_values(array_filter(
+        $tiles,
+        static fn (array $t): bool => !empty($t['links']) && is_array($t['links'])
+    ));
+};
+$coreTiles = $filterEmptyTiles($coreTiles);
+$opsTiles = $filterEmptyTiles($opsTiles);
+$resourceTiles = $filterEmptyTiles($resourceTiles);
+$adminTiles = $filterEmptyTiles($adminTiles);
+
 $renderLinks = static function (array $item) use ($h): void {
     ?>
     <ul class="dash-rail__links" role="list">
@@ -613,7 +663,22 @@ $renderTile = static function (array $item) use ($num, $h, $renderLinks, $icon):
                         $ctCls .= ' bo-rail__compact-ico--admin';
                     }
                     $ctTitle = $ctHint !== '' ? ($ctLabel . ' — ' . $ctHint) : $ctLabel;
-                    $ctShort = $ctLabel;
+                    static $boCompactShort = [
+                        'overview' => 'Accueil',
+                        'members' => 'Membres',
+                        'recruitment' => 'Recrut.',
+                        'access' => 'Droits',
+                        'organisation' => 'Orga',
+                        'comms' => 'Comms',
+                        'ops' => 'Ops',
+                        'events' => 'Events',
+                        'training' => 'Forma.',
+                        'documents' => 'Docs',
+                        'tools' => 'Outils',
+                        'moderation' => 'Modér.',
+                        'admin' => 'Admin',
+                    ];
+                    $ctShort = $boCompactShort[$ctId] ?? $ctLabel;
                     if (function_exists('mb_strlen') && mb_strlen($ctShort, 'UTF-8') > 8) {
                         $ctShort = mb_substr($ctShort, 0, 7, 'UTF-8') . '…';
                     } elseif (strlen($ctShort) > 8) {

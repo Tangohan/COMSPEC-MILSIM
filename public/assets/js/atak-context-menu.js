@@ -7,12 +7,53 @@ window.ATAKContextMenu = (function () {
   var activeFeature = null;
   var suppressMapContextMenu = false;
   var boundMap = null;
-  var drawMode = null;
+  var drawMode = null; // 'line' | 'zone' | 'polygon' | 'rectangle'
   var drawPoints = [];
   var drawPreview = null;
+  var drawOpts = null;
   var hintEl = null;
   var promptResolve = null;
   var markerFormResolve = null;
+
+  /** Presets zones tactiques (TOC web — indépendant du mod en jeu). */
+  var ZONE_PRESETS = {
+    zone: {
+      mode: 'zone',
+      kind: 'zone',
+      color: '#eab308',
+      defaultLabel: 'Zone',
+      title: 'Libellé de la zone',
+      hint: 'Optionnel.',
+      mapHint: 'Zone : cliquez le centre, puis le bord pour fixer le rayon. Échap pour abandonner.'
+    },
+    search: {
+      mode: 'zone',
+      kind: 'search_zone',
+      color: '#22d3ee',
+      defaultLabel: 'Zone de recherche',
+      title: 'Nom de la zone de recherche',
+      hint: 'Ex. secteur nord — fouille en cours',
+      mapHint: 'Zone de recherche : cliquez le centre, puis le bord pour fixer le rayon. Échap pour abandonner.'
+    },
+    perimeter: {
+      mode: 'polygon',
+      kind: 'perimeter',
+      color: '#fb923c',
+      defaultLabel: 'Périmètre',
+      title: 'Nom du périmètre',
+      hint: 'Ex. périmètre de sécurité — bâtiment A',
+      mapHint: 'Périmètre : cliquez pour poser les sommets (minimum 3), puis Terminer. Échap pour abandonner.'
+    },
+    aoi: {
+      mode: 'rectangle',
+      kind: 'aoi',
+      color: '#86efac',
+      defaultLabel: 'Zone d’intérêt',
+      title: 'Nom de la zone d’intérêt',
+      hint: 'Ex. zone d’intérêt — carrefour Est',
+      mapHint: 'Zone d’intérêt : cliquez un coin, puis le coin opposé. Échap pour abandonner.'
+    }
+  };
 
   var MARKER_COLORS = [
     { value: '#34d399', label: 'Vert' },
@@ -62,6 +103,12 @@ window.ATAKContextMenu = (function () {
 
   function featureTitle(feature) {
     if (!feature) return '';
+    var kind = '';
+    if (feature.shape && feature.shape.meta) kind = String(feature.shape.meta.kind || '');
+    else if (feature.meta) kind = String(feature.meta.kind || '');
+    if (kind === 'search_zone') return 'Zone de recherche';
+    if (kind === 'perimeter') return 'Périmètre';
+    if (kind === 'aoi') return 'Zone d’intérêt';
     var t = feature.featureType;
     if (t === 'marker') return 'Marqueur';
     if (t === 'comment') return 'Commentaire';
@@ -94,11 +141,16 @@ window.ATAKContextMenu = (function () {
 
   function renderCreateItems() {
     return '' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--jackpot" data-action="jackpot" role="menuitem">JACKPOT — HVT</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="sitrep" role="menuitem">Signaler une situation</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="ping" role="menuitem">Envoyer un ping</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="line" role="menuitem">Tracer un trait</button>' +
-      '<button type="button" class="atak-ctx-menu__item" data-action="comment" role="menuitem">Ajouter un commentaire</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="comment" role="menuitem">Enregistrer une note</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="zone" role="menuitem">Zone circulaire</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="search-zone" role="menuitem">Zone de recherche</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="perimeter" role="menuitem">Périmètre de sécurité</button>' +
+      '<button type="button" class="atak-ctx-menu__item" data-action="aoi" role="menuitem">Zone d’intérêt</button>' +
       '<div class="atak-ctx-menu__sep" role="separator"></div>' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--muted" data-action="copy" role="menuitem">Copier les coordonnées</button>';
   }
@@ -207,6 +259,7 @@ window.ATAKContextMenu = (function () {
   var PING_KINDS = [
     { value: 'contact', label: 'Contact' },
     { value: 'hostile', label: 'Hostile' },
+    { value: 'jackpot', label: 'JACKPOT (HVT)' },
     { value: 'medical', label: 'Médical' },
     { value: 'rally', label: 'Ralliement' },
     { value: 'objective', label: 'Objectif' },
@@ -506,6 +559,7 @@ window.ATAKContextMenu = (function () {
         e.preventDefault();
         e.stopPropagation();
         if (drawMode === 'line') finishLine();
+        else if (drawMode === 'polygon') finishPolygon();
         return;
       }
       if (cancel) {
@@ -513,9 +567,26 @@ window.ATAKContextMenu = (function () {
         e.stopPropagation();
         cancelDraw();
         if (window.ATAKShowNotification) window.ATAKShowNotification('Dessin annulé.');
+        window.dispatchEvent(new CustomEvent('atak:draw-ended'));
       }
     });
     return hintEl;
+  }
+
+  function updatePolygonHint() {
+    var n = drawPoints.length;
+    var label = (drawOpts && drawOpts.defaultLabel) ? drawOpts.defaultLabel : 'Périmètre';
+    if (n < 3) {
+      showHint(
+        label + ' : cliquez pour poser les sommets (minimum 3). Échap ou Annuler pour abandonner.',
+        { showFinish: true, finishDisabled: true, finishLabel: 'Terminer' }
+      );
+    } else {
+      showHint(
+        label + ' : ' + n + ' sommets. Cliquez pour continuer, ou Terminer / double-clic pour valider.',
+        { showFinish: true, finishDisabled: false, finishLabel: 'Terminer' }
+      );
+    }
   }
 
   function showHint(text, opts) {
@@ -552,6 +623,44 @@ window.ATAKContextMenu = (function () {
         { showFinish: true, finishDisabled: false, finishLabel: 'Terminer le trait' }
       );
     }
+  }
+
+  function getDrawSpeedKph() {
+    if (window.ATAKMapTools && typeof window.ATAKMapTools.getToolSpeedKph === 'function') {
+      return window.ATAKMapTools.getToolSpeedKph();
+    }
+    return 5;
+  }
+
+  function zoneMetricsLine(radiusM) {
+    var r = Math.max(10, Math.round(Number(radiusM) || 0));
+    var tools = window.ATAKMapTools;
+    if (tools && typeof tools.circleMetrics === 'function') {
+      var m = tools.circleMetrics(r, getDrawSpeedKph());
+      return 'Rayon ' + r + ' m · ' + m.summary + ' (à ' + String(m.speedKph).replace('.', ',') + ' km/h)';
+    }
+    var area = Math.PI * r * r;
+    var speed = getDrawSpeedKph();
+    var delayS = r / (speed / 3.6);
+    var areaLabel = area >= 100000
+      ? (area / 1e6).toFixed(2).replace('.', ',') + ' km²'
+      : Math.round(area).toLocaleString('fr-FR') + ' m²';
+    var delayLabel = delayS < 60
+      ? Math.round(delayS) + ' s'
+      : Math.round(delayS / 60) + ' min';
+    return 'Rayon ' + r + ' m · Superficie : ' + areaLabel + ' · Délai jusqu’au bord : ' + delayLabel;
+  }
+
+  function updateZoneDrawHint(radiusM) {
+    if (drawMode !== 'zone') return;
+    var base = (drawOpts && drawOpts.mapHint) || 'Zone : cliquez pour fixer le rayon.';
+    var intro = drawPoints.length < 1
+      ? base
+      : 'Centre posé — déplacez pour fixer le bord, puis cliquez.';
+    showHint(
+      intro + ' — ' + zoneMetricsLine(radiusM != null ? radiusM : 0),
+      { showFinish: true, finishDisabled: true, finishLabel: 'Terminer' }
+    );
   }
 
   function hideMenu() {
@@ -659,12 +768,18 @@ window.ATAKContextMenu = (function () {
       map.off('click', onDrawClick);
       map.off('dblclick', onDrawDblClick);
       map.off('mousemove', onDrawMove);
+      if (map.getContainer) map.getContainer().classList.remove('atak-map--drawing');
       if (map.doubleClickZoom) map.doubleClickZoom.enable();
     }
     clearDrawPreview();
     drawMode = null;
     drawPoints = [];
+    drawOpts = null;
     hideHint();
+  }
+
+  function activeDrawColor() {
+    return (drawOpts && drawOpts.color) || (drawMode === 'line' ? '#34d399' : '#eab308');
   }
 
   function updateDrawPreview(hoverLatLng) {
@@ -673,15 +788,54 @@ window.ATAKContextMenu = (function () {
     clearDrawPreview();
     var pts = drawPoints.slice();
     if (hoverLatLng) pts.push(hoverLatLng);
+    var color = activeDrawColor();
     if (drawMode === 'line' && pts.length >= 2) {
-      drawPreview = L.polyline(pts, { color: '#34d399', weight: 2, dashArray: '6 4', opacity: 0.9 });
+      drawPreview = L.polyline(pts, { color: color, weight: 2, dashArray: '6 4', opacity: 0.9 });
       drawPreview.addTo(map);
     } else if (drawMode === 'zone' && pts.length >= 1 && hoverLatLng) {
       var r = map.distance(pts[0], hoverLatLng);
-      drawPreview = L.circle(pts[0], { radius: Math.max(r, 10), color: '#eab308', fillColor: '#eab308', fillOpacity: 0.12, weight: 2, dashArray: '4 4' });
+      var radiusM = Math.max(r, 10);
+      drawPreview = L.circle(pts[0], {
+        radius: radiusM,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.12,
+        weight: 2,
+        dashArray: '4 4'
+      });
+      drawPreview.addTo(map);
+      updateZoneDrawHint(radiusM);
+      window.dispatchEvent(new CustomEvent('atak:zone-radius-preview', {
+        detail: { radius: radiusM, kind: drawOpts && drawOpts.kind }
+      }));
+    } else if (drawMode === 'polygon' && pts.length >= 2) {
+      drawPreview = L.polygon(pts, {
+        color: color,
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.12,
+        dashArray: '4 4'
+      });
+      drawPreview.addTo(map);
+    } else if (drawMode === 'rectangle' && pts.length >= 1 && hoverLatLng) {
+      var a = pts[0];
+      var b = hoverLatLng;
+      var corners = [
+        L.latLng(a.lat, a.lng),
+        L.latLng(a.lat, b.lng),
+        L.latLng(b.lat, b.lng),
+        L.latLng(b.lat, a.lng)
+      ];
+      drawPreview = L.polygon(corners, {
+        color: color,
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 0.12,
+        dashArray: '4 4'
+      });
       drawPreview.addTo(map);
     } else if (pts.length === 1) {
-      drawPreview = L.circleMarker(pts[0], { radius: 5, color: '#34d399', fillColor: '#34d399', fillOpacity: 1 });
+      drawPreview = L.circleMarker(pts[0], { radius: 5, color: color, fillColor: color, fillOpacity: 1 });
       drawPreview.addTo(map);
     }
   }
@@ -694,8 +848,13 @@ window.ATAKContextMenu = (function () {
       finishZone();
       return;
     }
+    if (drawMode === 'rectangle' && drawPoints.length >= 2) {
+      finishRectangle();
+      return;
+    }
     updateDrawPreview(null);
     if (drawMode === 'line') updateLineHint();
+    else if (drawMode === 'polygon') updatePolygonHint();
   }
 
   function onDrawDblClick(e) {
@@ -703,6 +862,7 @@ window.ATAKContextMenu = (function () {
     L.DomEvent.preventDefault(e);
     L.DomEvent.stopPropagation(e);
     if (drawMode === 'line') finishLine();
+    else if (drawMode === 'polygon') finishPolygon();
   }
 
   function onDrawMove(e) {
@@ -710,26 +870,38 @@ window.ATAKContextMenu = (function () {
     updateDrawPreview(e.latlng);
   }
 
-  function startDraw(mode, startLatLng) {
+  function startDraw(mode, startLatLng, opts) {
     cancelDraw();
     var map = getMap();
     if (!map) return;
     drawMode = mode;
+    drawOpts = opts || null;
     drawPoints = startLatLng ? [startLatLng] : [];
     if (map.doubleClickZoom) map.doubleClickZoom.disable();
+    if (map.getContainer) map.getContainer().classList.add('atak-map--drawing');
     map.on('click', onDrawClick);
     map.on('dblclick', onDrawDblClick);
     map.on('mousemove', onDrawMove);
     updateDrawPreview(null);
+    window.dispatchEvent(new CustomEvent('atak:draw-started', { detail: { mode: mode, kind: drawOpts && drawOpts.kind } }));
     if (mode === 'line') {
       updateLineHint();
+    } else if (mode === 'polygon') {
+      updatePolygonHint();
+    } else if (mode === 'rectangle') {
+      showHint(
+        (drawOpts && drawOpts.mapHint) || 'Rectangle : cliquez un coin, puis le coin opposé. Échap pour abandonner.',
+        { showFinish: true, finishDisabled: true, finishLabel: 'Terminer' }
+      );
     } else if (mode === 'zone') {
-      showHint('Zone : cliquez pour fixer le rayon. Échap ou Annuler pour abandonner.', {
-        showFinish: true,
-        finishDisabled: true,
-        finishLabel: 'Terminer'
-      });
+      updateZoneDrawHint(0);
     }
+  }
+
+  function startZoneTool(presetKey, startLatLng) {
+    var key = String(presetKey || 'zone');
+    var preset = ZONE_PRESETS[key] || ZONE_PRESETS.zone;
+    startDraw(preset.mode, startLatLng || null, preset);
   }
 
   function finishLine() {
@@ -740,6 +912,7 @@ window.ATAKContextMenu = (function () {
     }
     var pts = drawPoints.slice();
     cancelDraw();
+    window.dispatchEvent(new CustomEvent('atak:draw-ended'));
     openPrompt('Libellé du trait', 'Optionnel — laissez vide pour un trait sans nom.', 'Ex. axe d’approche', '').then(function (label) {
       if (label === null) return;
       var coordinates = pts.map(function (p) { return [p.lng, p.lat]; });
@@ -767,19 +940,106 @@ window.ATAKContextMenu = (function () {
     var center = drawPoints[0];
     var edge = drawPoints[1];
     var radius = map ? map.distance(center, edge) : 100;
+    var radiusM = Math.max(Math.round(radius), 10);
+    var opts = drawOpts || ZONE_PRESETS.zone;
+    var speedKph = getDrawSpeedKph();
+    var metrics = (window.ATAKMapTools && window.ATAKMapTools.circleMetrics)
+      ? window.ATAKMapTools.circleMetrics(radiusM, speedKph)
+      : null;
     cancelDraw();
-    openPrompt('Libellé de la zone', 'Optionnel.', 'Ex. zone d’interdiction', '').then(function (label) {
+    window.dispatchEvent(new CustomEvent('atak:draw-ended'));
+    if (window.ATAKMapTools && window.ATAKMapTools.setToolRadiusM) {
+      window.ATAKMapTools.setToolRadiusM(radiusM, false);
+    }
+    if (window.ATAKMapTools && window.ATAKMapTools.refreshZoneMetrics) {
+      window.ATAKMapTools.refreshZoneMetrics(radiusM);
+    }
+    openPrompt(opts.title || 'Libellé de la zone', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'zone'), '').then(function (label) {
       if (label === null) return;
+      var meta = {
+        category: 'manual',
+        kind: opts.kind || 'zone',
+        radius_m: radiusM,
+        speed_kph: speedKph,
+        area_m2: metrics ? Math.round(metrics.areaM2) : Math.round(Math.PI * radiusM * radiusM),
+        delay_s: metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6))
+      };
       var payload = {
         mapId: getMapId(),
         type: 'CIRCLE',
-        label: (label || '').trim() || 'Zone',
-        color: '#eab308',
+        label: (label || '').trim() || opts.defaultLabel || 'Zone',
+        color: opts.color || '#eab308',
         stroke: 2,
         fillOpacity: 0.15,
         createdBy: getAuthor(),
-        geometry: { center: [center.lng, center.lat], radius: Math.max(Math.round(radius), 10) },
-        meta: { category: 'manual', kind: 'zone' }
+        geometry: { center: [center.lng, center.lat], radius: radiusM },
+        meta: meta
+      };
+      if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
+        window.ATAKMapShapes.createShape(payload);
+      } else {
+        postShape(payload);
+      }
+    });
+  }
+
+  function finishPolygon() {
+    if (drawMode !== 'polygon' || drawPoints.length < 3) {
+      if (window.ATAKShowError) window.ATAKShowError('Placez au moins trois sommets, puis cliquez sur Terminer.');
+      updatePolygonHint();
+      return;
+    }
+    var pts = drawPoints.slice();
+    var opts = drawOpts || ZONE_PRESETS.perimeter;
+    cancelDraw();
+    window.dispatchEvent(new CustomEvent('atak:draw-ended'));
+    openPrompt(opts.title || 'Nom du périmètre', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'périmètre'), '').then(function (label) {
+      if (label === null) return;
+      var coordinates = pts.map(function (p) { return [p.lng, p.lat]; });
+      var payload = {
+        mapId: getMapId(),
+        type: 'POLYGON',
+        label: (label || '').trim() || opts.defaultLabel || 'Périmètre',
+        color: opts.color || '#fb923c',
+        stroke: 2,
+        fillOpacity: 0.12,
+        createdBy: getAuthor(),
+        geometry: { coordinates: coordinates },
+        meta: { category: 'manual', kind: opts.kind || 'perimeter' }
+      };
+      if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
+        window.ATAKMapShapes.createShape(payload);
+      } else {
+        postShape(payload);
+      }
+    });
+  }
+
+  function finishRectangle() {
+    if (drawMode !== 'rectangle' || drawPoints.length < 2) return;
+    var a = drawPoints[0];
+    var b = drawPoints[1];
+    var opts = drawOpts || ZONE_PRESETS.aoi;
+    cancelDraw();
+    window.dispatchEvent(new CustomEvent('atak:draw-ended'));
+    var corners = [
+      [a.lng, a.lat],
+      [b.lng, a.lat],
+      [b.lng, b.lat],
+      [a.lng, b.lat]
+    ];
+    openPrompt(opts.title || 'Nom de la zone d’intérêt', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'zone d’intérêt'), '').then(function (label) {
+      if (label === null) return;
+      var payload = {
+        mapId: getMapId(),
+        type: 'POLYGON',
+        label: (label || '').trim() || opts.defaultLabel || 'Zone d’intérêt',
+        color: opts.color || '#86efac',
+        stroke: 2,
+        fillOpacity: 0.12,
+        createdBy: getAuthor(),
+        geometry: { coordinates: corners },
+        meta: { category: 'manual', kind: opts.kind || 'aoi', shape: 'rectangle' }
       };
       if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
         window.ATAKMapShapes.createShape(payload);
@@ -900,6 +1160,9 @@ window.ATAKContextMenu = (function () {
       window.ATAKMapShapes.createShape(payload);
     } else {
       postShape(payload);
+    }
+    if (window.ATAKShowNotification) {
+      window.ATAKShowNotification('Note enregistrée — grille ' + gridLabel(latlng));
     }
   }
 
@@ -1036,22 +1299,39 @@ window.ATAKContextMenu = (function () {
       });
       return;
     }
-    // Trait / zone : libellé + couleur (choix nommés)
+    // Trait / zone : libellé + couleur (choix nommés) ; cercle → rafraîchir délai (vitesse barre d’outils)
     var shape = feature.shape || {};
     var currentLabel = shape.label || feature.label || '';
     var currentColor = shape.color || (feature.featureType === 'zone' ? '#eab308' : '#34d399');
+    var isCircle = String(shape.type || '').toUpperCase() === 'CIRCLE';
     openPrompt('Libellé — ' + featureTitle(feature), 'Modifiez le nom affiché.', 'Ex. axe d’approche', currentLabel).then(function (label) {
       if (label === null) return;
       var nextLabel = (label || '').trim() || featureTitle(feature);
       openColorPick(currentColor).then(function (color) {
         if (color === null) return;
-        if (window.ATAKMapShapes && window.ATAKMapShapes.updateShape) {
-          window.ATAKMapShapes.updateShape(feature.id, { label: nextLabel, color: color }).then(function (row) {
-            if (row && window.ATAKShowNotification) {
-              window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
-            }
-          });
+        if (!window.ATAKMapShapes || !window.ATAKMapShapes.updateShape) return;
+        var patch = { label: nextLabel, color: color };
+        if (isCircle) {
+          var geom = shape.geometry || {};
+          var radiusM = geom.radius != null ? Number(geom.radius) : NaN;
+          var speedKph = getDrawSpeedKph();
+          var prevMeta = Object.assign({}, shape.meta || {});
+          if (isFinite(radiusM) && radiusM > 0) {
+            var metrics = (window.ATAKMapTools && window.ATAKMapTools.circleMetrics)
+              ? window.ATAKMapTools.circleMetrics(radiusM, speedKph)
+              : null;
+            prevMeta.radius_m = Math.round(radiusM);
+            prevMeta.speed_kph = speedKph;
+            prevMeta.area_m2 = metrics ? Math.round(metrics.areaM2) : Math.round(Math.PI * radiusM * radiusM);
+            prevMeta.delay_s = metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6));
+            patch.meta = prevMeta;
+          }
         }
+        window.ATAKMapShapes.updateShape(feature.id, patch).then(function (row) {
+          if (row && window.ATAKShowNotification) {
+            window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
+          }
+        });
       });
     });
   }
@@ -1195,16 +1475,28 @@ window.ATAKContextMenu = (function () {
       });
       return;
     }
+    if (action === 'sitrep') {
+      if (window.ATAKSitrep && typeof window.ATAKSitrep.prefillFromMap === 'function') {
+        window.ATAKSitrep.prefillFromMap(ll);
+      } else if (window.ATAKShowError) {
+        window.ATAKShowError('Tableau de situation indisponible.');
+      }
+      return;
+    }
     if (action === 'comment') {
-      openPrompt('Commentaire', 'Note visible sur la carte pour votre équipe.', 'Ex. couverture au nord', '').then(function (text) {
+      openPrompt('Enregistrer une note', 'Note visible sur la carte pour votre équipe.', 'Ex. couverture au nord', '').then(function (text) {
         if (text === null) return;
         var t = (text || '').trim();
         if (!t) {
-          if (window.ATAKShowError) window.ATAKShowError('Saisissez un commentaire.');
+          if (window.ATAKShowError) window.ATAKShowError('Saisissez une note.');
           return;
         }
         createCommentAt(ll, t);
       });
+      return;
+    }
+    if (action === 'jackpot') {
+      placeJackpotAt(ll);
       return;
     }
     if (action === 'line') {
@@ -1212,9 +1504,85 @@ window.ATAKContextMenu = (function () {
       return;
     }
     if (action === 'zone') {
-      startDraw('zone', ll);
+      startZoneTool('zone', ll);
       return;
     }
+    if (action === 'search-zone') {
+      startZoneTool('search', ll);
+      return;
+    }
+    if (action === 'perimeter') {
+      startZoneTool('perimeter', null);
+      return;
+    }
+    if (action === 'aoi') {
+      startZoneTool('aoi', null);
+      return;
+    }
+  }
+
+  /**
+   * Place un marqueur JACKPOT (HVT) + ping associé.
+   */
+  function placeJackpotAt(latlng, opts) {
+    opts = opts || {};
+    if (!latlng) return;
+    var label = (opts.label || 'JACKPOT').trim() || 'JACKPOT';
+    var detail = (opts.detail || '').trim();
+    createMarkerAt(latlng, {
+      label: label,
+      description: detail
+        ? ('HVT — ' + detail)
+        : 'HVT — cible de haute valeur (JACKPOT)',
+      color: '#ef4444',
+      icon: 'flag',
+      size: 'lg',
+      symbolMode: 'simple'
+    });
+    if (window.ATAKPings && window.ATAKPings.createPingAt) {
+      window.ATAKPings.createPingAt(
+        latlng.lng,
+        latlng.lat,
+        detail || 'Cible de haute valeur',
+        'jackpot'
+      );
+    }
+    if (window.ATAKShowNotification) {
+      window.ATAKShowNotification('JACKPOT enregistré — grille ' + gridLabel(latlng));
+    }
+  }
+
+  function promptJackpotAt(latlng) {
+    if (!latlng) return Promise.resolve(null);
+    return openPrompt(
+      'JACKPOT — HVT',
+      'Repère rouge pour une cible de haute valeur. Précisez un détail si besoin (indicatif, description).',
+      'Ex. chef de section, véhicule VIP…',
+      ''
+    ).then(function (text) {
+      if (text === null) return null;
+      placeJackpotAt(latlng, { detail: (text || '').trim() });
+      return true;
+    });
+  }
+
+  function promptMapNoteAt(latlng) {
+    if (!latlng) return Promise.resolve(null);
+    return openPrompt(
+      'Enregistrer une note',
+      'Note fixée sur la carte à cet emplacement.',
+      'Ex. couverture, cache, observation…',
+      ''
+    ).then(function (text) {
+      if (text === null) return null;
+      var t = (text || '').trim();
+      if (!t) {
+        if (window.ATAKShowError) window.ATAKShowError('Saisissez une note.');
+        return null;
+      }
+      createCommentAt(latlng, t);
+      return true;
+    });
   }
 
   function onDocClick(e) {
@@ -1248,14 +1616,16 @@ window.ATAKContextMenu = (function () {
       if (drawMode) {
         cancelDraw();
         if (window.ATAKShowNotification) window.ATAKShowNotification('Dessin annulé.');
+        window.dispatchEvent(new CustomEvent('atak:draw-ended'));
         return;
       }
       hideMenu();
       return;
     }
-    if (e.key === 'Enter' && drawMode === 'line' && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden) && !(colorPickEl && !colorPickEl.hidden) && !(pingFormEl && !pingFormEl.hidden)) {
+    if (e.key === 'Enter' && (drawMode === 'line' || drawMode === 'polygon') && !(promptEl && !promptEl.hidden) && !(markerFormEl && !markerFormEl.hidden) && !(colorPickEl && !colorPickEl.hidden) && !(pingFormEl && !pingFormEl.hidden)) {
       e.preventDefault();
-      finishLine();
+      if (drawMode === 'line') finishLine();
+      else if (drawMode === 'polygon') finishPolygon();
     }
   }
 
@@ -1295,9 +1665,18 @@ window.ATAKContextMenu = (function () {
   return {
     hide: hideMenu,
     cancelDraw: cancelDraw,
+    startDraw: startDraw,
+    startZoneTool: startZoneTool,
+    isDrawing: function () { return !!drawMode; },
+    getDrawKind: function () { return drawOpts && drawOpts.kind ? drawOpts.kind : (drawMode || null); },
     openPrompt: openPrompt,
     openPingForm: openPingForm,
     finishLine: finishLine,
-    confirmAction: confirmAction
+    confirmAction: confirmAction,
+    createMarkerAt: createMarkerAt,
+    createCommentAt: createCommentAt,
+    placeJackpotAt: placeJackpotAt,
+    promptJackpotAt: promptJackpotAt,
+    promptMapNoteAt: promptMapNoteAt
   };
 })();

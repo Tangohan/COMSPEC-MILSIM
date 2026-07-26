@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
 
@@ -159,7 +160,8 @@ final class ComspecApiKeyAuth
     }
 
     /**
-     * Navigateur connecté au portail (session membre + communauté) : accès aux API tactiques sans clé ATAK.
+     * Navigateur connecté au portail (session membre + communauté) ou session téléphone
+     * après appariement (/connect → Carte ATAK) : accès aux API tactiques sans clé ATAK.
      * Désactivable avec TACTICAL_API_ALLOW_SESSION=false.
      */
     private static function authenticatedBrowserSessionMayAccessTactical(): bool
@@ -170,11 +172,34 @@ final class ComspecApiKeyAuth
         Session::start();
         $uid = Session::get('user_id');
         $tid = Session::get('tenant_id');
-        if ($uid === null || $uid === '' || $tid === null || $tid === '') {
+        if ($uid !== null && $uid !== '' && $tid !== null && $tid !== '') {
+            if ((int) $uid > 0 && (int) $tid > 0) {
+                return true;
+            }
+        }
+
+        return self::phonePairingBrowserSessionMayAccessTactical($tid);
+    }
+
+    /**
+     * Session téléphone : jeton d’appariement encore valide + communauté alignée.
+     */
+    private static function phonePairingBrowserSessionMayAccessTactical(mixed $tid): bool
+    {
+        $token = trim((string) Session::get('atak_phone_pairing_token', ''));
+        if ($token === '' || $tid === null || $tid === '' || (int) $tid < 1) {
+            return false;
+        }
+        try {
+            $pairing = (new TacticalPhonePairingRepository())->findValidByToken($token);
+        } catch (\Throwable) {
+            return false;
+        }
+        if ($pairing === null) {
             return false;
         }
 
-        return (int) $uid > 0 && (int) $tid > 0;
+        return (int) ($pairing['tenant_id'] ?? 0) === (int) $tid;
     }
 
     private static function tacticalSessionBypassEnabled(): bool

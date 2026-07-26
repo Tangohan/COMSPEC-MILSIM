@@ -228,6 +228,14 @@ final class TacticalAlertParser
     }
 
     /**
+     * Messages techniques (sync affichage carte…) — hors journal radio / tchat opérateur.
+     */
+    public static function isHiddenSystemChatBody(?string $body): bool
+    {
+        return self::parseFactionSettings($body) !== null;
+    }
+
+    /**
      * Parse « REGLAGES AFFICHAGE|adversaire=1|independants=1|civils=1 »
      *
      * @return array{show_east: bool, show_guer: bool, show_civ: bool}|null
@@ -240,8 +248,16 @@ final class TacticalAlertParser
         }
         $body = self::stripCommsPrefix($body);
         $upper = mb_strtoupper($body);
-        if (!str_starts_with($upper, 'REGLAGES AFFICHAGE')) {
-            return null;
+        // Variantes / tronquages éventuels côté affichage journal
+        if (
+            !str_starts_with($upper, 'REGLAGES AFFICHAGE')
+            && !str_starts_with($upper, 'AFFICHAGE|ADVERSAIRE=')
+            && !str_contains($upper, 'REGLAGES AFFICHAGE|')
+        ) {
+            // Cas journal : auteur « REGLAGES » + corps « AFFICHAGE|adversaire=… »
+            if (!(str_starts_with($upper, 'AFFICHAGE|') && str_contains($upper, 'ADVERSAIRE='))) {
+                return null;
+            }
         }
 
         $showEast = true;

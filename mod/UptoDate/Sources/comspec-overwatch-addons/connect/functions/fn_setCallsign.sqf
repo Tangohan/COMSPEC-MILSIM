@@ -31,6 +31,18 @@ if (_veh != player && {driver _veh == player}) then {
     _veh setVariable ["COMSPEC_Callsign", _callsign, true];
 };
 
+// Blue Force Tracking (cTab / iATAK) : aligner le nom de groupe sur l’indicatif
+// pour que marqueurs carte et effectifs Athena affichent la même identité.
+if (!isNull player && {local player}) then {
+    private _grp = group player;
+    if (!isNull _grp && {local _grp}) then {
+        private _curGid = trim (groupId _grp);
+        if (!(_curGid isEqualTo _callsign)) then {
+            _grp setGroupIdGlobal [_callsign];
+        };
+    };
+};
+
 [format ["[Athena] Callsign registered : %1 (%2)", _callsign, _source]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 true

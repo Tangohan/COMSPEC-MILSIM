@@ -14,12 +14,11 @@ use App\Repositories\EmailTokenRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\TenantRepository;
-use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
-use App\Services\Profile\RecruitmentPresetPayloadService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Account\AccountDeletionService;
 use App\Services\Auth\AuthService;
 use App\Services\Email\EmailTokenPurpose;
 use App\Services\EmailService;
@@ -34,7 +33,6 @@ final class RegisterController
         private AuthService $authService,
         private TenantRepository $tenantRepository,
         private UserRepository $userRepository,
-        private UserLegalIdentityRepository $userLegalIdentityRepository,
         private UserProfileRepository $userProfileRepository,
         private RoleRepository $roleRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
@@ -43,7 +41,8 @@ final class RegisterController
         private EmailService $emailService,
         private EmailTokenRepository $emailTokens,
         private IndicatorBlocklistService $indicatorBlocklist,
-        private SteamWebApiService $steamWebApiService
+        private SteamWebApiService $steamWebApiService,
+        private AccountDeletionService $accountDeletionService,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -86,15 +85,6 @@ final class RegisterController
         $confirm = (string) $request->input('password_confirmation');
         $displayName = trim((string) $request->input('display_name'));
         $steamProfile = trim((string) $request->input('steam_profile'));
-        $legalFirstName = trim((string) $request->input('legal_first_name'));
-        $legalLastName = trim((string) $request->input('legal_last_name'));
-        $legalBirthDate = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('legal_birth_date'));
-        $legalCountry = trim((string) $request->input('legal_country'));
-        if (function_exists('mb_substr')) {
-            $legalCountry = mb_substr($legalCountry, 0, 100);
-        } else {
-            $legalCountry = substr($legalCountry, 0, 100);
-        }
         $discordHandle = trim((string) $request->input('discord_handle'));
         if (function_exists('mb_substr')) {
             $discordHandle = mb_substr($discordHandle, 0, 120);
@@ -102,21 +92,15 @@ final class RegisterController
             $discordHandle = substr($discordHandle, 0, 120);
         }
         $acceptTerms = (string) $request->input('accept_terms') === '1';
-        $acceptIdentitySplit = (string) $request->input('accept_identity_split') === '1';
         $communityCodeInput = trim((string) $request->input('community_code'));
 
         $oldPayload = [
             'email' => $email,
             'display_name' => $displayName,
             'steam_profile' => $steamProfile,
-            'legal_first_name' => $legalFirstName,
-            'legal_last_name' => $legalLastName,
-            'legal_birth_date' => (string) $request->input('legal_birth_date'),
-            'legal_country' => $legalCountry,
             'discord_handle' => $discordHandle,
             'community_code' => $communityCodeInput,
             'accept_terms' => $acceptTerms ? '1' : '',
-            'accept_identity_split' => $acceptIdentitySplit ? '1' : '',
         ];
         $flashBack = static function (string $message, int $step = 1) use ($oldPayload): void {
             Session::flash('error', $message);
@@ -131,10 +115,6 @@ final class RegisterController
                 'password_confirmation' => $confirm,
                 'display_name' => $displayName,
                 'steam_profile' => $steamProfile,
-                'legal_first_name' => $legalFirstName,
-                'legal_last_name' => $legalLastName,
-                'legal_birth_date' => $legalBirthDate,
-                'legal_country' => $legalCountry,
                 'discord_handle' => $discordHandle,
             ],
             [
@@ -143,33 +123,21 @@ final class RegisterController
                 'password_confirmation' => 'required',
                 'display_name' => 'required|min:2|max:100',
                 'steam_profile' => 'max:512',
-                'legal_first_name' => 'required|min:2|max:100',
-                'legal_last_name' => 'required|min:2|max:100',
-                'legal_birth_date' => 'max:12',
-                'legal_country' => 'max:100',
                 'discord_handle' => 'max:120',
             ]
         );
         if (!$v->validate()) {
-            $step = 1;
-            if ($legalFirstName === '' || strlen($legalFirstName) < 2 || $legalLastName === '' || strlen($legalLastName) < 2) {
-                $step = 1;
-            } elseif ($email === '' || $displayName === '' || strlen($password) < 8) {
-                $step = 2;
-            } else {
-                $step = 2;
-            }
-            $flashBack('Vérifiez les informations saisies (champs obligatoires et formats).', $step);
+            $flashBack('Vérifiez les informations saisies (champs obligatoires et formats).', 1);
 
             return Response::redirect(url('register'));
         }
         if ($password !== $confirm) {
-            $flashBack('Les deux mots de passe ne sont pas identiques.', 2);
+            $flashBack('Les deux mots de passe ne sont pas identiques.', 1);
 
             return Response::redirect(url('register'));
         }
-        if (!$acceptIdentitySplit || !$acceptTerms) {
-            $flashBack('Merci de cocher les deux confirmations pour terminer l’inscription.', 3);
+        if (!$acceptTerms) {
+            $flashBack('Merci d’accepter les conditions pour terminer l’inscription.', 2);
 
             return Response::redirect(url('register'));
         }
@@ -209,7 +177,17 @@ final class RegisterController
         }
         // Un même e-mail ne doit pas créer un 2ᵉ « identité » (autre mot de passe) sur une autre communauté.
         // Rejoindre une communauté se fait après connexion (invitation / candidature / code).
+        // Les comptes déjà anonymisés / soft-deleted ne bloquent plus l’adresse.
+        $this->accountDeletionService->releaseEmailHeldByDeletedAccounts($email);
         if ($this->userRepository->emailExistsGlobally($email)) {
+            if ($this->userRepository->emailPendingDeletionGlobally($email)) {
+                $flashBack(
+                    'Un compte avec cette adresse est en cours de suppression. Reconnectez-vous pour annuler la demande, ou attendez la fin du délai de rétractation avant de créer un nouveau compte.',
+                    2
+                );
+
+                return Response::redirect(url('login'));
+            }
             $flashBack(
                 'Un compte existe déjà avec cette adresse e-mail. Connectez-vous, puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.',
                 2
@@ -246,26 +224,12 @@ final class RegisterController
                 $this->userRepository->syncOrganizationRoles($userId, $tenantId, [$roleId], null, true);
             }
             $this->personnelProfileRepository->ensureRecord($userId);
-            $this->userLegalIdentityRepository->upsert($userId, $tenantId, [
-                'first_name' => $legalFirstName,
-                'last_name' => $legalLastName,
-                'birth_date' => $legalBirthDate,
-            ]);
             $this->userProfileRepository->ensureRow($userId);
-            $profileUpsert = [
-                'first_name' => $legalFirstName,
-                'last_name' => $legalLastName,
-            ];
-            if ($legalBirthDate !== '') {
-                $profileUpsert['birth_date'] = $legalBirthDate;
-            }
-            if ($legalCountry !== '') {
-                $profileUpsert['country_of_residence'] = $legalCountry;
-            }
             if ($discordHandle !== '') {
-                $profileUpsert['discord_handle'] = $discordHandle;
+                $this->userProfileRepository->upsert($userId, [
+                    'discord_handle' => $discordHandle,
+                ]);
             }
-            $this->userProfileRepository->upsert($userId, $profileUpsert);
             if ($resolvedSteamId !== null) {
                 $steamPatch = ['steam_id' => $resolvedSteamId];
                 $steamPlayer = $this->steamWebApiService->fetchPublicPlayer($resolvedSteamId);
@@ -288,7 +252,7 @@ final class RegisterController
         $tokenHash = hash('sha256', $rawToken);
         $expires = new \DateTimeImmutable('+15 minutes');
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+        $tenantName = email_community_label($tenant, (string) ($tenant['name'] ?? ''));
         $emailNorm = strtolower(trim($email));
         $sentOk = $this->emailService->sendUserRegisterConfirmation(
             $emailNorm,

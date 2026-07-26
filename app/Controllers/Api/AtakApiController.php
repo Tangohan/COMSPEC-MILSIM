@@ -72,6 +72,7 @@ class AtakApiController
         private ?AtakOperatorIdRepository $operatorIdRepository = null,
         private ?AtakMedicalTriageRepository $medicalTriageRepository = null,
         private ?AtakBetaRegistrationRepository $betaRegistrationRepository = null,
+        private ?\App\Repositories\AtakModReportRepository $modReportRepository = null,
         ?AtakArmaWriteGuard $armaGuard = null,
         ?RoleplaySimulationService $roleplaySim = null,
     ) {
@@ -87,10 +88,16 @@ class AtakApiController
         $this->orderTypeRepository ??= new AtakOrderTypeRepository();
         $this->fireTeamRepository ??= new FireTeamRepository();
         $this->betaRegistrationRepository ??= new AtakBetaRegistrationRepository();
+        // modReportRepository : lazy (évite migration / PDO au boot de toutes les routes ATAK).
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
         $this->armaGuard = $armaGuard ?? new AtakArmaWriteGuard($this->userRepository, $this->activityLog);
         $this->roleplaySim = $roleplaySim ?? new RoleplaySimulationService($this->tenantAtakConfigRepository);
+    }
+
+    private function modReports(): \App\Repositories\AtakModReportRepository
+    {
+        return $this->modReportRepository ??= new \App\Repositories\AtakModReportRepository();
     }
 
     /**
@@ -428,9 +435,9 @@ class AtakApiController
     }
 
     /**
-     * Connexion téléphone (inspiré de cTab) : génère un token (QR) + un code court lisible,
-     * consommés par l'extension Arma (fonction native GetPhoneConnectInfo) pour affichage
-     * en jeu, puis par un navigateur mobile sans compte sur /atak/connect/{token}.
+     * Connexion téléphone (inspiré de cTab) : génère un jeton (QR) + un code court lisible,
+     * consommés par l'extension Arma (GetPhoneConnectInfo) pour affichage en jeu, puis par
+     * un navigateur mobile sans compte sur /connect (saisie) ou /connect/{jeton} (QR).
      * Appelable aussi depuis le dashboard web (session) après une liaison réussie
      * pour re-lier un autre appareil.
      */
@@ -488,22 +495,40 @@ class AtakApiController
         // Pas de journal Activité ici : préparer un QR n’est pas une connexion réelle
         // (sinon spam « Accès » à chaque régénération / poll tablette).
 
-        // URL absolues (APP_URL + éventuel /public) : l’extension Arma télécharge le PNG ensuite.
-        $connectUrl = url('atak/connect/' . $token);
+        // Adresse courte affichée en jeu / sur le TOC ; le QR encode le lien direct (jeton).
+        $entryUrl = $this->phoneConnectPublicUrl('connect');
+        $pairUrl = $this->phoneConnectPublicUrl('connect/' . $token);
         $qrImageUrl = url('api/atak/phone-pairing/' . $token . '/qr.png');
 
         // Data-URI inline : le dashboard ATAK affiche le QR sans second GET
         // (évite img cassée si l’endpoint PNG est bloqué, en 503, ou mal servi).
-        $qrDataUri = $this->phonePairingQrDataUri($connectUrl);
+        $qrDataUri = $this->phonePairingQrDataUri($pairUrl);
 
         return Response::json([
             'token' => $token,
             'code' => $pairing['code'],
-            'connect_url' => $connectUrl,
+            // Adresse mobile courte (saisie du code) — affichée sur l’écran téléphone en jeu.
+            'connect_url' => $entryUrl,
+            // Lien direct (QR / « Ouvrir la page » côté TOC).
+            'pair_url' => $pairUrl,
             'qr_image_url' => $qrImageUrl,
             'qr_image_data_uri' => $qrDataUri,
             'expires_at' => $pairing['expires_at'],
         ]);
+    }
+
+    /**
+     * URL publique téléphone : préfère /connect sans segment /public quand l’hébergeur
+     * réécrit la racine (voir .htaccess à la racine du domaine).
+     */
+    private function phoneConnectPublicUrl(string $path): string
+    {
+        $full = url($path);
+        if (preg_match('#^(https?://[^/]+)/public/(connect(?:/.*)?)$#i', $full, $m)) {
+            return $m[1] . '/' . $m[2];
+        }
+
+        return $full;
     }
 
     /**
@@ -711,10 +736,10 @@ class AtakApiController
                 ->header('Cache-Control', 'no-store')
                 ->setBody('Not found');
         }
-        $connectUrl = url('atak/connect/' . $token);
+        $pairUrl = $this->phoneConnectPublicUrl('connect/' . $token);
         $generator = new QrPngGenerator();
         // pngOnly : Arma RscPicture n’affiche pas de SVG — forcer un PNG binaire (Endroid, GD ou zlib).
-        $png = $generator->png($connectUrl, 400, 12, true);
+        $png = $generator->png($pairUrl, 400, 12, true);
         if ($png === null || strncmp($png['body'], "\x89PNG", 4) !== 0) {
             // Le code court reste affiché côté Tacmap / jeu ; détail technique en log seulement.
             error_log('[atak_phone_pairing_qr] unavailable token=' . substr($token, 0, 8)
@@ -843,7 +868,9 @@ class AtakApiController
         } else {
             $map = $request->query('mapId');
         }
-        return $map !== null && $map !== '' ? (int) $map : self::DEFAULT_MAP_ID;
+        $mapId = ($map !== null && $map !== '') ? (int) $map : self::DEFAULT_MAP_ID;
+
+        return $mapId < 1 ? self::DEFAULT_MAP_ID : $mapId;
     }
 
     private function jsonBody(Request $request): array
@@ -1477,6 +1504,99 @@ class AtakApiController
     }
 
     /**
+     * Remontée d’erreurs / bugs du pack Overwatch (Arma → Athena).
+     * Public comme beta-register ; rate-limité. Pas de secret requis.
+     */
+    public function modReport(Request $request, array $params = []): Response
+    {
+        $body = $this->jsonBody($request);
+        $severity = trim((string) ($body['severity'] ?? $body['level'] ?? 'error'));
+        $channel = trim((string) ($body['channel'] ?? $body['module'] ?? 'Core'));
+        $message = trim((string) ($body['message'] ?? $body['msg'] ?? ''));
+        $detail = trim((string) ($body['detail'] ?? $body['detail_text'] ?? ''));
+        $fingerprint = trim((string) ($body['fingerprint'] ?? ''));
+        $source = trim((string) ($body['source'] ?? 'auto'));
+        $steamRaw = trim((string) ($body['steam_uid'] ?? $body['steam_id'] ?? ''));
+        $playerUid = trim((string) ($body['player_uid'] ?? $body['uid'] ?? ''));
+        $playerName = trim((string) ($body['player_name'] ?? $body['name'] ?? ''));
+        $callsign = trim((string) ($body['callsign'] ?? ''));
+        $modVersion = trim((string) ($body['mod_version'] ?? ''));
+        $extVersion = trim((string) ($body['extension_version'] ?? ''));
+        $armaBuild = trim((string) ($body['arma_build'] ?? ''));
+        $contextRaw = $body['context'] ?? $body['context_json'] ?? null;
+
+        if ($message === '') {
+            return Response::json([
+                'error' => 'missing_message',
+                'message' => 'Le rapport doit contenir un message.',
+            ], 400);
+        }
+
+        $steam = SteamId::normalize($steamRaw !== '' ? $steamRaw : null);
+        if ($steam === null && $steamRaw !== '' && SteamId::normalize($playerUid) !== null) {
+            $steam = SteamId::normalize($playerUid);
+        }
+        if ($playerUid === '' && $steam !== null) {
+            $playerUid = $steam;
+        }
+
+        $contextJson = null;
+        if (is_array($contextRaw)) {
+            $encoded = json_encode($contextRaw, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $contextJson = is_string($encoded) ? $encoded : null;
+        } elseif (is_string($contextRaw) && trim($contextRaw) !== '') {
+            $contextJson = trim($contextRaw);
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'];
+            $ip = is_string($forwarded) ? trim(explode(',', $forwarded)[0]) : trim((string) $forwarded[0]);
+        }
+        $ip = trim((string) $ip);
+        if (strlen($ip) > 45) {
+            $ip = substr($ip, 0, 45);
+        }
+
+        try {
+            $result = $this->modReports()->upsert([
+                'severity' => $severity,
+                'channel' => $channel,
+                'message' => $message,
+                'detail_text' => $detail !== '' ? $detail : null,
+                'context_json' => $contextJson,
+                'fingerprint' => $fingerprint !== '' ? $fingerprint : null,
+                'source' => $source !== '' ? $source : 'auto',
+                'steam_uid' => $steam,
+                'player_uid' => $playerUid !== '' ? $playerUid : null,
+                'player_name' => $playerName !== '' ? $playerName : null,
+                'callsign' => $callsign !== '' ? $callsign : null,
+                'client_ip' => $ip !== '' ? $ip : null,
+                'mod_version' => $modVersion !== '' ? $modVersion : null,
+                'extension_version' => $extVersion !== '' ? $extVersion : null,
+                'arma_build' => $armaBuild !== '' ? $armaBuild : null,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return Response::json([
+                'error' => 'invalid',
+                'message' => 'Rapport incomplet.',
+            ], 400);
+        } catch (\Throwable $e) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer le rapport pour le moment.',
+            ], 503);
+        }
+
+        return Response::json([
+            'ok' => true,
+            'created' => $result['created'],
+            'id' => $result['id'],
+            'hit_count' => $result['hit_count'],
+        ]);
+    }
+
+    /**
      * Journal d’activité de liaison (init client, indicatifs, messages / positions).
      * Consommé par le panneau « Activité de liaison » et la page dédiée.
      *
@@ -1840,6 +1960,7 @@ class AtakApiController
                     'patient_nationality' => $body['patient_nationality'] ?? 'FRIENDLY',
                     'patient_status' => $body['patient_status'] ?? 'MILITARY',
                     'nbc_contamination' => $body['nbc_contamination'] ?? 'NONE',
+                    'remarks' => $body['remarks'] ?? $body['notes'] ?? null,
                     'requested_by_callsign' => $body['requested_by_callsign'] ?? $author,
                     'requested_by_unit' => $body['requested_by_unit'] ?? null,
                 ]);
@@ -1850,11 +1971,28 @@ class AtakApiController
             }
         }
 
+        $patientBits = [];
+        $t1 = (int) ($body['patients_t1_urgent'] ?? 0);
+        $t2 = (int) ($body['patients_t2_urgent'] ?? 0);
+        $t3 = (int) ($body['patients_t3_delayed'] ?? 0);
+        $totalPatients = $t1 + $t2 + $t3;
+        if ($totalPatients > 0) {
+            $patientBits[] = $totalPatients . ' blessé' . ($totalPatients > 1 ? 's' : '');
+        }
+        $gridHint = trim((string) ($body['pickup_grid'] ?? $body['line1'] ?? ''));
+        $activityLabel = 'Demande d’évacuation médicale — ' . $author;
+        if ($patientBits !== []) {
+            $activityLabel .= ' · ' . $patientBits[0];
+        }
+        if ($gridHint !== '') {
+            $activityLabel .= ' · ' . $gridHint;
+        }
+
         $this->activityLog->record(
             $tenantId,
             $mapId,
             AtakActivityLogService::TYPE_MEDEVAC,
-            'Demande MEDEVAC envoyée — ' . $author,
+            $activityLabel,
             $author
         );
 
@@ -2219,6 +2357,39 @@ class AtakApiController
             $payload['expires_in'] = $expiresIn;
             $payload['steam_uid'] = $steam;
         }
+        if ($callSign !== '') {
+            $payload['call_sign'] = $callSign;
+            $payload['callsign'] = $callSign;
+        }
+        // ID BFT lié à l’indicatif (même identité TOC / carte / terminal).
+        if ($steam !== null && isset($user) && is_array($user)) {
+            try {
+                $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
+                if ($opIds->tablesReady()) {
+                    $uid = (int) ($user['id'] ?? 0);
+                    $mid = $uid > 0
+                        ? $opIds->ensureForUser($tenantId, $uid, $callSign !== '' ? $callSign : null)
+                        : ($callSign !== '' ? $opIds->ensureForCallSign($tenantId, $callSign) : '');
+                    if ($mid !== '') {
+                        $payload['military_id'] = $mid;
+                        $payload['bft_id'] = $mid;
+                        $payload['atak_id'] = $callSign !== '' ? $callSign : $mid;
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        } elseif ($callSign !== '') {
+            try {
+                $opIds = $this->operatorIdRepository ?? new AtakOperatorIdRepository();
+                if ($opIds->tablesReady()) {
+                    $mid = $opIds->ensureForCallSign($tenantId, $callSign);
+                    $payload['military_id'] = $mid;
+                    $payload['bft_id'] = $mid;
+                    $payload['atak_id'] = $callSign;
+                }
+            } catch (\Throwable) {
+            }
+        }
 
         try {
             $expSvc = new \App\Services\Tactical\AtakExperienceService();
@@ -2456,11 +2627,19 @@ class AtakApiController
         }
         $markerData = $this->normalizeArmaMarkerData($body['markerData'] ?? '{}', (string) $armaName);
         $row = $this->atak->upsertMarkerByArmaName($tenantId, $mapId, $layerId, $armaName, $markerData);
+        $label = (string) $armaName;
+        $decoded = json_decode($markerData, true);
+        if (is_array($decoded)) {
+            $txt = trim((string) ($decoded['text'] ?? $decoded['label'] ?? ''));
+            if ($txt !== '') {
+                $label = $txt;
+            }
+        }
         $this->activityLog->record(
             $tenantId,
             $mapId,
             AtakActivityLogService::TYPE_MARKER,
-            'Marqueur placé — ' . $armaName,
+            'Marqueur placé — ' . $label,
             (string) $armaName
         );
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']], 201);
@@ -2540,9 +2719,40 @@ class AtakApiController
             foreach ($rows as &$row) {
                 $mid = trim((string) ($row['military_id'] ?? ''));
                 $cs = trim((string) ($row['call_sign'] ?? ''));
-                if ($mid === '' && $cs !== '') {
-                    $mid = $opIds->syncUnitMilitaryId($tenantId, (int) ($row['id'] ?? 0), $cs, null);
+                $extra = AtakDataRepository::decodeExtra($row['extra'] ?? null);
+                $extraMid = trim((string) ($extra['bft_id'] ?? $extra['military_id'] ?? ''));
+                if ($mid === '' && $extraMid !== '') {
+                    $mid = $extraMid;
                     $row['military_id'] = $mid;
+                }
+                if ($mid === '' && $cs !== '') {
+                    $steam = trim((string) ($extra['steam_uid'] ?? $extra['steamId'] ?? $extra['player_uid'] ?? ''));
+                    $userId = null;
+                    if ($steam !== '') {
+                        try {
+                            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam)
+                                ?? $this->userRepository->findBySteamId($steam);
+                            if (is_array($user)) {
+                                $uid = (int) ($user['id'] ?? 0);
+                                if ($uid > 0) {
+                                    $userId = $uid;
+                                }
+                            }
+                        } catch (\Throwable) {
+                            $userId = null;
+                        }
+                    }
+                    $mid = $opIds->syncUnitMilitaryId($tenantId, (int) ($row['id'] ?? 0), $cs, $userId);
+                    $row['military_id'] = $mid;
+                }
+                // Miroir lecture seule pour l’UI (pas d’écriture DB à chaque poll).
+                if ($mid !== '') {
+                    $row['bft_id'] = $mid;
+                    if ($extraMid === '') {
+                        $extra['bft_id'] = $mid;
+                        $extra['military_id'] = $mid;
+                        $row['extra'] = $extra;
+                    }
                 }
             }
             unset($row);
@@ -2561,7 +2771,156 @@ class AtakApiController
 
         $rows = $this->enrichUnitsWithFireTeams($tenantId, $rows);
 
+        $includeGateway = $request->query('include_gateway') === '1'
+            || $request->query('includeGateway') === '1'
+            || $request->query('gateway') === '1';
+        if ($includeGateway) {
+            $rows = array_merge($rows, $this->collectGatewayMirrorUnits($tenantId));
+        }
+
         return Response::json($rows);
+    }
+
+    /**
+     * Passerelles actives pour le tenant courant (lecture).
+     */
+    public function gatewaysIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        try {
+            $svc = \App\Core\Container::get(\App\Services\Tactical\AtakMapGatewayService::class);
+            if (!$svc->schemaReady()) {
+                return Response::json(['items' => [], 'ready' => false]);
+            }
+            $items = $svc->listDecoratedForTenant($r);
+            $active = array_values(array_filter(
+                $items,
+                static fn (array $g): bool => ($g['status'] ?? '') === 'active'
+            ));
+
+            return Response::json(['ready' => true, 'items' => $items, 'active' => $active]);
+        } catch (\Throwable) {
+            return Response::json(['items' => [], 'ready' => false]);
+        }
+    }
+
+    /**
+     * Unités miroir (lecture seule) des communautés liées par passerelle active.
+     */
+    public function gatewaysMirrorUnits(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json($this->collectGatewayMirrorUnits($r));
+    }
+
+    /**
+     * Marqueurs miroir (lecture seule) si le périmètre le permet.
+     */
+    public function gatewaysMirrorMarkers(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+
+        return Response::json($this->collectGatewayMirrorMarkers($r));
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function collectGatewayMirrorUnits(int $tenantId): array
+    {
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\AtakMapGatewayRepository::class);
+            if (!$repo->schemaReady()) {
+                return [];
+            }
+            $out = [];
+            foreach ($repo->listActiveForTenant($tenantId) as $gw) {
+                if (empty($gw['share_units'])) {
+                    continue;
+                }
+                $peerId = $repo->peerTenantId($gw, $tenantId);
+                if ($peerId < 1) {
+                    continue;
+                }
+                $peerMap = $repo->peerMapId($gw, $tenantId);
+                $peerUnits = $this->atak->getUnits($peerId, $peerMap);
+                $peerLabel = 'Allié';
+                try {
+                    $peerTenant = $this->tenantRepository->findById($peerId);
+                    if (is_array($peerTenant)) {
+                        $peerLabel = community_display_name($peerTenant);
+                    }
+                } catch (\Throwable) {
+                }
+                foreach ($peerUnits as $u) {
+                    if (!is_array($u)) {
+                        continue;
+                    }
+                    $u['gateway_id'] = (int) ($gw['id'] ?? 0);
+                    $u['gateway_partner'] = true;
+                    $u['gateway_peer_tenant_id'] = $peerId;
+                    $u['gateway_peer_label'] = $peerLabel;
+                    $u['id'] = 'gw-' . (int) ($gw['id'] ?? 0) . '-' . (string) ($u['id'] ?? '0');
+                    $cs = trim((string) ($u['call_sign'] ?? ''));
+                    if ($cs !== '') {
+                        $u['call_sign'] = $cs . ' · ' . $peerLabel;
+                    }
+                    $out[] = $u;
+                }
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function collectGatewayMirrorMarkers(int $tenantId): array
+    {
+        try {
+            $repo = \App\Core\Container::get(\App\Repositories\AtakMapGatewayRepository::class);
+            if (!$repo->schemaReady()) {
+                return [];
+            }
+            $out = [];
+            foreach ($repo->listActiveForTenant($tenantId) as $gw) {
+                if (empty($gw['share_markers'])) {
+                    continue;
+                }
+                $peerId = $repo->peerTenantId($gw, $tenantId);
+                if ($peerId < 1) {
+                    continue;
+                }
+                $peerMap = $repo->peerMapId($gw, $tenantId);
+                $markers = $this->atak->getMarkers($peerId, $peerMap);
+                foreach ($markers as $m) {
+                    if (!is_array($m)) {
+                        continue;
+                    }
+                    $m['gateway_id'] = (int) ($gw['id'] ?? 0);
+                    $m['gateway_partner'] = true;
+                    $m['id'] = 'gw-' . (int) ($gw['id'] ?? 0) . '-m-' . (string) ($m['id'] ?? '0');
+                    $out[] = $m;
+                }
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -2938,6 +3297,222 @@ class AtakApiController
             'message' => 'Liaison coupée' . ($callSign !== '' ? ' — ' . $callSign : '') . '.',
             'unit' => $row,
         ]);
+    }
+
+    /**
+     * Demande au terminal du contact de vibrer (signal haptique — pas un ordre C2 à acquitter).
+     */
+    public function unitsVibrate(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->orderRepository || !$this->orderRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'La vibration du terminal n’est pas encore disponible sur ce serveur.',
+            ], 503);
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour faire vibrer un terminal.',
+            ], 403);
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+        $unit = $this->atak->getUnitById($r, $id);
+        if ($unit === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+
+        $callSign = trim((string) ($unit['call_sign'] ?? ''));
+        if ($callSign === '') {
+            return Response::json([
+                'error' => 'no_callsign',
+                'message' => 'Ce contact n’a pas d’indicatif — impossible de cibler le terminal.',
+            ], 400);
+        }
+
+        $mapId = (int) ($unit['map_id'] ?? $this->mapId($request, true));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+
+        $user = $this->sessionUserBrief();
+        $issuer = '';
+        if ($user) {
+            $issuer = (string) ($user['callsign'] ?: $user['displayName'] ?: '');
+        }
+        if ($issuer === '') {
+            $issuer = 'État-major';
+        }
+
+        $externalId = 'VIB-W-' . bin2hex(random_bytes(5));
+        $row = $this->orderRepository->upsertByExternalId($r, $mapId, [
+            'external_id' => $externalId,
+            'parent_external_id' => '',
+            'order_type' => 'VIBRATE',
+            'type_label' => 'Faire vibrer le terminal',
+            'target' => $callSign,
+            'target_type' => 'solo',
+            'target_ref' => $callSign,
+            'target_label' => $callSign,
+            'payload' => 'Vibration demandée depuis Athena',
+            'priority' => 'URGENT',
+            'issuer' => $issuer,
+            'issuer_user_id' => $user['userId'] ?? null,
+            'status' => 'PENDING',
+            'source' => 'web',
+            'radio_sim' => false,
+            'note' => 'Signal haptique (pas un ordre)',
+        ]);
+        if (!$row) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’envoyer la vibration.',
+            ], 500);
+        }
+
+        $this->activityLog?->record(
+            $r,
+            $mapId,
+            AtakActivityLogService::TYPE_ORDER,
+            'Terminal — vibration — ' . $callSign,
+            $issuer,
+            [
+                'unit_id' => $id,
+                'call_sign' => $callSign,
+                'order_type' => 'VIBRATE',
+                'signal' => 'vibrate',
+                'source' => 'web',
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'message' => 'Vibration envoyée vers ' . $callSign . ' — le terminal vibre en jeu.',
+            'signal' => 'vibrate',
+            'order' => $this->serializeOrder($row),
+        ], 201);
+    }
+
+    /**
+     * Envoie une notification lisible sur le terminal ATAK du contact (cliquable dans Athena).
+     */
+    public function unitsNotify(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->orderRepository || !$this->orderRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les notifications terminal ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour notifier un terminal.',
+            ], 403);
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+        $unit = $this->atak->getUnitById($r, $id);
+        if ($unit === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+
+        $callSign = trim((string) ($unit['call_sign'] ?? ''));
+        if ($callSign === '') {
+            return Response::json([
+                'error' => 'no_callsign',
+                'message' => 'Ce contact n’a pas d’indicatif — impossible de cibler le terminal.',
+            ], 400);
+        }
+
+        $body = $this->jsonBody($request);
+        $message = trim((string) ($body['message'] ?? $body['payload'] ?? $body['text'] ?? ''));
+        if ($message === '') {
+            return Response::json([
+                'error' => 'message_required',
+                'message' => 'Saisissez le texte de la notification.',
+            ], 400);
+        }
+        if (mb_strlen($message) > 500) {
+            $message = mb_substr($message, 0, 500);
+        }
+
+        $mapId = (int) ($unit['map_id'] ?? $this->mapId($request, true));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+
+        $user = $this->sessionUserBrief();
+        $issuer = '';
+        if ($user) {
+            $issuer = (string) ($user['callsign'] ?: $user['displayName'] ?: '');
+        }
+        if ($issuer === '') {
+            $issuer = 'État-major';
+        }
+
+        $externalId = 'NTF-W-' . bin2hex(random_bytes(5));
+        $row = $this->orderRepository->upsertByExternalId($r, $mapId, [
+            'external_id' => $externalId,
+            'parent_external_id' => '',
+            'order_type' => 'NOTIFY',
+            'type_label' => 'Notification terminal',
+            'target' => $callSign,
+            'target_type' => 'solo',
+            'target_ref' => $callSign,
+            'target_label' => $callSign,
+            'payload' => $message,
+            'priority' => 'IMPORTANT',
+            'issuer' => $issuer,
+            'issuer_user_id' => $user['userId'] ?? null,
+            'status' => 'PENDING',
+            'source' => 'web',
+            'radio_sim' => false,
+            'note' => 'Notification terminal (pas un ordre)',
+        ]);
+        if (!$row) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’envoyer la notification.',
+            ], 500);
+        }
+
+        $this->activityLog?->record(
+            $r,
+            $mapId,
+            AtakActivityLogService::TYPE_ORDER,
+            'Terminal — notification — ' . $callSign,
+            $issuer,
+            [
+                'unit_id' => $id,
+                'call_sign' => $callSign,
+                'order_type' => 'NOTIFY',
+                'signal' => 'notify',
+                'source' => 'web',
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'message' => 'Notification envoyée vers ' . $callSign . ' — visible sur le terminal en jeu.',
+            'signal' => 'notify',
+            'order' => $this->serializeOrder($row),
+        ], 201);
     }
 
     /**
@@ -3356,7 +3931,35 @@ class AtakApiController
         
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 100);
-        $rows = $this->atak->getChatMessages($tenantId, $mapId, min($limit, 500));
+        // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
+        $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
+        $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+        $rows = array_values(array_filter(
+            is_array($rows) ? $rows : [],
+            static function ($row): bool {
+                if (!is_array($row)) {
+                    return false;
+                }
+                $body = (string) ($row['body'] ?? '');
+                $author = (string) ($row['author'] ?? '');
+                // Anciens messages parfois découpés (auteur REGLAGES / corps AFFICHAGE|…)
+                if (TacticalAlertParser::isHiddenSystemChatBody($body)) {
+                    return false;
+                }
+                if (
+                    mb_strtoupper(trim($author)) === 'REGLAGES'
+                    && str_starts_with(mb_strtoupper(trim($body)), 'AFFICHAGE|')
+                ) {
+                    return false;
+                }
+
+                return true;
+            }
+        ));
+        if (count($rows) > $limit) {
+            $rows = array_slice($rows, -$limit);
+        }
+
         return Response::json($rows);
     }
 
@@ -4239,8 +4842,23 @@ class AtakApiController
             is_string($author) ? $author : null
         );
 
+        // Réglages d’affichage camps (CBA / params mission → Tacmap) :
+        // appliqués silencieusement — jamais stockés ni affichés dans le journal radio.
+        $factionSettings = TacticalAlertParser::parseFactionSettings(is_string($bodyText) ? $bodyText : null);
+        if (is_array($factionSettings)) {
+            $settingsSvc = new MissionDisplaySettingsService();
+            $saved = $settingsSvc->put($tenantId, $mapId, $factionSettings);
+
+            return Response::json([
+                'ok' => true,
+                'hidden_from_chat' => true,
+                'mission_settings' => $saved,
+            ], 201);
+        }
+
         // Dédup alertes auto (KO / arrêt cardiaque) : ne pas réinsérer la même alerte en boucle.
         $medicalDup = false;
+        $row = null;
         $parsedMedical = MedicalAlertParser::parse(is_string($bodyText) ? $bodyText : null);
         if (is_array($parsedMedical) && in_array((string) ($parsedMedical['kind'] ?? ''), ['unconscious', 'cardiac_arrest'], true)) {
             $cs = trim((string) ($parsedMedical['call_sign'] ?? ''));
@@ -4261,24 +4879,6 @@ class AtakApiController
         }
         if (!$medicalDup) {
             $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText);
-        }
-
-        // Réglages d’affichage camps (CBA / params mission → Tacmap)
-        $factionSettings = TacticalAlertParser::parseFactionSettings(is_string($bodyText) ? $bodyText : null);
-        if (is_array($factionSettings)) {
-            $settingsSvc = new MissionDisplaySettingsService();
-            $saved = $settingsSvc->put($tenantId, $mapId, $factionSettings);
-            if (is_array($row)) {
-                $row['mission_settings'] = $saved;
-            }
-            $this->activityLog?->record(
-                $tenantId,
-                $mapId,
-                AtakActivityLogService::TYPE_TACTICAL_ALERT,
-                'Affichage des camps mis à jour sur la carte',
-                (string) $author,
-                $saved
-            );
         }
 
         // Alertes tactiques TIC / CLEAR / FRAGO / SALUTE / Eagle Down
@@ -4406,7 +5006,6 @@ class AtakApiController
             // Déjà journalisé métier (ordre / alerte tactique / réglages camps) : pas de doublon « Message envoyé ».
             !isset($row['order'])
             && $tactical === null
-            && !is_array($factionSettings)
         ) {
             $mentionSummary = $this->applyChatMentions(
                 $tenantId,
@@ -4420,6 +5019,24 @@ class AtakApiController
             }
             $activityLabel = "Message envoy\u{00e9} \u{2014} " . $author;
             $activityMeta = $chatActivityMeta;
+            $bodyStr = is_string($bodyText) ? $bodyText : '';
+            // Message ATAK destinataire HQ → libellé TOC clair (pas un vague « Message envoyé »)
+            if (str_contains($bodyStr, '[HQ]') || str_starts_with($bodyStr, 'HQ|')) {
+                $hqExcerpt = $bodyStr;
+                if (preg_match('/\[HQ\]\s*(.+)$/u', $bodyStr, $hm)) {
+                    $hqExcerpt = trim((string) $hm[1]);
+                } elseif (str_starts_with($bodyStr, 'HQ|')) {
+                    $parts = explode('|', $bodyStr, 2);
+                    $hqExcerpt = trim((string) ($parts[1] ?? $bodyStr));
+                }
+                if (function_exists('mb_strlen') && mb_strlen($hqExcerpt) > 120) {
+                    $hqExcerpt = mb_substr($hqExcerpt, 0, 117) . '…';
+                } elseif (strlen($hqExcerpt) > 120) {
+                    $hqExcerpt = substr($hqExcerpt, 0, 117) . '...';
+                }
+                $activityLabel = 'Message HQ — ' . $author . ($hqExcerpt !== '' ? ' : ' . $hqExcerpt : '');
+                $activityMeta['channel'] = 'HQ';
+            }
             if (is_array($mentionSummary) && $mentionSummary['mentions'] !== []) {
                 $labels = [];
                 foreach ($mentionSummary['mentions'] as $m) {
@@ -4563,6 +5180,12 @@ class AtakApiController
         $orders = [];
         $maxUpdated = '';
         foreach ($rows as $row) {
+            $orderType = strtoupper((string) ($row['order_type'] ?? ''));
+            // Signaux terminal : visibles côté jeu uniquement, jamais dans le panneau ordres web.
+            if (!$forGame && in_array($orderType, AtakOrderRepository::TERMINAL_SIGNAL_TYPES, true)) {
+                continue;
+            }
+
             $serialized = $this->serializeOrder($row);
             $aliases = $this->orderMatchAliases($r, $mapId, $row);
             $serialized['match_aliases'] = $aliases;
@@ -5229,11 +5852,6 @@ class AtakApiController
             ], 503);
         }
 
-        $externalId = trim((string) ($params['id'] ?? ''));
-        if ($externalId === '') {
-            return Response::json(['error' => 'not_found', 'message' => 'Ordre introuvable.'], 404);
-        }
-
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $request->query('mapId') ?? self::DEFAULT_MAP_ID);
         if ($mapId < 1) {
@@ -5251,8 +5869,42 @@ class AtakApiController
         }
         $note = (string) ($body['note'] ?? '');
 
-        $existing = $this->orderRepository->findByExternalId($r, $mapId, $externalId);
+        // Identifiant : segment d’URL (ORD-…), corps (external_id / id), ou clé primaire (db_id).
+        $candidates = [];
+        $pathId = rawurldecode(trim((string) ($params['id'] ?? '')));
+        if ($pathId !== '') {
+            $candidates[] = $pathId;
+        }
+        foreach (['external_id', 'externalId', 'id'] as $bodyKey) {
+            $cand = trim((string) ($body[$bodyKey] ?? ''));
+            if ($cand !== '' && !in_array($cand, $candidates, true)) {
+                $candidates[] = $cand;
+            }
+        }
+
+        $existing = null;
+        foreach ($candidates as $cand) {
+            $existing = $this->orderRepository->resolveOrder($r, $mapId, $cand);
+            if ($existing) {
+                break;
+            }
+        }
         if (!$existing) {
+            $dbId = (int) ($body['db_id'] ?? $body['dbId'] ?? 0);
+            if ($dbId > 0) {
+                $existing = $this->orderRepository->findByPrimaryKey($r, $dbId);
+            }
+        }
+        if (!$existing) {
+            return Response::json(['error' => 'not_found', 'message' => 'Ordre introuvable.'], 404);
+        }
+
+        $externalId = trim((string) ($existing['external_id'] ?? ''));
+        $orderMapId = (int) ($existing['map_id'] ?? $mapId);
+        if ($orderMapId < 1) {
+            $orderMapId = $mapId;
+        }
+        if ($externalId === '') {
             return Response::json(['error' => 'not_found', 'message' => 'Ordre introuvable.'], 404);
         }
 
@@ -5267,17 +5919,41 @@ class AtakApiController
             }
         }
 
-        $row = $this->orderRepository->updateStatus($r, $mapId, $externalId, $normalized, $by, $note);
+        $row = $this->orderRepository->updateStatus($r, $orderMapId, $externalId, $normalized, $by, $note);
         if (!$row) {
-            return Response::json(['error' => 'not_found', 'message' => 'Ordre introuvable.'], 404);
+            return Response::json([
+                'error' => 'update_failed',
+                'message' => 'Impossible de mettre à jour le statut de cet ordre.',
+            ], 500);
         }
+
+        $orderTitle = $this->orderTypeLabelFr(
+            (string) ($row['order_type'] ?? ''),
+            (string) ($row['type_label'] ?? '')
+        );
+        $orderRef = trim((string) ($row['external_id'] ?? $externalId));
+        $statusFr = $this->orderStatusLabelFr((string) ($row['status'] ?? ''));
+        $activityLabel = $orderTitle !== ''
+            ? ($orderRef !== ''
+                ? $orderTitle . ' (' . $orderRef . ') — statut : ' . $statusFr
+                : $orderTitle . ' — statut : ' . $statusFr)
+            : ($orderRef !== ''
+                ? 'Ordre ' . $orderRef . ' — statut : ' . $statusFr
+                : 'Statut d’ordre mis à jour — ' . $statusFr);
 
         $this->activityLog?->record(
             $r,
-            $mapId,
+            $orderMapId,
             AtakActivityLogService::TYPE_ORDER,
-            'Statut d’ordre mis à jour — ' . $this->orderStatusLabelFr((string) ($row['status'] ?? '')),
-            $by !== '' ? $by : (string) ($row['issuer'] ?? '')
+            $activityLabel,
+            $by !== '' ? $by : (string) ($row['issuer'] ?? ''),
+            [
+                'order_id' => $orderRef,
+                'order_type' => (string) ($row['order_type'] ?? ''),
+                'order_title' => $orderTitle,
+                'status' => (string) ($row['status'] ?? ''),
+                'status_label' => $statusFr,
+            ]
         );
 
         return Response::json(['ok' => true, 'order' => $this->serializeOrder($row)]);
@@ -5575,6 +6251,9 @@ class AtakApiController
             'CAS' => 'Appui aérien',
             'QRF' => 'Force de réaction',
             'MOVE' => 'Se déplacer',
+            'FRAGO' => 'Ordre fragmentaire',
+            'VIBRATE' => 'Faire vibrer le terminal',
+            'NOTIFY' => 'Notification terminal',
             default => null,
         };
         if ($builtin !== null) {
@@ -7257,21 +7936,63 @@ class AtakApiController
         // Génération numéro QRF
         $qrfNumber = $body['qrf_number'] ?? $repo->generateQrfNumber($tenantId, $mapId);
 
+        $contactPos = $body['contact_pos'] ?? $body['pos'] ?? $body['position'] ?? null;
+        $posX = \App\Repositories\AtakDataRepository::coerceFloat(
+            $body['contact_pos_x'] ?? $body['pos_x'] ?? $body['x'] ?? (is_array($contactPos) ? ($contactPos[0] ?? null) : null)
+        );
+        $posY = \App\Repositories\AtakDataRepository::coerceFloat(
+            $body['contact_pos_y'] ?? $body['pos_y'] ?? $body['y'] ?? (is_array($contactPos) ? ($contactPos[1] ?? null) : null)
+        );
+        if ($posX === null || $posY === null) {
+            return Response::json([
+                'error' => 'contact_pos_required',
+                'message' => 'Indiquez la position du contact pour demander le renfort.',
+            ], 400);
+        }
+        $coordsOk = $this->armaGuard->assertPositionCoords($posX, $posY, $tenantId);
+        if ($coordsOk instanceof Response) {
+            return $coordsOk;
+        }
+
         $data = array_merge($body, [
             'tenant_id' => $tenantId,
             'context_id' => $mapId,
             'qrf_number' => $qrfNumber,
+            'contact_pos_x' => $posX,
+            'contact_pos_y' => $posY,
             'requesting_user_id' => $actor['user_id'] ?? null,
             'requesting_callsign' => $body['requesting_callsign'] ?? $actor['callsign'] ?? null,
+            'requesting_steam_id' => $body['requesting_steam_id'] ?? $actor['steam_uid'] ?? null,
         ]);
 
-        $qrfId = $repo->create($data);
-        
-        $this->activityLog->record(
+        try {
+            $qrfId = $repo->create($data);
+        } catch (\InvalidArgumentException $e) {
+            return Response::json([
+                'error' => 'contact_pos_required',
+                'message' => 'Indiquez la position du contact pour demander le renfort.',
+            ], 400);
+        } catch (\Throwable $e) {
+            error_log('[atak_qrf] store_failed ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer la demande de renfort.',
+            ], 500);
+        }
+        if ($qrfId < 1) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’enregistrer la demande de renfort.',
+            ], 500);
+        }
+
+        $this->activityLog?->record(
             $tenantId,
             $mapId,
             'QRF_REQUEST',
-            sprintf('QRF demandé : %s - %s - %s', 
+            sprintf(
+                'QRF demandé : %s - %s - %s',
                 $qrfNumber,
                 $data['threat_type'] ?? 'UNKNOWN',
                 $data['requesting_unit'] ?? 'Unknown'
@@ -7280,8 +8001,8 @@ class AtakApiController
         );
 
         $qrf = $repo->findById($qrfId);
-        
-        return Response::json($qrf, 201);
+
+        return Response::json($qrf ?: ['id' => $qrfId, 'qrf_number' => $qrfNumber], 201);
     }
 
     /**

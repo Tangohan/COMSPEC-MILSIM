@@ -239,7 +239,8 @@ foreach ($dataSummary as $k => $v) {
                     <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
                         <p class="text-sm font-semibold text-red-950">Fonction indisponible pour le moment</p>
                         <p class="text-xs text-red-900 mt-1 leading-relaxed">
-                            La base de données n’est pas à jour pour le mode maintenance. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.
+                            La mise à jour qui active le mode maintenance de la carte n’a pas encore été appliquée sur ce serveur.
+                            Demandez au support plateforme de lancer la mise à jour de la base, puis réessayez.
                         </p>
                     </div>
                 <?php else: ?>

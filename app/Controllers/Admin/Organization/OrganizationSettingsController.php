@@ -11,7 +11,10 @@ use App\Core\Session;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantSlugService;
+use App\Services\Community\TenantTypeConfig;
+use App\Services\Community\TenantTypeSwitchService;
 use App\Services\Integrations\DiscordWebhookService;
 
 /**
@@ -46,8 +49,11 @@ final class OrganizationSettingsController
         private AuthService $authService,
         private TenantRepository $tenantRepository,
         private TenantBrandingRepository $brandingRepository,
-        private DiscordWebhookService $discordWebhook
-    ) {}
+        private DiscordWebhookService $discordWebhook,
+        private ?TenantTypeSwitchService $tenantTypeSwitchService = null,
+    ) {
+        $this->tenantTypeSwitchService ??= new TenantTypeSwitchService($this->tenantRepository);
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -78,7 +84,67 @@ final class OrganizationSettingsController
             'navOpsImageUrl' => $this->communityImageUrl($slug, 'nav-operations'),
             'navResImageUrl' => $this->communityImageUrl($slug, 'nav-resources'),
             'orgSettingsFormAction' => $this->formActionFromRequest($request),
+            'tenantTypeOptions' => TenantTypeConfig::availableTypes(),
+            'currentTenantType' => TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full')),
+            'tenantTypeFormAction' => url('back-office/organisation/profil'),
         ]);
+    }
+
+    public function updateType(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        $redirectTo = url('back-office/organisation/parametres');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($redirectTo);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return Response::redirect(url('dashboard'));
+        }
+
+        $newType = TenantTypeConfig::normalizeType((string) $request->input('tenant_type', ''));
+        $confirm = (string) $request->input('confirm_type_change', '') === '1';
+        if (!$confirm) {
+            Session::flash('error', 'Veuillez cocher la case de confirmation avant de changer le profil de la communauté.');
+
+            return Response::redirect($redirectTo . '#org-profil');
+        }
+
+        try {
+            // Toujours réappliquer permissions / rôles du profil (y compris si déjà « ATAK »),
+            // pour réparer une communauté créée avant la migration ou mal classée en Complet.
+            $result = $this->tenantTypeSwitchService->switchType($tenantId, $newType, true);
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            if ($e instanceof \RuntimeException && $msg !== '' && !preg_match('/SQLSTATE|Unknown column|PDOException/i', $msg)) {
+                Session::flash('error', $msg);
+            } else {
+                Session::flash('error', 'Impossible de modifier le profil de la communauté. Réessayez ou contactez le support.');
+            }
+
+            return Response::redirect($redirectTo . '#org-profil');
+        }
+
+        if (!empty($result['changed'])) {
+            Session::flash(
+                'success',
+                'Profil mis à jour : « ' . TenantTypeConfig::label($result['from']) . ' » → « '
+                . TenantTypeConfig::label($result['to']) . ' ». Les menus et accès ont été ajustés.'
+            );
+        } else {
+            Session::flash(
+                'success',
+                'Profil « ' . TenantTypeConfig::label($newType)
+                . ' » réappliqué : menus et permissions ont été réalignés.'
+            );
+        }
+
+        return Response::redirect($redirectTo . '#org-profil');
     }
 
     public function update(Request $request, array $params = []): Response
@@ -191,8 +257,9 @@ final class OrganizationSettingsController
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
         $community['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
-        $registrationModeInput = (string) $request->input('registration_mode', 'milsim');
-        $community['registration_mode'] = in_array($registrationModeInput, ['simple', 'discord'], true) ? $registrationModeInput : 'milsim';
+        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
+            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+        );
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
         $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
@@ -224,13 +291,14 @@ final class OrganizationSettingsController
         }
 
         $discordWarning = null;
+        $warnings = [];
         $discordRaw = trim((string) $request->input('discord_webhook_url', ''));
         if ($discordRaw === '') {
             $integrations['discord_webhook_url'] = null;
         } elseif ($this->discordWebhook->isValidWebhookUrl($discordRaw)) {
             $integrations['discord_webhook_url'] = $discordRaw;
         } else {
-            $discordWarning = 'L’URL de webhook Discord n’a pas été enregistrée : elle doit commencer par https://discord.com/api/webhooks/…';
+            $warnings[] = 'L’URL de webhook Discord n’a pas été enregistrée : elle doit commencer par https://discord.com/api/webhooks/…';
         }
 
         $this->tenantRepository->mergeSettings($tenantId, [
@@ -239,7 +307,11 @@ final class OrganizationSettingsController
             'integrations' => $integrations,
         ]);
 
-        return $discordWarning;
+        if (TenantCommunityProfileService::needsDiscordInviteAlert($community)) {
+            $warnings[] = 'Le recrutement via Discord est actif, mais le lien Discord n’est pas renseigné. Ajoutez-le dans « Coordonnées de contact » pour que les candidats puissent ouvrir votre serveur.';
+        }
+
+        return $warnings === [] ? null : implode(' ', $warnings);
     }
 
     /**

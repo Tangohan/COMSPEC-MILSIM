@@ -15,6 +15,7 @@ use App\Services\Admin\RolePermissionService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\AuthService;
+use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantInitialSetupService;
 use App\Support\OrganizationRoleLabels;
 
@@ -114,7 +115,13 @@ final class TenantInitialSetupController
             return Response::redirect($redirectTo);
         }
 
-        Session::flash('success', 'Paramètres enregistrés. Vous pouvez poursuivre ou terminer quand vous êtes prêt.');
+        $msg = 'Paramètres enregistrés. Vous pouvez poursuivre ou terminer quand vous êtes prêt.';
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        if (TenantCommunityProfileService::needsDiscordInviteAlert($community)) {
+            $msg .= ' Attention : le recrutement via Discord est actif sans lien Discord — renseignez-le pour que les candidats puissent rejoindre votre serveur.';
+        }
+        Session::flash('success', $msg);
 
         return Response::redirect($redirectTo);
     }
@@ -188,6 +195,15 @@ final class TenantInitialSetupController
 
         Session::flash('success', 'Configuration initiale terminée. Bienvenue dans le back-office.');
 
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+        if (TenantCommunityProfileService::needsDiscordInviteAlert($community)) {
+            Session::flash(
+                'success',
+                'Configuration initiale terminée. Attention : le lien Discord n’est pas encore renseigné — ajoutez-le dans les paramètres pour finaliser le recrutement Discord.'
+            );
+        }
+
         return Response::redirect(url('back-office'));
     }
 
@@ -256,7 +272,9 @@ final class TenantInitialSetupController
         $community['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
         $community['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
-        $community['registration_mode'] = ((string) $request->input('registration_mode', 'milsim')) === 'simple' ? 'simple' : 'milsim';
+        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
+            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+        );
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
         $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';

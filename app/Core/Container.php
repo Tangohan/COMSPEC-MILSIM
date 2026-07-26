@@ -144,11 +144,15 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Community\TenantCommunityProfileService::class),
             ),
+            \App\Services\Community\TenantTypeSwitchService::class => new \App\Services\Community\TenantTypeSwitchService(
+                self::get(TenantRepository::class),
+            ),
             \App\Controllers\Admin\Organization\OrganizationSettingsController::class => new \App\Controllers\Admin\Organization\OrganizationSettingsController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Services\Integrations\DiscordWebhookService::class),
+                self::get(\App\Services\Community\TenantTypeSwitchService::class),
             ),
             \App\Services\Community\TenantInitialSetupService::class => new \App\Services\Community\TenantInitialSetupService(
                 self::get(TenantRepository::class),
@@ -256,7 +260,6 @@ class Container
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
@@ -265,7 +268,8 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\EmailTokenRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
-                self::get(\App\Services\Steam\SteamWebApiService::class)
+                self::get(\App\Services\Steam\SteamWebApiService::class),
+                self::get(\App\Services\Account\AccountDeletionService::class),
             ),
             \App\Controllers\Web\VerifyEmailController::class => new \App\Controllers\Web\VerifyEmailController(
                 self::get(\App\Repositories\EmailTokenRepository::class),
@@ -554,7 +558,11 @@ class Container
             \App\Services\Account\AccountDeletionService::class => new \App\Services\Account\AccountDeletionService(
                 self::get(UserRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
-                self::get(\App\Repositories\UserLegalIdentityRepository::class)
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
+                self::get(\App\Repositories\PersonnelProfileRepository::class),
+                self::get(\App\Repositories\UserProfileDisplaySettingsRepository::class),
+                self::get(\App\Repositories\PersonnelExtrasRepository::class),
+                self::get(\App\Repositories\RecruitmentPresetRepository::class),
             ),
             \App\Controllers\Web\AccountPrivacyController::class => new \App\Controllers\Web\AccountPrivacyController(
                 self::get(AuthService::class),
@@ -618,6 +626,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Services\Audit\AuditService::class),
+                self::get(\App\Services\Account\AccountDeletionService::class),
             ),
             \App\Repositories\PersonnelJobRoleRepository::class => new \App\Repositories\PersonnelJobRoleRepository(),
             \App\Repositories\PlanningEntryRepository::class => new \App\Repositories\PlanningEntryRepository(),
@@ -953,7 +962,8 @@ class Container
                 self::get(\App\Repositories\RoleSetRepository::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Services\Personnel\PersonnelOrgHistoryRecorder::class),
-                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class)
+                self::get(\App\Services\Personnel\PersonnelStructureChangeNotificationService::class),
+                self::get(\App\Services\Steam\SteamWebApiService::class)
             ),
             \App\Services\Documents\DocumentTrainingReferencesService::class => new \App\Services\Documents\DocumentTrainingReferencesService(
                 self::get(\App\Repositories\TrainingResourceRepository::class),
@@ -1253,6 +1263,17 @@ class Container
             \App\Repositories\TenantAtakConfigRepository::class => new \App\Repositories\TenantAtakConfigRepository(),
             \App\Repositories\AtakMapRepository::class => new \App\Repositories\AtakMapRepository(),
             \App\Repositories\TacticalGameLinkRepository::class => new \App\Repositories\TacticalGameLinkRepository(),
+            \App\Repositories\AtakMapGatewayRepository::class => new \App\Repositories\AtakMapGatewayRepository(),
+            \App\Services\Tactical\AtakMapGatewayService::class => new \App\Services\Tactical\AtakMapGatewayService(
+                self::get(\App\Repositories\AtakMapGatewayRepository::class),
+                self::get(TenantRepository::class),
+            ),
+            \App\Controllers\Web\AtakMapGatewayController::class => new \App\Controllers\Web\AtakMapGatewayController(
+                self::get(AuthService::class),
+                self::get(\App\Services\Tactical\AtakMapGatewayService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+                self::get(\App\Repositories\AtakMapRepository::class),
+            ),
             \App\Controllers\Web\AtakController::class => new \App\Controllers\Web\AtakController(
                 self::get(\App\Services\Tactical\AtakTokenService::class),
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
@@ -1308,8 +1329,16 @@ class Container
                 self::get(UserRepository::class),
             ),
             \App\Repositories\AtakBetaRegistrationRepository::class => new \App\Repositories\AtakBetaRegistrationRepository(),
+            \App\Repositories\AtakModReportRepository::class => new \App\Repositories\AtakModReportRepository(),
             \App\Controllers\Admin\AdminAtakBetaRegistrationsController::class => new \App\Controllers\Admin\AdminAtakBetaRegistrationsController(
-                self::get(\App\Repositories\AtakBetaRegistrationRepository::class)
+                self::get(\App\Repositories\AtakBetaRegistrationRepository::class),
+                self::get(AuthService::class),
+                self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
+                self::get(\App\Repositories\BlockedIndicatorRepository::class),
+            ),
+            \App\Controllers\Admin\AdminAtakModReportsController::class => new \App\Controllers\Admin\AdminAtakModReportsController(
+                self::get(\App\Repositories\AtakModReportRepository::class),
+                self::get(AuthService::class),
             ),
             \App\Controllers\Admin\AdminForumConfigController::class => new \App\Controllers\Admin\AdminForumConfigController(
                 self::get(\App\Repositories\ForumCategoryRepository::class),
@@ -1647,9 +1676,7 @@ class Container
             \App\Repositories\UserAlertDismissalRepository::class => new \App\Repositories\UserAlertDismissalRepository(),
             \App\Services\Alerts\AccountProfileAlertsBuilder::class => new \App\Services\Alerts\AccountProfileAlertsBuilder(
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
-                self::get(\App\Repositories\EnlistmentRepository::class),
             ),
             \App\Services\Alerts\RecruitmentRetroAlertsBuilder::class => new \App\Services\Alerts\RecruitmentRetroAlertsBuilder(
                 self::get(\App\Repositories\EnlistmentRecruitmentEngagementRepository::class),
@@ -1964,6 +1991,7 @@ class Container
                 operatorIdRepository: self::get(\App\Repositories\AtakOperatorIdRepository::class),
                 medicalTriageRepository: self::get(\App\Repositories\AtakMedicalTriageRepository::class),
                 betaRegistrationRepository: self::get(\App\Repositories\AtakBetaRegistrationRepository::class),
+                // modReportRepository lazy dans AtakApiController (pas au boot de toutes les routes ATAK).
             ),
             \App\Repositories\FireUnitRepository::class => new \App\Repositories\FireUnitRepository(),
             \App\Repositories\FireTableRepository::class => new \App\Repositories\FireTableRepository(),
@@ -2021,7 +2049,8 @@ class Container
             ),
             \App\Controllers\Api\IffController::class => new \App\Controllers\Api\IffController(
                 self::get(\App\Services\Iff\IffChallengeService::class),
-                self::get(\App\Services\Iff\IffValidationService::class)
+                self::get(\App\Services\Iff\IffValidationService::class),
+                self::get(\App\Repositories\IffAssetStatusRepository::class)
             ),
             // Module Courrier (Bureau Courrier / Correspondance Officielle)
             \App\Repositories\Courrier\DocumentPresetRepository::class => new \App\Repositories\Courrier\DocumentPresetRepository(),

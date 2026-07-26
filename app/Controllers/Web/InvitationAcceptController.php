@@ -133,8 +133,22 @@ final class InvitationAcceptController
         }
 
         $rstmt = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $rstmt->execute([$tenantId, 'member']);
-        $memberRoleId = (int) ($rstmt->fetchColumn() ?: 0);
+        $fallbackSlugs = ['member', 'atak_operator', 'personnel_manager'];
+        $memberRoleId = 0;
+        foreach ($fallbackSlugs as $slug) {
+            $rstmt->execute([$tenantId, $slug]);
+            $memberRoleId = (int) ($rstmt->fetchColumn() ?: 0);
+            if ($memberRoleId > 0) {
+                break;
+            }
+        }
+        if ($memberRoleId <= 0) {
+            $anyRole = $pdo->prepare(
+                "SELECT id FROM roles WHERE tenant_id = ? AND (role_layer IN ('community', 'intra') OR role_layer IS NULL) ORDER BY id ASC LIMIT 1"
+            );
+            $anyRole->execute([$tenantId]);
+            $memberRoleId = (int) ($anyRole->fetchColumn() ?: 0);
+        }
         $invRole = $inv['role_id'] !== null && $inv['role_id'] !== '' ? (int) $inv['role_id'] : 0;
         $roleId = $invRole > 0 ? $invRole : $memberRoleId;
         if ($roleId <= 0) {

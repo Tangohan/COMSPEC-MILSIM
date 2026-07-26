@@ -1,4 +1,6 @@
 -- Migration : Système de Points d'Intérêt (POI) et Intelligence Tactique
+-- Préférer bootstrap/atak_poi_intelligence_migration.php via run-migrations.php
+-- (ce fichier .sql n’est pas exécuté automatiquement par le runner CLI).
 
 -- Table principale des POI
 CREATE TABLE IF NOT EXISTS atak_poi (

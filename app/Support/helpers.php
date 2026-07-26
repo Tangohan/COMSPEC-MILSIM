@@ -943,11 +943,19 @@ if (!function_exists('detect_current_module')) {
             return 'forum';
         }
 
+        // Aligné sur TenantTypeConfig::moduleForUri — les règles plateforme « module carte » couvrent toute la surface ATAK.
         $atakPrefixes = [
-            '/atak', '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
+            '/atak', '/tacmap', '/overwatch', '/c2',
+            '/admin/atak-config', '/admin/atak-mod', '/admin/atak-mod-blocks', '/admin/atak-beta', '/admin/atak',
+            '/back-office/atak', '/back-office/ressources/atak-config', '/back-office/ressources/atak-mod',
+            '/back-office/ressources/atak-mod-blocks', '/back-office/ressources/atak-beta',
+            '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
             '/api/nine-line', '/api/cas', '/api/recon', '/api/map-shapes', '/api/flight-manifest',
             '/api/intel', '/api/fire-support', '/api/danger-zones', '/api/logistics', '/api/replay', '/api/iff',
+            '/api/tacmap', '/api/overwatch',
         ];
+        // Plus long préfixe d’abord (ex. /admin/atak-config avant /admin).
+        usort($atakPrefixes, static fn (string $a, string $b): int => strlen($b) <=> strlen($a));
         foreach ($atakPrefixes as $pre) {
             if ($path === $pre || str_starts_with($path, $pre . '/')) {
                 return 'atak';
@@ -994,6 +1002,38 @@ if (!function_exists('community_display_name')) {
         }
 
         return (string) ($tenantOrMembershipRow['name'] ?? '');
+    }
+}
+
+if (!function_exists('email_community_label')) {
+    /**
+     * Libellé pour e-mails transactionnels : le tenant système (slug default) et les
+     * libellés techniques (« Aucune organisation », etc.) sont remplacés par la marque.
+     *
+     * @param array{name?: string, slug?: string}|null $tenant
+     */
+    function email_community_label(?array $tenant, ?string $fallbackName = null): string
+    {
+        $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
+        $slug = strtolower(trim((string) ($tenant['slug'] ?? '')));
+        $name = trim((string) ($tenant['name'] ?? ($fallbackName ?? '')));
+        if ($slug === 'default') {
+            return $brand;
+        }
+        $normalized = mb_strtolower(str_replace(["'", '’'], "'", $name));
+        $placeholders = [
+            '',
+            'aucune organisation',
+            "pas d'organisation",
+            'default organisation',
+            'default',
+            'communauté',
+        ];
+        if (in_array($normalized, $placeholders, true)) {
+            return $brand;
+        }
+
+        return $name !== '' ? $name : $brand;
     }
 }
 
@@ -1051,6 +1091,28 @@ if (!function_exists('bo_select_class')) {
         $extra = trim($extra);
 
         return $extra !== '' ? $base . ' ' . $extra : $base;
+    }
+}
+
+if (!function_exists('format_arma_playtime_french')) {
+    /**
+     * Libellé lisible du temps de mission transmis par ATAK (secondes cumulées).
+     */
+    function format_arma_playtime_french(int $seconds): string
+    {
+        if ($seconds <= 0) {
+            return 'Pas encore enregistré';
+        }
+        $h = intdiv($seconds, 3600);
+        $m = intdiv($seconds % 3600, 60);
+        if ($h > 0) {
+            return $m > 0 ? "{$h} h {$m} min" : "{$h} h";
+        }
+        if ($m > 0) {
+            return "{$m} min";
+        }
+
+        return 'Moins d’une minute';
     }
 }
 

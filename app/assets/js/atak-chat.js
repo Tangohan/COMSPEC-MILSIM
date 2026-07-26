@@ -11,7 +11,10 @@ window.ATAKChat = (function () {
   function fetchMessages() {
     var url = getApiBase() + '/api/chat?mapId=' + getMapId();
     fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-      var list = Array.isArray(data) ? data : [];
+      var list = (Array.isArray(data) ? data : []).filter(function (m) {
+        var body = String((m && m.body) || '').toUpperCase();
+        return body.indexOf('REGLAGES AFFICHAGE') !== 0 && body.indexOf('AFFICHAGE|ADVERSAIRE=') !== 0;
+      });
       var el = document.getElementById('atak-chat-messages');
       if (el) el.innerHTML = list.map(formatMsg).join('');
       el.scrollTop = el.scrollHeight;

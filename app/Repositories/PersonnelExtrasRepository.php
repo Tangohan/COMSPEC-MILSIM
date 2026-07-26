@@ -44,6 +44,16 @@ class PersonnelExtrasRepository
         $stmt->execute([$userId]);
     }
 
+    /** RGPD / soft-delete : efface matricule legacy et notes admin. */
+    public function deleteByUserId(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM personnel_extras WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     public function updateServiceNumber(int $userId, string $serviceNumber): bool
     {
         $this->ensureRecord($userId);

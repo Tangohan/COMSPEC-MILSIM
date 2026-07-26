@@ -29,6 +29,7 @@ declare(strict_types=1);
  * @var bool $can_open_effectifs_workspace
  * @var bool $dashboard_is_default_tenant
  * @var int $currentTid
+ * @var string|null $arma_playtime_label
  */
 
 $currentTid = (int) ($currentTid ?? \App\Core\Session::get('tenant_id') ?? 0);
@@ -307,6 +308,12 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                                         · <?= htmlspecialchars($platformRole, ENT_QUOTES, 'UTF-8') ?>
                                     <?php endif; ?>
                                     · <?= htmlspecialchars($statutLabel, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php
+                                    $selfPlaytime = trim((string) ($arma_playtime_label ?? ''));
+                                    if ($selfPlaytime !== ''):
+                                    ?>
+                                        · Temps en mission <?= htmlspecialchars($selfPlaytime, ENT_QUOTES, 'UTF-8') ?>
+                                    <?php endif; ?>
                                 </span>
                             </span>
                         </div>
@@ -377,12 +384,42 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                             <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
                         </svg>
                     </button>
-                        <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">Ma fiche</a>
-                        <a href="<?= url('publier') ?>" class="dash-idstrip__text-btn">Publier</a>
-                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">Nouvelle manœuvre</a>
-                    <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">Demande à l’encadrement</a>
+                    <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span>Ma fiche</span>
+                    </a>
+                    <a href="<?= url('publier') ?>" class="dash-idstrip__text-btn">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                        <span>Publier</span>
+                    </a>
+                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 22V15"/>
+                        </svg>
+                        <span>Nouvelle manœuvre</span>
+                    </a>
+                    <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+                        </svg>
+                        <span>Demande à l’encadrement</span>
+                    </a>
                     <?php if ($canViewAtakOperators): ?>
-                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">Effectifs en liaison<?php if ($atakOperatorsLinkedCount !== null): ?> (<?= (int) $atakOperatorsLinkedCount ?>)<?php endif; ?></a>
+                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-idstrip__text-btn dash-idstrip__text-btn--accent">
+                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                        </svg>
+                        <span>Effectifs en liaison<?php if ($atakOperatorsLinkedCount !== null): ?> (<?= (int) $atakOperatorsLinkedCount ?>)<?php endif; ?></span>
+                    </a>
                     <?php endif; ?>
                 </div>
                 <?php
@@ -392,16 +429,28 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                 <div class="dash-idstrip__aside">
                     <?php if ($dashShowCommunitySwitch): ?>
                     <div class="dash-idstrip__switch">
-                        <span class="dash-idstrip__label">Autres communautés</span>
+                        <span class="dash-idstrip__label dash-idstrip__label--with-icon">
+                            <svg class="dash-idstrip__btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12M8 12h12M8 17h12"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h.01M4 12h.01M4 17h.01"/>
+                            </svg>
+                            Autres communautés
+                        </span>
                         <div class="dash-idstrip__chips">
                             <?php foreach ($communityMemberships as $m): ?>
                                 <?php if ((int) ($m['tenant_id'] ?? 0) === $currentTid) {
                                     continue;
                                 } ?>
-                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');b.textContent='…';}">
+                                <form method="post" action="<?= url('community/switch') ?>" class="inline" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.setAttribute('aria-busy','true');}">
                                     <?= \App\Core\Csrf::field() ?>
                                     <input type="hidden" name="tenant_id" value="<?= (int) $m['tenant_id'] ?>">
-                                    <button type="submit" class="dash-idstrip__chip"><?= htmlspecialchars(community_display_name($m), ENT_QUOTES, 'UTF-8') ?></button>
+                                    <button type="submit" class="dash-idstrip__chip">
+                                        <svg class="dash-idstrip__btn-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h3a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2V9a2 2 0 012-2z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h3a2 2 0 012 2v9a2 2 0 01-2 2h-3"/>
+                                        </svg>
+                                        <?= htmlspecialchars(community_display_name($m), ENT_QUOTES, 'UTF-8') ?>
+                                    </button>
                                 </form>
                             <?php endforeach; ?>
                         </div>

@@ -21,7 +21,7 @@ $roles = is_array($roleOptions ?? null) ? $roleOptions : [];
 $guestSlug = (string) ($defaultGuestRoleSlug ?? 'invite');
 $logo = trim((string) ($logoUrl ?? ''));
 $pm = is_array($c['public_modules'] ?? null) ? $c['public_modules'] : [];
-$registrationMode = ($c['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
+$registrationMode = \App\Services\Community\TenantCommunityProfileService::normalizeRegistrationMode($c['registration_mode'] ?? 'milsim');
 $slugHint = trim((string) ($tenant['slug'] ?? ''));
 $publicPageUrl = $slugHint !== '' ? url('c/' . rawurlencode($slugHint)) : '';
 $communityName = trim((string) ($tenant['name'] ?? ''));
@@ -62,6 +62,21 @@ $ok = \App\Core\Session::getFlash('success');
 
     <?php if ($err): ?><div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($ok): ?><div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><?= htmlspecialchars((string) $ok, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+
+    <?php
+    $setupTenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
+    $setupTypeLabel = \App\Services\Community\TenantTypeConfig::label($setupTenantType);
+    ?>
+    <section class="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-5 shadow-sm">
+        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">Profil de la communauté</p>
+        <p class="mt-2 text-sm text-emerald-950 leading-relaxed">
+            Profil actuel : <strong><?= htmlspecialchars($setupTypeLabel, ENT_QUOTES, 'UTF-8') ?></strong>.
+            Vous pouvez le modifier à tout moment dans les paramètres (menus et accès seront ajustés).
+        </p>
+        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#profil', ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex items-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-950 hover:bg-emerald-100">
+            Modifier le type de communauté
+        </a>
+    </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Checklist</p>
@@ -131,8 +146,21 @@ $ok = \App\Core\Session::getFlash('success');
                     <input id="contact_email" type="email" name="contact_email" value="<?= htmlspecialchars((string) ($c['contact_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="255" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="contact@votre-unite.fr" autocomplete="email">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5" for="contact_discord_url">Lien Discord <span class="font-normal text-slate-400">(optionnel)</span></label>
-                    <input id="contact_discord_url" type="url" name="contact_discord_url" value="<?= htmlspecialchars((string) ($c['contact_discord_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="500" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="https://discord.gg/…">
+                    <?php
+                    $discordLinkMissing = $registrationMode === 'discord' && trim((string) ($c['contact_discord_url'] ?? '')) === '';
+                    ?>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5" for="contact_discord_url">
+                        Lien Discord
+                        <?php if ($registrationMode === 'discord'): ?>
+                            <span class="text-rose-600">*</span>
+                        <?php else: ?>
+                            <span class="font-normal text-slate-400">(optionnel)</span>
+                        <?php endif; ?>
+                    </label>
+                    <input id="contact_discord_url" type="url" name="contact_discord_url" value="<?= htmlspecialchars((string) ($c['contact_discord_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="500" class="w-full rounded-xl border <?= $discordLinkMissing ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300' ?> px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="https://discord.gg/…">
+                    <?php if ($discordLinkMissing): ?>
+                    <p class="mt-1.5 text-xs font-semibold text-amber-800">Obligatoire pour le recrutement via Discord — sans ce lien, les candidats ne pourront pas ouvrir votre serveur.</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -147,7 +175,15 @@ $ok = \App\Core\Session::getFlash('success');
                 <select id="registration_mode" name="registration_mode" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
                     <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé)</option>
                     <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Mode simple (champs réduits)</option>
+                    <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo et questions personnalisées)</option>
                 </select>
+                <?php if ($registrationMode === 'discord'): ?>
+                <p class="mt-1.5 text-xs <?= $discordLinkMissing ? 'font-semibold text-amber-800' : 'text-slate-500' ?>">
+                    <?= $discordLinkMissing
+                        ? 'Renseignez le lien Discord ci-dessus avant de terminer — il est affiché aux candidats sur le formulaire public.'
+                        : 'Pensez à composer les questions dans le bureau recrutement après cette étape.' ?>
+                </p>
+                <?php endif; ?>
             </div>
             <div class="space-y-3">
                 <label class="flex items-start gap-3 cursor-pointer rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3">

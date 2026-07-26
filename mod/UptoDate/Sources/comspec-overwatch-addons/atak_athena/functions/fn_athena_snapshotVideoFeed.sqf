@@ -16,8 +16,15 @@ private _device = "";
 private _feedId = "";
 private _caption = "";
 
-private _hasHcam = ("ItemcTabHCam" in (items player + assignedItems player))
-    || {((headgear player) in (missionNamespace getVariable ["cTab_helmetClass_has_HCam", []]))};
+private _helmetClasses = missionNamespace getVariable ["cTab_helmetClass_has_HCam", []];
+if (!(_helmetClasses isEqualType [])) then { _helmetClasses = []; };
+if (_helmetClasses isEqualTo [] && {!isNil "cTab_helmetClass_has_HCam"} && {cTab_helmetClass_has_HCam isEqualType []}) then {
+    _helmetClasses = cTab_helmetClass_has_HCam;
+};
+private _hcamGear = (items player) + (assignedItems player);
+private _hcamGoggles = goggles player;
+if (_hcamGoggles isNotEqualTo "") then { _hcamGear pushBackUnique _hcamGoggles; };
+private _hasHcam = ("ItemcTabHCam" in _hcamGear) || {((headgear player) in _helmetClasses)};
 if (_hasHcam) then {
     private _uid = getPlayerUID player;
     _feedId = format ["helmet:%1", _uid];

@@ -8,6 +8,7 @@ declare(strict_types=1);
  * @var list<array<string, mixed>> $dashboard_effectifs_rows
  * @var bool $can_view_personnel_directory
  * @var bool $can_open_effectifs_workspace
+ * @var bool $can_see_inactive_effectifs
  * @var string|null $dashboard_tenant_label
  */
 
@@ -20,6 +21,7 @@ $unitLabel = trim((string) ($dashboard_tenant_label ?? '')) !== ''
     ? (string) $dashboard_tenant_label
     : 'Votre communauté';
 $canOpenWorkspace = !empty($can_open_effectifs_workspace);
+$canSeeInactive = !empty($can_see_inactive_effectifs);
 $directoryUrl = url('personnel');
 $workspaceUrl = function_exists('effectifs_workspace_url')
     ? effectifs_workspace_url()
@@ -105,7 +107,10 @@ $rowCount = count($rows);
                             <th scope="col">Grade</th>
                             <th scope="col">Affectation</th>
                             <th scope="col">Fonction</th>
+                            <th scope="col">Temps en mission</th>
+                            <?php if ($canSeeInactive): ?>
                             <th scope="col">Statut</th>
+                            <?php endif; ?>
                             <th scope="col" class="text-right">Fiche</th>
                         </tr>
                     </thead>
@@ -138,6 +143,11 @@ $rowCount = count($rows);
                             $assignment = $unitName !== '' ? $unitName : ($unitCode !== '' ? $unitCode : '');
                             $primaryRole = trim((string) ($row['primary_role'] ?? ''));
                             $status = trim((string) ($row['status'] ?? ''));
+                            $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
+                            $playtimeSeconds = (int) ($row['arma_playtime_seconds'] ?? 0);
+                            if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
+                                $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
+                            }
                             ?>
                             <tr>
                                 <td>
@@ -186,10 +196,19 @@ $rowCount = count($rows);
                                     <?php endif; ?>
                                 </td>
                                 <td>
+                                    <?php if ($playtimeLabel !== ''): ?>
+                                        <span class="dash-eff-playtime" title="Temps de mission transmis par la liaison terrain"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php else: ?>
+                                        <span class="das-muted">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <?php if ($canSeeInactive): ?>
+                                <td>
                                     <span class="das-badge <?= htmlspecialchars($statusBadge($status), ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </td>
+                                <?php endif; ?>
                                 <td class="text-right">
                                     <a href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-btn">Ouvrir</a>
                                 </td>
@@ -279,7 +298,7 @@ $rowCount = count($rows);
 .das-sheet { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .das-sheet__table {
     width: 100%;
-    min-width: 52rem;
+    min-width: <?= $canSeeInactive ? '58rem' : '50rem' ?>;
     border-collapse: collapse;
     font-size: 0.8125rem;
 }
@@ -378,5 +397,12 @@ $rowCount = count($rows);
     font-weight: 700;
     letter-spacing: 0.04em;
     color: #334155;
+}
+.dash-eff-playtime {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #0f766e;
+    white-space: nowrap;
 }
 </style>

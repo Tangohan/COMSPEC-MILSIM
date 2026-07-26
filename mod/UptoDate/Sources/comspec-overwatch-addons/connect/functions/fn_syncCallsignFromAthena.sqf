@@ -22,10 +22,19 @@ private _atakId = if (count _info >= 5) then { trim (_info select 4) } else { ""
 private _mid = if (count _info >= 8) then { trim (_info select 7) } else { "" };
 if (_mid != "") then {
     missionNamespace setVariable ["COMSPEC_MilitaryId", _mid, false];
+    profileNamespace setVariable ["COMSPEC_MilitaryId", _mid];
+};
+if (_atakId != "") then {
+    missionNamespace setVariable ["COMSPEC_AtakId", _atakId, false];
 };
 if (_callsign isEqualTo "") then { _callsign = _atakId; };
 if (_callsign isEqualTo "") then { _callsign = _displayName; };
 if (_callsign isEqualTo "") exitWith { false };
+
+// L’ID BFT reste lié à l’indicatif même si on ne change pas l’indicatif local.
+if (_mid != "") then {
+    missionNamespace setVariable ["COMSPEC_BftId", _mid, false];
+};
 
 if (!_force && {!(_local isEqualTo "")} && {!(_local isEqualTo (name player))} && {!((toLower _local) in ["unknown", "inconnu", "operateur"])}) exitWith {
     // Indicatif local déjà choisi — on garde, Athena reste source pour le site

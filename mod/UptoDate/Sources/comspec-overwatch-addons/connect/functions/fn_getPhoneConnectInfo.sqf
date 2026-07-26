@@ -72,5 +72,10 @@ if (!_codeOk) exitWith {
     diag_log format ["[COMSPEC] GetPhoneConnectInfo code suspect : %1 (raw cols=%2)", _shortCode, count _cols];
     []
 };
+if (_connectUrl isEqualTo "") exitWith {
+    missionNamespace setVariable ["COMSPEC_PhoneConnectLastError", "Adresse mobile manquante dans la réponse Athena — réessayez.", false];
+    diag_log "[COMSPEC] GetPhoneConnectInfo : connectUrl vide";
+    []
+};
 
 [_token, _shortCode, _connectUrl, _qrImageUrl, _expiresAt]

@@ -209,8 +209,29 @@
       }).bindPopup('Point d’observation').addTo(layerGroups.elevation);
       setHint(
         'Zone visible : ' + result.visibleCount + ' échantillons — zones masquées : ' + result.deadCount +
-        ' (relief approximatif).'
+        ' (relief approximatif). ' + circleReadout(result.radius)
       );
+    }
+
+    function circleReadout(radiusM) {
+      var r = Math.max(0, Number(radiusM) || 0);
+      var speedEl = opts.speedEl || document.getElementById('tacmap-tool-speed');
+      var speed = speedEl ? Math.max(0.1, parseFloat(speedEl.value) || 5) : 5;
+      var area = Math.PI * r * r;
+      var areaLabel = area >= 100000
+        ? (area / 1e6).toFixed(2).replace('.', ',') + ' km²'
+        : Math.round(area).toLocaleString('fr-FR') + ' m²';
+      var delayS = r / (speed / 3.6);
+      var delayLabel;
+      if (delayS < 60) delayLabel = Math.round(delayS) + ' s';
+      else if (delayS < 3600) delayLabel = Math.round(delayS / 60) + ' min';
+      else {
+        var h = Math.floor(delayS / 3600);
+        var m = Math.floor((delayS % 3600) / 60);
+        delayLabel = m === 0 ? (h + ' h') : (h + ' h ' + String(m).padStart(2, '0') + ' min');
+      }
+      return 'Superficie : ' + areaLabel + ' · Délai jusqu’au bord : ' + delayLabel +
+        ' (à ' + String(speed).replace('.', ',') + ' km/h)';
     }
 
     function drawHeatmap(centerXY) {

@@ -1,4 +1,4 @@
-﻿class CfgPatches {
+class CfgPatches {
     class comspec_overwatch_connect {
         name = "COMSPEC Overwatch Connect";
         units[] = {};
@@ -26,6 +26,15 @@ class CfgFunctions {
             class tacticalAlertDialogShow {};
             class saluteDialogShow {};
             class saluteDialogSubmit {};
+            class medevacDialogShow {};
+            class medevacDialogSubmit {};
+            class casRequestShow {};
+            class casRequestSubmit {};
+            class casDialogShow {};
+            class flightManifestShow {};
+            class reportDiag {};
+            class bugReportShow {};
+            class bugReportSubmit {};
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
@@ -95,6 +104,12 @@ class CfgFunctions {
             class registerEventHandler {};
             class publishEvent {};
             class issueOrder {};
+            class canIssueOrder {};
+            class orderComposeShow {};
+            class orderComposeOnLoad {};
+            class orderComposeRefreshMode {};
+            class orderComposeRefreshLinkStatus {};
+            class orderComposeSubmit {};
             class updateOrderStatus {};
             class receiveOrder {};
             class orderConcernsPlayer {};
@@ -159,10 +174,14 @@ class CfgFunctions {
             class addScreenToast {};
             class showNotification {};
             class announce {};
+            class ambientHint {};
             class pushHtmlAlert {};
             class getUnitRole {};
             class setUnitRole {};
             class extResult {};
+            class parseAtakExtResponse {};
+            class atakExtFailMessage {};
+            class openAthenaFeature {};
             class extensionStatus {};
             class extensionLoadHint {};
             class getModVersion {};
@@ -211,6 +230,9 @@ class CfgFunctions {
             class canOpenOverwatchUi {};
             class openAtakEnhanced {};
             class syncMapMarker {};
+            class queueMapMarker {};
+            class sendLocalTacticalMarker {};
+            class resyncAllMapMarkers {};
             class gridPosition {};
             class formatHeading {};
             class trackPacketLoss {};
@@ -283,37 +305,43 @@ class CfgNotifications {
 class CfgSounds {
     sounds[] = {};
     class COMSPEC_ATAK_SilentVib {
-        name = "Silent (vibration)";
+        name = "Silencieux — vibration seule";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_silencieux_vibration.ogg", 1, 1, 50};
         titles[] = {};
     };
+    // Buzz forcé pour « Faire vibrer le terminal » (TOC Athena) — même fichier, volume un peu plus haut
+    class COMSPEC_ATAK_Vibrate {
+        name = "Vibration terminal";
+        sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_silencieux_vibration.ogg", 2, 1, 50};
+        titles[] = {};
+    };
     class COMSPEC_ATAK_Stalker {
-        name = "Stalker";
+        name = "Ambiance tension";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\sound_1_stalker.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Health {
-        name = "Health alert";
+        name = "Signal médical";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_no_activyt_health.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Start {
-        name = "ATAK startup";
+        name = "Démarrage ATAK";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_start.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Disconnect {
-        name = "ATAK disconnect";
+        name = "Déconnexion ATAK";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_disconnect.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Unconscious {
-        name = "Unconscious alert";
+        name = "Alerte inconscient";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_alert_2.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Death {
-        name = "Death alert";
+        name = "Alerte mort";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_death.ogg", 1, 1, 50};
         titles[] = {};
     };
@@ -345,6 +373,7 @@ class CfgFactionClasses
 #include "display.hpp"
 #include "display_hub.hpp"
 #include "display_cas.hpp"
+#include "display_cas_request.hpp"
 #include "display_flight_manifest.hpp"
 #include "display_briefing.hpp"
 #include "display_phone_connect.hpp"
@@ -352,7 +381,10 @@ class CfgFactionClasses
 #include "display_nda.hpp"
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
+#include "display_medevac.hpp"
+#include "display_bug_report.hpp"
 #include "display_order_inbox.hpp"
+#include "display_order_compose.hpp"
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"

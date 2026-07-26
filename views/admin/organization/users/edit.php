@@ -28,6 +28,8 @@ $listUrl = url('back-office/users');
 $displayName = trim((string) ($user['display_name'] ?? ''));
 $email = (string) ($user['email'] ?? '');
 $callsign = trim((string) ($user['callsign'] ?? ''));
+$steamId = trim((string) ($user['steam_id'] ?? ''));
+$steamWebConfigured = !empty($steamWebConfigured);
 $ust = (string) ($user['status'] ?? '');
 $statusLabel = match ($ust) {
     'active' => 'Compte actif',
@@ -48,118 +50,6 @@ $initialsSource = $displayName !== '' ? $displayName : $email;
 $initials = function_exists('user_display_initials')
     ? user_display_initials($initialsSource, 2)
     : mb_strtoupper(mb_substr($initialsSource, 0, 2, 'UTF-8'), 'UTF-8');
-
-$roleBucketLabel = static function (array $r): string {
-    $tier = (string) ($r['semantic_tier'] ?? 'function');
-    $sub = trim((string) ($r['subcategory'] ?? ''));
-    $name = trim((string) ($r['name'] ?? ''));
-    $slug = strtolower(trim((string) ($r['slug'] ?? '')));
-
-    if ($tier === 'status' || $sub === 'Affichage' || str_contains($slug, 'probation') || str_contains($slug, 'trial')) {
-        return 'Statut';
-    }
-    if (
-        $sub === 'Commandement'
-        || $sub === 'Encadrement'
-        || $tier === 'authority'
-        || preg_match('/^Chef(\s|$|’|\')/iu', $name) === 1
-        || str_starts_with(mb_strtolower($name, 'UTF-8'), 'chef ')
-    ) {
-        return 'Chefs';
-    }
-    if (
-        $sub === 'Combattant'
-        || $sub === 'Spécialités'
-        || $sub === 'Specialites'
-        || $tier === 'specialty'
-        || preg_match('/^(Fusilier|Grenadier|Mitrailleur|Tireur|Éclaireur|Eclaireur|Opérateur|Operateur|Spécialiste|Specialiste)\b/iu', $name) === 1
-    ) {
-        return 'Spécificité';
-    }
-    if ($sub !== '') {
-        return $sub;
-    }
-
-    return match ($tier) {
-        'support' => 'Soutien',
-        'liaison' => 'Liaison',
-        'function' => 'Fonction',
-        default => 'Autres',
-    };
-};
-
-$roleCategoryLabel = static function (array $r) use ($roleBucketLabel): string {
-    $cat = trim((string) ($r['category'] ?? ''));
-    if ($cat !== '') {
-        return $cat;
-    }
-    $bucket = $roleBucketLabel($r);
-    if ($bucket === 'Statut') {
-        return 'Statut';
-    }
-
-    return 'Autres attributions';
-};
-
-$bucketSortOrder = [
-    'Statut' => 10,
-    'Chefs' => 20,
-    'Spécificité' => 30,
-    'Fonction' => 40,
-    'Soutien' => 50,
-    'Liaison' => 60,
-    'Autres' => 90,
-];
-
-/** @var array<string, array<string, array<string, list<array<string, mixed>>>>> $rolesByLayerCategoryBucket */
-$rolesByLayerCategoryBucket = ['community' => [], 'intra' => []];
-foreach ($roles as $r) {
-    $ly = (string) ($r['role_layer'] ?? 'community');
-    if ($ly !== 'community' && $ly !== 'intra') {
-        $ly = 'community';
-    }
-    $cat = $roleCategoryLabel($r);
-    $bucket = $roleBucketLabel($r);
-    $rolesByLayerCategoryBucket[$ly][$cat][$bucket][] = $r;
-}
-
-foreach ($rolesByLayerCategoryBucket as $ly => &$cats) {
-    uksort($cats, static function (string $a, string $b): int {
-        if ($a === 'Statut') {
-            return -1;
-        }
-        if ($b === 'Statut') {
-            return 1;
-        }
-
-        return strcasecmp($a, $b);
-    });
-    foreach ($cats as &$buckets) {
-        uksort($buckets, static function (string $a, string $b) use ($bucketSortOrder): int {
-            $oa = $bucketSortOrder[$a] ?? 80;
-            $ob = $bucketSortOrder[$b] ?? 80;
-            if ($oa !== $ob) {
-                return $oa <=> $ob;
-            }
-
-            return strcasecmp($a, $b);
-        });
-        foreach ($buckets as &$list) {
-            usort($list, static function (array $a, array $b): int {
-                $pa = (int) ($a['display_priority'] ?? 0);
-                $pb = (int) ($b['display_priority'] ?? 0);
-                if ($pa !== $pb) {
-                    return $pa <=> $pb;
-                }
-
-                return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
-            });
-        }
-        unset($list);
-    }
-    unset($buckets);
-}
-unset($cats);
 
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
@@ -271,7 +161,7 @@ $formatDateFr = static function (?string $raw): string {
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-account">
                     <h2 id="sec-account" class="bo-user-edit__panel-title">Compte et accès</h2>
-                    <p class="bo-user-edit__panel-lead">Adresse de connexion, mot de passe et état du compte dans la communauté.</p>
+                    <p class="bo-user-edit__panel-lead">Adresse de connexion, mot de passe, état du compte et rattachement Steam pour la carte.</p>
                     <div class="bo-user-edit__grid">
                         <div>
                             <label for="email" class="bo-user-edit__label">Adresse e-mail <span class="req">*</span></label>
@@ -292,6 +182,33 @@ $formatDateFr = static function (?string $raw): string {
                             <p class="bo-user-edit__hint">Un compte inactif ne peut plus se connecter à cette communauté.</p>
                         </div>
                     </div>
+                </section>
+
+                <section class="bo-user-edit__panel" aria-labelledby="sec-steam">
+                    <h2 id="sec-steam" class="bo-user-edit__panel-title">Liaison Steam</h2>
+                    <p class="bo-user-edit__panel-lead">Rattachez l’identifiant Steam du membre pour le retrouver sur la carte et parmi les opérateurs en liaison.</p>
+                    <div class="bo-user-edit__grid">
+                        <div style="grid-column: 1 / -1;">
+                            <label for="steam_id" class="bo-user-edit__label">Identifiant Steam</label>
+                            <input type="text" id="steam_id" name="steam_id" class="bo-user-edit__input" value="<?= htmlspecialchars($steamId, ENT_QUOTES, 'UTF-8') ?>" placeholder="Numéro Steam, format classique, ou adresse du profil" autocomplete="off" maxlength="512">
+                            <p class="bo-user-edit__hint">Laissez vide pour retirer la liaison.</p>
+                        </div>
+                        <div>
+                            <label class="bo-user-edit__label" style="display:flex;align-items:flex-start;gap:.55rem;font-weight:600;text-transform:none;letter-spacing:0;">
+                                <input type="checkbox" name="sync_steam_profile" value="1" style="margin-top:.2rem" <?= $steamWebConfigured ? '' : 'disabled' ?>>
+                                <span>Synchroniser photo / profil public à l’enregistrement</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="bo-user-edit__label" style="display:flex;align-items:flex-start;gap:.55rem;font-weight:600;text-transform:none;letter-spacing:0;">
+                                <input type="checkbox" name="apply_steam_display_name" value="1" style="margin-top:.2rem" <?= $steamWebConfigured ? '' : 'disabled' ?>>
+                                <span>Appliquer le pseudo Steam comme nom d’affichage</span>
+                            </label>
+                        </div>
+                    </div>
+                    <?php if (!$steamWebConfigured): ?>
+                    <p class="bo-user-edit__hint" style="margin-top:.75rem">La lecture du profil public Steam n’est pas configurée sur ce serveur : l’identifiant peut tout de même être enregistré.</p>
+                    <?php endif; ?>
                 </section>
 
                 <section class="bo-user-edit__panel" aria-labelledby="sec-grade">
@@ -338,91 +255,20 @@ $formatDateFr = static function (?string $raw): string {
                 <section class="bo-user-edit__panel" aria-labelledby="sec-roles">
                     <h2 id="sec-roles" class="bo-user-edit__panel-title">Rôles dans la communauté</h2>
                     <p class="bo-user-edit__panel-lead">
-                        Les rôles sont regroupés par domaine, puis par type d’attribution&nbsp;:
-                        <strong>Statut</strong> (période d’essai, service, etc.),
-                        <strong>Chefs</strong> (commandement et encadrement),
-                        <strong>Spécificité</strong> (fusilier, grenadier, tireurs…).
-                        Les droits effectifs restent l’union de tous les rôles cochés.
+                        Recherchez et ajoutez les rôles via la liste. Les droits effectifs restent l’union de tous les rôles sélectionnés.
                     </p>
 
+                    <?php if ($roles === []): ?>
+                    <p class="bo-user-edit__panel-lead">Aucun rôle communauté n’est encore défini.</p>
+                    <?php else: ?>
                     <div class="bo-user-edit__roles">
                         <?php
-                        $hasAnyOrgRole = false;
-                        foreach (['community', 'intra'] as $layerKey):
-                            $cats = $rolesByLayerCategoryBucket[$layerKey] ?? [];
-                            if ($cats === []) {
-                                continue;
-                            }
-                            $hasAnyOrgRole = true;
+                        $pickerId = 'user-edit-org-role-picker';
+                        $matrixRootId = 'role-matrix-wrap';
+                        $showMatrix = true;
+                        $matrixOpen = false;
+                        require base_path('views/admin/organization/partials/org_role_multi_picker.php');
                         ?>
-                        <div class="bo-user-edit__role-layer">
-                            <p class="bo-user-edit__role-layer-title"><?= htmlspecialchars(OrganizationRoleLabels::layerGroupLabel($layerKey, $organizationRoleLabelMode), ENT_QUOTES, 'UTF-8') ?></p>
-                            <?php foreach ($cats as $catLabel => $buckets): ?>
-                            <div class="bo-user-edit__role-group">
-                                <p class="bo-user-edit__role-group-title"><?= htmlspecialchars((string) $catLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                                <?php foreach ($buckets as $bucketLabel => $bucketRoles): ?>
-                                <div class="bo-user-edit__role-bucket">
-                                    <p class="bo-user-edit__role-bucket-title"><?= htmlspecialchars((string) $bucketLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <div class="bo-user-edit__role-list">
-                                        <?php foreach ($bucketRoles as $r):
-                                            $rid = (int) $r['id'];
-                                            $chk = in_array($rid, $selectedRoleIds, true);
-                                            $rDisp = OrganizationRoleLabels::displayName($r, $organizationRoleLabelMode);
-                                        ?>
-                                        <label class="bo-user-edit__role <?= $chk ? 'is-on' : '' ?>">
-                                            <input type="checkbox" name="role_ids[]" value="<?= $rid ?>" class="role-pick" <?= $chk ? 'checked' : '' ?> data-role-name="<?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?>">
-                                            <span>
-                                                <span class="bo-user-edit__role-name"><?= htmlspecialchars($rDisp, ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php if (!empty($r['description'])): ?>
-                                                <span class="bo-user-edit__role-desc"><?= htmlspecialchars((string) $r['description'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                <?php endif; ?>
-                                            </span>
-                                        </label>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <?php endforeach; ?>
-                        <?php if (!$hasAnyOrgRole): ?>
-                        <p class="bo-user-edit__panel-lead">Aucun rôle communauté n’est encore défini.</p>
-                        <?php endif; ?>
-                    </div>
-
-                    <?php if (!empty($roleMatrix['permissions'])): ?>
-                    <div id="role-matrix-wrap" class="bo-user-edit__matrix">
-                        <p class="bo-user-edit__matrix-cap">Aperçu des droits cumulés selon les cases cochées</p>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Droit</th>
-                                    <?php foreach ($roleMatrix['roles'] as $rr): ?>
-                                    <th class="role-col" data-role-id="<?= (int) $rr['id'] ?>"><?= htmlspecialchars(OrganizationRoleLabels::displayName($rr, $organizationRoleLabelMode), ENT_QUOTES, 'UTF-8') ?></th>
-                                    <?php endforeach; ?>
-                                    <th>Cumulé</th>
-                                </tr>
-                            </thead>
-                            <tbody id="role-matrix-body">
-                                <?php foreach ($roleMatrix['permissions'] as $p):
-                                    $pid = (int) ($p['id'] ?? 0);
-                                ?>
-                                <tr class="perm-row" data-perm-id="<?= $pid ?>">
-                                    <td>
-                                        <span><?= htmlspecialchars((string) ($p['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    </td>
-                                    <?php foreach ($roleMatrix['roles'] as $rr):
-                                        $rid = (int) $rr['id'];
-                                        $has = !empty($roleMatrix['byRole'][$rid][$pid]);
-                                    ?>
-                                    <td class="role-cell" data-role-id="<?= $rid ?>" data-perm-id="<?= $pid ?>"><?= $has ? '✓' : '—' ?></td>
-                                    <?php endforeach; ?>
-                                    <td class="union-cell is-off" data-perm-id="<?= $pid ?>">—</td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
                     </div>
                     <?php endif; ?>
                 </section>
@@ -517,7 +363,7 @@ $formatDateFr = static function (?string $raw): string {
             <?php if (!$isServiceAccount && $roleSetsList !== []): ?>
             <section class="bo-user-edit__panel bo-user-edit__panel--amber" aria-labelledby="sec-role-sets">
                 <h2 id="sec-role-sets" class="bo-user-edit__panel-title">Pack de rôles</h2>
-                <p class="bo-user-edit__panel-lead">Ajoute en une fois les rôles du pack, <strong>sans retirer</strong> ceux déjà cochés ci-dessus. Enregistrez ensuite si vous avez aussi modifié le compte.</p>
+                <p class="bo-user-edit__panel-lead">Ajoute en une fois les rôles du pack, <strong>sans retirer</strong> ceux déjà sélectionnés ci-dessus. Enregistrez ensuite si vous avez aussi modifié le compte.</p>
                 <form method="post" action="<?= htmlspecialchars(url('back-office/users/' . $uid . '/apply-role-set'), ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__subform bo-user-edit__subform--pack">
                     <?= \App\Core\Csrf::field() ?>
                     <div>
@@ -540,39 +386,3 @@ $formatDateFr = static function (?string $raw): string {
         </div>
     </div>
 </div>
-<script>
-(function () {
-    var matrix = <?= json_encode($roleMatrix, JSON_UNESCAPED_UNICODE) ?>;
-    var picks = document.querySelectorAll('.role-pick');
-    function selectedIds() {
-        var ids = [];
-        picks.forEach(function (cb) { if (cb.checked) ids.push(parseInt(cb.value, 10)); });
-        return ids;
-    }
-    function refreshUnion() {
-        var ids = selectedIds();
-        var byRole = matrix.byRole || {};
-        document.querySelectorAll('.union-cell').forEach(function (cell) {
-            var pid = parseInt(cell.getAttribute('data-perm-id'), 10);
-            var ok = false;
-            for (var i = 0; i < ids.length; i++) {
-                var rid = ids[i];
-                if (byRole[rid] && byRole[rid][pid]) { ok = true; break; }
-            }
-            cell.textContent = ok ? '✓' : '—';
-            cell.classList.toggle('is-on', ok);
-            cell.classList.toggle('is-off', !ok);
-        });
-        document.querySelectorAll('.role-col').forEach(function (th) {
-            var rid = parseInt(th.getAttribute('data-role-id'), 10);
-            th.classList.toggle('is-on', ids.indexOf(rid) !== -1);
-        });
-        picks.forEach(function (cb) {
-            var lab = cb.closest('.bo-user-edit__role');
-            if (lab) lab.classList.toggle('is-on', cb.checked);
-        });
-    }
-    picks.forEach(function (cb) { cb.addEventListener('change', refreshUnion); });
-    refreshUnion();
-})();
-</script>

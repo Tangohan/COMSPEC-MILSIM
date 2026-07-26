@@ -239,6 +239,8 @@ window.ATAKSessionWorkspace = (function () {
     state.dirty = true;
     var badge = document.getElementById('atak-notes-dirty');
     if (badge) badge.hidden = false;
+    var label = document.getElementById('atak-notes-dirty-label');
+    if (label) label.hidden = false;
     if (state.saveTimer) clearTimeout(state.saveTimer);
     state.saveTimer = setTimeout(function () { save(false); }, 1800);
   }
@@ -260,6 +262,8 @@ window.ATAKSessionWorkspace = (function () {
     setMeta();
     var badge = document.getElementById('atak-notes-dirty');
     if (badge) badge.hidden = true;
+    var label = document.getElementById('atak-notes-dirty-label');
+    if (label) label.hidden = true;
   }
 
   function load() {
@@ -295,12 +299,16 @@ window.ATAKSessionWorkspace = (function () {
       })
       .then(function (data) {
         applyWorkspace(data);
-        if (manual && window.ATAKShowError) {
-          /* succès silencieux via meta */
+        if (manual) {
+          if (window.ATAKShowNotification) {
+            window.ATAKShowNotification('Notes enregistrées.');
+          } else if (window.ATAKShowError) {
+            /* pas de toast dédié — meta mise à jour */
+          }
         }
       })
       .catch(function () {
-        if (window.ATAKShowError) window.ATAKShowError('Impossible d’enregistrer les notes de session.');
+        if (window.ATAKShowError) window.ATAKShowError('Impossible d’enregistrer les notes. Connectez-vous puis réessayez.');
       });
   }
 

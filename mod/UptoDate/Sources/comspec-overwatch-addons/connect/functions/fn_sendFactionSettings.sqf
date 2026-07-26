@@ -37,18 +37,22 @@ missionNamespace setVariable ["COMSPEC_ShowEast", _showEast > 0, false];
 missionNamespace setVariable ["COMSPEC_ShowGuer", _showGuer > 0, false];
 missionNamespace setVariable ["COMSPEC_ShowCiv", _showCiv > 0, false];
 
-// Via messagerie structurée (pas de nouveau handler DLL) — parsé côté portail
-private _callSign = [] call comspec_overwatch_connect_fnc_getCallsign;
-if (_callSign isEqualTo "") then { _callSign = name player; };
+// Via messagerie structurée (transport historique) — le portail applique sans publier au journal radio.
 private _body = format [
     "REGLAGES AFFICHAGE|adversaire=%1|independants=%2|civils=%3",
     if (_showEast > 0) then { 1 } else { 0 },
     if (_showGuer > 0) then { 1 } else { 0 },
     if (_showCiv > 0) then { 1 } else { 0 }
 ];
+
+// Évite le spam à chaque reconnexion / relance des boucles si rien n’a changé.
+private _last = missionNamespace getVariable ["COMSPEC_LastFactionSettingsBody", ""];
+if (_body isEqualTo _last) exitWith {};
+missionNamespace setVariable ["COMSPEC_LastFactionSettingsBody", _body, false];
+
 [player, "CHAT", _body, "", "INFANTRY", 0.5] call comspec_overwatch_connect_fnc_sendIntel;
 
 [format [
-    "[Athena] Réglages camps envoyés — adversaire=%1, indépendants=%2, civils=%3",
+    "[Athena] Affichage carte synchronisé (adversaire=%1, indépendants=%2, civils=%3) — hors journal radio.",
     _showEast > 0, _showGuer > 0, _showCiv > 0
 ]] call comspec_overwatch_connect_fnc_appendLinkLog;

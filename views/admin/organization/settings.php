@@ -36,8 +36,7 @@ $primaryColor = trim((string) ($b['primary_color'] ?? '')) ?: '#059669';
 $accentColor = trim((string) ($b['accent_color'] ?? '')) ?: '#0f172a';
 
 $pm = is_array($c['public_modules'] ?? null) ? $c['public_modules'] : [];
-$registrationModeRaw = (string) ($c['registration_mode'] ?? 'milsim');
-$registrationMode = in_array($registrationModeRaw, ['simple', 'discord'], true) ? $registrationModeRaw : 'milsim';
+$registrationMode = \App\Services\Community\TenantCommunityProfileService::normalizeRegistrationMode($c['registration_mode'] ?? 'milsim');
 $locale = strtolower((string) ($c['default_locale'] ?? 'fr'));
 if ($locale === 'fr-fr') {
     $locale = 'fr';
@@ -57,6 +56,7 @@ $publicPageUrl = $slugHint !== '' ? url('c/' . rawurlencode($slugHint)) : '';
 
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
+$discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($c);
 
 $completion = [
     'Nom affiché' => trim((string) ($tenant['name'] ?? '')) !== '',
@@ -66,6 +66,9 @@ $completion = [
     'E-mail de contact' => trim((string) ($c['contact_email'] ?? '')) !== '',
     'Fuseau horaire' => $currentTz !== '',
 ];
+if ($registrationMode === 'discord') {
+    $completion['Lien Discord'] = trim((string) ($c['contact_discord_url'] ?? '')) !== '';
+}
 $completionDone = count(array_filter($completion));
 $completionTotal = count($completion);
 $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completionTotal) * 100) : 0;
@@ -106,6 +109,17 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
     <?php if ($err): ?><div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
     <?php if ($ok): ?><div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"><?= htmlspecialchars((string) $ok, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
+    <?php if ($discordInviteMissing): ?>
+    <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3.5 text-sm text-amber-950" role="alert">
+        <p class="font-bold">Lien Discord manquant</p>
+        <p class="mt-1 leading-relaxed">
+            Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
+            Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public.
+            <button type="button" class="font-semibold underline decoration-amber-400 hover:text-amber-900" data-org-tab="contact">Renseigner le lien Discord</button>
+        </p>
+    </div>
+    <?php endif; ?>
+
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Checklist</p>
         <div class="mt-3 flex flex-wrap gap-2">
@@ -122,6 +136,7 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
             <?php
             $tabs = [
                 'identite' => 'Identité',
+                'profil' => 'Profil communauté',
                 'images' => 'Images & marque',
                 'contact' => 'Contact',
                 'acces' => 'Accès & fuseau',
@@ -355,8 +370,11 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
                         <input id="contact_email" type="email" name="contact_email" value="<?= htmlspecialchars((string) ($c['contact_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="255" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5" for="contact_discord_url">Lien Discord</label>
-                        <input id="contact_discord_url" type="url" name="contact_discord_url" value="<?= htmlspecialchars((string) ($c['contact_discord_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="500" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="https://discord.gg/…">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5" for="contact_discord_url">Lien Discord<?= $registrationMode === 'discord' ? ' <span class="text-rose-600">*</span>' : '' ?></label>
+                        <input id="contact_discord_url" type="url" name="contact_discord_url" value="<?= htmlspecialchars((string) ($c['contact_discord_url'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="500" class="w-full rounded-xl border <?= $discordInviteMissing ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300' ?> px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" placeholder="https://discord.gg/…">
+                        <?php if ($discordInviteMissing): ?>
+                        <p class="mt-1.5 text-xs font-semibold text-amber-800">Obligatoire tant que le mode « Recrutement via Discord » est actif.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div>
@@ -421,12 +439,15 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
                         <select id="registration_mode" name="registration_mode" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100">
                             <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé)</option>
                             <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Mode simple (champs réduits)</option>
-                            <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo + questions custom)</option>
+                            <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo et questions personnalisées)</option>
                         </select>
                         <?php if ($registrationMode === 'discord'): ?>
                         <p class="mt-1.5 text-xs text-slate-500">
                             <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-indigo-700 underline">Configurer les questions du formulaire Discord →</a>
                         </p>
+                        <?php if ($discordInviteMissing): ?>
+                        <p class="mt-1.5 text-xs font-semibold text-amber-800">Pensez aussi à renseigner le lien Discord dans l’onglet Contact.</p>
+                        <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -494,12 +515,75 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
             </section>
         </div>
 
-        <div class="sticky bottom-0 mt-2 flex justify-end border-t border-slate-200 bg-white/95 backdrop-blur-md px-1 py-4">
+        <div class="sticky bottom-0 mt-2 flex justify-end border-t border-slate-200 bg-white/95 backdrop-blur-md px-1 py-4" data-org-save-bar>
             <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-slate-900/25 ring-1 ring-white/10 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
                 <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
                 Enregistrer les paramètres
             </button>
         </div>
+    </form>
+
+    <?php
+    $tenantTypeOptions = is_array($tenantTypeOptions ?? null) ? $tenantTypeOptions : \App\Services\Community\TenantTypeConfig::availableTypes();
+    $currentTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+        (string) ($currentTenantType ?? ($tenant['tenant_type'] ?? 'full'))
+    );
+    $tenantTypeFormAction = (string) ($tenantTypeFormAction ?? url('back-office/organisation/profil'));
+    ?>
+    <form method="post" action="<?= htmlspecialchars($tenantTypeFormAction, ENT_QUOTES, 'UTF-8') ?>" class="org-panel hidden space-y-6 pb-16" data-org-panel="profil" id="org-panel-profil">
+        <?= \App\Core\Csrf::field() ?>
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6" id="org-profil">
+            <div>
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Modifier le type de communauté</h2>
+                <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-2xl">
+                    Le profil détermine les outils visibles et accessibles pour tous les membres.
+                    Changer de profil masque ou révèle des modules ; les données déjà enregistrées ne sont pas effacées.
+                    Vous pouvez aussi réappliquer le profil actuel pour réaligner menus et permissions (utile après une mise à jour).
+                </p>
+            </div>
+
+            <fieldset class="space-y-3">
+                <legend class="sr-only">Profil de la communauté</legend>
+                <?php foreach ($tenantTypeOptions as $typeKey => $typeMeta): ?>
+                    <?php
+                    $isCurrent = $typeKey === $currentTenantType;
+                    $inputId = 'tenant_type_' . preg_replace('/[^a-z0-9_-]/i', '', (string) $typeKey);
+                    ?>
+                    <label for="<?= htmlspecialchars($inputId, ENT_QUOTES, 'UTF-8') ?>" class="flex cursor-pointer gap-4 rounded-2xl border p-4 transition <?= $isCurrent ? 'border-emerald-400 bg-emerald-50/70 ring-1 ring-emerald-200' : 'border-slate-200 bg-slate-50/40 hover:border-slate-300' ?>">
+                        <input
+                            id="<?= htmlspecialchars($inputId, ENT_QUOTES, 'UTF-8') ?>"
+                            type="radio"
+                            name="tenant_type"
+                            value="<?= htmlspecialchars((string) $typeKey, ENT_QUOTES, 'UTF-8') ?>"
+                            class="mt-1 h-4 w-4 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            <?= $isCurrent ? 'checked' : '' ?>
+                            data-type-consequence="<?= htmlspecialchars((string) ($typeMeta['consequences'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                        >
+                        <span class="min-w-0 flex-1">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <span class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($typeMeta['label'] ?? $typeKey), ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($isCurrent): ?>
+                                    <span class="inline-flex rounded-full border border-emerald-300 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">Profil actuel</span>
+                                <?php endif; ?>
+                            </span>
+                            <span class="mt-1 block text-sm text-slate-600 leading-relaxed"><?= htmlspecialchars((string) ($typeMeta['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="mt-2 block text-xs font-semibold text-amber-900/90 leading-relaxed"><?= htmlspecialchars((string) ($typeMeta['consequences'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </fieldset>
+
+            <label class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                <input type="checkbox" name="confirm_type_change" value="1" class="mt-1 h-4 w-4 rounded border-amber-400 text-emerald-600 focus:ring-emerald-500" required>
+                <span>Je confirme l’application (ou la réapplication) de ce profil pour toute la communauté.</span>
+            </label>
+
+            <div class="flex justify-end">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
+                    Appliquer le profil
+                </button>
+            </div>
+        </section>
     </form>
 </div>
 </div>
@@ -508,9 +592,13 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
     var tabs = document.querySelectorAll('[data-org-tab]');
     var panels = document.querySelectorAll('[data-org-panel]');
     if (!tabs.length || !panels.length) return;
-    var order = ['identite', 'images', 'contact', 'acces', 'options'];
+    var order = ['identite', 'profil', 'images', 'contact', 'acces', 'options'];
+    var saveBar = document.querySelector('[data-org-save-bar]');
     function show(id) {
-        if (order.indexOf(id) === -1) id = 'identite';
+        if (order.indexOf(id) === -1) {
+            if (id === 'org-profil') id = 'profil';
+            else id = 'identite';
+        }
         panels.forEach(function (p) {
             p.classList.toggle('hidden', p.getAttribute('data-org-panel') !== id);
         });
@@ -522,6 +610,9 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
             t.classList.toggle('text-emerald-950', on);
             t.classList.toggle('shadow', on);
         });
+        if (saveBar) {
+            saveBar.classList.toggle('hidden', id === 'profil');
+        }
         try {
             if (history.replaceState) history.replaceState(null, '', '#' + id);
         } catch (e) {}
@@ -530,6 +621,7 @@ $completionPct = $completionTotal > 0 ? (int) round(($completionDone / $completi
         t.addEventListener('click', function () { show(String(t.getAttribute('data-org-tab') || '')); });
     });
     var initial = (location.hash || '').replace(/^#/, '');
+    if (initial === 'org-profil') initial = 'profil';
     show(order.indexOf(initial) !== -1 ? initial : 'identite');
 })();
 (function () {

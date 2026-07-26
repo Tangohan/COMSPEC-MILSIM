@@ -21,12 +21,13 @@ player createDiaryRecord [
     ["Guide configuration", _guide]
 ];
 
-private _headline = "Guide Overwatch — voir le journal de mission (section COMSPEC Athena).";
+private _headline = "Guide Overwatch — journal de mission (COMSPEC Athena).";
 if ((_map getOrDefault ["realism", "0"]) isEqualTo "1") then {
-    _headline = "Mode réalisme actif pour votre communauté — consultez le journal COMSPEC Athena.";
+    // Réalisme : journal seulement, pas de bandeau / chat.
+    exitWith {};
 };
 if ((_map getOrDefault ["troll", "0"]) isEqualTo "1") then {
-    _headline = "Mode troll actif — alertes de suivi renforcées. Consultez le journal COMSPEC Athena.";
+    _headline = "Mode troll actif — journal COMSPEC Athena.";
 };
 
 [_headline, "system", "info"] call comspec_overwatch_connect_fnc_announce;

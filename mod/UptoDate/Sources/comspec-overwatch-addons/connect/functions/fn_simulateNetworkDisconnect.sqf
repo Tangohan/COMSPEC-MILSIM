@@ -6,6 +6,7 @@
 */
 
 // Vérifier si le mode roleplay est activé
+if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_network_failures", false])) exitWith {};
 
@@ -35,9 +36,9 @@ if (_state getOrDefault ["is_disconnected", false]) then {
         private _interval = 600; // Par défaut 10 minutes
         _state set ["next_disconnect_at", _now + _interval];
         
-        // Notification
-        hintSilent "Liaison ATAK rétablie";
-        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+        // Notification (masquée en milsim / réalisme / mode discret)
+["Liaison ATAK rétablie", "link", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
         
         // Reset du hint pour la prochaine déconnexion
         missionNamespace setVariable ["COMSPEC_DisconnectHintShown", false, false];
@@ -68,7 +69,7 @@ if (_state getOrDefault ["is_disconnected", false]) then {
         _state set ["disconnect_count", (_state getOrDefault ["disconnect_count", 0]) + 1];
 
         private _msg = format ["Perte de liaison ATAK (%1s)", _duration];
-        hintSilent _msg;
+        [_msg, "link", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
 
         ["disconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;

@@ -10,10 +10,10 @@ if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
 if !([_fromAtak] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {
-    private _msg = if (!(missionNamespace getVariable ["comspec_overwatch_require_item", false]) || {([player] call comspec_overwatch_connect_fnc_hasTerminal)}) then {
-        "Ouvrez le téléphone ATAK Enhanced pour accéder à Overwatch."
+    private _msg = if (!(missionNamespace getVariable ["comspec_overwatch_require_item", true]) || {([player] call comspec_overwatch_connect_fnc_hasTerminal)}) then {
+        "Ouvrez le téléphone ATAK pour accéder à Athena."
     } else {
-        "Équipement requis manquant — synchronisation et interface indisponibles."
+        "Terminal ATAK manquant — emportez votre téléphone ou tablette tactique pour synchroniser et ouvrir l’interface."
     };
     ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 };
@@ -55,4 +55,4 @@ if (!_ok) exitWith {
         };
     };
 };
-
+

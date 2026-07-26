@@ -1,4 +1,6 @@
-/* Barres d’info pleine largeur sous la navbar (plateforme + annonces importantes communauté).
+/* Barres d’info sous la navbar (plateforme + annonces importantes communauté).
+ * Portail : pleine largeur viewport. Shell BO / formation : rendues dans la colonne
+ * contenu (views/layout/main.php) pour rester à droite du rail.
  * z-index 94 : sous le header Athena (96) pour ne pas masquer menus / dropdowns. */
 
 .navbar-info-banners {
@@ -8,6 +10,15 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* Dans la colonne contenu BO : ne pas remonter au-dessus du rail (isolate du shell). */
+.bo-shell-row .navbar-info-banners {
+  z-index: 1;
+}
+
+.bo-shell-row .alert-banners-stack {
+  z-index: 1;
 }
 
 .navbar-info-banners .mini-banner,

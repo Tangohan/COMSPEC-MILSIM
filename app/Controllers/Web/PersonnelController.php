@@ -219,6 +219,9 @@ class PersonnelController
 
     private function formatArmaPlaytimeFrench(int $seconds): string
     {
+        if (function_exists('format_arma_playtime_french')) {
+            return format_arma_playtime_french($seconds);
+        }
         if ($seconds <= 0) {
             return 'Pas encore de temps enregistré';
         }
@@ -274,7 +277,9 @@ class PersonnelController
         }
 
         $query = trim((string) $request->query('q', ''));
-        $results = $this->userRepository->listPersonnelDirectoryRich($tenantId, $query, 150);
+        $gate = Gate::getInstance();
+        $canSeeInactive = EffectifsLmsAccess::allows($gate) || EffectifsLmsAccess::canManageStatus($gate);
+        $results = $this->userRepository->listPersonnelDirectoryRich($tenantId, $query, 150, $canSeeInactive);
 
         $userIds = [];
         $legacyRoleIdByUserId = [];
@@ -308,6 +313,7 @@ class PersonnelController
             'currentUserId' => (int) ($user['id'] ?? 0),
             'tenantName' => $tenantName,
             'canAccessEffectifsLms' => $canAccessEffectifsLms,
+            'canSeeInactiveDirectory' => $canSeeInactive,
         ]);
     }
 
@@ -1415,12 +1421,6 @@ class PersonnelController
                 'bio' => trim((string) $request->input('civil_bio')) ?: null,
                 'timezone' => trim((string) $request->input('civil_timezone')) ?: null,
                 'language' => trim((string) $request->input('civil_language')) ?: null,
-            ]);
-            $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
-                'first_name' => trim((string) $request->input('civil_first_name')),
-                'last_name' => trim((string) $request->input('civil_last_name')),
-                'nationality' => trim((string) $request->input('civil_nationality')) ?: null,
-                'birth_date' => trim((string) $request->input('civil_birth_date')) ?: null,
             ]);
         }
 

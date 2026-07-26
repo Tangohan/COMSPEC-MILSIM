@@ -376,6 +376,8 @@
   flex: 1 1 auto;
   background: #050505;
   color: var(--inv-ink);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+  padding-bottom: 1.5rem;
 }
 
 .inv-compose [x-cloak] {

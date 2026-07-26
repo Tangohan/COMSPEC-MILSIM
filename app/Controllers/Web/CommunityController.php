@@ -597,8 +597,6 @@ class CommunityController
         if ($ref !== '') {
             Session::set('pending_referrer_code', $ref);
         }
-        $plans = $this->subscriptionPlanRepository->allOrdered();
-        $paidPlans = array_values(array_filter($plans, static fn ($p) => in_array((string) ($p['slug'] ?? ''), ['standard', 'pro', 'pro_plus'], true)));
         $stripeConfigured = (getenv('STRIPE_SECRET_KEY') ?: '') !== '';
 
         $grades = new GradeRepository();
@@ -608,7 +606,6 @@ class CommunityController
         return Response::view('layout.main', [
             'title' => 'Créer une communauté',
             'content' => 'community.create',
-            'paidPlans' => $paidPlans,
             'stripeConfigured' => $stripeConfigured,
             'gradesFr' => $gradesFr,
             'gradesUs' => $gradesUs,
@@ -666,7 +663,7 @@ class CommunityController
             'previewSlug' => $slug,
             'communityPreview' => $communityPreview,
             'milsimPackPreview' => $milsimPack,
-            'registrationMode' => ((string) ($data['registration_mode'] ?? 'milsim')) === 'simple' ? 'simple' : 'milsim',
+            'registrationMode' => TenantCommunityProfileService::normalizeRegistrationMode($data['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM),
         ]);
     }
 
@@ -688,7 +685,7 @@ class CommunityController
         }, $badges)));
 
         $c = [
-            'registration_mode' => ((string) ($data['registration_mode'] ?? 'milsim')) === 'simple' ? 'simple' : 'milsim',
+            'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode($data['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM),
             'community_locked' => !empty($data['community_locked']),
             'require_ai_ack' => !empty($data['require_ai_ack']),
             'welcome_text' => trim((string) ($data['welcome_text'] ?? '')),
@@ -766,12 +763,15 @@ class CommunityController
             return Response::redirect(url('login'));
         }
         $planChoice = trim((string) $request->input('plan_choice', 'free'));
+        $wantsHeartSupport = $planChoice === 'heart_support';
         try {
             $paid = $this->parsePaidPlanChoice($planChoice);
             $referrerUserId = $this->resolveReferrerUserId((int) $user['id']);
             $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType((string) $request->input('tenant_type', 'full'));
             $optionsBase = [
-                'registration_mode' => (string) $request->input('registration_mode', 'milsim'),
+                'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode(
+                    $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+                ),
                 'community_locked' => $request->input('community_locked') ? true : false,
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
                 'welcome_text' => trim((string) $request->input('welcome_text')),
@@ -797,17 +797,17 @@ class CommunityController
             if ($paid !== null) {
                 [$planSlug, $interval] = $paid;
                 if ((getenv('STRIPE_SECRET_KEY') ?: '') === '') {
-                    Session::flash('error', 'Paiement indisponible : STRIPE_SECRET_KEY n’est pas configuré sur le serveur.');
+                    Session::flash('error', 'Le paiement en ligne n’est pas disponible pour le moment.');
                     return Response::redirect(url('communities/create'));
                 }
                 $planRow = $this->subscriptionPlanRepository->findBySlug($planSlug);
                 if (!$planRow) {
-                    Session::flash('error', 'Plan d’abonnement introuvable.');
+                    Session::flash('error', 'Cette formule n’est pas disponible.');
                     return Response::redirect(url('communities/create'));
                 }
                 $priceId = $this->stripePriceIdForInterval($planRow, $interval);
                 if ($priceId === null) {
-                    Session::flash('error', 'Ce prix Stripe n’est pas configuré pour cette formule (vérifiez les Price IDs en base ou en Stripe).');
+                    Session::flash('error', 'Cette formule n’est pas encore ouverte à la souscription. Choisissez Quartier libre ou Support du cœur.');
                     return Response::redirect(url('communities/create'));
                 }
                 $payload = json_encode([
@@ -826,9 +826,18 @@ class CommunityController
             ]));
             Session::forget('pending_referrer_code');
 
-            return $this->finalizeFreeCommunityCreation($name, $slug, $result);
-        } catch (\Throwable $e) {
+            return $this->finalizeFreeCommunityCreation($name, $slug, $result, $wantsHeartSupport);
+        } catch (\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
+            return Response::redirect(url('communities/create'));
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            if ($e instanceof \RuntimeException && $msg !== '' && !preg_match('/SQLSTATE|Unknown column|PDOException/i', $msg)) {
+                Session::flash('error', $msg);
+            } else {
+                error_log('[community.create] ' . $msg);
+                Session::flash('error', 'Impossible de créer la communauté pour le moment. Réessayez plus tard ou contactez le support.');
+            }
             return Response::redirect(url('communities/create'));
         }
     }
@@ -944,13 +953,14 @@ class CommunityController
     /**
      * @param array{tenant_id: int, user_id: int} $result
      */
-    private function finalizeFreeCommunityCreation(string $name, string $slugInput, array $result): Response
+    private function finalizeFreeCommunityCreation(string $name, string $slugInput, array $result, bool $withHeartSupport = false): Response
     {
         Session::forget('pending_referrer_code');
         $newUserId = (int) $result['user_id'];
         $tenantId = (int) $result['tenant_id'];
         $t = $this->tenantRepository->findById($tenantId);
         $u = $this->userRepository->findById($newUserId, $tenantId);
+        $creatorEmail = '';
         if ($u) {
             $this->authService->loginUser($u);
             $this->rbacService->setPermissionsForGateFromUserRow($u, $this->userRepository);
@@ -968,10 +978,50 @@ class CommunityController
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
-        Session::flash('success', 'Communauté créée. Finalisez les derniers réglages essentiels.');
-        $newSlug = $t['slug'] ?? $slugInput;
 
-        return Response::redirect(url('back-office/configuration-initiale'));
+        $setupUrl = url('back-office/configuration-initiale');
+
+        if ($withHeartSupport && (getenv('STRIPE_SECRET_KEY') ?: '') !== '') {
+            try {
+                $successUrl = $setupUrl . (str_contains($setupUrl, '?') ? '&' : '?') . 'soutien=merci';
+                $session = $this->stripeCheckoutService->createPaymentCheckoutSession(
+                    200,
+                    'eur',
+                    'Support du cœur — Athena',
+                    'Contribution volontaire de 2 € pour soutenir le projet',
+                    $successUrl,
+                    $setupUrl,
+                    $creatorEmail !== '' ? $creatorEmail : null,
+                    [
+                        'kind' => 'community_heart_support',
+                        'user_id' => (string) $newUserId,
+                        'tenant_id' => (string) $tenantId,
+                        'amount_cents' => '200',
+                    ]
+                );
+                Session::flash('success', 'Communauté créée. Merci pour votre soutien — finalisez le paiement sécurisé de 2 €.');
+
+                return Response::redirect($session['url']);
+            } catch (\Throwable) {
+                Session::flash(
+                    'success',
+                    'Communauté créée. Merci pour votre intention de soutien ; le paiement n’est pas disponible pour le moment. Finalisez les derniers réglages essentiels.'
+                );
+
+                return Response::redirect($setupUrl);
+            }
+        }
+
+        if ($withHeartSupport) {
+            Session::flash(
+                'success',
+                'Communauté créée. Merci pour votre intention de soutien. Finalisez les derniers réglages essentiels.'
+            );
+        } else {
+            Session::flash('success', 'Communauté créée. Finalisez les derniers réglages essentiels.');
+        }
+
+        return Response::redirect($setupUrl);
     }
 
     private function resolveReferrerUserId(int $currentUserId): ?int
@@ -988,10 +1038,10 @@ class CommunityController
         return null;
     }
 
-    /** @return array{0: string, 1: string}|null null = gratuit */
+    /** @return array{0: string, 1: string}|null null = gratuit / soutien volontaire */
     private function parsePaidPlanChoice(string $planChoice): ?array
     {
-        if ($planChoice === 'free') {
+        if ($planChoice === 'free' || $planChoice === 'heart_support') {
             return null;
         }
         $parts = explode('|', $planChoice, 2);

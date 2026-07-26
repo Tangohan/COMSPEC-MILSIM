@@ -61,6 +61,70 @@ window.ATAKMapShapes = (function () {
     return L.latLng(applied[0], applied[1]);
   }
 
+  function formatIntFr(n) {
+    var s = String(Math.round(Math.abs(n)));
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+
+  function formatAreaFrLocal(areaM2) {
+    if (window.ATAKMapTools && typeof window.ATAKMapTools.formatAreaFr === 'function') {
+      return window.ATAKMapTools.formatAreaFr(areaM2);
+    }
+    var a = Number(areaM2);
+    if (!isFinite(a) || a < 0) return '—';
+    if (a >= 100000) {
+      return (a / 1e6).toFixed(2).replace('.', ',') + ' km²';
+    }
+    return formatIntFr(a) + ' m²';
+  }
+
+  function formatDelayFrLocal(seconds) {
+    if (window.ATAKMapTools && typeof window.ATAKMapTools.formatDelayFr === 'function') {
+      return window.ATAKMapTools.formatDelayFr(seconds);
+    }
+    var s = Math.max(0, Math.round(Number(seconds) || 0));
+    if (s < 60) return s + ' s';
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    if (h >= 1) return m === 0 ? (h + ' h') : (h + ' h ' + String(m).padStart(2, '0') + ' min');
+    return m + ' min';
+  }
+
+  function circleShapeMetrics(s) {
+    var geom = s.geometry || {};
+    var meta = s.meta || {};
+    var radius = geom.radius != null ? Number(geom.radius) : (meta.radius_m != null ? Number(meta.radius_m) : NaN);
+    if (!isFinite(radius) || radius <= 0) return null;
+    var speed = meta.speed_kph != null ? Number(meta.speed_kph) : NaN;
+    if (!isFinite(speed) || speed <= 0) {
+      speed = (window.ATAKMapTools && window.ATAKMapTools.getToolSpeedKph)
+        ? window.ATAKMapTools.getToolSpeedKph()
+        : 5;
+    }
+    var area = meta.area_m2 != null ? Number(meta.area_m2) : (Math.PI * radius * radius);
+    var delay = meta.delay_s != null ? Number(meta.delay_s) : (radius / (speed / 3.6));
+    // Recalcule toujours à partir du rayon + vitesse (source de vérité).
+    if (window.ATAKMapTools && typeof window.ATAKMapTools.circleMetrics === 'function') {
+      var m = window.ATAKMapTools.circleMetrics(radius, speed);
+      return {
+        radiusM: radius,
+        speedKph: speed,
+        areaLabel: m.areaLabel,
+        delayLabel: m.delayLabel,
+        tip: 'Rayon ' + Math.round(radius) + ' m · Superficie ' + m.areaLabel +
+          ' · Délai jusqu’au bord ' + m.delayLabel
+      };
+    }
+    return {
+      radiusM: radius,
+      speedKph: speed,
+      areaLabel: formatAreaFrLocal(area),
+      delayLabel: formatDelayFrLocal(delay),
+      tip: 'Rayon ' + Math.round(radius) + ' m · Superficie ' + formatAreaFrLocal(area) +
+        ' · Délai jusqu’au bord ' + formatDelayFrLocal(delay)
+    };
+  }
+
   function renderShape(s) {
     var lg = ensureLayer();
     if (!lg || !s) return;
@@ -76,6 +140,13 @@ window.ATAKMapShapes = (function () {
     var kind = meta.kind || '';
     var type = String(s.type || '').toUpperCase();
     var obj = null;
+    var kindLabel = '';
+    if (kind === 'search_zone') kindLabel = 'Zone de recherche';
+    else if (kind === 'perimeter') kindLabel = 'Périmètre';
+    else if (kind === 'aoi') kindLabel = 'Zone d’intérêt';
+    else if (kind === 'zone') kindLabel = 'Zone';
+    else if (kind === 'line') kindLabel = 'Trait';
+    else if (kind === 'comment') kindLabel = 'Commentaire';
 
     if (type === 'LINE' || type === 'POLYLINE' || type === 'POLYGON') {
       var coords = geom.coordinates || geom.points || [];
@@ -131,12 +202,31 @@ window.ATAKMapShapes = (function () {
     }
 
     if (!obj) return;
-    var popup = '<strong>' + escapeHtml(label) + '</strong>';
+    var displayLabel = label || kindLabel || 'Élément';
+    var popup = '<strong>' + escapeHtml(displayLabel) + '</strong>';
+    if (kindLabel && label && kindLabel !== label) {
+      popup = '<strong>' + escapeHtml(kindLabel) + '</strong><br/>' + escapeHtml(label);
+    }
     if (meta.author || s.created_by || s.createdBy) {
       popup += '<br/><span style="color:var(--atak-muted)">' + escapeHtml(meta.author || s.created_by || s.createdBy) + '</span>';
     }
     if (kind === 'comment' && label) {
       popup = '<strong>Commentaire</strong><br/>' + escapeHtml(label);
+    }
+    var circleMetrics = (type === 'CIRCLE') ? circleShapeMetrics(s) : null;
+    if (circleMetrics) {
+      popup += '<br/><span class="atak-shape-metrics">' +
+        'Rayon : ' + escapeHtml(String(Math.round(circleMetrics.radiusM))) + ' m<br/>' +
+        'Superficie : ' + escapeHtml(circleMetrics.areaLabel) + '<br/>' +
+        'Délai jusqu’au bord : ' + escapeHtml(circleMetrics.delayLabel) +
+        ' <span style="color:var(--atak-muted)">(à ' + escapeHtml(String(circleMetrics.speedKph).replace('.', ',')) + ' km/h)</span>' +
+        '</span>';
+      obj.bindTooltip(circleMetrics.tip, {
+        sticky: true,
+        direction: 'top',
+        opacity: 0.95,
+        className: 'atak-shape-circle-tip'
+      });
     }
     obj.bindPopup(popup);
     obj._atakShapeId = key;
@@ -151,13 +241,13 @@ window.ATAKMapShapes = (function () {
         var featureType = 'shape';
         if (kind === 'comment' || type === 'POINT') featureType = 'comment';
         else if (kind === 'line' || type === 'LINE' || type === 'POLYLINE') featureType = 'line';
-        else if (kind === 'zone' || type === 'CIRCLE') featureType = 'zone';
+        else if (kind === 'zone' || kind === 'search_zone' || kind === 'perimeter' || kind === 'aoi' || type === 'CIRCLE' || type === 'POLYGON') featureType = 'zone';
         window.dispatchEvent(new CustomEvent('atak:feature-contextmenu', {
           detail: {
             featureType: featureType,
             id: key,
             shape: s,
-            label: label || featureTypeLabel(featureType),
+            label: label || kindLabel || featureTypeLabel(featureType),
             latlng: e.latlng || null,
             clientX: e.originalEvent.clientX,
             clientY: e.originalEvent.clientY
@@ -323,6 +413,9 @@ window.ATAKMapShapes = (function () {
         var kind = (payload.meta && payload.meta.kind) || payload.type || 'élément';
         var msg = kind === 'comment' ? 'Commentaire enregistré.'
           : kind === 'line' ? 'Trait enregistré.'
+          : kind === 'search_zone' ? 'Zone de recherche enregistrée.'
+          : kind === 'perimeter' ? 'Périmètre enregistré.'
+          : kind === 'aoi' ? 'Zone d’intérêt enregistrée.'
           : kind === 'zone' ? 'Zone enregistrée.'
           : 'Élément enregistré sur la carte.';
         window.ATAKShowNotification(msg);
@@ -331,6 +424,58 @@ window.ATAKMapShapes = (function () {
     }).catch(function () {
       if (window.ATAKShowError) window.ATAKShowError('Impossible d’enregistrer sur la carte.');
       return null;
+    });
+  }
+
+  var TACTICAL_KINDS = {
+    zone: true,
+    search_zone: true,
+    perimeter: true,
+    aoi: true,
+    line: true
+  };
+
+  function isTacticalDrawing(s) {
+    if (!s) return false;
+    var meta = s.meta || {};
+    var kind = String(meta.kind || '');
+    if (TACTICAL_KINDS[kind]) return true;
+    var type = String(s.type || '').toUpperCase();
+    return type === 'CIRCLE' || type === 'POLYGON' || type === 'LINE' || type === 'POLYLINE';
+  }
+
+  function clearLastDrawing() {
+    var list = shapes.filter(isTacticalDrawing);
+    if (!list.length) return Promise.resolve(false);
+    var last = list[list.length - 1];
+    return deleteShape(shapeKey(last)).then(function (ok) {
+      if (ok && window.ATAKShowNotification) window.ATAKShowNotification('Dernier tracé effacé.');
+      return !!ok;
+    });
+  }
+
+  function clearAllDrawings() {
+    var targets = shapes.filter(isTacticalDrawing);
+    if (!targets.length) {
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Aucun tracé à effacer.');
+      return Promise.resolve(0);
+    }
+    var chain = Promise.resolve();
+    var count = 0;
+    targets.forEach(function (s) {
+      chain = chain.then(function () {
+        return deleteShape(shapeKey(s)).then(function (ok) {
+          if (ok) count += 1;
+        });
+      });
+    });
+    return chain.then(function () {
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification(count > 1
+          ? count + ' tracés effacés.'
+          : (count === 1 ? 'Tracé effacé.' : 'Aucun tracé effacé.'));
+      }
+      return count;
     });
   }
 
@@ -347,6 +492,8 @@ window.ATAKMapShapes = (function () {
     createShape: createShape,
     updateShape: updateShape,
     deleteShape: deleteShape,
+    clearLastDrawing: clearLastDrawing,
+    clearAllDrawings: clearAllDrawings,
     redrawAll: redrawAll
   };
 })();

@@ -14,7 +14,10 @@ params [
     ["_targetType", ""]
 ];
 
-private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF", "CUSTOM"];
+if (!hasInterface) exitWith { createHashMap };
+if (isNull player) exitWith { createHashMap };
+
+private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF", "FRAGO", "CUSTOM"];
 if !(_orderType in _validTypes) then { _orderType = "MOVE"; };
 
 private _id = format ["ORD-%1-%2", round (serverTime * 1000), floor random 9999];

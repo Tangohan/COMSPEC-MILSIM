@@ -11,9 +11,30 @@ class TenantRepository
 {
     private PDO $pdo;
 
+    /** @var bool|null cache information_schema pour tenants.tenant_type */
+    private ?bool $hasTenantTypeColumn = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    private function hasTenantTypeColumn(): bool
+    {
+        if ($this->hasTenantTypeColumn !== null) {
+            return $this->hasTenantTypeColumn;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'tenant_type' LIMIT 1"
+            );
+            $this->hasTenantTypeColumn = $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->hasTenantTypeColumn = false;
+        }
+
+        return $this->hasTenantTypeColumn;
     }
 
     public function findById(int $id): ?array
@@ -169,7 +190,21 @@ class TenantRepository
     public function getTenantType(int $tenantId): string
     {
         $tenant = $this->findById($tenantId);
-        return $tenant ? (string) ($tenant['tenant_type'] ?? 'full') : 'full';
+        return \App\Services\Community\TenantTypeConfig::normalizeType(
+            $tenant ? (string) ($tenant['tenant_type'] ?? 'full') : 'full'
+        );
+    }
+
+    public function updateTenantType(int $tenantId, string $tenantType): void
+    {
+        if (!$this->hasTenantTypeColumn()) {
+            throw new \RuntimeException(
+                'La colonne du profil de communauté est absente. Lancez les migrations puis réessayez.'
+            );
+        }
+        $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
+        $stmt = $this->pdo->prepare('UPDATE tenants SET tenant_type = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$tenantType, $tenantId]);
     }
 
     public function updateLogoUrl(int $tenantId, ?string $url): void
@@ -195,8 +230,26 @@ class TenantRepository
     /** @return int id du tenant créé */
     public function create(string $name, string $slug, string $planSlug = 'free', string $tenantType = 'full'): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO tenants (name, slug, tenant_type, plan_slug, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())');
-        $stmt->execute([$name, $slug, $tenantType, $planSlug]);
+        $tenantType = \App\Services\Community\TenantTypeConfig::normalizeType($tenantType);
+        if ($this->hasTenantTypeColumn()) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO tenants (name, slug, tenant_type, plan_slug, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$name, $slug, $tenantType, $planSlug]);
+        } else {
+            // Sans la colonne, tout est traité comme « Complet » : refuser un profil restreint
+            // plutôt que de créer une communauté ATAK/Effectifs qui verrait tous les modules.
+            if ($tenantType !== \App\Services\Community\TenantTypeConfig::TYPE_FULL) {
+                throw new \RuntimeException(
+                    'Le profil choisi ne peut pas être enregistré : lancez les migrations (colonne du profil de communauté), puis recréez la communauté.'
+                );
+            }
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO tenants (name, slug, plan_slug, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())'
+            );
+            $stmt->execute([$name, $slug, $planSlug]);
+        }
+
         return (int) $this->pdo->lastInsertId();
     }
 
@@ -329,11 +382,12 @@ class TenantRepository
     public function listOverviewForPlatform(): array
     {
         $humanUsers = UserRepository::sqlLiteralExcludeTechnicalInternalEmails('u');
+        $typeSelect = $this->hasTenantTypeColumn() ? 't.tenant_type,' : "'full' AS tenant_type,";
         $sql = <<<SQL
 SELECT t.id,
        t.name,
        t.slug,
-       t.tenant_type,
+       {$typeSelect}
        t.created_at AS created_at,
        t.plan_slug,
        t.subscription_status,

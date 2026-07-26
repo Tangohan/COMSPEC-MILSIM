@@ -111,6 +111,40 @@ class CasNineLineRepository
         $line7 = $lines['line7'] ?? $payload['line7'] ?? '';
         $line8 = $lines['line8'] ?? $payload['line8'] ?? '';
         $line9 = $lines['line9'] ?? $payload['line9'] ?? '';
+
+        // Remplissage depuis les champs structurés du jeu si les lignes 9-line sont vides
+        if ($line1 === '' && !empty($payload['pickup_grid'])) {
+            $line1 = (string) $payload['pickup_grid'];
+        }
+        if ($line2 === '' && (!empty($payload['radio_frequency']) || !empty($payload['radio_callsign']))) {
+            $line2 = trim(($payload['radio_frequency'] ?? '') . ' / ' . ($payload['radio_callsign'] ?? ''), ' /');
+        }
+        if ($line3 === '' && (
+            isset($payload['patients_t1_urgent']) || isset($payload['patients_t2_urgent']) || isset($payload['patients_t3_delayed'])
+        )) {
+            $line3 = sprintf(
+                'A %d / B %d / C %d',
+                (int) ($payload['patients_t1_urgent'] ?? 0),
+                (int) ($payload['patients_t2_urgent'] ?? 0),
+                (int) ($payload['patients_t3_delayed'] ?? 0)
+            );
+        }
+        if ($line4 === '' && !empty($payload['remarks'])) {
+            $line4 = (string) $payload['remarks'];
+        }
+        if ($line5 === '' && (isset($payload['patients_litter']) || isset($payload['patients_ambulatory']))) {
+            $line5 = sprintf(
+                'L %d / A %d',
+                (int) ($payload['patients_litter'] ?? 0),
+                (int) ($payload['patients_ambulatory'] ?? 0)
+            );
+        }
+        if ($line6 === '' && !empty($payload['security_status'])) {
+            $line6 = (string) $payload['security_status'];
+        }
+        if ($line7 === '' && (!empty($payload['lz_marking']) || !empty($payload['lz_marking_color']))) {
+            $line7 = trim(($payload['lz_marking'] ?? '') . ' ' . ($payload['lz_marking_color'] ?? ''));
+        }
         $status = $kind === self::KIND_MEDEVAC ? 'REQUESTED' : 'SUBMITTED';
 
         if ($this->hasMissionKindColumn()) {

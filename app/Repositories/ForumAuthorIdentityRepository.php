@@ -61,20 +61,32 @@ class ForumAuthorIdentityRepository
          $upsJoin
          WHERE u.tenant_id = ? AND u.id IN ($placeholders)";
         try {
-            $stmt = $this->pdo->prepare($sql);
+            // Prefer including deleted_at when the column exists (soft-delete seal).
+            $sqlWithDeleted = str_replace(
+                'u.callsign AS author_callsign,',
+                'u.callsign AS author_callsign, u.deleted_at AS author_deleted_at,',
+                $sql
+            );
+            $stmt = $this->pdo->prepare($sqlWithDeleted);
             $stmt->execute($params);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\PDOException $e) {
-            $sql2 = "SELECT u.id AS author_user_id, u.email AS author_email, u.display_name AS author_name, u.callsign AS author_callsign,
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\PDOException $e2) {
+                $sql2 = "SELECT u.id AS author_user_id, u.email AS author_email, u.display_name AS author_name, u.callsign AS author_callsign,
                 up.first_name AS author_first_name, up.last_name AS author_last_name,
                 NULL AS author_character_name,
                 NULL AS author_forum_alias, NULL AS author_forum_label_mode
          FROM users u
          LEFT JOIN user_profiles up ON up.user_id = u.id
          WHERE u.tenant_id = ? AND u.id IN ($placeholders)";
-            $stmt = $this->pdo->prepare($sql2);
-            $stmt->execute($params);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $stmt = $this->pdo->prepare($sql2);
+                $stmt->execute($params);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
         }
         $map = [];
         foreach ($rows as $row) {

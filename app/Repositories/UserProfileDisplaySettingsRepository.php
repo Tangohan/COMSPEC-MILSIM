@@ -35,6 +35,16 @@ class UserProfileDisplaySettingsRepository
         return $row ?: null;
     }
 
+    /** RGPD / soft-delete : efface alias forum et préférences d’affichage. */
+    public function deleteByUserId(int $userId): void
+    {
+        if ($userId < 1 || !$this->tableExists()) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM user_profile_display_settings WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     /**
      * @return array<string, mixed>
      */

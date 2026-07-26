@@ -53,7 +53,7 @@ foreach (is_array($c['style_badges'] ?? null) ? $c['style_badges'] : [] as $slug
 
     <div class="rounded-2xl border border-slate-200 bg-white p-5 mb-8">
         <p class="text-sm font-black text-slate-900 mb-2">Formulaire de candidature (extrait)</p>
-        <p class="text-xs text-slate-500 mb-4">Mode : <?= $registrationMode === 'simple' ? 'Simple' : 'MilSim complet' ?></p>
+        <p class="text-xs text-slate-500 mb-4">Mode : <?= htmlspecialchars(\App\Services\Community\TenantCommunityProfileService::registrationModeLabel($registrationMode), ENT_QUOTES, 'UTF-8') ?></p>
         <?php if ($registrationMode === 'milsim' && !empty($pack['fields']) && is_array($pack['fields'])): ?>
             <ul class="text-sm text-slate-700 space-y-1 list-disc pl-5">
                 <?php foreach ($pack['fields'] as $fk => $fv): ?>
@@ -62,6 +62,8 @@ foreach (is_array($c['style_badges'] ?? null) ? $c['style_badges'] : [] as $slug
                     <?php endif; ?>
                 <?php endforeach; ?>
             </ul>
+        <?php elseif ($registrationMode === 'discord'): ?>
+            <p class="text-sm text-slate-600">Fiche Discord : pseudo, coordonnées et questions personnalisées. Le lien d’invitation Discord s’affiche si renseigné après création.</p>
         <?php else: ?>
             <p class="text-sm text-slate-600">Champs réduits (mode simple).</p>
         <?php endif; ?>

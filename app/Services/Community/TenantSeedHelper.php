@@ -20,86 +20,110 @@ final class TenantSeedHelper
     {
         $stmt = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
         $stmt->execute([$tenantId, 'forum.view']);
-        if ($stmt->fetch()) {
-            self::ensurePedagogyMandatoryUnits($tenantId);
+        $hasForumView = (bool) $stmt->fetch();
 
-            return;
-        }
+        if (!$hasForumView) {
+            $permissions = [
+                ['admin.access', 'Accès administration', 'admin'],
+                ['forum.view', 'Voir le forum', 'forum'],
+                ['forum.create_topic', 'Créer un sujet', 'forum'],
+                ['forum.reply', 'Répondre', 'forum'],
+                ['forum.edit_own', 'Modifier son message', 'forum'],
+                ['forum.delete_own', 'Supprimer son message', 'forum'],
+                ['forum.moderate', 'Modérer le forum', 'forum'],
+                ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
+                ['forum.manage_categories', 'Gérer les catégories', 'forum'],
+            ];
 
-        $permissions = [
-            ['admin.access', 'Accès administration', 'admin'],
-            ['forum.view', 'Voir le forum', 'forum'],
-            ['forum.create_topic', 'Créer un sujet', 'forum'],
-            ['forum.reply', 'Répondre', 'forum'],
-            ['forum.edit_own', 'Modifier son message', 'forum'],
-            ['forum.delete_own', 'Supprimer son message', 'forum'],
-            ['forum.moderate', 'Modérer le forum', 'forum'],
-            ['forum.moderate_organization', 'Modérer la section forum de l\'organisation', 'forum'],
-            ['forum.manage_categories', 'Gérer les catégories', 'forum'],
-        ];
-
-        $permIds = [];
-        foreach ($permissions as $p) {
-            $permIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
-        }
-
-        $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $adminRole->execute([$tenantId, 'tenant_admin']);
-        $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        $coRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $coRole->execute([$tenantId, 'community_owner']);
-        $communityOwnerId = (int) ($coRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if ($adminRoleId) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach ($permIds as $pid) {
-                $link->execute([$adminRoleId, $pid]);
+            $permIds = [];
+            foreach ($permissions as $p) {
+                $permIds[$p[0]] = self::insertPermission($pdo, $tenantId, $p[1], $p[0], $p[2]);
             }
-        }
-        if ($communityOwnerId) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach ($permIds as $pid) {
-                $link->execute([$communityOwnerId, $pid]);
-            }
-        }
 
-        foreach (TenantDefaultRoleDefinitions::operationalRoles() as $def) {
-            $slug = $def['slug'];
-            $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-            $st->execute([$tenantId, $slug]);
-            if (!$st->fetch()) {
-                $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
-                    ->execute([
-                        $tenantId,
-                        $def['name'],
-                        $slug,
-                        $def['description'],
-                        $def['is_system'],
-                        $def['is_locked'],
-                        $def['role_layer'],
-                    ]);
-            }
-        }
-
-        $modRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $modRole->execute([$tenantId, 'forum_moderator']);
-        $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if ($modRoleId) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
-                if (isset($permIds[$slug])) {
-                    $link->execute([$modRoleId, $permIds[$slug]]);
+            $adminRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $adminRole->execute([$tenantId, 'tenant_admin']);
+            $adminRoleId = (int) ($adminRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
+            $coRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $coRole->execute([$tenantId, 'community_owner']);
+            $communityOwnerId = (int) ($coRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
+            if ($adminRoleId) {
+                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                foreach ($permIds as $pid) {
+                    $link->execute([$adminRoleId, $pid]);
                 }
             }
-        }
+            if ($communityOwnerId) {
+                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                foreach ($permIds as $pid) {
+                    $link->execute([$communityOwnerId, $pid]);
+                }
+            }
 
-        $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
-        $memberRole->execute([$tenantId, 'member']);
-        $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
-        if ($memberRoleId) {
-            $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
-            foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'] as $slug) {
-                if (isset($permIds[$slug])) {
-                    $link->execute([$memberRoleId, $permIds[$slug]]);
+            foreach (TenantDefaultRoleDefinitions::operationalRoles() as $def) {
+                $slug = $def['slug'];
+                $st = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+                $st->execute([$tenantId, $slug]);
+                if (!$st->fetch()) {
+                    $pdo->prepare('INSERT INTO roles (tenant_id, name, slug, description, is_system, is_locked, role_layer, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())')
+                        ->execute([
+                            $tenantId,
+                            $def['name'],
+                            $slug,
+                            $def['description'],
+                            $def['is_system'],
+                            $def['is_locked'],
+                            $def['role_layer'],
+                        ]);
+                }
+            }
+
+            $modRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $modRole->execute([$tenantId, 'forum_moderator']);
+            $modRoleId = (int) ($modRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
+            if ($modRoleId) {
+                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own', 'forum.moderate', 'forum.moderate_organization'] as $slug) {
+                    if (isset($permIds[$slug])) {
+                        $link->execute([$modRoleId, $permIds[$slug]]);
+                    }
+                }
+            }
+
+            $memberRole = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+            $memberRole->execute([$tenantId, 'member']);
+            $memberRoleId = (int) ($memberRole->fetch(PDO::FETCH_ASSOC)['id'] ?? 0);
+            if ($memberRoleId) {
+                $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                foreach (['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'] as $slug) {
+                    if (isset($permIds[$slug])) {
+                        $link->execute([$memberRoleId, $permIds[$slug]]);
+                    }
+                }
+            }
+        } else {
+            // Permissions déjà présentes : rattacher le minimum aux rôles simplifiés + gouvernance.
+            $forumSlugs = ['forum.view', 'forum.create_topic', 'forum.reply', 'forum.edit_own'];
+            $permIds = [];
+            foreach ($forumSlugs as $slug) {
+                $s = $pdo->prepare('SELECT id FROM permissions WHERE tenant_id = ? AND slug = ? LIMIT 1');
+                $s->execute([$tenantId, $slug]);
+                $id = (int) ($s->fetchColumn() ?: 0);
+                if ($id > 0) {
+                    $permIds[$slug] = $id;
+                }
+            }
+            if ($permIds !== []) {
+                foreach (['community_owner', 'tenant_admin', 'member', 'atak_operator', 'atak_admin', 'personnel_manager'] as $roleSlug) {
+                    $rs = $pdo->prepare('SELECT id FROM roles WHERE tenant_id = ? AND slug = ? LIMIT 1');
+                    $rs->execute([$tenantId, $roleSlug]);
+                    $roleId = (int) ($rs->fetchColumn() ?: 0);
+                    if ($roleId < 1) {
+                        continue;
+                    }
+                    $link = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)');
+                    foreach ($permIds as $pid) {
+                        $link->execute([$roleId, $pid]);
+                    }
                 }
             }
         }

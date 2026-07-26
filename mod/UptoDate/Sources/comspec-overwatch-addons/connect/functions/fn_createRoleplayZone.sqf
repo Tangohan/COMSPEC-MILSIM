@@ -93,8 +93,8 @@ diag_log format ["[COMSPEC Roleplay] Zone créée: %1 à %2 (rayon %3m, intensit
 
 // Notification
 if (hasInterface) then {
-    private _msg = format ["Zone roleplay créée : %1 (%2m)", _typeName, _radius];
-    hintSilent _msg;
+    private _msg = format ["Zone créée : %1 (%2m)", _typeName, _radius];
+    [_msg, "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
 };
 
 _zone

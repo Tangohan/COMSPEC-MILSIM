@@ -187,14 +187,28 @@ class HomeController
         $dashboardEffectifsRows = [];
         $canViewPersonnelDirectory = false;
         $canOpenEffectifsWorkspace = false;
+        $canSeeInactiveEffectifs = false;
+        $armaPlaytimeLabel = null;
+        $armaPlaytimeSeconds = 0;
+        $dashboardTenantType = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
         if ($tenantId) {
             $tid = (int) $tenantId;
             $tenantRow = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tid);
             if ($tenantRow) {
                 $dashboardTenantLabel = community_display_name($tenantRow);
                 $dashboardIsDefaultTenant = ($tenantRow['slug'] ?? '') === 'default';
+                $dashboardTenantType = \App\Services\Community\TenantTypeConfig::normalizeType(
+                    (string) ($tenantRow['tenant_type'] ?? 'full')
+                );
             }
-            $showcaseTrainingFeature = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'training');
+            $allowsTraining = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'training');
+            $allowsRecruitment = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'recruitment');
+            $allowsForum = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'forum');
+            $allowsPersonnel = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'personnel');
+            $allowsAtak = \App\Services\Community\TenantTypeConfig::moduleAllowed($dashboardTenantType, 'atak');
+
+            $showcaseTrainingFeature = $allowsTraining
+                && \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class)->allows($tid, 'training');
             if ($showcaseTrainingFeature) {
                 $rows = \App\Core\Container::get(\App\Repositories\TrainingCourseRepository::class)->listPublishedForDashboard($tid, 20);
                 $showcaseItems = self::buildTrainingShowcasePayload($rows);
@@ -204,67 +218,69 @@ class HomeController
                 $uid = (int) $currentUser['id'];
                 $uemail = (string) ($currentUser['email'] ?? '');
                 $enlistRepo = \App\Core\Container::get(\App\Repositories\EnlistmentRepository::class);
-                $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
-                if ($dashboardIsDefaultTenant) {
-                    $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
-                    foreach ($candidateRows as $row) {
-                        $candidateTid = (int) ($row['tenant_id'] ?? 0);
-                        $candidateId = (int) ($row['id'] ?? 0);
-                        if ($candidateTid < 1 || $candidateId < 1) {
-                            continue;
-                        }
-                        $token = $enlistRepo->findValidCandidatePortalTokenForEnlistment($candidateTid, $candidateId);
-                        if ($token === null) {
-                            $token = $enlistRepo->ensureCandidatePortalToken($candidateTid, $candidateId, 24 * 7);
-                        }
-                        $row['candidate_portal_href'] = $token !== null
-                            ? url('enlistment/suivi/' . rawurlencode($token))
-                            : null;
-                        $candidateEnlistmentTracking[] = $row;
-                    }
-                }
-
-                // Tableau complet « Mes candidatures » (tous statuts, toutes communautés) pour le dashboard.
-                try {
-                    $openingRepoForMine = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
-                    $openingsTableReady = $openingRepoForMine->tablesExist();
-                    $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
-                    foreach ($myApplicationsRows as $row) {
-                        $appTid = (int) ($row['tenant_id'] ?? 0);
-                        $appId = (int) ($row['id'] ?? 0);
-                        if ($appTid < 1 || $appId < 1) {
-                            continue;
-                        }
-                        $appToken = $enlistRepo->findValidCandidatePortalTokenForEnlistment($appTid, $appId);
-                        if ($appToken === null) {
-                            $appToken = $enlistRepo->ensureCandidatePortalToken($appTid, $appId, 24 * 7);
-                        }
-                        $row['candidate_portal_href'] = $appToken !== null
-                            ? url('enlistment/suivi/' . rawurlencode($appToken))
-                            : null;
-                        $row['opening_title'] = null;
-                        $openingId = (int) ($row['recruitment_opening_id'] ?? 0);
-                        if ($openingId > 0 && $openingsTableReady) {
-                            try {
-                                $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
-                                if ($openingRow) {
-                                    $row['opening_title'] = trim((string) ($openingRow['title'] ?? '')) ?: null;
-                                }
-                            } catch (\Throwable) {
-                                $row['opening_title'] = null;
+                if ($allowsRecruitment) {
+                    $myEnlistmentsPending = $enlistRepo->listPendingSubmittedForSubmitter($tid, $uid, $uemail);
+                    if ($dashboardIsDefaultTenant) {
+                        $candidateRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 8);
+                        foreach ($candidateRows as $row) {
+                            $candidateTid = (int) ($row['tenant_id'] ?? 0);
+                            $candidateId = (int) ($row['id'] ?? 0);
+                            if ($candidateTid < 1 || $candidateId < 1) {
+                                continue;
                             }
+                            $token = $enlistRepo->findValidCandidatePortalTokenForEnlistment($candidateTid, $candidateId);
+                            if ($token === null) {
+                                $token = $enlistRepo->ensureCandidatePortalToken($candidateTid, $candidateId, 24 * 7);
+                            }
+                            $row['candidate_portal_href'] = $token !== null
+                                ? url('enlistment/suivi/' . rawurlencode($token))
+                                : null;
+                            $candidateEnlistmentTracking[] = $row;
                         }
-                        $myApplicationsAll[] = $row;
                     }
-                } catch (\Throwable) {
-                    $myApplicationsAll = [];
+
+                    // Tableau complet « Mes candidatures » (tous statuts, toutes communautés) pour le dashboard.
+                    try {
+                        $openingRepoForMine = \App\Core\Container::get(\App\Repositories\RecruitmentOpeningRepository::class);
+                        $openingsTableReady = $openingRepoForMine->tablesExist();
+                        $myApplicationsRows = $enlistRepo->listRecentForSubmitterAcrossTenants($uid, $uemail, 20);
+                        foreach ($myApplicationsRows as $row) {
+                            $appTid = (int) ($row['tenant_id'] ?? 0);
+                            $appId = (int) ($row['id'] ?? 0);
+                            if ($appTid < 1 || $appId < 1) {
+                                continue;
+                            }
+                            $appToken = $enlistRepo->findValidCandidatePortalTokenForEnlistment($appTid, $appId);
+                            if ($appToken === null) {
+                                $appToken = $enlistRepo->ensureCandidatePortalToken($appTid, $appId, 24 * 7);
+                            }
+                            $row['candidate_portal_href'] = $appToken !== null
+                                ? url('enlistment/suivi/' . rawurlencode($appToken))
+                                : null;
+                            $row['opening_title'] = null;
+                            $openingId = (int) ($row['recruitment_opening_id'] ?? 0);
+                            if ($openingId > 0 && $openingsTableReady) {
+                                try {
+                                    $openingRow = $openingRepoForMine->findByIdForTenant($openingId, $appTid);
+                                    if ($openingRow) {
+                                        $row['opening_title'] = trim((string) ($openingRow['title'] ?? '')) ?: null;
+                                    }
+                                } catch (\Throwable) {
+                                    $row['opening_title'] = null;
+                                }
+                            }
+                            $myApplicationsAll[] = $row;
+                        }
+                    } catch (\Throwable) {
+                        $myApplicationsAll = [];
+                    }
                 }
 
                 $gate = \App\Core\Gate::getInstance();
                 $roleSlug = \App\Core\Container::get(\App\Repositories\UserRepository::class)->getRoleSlugForUser($uid) ?? '';
                 $staffSlugs = ['recruiter', 'community_owner', 'hr', 'tenant_admin'];
-                $showStaffEnlistments = $gate->allows('admin.organization') || $gate->allows('admin.access')
-                    || in_array($roleSlug, $staffSlugs, true);
+                $showStaffEnlistments = $allowsRecruitment && ($gate->allows('admin.organization') || $gate->allows('admin.access')
+                    || in_array($roleSlug, $staffSlugs, true));
                 if ($showStaffEnlistments) {
                     $staffEnlistmentsPending = $enlistRepo->listPendingSubmittedForTenant($tid, 25);
                     try {
@@ -277,25 +293,65 @@ class HomeController
                     }
                 }
 
-                $canViewPersonnelDirectory = $gate->allows('personnel.profile.view');
-                $canOpenEffectifsWorkspace = \App\Support\EffectifsLmsAccess::allows($gate);
+                $canViewPersonnelDirectory = $allowsPersonnel && $gate->allows('personnel.profile.view');
+                $canOpenEffectifsWorkspace = $allowsPersonnel && \App\Support\EffectifsLmsAccess::allows($gate);
+                $canSeeInactiveEffectifs = $canOpenEffectifsWorkspace
+                    || \App\Support\EffectifsLmsAccess::canManageStatus($gate);
                 if ($canViewPersonnelDirectory && !$dashboardIsDefaultTenant) {
                     try {
                         $dashboardEffectifsRows = \App\Core\Container::get(\App\Repositories\UserRepository::class)
-                            ->listPersonnelDirectoryRich($tid, '', 40);
+                            ->listPersonnelDirectoryRich($tid, '', 40, $canSeeInactiveEffectifs);
                     } catch (\Throwable) {
                         $dashboardEffectifsRows = [];
                     }
                 }
 
+                // Temps de mission transmis par ATAK (cumul user_arma_playtime).
                 try {
-                    $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);
-                    $candidateDossierNumber = $latestDossier ? (int) ($latestDossier['id'] ?? 0) : null;
-                    if ($candidateDossierNumber === 0) {
-                        $candidateDossierNumber = null;
+                    $playtimeRepo = \App\Core\Container::get(\App\Repositories\ArmaPlaytimeRepository::class);
+                    $playtimeUserIds = [];
+                    foreach ($dashboardEffectifsRows as $effRow) {
+                        if (is_array($effRow)) {
+                            $playtimeUserIds[] = (int) ($effRow['id'] ?? 0);
+                        }
+                    }
+                    if ($uid > 0) {
+                        $playtimeUserIds[] = $uid;
+                    }
+                    $playtimeByUser = $playtimeRepo->summariesForUsers($tid, $playtimeUserIds);
+                    foreach ($dashboardEffectifsRows as &$effRow) {
+                        if (!is_array($effRow)) {
+                            continue;
+                        }
+                        $effUid = (int) ($effRow['id'] ?? 0);
+                        $secs = (int) (($playtimeByUser[$effUid]['total_seconds'] ?? 0));
+                        $effRow['arma_playtime_seconds'] = $secs;
+                        $effRow['arma_playtime_label'] = $secs > 0
+                            ? format_arma_playtime_french($secs)
+                            : null;
+                    }
+                    unset($effRow);
+                    if ($uid > 0) {
+                        $selfSecs = (int) (($playtimeByUser[$uid]['total_seconds'] ?? 0));
+                        $armaPlaytimeLabel = $selfSecs > 0
+                            ? format_arma_playtime_french($selfSecs)
+                            : null;
+                        $armaPlaytimeSeconds = $selfSecs;
                     }
                 } catch (\Throwable) {
-                    $candidateDossierNumber = null;
+                    // Table absente ou indisponible : le dashboard reste utilisable sans cette colonne.
+                }
+
+                if ($allowsRecruitment) {
+                    try {
+                        $latestDossier = $enlistRepo->findLatestBySubmitter($tid, $uid);
+                        $candidateDossierNumber = $latestDossier ? (int) ($latestDossier['id'] ?? 0) : null;
+                        if ($candidateDossierNumber === 0) {
+                            $candidateDossierNumber = null;
+                        }
+                    } catch (\Throwable) {
+                        $candidateDossierNumber = null;
+                    }
                 }
 
                 $canManageInvitations = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('invitations.send');
@@ -308,9 +364,9 @@ class HomeController
                     }
                 }
 
-                $canViewAtakOperators = $gate->allows('admin.system')
+                $canViewAtakOperators = $allowsAtak && ($gate->allows('admin.system')
                     || $gate->allows('admin.organization')
-                    || $gate->allows('admin.access');
+                    || $gate->allows('admin.access'));
                 if ($canViewAtakOperators) {
                     try {
                         $mapRepo = \App\Core\Container::get(\App\Repositories\AtakMapRepository::class);
@@ -355,24 +411,26 @@ class HomeController
                     $dashboardPins = [];
                 }
 
-                try {
-                    $followedChannelsRows = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
-                        ->listSubscribedForUser($uid, $tid);
-                    foreach ($followedChannelsRows as $fc) {
-                        $lastTopicId = (int) ($fc['last_topic_id'] ?? 0);
-                        $followedChannels[] = [
-                            'name' => (string) ($fc['name'] ?? ''),
-                            'slug' => (string) ($fc['slug'] ?? ''),
-                            'href' => url('forum/category/' . rawurlencode((string) ($fc['slug'] ?? ''))),
-                            'icon' => (string) ($fc['icon'] ?? ''),
-                            'unread_count' => (int) ($fc['unread_count'] ?? 0),
-                            'last_topic_title' => trim((string) ($fc['last_topic_title'] ?? '')),
-                            'last_topic_href' => $lastTopicId > 0 ? url('forum/topic/' . $lastTopicId) : null,
-                            'last_activity_at' => $fc['last_activity_at'] ?? null,
-                        ];
+                if ($allowsForum) {
+                    try {
+                        $followedChannelsRows = \App\Core\Container::get(\App\Repositories\ForumCategoryRepository::class)
+                            ->listSubscribedForUser($uid, $tid);
+                        foreach ($followedChannelsRows as $fc) {
+                            $lastTopicId = (int) ($fc['last_topic_id'] ?? 0);
+                            $followedChannels[] = [
+                                'name' => (string) ($fc['name'] ?? ''),
+                                'slug' => (string) ($fc['slug'] ?? ''),
+                                'href' => url('forum/category/' . rawurlencode((string) ($fc['slug'] ?? ''))),
+                                'icon' => (string) ($fc['icon'] ?? ''),
+                                'unread_count' => (int) ($fc['unread_count'] ?? 0),
+                                'last_topic_title' => trim((string) ($fc['last_topic_title'] ?? '')),
+                                'last_topic_href' => $lastTopicId > 0 ? url('forum/topic/' . $lastTopicId) : null,
+                                'last_activity_at' => $fc['last_activity_at'] ?? null,
+                            ];
+                        }
+                    } catch (\Throwable) {
+                        $followedChannels = [];
                     }
-                } catch (\Throwable) {
-                    $followedChannels = [];
                 }
 
                 try {
@@ -433,37 +491,41 @@ class HomeController
                     ];
                 }
 
-                try {
-                    /** @var \App\Repositories\ForumTopicRepository $forumTopicRepo */
-                    $forumTopicRepo = \App\Core\Container::get(\App\Repositories\ForumTopicRepository::class);
-                    $forumDashPins = $forumTopicRepo->listPinnedOnDashboardForTenant($tid, 8);
-                    foreach ($forumDashPins as $ftPin) {
-                        $title = trim((string) ($ftPin['title'] ?? ''));
-                        if ($title === '') {
-                            continue;
+                if ($allowsForum) {
+                    try {
+                        /** @var \App\Repositories\ForumTopicRepository $forumTopicRepo */
+                        $forumTopicRepo = \App\Core\Container::get(\App\Repositories\ForumTopicRepository::class);
+                        $forumDashPins = $forumTopicRepo->listPinnedOnDashboardForTenant($tid, 8);
+                        foreach ($forumDashPins as $ftPin) {
+                            $title = trim((string) ($ftPin['title'] ?? ''));
+                            if ($title === '') {
+                                continue;
+                            }
+                            $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
+                            $excerpt = self::plainTextExcerpt($rawBody, 220);
+                            $topicId = (int) ($ftPin['id'] ?? 0);
+                            $dashboardAnnounceItems[] = [
+                                'kind' => 'forum_pin',
+                                'category' => 'Message épinglé',
+                                'title' => $title,
+                                'body' => $excerpt,
+                                'cta_label' => 'Ouvrir le message',
+                                'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
+                                'scope' => 'tenant',
+                            ];
                         }
-                        $rawBody = trim((string) ($ftPin['first_post_body'] ?? ''));
-                        $excerpt = self::plainTextExcerpt($rawBody, 220);
-                        $topicId = (int) ($ftPin['id'] ?? 0);
-                        $dashboardAnnounceItems[] = [
-                            'kind' => 'forum_pin',
-                            'category' => 'Message épinglé',
-                            'title' => $title,
-                            'body' => $excerpt,
-                            'cta_label' => 'Ouvrir le message',
-                            'cta_url' => $topicId > 0 ? url('forum/topic/' . $topicId) : null,
-                            'scope' => 'tenant',
-                        ];
+                    } catch (\Throwable) {
+                        // Optionnel si le schéma forum n’est pas prêt.
                     }
-                } catch (\Throwable) {
-                    // Optionnel si le schéma forum n’est pas prêt.
                 }
 
-                try {
-                    $missionBriefing = \App\Core\Container::get(\App\Services\Dashboard\MemberMissionBriefingService::class)
-                        ->buildForViewer($tid, $uid, $modpack, $dashboardPins, $showcaseTrainingFeature);
-                } catch (\Throwable) {
-                    $missionBriefing = null;
+                if ($dashboardTenantType === \App\Services\Community\TenantTypeConfig::TYPE_FULL) {
+                    try {
+                        $missionBriefing = \App\Core\Container::get(\App\Services\Dashboard\MemberMissionBriefingService::class)
+                            ->buildForViewer($tid, $uid, $modpack, $dashboardPins, $showcaseTrainingFeature);
+                    } catch (\Throwable) {
+                        $missionBriefing = null;
+                    }
                 }
 
                 try {
@@ -495,8 +557,12 @@ class HomeController
             );
         }
 
-        return Response::view('dashboard', [
-            'title' => 'Dashboard — Athena',
+        return Response::view(\App\Services\Community\TenantTypeConfig::dashboardView($dashboardTenantType), [
+            'title' => match ($dashboardTenantType) {
+                \App\Services\Community\TenantTypeConfig::TYPE_ATAK => 'Carte ATAK — Athena',
+                \App\Services\Community\TenantTypeConfig::TYPE_EFFECTIFS => 'Bureau des effectifs — Athena',
+                default => 'Dashboard — Athena',
+            },
             'modpack' => $modpack,
             'currentUser' => $currentUser,
             'personnelExtras' => $personnelExtras,
@@ -508,6 +574,7 @@ class HomeController
             'show_founder_trial_banner' => $showFounderTrialBanner,
             'dashboard_tenant_label' => $dashboardTenantLabel,
             'dashboard_is_default_tenant' => $dashboardIsDefaultTenant,
+            'dashboard_tenant_type' => $dashboardTenantType,
             'showcase_training_feature' => $showcaseTrainingFeature,
             'showcase_items' => $showcaseItems,
             'my_enlistments_pending' => $myEnlistmentsPending,
@@ -532,6 +599,9 @@ class HomeController
             'dashboard_effectifs_rows' => $dashboardEffectifsRows,
             'can_view_personnel_directory' => $canViewPersonnelDirectory,
             'can_open_effectifs_workspace' => $canOpenEffectifsWorkspace,
+            'can_see_inactive_effectifs' => $canSeeInactiveEffectifs,
+            'arma_playtime_label' => $armaPlaytimeLabel,
+            'arma_playtime_seconds' => $armaPlaytimeSeconds,
         ]);
     }
 

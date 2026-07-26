@@ -41,10 +41,11 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-marker-catalog.js?v=202607261745"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js?v=202607261745"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js?v=202607262015"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>

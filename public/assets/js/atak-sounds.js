@@ -1,6 +1,6 @@
 /**
  * Sons ATAK (web) — alignés sur le réglage jeu (CBA).
- * Préférence : Mode silence (vibration) / Stalker / Alerte santé / Mode silence sans vibration.
+ * Préférence : Silencieux — vibration seule / Ambiance tension / Signal médical / Silencieux — sans vibration.
  * Volume 0–100 % + modes silence (barre latérale / panneau compte).
  * Événements dédiés : démarrage, déconnexion, inconscient, mort.
  */
@@ -9,19 +9,20 @@ window.ATAKSounds = (function () {
   var STORAGE_KEY_VOLUME = 'atak_alert_volume';
   var STORAGE_KEY_AUDIBLE = 'atak_notif_sound_audible';
   var PREFS = {
-    silent_vib: { label: 'Mode silence (avec vibration)', file: null, vibrate: true },
-    stalker: { label: 'Stalker', file: 'sound_1_stalker.ogg', vibrate: false },
-    health: { label: 'Alerte santé', file: 'atak_no_activyt_health.ogg', vibrate: false },
-    mute: { label: 'Mode silence sans vibration', file: null, vibrate: false }
+    silent_vib: { label: 'Silencieux — vibration seule', file: null, vibrate: true },
+    stalker: { label: 'Ambiance tension', file: 'sound_1_stalker.ogg', vibrate: false },
+    health: { label: 'Signal médical', file: 'atak_no_activyt_health.ogg', vibrate: false },
+    mute: { label: 'Silencieux — sans vibration', file: null, vibrate: false }
   };
-  /** Sons liés à un événement précis (indépendants du choix Stalker/Santé, sauf modes silence). */
+  /** Sons liés à un événement précis (indépendants du style d'alerte choisi, sauf modes silencieux). */
   var EVENTS = {
     start: { file: 'atak_start.ogg', cooldown: 2500 },
     disconnect: { file: 'atak_disconnect.ogg', cooldown: 2500 },
     unconscious: { file: 'atak_alert_2.ogg', cooldown: 4000 },
     death: { file: 'atak_death.ogg', cooldown: 4000 },
     order: { file: 'roger_simple.ogg', cooldown: 1200 },
-    order_priority: { file: 'roger_prio.ogg', cooldown: 1200 }
+    order_priority: { file: 'roger_prio.ogg', cooldown: 1200 },
+    medevac: { file: 'medevac.mp3', cooldown: 2500 }
   };
   var DEFAULT_PREF = 'stalker';
   var DEFAULT_AUDIBLE = 'stalker';
@@ -64,6 +65,7 @@ window.ATAKSounds = (function () {
     if (n === 'boot' || n === 'connect' || n === 'client_init') return 'start';
     if (n === 'cardiac_arrest' || n === 'kia' || n === 'dead' || n === 'killed') return 'death';
     if (n === 'order_prio' || n === 'order-priority' || n === 'urgent_order') return 'order_priority';
+    if (n === 'medevac' || n === 'evac' || n === '9line_medevac' || n === 'nine_line_medevac') return 'medevac';
     if (EVENTS[n]) return n;
     return '';
   }
@@ -178,12 +180,12 @@ window.ATAKSounds = (function () {
   function muteReason() {
     var silent = isSilentMode();
     if (silent && volume <= 0) {
-      return 'Sons coupés : mode silence et volume à 0 %. Les bandeaux d’alerte restent visibles.';
+      return 'Sons coupés : mode silencieux et volume à 0 %. Les bandeaux d\'alerte restent visibles.';
     }
     if (silent) {
       return pref === 'mute'
-        ? 'Sons et vibrations coupés (mode silence sans vibration). Les bandeaux d’alerte restent visibles.'
-        : 'Sons coupés (mode silence). Les bandeaux d’alerte restent visibles.';
+        ? 'Sons et vibrations coupés (silencieux — sans vibration). Les bandeaux d\'alerte restent visibles.'
+        : 'Sons coupés (silencieux — vibration seule). Les bandeaux d\'alerte restent visibles.';
     }
     if (volume <= 0) {
       return 'Volume des alertes à 0 %. Montez le volume pour entendre les sons. Les bandeaux restent visibles.';
@@ -326,10 +328,11 @@ window.ATAKSounds = (function () {
     lastPlayAt = now;
     var isCritical = eventKey === 'unconscious' || eventKey === 'death';
     var isOrder = eventKey === 'order' || eventKey === 'order_priority';
-    var vibOpts = (isCritical || isOrder) ? Object.assign({}, opts, { priority: true }) : opts;
+    var isMedevac = eventKey === 'medevac';
+    var vibOpts = (isCritical || isOrder || isMedevac) ? Object.assign({}, opts, { priority: true }) : opts;
     if (pref === 'silent_vib') {
-      // Ordres : toujours le roger (comme les urgences médicales en jeu).
-      if (isOrder || isCritical) {
+      // Ordres / MEDEVAC : toujours le son dédié (comme les urgences médicales en jeu).
+      if (isOrder || isCritical || isMedevac) {
         var okSilent = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
         tryVibrate(vibOpts);
         return okSilent;
@@ -337,7 +340,7 @@ window.ATAKSounds = (function () {
       return tryVibrate(vibOpts);
     }
     var ok = playAudio(getAudioByFile(meta.file, cacheKey('event', eventKey)));
-    if (isCritical || isOrder || opts.priority) tryVibrate(vibOpts);
+    if (isCritical || isOrder || isMedevac || opts.priority) tryVibrate(vibOpts);
     return ok;
   }
   /** Types d’activité de liaison qui méritent un son (pas le bruit de fond position). */
@@ -359,6 +362,7 @@ window.ATAKSounds = (function () {
       case 'sigint':
       case 'order':
       case 'tactical_alert':
+      case 'medevac':
         return true;
       default:
         return false;
@@ -370,6 +374,7 @@ window.ATAKSounds = (function () {
     var t = String(type || '');
     if (t === 'client_init') return playEvent('start', opts);
     if (t === 'disconnect') return playEvent('disconnect', opts);
+    if (t === 'medevac') return playEvent('medevac', Object.assign({}, opts, { priority: true }));
     if (t === 'order') {
       return playEvent(opts.highPriority ? 'order_priority' : 'order', opts);
     }

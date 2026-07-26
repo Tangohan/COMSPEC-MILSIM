@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\AtakModulesSchema;
 
 /**
  * Repository pour le tracking enrichi des véhicules et assets lourds
@@ -15,6 +16,7 @@ class AtakVehicleTrackingRepository
 
     public function __construct(?Database $db = null)
     {
+        AtakModulesSchema::ensure();
         $this->db = $db ?? Database::getInstance();
     }
 

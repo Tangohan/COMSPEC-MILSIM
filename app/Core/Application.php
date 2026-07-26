@@ -44,6 +44,7 @@ class Application
             new \App\Middleware\RateLimitMiddleware(),
             new \App\Middleware\CsrfPostMiddleware(),
             \App\Core\Container::get(\App\Middleware\DemoNdaGateMiddleware::class),
+            new \App\Middleware\TenantTypeModuleAccessMiddleware(),
         ]);
         foreach (array_reverse($global) as $mw) {
             $next = $runner;

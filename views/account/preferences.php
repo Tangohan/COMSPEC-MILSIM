@@ -25,14 +25,13 @@ foreach ($notifEmailCatalog as $item) {
 
 $accountNavKey = 'preferences';
 $accountTitle = 'Profil & préférences';
-$accountLead = 'Identité civile, affichage sur le portail, fuseau horaire et notifications — séparés du dossier opérationnel (personnage).';
+$accountLead = 'Affichage sur le portail, fuseau horaire et notifications — séparés du dossier opérationnel (personnage).';
 $accountUser = $user;
 require base_path('views/partials/account/shell_open.php');
 ?>
 
 <nav class="account-hub__subnav" aria-label="Sections des préférences">
     <a href="#section-profil">Profil portail</a>
-    <a href="#section-civil">Identité civile</a>
     <a href="#section-locale">Fuseau &amp; langue</a>
     <a href="#section-interface">Interface</a>
     <a href="#connexion-verification">Code de sécurité</a>
@@ -169,7 +168,7 @@ require base_path('views/partials/account/shell_open.php');
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Profil</p>
             <h2 class="account-hub__panel-title">Profil portail &amp; liaisons</h2>
-            <p class="account-hub__panel-desc">Nom affiché, indicatif et liens utiles. L’identité civile est gérée juste en dessous.</p>
+            <p class="account-hub__panel-desc">Nom affiché, indicatif et liens utiles.</p>
         </div>
         <div class="account-hub__panel-body">
             <div class="account-hub__form-grid">
@@ -220,30 +219,6 @@ require base_path('views/partials/account/shell_open.php');
                     <?php else: ?>
                     <p class="account-hub__hint">La lecture automatique du profil public n’est pas activée sur ce serveur : vous pouvez tout de même enregistrer le numéro ou une adresse de profil.</p>
                     <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="section-civil" class="account-hub__panel account-hub__section-anchor">
-        <div class="account-hub__panel-head">
-            <p class="account-hub__panel-kicker">Données sensibles</p>
-            <h2 class="account-hub__panel-title">Identité civile</h2>
-            <p class="account-hub__panel-desc">Ces informations sont stockées à part du profil opérationnel.</p>
-        </div>
-        <div class="account-hub__panel-body">
-            <div class="account-hub__legal-box" style="margin-bottom:1rem">
-                <h3>Espace isolé</h3>
-                <p>Prénom et nom ne sont pas mélangés avec le personnage ou l’affectation d’unité.</p>
-            </div>
-            <div class="account-hub__form-grid account-hub__form-grid--2">
-                <div>
-                    <label class="account-hub__label" for="first_name">Prénom</label>
-                    <input type="text" name="first_name" id="first_name" value="<?= htmlspecialchars((string) ($profile['first_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
-                </div>
-                <div>
-                    <label class="account-hub__label" for="last_name">Nom</label>
-                    <input type="text" name="last_name" id="last_name" value="<?= htmlspecialchars((string) ($profile['last_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="100">
                 </div>
             </div>
         </div>

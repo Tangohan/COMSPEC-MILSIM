@@ -172,6 +172,7 @@ window.ATAKPings = (function () {
     var kindLabels = {
       contact: 'Contact',
       hostile: 'Hostile',
+      jackpot: 'JACKPOT',
       medical: 'Médical',
       rally: 'Ralliement',
       objective: 'Objectif',

@@ -19,7 +19,7 @@ if (_atakState isEqualTo createHashMap) exitWith { false };
 // Vérifier si a un toolkit
 private _hasToolkit = "ToolKit" in (items player);
 if (!_hasToolkit && {_repairType in ["screen", "full"]}) exitWith {
-    hintSilent "Un Toolkit ACE est nécessaire pour réparer l'ATAK";
+    ["Toolkit requis pour réparer l'ATAK.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     false
 };
 
@@ -30,7 +30,7 @@ switch (_repairType) do {
         // Rallumer l'ATAK (gratuit)
         if (!(_atakState get "powered_on")) then {
             _atakState set ["powered_on", true];
-            hintSilent "ATAK rallumé";
+            ["ATAK rallumé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Clear_F";
             _success = true;
         };
@@ -46,7 +46,7 @@ switch (_repairType) do {
                 params ["_state"];
                 _state set ["screen_destroyed", false];
                 _state set ["powered_on", true];
-                hintSilent "Écran ATAK réparé";
+                ["Écran ATAK réparé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
                 playSound "FD_CP_Clear_F";
             }, [_atakState], 5] call CBA_fnc_waitAndExecute;
             
@@ -57,7 +57,7 @@ switch (_repairType) do {
     case "full": {
         // Réparation complète (impossible si device_destroyed)
         if (_atakState get "device_destroyed") exitWith {
-            hintSilent "ATAK trop endommagé, remplacement nécessaire";
+            ["ATAK trop endommagé — remplacement requis", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
             false
         };
         
@@ -67,7 +67,7 @@ switch (_repairType) do {
             params ["_state"];
             _state set ["screen_destroyed", false];
             _state set ["powered_on", true];
-            hintSilent "ATAK complètement réparé";
+            ["ATAK réparé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Clear_F";
         }, [_atakState], 8] call CBA_fnc_waitAndExecute;
         

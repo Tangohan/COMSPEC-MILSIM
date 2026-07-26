@@ -208,6 +208,8 @@ function migrations_web_collect_status(string $root): array
             'tenants' => null,
             'users' => null,
             'has_default_tenant' => null,
+            'has_tenant_type' => null,
+            'module_tables' => [],
         ],
         'sql_migrations' => [
             'count' => 0,
@@ -223,6 +225,8 @@ function migrations_web_collect_status(string $root): array
     $checks = [
         '.env' => $root . '/.env',
         'schema.sql' => $root . '/migrations/schema.sql',
+        'c2_pillars.sql' => $root . '/migrations/c2_pillars.sql',
+        'modules ATAK (SQL)' => $root . '/migrations/2026_07_24_002_atak_poi_intelligence.sql',
         'config migrations web' => $root . '/config/migrations_web.php',
     ];
     foreach ($checks as $label => $path) {
@@ -272,6 +276,49 @@ function migrations_web_collect_status(string $root): array
             } catch (Throwable $e) {
                 $status['database']['users'] = null;
             }
+            try {
+                $st = $pdo->query(
+                    "SELECT 1 FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'tenant_type' LIMIT 1"
+                );
+                $status['database']['has_tenant_type'] = $st !== false && (bool) $st->fetchColumn();
+            } catch (Throwable $e) {
+                $status['database']['has_tenant_type'] = null;
+            }
+
+            $moduleTables = [
+                'atak_poi' => ['label' => 'POI carte', 'group' => 'Modules carte'],
+                'atak_tactical_zones' => ['label' => 'Zones tactiques', 'group' => 'Modules carte'],
+                'atak_tactical_reports' => ['label' => 'Rapports tactiques', 'group' => 'Modules carte'],
+                'atak_medevac_requests' => ['label' => 'MEDEVAC', 'group' => 'Modules carte'],
+                'atak_qrf_requests' => ['label' => 'QRF', 'group' => 'Modules carte'],
+                'atak_vehicle_tracking' => ['label' => 'Véhicules', 'group' => 'Modules carte'],
+                'fire_units' => ['label' => 'Appui-feu', 'group' => 'Piliers C2'],
+                'danger_zones' => ['label' => 'Zones de danger', 'group' => 'Piliers C2'],
+                'intel_reports' => ['label' => 'Renseignement', 'group' => 'Piliers C2'],
+                'logs_positions' => ['label' => 'Replay positions', 'group' => 'Piliers C2'],
+                'iff_challenges' => ['label' => 'IFF', 'group' => 'Piliers C2'],
+                'asset_logistics_status' => ['label' => 'Logistique assets', 'group' => 'Piliers C2'],
+            ];
+            $tableCheck = $pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            foreach ($moduleTables as $table => $meta) {
+                try {
+                    $tableCheck->execute([$table]);
+                    $status['database']['module_tables'][$table] = [
+                        'label' => (string) $meta['label'],
+                        'group' => (string) $meta['group'],
+                        'ok' => (bool) $tableCheck->fetchColumn(),
+                    ];
+                } catch (Throwable $e) {
+                    $status['database']['module_tables'][$table] = [
+                        'label' => (string) $meta['label'],
+                        'group' => (string) $meta['group'],
+                        'ok' => false,
+                    ];
+                }
+            }
         } catch (Throwable $e) {
             $status['database']['error'] = $e->getMessage();
         }
@@ -294,6 +341,11 @@ function migrations_web_collect_status(string $root): array
         'rbac_three_layer_migration.php',
         'user_roles_migration.php',
         'core_schema_extensions_migration.php',
+        'tenant_type_migration.php',
+        'tenant_atak_maintenance_migration.php',
+        'atak_modules_schema_migration.php',
+        'c2_pillars_migration.php',
+        'discord_recruitment_migration.php',
     ];
     $missing = [];
     foreach ($bootstrapExpected as $bf) {
@@ -478,6 +530,29 @@ function migrations_web_layout_start(string $title, string $bodyClass = ''): voi
     .kv { display: grid; gap: .4rem; margin-top: .7rem; }
     .kv div { display: flex; justify-content: space-between; gap: 1rem; font-size: .88rem; border-bottom: 1px dashed var(--line); padding: .35rem 0; }
     .kv span:last-child { color: #cbd5e1; font-family: var(--mono); font-size: .8rem; text-align: right; }
+    .mod-groups { display: grid; gap: 1rem; margin-top: .9rem; }
+    @media (min-width: 860px) { .mod-groups { grid-template-columns: 1fr 1fr; } }
+    .mod-group {
+      border: 1px solid var(--line); border-radius: .85rem; padding: .85rem .95rem;
+      background: rgba(2,6,23,.28);
+    }
+    .mod-group__title {
+      margin: 0 0 .7rem; font-size: .68rem; font-weight: 800; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .mod-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .mod-chip {
+      display: inline-flex; align-items: center; gap: .4rem;
+      border-radius: .65rem; padding: .4rem .65rem; font-size: .8rem; font-weight: 650;
+      border: 1px solid var(--line); background: rgba(15,23,42,.55); color: #e2e8f0;
+    }
+    .mod-chip--ok { border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08); }
+    .mod-chip--ko { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); color: #fde68a; }
+    .mod-chip__dot {
+      width: .55rem; height: .55rem; border-radius: 999px; background: var(--muted);
+    }
+    .mod-chip--ok .mod-chip__dot { background: var(--ok); }
+    .mod-chip--ko .mod-chip__dot { background: var(--warn); }
     .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
     .login-card { width: min(420px, 100%); }
     .console-shell { display: flex; flex-direction: column; min-height: 100vh; }
@@ -599,6 +674,8 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     echo '<div class="kv">';
     echo '<div><span>Comptes</span><span>' . migrations_web_h($db['users'] === null ? '—' : (string) $db['users']) . '</span></div>';
     echo '<div><span>Tenant défaut</span><span>' . (!empty($db['has_default_tenant']) ? 'présent' : ($db['has_default_tenant'] === false ? 'absent' : '—')) . '</span></div>';
+    $ttLabel = $db['has_tenant_type'] === true ? 'présent' : ($db['has_tenant_type'] === false ? 'manquant — lancez les migrations' : '—');
+    echo '<div><span>Profil de communauté</span><span>' . migrations_web_h($ttLabel) . '</span></div>';
     echo '<div><span>Fichiers SQL</span><span>' . (int) ($status['sql_migrations']['count'] ?? 0) . '</span></div>';
     echo '</div></section>';
 
@@ -623,6 +700,42 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
         echo '<div class="flash flash-warn" style="margin-top:1rem">Manquants : ' . migrations_web_h(implode(', ', $missingBoot)) . '</div>';
     }
     echo '</section>';
+
+    // Modules ATAK / C2
+    $moduleTables = $db['module_tables'] ?? [];
+    if (is_array($moduleTables) && $moduleTables !== []) {
+        $modOk = 0;
+        $modTotal = count($moduleTables);
+        $byGroup = [];
+        foreach ($moduleTables as $table => $mt) {
+            if (!empty($mt['ok'])) {
+                $modOk++;
+            }
+            $group = (string) ($mt['group'] ?? 'Autres');
+            $byGroup[$group][$table] = $mt;
+        }
+        $allModOk = $modOk === $modTotal;
+        echo '<section class="panel col-12"><p class="label">État des modules métier</p>';
+        echo '<div class="row" style="margin-top:.5rem">' . migrations_web_badge_for_bool($allModOk, $modOk . ' / ' . $modTotal . ' prêts', $modOk . ' / ' . $modTotal . ' présents') . '</div>';
+        echo '<div class="mod-groups">';
+        foreach ($byGroup as $groupName => $items) {
+            echo '<div class="mod-group"><p class="mod-group__title">' . migrations_web_h($groupName) . '</p><div class="mod-chips">';
+            foreach ($items as $mt) {
+                $ok = !empty($mt['ok']);
+                $cls = $ok ? 'mod-chip mod-chip--ok' : 'mod-chip mod-chip--ko';
+                $title = $ok ? 'Présent' : 'À créer';
+                echo '<span class="' . $cls . '" title="' . migrations_web_h($title) . '"><span class="mod-chip__dot" aria-hidden="true"></span>' . migrations_web_h((string) ($mt['label'] ?? '')) . '</span>';
+            }
+            echo '</div></div>';
+        }
+        echo '</div>';
+        if (!$allModOk) {
+            echo '<div class="flash flash-warn" style="margin-top:1rem">Des modules carte manquent encore. Cliquez sur <strong>Lancer les migrations</strong> pour les créer automatiquement, puis actualisez cette page.</div>';
+        } else {
+            echo '<div class="flash flash-ok" style="margin-top:1rem">Tous les modules listés sont en place.</div>';
+        }
+        echo '</section>';
+    }
 
     // Dernier run
     echo '<section class="panel col-8"><p class="label">Dernier passage</p>';

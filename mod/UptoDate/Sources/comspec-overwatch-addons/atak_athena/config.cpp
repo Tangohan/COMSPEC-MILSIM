@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.4;
-        versionStr = "1.0.4";
-        versionAr[] = {1, 0, 4};
+        version = 1.0.6;
+        versionStr = "1.0.6";
+        versionAr[] = {1, 0, 6};
     };
 };
 
@@ -39,11 +39,15 @@ class CfgFunctions
             class athena_pushNotification {};
             class athena_selectTab {};
             class athena_sendPhoto {};
+        class athena_collectLocalPhotos {};
+        class athena_rememberLocalPhoto {};
             class athena_setPanelFeedback {};
             class athena_bridgeIcemanAlert {};
             class athena_bridgeIcemanBda {};
             class athena_bridgeIcemanPhoto {};
             class athena_bridgeIcemanGroup {};
+            class athena_installHqContact {};
+            class athena_sendHqMessage {};
             class athena_bridgeComspecSent {};
             class athena_onOrderReceived {};
             class athena_refresh {};
@@ -57,6 +61,25 @@ class CfgFunctions
             class athena_installDesktopShortcut {};
             class athena_showLinkDialog {};
             class athena_showPhoneConnect {};
+            class athena_openAtakApp {};
+            class athena_openFeature {};
+            class athena_pollIcemanPhotos {};
+            class athena_onVibrate {};
+            class athena_onNotify {};
+            class athena_statusOnOpened {};
+            class athena_updateStatus {};
+            class athena_openStatus {};
+        };
+    };
+    // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
+    class BCE
+    {
+        class ATAK
+        {
+            class ATAK_Check_Layout
+            {
+                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
+            };
         };
     };
 };
@@ -77,7 +100,16 @@ class Extended_PostInit_EventHandlers
     };
 };
 
+// Forward decls once only — Arma treats `class X;` as a definition; repeating it
+// across included HPPs yields ".X: Member already defined."
+class ATAK_Message;
+class BCE_RscButtonMenu;
+class RscStructuredText;
+class RscListBox;
+class RscText;
+
 #include "ui\athena_page.hpp"
+#include "ui\status_page.hpp"
 
 class ATAK_APPs
 {
@@ -92,6 +124,18 @@ class ATAK_APPs
             ORDER = 3.5;
             PAGE_CTRL = "COMSPEC_ATAK_Athena";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
+        };
+    };
+    class AtakStatus: message
+    {
+        text = "<t size='1'>État ATAK</t>";
+        textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.6;
+            PAGE_CTRL = "COMSPEC_ATAK_Status";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
         };
     };
 };
@@ -111,6 +155,18 @@ class RscTitles
                 ORDER = 3.5;
                 PAGE_CTRL = "COMSPEC_ATAK_Athena";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_onOpened";
+            };
+        };
+        class AtakStatus: message
+        {
+            text = "<t size='1'>État ATAK</t>";
+            textureNoShortcut = "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.6;
+                PAGE_CTRL = "COMSPEC_ATAK_Status";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
             };
         };
     };

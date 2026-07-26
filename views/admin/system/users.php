@@ -72,6 +72,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
             <p class="mt-2 max-w-3xl text-sm text-slate-600 leading-relaxed">
                 Recherchez un compte sur l’ensemble du site, filtrez par communauté ou par état d’accès, puis activez ou désactivez la connexion.
                 Les dossiers RH détaillés restent dans le back-office de chaque communauté&nbsp;; les mesures d’accès avancées se gèrent via les sanctions site.
+                Les comptes restés sur le contexte système sans organisation sont masqués dès qu’une vraie communauté est liée au même e-mail.
             </p>
         </header>
 

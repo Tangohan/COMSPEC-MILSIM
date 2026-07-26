@@ -93,7 +93,10 @@ final class RateLimitMiddleware
             '/api/atak/game-link/by-steam' => [30, 3600],
             '/api/atak/client-init' => [60, 300],
             '/api/atak/beta-register' => [20, 3600],
+            '/api/atak/mod-report' => [40, 600],
             '/api/atak/position' => [200, 60],
+            '/connect/code' => [30, 3600],
+            '/atak/connect/code' => [30, 3600],
         ];
         foreach ($routes as $routePath => $rule) {
             if ($path === $routePath) {

@@ -664,8 +664,8 @@ window.ATAKMedicalAlerts = (function () {
     if (!window.ATAKSounds) return '';
     var silent = typeof window.ATAKSounds.isSilentMode === 'function' && window.ATAKSounds.isSilentMode();
     var vol = typeof window.ATAKSounds.getVolume === 'function' ? window.ATAKSounds.getVolume() : 70;
-    if (silent && vol <= 0) return ' (son coupé — mode silence et volume à 0 %)';
-    if (silent) return ' (son coupé — mode silence)';
+    if (silent && vol <= 0) return ' (son coupé — mode silencieux et volume à 0 %)';
+    if (silent) return ' (son coupé — mode silencieux)';
     if (vol <= 0) return ' (son coupé — volume à 0 %)';
     return '';
   }
@@ -723,6 +723,17 @@ window.ATAKMedicalAlerts = (function () {
     };
   }
 
+  function openMedicalTab() {
+    var btn = document.querySelector('.atak-tab[data-tab="medical"]');
+    if (btn && !btn.hidden) {
+      try { btn.click(); } catch (e) {}
+      return;
+    }
+    if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.openTab === 'function') {
+      try { window.ATAKPanelChrome.openTab('medical'); } catch (e2) {}
+    }
+  }
+
   function renderBanner(data) {
     var banner = document.getElementById('atak-medical-banner')
       || document.getElementById('overwatch-medical-banner')
@@ -734,6 +745,9 @@ window.ATAKMedicalAlerts = (function () {
     if (!alerts.length && !units.length) {
       banner.hidden = true;
       banner.innerHTML = '';
+      banner.removeAttribute('role');
+      banner.style.cursor = '';
+      banner.title = '';
       return;
     }
     var latest = alerts[alerts.length - 1] || null;
@@ -748,6 +762,10 @@ window.ATAKMedicalAlerts = (function () {
     }).join(' · ');
     var msg = latest ? String(latest.summary || latest.label || '').trim() : '';
     banner.hidden = false;
+    banner.setAttribute('role', 'button');
+    banner.setAttribute('tabindex', '0');
+    banner.style.cursor = 'pointer';
+    banner.title = 'Ouvrir le panneau Médical';
     banner.innerHTML =
       '<div class="atak-medical-banner-inner">' +
       '<strong>Médical</strong>' +
@@ -1084,6 +1102,25 @@ window.ATAKMedicalAlerts = (function () {
     activeFilter = readStoredFilter();
     document.addEventListener('click', onDismissClick);
     document.addEventListener('change', onTriageSelectChange);
+    document.addEventListener('click', function (ev) {
+      var banner = ev.target && ev.target.closest
+        ? ev.target.closest('#atak-medical-banner, #overwatch-medical-banner, #tacmap-medical-banner')
+        : null;
+      if (!banner) return;
+      if (ev.target.closest && ev.target.closest('[data-medical-action]')) return;
+      openMedicalTab();
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter' && ev.key !== ' ') return;
+      var banner = ev.target && (ev.target.id === 'atak-medical-banner'
+        || ev.target.id === 'overwatch-medical-banner'
+        || ev.target.id === 'tacmap-medical-banner')
+        ? ev.target
+        : null;
+      if (!banner) return;
+      ev.preventDefault();
+      openMedicalTab();
+    });
     document.addEventListener('click', function (ev) {
       var tab = ev.target && ev.target.closest
         ? ev.target.closest('#atak-medical-subtabs [data-medical-filter]')

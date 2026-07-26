@@ -1,6 +1,6 @@
 /*
-    Ouvre la vue Appui aérien de la tablette Athena (plus de dialog CAS).
+    Ouvre l’appui aérien : formulaire de demande joueur (pas la boîte à ordres).
 */
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
-["cas"] call comspec_overwatch_connect_fnc_openTabletView;
+[] call comspec_overwatch_connect_fnc_casRequestShow;

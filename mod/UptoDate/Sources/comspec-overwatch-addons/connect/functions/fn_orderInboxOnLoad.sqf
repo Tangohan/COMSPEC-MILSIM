@@ -36,6 +36,8 @@ private _shown = [];
 
     private _id = _order getOrDefault ["id", ""];
     private _type = _order getOrDefault ["type", "MOVE"];
+    // Signal terminal : pas listé comme ordre à répondre
+    if ((toUpper _type) in ["VIBRATE", "NOTIFY"]) then { continue };
     private _status = _order getOrDefault ["status", "PENDING"];
     private _prio = _order getOrDefault ["priority", "IMPORTANT"];
 
@@ -45,20 +47,20 @@ private _shown = [];
     } else {
         switch (toUpper _type) do {
             case "HOLD": { "Tenir" };
-            case "RECON": { "Recon" };
-            case "CAS": { "CAS" };
-            case "QRF": { "QRF" };
-            case "CUSTOM": { "Perso." };
+            case "RECON": { "Reconnaissance" };
+            case "CAS": { "Appui aérien" };
+            case "QRF": { "Force de réaction" };
+            case "CUSTOM": { "Personnalisé" };
             default { "Mouvement" };
         };
     };
     private _statusLabel = switch (toUpper _status) do {
-        case "ACK": { "Acknowledged" };
-        case "EXEC": { "In progress" };
-        case "FAILED": { "Failed" };
-        case "DELIVERED": { "Delivered" };
-        case "CANCELLED": { "Cancelled" };
-        default { "Pending" };
+        case "ACK": { "Accepté / confirmé" };
+        case "EXEC": { "En cours" };
+        case "FAILED": { "Refusé / échec" };
+        case "DELIVERED": { "Reçu" };
+        case "CANCELLED": { "Annulé" };
+        default { "En attente de réponse" };
     };
 
     private _idx = _list lbAdd format ["[%1] %2 — %3 (%4)", _statusLabel, _typeLabel, _issuer, _prio];
@@ -73,7 +75,7 @@ if (!isNull _hint) then {
     private _txt = if ((count _shown) == 0) then {
         "Aucun ordre en attente pour vous."
     } else {
-        format ["%1 ordre(s) — sélectionnez puis répondez.", count _shown]
+        format ["%1 ordre(s) — sélectionnez puis choisissez une réponse.", count _shown]
     };
     _hint ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#8aa0b4'>%1</t>", _txt];
 };

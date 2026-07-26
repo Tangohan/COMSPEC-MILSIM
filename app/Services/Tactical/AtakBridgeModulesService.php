@@ -35,8 +35,8 @@ final class AtakBridgeModulesService
             ],
             [
                 'id' => 'ctab_markers',
-                'label' => 'Marqueurs cTab',
-                'description' => 'Synchronise les repères placés sur la tablette cTab vers la carte web.',
+                'label' => 'Marqueurs ATAK / cTab',
+                'description' => 'Synchronise les repères posés sur ATAK Enhanced et la tablette cTab vers la carte web.',
             ],
             [
                 'id' => 'route',

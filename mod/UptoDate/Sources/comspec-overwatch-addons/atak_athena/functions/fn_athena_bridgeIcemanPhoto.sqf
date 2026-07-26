@@ -18,6 +18,10 @@ if (!(["iceman_photo"] call comspec_overwatch_connect_fnc_isModModuleEnabled)) e
 
 if (_filePath isEqualTo "") exitWith {};
 
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto") then {
+    [_filePath, _fileName] call comspec_overwatch_atak_athena_fnc_athena_rememberLocalPhoto;
+};
+
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {};
 
 
@@ -104,123 +108,86 @@ if (!isNull _drone && {alive _drone}) then {
 
 
 
-[_filePath, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+private _ok = [_filePath, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+if (!(_ok isEqualType true)) then { _ok = false; };
+
+if (!_ok) exitWith {
+    private _detail = missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""];
+    private _msg = "L’envoi de la photo a échoué.";
+    private _d = toLower (str _detail);
+    if ((_d find "file_not_found") >= 0) then {
+        _msg = "Fichier introuvable sur le poste — reprenez une vue depuis l’app Photos d’ATAK.";
+    };
+    if ((_d find "file_too_large") >= 0) then {
+        _msg = "La photo est trop volumineuse pour être transmise.";
+    };
+    if ((_d find "not_connected") >= 0) then {
+        _msg = "Pas de liaison Athena active — reconnectez-vous, puis renvoyez.";
+    };
+    if ((_d find "network") >= 0 || {(_d find "timeout") >= 0}) then {
+        _msg = "Liaison dégradée — la photo n’a pas pu partir. Réessayez dans un instant.";
+    };
+    [_msg, "error", 8] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+};
 
 [format ["Photo envoyée (%1)", _fileName]] call comspec_overwatch_connect_fnc_appendModuleLog;
 
-
-
 private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
-
 if (!(_inbox isEqualType [])) then { _inbox = []; };
 
 private _cs = "";
-
 if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
-
     _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
-
 };
-
 if (_cs isEqualTo "") then { _cs = name player; };
 
-
-
 private _summary = switch (_device) do {
-
     case "DRONE": {
-
         if (_fileName isEqualTo "") then {
-
             format ["Vue drone — grille %1", _grid]
-
         } else {
-
             format ["Vue drone — %1 (grille %2)", _fileName, _grid]
-
         };
-
     };
-
     case "HELMET": {
-
         if (_fileName isEqualTo "") then {
-
             format ["Vue casque — grille %1", _grid]
-
         } else {
-
             format ["Vue casque — %1 (grille %2)", _fileName, _grid]
-
         };
-
     };
-
     default {
-
         if (_fileName isEqualTo "") then {
-
             format ["Remontée depuis ATAK — grille %1", _grid]
-
         } else {
-
             format ["Remontée depuis ATAK — %1 (grille %2)", _fileName, _grid]
-
         };
-
     };
-
 };
-
-
 
 private _dupPhoto = false;
-
 if ((count _inbox) > 0) then {
-
     private _prev = _inbox select ((count _inbox) - 1);
-
     _dupPhoto = (_prev select 0) isEqualTo "PHOTO" && {(_prev select 2) isEqualTo _summary};
-
 };
-
 if (!_dupPhoto) then {
-
     _inbox pushBack [
-
         "PHOTO",
-
         "Photo remontée",
-
         _summary,
-
         _grid,
-
         [daytime, "HH:MM"] call BIS_fnc_timeToString,
-
         _cs
-
     ];
-
     while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
-
     missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
-
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
-
 };
-
-
 
 [
-
     "Photo envoyée vers Athena.",
-
     "ok",
-
     5
-
 ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
-
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 

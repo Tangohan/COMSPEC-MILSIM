@@ -33,143 +33,205 @@ $statusLabel = static function (array $t): string {
 
     return 'Active';
 };
+
+$emptyCopy = match ($tab) {
+    'organigramme' => 'Aucune équipe rattachée à l’organigramme pour le moment. Créez-en une pour structurer durablement vos unités.',
+    'toutes' => 'Aucune équipe de feu enregistrée. Commencez par une équipe de mission ou une équipe d’organigramme.',
+    default => 'Aucune équipe de mission dans cette vue. Constituez votre première équipe pour la carte tactique.',
+};
+
+$createMissionUrl = url('back-office/atak/fire-teams/create?type=mission');
+$createOrgaUrl = url('back-office/atak/fire-teams/create?type=organigramme');
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Tactique · ATAK</p>
-                <h1 class="mt-2 text-2xl font-black text-slate-900">Équipes de feu</h1>
-                <p class="mt-2 text-sm text-slate-600 max-w-2xl">
-                    Constituez des équipes pour une mission cartographique, ou rattachez-les durablement à une unité de l’organigramme.
-                    Distinct des équipes RH classiques et de l’appui-feu.
-                </p>
+<link href="<?= $h(asset_url('assets/css/back-office-fire-teams.css')) ?>" rel="stylesheet">
+<div class="bo-ft">
+    <div class="bo-ft__frame">
+        <header class="bo-ft__hero">
+            <div class="bo-ft__hero-top">
+                <div>
+                    <p class="bo-ft__eyebrow">Tactique · ATAK</p>
+                    <h1 class="bo-ft__title">Équipes de feu</h1>
+                    <p class="bo-ft__lead">
+                        Constituez des équipes pour une mission cartographique, ou rattachez-les durablement à une unité de l’organigramme.
+                        Distinct des équipes RH classiques et de l’appui-feu.
+                    </p>
+                </div>
+                <div class="bo-ft__actions" role="group" aria-label="Actions équipes de feu">
+                    <a href="<?= $h($createMissionUrl) ?>" class="bo-ft__btn bo-ft__btn--primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/><circle cx="12" cy="12" r="9" opacity=".35"/></svg>
+                        <span>Nouvelle mission</span>
+                    </a>
+                    <a href="<?= $h($createOrgaUrl) ?>" class="bo-ft__btn bo-ft__btn--secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/><path stroke-linecap="round" d="M8 4.5v15M16 4.5v15" opacity=".45"/></svg>
+                        <span>Nouvelle organigramme</span>
+                    </a>
+                    <a href="<?= $h(url('back-office/atak/operateurs')) ?>" class="bo-ft__btn bo-ft__btn--ghost">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"/><path stroke-linecap="round" d="M19.5 8.25v3m0 0v3m0-3h3m-3 0h-3" opacity=".7"/></svg>
+                        <span>Effectifs en liaison</span>
+                    </a>
+                    <a href="<?= $h(url('admin/atak-config')) ?>" class="bo-ft__btn bo-ft__btn--ghost">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.174.1.331.24.46.41l1.12.01c.54.005.99.45.99.99v2.592c0 .54-.45.985-.99.99l-1.12.01a1.6 1.6 0 0 0-.46.41c-.332.184-.582.496-.645.87l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.17 1.17 0 0 0-.645-.87 1.6 1.6 0 0 0-.46-.41l-1.12-.01c-.54-.005-.99-.45-.99-.99V8.502c0-.54.45-.985.99-.99l1.12-.01c.17-.002.33-.12.46-.41.332-.184.582-.496.645-.87l.213-1.28Z"/><circle cx="12" cy="12" r="2.6"/></svg>
+                        <span>Config ATAK</span>
+                    </a>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="<?= $h(url('back-office/atak/fire-teams/create?type=mission')) ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Nouvelle (mission)</a>
-                <a href="<?= $h(url('back-office/atak/fire-teams/create?type=organigramme')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Nouvelle (organigramme)</a>
-                <a href="<?= $h(url('back-office/atak/operateurs')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Effectifs en liaison</a>
-                <a href="<?= $h(url('admin/atak-config')) ?>" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Config ATAK</a>
-            </div>
-        </div>
-        <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div class="rounded-xl bg-slate-50 p-3">
-                <p class="text-xs uppercase text-slate-500">Liste affichée</p>
-                <p class="text-2xl font-black text-slate-900"><?= (int) ($stats['total'] ?? count($teams)) ?></p>
-            </div>
-            <div class="rounded-xl bg-emerald-50 p-3">
-                <p class="text-xs uppercase text-emerald-700">Actives</p>
-                <p class="text-2xl font-black text-emerald-900"><?= (int) ($stats['active'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-xl bg-slate-50 p-3 col-span-2 sm:col-span-1">
-                <p class="text-xs uppercase text-slate-500">Raccourcis</p>
-                <p class="mt-1 text-sm text-slate-700">
-                    <a class="underline font-semibold" href="<?= $h(url('back-office/teams')) ?>">Équipes ORBAT</a>
-                    ·
-                    <a class="underline font-semibold" href="<?= $h(url('orbat')) ?>">Organigramme</a>
-                </p>
-            </div>
-        </div>
-    </header>
 
-    <?php if ($flashSuccess): ?>
-        <p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status"><?= $h($flashSuccess) ?></p>
-    <?php endif; ?>
-    <?php if ($flashError): ?>
-        <p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert"><?= $h($flashError) ?></p>
-    <?php endif; ?>
+            <div class="bo-ft__kpis" aria-label="Synthèse">
+                <div class="bo-ft__kpi">
+                    <p class="bo-ft__kpi-label">Liste affichée</p>
+                    <p class="bo-ft__kpi-value"><?= (int) ($stats['total'] ?? count($teams)) ?></p>
+                </div>
+                <div class="bo-ft__kpi bo-ft__kpi--accent">
+                    <p class="bo-ft__kpi-label">Actives</p>
+                    <p class="bo-ft__kpi-value"><?= (int) ($stats['active'] ?? 0) ?></p>
+                </div>
+                <div class="bo-ft__kpi">
+                    <p class="bo-ft__kpi-label">Raccourcis</p>
+                    <p class="bo-ft__kpi-links">
+                        <a href="<?= $h(url('back-office/teams')) ?>">Équipes ORBAT</a>
+                        <span class="bo-ft__kpi-sep" aria-hidden="true">·</span>
+                        <a href="<?= $h(url('orbat')) ?>">Organigramme</a>
+                    </p>
+                </div>
+            </div>
+        </header>
 
-    <?php if (!$ready): ?>
-        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            Les tables des équipes de feu ne sont pas encore créées. Un administrateur plateforme doit exécuter les migrations
-            (<span class="font-semibold">run-migrations.php</span> ou l’écran de migrations).
-        </div>
-    <?php endif; ?>
+        <?php if ($flashSuccess): ?>
+            <p class="bo-ft__flash bo-ft__flash--ok" role="status"><?= $h($flashSuccess) ?></p>
+        <?php endif; ?>
+        <?php if ($flashError): ?>
+            <p class="bo-ft__flash bo-ft__flash--err" role="alert"><?= $h($flashError) ?></p>
+        <?php endif; ?>
 
-    <nav class="flex flex-wrap gap-2" aria-label="Filtres des équipes de feu">
-        <?php
-        $tabs = [
-            'mission' => 'De mission',
-            'organigramme' => 'Organigramme',
-            'toutes' => 'Toutes',
-        ];
-        foreach ($tabs as $key => $label):
-            $href = url('back-office/atak/fire-teams?vue=' . $key . ($includeDissolved ? '&inclure_dissoutes=1' : ''));
-            $active = $tab === $key;
-            ?>
-            <a href="<?= $h($href) ?>"
-               class="rounded-lg px-3 py-2 text-sm font-semibold <?= $active ? 'bg-slate-900 text-white' : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50' ?>">
-                <?= $h($label) ?>
-            </a>
-        <?php endforeach; ?>
-        <a href="<?= $h(url('back-office/atak/fire-teams?vue=' . $tab . ($includeDissolved ? '' : '&inclure_dissoutes=1'))) ?>"
-           class="rounded-lg px-3 py-2 text-sm font-semibold border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">
-            <?= $includeDissolved ? 'Masquer les dissoutes' : 'Inclure les dissoutes' ?>
-        </a>
-    </nav>
-
-    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <?php if ($teams === []): ?>
-            <div class="p-6 text-sm text-slate-500">Aucune équipe de feu dans cette vue.</div>
-        <?php else: ?>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Équipe</th>
-                            <th class="px-4 py-3 text-left">Portée</th>
-                            <th class="px-4 py-3 text-left">Rattachement</th>
-                            <th class="px-4 py-3 text-left">Effectif</th>
-                            <th class="px-4 py-3 text-left">État</th>
-                            <th class="px-4 py-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php foreach ($teams as $t):
-                            $tid = (int) ($t['id'] ?? 0);
-                            $color = (string) ($t['color'] ?? '#2563EB');
-                            $kind = (string) ($t['kind'] ?? 'ephemeral');
-                            $mapId = isset($t['map_id']) ? (int) $t['map_id'] : 0;
-                            $attach = $kind === 'permanent'
-                                ? ((string) ($t['unit_name'] ?? '') !== '' ? (string) $t['unit_name'] : 'Sans unité liée')
-                                : ($maps[$mapId] ?? ('Carte #' . $mapId));
-                            if ($kind === 'ephemeral' && !empty($t['mission_key'])) {
-                                $attach .= ' · ' . (string) $t['mission_key'];
-                            }
-                            ?>
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center gap-2">
-                                        <span class="inline-block h-3 w-3 rounded-full border border-slate-200" style="background:<?= $h($color) ?>" aria-hidden="true"></span>
-                                        <span class="font-semibold text-slate-900"><?= $h($t['label'] ?? '') ?></span>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-slate-700"><?= $h($kindLabel($kind)) ?></td>
-                                <td class="px-4 py-3 text-slate-700"><?= $h($attach) ?></td>
-                                <td class="px-4 py-3 text-slate-700"><?= (int) ($t['member_count'] ?? 0) ?></td>
-                                <td class="px-4 py-3">
-                                    <?php $st = $statusLabel($t); ?>
-                                    <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold
-                                        <?= $st === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600' ?>">
-                                        <?= $h($st) ?>
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex flex-wrap gap-2">
-                                        <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= $h(url('back-office/atak/fire-teams/' . $tid)) ?>">Ouvrir</a>
-                                        <?php if (!empty($t['is_active'])): ?>
-                                            <form method="post" action="<?= $h(url('back-office/atak/fire-teams/' . $tid . '/dissolve')) ?>" onsubmit="return confirm('Dissoudre cette équipe de feu ?');">
-                                                <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
-                                                <button type="submit" class="rounded-md border border-amber-300 px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-50">Dissoudre</button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <?php if (!$ready): ?>
+            <div class="bo-ft__flash bo-ft__flash--warn" role="status">
+                Les tables des équipes de feu ne sont pas encore créées. Un administrateur plateforme doit exécuter les migrations
+                (<strong>run-migrations.php</strong> ou l’écran de migrations).
             </div>
         <?php endif; ?>
-    </section>
+
+        <nav class="bo-ft__filters" aria-label="Filtres des équipes de feu">
+            <?php
+            $tabs = [
+                'mission' => [
+                    'label' => 'De mission',
+                    'icon' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5v2.25M4.5 9h15l-1.2 10.2A1.5 1.5 0 0 1 16.81 20.5H7.19a1.5 1.5 0 0 1-1.49-1.3L4.5 9Z"/></svg>',
+                ],
+                'organigramme' => [
+                    'label' => 'Organigramme',
+                    'icon' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h9v3h-9v-3Zm3.75 3v3.75m-5.25 0h10.5v3.75H6v-3.75Z"/></svg>',
+                ],
+                'toutes' => [
+                    'label' => 'Toutes',
+                    'icon' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>',
+                ],
+            ];
+            foreach ($tabs as $key => $meta):
+                $href = url('back-office/atak/fire-teams?vue=' . $key . ($includeDissolved ? '&inclure_dissoutes=1' : ''));
+                $active = $tab === $key;
+                ?>
+                <a href="<?= $h($href) ?>"
+                   class="bo-ft__tab<?= $active ? ' is-active' : '' ?>"
+                   <?= $active ? 'aria-current="page"' : '' ?>>
+                    <?= $meta['icon'] ?>
+                    <span><?= $h($meta['label']) ?></span>
+                </a>
+            <?php endforeach; ?>
+            <a href="<?= $h(url('back-office/atak/fire-teams?vue=' . $tab . ($includeDissolved ? '' : '&inclure_dissoutes=1'))) ?>"
+               class="bo-ft__tab bo-ft__tab--toggle<?= $includeDissolved ? ' is-on' : '' ?>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                <span><?= $includeDissolved ? 'Masquer les dissoutes' : 'Inclure les dissoutes' ?></span>
+            </a>
+        </nav>
+
+        <section class="bo-ft__panel" aria-label="Liste des équipes de feu">
+            <?php if ($teams === []): ?>
+                <div class="bo-ft__empty">
+                    <div class="bo-ft__empty-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.547 3.199a3.001 3.001 0 0 1-.547-3.199m0 0a9.06 9.06 0 0 0-3.741-.479m-4.017.479a9.094 9.094 0 0 1-3.741-.479 3 3 0 0 1 4.682-2.72m-1.04 3.199c.24-.681.54-1.31.894-1.877M15 11.25a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6.75 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-18 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>
+                        </svg>
+                    </div>
+                    <h2 class="bo-ft__empty-title">Aucune équipe de feu dans cette vue</h2>
+                    <p class="bo-ft__empty-text"><?= $h($emptyCopy) ?></p>
+                    <div class="bo-ft__empty-actions">
+                        <?php if ($tab === 'organigramme'): ?>
+                            <a href="<?= $h($createOrgaUrl) ?>" class="bo-ft__btn bo-ft__btn--primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                <span>Créer la première équipe</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="<?= $h($createMissionUrl) ?>" class="bo-ft__btn bo-ft__btn--primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                                <span>Créer la première équipe</span>
+                            </a>
+                            <?php if ($tab === 'toutes'): ?>
+                                <a href="<?= $h($createOrgaUrl) ?>" class="bo-ft__btn bo-ft__btn--secondary">
+                                    <span>Équipe d’organigramme</span>
+                                </a>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="bo-ft__table-wrap">
+                    <table class="bo-ft__table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Équipe</th>
+                                <th scope="col">Portée</th>
+                                <th scope="col">Rattachement</th>
+                                <th scope="col">Effectif</th>
+                                <th scope="col">État</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($teams as $t):
+                                $tid = (int) ($t['id'] ?? 0);
+                                $color = (string) ($t['color'] ?? '#2563EB');
+                                $kind = (string) ($t['kind'] ?? 'ephemeral');
+                                $mapId = isset($t['map_id']) ? (int) $t['map_id'] : 0;
+                                $attach = $kind === 'permanent'
+                                    ? ((string) ($t['unit_name'] ?? '') !== '' ? (string) $t['unit_name'] : 'Sans unité liée')
+                                    : ($maps[$mapId] ?? ('Carte #' . $mapId));
+                                if ($kind === 'ephemeral' && !empty($t['mission_key'])) {
+                                    $attach .= ' · ' . (string) $t['mission_key'];
+                                }
+                                $st = $statusLabel($t);
+                                ?>
+                                <tr>
+                                    <td>
+                                        <div class="bo-ft__team">
+                                            <span class="bo-ft__dot" style="background:<?= $h($color) ?>" aria-hidden="true"></span>
+                                            <span class="bo-ft__team-name"><?= $h($t['label'] ?? '') ?></span>
+                                        </div>
+                                    </td>
+                                    <td><?= $h($kindLabel($kind)) ?></td>
+                                    <td><?= $h($attach) ?></td>
+                                    <td><?= (int) ($t['member_count'] ?? 0) ?></td>
+                                    <td>
+                                        <span class="bo-ft__badge <?= $st === 'Active' ? 'bo-ft__badge--ok' : 'bo-ft__badge--muted' ?>">
+                                            <?= $h($st) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="bo-ft__row-actions">
+                                            <a class="bo-ft__mini" href="<?= $h(url('back-office/atak/fire-teams/' . $tid)) ?>">Ouvrir</a>
+                                            <?php if (!empty($t['is_active'])): ?>
+                                                <form method="post" action="<?= $h(url('back-office/atak/fire-teams/' . $tid . '/dissolve')) ?>" onsubmit="return confirm('Dissoudre cette équipe de feu ?');">
+                                                    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+                                                    <button type="submit" class="bo-ft__mini bo-ft__mini--warn">Dissoudre</button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+    </div>
 </div>

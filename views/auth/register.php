@@ -6,7 +6,7 @@ $old = is_array($register_old ?? null) ? $register_old : [];
 $prefillCc = (string) ($prefill_community_code ?? ($old['community_code'] ?? ''));
 $prefillSlug = (string) ($prefill_tenant_slug ?? '');
 $startStep = (int) ($register_step ?? 1);
-if ($startStep < 1 || $startStep > 3) {
+if ($startStep < 1 || $startStep > 2) {
     $startStep = 1;
 }
 $val = static function (array $old, string $key, string $default = '') : string {
@@ -69,8 +69,9 @@ $val = static function (array $old, string $key, string $default = '') : string 
         }
         .login-visual {
             background:
-                linear-gradient(180deg, rgba(5, 5, 5, 0.35) 0%, rgba(5, 5, 5, 0.82) 100%),
+                linear-gradient(180deg, rgba(5, 5, 5, 0.2) 0%, rgba(5, 5, 5, 0.55) 45%, rgba(5, 5, 5, 0.92) 100%),
                 url('<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/images/fog-team.jpg') center / cover no-repeat;
+            background-color: #050505;
         }
         .reg-step-dot {
             width: 1.75rem;
@@ -99,12 +100,8 @@ $val = static function (array $old, string $key, string $default = '') : string 
             flex: 1 1 auto;
             height: 1px;
             background: rgba(244, 244, 240, 0.12);
-            min-width: 1.25rem;
         }
         .reg-step-line.is-done { background: rgba(52, 211, 153, 0.45); }
-        @media (prefers-reduced-motion: reduce) {
-            .login-field { transition: none; }
-        }
     </style>
 </head>
 <body
@@ -127,7 +124,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
         },
         next() {
             if (!this.validateStep(this.step)) return;
-            this.step = Math.min(3, this.step + 1);
+            this.step = Math.min(2, this.step + 1);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         prev() {
@@ -135,12 +132,12 @@ $val = static function (array $old, string $key, string $default = '') : string 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         onSubmit(e) {
-            if (this.step !== 3) {
+            if (this.step !== 2) {
                 e.preventDefault();
                 this.next();
                 return;
             }
-            for (let n = 1; n <= 3; n++) {
+            for (let n = 1; n <= 2; n++) {
                 if (!this.validateStep(n)) {
                     e.preventDefault();
                     this.step = n;
@@ -154,7 +151,7 @@ $val = static function (array $old, string $key, string $default = '') : string 
 <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(52,211,153,0.07),transparent_50%)]" aria-hidden="true"></div>
 
 <header class="relative z-20 border-b border-white/5 bg-black/80 backdrop-blur-md">
-    <div class="mx-auto flex h-14 max-w-[100rem] items-center justify-between gap-3 px-5 md:px-8">
+    <div class="flex h-14 w-full items-center justify-between gap-3 px-5 md:px-8 lg:px-10">
         <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="hi-kicker text-white/45 transition hover:text-white"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></a>
         <a href="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>" class="text-[11px] font-black uppercase tracking-[0.32em] text-white">
             <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?>
@@ -166,12 +163,12 @@ $val = static function (array $old, string $key, string $default = '') : string 
     </div>
 </header>
 
-<main class="relative z-10 mx-auto grid min-h-[calc(100svh-3.5rem)] w-full max-w-[100rem] lg:grid-cols-2">
-    <aside class="login-visual relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-end" aria-hidden="true">
-        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-        <div class="relative z-10 p-10 xl:p-14">
+<main class="relative z-10 grid min-h-[calc(100svh-3.5rem)] w-full lg:grid-cols-2">
+    <aside class="login-visual relative hidden min-h-full overflow-hidden lg:flex lg:flex-col lg:justify-end" aria-hidden="true">
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10"></div>
+        <div class="relative z-10 p-10 xl:p-14 2xl:p-16">
             <p class="hi-kicker text-emerald-400/90"><?= htmlspecialchars(__('auth.register_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
-            <p class="hi-display mt-4 text-[clamp(3rem,6vw,5.5rem)] text-white leading-none">
+            <p class="hi-display mt-4 text-[clamp(3rem,5.5vw,5.5rem)] text-white leading-none">
                 <?= htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') ?><span class="text-emerald-400">.</span>
             </p>
             <p class="hi-body mt-6 max-w-md text-white/65">
@@ -180,13 +177,12 @@ $val = static function (array $old, string $key, string $default = '') : string 
             <ol class="mt-10 space-y-3 text-sm text-white/55">
                 <li class="flex gap-3"><span class="font-black text-emerald-400">01</span> <?= htmlspecialchars(__('auth.register_step1'), ENT_QUOTES, 'UTF-8') ?></li>
                 <li class="flex gap-3"><span class="font-black text-emerald-400">02</span> <?= htmlspecialchars(__('auth.register_step2'), ENT_QUOTES, 'UTF-8') ?></li>
-                <li class="flex gap-3"><span class="font-black text-emerald-400">03</span> <?= htmlspecialchars(__('auth.register_step3'), ENT_QUOTES, 'UTF-8') ?></li>
             </ol>
         </div>
     </aside>
 
-    <section class="relative flex flex-col justify-center px-5 py-10 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-        <div class="mx-auto w-full max-w-lg">
+    <section class="relative flex flex-col justify-center px-5 py-10 sm:px-8 md:px-12 lg:px-14 xl:px-20 2xl:px-28">
+        <div class="mx-auto w-full max-w-lg lg:mx-0 lg:ml-0 xl:max-w-xl">
             <div class="mb-8">
                 <p class="hi-kicker text-emerald-400/90"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></p>
                 <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl"><?= htmlspecialchars(__('auth.register_heading'), ENT_QUOTES, 'UTF-8') ?></h1>
@@ -199,14 +195,11 @@ $val = static function (array $old, string $key, string $default = '') : string 
                 <div class="flex items-center gap-2">
                     <span class="reg-step-dot" :class="step > 1 ? 'is-done' : (step === 1 ? 'is-active' : '')" aria-current="<?= $startStep === 1 ? 'step' : 'false' ?>">1</span>
                     <span class="reg-step-line" :class="step > 1 ? 'is-done' : ''" aria-hidden="true"></span>
-                    <span class="reg-step-dot" :class="step > 2 ? 'is-done' : (step === 2 ? 'is-active' : '')">2</span>
-                    <span class="reg-step-line" :class="step > 2 ? 'is-done' : ''" aria-hidden="true"></span>
-                    <span class="reg-step-dot" :class="step === 3 ? 'is-active' : ''">3</span>
+                    <span class="reg-step-dot" :class="step === 2 ? 'is-active' : ''">2</span>
                 </div>
                 <p class="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
-                    <span x-show="step === 1"><?= htmlspecialchars(__('auth.step_identity'), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span x-show="step === 2" x-cloak><?= htmlspecialchars(__('auth.step_account'), ENT_QUOTES, 'UTF-8') ?></span>
-                    <span x-show="step === 3" x-cloak><?= htmlspecialchars(__('auth.step_validation'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span x-show="step === 1"><?= htmlspecialchars(__('auth.step_account'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <span x-show="step === 2" x-cloak><?= htmlspecialchars(__('auth.step_validation'), ENT_QUOTES, 'UTF-8') ?></span>
                 </p>
             </nav>
 
@@ -223,50 +216,6 @@ $val = static function (array $old, string $key, string $default = '') : string 
                     <?= \App\Core\Csrf::field() ?>
 
                     <div x-show="step === 1" x-ref="step1" x-transition.opacity.duration.200ms>
-                        <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_who'), ENT_QUOTES, 'UTF-8') ?></p>
-                        <p class="mb-5 text-xs leading-relaxed text-white/45">
-                            Ces informations restent administratives. Elles ne remplacent pas votre pseudo public.
-                        </p>
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="login-label" for="legal_first_name">Prénom</label>
-                                <input id="legal_first_name" type="text" name="legal_first_name" required minlength="2" maxlength="100"
-                                       autocomplete="given-name" placeholder="Prénom"
-                                       value="<?= $val($old, 'legal_first_name') ?>"
-                                       class="login-field">
-                            </div>
-                            <div>
-                                <label class="login-label" for="legal_last_name">Nom</label>
-                                <input id="legal_last_name" type="text" name="legal_last_name" required minlength="2" maxlength="100"
-                                       autocomplete="family-name" placeholder="Nom"
-                                       value="<?= $val($old, 'legal_last_name') ?>"
-                                       class="login-field">
-                            </div>
-                            <div>
-                                <label class="login-label" for="legal_birth_date"><?= htmlspecialchars(__('auth.register_birth'), ENT_QUOTES, 'UTF-8') ?> <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
-                                <input id="legal_birth_date" type="date" name="legal_birth_date" autocomplete="bday"
-                                       value="<?= $val($old, 'legal_birth_date') ?>"
-                                       class="login-field">
-                            </div>
-                            <div>
-                                <label class="login-label" for="legal_country">Pays <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
-                                <input id="legal_country" type="text" name="legal_country" maxlength="100"
-                                       autocomplete="country-name" placeholder="ex. France"
-                                       value="<?= $val($old, 'legal_country') ?>"
-                                       class="login-field">
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
-                                <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"
-                                       placeholder="Votre pseudo Discord"
-                                       value="<?= $val($old, 'discord_handle') ?>"
-                                       class="login-field">
-                            </div>
-                        </div>
-                        <button type="button" @click="next()" class="hi-cta hi-cta-solid mt-6 w-full justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
-                    </div>
-
-                    <div x-show="step === 2" x-ref="step2" x-cloak x-transition.opacity.duration.200ms>
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_access'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             E-mail de connexion, pseudo visible et mot de passe.
@@ -297,6 +246,13 @@ $val = static function (array $old, string $key, string $default = '') : string 
                                 <input id="display_name" type="text" name="display_name" required minlength="2" maxlength="100"
                                        autocomplete="nickname" placeholder="Visible par les autres membres"
                                        value="<?= $val($old, 'display_name') ?>"
+                                       class="login-field">
+                            </div>
+                            <div>
+                                <label class="login-label" for="discord_handle">Discord <span class="normal-case tracking-normal text-white/30"><?= htmlspecialchars(__('auth.register_optional'), ENT_QUOTES, 'UTF-8') ?></span></label>
+                                <input id="discord_handle" type="text" name="discord_handle" maxlength="120" autocomplete="off"
+                                       placeholder="Votre pseudo Discord"
+                                       value="<?= $val($old, 'discord_handle') ?>"
                                        class="login-field">
                             </div>
                             <div>
@@ -340,25 +296,16 @@ $val = static function (array $old, string $key, string $default = '') : string 
                             </div>
                         </div>
 
-                        <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row">
-                            <button type="button" @click="prev()" class="hi-cta hi-cta-ghost w-full justify-center sm:w-auto sm:min-w-[8rem]"><?= htmlspecialchars(__('common.back'), ENT_QUOTES, 'UTF-8') ?></button>
-                            <button type="button" @click="next()" class="hi-cta hi-cta-solid w-full flex-1 justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
-                        </div>
+                        <button type="button" @click="next()" class="hi-cta hi-cta-solid mt-6 w-full justify-center"><?= htmlspecialchars(__('auth.register_continue'), ENT_QUOTES, 'UTF-8') ?></button>
                     </div>
 
-                    <div x-show="step === 3" x-ref="step3" x-cloak x-transition.opacity.duration.200ms>
+                    <div x-show="step === 2" x-ref="step2" x-cloak x-transition.opacity.duration.200ms>
                         <p class="mb-1 text-sm font-bold text-white"><?= htmlspecialchars(__('auth.register_last_step'), ENT_QUOTES, 'UTF-8') ?></p>
                         <p class="mb-5 text-xs leading-relaxed text-white/45">
                             Confirmez les règles du compte, puis validez. Vous pourrez ensuite confirmer votre e-mail.
                         </p>
 
                         <div class="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                            <label class="flex items-start gap-3 text-sm leading-relaxed text-white/70">
-                                <input type="checkbox" name="accept_identity_split" value="1" required
-                                       class="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/40"
-                                       <?= !empty($old['accept_identity_split']) ? 'checked' : '' ?>>
-                                <span><?= htmlspecialchars(__('auth.register_identity_note'), ENT_QUOTES, 'UTF-8') ?></span>
-                            </label>
                             <label class="flex items-start gap-3 text-sm leading-relaxed text-white/70">
                                 <input type="checkbox" name="accept_terms" value="1" required
                                        class="mt-1 h-4 w-4 rounded border-white/20 bg-transparent text-emerald-500 focus:ring-emerald-500/40"

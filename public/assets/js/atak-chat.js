@@ -86,11 +86,24 @@ window.ATAKChat = (function () {
     return isNaN(n) ? 0 : n;
   }
 
+  /** Sync technique (affichage camps) — ne doit pas apparaître dans le journal radio. */
+  function isHiddenSystemMessage(m) {
+    if (!m) return false;
+    var body = String(m.body || '').trim();
+    var author = String(m.author || '').trim().toUpperCase();
+    var upper = body.toUpperCase();
+    if (upper.indexOf('REGLAGES AFFICHAGE') === 0) return true;
+    if (upper.indexOf('AFFICHAGE|ADVERSAIRE=') === 0) return true;
+    if (author === 'REGLAGES' && upper.indexOf('AFFICHAGE|') === 0) return true;
+    return false;
+  }
+
   function filterVisible(list) {
     var before = getClearedBeforeId();
-    if (before < 1) return list;
-    return list.filter(function (m) {
+    return (list || []).filter(function (m) {
+      if (isHiddenSystemMessage(m)) return false;
       var id = messageId(m);
+      if (before < 1) return true;
       return id < 1 || id > before;
     });
   }
@@ -428,6 +441,7 @@ window.ATAKChat = (function () {
   }
 
   function appendMessage(msg) {
+    if (isHiddenSystemMessage(msg)) return;
     if (messageId(msg) > 0 && messageId(msg) <= getClearedBeforeId()) {
       return;
     }

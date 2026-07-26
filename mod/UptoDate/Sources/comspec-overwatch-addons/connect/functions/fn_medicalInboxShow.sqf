@@ -1,7 +1,15 @@
 /*
-    Ouvre la vue Médical de la tablette Athena (plus de dialog triage).
+
+    Ouvre les alertes médicales / urgences dans l’app Athena (ATAK Enhanced).
+
 */
+
 if (!hasInterface) exitWith {};
+
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
-["medical"] call comspec_overwatch_connect_fnc_openTabletView;
+
+
+["urgences"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+
+

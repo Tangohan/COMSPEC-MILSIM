@@ -149,21 +149,8 @@ function navigation_menu_item_visible(array $item, bool $loggedIn): bool
         return false;
     }
 
-    if ($loggedIn && !empty($item['module'])) {
-        $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
-        if ($tenantId > 0) {
-            try {
-                $tenantRepo = \App\Core\Container::get(\App\Repositories\TenantRepository::class);
-                $tenant = $tenantRepo->findById($tenantId);
-                if ($tenant) {
-                    $tenantType = (string) ($tenant['tenant_type'] ?? 'full');
-                    if (!(\App\Services\Community\TenantTypeConfig::moduleAllowed($tenantType, (string) $item['module']))) {
-                        return false;
-                    }
-                }
-            } catch (\Throwable) {
-            }
-        }
+    if ($loggedIn && !navigation_tenant_type_allows_item($item)) {
+        return false;
     }
     if (!empty($item['auth_only']) && !$loggedIn) {
         return false;
@@ -178,6 +165,61 @@ function navigation_menu_item_visible(array $item, bool $loggedIn): bool
 }
 
 /**
+ * Type de communauté courant (session), normalisé.
+ */
+function navigation_current_tenant_type(): string
+{
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
+    $cached = \App\Services\Community\TenantTypeConfig::TYPE_FULL;
+    $tenantId = (int) (\App\Core\Session::get('tenant_id') ?? 0);
+    if ($tenantId < 1) {
+        return $cached;
+    }
+    try {
+        $tenant = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
+        if ($tenant) {
+            $cached = \App\Services\Community\TenantTypeConfig::normalizeType(
+                (string) ($tenant['tenant_type'] ?? 'full')
+            );
+        }
+    } catch (\Throwable) {
+    }
+
+    return $cached;
+}
+
+/**
+ * @param array{module?: string, path?: string} $item
+ */
+function navigation_tenant_type_allows_item(array $item): bool
+{
+    $type = navigation_current_tenant_type();
+    if ($type === \App\Services\Community\TenantTypeConfig::TYPE_FULL) {
+        return true;
+    }
+    $module = trim((string) ($item['module'] ?? ''));
+    if ($module === '' && !empty($item['path'])) {
+        $module = (string) (\App\Services\Community\TenantTypeConfig::moduleForUri((string) $item['path']) ?? '');
+    }
+    if ($module === '') {
+        return true;
+    }
+
+    return \App\Services\Community\TenantTypeConfig::moduleAllowed($type, $module);
+}
+
+/**
+ * @param array{module?: string, path?: string} $link
+ */
+function navigation_tenant_type_allows_link(array $link): bool
+{
+    return navigation_tenant_type_allows_item($link);
+}
+
+/**
  * Résout un lien avec href + path canonique pour l’état actif.
  *
  * @param array{path: string, active_match?: string, label: string, description?: string} $link
@@ -186,6 +228,9 @@ function navigation_menu_item_visible(array $item, bool $loggedIn): bool
 function navigation_resolve_link(array $link): ?array
 {
     if (!navigation_item_allowed($link)) {
+        return null;
+    }
+    if (!navigation_tenant_type_allows_link($link)) {
         return null;
     }
     $pathFragment = (string) ($link['path'] ?? '');
@@ -312,13 +357,18 @@ function navigation_resolve_featured(array $featured): ?array
         return $out;
     }
 
+    $ctaPath = (string) $featured['cta_path'];
+    if (!navigation_tenant_type_allows_link(['path' => $ctaPath, 'module' => $featured['cta_module'] ?? null])) {
+        return $out;
+    }
+
     $perm = $featured['cta_permission'] ?? null;
     if ($perm !== null && $perm !== '' && !\App\Core\Gate::getInstance()->allows((string) $perm)) {
         return $out;
     }
 
-    $out['cta_href'] = url((string) $featured['cta_path']);
-    $out['cta_path'] = navigation_route_path((string) $featured['cta_path']);
+    $out['cta_href'] = url($ctaPath);
+    $out['cta_path'] = navigation_route_path($ctaPath);
 
     return $out;
 }
@@ -393,6 +443,9 @@ function navigation_image_file_exists(string $relativePath): bool
 function navigation_append_forum_rubric_links(array &$megaItem): void
 {
     if (($megaItem['variant'] ?? '') !== 'operations') {
+        return;
+    }
+    if (!navigation_tenant_type_allows_item(['module' => 'forum'])) {
         return;
     }
     if (!\App\Core\Gate::getInstance()->allows('forum.view')) {

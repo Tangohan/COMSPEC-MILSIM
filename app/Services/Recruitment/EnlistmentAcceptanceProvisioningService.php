@@ -272,6 +272,23 @@ final class EnlistmentAcceptanceProvisioningService
             ];
         }
 
+        $srcEmail = strtolower(trim((string) ($global['email'] ?? '')));
+        $isSealed = !empty($global['deleted_at'])
+            || str_ends_with($srcEmail, '@deleted.invalid')
+            || (
+                (string) ($global['display_name'] ?? '') === \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME
+                && (string) ($global['status'] ?? '') === 'inactive'
+            );
+        if ($isSealed) {
+            return [
+                'ok' => false,
+                'message' => 'Le compte lié à cette candidature a été supprimé. Une nouvelle inscription est nécessaire ; l’historique précédent n’est pas récupérable.',
+                'staff_summary' => '',
+                'candidate_scenario' => 'existing',
+                'warn' => null,
+            ];
+        }
+
         $srcTenant = (int) ($global['tenant_id'] ?? 0);
         if ($srcTenant === $tenantId) {
             if (!$this->promoteGuestOrInviteToMember($tenantId, $submitterId)) {
@@ -293,7 +310,6 @@ final class EnlistmentAcceptanceProvisioningService
             ];
         }
 
-        $srcEmail = trim((string) ($global['email'] ?? ''));
         $match = $srcEmail !== '' ? $this->userRepository->findByEmail($tenantId, $srcEmail) : null;
         if ($match) {
             $uid = (int) $match['id'];

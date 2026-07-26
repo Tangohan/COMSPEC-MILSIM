@@ -1,0 +1,14 @@
+name = "COMSPEC Overwatch (BÊTA)";
+author = "COMSPEC";
+actionName = "Website";
+action = "https://athena.ttrd.fr/public";
+logo = "logo.paa";
+logoOver = "logo.paa";
+logoSmall = "logoSmall.paa";
+picture = "logo.paa";
+tooltip = "COMSPEC Overwatch · BÊTA";
+tooltipOwned = "COMSPEC Overwatch";
+overview = "Accès anticipé — Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
+overviewPicture = "logoSmall.paa";
+hideName = 0;
+hidePicture = 0;

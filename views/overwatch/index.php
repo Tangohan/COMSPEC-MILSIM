@@ -42,6 +42,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
   <script src="<?= htmlspecialchars(asset_url('assets/vendor/milstd/milstd2525.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/milstd-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/nato-sidc-icons.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= htmlspecialchars(asset_url('assets/js/arma-marker-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/arma-map-markers.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-unit-popup.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/atak-medical-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -1986,6 +1987,29 @@ function setWorkspace(mapId) {
       loadLogistics();
 
       var sitrepLayers = [];
+      function removeSitrepMarker(reportId) {
+        var id = String(reportId || '');
+        sitrepLayers = sitrepLayers.filter(function (l) {
+          if (!l || String(l._sitrepId || '') !== id) return true;
+          try {
+            if (layerGroups.markers) layerGroups.markers.removeLayer(l);
+          } catch (e) {}
+          return false;
+        });
+      }
+      function deleteSitrep(reportId) {
+        var id = String(reportId || '');
+        if (!id) return Promise.reject(new Error('missing'));
+        return fetch(apiBase + '/intel/report/' + encodeURIComponent(id) + '?missionId=' + encodeURIComponent(getMissionId()), {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ missionId: getMissionId() })
+        }).then(function (r) {
+          if (!r.ok) throw new Error('delete');
+          return true;
+        });
+      }
       function loadSitrep() {
         var el = document.getElementById('sitrep-list');
         if (!el) return;
@@ -1996,12 +2020,23 @@ function setWorkspace(mapId) {
               if (layerGroups.markers && l) layerGroups.markers.removeLayer(l);
             });
             sitrepLayers = [];
-            if (!reports || reports.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucun report.</p>'; return; }
+            if (!reports || reports.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucune situation signalée.</p>'; return; }
             var isWorld = window.OverwatchState.currentMapType === 'world';
+            var targetLabels = { INFANTRY: 'Infanterie', VEHICLE: 'Véhicule', ARMOR: 'Blindé', AIR_DEFENSE: 'Défense antiaérienne', UNKNOWN: 'Non identifié' };
+            var statusLabels = { TEMPORARY: 'Provisoire', CORROBORATED: 'Corroboré', CONFIRMED: 'Confirmé' };
             el.innerHTML = reports.map(function (r) {
               var status = r.status || 'TEMPORARY';
               var color = status === 'CONFIRMED' ? 'bg-red-100 border-red-300' : status === 'CORROBORATED' ? 'bg-amber-100 border-amber-300' : 'bg-yellow-100 border-yellow-300';
-              return '<div class="rounded-lg border p-2 ' + color + '"><div class="font-bold">' + (r.target_type || '?') + ' — ' + status + '</div><div class="text-xs">' + (r.merged_count || 1) + ' report(s) · ' + (r.source_callsign || '?') + '</div></div>';
+              var tLabel = targetLabels[r.target_type] || r.target_type || '?';
+              var sLabel = statusLabels[status] || status;
+              var rid = String(r.id || '');
+              return '<div class="rounded-lg border p-2 ' + color + '" data-sitrep-id="' + rid + '">' +
+                '<div class="font-bold">' + tLabel + ' — ' + sLabel + '</div>' +
+                '<div class="text-xs">' + (r.merged_count || 1) + ' source(s) · ' + (r.source_callsign || '?') + '</div>' +
+                (rid
+                  ? '<div class="mt-1 text-right"><button type="button" class="text-xs font-bold text-red-700 hover:underline" data-delete-sitrep="' + rid + '">Supprimer</button></div>'
+                  : '') +
+                '</div>';
             }).join('');
             overwatchHealthStatus.sitrep = 'OK';
             if (window.refreshHealthPanel) refreshHealthPanel();
@@ -2010,7 +2045,10 @@ function setWorkspace(mapId) {
               var lng = isWorld ? (r.pos_x != null ? r.pos_x : 0) / WORLD_SCALE : (r.pos_x != null ? r.pos_x : 0);
               var status = r.status || 'TEMPORARY';
               var col = status === 'CONFIRMED' ? '#dc2626' : status === 'CORROBORATED' ? '#d97706' : '#eab308';
-              var layer = L.circleMarker([lat, lng], { radius: 10, color: col, fillOpacity: 0.8 }).bindPopup((r.target_type || '?') + ' — ' + status);
+              var tLabel = targetLabels[r.target_type] || r.target_type || '?';
+              var sLabel = statusLabels[status] || status;
+              var layer = L.circleMarker([lat, lng], { radius: 10, color: col, fillOpacity: 0.8 }).bindPopup(tLabel + ' — ' + sLabel);
+              layer._sitrepId = String(r.id || '');
               if (layerGroups.markers) layer.addTo(layerGroups.markers);
               sitrepLayers.push(layer);
             });
@@ -2019,6 +2057,32 @@ function setWorkspace(mapId) {
       }
       document.querySelector('[data-tab="sitrep"]')?.addEventListener('click', loadSitrep);
       loadSitrep();
+      (function bindSitrepDelete() {
+        var el = document.getElementById('sitrep-list');
+        if (!el || el._sitrepDeleteBound) return;
+        el._sitrepDeleteBound = true;
+        el.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-delete-sitrep]');
+          if (!btn) return;
+          e.preventDefault();
+          e.stopPropagation();
+          var id = btn.getAttribute('data-delete-sitrep');
+          if (!id) return;
+          if (!window.confirm('Supprimer ce signalement ?')) return;
+          btn.disabled = true;
+          deleteSitrep(id).then(function () {
+            removeSitrepMarker(id);
+            var row = el.querySelector('[data-sitrep-id="' + id + '"]');
+            if (row) row.remove();
+            if (!el.querySelector('[data-sitrep-id]')) {
+              el.innerHTML = '<p class="text-slate-500 text-xs">Aucune situation signalée.</p>';
+            }
+          }).catch(function () {
+            btn.disabled = false;
+            window.alert('Impossible de supprimer ce signalement.');
+          });
+        });
+      })();
       document.getElementById('sitrep-test-submit') && document.getElementById('sitrep-test-submit').addEventListener('click', function () {
         var missionId = getMissionId();
         var target = document.getElementById('sitrep-test-target');
@@ -2030,7 +2094,8 @@ function setWorkspace(mapId) {
           target_type: target ? target.value.trim() || 'UNKNOWN' : 'UNKNOWN',
           pos_x: x ? parseFloat(x.value) || 0 : 0,
           pos_y: y ? parseFloat(y.value) || 0 : 0,
-          source_callsign: source ? source.value.trim() || 'C2' : 'C2'
+          source_callsign: source ? source.value.trim() || 'TOC' : 'TOC',
+          report_type: 'SITREP'
         };
         fetch(apiBase + '/intel/report', {
           method: 'POST',
@@ -2102,7 +2167,7 @@ function setWorkspace(mapId) {
             var codeEl = document.getElementById('iff-challenge-code');
             var validEl = document.getElementById('iff-valid-until');
             if (codeEl) codeEl.textContent = c.code || '—';
-            if (validEl) validEl.textContent = c.valid_until ? 'Valide jusqu\'à ' + c.valid_until : '—';
+            if (validEl) validEl.textContent = c.valid_until ? 'Valable jusqu’à ' + c.valid_until : 'Aucun défi actif.';
           });
         fetch(apiBase + '/iff/assets?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
           .then(function (r) { return r.json(); })
@@ -2111,17 +2176,46 @@ function setWorkspace(mapId) {
             if (window.refreshHealthPanel) refreshHealthPanel();
             var el = document.getElementById('iff-assets-list');
             if (!el) return;
-            if (!assets || assets.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucun asset.</p>'; return; }
+            if (!assets || assets.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucune unité inscrite.</p>'; return; }
+            var statusLabels = { FRIENDLY: 'Ami confirmé', SUSPECT: 'Suspect', EXPIRED: 'Défi expiré', PENDING: 'En attente' };
             el.innerHTML = assets.map(function (a) {
               var st = a.response_status || 'PENDING';
               var color = st === 'FRIENDLY' ? 'bg-blue-100 border-blue-300' : st === 'SUSPECT' ? 'bg-red-100 border-red-300' : st === 'EXPIRED' ? 'bg-amber-100 border-amber-300' : 'bg-slate-100 border-slate-300';
-              return '<div class="rounded-lg border p-2 ' + color + '"><span class="font-bold">' + (a.callsign || a.asset_id) + '</span> — ' + st + '</div>';
+              return '<div class="rounded-lg border p-2 ' + color + '"><span class="font-bold">' + (a.callsign || a.asset_id) + '</span> — ' + (statusLabels[st] || st) + '</div>';
             }).join('');
           })
           .catch(function () { overwatchHealthStatus.iff = 'Erreur'; if (window.refreshHealthPanel) refreshHealthPanel(); });
       }
       document.querySelector('[data-tab="iff"]')?.addEventListener('click', loadIff);
       loadIff();
+      document.getElementById('iff-generate') && document.getElementById('iff-generate').addEventListener('click', function () {
+        var codeEl = document.getElementById('iff-new-code');
+        var minsEl = document.getElementById('iff-valid-minutes');
+        var fb = document.getElementById('iff-feedback');
+        var code = codeEl ? String(codeEl.value || '').trim() : '';
+        var mins = minsEl ? parseInt(minsEl.value, 10) : 30;
+        if (fb) fb.textContent = 'Publication…';
+        fetch(apiBase + '/iff/challenge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            missionId: getMissionId(),
+            code: code || undefined,
+            validMinutes: mins
+          })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+          .then(function (res) {
+            if (fb) {
+              fb.textContent = res.ok
+                ? ('Défi publié' + (res.data && res.data.code ? ' : ' + res.data.code : '') + '.')
+                : ((res.data && res.data.message) || 'Publication impossible.');
+            }
+            if (codeEl && res.ok) codeEl.value = '';
+            loadIff();
+          })
+          .catch(function () { if (fb) fb.textContent = 'Erreur réseau.'; });
+      });
 
       (function setupOverwatchAccessRequest() {
         var modal = document.getElementById('overwatch-access-modal');

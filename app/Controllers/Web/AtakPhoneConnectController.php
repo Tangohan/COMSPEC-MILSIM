@@ -1,103 +1,396 @@
 <?php
 
+
+
 declare(strict_types=1);
+
+
 
 namespace App\Controllers\Web;
 
+
+
 use App\Core\Csrf;
+
 use App\Core\Request;
+
 use App\Core\Response;
+
 use App\Core\Session;
+
 use App\Repositories\TacticalBriefingSlideRepository;
+
 use App\Repositories\TacticalPhonePairingRepository;
+
 use App\Repositories\TenantRepository;
 
+
+
 /**
+
  * Connexion téléphone du module ATAK (inspiré de cTab) : page publique sans compte, ouverte
- * en scannant le QR affiché en jeu ou en saisissant le code court, affichant la diapositive
- * de briefing en cours pour la communauté du pairing.
+
+ * en scannant le QR affiché sur Athena (ordinateur) ou en jeu, ou en saisissant le code court
+
+ * sur /connect — choix entre diapositives (briefing) et carte ATAK complète.
+
  */
+
 final class AtakPhoneConnectController
+
 {
+
     private TacticalPhonePairingRepository $pairingRepository;
+
     private TacticalBriefingSlideRepository $briefingSlideRepository;
+
     private TenantRepository $tenantRepository;
 
+
+
     public function __construct(
+
         ?TacticalPhonePairingRepository $pairingRepository = null,
+
         ?TacticalBriefingSlideRepository $briefingSlideRepository = null,
+
         ?TenantRepository $tenantRepository = null,
+
     ) {
+
         $this->pairingRepository = $pairingRepository ?? new TacticalPhonePairingRepository();
+
         $this->briefingSlideRepository = $briefingSlideRepository ?? new TacticalBriefingSlideRepository();
+
         $this->tenantRepository = $tenantRepository ?? new TenantRepository();
+
     }
 
-    /** Saisie manuelle du code (pas de token dans l’URL). */
+
+
+    /** Saisie manuelle du code (pas de jeton dans l’URL). */
+
     public function codeForm(Request $request, array $params = []): Response
+
     {
+
         return Response::view('atak.connect_code', [
-            'title' => 'Connexion téléphone — ATAK',
+
+            'title' => 'Connexion téléphone — Athena ATAK',
+
+            'entryUrlLabel' => $this->publicEntryLabel(),
+
         ]);
+
     }
+
+
 
     public function codeSubmit(Request $request, array $params = []): Response
-    {
-        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
-            Session::flash('error', 'Session expirée, réessayez.');
 
-            return Response::redirect(url('atak/connect'));
+    {
+
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+
+            Session::flash('error', 'La session a expiré. Saisissez à nouveau le code.');
+
+
+
+            return Response::redirect(url('connect'));
+
         }
+
         $code = trim((string) $request->input('code', ''));
+
         $pairing = $this->pairingRepository->findValidByCode($code);
+
         if ($pairing === null) {
-            Session::flash('error', 'Code invalide ou expiré. Générez un nouveau code depuis la tablette en jeu.');
+
+            Session::flash('error', 'Code incorrect ou expiré. Demandez un nouveau code depuis Athena sur l’ordinateur (bouton Téléphone), puis réessayez.');
+
             try {
+
                 $guessTenant = (int) (getenv('ATAK_DEFAULT_TENANT_ID') ?: 0);
+
                 if ($guessTenant > 0) {
+
                     (new \App\Services\Tactical\AtakActivityLogService())->recordAuthAttempt(
+
                         $guessTenant,
+
                         false,
+
                         'Connexion téléphone refusée — code invalide ou expiré',
+
                         ['reason' => 'invalid_or_expired_code', 'method' => 'phone']
+
                     );
+
                 }
+
             } catch (\Throwable) {
+
                 // Best-effort.
+
             }
 
-            return Response::redirect(url('atak/connect'));
+
+
+            return Response::redirect(url('connect'));
+
         }
 
-        return Response::redirect(url('atak/connect/' . (string) $pairing['token']));
+
+
+        return Response::redirect(url('connect/' . (string) $pairing['token']));
+
     }
 
-    /** Ouverture directe par token (QR scanné). */
+
+
+    /** Après scan QR ou code valide : choix Diapositives / Carte ATAK. */
+
     public function show(Request $request, array $params = []): Response
+
     {
+
         $token = trim((string) ($params['token'] ?? ''));
+
         $pairing = $this->pairingRepository->findValidByToken($token);
+
         if ($pairing === null) {
-            return Response::view('atak.connect_expired', [
-                'title' => 'Connexion expirée — ATAK',
-            ]);
+
+            return $this->expiredView();
+
         }
+
         $this->pairingRepository->markPaired($token);
 
+
+
         $tenantId = (int) ($pairing['tenant_id'] ?? 0);
-        // Journal Activité : premier heartbeat présence (connect_slides) — pas ici,
-        // pour éviter un doublon « Accès / Briefing » à l’ouverture.
-        $tenant = $tenantId > 0 ? $this->tenantRepository->findById($tenantId) : null;
-        $tenantName = $tenant ? (function_exists('community_display_name') ? community_display_name($tenant) : (string) ($tenant['name'] ?? 'Communauté')) : 'Communauté';
+
+        $tenantName = $this->tenantDisplayName($tenantId);
+
+
+
+        return Response::view('atak.connect_choose', [
+
+            'title' => 'Choisir une destination — Athena ATAK',
+
+            'atakTenantName' => $tenantName,
+
+            'slidesUrl' => url('connect/' . $token . '/slides'),
+
+            'carteUrl' => url('connect/' . $token . '/carte'),
+
+        ]);
+
+    }
+
+
+
+    /** Briefing / diapositives mobile (expérience existante). */
+
+    public function slides(Request $request, array $params = []): Response
+
+    {
+
+        $token = trim((string) ($params['token'] ?? ''));
+
+        $pairing = $this->pairingRepository->findValidByToken($token);
+
+        if ($pairing === null) {
+
+            return $this->expiredView();
+
+        }
+
+        $this->pairingRepository->markPaired($token);
+
+
+
+        $tenantId = (int) ($pairing['tenant_id'] ?? 0);
+
+        $tenantName = $this->tenantDisplayName($tenantId);
+
         $slides = $tenantId > 0 ? $this->briefingSlideRepository->listActiveForTenant($tenantId) : [];
 
+
+
         return Response::view('atak.connect_slides', [
-            'title' => 'Briefing tactique — ' . $tenantName,
+
+            'title' => 'ATAK Athena — ' . $tenantName,
+
             'atakTenantName' => $tenantName,
+
             'atakSlides' => $slides,
+
             'atakPairingToken' => $token,
+
             'atakPresenceUrl' => url('api/atak/briefing-presence'),
+
             'atakCommentsBaseUrl' => url('api/atak/briefing-slides'),
+
         ]);
+
     }
+
+
+
+    /**
+
+     * Ouvre la vraie carte ATAK : session téléphone (communauté + jeton) puis redirection /atak.
+
+     * Si un membre est déjà connecté, on conserve sa session portail.
+
+     */
+
+    public function openCarte(Request $request, array $params = []): Response
+
+    {
+
+        $token = trim((string) ($params['token'] ?? ''));
+
+        $pairing = $this->pairingRepository->findValidByToken($token);
+
+        if ($pairing === null) {
+
+            return $this->expiredView();
+
+        }
+
+        $this->pairingRepository->markPaired($token);
+
+
+
+        $tenantId = (int) ($pairing['tenant_id'] ?? 0);
+
+        if ($tenantId < 1) {
+
+            Session::flash('error', 'Communauté introuvable pour cette liaison. Demandez un nouveau code.');
+
+
+
+            return Response::redirect(url('connect'));
+
+        }
+
+
+
+        $memberUserId = (int) Session::get('user_id');
+
+        if ($memberUserId < 1) {
+
+            Session::set('tenant_id', $tenantId);
+
+            Session::set('atak_phone_pairing_token', $token);
+
+            Session::set('atak_phone_operator_label', 'Opérateur téléphone');
+
+        }
+
+
+
+        return Response::redirect(url('atak'));
+
+    }
+
+
+
+    private function expiredView(): Response
+
+    {
+
+        return Response::view('atak.connect_expired', [
+
+            'title' => 'Connexion expirée — Athena ATAK',
+
+            'entryUrlLabel' => $this->publicEntryLabel(),
+
+        ]);
+
+    }
+
+
+
+    private function tenantDisplayName(int $tenantId): string
+
+    {
+
+        if ($tenantId < 1) {
+
+            return 'Communauté';
+
+        }
+
+        $tenant = $this->tenantRepository->findById($tenantId);
+
+        if (!$tenant) {
+
+            return 'Communauté';
+
+        }
+
+
+
+        return function_exists('community_display_name')
+
+            ? community_display_name($tenant)
+
+            : (string) ($tenant['name'] ?? 'Communauté');
+
+    }
+
+
+
+    /** Libellé court affiché à l’utilisateur (sans jargon technique). */
+
+    private function publicEntryLabel(): string
+
+    {
+
+        $raw = url('connect');
+
+        if (preg_match('#^(https?://)([^/]+)/public/connect/?$#i', $raw, $m)) {
+
+            return $m[2] . '/connect';
+
+        }
+
+        $host = parse_url($raw, PHP_URL_HOST);
+
+        if (!is_string($host) || $host === '') {
+
+            return 'athena.ttrd.fr/connect';
+
+        }
+
+        $path = (string) (parse_url($raw, PHP_URL_PATH) ?: '/connect');
+
+        $path = rtrim($path, '/');
+
+        if ($path === '' || $path === '/') {
+
+            $path = '/connect';
+
+        }
+
+        // Afficher sans le segment /public si présent (adresse racine réécrite).
+
+        $path = preg_replace('#^/public(/|$)#', '/', $path) ?? $path;
+
+        if ($path === '/' || $path === '') {
+
+            $path = '/connect';
+
+        }
+
+
+
+        return $host . $path;
+
+    }
+
 }
+

@@ -1,5 +1,4 @@
 /*
- * Auteur: COMSPEC
  * Ajoute les actions ATAK au menu ACE Interact
  * Permet accès rapide aux fonctions tactiques
  */
@@ -8,6 +7,9 @@ if (!hasInterface) exitWith { false };
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith { false };
 if (isNil "ace_interact_menu_fnc_createAction") exitWith { false };
 if (isNull player) exitWith { false };
+if (!(missionNamespace getVariable ["COMSPEC_ACEMenuReady", false])) then {
+    [] call comspec_overwatch_connect_fnc_initACE;
+};
 
 // Évite double enregistrement (postInit + respawn)
 if (missionNamespace getVariable ["COMSPEC_ATAKMenuReady", false]) exitWith { true };
@@ -15,6 +17,12 @@ missionNamespace setVariable ["COMSPEC_ATAKMenuReady", true, false];
 
 // insertChildren ACE : DOIT retourner un tableau (jamais nil via {}).
 private _noChildren = { [] };
+private _condAtak = {
+    (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+    && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+};
+// Chemin complet sous COMSPEC_Main (évite sous-menus orphelins / « non branchés »)
+private _atakPath = ["ACE_SelfActions", "COMSPEC_Main", "comspec_atak_menu"];
 
 // Action principale ATAK dans menu self-interact
 private _atakAction = [
@@ -22,29 +30,29 @@ private _atakAction = [
     "ATAK Tactique",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\communicate_ca.paa",
     {},
-    { true },
+    _condAtak,
     _noChildren
 ] call ace_interact_menu_fnc_createAction;
 
-[_atakAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+[_atakAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 // Sous-menu: Rapports tactiques
 private _reportAction = [
     "comspec_atak_reports",
-    "Rapports Tactiques",
+    "Rapports tactiques",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",
     {},
-    { true },
+    _condAtak,
     {
         private _actions = [];
         private _noChildren = { [] };
 
         private _spotrepAction = [
             "comspec_spotrep",
-            "SPOTREP (Observation)",
+            "Observation (SPOTREP)",
             "",
             {
-                ["SPOTREP", "PRIORITY", "Entrez résumé", "Entrez détails"] call comspec_overwatch_connect_fnc_submitTacticalReport;
+                ["SPOTREP", "PRIORITY", "Observation terrain", "Observation depuis position actuelle"] call comspec_overwatch_connect_fnc_submitTacticalReport;
             },
             { true },
             _noChildren
@@ -53,10 +61,10 @@ private _reportAction = [
 
         private _contactAction = [
             "comspec_contact",
-            "CONTACT (Ennemi)",
+            "Contact ennemi",
             "",
             {
-                ["CONTACT", "IMMEDIATE", "Contact ennemi", "Entrez détails contact"] call comspec_overwatch_connect_fnc_submitTacticalReport;
+                ["CONTACT", "IMMEDIATE", "Contact ennemi", "Contact ennemi à la position actuelle"] call comspec_overwatch_connect_fnc_submitTacticalReport;
             },
             { true },
             _noChildren
@@ -65,10 +73,10 @@ private _reportAction = [
 
         private _sitrepAction = [
             "comspec_sitrep",
-            "SITREP (Situation)",
+            "Situation (SITREP)",
             "",
             {
-                ["SITREP", "ROUTINE", "Entrez situation", "Détails situation actuelle"] call comspec_overwatch_connect_fnc_submitTacticalReport;
+                ["SITREP", "ROUTINE", "Situation actuelle", "Situation à la position actuelle"] call comspec_overwatch_connect_fnc_submitTacticalReport;
             },
             { true },
             _noChildren
@@ -79,15 +87,15 @@ private _reportAction = [
     }
 ] call ace_interact_menu_fnc_createAction;
 
-[_reportAction, ["ACE_SelfActions", "comspec_atak_menu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+[_reportAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 // Sous-menu: POI
 private _poiAction = [
     "comspec_atak_poi",
-    "Marquer POI",
+    "Marquer point d'intérêt",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
     {},
-    { true },
+    _condAtak,
     {
         private _actions = [];
         private _noChildren = { [] };
@@ -106,7 +114,7 @@ private _poiAction = [
 
         private _enemyAction = [
             "comspec_poi_enemy",
-            "Position Ennemie",
+            "Position ennemie",
             "",
             {
                 ["Position ennemie", "ENEMY_POSITION", "ENEMY", "CONFIRMED", "Position hostile confirmée"] call comspec_overwatch_connect_fnc_createPOI;
@@ -132,25 +140,25 @@ private _poiAction = [
     }
 ] call ace_interact_menu_fnc_createAction;
 
-[_poiAction, ["ACE_SelfActions", "comspec_atak_menu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+[_poiAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 // Sous-menu: Appui
 private _supportAction = [
     "comspec_atak_support",
-    "Demander Appui",
+    "Demander appui",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\heli_ca.paa",
     {},
-    { true },
+    _condAtak,
     {
         private _actions = [];
         private _noChildren = { [] };
 
         private _medevacAction = [
             "comspec_medevac",
-            "MEDEVAC (Évacuation Médicale)",
+            "Évacuation médicale",
             "",
             {
-                ["URGENT", 1, 0, 0, "POSSIBLE_ENEMY", "SMOKE", "GREEN"] call comspec_overwatch_connect_fnc_requestMEDEVAC;
+                [] call comspec_overwatch_connect_fnc_medevacDialogShow;
             },
             { true },
             _noChildren
@@ -159,10 +167,10 @@ private _supportAction = [
 
         private _qrfAction = [
             "comspec_qrf",
-            "QRF (Renfort d'Urgence)",
+            "Renfort d'urgence",
             "",
             {
-                ["TROOPS_IN_CONTACT", "IMMEDIATE", "Besoin renfort immédiat", "SQUAD", 0, "ENGAGED"] call comspec_overwatch_connect_fnc_requestQRF;
+                ["TROOPS_IN_CONTACT", "IMMEDIATE", "Besoin renfort immédiat", "SQUAD", 0, "ENGAGED", getPosWorld player] call comspec_overwatch_connect_fnc_requestQRF;
             },
             { true },
             _noChildren
@@ -173,15 +181,19 @@ private _supportAction = [
     }
 ] call ace_interact_menu_fnc_createAction;
 
-[_supportAction, ["ACE_SelfActions", "comspec_atak_menu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+[_supportAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 // Action sur véhicule: Demander service
 private _vehicleServiceAction = [
     "comspec_vehicle_service",
-    "Demander Service Véhicule",
+    "Demander service véhicule",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\repair_ca.paa",
     {},
-    { vehicle player != player },
+    {
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+        && { vehicle player != player }
+    },
     {
         private _actions = [];
         private _noChildren = { [] };
@@ -226,7 +238,7 @@ private _vehicleServiceAction = [
     }
 ] call ace_interact_menu_fnc_createAction;
 
-[_vehicleServiceAction, ["ACE_SelfActions", "comspec_atak_menu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+[_vehicleServiceAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 diag_log "[COMSPEC ATAK] Menu ATAK tactique initialisé (ACE Interact)";
 

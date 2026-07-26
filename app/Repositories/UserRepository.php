@@ -30,6 +30,8 @@ class UserRepository
 
     private static ?bool $hasDeletedAtColumn = null;
 
+    private static ?bool $hasDeletionRequestColumns = null;
+
     /** @var array{join: string, grade_short: string, order_grade: string}|null */
     private static ?array $gradesConfigPublicRoster = null;
 
@@ -69,6 +71,16 @@ class UserRepository
         }
 
         return self::$hasDeletedAtColumn;
+    }
+
+    private function hasDeletionRequestColumns(): bool
+    {
+        if (self::$hasDeletionRequestColumns === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deletion_requested_at' LIMIT 1");
+            self::$hasDeletionRequestColumns = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasDeletionRequestColumns;
     }
 
     private function hasAthenaIdentifierColumn(): bool
@@ -646,14 +658,17 @@ class UserRepository
     public function findByEmail(int $tenantId, string $email): ?array
     {
         $email = strtolower(trim($email));
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? LIMIT 1');
-        $stmt->execute([$tenantId, $email]);
+        $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $sql = 'SELECT * FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? AND ' . $freed['sql'] . ' LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$tenantId, $email], $freed['params']));
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;
     }
 
     /**
      * Tous les comptes partageant exactement la même adresse (multi-communautés).
+     * Ignore les comptes déjà anonymisés / soft-deleted (e-mail libéré).
      *
      * @return list<int>
      */
@@ -663,8 +678,11 @@ class UserRepository
         if ($email === '') {
             return [];
         }
-        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?');
-        $stmt->execute([$email]);
+        $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND ' . $freed['sql']
+        );
+        $stmt->execute(array_merge([$email], $freed['params']));
         $out = [];
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $id = (int) ($r['id'] ?? 0);
@@ -674,6 +692,90 @@ class UserRepository
         }
 
         return $out;
+    }
+
+    /**
+     * Libère une adresse encore portée par des lignes déjà anonymisées / soft-deleted
+     * (cas où deleted_at ou le libellé ont été posés sans remplacer l’e-mail).
+     * Sans cela, l’unicité SQL (tenant_id, email) bloquerait toute réinscription.
+     *
+     * @return list<int> ids anonymisés (pour scrub des tables liées côté service)
+     */
+    public function releaseEmailHeldByDeletedAccounts(string $email): array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || str_ends_with($email, '@deleted.invalid')) {
+            return [];
+        }
+
+        $conditions = ["(display_name = 'Compte supprimé' AND status = 'inactive')"];
+        if ($this->hasDeletedAtColumn()) {
+            $conditions[] = 'deleted_at IS NOT NULL';
+        }
+        $sql = 'SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND (' . implode(' OR ', $conditions) . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$email]);
+        $ids = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $done = [];
+        foreach ($ids as $id) {
+            if ($this->anonymizeUserIdentity($id, 0)) {
+                $done[] = $id;
+            }
+        }
+
+        return $done;
+    }
+
+    /**
+     * Indique si l’adresse est encore réservée uniquement par un compte en délai de
+     * rétractation RGPD (pas encore anonymisé) — utile pour un message d’inscription clair.
+     */
+    public function emailPendingDeletionGlobally(string $email): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || strcasecmp($email, self::SYSTEM_MODERATOR_EMAIL) === 0) {
+            return false;
+        }
+        if (!$this->hasDeletionRequestColumns()) {
+            return false;
+        }
+        $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $sql = 'SELECT 1 FROM users
+                WHERE LOWER(TRIM(email)) = ?
+                  AND deletion_requested_at IS NOT NULL
+                  AND ' . $freed['sql'];
+        $params = array_merge([$email], $freed['params']);
+        if ($this->hasServiceAccountColumn()) {
+            $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
+        }
+        $stmt = $this->pdo->prepare($sql . ' LIMIT 1');
+        $stmt->execute($params);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Comptes dont l’e-mail est encore « pris » pour inscription / login.
+     * Exclut soft-delete et e-mails déjà remplacés par @deleted.invalid.
+     *
+     * @return array{sql: string, params: list<mixed>}
+     */
+    private function sqlEmailStillClaimedPredicate(string $alias = 'users'): array
+    {
+        $a = $alias !== '' ? $alias . '.' : '';
+        $fragments = ["LOWER(TRIM({$a}email)) NOT LIKE '%@deleted.invalid'"];
+        $params = [];
+        if ($this->hasDeletedAtColumn()) {
+            $fragments[] = "{$a}deleted_at IS NULL";
+        }
+
+        return ['sql' => implode(' AND ', $fragments), 'params' => $params];
     }
 
     /** RGPD : programme la suppression du compte (délai de rétractation). */
@@ -701,37 +803,35 @@ class UserRepository
     /** RGPD : comptes dont le délai de rétractation est dépassé (à anonymiser). */
     public function listDueForDeletionAnonymization(): array
     {
+        $extra = '';
+        if ($this->hasDeletedAtColumn()) {
+            $extra = ' AND deleted_at IS NULL';
+        }
         $stmt = $this->pdo->query(
             "SELECT id, tenant_id FROM users
-             WHERE deletion_requested_at IS NOT NULL AND deletion_scheduled_at IS NOT NULL
-               AND deletion_scheduled_at <= NOW() AND status != 'inactive'"
+             WHERE deletion_requested_at IS NOT NULL
+               AND deletion_scheduled_at IS NOT NULL
+               AND deletion_scheduled_at <= NOW()
+               AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'
+               {$extra}"
         );
 
         return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
     }
 
-    /** RGPD : anonymise un compte après le délai de rétractation. */
+    /**
+     * RGPD : anonymise un compte après le délai de rétractation (ligne users uniquement).
+     * Préférer {@see \App\Services\Account\AccountDeletionService::anonymizeAccountCompletely}
+     * pour le scrub des tables liées.
+     */
     public function anonymizeForDeletion(int $userId, int $tenantId): bool
     {
-        $stmt = $this->pdo->prepare(
-            "UPDATE users SET
-                email = CONCAT('deleted-user-', id, '@deleted.invalid'),
-                password_hash = ?,
-                display_name = 'Compte supprimé',
-                callsign = NULL,
-                profile_slug = NULL,
-                athena_identifier = NULL,
-                steam_id = NULL,
-                avatar_url = NULL,
-                profile_banner_url = NULL,
-                status = 'inactive',
-                deletion_requested_at = NULL,
-                deletion_scheduled_at = NULL,
-                updated_at = NOW()
-             WHERE id = ? AND tenant_id = ?"
-        );
+        $row = $this->findById($userId, $tenantId);
+        if ($row === null) {
+            return false;
+        }
 
-        return $stmt->execute([password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID), $userId, $tenantId]);
+        return $this->anonymizeUserIdentity($userId, 0);
     }
 
     public function findById(int $id, ?int $tenantId = null): ?array
@@ -1044,7 +1144,7 @@ class UserRepository
      *
      * @return list<array<string, mixed>>
      */
-    public function listPersonnelDirectoryRich(int $tenantId, string $query, int $limit = 150): array
+    public function listPersonnelDirectoryRich(int $tenantId, string $query, int $limit = 150, bool $includeInactiveAndDeleted = false): array
     {
         $limit = max(10, min(300, $limit));
         $hasAthenaIdentifier = $this->hasAthenaIdentifierColumn();
@@ -1054,6 +1154,14 @@ class UserRepository
 
         $where = ['u.tenant_id = ?', $pack['sql']];
         $params = array_merge([$tenantId], $pack['params']);
+
+        if (!$includeInactiveAndDeleted) {
+            $where[] = "u.status = 'active'";
+            if ($this->hasDeletedAtColumn()) {
+                $where[] = 'u.deleted_at IS NULL';
+            }
+            $where[] = "(u.display_name IS NULL OR TRIM(u.display_name) <> 'Compte supprimé')";
+        }
 
         $q = trim($query);
         if ($q !== '') {
@@ -1416,21 +1524,56 @@ class UserRepository
      * formations, documents…) référencent users.id, la plupart en ON DELETE CASCADE —
      * une vraie suppression SQL effacerait tout cet historique en cascade.
      * Le compte reste identifié par son id mais devient inutilisable (email/mdp invalidés,
-     * status inactive) et ses données personnelles sont scrubées.
+     * status inactive) et ses données personnelles sont scrubées — l'e-mail d'origine
+     * est libéré pour une éventuelle réinscription.
+     *
+     * Si la même adresse existe sur d'autres communautés (clone / multi-appartenance),
+     * elles sont anonymisées aussi : l'inscription plateforme est globale par e-mail.
      */
     public function softDeleteAccount(int $userId, int $tenantId, int $actorUserId): bool
     {
-        if (!$this->hasDeletedAtColumn()) {
+        $target = $this->findById($userId, $tenantId);
+        if ($target === null) {
             return false;
         }
 
-        $anonymizedEmail = 'deleted-' . $userId . '@deleted.invalid';
+        $originalEmail = strtolower(trim((string) ($target['email'] ?? '')));
+        $siblingIds = $originalEmail !== '' && !str_ends_with($originalEmail, '@deleted.invalid')
+            ? $this->listIdsByEmailNormalized($originalEmail)
+            : [$userId];
+        if ($siblingIds === []) {
+            $siblingIds = [$userId];
+        }
+        if (!in_array($userId, $siblingIds, true)) {
+            $siblingIds[] = $userId;
+        }
+
+        $ok = true;
+        foreach ($siblingIds as $sid) {
+            if (!$this->anonymizeUserIdentity((int) $sid, $actorUserId)) {
+                $ok = false;
+            }
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Anonymise une ligne users (e-mail libéré, accès coupé, libellé « Compte supprimé »).
+     * Ne filtre pas sur tenant_id : appelé pour chaque id partagé par l’e-mail.
+     * Ne scrub pas les tables liées — voir AccountDeletionService.
+     */
+    public function anonymizeUserIdentity(int $userId, int $actorUserId): bool
+    {
+        if ($userId < 1) {
+            return false;
+        }
+
+        $anonymizedEmail = 'deleted-' . $userId . '-' . time() . '@deleted.invalid';
         $invalidatedHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
 
         $set = [
             '`status` = ?',
-            '`deleted_at` = NOW()',
-            '`deleted_by` = ?',
             '`email` = ?',
             '`display_name` = ?',
             '`callsign` = NULL',
@@ -1439,26 +1582,50 @@ class UserRepository
             '`password_hash` = ?',
             '`updated_at` = NOW()',
         ];
-        $params = ['inactive', $actorUserId, $anonymizedEmail, 'Compte supprimé', $invalidatedHash];
+        $params = ['inactive', $anonymizedEmail, 'Compte supprimé', $invalidatedHash];
 
+        if ($this->hasDeletionRequestColumns()) {
+            $set[] = '`deletion_requested_at` = NULL';
+            $set[] = '`deletion_scheduled_at` = NULL';
+        }
+        if ($this->hasDeletedAtColumn()) {
+            $set[] = '`deleted_at` = COALESCE(`deleted_at`, NOW())';
+            $set[] = '`deleted_by` = COALESCE(`deleted_by`, ?)';
+            $params[] = $actorUserId;
+        }
         if ($this->hasProfileSlugColumn()) {
             $set[] = '`profile_slug` = NULL';
         }
+        if ($this->hasAthenaIdentifierColumn()) {
+            $set[] = '`athena_identifier` = NULL';
+        }
+        if ($this->hasProfileBannerUrlColumn()) {
+            $set[] = '`profile_banner_url` = NULL';
+        }
 
         $params[] = $userId;
-        $params[] = $tenantId;
-        $sql = 'UPDATE users SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?';
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET ' . implode(', ', $set) . ' WHERE id = ?'
+        );
+        if (!$stmt->execute($params)) {
+            return false;
+        }
 
-        return $stmt->execute($params);
+        try {
+            $this->invalidateAllSessionsForUser($userId);
+        } catch (\Throwable) {
+        }
+
+        return $stmt->rowCount() > 0 || $this->findById($userId) !== null;
     }
 
     /** Vérifie si un autre utilisateur (hors userId) a déjà cet email dans le tenant. */
     public function emailExistsInTenant(int $tenantId, string $email, ?int $excludeUserId = null): bool
     {
         $email = strtolower(trim($email));
-        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ?';
-        $params = [$tenantId, $email];
+        $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $sql = 'SELECT 1 FROM users WHERE tenant_id = ? AND LOWER(TRIM(email)) = ? AND ' . $freed['sql'];
+        $params = array_merge([$tenantId, $email], $freed['params']);
         if ($excludeUserId !== null) {
             $sql .= ' AND id != ?';
             $params[] = $excludeUserId;
@@ -1468,15 +1635,16 @@ class UserRepository
         return (bool) $stmt->fetchColumn();
     }
 
-    /** Indique si cet e-mail existe déjà sur n’importe quelle communauté (hors comptes techniques). */
+    /** Indique si cet e-mail existe déjà sur n’importe quelle communauté (hors comptes techniques / anonymisés). */
     public function emailExistsGlobally(string $email, ?int $excludeUserId = null): bool
     {
         $email = strtolower(trim($email));
         if ($email === '' || strcasecmp($email, self::SYSTEM_MODERATOR_EMAIL) === 0) {
             return false;
         }
-        $sql = 'SELECT 1 FROM users WHERE LOWER(TRIM(email)) = ?';
-        $params = [$email];
+        $freed = $this->sqlEmailStillClaimedPredicate('users');
+        $sql = 'SELECT 1 FROM users WHERE LOWER(TRIM(email)) = ? AND ' . $freed['sql'];
+        $params = array_merge([$email], $freed['params']);
         if ($this->hasServiceAccountColumn()) {
             $sql .= ' AND (is_service_account IS NULL OR is_service_account = 0)';
         }
@@ -1513,8 +1681,13 @@ class UserRepository
     public function searchForMention(int $tenantId, string $query, int $limit = 10): array
     {
         $term = '%' . trim($query) . '%';
+        $extra = " AND status = 'active' AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'";
+        if ($this->hasDeletedAtColumn()) {
+            $extra .= ' AND deleted_at IS NULL';
+        }
         $stmt = $this->pdo->prepare(
-            'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (display_name LIKE ? OR callsign LIKE ?) ORDER BY display_name ASC LIMIT ?'
+            'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (display_name LIKE ? OR callsign LIKE ?)'
+            . $extra . ' ORDER BY display_name ASC LIMIT ?'
         );
         $stmt->execute([$tenantId, $term, $term, $limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1531,11 +1704,15 @@ class UserRepository
         if ($token === '') {
             return null;
         }
+        $extra = " AND status = 'active' AND LOWER(TRIM(email)) NOT LIKE '%@deleted.invalid'";
+        if ($this->hasDeletedAtColumn()) {
+            $extra .= ' AND deleted_at IS NULL';
+        }
         $stmt = $this->pdo->prepare(
             'SELECT id, display_name, callsign FROM users WHERE tenant_id = ? AND (
                 LOWER(display_name) = LOWER(?)
                 OR (callsign IS NOT NULL AND TRIM(callsign) <> \'\' AND LOWER(TRIM(callsign)) = LOWER(?))
-            ) LIMIT 1'
+            )' . $extra . ' LIMIT 1'
         );
         $stmt->execute([$tenantId, $token, $token]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -1601,21 +1778,44 @@ class UserRepository
         $term = '%' . $q . '%';
         $limit = max(1, min(30, $limit));
         $pack = $this->technicalAccountExclusionPredicate('u');
-        $sql = 'SELECT u.id, u.email, u.display_name, u.callsign, u.steam_id, t.name AS tenant_name, u.status
+        $hasDeletedAt = $this->hasDeletedAtColumn();
+        $deletedSelf = $hasDeletedAt ? 'AND u.deleted_at IS NULL' : '';
+        $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
+        $sql = "SELECT u.id, u.email, u.display_name, u.callsign, u.steam_id, t.name AS tenant_name, t.slug AS tenant_slug, u.status
              FROM users u
              INNER JOIN tenants t ON t.id = u.tenant_id
              WHERE (
                  u.email LIKE ?
                  OR u.display_name LIKE ?
-                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
-                 OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> \'\' AND u.steam_id LIKE ?)
-             ) AND ' . $pack['sql'] . '
+                 OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> '' AND u.callsign LIKE ?)
+                 OR (u.steam_id IS NOT NULL AND TRIM(u.steam_id) <> '' AND u.steam_id LIKE ?)
+             ) AND {$pack['sql']}
+             {$deletedSelf}
+             AND (t.slug <> 'default' OR NOT EXISTS (
+                SELECT 1 FROM users u2
+                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
+                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
+                  AND TRIM(u.email) <> ''
+                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND u2.id <> u.id
+                  {$siblingAlive}
+             ))
              ORDER BY t.name ASC, u.email ASC
-             LIMIT ' . $limit;
+             LIMIT {$limit}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(array_merge([$term, $term, $term, $term], $pack['params']));
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            if (function_exists('community_display_name')) {
+                $row['tenant_name'] = community_display_name([
+                    'name' => (string) ($row['tenant_name'] ?? ''),
+                    'slug' => (string) ($row['tenant_slug'] ?? ''),
+                ]);
+            }
+        }
+        unset($row);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $rows;
     }
 
     /**
@@ -1694,6 +1894,19 @@ class UserRepository
         if ($tenantId !== null && $tenantId > 0) {
             $parts[] = 'u.tenant_id = ?';
             $params[] = $tenantId;
+        } else {
+            // Masquer le compte « tenant système » dès qu’une vraie communauté existe pour le même e-mail
+            // (évite les doublons Oliver / Aucune organisation + régiment dans l’annuaire plateforme).
+            $siblingAlive = $hasDeletedAt ? 'AND u2.deleted_at IS NULL' : '';
+            $parts[] = "(t.slug <> 'default' OR NOT EXISTS (
+                SELECT 1 FROM users u2
+                INNER JOIN tenants t2 ON t2.id = u2.tenant_id AND t2.slug <> 'default'
+                WHERE LOWER(TRIM(u2.email)) = LOWER(TRIM(u.email))
+                  AND TRIM(u.email) <> ''
+                  AND LOWER(TRIM(u.email)) NOT LIKE '%@deleted.invalid'
+                  AND u2.id <> u.id
+                  {$siblingAlive}
+            ))";
         }
 
         $where = implode(' AND ', $parts);
@@ -1715,9 +1928,19 @@ class UserRepository
                 LIMIT {$perPage} OFFSET {$offset}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as &$row) {
+            if (function_exists('community_display_name')) {
+                $row['tenant_name'] = community_display_name([
+                    'name' => (string) ($row['tenant_name'] ?? ''),
+                    'slug' => (string) ($row['tenant_slug'] ?? ''),
+                ]);
+            }
+        }
+        unset($row);
 
         return [
-            'rows' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'rows' => $rows,
             'total' => $total,
         ];
     }

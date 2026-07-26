@@ -4,12 +4,12 @@
       - "" / omis : son selon préférence CBA (silent_vib / stalker / health)
       - "start" | "disconnect" | "unconscious" | "death" | "cardiac_arrest" | "kia" | "dead"
       - "order" | "order_priority" (roger_simple / roger_prio)
-        → son d’événement dédié (indépendant du choix Stalker/Santé, sauf Muet)
+        → son d’événement dédié (indépendant du style d'alerte, sauf Muet)
 
     Mode discret (quiet_mode) : n’empêche PAS le son — il ne masque que les bandeaux BIS / chat.
-    Préférence « Silencieux (vibration) » : les sons d’urgence médicale (inconscient / mort)
+    Préférence « Silencieux — vibration seule » : : les sons d’urgence médicale (inconscient / mort)
     et les ordres restent audibles ; seuls les bips génériques restent silencieux.
-    « Muet » : aucun son.
+    « Silencieux — sans vibration » : aucun son.
 
     Coupé hors jeu actif : les PFH CBA tournent encore pendant Esc / carte /
     inventaire, donc sans ce garde la vibration continue dans les menus.

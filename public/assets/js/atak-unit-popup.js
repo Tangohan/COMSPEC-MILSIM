@@ -175,6 +175,7 @@ window.ATAKUnitPopup = (function () {
     var notes = extra.toc_note || extra.notes || extra.note || '';
     var vehicle = extra.toc_vehicle != null ? String(extra.toc_vehicle).trim() : '';
     var side = extra.side || u.side || '';
+    var bftId = String(u.military_id || u.bft_id || extra.military_id || extra.bft_id || '').trim();
 
     var tone = statusTone(statusRaw) || healthTone(healthRaw);
     var headClass = 'atak-unit-popup__head';
@@ -183,6 +184,7 @@ window.ATAKUnitPopup = (function () {
     var rows =
       row('Liaison', status, statusTone(statusRaw)) +
       row('État', health, healthTone(healthRaw)) +
+      (bftId ? row('Identifiant de suivi', bftId) : '') +
       row('Affiliation', affLabel) +
       (side && !affLabel ? row('Camp', String(side)) : '') +
       row('Groupe', parent) +

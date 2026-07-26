@@ -16,6 +16,9 @@ return [
         // Accès anticipé Overwatch : 1er lancement menu principal, sans clé ATAK
         // (extension RegisterBeta — voir AtakApiController::betaRegister, rate-limité).
         '/api/atak/beta-register',
+        // Rapports d’erreurs / bugs Overwatch : avant ou sans liaison (ReportDiag / signalement),
+        // rate-limité — voir AtakApiController::modReport.
+        '/api/atak/mod-report',
         // QR téléphone : token dans l’URL (TTL court) — scannable / téléchargeable sans clé
         // (exemption dynamique dans ComspecApiKeyAuth::pathRequiresProtection pour …/qr.png).
     ],

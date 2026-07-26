@@ -1,4 +1,4 @@
-// Accord de confidentialité — accès anticipé COMSPEC Overwatch (idd 9978)
+// Note bêta publique — premier lancement COMSPEC Overwatch (idd 9978)
 class COMSPEC_NDA_Dialog {
     idd = 9978;
     movingEnable = 0;
@@ -150,7 +150,7 @@ class COMSPEC_NDA_Dialog {
 
         class BtnAccept: COMSPEC_RscButtonAccent {
             idc = 9501;
-            text = "J'accepte";
+            text = "Compris";
             x = 0.24 * safezoneW + safezoneX;
             y = 0.820 * safezoneH + safezoneY;
             w = 0.28 * safezoneW;
@@ -161,7 +161,7 @@ class COMSPEC_NDA_Dialog {
 
         class BtnDecline: COMSPEC_RscButtonDanger {
             idc = 9502;
-            text = "Refuser";
+            text = "Plus tard";
             x = 0.535 * safezoneW + safezoneX;
             y = 0.820 * safezoneH + safezoneY;
             w = 0.225 * safezoneW;

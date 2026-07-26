@@ -333,6 +333,7 @@ class TenantAtakConfigRepository
 
     /**
      * Applique les colonnes maintenance si absentes (idempotent, même DDL que la migration bootstrap).
+     * Une colonne à la fois pour éviter qu’une demi-migration laisse le mode maintenance inutilisable.
      */
     private function ensureMaintenanceSchema(): void
     {
@@ -346,18 +347,50 @@ class TenantAtakConfigRepository
             return;
         }
 
-        try {
-            $this->pdo->exec(
-                'ALTER TABLE tenant_atak_config
-                 ADD COLUMN maintenance_enabled TINYINT(1) NOT NULL DEFAULT 0,
-                 ADD COLUMN maintenance_message TEXT DEFAULT NULL'
-            );
-            // Invalider le cache de détection
-            $this->resetMaintenanceColumnsCache();
-        } catch (\Throwable) {
-            // Colonnes déjà présentes (course) ou droits insuffisants — hasMaintenanceColumns tranchera
-            $this->resetMaintenanceColumnsCache();
+        foreach ([
+            'maintenance_enabled' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'maintenance_message' => 'TEXT DEFAULT NULL',
+        ] as $column => $ddl) {
+            if ($this->columnExistsOnTenantAtakConfig($column)) {
+                continue;
+            }
+            try {
+                $this->pdo->exec(
+                    'ALTER TABLE tenant_atak_config ADD COLUMN ' . $column . ' ' . $ddl
+                );
+            } catch (\Throwable) {
+                // Colonne déjà présente (course) ou droits insuffisants — hasMaintenanceColumns tranchera
+            }
         }
+
+        $this->resetMaintenanceColumnsCache();
+    }
+
+    private function columnExistsOnTenantAtakConfig(string $column): bool
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = ? LIMIT 1"
+            );
+            $st->execute([$column]);
+            if ($st->fetchColumn()) {
+                return true;
+            }
+        } catch (\Throwable) {
+            // Fallback ci-dessous
+        }
+
+        try {
+            $st = $this->pdo->query('SHOW COLUMNS FROM tenant_atak_config LIKE ' . $this->pdo->quote($column));
+            if ($st && $st->fetch(\PDO::FETCH_ASSOC)) {
+                return true;
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+
+        return false;
     }
 
     private function resetMaintenanceColumnsCache(): void
@@ -377,10 +410,11 @@ class TenantAtakConfigRepository
         }
         try {
             $st = $this->pdo->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'maintenance_enabled' LIMIT 1"
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config'
+                   AND COLUMN_NAME IN ('maintenance_enabled', 'maintenance_message')"
             );
-            if ($st && $st->fetchColumn()) {
+            if ($st && (int) $st->fetchColumn() >= 2) {
                 $cached = true;
 
                 return true;
@@ -391,7 +425,10 @@ class TenantAtakConfigRepository
 
         try {
             $st = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_enabled'");
-            if ($st && $st->fetch(PDO::FETCH_ASSOC)) {
+            $hasEnabled = $st && $st->fetch(PDO::FETCH_ASSOC);
+            $st2 = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'maintenance_message'");
+            $hasMessage = $st2 && $st2->fetch(PDO::FETCH_ASSOC);
+            if ($hasEnabled && $hasMessage) {
                 $cached = true;
 
                 return true;
@@ -401,7 +438,7 @@ class TenantAtakConfigRepository
         }
 
         try {
-            $this->pdo->query('SELECT maintenance_enabled FROM tenant_atak_config LIMIT 0');
+            $this->pdo->query('SELECT maintenance_enabled, maintenance_message FROM tenant_atak_config LIMIT 0');
             $cached = true;
         } catch (\Throwable) {
             $cached = false;

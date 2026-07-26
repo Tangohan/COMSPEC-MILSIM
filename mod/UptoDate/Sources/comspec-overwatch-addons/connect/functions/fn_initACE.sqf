@@ -1,4 +1,4 @@
-﻿if (!hasInterface) exitWith {};
+if (!hasInterface) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {
     ["WARN", "ACE", "ace_interact_menu absent — menus non installés"] call comspec_overwatch_connect_fnc_log;
 };
@@ -21,7 +21,6 @@ missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
 
 // Condition CBA : toujours un booléen (évite nil dans le menu ACE).
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
-private _condUi = { [false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi };
 private _condSync = {
     (missionNamespace getVariable ["comspec_overwatch_enabled", true])
     && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
@@ -35,9 +34,9 @@ private _mainAction = [
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _tabletAction = [
-    "COMSPEC_Tablet", "Ouvrir tablette Athena", "", {
-        ["bft"] call comspec_overwatch_connect_fnc_openTabletView;
-    }, _condUi, _noChildren
+    "COMSPEC_Tablet", "Ouvrir téléphone ATAK", "", {
+        ["all"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -70,60 +69,101 @@ private _medAction = [
 
 private _medInboxAction = [
     "COMSPEC_MedInbox", "Alertes médicales (triage)", "", {
-        ["medical"] call comspec_overwatch_connect_fnc_openTabletView;
+        ["urgences"] call comspec_overwatch_connect_fnc_openAthenaFeature;
     }, {
-        ([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi)
-        && {[] call comspec_overwatch_connect_fnc_canTriageMedical}
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+        && { [] call comspec_overwatch_connect_fnc_canTriageMedical }
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_medInboxAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _condCommander = {
+    (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+    && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+    && { [] call comspec_overwatch_connect_fnc_canIssueOrder }
+};
+
 private _orderMenu = [
-    "COMSPEC_OrderMenu", "Ordres C2", "", {}, _condSync, _noChildren
+    "COMSPEC_OrderMenu", "Ordres C2", "", {}, _condCommander, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_orderMenu, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+private _composeAction = [
+    "COMSPEC_OrderCompose", "Rédiger un ordre / FRAGO…", "", {
+        [""] call comspec_overwatch_connect_fnc_orderComposeShow;
+    }, {
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true] }
+        && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+        && { [] call comspec_overwatch_connect_fnc_canIssueOrder }
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_composeAction, ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_OrderMenu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _fragoAction = [
+    "COMSPEC_OrderFrago", "Rédiger un FRAGO…", "", {
+        ["FRAGO"] call comspec_overwatch_connect_fnc_orderComposeShow;
+    }, {
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true] }
+        && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+        && { [] call comspec_overwatch_connect_fnc_canIssueOrder }
+    }, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_fragoAction, ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_OrderMenu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 {
-    _x params ["_id", "_label", "_type"];
+    _x params ["_id", "_label", "_type", "_announce"];
     private _a = [
         _id,
         _label,
         "",
         {
             params ["_target", "_player", "_params"];
-            _params params ["_orderType"];
+            _params params ["_orderType", "_announceLabel"];
+            if !([] call comspec_overwatch_connect_fnc_canIssueOrder) exitWith {
+                ["Seul le chef d’unité peut émettre cet ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+            };
             private _g = group _player;
             private _hasGroupLeader = !isNull leader _g;
             private _targetName = if (_hasGroupLeader) then { groupId _g } else { name _player };
             private _targetType = if (_hasGroupLeader) then { "group" } else { "solo" };
             [_orderType, _targetName, "", "IMPORTANT", "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
-            [format ["Ordre %1 transmis vers %2.", _orderType, _targetName], "order", "info"] call comspec_overwatch_connect_fnc_announce;
+            [format ["Ordre %1 → %2", _announceLabel, _targetName], "order", "info"] call comspec_overwatch_connect_fnc_announce;
         },
-        _condSync,
+        _condCommander,
         _noChildren,
-        [_type]
+        [_type, _announce]
     ] call ace_interact_menu_fnc_createAction;
     [_a, ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_OrderMenu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 } forEach [
-    ["COMSPEC_OrderMove", "Ordonner MOVE", "MOVE"],
-    ["COMSPEC_OrderHold", "Ordonner HOLD", "HOLD"],
-    ["COMSPEC_OrderRecon", "Ordonner RECON", "RECON"],
-    ["COMSPEC_OrderQRF", "Ordonner QRF", "QRF"]
+    ["COMSPEC_OrderMove", "Ordonner déplacement (rapide)", "MOVE", "déplacement"],
+    ["COMSPEC_OrderHold", "Ordonner maintien (rapide)", "HOLD", "maintien"],
+    ["COMSPEC_OrderRecon", "Ordonner reconnaissance (rapide)", "RECON", "reconnaissance"],
+    ["COMSPEC_OrderQRF", "Ordonner renfort (rapide)", "QRF", "renfort"]
 ];
 
 private _casAction = [
-    "COMSPEC_CAS", "Appui aérien (tablette)", "", {
-        ["cas"] call comspec_overwatch_connect_fnc_openTabletView;
-    }, _condUi, _noChildren
+    "COMSPEC_CAS", "Appui aérien (Athena)", "", {
+        [] call comspec_overwatch_connect_fnc_casRequestShow;
+    }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_casAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _manifestAction = [
-    "COMSPEC_Manifest", "Flight Manifest (tablette)", "", {
-        ["manifest"] call comspec_overwatch_connect_fnc_openTabletView;
-    }, _condUi, _noChildren
+    "COMSPEC_Manifest", "Manifeste de vol (Athena)", "", {
+        [] call comspec_overwatch_connect_fnc_flightManifestShow;
+    }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_manifestAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _briefingAction = [
+    "COMSPEC_Briefing", "Briefing / diaporama", "", {
+        [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_briefingAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _reconAction = [
     "COMSPEC_Recon", "Envoyer photo Recon", "", {
@@ -184,20 +224,44 @@ private _droneSnapAction = [
 private _laserAction = [
     "COMSPEC_LaserSync", "Synchroniser code laser", "", {
         [] call comspec_overwatch_connect_fnc_syncLaserCode;
+        ["Code laser synchronisé.", "laser", "info"] call comspec_overwatch_connect_fnc_announce;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_laserAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _callsignAction = [
-    "COMSPEC_Callsign", "Mon indicatif (tablette)", "", {
-        ["callsign"] call comspec_overwatch_connect_fnc_openTabletView;
-    }, _condUi, _noChildren
+    "COMSPEC_Callsign", "Mon indicatif / liaison", "", {
+        ["liaison"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_callsignAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ordersAction = [
-    "COMSPEC_OrderInbox", "Ordres reçus (tablette)", "", {
-        ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
-    }, _condUi, _noChildren
+    "COMSPEC_OrderInbox", "Ordres reçus", "", {
+        [] call comspec_overwatch_connect_fnc_orderInboxShow;
+    }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_ordersAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _messagesAction = [
+    "COMSPEC_Messages", "Messagerie Athena", "", {
+        ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_messagesAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _photosAction = [
+    "COMSPEC_Photos", "Photos Athena", "", {
+        ["photo"] call comspec_overwatch_connect_fnc_openAthenaFeature;
+    }, _condSync, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_photosAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+private _bugAction = [
+    "COMSPEC_BugReport", "Signaler un problème…", "", {
+        [] call comspec_overwatch_connect_fnc_bugReportShow;
+    }, _condEnabled, _noChildren
+] call ace_interact_menu_fnc_createAction;
+[_bugAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];

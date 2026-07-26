@@ -95,6 +95,10 @@ final class TenantBootstrapService
                 ))->ensureDefaultsForTenant($pdo, $tenantId);
             } else {
                 $this->seedSimplifiedTenant($pdo, $tenantId, $tenantType, $communityOwnerRoleId, $tenantAdminRoleId);
+                if (!empty($seedConfig['seed_forum'])) {
+                    TenantSeedHelper::seedForumAndRoles($pdo, $tenantId);
+                    TenantSeedHelper::ensureOrganizationForumSection($pdo, $tenantId);
+                }
             }
 
             $st = $pdo->prepare('INSERT IGNORE INTO role_permissions (role_id, permission_id) SELECT ?, permission_id FROM role_permissions WHERE role_id = ?');
@@ -108,7 +112,7 @@ final class TenantBootstrapService
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $communitySettings = [
-                'registration_mode' => ($options['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim',
+                'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode($options['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM),
                 'community_locked' => !empty($options['community_locked']),
                 'require_ai_ack' => array_key_exists('require_ai_ack', $options) ? (bool) $options['require_ai_ack'] : true,
                 'welcome_text' => trim((string) ($options['welcome_text'] ?? '')),

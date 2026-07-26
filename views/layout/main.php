@@ -149,6 +149,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php if (!empty($usesAdminSidebarShell)): ?>
     <style>
       [x-cloak]{display:none!important}
+      body.bo-shell {
+        font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      }
       /* Shell admin : largeur aside bornée pour ne pas écraser la colonne contenu */
       #back-office-sidebar,
       #platform-admin-sidebar {
@@ -222,6 +225,9 @@ if ($showBottomNav) {
 if (!empty($backOfficeHoverRail)) {
     $bodyClasses .= ' bo-shell--hover-rail';
 }
+if (!empty($usesAdminSidebarShell)) {
+    $bodyClasses .= ' bo-shell';
+}
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
     <div class="grain" aria-hidden="true"></div>
@@ -237,9 +243,11 @@ if (!empty($backOfficeHoverRail)) {
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
+    <?php if (empty($usesAdminSidebarShell)): ?>
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
+    <?php endif; ?>
     <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
@@ -302,6 +310,12 @@ if (!empty($backOfficeHoverRail)) {
             </aside>
 
             <div class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden <?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? 'bg-[#050505]' : 'bg-slate-50' ?>">
+                <?php
+                // Dans la colonne contenu pour ne pas chevaucher le rail (isolate + hover fixed).
+                require base_path('views/partials/navbar_info_banners.php');
+                require base_path('views/partials/alert_banners.php');
+                require base_path('views/partials/forum_moderation_alerts.php');
+                ?>
                 <div class="flex min-h-0 min-w-0 flex-1 flex-col">
                 <?php
                 $contentPath = str_replace('.', '/', $content);
@@ -313,14 +327,6 @@ if (!empty($backOfficeHoverRail)) {
                 }
                 ?>
                 </div>
-                <footer class="mt-auto shrink-0 border-t border-emerald-700/40 bg-[#020617] text-slate-300">
-                    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-5 lg:px-6">
-                        <p class="text-[11px] font-semibold tracking-wide text-slate-400">
-                            <span class="text-emerald-400">Athena</span> · Espace d’administration
-                        </p>
-                        <p class="text-[10px] text-slate-500">© <?= (int) date('Y') ?> Compsec</p>
-                    </div>
-                </footer>
             </div>
         </div>
         <?php else: ?>
@@ -335,7 +341,7 @@ if (!empty($backOfficeHoverRail)) {
         ?>
         <?php endif; ?>
     </main>
-    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace)): ?>
+    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace) && empty($isBackOfficeShell) && empty($isPlatformAdminShell)): ?>
         <?php require base_path('views/partials/portal_footer.php'); ?>
     <?php endif; ?>
     <?php if (!empty($showBottomNav)): ?>

@@ -22,6 +22,7 @@ $canEditPersonnel = !empty($canEditPersonnel);
 $currentUserId = (int) ($currentUserId ?? 0);
 $tenantName = trim((string) ($tenantName ?? ''));
 $canAccessEffectifsLms = !empty($canAccessEffectifsLms);
+$canSeeInactiveDirectory = !empty($canSeeInactiveDirectory);
 
 $heroImageRel = 'assets/images/fog-team.jpg';
 if (!is_file(base_path('public/' . $heroImageRel))) {
@@ -200,7 +201,9 @@ $totalResults = count($results);
                         <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Indicatif / radio</th>
                         <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Ancienneté</th>
                         <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Médailles</th>
+                        <?php if ($canSeeInactiveDirectory): ?>
                         <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Statut</th>
+                        <?php endif; ?>
                         <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Action</th>
                     </tr>
                 </thead>
@@ -251,8 +254,8 @@ $totalResults = count($results);
                                     <?php if ($character !== ''): ?>
                                     <p class="truncate text-xs text-slate-500">RP : <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
-                                    <?php if ($athenaId !== ''): ?>
-                                    <p class="mt-0.5 truncate text-[10px] font-medium text-slate-300" title="Identifiant système Athena (interne, réservé au staff)">ID <?= htmlspecialchars($athenaId, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if ($canSeeInactiveDirectory && $athenaId !== ''): ?>
+                                    <p class="mt-0.5 truncate text-[10px] font-medium text-slate-300" title="Identifiant interne réservé à l’encadrement">Réf. <?= htmlspecialchars($athenaId, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -361,11 +364,13 @@ $totalResults = count($results);
                             <?php endif; ?>
                         </td>
 
+                        <?php if ($canSeeInactiveDirectory): ?>
                         <td class="px-4 py-3">
                             <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset <?= htmlspecialchars($statusClasses($status), ENT_QUOTES, 'UTF-8') ?>">
                                 <?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?>
                             </span>
                         </td>
+                        <?php endif; ?>
 
                         <td class="px-4 py-3 text-right">
                             <?php

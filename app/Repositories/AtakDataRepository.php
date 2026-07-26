@@ -947,12 +947,42 @@ class AtakDataRepository
         }
         $this->setLastActivity($tenantId, $mapId);
 
-        // ID militaire stable (best-effort, migration v2)
+        // ID BFT (military_id) lié à l’indicatif — et au compte Steam si connu.
         if ($unitId > 0) {
             try {
                 $opIds = new AtakOperatorIdRepository();
                 if ($opIds->tablesReady() && $opIds->unitsMilitaryIdColumnReady()) {
-                    $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, null);
+                    $extraArr = self::decodeExtra($extraJson);
+                    $steam = trim((string) ($extraArr['steam_uid'] ?? $extraArr['steamId'] ?? $extraArr['player_uid'] ?? ''));
+                    $userId = null;
+                    if ($steam !== '') {
+                        try {
+                            $userRepo = new UserRepository();
+                            $user = $userRepo->findBySteamIdForTenant($tenantId, $steam)
+                                ?? $userRepo->findBySteamId($steam);
+                            if (is_array($user)) {
+                                $userId = (int) ($user['id'] ?? 0);
+                                if ($userId < 1) {
+                                    $userId = null;
+                                }
+                            }
+                        } catch (\Throwable) {
+                            $userId = null;
+                        }
+                    }
+                    $mid = $opIds->syncUnitMilitaryId($tenantId, $unitId, $callSign, $userId);
+                    // Miroir dans extra pour BFT / tablette / ATAK (même identité que l’indicatif).
+                    if ($mid !== '') {
+                        $extraArr['bft_id'] = $mid;
+                        $extraArr['military_id'] = $mid;
+                        $extraArr['atak_id'] = $mid;
+                        $encoded = json_encode($extraArr, JSON_UNESCAPED_UNICODE);
+                        if (is_string($encoded) && $encoded !== '') {
+                            $this->pdo->prepare(
+                                'UPDATE atak_units SET extra = ? WHERE id = ? AND tenant_id = ?'
+                            )->execute([$encoded, $unitId, $tenantId]);
+                        }
+                    }
                 }
             } catch (\Throwable) {
             }

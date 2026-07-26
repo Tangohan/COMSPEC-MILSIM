@@ -193,6 +193,7 @@ class AtakController
 
         return Response::view('atak', [
             'atakToken' => $token,
+            'atakTenantId' => $tenantId,
             'nodeAtakUrl' => $nodeUrl,
             'visitorIp' => $visitorIp,
             'atakConfig' => $config ? [

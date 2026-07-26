@@ -639,27 +639,49 @@ window.ATAKMap = (function () {
   }
 
   function markerPopupHtml(data, lng, lat) {
-    var label = data.label || data.text || data.message || data.name || data.symbolName || 'Marqueur';
+    var arma = window.ArmaMapMarkers;
+    var label = (arma && arma.displayLabelOf)
+      ? arma.displayLabelOf(data)
+      : (data.label || data.text || data.message || data.name || data.symbolName || 'Repère');
     var author = data.author || data.createdBy || '';
     var desc = data.description || data.desc || '';
     var gx = Math.round(Number(lng));
     var gy = Math.round(Number(lat));
     var html = '<div class="atak-marker-popup">';
+    html += '<div class="atak-marker-popup__kind">Repère carte</div>';
     html += '<strong>' + escapeHtml(label) + '</strong>';
-    if (data.symbolName || data.affiliation) {
+    var typeFr = (arma && arma.typeLabelFr)
+      ? arma.typeLabelFr(data)
+      : '';
+    if (data.symbolName || data.affiliation || typeFr) {
       var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
         ? window.MilstdCatalog.affiliationLabelFr(data.affiliation)
         : '';
       var symLine = [];
       if (data.symbolName) symLine.push(escapeHtml(data.symbolName));
+      else if (typeFr && typeFr !== label) symLine.push(escapeHtml(typeFr));
       if (affFr) symLine.push(escapeHtml(affFr));
       if (symLine.length) html += '<div class="atak-marker-popup__symbol">' + symLine.join(' · ') + '</div>';
     }
     html += '<div class="atak-marker-popup__coords">Grille ' + gx + ' / ' + gy + '</div>';
     if (desc) html += '<p class="atak-marker-popup__desc">' + escapeHtml(desc) + '</p>';
     if (author) html += '<span class="atak-marker-popup__author">' + escapeHtml(author) + '</span>';
+    html += '<p class="atak-marker-popup__hint">Ce point n’est pas un effectif en liaison — c’est un repère posé sur la carte.</p>';
     html += '</div>';
     return html;
+  }
+
+  function liveUnitsForMarkerDedupe() {
+    if (window.ATAKUnits && typeof window.ATAKUnits.getUnits === 'function') {
+      return window.ATAKUnits.getUnits() || [];
+    }
+    return Array.isArray(lastUnitsListForMap) ? lastUnitsListForMap : [];
+  }
+
+  function shouldHideMarkerVsUnits(data) {
+    var arma = window.ArmaMapMarkers;
+    if (!arma || typeof arma.isLiveUnitDuplicate !== 'function') return false;
+    return !!arma.isLiveUnitDuplicate(data, liveUnitsForMarkerDedupe());
   }
 
   function emitFeatureContextMenu(detail, e) {
@@ -692,10 +714,26 @@ window.ATAKMap = (function () {
     });
   }
 
+  function removeExistingMarkerLayer(id) {
+    var prev = markersById[id];
+    if (!prev) return;
+    var lg = layerGroups[prev._atakLayerId];
+    if (lg) {
+      try { lg.removeLayer(prev); } catch (e) {}
+    } else {
+      try { if (map) map.removeLayer(prev); } catch (e2) {}
+    }
+    delete markersById[id];
+  }
+
   function addOrUpdateMarker(payload) {
     var id = payload.id;
     var layerId = payload.layerId;
     var data = payload.data || {};
+    if (shouldHideMarkerVsUnits(data)) {
+      removeExistingMarkerLayer(id);
+      return;
+    }
     var pos = data.pos;
     if (!pos || !pos.length) return;
     var lat, lng;
@@ -712,28 +750,53 @@ window.ATAKMap = (function () {
     var popupHtml = markerPopupHtml(data, lng, lat);
     var armaHelper = window.ArmaMapMarkers;
     var isArma = armaHelper && typeof armaHelper.isArmaStyleMarker === 'function' && armaHelper.isArmaStyleMarker(data);
+    var isArea = armaHelper && typeof armaHelper.isAreaShape === 'function' && armaHelper.isAreaShape(data);
     var isManual = !isArma && ((data.type === 'manual') || data.color || data.icon || data.size || data.description);
+    var layer = ensureLayer(layerId);
+    var existing = markersById[id];
 
-    if (markersById[id]) {
-      markersById[id].setLatLng(latlng);
-      markersById[id]._atakData = data;
-      markersById[id]._atakGrid = { lng: lng, lat: lat };
-      try {
-        if (isArma && armaHelper.leafletDivIcon) {
-          markersById[id].setIcon(armaHelper.leafletDivIcon(L, data));
-        } else if (isManual) {
-          markersById[id].setIcon(buildManualMarkerIcon(data));
-        }
-      } catch (e) {}
-      if (markersById[id].getPopup && markersById[id].getPopup()) {
-        markersById[id].setPopupContent(popupHtml);
-      } else {
-        markersById[id].bindPopup(popupHtml);
-      }
-      bindMarkerContextMenu(markersById[id], id);
+    // Formes Arma (rectangle / ellipse / polyline) — couche géométrique, pas une icône point.
+    if (isArea && armaHelper && armaHelper.leafletShapeLayer) {
+      if (existing) removeExistingMarkerLayer(id);
+      var shapeLayer = armaHelper.leafletShapeLayer(L, data, latlng);
+      if (!shapeLayer) return;
+      shapeLayer._atakId = id;
+      shapeLayer._atakLayerId = layerId;
+      shapeLayer._atakData = data;
+      shapeLayer._atakGrid = { lng: lng, lat: lat };
+      shapeLayer._atakIsArea = true;
+      if (shapeLayer.bindPopup) shapeLayer.bindPopup(popupHtml);
+      bindMarkerContextMenu(shapeLayer, id);
+      shapeLayer.addTo(layer);
+      markersById[id] = shapeLayer;
       return;
     }
-    var layer = ensureLayer(layerId);
+
+    if (existing && existing._atakIsArea) {
+      removeExistingMarkerLayer(id);
+      existing = null;
+    }
+
+    if (existing) {
+      if (existing.setLatLng) existing.setLatLng(latlng);
+      existing._atakData = data;
+      existing._atakGrid = { lng: lng, lat: lat };
+      try {
+        if (isArma && armaHelper.leafletDivIcon && existing.setIcon) {
+          existing.setIcon(armaHelper.leafletDivIcon(L, data));
+        } else if (isManual && existing.setIcon) {
+          existing.setIcon(buildManualMarkerIcon(data));
+        }
+      } catch (e) {}
+      if (existing.getPopup && existing.getPopup()) {
+        existing.setPopupContent(popupHtml);
+      } else if (existing.bindPopup) {
+        existing.bindPopup(popupHtml);
+      }
+      bindMarkerContextMenu(existing, id);
+      return;
+    }
+
     var icon;
     if (isArma && armaHelper && armaHelper.leafletDivIcon) {
       icon = armaHelper.leafletDivIcon(L, data);
@@ -771,12 +834,19 @@ window.ATAKMap = (function () {
     if (!m) return null;
     var data = m._atakData || {};
     var grid = m._atakGrid || {};
+    var ll = m.getLatLng ? m.getLatLng() : null;
+    if (!ll && m.getBounds) {
+      try {
+        var b = m.getBounds();
+        if (b && b.isValid && b.isValid()) ll = b.getCenter();
+      } catch (e) {}
+    }
     return {
       id: id,
       layerId: m._atakLayerId,
       data: data,
-      gridLng: grid.lng,
-      gridLat: grid.lat
+      gridLng: grid.lng != null ? grid.lng : (ll ? ll.lng : null),
+      gridLat: grid.lat != null ? grid.lat : (ll ? ll.lat : null)
     };
   }
 
@@ -819,6 +889,12 @@ window.ATAKMap = (function () {
       var data = m._atakData || {};
       var grid = m._atakGrid || {};
       var ll = m.getLatLng ? m.getLatLng() : null;
+      if (!ll && m.getBounds) {
+        try {
+          var b = m.getBounds();
+          if (b && b.isValid && b.isValid()) ll = b.getCenter();
+        } catch (e) {}
+      }
       return {
         id: k,
         layerId: m._atakLayerId,
@@ -832,7 +908,15 @@ window.ATAKMap = (function () {
   function focusMarker(id) {
     var m = markersById[id];
     if (!m || !map) return;
-    var ll = m.getLatLng();
+    var ll = null;
+    if (m.getLatLng) {
+      ll = m.getLatLng();
+    } else if (m.getBounds) {
+      try {
+        var b = m.getBounds();
+        if (b && b.isValid && b.isValid()) ll = b.getCenter();
+      } catch (e) {}
+    }
     if (ll) {
       map.setView(ll, Math.max(map.getZoom(), 4));
       if (m.openPopup) m.openPopup();
@@ -990,6 +1074,7 @@ window.ATAKMap = (function () {
         return { kind: 'drone', label: dLabel, color: dColor, rest: rest };
       }
       if (raw.indexOf('hostile') >= 0 || raw.indexOf('ennemi') >= 0) return { kind: 'hostile', label: 'Hostile', color: '#ef4444', rest: rest };
+      if (raw.indexOf('jackpot') >= 0 || raw.indexOf('hvt') >= 0) return { kind: 'jackpot', label: 'JACKPOT', color: '#f59e0b', rest: rest };
       if (raw.indexOf('medical') >= 0 || raw.indexOf('médical') >= 0) return { kind: 'medical', label: 'Médical', color: '#f8fafc', rest: rest };
       if (raw.indexOf('ralli') >= 0 || raw.indexOf('rally') >= 0) return { kind: 'rally', label: 'Ralliement', color: '#22c55e', rest: rest };
       if (raw.indexOf('contact') >= 0) return { kind: 'contact', label: 'Contact', color: '#f97316', rest: rest };
@@ -1026,18 +1111,22 @@ window.ATAKMap = (function () {
       var latlng = L.latLng(applied[0], applied[1]);
       var kind = pingKindFromMessage(p.message);
       var author = String(p.author || '').trim();
-      var pinLabel = author || kind.label;
+      // Ne jamais afficher l’indicatif seul sous le point (confusion avec un effectif).
+      var pinLabel = kind.label || 'Ping';
       var icon = L.divIcon({
         className: 'atak-ping-map-icon',
         html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
           '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
-          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">' +
-          String(pinLabel).replace(/</g, '&lt;').slice(0, 12) + '</span></div>',
-        iconSize: [64, 26],
-        iconAnchor: [32, 8]
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis;">' +
+          String(pinLabel).replace(/</g, '&lt;').slice(0, 14) + '</span></div>',
+        iconSize: [72, 26],
+        iconAnchor: [36, 8]
       });
-      var popup = '<b>' + String(kind.label).replace(/</g, '&lt;') + ' — ' + String(author || '?').replace(/</g, '&lt;') +
-        '</b><br/>' + String(kind.rest || p.message || '').replace(/</g, '&lt;');
+      var popup = '<div class="atak-ping-popup"><div class="atak-marker-popup__kind">Ping</div><b>' +
+        String(kind.label).replace(/</g, '&lt;') +
+        (author ? ' — ' + String(author).replace(/</g, '&lt;') : '') +
+        '</b><br/>' + String(kind.rest || p.message || '').replace(/</g, '&lt;') +
+        '<p class="atak-marker-popup__hint">Signal ponctuel — ce n’est pas la position d’un effectif.</p></div>';
       if (pingMarkersById[id]) {
         pingMarkersById[id].setLatLng(latlng);
         pingMarkersById[id].setIcon(icon);
@@ -1075,7 +1164,7 @@ window.ATAKMap = (function () {
     var applied = applyOffset(parseFloat(posY), parseFloat(posX));
     var latlng = L.latLng(applied[0], applied[1]);
     var kind = pingKindFromMessage(message);
-    var pinLabel = String(author || kind.label || 'Ping').slice(0, 12);
+    var pinLabel = String(kind.label || 'Ping').slice(0, 14);
     var id = pingId != null && String(pingId) !== '' ? String(pingId) : ('live_' + Date.now());
     var icon = L.divIcon({
       className: 'atak-ping-temp-icon',
@@ -1083,11 +1172,16 @@ window.ATAKMap = (function () {
         '<span style="width:14px;height:14px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
         '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;">' +
         pinLabel.replace(/</g, '&lt;') + '</span></div>',
-      iconSize: [64, 28],
-      iconAnchor: [32, 10]
+      iconSize: [72, 28],
+      iconAnchor: [36, 10]
     });
     var marker = L.marker(latlng, { icon: icon, zIndexOffset: 400 });
-    marker.bindPopup('<b>' + kind.label + ' — ' + (author || '?') + '</b><br/>' + String(message || '').replace(/</g, '&lt;')).openPopup();
+    marker.bindPopup(
+      '<div class="atak-ping-popup"><div class="atak-marker-popup__kind">Ping</div><b>' +
+      kind.label + (author ? ' — ' + String(author).replace(/</g, '&lt;') : '') +
+      '</b><br/>' + String(message || '').replace(/</g, '&lt;') +
+      '<p class="atak-marker-popup__hint">Signal ponctuel — ce n’est pas la position d’un effectif.</p></div>'
+    ).openPopup();
     marker._atakPingId = id;
     if (!marker._atakCtxBound) {
       marker._atakCtxBound = true;
@@ -1214,7 +1308,19 @@ window.ATAKMap = (function () {
     });
   }
 
-  function setUnitsMarkers(list) {
+  var replayActive = false;
+
+  function setReplayActive(v) {
+    replayActive = !!v;
+  }
+
+  function isReplayActive() {
+    return replayActive;
+  }
+
+  function setUnitsMarkers(list, opts) {
+    opts = opts || {};
+    if (replayActive && !opts.fromReplay) return;
     if (!map) return;
     if (!unitsLayer) unitsLayer = L.layerGroup().addTo(map);
     lastUnitsListForMap = Array.isArray(list) ? list : [];
@@ -1394,6 +1500,18 @@ window.ATAKMap = (function () {
         delete unitPosLiveSeen[k];
       }
     });
+    // Unités mises à jour → retirer les repères carte qui doublonnent le BFT.
+    refreshMarkersAgainstUnits();
+  }
+
+  function refreshMarkersAgainstUnits() {
+    Object.keys(markersById).forEach(function (id) {
+      var m = markersById[id];
+      if (!m || !m._atakData) return;
+      if (shouldHideMarkerVsUnits(m._atakData)) {
+        removeExistingMarkerLayer(id);
+      }
+    });
   }
 
   function setAirAssets(assets) {
@@ -1491,6 +1609,8 @@ window.ATAKMap = (function () {
     updateMarkerById: updateMarkerById,
     setAirAssets: setAirAssets,
     setUnitsMarkers: setUnitsMarkers,
+    setReplayActive: setReplayActive,
+    isReplayActive: isReplayActive,
     getUnitMarkerPriority: getUnitMarkerPriority,
     setUnitMarkerPriority: setUnitMarkerPriority,
     getDisplayPrefs: getDisplayPrefs,

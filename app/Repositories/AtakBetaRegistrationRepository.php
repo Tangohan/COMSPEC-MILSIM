@@ -146,6 +146,108 @@ final class AtakBetaRegistrationRepository
         return (int) ($n ?: 0);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT id, steam_uid, player_uid, player_name, client_ip,
+                    arma_build, arma_branch, mod_version, extension_version,
+                    acknowledged_at, first_seen_at, last_seen_at, hit_count
+             FROM atak_beta_registrations WHERE id = ? LIMIT 1'
+        );
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return list<array<string, mixed>>
+     */
+    public function findByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "SELECT id, steam_uid, player_uid, player_name, client_ip,
+                    arma_build, arma_branch, mod_version, extension_version,
+                    acknowledged_at, first_seen_at, last_seen_at, hit_count
+             FROM atak_beta_registrations WHERE id IN ({$placeholders})"
+        );
+        $st->execute($ids);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function clearAcknowledged(int $id): bool
+    {
+        if ($id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE atak_beta_registrations SET acknowledged_at = NULL WHERE id = ? AND acknowledged_at IS NOT NULL'
+        );
+        $st->execute([$id]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * @param list<int> $ids
+     */
+    public function clearAcknowledgedMany(array $ids): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare(
+            "UPDATE atak_beta_registrations SET acknowledged_at = NULL
+             WHERE id IN ({$placeholders}) AND acknowledged_at IS NOT NULL"
+        );
+        $st->execute($ids);
+
+        return $st->rowCount();
+    }
+
+    public function deleteById(int $id): bool
+    {
+        if ($id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare('DELETE FROM atak_beta_registrations WHERE id = ?');
+        $st->execute([$id]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /**
+     * @param list<int> $ids
+     */
+    public function deleteByIds(array $ids): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $st = $this->pdo->prepare("DELETE FROM atak_beta_registrations WHERE id IN ({$placeholders})");
+        $st->execute($ids);
+
+        return $st->rowCount();
+    }
+
     private function nullIfEmpty(?string $v): ?string
     {
         if ($v === null) {

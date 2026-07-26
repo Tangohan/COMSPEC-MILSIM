@@ -238,7 +238,7 @@ class AdminAtakConfigController
         if (!$ok) {
             Session::flash(
                 'error',
-                'Impossible d’enregistrer le mode maintenance : la base de données n’est pas à jour. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.'
+                'Impossible d’enregistrer le mode maintenance : la mise à jour qui active cette fonction n’a pas encore été appliquée. Demandez au support plateforme de lancer la mise à jour, puis réessayez.'
             );
 
             return Response::redirect(url('admin/atak-config'));

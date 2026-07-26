@@ -16,7 +16,7 @@ if (!isNil "_zone" && {isNil "_lastZone" || {(_zone get "id") != (_lastZone get 
     private _intensity = _zone get "intensity";
     
     private _msg = format ["Entrée en %1 (intensité %2%%)", _zoneName, _intensity];
-    hintSilent _msg;
+    [_msg, "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
     
     // Son d'avertissement
     ["warning"] call comspec_overwatch_connect_fnc_playRoleplaySound;
@@ -29,7 +29,7 @@ if (!isNil "_zone" && {isNil "_lastZone" || {(_zone get "id") != (_lastZone get 
 
 if (isNil "_zone" && {!isNil "_lastZone"}) then {
     // Sortie d'une zone
-    hintSilent "Sortie de la zone roleplay";
+    ["Sortie de zone dégradée", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     
     missionNamespace setVariable ["COMSPEC_LastRoleplayZone", nil, false];
     missionNamespace setVariable ["COMSPEC_InRoleplayZone", false, false];

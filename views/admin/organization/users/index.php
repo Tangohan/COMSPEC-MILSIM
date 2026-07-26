@@ -78,35 +78,31 @@ $truncateRole = static function (string $label, int $max = 22): string {
     return rtrim(mb_substr($label, 0, $max - 1, 'UTF-8')) . '…';
 };
 ?>
-<main class="min-h-[80vh] bg-slate-50">
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <div class="space-y-6">
+<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-users.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<div class="bo-users">
+    <header class="bo-users__hero">
+        <div class="bo-users__hero-inner">
+            <div class="min-w-0">
+                <p class="bo-users__eyebrow">Membres · Annuaire</p>
+                <h1 class="bo-users__title">
+                    Utilisateurs
+                    <?php if ($usersTotal !== null): ?>
+                    <span class="bo-users__count"><?= (int) $usersTotal ?></span>
+                    <?php endif; ?>
+                </h1>
+                <p class="bo-users__lead">
+                    Comptes, rôles, statuts et complétude (compte + fiche personnelle) de la communauté active.
+                </p>
+            </div>
+            <div class="bo-users__hero-actions">
+                <a href="<?= url('back-office/invitations') ?>" class="bo-users__btn bo-users__btn--ghost">Inviter</a>
+                <a href="<?= url('back-office/users/create') ?>" class="bo-users__btn bo-users__btn--solid">Nouvel utilisateur</a>
+            </div>
+        </div>
+    </header>
 
-            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex flex-col gap-4 border-b border-slate-200 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="min-w-0">
-                        <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">Administration organisationnelle</p>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <h1 class="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Utilisateurs</h1>
-                            <?php if ($usersTotal !== null): ?>
-                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                                <?= (int) $usersTotal ?> utilisateur(s)
-                            </span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="mt-2 text-sm text-slate-600">
-                            Membres de la communauté active — comptes, rôles, statuts et complétude (compte + fiche personnelle). Les administrateurs site voient le même périmètre selon l’organisation sélectionnée.
-                        </p>
-                    </div>
-
-                    <div class="flex shrink-0 items-center gap-3">
-                        <a href="<?= url('back-office/users/create') ?>"
-                           class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
-                            Nouvel utilisateur
-                        </a>
-                    </div>
-                </div>
-
+    <div class="bo-users__deck">
+            <section class="bo-users__panel">
                 <div class="border-b border-slate-200 bg-slate-50/80 px-6 py-5">
                     <form method="get"
                           action="<?= url('back-office/users') ?>"
@@ -458,16 +454,13 @@ $truncateRole = static function (string $label, int $max = 22): string {
                 <?php endif; ?>
 
                 <div class="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-                    <a href="<?= url('back-office') ?>"
-                       class="text-sm font-medium text-slate-600 underline-offset-4 transition hover:text-slate-950 hover:underline">
-                        Retour administration organisationnelle
+                    <a href="<?= url('back-office') ?>" class="bo-users__back">
+                        ← Retour à l’administration
                     </a>
-
                     <div class="text-xs font-medium text-slate-400">
-                        Liste des membres — back-office
+                        Liste des membres
                     </div>
                 </div>
             </section>
-        </div>
     </div>
-</main>
+</div>

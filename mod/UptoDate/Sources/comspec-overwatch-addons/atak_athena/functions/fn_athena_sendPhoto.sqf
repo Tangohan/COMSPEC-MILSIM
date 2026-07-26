@@ -1,8 +1,9 @@
 /*
-    Envoie vers Athena la photo sélectionnée dans l’inbox Athena
-    ou la dernière photo locale Photo Library.
+    Envoie vers Athena la photo sélectionnée dans le journal Athena (onglet Photos),
+    ou la dernière capture locale disponible.
 */
 if (!hasInterface) exitWith {};
+
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {
     [
         "Le module photo n’est pas disponible pour le moment.",
@@ -12,6 +13,7 @@ if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith {
 };
 
 private _path = "";
+private _fileName = "";
 private _caption = "";
 
 private _listCtrl = controlNull;
@@ -25,30 +27,38 @@ if (!isNull _listCtrl) then {
         (_entries select _sel) params ["_kind", "", "", "", ["_meta", []]];
         if (_kind isEqualTo "photo" && {(_meta isEqualType []) && {(count _meta) >= 1}}) then {
             _path = _meta select 0;
-            if ((count _meta) >= 2) then { _caption = format ["Photo ATAK — %1", _meta select 1]; };
+            if ((count _meta) >= 2) then {
+                _fileName = _meta select 1;
+                _caption = format ["Photo ATAK — %1", _fileName];
+            };
         };
     };
 };
 
-// Repli : dernière photo locale Photo Library
-if (_path isEqualTo "" && {!isNil "Iceman_fnc_photo_getRecords"}) then {
-    private _records = call Iceman_fnc_photo_getRecords;
-    if ((_records isEqualType []) && {(count _records) > 0}) then {
-        private _rec = _records select ((count _records) - 1);
-        if ((_rec isEqualType []) && {(count _rec) > 3}) then {
-            _path = _rec select 2;
-            private _fn = _rec select 3;
-            private _g = if ((count _rec) > 8) then { _rec select 8 } else { mapGridPosition player };
-            _caption = format ["Photo ATAK Enhanced — grille %1 (%2)", _g, _fn];
+// Repli : collecteur unifié (Photo Library + cache Quick Pictures)
+if (_path isEqualTo "" && {!isNil "comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos"}) then {
+    private _photos = [] call comspec_overwatch_atak_athena_fnc_athena_collectLocalPhotos;
+    if ((_photos isEqualType []) && {(count _photos) > 0}) then {
+        private _rec = _photos select 0;
+        if ((_rec isEqualType []) && {(count _rec) > 0}) then {
+            _path = _rec select 0;
+            _fileName = if ((count _rec) > 1) then { _rec select 1 } else { "" };
+            private _g = if ((count _rec) > 2) then { _rec select 2 } else { mapGridPosition player };
+            _caption = format ["Photo ATAK Enhanced — grille %1 (%2)", _g, _fileName];
         };
     };
+};
+
+// Si le chemin stocké est vide / inutilisable, remonter via le nom de fichier (résolu côté extension).
+if (_path isEqualTo "" && {_fileName isNotEqualTo ""}) then {
+    _path = _fileName;
 };
 
 if (_path isEqualTo "") exitWith {
     [
-        "Aucune photo à remonter — capturez d’abord depuis l’app Photos d’ATAK.",
+        "Aucune photo à remonter — ouvrez l’onglet Photos, sélectionnez une capture, ou prenez d’abord une vue depuis l’app Photos d’ATAK.",
         "warn",
-        6
+        7
     ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
 };
 
@@ -81,10 +91,45 @@ if (!isNull _drone && {alive _drone}) then {
     };
 };
 
-[_path, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
-[
-    "Photo envoyée vers Athena.",
-    "ok",
-    5
-] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+private _ok = [_path, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+if (!(_ok isEqualType true)) then { _ok = false; };
+
+// Second essai : nom de fichier seul (Iceman affiche souvent .jpg alors qu’Arma écrit .png).
+if (!_ok && {_fileName isNotEqualTo ""} && {(toLower _fileName) isNotEqualTo (toLower _path)}) then {
+    private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
+    if ((_detail find "file_not_found") >= 0) then {
+        _ok = [_fileName, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
+        if (!(_ok isEqualType true)) then { _ok = false; };
+    };
+};
+
+if (_ok) then {
+    [
+        "Photo envoyée vers Athena.",
+        "ok",
+        5
+    ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+} else {
+    private _detail = missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""];
+    private _msg = "L’envoi de la photo a échoué.";
+    private _d = toLower (str _detail);
+    if ((_d find "file_not_found") >= 0) then {
+        _msg = "Fichier introuvable sur le poste — reprenez une vue depuis l’app Photos d’ATAK, puis renvoyez.";
+    };
+    if ((_d find "file_too_large") >= 0) then {
+        _msg = "La photo est trop volumineuse pour être transmise. Reprenez une vue plus légère, puis renvoyez.";
+    };
+    if ((_d find "not_connected") >= 0) then {
+        _msg = "Pas de liaison Athena active — reconnectez-vous depuis le panneau Liaison, puis renvoyez.";
+    };
+    if ((_d find "network") >= 0 || {(_d find "timeout") >= 0}) then {
+        _msg = "Liaison dégradée — la photo n’a pas pu partir. Réessayez dans un instant.";
+    };
+    [
+        _msg,
+        "error",
+        8
+    ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;
+};
+
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;

@@ -8,9 +8,9 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Connexion téléphone (module ATAK, inspiré de cTab) : token/QR généré en jeu, code court
- * lisible en secours, consommés par un navigateur mobile sans compte pour consulter la
- * diapositive de briefing en cours (voir AtakPhoneConnectController).
+ * Connexion téléphone (module ATAK, inspiré de cTab) : jeton/QR généré depuis Athena ou en jeu,
+ * code court lisible en secours, consommés par un navigateur mobile sans compte sur /connect
+ * pour choisir entre le briefing (diapositives) et la carte ATAK (voir AtakPhoneConnectController).
  */
 class TacticalPhonePairingRepository
 {

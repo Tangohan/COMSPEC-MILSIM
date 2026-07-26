@@ -9,6 +9,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_Athena_group", _group];
 private _token = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_Athena_token", _token];
 
+private _pending = missionNamespace getVariable ["COMSPEC_Athena_PendingTab", ""];
+if (_pending isEqualType "" && {_pending isNotEqualTo ""}) then {
+    missionNamespace setVariable ["COMSPEC_Athena_PanelTab", toLower _pending, false];
+    missionNamespace setVariable ["COMSPEC_Athena_PendingTab", "", false];
+};
+
 [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 
 [_token] spawn {

@@ -137,7 +137,7 @@ class COMSPEC_Hub_Dialog {
 
         class BtnNdaReset: RscButton {
             idc = 9121;
-            text = "Relire l’accord";
+            text = "Relire la note bêta";
             x = 0.505 * safezoneW + safezoneX;
             y = 0.378 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;

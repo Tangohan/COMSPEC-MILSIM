@@ -34,6 +34,8 @@ use App\Services\Personnel\PersonnelOrgHistoryRecorder;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
 use App\Support\Audit\AuditFieldSnapshot;
 use App\Support\OrganizationRoleLabels;
+use App\Services\Community\TenantTypeConfig;
+use App\Services\Steam\SteamWebApiService;
 
 class UserAdminController
 {
@@ -48,6 +50,90 @@ class UserAdminController
         $tenant = $this->tenantRepository->findById($tenantId) ?: [];
 
         return OrganizationRoleLabels::mode($community, $tenant);
+    }
+
+    /** URL de retour après erreur de création (évite le hub structure bloqué en profil Carte ATAK). */
+    private function memberCreateEntryUrl(int $tenantId): string
+    {
+        $tenant = $this->tenantRepository->findById($tenantId) ?: [];
+        $type = TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full'));
+        if (TenantTypeConfig::moduleAllowed($type, 'personnel')) {
+            return url('back-office/organisation/structure?ouvrir=membre');
+        }
+
+        return url('back-office/users/create');
+    }
+
+    /**
+     * @return array{ok: true, steam_id: ?string}|array{ok: false, error: string}
+     */
+    private function resolveSteamIdInput(string $raw, int $tenantId, ?int $excludeUserId = null): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return ['ok' => true, 'steam_id' => null];
+        }
+        $resolved = $this->steamWebApiService->resolveSteamIdFromUserInput($raw);
+        if ($resolved === null) {
+            return [
+                'ok' => false,
+                'error' => 'Impossible de reconnaître l’identifiant Steam. Indiquez le numéro Steam, le format classique, ou l’adresse du profil public.',
+            ];
+        }
+        $existing = $this->userRepository->findBySteamIdForTenant($tenantId, $resolved);
+        if ($existing && ($excludeUserId === null || (int) $existing['id'] !== $excludeUserId)) {
+            return [
+                'ok' => false,
+                'error' => 'Cet identifiant Steam est déjà rattaché à un autre membre de la communauté.',
+            ];
+        }
+
+        return ['ok' => true, 'steam_id' => $resolved];
+    }
+
+    /**
+     * @return list<string> messages de résultat
+     */
+    private function applySteamProfileSync(int $userId, int $tenantId, string $steamId, bool $applyDisplayName): array
+    {
+        $notes = [];
+        if (!$this->steamWebApiService->isConfigured()) {
+            $notes[] = 'Identifiant Steam enregistré. La synchronisation du profil public n’est pas configurée sur ce serveur.';
+
+            return $notes;
+        }
+        $summary = $this->steamWebApiService->fetchPublicPlayer($steamId);
+        if ($summary === null) {
+            $notes[] = 'Identifiant Steam enregistré, mais le profil public Steam n’a pas pu être lu.';
+
+            return $notes;
+        }
+        $patch = [];
+        if (($summary['avatar_url'] ?? '') !== '') {
+            $patch['avatar_url'] = function_exists('mb_substr')
+                ? mb_substr((string) $summary['avatar_url'], 0, 500)
+                : substr((string) $summary['avatar_url'], 0, 500);
+        }
+        if ($applyDisplayName && ($summary['personaname'] ?? '') !== '') {
+            $patch['display_name'] = function_exists('mb_substr')
+                ? mb_substr((string) $summary['personaname'], 0, 100)
+                : substr((string) $summary['personaname'], 0, 100);
+        }
+        if ($patch === []) {
+            $notes[] = 'Identifiant Steam enregistré. Aucune donnée exploitable renvoyée par Steam.';
+
+            return $notes;
+        }
+        $this->userRepository->update($userId, $tenantId, $patch);
+        if (isset($patch['avatar_url']) && isset($patch['display_name'])) {
+            $notes[] = 'Photo et nom d’affichage mis à jour depuis Steam.';
+        } elseif (isset($patch['avatar_url'])) {
+            $notes[] = 'Photo du compte mise à jour depuis Steam.';
+        } else {
+            $notes[] = 'Nom d’affichage mis à jour depuis Steam.';
+        }
+
+        return $notes;
     }
 
     public function __construct(
@@ -72,6 +158,7 @@ class UserAdminController
         private IndicatorBlocklistService $indicatorBlocklist,
         private PersonnelOrgHistoryRecorder $personnelOrgHistoryRecorder,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
+        private SteamWebApiService $steamWebApiService,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -157,6 +244,8 @@ class UserAdminController
             'usersPage' => $page,
             'usersPerPage' => $perPage,
             'usersTotalPages' => $totalPages,
+            'backOfficePageCss' => ['back-office-users.css'],
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -216,6 +305,8 @@ class UserAdminController
             'isServiceAccount' => $isService,
             'roles' => $roles,
             'showPlatformDiagnostics' => $forPlatformOperator,
+            'backOfficePageCss' => ['back-office-users.css'],
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -343,6 +434,9 @@ class UserAdminController
             'grades' => $grades,
             'gradeCategories' => $gradeCategories,
             'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
+            'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
+            'backOfficePageCss' => ['back-office-users.css'],
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -353,6 +447,7 @@ class UserAdminController
         if (!$tenantId || !$actorUserId) {
             return Response::redirect(url('login'));
         }
+        $createUrl = $this->memberCreateEntryUrl($tenantId);
         $email = trim((string) $request->input('email'));
         $displayName = trim((string) $request->input('display_name'));
         $callsign = trim((string) $request->input('callsign'));
@@ -361,7 +456,7 @@ class UserAdminController
             if (!$this->roleRepository->canAssignInTenantAdminContext($rid, $tenantId)) {
                 Session::flash('error', 'Un rôle sélectionné ne peut pas être attribué depuis l’administration communauté.');
 
-                return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
+                return Response::redirect($createUrl);
             }
         }
         $primaryRoleId = $this->userRepository->peekPrimaryRoleIdForTenant($tenantId, $roleIds);
@@ -375,17 +470,25 @@ class UserAdminController
 
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             Session::flash('error', 'Une adresse e-mail valide est requise.');
-            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
+            return Response::redirect($createUrl);
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
             Session::flash('error', 'Cet email est déjà utilisé.');
-            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
+            return Response::redirect($createUrl);
         }
+
+        $steamResult = $this->resolveSteamIdInput((string) $request->input('steam_id', ''), $tenantId);
+        if ($steamResult['ok'] === false) {
+            Session::flash('error', $steamResult['error']);
+
+            return Response::redirect($createUrl);
+        }
+        $steamId = $steamResult['steam_id'];
 
         $gate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
         if (!$gate->canAddMember($tenantId)) {
             Session::flash('error', 'Limite de membres du plan atteinte.');
-            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
+            return Response::redirect($createUrl);
         }
         $passwordPlaceholder = password_hash(bin2hex(random_bytes(32)), PASSWORD_ARGON2ID);
         $userId = $this->userRepository->create($tenantId, [
@@ -405,7 +508,20 @@ class UserAdminController
         } catch (\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
 
-            return Response::redirect(url('back-office/organisation/structure?ouvrir=membre'));
+            return Response::redirect($createUrl);
+        }
+
+        $steamNotes = [];
+        if ($steamId !== null) {
+            $this->userRepository->update($userId, $tenantId, ['steam_id' => $steamId]);
+            if ($request->input('sync_steam_profile') === '1') {
+                $steamNotes = $this->applySteamProfileSync(
+                    $userId,
+                    $tenantId,
+                    $steamId,
+                    $request->input('apply_steam_display_name') === '1'
+                );
+            }
         }
 
         $this->passwordResetRepository->deleteExpired();
@@ -430,12 +546,16 @@ class UserAdminController
 
         $this->adminAuditService->logUserCreated($tenantId, $actorUserId, $userId, $email);
         if ($sent) {
-            Session::flash(
-                'success',
-                'Compte créé. Un e-mail a été envoyé à ' . $email . ' avec un lien pour définir le mot de passe (valide ' . self::SETUP_TOKEN_HOURS . ' h). Le compte sera actif après cette étape.'
-            );
+            $ok = 'Compte créé. Un e-mail a été envoyé à ' . $email . ' avec un lien pour définir le mot de passe (valide ' . self::SETUP_TOKEN_HOURS . ' h). Le compte sera actif après cette étape.';
+            if ($steamNotes !== []) {
+                $ok .= ' ' . implode(' ', $steamNotes);
+            }
+            Session::flash('success', $ok);
         } else {
             $msg = 'Compte créé, mais l’e-mail d’invitation n’a pas pu être envoyé. Vous pouvez utiliser « Mot de passe oublié » sur la page de connexion pour régénérer un lien, ou vérifier la configuration e-mail.';
+            if ($steamNotes !== []) {
+                $msg .= ' ' . implode(' ', $steamNotes);
+            }
             $detail = $this->emailService->getLastSendError();
             if ($detail !== null && $detail !== '') {
                 $clean = preg_replace('/\s+/u', ' ', $detail) ?? $detail;
@@ -489,7 +609,9 @@ class UserAdminController
             'userActivePositions' => $userActivePositions,
             'roleSetsList' => $roleSets,
             'organizationRoleLabelMode' => $this->organizationRoleLabelModeForTenant($tenantId),
+            'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
             'backOfficePageCss' => ['back-office-users.css'],
+            'showPortalFooter' => false,
         ]);
     }
 
@@ -664,6 +786,17 @@ class UserAdminController
             $data['password_hash'] = password_hash((string) $password, PASSWORD_ARGON2ID);
         }
 
+        $steamNotes = [];
+        if ($request->input('steam_id') !== null) {
+            $steamResult = $this->resolveSteamIdInput((string) $request->input('steam_id'), $tenantId, $id);
+            if ($steamResult['ok'] === false) {
+                Session::flash('error', $steamResult['error']);
+
+                return Response::redirect($editUrl);
+            }
+            $data['steam_id'] = $steamResult['steam_id'];
+        }
+
         $updatedUser = array_merge($user, $data);
         $gradeValidationIssues = $this->gradeValidationService->validateUserProfile($updatedUser);
         if ($this->gradeValidationService->hasErrors($gradeValidationIssues)) {
@@ -741,7 +874,7 @@ class UserAdminController
         }
 
         if (!empty($data)) {
-            $auditKeys = ['email', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code', 'display_name', 'callsign', 'profile_slug'];
+            $auditKeys = ['email', 'grade_id', 'status', 'nationality_code', 'preferred_grade_format', 'professional_category_code', 'display_name', 'callsign', 'profile_slug', 'steam_id'];
             $passwordWillChange = isset($data['password_hash']);
             $beforeAugmented = array_merge($user, ['connexion_mot_de_passe' => false]);
             $keys = $auditKeys;
@@ -754,6 +887,27 @@ class UserAdminController
             [$o, $n] = AuditFieldSnapshot::diffOnly($beforeAugmented, $afterAugmented, $keys);
             [$os, $ns] = AuditFieldSnapshot::encodePair($o, $n);
             $this->adminAuditService->logUserUpdated($tenantId, $actorUserId, $id, $os, $ns);
+        }
+
+        $wantSteamSync = $request->input('sync_steam_profile') === '1';
+        if ($wantSteamSync) {
+            $finalSteamId = '';
+            if (array_key_exists('steam_id', $data)) {
+                $finalSteamId = trim((string) ($data['steam_id'] ?? ''));
+            } else {
+                $finalSteamId = trim((string) ($user['steam_id'] ?? ''));
+            }
+            if ($finalSteamId === '') {
+                Session::flash('error', 'Indiquez un identifiant Steam avant de synchroniser le profil public.');
+
+                return Response::redirect($editUrl);
+            }
+            $steamNotes = $this->applySteamProfileSync(
+                $id,
+                $tenantId,
+                $finalSteamId,
+                $request->input('apply_steam_display_name') === '1'
+            );
         }
 
         if ($structureBefore !== null) {
@@ -776,12 +930,15 @@ class UserAdminController
             }
         }
 
+        $extraSteam = $steamNotes !== [] ? ' ' . implode(' ', $steamNotes) : '';
         if (!empty($data) && $rolesSynced) {
-            Session::flash('success', 'Compte et rôles enregistrés.');
+            Session::flash('success', 'Compte et rôles enregistrés.' . $extraSteam);
         } elseif (!empty($data)) {
-            Session::flash('success', 'Compte mis à jour.');
+            Session::flash('success', 'Compte mis à jour.' . $extraSteam);
         } elseif ($rolesSynced) {
-            Session::flash('success', 'Rôles mis à jour.');
+            Session::flash('success', 'Rôles mis à jour.' . $extraSteam);
+        } elseif ($wantSteamSync && $steamNotes !== []) {
+            Session::flash('success', implode(' ', $steamNotes));
         } else {
             Session::flash('warning', 'Aucun changement à enregistrer.');
 

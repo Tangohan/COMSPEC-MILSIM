@@ -132,6 +132,15 @@ switch (true) do {
         };
         call _fnc_refresh;
     };
+    case ((_cmd select [0, 14]) isEqualTo "order:compose|"): {
+        private _pref = _cmd select [14, (count _cmd) - 14];
+        closeDialog 0;
+        [_pref] spawn {
+            params ["_k"];
+            uiSleep 0.05;
+            [_k] call comspec_overwatch_connect_fnc_orderComposeShow;
+        };
+    };
     case ((_cmd select [0, 13]) isEqualTo "callsign:set|"): {
         private _rest = _cmd select [13, (count _cmd) - 13];
         private _parts = _rest splitString "|";
@@ -155,8 +164,17 @@ switch (true) do {
             _tail deleteAt 0;
             _tail joinString "|"
         } else { "" };
-        [_kind, _body, getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
-        call _fnc_refresh;
+        private _kindKey = toUpper (trim _kind);
+        if (_kindKey isEqualTo "FRAGO"
+            && { missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true] }
+            && { !isNil "comspec_overwatch_connect_fnc_orderComposeShow" }
+        ) then {
+            closeDialog 0;
+            0 spawn { ["FRAGO"] call comspec_overwatch_connect_fnc_orderComposeShow; };
+        } else {
+            [_kind, _body, getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
+            call _fnc_refresh;
+        };
     };
     case ((_cmd select [0, 12]) isEqualTo "salute:send|"): {
         private _rest = _cmd select [12, (count _cmd) - 12];

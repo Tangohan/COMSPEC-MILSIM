@@ -1,4 +1,7 @@
 -- Athena : schéma de référence principal (complété par run-migrations.php / extensions DDL)
+-- Annexes importantes (posées par le pipeline, pas forcément ici) :
+--   bootstrap/atak_modules_schema_migration.php  → POI, zones, MEDEVAC, QRF, véhicules, rapports
+--   bootstrap/c2_pillars_migration.php           → fire_units, danger_zones, intel, IFF, replay…
 -- Exécution : run-migrations.php ou import manuel
 
 SET NAMES utf8mb4;
@@ -8,12 +11,14 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `slug` varchar(100) NOT NULL,
+  `tenant_type` varchar(32) NOT NULL DEFAULT 'full' COMMENT 'Profil communauté : full | effectifs | atak',
   `logo_url` varchar(500) DEFAULT NULL,
   `settings` text,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `slug` (`slug`)
+  UNIQUE KEY `slug` (`slug`),
+  KEY `idx_tenants_type` (`tenant_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `role_definitions` (

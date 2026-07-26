@@ -1,0 +1,27 @@
+COMSPEC Overwatch — 26/07/2026
+
+Stabilisation & Athena / ATAK Enhanced
+
+• Correctifs crash au respawn (REAPP) et liaison plus stable
+• Menu ACE ATAK rebranché (POI, rapports, appui, messagerie, photos…)
+• Briefing / diaporama accessible depuis ACE, bureau ATAK et panneau Athena
+• Demande d’appui aérien : formulaire dédié (plus seulement la boîte à ordres)
+• Manifeste de vol : formulaire dédié + libellés français
+• Viewer 9-lignes ouvert à la réception d’une demande d’appui
+• Marqueurs enrichis : vanilla Arma + MarkersPlus + Metis (libellés FR jeu/web)
+• Marqueurs ATAK Enhanced / cTab / Marker Dropper remontés sur la carte web (formes, préfixes, diamants, sync immédiate)
+• Contact permanent HQ → messages vers le poste de commandement Athena
+• Photos Quick Pictures + sélection dans l’app Athena
+• Liaison téléphone : adresse mobile + code d’appariement ; page web /atak/connect (saisie du code PC)
+• Terminal ATAK requis par défaut pour utiliser les fonctions
+• Faire vibrer le terminal depuis le TOC web
+• En-tête carte Athena : clusters d’actions, bouton « Lier le jeu », badge BÊTA
+• Signalement d’erreurs du mod remonte vers Athena (journal admin)
+• Demande de renfort : message clair si la position du contact manque
+• Accord d’accès anticipé qui ne se redemande plus à chaque lancement
+• Filtres : réglages d’affichage hors journal radio ; messages de groupe restent en jeu
+• Suivi Blue Force lié à l’indicatif (identifiant de suivi)
+• Packs sonores renommés clairement (silencieux, tension, signal médical)
+• Compatibilité Mavic / Options CBA (sessions précédentes du jour)
+
+Relancez Arma après mise à jour. Hard-refresh recommandé sur athena.ttrd.fr.

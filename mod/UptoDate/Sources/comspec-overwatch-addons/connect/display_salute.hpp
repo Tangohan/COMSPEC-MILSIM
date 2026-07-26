@@ -32,7 +32,7 @@ class COMSPEC_Salute_Dialog {
         };
         class Hint: RscStructuredText {
             idc = -1;
-            text = "<t align='center' size='0.55' color='#8aa0b4'>Taille · Activité · Localisation · Unité · Heure · Équipement</t>";
+            text = "<t align='center' size='0.55' color='#8aa0b4'>Renseignez les rubriques avant transmission vers Athena.</t>";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.205 * safezoneH + safezoneY;
             w = 0.32 * safezoneW;
@@ -41,7 +41,7 @@ class COMSPEC_Salute_Dialog {
 
         class LabelS: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>TAILLE</t>";
+            text = "<t size='0.55' color='#5a9e88'>S — EFFECTIF / TAILLE</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.24 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditS: RscEdit {
@@ -51,7 +51,7 @@ class COMSPEC_Salute_Dialog {
         };
         class LabelA: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>ACTIVITÉ</t>";
+            text = "<t size='0.55' color='#5a9e88'>A — ACTIVITÉ</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.30 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditA: RscEdit {
@@ -61,7 +61,7 @@ class COMSPEC_Salute_Dialog {
         };
         class LabelL: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>LOCALISATION</t>";
+            text = "<t size='0.55' color='#5a9e88'>L — EMPLACEMENT</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.36 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditL: RscEdit {
@@ -71,7 +71,7 @@ class COMSPEC_Salute_Dialog {
         };
         class LabelU: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>UNITÉ</t>";
+            text = "<t size='0.55' color='#5a9e88'>U — UNITÉ / IDENTIFICATION</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.42 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditU: RscEdit {
@@ -81,7 +81,7 @@ class COMSPEC_Salute_Dialog {
         };
         class LabelT: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>HEURE</t>";
+            text = "<t size='0.55' color='#5a9e88'>T — HEURE</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.48 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditT: RscEdit {
@@ -91,7 +91,7 @@ class COMSPEC_Salute_Dialog {
         };
         class LabelE: RscStructuredText {
             idc = -1;
-            text = "<t size='0.55' color='#5a9e88'>ÉQUIPEMENT</t>";
+            text = "<t size='0.55' color='#5a9e88'>E — ÉQUIPEMENT / ARMEMENT</t>";
             x = 0.34 * safezoneW + safezoneX; y = 0.54 * safezoneH + safezoneY; w = 0.32 * safezoneW; h = 0.018 * safezoneH;
         };
         class EditE: RscEdit {
@@ -102,7 +102,7 @@ class COMSPEC_Salute_Dialog {
 
         class BtnSend: RscButton {
             idc = 9407;
-            text = "Transmettre";
+            text = "Envoyer";
             x = 0.34 * safezoneW + safezoneX;
             y = 0.62 * safezoneH + safezoneY;
             w = 0.18 * safezoneW;
@@ -113,14 +113,14 @@ class COMSPEC_Salute_Dialog {
         };
         class BtnClose: RscButton {
             idc = 9408;
-            text = "Fermer";
+            text = "Annuler";
             x = 0.53 * safezoneW + safezoneX;
             y = 0.62 * safezoneH + safezoneY;
             w = 0.13 * safezoneW;
             h = 0.036 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};
             colorBackgroundActive[] = {0.28, 0.12, 0.12, 1};
-            action = "closeDialog 0;";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_Salute_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 1; } else { closeDialog 0; };";
         };
     };
 };

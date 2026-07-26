@@ -555,8 +555,9 @@
 /**
  * Mode aside dépliable (body.bo-shell--hover-rail + .bo-aside--hover-rail).
  * Réf. dashboard dash-rail / mes-formations / effectifs_lms :
- * rail fixed sous le header Athena (passe au-dessus des barres transmissions),
- * expansion au survol / focus clavier. Largeur au repos réservée via padding shell.
+ * rail fixed sous le header Athena ; les barres info / transmissions sont rendues
+ * dans la colonne contenu (pas pleine largeur viewport) pour ne pas chevaucher le rail.
+ * Expansion au survol / focus clavier. Largeur au repos réservée via padding shell.
  * Mobile : tiroir plein inchangé (règles sous min-width 1024px uniquement).
  */
 @media (min-width: 1024px) {
@@ -570,7 +571,7 @@
   body.bo-shell--hover-rail #back-office-sidebar.bo-aside--hover-rail.back-office-rail-aside {
     --bo-hover-rail-w: 4.5rem;
     --bo-hover-rail-open: min(20rem, 92vw);
-    /* Sous le header Athena (z 96), au-dessus des tuiles transmissions (94–95) */
+    /* Sous le header Athena (z 96) ; barres info/alertes sont dans la colonne contenu */
     position: fixed !important;
     top: var(--athena-header-h, 4rem);
     left: 0;
@@ -727,12 +728,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 0.5rem;
+    font-size: 0.55rem;
     font-weight: 800;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     line-height: 1.15;
-    color: rgba(248, 250, 252, 0.55);
+    color: rgba(248, 250, 252, 0.62);
     text-align: center;
   }
 

@@ -46,6 +46,11 @@ private _tab = switch (_kind) do {
     case "order": { "order" };
     case "bda": { "bda" };
     case "photo": { "photo" };
+    case "notify";
+    case "hq";
+    case "messages";
+    case "vibrate";
+    case "alert": { "notif" };
     default { "notif" };
 };
 missionNamespace setVariable ["COMSPEC_Athena_PanelTab", _tab, false];

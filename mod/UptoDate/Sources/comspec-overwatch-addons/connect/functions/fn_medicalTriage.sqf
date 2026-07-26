@@ -1,8 +1,12 @@
 /*
-    Applique un statut de triage sur l’alerte sélectionnée.
+    Applique un statut de triage sur l’alerte sélectionnée (tablette legacy ou panneau Athena).
     Params: [_status] — a_secourir | en_cours | traite | kia | annule
+            [_alertIdOverride] — id forcé (optionnel)
 */
-params [["_status", "traite", [""]]];
+params [
+    ["_status", "traite", [""]],
+    ["_alertIdOverride", "", [""]]
+];
 
 if (!hasInterface) exitWith {};
 
@@ -10,19 +14,39 @@ if !([] call comspec_overwatch_connect_fnc_canTriageMedical) exitWith {
     ["COMSPEC_Warning", ["Seul un médecin ou un chef d’équipe peut faire le triage des alertes."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
-private _display = uiNamespace getVariable ["COMSPEC_MedicalInbox_Display", displayNull];
-if (isNull _display) exitWith {};
+private _alertId = trim _alertIdOverride;
 
-private _list = _display displayCtrl 9501;
-if (isNull _list) exitWith {};
-
-private _idx = lbCurSel _list;
-if (_idx < 0) exitWith {
-    ["COMSPEC_Warning", ["Sélectionnez d’abord une alerte."]] call comspec_overwatch_connect_fnc_showNotification;
+if (_alertId isEqualTo "") then {
+    private _display = uiNamespace getVariable ["COMSPEC_MedicalInbox_Display", displayNull];
+    if (!isNull _display) then {
+        private _list = _display displayCtrl 9501;
+        if (!isNull _list) then {
+            private _idx = lbCurSel _list;
+            if (_idx >= 0) then { _alertId = _list lbData _idx; };
+        };
+    };
 };
 
-private _alertId = _list lbData _idx;
-if (_alertId isEqualTo "") exitWith {};
+if (_alertId isEqualTo "") then {
+    private _group = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
+    if (!isNull _group) then {
+        private _listCtrl = _group controlsGroupCtrl 9710;
+        if (!isNull _listCtrl) then {
+            private _idx = lbCurSel _listCtrl;
+            private _entries = _listCtrl getVariable ["COMSPEC_Athena_Entries", []];
+            if (_idx >= 0 && {_idx < count _entries}) then {
+                (_entries select _idx) params ["_kind", "", "", "", ["_meta", []]];
+                if (_kind isEqualTo "medical" && {(_meta isEqualType []) && {(count _meta) > 0}}) then {
+                    _alertId = str (_meta select 0);
+                };
+            };
+        };
+    };
+};
+
+if (_alertId isEqualTo "") exitWith {
+    ["COMSPEC_Warning", ["Sélectionnez d’abord une alerte médicale."]] call comspec_overwatch_connect_fnc_showNotification;
+};
 
 private _statusNorm = toLower _status;
 if !(_statusNorm in ["a_secourir", "en_cours", "traite", "kia", "annule"]) exitWith {
@@ -55,11 +79,11 @@ if (_prefix != "OK") exitWith {
 };
 
 private _label = switch (_statusNorm) do {
-    case "en_cours": { "In progress" };
-    case "traite": { "Treated" };
-    case "kia": { "KIA" };
-    case "annule": { "Cancelled" };
-    default { "To rescue" };
+    case "en_cours": { "Prise en charge" };
+    case "traite": { "Traité" };
+    case "kia": { "Décédé" };
+    case "annule": { "Annulé" };
+    default { "À secourir" };
 };
 
 private _alerts = missionNamespace getVariable ["COMSPEC_MedicalAlerts", []];
@@ -74,4 +98,12 @@ missionNamespace setVariable ["COMSPEC_MedicalAlerts", _alerts, false];
 
 ["COMSPEC_Info", [format ["Triage mis à jour — %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
 [format ["[Médical] Triage %1 — alerte %2", _label, _alertId], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
-[] call comspec_overwatch_connect_fnc_medicalInboxOnLoad;
+
+private _medDisp = uiNamespace getVariable ["COMSPEC_MedicalInbox_Display", displayNull];
+if (!isNull _medDisp && {!isNil "comspec_overwatch_connect_fnc_medicalInboxOnLoad"}) then {
+    [] call comspec_overwatch_connect_fnc_medicalInboxOnLoad;
+};
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+};
+

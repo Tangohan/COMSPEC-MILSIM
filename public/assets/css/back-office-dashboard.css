@@ -134,6 +134,23 @@
   flex-shrink: 0;
 }
 
+.org-dash__setup--warn {
+  background: linear-gradient(180deg, #78350f 0%, #451a03 100%);
+  border-bottom-color: rgba(251, 191, 36, 0.35);
+}
+
+.org-dash__setup--warn .org-dash__setup-kicker {
+  color: #fde68a;
+}
+
+.org-dash__setup--warn .org-dash__setup-title {
+  color: #fffbeb;
+}
+
+.org-dash__setup--warn .org-dash__setup-lead {
+  color: #fde68a;
+}
+
 /* ——— Hero ——— */
 .org-dash__hero {
   position: relative;

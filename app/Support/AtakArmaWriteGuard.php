@@ -60,20 +60,25 @@ final class AtakArmaWriteGuard
         if ($sessionToken === '') {
             $sessionToken = trim((string) ($body['session_token'] ?? $body['game_session'] ?? ''));
         }
+        if ($sessionToken === '' && isset($_POST['session_token']) && is_string($_POST['session_token'])) {
+            $sessionToken = trim($_POST['session_token']);
+        }
+        if ($sessionToken === '' && isset($_POST['game_session']) && is_string($_POST['game_session'])) {
+            $sessionToken = trim($_POST['game_session']);
+        }
         $apiKey = ComspecApiKeyAuth::extractPresentedKey();
         $session = $sessionToken !== ''
             ? AtakGameSession::validate($sessionToken, $tenantId, $apiKey)
             : null;
 
+        // Jeton présent mais invalide/expiré : ne pas bloquer tout le trafic jeu
+        // (photos, positions…). L’extension renvoie souvent un ancien X-COMSPEC-SESSION ;
+        // la clé API (+ Steam si fourni) suffit pour continuer.
         if ($sessionToken !== '' && $session === null) {
-            $this->log($tenantId, false, 'Session jeu refusée — jeton invalide ou expiré', [
-                'reason' => 'invalid_session',
+            $this->log($tenantId, false, 'Session jeu ignorée — jeton invalide ou expiré (repli clé API)', [
+                'reason' => 'invalid_session_ignored',
             ]);
-
-            return Response::json([
-                'error' => 'invalid_session',
-                'message' => 'Session de jeu expirée. Reconnectez-vous depuis Arma (Athena).',
-            ], 401);
+            $sessionToken = '';
         }
 
         if ($session !== null) {
@@ -201,6 +206,13 @@ final class AtakArmaWriteGuard
             }
             if (is_int($v) || is_float($v)) {
                 return (string) $v;
+            }
+            // Uploads multipart (photos) : champs dans $_POST, pas dans le JSON.
+            if (isset($_POST[$k])) {
+                $p = $_POST[$k];
+                if (is_string($p) && trim($p) !== '') {
+                    return trim($p);
+                }
             }
         }
         $q = $request->query('steam_uid');

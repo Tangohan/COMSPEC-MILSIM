@@ -88,6 +88,20 @@ class PersonnelProfileRepository
         $stmt->execute([$userId]);
     }
 
+    /** RGPD / soft-delete : efface le dossier personnel (noms RP, matricule, notes…). */
+    public function deleteByUserId(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        try {
+            $this->pdo->prepare('DELETE FROM personnel_profile_job_roles WHERE user_id = ?')->execute([$userId]);
+        } catch (\Throwable) {
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM personnel_profiles WHERE user_id = ?');
+        $stmt->execute([$userId]);
+    }
+
     public function updatePortraitPath(int $userId, ?string $path): bool
     {
         $this->ensureRecord($userId);

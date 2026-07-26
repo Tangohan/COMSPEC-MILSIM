@@ -50,7 +50,14 @@ window.ATAKMarkers = (function () {
     }
     el.innerHTML = list.map(function (item) {
       var d = item.data || {};
-      var label = d.label || d.text || d.symbolName || d.name || 'Marqueur';
+      var units = (window.ATAKUnits && window.ATAKUnits.getUnits) ? window.ATAKUnits.getUnits() : [];
+      if (window.ArmaMapMarkers && window.ArmaMapMarkers.isLiveUnitDuplicate
+        && window.ArmaMapMarkers.isLiveUnitDuplicate(d, units)) {
+        return '';
+      }
+      var label = (window.ArmaMapMarkers && window.ArmaMapMarkers.displayLabelOf)
+        ? window.ArmaMapMarkers.displayLabelOf(d)
+        : (d.label || d.text || d.symbolName || d.name || 'Repère');
       var desc = d.description || '';
       var gx = item.gridLng != null ? Math.round(Number(item.gridLng)) : '—';
       var gy = item.gridLat != null ? Math.round(Number(item.gridLat)) : '—';
@@ -59,12 +66,16 @@ window.ATAKMarkers = (function () {
         color = window.ArmaMapMarkers.armaColorHex(color);
       }
       var metaExtra = '';
-      if (d.symbolName || d.affiliation) {
+      var typeFr = (window.ArmaMapMarkers && window.ArmaMapMarkers.typeLabelFr)
+        ? window.ArmaMapMarkers.typeLabelFr(d)
+        : '';
+      if (d.symbolName || d.affiliation || typeFr) {
         var affFr = (window.MilstdCatalog && window.MilstdCatalog.affiliationLabelFr)
           ? window.MilstdCatalog.affiliationLabelFr(d.affiliation)
           : '';
         var bits = [];
         if (d.symbolName) bits.push(escapeHtml(d.symbolName));
+        else if (typeFr && typeFr !== label) bits.push(escapeHtml(typeFr));
         if (affFr) bits.push(escapeHtml(affFr));
         if (bits.length) metaExtra = '<span class="atak-marker-item__symbol">' + bits.join(' · ') + '</span>';
       }
@@ -85,13 +96,14 @@ window.ATAKMarkers = (function () {
         (thumb || '<span class="atak-marker-item__swatch" style="background:' + escapeHtml(color) + '" aria-hidden="true"></span>') +
         '<span class="atak-marker-item__body">' +
         '<strong>' + escapeHtml(label) + '</strong>' +
+        '<span class="atak-marker-item__kind">Repère carte</span>' +
         metaExtra +
         '<span class="atak-marker-item__meta">Grille ' + gx + ' / ' + gy + '</span>' +
         (desc ? '<span class="atak-marker-item__desc">' + escapeHtml(desc) + '</span>' : '') +
         '</span></button>' +
         '<button type="button" class="atak-marker-item__del" data-delete="' + escapeHtml(item.id) + '" title="Supprimer">×</button>' +
         '</div>';
-    }).join('');
+    }).filter(Boolean).join('');
     bindList();
   }
 

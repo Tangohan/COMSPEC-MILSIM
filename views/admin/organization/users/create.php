@@ -8,21 +8,58 @@ $roleMatrix = $roleMatrix ?? ['roles' => [], 'permissions' => [], 'byRole' => []
 $grades = $grades ?? [];
 $gradeCategories = $gradeCategories ?? [];
 $organizationRoleLabelMode = $organizationRoleLabelMode ?? OrganizationRoleLabels::MODE_FR;
+$steamWebConfigured = !empty($steamWebConfigured);
+$listUrl = url('back-office/users');
+$inviteUrl = url('back-office/invitations');
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
 ?>
-<div class="max-w-7xl mx-auto px-6 py-12">
-    <h1 class="text-2xl font-black text-slate-900 mb-2">Nouvel utilisateur</h1>
-    <p class="text-sm text-slate-600 mb-6">Aucun mot de passe n’est saisi ici : un <strong>e-mail</strong> est envoyé à la personne avec un lien sécurisé pour définir son mot de passe et activer le compte (comme une invitation de la communauté).</p>
-
-    <form method="post" action="<?= url('back-office/users/store') ?>" class="space-y-4">
-        <?= \App\Core\Csrf::field() ?>
-        <?php
-        $fieldIdPrefix = '';
-        $matrixRootId = 'role-matrix-wrap';
-        require base_path('views/admin/organization/partials/user_invite_form_fields.php');
-        ?>
-        <div class="flex gap-3 pt-4">
-            <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer et envoyer l’e-mail</button>
-            <a href="<?= url('back-office/users') ?>" class="px-4 py-2 text-slate-600 text-sm hover:underline">Annuler</a>
+<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-users.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+<div class="bo-user-edit">
+    <header class="bo-user-edit__hero">
+        <div class="bo-user-edit__hero-inner">
+            <div class="min-w-0">
+                <a href="<?= htmlspecialchars($listUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__back">← Liste des membres</a>
+                <p class="bo-user-edit__eyebrow">Membres · Création</p>
+                <h1 class="bo-user-edit__title">Nouvel utilisateur</h1>
+                <p class="bo-user-edit__lead">
+                    Aucun mot de passe n’est saisi ici : un e-mail est envoyé avec un lien sécurisé pour définir le mot de passe et activer le compte.
+                    Vous pouvez aussi rattacher l’identifiant Steam pour la carte.
+                </p>
+            </div>
+            <div class="bo-user-edit__hero-actions">
+                <a href="<?= htmlspecialchars($inviteUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--ghost">Préférer une invitation</a>
+                <a href="<?= htmlspecialchars($listUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--solid">Annuler</a>
+            </div>
         </div>
-    </form>
+    </header>
+
+    <div class="bo-user-edit__deck">
+        <?php if ($flashErr): ?>
+            <div class="bo-user-edit__flash bo-user-edit__flash--err" role="alert"><?= htmlspecialchars((string) $flashErr, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+        <?php if ($flashOk): ?>
+            <div class="bo-user-edit__flash bo-user-edit__flash--ok" role="status"><?= htmlspecialchars((string) $flashOk, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= htmlspecialchars(url('back-office/users/store'), ENT_QUOTES, 'UTF-8') ?>" id="user-admin-create-form" class="bo-user-edit__create">
+            <?= \App\Core\Csrf::field() ?>
+            <section class="bo-user-edit__panel" aria-labelledby="create-account-heading">
+                <h2 id="create-account-heading" class="bo-user-edit__panel-title">Identité &amp; accès</h2>
+                <p class="bo-user-edit__panel-lead">Renseignez l’e-mail de contact, le nom affiché, l’indicatif et les rôles à attribuer dès la création.</p>
+                <div class="bo-user-edit__create-fields space-y-4">
+                    <?php
+                    $fieldIdPrefix = '';
+                    $matrixRootId = 'role-matrix-wrap';
+                    require base_path('views/admin/organization/partials/user_invite_form_fields.php');
+                    ?>
+                </div>
+            </section>
+
+            <div class="bo-user-edit__actions-bar">
+                <button type="submit" class="bo-user-edit__btn bo-user-edit__btn--dark">Créer et envoyer l’e-mail</button>
+                <a href="<?= htmlspecialchars($listUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--ghost bo-user-edit__btn--light">Annuler</a>
+            </div>
+        </form>
+    </div>
 </div>

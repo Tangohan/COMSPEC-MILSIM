@@ -1,8 +1,8 @@
 /*
     Réponse à un ordre sélectionné dans la boîte de réception.
-    Params: [_status] — ACK | EXEC | FAILED
+    Params: [_action] — ACCEPT | REFUSE | STANDBY | COUNTER (aliases ACK | FAILED | EXEC acceptés)
 */
-params [["_status", "ACK", [""]]];
+params [["_action", "ACCEPT", [""]]];
 
 if (!hasInterface) exitWith {};
 
@@ -14,23 +14,78 @@ if (isNull _list) exitWith {};
 
 private _idx = lbCurSel _list;
 if (_idx < 0) exitWith {
+    ["Sélectionnez d’abord un ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
     ["COMSPEC_Warning", ["Sélectionnez d’abord un ordre."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 private _orderId = _list lbData _idx;
-if (_orderId isEqualTo "") exitWith {};
+if (_orderId isEqualTo "") exitWith {
+    ["Cet ordre n’est plus disponible.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["COMSPEC_Warning", ["Cet ordre n’est plus disponible."]] call comspec_overwatch_connect_fnc_showNotification;
+};
 
-private _ok = [_orderId, _status, ""] call comspec_overwatch_connect_fnc_updateOrderStatus;
+private _noteCtrl = _display displayCtrl 9403;
+private _note = if (!isNull _noteCtrl) then { trim (ctrlText _noteCtrl) } else { "" };
+
+private _actionKey = toUpper _action;
+private _status = "ACK";
+private _finalNote = _note;
+private _feedback = "Réponse envoyée.";
+
+switch (_actionKey) do {
+    case "ACCEPT";
+    case "ACK": {
+        _status = "ACK";
+        _finalNote = _note;
+        _feedback = "Ordre accepté.";
+    };
+    case "REFUSE";
+    case "FAILED": {
+        _status = "FAILED";
+        _finalNote = format ["Refus : %1", _note];
+        _feedback = "Ordre refusé — le commandement a été informé.";
+    };
+    case "STANDBY";
+    case "PENDING": {
+        _status = "ACK";
+        _finalNote = if (_note isEqualTo "") then { "En attente" } else { format ["En attente — %1", _note] };
+        _feedback = "Mise en attente signalée.";
+    };
+    case "COUNTER";
+    case "PROPOSAL": {
+        _status = "ACK";
+        _finalNote = format ["Proposition de changement : %1", _note];
+        _feedback = "Proposition de changement envoyée.";
+    };
+    case "EXEC": {
+        _status = "EXEC";
+        _finalNote = _note;
+        _feedback = "Ordre signalé en cours d’exécution.";
+    };
+    default {
+        _status = "ACK";
+        _finalNote = _note;
+        _feedback = "Réponse envoyée.";
+    };
+};
+
+if (_actionKey in ["REFUSE", "FAILED"] && {_note isEqualTo ""}) exitWith {
+    ["Indiquez un motif avant de refuser l’ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["COMSPEC_Warning", ["Indiquez un motif avant de refuser l’ordre."]] call comspec_overwatch_connect_fnc_showNotification;
+};
+
+if (_actionKey in ["COUNTER", "PROPOSAL"] && {_note isEqualTo ""}) exitWith {
+    ["Décrivez votre proposition de changement avant d’envoyer.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["COMSPEC_Warning", ["Décrivez votre proposition de changement avant d’envoyer."]] call comspec_overwatch_connect_fnc_showNotification;
+};
+
+private _ok = [_orderId, _status, _finalNote] call comspec_overwatch_connect_fnc_updateOrderStatus;
 if (!_ok) exitWith {
-    ["COMSPEC_Warning", ["Impossible de mettre à jour cet ordre."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["Impossible d’envoyer la réponse pour cet ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["COMSPEC_Warning", ["Impossible d’envoyer la réponse pour cet ordre."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
-private _label = switch (toUpper _status) do {
-    case "ACK": { "Order acknowledged" };
-    case "EXEC": { "Ordre en cours d’exécution" };
-    case "FAILED": { "Order reported as failed" };
-    default { "Statut d’ordre mis à jour" };
-};
-
-["COMSPEC_Info", [_label]] call comspec_overwatch_connect_fnc_showNotification;
+[_feedback, "order", "info"] call comspec_overwatch_connect_fnc_announce;
+["COMSPEC_Info", [_feedback]] call comspec_overwatch_connect_fnc_showNotification;
+if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText ""; };
 [] call comspec_overwatch_connect_fnc_orderInboxOnLoad;

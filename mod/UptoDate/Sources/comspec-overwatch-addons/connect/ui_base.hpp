@@ -7,6 +7,7 @@ class RscStructuredText;
 class RscPicture;
 class RscPictureKeepAspect;
 class RscListBox;
+class RscCombo;
 class RscWebBrowser;
 class RscMapControl;
 class RscControlsGroup;

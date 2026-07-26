@@ -54,23 +54,26 @@ final class VerifyEmailController
         $this->userRepository->markEmailVerified($userId, $tenantId);
 
         $tenant = $this->tenantRepository->findById($tenantId);
-        $tenantName = (string) ($tenant['name'] ?? 'Communauté');
-        $staff = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
-        $ip = trim($request->ip());
-        foreach ($staff as $adminEmail) {
-            $em = strtolower(trim($adminEmail));
-            $adm = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
-            if ($adm && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($adm['id'] ?? 0), EmailEvents::NEW_COMMUNITY_MEMBER)) {
-                continue;
+        $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
+        // Pas de notif « nouveau membre » sur le tenant système : ce n’est pas une vraie communauté.
+        if (is_array($tenant) && ($tenant['slug'] ?? '') !== 'default') {
+            $staff = $this->userRepository->listGovernanceEmailsForTenant($tenantId);
+            $ip = trim($request->ip());
+            foreach ($staff as $adminEmail) {
+                $em = strtolower(trim($adminEmail));
+                $adm = $em !== '' ? $this->userRepository->findByEmail($tenantId, $em) : null;
+                if ($adm && !$this->notificationPreferencesRepository->isEmailEventEnabled((int) ($adm['id'] ?? 0), EmailEvents::NEW_COMMUNITY_MEMBER)) {
+                    continue;
+                }
+                $this->emailService->sendNewCommunityMemberStaff(
+                    $adminEmail,
+                    $tenantName,
+                    (string) ($user['email'] ?? ''),
+                    $ip !== '' ? $ip : '—',
+                    'Inscription confirmée (vérification e-mail)',
+                    $tenantId
+                );
             }
-            $this->emailService->sendNewCommunityMemberStaff(
-                $adminEmail,
-                $tenantName,
-                (string) ($user['email'] ?? ''),
-                $ip !== '' ? $ip : '—',
-                'Inscription confirmée (vérification e-mail)',
-                $tenantId
-            );
         }
 
         Session::forget('pending_verification_email');
@@ -149,7 +152,7 @@ final class VerifyEmailController
 
             $tenantId = (int) $row['tenant_id'];
             $tenant = $this->tenantRepository->findById($tenantId);
-            $tenantName = (string) ($tenant['name'] ?? 'Communauté');
+            $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
             $rawToken = bin2hex(random_bytes(32));
             $tokenHash = hash('sha256', $rawToken);
             $expires = new \DateTimeImmutable('+15 minutes');

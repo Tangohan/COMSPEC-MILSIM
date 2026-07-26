@@ -1,5 +1,5 @@
 /*
-    Refus NDA : ferme sans acknowledgement (réaffichage possible au prochain lancement).
+    Plus tard : ferme sans confirmation (réaffichage possible au prochain lancement).
 */
 if (!hasInterface) exitWith {};
 

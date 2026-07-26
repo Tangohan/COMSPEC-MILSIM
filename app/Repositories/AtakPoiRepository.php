@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\AtakModulesSchema;
 
 /**
  * Repository pour les Points d'Intérêt (POI) tactiques
@@ -15,6 +16,7 @@ class AtakPoiRepository
 
     public function __construct(?Database $db = null)
     {
+        AtakModulesSchema::ensure();
         $this->db = $db ?? Database::getInstance();
     }
 

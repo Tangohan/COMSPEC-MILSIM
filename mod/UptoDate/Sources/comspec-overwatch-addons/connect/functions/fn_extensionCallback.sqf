@@ -62,6 +62,34 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
         missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
     };
+    case "BftIdentity": {
+        // data = "indicatif\tID_BFT" — lie le suivi Blue Force à l’indicatif Athena
+        private _parts = _data splitString toString [9];
+        private _cs = if (count _parts > 0) then { trim (_parts select 0) } else { "" };
+        private _mid = if (count _parts > 1) then { trim (_parts select 1) } else { "" };
+        if (_mid != "") then {
+            missionNamespace setVariable ["COMSPEC_MilitaryId", _mid, false];
+            missionNamespace setVariable ["COMSPEC_BftId", _mid, false];
+            profileNamespace setVariable ["COMSPEC_MilitaryId", _mid];
+        };
+        if (_cs != "" && {!((toLower _cs) in ["unknown", "inconnu", "operateur"])}) then {
+            private _local = trim (missionNamespace getVariable ["COMSPEC_Callsign", ""]);
+            if (_local isEqualTo "" || {(toLower _local) in ["unknown", "inconnu", "operateur"]} || {_local isEqualTo (name player)}) then {
+                [_cs, true, "bft_athena"] call comspec_overwatch_connect_fnc_setCallsign;
+            } else {
+                // Indicatif déjà choisi : aligner seulement le groupe BFT si besoin
+                if (!isNull player && {local player}) then {
+                    private _grp = group player;
+                    if (!isNull _grp && {local _grp}) then {
+                        private _gid = trim (groupId _grp);
+                        if (!(_gid isEqualTo _local)) then {
+                            _grp setGroupIdGlobal [_local];
+                        };
+                    };
+                };
+            };
+        };
+    };
     case "Debug": {
         if (!(_data isEqualTo "")) then {
             ["DEBUG", "Ext", _data] call comspec_overwatch_connect_fnc_log;

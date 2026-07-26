@@ -27,7 +27,7 @@ window.ATAKSessionProfile = (function () {
     medic: {
       id: 'medic',
       label: 'Médecin',
-      hint: 'Assistances, triage et choix médicaux.'
+      hint: 'Triage médical et choix de secours.'
     },
     radio: {
       id: 'radio',
@@ -166,8 +166,10 @@ window.ATAKSessionProfile = (function () {
   function canAccessTab(tab) {
     if (!state) return true;
     switch (tab) {
+      // Médical toujours visible : alertes / MEDEVAC utiles à tout le TOC ;
+      // le triage reste réservé à la spécialité Médecin (canTriageMedicalUi).
       case 'medical':
-        return hasSpecialty('medic');
+        return true;
       case 'jtac':
         return hasSpecialty('jtac');
       case 'radio':

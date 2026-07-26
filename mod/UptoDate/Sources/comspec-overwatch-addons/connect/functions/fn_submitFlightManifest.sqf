@@ -79,5 +79,10 @@ private _json = format [
 "COMSPECExtension" callExtension ["SendFlightManifest", [_json]];
 
 [format ["[FLIGHT MANIFEST] Sent: %1", _callsign]] call comspec_overwatch_connect_fnc_appendLinkLog;
+["Manifeste de vol transmis.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
 
-closeDialog 0;
+if (!isNull _display) then {
+    _display closeDisplay 1;
+} else {
+    closeDialog 0;
+};

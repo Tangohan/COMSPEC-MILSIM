@@ -59,4 +59,9 @@ class IntelFusionService
     {
         return $this->repository->listByMission($missionId, $status);
     }
+
+    public function deleteReport(string $missionId, int $id): bool
+    {
+        return $this->repository->deleteByIdForMission($id, $missionId);
+    }
 }

@@ -127,11 +127,11 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_notif_sound", "LIST",
-    ["Notification sound", "Played with alerts (messaging, orders, connection). Medical emergencies use a dedicated sound, including in Silent (vibration) mode. Only Mute cuts everything. Discreet mode does not cut these sounds."],
+    ["Son des notifications", "Joué avec les alertes (messages, ordres, connexion). Les urgences médicales ont un son dédié, y compris en mode Silencieux — vibration seule. Seul Silencieux — sans vibration coupe tout. Le mode discret ne coupe pas ces sons."],
     "COMSPEC Overwatch",
     [
         ["silent_vib", "stalker", "health", "mute"],
-        ["Silent (vibration)", "Stalker", "Health alert", "Mute"],
+        ["Silencieux — vibration seule", "Ambiance tension", "Signal médical", "Silencieux — sans vibration"],
         0
     ],
     false
@@ -151,7 +151,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_quiet_mode", "CHECKBOX",
-    ["Mode discret — masquer les alertes à l’écran", "Masque temporairement les bandeaux lorsque « Afficher les notifications à l’écran » est activé. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Muet. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
+    ["Mode discret — masquer les alertes à l’écran", "Masque temporairement les bandeaux lorsque « Afficher les notifications à l’écran » est activé. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Silencieux — sans vibration. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
     "COMSPEC Overwatch", false
 ] call CBA_fnc_addSetting;
 
@@ -163,8 +163,8 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_require_item", "CHECKBOX",
-    ["Exiger un équipement pour synchroniser et ouvrir l’interface", "Si activé : la synchronisation Athena et l’ouverture de l’interface Overwatch ne fonctionnent que si vous portez l’équipement choisi ci-dessous. Si désactivé : sync et interface restent disponibles sans objet précis."],
-    "COMSPEC Overwatch", false
+    ["Exiger un terminal ATAK pour synchroniser et ouvrir l’interface", "Activé par défaut : la synchronisation Athena et l’ouverture du téléphone / des menus ATAK ne fonctionnent que si vous portez le terminal choisi ci-dessous (téléphone ATAK, tablette cTab, etc.). Décochez uniquement pour les tests sans équipement."],
+    "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
@@ -203,8 +203,8 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 [
     "comspec_overwatch_reset_beta_nda", "CHECKBOX",
     [
-        "Réafficher l’accord d’accès anticipé",
-        "Cochez puis validez : l’accord de confidentialité (accès anticipé) s’affiche à nouveau tout de suite si possible, sinon au prochain retour au menu principal. La case se décoche ensuite automatiquement. Votre inscription à l’accès anticipé n’est pas annulée."
+        "Réafficher la note bêta",
+        "Cochez puis validez : la note de bienvenue (bêta publique) s'affiche à nouveau. La case se décoche ensuite automatiquement. Votre inscription à la bêta n'est pas annulée."
     ],
     "COMSPEC Overwatch",
     false,
@@ -213,13 +213,22 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
         params ["_value"];
         if (!_value) exitWith {};
         0 spawn {
-            // Laisser CBA / le profil se stabiliser (preInit ou Options)
             uiSleep 0.05;
-            if !(isNil "comspec_overwatch_connect_fnc_resetBetaNdaAck") then {
-                [] call comspec_overwatch_connect_fnc_resetBetaNdaAck;
-            };
-            if !(isNil "CBA_fnc_setSetting") then {
-                ["comspec_overwatch_reset_beta_nda", false, 0, "client", true] call CBA_fnc_setSetting;
+            // Au chargement CBA (boot), la case peut être coincée à « true » dans le profil :
+            // on la décoche SANS effacer l'acceptation NDA. L'effacement n'a lieu que si le
+            // joueur coche la case après le démarrage (menu Options / mission).
+            private _bootGuard = missionNamespace getVariable ["COMSPEC_NDA_ResetBootGuard", true];
+            if (_bootGuard) then {
+                if !(isNil "CBA_fnc_setSetting") then {
+                    ["comspec_overwatch_reset_beta_nda", false, 0, "client", true] call CBA_fnc_setSetting;
+                };
+            } else {
+                if !(isNil "comspec_overwatch_connect_fnc_resetBetaNdaAck") then {
+                    [] call comspec_overwatch_connect_fnc_resetBetaNdaAck;
+                };
+                if !(isNil "CBA_fnc_setSetting") then {
+                    ["comspec_overwatch_reset_beta_nda", false, 0, "client", true] call CBA_fnc_setSetting;
+                };
             };
         };
     }
@@ -322,11 +331,11 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "COMSPEC Overwatch", "comspec_menu_chat",
-    ["Messagerie ATAK / Overwatch", "Ouvre ATAK Enhanced (défaut) ou la messagerie Overwatch si l’option ATAK-only est désactivée (Ctrl+K)"],
+    ["Messagerie ATAK / Overwatch", "Ouvre la messagerie Athena dans ATAK Enhanced (défaut), ou la messagerie Overwatch si l’option ATAK-only est désactivée (Ctrl+K)"],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
         if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
-            0 spawn { [] call comspec_overwatch_connect_fnc_openAtakEnhanced; };
+            0 spawn { ["messages"] call comspec_overwatch_connect_fnc_openAthenaFeature; };
             true
         };
         if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
@@ -340,11 +349,11 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "COMSPEC Overwatch", "comspec_menu_hub_csk",
-    ["Applications ATAK / Overwatch", "Ouvre ATAK Enhanced (défaut) ou les applications Overwatch si l’option ATAK-only est désactivée (Ctrl+Shift+K)"],
+    ["Applications ATAK / Overwatch", "Ouvre Athena dans ATAK Enhanced (défaut), ou les applications Overwatch si l’option ATAK-only est désactivée (Ctrl+Shift+K)"],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
         if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
-            0 spawn { [] call comspec_overwatch_connect_fnc_openAtakEnhanced; };
+            0 spawn { ["all"] call comspec_overwatch_connect_fnc_openAthenaFeature; };
             true
         };
         if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
@@ -395,7 +404,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-        ["URGENT", 1, 0, 0, "POSSIBLE_ENEMY", "SMOKE", "GREEN"] call comspec_overwatch_connect_fnc_requestMEDEVAC;
+        [] call comspec_overwatch_connect_fnc_medevacDialogShow;
         true
     },
     "",
@@ -408,7 +417,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-        ["TROOPS_IN_CONTACT", "IMMEDIATE", "Besoin renfort immédiat", "SQUAD", 0, "ENGAGED"] call comspec_overwatch_connect_fnc_requestQRF;
+        ["TROOPS_IN_CONTACT", "IMMEDIATE", "Besoin renfort immédiat", "SQUAD", 0, "ENGAGED", getPosWorld player] call comspec_overwatch_connect_fnc_requestQRF;
         true
     },
     "",
@@ -419,31 +428,33 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 
 
-// Cache position / tracking tactique
-missionNamespace setVariable ["COMSPEC_lastPos", [0,0,0], true];
-missionNamespace setVariable ["COMSPEC_lastName", "", true];
-missionNamespace setVariable ["COMSPEC_lastRole", "", true];
-missionNamespace setVariable ["COMSPEC_lastRadio", "", true];
-missionNamespace setVariable ["COMSPEC_lastMedical", "", true];
-missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
-missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
-missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
-missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
-missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];
-missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
-missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
-missionNamespace setVariable ["COMSPEC_RespawnGraceUntil", -1e9, false];
-missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9, false];
-missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];
-missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
-missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
-missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
-missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
-missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
-missionNamespace setVariable ["COMSPEC_PositionTrail", [], true];
-missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, true];
-missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
-missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", -1e9, false];
+// Cache position / tracking tactique (local client — jamais public depuis le dédié)
+if (hasInterface) then {
+    missionNamespace setVariable ["COMSPEC_lastPos", [0,0,0], false];
+    missionNamespace setVariable ["COMSPEC_lastName", "", false];
+    missionNamespace setVariable ["COMSPEC_lastRole", "", false];
+    missionNamespace setVariable ["COMSPEC_lastRadio", "", false];
+    missionNamespace setVariable ["COMSPEC_lastMedical", "", false];
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
+    missionNamespace setVariable ["COMSPEC_RespawnGraceUntil", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];
+    missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
+    missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
+    missionNamespace setVariable ["COMSPEC_lastSendTime", 0, false];
+    missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
+    missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];
+    missionNamespace setVariable ["COMSPEC_PositionTrail", [], false];
+    missionNamespace setVariable ["COMSPEC_ImmobileSince", 0, false];
+    missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
+    missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", -1e9, false];
+};
 
 [
     "comspec_overwatch_athena_feed_snapshot", "CHECKBOX",
@@ -466,15 +477,27 @@ missionNamespace setVariable ["COMSPEC_LastLatencyMs", -1, false];
 missionNamespace setVariable ["COMSPEC_LastLatencyAt", -1, false];
 
 // Bus d'évènements + C2 + Intel Engine
-missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, true];
-missionNamespace setVariable ["COMSPEC_Orders", [], true];
-missionNamespace setVariable ["COMSPEC_OrderLog", [], true];
-missionNamespace setVariable ["COMSPEC_IntelStore", [], true];
-missionNamespace setVariable ["COMSPEC_IntelHeatmap", createHashMap, true];
-missionNamespace setVariable ["COMSPEC_RadioReplay", [], true];
-missionNamespace setVariable ["COMSPEC_Comms_Channel", "SQUAD", true];
-missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", true];
-missionNamespace setVariable ["COMSPEC_OrdersSeen", [], false];
+// EventBus / caches locaux : pas de broadcast depuis le dédié.
+// Orders / OrderLog : publiés pour synchro MP (émis côté client via issueOrder).
+if (hasInterface || {isServer}) then {
+    if (isNil {missionNamespace getVariable "COMSPEC_EventBus"}) then {
+        missionNamespace setVariable ["COMSPEC_EventBus", createHashMap, false];
+    };
+    if (isNil {missionNamespace getVariable "COMSPEC_Orders"}) then {
+        missionNamespace setVariable ["COMSPEC_Orders", [], isServer];
+    };
+    if (isNil {missionNamespace getVariable "COMSPEC_OrderLog"}) then {
+        missionNamespace setVariable ["COMSPEC_OrderLog", [], isServer];
+    };
+};
+if (hasInterface) then {
+    missionNamespace setVariable ["COMSPEC_IntelStore", [], false];
+    missionNamespace setVariable ["COMSPEC_IntelHeatmap", createHashMap, false];
+    missionNamespace setVariable ["COMSPEC_RadioReplay", [], false];
+    missionNamespace setVariable ["COMSPEC_Comms_Channel", "SQUAD", false];
+    missionNamespace setVariable ["COMSPEC_Comms_Priority", "ROUTINE", false];
+    missionNamespace setVariable ["COMSPEC_OrdersSeen", [], false];
+};
 
 // Restaure l’indicatif profil dès le preInit (avant les lectures CAS / recon)
 private _savedCallsign = trim (profileNamespace getVariable ["COMSPEC_Callsign", ""]);
@@ -531,9 +554,49 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
     1
 ] call CBA_fnc_addSetting;
 
+[
+    "comspec_overwatch_order_compose_enabled", "CHECKBOX",
+    ["Émission d’ordres / FRAGO in-game", "Autorise les chefs d’unité à ouvrir une mini-fenêtre pour rédiger et envoyer un ordre ou un FRAGO sans passer par la tablette web."],
+    ["COMSPEC Overwatch", "Ordres C2"], true
+] call CBA_fnc_addSetting;
+
+[
+    "COMSPEC Overwatch - Ordres", "comspec_order_compose_key",
+    ["Ouvrir rédaction d’ordre / FRAGO", "Ouvre la mini-fenêtre contextuelle pour écrire et envoyer un ordre (chefs d’unité)."],
+    {
+        if (!(missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        0 spawn { [""] call comspec_overwatch_connect_fnc_orderComposeShow; };
+        true
+    },
+    "",
+    [], // Pas de touche par défaut — à définir dans Options > Contrôles > Extension Addon
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
+[
+    "COMSPEC Overwatch - Ordres", "comspec_frago_compose_key",
+    ["Ouvrir rédaction FRAGO", "Ouvre directement le formulaire d’ordre fragmentaire (Situation · Mission · Exécution · Soutien · Commandement)."],
+    {
+        if (!(missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true])) exitWith { false };
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        0 spawn { ["FRAGO"] call comspec_overwatch_connect_fnc_orderComposeShow; };
+        true
+    },
+    "",
+    [],
+    false, 0, false
+] call CBA_fnc_addKeybind;
+
 ["INFO", "Boot", format [
     "PreInit OK — connect v%1 | enabled=%2 | logLevel=%3",
     getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr"),
     missionNamespace getVariable ["comspec_overwatch_enabled", true],
     missionNamespace getVariable ["comspec_overwatch_log_level", 3]
 ]] call comspec_overwatch_connect_fnc_log;
+
+if (isNil "COMSPEC_NDA_ResetBootEh") then {
+    COMSPEC_NDA_ResetBootEh = ["CBA_settingsInitialized", {
+        [{ missionNamespace setVariable ["COMSPEC_NDA_ResetBootGuard", false, false]; }, [], 8] call CBA_fnc_waitAndExecute;
+    }] call CBA_fnc_addEventHandler;
+};

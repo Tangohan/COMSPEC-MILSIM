@@ -1,8 +1,10 @@
-/* COMSPEC ATAK — Outils carte (grille, suivi, mesure, vision nocturne) */
+/* COMSPEC ATAK — Outils carte (grille, suivi, mesure, zones, vision nocturne) */
 window.ATAKMapTools = (function () {
   var followOn = false;
   var measureOn = false;
   var nvgOn = false;
+  var placeMode = null; // 'note' | 'jackpot' | null
+  var activeDrawTool = null; // 'search-zone' | 'perimeter' | 'aoi' | 'line' | null
   var measurePoints = [];
   var measureLayer = null;
   var measureLine = null;
@@ -10,6 +12,13 @@ window.ATAKMapTools = (function () {
   var followTimer = null;
   var boundMap = null;
   var toastTimer = null;
+
+  var DRAW_TOOL_PRESET = {
+    'search-zone': 'search',
+    perimeter: 'perimeter',
+    aoi: 'aoi',
+    line: null
+  };
 
   function getMap() {
     return window.ATAKMap && window.ATAKMap.getMap ? window.ATAKMap.getMap() : null;
@@ -80,7 +89,134 @@ window.ATAKMapTools = (function () {
   function formatDistance(meters) {
     if (!isFinite(meters) || meters < 0) return '—';
     if (meters < 1000) return Math.round(meters) + ' m';
-    return (meters / 1000).toFixed(meters < 10000 ? 2 : 1) + ' km';
+    return (meters / 1000).toFixed(meters < 10000 ? 2 : 1).replace('.', ',') + ' km';
+  }
+
+  /** Séparateur milliers FR (espace fine non-sécable → espace simple pour lisibilité TOC). */
+  function formatIntFr(n) {
+    var s = String(Math.round(Math.abs(n)));
+    return s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+
+  /** Superficie d’un cercle : π × r² (r en mètres). */
+  function circleAreaM2(radiusM) {
+    var r = Number(radiusM);
+    if (!isFinite(r) || r < 0) return 0;
+    return Math.PI * r * r;
+  }
+
+  /**
+   * Libellé superficie français : « 785 000 m² » ou « 0,79 km² ».
+   * Seuil : ≥ 100 000 m² → km² (2 décimales), sinon m².
+   */
+  function formatAreaFr(areaM2) {
+    var a = Number(areaM2);
+    if (!isFinite(a) || a < 0) return '—';
+    if (a >= 100000) {
+      var km2 = a / 1e6;
+      var decimals = km2 < 10 ? 2 : (km2 < 100 ? 1 : 0);
+      return km2.toFixed(decimals).replace('.', ',') + ' km²';
+    }
+    return formatIntFr(a) + ' m²';
+  }
+
+  /**
+   * Délai centre → bord : distance(rayon) / vitesse.
+   * Vitesse en km/h (presets À pied 5 / Véhicule 40), convertie en m/s.
+   */
+  function delaySeconds(radiusM, speedKph) {
+    var r = Number(radiusM);
+    var kph = Math.max(Number(speedKph) || 0, 0.1);
+    if (!isFinite(r) || r < 0) return 0;
+    var speedMS = kph / 3.6;
+    return r / speedMS;
+  }
+
+  /** Ex. « 12 min », « 1 h 05 min », « 45 s ». */
+  function formatDelayFr(seconds) {
+    var s = Math.max(0, Math.round(Number(seconds) || 0));
+    if (s < 60) return s + ' s';
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    if (h >= 1) {
+      if (m === 0) return h + ' h';
+      return h + ' h ' + String(m).padStart(2, '0') + ' min';
+    }
+    return m + ' min';
+  }
+
+  function getToolRadiusM() {
+    var el = document.getElementById('atak-tool-radius');
+    var v = el ? parseFloat(el.value) : NaN;
+    if (!isFinite(v) || v < 10) return 500;
+    return Math.min(50000, v);
+  }
+
+  function setToolRadiusM(meters, fromDraw) {
+    var el = document.getElementById('atak-tool-radius');
+    if (!el) return;
+    var v = Math.max(10, Math.min(50000, Math.round(Number(meters) || 0)));
+    if (fromDraw) {
+      // Évite de saturater le champ pendant le tracé (pas de focus/step parasites).
+      if (document.activeElement === el) return;
+    }
+    el.value = String(v);
+  }
+
+  function getToolSpeedKph() {
+    var el = document.getElementById('atak-tool-speed');
+    var v = el ? parseFloat(el.value) : NaN;
+    if (!isFinite(v) || v < 0.1) return 5;
+    return Math.min(200, v);
+  }
+
+  function setToolSpeedKph(kph) {
+    var el = document.getElementById('atak-tool-speed');
+    if (!el) return;
+    var v = Math.max(1, Math.min(200, Number(kph) || 5));
+    el.value = String(v);
+    refreshZoneMetrics();
+  }
+
+  function circleMetrics(radiusM, speedKph) {
+    var r = Number(radiusM);
+    if (!isFinite(r) || r < 0) r = 0;
+    var speed = speedKph != null ? Number(speedKph) : getToolSpeedKph();
+    var area = circleAreaM2(r);
+    var delay = delaySeconds(r, speed);
+    return {
+      radiusM: r,
+      speedKph: speed,
+      areaM2: area,
+      delayS: delay,
+      areaLabel: formatAreaFr(area),
+      delayLabel: formatDelayFr(delay),
+      summary: 'Superficie : ' + formatAreaFr(area) + ' · Délai jusqu’au bord : ' + formatDelayFr(delay)
+    };
+  }
+
+  function refreshZoneMetrics(radiusOverride) {
+    var el = document.getElementById('atak-zone-metrics');
+    if (!el) return;
+    var prefOff = el.getAttribute('data-pref-hidden') === '1';
+    var r = radiusOverride != null ? Number(radiusOverride) : getToolRadiusM();
+    if (!isFinite(r) || r <= 0) {
+      el.hidden = true;
+      el.textContent = '';
+      return;
+    }
+    var m = circleMetrics(r, getToolSpeedKph());
+    el.textContent = m.summary + ' · ' + String(m.speedKph).replace('.', ',') + ' km/h';
+    el.title = el.textContent;
+    el.hidden = prefOff;
+  }
+
+  function onZoneRadiusPreview(ev) {
+    var detail = ev && ev.detail ? ev.detail : {};
+    var r = detail.radius != null ? Number(detail.radius) : NaN;
+    if (!isFinite(r) || r <= 0) return;
+    setToolRadiusM(r, true);
+    refreshZoneMetrics(r);
   }
 
   function formatBearing(deg) {
@@ -264,6 +400,10 @@ window.ATAKMapTools = (function () {
   }
 
   function onMapClickMeasure(e) {
+    if (placeMode) {
+      onMapClickPlace(e);
+      return;
+    }
     if (!measureOn || !e || !e.latlng) return;
     if (measurePoints.length >= 2) {
       measurePoints = [];
@@ -296,12 +436,148 @@ window.ATAKMapTools = (function () {
     toast('Grille : ' + text);
   }
 
+  function clearPlaceMode() {
+    if (!placeMode) return;
+    var prev = placeMode;
+    placeMode = null;
+    setToolActive('note', false);
+    setToolActive('jackpot', false);
+    var map = getMap();
+    if (map && map.getContainer) {
+      map.getContainer().classList.remove('atak-map--place-note', 'atak-map--place-jackpot');
+    }
+    return prev;
+  }
+
+  function setDrawToolActive(tool) {
+    ['search-zone', 'perimeter', 'aoi', 'line'].forEach(function (t) {
+      setToolActive(t, t === tool);
+    });
+    activeDrawTool = tool || null;
+  }
+
+  function cancelMapDraw() {
+    if (window.ATAKContextMenu && window.ATAKContextMenu.cancelDraw) {
+      window.ATAKContextMenu.cancelDraw();
+    }
+    setDrawToolActive(null);
+  }
+
+  function startDrawTool(tool) {
+    if (activeDrawTool === tool) {
+      cancelMapDraw();
+      toast('Dessin annulé.');
+      return;
+    }
+    stopMeasure(false);
+    setFollow(false);
+    clearPlaceMode();
+    var ctx = window.ATAKContextMenu;
+    if (!ctx) {
+      toast('Outils de dessin indisponibles.');
+      return;
+    }
+    if (tool === 'line') {
+      if (typeof ctx.startDraw === 'function') ctx.startDraw('line', null);
+      else {
+        toast('Outil trait indisponible.');
+        return;
+      }
+    } else {
+      var preset = DRAW_TOOL_PRESET[tool];
+      if (!preset || typeof ctx.startZoneTool !== 'function') {
+        toast('Outil de zone indisponible.');
+        return;
+      }
+      ctx.startZoneTool(preset, null);
+    }
+    setDrawToolActive(tool);
+    if (tool === 'search-zone') toast('Zone de recherche : cliquez le centre, puis le bord.');
+    else if (tool === 'perimeter') toast('Périmètre : cliquez les sommets, puis Terminer.');
+    else if (tool === 'aoi') toast('Zone d’intérêt : cliquez deux coins opposés.');
+    else if (tool === 'line') toast('Trait : cliquez les points, puis Terminer.');
+  }
+
+  function clearDrawings() {
+    cancelMapDraw();
+    clearPlaceMode();
+    var shapesApi = window.ATAKMapShapes;
+    if (!shapesApi || !shapesApi.clearAllDrawings) {
+      toast('Aucun tracé à effacer.');
+      return;
+    }
+    var list = (shapesApi.getShapes && shapesApi.getShapes()) || [];
+    var hasAny = list.some(function (s) {
+      var kind = (s.meta && s.meta.kind) || '';
+      var type = String(s.type || '').toUpperCase();
+      return kind === 'zone' || kind === 'search_zone' || kind === 'perimeter' || kind === 'aoi' || kind === 'line'
+        || type === 'CIRCLE' || type === 'POLYGON' || type === 'LINE' || type === 'POLYLINE';
+    });
+    if (!hasAny) {
+      toast('Aucun tracé à effacer.');
+      return;
+    }
+    var confirmFn = window.ATAKContextMenu && window.ATAKContextMenu.confirmAction
+      ? window.ATAKContextMenu.confirmAction
+      : null;
+    var ask = confirmFn
+      ? confirmFn('Effacer tous les tracés et zones de la carte ?')
+      : Promise.resolve(window.confirm('Effacer tous les tracés et zones de la carte ?'));
+    ask.then(function (ok) {
+      if (!ok) return;
+      shapesApi.clearAllDrawings();
+    });
+  }
+
+  function startPlaceMode(mode) {
+    if (placeMode === mode) {
+      clearPlaceMode();
+      toast(mode === 'jackpot' ? 'Placement JACKPOT annulé.' : 'Placement de note annulé.');
+      return;
+    }
+    stopMeasure(false);
+    setFollow(false);
+    cancelMapDraw();
+    clearPlaceMode();
+    placeMode = mode;
+    setToolActive(mode, true);
+    var map = getMap();
+    if (map && map.getContainer) {
+      map.getContainer().classList.add(mode === 'jackpot' ? 'atak-map--place-jackpot' : 'atak-map--place-note');
+    }
+    toast(mode === 'jackpot'
+      ? 'JACKPOT : cliquez sur la carte pour marquer la HVT.'
+      : 'Note : cliquez sur la carte pour enregistrer une note.');
+  }
+
+  function onMapClickPlace(e) {
+    if (!placeMode || !e || !e.latlng) return;
+    var mode = placeMode;
+    clearPlaceMode();
+    var ctx = window.ATAKContextMenu;
+    if (mode === 'jackpot') {
+      if (ctx && typeof ctx.promptJackpotAt === 'function') {
+        ctx.promptJackpotAt(e.latlng);
+      } else if (ctx && typeof ctx.placeJackpotAt === 'function') {
+        ctx.placeJackpotAt(e.latlng);
+      }
+      return;
+    }
+    if (mode === 'note') {
+      if (ctx && typeof ctx.promptMapNoteAt === 'function') {
+        ctx.promptMapNoteAt(e.latlng);
+      }
+    }
+  }
+
   function startMeasure() {
     if (measureOn) {
       stopMeasure(false);
       toast('Mesure annulée.');
       return;
     }
+    clearPlaceMode();
+    cancelMapDraw();
     setFollow(false);
     measureOn = true;
     measurePoints = [];
@@ -371,7 +647,17 @@ window.ATAKMapTools = (function () {
       centerOnSelf(true);
     } else if (tool === 'follow') setFollow(!followOn);
     else if (tool === 'measure') startMeasure();
-    else if (tool === 'zoom-in') zoomBy(1);
+    else if (tool === 'note') startPlaceMode('note');
+    else if (tool === 'jackpot') startPlaceMode('jackpot');
+    else if (tool === 'search-zone' || tool === 'perimeter' || tool === 'aoi' || tool === 'line') startDrawTool(tool);
+    else if (tool === 'clear-drawings') clearDrawings();
+    else if (tool === 'speed-foot') {
+      setToolSpeedKph(5);
+      toast('Vitesse à pied : 5 km/h');
+    } else if (tool === 'speed-vehicle') {
+      setToolSpeedKph(40);
+      toast('Vitesse véhicule : 40 km/h');
+    } else if (tool === 'zoom-in') zoomBy(1);
     else if (tool === 'zoom-out') zoomBy(-1);
     else if (tool === 'nvg') setNvg(!nvgOn);
     else if (tool === 'clear-measure') {
@@ -410,6 +696,11 @@ window.ATAKMapTools = (function () {
         stopMeasure(false);
         toast('Mesure annulée.');
       }
+      if (placeMode) {
+        clearPlaceMode();
+        toast('Placement annulé.');
+      }
+      if (activeDrawTool) setDrawToolActive(null);
       if (followOn) setFollow(false);
       return;
     }
@@ -422,12 +713,213 @@ window.ATAKMapTools = (function () {
     else if (k === 'n') { e.preventDefault(); setNvg(!nvgOn); }
   }
 
+  function onDrawEnded() {
+    setDrawToolActive(null);
+  }
+
+  function bindZoneMetricInputs() {
+    var radiusEl = document.getElementById('atak-tool-radius');
+    var speedEl = document.getElementById('atak-tool-speed');
+    function onChange() { refreshZoneMetrics(); }
+    if (radiusEl && !radiusEl._atakBound) {
+      radiusEl._atakBound = true;
+      radiusEl.addEventListener('input', onChange);
+      radiusEl.addEventListener('change', onChange);
+    }
+    if (speedEl && !speedEl._atakBound) {
+      speedEl._atakBound = true;
+      speedEl.addEventListener('input', onChange);
+      speedEl.addEventListener('change', onChange);
+    }
+    refreshZoneMetrics();
+  }
+
+  var LS_COLLAPSED = 'atak_map_tools_collapsed';
+  var LS_VISIBLE = 'atak_map_tools_visible_v1';
+
+  var TOOL_PREF_DEFS = [
+    { id: 'goto', label: 'Grille' },
+    { id: 'me', label: 'Moi' },
+    { id: 'follow', label: 'Suivre' },
+    { id: 'measure', label: 'Mesurer' },
+    { id: 'note', label: 'Note' },
+    { id: 'jackpot', label: 'JACKPOT' },
+    { id: 'search-zone', label: 'Recherche' },
+    { id: 'perimeter', label: 'Périmètre' },
+    { id: 'aoi', label: 'Zone d’intérêt' },
+    { id: 'line', label: 'Trait' },
+    { id: 'clear-drawings', label: 'Effacer' },
+    { id: 'radius', label: 'Rayon' },
+    { id: 'speed', label: 'Vitesse' },
+    { id: 'speed-presets', label: 'À pied / Véhicule' },
+    { id: 'metrics', label: 'Superficie / Délai' },
+    { id: 'zoom', label: 'Zoom' },
+    { id: 'nvg', label: 'Vision nocturne' }
+  ];
+
+  var SEP_GROUPS = {
+    nav: ['goto', 'me', 'follow'],
+    mark: ['measure', 'note', 'jackpot'],
+    draw: ['search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings'],
+    view: ['radius', 'speed', 'speed-presets', 'metrics']
+  };
+
+  function defaultVisibleMap() {
+    var out = {};
+    TOOL_PREF_DEFS.forEach(function (d) { out[d.id] = true; });
+    return out;
+  }
+
+  function loadVisibleMap() {
+    var base = defaultVisibleMap();
+    try {
+      var raw = localStorage.getItem(LS_VISIBLE);
+      if (!raw) return base;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return base;
+      TOOL_PREF_DEFS.forEach(function (d) {
+        if (Object.prototype.hasOwnProperty.call(parsed, d.id)) {
+          base[d.id] = !!parsed[d.id];
+        }
+      });
+    } catch (e) {}
+    return base;
+  }
+
+  function saveVisibleMap(map) {
+    try {
+      localStorage.setItem(LS_VISIBLE, JSON.stringify(map || defaultVisibleMap()));
+    } catch (e) {}
+  }
+
+  function applyVisibleSlots(visible) {
+    var bar = document.getElementById('atak-map-tools');
+    if (!bar) return;
+    var map = visible || loadVisibleMap();
+    bar.querySelectorAll('[data-tool-slot]').forEach(function (el) {
+      var slot = el.getAttribute('data-tool-slot');
+      var show = map[slot] !== false;
+      // metrics stays driven by content when visible preference is on
+      if (slot === 'metrics') {
+        if (!show) el.hidden = true;
+        else if (!el.textContent || !String(el.textContent).trim()) el.hidden = true;
+        else el.hidden = false;
+        el.setAttribute('data-pref-hidden', show ? '0' : '1');
+        return;
+      }
+      el.hidden = !show;
+    });
+    Object.keys(SEP_GROUPS).forEach(function (sepId) {
+      var sep = bar.querySelector('[data-tool-sep="' + sepId + '"]');
+      if (!sep) return;
+      var any = SEP_GROUPS[sepId].some(function (id) { return map[id] !== false; });
+      sep.hidden = !any;
+    });
+    var chromeSep = bar.querySelector('[data-tool-sep="chrome"]');
+    if (chromeSep) chromeSep.hidden = false;
+  }
+
+  function buildPrefsPanel() {
+    var grid = document.getElementById('atak-map-tools-prefs-grid');
+    if (!grid || grid._atakBuilt) return;
+    grid._atakBuilt = true;
+    var visible = loadVisibleMap();
+    grid.innerHTML = '';
+    TOOL_PREF_DEFS.forEach(function (def) {
+      var lab = document.createElement('label');
+      lab.className = 'atak-map-tools__prefs-item';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = visible[def.id] !== false;
+      cb.setAttribute('data-pref-slot', def.id);
+      cb.addEventListener('change', function () {
+        var next = loadVisibleMap();
+        next[def.id] = !!cb.checked;
+        saveVisibleMap(next);
+        applyVisibleSlots(next);
+      });
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(def.label));
+      grid.appendChild(lab);
+    });
+  }
+
+  function setPrefsOpen(open) {
+    var panel = document.getElementById('atak-map-tools-prefs');
+    var btn = document.querySelector('#atak-map-tools [data-tool-ui="customize"]');
+    if (panel) panel.hidden = !open;
+    if (btn) {
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.classList.toggle('is-active', !!open);
+    }
+    if (open) buildPrefsPanel();
+  }
+
+  function setToolbarCollapsed(collapsed) {
+    var bar = document.getElementById('atak-map-tools');
+    var fab = document.getElementById('atak-map-tools-fab');
+    if (bar) {
+      bar.classList.toggle('is-collapsed', !!collapsed);
+      bar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    }
+    if (fab) fab.hidden = !collapsed;
+    if (collapsed) setPrefsOpen(false);
+    try {
+      localStorage.setItem(LS_COLLAPSED, collapsed ? '1' : '0');
+    } catch (e) {}
+  }
+
+  function isToolbarCollapsed() {
+    try {
+      return localStorage.getItem(LS_COLLAPSED) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function onChromeClick(e) {
+    var ui = e.target.closest('[data-tool-ui]');
+    if (!ui) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var action = ui.getAttribute('data-tool-ui');
+    if (action === 'collapse') setToolbarCollapsed(true);
+    else if (action === 'customize') {
+      var panel = document.getElementById('atak-map-tools-prefs');
+      setPrefsOpen(!(panel && !panel.hidden));
+    } else if (action === 'prefs-close') setPrefsOpen(false);
+    else if (action === 'prefs-all') {
+      var all = defaultVisibleMap();
+      saveVisibleMap(all);
+      applyVisibleSlots(all);
+      var grid = document.getElementById('atak-map-tools-prefs-grid');
+      if (grid) {
+        grid.querySelectorAll('input[data-pref-slot]').forEach(function (cb) {
+          cb.checked = true;
+        });
+      }
+    }
+  }
+
   function initToolbar() {
     var bar = document.getElementById('atak-map-tools');
     if (!bar || bar._atakBound) return;
     bar._atakBound = true;
     bar.addEventListener('click', onToolClick);
+    bar.addEventListener('click', onChromeClick);
+    var fab = document.getElementById('atak-map-tools-fab');
+    if (fab && !fab._atakBound) {
+      fab._atakBound = true;
+      fab.addEventListener('click', function () {
+        setToolbarCollapsed(false);
+      });
+    }
     document.addEventListener('keydown', onKey);
+    window.addEventListener('atak:draw-ended', onDrawEnded);
+    window.addEventListener('atak:zone-radius-preview', onZoneRadiusPreview);
+    bindZoneMetricInputs();
+    applyVisibleSlots(loadVisibleMap());
+    setToolbarCollapsed(isToolbarCollapsed());
     try {
       if (localStorage.getItem('atak_map_nvg') === '1') setNvg(true);
     } catch (e) {}
@@ -464,7 +956,20 @@ window.ATAKMapTools = (function () {
     findSelfUnit: findSelfUnit,
     setFollow: setFollow,
     startMeasure: startMeasure,
+    startDrawTool: startDrawTool,
+    clearDrawings: clearDrawings,
     setNvg: setNvg,
-    updateHudContacts: updateHudContacts
+    updateHudContacts: updateHudContacts,
+    getToolRadiusM: getToolRadiusM,
+    setToolRadiusM: setToolRadiusM,
+    getToolSpeedKph: getToolSpeedKph,
+    setToolSpeedKph: setToolSpeedKph,
+    circleAreaM2: circleAreaM2,
+    formatAreaFr: formatAreaFr,
+    delaySeconds: delaySeconds,
+    formatDelayFr: formatDelayFr,
+    circleMetrics: circleMetrics,
+    refreshZoneMetrics: refreshZoneMetrics,
+    setToolbarCollapsed: setToolbarCollapsed
   };
 })();

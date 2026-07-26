@@ -18,7 +18,7 @@ if (is_file($autoload)) {
     require_once $autoload;
 }
 
-$payload = $argv[1] ?? 'https://athena.ttrd.fr/atak/connect/smoke-test';
+$payload = $argv[1] ?? 'https://athena.ttrd.fr/connect/smoke-test';
 $gen = new \App\Services\Qr\QrPngGenerator();
 $out = $gen->png($payload, 400, 12, true);
 

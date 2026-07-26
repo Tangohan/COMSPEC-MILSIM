@@ -170,7 +170,19 @@ window.ATAKUnitMenu = (function () {
       disabled: !canPing,
       title: canPing ? '' : (canCenter ? 'Action indisponible' : 'Position indisponible')
     });
-    html += menuItem('chat', 'Ouvrir la messagerie', { muted: true });
+    html += menuItem('vibrate', 'Faire vibrer le terminal', {
+      disabled: !inLiaison,
+      title: !inLiaison
+        ? 'Hors liaison — vibration impossible'
+        : 'Fait vibrer le téléphone ATAK du joueur en jeu'
+    });
+    html += menuItem('notify', 'Envoyer une notification…', {
+      disabled: !inLiaison,
+      title: !inLiaison
+        ? 'Hors liaison — notification impossible'
+        : 'Affiche une notification cliquable sur le terminal Athena'
+    });
+    html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
 
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
 
@@ -204,7 +216,7 @@ window.ATAKUnitMenu = (function () {
       title: canDisconnect
         ? 'Marquer ce contact hors liaison (carte et effectifs)'
         : (!inLiaison
-          ? 'Ce contact n’est plus en liaison'
+          ? 'Hors liaison - vibration impossible'
           : 'Réservé à l’état-major, à l’administration, ou à l’opérateur concerné')
     });
     html += menuItem('delete', 'Supprimer', {
@@ -526,6 +538,44 @@ window.ATAKUnitMenu = (function () {
     });
   }
 
+  function vibrateUnit(unitId) {
+    var base = getApiBase();
+    return fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/vibrate', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var err = new Error((body && body.message) || 'vibrate_failed');
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    });
+  }
+
+  function notifyUnit(unitId, message) {
+    var base = getApiBase();
+    return fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/notify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: String(message || '').trim() })
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var err = new Error((body && body.message) || 'notify_failed');
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    });
+  }
+
   function rememberLink(callsign, linked) {
     if (!linked || !linked.userId) return;
     if (!window.ATAK_CALLSIGN_TO_USER) window.ATAK_CALLSIGN_TO_USER = {};
@@ -688,6 +738,69 @@ window.ATAKUnitMenu = (function () {
           sendPing(msg || '', 'contact');
         });
       }
+      return;
+    }
+
+    if (action === 'vibrate') {
+      if (!unit || !unit.id) {
+        if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — impossible de faire vibrer le terminal.');
+        return;
+      }
+      var liveV = unitLiveStatus(unit);
+      if (liveV !== 'linked' && liveV !== 'delayed') {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Ce contact n’est plus en liaison.');
+        }
+        return;
+      }
+      var vibLabel = unit.call_sign ? String(unit.call_sign) : 'cet opérateur';
+      vibrateUnit(unit.id).then(function () {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Le terminal de ' + vibLabel + ' vibre en jeu');
+        }
+      }).catch(function (err) {
+        if (window.ATAKShowError) {
+          window.ATAKShowError((err && err.body && err.body.message) || 'Impossible de faire vibrer ce terminal.');
+        }
+      });
+      return;
+    }
+
+    if (action === 'notify') {
+      if (!unit || !unit.id) {
+        if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — impossible d’envoyer une notification.');
+        return;
+      }
+      var liveN = unitLiveStatus(unit);
+      if (liveN !== 'linked' && liveN !== 'delayed') {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Ce contact n’est plus en liaison.');
+        }
+        return;
+      }
+      var ntfLabel = unit.call_sign ? String(unit.call_sign) : 'cet opérateur';
+      openPrompt(
+        'Notification pour ' + ntfLabel,
+        'Le texte apparaîtra sur le terminal Athena — le joueur pourra cliquer pour le lire.',
+        'Ex. Rejoignez le brief à 15:00',
+        ''
+      ).then(function (msg) {
+        if (msg === null) return;
+        var text = String(msg || '').trim();
+        if (!text) {
+          if (window.ATAKShowError) window.ATAKShowError('Saisissez le texte de la notification.');
+          return;
+        }
+        notifyUnit(unit.id, text).then(function () {
+          if (window.ATAKShowNotification) {
+            window.ATAKShowNotification('Notification envoyée — ' + ntfLabel);
+          }
+        }).catch(function (err) {
+          if (window.ATAKShowError) {
+            window.ATAKShowError((err && err.body && err.body.message) || 'Impossible d’envoyer la notification.');
+          }
+        });
+      });
       return;
     }
 

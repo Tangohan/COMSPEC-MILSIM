@@ -33,6 +33,14 @@ final class ProfilePublicIdentityService
     ): string {
         $email = trim((string) ($user['email'] ?? ''));
         $displayName = trim((string) ($user['display_name'] ?? ''));
+        // Compte anonymisé / soft-deleted : jamais d’alias, callsign ou nom RP résiduel.
+        if (
+            $displayName === \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME
+            || str_ends_with(strtolower($email), '@deleted.invalid')
+            || !empty($user['deleted_at'])
+        ) {
+            return \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME;
+        }
         $callsign = trim((string) ($user['callsign'] ?? ''));
         $characterName = trim((string) ($personnelProfile['character_name'] ?? ''));
         $forumAlias = trim((string) ($settings['forum_alias'] ?? ''));
@@ -64,6 +72,15 @@ final class ProfilePublicIdentityService
      */
     public function resolveLegalFullName(array $user, ?array $userProfile): string
     {
+        $displayName = trim((string) ($user['display_name'] ?? ''));
+        $email = trim((string) ($user['email'] ?? ''));
+        if (
+            $displayName === \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME
+            || str_ends_with(strtolower($email), '@deleted.invalid')
+            || !empty($user['deleted_at'])
+        ) {
+            return \App\Services\Account\AccountDeletionService::DELETED_DISPLAY_NAME;
+        }
         $fn = trim((string) ($userProfile['first_name'] ?? ''));
         $ln = trim((string) ($userProfile['last_name'] ?? ''));
         $full = trim($fn . ' ' . $ln);
@@ -71,7 +88,7 @@ final class ProfilePublicIdentityService
             return $full;
         }
 
-        return trim((string) ($user['display_name'] ?? ''));
+        return $displayName;
     }
 
     /**
@@ -86,6 +103,7 @@ final class ProfilePublicIdentityService
                 'email' => (string) ($authorRow['author_email'] ?? ''),
                 'display_name' => (string) ($authorRow['author_name'] ?? ''),
                 'callsign' => (string) ($authorRow['author_callsign'] ?? ''),
+                'deleted_at' => $authorRow['author_deleted_at'] ?? null,
             ],
             [
                 'first_name' => $authorRow['author_first_name'] ?? null,
@@ -196,6 +214,7 @@ final class ProfilePublicIdentityService
             'email' => (string) ($postRow['author_email'] ?? ''),
             'display_name' => (string) ($postRow['author_name'] ?? ''),
             'callsign' => (string) ($postRow['author_callsign'] ?? ''),
+            'deleted_at' => $postRow['author_deleted_at'] ?? $postRow['deleted_at'] ?? null,
         ];
         $userProfile = [
             'first_name' => $postRow['author_first_name'] ?? null,

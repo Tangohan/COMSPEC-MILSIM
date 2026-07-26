@@ -237,6 +237,19 @@
   }
   .order-row .st { color: var(--accent); font-weight: 600; }
   .order-row .issuer { color: var(--muted); }
+  .order-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .order-pill {
+    display: inline-flex; align-items: center;
+    padding: 1px 7px; border-radius: 999px;
+    border: 1px solid rgba(100,116,139,0.4);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .order-pill.status-pending { color: #fbbf24; border-color: rgba(245,158,11,0.45); background: rgba(245,158,11,0.12); }
+  .order-pill.status-delivered { color: #c4b5fd; border-color: rgba(167,139,250,0.45); background: rgba(167,139,250,0.14); }
+  .order-pill.status-ack { color: #7dd3fc; border-color: rgba(56,189,248,0.4); background: rgba(56,189,248,0.12); }
+  .order-pill.status-exec { color: #6ee7b7; border-color: rgba(52,211,153,0.45); background: rgba(52,211,153,0.12); }
+  .order-pill.status-failed { color: #fca5a5; border-color: rgba(239,68,68,0.45); background: rgba(239,68,68,0.12); }
+  .order-pill.prio { text-transform: none; font-weight: 600; color: #fcd34d; border-color: rgba(251,191,36,0.4); }
   .order-actions { display: flex; gap: 4px; flex-wrap: wrap; grid-column: 1 / -1; margin-top: 4px; }
   .order-actions .btn { min-height: 28px; padding: 4px 8px; font-size: 11px; }
   .composer {
@@ -1168,7 +1181,11 @@
           <button class="btn primary" type="button" id="chat-send">Envoyer</button>
         </div>
       </div>      <div class="panel-view" id="view-orders">
-        <div class="panel-toolbar"><button type="button" class="btn-clear" data-clear="orders" title="Vider l’affichage local des ordres">Vider</button></div>
+        <div class="panel-toolbar">
+          <button type="button" class="btn primary" data-cmd="order:compose|" title="Rédiger un ordre (chef d’unité)">Émettre</button>
+          <button type="button" class="btn" data-cmd="order:compose|FRAGO" title="Rédiger un FRAGO">FRAGO</button>
+          <button type="button" class="btn-clear" data-clear="orders" title="Vider l’affichage local des ordres">Vider</button>
+        </div>
         <div class="feed-empty" id="orders-empty">Aucun ordre en attente pour vous.</div>
         <div id="orders-feed"></div>
       </div>
@@ -1387,6 +1404,7 @@
         <p class="form-hint">Scannez ce QR code avec votre téléphone pour ouvrir l'ATAK Athena dédié, ou saisissez le code sur la page de connexion.</p>
         <img class="phone-qr" id="phone-qr" alt="QR code de connexion téléphone" style="display:none;" />
         <div class="phone-code" id="phone-code">······</div>
+        <p class="form-hint" id="phone-url" style="word-break:break-all;color:#c8e8ff;"></p>
         <p class="form-hint" id="phone-hint">Chargement du code…</p>
         <div class="form-actions">
           <button class="btn primary" type="button" data-cmd="phone:refresh">Nouveau code</button>
@@ -2099,6 +2117,19 @@
     feed.innerHTML = html;
   }
 
+  function orderStatusPillClass(status) {
+    var s = String(status || "À traiter").toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-");
+    if (s.indexOf("retard") >= 0) return "status-pending";
+    if (s.indexOf("cours") >= 0 || s === "exec") return "status-exec";
+    if (s.indexOf("confirm") >= 0 || s === "ack") return "status-ack";
+    if (s.indexOf("recu") >= 0 || s === "delivered") return "status-delivered";
+    if (s.indexOf("echec") >= 0 || s === "failed") return "status-failed";
+    if (s.indexOf("annul") >= 0) return "status-failed";
+    return "status-pending";
+  }
+
   function renderOrders(orders) {
     if (Array.isArray(orders)) {
       var now = Date.now();
@@ -2124,9 +2155,14 @@
       var o = orderRows[i];
       var stale = isWallStale(o.receivedAt);
       var oid = o.id || "";
-      html += '<div class="order-row' + (stale ? " stale" : "") + '"><span class="st">' + escapeHtml(o.status || "À traiter") +
-        '</span><span>' + escapeHtml(o.type || "Ordre") + (stale ? staleBadgeHtml() : "") +
-        '</span><span class="issuer">' + escapeHtml(o.issuer || "") + "</span>";
+      var stLabel = o.status || "À traiter";
+      html += '<div class="order-row' + (stale ? " stale" : "") + '">' +
+        '<div class="order-badges">' +
+          '<span class="order-pill ' + orderStatusPillClass(stLabel) + '">' + escapeHtml(stLabel) + '</span>' +
+          (o.priority ? '<span class="order-pill prio">' + escapeHtml(o.priority) + '</span>' : '') +
+        '</div>' +
+        '<span>' + escapeHtml(o.type || "Ordre") + (stale ? staleBadgeHtml() : "") + '</span>' +
+        '<span class="issuer">' + escapeHtml(o.issuer || "") + "</span>";
       if (oid) {
         html += '<div class="order-actions">' +
           '<button class="btn" type="button" data-cmd="order:status|' + escapeHtml(oid) + '|ACK">Accusé</button>' +
@@ -2519,13 +2555,16 @@
     var codeEl = document.getElementById("phone-code");
     var hintEl = document.getElementById("phone-hint");
     var qrEl = document.getElementById("phone-qr");
+    var urlEl = document.getElementById("phone-url");
     if (!info || !info.ok) {
       if (codeEl) codeEl.textContent = "——";
+      if (urlEl) urlEl.textContent = "";
       if (hintEl) hintEl.textContent = (info && info.error) ? info.error : "Code indisponible pour le moment.";
       if (qrEl) { qrEl.style.display = "none"; qrEl.removeAttribute("src"); }
       return;
     }
     if (codeEl) codeEl.textContent = info.code || "——";
+    if (urlEl) urlEl.textContent = info.url || "";
     if (hintEl) {
       hintEl.textContent = info.expires
         ? "Scannez le QR ou saisissez ce code sur Athena · expire bientôt"

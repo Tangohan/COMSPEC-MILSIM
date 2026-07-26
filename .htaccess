@@ -1,0 +1,14 @@
+# Athena — racine du domaine (public_html)
+# L’application vit sous /public/ ; la racine ne sert que de pont pour quelques adresses courtes.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Connexion téléphone ATAK : athena.ttrd.fr/connect → /public/connect
+    RewriteRule ^connect/?$ public/connect [L,QSA]
+    RewriteRule ^connect/(.*)$ public/connect/$1 [L,QSA]
+
+    # Carte ATAK : athena.ttrd.fr/atak → /public/atak (après appariement téléphone ou connexion membre)
+    RewriteRule ^atak/?$ public/atak [L,QSA]
+    RewriteRule ^atak/(.*)$ public/atak/$1 [L,QSA]
+</IfModule>

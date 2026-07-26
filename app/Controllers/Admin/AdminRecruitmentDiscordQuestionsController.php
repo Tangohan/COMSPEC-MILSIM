@@ -38,6 +38,7 @@ class AdminRecruitmentDiscordQuestionsController
             'showPortalFooter' => false,
             'discordQuestionsTableMissing' => !$this->questionRepository->tableExists(),
             'discordQuestions' => $this->questionRepository->listForTenant((int) $tenantId),
+            'discordInviteMissing' => $this->isDiscordInviteMissing((int) $tenantId),
             'discordQuestionTypes' => [
                 'select' => 'Liste déroulante (select)',
                 'open' => 'Question ouverte (texte long)',
@@ -45,6 +46,18 @@ class AdminRecruitmentDiscordQuestionsController
                 'free' => 'Réponse libre (texte court)',
             ],
         ]);
+    }
+
+    private function isDiscordInviteMissing(int $tenantId): bool
+    {
+        try {
+            $settings = (new \App\Repositories\TenantRepository())->getSettings($tenantId);
+            $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+
+            return \App\Services\Community\TenantCommunityProfileService::needsDiscordInviteAlert($community);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function store(Request $request, array $params = []): Response

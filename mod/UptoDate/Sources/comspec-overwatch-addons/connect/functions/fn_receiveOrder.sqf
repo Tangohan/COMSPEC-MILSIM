@@ -45,8 +45,55 @@ private _typeLabel = if (_typeLabelCustom != "") then {
         case "CAS": { "Appui aérien" };
         case "QRF": { "Force de réaction" };
         case "CUSTOM": { "Ordre personnalisé" };
+        case "VIBRATE": { "Faire vibrer le terminal" };
+        case "NOTIFY": { "Notification terminal" };
         default { "Se déplacer" };
     };
+};
+
+private _ackTerminalSignal = {
+    params ["_oid", "_note"];
+    private _acked = [_oid, "ACK", _note] call comspec_overwatch_connect_fnc_updateOrderStatus;
+    if (!_acked) then {
+        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+        private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_by isEqualTo "") then { _by = name player; };
+        ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, _note]]] call comspec_overwatch_connect_fnc_extResult;
+    };
+};
+
+// Signal haptique TOC : buzz réel du terminal — pas un ordre C2 à acquitter manuellement
+if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onVibrate") then {
+        [_order] call comspec_overwatch_atak_athena_fnc_athena_onVibrate;
+    } else {
+        // Fallback si atak_athena absent — son packé connect, UI (toujours audible)
+        playSoundUI ["COMSPEC_ATAK_Vibrate", 1.6, 1];
+        [] spawn {
+            uiSleep 0.35;
+            playSoundUI ["COMSPEC_ATAK_Vibrate", 1.6, 1];
+        };
+        private _msg = format ["Votre terminal vibre — appel de %1", _issuer];
+        ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+    };
+    [_id, "Vibration reçue"] call _ackTerminalSignal;
+};
+
+// Notification TOC : entrée cliquable dans Athena — pas un ordre C2
+if ((toUpper _type) isEqualTo "NOTIFY") exitWith {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
+        [_order] call comspec_overwatch_atak_athena_fnc_athena_onNotify;
+    } else {
+        private _payload = trim (_order getOrDefault ["payload", ""]);
+        private _msg = if (_payload isEqualTo "") then {
+            format ["Notification Athena — de %1", _issuer]
+        } else {
+            format ["%1 — %2", _issuer, _payload]
+        };
+        ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        ["ATHENA", _msg, 7] call comspec_overwatch_connect_fnc_addScreenToast;
+    };
+    [_id, "Notification reçue"] call _ackTerminalSignal;
 };
 
 private _prioLabel = switch (toUpper _priority) do {
@@ -67,17 +114,14 @@ if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
 // Si l’app Athena cTab est ouverte : rester sur le panneau (pas de Chromium forcé).
 private _athenaGroup = uiNamespace getVariable ["COMSPEC_ATAK_Athena_group", controlNull];
 private _athenaOpen = !isNull _athenaGroup && {ctrlShown _athenaGroup};
-if (_athenaOpen) exitWith {};
-
-// Sinon ouvre la tablette sur les ordres (plus de dialog 9975) — hors mode ATAK-only
-if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {};
-if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {};
-
-if (isNull (findDisplay 9974)) then {
-    0 spawn {
-        uiSleep 0.15;
-        ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
-    };
-} else {
-    ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
+if (_athenaOpen) exitWith {
+    missionNamespace setVariable ["COMSPEC_Athena_PanelTab", "order", false];
+    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
 };
+
+// Mode ATAK-only : notification + pastille déjà poussées — pas d’auto-ouverture intrusive.
+if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {};
+
+// Legacy tablette (option ATAK-only désactivée)
+if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {};
+["order"] call comspec_overwatch_connect_fnc_openAthenaFeature;

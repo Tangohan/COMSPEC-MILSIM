@@ -32,18 +32,32 @@ return static function (PDO $pdo): void {
         return;
     }
 
+    // Colonnes une par une : si l’une existe déjà, l’autre peut encore manquer.
     if (!$hasColumn($pdo, 'tenant_atak_config', 'maintenance_enabled')) {
         try {
             $pdo->exec(
                 'ALTER TABLE tenant_atak_config
-                 ADD COLUMN maintenance_enabled TINYINT(1) NOT NULL DEFAULT 0,
-                 ADD COLUMN maintenance_message TEXT DEFAULT NULL'
+                 ADD COLUMN maintenance_enabled TINYINT(1) NOT NULL DEFAULT 0'
             );
-            echo "  [OK] tenant_atak_config.maintenance_enabled (+ maintenance_message)\n";
+            echo "  [OK] tenant_atak_config.maintenance_enabled\n";
         } catch (Throwable $e) {
-            echo '  [ATTENTION] tenant_atak_config.maintenance : ' . $e->getMessage() . "\n";
+            echo '  [ATTENTION] tenant_atak_config.maintenance_enabled : ' . $e->getMessage() . "\n";
         }
     } else {
         echo "  [SKIP] tenant_atak_config.maintenance_enabled déjà présent\n";
+    }
+
+    if (!$hasColumn($pdo, 'tenant_atak_config', 'maintenance_message')) {
+        try {
+            $pdo->exec(
+                'ALTER TABLE tenant_atak_config
+                 ADD COLUMN maintenance_message TEXT DEFAULT NULL'
+            );
+            echo "  [OK] tenant_atak_config.maintenance_message\n";
+        } catch (Throwable $e) {
+            echo '  [ATTENTION] tenant_atak_config.maintenance_message : ' . $e->getMessage() . "\n";
+        }
+    } else {
+        echo "  [SKIP] tenant_atak_config.maintenance_message déjà présent\n";
     }
 };

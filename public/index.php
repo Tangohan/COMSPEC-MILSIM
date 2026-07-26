@@ -277,9 +277,19 @@ try {
 
     if ($wantsJson) {
         http_response_code(500);
+        $message = 'Une erreur est survenue. Merci de réessayer plus tard.';
+        $raw = $e->getMessage();
+        if (
+            str_contains($raw, "doesn't exist")
+            || str_contains($raw, 'Base table')
+            || str_contains($raw, '1146')
+            || str_contains($raw, '42S02')
+        ) {
+            $message = 'Cette fonctionnalité n’est pas encore prête sur le serveur. Demandez à un administrateur de lancer la mise à jour de la base, puis réessayez.';
+        }
         echo json_encode([
             'error' => 'server_error',
-            'message' => 'Une erreur est survenue. Merci de réessayer plus tard.',
+            'message' => $message,
         ], JSON_UNESCAPED_UNICODE);
     } elseif ($showErrors) {
         echo '<pre style="background:#fdd;padding:1em;white-space:pre-wrap;">';

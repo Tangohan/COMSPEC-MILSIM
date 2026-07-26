@@ -46,6 +46,8 @@ if (isNil "COMSPEC_ATAKRespawnEH") then {
 
             if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
 
+            private _prevAce = missionNamespace getVariable ["COMSPEC_ACEMenuUnit", objNull];
+            if (!isNull _prevAce && {_prevAce isEqualTo player}) exitWith {};
             missionNamespace setVariable ["COMSPEC_ATAKMenuReady", false, false];
             missionNamespace setVariable ["COMSPEC_ACEMenuReady", false, false];
             missionNamespace setVariable ["COMSPEC_AtakRepairReady", false, false];

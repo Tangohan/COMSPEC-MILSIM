@@ -18,6 +18,7 @@ use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
+use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Recruitment\EnlistmentCandidatePortalJourneyService;
 use App\Services\Recruitment\EnlistmentPortalAttachmentService;
 use App\Services\Recruitment\EnlistmentPortalAutoModerationCoordinator;
@@ -309,11 +310,15 @@ final class EnlistmentCandidatePortalController
             : null;
 
         if (trim((string) ($row['form_channel'] ?? '')) === 'discord') {
-            $recruitmentModeLabel = 'Recrutement via Discord';
+            $recruitmentModeLabel = TenantCommunityProfileService::registrationModeLabel(TenantCommunityProfileService::REGISTRATION_MODE_DISCORD);
         } else {
             $community = is_array($tenantSettings['community'] ?? null) ? $tenantSettings['community'] : [];
-            $regMode = (string) ($community['registration_mode'] ?? 'milsim');
-            $recruitmentModeLabel = $regMode === 'simple' ? 'Recrutement simplifié' : 'Recrutement MilSim complet';
+            $regMode = TenantCommunityProfileService::normalizeRegistrationMode($community['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM);
+            $recruitmentModeLabel = match ($regMode) {
+                TenantCommunityProfileService::REGISTRATION_MODE_SIMPLE => 'Recrutement simplifié',
+                TenantCommunityProfileService::REGISTRATION_MODE_DISCORD => 'Recrutement via Discord',
+                default => 'Recrutement MilSim complet',
+            };
         }
 
         return Response::view('enlistment.candidate_portal', [

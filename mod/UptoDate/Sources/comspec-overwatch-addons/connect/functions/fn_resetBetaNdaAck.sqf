@@ -1,5 +1,5 @@
 /*
-    Efface l’acceptation NDA locale et réaffiche l’accord (immédiatement si possible).
+    Efface la confirmation locale de la note bêta et la réaffiche (immédiatement si possible).
     Ne touche pas à l’inscription Athena (RegisterBeta) déjà enregistrée.
 */
 if (!hasInterface) exitWith { false };
@@ -18,6 +18,6 @@ if (!isNull _open) then {
 
 [] call comspec_overwatch_connect_fnc_showBetaAccessNote;
 
-["COMSPEC_Info", ["L’accord d’accès anticipé sera affiché à nouveau."]] call comspec_overwatch_connect_fnc_showNotification;
+["COMSPEC_Info", ["La note bêta sera affichée à nouveau."]] call comspec_overwatch_connect_fnc_showNotification;
 
 true

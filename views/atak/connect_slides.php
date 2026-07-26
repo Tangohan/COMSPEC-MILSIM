@@ -196,14 +196,14 @@ foreach ($atakSlides as $slide) {
 >
     <header>
         <div>
-            <p class="eyebrow">Briefing tactique</p>
+            <p class="eyebrow">ATAK Athena</p>
             <h1><?= htmlspecialchars($atakTenantName, ENT_QUOTES, 'UTF-8') ?></h1>
         </div>
         <div class="presence-chip" id="presence-chip" aria-live="polite">ATAK : —</div>
     </header>
 
     <?php if ($slidesPayload === []): ?>
-    <div class="empty">Aucune diapositive de briefing active pour l’instant.</div>
+    <div class="empty">Connexion réussie. Aucune diapositive de briefing active pour l’instant — vous restez lié à la session Athena.</div>
     <?php else: ?>
     <div class="deck" id="briefing-deck" aria-live="polite">
         <?php foreach ($slidesPayload as $i => $slide): ?>

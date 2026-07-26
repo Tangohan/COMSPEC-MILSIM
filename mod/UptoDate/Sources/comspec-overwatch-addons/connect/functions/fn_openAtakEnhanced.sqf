@@ -6,7 +6,7 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
 if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
-    ["COMSPEC_Warning", ["Équipement requis manquant — synchronisation et interface indisponibles."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["Terminal ATAK manquant — emportez votre téléphone ou tablette tactique pour synchroniser et ouvrir l’interface."]] call comspec_overwatch_connect_fnc_showNotification;
     false
 };
 

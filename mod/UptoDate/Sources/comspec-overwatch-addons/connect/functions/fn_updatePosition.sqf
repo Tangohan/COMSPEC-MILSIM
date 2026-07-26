@@ -237,6 +237,21 @@ _vehJson = _vehJson + format [
     _sideStr,
     _affiliation
 ];
+// Identifiant BFT lié à l’indicatif (Athena / military_id) — même clé TOC ↔ carte ↔ terminal
+private _bftId = trim (missionNamespace getVariable ["COMSPEC_MilitaryId", ""]);
+if (_bftId isEqualTo "") then {
+    _bftId = trim (missionNamespace getVariable ["COMSPEC_BftId", ""]);
+};
+if (_bftId isEqualTo "") then {
+    _bftId = trim (profileNamespace getVariable ["COMSPEC_MilitaryId", ""]);
+};
+if (!(_bftId isEqualTo "")) then {
+    _bftId = (_bftId splitString """" joinString "");
+    _vehJson = _vehJson + format [
+        ",""bft_id"":""%1"",""military_id"":""%1"",""atak_id"":""%1""",
+        _bftId
+    ];
+};
 private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
 _modVersion = (_modVersion splitString """" joinString "");
 if (!(_modVersion isEqualTo "")) then {

@@ -39,11 +39,6 @@ if (!empty($p['clearance_reviewed_at'])) {
 $readinessScoreVal = isset($p['readiness_score']) ? (int) $p['readiness_score'] : 0;
 $score = (int) ($completeness['score'] ?? 0);
 $missingLabels = $completeness['missing_labels'] ?? [];
-$civilBirth = '';
-if (!empty($up['birth_date'])) {
-    $bd = date_create((string) $up['birth_date']);
-    $civilBirth = $bd ? $bd->format('Y-m-d') : '';
-}
 $enlistmentDateVal = '';
 if (!empty($p['enlistment_date'])) {
     $enlistmentDateVal = substr((string) $p['enlistment_date'], 0, 10);
@@ -61,7 +56,7 @@ $editNavGroups = [
     [
         'title' => 'Qui êtes-vous',
         'items' => [
-            ['id' => 'edit-civil', 'label' => 'Identité civile', 'show' => $isMe],
+            ['id' => 'edit-compte', 'label' => 'Compte &amp; interface', 'show' => $isMe],
             ['id' => 'edit-identite-rp', 'label' => 'Personnage (RP)', 'show' => true],
         ],
     ],
@@ -102,7 +97,7 @@ $editValidTabIds = implode(',', array_map(
       <div>
         <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Dossier opérationnel</p>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Éditer le dossier</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Chaque bloc a un rôle distinct : identité civile (vous, hors jeu), personnage (en mission), puis unité, habilitation et affichage sur le forum.</p>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">Chaque bloc a un rôle distinct : préférences de compte, personnage (en mission), puis unité, habilitation et affichage sur le forum.</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <a href="<?= $isMe ? url('personnel/me') : url('personnel/' . (int) $targetUser['id']) ?>" class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:border-slate-300">← Fiche</a>
@@ -177,40 +172,19 @@ $editValidTabIds = implode(',', array_map(
         <?= \App\Core\Csrf::field() ?>
 
         <?php if ($isMe): ?>
-        <div class="space-y-6" x-cloak x-show="tab === 'edit-civil'">
+        <div class="space-y-6" x-cloak x-show="tab === 'edit-compte'">
           <div class="px-1">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-700">1 · Vous (hors jeu)</p>
-            <p class="mt-1 text-sm text-slate-600">Informations civiles du compte — distinctes du personnage.</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-700">1 · Compte</p>
+            <p class="mt-1 text-sm text-slate-600">Réglages du compte — distincts du personnage.</p>
           </div>
-        <section id="edit-civil" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-indigo-900/[0.06]">
+        <section id="edit-compte" class="scroll-mt-24 overflow-hidden rounded-2xl border border-indigo-200/80 bg-white shadow-sm ring-1 ring-indigo-900/[0.06]">
           <div class="border-b border-indigo-100 bg-indigo-50/80 px-6 py-5">
-            <h2 class="text-base font-black tracking-tight text-indigo-950">Identité civile</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-indigo-900/85">Prénom et nom réels, état civil et réglages du compte. Ces données ne remplacent pas le nom de personnage ni l’indicatif en mission.</p>
+            <h2 class="text-base font-black tracking-tight text-indigo-950">Compte &amp; interface</h2>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-indigo-900/85">Fuseau, langue et présentation courte. Ces données ne remplacent pas le nom de personnage ni l’indicatif en mission.</p>
           </div>
           <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">État civil</h3>
-              <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label for="civil_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
-                  <input type="text" name="civil_first_name" id="civil_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
-                </div>
-                <div>
-                  <label for="civil_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
-                  <input type="text" name="civil_last_name" id="civil_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" maxlength="100">
-                </div>
-                <div>
-                  <label for="civil_birth_date" class="mb-1 block text-xs font-bold text-slate-600">Date de naissance</label>
-                  <input type="date" name="civil_birth_date" id="civil_birth_date" value="<?= htmlspecialchars($civilBirth) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                </div>
-                <div>
-                  <label for="civil_nationality" class="mb-1 block text-xs font-bold text-slate-600">Nationalité (civile)</label>
-                  <input type="text" name="civil_nationality" id="civil_nationality" value="<?= htmlspecialchars((string) ($up['nationality'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100">
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Compte &amp; interface</h3>
+              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Préférences</h3>
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
@@ -230,7 +204,7 @@ $editValidTabIds = implode(',', array_map(
             <div class="rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3">
               <label class="flex items-start gap-3 text-sm text-slate-800">
                 <input type="checkbox" name="hide_personal_info" value="1" class="mt-1 rounded border-slate-300 text-amber-900" <?= !empty($d['hide_personal_info']) ? 'checked' : '' ?>>
-                <span><strong>Masquer mes informations personnelles</strong> sur la fiche publique (prénom, nom, date de naissance, nationalité civile, fuseau, langue, présentation du compte). Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter ; les autres membres ne verront que votre personnage (nom, indicatif, etc.).</span>
+                <span><strong>Masquer mes informations personnelles</strong> sur la fiche publique (fuseau, langue, présentation du compte). Seuls les <strong>administrateurs</strong> (accès fiche personnel) et les <strong>modérateurs forum</strong> pourront les consulter ; les autres membres ne verront que votre personnage (nom, indicatif, etc.).</span>
               </label>
             </div>
           </div>

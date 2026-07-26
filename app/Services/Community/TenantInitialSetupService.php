@@ -55,6 +55,11 @@ final class TenantInitialSetupService
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $rolesCount = count($roles);
 
+        $discordMode = TenantCommunityProfileService::normalizeRegistrationMode(
+            $community['registration_mode'] ?? null
+        ) === TenantCommunityProfileService::REGISTRATION_MODE_DISCORD;
+        $hasDiscordLink = trim((string) ($community['contact_discord_url'] ?? '')) !== '';
+
         $items = [
             'Nom affiché' => trim((string) ($tenant['name'] ?? '')) !== '',
             'Adresse publique' => trim((string) ($tenant['slug'] ?? '')) !== '',
@@ -64,10 +69,14 @@ final class TenantInitialSetupService
             'Mode d’inscription' => $this->hasRegistrationConfigured($community),
             'Rôles de la communauté' => $rolesCount > 0,
         ];
+        if ($discordMode) {
+            $items['Lien Discord'] = $hasDiscordLink;
+        }
 
-        $optional = [
-            'Lien Discord' => trim((string) ($community['contact_discord_url'] ?? '')) !== '',
-        ];
+        $optional = [];
+        if (!$discordMode) {
+            $optional['Lien Discord'] = $hasDiscordLink;
+        }
 
         $done = count(array_filter($items));
         $total = count($items);
@@ -120,9 +129,9 @@ final class TenantInitialSetupService
     private function hasRegistrationConfigured(array $community): bool
     {
         if (array_key_exists('registration_mode', $community)) {
-            $mode = (string) $community['registration_mode'];
+            $mode = TenantCommunityProfileService::normalizeRegistrationMode($community['registration_mode']);
 
-            return $mode === 'simple' || $mode === 'milsim';
+            return in_array($mode, TenantCommunityProfileService::allowedRegistrationModes(), true);
         }
 
         // Défaut seedé / implicite : considéré comme défini pour ne pas bloquer le %.

@@ -268,38 +268,50 @@
     return L.latLng(y, x);
   }
 
-  function renderAtakMarkers(layerGroup, list, isWorld, onCtx) {
+  function renderAtakMarkers(layerGroup, list, isWorld, onCtx, unitsForDedupe) {
     if (!layerGroup) return;
     layerGroup.clearLayers();
     var arma = window.ArmaMapMarkers;
+    var units = Array.isArray(unitsForDedupe) ? unitsForDedupe : [];
     (list || []).forEach(function (m) {
       var id = m.id;
       if (id == null) return;
       var raw = m.markerData;
       var data = typeof raw === 'string' ? (function () { try { return JSON.parse(raw || '{}'); } catch (e) { return {}; } })() : (raw || {});
+      if (arma && arma.isLiveUnitDuplicate && arma.isLiveUnitDuplicate(data, units)) return;
       var latlng = parseMarkerDataPos(data.pos, isWorld);
       if (!latlng) return;
-      var label = (arma && arma.labelOf) ? arma.labelOf(data) : ((data.text || data.label || 'Repère') + '');
-      var icon;
-      if (arma && arma.leafletDivIcon && (arma.isArmaStyleMarker(data) || data.type || data.color)) {
-        icon = arma.leafletDivIcon(L, data);
-      } else {
-        var color = (arma && arma.armaColorHex) ? arma.armaColorHex(data.color) : '#10b981';
-        icon = L.divIcon({
-          className: 'comspec-atak-marker',
-          html: '<span style="width:11px;height:11px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);"></span>',
-          iconSize: [15, 15],
-          iconAnchor: [7, 7],
-        });
+      var label = (arma && arma.displayLabelOf) ? arma.displayLabelOf(data) : ((arma && arma.labelOf) ? arma.labelOf(data) : ((data.text || data.label || 'Repère') + ''));
+      var layer = null;
+      if (arma && arma.isAreaShape && arma.isAreaShape(data) && arma.leafletShapeLayer) {
+        layer = arma.leafletShapeLayer(L, data, latlng);
       }
-      var marker = L.marker(latlng, { icon: icon });
-      var typeLab = data.type ? String(data.type) : '';
-      var colorLab = data.color ? String(data.color) : '';
-      marker.bindPopup('<strong>' + String(label || 'Repère').replace(/</g, '&lt;') + '</strong>' +
-        (typeLab ? '<br/>Type : ' + typeLab.replace(/</g, '&lt;') : '') +
-        (colorLab ? '<br/>Couleur : ' + colorLab.replace(/</g, '&lt;') : ''));
-      bindDeletableLayer(marker, { kind: 'marker', id: id, label: label }, onCtx);
-      marker.addTo(layerGroup);
+      if (!layer) {
+        var icon;
+        if (arma && arma.leafletDivIcon && (arma.isArmaStyleMarker(data) || data.type || data.color)) {
+          icon = arma.leafletDivIcon(L, data);
+        } else {
+          var color = (arma && arma.armaColorHex) ? arma.armaColorHex(data.color) : '#10b981';
+          icon = L.divIcon({
+            className: 'comspec-atak-marker',
+            html: '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">' +
+              '<span style="width:11px;height:11px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2);"></span>' +
+              '<span style="font:700 8px/1 ui-sans-serif,system-ui;color:#94a3b8;text-shadow:0 0 2px #000;">' +
+              String(label || 'Repère').replace(/</g, '&lt;').slice(0, 14) + '</span></div>',
+            iconSize: [80, 28],
+            iconAnchor: [40, 10],
+          });
+        }
+        layer = L.marker(latlng, { icon: icon });
+      }
+      var typeLab = (arma && arma.typeLabelFr) ? arma.typeLabelFr(data) : (data.type ? String(data.type) : '');
+      layer.bindPopup(
+        '<div class="atak-marker-popup__kind">Repère carte</div><strong>' + String(label || 'Repère').replace(/</g, '&lt;') + '</strong>' +
+        (typeLab ? '<br/>' + String(typeLab).replace(/</g, '&lt;') : '') +
+        '<p class="atak-marker-popup__hint">Ce point n’est pas un effectif en liaison — c’est un repère posé sur la carte.</p>'
+      );
+      bindDeletableLayer(layer, { kind: 'marker', id: id, label: label }, onCtx);
+      layer.addTo(layerGroup);
     });
   }
 
@@ -357,20 +369,23 @@
       var latlng = isWorld ? L.latLng(x / WORLD_SCALE, y / WORLD_SCALE) : L.latLng(y, x);
       var kind = pingKindFromMessage(p.message);
       var author = String(p.author || '').trim();
-      var pinLabel = author || kind.label;
+      var pinLabel = kind.label || 'Ping';
       var icon = L.divIcon({
         className: 'comspec-ping-marker',
         html: '<div style="display:flex;flex-direction:column;align-items:center;">' +
           '<span style="width:12px;height:12px;border-radius:50%;background:' + kind.color + ';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35);"></span>' +
-          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;">' +
-          String(pinLabel).replace(/</g, '&lt;').slice(0, 12) + '</span></div>',
-        iconSize: [64, 26],
-        iconAnchor: [32, 8],
+          '<span style="margin-top:1px;font:700 8px/1 ui-sans-serif,system-ui;color:' + kind.color + ';text-shadow:0 0 2px #000;white-space:nowrap;max-width:72px;overflow:hidden;text-overflow:ellipsis;">' +
+          String(pinLabel).replace(/</g, '&lt;').slice(0, 14) + '</span></div>',
+        iconSize: [72, 26],
+        iconAnchor: [36, 8],
       });
       L.marker(latlng, { icon: icon })
-        .bindPopup('<strong>' + String(author || '—').replace(/</g, '&lt;') + '</strong> · ' +
-          String(kind.label).replace(/</g, '&lt;') + '<br/>' +
-          String(kind.rest || p.message || '').replace(/</g, '&lt;'))
+        .bindPopup(
+          '<div class="atak-marker-popup__kind">Ping</div><strong>' + String(kind.label).replace(/</g, '&lt;') +
+          (author ? ' — ' + String(author).replace(/</g, '&lt;') : '') + '</strong><br/>' +
+          String(kind.rest || p.message || '').replace(/</g, '&lt;') +
+          '<p class="atak-marker-popup__hint">Signal ponctuel — ce n’est pas la position d’un effectif.</p>'
+        )
         .addTo(layerGroup);
     });
   }
@@ -729,7 +744,9 @@
       if (state.layers.markers) {
         fetch(apiBase + '/markers?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
           .then(function (r) { return r.json(); })
-          .then(function (list) { renderAtakMarkers(layerGroups.markers, list, isWorld, onTacmapFeatureContextMenu); })
+          .then(function (list) {
+            renderAtakMarkers(layerGroups.markers, list, isWorld, onTacmapFeatureContextMenu, lastUnitsRaw);
+          })
           .catch(function () {});
       }
       if (state.layers.pings) {
@@ -1229,6 +1246,15 @@
           state.unitsCount = filtered.length;
           renderUnitsOnMap(filtered);
           renderRosterAndTable(filtered);
+          // Repères carte : recharger pour masquer ceux qui doublonnent un BFT.
+          if (state.layers.markers && layerGroups.markers) {
+            fetch(apiBase + '/markers?mapId=' + encodeURIComponent(state.currentMapId), { credentials: 'include' })
+              .then(function (r) { return r.json(); })
+              .then(function (mlist) {
+                renderAtakMarkers(layerGroups.markers, mlist, false, onTacmapFeatureContextMenu, lastUnitsRaw);
+              })
+              .catch(function () {});
+          }
           if (medicalPanelEnabled) {
             fetchMedicalChatAlerts().then(function (alerts) {
               renderMedicalPanel(filtered, alerts);
@@ -1520,10 +1546,48 @@
       });
       if (inpR) inpR.addEventListener('change', function () {
         if (terrainTools) terrainTools.setRadiusM(inpR.value);
+        refreshRadiusMetrics();
       });
+      if (inpR) inpR.addEventListener('input', refreshRadiusMetrics);
       if (inpS) inpS.addEventListener('change', function () {
         if (routeTools) routeTools.setSpeedKph(inpS.value);
+        refreshRadiusMetrics();
       });
+      if (inpS) inpS.addEventListener('input', refreshRadiusMetrics);
+      refreshRadiusMetrics();
+    }
+
+    function refreshRadiusMetrics() {
+      var etaEl = getEl(els.toolEta);
+      var inpR = getEl(els.toolRadius);
+      var inpS = getEl(els.toolSpeed);
+      if (!etaEl || !inpR) return;
+      // Ne pas écraser un ETA d’itinéraire déjà affiché (contient « Arrivée estimée »).
+      var cur = etaEl.textContent || '';
+      if (cur.indexOf('Arrivée estimée') >= 0) return;
+      var r = Math.max(0, parseFloat(inpR.value) || 0);
+      if (r <= 0) {
+        if (cur.indexOf('Superficie') >= 0) etaEl.textContent = '';
+        return;
+      }
+      var speed = Math.max(0.1, parseFloat(inpS && inpS.value) || 5);
+      var area = Math.PI * r * r;
+      var areaLabel = area >= 100000
+        ? (area / 1e6).toFixed(2).replace('.', ',') + ' km²'
+        : Math.round(area).toLocaleString('fr-FR') + ' m²';
+      var delayS = r / (speed / 3.6);
+      var delayLabel;
+      if (delayS < 60) delayLabel = Math.round(delayS) + ' s';
+      else if (delayS < 3600) delayLabel = Math.round(delayS / 60) + ' min';
+      else {
+        var h = Math.floor(delayS / 3600);
+        var m = Math.floor((delayS % 3600) / 60);
+        delayLabel = m === 0 ? (h + ' h') : (h + ' h ' + String(m).padStart(2, '0') + ' min');
+      }
+      etaEl.textContent =
+        'Rayon ' + Math.round(r) + ' m · Superficie : ' + areaLabel +
+        ' · Délai jusqu’au bord : ' + delayLabel +
+        ' (à ' + String(speed).replace('.', ',') + ' km/h)';
     }
     wireToolButtons();
 

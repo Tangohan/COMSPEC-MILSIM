@@ -354,12 +354,12 @@ $jsHref = url('assets/js/community-enlistment.js');
                         <?php if ($canUseAccount): ?>
                             <div class="ce-flow">
                                 <button type="button" id="enlist-btn-flow-account" class="ce-flow-btn is-active enlist-flow-btn">Compte Athena</button>
-                                <button type="button" id="enlist-btn-flow-guest" class="ce-flow-btn enlist-flow-btn">Invité (personnage ou identité réelle)</button>
+                                <button type="button" id="enlist-btn-flow-guest" class="ce-flow-btn enlist-flow-btn">Invité (personnage)</button>
                             </div>
                             <input type="hidden" name="enlistment_flow" id="enlistment_flow" value="account">
                         <?php else: ?>
                             <input type="hidden" name="enlistment_flow" id="enlistment_flow" value="guest">
-                            <p class="ce-help">Choisissez plus bas si le dossier est porté par un <strong>personnage</strong> ou par votre <strong>identité réelle</strong> (contact administratif).</p>
+                            <p class="ce-help">La candidature porte sur votre <strong>personnage</strong> (univers fictionnel).</p>
                         <?php endif; ?>
 
                         <?php if ($canUseAccount): ?>
@@ -447,17 +447,9 @@ $jsHref = url('assets/js/community-enlistment.js');
                         <?php endif; ?>
 
                         <div id="enlist-guest-identity" class="<?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
+                            <input type="hidden" name="identity_kind" value="rp">
                             <p class="ce-panel__title">Identité portée par la candidature</p>
-                            <div class="ce-identity">
-                                <label class="ce-check">
-                                    <input type="radio" name="identity_kind" value="admin" checked>
-                                    <span>Identité réelle (dossier administratif)</span>
-                                </label>
-                                <label class="ce-check">
-                                    <input type="radio" name="identity_kind" value="rp">
-                                    <span>Personnage (univers fictionnel)</span>
-                                </label>
-                            </div>
+                            <p class="ce-help" style="margin-bottom:0">Le dossier porte sur votre personnage (univers fictionnel).</p>
                         </div>
                     </section>
 
@@ -465,16 +457,12 @@ $jsHref = url('assets/js/community-enlistment.js');
                         <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_1']) ?></h3>
                         <div id="enlist-guest-names" class="ce-field-grid <?= $canUseAccount ? 'hidden' : '' ?>" <?= $canUseAccount ? 'style="display:none"' : '' ?>>
                             <div class="space-y-2 ce-span-2">
-                                <label id="label-full-name" class="ce-label"><?= htmlspecialchars($fld('full_name')['label']) ?></label>
+                                <label id="label-full-name" class="ce-label">Nom du personnage</label>
                                 <input type="text" name="full_name" id="input-full-name" class="input-field track-field guest-req-field" placeholder="<?= htmlspecialchars($fld('full_name')['placeholder']) ?>"
                                     value="<?= htmlspecialchars($prefill['full_name']) ?>"
-                                    autocomplete="name">
+                                    autocomplete="off">
                             </div>
-                            <div id="legal-full-row" class="space-y-2 ce-span-2 hidden">
-                                <label class="ce-label"><?= htmlspecialchars($fld('legal_full_name')['label']) ?></label>
-                                <input type="text" name="legal_full_name" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('legal_full_name')['placeholder']) ?>" autocomplete="name">
-                            </div>
-                            <div id="guest-rp-detail" class="hidden ce-span-2 ce-rp-box space-y-4">
+                            <div id="guest-rp-detail" class="ce-span-2 ce-rp-box space-y-4">
                                 <p class="ce-panel__title">Identité personnage (optionnel si le champ unique ci-dessus suffit)</p>
                                 <div class="ce-field-grid">
                                     <div class="space-y-2">
@@ -704,10 +692,8 @@ $jsHref = url('assets/js/community-enlistment.js');
             var btnAcc = document.getElementById('enlist-btn-flow-account');
             var btnGuest = document.getElementById('enlist-btn-flow-guest');
             var btnExpand = document.getElementById('enlist-btn-expand-full');
-            var legalRow = document.getElementById('legal-full-row');
             var guestRpDetail = document.getElementById('guest-rp-detail');
             var labelFull = document.getElementById('label-full-name');
-            var LABEL_ADMIN = <?= json_encode($fld('full_name')['label'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
             var LABEL_RP = 'Nom du personnage';
 
             function setGuestFieldsRequired(isGuest) {
@@ -737,18 +723,11 @@ $jsHref = url('assets/js/community-enlistment.js');
             }
 
             function syncIdentityKind() {
-                var rp = false;
-                document.querySelectorAll('input[name="identity_kind"]').forEach(function(r) {
-                    if (r.checked) rp = (r.value === 'rp');
-                });
-                if (legalRow) {
-                    legalRow.classList.toggle('hidden', !rp);
-                }
                 if (guestRpDetail) {
-                    guestRpDetail.classList.toggle('hidden', !rp);
+                    guestRpDetail.classList.remove('hidden');
                 }
                 if (labelFull) {
-                    labelFull.textContent = rp ? LABEL_RP : LABEL_ADMIN;
+                    labelFull.textContent = LABEL_RP;
                 }
             }
 
@@ -768,9 +747,6 @@ $jsHref = url('assets/js/community-enlistment.js');
                         if (el.type === 'button') return;
                         el.disabled = guest;
                     });
-                    document.querySelectorAll('input[name="identity_kind"]').forEach(function(r) {
-                        r.disabled = !guest;
-                    });
                 }
                 if (guest) {
                     form.classList.add('enlist-compact-expanded');
@@ -783,6 +759,7 @@ $jsHref = url('assets/js/community-enlistment.js');
                     if (modeInput) modeInput.value = 'full';
                 }
                 setGuestFieldsRequired(guest || !canUseAccount);
+                syncIdentityKind();
                 syncRpSharePanel();
                 syncMotivationRequired();
             }
@@ -793,6 +770,7 @@ $jsHref = url('assets/js/community-enlistment.js');
                 setFlow(flowInput && flowInput.value === 'guest' ? 'guest' : 'account');
             } else {
                 setGuestFieldsRequired(true);
+                syncIdentityKind();
                 syncRpSharePanel();
                 syncMotivationRequired();
             }
@@ -809,9 +787,6 @@ $jsHref = url('assets/js/community-enlistment.js');
                 });
             }
 
-            document.querySelectorAll('input[name="identity_kind"]').forEach(function(r) {
-                r.addEventListener('change', syncIdentityKind);
-            });
             syncIdentityKind();
 
             var presetSel = document.getElementById('recruitment_preset_select');

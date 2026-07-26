@@ -644,6 +644,12 @@ window.ATAKActivity = (function () {
             }
           }
         }
+        // Demande d'évacuation médicale : son MEDEVAC dédié.
+        if (actType === 'medevac' && window.ATAKSounds.playEvent) {
+          window.ATAKSounds.playEvent('medevac', { priority: true });
+          played = true;
+          break;
+        }
         // Mention radio : prioriser un toast métier (sans doubler le bip chat générique).
         if (actType === 'chat' && notifyMentionFromActivityEvent(fresh[j])) {
           played = true;

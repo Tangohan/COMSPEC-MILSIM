@@ -11,6 +11,57 @@ use App\Core\Request;
  */
 final class TenantCommunityProfileService
 {
+    /** Modes d’inscription publique supportés (candidature / enrôlement). */
+    public const REGISTRATION_MODE_MILSIM = 'milsim';
+    public const REGISTRATION_MODE_SIMPLE = 'simple';
+    public const REGISTRATION_MODE_DISCORD = 'discord';
+
+    /**
+     * @return list<string>
+     */
+    public static function allowedRegistrationModes(): array
+    {
+        return [
+            self::REGISTRATION_MODE_MILSIM,
+            self::REGISTRATION_MODE_SIMPLE,
+            self::REGISTRATION_MODE_DISCORD,
+        ];
+    }
+
+    public static function normalizeRegistrationMode(mixed $raw): string
+    {
+        $mode = strtolower(trim((string) ($raw ?? '')));
+        if ($mode === self::REGISTRATION_MODE_SIMPLE || $mode === self::REGISTRATION_MODE_DISCORD) {
+            return $mode;
+        }
+
+        return self::REGISTRATION_MODE_MILSIM;
+    }
+
+    /** Libellé métier pour l’UI (jamais la valeur technique brute). */
+    public static function registrationModeLabel(mixed $raw): string
+    {
+        return match (self::normalizeRegistrationMode($raw)) {
+            self::REGISTRATION_MODE_SIMPLE => 'Formulaire court',
+            self::REGISTRATION_MODE_DISCORD => 'Recrutement via Discord',
+            default => 'Dossier MilSim complet',
+        };
+    }
+
+    /**
+     * True si le recrutement Discord est actif sans lien d’invitation renseigné.
+     *
+     * @param array<string, mixed> $community
+     */
+    public static function needsDiscordInviteAlert(array $community): bool
+    {
+        if (self::normalizeRegistrationMode($community['registration_mode'] ?? null) !== self::REGISTRATION_MODE_DISCORD) {
+            return false;
+        }
+
+        return trim((string) ($community['contact_discord_url'] ?? '')) === '';
+    }
+
     /** Modèle de page publique : classique (carte) ou vitrine (pleine page). */
     public static function resolvePublicPageLayout(mixed $raw): string
     {
@@ -114,7 +165,7 @@ final class TenantCommunityProfileService
         $modpackSize = $community['modpack_size_gb'] ?? null;
         $militarySections = is_array($community['military_sections'] ?? null) ? $community['military_sections'] : [];
         $welcomeText = trim((string) ($community['welcome_text'] ?? ''));
-        $isSimpleReg = ($community['registration_mode'] ?? 'milsim') === 'simple';
+        $registrationMode = self::normalizeRegistrationMode($community['registration_mode'] ?? self::REGISTRATION_MODE_MILSIM);
         $publicAudience = self::resolvePublicAudience($community, $tenantSlug);
 
         $contactEmail = trim((string) ($community['contact_email'] ?? ''));
@@ -129,7 +180,8 @@ final class TenantCommunityProfileService
             'militarySections' => $militarySections,
             'styleBadgeLabels' => $styleBadgeLabels,
             'welcomeText' => $welcomeText,
-            'registrationModeLabel' => $isSimpleReg ? 'Simple' : 'MilSim complet',
+            'registrationMode' => $registrationMode,
+            'registrationModeLabel' => self::registrationModeLabel($registrationMode),
             'isLocked' => !empty($community['community_locked']),
             'discordUrl' => trim((string) ($community['contact_discord_url'] ?? '')),
             'contactEmail' => $contactEmail,
@@ -188,7 +240,7 @@ final class TenantCommunityProfileService
     {
         $c = $existing;
 
-        $c['registration_mode'] = ((string) $request->input('registration_mode', 'milsim')) === 'simple' ? 'simple' : 'milsim';
+        $c['registration_mode'] = self::normalizeRegistrationMode($request->input('registration_mode', self::REGISTRATION_MODE_MILSIM));
 
         $c['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
         $c['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';

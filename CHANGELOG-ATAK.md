@@ -7,6 +7,101 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.1] - 2026-07-26
+
+### Ajouté — Athena WEB / TOC ATAK (branchement Overwatch)
+
+#### Carte — marqueurs Marker Dropper & cTab
+- Les repères posés en jeu (Marker Dropper, marqueurs carte Arma, marqueurs utilisateur cTab / ATAK Enhanced) remontent sur la carte Athena du poste de commandement
+- Pont cTab : écoute immédiate des mises à jour + file d’attente si la liaison Athena n’est pas encore prête
+- Marqueurs `_USER_DEFINED` (Dropper / carte Arma) inclus dans le miroir web
+- Sync immédiate vers le miroir web dès qu’un repère est posé ou mis à jour (sans attendre le prochain cycle long)
+- Les points d’intérêt ACE (LZ d’évacuation, renfort, service véhicule, POI) s’affichent aussi sur la carte web
+- **Diamants hostiles** : alerte, destruction, objectif ou points rouges simples en diamant (lisibles d’un coup d’œil, sans confusion avec un effectif ami)
+- **Badges de préfixe** : libellés courts type « T », « T1 », « A-3 » en pastille à côté du symbole
+- Libellés français sur la carte et dans l’historique (« Alerte », « Objectif », « Point d’intérêt », « Repère · … »)
+- Déduplication : un point anonyme ou au même indicatif qu’un contact déjà en liaison ne double plus le symbole OTAN de l’effectif
+- Pop-up carte : précision « ce point n’est pas un effectif en liaison — c’est un repère posé sur la carte »
+
+#### En-tête carte tactique (Tacmap)
+- Barre d’en-tête redesignée : actions regroupées en **clusters** (contexte mission, liaison, état système)
+- Bouton **Lier le jeu** (code d’appariement Arma ↔ compte) intégré au cluster liaison
+- Badge **BÊTA** à côté de la marque (accès anticipé) ; tagline d’état recentrée sur **Liaison** (plus de libellé « théâtre » en en-tête)
+- Plus de bouton fluo / accent agressif : actions primaires sobres, cohérentes avec le reste du TOC
+
+#### Connexion téléphone — page `/atak/connect`
+- Page web téléphone : saisie du **code affiché sur le PC / tablette** pour ouvrir la carte ATAK mobile sans compte
+- Flux : code → token de session → vue connectée (expiration gérée avec message clair)
+- Complète l’écran de liaison en jeu (adresse mobile + code d’appariement)
+
+#### Rapports d’erreurs mod → Athena
+- Remontée des diagnostics / bugs Overwatch vers le portail (`POST /api/atak/mod-report`)
+- Journal admin **Rapports erreurs** (liste, filtre, retrait)
+- Exemption de clé d’accès pour ce chemin (signalement possible avant ou sans liaison complète) + rate-limit
+- Correctif `Database::getPdo` : accès PDO stable pour le dépôt des rapports (évite échec au boot / lazy-init)
+
+#### Menu contact — Faire vibrer le terminal
+- Action **Faire vibrer le terminal** dans le menu contextuel d’un contact
+- Disponible uniquement si le contact est **en liaison** (sinon message clair : hors liaison)
+- Confirmation opérateur : « Le terminal de [indicatif] vibre en jeu »
+- Journal d’activité TOC : « Terminal — vibration — [indicatif] » (signal haptique, pas un ordre de manœuvre)
+- Action voisine : **Envoyer une notification…** (bandeau cliquable sur le terminal du joueur)
+
+#### Blue Force / indicatif / identifiant de suivi
+- Chaque contact en liaison reçoit un **identifiant de suivi** stable lié à son indicatif (réutilisé d’une session à l’autre)
+- Affichage liste BFT : ligne **« Suivi … »** sous l’indicatif
+- Fiche pop-up unité : ligne **« Identifiant de suivi »**
+- Même identité partagée entre carte, tablette et TOC
+
+#### Messagerie HQ (poste de commandement)
+- Contact permanent **HQ** dans la messagerie ATAK / cTab en jeu : messages destinés au PC → journal radio / messagerie Athena
+- Journal d’activité TOC : **« Message HQ — [auteur] : … »**
+
+#### Sons & alertes TOC
+- Préférences sonores TOC avec libellés métier (silencieux avec/sans vibration, ambiance tension, signal médical)
+- Assistances médicales : bandeaux et toasts restent visibles même si le son est coupé
+- Escalade médicale : les alertes moins graves du même indicatif sont clôturées pour éviter le doublon
+
+### Modifié
+
+#### Journal radio — moins de bruit technique
+- Messages de **réglages d’affichage** (camps adversaire / indépendants / civils) appliqués en silence côté carte et **hors journal radio** du TOC
+- Variantes anciennes (auteur « REGLAGES » + corps « AFFICHAGE|… ») également filtrées
+- Sync Blue Force / positions : hors journal d’activité par défaut
+
+#### Messages de groupe vs canal HQ
+- Les **messages de groupe** restent en jeu et **ne spamment plus** le journal radio web du TOC
+- Canal officiel jeu → TOC : destinataire **HQ**
+
+#### Ordres / signaux terminal
+- Types « Faire vibrer » et « Notifier » traités comme **signaux terminal**, distincts des ordres de manœuvre
+
+### Corrigé
+
+- Confusion repère / effectif : libellé court type indicatif préfixé **« Repère · … »** ; ne remplace plus le symbole Blue Force
+- Messages techniques d’affichage camps filtrés côté serveur et interface
+- Contacts hors liaison : vibration / notification refusées avec message opérateur compréhensible
+- Demande de renfort (QRF) sans position de contact : réponse **400** avec message métier (« Indiquez la position du contact pour demander le renfort ») au lieu d’un échec opaque
+
+### Stabilité & ACE (volet jeu Overwatch)
+- REAPP / respawn durci ; menu ACE ATAK rebranché ; NDA qui ne revient plus à chaque lancement
+- Terminal ATAK requis par défaut ; features prioritairement dans ATAK Enhanced / cTab
+- Adresse mobile + code d’appariement sur l’écran de liaison téléphone
+- Briefing / diaporama, demande d’appui aérien (CAS) et manifeste de vol branchés côté mod (formulaires dédiés + viewer 9-lignes) — détail Steam / changelog Overwatch
+
+### Déploiement prod (Athena WEB — 26/07/2026)
+
+- FTP Hostinger → `athena.ttrd.fr` (`/domains/athena.ttrd.fr/public_html/`)
+- Assets synchronisés en dual : `assets/` **et** `public/assets/` (JS + CSS)
+- Cache-bust TOC : `views/atak.php` — `?v=202607261735` sur scripts / styles critiques
+- Contrôle post-upload : ping HTTPS **200** ; JS vérifiés (vibrer, diamants, suivi, filtre réglages)
+- Périmètre web : carte / marqueurs, unités BFT, menu vibrer, tchat filtré, contrôleur & dépôts ATAK, routes
+- `.env` non modifié ; pas de rebuild PBO dans ce déploiement web (packs déjà rebuild côté mod)
+
+Voir aussi `mod/UptoDate/STEAM_CHANGELOG.txt` (texte Steam) et `mod/UptoDate/@COMSPECOverwatch/CHANGELOG.md`.
+
+---
+
 ## [1.2.0] - 2026-07-24
 
 ### Ajouté - Phase 2.5 : Intelligence & Automatisation

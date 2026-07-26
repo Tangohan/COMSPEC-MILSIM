@@ -99,7 +99,7 @@ private _alert = createHashMapFromArray [
 
 [format ["Alerte médicale transmise : %1", _label], "medical", "critical"] call comspec_overwatch_connect_fnc_announce;
 // Son d’urgence dédié (inconscient → atak_alert_2, arrêt cardiaque → atak_death).
-// Mode discret ne coupe pas ce son ; seul « Muet » (CBA Son des notifications) le coupe.
+// Mode discret ne coupe pas ce son ; seul « Silencieux — sans vibration » (réglage Son des notifications) le coupe.
 [_kindNorm] call comspec_overwatch_connect_fnc_playAtakNotification;
 diag_log format ["[COMSPEC] Medical alert %1 — %2", _kindNorm, _msg];
 [format ["[Médical] %1 — %2 (grille %3)", _callSign, _label, _grid], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;

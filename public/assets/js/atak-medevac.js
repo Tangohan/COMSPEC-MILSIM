@@ -11,6 +11,8 @@ window.ATAKMedevac = (function () {
     '8. Nationalité / statut des blessés',
     '9. Contamination NBC'
   ];
+  var knownIds = {};
+  var firstLoad = true;
 
   function apiBase() {
     return window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : (window.ATAK_API_BASE || '');
@@ -40,6 +42,12 @@ window.ATAKMedevac = (function () {
     return map[k] || k || '—';
   }
 
+  function playMedevacSound() {
+    if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
+      try { window.ATAKSounds.playEvent('medevac', { priority: true }); } catch (e) {}
+    }
+  }
+
   function fetchList() {
     var el = document.getElementById('atak-medevac-list');
     if (!el || !apiBase()) return;
@@ -47,18 +55,28 @@ window.ATAKMedevac = (function () {
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var list = Array.isArray(data) ? data : [];
+        var hasNew = false;
+        for (var i = 0; i < list.length; i++) {
+          var id = String(list[i].id || '');
+          if (!id) continue;
+          if (!firstLoad && !knownIds[id]) hasNew = true;
+          knownIds[id] = true;
+        }
+        firstLoad = false;
+        if (hasNew) playMedevacSound();
+
         if (!list.length) {
-          el.innerHTML = '<div class="atak-empty-state"><p class="atak-empty-state-title">Aucune demande MEDEVAC</p>'
-            + '<p class="atak-empty-state-text">Rédigez une 9-line pour coordonner une évacuation sanitaire.</p></div>';
+          el.innerHTML = '<div class="atak-empty-state"><p class="atak-empty-state-title">Aucune demande d’évacuation médicale</p>'
+            + '<p class="atak-empty-state-text">Rédigez une demande pour coordonner une évacuation sanitaire.</p></div>';
           return;
         }
         el.innerHTML = list.map(formatItem).join('');
         el.querySelectorAll('[data-medevac-status]').forEach(function (btn) {
           btn.addEventListener('click', function () {
-            var id = btn.getAttribute('data-id');
+            var mid = btn.getAttribute('data-id');
             var st = btn.getAttribute('data-medevac-status');
-            if (!id || !st) return;
-            fetch(apiBase() + '/api/atak/medevac/' + encodeURIComponent(id) + '/status', {
+            if (!mid || !st) return;
+            fetch(apiBase() + '/api/atak/medevac/' + encodeURIComponent(mid) + '/status', {
               method: 'POST',
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },

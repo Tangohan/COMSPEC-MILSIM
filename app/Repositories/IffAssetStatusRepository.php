@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\C2PillarsSchema;
 use PDO;
 
 class IffAssetStatusRepository
@@ -13,6 +14,7 @@ class IffAssetStatusRepository
 
     public function __construct()
     {
+        C2PillarsSchema::ensure();
         $this->pdo = Database::getPdo();
     }
 
@@ -32,12 +34,19 @@ class IffAssetStatusRepository
 
     public function upsert(string $missionId, string $assetId, string $callsign, ?string $platformType = null, ?int $challengeId = null): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM iff_asset_status WHERE mission_id = ? AND asset_id = ?');
+        $stmt = $this->pdo->prepare('SELECT id, current_challenge_id FROM iff_asset_status WHERE mission_id = ? AND asset_id = ?');
         $stmt->execute([$missionId, $assetId]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($existing) {
-            $this->pdo->prepare('UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = ?, updated_at = NOW() WHERE id = ?')
-                ->execute([$callsign, $platformType, $challengeId, $existing['id']]);
+            $prevChallenge = isset($existing['current_challenge_id']) ? (int) $existing['current_challenge_id'] : 0;
+            $nextChallenge = $challengeId !== null ? (int) $challengeId : 0;
+            if ($nextChallenge > 0 && $nextChallenge !== $prevChallenge) {
+                $this->pdo->prepare('UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = ?, response_status = ?, response_code = NULL, responded_at = NULL, updated_at = NOW() WHERE id = ?')
+                    ->execute([$callsign, $platformType, $challengeId, 'PENDING', $existing['id']]);
+            } else {
+                $this->pdo->prepare('UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = COALESCE(?, current_challenge_id), updated_at = NOW() WHERE id = ?')
+                    ->execute([$callsign, $platformType, $challengeId, $existing['id']]);
+            }
         } else {
             $this->pdo->prepare('INSERT INTO iff_asset_status (mission_id, asset_id, callsign, platform_type, current_challenge_id, response_status) VALUES (?, ?, ?, ?, ?, ?)')
                 ->execute([$missionId, $assetId, $callsign, $platformType, $challengeId, 'PENDING']);

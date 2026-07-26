@@ -62,14 +62,14 @@ switch (_realism) do {
             _atakState set ["powered_on", false];
             
             if (_wasPowered) then {
-                hintSilent "ATAK éteint suite au choc !";
+                ["ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
                 playSound "addItemFailed";
                 
                 // Peut être rallumé après 30 secondes
                 [{
                     private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
                     _state set ["powered_on", true];
-                    hintSilent "ATAK redémarré";
+                    ["ATAK rétabli", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
                 }, [], 30] call CBA_fnc_waitAndExecute;
             };
         };
@@ -82,7 +82,7 @@ switch (_realism) do {
             _atakState set ["screen_destroyed", true];
             _atakState set ["powered_on", false];
             
-            hintSilent "Écran ATAK détruit ! Connexion maintenue mais pas d'affichage.";
+            ["Écran ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
             
             // Log pour debug
@@ -98,7 +98,7 @@ switch (_realism) do {
             _atakState set ["screen_destroyed", true];
             _atakState set ["powered_on", false];
             
-            hintSilent "ATAK complètement détruit ! Connexion perdue.";
+            ["ATAK hors service — liaison coupée", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
             
             // Forcer la déconnexion

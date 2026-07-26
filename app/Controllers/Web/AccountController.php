@@ -383,12 +383,6 @@ class AccountController
                     'language' => $language,
                 ]);
                 (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
-                $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
-                    'first_name' => trim((string) $request->input('first_name')),
-                    'last_name' => trim((string) $request->input('last_name')),
-                    'birth_date' => trim((string) ($profile['birth_date'] ?? '')),
-                    'nationality' => trim((string) ($profile['nationality'] ?? '')),
-                ]);
                 if (!empty($vUi['normalized'])) {
                     $this->userUiPreferencesRepository->upsert($uid, $tenantId, $vUi['normalized']);
                 }

@@ -32,7 +32,7 @@ $navResStyle = in_array(($navRes['submenu_style'] ?? 'minimal'), $navStyles, tru
 $navOpsImageEnabled = !array_key_exists('image_enabled', $navOps) || !empty($navOps['image_enabled']);
 $navResImageEnabled = !array_key_exists('image_enabled', $navRes) || !empty($navRes['image_enabled']);
 $presentationMode = ($c['presentation_mode'] ?? 'simple') === 'military' ? 'military' : 'simple';
-$registrationMode = ($c['registration_mode'] ?? 'milsim') === 'simple' ? 'simple' : 'milsim';
+$registrationMode = \App\Services\Community\TenantCommunityProfileService::normalizeRegistrationMode($c['registration_mode'] ?? 'milsim');
 $em = \App\Services\Community\EnlistmentMilsimPackService::forCommunity($c);
 $emRoeLines = implode("\n", is_array($em['roe_items'] ?? null) ? $em['roe_items'] : []);
 $emPreambleStatus = implode("\n", is_array($em['preamble_status_lines'] ?? null) ? $em['preamble_status_lines'] : []);
@@ -393,7 +393,15 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <select name="registration_mode" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
                     <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé, CV, disponibilités, etc.)</option>
                     <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Mode simple (champs réduits, onboarding rapide)</option>
+                    <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo et questions personnalisées)</option>
                 </select>
+                <?php if ($registrationMode === 'discord'): ?>
+                <p class="mt-1.5 text-xs text-slate-500 max-w-2xl">
+                    Les candidats déposent une fiche courte (pseudo Discord + vos questions). Composez les questions dans
+                    <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-indigo-700 underline">Questions Discord</a>
+                    et renseignez le lien d’invitation Discord dans la fiche contact.
+                </p>
+                <?php endif; ?>
             </div>
         </section>
 
