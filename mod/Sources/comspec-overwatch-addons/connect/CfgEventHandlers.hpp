@@ -15,4 +15,10 @@ class Extended_DisplayLoad_EventHandlers {
     class RscDisplayMain {
         comspec_overwatch_connect = "_this call comspec_overwatch_connect_fnc_onMainMenuLoad";
     };
+    class RscDisplayInterrupt {
+        comspec_overwatch_connect = "_this call comspec_overwatch_connect_fnc_onInterruptLoad";
+    };
+    class RscDisplayMPInterrupt {
+        comspec_overwatch_connect = "_this call comspec_overwatch_connect_fnc_onInterruptLoad";
+    };
 };
