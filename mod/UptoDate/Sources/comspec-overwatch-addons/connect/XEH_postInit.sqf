@@ -72,7 +72,7 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         uiSleep 2.5;
         waitUntil {
             missionNamespace getVariable ["COMSPEC_AthenaReady", false]
-            || {diag_tickTime > (missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime] + 120)}
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 120)}
         };
         [] call comspec_overwatch_connect_fnc_showAthenaLinkHelp;
     };
