@@ -253,7 +253,7 @@ class AtakOrderRepository
 
         $type = $this->normalizeType((string) ($data['order_type'] ?? 'MOVE'));
         $typeLabel = mb_substr(trim((string) ($data['type_label'] ?? '')), 0, 120);
-        if ($type === 'CUSTOM' && $typeLabel === '') {
+        if (($type === 'CUSTOM' || str_starts_with($type, 'TYP_')) && $typeLabel === '') {
             $typeLabel = 'Ordre personnalisé';
         }
         $priority = $this->normalizePriority((string) ($data['priority'] ?? 'IMPORTANT'));
@@ -650,7 +650,10 @@ class AtakOrderRepository
         if (in_array($t, self::TYPES, true)) {
             return $t;
         }
-        // Codes modèles personnalisés (ex. CUSTOM_AB12, TPL_9)
+        // Types / modèles personnalisés (ex. TYP_12, CUSTOM_AB12, TPL_9)
+        if (preg_match('/^TYP_\d+$/', $t) === 1) {
+            return mb_substr($t, 0, 32);
+        }
         if (preg_match('/^(CUSTOM|TPL)_[A-Z0-9_]{1,24}$/', $t) === 1) {
             return mb_substr($t, 0, 32);
         }

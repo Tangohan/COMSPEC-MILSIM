@@ -845,18 +845,22 @@ if ($atakMapConfig) {
         <p class="atak-panel-hint">Ordres tactiques émis depuis la carte ou reçus du théâtre. Confirmez la réception, suivez l’exécution ou annulez si besoin. Un léger délai radio peut s’appliquer côté destinataire.</p>
         <div class="atak-orders-issue" id="atak-orders-issue" hidden>
           <div class="atak-orders-issue-grid">
-            <label class="atak-orders-field">
+            <label class="atak-orders-field atak-orders-field--wide">
               <span>Type d’ordre</span>
-              <select id="atak-order-type">
-                <optgroup label="Types courants" id="atak-order-type-builtin">
-                  <option value="MOVE">Se déplacer</option>
-                  <option value="HOLD">Tenir la position</option>
-                  <option value="RECON">Reconnaissance</option>
-                  <option value="CAS">Appui aérien</option>
-                  <option value="QRF">Force de réaction</option>
-                </optgroup>
-                <optgroup label="Mes modèles" id="atak-order-type-custom" hidden></optgroup>
-              </select>
+              <div class="atak-orders-type-row">
+                <select id="atak-order-type">
+                  <optgroup label="Types courants" id="atak-order-type-builtin">
+                    <option value="MOVE">Se déplacer</option>
+                    <option value="HOLD">Tenir la position</option>
+                    <option value="RECON">Reconnaissance</option>
+                    <option value="CAS">Appui aérien</option>
+                    <option value="QRF">Force de réaction</option>
+                  </optgroup>
+                  <optgroup label="Types personnalisés" id="atak-order-type-custom-types" hidden></optgroup>
+                  <optgroup label="Mes modèles" id="atak-order-type-custom" hidden></optgroup>
+                </select>
+                <button type="button" class="atak-order-tpl-btn" id="atak-order-type-add-btn" title="Créer un nouveau type d’ordre">Nouveau type</button>
+              </div>
             </label>
             <label class="atak-orders-field">
               <span>Priorité</span>
@@ -892,6 +896,25 @@ if ($atakMapConfig) {
               <input type="checkbox" id="atak-order-radio-sim" checked />
               <span>Conditions radio réalistes (délai, brouillage fictif)</span>
             </label>
+            <div class="atak-orders-templates atak-orders-field--wide" id="atak-orders-type-form-wrap">
+              <div class="atak-orders-templates-actions">
+                <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--danger" id="atak-order-type-delete-btn" hidden>Retirer ce type</button>
+              </div>
+              <div class="atak-orders-tpl-form" id="atak-orders-type-form" hidden>
+                <label class="atak-orders-field">
+                  <span>Intitulé du type</span>
+                  <input type="text" id="atak-order-type-label" maxlength="120" placeholder="Ex. Sécuriser le périmètre" />
+                </label>
+                <label class="atak-orders-field">
+                  <span>Description (facultatif)</span>
+                  <input type="text" id="atak-order-type-desc" maxlength="400" placeholder="Précisions visibles lors de la sélection" />
+                </label>
+                <div class="atak-orders-templates-actions">
+                  <button type="button" class="atak-order-tpl-btn atak-order-tpl-btn--primary" id="atak-order-type-confirm-btn">Enregistrer le type</button>
+                  <button type="button" class="atak-order-tpl-btn" id="atak-order-type-cancel-btn">Annuler</button>
+                </div>
+              </div>
+            </div>
             <div class="atak-orders-templates atak-orders-field--wide" id="atak-orders-templates">
               <div class="atak-orders-templates-actions">
                 <button type="button" class="atak-order-tpl-btn" id="atak-order-tpl-save-btn">Enregistrer comme modèle</button>

@@ -12,6 +12,7 @@ use App\Repositories\AtakMedicalTriageRepository;
 use App\Repositories\AtakOperatorIdRepository;
 use App\Repositories\AtakOrderRepository;
 use App\Repositories\AtakOrderTemplateRepository;
+use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
@@ -66,6 +67,7 @@ class AtakApiController
         private ?\App\Repositories\UnitRepository $unitRepository = null,
         private ?AtakOrderRepository $orderRepository = null,
         private ?AtakOrderTemplateRepository $orderTemplateRepository = null,
+        private ?AtakOrderTypeRepository $orderTypeRepository = null,
         private ?FireTeamRepository $fireTeamRepository = null,
         private ?AtakOperatorIdRepository $operatorIdRepository = null,
         private ?AtakMedicalTriageRepository $medicalTriageRepository = null,
@@ -82,6 +84,7 @@ class AtakApiController
         $this->unitRepository ??= new \App\Repositories\UnitRepository();
         $this->orderRepository ??= new AtakOrderRepository();
         $this->orderTemplateRepository ??= new AtakOrderTemplateRepository();
+        $this->orderTypeRepository ??= new AtakOrderTypeRepository();
         $this->fireTeamRepository ??= new FireTeamRepository();
         $this->betaRegistrationRepository ??= new AtakBetaRegistrationRepository();
         $this->operatorIdRepository ??= new AtakOperatorIdRepository();
@@ -4535,6 +4538,7 @@ class AtakApiController
                 'radio_sim' => $this->orderRepository->v2ColumnsReady(),
                 'since' => true,
                 'custom_templates' => $this->orderTemplateRepository?->tablesReady() ?? false,
+                'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],
         ]);
     }
@@ -4649,6 +4653,122 @@ class AtakApiController
             return Response::json([
                 'error' => 'not_found',
                 'message' => 'Ce modèle d’ordre n’existe pas ou a déjà été retiré.',
+            ], 404);
+        }
+
+        return Response::json(['ok' => true]);
+    }
+
+    /**
+     * Types d’ordres personnalisés du tenant (libellés du sélecteur).
+     */
+    public function ordersTypesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour gérer les types d’ordre.',
+            ], 403);
+        }
+        $types = $this->orderTypeRepository && $this->orderTypeRepository->tablesReady()
+            ? $this->orderTypeRepository->listForTenant($r)
+            : [];
+
+        return Response::json([
+            'ok' => true,
+            'types' => $types,
+            'persisted' => $this->orderTypeRepository?->tablesReady() ?? false,
+        ]);
+    }
+
+    /**
+     * Créer un type d’ordre personnalisé.
+     */
+    public function ordersTypesStore(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour créer un type d’ordre.',
+            ], 403);
+        }
+        if (!$this->orderTypeRepository || !$this->orderTypeRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les types d’ordre personnalisés ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+
+        $body = $this->jsonBody($request);
+        $label = trim((string) ($body['label'] ?? $body['name'] ?? ''));
+        if ($label === '') {
+            return Response::json([
+                'error' => 'label_required',
+                'message' => 'Indiquez un intitulé pour ce type d’ordre.',
+            ], 400);
+        }
+        $description = trim((string) ($body['description'] ?? ''));
+        $user = $this->sessionUserBrief();
+        $createdBy = isset($user['userId']) ? (int) $user['userId'] : null;
+
+        $row = $this->orderTypeRepository->create($r, $label, $description, $createdBy);
+        if (!$row) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible de créer ce type d’ordre.',
+            ], 500);
+        }
+
+        return Response::json(['ok' => true, 'type' => $row], 201);
+    }
+
+    /**
+     * Supprimer un type d’ordre personnalisé.
+     */
+    public function ordersTypesDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour supprimer un type d’ordre.',
+            ], 403);
+        }
+        if (!$this->orderTypeRepository || !$this->orderTypeRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les types d’ordre personnalisés ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+
+        $id = (int) ($params['id'] ?? $request->query('id') ?? 0);
+        if ($id < 1) {
+            $body = $this->jsonBody($request);
+            $id = (int) ($body['id'] ?? 0);
+        }
+        if ($id < 1) {
+            return Response::json([
+                'error' => 'invalid_id',
+                'message' => 'Type d’ordre introuvable.',
+            ], 400);
+        }
+
+        $ok = $this->orderTypeRepository->deleteForTenant($r, $id);
+        if (!$ok) {
+            return Response::json([
+                'error' => 'not_found',
+                'message' => 'Ce type d’ordre n’existe pas ou a déjà été retiré.',
             ], 404);
         }
 
@@ -5370,18 +5490,29 @@ class AtakApiController
     {
         $customLabel = trim($customLabel);
         $upper = strtoupper($type);
-        return match ($upper) {
+        $builtin = match ($upper) {
             'HOLD' => 'Tenir la position',
             'RECON' => 'Reconnaissance',
             'CAS' => 'Appui aérien',
             'QRF' => 'Force de réaction',
-            'CUSTOM' => $customLabel !== '' ? $customLabel : 'Ordre personnalisé',
             'MOVE' => 'Se déplacer',
-            default => $customLabel !== ''
-                ? $customLabel
-                : ((str_starts_with($upper, 'CUSTOM') || str_starts_with($upper, 'TPL_'))
-                    ? 'Ordre personnalisé'
-                    : 'Se déplacer'),
+            default => null,
+        };
+        if ($builtin !== null) {
+            return $builtin;
+        }
+        if ($customLabel !== '') {
+            return $customLabel;
+        }
+        if (AtakOrderTypeRepository::idFromCode($upper) !== null) {
+            return 'Ordre personnalisé';
+        }
+
+        return match ($upper) {
+            'CUSTOM' => 'Ordre personnalisé',
+            default => (str_starts_with($upper, 'CUSTOM') || str_starts_with($upper, 'TPL_'))
+                ? 'Ordre personnalisé'
+                : 'Se déplacer',
         };
     }
 

@@ -5149,6 +5149,20 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
 .atak-order-issue-submit:hover {
   background: rgba(52, 211, 153, 0.22);
 }
+.atak-orders-type-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+.atak-orders-type-row select {
+  flex: 1;
+  min-width: 0;
+}
+.atak-orders-type-row .atak-order-tpl-btn {
+  flex-shrink: 0;
+  align-self: stretch;
+  white-space: nowrap;
+}
 .atak-orders-templates {
   margin-top: 0.15rem;
   display: flex;

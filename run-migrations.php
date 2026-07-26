@@ -3029,6 +3029,14 @@ try {
     echo '  [ATTENTION] atak_order_templates : ' . $e->getMessage() . "\n";
 }
 
+$atakOrderTypesMigrate = require $root . '/bootstrap/atak_order_types_migration.php';
+try {
+    echo "Migration atak_order_types (types d’ordres personnalisés)...\n";
+    $atakOrderTypesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_order_types : ' . $e->getMessage() . "\n";
+}
+
 $atakUnitsPositionMigrate = require $root . '/bootstrap/atak_units_position_migration.php';
 try {
     echo "Migration atak_units_position (coordonnées carte pos_x / pos_y)...\n";

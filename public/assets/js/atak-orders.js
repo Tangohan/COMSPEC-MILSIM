@@ -11,6 +11,10 @@ window.ATAKOrders = (function () {
   var customTemplates = [];
   var templatesLoaded = false;
   var serverTemplatesReady = false;
+  /** @type {Array<{id:string,code:string,label:string,description:string}>} */
+  var customOrderTypes = [];
+  var orderTypesLoaded = false;
+  var serverOrderTypesReady = false;
   /** @type {Record<string, object>} cache local pour merge delta (?since=) */
   var ordersById = {};
   /** Curseur datetime SQL du dernier poll (null = snapshot complet) */
@@ -68,10 +72,25 @@ window.ATAKOrders = (function () {
     var t = String(type || '').toUpperCase();
     if (BUILTIN_TYPES[t]) return BUILTIN_TYPES[t];
     var custom = String(customLabel || '').trim();
+    if (t.indexOf('TYP_') === 0) {
+      var typeId = t.slice(4);
+      for (var ti = 0; ti < customOrderTypes.length; ti++) {
+        if (String(customOrderTypes[ti].id) === typeId) return customOrderTypes[ti].label;
+      }
+      return custom || 'Ordre personnalisé';
+    }
     if (t === 'CUSTOM' || t.indexOf('CUSTOM_') === 0 || t.indexOf('TPL_') === 0) {
       return custom || 'Ordre personnalisé';
     }
     return custom || 'Se déplacer';
+  }
+
+  function findOrderType(id) {
+    var sid = String(id || '');
+    for (var i = 0; i < customOrderTypes.length; i++) {
+      if (String(customOrderTypes[i].id) === sid) return customOrderTypes[i];
+    }
+    return null;
   }
 
   function templatesStorageKey() {
@@ -124,28 +143,58 @@ window.ATAKOrders = (function () {
 
   function fillTypeSelect(preserveSelection) {
     var sel = document.getElementById('atak-order-type');
-    var group = document.getElementById('atak-order-type-custom');
-    if (!sel || !group) return;
+    var tplGroup = document.getElementById('atak-order-type-custom');
+    var typeGroup = document.getElementById('atak-order-type-custom-types');
+    if (!sel) return;
     var prev = preserveSelection ? String(sel.value || '') : '';
-    group.innerHTML = '';
-    if (!customTemplates.length) {
-      group.hidden = true;
-    } else {
-      group.hidden = false;
-      customTemplates.forEach(function (t) {
-        var opt = document.createElement('option');
-        opt.value = 'tpl:' + t.id;
-        opt.textContent = t.label;
-        group.appendChild(opt);
-      });
+
+    if (typeGroup) {
+      typeGroup.innerHTML = '';
+      if (!customOrderTypes.length) {
+        typeGroup.hidden = true;
+      } else {
+        typeGroup.hidden = false;
+        customOrderTypes.forEach(function (t) {
+          var opt = document.createElement('option');
+          opt.value = 'typ:' + t.id;
+          opt.textContent = t.label;
+          if (t.description) opt.title = t.description;
+          typeGroup.appendChild(opt);
+        });
+      }
     }
+
+    if (tplGroup) {
+      tplGroup.innerHTML = '';
+      if (!customTemplates.length) {
+        tplGroup.hidden = true;
+      } else {
+        tplGroup.hidden = false;
+        customTemplates.forEach(function (t) {
+          var opt = document.createElement('option');
+          opt.value = 'tpl:' + t.id;
+          opt.textContent = t.label;
+          tplGroup.appendChild(opt);
+        });
+      }
+    }
+
     if (prev) {
       sel.value = prev;
-      if (sel.value !== prev && prev.indexOf('tpl:') === 0) {
+      if (sel.value !== prev && (prev.indexOf('tpl:') === 0 || prev.indexOf('typ:') === 0)) {
         sel.value = 'MOVE';
       }
     }
     updateTemplateDeleteVisibility();
+    updateTypeDeleteVisibility();
+  }
+
+  function updateTypeDeleteVisibility() {
+    var sel = document.getElementById('atak-order-type');
+    var btn = document.getElementById('atak-order-type-delete-btn');
+    if (!btn) return;
+    var v = sel ? String(sel.value || '') : '';
+    btn.hidden = v.indexOf('typ:') !== 0;
   }
 
   function updateTemplateDeleteVisibility() {
@@ -167,6 +216,14 @@ window.ATAKOrders = (function () {
   function resolveIssueType() {
     var typeEl = document.getElementById('atak-order-type');
     var raw = typeEl ? String(typeEl.value || 'MOVE') : 'MOVE';
+    if (raw.indexOf('typ:') === 0) {
+      var ot = findOrderType(raw.slice(4));
+      return {
+        type: ot ? (ot.code || ('TYP_' + ot.id)) : 'CUSTOM',
+        type_label: ot ? ot.label : 'Ordre personnalisé',
+        template: null
+      };
+    }
     if (raw.indexOf('tpl:') === 0) {
       var tpl = findTemplate(raw.slice(4));
       return {
@@ -180,6 +237,47 @@ window.ATAKOrders = (function () {
       type_label: '',
       template: null
     };
+  }
+
+  function loadOrderTypes(force) {
+    if (orderTypesLoaded && !force) {
+      return Promise.resolve(customOrderTypes);
+    }
+    var base = getApiBase();
+    if (!base) {
+      orderTypesLoaded = true;
+      return Promise.resolve(customOrderTypes);
+    }
+    return fetch(base + '/api/atak/orders/types', {
+      credentials: 'include',
+      cache: 'no-store'
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('types ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        serverOrderTypesReady = !!(data && data.persisted);
+        var serverList = (data && Array.isArray(data.types)) ? data.types : [];
+        customOrderTypes = serverList.map(function (t) {
+          return {
+            id: String(t.id),
+            code: String(t.code || ('TYP_' + t.id)),
+            label: String(t.label || '').trim(),
+            description: String(t.description || '').trim()
+          };
+        }).filter(function (t) { return t.id && t.label; });
+        orderTypesLoaded = true;
+        fillTypeSelect(true);
+        return customOrderTypes;
+      })
+      .catch(function () {
+        serverOrderTypesReady = false;
+        customOrderTypes = [];
+        orderTypesLoaded = true;
+        fillTypeSelect(true);
+        return customOrderTypes;
+      });
   }
 
   function loadTemplates(force) {
@@ -340,6 +438,114 @@ window.ATAKOrders = (function () {
     });
   }
 
+  function showTypeForm(show) {
+    var form = document.getElementById('atak-orders-type-form');
+    if (!form) return;
+    form.hidden = !show;
+    if (show) {
+      var labelEl = document.getElementById('atak-order-type-label');
+      var descEl = document.getElementById('atak-order-type-desc');
+      if (labelEl) {
+        labelEl.value = '';
+        labelEl.focus();
+      }
+      if (descEl) descEl.value = '';
+    }
+  }
+
+  function createTypeFromForm() {
+    var labelEl = document.getElementById('atak-order-type-label');
+    var descEl = document.getElementById('atak-order-type-desc');
+    var label = labelEl ? String(labelEl.value || '').trim() : '';
+    var description = descEl ? String(descEl.value || '').trim() : '';
+    if (!label) {
+      if (window.ATAKShowError) window.ATAKShowError('Indiquez un intitulé pour ce type d’ordre.');
+      return;
+    }
+
+    var base = getApiBase();
+    if (!base) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison Tacmap indisponible.');
+      return;
+    }
+
+    fetch(base + '/api/atak/orders/types', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        label: label,
+        description: description
+      })
+    })
+      .then(function (r) {
+        return r.json().then(function (d) { return { ok: r.ok, status: r.status, data: d }; });
+      })
+      .then(function (res) {
+        if (!res.ok || !res.data || !res.data.type) {
+          if (window.ATAKShowError) {
+            window.ATAKShowError((res.data && res.data.message) || 'Impossible de créer ce type d’ordre.');
+          }
+          return;
+        }
+        serverOrderTypesReady = true;
+        var t = res.data.type;
+        var entry = {
+          id: String(t.id),
+          code: String(t.code || ('TYP_' + t.id)),
+          label: String(t.label || label),
+          description: String(t.description || description)
+        };
+        customOrderTypes = customOrderTypes.filter(function (x) { return String(x.id) !== entry.id; });
+        customOrderTypes.push(entry);
+        fillTypeSelect(false);
+        var sel = document.getElementById('atak-order-type');
+        if (sel) sel.value = 'typ:' + entry.id;
+        updateTypeDeleteVisibility();
+        showTypeForm(false);
+        if (window.ATAKShowNotification) window.ATAKShowNotification('Type d’ordre enregistré.');
+      })
+      .catch(function () {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de créer ce type d’ordre.');
+      });
+  }
+
+  function deleteSelectedType() {
+    var sel = document.getElementById('atak-order-type');
+    var raw = sel ? String(sel.value || '') : '';
+    if (raw.indexOf('typ:') !== 0) return;
+    var id = raw.slice(4);
+    var ot = findOrderType(id);
+    if (!ot) return;
+    if (!window.confirm('Retirer le type « ' + ot.label + ' » ?')) return;
+
+    var base = getApiBase();
+    var finish = function () {
+      customOrderTypes = customOrderTypes.filter(function (t) { return String(t.id) !== String(id); });
+      fillTypeSelect(false);
+      if (sel) sel.value = 'MOVE';
+      updateTypeDeleteVisibility();
+      if (window.ATAKShowNotification) window.ATAKShowNotification('Type retiré.');
+    };
+
+    if (!base || !serverOrderTypesReady) {
+      finish();
+      return;
+    }
+
+    fetch(base + '/api/atak/orders/types/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error('delete type');
+        finish();
+      })
+      .catch(function () {
+        if (window.ATAKShowError) window.ATAKShowError('Impossible de retirer ce type d’ordre.');
+      });
+  }
+
   function deleteSelectedTemplate() {
     var sel = document.getElementById('atak-order-type');
     var raw = sel ? String(sel.value || '') : '';
@@ -465,6 +671,7 @@ window.ATAKOrders = (function () {
     }
     if (visible) {
       loadTemplates(false);
+      loadOrderTypes(false);
     }
   }
 
@@ -909,9 +1116,30 @@ window.ATAKOrders = (function () {
       orderTypeEl._boundTpl = true;
       orderTypeEl.addEventListener('change', function () {
         updateTemplateDeleteVisibility();
+        updateTypeDeleteVisibility();
         var resolved = resolveIssueType();
         if (resolved.template) applyTemplateToForm(resolved.template);
       });
+    }
+    var typeAddBtn = document.getElementById('atak-order-type-add-btn');
+    if (typeAddBtn && !typeAddBtn._bound) {
+      typeAddBtn._bound = true;
+      typeAddBtn.addEventListener('click', function () { showTypeForm(true); });
+    }
+    var typeCancelBtn = document.getElementById('atak-order-type-cancel-btn');
+    if (typeCancelBtn && !typeCancelBtn._bound) {
+      typeCancelBtn._bound = true;
+      typeCancelBtn.addEventListener('click', function () { showTypeForm(false); });
+    }
+    var typeConfirmBtn = document.getElementById('atak-order-type-confirm-btn');
+    if (typeConfirmBtn && !typeConfirmBtn._bound) {
+      typeConfirmBtn._bound = true;
+      typeConfirmBtn.addEventListener('click', function () { createTypeFromForm(); });
+    }
+    var typeDeleteBtn = document.getElementById('atak-order-type-delete-btn');
+    if (typeDeleteBtn && !typeDeleteBtn._bound) {
+      typeDeleteBtn._bound = true;
+      typeDeleteBtn.addEventListener('click', function () { deleteSelectedType(); });
     }
     var saveBtn = document.getElementById('atak-order-tpl-save-btn');
     if (saveBtn && !saveBtn._bound) {
@@ -974,6 +1202,7 @@ window.ATAKOrders = (function () {
     startPolling: startPolling,
     loadRecipients: loadRecipients,
     loadTemplates: loadTemplates,
+    loadOrderTypes: loadOrderTypes,
     parseOrderChatBody: parseOrderChatBody,
     formatChatBody: formatChatBody,
     typeLabelFr: typeLabelFr
