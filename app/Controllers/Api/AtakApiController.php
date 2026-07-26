@@ -812,6 +812,12 @@ class AtakApiController
 
             return $this->jsonBodyCache;
         }
+        if (!mb_check_encoding($raw, 'UTF-8')) {
+            $converted = @mb_convert_encoding($raw, 'UTF-8', 'ISO-8859-1');
+            if (is_string($converted) && $converted !== '') {
+                $raw = $converted;
+            }
+        }
         $decoded = json_decode($raw, true);
         $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
 
@@ -970,6 +976,82 @@ class AtakApiController
     }
 
     /**
+     * Le mod Overwatch envoie toujours mapId=1 (Extension.cs) ; fusionner avec le théâtre affiché.
+     */
+    private function resolveLatestArmaActivity(int $tenantId, int $mapId): ?string
+    {
+        $modMapId = self::DEFAULT_MAP_ID;
+        $last = $this->atak->getLastActivity($tenantId, $mapId);
+        if ($mapId === $modMapId) {
+            return $last;
+        }
+        $modLast = $this->atak->getLastActivity($tenantId, $modMapId);
+        if ($modLast === null) {
+            return $last;
+        }
+        if ($last === null || strtotime($modLast) > strtotime($last)) {
+            return $modLast;
+        }
+
+        return $last;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function unitsForTransmission(int $tenantId, int $mapId): array
+    {
+        $modMapId = self::DEFAULT_MAP_ID;
+        $units = $this->atak->getUnits($tenantId, $mapId);
+        if ($mapId === $modMapId) {
+            return $units;
+        }
+        $modUnits = $this->atak->getUnits($tenantId, $modMapId);
+        if ($modUnits === []) {
+            return $units;
+        }
+        if ($units === []) {
+            return $modUnits;
+        }
+
+        $rank = ['linked' => 3, 'delayed' => 2, 'offline' => 1];
+        $byKey = [];
+        foreach (array_merge($modUnits, $units) as $u) {
+            if (!is_array($u)) {
+                continue;
+            }
+            $callSign = strtolower(trim((string) ($u['call_sign'] ?? '')));
+            $key = $callSign !== '' ? $callSign : ('id:' . (string) ($u['id'] ?? count($byKey)));
+            if (!isset($byKey[$key])) {
+                $byKey[$key] = $u;
+                continue;
+            }
+            $curRank = $rank[(string) ($byKey[$key]['status'] ?? 'offline')] ?? 0;
+            $newRank = $rank[(string) ($u['status'] ?? 'offline')] ?? 0;
+            if ($newRank > $curRank) {
+                $byKey[$key] = $u;
+            }
+        }
+
+        return array_values($byKey);
+    }
+
+    /**
+     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int} $primary
+     * @param array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int} $secondary
+     * @return array{athena_at:int,ctab_at:int,atak_enhanced_at:int,athena_ctab_at:int}
+     */
+    private function mergeModDetection(array $primary, array $secondary): array
+    {
+        $out = $primary;
+        foreach ($secondary as $key => $value) {
+            $out[$key] = max((int) ($out[$key] ?? 0), (int) $value);
+        }
+
+        return $out;
+    }
+
+    /**
      * États des canaux de transmission pour le bandeau ATAK.
      * linked = en liaison · present = détecté récemment · absent = non détecté.
      *
@@ -983,8 +1065,15 @@ class AtakApiController
      */
     private function buildTransmissionSources(int $tenantId, int $mapId, ?int $armaAgo, array $units): array
     {
+        $modMapId = self::DEFAULT_MAP_ID;
         $webCount = count($this->activityLog->listWebPresence($tenantId, $mapId));
         $detect = $this->activityLog->getModDetection($tenantId, $mapId);
+        if ($mapId !== $modMapId) {
+            $detect = $this->mergeModDetection(
+                $detect,
+                $this->activityLog->getModDetection($tenantId, $modMapId)
+            );
+        }
 
         $ctabFresh = false;
         $ctabSeen = false;
@@ -1943,6 +2032,12 @@ class AtakApiController
             $payload['steam_uid'] = $steam;
         }
 
+        try {
+            $expSvc = new \App\Services\Tactical\AtakExperienceService();
+            $payload['experience'] = $expSvc->payloadForGame($tenantId);
+        } catch (\Throwable) {
+        }
+
         return Response::json($payload);
     }
 
@@ -2011,17 +2106,38 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
-        $last = $this->atak->getLastActivity($tenantId, $mapId);
+        $last = $this->resolveLatestArmaActivity($tenantId, $mapId);
         $ago = null;
         if ($last !== null) {
             $ago = (int) (time() - strtotime($last));
         }
-        $units = $this->atak->getUnits($tenantId, $mapId);
+        $units = $this->unitsForTransmission($tenantId, $mapId);
         $unitsCount = count(array_filter(
             $units,
             static fn ($u) => is_array($u) && (string) ($u['status'] ?? '') === 'linked'
         ));
         $activeCallSigns = $this->atak->getActiveUnitsSummary($tenantId, $mapId, 15);
+        if ($mapId !== self::DEFAULT_MAP_ID) {
+            $modSummary = $this->atak->getActiveUnitsSummary($tenantId, self::DEFAULT_MAP_ID, 15);
+            if ($modSummary !== []) {
+                $seen = [];
+                foreach ($activeCallSigns as $row) {
+                    $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
+                    if ($cs !== '') {
+                        $seen[$cs] = true;
+                    }
+                }
+                foreach ($modSummary as $row) {
+                    $cs = strtolower(trim((string) ($row['call_sign'] ?? '')));
+                    if ($cs === '' || isset($seen[$cs])) {
+                        continue;
+                    }
+                    $activeCallSigns[] = $row;
+                    $seen[$cs] = true;
+                }
+                $activeCallSigns = array_slice($activeCallSigns, 0, 15);
+            }
+        }
         $transmissions = $this->buildTransmissionSources($tenantId, $mapId, $ago, $units);
 
         return Response::json([
@@ -3357,6 +3473,48 @@ class AtakApiController
     }
 
     /**
+     * Expérience Overwatch par communauté (réalisme, troll, guide).
+     */
+    public function experience(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakExperienceService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+
+        if ($method === 'POST' || $method === 'PUT' || $method === 'PATCH') {
+            $isGame = ComspecApiKeyAuth::extractPresentedKey() !== '';
+            if ($isGame) {
+                return Response::json([
+                    'error' => 'forbidden',
+                    'message' => 'L’expérience se règle depuis l’administration web.',
+                ], 403);
+            }
+            if (!function_exists('can') || !can('admin.access')) {
+                return Response::json(['error' => 'Forbidden'], 403);
+            }
+            $body = $this->jsonBody($request);
+            $incoming = is_array($body['settings'] ?? null) ? $body['settings'] : $body;
+            $saved = $svc->put($tenantId, $incoming);
+
+            return Response::json([
+                'ok' => true,
+                'settings' => $saved['settings'],
+                'catalog' => $svc->catalogWithState($tenantId),
+                'guide' => $saved['guide'],
+                'updated_at' => $saved['updated_at'],
+            ]);
+        }
+
+        $payload = $svc->payloadForGame($tenantId);
+
+        return Response::json($payload);
+    }
+
+    /**
      * Met à jour le triage d’une alerte médicale (message tchat).
      * Réservé aux profils médecin / RH (web) ou au flux jeu (clé API).
      */
@@ -4052,7 +4210,7 @@ class AtakApiController
                 $row['mentions'] = $mentionSummary['mentions'];
                 $row['mention_pings'] = $mentionSummary['pings'];
             }
-            $activityLabel = 'Message envoyé — ' . $author;
+            $activityLabel = "Message envoy\u{00e9} \u{2014} " . $author;
             $activityMeta = $chatActivityMeta;
             if (is_array($mentionSummary) && $mentionSummary['mentions'] !== []) {
                 $labels = [];
@@ -4063,7 +4221,7 @@ class AtakApiController
                     }
                 }
                 if ($labels !== []) {
-                    $activityLabel = 'Mention — ' . $author . ' → ' . implode(', ', $labels);
+                    $activityLabel = "Mention \u{2014} " . $author . ' → ' . implode(', ', $labels);
                 }
                 $activityMeta['mentions'] = array_values(array_map(
                     static fn (array $m): string => (string) ($m['call_sign'] ?? $m['token'] ?? ''),

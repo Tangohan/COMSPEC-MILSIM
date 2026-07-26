@@ -195,7 +195,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
         <!-- Un seul hero : fond immersif + marque Athena + accès -->
         <section class="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-black pt-14" id="hero" aria-labelledby="hero-title" data-hero-videos-ready="<?= $heroVideosPresentOnDisk ? '1' : '0' ?>">
             <div class="pointer-events-none absolute inset-0" id="heroSlider">
-                <div id="heroImageSlides" class="absolute inset-0">
+                <div id="heroImageSlides" class="hi-hero-images absolute inset-0">
                     <div class="slide absolute inset-0 opacity-100 transition-opacity duration-1000 ease-in-out">
                         <img id="hero-poster" src="<?= htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async" fetchpriority="high">
                     </div>
@@ -968,6 +968,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     return;
                 }
 
+                pruneUnplayableSources(nextVideo);
                 var playPromise = nextVideo.play();
                 if (playPromise && playPromise.catch) {
                     playPromise.catch(function () {
@@ -975,10 +976,22 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         nextVideo.volume = 0;
                         withSound = false;
                         nextVideo.play().catch(function () {
-                            // Lecture impossible (fichier absent / MIME) → retour aux images.
-                            if (mode === 'videos') {
-                                enableImageMode();
+                            var sources = nextVideo.querySelectorAll('source');
+                            if (sources.length > 1) {
+                                sources[0].remove();
+                                try {
+                                    nextVideo.load();
+                                    nextVideo.play().catch(function () {
+                                        if (mode === 'videos') enableImageMode();
+                                    });
+                                } catch (e) {
+                                    if (mode === 'videos') enableImageMode();
+                                }
+                                syncAvUi();
+                                return;
                             }
+                            if (mode === 'videos') enableImageMode();
+                            syncAvUi();
                         });
                         syncAvUi();
                     });
@@ -1098,6 +1111,62 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 updateImageSlide(current - 1);
             };
 
+            function canPlayMime(mime) {
+                if (!mime) return true;
+                try {
+                    var probe = document.createElement('video');
+                    var answer = probe.canPlayType(mime);
+                    return answer === 'probably' || answer === 'maybe';
+                } catch (e) {
+                    return true;
+                }
+            }
+
+            function pruneUnplayableSources(video) {
+                if (!video) return false;
+                var sources = Array.prototype.slice.call(video.querySelectorAll('source'));
+                var kept = 0;
+                sources.forEach(function (source) {
+                    var type = source.getAttribute('type') || '';
+                    if (type && !canPlayMime(type)) {
+                        source.remove();
+                    } else {
+                        kept++;
+                    }
+                });
+                return kept > 0;
+            }
+
+            function verifyHeroVideoPlayback(video, finish) {
+                var playAttempt = video.play();
+                if (playAttempt && playAttempt.then) {
+                    playAttempt.then(function () {
+                        finish(true);
+                    }).catch(function () {
+                        var sources = video.querySelectorAll('source');
+                        if (sources.length <= 1) {
+                            finish(false);
+                            return;
+                        }
+                        sources[0].remove();
+                        try {
+                            video.load();
+                        } catch (e) {
+                            finish(false);
+                            return;
+                        }
+                        video.addEventListener('canplay', function () {
+                            verifyHeroVideoPlayback(video, finish);
+                        }, { once: true });
+                        video.addEventListener('error', function () {
+                            finish(false);
+                        }, { once: true });
+                    });
+                    return;
+                }
+                finish(!video.error);
+            }
+
             function probeSlide(slide) {
                 return new Promise(function (resolve) {
                     var video = slide.querySelector('[data-hero-video]');
@@ -1105,29 +1174,31 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         resolve(false);
                         return;
                     }
+                    if (!pruneUnplayableSources(video)) {
+                        resolve(false);
+                        return;
+                    }
                     var settled = false;
                     function finish(ok) {
                         if (settled) return;
                         settled = true;
+                        try {
+                            video.pause();
+                            video.currentTime = 0;
+                        } catch (e) {}
                         resolve(!!ok);
                     }
-                    var onReady = function () { finish(true); };
                     var onFail = function () { finish(false); };
-                    video.addEventListener('loadeddata', onReady, { once: true });
-                    video.addEventListener('canplay', onReady, { once: true });
-                    video.addEventListener('loadedmetadata', onReady, { once: true });
+                    video.addEventListener('canplay', function () {
+                        verifyHeroVideoPlayback(video, finish);
+                    }, { once: true });
                     video.addEventListener('error', onFail, { once: true });
-                    Array.prototype.forEach.call(video.querySelectorAll('source'), function (source) {
-                        source.addEventListener('error', function () {
-                            // Un source en 404 n'est fatal que si tous échouent → on attend error vidéo / timeout.
-                        }, { once: true });
-                    });
                     window.setTimeout(function () {
-                        // HAVE_METADATA (1) suffit pour lancer une lecture muted.
-                        finish(video.readyState >= 1);
+                        if (!settled) finish(false);
                     }, PROBE_TIMEOUT_MS);
                     try {
                         video.muted = true;
+                        video.volume = 0;
                         video.setAttribute('playsinline', '');
                         video.load();
                     } catch (e) {
@@ -1211,18 +1282,27 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     startHero();
                 };
 
-                if (knownPresent.length) {
-                    afterResolve(knownPresent);
-                } else {
-                    // Pas de fichier détecté côté serveur : images tout de suite, upgrade si un clip charge.
-                    enableImageMode();
-                    Promise.all(candidateSlides.map(probeSlide)).then(function (results) {
-                        var ok = candidateSlides.filter(function (_slide, index) {
-                            return !!results[index];
-                        });
-                        if (ok.length) afterResolve(ok);
+                var slidesToProbe = knownPresent.length ? knownPresent : candidateSlides;
+
+                // Toujours vérifier la lecture côté navigateur (HEVC / MP4 non supporté ≠ fichier présent).
+                enableImageMode();
+                Promise.all(slidesToProbe.map(probeSlide)).then(function (results) {
+                    var ok = slidesToProbe.filter(function (_slide, index) {
+                        return !!results[index];
                     });
-                }
+                    if (ok.length) {
+                        afterResolve(ok);
+                        return;
+                    }
+                    if (knownPresent.length && slidesToProbe !== candidateSlides) {
+                        Promise.all(candidateSlides.map(probeSlide)).then(function (fallbackResults) {
+                            var fallback = candidateSlides.filter(function (_slide, index) {
+                                return !!fallbackResults[index];
+                            });
+                            if (fallback.length) afterResolve(fallback);
+                        });
+                    }
+                });
             } else {
                 videoSlides = [];
                 bindVideoEvents();

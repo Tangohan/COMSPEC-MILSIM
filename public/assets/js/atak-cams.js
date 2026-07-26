@@ -96,14 +96,49 @@ window.ATAKCams = (function () {
     });
   }
 
-  function emptyStateHtml() {
+  function emptyStateHtml(kind) {
+    if (kind === 'photos') {
+      return (
+        '<div class="atak-empty-state">' +
+          '<div class="atak-empty-state-icon" aria-hidden="true">◫</div>' +
+          '<p class="atak-empty-state-title">Aucune photo reçue</p>' +
+          '<p class="atak-empty-state-text">Les vues capturées depuis la tablette ou les caméras casque apparaîtront ici dès leur remontée.</p>' +
+        '</div>'
+      );
+    }
     return (
       '<div class="atak-empty-state">' +
         '<div class="atak-empty-state-icon" aria-hidden="true">▣</div>' +
-        '<p class="atak-empty-state-title">Aucun aperçu pour l’instant</p>' +
-        '<p class="atak-empty-state-text">Les caméras casque et drones détectés en jeu, ainsi que les photos envoyées depuis la tablette, apparaîtront ici. La vidéo en direct n’est pas disponible : seuls des aperçus photo sont transmis.</p>' +
+        '<p class="atak-empty-state-title">Aucune caméra détectée</p>' +
+        '<p class="atak-empty-state-text">Les caméras casque et drones actifs en jeu apparaîtront ici. Seuls des aperçus photo sont transmis, pas de vidéo en direct.</p>' +
       '</div>'
     );
+  }
+
+  function fetchJsonForMap(path, mapId) {
+    var base = getApiBase();
+    var sep = path.indexOf('?') >= 0 ? '&' : '?';
+    var url = (base ? base : '') + path + sep + 'mapId=' + encodeURIComponent(mapId);
+    return fetch(url, { credentials: 'include' })
+      .then(function (r) { return r.json(); })
+      .catch(function () { return null; });
+  }
+
+  function fetchWithMapFallback(path, parseResult) {
+    var mid = getMapId();
+    return fetchJsonForMap(path, mid).then(function (data) {
+      var result = parseResult(data);
+      if (result && ((Array.isArray(result) && result.length) || (result.feeds && result.feeds.length))) {
+        return result;
+      }
+      if (mid === 1) return result;
+      return fetchJsonForMap(path, 1).then(function (fallback) {
+        var fb = parseResult(fallback);
+        if (Array.isArray(fb) && fb.length) return fb;
+        if (fb && fb.feeds && fb.feeds.length) return fb;
+        return result;
+      });
+    });
   }
 
   function renderFeeds(feeds) {
@@ -188,67 +223,51 @@ window.ATAKCams = (function () {
 
   function paint(feeds, photos) {
     ensureLightbox();
-    var root = document.getElementById('atak-cams-list');
-    var photosEl = document.getElementById('atak-intel-photos');
-    if (!root) return;
+    var camsRoot = document.getElementById('atak-cams-list');
+    var photosRoot = document.getElementById('atak-photos-list');
+    if (!camsRoot && !photosRoot) return;
 
     var feedHtml = renderFeeds(feeds);
     var photoHtml = renderPhotos(photos, 'Photos reçues');
 
-    if (!feedHtml && !photoHtml) {
-      root.innerHTML = emptyStateHtml();
-      if (photosEl) photosEl.innerHTML = '';
-      return;
+    if (camsRoot) {
+      camsRoot.innerHTML = feedHtml || emptyStateHtml('cams');
     }
+    if (photosRoot) {
+      photosRoot.innerHTML = photoHtml || emptyStateHtml('photos');
+    }
+  }
 
-    root.innerHTML = feedHtml || '';
-    if (photosEl) {
-      photosEl.innerHTML = photoHtml;
-    } else if (photoHtml) {
-      root.insertAdjacentHTML('beforeend', photoHtml);
-    }
+  function notifyNewFeeds(feeds) {
+    feeds.forEach(function (f) {
+      if (f && f.id && f.online && !lastFeedIds[f.id]) {
+        lastFeedIds[f.id] = true;
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification((f.kind_label || 'Caméra') + ' disponible — ' + (f.callsign || f.label || ''));
+        }
+      }
+    });
   }
 
   function fetchVideoFeeds() {
-    var base = getApiBase();
-    var url = (base ? base : '') + '/api/atak/video-feeds?mapId=' + getMapId();
-    return fetch(url, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var feeds = (data && Array.isArray(data.feeds)) ? data.feeds : [];
-        feeds.forEach(function (f) {
-          if (f && f.id && f.online && !lastFeedIds[f.id]) {
-            lastFeedIds[f.id] = true;
-            if (window.ATAKShowNotification) {
-              window.ATAKShowNotification((f.kind_label || 'Caméra') + ' disponible — ' + (f.callsign || f.label || ''));
-            }
-          }
-        });
-        return feeds;
-      })
-      .catch(function () { return []; });
+    return fetchWithMapFallback('/api/atak/video-feeds', function (data) {
+      return (data && Array.isArray(data.feeds)) ? data.feeds : [];
+    }).then(function (feeds) {
+      notifyNewFeeds(feeds || []);
+      return feeds || [];
+    });
   }
 
   function fetchReconImages() {
-    var base = getApiBase();
-    var url = (base ? base : '') + '/api/recon/images?mapId=' + getMapId() + '&limit=40';
-    return fetch(url, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        return Array.isArray(data) ? data : [];
-      })
-      .catch(function () { return []; });
+    return fetchWithMapFallback('/api/recon/images?limit=40', function (data) {
+      return Array.isArray(data) ? data : [];
+    }).then(function (list) { return list || []; });
   }
 
   function fetchIntelPhotos() {
-    var base = getApiBase();
-    var url = (base ? base : '') + '/api/intel/photos?mapId=' + getMapId();
-    return fetch(url, { credentials: 'include' })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        return Array.isArray(data) ? data : [];
-      })
-      .catch(function () { return []; });
+    return fetchWithMapFallback('/api/intel/photos', function (data) {
+      return Array.isArray(data) ? data : [];
+    }).then(function (list) { return list || []; });
   }
 
   function refresh() {

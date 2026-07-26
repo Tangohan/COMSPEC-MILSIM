@@ -1,7 +1,8 @@
 # Vidéos hero — page d’accueil Athena
 #
 # Rotation automatique (muted). Son uniquement via les contrôles / consentement.
-# Déposer webm et/ou mp4 (codecs modernes, clips courts recommandés).
+# Déposer webm (VP9/VP8) et/ou mp4 H.264 (faststart). Éviter HEVC/H.265 seul :
+# Chrome/Firefox ne le décodent pas — la page retombe sur le diaporama images.
 #
 # Clip 1 (équivalents) :
 #   public/assets/video/hero-athena.webm

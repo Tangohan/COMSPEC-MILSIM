@@ -700,6 +700,7 @@ CREATE TABLE IF NOT EXISTS `tenant_atak_config` (
   `default_map_slug` varchar(50) DEFAULT 'altis',
   `maintenance_enabled` tinyint(1) NOT NULL DEFAULT 0,
   `maintenance_message` text DEFAULT NULL,
+  `experience_config` json DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`tenant_id`),

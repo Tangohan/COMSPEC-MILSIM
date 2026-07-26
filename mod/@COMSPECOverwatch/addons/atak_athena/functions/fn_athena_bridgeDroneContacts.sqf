@@ -37,7 +37,7 @@ if (_cs isEqualTo "") then { _cs = name player; };
         "SendPing",
         [_cs, str (_pos select 0), str (_pos select 1), _msg]
     ];
-    [format ["Contact ISR → Athena · %1", _label]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [format ["Contact ISR · %1", _label]] call comspec_overwatch_connect_fnc_appendModuleLog;
 } forEach _contacts;
 
 missionNamespace setVariable ["COMSPEC_Athena_DroneContactSeen", _seen, false];

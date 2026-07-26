@@ -1426,6 +1426,21 @@ public static class Extension
                 var simplified = SimplifyModModulesJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Expérience communauté (réalisme, troll, guide). Lignes : clef\tvaleur
+            if (function == "GetExperience")
+            {
+                var resp = SendGet(_baseUrl + "/api/atak/experience", token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var respBody = ReadContentUtf8(resp, token);
+                var simplified = SimplifyExperienceJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
@@ -1886,6 +1901,41 @@ public static class Extension
     /// Simplifie GET /api/atak/mod-modules pour SQF.
     /// Lignes : id\tenabled(0|1)\tlabel
     /// </summary>
+    private static string SimplifyExperienceJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\r", " ").Replace("|", "-");
+
+            static void AppendLine(StringBuilder sb, string key, string val)
+            {
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(Clean(key)).Append('\t').Append(Clean(val));
+            }
+
+            if (doc.RootElement.TryGetProperty("realism", out var realism))
+                AppendLine(sb, "realism", realism.ValueKind == JsonValueKind.True || (realism.ValueKind == JsonValueKind.Number && realism.GetInt32() != 0) ? "1" : "0");
+            if (doc.RootElement.TryGetProperty("troll", out var troll))
+                AppendLine(sb, "troll", troll.ValueKind == JsonValueKind.True || (troll.ValueKind == JsonValueKind.Number && troll.GetInt32() != 0) ? "1" : "0");
+            foreach (var key in new[] { "screen_notifications", "vehicle_detail", "require_equipment", "show_opfor" })
+            {
+                if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
+                    AppendLine(sb, key, el.GetString() ?? "player");
+            }
+            if (doc.RootElement.TryGetProperty("guide", out var guide) && guide.ValueKind == JsonValueKind.String)
+            {
+                var g = guide.GetString() ?? "";
+                g = g.Replace("\r\n", "\n").Replace('\r', '\n').Replace("\n", "§NL§");
+                AppendLine(sb, "guide", g);
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyModModulesJson(string json)
     {
         try

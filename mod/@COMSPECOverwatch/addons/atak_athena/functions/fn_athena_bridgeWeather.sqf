@@ -46,4 +46,4 @@ private _json = format [
 ];
 
 "COMSPECExtension" callExtension ["SendWeather", [_json]];
-[format ["Météo → Athena · %1 · %2 °C", _condition, _temp]] call comspec_overwatch_connect_fnc_appendModuleLog;
+[format ["Météo · %1 · %2 °C", _condition, _temp]] call comspec_overwatch_connect_fnc_appendModuleLog;

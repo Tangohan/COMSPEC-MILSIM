@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Tactical;
 
+use App\Support\Utf8Text;
+
 /**
  * Journal d’activité ATAK (fichier JSON par théâtre).
  * Fenêtre active pour le panneau latéral ; historique archivé conservé pour la page dédiée.
@@ -96,6 +98,10 @@ final class AtakActivityLogService
         if ($tenantId < 1 || $mapId < 1 || $label === '') {
             return;
         }
+        $label = Utf8Text::normalize($label);
+        if ($actor !== null && $actor !== '') {
+            $actor = Utf8Text::normalize($actor);
+        }
         $safeMeta = $this->sanitizeMeta($meta);
         $this->mutate($tenantId, $mapId, function (array &$data) use ($type, $label, $actor, $safeMeta): void {
             $this->appendEvent($data, $type, $label, $actor, $safeMeta);
@@ -185,6 +191,10 @@ final class AtakActivityLogService
      */
     private function appendEvent(array &$data, string $type, string $label, ?string $actor = null, array $meta = []): void
     {
+        $label = Utf8Text::normalize($label);
+        if ($actor !== null && $actor !== '') {
+            $actor = Utf8Text::normalize($actor);
+        }
         $id = (int) ($data['next_id'] ?? 1);
         $data['next_id'] = $id + 1;
         $event = [
@@ -607,15 +617,16 @@ final class AtakActivityLogService
     private function normalizeEventForApi(array $e): ?array
     {
         $id = (int) ($e['id'] ?? 0);
-        $label = (string) ($e['label'] ?? '');
+        $label = Utf8Text::normalize((string) ($e['label'] ?? ''));
         if ($id < 1 && $label === '') {
             return null;
         }
+        $actorRaw = isset($e['actor']) && is_string($e['actor']) && $e['actor'] !== '' ? $e['actor'] : null;
         $item = [
             'id' => $id,
             'type' => (string) ($e['type'] ?? ''),
             'label' => $label,
-            'actor' => isset($e['actor']) && is_string($e['actor']) && $e['actor'] !== '' ? $e['actor'] : null,
+            'actor' => $actorRaw !== null ? Utf8Text::normalize($actorRaw) : null,
             'at' => (string) ($e['at'] ?? ''),
         ];
         if ($this->isArchived($e)) {

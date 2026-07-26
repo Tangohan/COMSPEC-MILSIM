@@ -721,6 +721,10 @@
 }
 
 /* Carousel vidéo hero (crossfade) */
+.home-impact .hi-hero-images {
+  z-index: 0;
+}
+
 .home-impact .hi-hero-images--standby {
   opacity: 0;
   visibility: hidden;

@@ -28,7 +28,11 @@ window.ATAKLiaisonPage = (function () {
 
   function escapeHtml(s) {
     if (window.ATAKActivity && ATAKActivity.escapeHtml) return ATAKActivity.escapeHtml(s);
-    return String(s == null ? '' : s)
+    s = String(s == null ? '' : s);
+    if (/[Ãâ€]/.test(s)) {
+      try { s = decodeURIComponent(escape(s)); } catch (e) { /* keep */ }
+    }
+    return s
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 

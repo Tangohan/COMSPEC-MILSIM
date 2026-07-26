@@ -11,7 +11,7 @@
   --atak-success: #22c55e;
   --atak-success-glow: rgba(34, 197, 94, 0.5);
   --atak-warning: #eab308;
-  --atak-left-w: 300px;
+  --atak-left-w: 380px;
   --atak-right-w: 280px;
   --atak-header-h: 36px;
   --atak-os-strip-h: 26px;
@@ -50,18 +50,18 @@ body.atak-page.atak-resizing #atak-map {
   pointer-events: none;
 }
 
-/* Prùfùrences compte ù densitù / contraste lùger */
+/* Pr?f?rences compte ? densit? / contraste l?ger */
 body.atak-page.atak-density-compact {
   --atak-header-h: 34px;
   --atak-os-strip-h: 24px;
-  --atak-left-w: 280px;
+  --atak-left-w: 340px;
   --atak-right-w: 260px;
   font-size: 12px;
 }
 body.atak-page.atak-density-comfortable {
   --atak-header-h: 40px;
   --atak-os-strip-h: 30px;
-  --atak-left-w: 320px;
+  --atak-left-w: 400px;
   --atak-right-w: 300px;
   font-size: 13px;
 }
@@ -1083,7 +1083,7 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
 
 /* Activit? de liaison */
 .atak-activity-panel {
-  padding: 0.75rem 0.8rem 1rem;
+  padding: 0.75rem 0.65rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -1154,7 +1154,7 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
 .atak-activity-list {
   list-style: none;
   margin: 0;
-  padding: 0 0.15rem 0 0.35rem;
+  padding: 0 0.1rem 0 0.25rem;
   overflow-y: auto;
   flex: 1;
   display: flex;
@@ -1162,14 +1162,13 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
   gap: 0.35rem;
   position: relative;
   scrollbar-width: thin;
-  scrollbar-color: rgba(52, 211, 153, 0.4) rgba(8, 12, 18, 0.55);
+  scrollbar-color: rgba(52, 211, 153, 0.45) transparent;
 }
 .atak-activity-list::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .atak-activity-list::-webkit-scrollbar-track {
-  background: rgba(8, 12, 18, 0.55);
-  border-radius: 3px;
+  background: transparent;
 }
 .atak-activity-list::-webkit-scrollbar-thumb {
   background: rgba(52, 211, 153, 0.35);
@@ -1277,15 +1276,16 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
 .atak-activity-label--preview {
   margin: 0;
   font-size: 0.8rem;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--atak-text, #e2e8f0);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   overflow: hidden;
-  padding-left: 0.85rem;
-  word-break: break-word;
+  padding-left: 0.65rem;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 .atak-activity-label--empty {
   color: var(--atak-muted);
@@ -1665,8 +1665,9 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
   margin: 0;
   font-size: 0.72rem;
   color: var(--atak-muted);
-  line-height: 1.4;
-  max-width: 16rem;
+  line-height: 1.45;
+  max-width: 100%;
+  text-wrap: pretty;
 }
 .atak-panel-hint {
   margin: 0;
@@ -1805,6 +1806,21 @@ body.atak-hints-hidden .atak-panel-hint {
   position: relative;
   z-index: 1;
   background: transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(52, 211, 153, 0.4) transparent;
+}
+.atak-panel-left .atak-tabs-content::-webkit-scrollbar {
+  width: 5px;
+}
+.atak-panel-left .atak-tabs-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.atak-panel-left .atak-tabs-content::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.35);
+  border-radius: 3px;
+}
+.atak-panel-left .atak-tabs-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.55);
 }
 
 .atak-left-rail {
@@ -1840,6 +1856,18 @@ body.atak-hints-hidden .atak-panel-hint {
   gap: 0.15rem;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(52, 211, 153, 0.35) transparent;
+}
+.atak-left-aside::-webkit-scrollbar {
+  width: 5px;
+}
+.atak-left-aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+.atak-left-aside::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.3);
+  border-radius: 3px;
 }
 
 .atak-panel-left.collapsed { width: 44px; min-width: 44px; }
@@ -1899,7 +1927,7 @@ body.atak-hints-hidden .atak-panel-hint {
   background: rgba(52, 211, 153, 0.08);
 }
 
-/* Reglages alertes ù bas du rail vertical */
+/* Reglages alertes ? bas du rail vertical */
 .atak-rail-audio {
   margin-top: auto;
   padding: 0.45rem 0.2rem 0.25rem;
@@ -2940,7 +2968,7 @@ body.atak-theme-light .atak-chat-messages {
   box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.25);
 }
 
-/* Radio proximitù */
+/* Radio proximit? */
 .atak-radio-head { padding: 0.55rem 0.65rem 0.35rem; }
 .atak-radio-toolbar {
   display: flex;
@@ -3118,7 +3146,7 @@ body.atak-theme-light .atak-chat-messages {
   50% { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.55); }
 }
 
-/* Assistances mùdicales */
+/* Assistances m?dicales */
 .atak-medical-banner {
   position: relative;
   z-index: 1200;
@@ -3401,7 +3429,7 @@ body.atak-theme-light .atak-chat-messages {
   max-width: none;
 }
 .atak-medical-triage-indicate-label {
-  /* Libellù visuel retirù : le select porte aria-label / title. */
+  /* Libell? visuel retir? : le select porte aria-label / title. */
   display: none;
 }
 .atak-medical-triage-select {
@@ -3546,7 +3574,7 @@ body.atak-theme-light .atak-chat-messages {
   color: #86efac;
 }
 .atak-medical-chat-flag { color: #fecaca; font-weight: 600; }
-/* .atak-medical-tab-badge : styles unifiùs via .atak-tab-badge */
+/* .atak-medical-tab-badge : styles unifi?s via .atak-tab-badge */
 .nato-sidc-stack.nato-sidc--wounded .nato-sidc-label,
 .nato-sidc-wrap.nato-sidc--wounded {
   filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.85));
@@ -3606,7 +3634,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-air-asset-pilot { font-size: 0.65rem; color: var(--atak-muted); margin-top: 0.25rem; }
 
 /* Leaflet dark override */
-/* Masquer le zoom Leaflet natif : remplacù par la barre dùoutils */
+/* Masquer le zoom Leaflet natif : remplac? par la barre d?outils */
 .atak-map-wrap .leaflet-control-zoom { display: none !important; }
 
 .atak-map-wrap .leaflet-control-scale {
@@ -3670,7 +3698,7 @@ body.atak-theme-light .atak-chat-messages {
 .atak-map-hud__measure { color: #fbbf24 !important; letter-spacing: 0.02em; }
 .atak-map-hud__row[hidden] { display: none !important; }
 
-/* Barre dùoutils carte (style tablette TAK) */
+/* Barre d?outils carte (style tablette TAK) */
 .atak-map-tools {
   position: absolute;
   top: 8px;
@@ -3827,8 +3855,8 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   color: #1f2933 !important;
 }
 
-/* Tableau des effectifs : hauteur verrouillùe sous la carte.
-   ùvite le tremblement Leaflet (reflow carte ? tiroir) quand le polling
+/* Tableau des effectifs : hauteur verrouill?e sous la carte.
+   ?vite le tremblement Leaflet (reflow carte ? tiroir) quand le polling
    reconstruit le tbody ou que le nombre de lignes change. */
 .atak-drawer {
   position: relative;
@@ -4471,7 +4499,7 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   margin-top: 0.15rem;
 }
 
-/* Saisie (ping / libellù) ? thùme sombre ATAK */
+/* Saisie (ping / libell?) ? th?me sombre ATAK */
 .atak-input-modal {
   position: fixed;
   inset: 0;
@@ -5396,7 +5424,7 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   background: rgba(0, 0, 0, 0.2);
 }
 
-/* Hub de connexion initiale ù profils de session (esprit prùambule LMS) */
+/* Hub de connexion initiale ? profils de session (esprit pr?ambule LMS) */
 body.atak-session-profile-locked {
   overflow: hidden;
 }
@@ -5974,7 +6002,7 @@ a.atak-session-hub__btn {
   color: var(--atak-accent, #34d399);
 }
 
-/* Blocs repliables (barre latùrale Athena) */
+/* Blocs repliables (barre lat?rale Athena) */
 .atak-collapse {
   margin: 0;
 }
@@ -6261,7 +6289,7 @@ a.atak-session-hub__btn {
   color: #fbbf24;
 }
 
-/* Panneau Notes ùlargi / plein format */
+/* Panneau Notes ?largi / plein format */
 .atak-panel-left.is-notes-wide {
   width: min(56vw, 760px) !important;
   min-width: min(56vw, 760px) !important;
@@ -6494,7 +6522,7 @@ a.atak-session-hub__btn {
 }
 .atak-col-ft { width: 14%; }
 
-/* --- Dùconnexion Arma (session web encore ouverte) --- */
+/* --- D?connexion Arma (session web encore ouverte) --- */
 .atak-session-profile-overlay.atak-arma-offline-modal {
   position: fixed;
   inset: 0;
@@ -6568,7 +6596,7 @@ a.atak-session-hub__btn {
   background: #7f1d1d !important;
 }
 
-/* ùù Chrome panneau : largeur + dùtachement ùù */
+/* ?? Chrome panneau : largeur + d?tachement ?? */
 .atak-panel-chrome {
   position: relative;
   z-index: 3;
@@ -6724,7 +6752,7 @@ body.atak-resizing .atak-resize-handle {
   display: flex !important;
 }
 
-/* Mode fenùtre dùtachùe */
+/* Mode fen?tre d?tach?e */
 body.atak-popout .atak-maint-banner,
 body.atak-popout .halo-loader,
 body.atak-popout .atak-session-hub,
@@ -6794,5 +6822,17 @@ body.atak-theme-light .atak-panel-chrome-btn {
   }
   .atak-resize-handle {
     width: 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --atak-left-w: min(380px, 88vw);
+  }
+  body.atak-page.atak-density-compact {
+    --atak-left-w: min(340px, 88vw);
+  }
+  body.atak-page.atak-density-comfortable {
+    --atak-left-w: min(400px, 88vw);
   }
 }

@@ -281,21 +281,25 @@ if (_distance < 0.5 && {_speed < 0.2}) then {
 };
 missionNamespace setVariable ["COMSPEC_ImmobileSince", _immobileTime, true];
 
-// Anomalies de suivi = polish UI : coupées en mode milsim.
-// IMMOBILE : 1 annonce par épisode d’immobilité (évite le spam à chaque tick position).
+// Anomalies de suivi = polish UI : coupées en mode milsim / réalisme communauté.
+private _realism = missionNamespace getVariable ["COMSPEC_TenantRealism", false];
+private _troll = missionNamespace getVariable ["COMSPEC_TenantTrollMode", false];
 private _milsimUi = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
-if (!_milsimUi && {(_now - _immobileTime) > 180} && {!(missionNamespace getVariable ["COMSPEC_ImmobileAlerted", false])}) then {
-    missionNamespace setVariable ["COMSPEC_ImmobileAlerted", true, false];
-    private _alert = createHashMapFromArray [["kind", "IMMOBILE"], ["unit", _callSign], ["duration", _now - _immobileTime], ["position", _pos]];
-    ["OnTrackingAnomaly", _alert] call comspec_overwatch_connect_fnc_publishEvent;
-};
-
-if (!_milsimUi && {_distance > 250} && {_batchInterval > 2}) then {
-    private _lastIncoherent = missionNamespace getVariable ["COMSPEC_IncoherentAlertAt", -1e9];
-    if ((_now - _lastIncoherent) > 60) then {
-        missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", _now, false];
-        private _alert2 = createHashMapFromArray [["kind", "INCOHERENT_MOVE"], ["unit", _callSign], ["distance", _distance], ["from", _lastPos], ["to", _pos]];
-        ["OnTrackingAnomaly", _alert2] call comspec_overwatch_connect_fnc_publishEvent;
+if (!_realism && !_milsimUi) then {
+    private _immobileSec = if (_troll) then { 120 } else { 180 };
+    if {(_now - _immobileTime) > _immobileSec} && {!(missionNamespace getVariable ["COMSPEC_ImmobileAlerted", false])} then {
+        missionNamespace setVariable ["COMSPEC_ImmobileAlerted", true, false];
+        private _alert = createHashMapFromArray [["kind", "IMMOBILE"], ["unit", _callSign], ["duration", _now - _immobileTime], ["position", _pos]];
+        ["OnTrackingAnomaly", _alert] call comspec_overwatch_connect_fnc_publishEvent;
+    };
+    private _jumpThreshold = if (_troll) then { 150 } else { 250 };
+    if {_distance > _jumpThreshold} && {_batchInterval > 2} then {
+        private _lastIncoherent = missionNamespace getVariable ["COMSPEC_IncoherentAlertAt", -1e9];
+        if ((_now - _lastIncoherent) > 60) then {
+            missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", _now, false];
+            private _alert2 = createHashMapFromArray [["kind", "INCOHERENT_MOVE"], ["unit", _callSign], ["distance", _distance], ["from", _lastPos], ["to", _pos]];
+            ["OnTrackingAnomaly", _alert2] call comspec_overwatch_connect_fnc_publishEvent;
+        };
     };
 };
 

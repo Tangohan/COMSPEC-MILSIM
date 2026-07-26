@@ -60,9 +60,12 @@ window.ATAKTransmissions = (function () {
   }
 
   function mapId() {
-    return window.ATAKSocket && window.ATAKSocket.getMapId
-      ? window.ATAKSocket.getMapId()
-      : (window.ATAK_DEFAULT_MAP_ID || 1);
+    if (window.ATAKSocket && window.ATAKSocket.getMapId) {
+      return window.ATAKSocket.getMapId();
+    }
+    return (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0)
+      ? window.ATAK_DEFAULT_MAP_ID
+      : 1;
   }
 
   function refresh() {

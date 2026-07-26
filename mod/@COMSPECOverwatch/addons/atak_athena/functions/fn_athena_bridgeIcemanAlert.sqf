@@ -38,7 +38,7 @@ if (_isLocalSender) then {
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", true, false];
     [_kindKey, _summary, if ((count _pos) >= 2) then { _pos } else { getPos player }] call comspec_overwatch_connect_fnc_sendTacticalAlert;
     missionNamespace setVariable ["COMSPEC_AthenaBridge_SuppressMirror", false, false];
-    [format ["Alerte %1 envoyee vers Athena", _label]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [format ["Alerte %1 envoyée", _label]] call comspec_overwatch_connect_fnc_appendModuleLog;
 } else {
     private _inbox = missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []];
     if (!(_inbox isEqualType [])) then { _inbox = []; };

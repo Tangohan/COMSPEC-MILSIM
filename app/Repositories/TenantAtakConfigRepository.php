@@ -338,4 +338,142 @@ class TenantAtakConfigRepository
 
         return $cached;
     }
+
+    /** Colonne experience_config présente (migration jouée ou auto-appliquée). */
+    public function isExperienceSchemaReady(): bool
+    {
+        $this->ensureExperienceSchema();
+
+        return $this->hasExperienceColumn();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getExperienceConfigRaw(int $tenantId): ?array
+    {
+        if ($tenantId < 1) {
+            return null;
+        }
+        $this->ensureExperienceSchema();
+        if (!$this->hasExperienceColumn()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT experience_config FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1'
+        );
+        $stmt->execute([$tenantId]);
+        $raw = $stmt->fetchColumn();
+        if (!is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+        $data = json_decode($raw, true);
+
+        return is_array($data) ? $data : null;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function saveExperienceConfig(int $tenantId, array $config): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+        $this->ensureExperienceSchema();
+        if (!$this->hasExperienceColumn()) {
+            return false;
+        }
+        $json = json_encode($config, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+            $stmt->execute([$tenantId]);
+            $exists = (bool) $stmt->fetchColumn();
+            if ($exists) {
+                $upd = $this->pdo->prepare(
+                    'UPDATE tenant_atak_config SET experience_config = ?, updated_at = NOW() WHERE tenant_id = ?'
+                );
+                $upd->execute([$json, $tenantId]);
+            } else {
+                $ins = $this->pdo->prepare(
+                    'INSERT INTO tenant_atak_config (tenant_id, experience_config, default_map_slug, created_at, updated_at)
+                     VALUES (?, ?, \'altis\', NOW(), NOW())'
+                );
+                $ins->execute([$tenantId, $json]);
+            }
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function ensureExperienceSchema(): void
+    {
+        static $attempted = false;
+        if ($attempted) {
+            return;
+        }
+        $attempted = true;
+        if ($this->hasExperienceColumn()) {
+            return;
+        }
+        try {
+            $this->pdo->exec(
+                'ALTER TABLE tenant_atak_config ADD COLUMN experience_config JSON DEFAULT NULL'
+            );
+            $this->resetExperienceColumnCache();
+        } catch (\Throwable) {
+            $this->resetExperienceColumnCache();
+        }
+    }
+
+    private function resetExperienceColumnCache(): void
+    {
+        $this->hasExperienceColumn(true);
+    }
+
+    private function hasExperienceColumn(bool $resetCache = false): bool
+    {
+        static $cached = null;
+        if ($resetCache) {
+            $cached = null;
+        }
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'experience_config' LIMIT 1"
+            );
+            if ($st && $st->fetchColumn()) {
+                $cached = true;
+
+                return true;
+            }
+        } catch (\Throwable) {
+        }
+        try {
+            $st = $this->pdo->query("SHOW COLUMNS FROM tenant_atak_config LIKE 'experience_config'");
+            if ($st && $st->fetch(PDO::FETCH_ASSOC)) {
+                $cached = true;
+
+                return true;
+            }
+        } catch (\Throwable) {
+        }
+        try {
+            $this->pdo->query('SELECT experience_config FROM tenant_atak_config LIMIT 0');
+            $cached = true;
+        } catch (\Throwable) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
 }

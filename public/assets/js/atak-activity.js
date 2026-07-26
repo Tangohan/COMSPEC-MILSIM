@@ -47,11 +47,22 @@ window.ATAKActivity = (function () {
   }
 
   function escapeHtml(s) {
-    return String(s == null ? '' : s)
+    return String(repairMojibake(s == null ? '' : s))
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  /** Corrige UTF-8 lu comme Latin-1 (ex. envoyÃ© → envoyé). */
+  function repairMojibake(s) {
+    s = String(s == null ? '' : s);
+    if (!/[Ãâ€]/.test(s)) return s;
+    try {
+      return decodeURIComponent(escape(s));
+    } catch (e) {
+      return s;
+    }
   }
 
   function typeClass(type) {
@@ -859,6 +870,7 @@ window.ATAKActivity = (function () {
     dayLabelFr: dayLabelFr,
     dayKeyFromIso: dayKeyFromIso,
     escapeHtml: escapeHtml,
+    repairMojibake: repairMojibake,
     openEventDetails: openEventDetails,
     getCachedEvents: function () { return eventsCache.slice(); }
   };

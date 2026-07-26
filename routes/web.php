@@ -899,6 +899,7 @@ return function (Router $router) {
     $router->post('/admin/atak-config/access-key', [AdminAtakConfigController::class, 'regenerateAccessKey'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/maintenance', [AdminAtakConfigController::class, 'setMaintenance'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/modules', [AdminAtakConfigController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1342,6 +1343,8 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
     $router->post('/api/atak/video-feeds', [AtakApiController::class, 'videoFeeds']);
     $router->get('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
+    $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
+    $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
 $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
 $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
 $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);

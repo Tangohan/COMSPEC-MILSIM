@@ -744,6 +744,7 @@ if ($atakMapConfig) {
       <div class="atak-left-rail">
       <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
         <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams"><span class="atak-tab-label">Cams</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="photos" title="Photos terrain"><span class="atak-tab-label">Photos</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs"><span class="atak-tab-label">Marqueurs</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat"><span class="atak-tab-label">Tchat</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" title="Ordres"><span class="atak-tab-label">Ordres</span> <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span></button>
@@ -782,11 +783,21 @@ if ($atakMapConfig) {
           <div class="atak-cams-list" id="atak-cams-list">
             <div class="atak-empty-state">
               <div class="atak-empty-state-icon" aria-hidden="true">▣</div>
-              <p class="atak-empty-state-title">Aucun aperçu pour l’instant</p>
-              <p class="atak-empty-state-text">Les caméras casque et drones détectés en jeu, ainsi que les photos envoyées depuis la tablette, apparaîtront ici.</p>
+              <p class="atak-empty-state-title">Aucune caméra détectée</p>
+              <p class="atak-empty-state-text">Les caméras casque et drones actifs en jeu apparaîtront ici. Seuls des aperçus photo sont transmis, pas de vidéo en direct.</p>
             </div>
           </div>
-          <div id="atak-intel-photos" class="atak-intel-photos"></div>
+        </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-photos">
+        <div class="atak-cams-panel">
+          <div class="atak-cams-list" id="atak-photos-list">
+            <div class="atak-empty-state">
+              <div class="atak-empty-state-icon" aria-hidden="true">◫</div>
+              <p class="atak-empty-state-title">Aucune photo reçue</p>
+              <p class="atak-empty-state-text">Les vues capturées depuis la tablette ou les caméras casque apparaîtront ici dès leur remontée.</p>
+            </div>
+          </div>
         </div>
       </div>
       <div class="atak-tabs-content" id="tab-markers">
@@ -1402,8 +1413,19 @@ if ($atakMapConfig) {
       var bootTimer = setTimeout(function () { bootAbort.abort(); }, 12000);
       var atakLiveConnectedOnce = false;
 
+      function resolveAtakMapId() {
+        if (window.ATAKSocket && typeof window.ATAKSocket.getMapId === 'function') {
+          return window.ATAKSocket.getMapId();
+        }
+        return (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0)
+          ? window.ATAK_DEFAULT_MAP_ID
+          : 1;
+      }
+
       function startAtakApplication() {
-      var mapId = (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0) ? window.ATAK_DEFAULT_MAP_ID : 1;
+      var mapId = (window.ATAK_DEFAULT_MAP_ID != null && window.ATAK_DEFAULT_MAP_ID > 0)
+        ? window.ATAK_DEFAULT_MAP_ID
+        : 1;
       if (window.ATAKSocket && typeof window.ATAKSocket.setMapId === 'function') {
         ATAKSocket.setMapId(mapId);
       }
@@ -1425,6 +1447,9 @@ if ($atakMapConfig) {
           else if (window.ATAKJTAC && window.ATAKJTAC.fetchNineLines) window.ATAKJTAC.fetchNineLines();
           if (window.ATAKMap && window.ATAKMap.pollMarkers) window.ATAKMap.pollMarkers();
           if (window.ATAKActivity && window.ATAKActivity.refresh) window.ATAKActivity.refresh();
+          if (window.ATAKTransmissions && typeof window.ATAKTransmissions.refresh === 'function') {
+            window.ATAKTransmissions.refresh();
+          }
         });
       }
       if (window.ATAK_MAPS_CONFIGS && window.ATAK_MAPS_LIST && window.ATAK_MAPS_LIST.length > 0) {
@@ -1526,7 +1551,7 @@ if ($atakMapConfig) {
         if (window.TacmapWeather) {
           var wEl = document.getElementById('atak-weather');
           var wVal = document.getElementById('atak-weather-value');
-          var mid = window.ATAKSocket && window.ATAKSocket.getMapId ? window.ATAKSocket.getMapId() : 1;
+          var mid = resolveAtakMapId();
           var ab = window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '';
           TacmapWeather.poll(ab || (window.ATAK_API_BASE || ''), mid, wEl, { compact: true, valueEl: wVal });
         }
@@ -1591,12 +1616,17 @@ if ($atakMapConfig) {
         var now = Date.now();
         if (now - lastLiaisonChipAt < 12000) return;
         lastLiaisonChipAt = now;
-        var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
+        var mid = resolveAtakMapId();
         Promise.all([
           measurePingLatency(),
-          fetch('<?= url("api/atak/stats") ?>?mapId=' + mid, { credentials: 'include' }).then(function (r) { return r.json(); })
+          fetch('<?= url("api/atak/stats") ?>?mapId=' + encodeURIComponent(mid), { credentials: 'include', cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
         ]).then(function (results) {
-          var d = results[1] || {};
+          var d = results[1];
+          if (!d) {
+            refreshLiaisonMetrics(null);
+            return;
+          }
           var ago = d.lastArmaActivityAgo != null ? Number(d.lastArmaActivityAgo) : null;
           var agoLabel = formatAgoFr(ago);
           var liaisonChipVal = document.getElementById('atak-chip-liaison-value');
@@ -1614,18 +1644,6 @@ if ($atakMapConfig) {
           refreshLiaisonMetrics(null);
         });
       }
-      atakPoll();
-      setInterval(atakPoll, 3000);
-      if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
-        ATAKActivity.start();
-      }
-      if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.startPolling === 'function') {
-        ATAKMedicalAlerts.startPolling(5000);
-      }
-      if (window.ATAKOrders && typeof window.ATAKOrders.startPolling === 'function') {
-        ATAKOrders.startPolling(4000);
-      }
-
       document.querySelectorAll('.atak-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var tab = this.getAttribute('data-tab');
@@ -1650,7 +1668,7 @@ if ($atakMapConfig) {
         var link = document.getElementById('atak-activity-fullscreen');
         if (!link) return;
         function update() {
-          var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : (window.ATAK_DEFAULT_MAP_ID || 1);
+          var mid = resolveAtakMapId();
           link.href = '<?= $base ?>/atak/liaison?mapId=' + encodeURIComponent(mid);
         }
         update();
@@ -1662,7 +1680,7 @@ if ($atakMapConfig) {
         var listEl = document.getElementById('atak-web-presence-list');
         var emptyEl = document.getElementById('atak-web-presence-empty');
         if (!listEl) return;
-        var mid = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
+        var mid = resolveAtakMapId();
         fetch('<?= url("api/atak/presence") ?>?mapId=' + encodeURIComponent(mid), { credentials: 'include', cache: 'no-store' })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (d) {
@@ -1688,6 +1706,20 @@ if ($atakMapConfig) {
       }
       refreshWebPresence();
       setInterval(refreshWebPresence, 20000);
+      if (window.ATAKTransmissions && typeof window.ATAKTransmissions.refresh === 'function') {
+        window.ATAKTransmissions.refresh();
+      }
+      atakPoll();
+      setInterval(atakPoll, 3000);
+      if (window.ATAKActivity && typeof window.ATAKActivity.start === 'function') {
+        ATAKActivity.start();
+      }
+      if (window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.startPolling === 'function') {
+        ATAKMedicalAlerts.startPolling(5000);
+      }
+      if (window.ATAKOrders && typeof window.ATAKOrders.startPolling === 'function') {
+        ATAKOrders.startPolling(4000);
+      }
       measurePingLatency().then(function () { refreshLiaisonMetrics(null); });
       setInterval(function () {
         lastLiaisonChipAt = 0;
@@ -1880,8 +1912,16 @@ if ($atakMapConfig) {
           socketStateEl.className = 'atak-health-cell atak-health-ok-text';
         }
         if (socketUrlEl) socketUrlEl.textContent = 'Rafraîchissement automatique';
-        var mapId = (window.ATAKSocket && window.ATAKSocket.getMapId) ? window.ATAKSocket.getMapId() : 1;
-        fetch('<?= url("api/atak/stats") ?>?mapId=' + mapId, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (d) {
+        var mapId = resolveAtakMapId();
+        fetch('<?= url("api/atak/stats") ?>?mapId=' + encodeURIComponent(mapId), { credentials: 'include', cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+          if (!d) {
+            if (armaEl) armaEl.textContent = '—';
+            if (unitsCountEl) unitsCountEl.textContent = '—';
+            if (activeCallsignsEl) activeCallsignsEl.textContent = '—';
+            return;
+          }
           var ago = d.lastArmaActivityAgo != null ? Number(d.lastArmaActivityAgo) : null;
           var agoLabel = formatAgoFr(ago);
           if (armaEl) {

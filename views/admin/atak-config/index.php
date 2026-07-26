@@ -77,6 +77,11 @@ foreach ($dataSummary as $k => $v) {
     <?php
     $bridgeModules = is_array($bridgeModules ?? null) ? $bridgeModules : [];
     $bridgeModulesUpdatedAt = (string) ($bridgeModulesUpdatedAt ?? '');
+    $experienceCatalog = is_array($experienceCatalog ?? null) ? $experienceCatalog : [];
+    $experienceGuide = (string) ($experienceGuide ?? '');
+    $experienceGuideCustom = (string) ($experienceGuideCustom ?? '');
+    $experienceUpdatedAt = (string) ($experienceUpdatedAt ?? '');
+    $experienceSchemaReady = !empty($experienceSchemaReady);
     ?>
     <div class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-1">Modules ATAK Enhanced / cTab</h2>
@@ -118,6 +123,108 @@ foreach ($dataSummary as $k => $v) {
                 </button>
             </div>
         </form>
+    </div>
+
+    <div class="mb-8 border border-violet-200 rounded-xl p-5 bg-violet-50/30 shadow-sm">
+        <h2 class="text-sm font-bold text-violet-950 mb-1">Expérience en jeu (réalisme, troll, personnalisation)</h2>
+        <p class="text-xs text-violet-900/80 mb-4 leading-relaxed">
+            Définissez le profil d’expérience pour votre communauté. Les opérateurs en liaison reçoivent ces réglages automatiquement
+            (en complément de leurs options personnelles lorsque vous laissez le choix).
+            Un guide de configuration est aussi affiché en mission lors de la première liaison.
+        </p>
+        <?php if ($experienceUpdatedAt !== ''): ?>
+            <p class="text-xs text-slate-400 mb-3">Dernière mise à jour : <?= htmlspecialchars($experienceUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
+        <?php if (!$experienceSchemaReady): ?>
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <p class="text-sm font-semibold text-red-950">Fonction indisponible pour le moment</p>
+                <p class="text-xs text-red-900 mt-1 leading-relaxed">
+                    La base de données n’est pas à jour pour l’expérience Overwatch. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.
+                </p>
+            </div>
+        <?php else: ?>
+        <form action="<?= $baseUrl ?>/admin/atak-config/experience" method="post" class="space-y-4" id="atak-experience-form">
+            <?= \App\Core\Csrf::field() ?>
+            <div class="grid sm:grid-cols-2 gap-3">
+                <?php foreach ($experienceCatalog as $exp): ?>
+                    <?php
+                    $eid = (string) ($exp['id'] ?? '');
+                    $elabel = (string) ($exp['label'] ?? $eid);
+                    $edesc = (string) ($exp['description'] ?? '');
+                    $etype = (string) ($exp['type'] ?? 'bool');
+                    $eval = $exp['value'] ?? false;
+                    if ($eid === '') {
+                        continue;
+                    }
+                    ?>
+                    <?php if ($etype === 'tri'): ?>
+                        <div class="rounded-lg border border-slate-200 bg-white px-3 py-3">
+                            <label class="block text-sm font-medium text-slate-800 mb-1"><?= htmlspecialchars($elabel, ENT_QUOTES, 'UTF-8') ?></label>
+                            <?php if ($edesc !== ''): ?>
+                                <p class="text-xs text-slate-500 mb-2 leading-relaxed"><?= htmlspecialchars($edesc, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                            <select name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                                <?php foreach (($exp['choices'] ?? []) as $ch): ?>
+                                    <?php $cv = (string) ($ch['value'] ?? ''); ?>
+                                    <option value="<?= htmlspecialchars($cv, ENT_QUOTES, 'UTF-8') ?>" <?= (string) $eval === $cv ? 'selected' : '' ?>><?= htmlspecialchars((string) ($ch['label'] ?? $cv), ENT_QUOTES, 'UTF-8') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php else: ?>
+                        <?php $echecked = !empty($eval); ?>
+                        <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 cursor-pointer hover:border-violet-300 experience-bool-row" data-exp-id="<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" value="0" />
+                            <input type="checkbox" name="experience_<?= htmlspecialchars($eid, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 experience-bool-cb" <?= $echecked ? 'checked' : '' ?> />
+                            <span>
+                                <span class="block text-sm font-medium text-slate-800"><?= htmlspecialchars($elabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($edesc !== ''): ?>
+                                    <span class="block text-xs text-slate-500 mt-0.5 leading-relaxed"><?= htmlspecialchars($edesc, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </span>
+                        </label>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Consignes supplémentaires pour le guide en jeu (facultatif)</label>
+                <textarea name="experience_guide_custom" rows="4" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Ex. : canaux Teamspeak, version du modpack, rappel procédure 9-line…"><?= htmlspecialchars($experienceGuideCustom) ?></textarea>
+                <p class="text-xs text-slate-500 mt-1.5">Ce texte est ajouté au guide affiché aux opérateurs en mission (journal de bord et panneau d’aide).</p>
+            </div>
+            <div class="pt-1 flex flex-wrap gap-2">
+                <button type="submit" class="inline-flex px-4 py-2 bg-violet-800 text-white text-sm font-semibold rounded-lg hover:bg-violet-900">
+                    Enregistrer l’expérience
+                </button>
+            </div>
+        </form>
+        <script>
+        (function () {
+            var form = document.getElementById('atak-experience-form');
+            if (!form) return;
+            var realism = form.querySelector('.experience-bool-cb[name="experience_realism"]');
+            var troll = form.querySelector('.experience-bool-cb[name="experience_troll"]');
+            if (!realism || !troll) return;
+            function syncExclusive() {
+                if (realism.checked) { troll.checked = false; troll.disabled = true; }
+                else { troll.disabled = false; }
+                if (troll.checked) { realism.checked = false; realism.disabled = true; }
+                else { realism.disabled = false; }
+            }
+            realism.addEventListener('change', syncExclusive);
+            troll.addEventListener('change', syncExclusive);
+            syncExclusive();
+        })();
+        </script>
+        <?php endif; ?>
+
+        <?php if ($experienceGuide !== ''): ?>
+        <details class="mt-5 rounded-lg border border-violet-200 bg-white">
+            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-violet-950">Aperçu du guide en jeu (copiable)</summary>
+            <div class="px-4 pb-4">
+                <p class="text-xs text-slate-500 mb-2">Texte transmis aux opérateurs lors de la liaison. Vous pouvez le copier pour un briefing écrit.</p>
+                <pre class="text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-3 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto"><?= htmlspecialchars($experienceGuide) ?></pre>
+            </div>
+        </details>
+        <?php endif; ?>
     </div>
 
     <div class="grid lg:grid-cols-12 gap-8 items-start">

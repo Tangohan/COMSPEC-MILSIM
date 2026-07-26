@@ -121,8 +121,13 @@ private _parts = [];
     ];
 } forEach _feeds;
 
+private _mapId = missionNamespace getVariable ["comspec_overwatch_map_id", 1];
+if (_mapId isEqualType "") then { _mapId = parseNumber _mapId; };
+if (_mapId isEqualTo 0) then { _mapId = 1; };
+
 private _json = format [
-    "{""mapId"":1,""callsign"":""%1"",""feeds"":[%2]}",
+    "{""mapId"":%1,""callsign"":""%2"",""feeds"":[%3]}",
+    _mapId,
     [_cs] call _escape,
     _parts joinString ","
 ];
@@ -137,5 +142,5 @@ missionNamespace setVariable ["COMSPEC_Athena_LastVideoFeedsAt", diag_tickTime, 
 
 "COMSPECExtension" callExtension ["SendVideoFeeds", [_json]];
 if ((count _feeds) > 0) then {
-    [format ["Cams → Athena · %1 flux", count _feeds]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [format ["Cams actives · %1 flux", count _feeds]] call comspec_overwatch_connect_fnc_appendModuleLog;
 };

@@ -275,7 +275,7 @@ if (_tab isEqualTo "modules") then {
             };
             _entries pushBack [
                 "modules",
-                format ["Journal · %1", _short],
+                format ["%1", _short],
                 format [
                     "<t color='#5a9e88'>Journal des modules</t><br/><t color='#8aa0b4'>Événement synchronisé</t><br/><br/>%1",
                     _line

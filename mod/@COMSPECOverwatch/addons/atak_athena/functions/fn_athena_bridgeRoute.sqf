@@ -55,4 +55,4 @@ private _json = format [
     _polyJson
 ];
 "COMSPECExtension" callExtension ["SendMarker", [_armaName, _json, "1", "0"]];
-[format ["Itinéraire → Athena · %1", _text]] call comspec_overwatch_connect_fnc_appendModuleLog;
+[format ["Itinéraire · %1", _text]] call comspec_overwatch_connect_fnc_appendModuleLog;

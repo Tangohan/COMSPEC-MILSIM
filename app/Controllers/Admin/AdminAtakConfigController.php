@@ -13,6 +13,7 @@ use App\Repositories\TenantAtakConfigRepository;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakTenantDataService;
 use App\Services\Tactical\AtakBridgeModulesService;
+use App\Services\Tactical\AtakExperienceService;
 use App\Support\ComspecApiKeyAuth;
 
 class AdminAtakConfigController
@@ -55,6 +56,10 @@ class AdminAtakConfigController
         $modulesSvc = new AtakBridgeModulesService();
         $bridgeModules = $modulesSvc->catalogWithState($tenantId);
         $bridgeModulesUpdatedAt = $modulesSvc->get($tenantId)['updated_at'] ?? '';
+        $experienceSvc = new AtakExperienceService();
+        $experiencePack = $experienceSvc->get($tenantId);
+        $experienceCatalog = $experienceSvc->catalogWithState($tenantId);
+        $experienceSchemaReady = $this->atakConfigRepository->isExperienceSchemaReady();
 
         return Response::view('layout.main', [
             'content' => 'admin.atak-config.index',
@@ -76,6 +81,11 @@ class AdminAtakConfigController
             'purgeConfirmPhrase' => self::PURGE_CONFIRM_PHRASE,
             'bridgeModules' => $bridgeModules,
             'bridgeModulesUpdatedAt' => $bridgeModulesUpdatedAt,
+            'experienceCatalog' => $experienceCatalog,
+            'experienceGuide' => $experiencePack['guide'],
+            'experienceGuideCustom' => trim((string) ($experiencePack['settings']['guide_custom'] ?? '')),
+            'experienceUpdatedAt' => $experiencePack['updated_at'],
+            'experienceSchemaReady' => $experienceSchemaReady,
         ]);
     }
 
@@ -158,6 +168,48 @@ class AdminAtakConfigController
         }
         $svc->put((int) $tenantId, $boolMap);
         Session::flash('success', 'Modules ATAK Enhanced / cTab enregistrés. Les joueurs en liaison récupèrent le réglage sous environ une minute.');
+
+        return Response::redirect(url('admin/atak-config'));
+    }
+
+    /** Réglages d’expérience Overwatch (réalisme, troll, personnalisation). */
+    public function storeExperience(Request $request, array $params = []): Response
+    {
+        $tenantId = Session::get('tenant_id');
+        if (!$tenantId) {
+            return Response::redirect(url('login'));
+        }
+        if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Requête invalide.');
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        if (!$this->atakConfigRepository->isExperienceSchemaReady()) {
+            Session::flash(
+                'error',
+                'Impossible d’enregistrer l’expérience : la base de données n’est pas à jour. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.'
+            );
+
+            return Response::redirect(url('admin/atak-config'));
+        }
+
+        $svc = new AtakExperienceService();
+        $incoming = [];
+        foreach ($svc->catalog() as $row) {
+            $id = $row['id'];
+            if ($row['type'] === 'bool') {
+                $incoming[$id] = (string) $request->input('experience_' . $id, '0') === '1';
+            } elseif ($row['type'] === 'tri') {
+                $incoming[$id] = trim((string) $request->input('experience_' . $id, 'player'));
+            }
+        }
+        $incoming['guide_custom'] = trim((string) $request->input('experience_guide_custom', ''));
+        if (!empty($incoming['realism'])) {
+            $incoming['troll'] = false;
+        }
+        $svc->put((int) $tenantId, $incoming);
+        Session::flash('success', 'Expérience Overwatch enregistrée. Les opérateurs en liaison récupèrent les réglages sous environ une minute.');
 
         return Response::redirect(url('admin/atak-config'));
     }

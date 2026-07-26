@@ -68,7 +68,7 @@ private _typeFromTexture = {
         _color
     ];
     "COMSPECExtension" callExtension ["SendMarker", [_armaName, _json, "1", "0"]];
-    [format ["Marqueur cTab → Athena · %1", _text]] call comspec_overwatch_connect_fnc_appendModuleLog;
+    [format ["Marqueur cTab · %1", _text]] call comspec_overwatch_connect_fnc_appendModuleLog;
 } forEach _list;
 
 {

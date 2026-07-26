@@ -10,6 +10,7 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
 [] call comspec_overwatch_connect_fnc_sendFactionSettings;
 [] call comspec_overwatch_connect_fnc_pollModModules;
+[] call comspec_overwatch_connect_fnc_pollExperience;
 
 private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
 if (!(_interval isEqualType 0)) then { _interval = 2; };
@@ -137,10 +138,19 @@ private _casPollInterval = 10;
     } forEach _orders;
 }, 5, []] call CBA_fnc_addPerFrameHandler;
 
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollExperience;
+    }, [], "pollExperience"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 60, []] call CBA_fnc_addPerFrameHandler;
+
 ["OnTrackingAnomaly", {
     params ["_alert"];
-    // Mode milsim : aucune annonce in-game pour les anomalies de suivi.
-    if (missionNamespace getVariable ["comspec_overwatch_milsim_ui", false]) exitWith {};
+    private _realism = missionNamespace getVariable ["COMSPEC_TenantRealism", false];
+    private _milsimUi = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
+    if (_realism || _milsimUi) exitWith {};
     private _kind = toUpper (_alert getOrDefault ["kind", "ANOMALY"]);
     private _unit = _alert getOrDefault ["unit", ""];
     private _msg = switch (_kind) do {

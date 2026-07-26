@@ -138,6 +138,9 @@ class CfgFunctions {
             class appendModuleLog {};
             class isModModuleEnabled {};
             class pollModModules {};
+            class pollExperience {};
+            class applyTenantExperience {};
+            class showExperienceGuide {};
             class portalLabel {};
             class toggleLogCategory {};
             class showDebugInfo {};

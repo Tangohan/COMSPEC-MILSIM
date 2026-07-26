@@ -509,6 +509,14 @@ class Container
                 self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
                 self::get(\App\Services\Attendance\CommunityEventSlotService::class)
             ),
+            \App\Controllers\Api\IntegrationsPublicEventsController::class => new \App\Controllers\Api\IntegrationsPublicEventsController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+            ),
+            \App\Controllers\Web\CommunityCalendarFeedController::class => new \App\Controllers\Web\CommunityCalendarFeedController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
+            ),
             \App\Controllers\Web\PointageController::class => new \App\Controllers\Web\PointageController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(AuthService::class),
@@ -627,6 +635,10 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
             ),
             \App\Controllers\Admin\Organization\DoctrineAdminController::class => new \App\Controllers\Admin\Organization\DoctrineAdminController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\DoctrineRepository::class),
+            ),
+            \App\Controllers\Api\DoctrineApiController::class => new \App\Controllers\Api\DoctrineApiController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\DoctrineRepository::class),
             ),
@@ -995,6 +1007,13 @@ class Container
                 self::get(\App\Services\Portal\UnifiedActionDigestService::class),
                 self::get(UserRepository::class),
             ),
+            \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
+            \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(
+                self::get(\App\Repositories\ForumNotificationRepository::class),
+                self::get(\App\Repositories\Courrier\CourrierDocumentNotificationRepository::class),
+                self::get(\App\Repositories\TenantMessageRepository::class),
+                self::get(\App\Services\Notifications\ActivityHubPresentationService::class),
+            ),
             \App\Controllers\Web\DocumentationController::class => new \App\Controllers\Web\DocumentationController(),
             \App\Controllers\Web\DossierOperateurController::class => new \App\Controllers\Web\DossierOperateurController(
                 self::get(AuthService::class),
@@ -1015,6 +1034,11 @@ class Container
             \App\Repositories\ModpackRepository::class => new \App\Repositories\ModpackRepository(),
             \App\Controllers\Web\ModpackController::class => new \App\Controllers\Web\ModpackController(
                 self::get(\App\Repositories\ModpackRepository::class)
+            ),
+            \App\Controllers\Web\OperateurTerrainController::class => new \App\Controllers\Web\OperateurTerrainController(
+                self::get(AuthService::class),
+                self::get(\App\Repositories\ModpackRepository::class),
+                self::get(\App\Services\Dashboard\TenantDashboardPinService::class),
             ),
             \App\Repositories\TrainingRepository::class => new \App\Repositories\TrainingRepository(),
             \App\Repositories\TrainingCourseRepository::class => new \App\Repositories\TrainingCourseRepository(),
@@ -1278,10 +1302,10 @@ class Container
             ),
             \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
             \App\Controllers\Admin\AdminAtakModBlocklistController::class => new \App\Controllers\Admin\AdminAtakModBlocklistController(
-                self::get(\App\Services\Auth\AuthService::class),
+                self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),
                 self::get(\App\Repositories\BlockedIndicatorRepository::class),
-                self::get(UserRepository::class)
+                self::get(UserRepository::class),
             ),
             \App\Repositories\AtakBetaRegistrationRepository::class => new \App\Repositories\AtakBetaRegistrationRepository(),
             \App\Controllers\Admin\AdminAtakBetaRegistrationsController::class => new \App\Controllers\Admin\AdminAtakBetaRegistrationsController(
@@ -1642,6 +1666,14 @@ class Container
                 self::get(\App\Repositories\UserAlertDismissalRepository::class),
                 self::get(TenantRepository::class),
             ),
+            \App\Services\Alerts\MemberAlertsPageService::class => new \App\Services\Alerts\MemberAlertsPageService(
+                self::get(\App\Services\Alerts\AlertPresentationService::class),
+                self::get(\App\Services\Dashboard\TenantDashboardPinService::class),
+                self::get(\App\Repositories\ForumTopicRepository::class),
+            ),
+            \App\Controllers\Web\MemberAlertsController::class => new \App\Controllers\Web\MemberAlertsController(
+                self::get(\App\Services\Alerts\MemberAlertsPageService::class),
+            ),
             \App\Controllers\Admin\System\SystemPlatformAlertsController::class => new \App\Controllers\Admin\System\SystemPlatformAlertsController(
                 self::get(\App\Repositories\PlatformAlertRepository::class),
                 self::get(\App\Repositories\UserRepository::class),
@@ -1722,6 +1754,15 @@ class Container
                 self::get(\App\Services\Cooperation\CooperationWorkflowService::class),
                 self::get(\App\Services\Cooperation\CooperationCatalogService::class),
                 self::get(\App\Services\Cooperation\CooperationAnnouncementDispatcher::class)
+            ),
+            \App\Controllers\Web\OperationalBoardController::class => new \App\Controllers\Web\OperationalBoardController(
+                self::get(\App\Repositories\PlanningEntryRepository::class),
+                self::get(UserRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\InterteamMissionRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class),
             ),
             \App\Controllers\Admin\System\SystemCooperationCatalogController::class => new \App\Controllers\Admin\System\SystemCooperationCatalogController(
                 self::get(\App\Repositories\CooperationCatalogRepository::class)
