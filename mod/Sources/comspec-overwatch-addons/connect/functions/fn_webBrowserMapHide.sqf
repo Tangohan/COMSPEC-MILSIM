@@ -20,6 +20,8 @@ if (!isNull _map) then {
     _map ctrlEnable false;
 };
 
+[] call comspec_overwatch_connect_fnc_mapContextMenuClose;
+
 missionNamespace setVariable ["COMSPEC_WebBrowser_MapVisible", false];
 missionNamespace setVariable ["COMSPEC_TabletPendingView", _view, false];
 

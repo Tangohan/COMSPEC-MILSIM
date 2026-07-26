@@ -93,6 +93,14 @@ if (!isNull _map) then {
         private _world = _mapCtrl ctrlMapScreenToWorld [_xC, _yC];
         [_world select 0, _world select 1, "mil_dot", "ColorRed"] call comspec_overwatch_connect_fnc_placeMarkerFromTablet;
     }];
+    // Clic droit : menu contextuel rapide (poser un marqueur coloré au point cliqué).
+    _map ctrlAddEventHandler ["MouseButtonDown", {
+        params ["_mapCtrl", "_button", "_xC", "_yC"];
+        if (_button != 1) exitWith {};
+        if !(missionNamespace getVariable ["COMSPEC_WebBrowser_MapVisible", false]) exitWith {};
+        private _world = _mapCtrl ctrlMapScreenToWorld [_xC, _yC];
+        [_world, _xC, _yC] call comspec_overwatch_connect_fnc_mapContextMenuShow;
+    }];
 };
 {
     private _c = _display displayCtrl _x;

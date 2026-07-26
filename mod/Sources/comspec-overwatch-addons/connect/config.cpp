@@ -186,6 +186,8 @@ class CfgFunctions {
             class webBrowserPageLoaded {};
             class webBrowserJSDialog {};
             class placeMarkerFromTablet {};
+            class mapContextMenuShow {};
+            class mapContextMenuClose {};
             class webBrowserOpenAthena {};
             class webBrowserOpenSystem {};
             class webBrowserJsEscape {};
