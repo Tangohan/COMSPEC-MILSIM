@@ -71,7 +71,11 @@ $maskIp = static function (mixed $raw): string {
     <section class="space-y-4">
         <h2 class="text-sm font-bold text-slate-900">Inscriptions récentes</h2>
         <?php if ($rows === []): ?>
-            <p class="text-sm text-slate-500">Aucune inscription pour le moment. Elles apparaîtront dès qu’un joueur lancera le mod et confirmera la note d’accès.</p>
+            <p class="text-sm text-slate-500">
+                Aucune inscription pour le moment. Elles apparaissent dès qu’un joueur lance le pack Overwatch,
+                confirme la note d’accès, et que la liaison avec Athena aboutit
+                (module du pack bien chargé — une protection anti-triche du jeu peut parfois le bloquer).
+            </p>
         <?php else: ?>
             <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
                 <table class="w-full text-sm">

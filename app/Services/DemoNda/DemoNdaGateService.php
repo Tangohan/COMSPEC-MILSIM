@@ -141,8 +141,50 @@ final class DemoNdaGateService
         if (str_starts_with($path, '/cron/')) {
             return true;
         }
+        // APIs machine (mod Arma, webhooks, etc.) : auth propre, pas de session portail démo.
+        // Sans cela, RegisterBeta / client-init reçoivent 302/403 HTML → admin « Accès anticipé » vide.
+        if ($this->isMachineApiPath($path)) {
+            return true;
+        }
 
         return str_starts_with($path, '/calendrier/abonnement/');
+    }
+
+    /**
+     * Chemins consommés hors navigateur (pack Overwatch, extensions, intégrations).
+     * Doivent rester joignables même si l’IP n’a pas validé le portail d’engagement démo.
+     */
+    public function isMachineApiPath(string $path): bool
+    {
+        if ($path === '/api/atak' || str_starts_with($path, '/api/atak/')) {
+            return true;
+        }
+
+        // Préfixes tactiques hors /api/atak (même DLL / mêmes clients).
+        $prefixes = [
+            '/api/markers',
+            '/api/units',
+            '/api/chat',
+            '/api/pings',
+            '/api/nine-line',
+            '/api/cas',
+            '/api/recon/',
+            '/api/map-shapes',
+            '/api/flight-manifest',
+            '/api/fire-support',
+            '/api/danger-zones',
+            '/api/logistics',
+            '/api/intel/',
+            '/api/replay/',
+            '/api/iff/',
+        ];
+        foreach ($prefixes as $prefix) {
+            if ($path === rtrim($prefix, '/') || str_starts_with($path, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isGatePath(string $path): bool

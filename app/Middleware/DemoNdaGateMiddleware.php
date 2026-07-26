@@ -29,20 +29,8 @@ final class DemoNdaGateMiddleware
         }
 
         $path = $request->path();
-        if ($this->gate->isPublicAssetPath($path)) {
-            return $next($request);
-        }
-
-        // Webhooks / santé / QR téléphone (token = secret, consommé aussi en <img> sans session démo)
-        if ($path === '/api/stripe/webhook' || $path === '/api/health' || str_starts_with($path, '/calendrier/abonnement/')) {
-            return $next($request);
-        }
-        if (str_starts_with($path, '/api/atak/phone-pairing/') && str_ends_with($path, '/qr.png')) {
-            return $next($request);
-        }
-
-        // Questionnaire de retour : accessible même après expiration, sans démarrer la visite démo
-        if ($path === DemoNdaGateService::FEEDBACK_PATH) {
+        // Assets, cron, webhooks, APIs machine (mod Overwatch / ATAK) — avant tout enregistrement IP.
+        if ($this->gate->isExemptPath($path)) {
             return $next($request);
         }
 

@@ -1312,6 +1312,13 @@ public static class Extension
                     if (httpCode == 503) return "ERR|http_503";
                     return "ERR|http_" + httpCode;
                 }
+                // Refuser un HTML de redirection (portail démo) pris pour un succès HTTP 200.
+                var bodyNorm = respBody.Replace(" ", "", StringComparison.Ordinal);
+                if (bodyNorm.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) < 0
+                    && bodyNorm.IndexOf("\"ok\":1", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return "ERR|invalid_response";
+                }
                 // Mémorise l’URL pour d’éventuels appels suivants (whoami, etc.).
                 _baseUrl = baseUrl;
                 return "OK|registered";
