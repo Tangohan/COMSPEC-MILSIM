@@ -2973,6 +2973,14 @@ try {
     echo '  [ATTENTION] tenant_atak_experience : ' . $e->getMessage() . "\n";
 }
 
+$tenantAtakRoleplayMigrate = require $root . '/bootstrap/tenant_atak_roleplay_config_migration.php';
+try {
+    echo "Migration tenant_atak_roleplay (configuration roleplay — réseau, capteurs, liaison)...\n";
+    $tenantAtakRoleplayMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_atak_roleplay : ' . $e->getMessage() . "\n";
+}
+
 $fireTeamsMigrate = require $root . '/bootstrap/fire_teams_migration.php';
 try {
     echo "Migration fire_teams (équipes de feu mission + organigramme)...\n";

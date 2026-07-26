@@ -43,6 +43,7 @@ $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformS
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-semibold text-slate-700">Communauté</th>
+                        <th class="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
                         <th class="px-4 py-3 text-left font-semibold text-slate-600">Formule</th>
                         <th class="px-4 py-3 text-left font-semibold text-slate-600">Abonnement</th>
                         <th class="px-4 py-3 text-left font-semibold text-slate-600">Création</th>
@@ -53,7 +54,7 @@ $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformS
                 <tbody class="divide-y divide-slate-100">
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-500">Aucune communauté enregistrée (hors espace technique).</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-slate-500">Aucune communauté enregistrée (hors espace technique).</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($rows as $t): ?>
@@ -69,6 +70,13 @@ $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformS
                             $statusLabel = (string) ($statusLabels[$status] ?? 'Statut inconnu');
                             $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
                             $editUrl = $id > 0 ? url('admin/tenants/' . $id . '/edit') : '';
+                            $tenantType = (string) ($t['tenant_type'] ?? 'full');
+                            $tenantTypeLabels = [
+                                'full' => ['label' => 'Complet', 'color' => 'slate'],
+                                'effectifs' => ['label' => 'Effectifs', 'color' => 'blue'],
+                                'atak' => ['label' => 'ATAK', 'color' => 'amber'],
+                            ];
+                            $typeInfo = $tenantTypeLabels[$tenantType] ?? ['label' => $tenantType, 'color' => 'slate'];
                             ?>
                             <tr>
                                 <td class="px-4 py-3">
@@ -76,6 +84,9 @@ $statusLabels = is_array($platformSubscriptionStatusLabels ?? null) ? $platformS
                                     <?php if ($publicUrl !== ''): ?>
                                         <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 inline-block text-xs font-semibold text-emerald-800 hover:text-emerald-950" target="_blank" rel="noopener">Page publique</a>
                                     <?php endif; ?>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex rounded-md bg-<?= htmlspecialchars($typeInfo['color'], ENT_QUOTES, 'UTF-8') ?>-50 px-2 py-1 text-xs font-semibold text-<?= htmlspecialchars($typeInfo['color'], ENT_QUOTES, 'UTF-8') ?>-950"><?= htmlspecialchars($typeInfo['label'], ENT_QUOTES, 'UTF-8') ?></span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-950"><?= htmlspecialchars($planLabel, ENT_QUOTES, 'UTF-8') ?></span>

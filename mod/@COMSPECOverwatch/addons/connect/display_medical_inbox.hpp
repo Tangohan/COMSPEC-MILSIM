@@ -26,7 +26,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Alertes médicales reçues</t>";
+            text = "<t font='RobotoCondensedBold' size='1' align='center' color='#e8f4f0'>Medical alerts received</t>";
             x = 0.28 * safezoneW + safezoneX;
             y = 0.175 * safezoneH + safezoneY;
             w = 0.44 * safezoneW;
@@ -55,7 +55,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class BtnEnCours: RscButton {
             idc = 9503;
-            text = "En cours";
+            text = "In progress";
             x = 0.28 * safezoneW + safezoneX;
             y = 0.54 * safezoneH + safezoneY;
             w = 0.09 * safezoneW;
@@ -66,7 +66,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class BtnTraite: RscButton {
             idc = 9504;
-            text = "Traité";
+            text = "Treated";
             x = 0.38 * safezoneW + safezoneX;
             y = 0.54 * safezoneH + safezoneY;
             w = 0.08 * safezoneW;
@@ -88,7 +88,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class BtnAnnule: RscButton {
             idc = 9506;
-            text = "Annulé";
+            text = "Cancelled";
             x = 0.55 * safezoneW + safezoneX;
             y = 0.54 * safezoneH + safezoneY;
             w = 0.08 * safezoneW;
@@ -99,7 +99,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class BtnRefresh: RscButton {
             idc = 9507;
-            text = "Actualiser";
+            text = "Refresh";
             x = 0.64 * safezoneW + safezoneX;
             y = 0.54 * safezoneH + safezoneY;
             w = 0.08 * safezoneW;
@@ -110,7 +110,7 @@ class COMSPEC_MedicalInbox_Dialog {
 
         class BtnClose: RscButton {
             idc = 9508;
-            text = "Fermer";
+            text = "Close";
             x = 0.28 * safezoneW + safezoneX;
             y = 0.59 * safezoneH + safezoneY;
             w = 0.08 * safezoneW;

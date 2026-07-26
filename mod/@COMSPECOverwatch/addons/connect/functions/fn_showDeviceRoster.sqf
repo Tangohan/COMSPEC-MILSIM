@@ -25,7 +25,7 @@ private _lines = [];
 {
     if (_forEachIndex >= _maxRows) exitWith {};
     _x params ["_callsign", "_gx", "_gy", ["_isSelf", false], ["_wx", 0], ["_wy", 0], ["_role", ""]];
-    private _roleTxt = if (_role isEqualTo "") then { "Opérateur" } else { _role };
+    private _roleTxt = if (_role isEqualTo "") then { "Operator" } else { _role };
     private _you = if (_isSelf) then { " <t color='#2dd4a8'>(vous)</t>" } else { "" };
     _lines pushBack format [
         "<t size='0.46' color='#d0dce8'>%1%2</t><br/><t size='0.40' color='#8aa0b4'>%3</t>  <t size='0.44' color='#5a9e88'>%4 %5</t>",

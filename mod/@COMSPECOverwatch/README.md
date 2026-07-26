@@ -76,13 +76,116 @@ Pour modifier les réglages manuellement :
 
 ## Raccourcis clavier (CBA)
 
+### Raccourcis par défaut
+
 | Action | Touche par défaut |
 |--------|-------------------|
 | Menu ATAK | **K** |
 | Messagerie | **Ctrl+K** |
 
+### Raccourcis ATAK tactiques (optionnels)
+
+**Les raccourcis tactiques sont désactivés par défaut** pour éviter les conflits avec d'autres mods (cTab, ATAK Enhanced, etc.).
+
+Pour les activer et les configurer :
+
+1. **ESC → Options → Commandes → Configurer les addons → COMSPEC Overwatch - ATAK**
+2. Activer dans **CBA Settings** : `Activer raccourcis ATAK`
+3. Configurer les touches pour chaque action :
+   - **Rapport Contact Rapide** : Soumettre CONTACT immédiat
+   - **POI Rapide** : Marquer position actuelle
+   - **MEDEVAC Rapide** : Demande évacuation urgente
+   - **QRF Rapide** : Demande renfort immédiat
+
+**Recommandation** : Si vous utilisez cTab ou ATAK Enhanced, laissez ces raccourcis désactivés et utilisez les menus ACE Interact.
+
 Si un raccourci ne répond pas : **ESC → Options → Commandes → Configurer les addons → COMSPEC Overwatch**, puis réassignez.  
 Les anciens profils pouvaient avoir « Messagerie » sur **K** seul (sans Ctrl) — les identifiants de raccourcis ont été renouvelés pour forcer les bons défauts.
+
+## Fonctionnalités ATAK tactiques
+
+Le mod inclut désormais un système complet de commandement et contrôle (C2) inspiré de l'ATAK militaire :
+
+### 📝 Rapports tactiques
+
+Soumettre des rapports structurés directement depuis le terrain :
+- **SPOTREP** : Observation ennemie/terrain
+- **CONTACT** : Rapport de contact ennemi immédiat
+- **SITREP** : Situation générale de l'unité
+- **SALUTE** : Rapport détaillé (Taille, Activité, Localisation, Uniforme, Temps, Équipement)
+
+**Accès** : Menu ACE Self-Interact → 📡 ATAK Tactique → 📝 Rapports Tactiques
+
+### 📍 Points d'Intérêt (POI)
+
+Marquer et partager des POI sur la carte tactique :
+- Cache d'armes
+- Positions ennemies
+- Objectifs tactiques
+- Infrastructures critiques
+
+Les POI marqués sont automatiquement visibles sur l'interface web ATAK pour tout le commandement.
+
+**Accès** : Menu ACE Self-Interact → 📡 ATAK Tactique → 📍 Marquer POI  
+**Raccourci rapide** : Shift+P (POI à position actuelle)
+
+### 🚁 Demandes d'appui
+
+#### MEDEVAC (Évacuation médicale)
+Format standardisé 9-Line pour demande d'évacuation sanitaire :
+- Classification patients par priorité (T1 Urgent, T2 Priority, T3 Delayed)
+- Sécurisation zone d'atterrissage
+- Marquage et signal LZ
+- Transmission automatique sur fréquence radio MEDEVAC
+
+**Accès** : Menu ACE Self-Interact → 📡 ATAK Tactique → 🚁 Demander Appui → MEDEVAC
+
+#### QRF (Quick Reaction Force)
+Demander renfort d'urgence avec :
+- Type de menace (embuscade, TIC, extraction)
+- Priorité (ROUTINE → IMMEDIATE)
+- Estimation force ennemie et pertes amies
+- Appui demandé (infanterie, blindés, CAS)
+
+**Accès** : Menu ACE Self-Interact → 📡 ATAK Tactique → 🚁 Demander Appui → QRF
+
+### 🚗 Suivi véhicules
+
+Tracking automatique des véhicules en temps réel :
+- Position, cap, vitesse
+- Carburant, munitions, santé composants
+- Détection automatique état critique
+- Historique déplacements
+
+Le système s'initialise automatiquement et envoie des mises à jour toutes les 10 secondes pour chaque véhicule occupé.
+
+#### Demandes de service véhicule
+
+Demander assistance logistique :
+- ⛽ **Ravitaillement** : Carburant critique
+- 🔫 **Réarmement** : Munitions épuisées
+- 🔨 **Réparation** : Véhicule endommagé
+- 🔧 **Maintenance** : Entretien préventif
+- 🚨 **Récupération** : Véhicule immobilisé
+
+**Accès** : Dans un véhicule → Menu ACE Self-Interact → 📡 ATAK Tactique → 🔧 Demander Service Véhicule
+
+Les demandes critiques (carburant <10%, dégâts >50%) déclenchent automatiquement :
+- Fumée de signalisation verte
+- Marker local temporaire
+- Notification sonore d'urgence
+
+### Intégration automatique
+
+Au démarrage de la mission :
+- ✅ Vérification extension chargée
+- ✅ Initialisation tracking véhicules
+- ✅ Création menus ACE Interact
+- ✅ Configuration raccourcis clavier
+
+Toutes les données sont transmises en temps réel vers l'interface web ATAK pour visualisation par le commandement.
+
+**Prérequis** : ACE3 recommandé pour menus contextuels (fonctions utilisables directement via code sinon)
 
 ## Build de l’extension (obligatoire pour la liaison ATAK)
 

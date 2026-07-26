@@ -87,14 +87,14 @@ if (_prefix isEqualTo "OK") then {
             private _existing = _byCs getOrDefault [_key, []];
             if ((count _existing) >= 7) then {
                 private _roleKeep = _existing select 6;
-                if (_roleKeep isEqualTo "" || {_roleKeep isEqualTo "Opérateur"}) then {
+                if (_roleKeep isEqualTo "" || {_roleKeep isEqualTo "Operator"}) then {
                     if (!(_roleAthena isEqualTo "")) then { _roleKeep = _roleAthena; };
                 };
                 _byCs set [_key, [_cs, _gx, _gy, _isSelf || (_existing select 3), _existing select 4, _existing select 5, _roleKeep]];
             } else {
                 private _wx = (_myPos select 0) + (_gx - (_myGrid select 0)) * 10;
                 private _wy = (_myPos select 1) + (_gy - (_myGrid select 1)) * 10;
-                private _roleUse = if (!(_roleAthena isEqualTo "")) then { _roleAthena } else { "Opérateur" };
+                private _roleUse = if (!(_roleAthena isEqualTo "")) then { _roleAthena } else { "Operator" };
                 if (_isSelf) then { _roleUse = _myRole; };
                 _byCs set [_key, [_cs, _gx, _gy, _isSelf, _wx, _wy, _roleUse]];
             };

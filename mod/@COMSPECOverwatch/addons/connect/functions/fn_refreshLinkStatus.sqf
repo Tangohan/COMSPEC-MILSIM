@@ -16,7 +16,7 @@ if (!(_url isEqualType "")) then { _url = format ["%1", _url]; };
 _url = trim _url;
 if (_url isEqualTo "") exitWith {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena non renseignée", false];
+    missionNamespace setVariable ["COMSPEC_LinkDetail", "Athena address not specified", false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     "offline"
 };
@@ -43,8 +43,8 @@ if (_prefix == "OK") then {
     // whoami public ≠ auth : sans clé, portail joignable seulement.
     if ((count _key) < 4) then {
         _state = "offline";
-        _detail = "Compte non lié";
-        [format ["[Athena] Portail joignable (adresse %1) mais compte non lié.", missionNamespace getVariable ["COMSPEC_userIp", "—"]]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        _detail = "Account not linked";
+        [format ["[Athena] Portail joignable (adresse %1) but account not linked.", missionNamespace getVariable ["COMSPEC_userIp", "—"]]] call comspec_overwatch_connect_fnc_appendLinkLog;
     } else {
         _state = "linked";
         _detail = "";
@@ -54,10 +54,10 @@ if (_prefix == "OK") then {
 } else {
     _state = "offline";
     _detail = switch (_payload) do {
-        case "not_connected": { "Liaison non établie" };
+        case "not_connected": { "Connection not established" };
         case "invalid": { "Extension indisponible" };
         default {
-            if (_payload isEqualTo "") then { "Hors liaison" } else { format ["Hors liaison (%1)", _payload] };
+            if (_payload isEqualTo "") then { "Not connected" } else { format ["Hors liaison (%1)", _payload] };
         };
     };
     [format ["[Athena] Contrôle liaison échoué : %1", _detail]] call comspec_overwatch_connect_fnc_appendLinkLog;

@@ -62,6 +62,8 @@ if ($atakMapConfig) {
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
   <link href="<?= $base ?>/assets/css/atak.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
@@ -1321,6 +1323,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
   <script>
     (function () {
       var HINTS_KEY = 'atak_hide_panel_hints';

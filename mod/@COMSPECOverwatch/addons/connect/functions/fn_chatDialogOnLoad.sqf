@@ -23,7 +23,7 @@ if (!isNull _logCtrl) then {
         private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
         private _hint = switch (_state) do {
             case "linked": {
-                "[Athena] Journal vide — liaison affichée active. Envoyez un message ou rouvrez Compte Athena si le site ne reçoit rien."
+                "[Athena] Journal vide — liaison showne active. Envoyez un message ou rouvrez Compte Athena si le site ne reçoit rien."
             };
             default {
                 "[Athena] Aucun événement. Touche K → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
@@ -37,17 +37,17 @@ if (!isNull _logCtrl) then {
 
 private _console = _display displayCtrl 1401;
 if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
-    _console ctrlSetText ("Les messages envoyés apparaissent ici." + (toString [10]));
+    _console ctrlSetText ("Sent messages appear here." + (toString [10]));
 };
 
-// Reflète l'état masqué/affiché sauvegardé (profileNamespace) sur les boutons de filtre,
+// Reflète l'état hidden/shown sauvegardé (profileNamespace) sur les boutons de filtre,
 // sans changer le réglage — le libellé est juste redessiné.
 {
     _x params ["_category", "_idc", "_label"];
     private _ctrl = _display displayCtrl _idc;
     if (!isNull _ctrl) then {
         private _muted = profileNamespace getVariable [format ["comspec_overwatch_mute_%1", _category], false];
-        _ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "masqué" } else { "affiché" }];
+        _ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }];
     };
 } forEach [
     ["liaison", 1411, "Liaison"],

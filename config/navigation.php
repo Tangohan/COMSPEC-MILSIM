@@ -70,7 +70,7 @@ return [
                     'title' => 'Forum & échanges',
                     'slot' => 'primary',
                     'links' => [
-                        ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view', 'description' => 'Rubriques, sujets et échanges'],
+                        ['label' => 'Accueil du forum', 'path' => 'forum', 'permission' => 'forum.view', 'module' => 'forum', 'description' => 'Rubriques, sujets et échanges'],
                         ['label' => 'Messagerie interne', 'path' => 'messages', 'description' => 'Échanges avec l’encadrement de votre communauté'],
                         ['label' => 'Publier un sujet', 'path' => 'forum/new-topic', 'permission' => 'forum.create_topic', 'description' => 'Démarrer une discussion'],
                     ],

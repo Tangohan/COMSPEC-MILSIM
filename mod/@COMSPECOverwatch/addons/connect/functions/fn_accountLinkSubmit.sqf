@@ -97,7 +97,7 @@ if (!_extOk) exitWith {
 
     private _msg = if (_extCode isEqualTo "bad_response") then {
 
-        format ["Module Athena réponse inattendue (%1).", _extPing]
+        format ["Athena module unexpected response (%1).", _extPing]
 
     } else {
 
@@ -285,7 +285,7 @@ if (_prefix != "OK") exitWith {
 
     if (!(_raw isEqualTo "")) then {
 
-        [format ["[Athena] Réponse brute extension : %1", _raw]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        [format ["[Athena] Raw extension response : %1", _raw]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
     };
 
@@ -328,9 +328,9 @@ _apiUrl = _dialogUrl;
 if (_apiKey isEqualTo "") exitWith {
     ["Liaison refusée : le portail n’a pas renvoyé d’accès. Contactez un administrateur Athena.", "#ff8a7a"] call _setStatus;
     ["[Athena] Réponse OK sans clé d’accès — configuration portail incomplète."] call comspec_overwatch_connect_fnc_appendLinkLog;
-    ["COMSPEC_Warning", ["Liaison refusée : accès manquant côté portail."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["Connection refused: missing access on portal side."]] call comspec_overwatch_connect_fnc_showNotification;
 };
-[format ["[Athena] Accès reçu (clé %1 car., communauté %2).", count _apiKey, if (_tenantId isEqualTo "") then { "—" } else { _tenantId }]] call comspec_overwatch_connect_fnc_appendLinkLog;
+[format ["[Athena] Access received (key %1 car., community %2).", count _apiKey, if (_tenantId isEqualTo "") then { "—" } else { _tenantId }]] call comspec_overwatch_connect_fnc_appendLinkLog;
 
 missionNamespace setVariable ["comspec_overwatch_api_url", _apiUrl];
 
@@ -360,7 +360,7 @@ saveProfileNamespace;
 
 
 
-// CBA : URL + communauté seulement. Ne PAS pousser la clé dans un EDITBOX CBA
+// CBA : URL + community seulement. Ne PAS pousser la clé dans un EDITBOX CBA
 // (troncature / sync → écrase missionNamespace → Connect 401 juste après redeem OK).
 if (!isNil "cba_settings_fnc_set") then {
     ["comspec_overwatch_api_url", _apiUrl, 0, "client", true] call cba_settings_fnc_set;

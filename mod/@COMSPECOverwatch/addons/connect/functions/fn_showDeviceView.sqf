@@ -8,10 +8,10 @@ if (isNull _display) exitWith {};
 
 private _state = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _syncLabel = switch (_state) do {
-    case "linked": { "Lié à Athena" };
+    case "linked": { "Linked to Athena" };
     case "connecting": { "Connexion…" };
-    case "disabled": { "Overwatch désactivé" };
-    default { "Hors liaison" };
+    case "disabled": { "Overwatch disabled" };
+    default { "Not connected" };
 };
 private _syncColor = switch (_state) do {
     case "linked": { "#7dffb3" };

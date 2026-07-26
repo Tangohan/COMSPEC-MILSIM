@@ -66,6 +66,7 @@ use App\Controllers\Admin\AdminRecruitmentDiscordQuestionsController;
 use App\Controllers\Admin\AdminRecruitmentsController;
 use App\Controllers\Admin\RecruitmentWorkspaceController;
 use App\Controllers\Admin\EffectifsWorkspaceController;
+use App\Controllers\Admin\Organization\RecruitmentInviteCodesController;
 use App\Controllers\Admin\AdminDocumentsController;
 use App\Controllers\Admin\AdminTrainingController;
 use App\Controllers\Admin\AdminTrainingStudioController;
@@ -839,6 +840,16 @@ return function (Router $router) {
     $router->post('/back-office/recruitments/{id}/recruteur-volontariat', [AdminRecruitmentsController::class, 'recruiterPick'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/referent', [AdminRecruitmentsController::class, 'assignReferent'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitments/{id}/bilan-equipe', [AdminRecruitmentsController::class, 'staffRetroSave'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    
+    // Routes pour les codes d'invitation de recrutement
+    $router->get('/back-office/recruitments/codes-invitation', [RecruitmentInviteCodesController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/creer', [RecruitmentInviteCodesController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/{id}', [RecruitmentInviteCodesController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/recruitments/codes-invitation/{id}/modifier', [RecruitmentInviteCodesController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/{id}/modifier', [RecruitmentInviteCodesController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/recruitments/codes-invitation/{id}/desactiver', [RecruitmentInviteCodesController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    
     $router->get('/back-office/recruitment/offers', [RecruitmentOffersController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/recruitment/offers/create', [RecruitmentOffersController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/recruitment/offers/store', [RecruitmentOffersController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -902,6 +913,9 @@ return function (Router $router) {
     $router->post('/admin/atak-config/experience', [AdminAtakConfigController::class, 'storeExperience'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-config/export', [AdminAtakConfigController::class, 'exportData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak/roleplay', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1279,6 +1293,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->get('/api/atak/stats', [AtakApiController::class, 'stats']);
+    $router->get('/api/atak/roleplay-stats', [AtakApiController::class, 'roleplayStats']);
     $router->get('/api/atak/presence', [AtakApiController::class, 'presence']);
     $router->get('/api/atak/activity', [AtakApiController::class, 'activityIndex']);
     $router->post('/api/atak/activity', [AtakApiController::class, 'activityStore']);
@@ -1395,6 +1410,47 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->post('/api/atak/flight-manifest', [AtakApiController::class, 'flightManifestStore']);
     $router->get('/api/atak/air-assets', [AtakApiController::class, 'airAssetsIndex']);
     $router->patch('/api/atak/air-assets/{callsign}/pilot-status', [AtakApiController::class, 'airAssetsPilotStatus']);
+
+    // API ATAK — Nouvelles features Phase 1
+    // Rapports tactiques (SPOTREP, SITREP, SALUTE, CONTACT)
+    $router->get('/api/atak/reports', [AtakApiController::class, 'tacticalReportsIndex']);
+    $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
+    $router->get('/api/atak/reports/{id}', [AtakApiController::class, 'tacticalReportsShow']);
+    $router->post('/api/atak/reports/{id}/acknowledge', [AtakApiController::class, 'tacticalReportsAcknowledge']);
+    
+    // Points d'Intérêt tactiques
+    $router->get('/api/atak/poi', [AtakApiController::class, 'poiIndex']);
+    $router->post('/api/atak/poi', [AtakApiController::class, 'poiStore']);
+    $router->put('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    $router->patch('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
+    
+    // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
+    $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
+    $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);
+    $router->post('/api/atak/zones/check-position', [AtakApiController::class, 'tacticalZonesCheckPosition']);
+    $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
+
+    // API ATAK — Nouvelles features Phase 2
+    // MEDEVAC 9-Line étendu avec triage TCCC
+    $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
+    $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
+    $router->get('/api/atak/medevac/{id}', [AtakApiController::class, 'medevacShow']);
+    $router->patch('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacUpdateStatus']);
+    $router->post('/api/atak/medevac/{id}/assign', [AtakApiController::class, 'medevacAssignAsset']);
+    $router->post('/api/atak/medevac/{id}/patients', [AtakApiController::class, 'medevacAddPatient']);
+    
+    // QRF (Quick Reaction Force)
+    $router->get('/api/atak/qrf', [AtakApiController::class, 'qrfIndex']);
+    $router->post('/api/atak/qrf', [AtakApiController::class, 'qrfStore']);
+    $router->post('/api/atak/qrf/{id}/assign', [AtakApiController::class, 'qrfAssign']);
+    $router->post('/api/atak/qrf/{id}/position', [AtakApiController::class, 'qrfUpdatePosition']);
+    $router->post('/api/atak/qrf/{id}/sitrep', [AtakApiController::class, 'qrfAddSitrep']);
+    
+    // Véhicules et assets lourds
+    $router->get('/api/atak/vehicles', [AtakApiController::class, 'vehiclesIndex']);
+    $router->post('/api/atak/vehicles', [AtakApiController::class, 'vehiclesUpsert']);
+    $router->post('/api/atak/vehicles/{id}/service', [AtakApiController::class, 'vehiclesServiceRequest']);
+    $router->get('/api/atak/vehicles/service-requests', [AtakApiController::class, 'vehiclesServiceRequests']);
 
     // API C2 — Fire Support
     $router->post('/api/fire-support/calculate', [FireSupportController::class, 'calculate']);

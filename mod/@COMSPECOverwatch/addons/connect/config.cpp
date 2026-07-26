@@ -13,6 +13,13 @@ class CfgPatches {
     };
 };
 
+// CBA Extended Event Handlers
+class Extended_PostInit_EventHandlers {
+    class comspec_overwatch_connect {
+        clientInit = "call compile preprocessFileLineNumbers '\z\comspec_overwatch\addons\connect\XEH_postInitClient.sqf'";
+    };
+};
+
 // Format obligatoire Tag > Category > Function (file = dossier des fn_*.sqf).
 class CfgFunctions {
     class comspec_overwatch_connect {
@@ -114,6 +121,19 @@ class CfgFunctions {
             class onMainMenuLoad {};
             class getCallsign {};
             class setCallsign {};
+            
+            // ATAK Phase 1 & 2 - Nouvelles fonctions
+            class submitTacticalReport {};
+            class createPOI {};
+            class requestMEDEVAC {};
+            class requestQRF {};
+            class updateVehicleTracking {};
+            class requestVehicleService {};
+            class initVehicleTracking {};
+            class initATAKMenu {};
+            class initATAK {};
+            class hashMapToJson {};
+            class formatTimestamp {};
             class syncCallsignFromAthena {};
             class callsignDialogShow {};
             class callsignDialogOnLoad {};
@@ -174,6 +194,31 @@ class CfgFunctions {
             class syncMapMarker {};
             class gridPosition {};
             class formatHeading {};
+            class trackPacketLoss {};
+            class recordPacketSent {};
+            class recordPacketReceived {};
+            class getPacketLossStats {};
+            class handlePositionUpdateCallback {};
+            class simulateNetworkDisconnect {};
+            class isNetworkDisconnected {};
+            class getNetworkDisconnectInfo {};
+            class playRoleplaySound {};
+            class injectRoleplayEffectsInBrowser {};
+            class checkAtakDamage {};
+            class isAtakFunctional {};
+            class repairAtak {};
+            class addAtakRepairAction {};
+            class updateAtakEnhancedRoleplay {};
+            class playAtakEnhancedSound {};
+            class createRoleplayZone {};
+            class deleteRoleplayZone {};
+            class getPlayerRoleplayZone {};
+            class applyZoneEffects {};
+            class listRoleplayZones {};
+            class moduleNoCoverage {};
+            class moduleInterference {};
+            class moduleDegraded {};
+            class moduleJammer {};
         };
     };
 };
@@ -219,7 +264,7 @@ class CfgNotifications {
 class CfgSounds {
     sounds[] = {};
     class COMSPEC_ATAK_SilentVib {
-        name = "Silencieux (vibration)";
+        name = "Silent (vibration)";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_silencieux_vibration.ogg", 1, 1, 50};
         titles[] = {};
     };
@@ -229,27 +274,27 @@ class CfgSounds {
         titles[] = {};
     };
     class COMSPEC_ATAK_Health {
-        name = "Alerte santé";
+        name = "Health alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_no_activyt_health.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Start {
-        name = "Démarrage ATAK";
+        name = "ATAK startup";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_start.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Disconnect {
-        name = "Déconnexion ATAK";
+        name = "ATAK disconnect";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_disconnect.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Unconscious {
-        name = "Alerte inconscient";
+        name = "Unconscious alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_alert_2.ogg", 1, 1, 50};
         titles[] = {};
     };
     class COMSPEC_ATAK_Death {
-        name = "Alerte mort";
+        name = "Death alert";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\atak_death.ogg", 1, 1, 50};
         titles[] = {};
     };
@@ -262,6 +307,18 @@ class CfgSounds {
         name = "Ordre prioritaire";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_prio.ogg", 1, 1, 50};
         titles[] = {};
+    };
+};
+
+// Catégorie Zeus/Eden pour modules roleplay
+class CfgFactionClasses
+{
+    class NO_CATEGORY;
+    class COMSPEC_Roleplay : NO_CATEGORY
+    {
+        displayName = "COMSPEC Roleplay";
+        priority = 2;
+        side = 7;
     };
 };
 
@@ -279,4 +336,7 @@ class CfgSounds {
 #include "display_medical_inbox.hpp"
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
+
+// Modules Zeus/Eden roleplay
+#include "modules\module_roleplay_zone.hpp"
 #include "CfgEventHandlers.hpp"

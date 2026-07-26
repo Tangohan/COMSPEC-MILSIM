@@ -1,8 +1,8 @@
 /*
     Ajoute une ligne au journal de liaison et rafraîchit le dialog messagerie s’il est ouvert.
     Params: [_line, _category] où _category ∈ "liaison" (défaut) | "cas" | "medical" | "system".
-    Une catégorie masquée par le joueur (réglage persistant, voir fn_toggleLogCategory) est
-    silencieusement ignorée : rien n’est ajouté au journal ni affiché.
+    Une catégorie hiddene par le joueur (réglage persistant, voir fn_toggleLogCategory) est
+    silencieusement ignorée : rien n’est ajouté au journal ni shown.
 
     IMPORTANT SQF : "\n" n’est PAS un saut de ligne (c’est \ + n). splitString "\n" coupe
     donc chaque lettre « n » (ex. Athena → Athe + a). Toujours utiliser toString [10].

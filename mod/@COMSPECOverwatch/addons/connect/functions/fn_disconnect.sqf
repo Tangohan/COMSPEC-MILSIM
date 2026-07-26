@@ -25,11 +25,11 @@ missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
 private _parts = _raw splitString "|";
 private _ok = (count _parts >= 1) && {(_parts select 0) isEqualTo "OK"};
 if (_ok) then {
-    ["[Athena] Déconnexion jeu signalée."] call comspec_overwatch_connect_fnc_appendLinkLog;
+    ["[Athena] Game disconnection reported."] call comspec_overwatch_connect_fnc_appendLinkLog;
 } else {
     private _why = if (count _parts >= 2) then { _parts select 1 } else { _raw };
     if (!(_why isEqualTo "")) then {
-        [format ["[Athena] Déconnexion jeu non confirmée (%1).", _why]] call comspec_overwatch_connect_fnc_appendLinkLog;
+        [format ["[Athena] Game disconnection not confirmed (%1).", _why]] call comspec_overwatch_connect_fnc_appendLinkLog;
     };
 };
 

@@ -60,7 +60,7 @@ private _pos = getPos _unit;
 private _grid = mapGridPosition _unit;
 
 private _label = if (_kindNorm == "cardiac_arrest") then {
-    "Arrêt cardiaque (rythme à zéro)"
+    "Cardiac arrest (zero heart rate)"
 } else {
     "Au sol — inconscient"
 };

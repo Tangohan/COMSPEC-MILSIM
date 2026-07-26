@@ -24,6 +24,177 @@ class TenantAtakConfigRepository
         return $row ?: null;
     }
 
+    /**
+     * Récupère la configuration roleplay complète pour une communauté.
+     * Retourne les valeurs par défaut si la configuration n'existe pas.
+     */
+    public function getRoleplayConfig(int $tenantId): array
+    {
+        $row = $this->getByTenantId($tenantId);
+        
+        $defaults = [
+            // Simulation réseau
+            'network_enabled' => false,
+            'network_mode' => 'normal',
+            'latency_min_ms' => 0,
+            'latency_max_ms' => 0,
+            'packet_loss_percent' => 0.0,
+            'disconnect_enabled' => false,
+            'disconnect_min_sec' => 5,
+            'disconnect_max_sec' => 30,
+            'disconnect_interval_sec' => 600,
+            
+            // Défauts capteur
+            'sensor_enabled' => false,
+            'sensor_failure_percent' => 0.0,
+            'sensor_error_percent' => 0.0,
+            'sensor_missing_percent' => 0.0,
+            
+            // Zones de dégradation
+            'zones_enabled' => false,
+            'zones_config' => null,
+        ];
+
+        if (!$row || !$this->hasRoleplayColumns()) {
+            return $defaults;
+        }
+
+        return [
+            'network_enabled' => (bool) ($row['roleplay_network_enabled'] ?? $defaults['network_enabled']),
+            'network_mode' => (string) ($row['roleplay_network_mode'] ?? $defaults['network_mode']),
+            'latency_min_ms' => (int) ($row['roleplay_latency_min_ms'] ?? $defaults['latency_min_ms']),
+            'latency_max_ms' => (int) ($row['roleplay_latency_max_ms'] ?? $defaults['latency_max_ms']),
+            'packet_loss_percent' => (float) ($row['roleplay_packet_loss_percent'] ?? $defaults['packet_loss_percent']),
+            'disconnect_enabled' => (bool) ($row['roleplay_disconnect_enabled'] ?? $defaults['disconnect_enabled']),
+            'disconnect_min_sec' => (int) ($row['roleplay_disconnect_min_sec'] ?? $defaults['disconnect_min_sec']),
+            'disconnect_max_sec' => (int) ($row['roleplay_disconnect_max_sec'] ?? $defaults['disconnect_max_sec']),
+            'disconnect_interval_sec' => (int) ($row['roleplay_disconnect_interval_sec'] ?? $defaults['disconnect_interval_sec']),
+            'sensor_enabled' => (bool) ($row['roleplay_sensor_enabled'] ?? $defaults['sensor_enabled']),
+            'sensor_failure_percent' => (float) ($row['roleplay_sensor_failure_percent'] ?? $defaults['sensor_failure_percent']),
+            'sensor_error_percent' => (float) ($row['roleplay_sensor_error_percent'] ?? $defaults['sensor_error_percent']),
+            'sensor_missing_percent' => (float) ($row['roleplay_sensor_missing_percent'] ?? $defaults['sensor_missing_percent']),
+            'zones_enabled' => (bool) ($row['roleplay_zones_enabled'] ?? $defaults['zones_enabled']),
+            'zones_config' => ($row['roleplay_zones_config'] ?? $defaults['zones_config']),
+        ];
+    }
+
+    /**
+     * Met à jour la configuration roleplay d'une communauté.
+     */
+    public function updateRoleplayConfig(int $tenantId, array $config): void
+    {
+        if ($tenantId < 1 || !$this->hasRoleplayColumns()) {
+            return;
+        }
+
+        $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');
+        $stmt->execute([$tenantId]);
+        $exists = (bool) $stmt->fetchColumn();
+
+        $fields = [
+            'roleplay_network_enabled' => isset($config['network_enabled']) ? (int) $config['network_enabled'] : 0,
+            'roleplay_network_mode' => $config['network_mode'] ?? 'normal',
+            'roleplay_latency_min_ms' => isset($config['latency_min_ms']) ? (int) $config['latency_min_ms'] : 0,
+            'roleplay_latency_max_ms' => isset($config['latency_max_ms']) ? (int) $config['latency_max_ms'] : 0,
+            'roleplay_packet_loss_percent' => isset($config['packet_loss_percent']) ? (float) $config['packet_loss_percent'] : 0.0,
+            'roleplay_disconnect_enabled' => isset($config['disconnect_enabled']) ? (int) $config['disconnect_enabled'] : 0,
+            'roleplay_disconnect_min_sec' => isset($config['disconnect_min_sec']) ? (int) $config['disconnect_min_sec'] : 5,
+            'roleplay_disconnect_max_sec' => isset($config['disconnect_max_sec']) ? (int) $config['disconnect_max_sec'] : 30,
+            'roleplay_disconnect_interval_sec' => isset($config['disconnect_interval_sec']) ? (int) $config['disconnect_interval_sec'] : 600,
+            'roleplay_sensor_enabled' => isset($config['sensor_enabled']) ? (int) $config['sensor_enabled'] : 0,
+            'roleplay_sensor_failure_percent' => isset($config['sensor_failure_percent']) ? (float) $config['sensor_failure_percent'] : 0.0,
+            'roleplay_sensor_error_percent' => isset($config['sensor_error_percent']) ? (float) $config['sensor_error_percent'] : 0.0,
+            'roleplay_sensor_missing_percent' => isset($config['sensor_missing_percent']) ? (float) $config['sensor_missing_percent'] : 0.0,
+            'roleplay_zones_enabled' => isset($config['zones_enabled']) ? (int) $config['zones_enabled'] : 0,
+            'roleplay_zones_config' => $config['zones_config'] ?? null,
+        ];
+
+        if ($exists) {
+            $upd = $this->pdo->prepare(
+                'UPDATE tenant_atak_config
+                 SET roleplay_network_enabled = ?, roleplay_network_mode = ?,
+                     roleplay_latency_min_ms = ?, roleplay_latency_max_ms = ?,
+                     roleplay_packet_loss_percent = ?,
+                     roleplay_disconnect_enabled = ?, roleplay_disconnect_min_sec = ?,
+                     roleplay_disconnect_max_sec = ?, roleplay_disconnect_interval_sec = ?,
+                     roleplay_sensor_enabled = ?, roleplay_sensor_failure_percent = ?,
+                     roleplay_sensor_error_percent = ?, roleplay_sensor_missing_percent = ?,
+                     roleplay_zones_enabled = ?, roleplay_zones_config = ?,
+                     updated_at = NOW()
+                 WHERE tenant_id = ?'
+            );
+            $upd->execute([
+                $fields['roleplay_network_enabled'],
+                $fields['roleplay_network_mode'],
+                $fields['roleplay_latency_min_ms'],
+                $fields['roleplay_latency_max_ms'],
+                $fields['roleplay_packet_loss_percent'],
+                $fields['roleplay_disconnect_enabled'],
+                $fields['roleplay_disconnect_min_sec'],
+                $fields['roleplay_disconnect_max_sec'],
+                $fields['roleplay_disconnect_interval_sec'],
+                $fields['roleplay_sensor_enabled'],
+                $fields['roleplay_sensor_failure_percent'],
+                $fields['roleplay_sensor_error_percent'],
+                $fields['roleplay_sensor_missing_percent'],
+                $fields['roleplay_zones_enabled'],
+                $fields['roleplay_zones_config'],
+                $tenantId,
+            ]);
+        } else {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO tenant_atak_config
+                    (tenant_id, roleplay_network_enabled, roleplay_network_mode,
+                     roleplay_latency_min_ms, roleplay_latency_max_ms,
+                     roleplay_packet_loss_percent,
+                     roleplay_disconnect_enabled, roleplay_disconnect_min_sec,
+                     roleplay_disconnect_max_sec, roleplay_disconnect_interval_sec,
+                     roleplay_sensor_enabled, roleplay_sensor_failure_percent,
+                     roleplay_sensor_error_percent, roleplay_sensor_missing_percent,
+                     roleplay_zones_enabled, roleplay_zones_config,
+                     default_map_slug, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'altis\', NOW(), NOW())'
+            );
+            $ins->execute([
+                $tenantId,
+                $fields['roleplay_network_enabled'],
+                $fields['roleplay_network_mode'],
+                $fields['roleplay_latency_min_ms'],
+                $fields['roleplay_latency_max_ms'],
+                $fields['roleplay_packet_loss_percent'],
+                $fields['roleplay_disconnect_enabled'],
+                $fields['roleplay_disconnect_min_sec'],
+                $fields['roleplay_disconnect_max_sec'],
+                $fields['roleplay_disconnect_interval_sec'],
+                $fields['roleplay_sensor_enabled'],
+                $fields['roleplay_sensor_failure_percent'],
+                $fields['roleplay_sensor_error_percent'],
+                $fields['roleplay_sensor_missing_percent'],
+                $fields['roleplay_zones_enabled'],
+                $fields['roleplay_zones_config'],
+            ]);
+        }
+    }
+
+    private function hasRoleplayColumns(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'roleplay_network_enabled' LIMIT 1"
+            );
+            $cached = (bool) $st?->fetchColumn();
+        } catch (\Throwable) {
+            $cached = false;
+        }
+
+        return $cached;
+    }
+
     public function createOrUpdate(int $tenantId, array $data): void
     {
         $stmt = $this->pdo->prepare('SELECT 1 FROM tenant_atak_config WHERE tenant_id = ? LIMIT 1');

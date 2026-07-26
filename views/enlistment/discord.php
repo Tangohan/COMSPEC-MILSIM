@@ -77,6 +77,22 @@ $discordQuestions = is_array($discordQuestions ?? null) ? $discordQuestions : []
             </div>
         <?php endforeach; ?>
 
+        <!-- Code d'invitation (optionnel) -->
+        <div class="space-y-2">
+            <label for="invite-code" class="block text-sm font-semibold text-slate-900">
+                Code d'invitation (optionnel)
+            </label>
+            <p class="text-xs text-slate-600">Si vous avez reçu un code d'invitation, saisissez-le ici pour accélérer votre candidature</p>
+            <input type="text" 
+                   name="invite_code" 
+                   id="invite-code" 
+                   maxlength="64"
+                   pattern="[A-Z0-9\-_]*"
+                   placeholder="Ex: MIGRATION2026"
+                   style="text-transform: uppercase;"
+                   class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100">
+        </div>
+
         <button type="submit" class="w-full py-3.5 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700">Envoyer ma candidature</button>
     </form>
 </div>

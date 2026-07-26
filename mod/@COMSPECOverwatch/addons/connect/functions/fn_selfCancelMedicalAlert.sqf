@@ -49,7 +49,7 @@ if (_prefix != "OK") exitWith {
     if (!(_x isEqualType createHashMap)) then { continue };
     if ((str (_x getOrDefault ["id", ""])) isEqualTo _alertId) then {
         _x set ["triage_status", "annule"];
-        _x set ["triage_label", "Annulé"];
+        _x set ["triage_label", "Cancelled"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_MedicalAlerts", []]);
 
