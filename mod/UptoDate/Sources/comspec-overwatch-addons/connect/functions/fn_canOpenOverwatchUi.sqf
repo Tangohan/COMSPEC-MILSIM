@@ -6,5 +6,5 @@ params [["_fromAtak", false, [true]]];
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith { false };
-if (!_fromAtak && {missionNamespace getVariable ["comspec_overwatch_atak_ui_only", false]}) exitWith { false };
+if (!_fromAtak && {missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]}) exitWith { false };
 true

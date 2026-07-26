@@ -14,6 +14,9 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
 if (isNull findDisplay 46) exitWith {};
 if (isMultiplayer && {getClientStateNumber >= 11}) exitWith {};
 if (!alive _unit) exitWith {};
+if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};
+// Anti-réentrée : ACE + PFH position peuvent rappeler dans la même frame
+if (missionNamespace getVariable ["COMSPEC_MedicalAlertBusy", false]) exitWith {};
 
 private _kindNorm = toLower _kind;
 if !(_kindNorm in ["unconscious", "cardiac_arrest"]) exitWith {};
@@ -22,6 +25,10 @@ private _last = missionNamespace getVariable ["COMSPEC_lastMedicalAlertKind", ""
 if (_last isEqualTo _kindNorm) exitWith {}; // déjà signalé pour cet état
 // Pas de « downgrade » : arrêt cardiaque déjà signalé → ne pas republier inconscient
 if (_last isEqualTo "cardiac_arrest" && {_kindNorm isEqualTo "unconscious"}) exitWith {};
+
+// Debounce temporel (évite oscillateur inconscient ↔ stable au spawn)
+private _lastAt = missionNamespace getVariable ["COMSPEC_lastMedicalAlertAt", -1e9];
+if ((diag_tickTime - _lastAt) < 4) exitWith {};
 
 // Déjà une alerte active non résolue du même type (cache poll) → ne pas republier
 private _own = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
@@ -42,7 +49,9 @@ if (_skipDup) exitWith {
 };
 
 // Verrouiller AVANT l’envoi pour éviter un double POST si le PFH / ACE rappellent dans la foulée
+missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", true, false];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", _kindNorm, false];
+missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", diag_tickTime, false];
 
 private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _parts = _state splitString "|";
@@ -94,3 +103,4 @@ private _alert = createHashMapFromArray [
 [_kindNorm] call comspec_overwatch_connect_fnc_playAtakNotification;
 diag_log format ["[COMSPEC] Medical alert %1 — %2", _kindNorm, _msg];
 [format ["[Médical] %1 — %2 (grille %3)", _callSign, _label, _grid], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
+missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];

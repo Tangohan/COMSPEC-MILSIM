@@ -187,8 +187,11 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_atak_ui_only", "CHECKBOX",
-    ["Interface Overwatch uniquement via ATAK Enhanced", "Désactive la tablette Overwatch hors d’ATAK Enhanced (touche K, menus ACE associés, ouverture automatique). La liaison Athena, la synchronisation et les fonctions dans ATAK Enhanced restent actives."],
-    "COMSPEC Overwatch", false
+    [
+        "Interface uniquement via ATAK Enhanced (recommandé)",
+        "Activé par défaut : la touche K et les menus associés ouvrent le téléphone ATAK Enhanced. La tablette Overwatch séparée n’est plus ouverte hors d’ATAK. Décochez seulement si vous devez retrouver l’ancienne tablette Overwatch hors ATAK. La liaison Athena et la synchronisation restent actives dans les deux cas."
+    ],
+    "COMSPEC Overwatch", true
 ] call CBA_fnc_addSetting;
 
 [
@@ -295,15 +298,19 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 ] call CBA_fnc_addSetting;
 
 // Raccourcis (CBA — personnalisables dans Options > Contrôles > Extension Addon)
-// K           → Tablette Athena
-// Ctrl+K      → Messagerie
-// Ctrl+Shift+K → Ancien menu hub (vues Overwatch)
-//
-// IDs : comspec_menu_hub ouvrait le hub sur K — on le réutilise pour la tablette
-// afin que les joueurs qui ont déjà K restent sur la bonne action.
+// Par défaut (ATAK Enhanced only) :
+//   K / Ctrl+K / Ctrl+Shift+K → téléphone ATAK Enhanced
+// Si « Interface uniquement via ATAK Enhanced » est décoché :
+//   K → tablette Overwatch, Ctrl+K → messagerie, Ctrl+Shift+K → applications
 [
-    "COMSPEC Overwatch", "comspec_menu_hub", ["Tablette Athena", "Ouvrir la tablette Athena Overwatch (K)"],
+    "COMSPEC Overwatch", "comspec_menu_hub",
+    ["Téléphone ATAK / tablette", "Ouvre ATAK Enhanced (défaut) ou la tablette Overwatch si l’option ATAK-only est désactivée (K)"],
     {
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
+            0 spawn { [] call comspec_overwatch_connect_fnc_openAtakEnhanced; };
+            true
+        };
         if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { [] call comspec_overwatch_connect_fnc_webBrowserShow; };
         true
@@ -314,8 +321,14 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch", "comspec_menu_chat", ["Messagerie", "Ouvrir la messagerie dans la tablette Athena (Ctrl+K)"],
+    "COMSPEC Overwatch", "comspec_menu_chat",
+    ["Messagerie ATAK / Overwatch", "Ouvre ATAK Enhanced (défaut) ou la messagerie Overwatch si l’option ATAK-only est désactivée (Ctrl+K)"],
     {
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
+            0 spawn { [] call comspec_overwatch_connect_fnc_openAtakEnhanced; };
+            true
+        };
         if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { ["chat"] call comspec_overwatch_connect_fnc_openTabletView; };
         true
@@ -325,10 +338,15 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     false, 0, false
 ] call CBA_fnc_addKeybind;
 
-// ID v2 : l’ancien menu hub était sur K — maintenant Ctrl+Shift+K → Apps tablette
 [
-    "COMSPEC Overwatch", "comspec_menu_hub_csk", ["Applications tablette", "Ouvrir le menu Applications de la tablette Athena (Ctrl+Shift+K)"],
+    "COMSPEC Overwatch", "comspec_menu_hub_csk",
+    ["Applications ATAK / Overwatch", "Ouvre ATAK Enhanced (défaut) ou les applications Overwatch si l’option ATAK-only est désactivée (Ctrl+Shift+K)"],
     {
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
+        if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {
+            0 spawn { [] call comspec_overwatch_connect_fnc_openAtakEnhanced; };
+            true
+        };
         if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith { false };
         0 spawn { ["apps"] call comspec_overwatch_connect_fnc_openTabletView; };
         true
@@ -408,9 +426,12 @@ missionNamespace setVariable ["COMSPEC_lastRole", "", true];
 missionNamespace setVariable ["COMSPEC_lastRadio", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedical", "", true];
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
 missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
 missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
 missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
+missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
 missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
 missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
 missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];

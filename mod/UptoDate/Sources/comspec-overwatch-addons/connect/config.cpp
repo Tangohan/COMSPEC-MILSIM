@@ -53,6 +53,7 @@ class CfgFunctions {
             class monitorRadioNet {};
             class initRadioMonitor {};
             class getMedicalState {};
+            class isPlayerSpawnStable {};
             class checkMedicalAlerts {};
             class reportMedicalAlert {};
             class canTriageMedical {};
@@ -206,6 +207,7 @@ class CfgFunctions {
             class extensionCallback {};
             class hasTerminal {};
             class canOpenOverwatchUi {};
+            class openAtakEnhanced {};
             class syncMapMarker {};
             class gridPosition {};
             class formatHeading {};

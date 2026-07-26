@@ -12,6 +12,8 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
 if (isNull findDisplay 46) exitWith {};
 if (isMultiplayer && {getClientStateNumber >= 11}) exitWith {};
 if (!alive _unit) exitWith {};
+// Spawn / JIP : attendre stabilisation (sinon faux inconscient → spam extension / CTD).
+if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};
 
 private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;
 private _parts = _state splitString "|";

@@ -11,6 +11,10 @@ params [["_silent", false, [true]]];
 
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+// Pas d’annulation auto pendant spawn (évite TriageMedicalAlert en boucle)
+if (_silent && {!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])}) exitWith {
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+};
 
 private _alert = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
 private _alertId = if (_alert isEqualType createHashMap) then { _alert getOrDefault ["id", ""] } else { "" };

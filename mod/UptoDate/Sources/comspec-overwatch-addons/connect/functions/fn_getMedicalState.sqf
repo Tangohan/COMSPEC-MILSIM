@@ -25,16 +25,15 @@ if (isClass (configFile >> "CfgPatches" >> "ace_medical")) then {
         if (!isNil "_hrFn" && {_hrFn isEqualType 0}) then { _hr = _hrFn; };
     };
 
+    // Flags ACE / lifeState uniquement — NE PAS utiliser ace_common_fnc_isAwake :
+    // au JIP / spawn (ACE + ACM) isAwake peut être false avant init vitale → faux KO / « mort ».
     private _uncon = _unit getVariable ["ACE_isUnconscious", false];
     if (!_uncon) then { _uncon = _unit getVariable ["ace_medical_incapacitated", false]; };
     if (!_uncon && {lifeState _unit == "INCAPACITATED"}) then { _uncon = true; };
-    if (!_uncon && {!isNil "ace_common_fnc_isAwake"}) then {
-        _uncon = !([_unit] call ace_common_fnc_isAwake);
-    };
 
     // Arrêt cardiaque = flag ACE explicite, ou FC à zéro UNIQUEMENT si déjà inconscient.
-    // Ne pas inférer depuis HR=0 seul : à la déconnexion / teardown ACE le rythme peut
-    // retomber à 0 sans arrêt cardiaque réel → fausse alerte « mort ».
+    // Ne pas inférer depuis HR=0 seul : à la déconnexion / teardown / spawn ACE le rythme peut
+    // être 0 sans arrêt cardiaque réel → fausse alerte « mort ».
     _cardiac = _unit getVariable ["ace_medical_inCardiacArrest", false];
     if (!_cardiac && {_hr <= 0} && {_uncon}) then { _cardiac = true; };
 

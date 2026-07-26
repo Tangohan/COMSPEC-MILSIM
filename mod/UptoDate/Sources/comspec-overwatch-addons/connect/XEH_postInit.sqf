@@ -56,24 +56,64 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_initACE;
     }, [], 8] call CBA_fnc_waitAndExecute;
 
-    // Handshake Athena (inspiré Remastered) puis sync lourde — hors thread principal
+    // Handshake Athena puis attendre stabilisation spawn/JIP avant sync lourde + alertes médicales.
+    // CTD observé (RPT 15-22-54) : Handshake OK puis crash avant « Boucles de sync » sur __cur_mp JIP
+    // (ACE/ACM init + MessageBox + sync extension dans la même fenêtre).
     0 spawn {
         ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+
+        private _deadline = diag_tickTime + 90;
+        waitUntil {
+            (
+                !isNull player
+                && {alive player}
+                && {!isNull findDisplay 46}
+                && {
+                    !isMultiplayer
+                    || {
+                        private _st = getClientStateNumber;
+                        _st >= 10 && {_st < 11}
+                    }
+                }
+                && {
+                    private _p = getPosWorld player;
+                    (abs (_p select 0) >= 1) || {abs (_p select 1) >= 1}
+                }
+            ) || {diag_tickTime > _deadline}
+        };
+
+        // Laisse ACE / ACM / cTab finir l’init unitaire (évite faux KO + flood extension)
+        uiSleep 8;
+
+        if (isNull player || {!alive player} || {isNull findDisplay 46}) exitWith {
+            ["WARN", "Boot", "Spawn non stabilisé — sync différée annulée"] call comspec_overwatch_connect_fnc_log;
+        };
+
+        missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
+        missionNamespace setVariable ["COMSPEC_SpawnStableAt", diag_tickTime, false];
+        ["INFO", "Boot", "Spawn stabilisé — armement alertes médicales"] call comspec_overwatch_connect_fnc_log;
+
         [] call comspec_overwatch_connect_fnc_startSyncLoops;
         ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
     };
 
-    // Alerte Windows (MessageBox) si compte Athena non lié — une fois / session
+    // Alerte Windows (MessageBox) si compte Athena non lié — après spawn stable uniquement
     0 spawn {
-        // Laisser le monde et l’UI se stabiliser avant le MessageBox bloquant
-        uiSleep 2.5;
+        uiSleep 3;
         waitUntil {
             missionNamespace getVariable ["COMSPEC_AthenaReady", false]
             || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 120)}
         };
+        waitUntil {
+            missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 150)}
+        };
+        // MessageBox natif pendant le chaos JIP = CTD fréquent — attendre encore
+        uiSleep 12;
+        if (isNull findDisplay 46 || {!alive player}) exitWith {};
         [] call comspec_overwatch_connect_fnc_showAthenaLinkHelp;
     };
 
@@ -117,6 +157,9 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             if (!local _unit || {_unit != player}) exitWith {};
             if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
             if (isNull findDisplay 46) exitWith {};
+            // Ignorer les bascules ACE pendant spawn / init médicale
+            if !(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]) exitWith {};
+            if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};
             if (_isUnconscious) then {
                 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
             } else {
@@ -166,6 +209,10 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false];
     missionNamespace setVariable ["COMSPEC_MedicalAlertsSeen", [], false];
     missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", false, false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
+    missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
+    missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
     if (isNil "COMSPEC_DisconnectEHs") then {
         COMSPEC_DisconnectEHs = true;
         addMissionEventHandler ["Ended", {

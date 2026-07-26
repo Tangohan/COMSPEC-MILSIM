@@ -14,7 +14,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
 if !([_fromAtak] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {
     private _msg = if (!(missionNamespace getVariable ["comspec_overwatch_require_item", false]) || {([player] call comspec_overwatch_connect_fnc_hasTerminal)}) then {
-        "Interface Overwatch désactivée hors ATAK Enhanced — utilisez ATAK Enhanced."
+        "Ouvrez le téléphone ATAK Enhanced pour accéder à Overwatch."
     } else {
         "Équipement requis manquant — synchronisation et interface indisponibles."
     };

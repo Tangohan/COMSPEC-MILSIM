@@ -70,7 +70,7 @@ private _athenaOpen = !isNull _athenaGroup && {ctrlShown _athenaGroup};
 if (_athenaOpen) exitWith {};
 
 // Sinon ouvre la tablette sur les ordres (plus de dialog 9975) — hors mode ATAK-only
-if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", false]) exitWith {};
+if (missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]) exitWith {};
 if !([false] call comspec_overwatch_connect_fnc_canOpenOverwatchUi) exitWith {};
 
 if (isNull (findDisplay 9974)) then {
