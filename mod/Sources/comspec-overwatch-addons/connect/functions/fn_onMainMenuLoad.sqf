@@ -17,7 +17,7 @@ if (!isNull _display && {isNull (_display displayCtrl 9611)}) then {
     private _textW = 0.11 * safezoneW;
 
     private _icon = _display ctrlCreate ["RscPicture", 9610];
-    _icon ctrlSetText "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_tablet.paa";
+    _icon ctrlSetText "\z\comspec_overwatch\addons\connect\img\comspec_atak_logo.paa";
     _icon ctrlSetPosition [_iconX, _badgeY, _badgeH, _badgeH];
     _icon ctrlCommit 0;
 

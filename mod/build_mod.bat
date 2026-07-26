@@ -5,6 +5,7 @@ set "ARMA_PATH=F:\SteamLibrary\steamapps\common\Arma 3"
 set "BUILDER_PATH=F:\SteamLibrary\steamapps\common\Arma 3 Tools\AddonBuilder\AddonBuilder.exe"
 set "PROJECT_DIR=%~dp0"
 set "OUTPUT_DIR=%PROJECT_DIR%%MOD_NAME%"
+set "SOURCES_DIR=%PROJECT_DIR%Sources\comspec-overwatch-addons"
 set "BUILD_LOG=%PROJECT_DIR%build_log.txt"
 set "TMP_OUT=%PROJECT_DIR%build_tmp_out.txt"
 
@@ -42,12 +43,12 @@ if not exist "%OUTPUT_DIR%\addons" mkdir "%OUTPUT_DIR%\addons"
 :: 3. Compilation des PBO
 echo [BUILD] Compilation de comspec_overwatch_main... >> "%BUILD_LOG%"
 echo [BUILD] Compilation de comspec_overwatch_main...
-if not exist "%PROJECT_DIR%%MOD_NAME%\addons\main" (
-    echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\main >> "%BUILD_LOG%"
-    echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\main
+if not exist "%SOURCES_DIR%\main" (
+    echo [ERREUR] Sources manquantes: %SOURCES_DIR%\main >> "%BUILD_LOG%"
+    echo [ERREUR] Sources manquantes: %SOURCES_DIR%\main
     goto :build_fail
 )
-"%BUILDER_PATH%" "%PROJECT_DIR%%MOD_NAME%\addons\main" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\main >> "%BUILD_LOG%" 2>&1
+"%BUILDER_PATH%" "%SOURCES_DIR%\main" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\main >> "%BUILD_LOG%" 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] AddonBuilder main a echoue. >> "%BUILD_LOG%"
     echo [ERREUR] AddonBuilder main a echoue.
@@ -56,12 +57,12 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo [BUILD] Compilation de comspec_overwatch_connect... >> "%BUILD_LOG%"
 echo [BUILD] Compilation de comspec_overwatch_connect...
-if not exist "%PROJECT_DIR%%MOD_NAME%\addons\connect" (
-    echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\connect >> "%BUILD_LOG%"
-    echo [ERREUR] Sources manquantes: %PROJECT_DIR%%MOD_NAME%\addons\connect
+if not exist "%SOURCES_DIR%\connect" (
+    echo [ERREUR] Sources manquantes: %SOURCES_DIR%\connect >> "%BUILD_LOG%"
+    echo [ERREUR] Sources manquantes: %SOURCES_DIR%\connect
     goto :build_fail
 )
-"%BUILDER_PATH%" "%PROJECT_DIR%%MOD_NAME%\addons\connect" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\connect >> "%BUILD_LOG%" 2>&1
+"%BUILDER_PATH%" "%SOURCES_DIR%\connect" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\connect >> "%BUILD_LOG%" 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo [ERREUR] AddonBuilder connect a echoue. >> "%BUILD_LOG%"
     echo [ERREUR] AddonBuilder connect a echoue.
@@ -69,10 +70,10 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: Bridge optionnel ATAK Enhanced (cTab/BCE) - ignore si AddonBuilder echoue
-if exist "%PROJECT_DIR%%MOD_NAME%\addons\atak_athena\config.cpp" (
+if exist "%SOURCES_DIR%\atak_athena\config.cpp" (
     echo [BUILD] Compilation de comspec_overwatch_atak_athena... >> "%BUILD_LOG%"
     echo [BUILD] Compilation de comspec_overwatch_atak_athena...
-    "%BUILDER_PATH%" "%PROJECT_DIR%%MOD_NAME%\addons\atak_athena" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_athena >> "%BUILD_LOG%" 2>&1
+    "%BUILDER_PATH%" "%SOURCES_DIR%\atak_athena" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\atak_athena >> "%BUILD_LOG%" 2>&1
     if %ERRORLEVEL% NEQ 0 (
         echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
         echo [WARN] AddonBuilder atak_athena a echoue - PBO optionnel ignore.

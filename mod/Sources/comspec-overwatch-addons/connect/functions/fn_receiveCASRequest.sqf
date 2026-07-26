@@ -20,18 +20,18 @@ if (_idx >= 0) then {
 // Extract status
 private _sIdx = _json find "\"status\"";
 if (_sIdx >= 0) then {
-    private _q = _json find "\"", _sIdx + 8;
+    private _q = _json find ["\"", _sIdx + 8];
     if (_q >= 0) then {
-        private _q2 = _json find "\"", _q + 1;
+        private _q2 = _json find ["\"", _q + 1];
         if (_q2 > _q) then { _status = _json select [_q + 1, _q2 - _q - 1]; };
     };
 };
 // assigned_aircraft / assignedAircraft
 private _aIdx = _json find "\"assigned";
 if (_aIdx >= 0) then {
-    private _q = _json find "\"", _aIdx + 12;
+    private _q = _json find ["\"", _aIdx + 12];
     if (_q >= 0) then {
-        private _q2 = _json find "\"", _q + 1;
+        private _q2 = _json find ["\"", _q + 1];
         if (_q2 > _q) then { _assigned = _json select [_q + 1, _q2 - _q - 1]; };
     };
 };
@@ -40,9 +40,9 @@ for "_i" from 1 to 9 do {
     private _key = "\"line" + str _i + "\"";
     private _lIdx = _json find _key;
     if (_lIdx >= 0) then {
-        private _q = _json find "\"", _lIdx + count _key + 1;
+        private _q = _json find ["\"", _lIdx + count _key + 1];
         if (_q >= 0) then {
-            private _q2 = _json find "\"", _q + 1;
+            private _q2 = _json find ["\"", _q + 1];
             if (_q2 > _q) then {
                 private _val = _json select [_q + 1, _q2 - _q - 1];
                 _lines set [_i - 1, _val];
