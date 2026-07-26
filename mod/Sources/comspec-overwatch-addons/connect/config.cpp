@@ -110,6 +110,7 @@ class CfgFunctions {
             class refreshBriefingSlides {};
             class getPhoneConnectInfo {};
             class phoneConnectShow {};
+            class phoneConnectDialogOnLoad {};
             class accountLinkShow {};
             class accountLinkOnLoad {};
             class accountLinkSubmit {};
