@@ -31,5 +31,20 @@ if (_isLocal) then {
     _inbox pushBack ["BDA", "Bilan des dégâts", _summary, _grid, _timeStr, _from];
     while { (count _inbox) > 40 } do { _inbox deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_Athena_AlertInbox", _inbox, false];
+    private _detail = format [
+        "<t color='#e0a060'>Bilan des dégâts</t><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Heure</t>  %3<br/><br/>%4",
+        _from,
+        if (_grid isEqualTo "") then { "—" } else { _grid },
+        _timeStr,
+        _summary
+    ];
+    [
+        "bda",
+        "Bilan des dégâts",
+        format ["%1 — %2", _from, if (_grid isEqualTo "") then { "—" } else { _grid }],
+        _detail,
+        format ["bda_%1_%2", _from, _timeStr],
+        _timeStr
+    ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
 };

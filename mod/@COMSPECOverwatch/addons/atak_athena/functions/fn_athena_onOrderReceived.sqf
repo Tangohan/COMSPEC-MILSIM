@@ -20,6 +20,29 @@ if (_typeLabel isEqualTo "") then {
 };
 private _issuer = _order getOrDefault ["issuer", "C2"];
 
+private _prio = _order getOrDefault ["priority", "IMPORTANT"];
+private _prioLabel = switch (toUpper _prio) do {
+    case "URGENT": { "Urgent" };
+    case "ROUTINE": { "Routine" };
+    default { "Important" };
+};
+private _payload = _order getOrDefault ["payload", ""];
+private _orderId = _order getOrDefault ["id", format ["ord_%1", diag_tickTime]];
+private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
+private _detail = format [
+    "<t color='#7eb8ff'>Ordre</t> — %1<br/><t color='#8aa0b4'>Priorité</t>  %2<br/><t color='#8aa0b4'>Émetteur</t>  %3<br/><t color='#8aa0b4'>Cible</t>  %4<br/>%5",
+    _typeLabel, _prioLabel, _issuer, _order getOrDefault ["target", "—"],
+    if (_payload isEqualTo "") then { "" } else { format ["<br/>%1", _payload] }
+];
+[
+    "order",
+    "Ordre",
+    format ["%1 — de %2", _typeLabel, _issuer],
+    _detail,
+    _orderId,
+    _timeStr
+] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
+
 ["ATHENA", format ["Nouvel ordre — %1 (de %2)", _typeLabel, _issuer], 8] call comspec_overwatch_connect_fnc_addScreenToast;
 if (!isNil "cTab_phoneVibrate") then {
     playSound "cTab_phoneVibrate";

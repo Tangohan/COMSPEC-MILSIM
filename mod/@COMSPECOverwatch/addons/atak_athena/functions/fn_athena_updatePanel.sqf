@@ -27,7 +27,8 @@ private _tabMap = [
     ["bda", 9741],
     ["photo", 9742],
     ["order", 9743],
-    ["modules", 9744]
+    ["modules", 9744],
+    ["notif", 9745]
 ];
 {
     _x params ["_id", "_idc"];
@@ -37,6 +38,66 @@ private _tabMap = [
         _ctrl ctrlSetBackgroundColor _col;
     };
 } forEach _tabMap;
+
+// Compteur non lus + libellé onglet Notifs
+private _notifs = missionNamespace getVariable ["COMSPEC_Athena_Notifications", []];
+if (!(_notifs isEqualType [])) then { _notifs = []; };
+private _unreadCount = {_x select 5} count _notifs;
+private _tabNotifCtrl = _group controlsGroupCtrl 9745;
+if (!isNull _tabNotifCtrl) then {
+    private _tabTxt = if (_unreadCount > 0) then {
+        format ["Notifs (%1)", _unreadCount]
+    } else {
+        "Notifs"
+    };
+    _tabNotifCtrl ctrlSetText _tabTxt;
+};
+
+// Zone notifications (fil compact, plus récent en haut)
+private _notifCtrl = _group controlsGroupCtrl 9715;
+if (!isNull _notifCtrl) then {
+    private _notifPrev = lbCurSel _notifCtrl;
+    _notifCtrl setVariable ["COMSPEC_AthenaNotifUpdating", true];
+    lbClear _notifCtrl;
+    private _notifDisp = +_notifs;
+    reverse _notifDisp;
+    private _maxNotif = 5;
+    private _shown = 0;
+    {
+        if (_shown >= _maxNotif) exitWith {};
+        _x params ["_nid", "_nkind", "_ntype", "_nbrief", "_ntime", "_nunread"];
+        private _prefix = if (_nunread) then { "● " } else { "  " };
+        private _line = format ["%1%2 · %3 · %4", _prefix, _ntype, _ntime, _nbrief];
+        if ((count _line) > 52) then { _line = (_line select [0, 49]) + "…"; };
+        private _idx = _notifCtrl lbAdd _line;
+        _notifCtrl lbSetData [_idx, str _forEachIndex];
+        private _col = switch (_nkind) do {
+            case "order": { [0.55, 0.78, 0.92, 1] };
+            case "bda": { [0.92, 0.72, 0.48, 1] };
+            case "photo": { [0.7, 0.84, 0.9, 1] };
+            case "group": { [0.75, 0.9, 0.75, 1] };
+            case "system": { [0.75, 0.82, 0.88, 1] };
+            default { [0.95, 0.86, 0.62, 1] };
+        };
+        _notifCtrl lbSetColor [_idx, _col];
+        if (_nunread) then {
+            _notifCtrl lbSetColorRight [_idx, [0.35, 0.95, 0.65, 1]];
+        };
+        _shown = _shown + 1;
+    } forEach _notifDisp;
+    _notifCtrl setVariable ["COMSPEC_AthenaNotifUpdating", false];
+    if ((count _notifDisp) == 0) then {
+        private _idx = _notifCtrl lbAdd "Aucune notification récente";
+        _notifCtrl lbSetColor [_idx, [0.55, 0.62, 0.68, 0.85]];
+        _notifCtrl lbSetCurSel -1;
+    } else {
+        if (_notifPrev >= 0 && {_notifPrev < _shown}) then {
+            _notifCtrl lbSetCurSel _notifPrev;
+        } else {
+            _notifCtrl lbSetCurSel -1;
+        };
+    };
+};
 
 private _statusTxt = if (_linked) then {
     private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
@@ -288,8 +349,12 @@ if (_tab isEqualTo "modules") then {
 };
 
 // Filtre onglet
-if (_tab isNotEqualTo "all" && {_tab isNotEqualTo "modules"}) then {
-    _entries = _entries select { (_x select 0) isEqualTo _tab };
+if (_tab isEqualTo "notif") then {
+    _entries = _entries select { (_x select 0) in ["order", "alert", "bda", "photo"] };
+} else {
+    if (_tab isNotEqualTo "all" && {_tab isNotEqualTo "modules"}) then {
+        _entries = _entries select { (_x select 0) isEqualTo _tab };
+    };
 };
 
 if (!isNull _listCtrl) then {
@@ -323,12 +388,13 @@ if (!isNull _listCtrl) then {
                 case "photo": { "Aucune photo à afficher — capturez d’abord depuis l’app Photos d’ATAK." };
                 case "order": { "Aucun ordre reçu pour le moment." };
                 case "modules": { "Aucun module synchronisé pour le moment." };
+                case "notif": { "Aucune notification pour le moment." };
                 default { "Aucune alerte, ordre, bilan ni photo pour le moment." };
             };
-            private _hint = if (_tab isEqualTo "photo") then {
-                "Ouvrez Photos sur ATAK, prenez une vue, puis revenez ici pour la remonter."
-            } else {
-                "Sélectionnez une entrée du journal ci-dessus."
+            private _hint = switch (_tab) do {
+                case "photo": { "Ouvrez Photos sur ATAK, prenez une vue, puis revenez ici pour la remonter." };
+                case "notif": { "Les nouveaux ordres et alertes apparaissent dans la zone ci-dessus." };
+                default { "Sélectionnez une entrée du journal ci-dessous." };
             };
             _detailCtrl ctrlSetStructuredText parseText format [
                 "<t size='0.88' color='#e8f4f0'>%1</t><br/><br/><t color='#9aa4aa'>%2</t>",

@@ -106,7 +106,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             idc = 9740;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
             y = QUOTE(COMSPEC_ATHENA_H(1.18));
-            w = QUOTE(COMSPEC_ATHENA_W(0.544));
+            w = QUOTE(COMSPEC_ATHENA_W(0.47));
             h = QUOTE(COMSPEC_ATHENA_H(0.44));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
             text = "Tout";
@@ -119,39 +119,81 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         class TabBda: TabAll
         {
             idc = 9741;
-            x = QUOTE(COMSPEC_ATHENA_W(0.644));
+            x = QUOTE(COMSPEC_ATHENA_W(0.53));
             text = "BDA";
             onButtonClick = "['bda'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabPhoto: TabAll
         {
             idc = 9742;
-            x = QUOTE(COMSPEC_ATHENA_W(1.228));
+            x = QUOTE(COMSPEC_ATHENA_W(1.00));
             text = "Photos";
             onButtonClick = "['photo'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabOrder: TabAll
         {
             idc = 9743;
-            x = QUOTE(COMSPEC_ATHENA_W(1.812));
+            x = QUOTE(COMSPEC_ATHENA_W(1.47));
             text = "Ordres";
             onButtonClick = "['order'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
         };
         class TabModules: TabAll
         {
             idc = 9744;
-            x = QUOTE(COMSPEC_ATHENA_W(2.396));
+            x = QUOTE(COMSPEC_ATHENA_W(1.94));
             text = "Modules";
             onButtonClick = "['modules'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
+        };
+        class TabNotif: TabAll
+        {
+            idc = 9745;
+            x = QUOTE(COMSPEC_ATHENA_W(2.41));
+            text = "Notifs";
+            onButtonClick = "['notif'] call comspec_overwatch_atak_athena_fnc_athena_selectTab";
+        };
+
+        class SecNotif: RscStructuredText
+        {
+            idc = -1;
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(1.66));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.20));
+            text = "<t size='0.58' color='#5a9e88'>NOTIFICATIONS</t>";
+            colorBackground[] = {0, 0, 0, 0};
+            class Attributes { font = "RobotoCondensed"; align = "left"; valign = "middle"; shadow = 0; };
+        };
+
+        class NotifList: RscListBox
+        {
+            idc = 9715;
+            x = QUOTE(COMSPEC_ATHENA_W(0.06));
+            y = QUOTE(COMSPEC_ATHENA_H(1.88));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            h = QUOTE(COMSPEC_ATHENA_H(0.58));
+            colorBackground[] = {0.025, 0.06, 0.08, 0.9};
+            colorSelect[] = {0.02, 0.04, 0.05, 1};
+            colorSelect2[] = {0.02, 0.04, 0.05, 1};
+            colorSelectBackground[] = {0.35, 0.55, 0.48, 0.88};
+            colorSelectBackground2[] = {0.35, 0.55, 0.48, 0.88};
+            sizeEx = QUOTE(COMSPEC_ATHENA_H(0.36));
+            rowHeight = QUOTE(COMSPEC_ATHENA_H(0.50));
+            onLBSelChanged = "_this call comspec_overwatch_atak_athena_fnc_athena_selectNotif";
+        };
+
+        class SecJournal: SecNotif
+        {
+            y = QUOTE(COMSPEC_ATHENA_H(2.30));
+            text = "<t size='0.58' color='#5a9e88'>JOURNAL</t>";
         };
 
         class Inbox: RscListBox
         {
             idc = 9710;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(1.70));
+            y = QUOTE(COMSPEC_ATHENA_H(2.52));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(1.96));
+            h = QUOTE(COMSPEC_ATHENA_H(1.32));
             colorBackground[] = ATHENA_BG_LIST;
             colorSelect[] = {0.02, 0.04, 0.05, 1};
             colorSelect2[] = {0.02, 0.04, 0.05, 1};
@@ -166,7 +208,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = -1;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(3.80));
+            y = QUOTE(COMSPEC_ATHENA_H(3.92));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.24));
             text = "<t size='0.62' color='#5a9e88'>DÉTAIL</t>";
@@ -184,9 +226,9 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9711;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(4.08));
+            y = QUOTE(COMSPEC_ATHENA_H(4.18));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
-            h = QUOTE(COMSPEC_ATHENA_H(0.58));
+            h = QUOTE(COMSPEC_ATHENA_H(0.52));
             text = "";
             colorBackground[] = ATHENA_BG_DETAIL;
             class Attributes
@@ -205,7 +247,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9712;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(4.74));
+            y = QUOTE(COMSPEC_ATHENA_H(4.78));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.36));
             text = "";
@@ -227,7 +269,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = -1;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(5.20));
+            y = QUOTE(COMSPEC_ATHENA_H(5.22));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.22));
             text = "<t size='0.58' color='#5a9e88'>ALERTES</t>";
@@ -275,7 +317,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         // --- Comptes-rendus ---
         class SecRapports: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(6.08));
+            y = QUOTE(COMSPEC_ATHENA_H(6.06));
             text = "<t size='0.58' color='#5a9e88'>COMPTES-RENDUS</t>";
         };
 
@@ -283,7 +325,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9721;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(6.42));
+            y = QUOTE(COMSPEC_ATHENA_H(6.40));
             w = QUOTE(COMSPEC_ATHENA_W(0.92));
             h = QUOTE(COMSPEC_ATHENA_H(0.44));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
@@ -313,7 +355,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9732;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(6.96));
+            y = QUOTE(COMSPEC_ATHENA_H(6.92));
             w = QUOTE(COMSPEC_ATHENA_W(2.88));
             h = QUOTE(COMSPEC_ATHENA_H(0.42));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
@@ -328,7 +370,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         // --- Outils ---
         class SecOutils: SecAlertes
         {
-            y = QUOTE(COMSPEC_ATHENA_H(7.46));
+            y = QUOTE(COMSPEC_ATHENA_H(7.42));
             text = "<t size='0.58' color='#5a9e88'>OUTILS</t>";
         };
 
@@ -336,7 +378,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9731;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(7.80));
+            y = QUOTE(COMSPEC_ATHENA_H(7.76));
             w = QUOTE(COMSPEC_ATHENA_W(1.40));
             h = QUOTE(COMSPEC_ATHENA_H(0.44));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
@@ -359,7 +401,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         {
             idc = 9734;
             x = QUOTE(COMSPEC_ATHENA_W(0.06));
-            y = QUOTE(COMSPEC_ATHENA_H(8.32));
+            y = QUOTE(COMSPEC_ATHENA_H(8.28));
             w = QUOTE(COMSPEC_ATHENA_W(1.40));
             h = QUOTE(COMSPEC_ATHENA_H(0.44));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));

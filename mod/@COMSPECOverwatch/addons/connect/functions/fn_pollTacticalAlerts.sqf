@@ -88,6 +88,22 @@ private _notifyTitles = [];
     private _fromMe = (toLower _from) isEqualTo (toLower _myCs) || {(toLower _from) isEqualTo (toLower (name player))};
     if (!_fromMe) then {
         _notifyTitles pushBack format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }];
+        private _detail = format [
+            "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
+            _kindLabel,
+            if (_from isEqualTo "") then { "Athena" } else { _from },
+            if (_grid isEqualTo "") then { "—" } else { _grid },
+            _timeStr,
+            if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
+        ];
+        [
+            "alert",
+            _kindLabel,
+            format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }],
+            _detail,
+            format ["remote_%1", _id],
+            _timeStr
+        ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
     };
 } forEach _lines;
 

@@ -35,6 +35,8 @@ class CfgFunctions
             class athena_sendQuick {};
             class athena_openTablet {};
             class athena_selectInbox {};
+            class athena_selectNotif {};
+            class athena_pushNotification {};
             class athena_selectTab {};
             class athena_sendPhoto {};
             class athena_setPanelFeedback {};

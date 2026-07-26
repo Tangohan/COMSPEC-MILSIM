@@ -1,6 +1,6 @@
 if (!hasInterface) exitWith {};
 
-// Icône Connexion Athena sur l’écran Desktop ATAK Enhanced
+// Icônes Desktop ATAK Enhanced (Connexion Athena, messages d’urgence, tchat)
 [] call comspec_overwatch_atak_athena_fnc_athena_installDesktopShortcut;
 
 // Dual-send : alertes Iceman → Athena
