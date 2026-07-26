@@ -23,6 +23,11 @@ private _fnc_skip = {
     diag_log format ["[COMSPEC] UpdatePosition skip: %1 (state=%2)", _reason, getClientStateNumber];
 };
 
+// Grâce REAPP / respawn : pas de POST ni d’alerte médicale (spike ACE + MRH + handshake)
+if (!_force && {diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])}) exitWith {
+    ["respawn_grace"] call _fnc_skip;
+};
+
 // Équipement requis (réglage CBA) — bloque sync position si manquant
 if !([_unit] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {
     if (!_force) then { ["no_terminal"] call _fnc_skip; };

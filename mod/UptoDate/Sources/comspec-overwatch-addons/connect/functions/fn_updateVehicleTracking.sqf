@@ -22,6 +22,12 @@ params [
 if (isNull _vehicle) exitWith {false};
 if (_vehicle isEqualTo player) exitWith {false}; // Pas un véhicule
 
+// Debounce / grâce REAPP (évite flood extension pendant spike ACE+MRH)
+if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {false};
+private _lastPost = missionNamespace getVariable ["COMSPEC_VehTrackLastAt", -1e9];
+if ((diag_tickTime - _lastPost) < 5) exitWith {false};
+missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
+
 // Préparer données
 private _vehicleData = createHashMap;
 

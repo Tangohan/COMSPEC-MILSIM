@@ -12,7 +12,9 @@ if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
 if (isNull findDisplay 46) exitWith {};
 if (isMultiplayer && {getClientStateNumber >= 11}) exitWith {};
 if (!alive _unit) exitWith {};
-// Spawn / JIP : attendre stabilisation (sinon faux inconscient → spam extension / CTD).
+// Mort puis REAPP immédiat : ne pas publier KIA / KO fantôme
+if (missionNamespace getVariable ["COMSPEC_DeathThenRespawn", false]) exitWith {};
+// Spawn / JIP / grâce respawn : attendre stabilisation
 if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};
 
 private _state = [_unit] call comspec_overwatch_connect_fnc_getMedicalState;

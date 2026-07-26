@@ -85,8 +85,15 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
             ) || {diag_tickTime > _deadline}
         };
 
-        // Laisse ACE / ACM / cTab finir l’init unitaire (évite faux KO + flood extension)
-        uiSleep 8;
+        // ACE (~3k delayed) + MRH JIP + handshake : attendre longtemps avant sync
+        uiSleep 15;
+
+        // Si REAPP pendant l’attente : prolonger jusqu’à fin de grâce
+        waitUntil {
+            diag_tickTime >= (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])
+            || {diag_tickTime > (_deadline + 60)}
+        };
+        uiSleep 3;
 
         if (isNull player || {!alive player} || {isNull findDisplay 46}) exitWith {
             ["WARN", "Boot", "Spawn non stabilisé — sync différée annulée"] call comspec_overwatch_connect_fnc_log;
@@ -94,33 +101,48 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 
         missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
         missionNamespace setVariable ["COMSPEC_SpawnStableAt", diag_tickTime, false];
+        missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
         ["INFO", "Boot", "Spawn stabilisé — armement alertes médicales"] call comspec_overwatch_connect_fnc_log;
 
         [] call comspec_overwatch_connect_fnc_startSyncLoops;
         ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
     };
 
-    // Alerte Windows (MessageBox) si compte Athena non lié — après spawn stable uniquement
+    // Alerte Windows (MessageBox) si compte Athena non lié — JAMAIS pendant REAPP
     0 spawn {
-        uiSleep 3;
+        uiSleep 8;
         waitUntil {
             missionNamespace getVariable ["COMSPEC_AthenaReady", false]
             || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 120)}
         };
         waitUntil {
             missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]
-            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 150)}
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 180)}
         };
-        // MessageBox natif pendant le chaos JIP = CTD fréquent — attendre encore
-        uiSleep 12;
-        if (isNull findDisplay 46 || {!alive player}) exitWith {};
+        // Après armement médical : encore une marge (spike ACE/MRH)
+        uiSleep 20;
+        waitUntil {
+            ([] call comspec_overwatch_connect_fnc_canShowWinMessageBox)
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 240)}
+        };
+        if (missionNamespace getVariable ["COMSPEC_CancelPendingAthenaHelp", false]) exitWith {
+            ["INFO", "Athena", "Aide liaison annulée (respawn / REAPP)"] call comspec_overwatch_connect_fnc_log;
+        };
+        if !([] call comspec_overwatch_connect_fnc_canShowWinMessageBox) exitWith {};
         [] call comspec_overwatch_connect_fnc_showAthenaLinkHelp;
     };
 
-    // Repli : note d’accès anticipé si le menu principal n’a pas pu l’afficher
-    // + enrichissement Steam une fois le joueur disponible en mission
+    // Note bêta : différée (pas de MessageBox Win32 en mission sur REAPP)
     0 spawn {
-        uiSleep 3;
+        uiSleep 25;
+        waitUntil {
+            (
+                missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]
+                && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])}
+            )
+            || {diag_tickTime > ((missionNamespace getVariable ["COMSPEC_HandshakeStartedAt", diag_tickTime]) + 200)}
+        };
+        uiSleep 5;
         if (profileNamespace getVariable ["comspec_overwatch_beta_note_ack", false]) then {
             private _needSend = !(profileNamespace getVariable ["comspec_overwatch_beta_registered", false]);
             private _steamNow = if (!isNull player) then { getPlayerUID player } else { "" };
@@ -183,18 +205,21 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_applyZoneEffects;
     }, 2, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 2 secondes
     
-    // Réalisme ATAK : Event handler pour les blessures
-    player addEventHandler ["Hit", {
-        params ["_unit", "_source", "_damage", "_instigator"];
-        // Vérifier dommages ATAK
-        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
-    }];
-    
-    // Vérification périodique de l'état ATAK
-    [{
-        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
-    }, 10, []] call CBA_fnc_addPerFrameHandler; // Toutes les 10 secondes
-    
+    // Réalisme ATAK : Hit une seule fois (évite double EH si re-settings)
+    if (isNil "COMSPEC_AtakHitEH") then {
+        COMSPEC_AtakHitEH = player addEventHandler ["Hit", {
+            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+        }];
+    };
+
+    if (isNil "COMSPEC_AtakDamagePFH") then {
+        COMSPEC_AtakDamagePFH = [{
+            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+            [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+        }, 10, []] call CBA_fnc_addPerFrameHandler;
+    };
+
     // Actions réparation ATAK — seulement si menus ACE activés
     [{
         if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
@@ -213,6 +238,13 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
     missionNamespace setVariable ["COMSPEC_lastMedicalAlertAt", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_RespawnGraceUntil", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9, false];
+    missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];
+    missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
+    missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
+    missionNamespace setVariable ["COMSPEC_VehTrackPlayer", objNull, false];
+    missionNamespace setVariable ["COMSPEC_VehicleTrackingBootMsg", false, false];
     if (isNil "COMSPEC_DisconnectEHs") then {
         COMSPEC_DisconnectEHs = true;
         addMissionEventHandler ["Ended", {

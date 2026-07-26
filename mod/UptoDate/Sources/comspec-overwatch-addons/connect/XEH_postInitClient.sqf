@@ -3,7 +3,14 @@
 
 if (!hasInterface) exitWith {};
 
-// Lancer initialisation ATAK avec délai pour s'assurer que tout est chargé
+// Différer ATAK / tracking : laisse MRH JIP + REAPP + ACE (~3k delayed) respirer
 [{
+    if (isNull player || {isNull findDisplay 46}) exitWith {
+        [{ [] call comspec_overwatch_connect_fnc_initATAK; }, [], 5] call CBA_fnc_waitAndExecute;
+    };
+    // Grâce proactive si on arrive pile pendant l’écran respawn
+    if (!(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false])) then {
+        missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", (diag_tickTime + 30) max (missionNamespace getVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9]), false];
+    };
     [] call comspec_overwatch_connect_fnc_initATAK;
-}, [], 3] call CBA_fnc_waitAndExecute;
+}, [], 10] call CBA_fnc_waitAndExecute;

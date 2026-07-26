@@ -432,6 +432,11 @@ missionNamespace setVariable ["COMSPEC_MedicalAlertsBootstrapped", false, false]
 missionNamespace setVariable ["COMSPEC_MedicalAlerts", [], false];
 missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", false, false];
 missionNamespace setVariable ["COMSPEC_MedicalAlertBusy", false, false];
+missionNamespace setVariable ["COMSPEC_RespawnGraceUntil", -1e9, false];
+missionNamespace setVariable ["COMSPEC_SuppressWinMessageBoxUntil", -1e9, false];
+missionNamespace setVariable ["COMSPEC_CancelPendingAthenaHelp", false, false];
+missionNamespace setVariable ["COMSPEC_DeathThenRespawn", false, false];
+missionNamespace setVariable ["COMSPEC_VehicleTrackingInited", false, false];
 missionNamespace setVariable ["COMSPEC_lastSendTime", 0, true];
 missionNamespace setVariable ["COMSPEC_ApiBackoffUntil", 0, false];
 missionNamespace setVariable ["COMSPEC_ApiBackoffSec", 2, false];

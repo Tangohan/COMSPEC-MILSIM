@@ -54,6 +54,8 @@ class CfgFunctions {
             class initRadioMonitor {};
             class getMedicalState {};
             class isPlayerSpawnStable {};
+            class canShowWinMessageBox {};
+            class onPlayerRespawn {};
             class checkMedicalAlerts {};
             class reportMedicalAlert {};
             class canTriageMedical {};
