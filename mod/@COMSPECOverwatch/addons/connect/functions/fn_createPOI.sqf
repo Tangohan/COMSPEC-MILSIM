@@ -24,7 +24,7 @@ params [
     ["_affiliation", "UNKNOWN", [""]],
     ["_certainty", "POSSIBLE", [""]],
     ["_description", "", [""]],
-    ["_position", [], [[]]]
+    ["_position", [], [[]]],
     ["_threatLevel", "LOW", [""]]
 ];
 
