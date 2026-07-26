@@ -5,7 +5,12 @@
   'use strict';
 
   function buildUrl(apiBase, mapId) {
-    var base = String(apiBase || '').replace(/\/$/, '');
+    var base = String(apiBase || window.ATAK_API_BASE || window.APP_BASE_URL || '').replace(/\/$/, '');
+    if (!base && typeof window.location !== 'undefined') {
+      var p = window.location.pathname || '';
+      var atakIdx = p.indexOf('/atak');
+      base = (window.location.origin || '') + (atakIdx >= 0 ? p.substring(0, atakIdx) : p.replace(/\/[^/]*$/, ''));
+    }
     // Normalise racine site (/public), /api ou anciennes bases /atak → /api/atak/weather
     base = base.replace(/\/api(?:\/atak)?$/, '').replace(/\/atak$/, '');
     return base + '/api/atak/weather?mapId=' + encodeURIComponent(mapId || 1);

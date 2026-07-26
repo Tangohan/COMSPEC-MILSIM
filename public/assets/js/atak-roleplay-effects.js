@@ -4,8 +4,14 @@
   'use strict';
 
   function atakApiUrl(path) {
+    var pathNorm = path.charAt(0) === '/' ? path : '/' + path;
     var base = String(window.ATAK_API_BASE || window.APP_BASE_URL || '').replace(/\/$/, '');
-    return (base || '') + path;
+    if (!base && typeof window.location !== 'undefined') {
+      var p = window.location.pathname || '';
+      var atakIdx = p.indexOf('/atak');
+      base = (window.location.origin || '') + (atakIdx >= 0 ? p.substring(0, atakIdx) : p.replace(/\/[^/]*$/, ''));
+    }
+    return base + pathNorm;
   }
 
   const RoleplayEffects = {
