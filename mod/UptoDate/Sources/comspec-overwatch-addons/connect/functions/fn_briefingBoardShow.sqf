@@ -7,6 +7,21 @@
 */
 params [["_index", 0, [0]]];
 
+// Deck Google actif : ne pas écraser avec les images Athena au onLoad du dialog.
+if (missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) exitWith {
+    private _path = missionNamespace getVariable ["COMSPEC_GoogleBriefingPath", ""];
+    private _gIndex = missionNamespace getVariable ["COMSPEC_GoogleBriefingIndex", 0];
+    private _total = missionNamespace getVariable ["COMSPEC_GoogleBriefingTotal", 1];
+    if (_path isNotEqualTo "") then {
+        [
+            _path,
+            format ["Google Slides — diapositive %1", _gIndex + 1],
+            _gIndex,
+            _total
+        ] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
+    };
+};
+
 private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
 if (count _slides == 0) exitWith {};
 _index = (_index max 0) min (count _slides - 1);
@@ -34,8 +49,9 @@ if (isNull _display) exitWith {}; // le joueur a pu fermer le dialog pendant le 
 
 if (_path != "") then {
     if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText _path; };
+    [_path, _title, _index, count _slides] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
 } else {
-    ["COMSPEC_Warning", ["Unable to load this slide (network or cache unavailable)."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["Impossible de charger cette diapositive (réseau ou cache indisponible)."]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 /*

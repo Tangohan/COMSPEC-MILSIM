@@ -61,28 +61,27 @@ if (!(_atakStatus get "can_display")) then {
     {
         private _ctrl = _display displayCtrl _x;
         if (!isNull _ctrl) then { _ctrl ctrlShow false; };
-    } forEach [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108]; // Boutons principaux
-    
-    exitWith {};
+    } forEach [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108];
 } else {
-    // Écran fonctionnel, réinitialiser état
+    // Ecran fonctionnel, reinitialiser etat
     if (_wasScreenBroken) then {
         missionNamespace setVariable ["COMSPEC_Roleplay_WasScreenBroken", false];
     };
     
-    // Cacher l'overlay
     if (!isNull _ctrlScreenBroken) then {
         _ctrlScreenBroken ctrlShow false;
     };
     
-    // Réafficher l'interface
     {
         private _ctrl = _display displayCtrl _x;
         if (!isNull _ctrl) then { _ctrl ctrlShow true; };
     } forEach [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108];
 };
 
-// === DÉCONNEXION ===
+// Ecran casse / eteint : ne pas continuer les overlays roleplay
+if (!(_atakStatus get "can_display")) exitWith {};
+
+// === DECONNEXION ===
 if (_isDisconnected && {!isNull _ctrlDisconnect}) then {
     // Son si nouvelle déconnexion
     if (!_wasDisconnected) then {

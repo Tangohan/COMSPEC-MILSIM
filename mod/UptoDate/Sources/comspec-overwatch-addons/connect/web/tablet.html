@@ -1364,10 +1364,22 @@
       </div>
 
       <div class="panel-view" id="view-briefing">
-        <p class="form-hint">Consultez l’ordre de mission et les diapositives sur le portail Athena. La tablette reste ouverte.</p>
+        <p class="form-hint">Consultez les diapositives publiées sur Athena, ou chargez une présentation Google Slides partagée (lien accessible à toute personne disposant du lien).</p>
         <div class="form-actions">
-          <button class="btn primary" type="button" data-cmd="open:athena">Ouvrir le portail Athena</button>
-          <button class="btn" type="button" data-cmd="refresh">Actualiser</button>
+          <button class="btn primary" type="button" data-cmd="briefing:board">Consulter les diapositives</button>
+          <button class="btn" type="button" data-cmd="briefing:community">Charger le brief Google de la communauté</button>
+        </div>
+        <div class="form-stack" style="margin-top:12px">
+          <div class="form-field">
+            <label for="briefing-google-url">Lien Google Slides</label>
+            <input type="text" id="briefing-google-url" maxlength="512" placeholder="https://docs.google.com/presentation/d/…" autocomplete="off">
+            <p class="form-hint">La présentation doit être partagée avec toute personne disposant du lien. Dépend de Google et peut évoluer.</p>
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="button" id="briefing-google-load">Charger la présentation</button>
+            <button class="btn" type="button" data-cmd="open:athena">Ouvrir le portail Athena</button>
+            <button class="btn" type="button" data-cmd="refresh">Actualiser</button>
+          </div>
         </div>
       </div>
 
@@ -2295,7 +2307,11 @@
     } else if (currentView === "briefing") {
       if (title) title.textContent = "BRIEFING";
       if (sideHead) sideHead.textContent = "ORDRE DE MISSION";
-      if (hint) hint.textContent = "Diapositives et documents via Athena";
+      if (hint) hint.textContent = "Diapositives Athena ou présentation Google";
+      var gInput = document.getElementById("briefing-google-url");
+      if (gInput && boot && boot.googleSlidesUrl && !gInput.value) {
+        gInput.value = boot.googleSlidesUrl;
+      }
     } else if (currentView === "phone") {
       if (title) title.textContent = "TÉLÉPHONE";
       if (sideHead) sideHead.textContent = "PAIRAGE";
@@ -2665,8 +2681,25 @@
     if (cmd === "refresh") setFooterMsg("Actualisation…");
     if (cmd === "toggle:quiet") setFooterMsg("Mise à jour du mode discret…");
     if (cmd === "open:athena") setFooterMsg("Ouverture du portail…");
+    if (cmd === "briefing:board") setFooterMsg("Ouverture du tableau de briefing…");
+    if (cmd === "briefing:community") setFooterMsg("Chargement du brief Google…");
     send(cmd);
   });
+
+  var briefingGoogleLoad = document.getElementById("briefing-google-load");
+  if (briefingGoogleLoad) {
+    briefingGoogleLoad.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var input = document.getElementById("briefing-google-url");
+      var url = input ? String(input.value || "").trim() : "";
+      if (!url) {
+        setFooterMsg("Collez un lien Google Slides avant de charger.");
+        return;
+      }
+      setFooterMsg("Chargement de la présentation…");
+      send("briefing:google|" + url);
+    });
+  }
 
   document.addEventListener("keydown", function (ev) {
     if (currentSkin !== "fbcb2") return;

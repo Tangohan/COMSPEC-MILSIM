@@ -56,7 +56,7 @@ if ((count _atakUrl) < 16) exitWith {
 // Alignement anti-spam avec le bouton « Navigateur système »
 missionNamespace setVariable ["COMSPEC_WebBrowser_SystemOpenAt", _now];
 
-// ——— Priorité 1 : navigateur système (Windows) ———
+// Priorite 1 : navigateur systeme (Windows)
 openURL _atakUrl;
 
 // Sur Stable, l’embarqué ne charge pas /atak : rester en mode local (radar tablette).

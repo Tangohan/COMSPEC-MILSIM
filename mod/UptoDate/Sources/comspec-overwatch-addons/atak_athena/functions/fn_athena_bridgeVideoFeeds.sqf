@@ -98,7 +98,7 @@ private _escape = {
     params ["_s"];
     if (!(_s isEqualType "")) then { _s = format ["%1", _s]; };
     _s = _s splitString """" joinString "";
-    _s = _s splitString "\" joinString "/";
+    _s = (_s splitString (toString [92])) joinString "/";
     _s = _s splitString toString [10] joinString " ";
     _s = _s splitString toString [13] joinString " ";
     _s

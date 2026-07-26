@@ -109,6 +109,13 @@ if (Test-Path -LiteralPath $pboAthena) {
 } else {
     Write-Host "  (atak_athena.pbo absent — pont cTab non packagé)"
 }
+$pboMavik = Join-Path $SourceMod "addons\mavik_compat.pbo"
+if (Test-Path -LiteralPath $pboMavik) {
+    Copy-Item -LiteralPath $pboMavik -Destination (Join-Path $OutDir "addons\mavik_compat.pbo") -Force
+    Write-Host "  + mavik_compat.pbo (filet Mavic / settings CBA)"
+} else {
+    Write-Host "  (mavik_compat.pbo absent — compat Mavic non packagée)"
+}
 
 # Signatures BI optionnelles (si présentes à côté des PBO)
 Get-ChildItem -LiteralPath (Join-Path $SourceMod "addons") -Filter "*.bisign" -ErrorAction SilentlyContinue |
@@ -121,7 +128,7 @@ Get-ChildItem -LiteralPath (Join-Path $SourceMod "keys") -Filter "*.bikey" -Erro
     }
 
 # Logo / picture référencé par mod.cpp (optionnel)
-foreach ($picName in @("gotak.png", "logo.paa", "overview.paa")) {
+foreach ($picName in @("gotak.png", "logo.paa", "logoSmall.paa", "overview.paa")) {
     $pic = Join-Path $SourceMod $picName
     $picAddons = Join-Path $SourceMod "addons\$picName"
     if (Test-Path -LiteralPath $pic) {

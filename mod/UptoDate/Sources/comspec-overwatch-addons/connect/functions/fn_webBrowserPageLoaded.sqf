@@ -371,8 +371,12 @@ private _safeOct = [_myOct] call comspec_overwatch_connect_fnc_webBrowserJsEscap
 private _latencyMs = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
 if (!(_latencyMs isEqualType 0)) then { _latencyMs = -1; };
 
+private _googleUrl = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
+if (!(_googleUrl isEqualType "")) then { _googleUrl = ""; };
+private _safeGoogleUrl = [_googleUrl] call comspec_overwatch_connect_fnc_webBrowserJsEscape;
+
 private _js = format [
-    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]},latencyMs:%21}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
+    "window.COMSPEC_BOOT={callsign:'%1',role:'%2',status:'%3',statusLabel:'%4',grid:'%5',time:'%6',units:[%7],chat:[%8],orders:[%9],alerts:[%10],quiet:%11,footer:'%12',mapHint:'%13',heading:%14,octant:'%15',radio:{moduleOk:%16,radius:%17,monitoring:%18,monitorChannel:'%19',contacts:[%20]},latencyMs:%21,googleSlidesUrl:'%22'}; if(window.COMSPEC_onBoot){window.COMSPEC_onBoot(window.COMSPEC_BOOT);}",
     _safeCallsign,
     _safeRole,
     _state,
@@ -393,7 +397,8 @@ private _js = format [
     _radioMon,
     _radioMonCh,
     _radioProxJs joinString ",",
-    _latencyMs
+    _latencyMs,
+    _safeGoogleUrl
 ];
 
 _ctrl ctrlWebBrowserAction ["ExecJS", _js];

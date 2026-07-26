@@ -5,16 +5,24 @@ if (!hasInterface) exitWith {};
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
-// Re-applique compat Mavic après init settings CBA (au cas où PreInit était trop tôt)
+// Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot)
 ["CBA_settingsInitialized", {
-    private _wasNil = isNil "mavic_setting_enableConnectionDistance";
-    if (_wasNil) then {
-        mavic_setting_enableConnectionDistance = false;
+    if (isNil "mavic_setting_enableConnectionDistance") then {
+        missionNamespace setVariable ["mavic_setting_enableConnectionDistance", false];
+    };
+    if (isNil "mavic_setting_maxConnectionDistance") then {
+        missionNamespace setVariable ["mavic_setting_maxConnectionDistance", 6000];
+    };
+    if (isNil "mavic_setting_showInterface") then {
+        missionNamespace setVariable ["mavic_setting_showInterface", true];
+    };
+    if (isNil "mavic_setting_vanillaInterface") then {
+        missionNamespace setVariable ["mavic_setting_vanillaInterface", false];
     };
     ["INFO", "Compat", format [
-        "CBA_settingsInitialized — mavic wasNil=%1 nowNil=%2",
-        _wasNil,
-        isNil "mavic_setting_enableConnectionDistance"
+        "CBA_settingsInitialized — mavic enableConn isNil=%1 maxDist=%2",
+        isNil "mavic_setting_enableConnectionDistance",
+        missionNamespace getVariable ["mavic_setting_maxConnectionDistance", -1]
     ]] call comspec_overwatch_connect_fnc_log;
     ["boot"] call comspec_overwatch_connect_fnc_logDump;
 }] call CBA_fnc_addEventHandler;
@@ -175,3 +183,11 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         };
     };
 }] call CBA_fnc_addEventHandler;
+
+// Sync multi-clients du briefing Google Slides (URL + index).
+if (isNil "COMSPEC_GoogleBriefingStateEH") then {
+    COMSPEC_GoogleBriefingStateEH = [
+        "COMSPEC_GoogleBriefingState",
+        { _this call comspec_overwatch_connect_fnc_handleGoogleBriefingState; }
+    ] call CBA_fnc_addEventHandler;
+};

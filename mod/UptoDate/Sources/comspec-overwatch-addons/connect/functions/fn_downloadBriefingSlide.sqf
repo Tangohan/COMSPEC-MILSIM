@@ -23,6 +23,6 @@ if (_prefix != "OK") exitWith {
 // Chemin local : normaliser \ → / pour RscPicture / setObjectTexture sous Windows.
 private _path = if (count _parts >= 2) then { _parts select 1 } else { "" };
 if (_path != "") then {
-    _path = (_path splitString "\") joinString "/";
+    _path = (_path splitString (toString [92])) joinString "/";
 };
 _path

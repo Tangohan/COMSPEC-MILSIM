@@ -29,11 +29,12 @@ private _pairs = [];
     
     switch (typeName _value) do {
         case "STRING": {
-            // Échapper guillemets et backslashes
             private _escaped = _value;
-            _escaped = _escaped splitString """" joinString "\""";
-            _escaped = _escaped splitString "\" joinString "\\";
-            _valueStr = format ["""%1""", _escaped];
+            private _dq = toString [34];
+            private _bs = toString [92];
+            _escaped = (_escaped splitString _bs) joinString (_bs + _bs);
+            _escaped = (_escaped splitString _dq) joinString (_bs + _dq);
+            _valueStr = _dq + _escaped + _dq;
         };
         case "SCALAR": {
             _valueStr = str _value;
@@ -45,7 +46,7 @@ private _pairs = [];
             // Tableau simple
             private _elements = _value apply {
                 if (typeName _x isEqualTo "STRING") then {
-                    format ["""%1""", _x]
+                    (toString [34]) + _x + (toString [34])
                 } else {
                     str _x
                 };
@@ -57,11 +58,11 @@ private _pairs = [];
             _valueStr = [_value] call comspec_overwatch_connect_fnc_hashMapToJson;
         };
         default {
-            _valueStr = """unknown""";
+            _valueStr = (toString [34]) + "unknown" + (toString [34]);
         };
     };
     
-    _pairs pushBack format ["""%1"":%2", _key, _valueStr];
+    _pairs pushBack format ["%1%2%1:%3", toString [34], _key, _valueStr];
 } forEach (keys _hashMap);
 
 // Assembler JSON

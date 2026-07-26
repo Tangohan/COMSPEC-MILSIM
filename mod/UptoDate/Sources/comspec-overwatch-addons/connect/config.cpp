@@ -108,6 +108,12 @@ class CfgFunctions {
             class briefingBoardShow {};
             class briefingBoardStep {};
             class refreshBriefingSlides {};
+            class setBriefingScreens {};
+            class loadGoogleBriefing {};
+            class applyGoogleBriefingSlide {};
+            class googleBriefingStep {};
+            class broadcastGoogleBriefingState {};
+            class handleGoogleBriefingState {};
             class getPhoneConnectInfo {};
             class phoneConnectShow {};
             class phoneConnectDialogOnLoad {};

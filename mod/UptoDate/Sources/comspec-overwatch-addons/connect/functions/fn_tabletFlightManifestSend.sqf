@@ -43,12 +43,14 @@ switch (side player) do {
 private _escape = {
     params ["_s"];
     private _o = "";
+    private _dq = toString [34];
+    private _bs = toString [92];
     if (isNil "_s" || { _s isEqualTo "" }) exitWith { "" };
     _s = str _s;
     if (count _s > 1) then { _s = _s select [1, count _s - 2]; };
     {
-        if (_x == 34) then { _o = _o + "\""; }
-        else { if (_x == 92) then { _o = _o + "\\"; } else { _o = _o + toString [_x]; }; };
+        if (_x == 34) then { _o = _o + _bs + _dq; }
+        else { if (_x == 92) then { _o = _o + _bs + _bs; } else { _o = _o + toString [_x]; }; };
     } forEach toArray _s;
     _o
 };

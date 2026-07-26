@@ -121,7 +121,45 @@ class AtakApiController
             ];
         }
 
-        return Response::json(['slides' => $out]);
+        return Response::json([
+            'slides' => $out,
+            'google_slides_url' => $this->resolveTenantGoogleSlidesUrl($tenantId),
+        ]);
+    }
+
+    /**
+     * Lien Google Slides public publié pour la communauté (tenants.settings.briefing.google_slides_url).
+     */
+    private function resolveTenantGoogleSlidesUrl(int $tenantId): string
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $briefing = $settings['briefing'] ?? null;
+        if (!is_array($briefing)) {
+            return '';
+        }
+        $url = trim((string) ($briefing['google_slides_url'] ?? ''));
+        if ($url === '' || !self::isValidGoogleSlidesUrl($url)) {
+            return '';
+        }
+
+        return $url;
+    }
+
+    public static function isValidGoogleSlidesUrl(string $url): bool
+    {
+        if ($url === '' || strlen($url) > 512) {
+            return false;
+        }
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+        $host = strtolower((string) (parse_url($url, PHP_URL_HOST) ?? ''));
+        if ($host !== 'docs.google.com') {
+            return false;
+        }
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?? '');
+
+        return (bool) preg_match('#^/presentation/d/(?:e/)?[a-zA-Z0-9_-]+#', $path);
     }
 
     /**

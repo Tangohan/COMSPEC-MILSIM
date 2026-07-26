@@ -133,6 +133,18 @@ Les diapositives en brouillon (non visibles en jeu) restent masquées pour Arma.
 
 Après une modification Athena, en jeu utilisez le bouton **Actualiser** du tableau de briefing, ou rouvrez le menu.
 
+### Option Google Slides (fragile)
+
+Sur la même page Athena, section **Présentation Google Slides** : collez un lien de présentation partagée avec toute personne disposant du lien. En jeu, tablette → Briefing → charger ce lien (ou coller un autre lien).
+
+Cette fonction télécharge les images via l’extension Overwatch. Elle **dépend de Google** et peut casser sans préavis. Pour les briefs critiques, restez sur les diapositives images Athena.
+
+En Eden, enregistrez les écrans avec :
+
+```sqf
+[[briefingScreen1, 0]] call comspec_overwatch_connect_fnc_setBriefingScreens;
+```
+
 ---
 
 ## Contrôle en jeu

@@ -998,6 +998,40 @@ public static class Extension
             return AppendLogLine(path, args[0]!) ? $"OK|{path}" : "ERR|write_failed";
         }
 
+        // Google Slides public → PNG locaux (async callback google_deck_ready / google_deck_error).
+        // Args : [url, index, requestId]. Retour sync : ["accepted"] | ["rejected","code"].
+        if (function == "LoadGoogleDeck" && args.Length >= 1)
+        {
+            var url = (args[0] ?? "").Trim();
+            var indexStr = args.Length > 1 ? (args[1] ?? "0") : "0";
+            var requestId = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+            if (requestId.Length == 0)
+                requestId = "deck_" + Guid.NewGuid().ToString("N")[..12];
+            if (!int.TryParse(indexStr.Trim().Replace(',', '.'), System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out var index))
+                index = 0;
+            return GoogleSlidesDeck.StartLoad(url, index, requestId, InvokeCallback);
+        }
+
+        // Navigation dans un deck déjà résolu. Args : [presentationId, index, requestId].
+        if (function == "LoadGoogleSlide" && args.Length >= 2)
+        {
+            var presentationId = (args[0] ?? "").Trim();
+            var indexStr = args[1] ?? "0";
+            var requestId = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+            if (requestId.Length == 0)
+                requestId = "slide_" + Guid.NewGuid().ToString("N")[..12];
+            if (!int.TryParse(indexStr.Trim().Replace(',', '.'), System.Globalization.NumberStyles.Integer,
+                    System.Globalization.CultureInfo.InvariantCulture, out var index))
+                index = 0;
+            return GoogleSlidesDeck.StartSlide(presentationId, index, requestId, InvokeCallback);
+        }
+
+        if (function == "CancelGoogleDeck")
+        {
+            return GoogleSlidesDeck.Cancel();
+        }
+
         // Connect : mémorise URL/clé/tenant puis valide la clé via client-init synchrone.
         // Sans clé (et aucune clé déjà mémorisée après Redeem) → OK|connected (SQF : joignable non lié).
         // Avec clé → ERR|unauthorized / tenant_required si le portail refuse (plus de faux « Connecté »).
@@ -2006,7 +2040,14 @@ public static class Extension
         {
             var sb = new StringBuilder();
             using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("slides", out var slides)) return "";
+            // Ligne méta : G\tgoogle_slides_url (lien communauté publié côté Athena).
+            if (doc.RootElement.TryGetProperty("google_slides_url", out var gUrlEl))
+            {
+                var gUrl = (gUrlEl.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                if (gUrl.Length > 0)
+                    sb.Append('G').Append('\t').Append(gUrl).Append('\n');
+            }
+            if (!doc.RootElement.TryGetProperty("slides", out var slides)) return sb.ToString();
             foreach (var el in slides.EnumerateArray())
             {
                 var id = el.TryGetProperty("id", out var i) ? i.GetInt32() : 0;

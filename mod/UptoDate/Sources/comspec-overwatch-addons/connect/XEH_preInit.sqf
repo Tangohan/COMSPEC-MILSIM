@@ -1,17 +1,18 @@
 // Compat modpack : si Mavic/mavik lit ses settings CBA avant enregistrement
-// (ou si l’enregistrement a échoué), éviter le spam "variable indéfinie".
+// (ou si l'enregistrement a echoue), eviter le spam variable indefinie.
 private _comspecCompatMavic = {
     if (isNil "mavic_setting_enableConnectionDistance") then {
-        mavic_setting_enableConnectionDistance = false;
+        missionNamespace setVariable ["mavic_setting_enableConnectionDistance", false];
     };
-    // Variantes / settings souvent lus au connect drone
-    {
-        if (isNil _x) then { missionNamespace setVariable [_x, false]; };
-    } forEach [
-        "mavic_setting_enableConnectionDistance",
-        "mavic_setting_connectionDistance",
-        "mavic_setting_enableConnectDistance"
-    ];
+    if (isNil "mavic_setting_maxConnectionDistance") then {
+        missionNamespace setVariable ["mavic_setting_maxConnectionDistance", 6000];
+    };
+    if (isNil "mavic_setting_showInterface") then {
+        missionNamespace setVariable ["mavic_setting_showInterface", true];
+    };
+    if (isNil "mavic_setting_vanillaInterface") then {
+        missionNamespace setVariable ["mavic_setting_vanillaInterface", false];
+    };
 };
 [] call _comspecCompatMavic;
 
@@ -126,7 +127,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_notif_sound", "LIST",
-    ["Notification sound", "Played at the same time as alerts (messaging, orders, connection…). Medical emergencies (unconscious / cardiac arrest) use dedicated sound, including in \"Silent (vibration)\" mode. Only \"Mute\" cuts everything. Discreet mode does not cut these sounds."],
+    ["Notification sound", "Played with alerts (messaging, orders, connection). Medical emergencies use a dedicated sound, including in Silent (vibration) mode. Only Mute cuts everything. Discreet mode does not cut these sounds."],
     "COMSPEC Overwatch",
     [
         ["silent_vib", "stalker", "health", "mute"],

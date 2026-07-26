@@ -21,12 +21,14 @@ $inactive = (int) ($stats['inactive'] ?? max(0, $total - $active));
 $commentCounts = is_array($briefingCommentCounts ?? null) ? $briefingCommentCounts : [];
 $presence = is_array($briefingPresence ?? null) ? $briefingPresence : [];
 $presenceUrl = (string) ($briefingPresenceUrl ?? '');
+$googleSlidesUrl = trim((string) ($briefingGoogleSlidesUrl ?? ''));
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 
 $edenScreenSnippet = <<<'SQF'
 this setVariable ["comspec_briefingScreenIndex", 0];
-[briefingScreen1, 0] spawn {
+[[this, 0]] call comspec_overwatch_connect_fnc_setBriefingScreens;
+[this, 0] spawn {
     params ["_obj", "_selIdx"];
     waitUntil { !isNull _obj };
     private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
@@ -59,10 +61,12 @@ foreach ($rows as $r) {
                     Préparez les images du briefing, définissez leur ordre, enrichissez-les ensuite avec des précisions,
                     puis publiez-les pour le jeu et les téléphones ATAK.
                     Les diapositives marquées « Visible en jeu » sont récupérées automatiquement par le mod COMSPEC Overwatch.
+                    Vous pouvez aussi publier un lien Google Slides partagé pour un affichage direct en jeu (dépend de Google).
                 </p>
             </div>
             <div class="bo-briefing__hero-actions">
                 <a href="#bo-briefing-create" class="bo-briefing__btn bo-briefing__btn--solid">Ajouter une diapositive</a>
+                <a href="#bo-briefing-google" class="bo-briefing__btn bo-briefing__btn--ghost">Lien Google Slides</a>
                 <a href="#bo-briefing-arma" class="bo-briefing__btn bo-briefing__btn--ghost">Voir en jeu</a>
                 <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="bo-briefing__btn bo-briefing__btn--ghost">Config ATAK</a>
             </div>
@@ -102,6 +106,43 @@ foreach ($rows as $r) {
 
         <div class="bo-briefing__layout">
             <div class="bo-briefing__stack">
+                <section class="bo-briefing__panel" id="bo-briefing-google" aria-labelledby="bo-briefing-google-title">
+                    <div class="bo-briefing__panel-head">
+                        <h2 id="bo-briefing-google-title">Présentation Google Slides</h2>
+                        <p>
+                            Optionnel. Publiez un lien de présentation partagée avec toute personne disposant du lien.
+                            Les opérateurs pourront la charger depuis la tablette Overwatch. Les diapositives images ci-dessous restent le chemin le plus fiable.
+                        </p>
+                    </div>
+                    <div class="bo-briefing__panel-body">
+                        <form
+                            method="post"
+                            action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/google-url'), ENT_QUOTES, 'UTF-8') ?>"
+                            class="bo-briefing__form-grid"
+                        >
+                            <?= \App\Core\Csrf::field() ?>
+                            <div class="bo-briefing__field bo-briefing__span-2">
+                                <label for="bs-google-url">Lien de la présentation</label>
+                                <input
+                                    type="url"
+                                    id="bs-google-url"
+                                    name="google_slides_url"
+                                    maxlength="512"
+                                    value="<?= htmlspecialchars($googleSlidesUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                    placeholder="https://docs.google.com/presentation/d/…"
+                                >
+                                <p class="bo-briefing__field-hint">
+                                    Dans Google Slides : Partager → « Toute personne disposant du lien ».
+                                    Laissez vide pour retirer le lien. Cette fonction dépend de Google et peut évoluer sans préavis.
+                                </p>
+                            </div>
+                            <div class="bo-briefing__form-actions bo-briefing__span-2">
+                                <button type="submit" class="bo-briefing__btn bo-briefing__btn--primary">Enregistrer le lien Google</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
                 <section class="bo-briefing__panel" id="bo-briefing-create" aria-labelledby="bo-briefing-create-title">
                     <div class="bo-briefing__panel-head">
                         <h2 id="bo-briefing-create-title">Ajouter une diapositive</h2>
@@ -339,8 +380,9 @@ foreach ($rows as $r) {
                             <pre id="bs-snippet-screen"><?= htmlspecialchars($edenScreenSnippet, ENT_QUOTES, 'UTF-8') ?></pre>
                         </div>
                         <p class="bo-briefing__field-hint" style="margin-top:0.5rem;">
-                            Remplacez <em>briefingScreen1</em> par le nom de variable de votre objet.
+                            Collez ce script dans le champ Init de l’écran. Il enregistre l’objet pour le briefing Athena et Google.
                             L’indice de sélection texturable (ici 0) dépend du modèle — vérifiez-le dans Eden / console développeur.
+                            Pour plusieurs écrans : <em>[[ecran1, 0], [ecran2, 0]] call comspec_overwatch_connect_fnc_setBriefingScreens;</em>
                         </p>
 
                         <?php if ($feedUrl !== ''): ?>

@@ -10,7 +10,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalBriefingSlideRepository;
+use App\Repositories\TenantRepository;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Controllers\Api\AtakApiController;
 
 /**
  * Diapositives de briefing tactique — images consultées in-game (Arma/Eden Editor) via l'extension.
@@ -51,6 +53,11 @@ final class AdminBriefingSlidesController
         $commentCounts = $this->comments->countsBySlideForTenant($tenantId);
         $presence = $this->activityLog->listBriefingPresence($tenantId);
 
+        $tenants = new TenantRepository();
+        $settings = $tenants->getSettings($tenantId);
+        $briefingSettings = is_array($settings['briefing'] ?? null) ? $settings['briefing'] : [];
+        $googleSlidesUrl = trim((string) ($briefingSettings['google_slides_url'] ?? ''));
+
         return Response::view('layout.main', [
             'content' => 'admin.briefing_slides.index',
             'title' => 'Diapositives de briefing tactique',
@@ -66,7 +73,44 @@ final class AdminBriefingSlidesController
             'briefingPresence' => $presence,
             'briefingPresenceUrl' => url('api/atak/briefing-presence') . '?tenant_id=' . $tenantId,
             'briefingCommentsBaseUrl' => url('api/atak/briefing-slides'),
+            'briefingGoogleSlidesUrl' => $googleSlidesUrl,
         ]);
+    }
+
+    public function updateGoogleUrl(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+
+        $url = trim((string) $request->input('google_slides_url', ''));
+        if ($url !== '' && !AtakApiController::isValidGoogleSlidesUrl($url)) {
+            Session::flash('error', 'Le lien doit être une présentation Google Slides partagée (docs.google.com/presentation/…).');
+
+            return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');
+        }
+
+        $tenants = new TenantRepository();
+        $tenants->updateSettings($tenantId, [
+            'briefing' => [
+                'google_slides_url' => $url,
+            ],
+        ]);
+
+        Session::flash(
+            'success',
+            $url === ''
+                ? 'Lien Google Slides retiré.'
+                : 'Lien Google Slides enregistré. Les opérateurs pourront le charger depuis la tablette en jeu.'
+        );
+
+        return Response::redirect(url('back-office/atak/briefing-slides') . '#bo-briefing-google');
     }
 
     public function store(Request $request, array $params = []): Response

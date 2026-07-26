@@ -45,7 +45,6 @@ _created pushBack _bg;
     _btn ctrlSetPosition [_posX, _posY + (_forEachIndex * _itemH), _menuW, _itemH];
     _btn ctrlSetText _label;
     _btn ctrlSetBackgroundColor [0.06, 0.14, 0.18, 0.95];
-    _btn ctrlSetBackgroundColorFocused [0.1, 0.22, 0.28, 1];
     _btn ctrlSetActiveColor [1, 1, 1, 1];
     private _action = if (_type isEqualTo "") then {
         "[] call comspec_overwatch_connect_fnc_mapContextMenuClose;"

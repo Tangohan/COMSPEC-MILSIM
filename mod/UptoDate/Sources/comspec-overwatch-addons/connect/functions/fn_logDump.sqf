@@ -25,7 +25,8 @@ private _snapshot = [
     format ["linkState=%1", missionNamespace getVariable ["COMSPEC_LinkState", "?"]],
     format ["athenaReady=%1", missionNamespace getVariable ["COMSPEC_AthenaReady", false]],
     format ["extOk=%1 code=%2 ping=%3", _extOk, _extCode, _ping],
-    format ["mavic_setting_enableConnectionDistance isNil=%1", isNil "mavic_setting_enableConnectionDistance"],
+    format ["mavic_setting_enableConnectionDistance isNil=%1 val=%2", isNil "mavic_setting_enableConnectionDistance", missionNamespace getVariable ["mavic_setting_enableConnectionDistance", "NIL"]],
+    format ["mavic_setting_maxConnectionDistance isNil=%1 val=%2", isNil "mavic_setting_maxConnectionDistance", missionNamespace getVariable ["mavic_setting_maxConnectionDistance", "NIL"]],
     format ["zen_attributes_fnc_addAttribute isNil=%1", isNil "zen_attributes_fnc_addAttribute"],
     format ["displayEsc=%1", !isNull findDisplay 49],
     format ["pauseManager=%1", !isNull findDisplay 9979]

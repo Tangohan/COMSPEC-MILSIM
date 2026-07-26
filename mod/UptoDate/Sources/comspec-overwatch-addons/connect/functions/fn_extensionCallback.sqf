@@ -68,5 +68,93 @@ switch (_function) do {
             [format ["[Debug] %1", _data], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
     };
+    case "google_deck_ready": {
+        private _payload = parseSimpleArray _data;
+        private _requestId = _payload param [0, ""];
+        private _current = missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+        if (_requestId isNotEqualTo "" && {_current isNotEqualTo ""} && {_requestId isNotEqualTo _current}) exitWith {};
+
+        private _presentationId = _payload param [1, ""];
+        private _index = _payload param [2, 0];
+        private _total = _payload param [3, 1];
+        private _path = _payload param [4, ""];
+        private _manifestComplete = _payload param [6, false];
+
+        if (_path isEqualTo "") exitWith {
+            missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+            ["COMSPEC_Warning", ["Présentation Google renvoyée sans image."]] call comspec_overwatch_connect_fnc_showNotification;
+        };
+
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingActive", true];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingPresentationId", _presentationId];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingIndex", _index];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingTotal", _total];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingPath", _path];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+
+        if (isNull (findDisplay 9970)) then {
+            createDialog "COMSPEC_Briefing_Dialog";
+        };
+
+        [
+            _path,
+            format ["Google Slides — diapositive %1", _index + 1],
+            _index,
+            _total
+        ] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
+
+        private _msg = format ["Diapositive %1 sur %2 chargée.", _index + 1, _total];
+        ["COMSPEC_Info", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        if (!_manifestComplete && {_total <= 1}) then {
+            ["COMSPEC_Warning", ["Liste des diapositives incomplète — navigation limitée."]] call comspec_overwatch_connect_fnc_showNotification;
+        };
+    };
+    case "google_slide_ready": {
+        private _payload = parseSimpleArray _data;
+        private _requestId = _payload param [0, ""];
+        private _current = missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+        if (_requestId isNotEqualTo "" && {_current isNotEqualTo ""} && {_requestId isNotEqualTo _current}) exitWith {};
+
+        private _path = _payload param [1, ""];
+        private _index = _payload param [2, 0];
+        private _total = _payload param [3, 1];
+
+        if (_path isEqualTo "") exitWith {
+            missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+        };
+
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingActive", true];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingIndex", _index];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingTotal", _total];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingPath", _path];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+
+        [
+            _path,
+            format ["Google Slides — diapositive %1", _index + 1],
+            _index,
+            _total
+        ] call comspec_overwatch_connect_fnc_applyGoogleBriefingSlide;
+    };
+    case "google_deck_error": {
+        private _payload = parseSimpleArray _data;
+        private _requestId = _payload param [0, ""];
+        private _current = missionNamespace getVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+        if (_requestId isNotEqualTo "" && {_current isNotEqualTo ""} && {_requestId isNotEqualTo _current}) exitWith {};
+
+        private _code = _payload param [1, "unknown"];
+        private _message = _payload param [2, "Échec du chargement."];
+        missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
+
+        private _human = switch (_code) do {
+            case "private": { "Présentation inaccessible ou non publique." };
+            case "not_found": { "Présentation introuvable." };
+            case "parse_failed": { "Impossible de lire la présentation (format Google modifié)." };
+            case "network": { "Réseau indisponible pour charger la présentation." };
+            case "cancelled": { "Chargement annulé." };
+            default { if (_message isEqualTo "") then { "Échec du chargement Google Slides." } else { _message } };
+        };
+        ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
+    };
     default {};
 };

@@ -76,7 +76,16 @@ _vehicleData set ["speed", speed _vehicle];
 
 // Fuel et munitions
 _vehicleData set ["fuel_percent", (fuel _vehicle) * 100];
-_vehicleData set ["ammo_percent", ((ammo (gunner _vehicle)) / (getAmmoCargo _vehicle)) * 100]; // Approximatif
+private _ammoPct = 0;
+private _gunner = gunner _vehicle;
+if (!isNull _gunner) then {
+    private _w = currentWeapon _vehicle;
+    if (_w != "") then {
+        private _a = _vehicle ammo _w;
+        if (!isNil "_a") then { _ammoPct = (_a min 100) max 0; };
+    };
+};
+_vehicleData set ["ammo_percent", _ammoPct];
 
 // Santé composants
 _vehicleData set ["engine_health", (1 - (_vehicle getHitPointDamage "HitEngine")) * 100];

@@ -50,40 +50,33 @@ if (_state getOrDefault ["is_disconnected", false]) then {
             ["NetworkReconnected", ""] call comspec_overwatch_connect_fnc_extensionCallback;
         };
         
-        diag_log format ["[COMSPEC Roleplay] Déconnexion terminée après %1 secondes", _until - (_now - (_until - _now))];
+        diag_log format ["[COMSPEC Roleplay] Deconnexion terminee (until=%1)", _until];
+    } else {
+        // Toujours en deconnexion : rien a faire ce tick
     };
-    
-    exitWith {};
-};
+} else {
+    // Verifier s'il est temps de declencher une nouvelle deconnexion
+    private _nextDisconnectAt = _state getOrDefault ["next_disconnect_at", _now + 600];
 
-// Vérifier s'il est temps de déclencher une nouvelle déconnexion
-private _nextDisconnectAt = _state getOrDefault ["next_disconnect_at", _now + 600];
+    if (_now >= _nextDisconnectAt) then {
+        private _minDuration = 5;
+        private _maxDuration = 30;
+        private _duration = floor (_minDuration + (random (_maxDuration - _minDuration)));
 
-if (_now >= _nextDisconnectAt) then {
-    // Déclencher une déconnexion
-    private _minDuration = 5; // Minimum 5 secondes
-    private _maxDuration = 30; // Maximum 30 secondes
-    
-    // Duration aléatoire
-    private _duration = _minDuration + (random (_maxDuration - _minDuration));
-    _duration = floor _duration;
-    
-    _state set ["is_disconnected", true];
-    _state set ["disconnect_until", _now + _duration];
-    _state set ["disconnect_count", (_state getOrDefault ["disconnect_count", 0]) + 1];
-    
-    // Notification
-    private _msg = format ["Perte de liaison ATAK (%1s)", _duration];
-    hintSilent _msg;
-    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    
-    // Son de déconnexion
-    ["disconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
-    
-    // Callback pour l'extension
-    if (!isNil "comspec_overwatch_connect_fnc_extensionCallback") then {
-        ["NetworkDisconnected", str _duration] call comspec_overwatch_connect_fnc_extensionCallback;
+        _state set ["is_disconnected", true];
+        _state set ["disconnect_until", _now + _duration];
+        _state set ["disconnect_count", (_state getOrDefault ["disconnect_count", 0]) + 1];
+
+        private _msg = format ["Perte de liaison ATAK (%1s)", _duration];
+        hintSilent _msg;
+        missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+
+        ["disconnect"] call comspec_overwatch_connect_fnc_playRoleplaySound;
+
+        if (!isNil "comspec_overwatch_connect_fnc_extensionCallback") then {
+            ["NetworkDisconnected", str _duration] call comspec_overwatch_connect_fnc_extensionCallback;
+        };
+
+        diag_log format ["[COMSPEC Roleplay] Deconnexion simulee: %1s (occurrence #%2)", _duration, _state get "disconnect_count"];
     };
-    
-    diag_log format ["[COMSPEC Roleplay] Déconnexion simulée déclenchée: %1 secondes (occurrence #%2)", _duration, _state get "disconnect_count"];
 };

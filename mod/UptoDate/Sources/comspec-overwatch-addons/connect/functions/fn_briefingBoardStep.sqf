@@ -4,6 +4,10 @@
 */
 params [["_delta", 1, [0]]];
 
+if (missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) exitWith {
+    [_delta] call comspec_overwatch_connect_fnc_googleBriefingStep;
+};
+
 private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
 private _count = count _slides;
 if (_count == 0) exitWith {};

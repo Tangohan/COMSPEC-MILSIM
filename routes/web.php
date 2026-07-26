@@ -919,6 +919,7 @@ return function (Router $router) {
     $router->get('/admin/atak/roleplay/reset', [\App\Controllers\Admin\AdminAtakRoleplayController::class, 'reset'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/briefing-slides', [AdminBriefingSlidesController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/briefing-slides/google-url', [AdminBriefingSlidesController::class, 'updateGoogleUrl'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/comment', [AdminBriefingSlidesController::class, 'storeComment'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

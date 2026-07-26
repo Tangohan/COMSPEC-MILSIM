@@ -15,7 +15,7 @@ class COMSPEC_Briefing_Dialog {
 
         class Title: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='0.9'>Briefing board</t>";
+            text = "<t font='RobotoCondensedBold' size='0.9'>Tableau de briefing</t>";
             x = 0.14 * safezoneW + safezoneX;
             y = 0.095 * safezoneH + safezoneY;
             w = 0.5 * safezoneW;
@@ -55,7 +55,7 @@ class COMSPEC_Briefing_Dialog {
 
         class PrevButton: COMSPEC_RscButton {
             idc = 9010;
-            text = "< Previous";
+            text = "< Précédente";
             x = 0.14 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -65,7 +65,7 @@ class COMSPEC_Briefing_Dialog {
 
         class NextButton: COMSPEC_RscButton {
             idc = 9011;
-            text = "Next >";
+            text = "Suivante >";
             x = 0.29 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
@@ -75,7 +75,7 @@ class COMSPEC_Briefing_Dialog {
 
         class RefreshButton: COMSPEC_RscButton {
             idc = 9012;
-            text = "Refresh";
+            text = "Actualiser";
             x = 0.62 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.1 * safezoneW;
@@ -85,7 +85,7 @@ class COMSPEC_Briefing_Dialog {
 
         class CloseButton: COMSPEC_RscButtonDanger {
             idc = 9013;
-            text = "Close";
+            text = "Fermer";
             x = 0.74 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.12 * safezoneW;
@@ -95,7 +95,7 @@ class COMSPEC_Briefing_Dialog {
 
         class PhoneConnectButton: COMSPEC_RscButtonAccent {
             idc = 9014;
-            text = "Connect my phone";
+            text = "Connecter mon téléphone";
             x = 0.44 * safezoneW + safezoneX;
             y = 0.865 * safezoneH + safezoneY;
             w = 0.16 * safezoneW;

@@ -24,19 +24,26 @@ if (_prefix != "OK") exitWith {
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { "" };
 private _lines = _payload splitString (toString [10]);
 private _slides = [];
+private _googleUrl = "";
 {
     if (_x != "") then {
         private _cols = _x splitString "\t";
-        if (count _cols >= 4) then {
-            _slides pushBack [
-                parseNumber (_cols select 0),
-                _cols select 1,
-                parseNumber (_cols select 2),
-                _cols select 3
-            ];
+        // Ligne méta Athena : G\tgoogle_slides_url
+        if ((count _cols) >= 2 && {(_cols select 0) isEqualTo "G"}) then {
+            _googleUrl = _cols select 1;
+        } else {
+            if (count _cols >= 4) then {
+                _slides pushBack [
+                    parseNumber (_cols select 0),
+                    _cols select 1,
+                    parseNumber (_cols select 2),
+                    _cols select 3
+                ];
+            };
         };
     };
 } forEach _lines;
 
+missionNamespace setVariable ["COMSPEC_CommunityGoogleSlidesUrl", _googleUrl, true];
 missionNamespace setVariable ["COMSPEC_BriefingSlides", _slides, true];
 _slides

@@ -228,6 +228,25 @@ switch (true) do {
     case (_cmd isEqualTo "phone:refresh"): {
         [false] call comspec_overwatch_connect_fnc_phoneConnectShow;
     };
+    case (_cmd isEqualTo "briefing:board"): {
+        [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+    };
+    case (_cmd isEqualTo "briefing:community"): {
+        private _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
+        if (_url isEqualTo "") then {
+            [] call comspec_overwatch_connect_fnc_getBriefingSlides;
+            _url = missionNamespace getVariable ["COMSPEC_CommunityGoogleSlidesUrl", ""];
+        };
+        if (_url isEqualTo "") then {
+            ["COMSPEC_Warning", ["Aucun brief Google publié pour la communauté."]] call comspec_overwatch_connect_fnc_showNotification;
+        } else {
+            [_url, 0, true] call comspec_overwatch_connect_fnc_loadGoogleBriefing;
+        };
+    };
+    case ((_cmd select [0, 15]) isEqualTo "briefing:google|"): {
+        private _url = _cmd select [15, (count _cmd) - 15];
+        [_url, 0, true] call comspec_overwatch_connect_fnc_loadGoogleBriefing;
+    };
     case ((_cmd select [0, 7]) isEqualTo "action:"): {
         private _act = _cmd select [7, (count _cmd) - 7];
         switch (_act) do {

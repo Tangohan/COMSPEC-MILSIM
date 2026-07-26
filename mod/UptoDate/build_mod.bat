@@ -80,6 +80,17 @@ if exist "%SOURCES_DIR%\atak_athena\config.cpp" (
     )
 )
 
+:: Compat Mavic (charge seulement si Mavic_Core present en jeu)
+if exist "%SOURCES_DIR%\mavik_compat\config.cpp" (
+    echo [BUILD] Compilation de comspec_overwatch_mavik_compat... >> "%BUILD_LOG%"
+    echo [BUILD] Compilation de comspec_overwatch_mavik_compat...
+    "%BUILDER_PATH%" "%SOURCES_DIR%\mavik_compat" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\mavik_compat >> "%BUILD_LOG%" 2>&1
+    if %ERRORLEVEL% NEQ 0 (
+        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder mavik_compat a echoue - PBO optionnel ignore.
+    )
+)
+
 :: 4. DLL a la racine du mod (Native AOT ~5 Mo ??? jamais le stub manag?? ~30 Ko)
 ::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) ??? pack Workshop : workshop-pack.ps1
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
@@ -100,6 +111,8 @@ if exist "%OUTPUT_DIR%\net8.0" (
     echo [CLEAN] Suppression dossier net8.0 du mod - ne pas shipper. >> "%BUILD_LOG%"
     rmdir /S /Q "%OUTPUT_DIR%\net8.0" >> "%BUILD_LOG%" 2>&1
 )
+if exist "%PROJECT_DIR%logo.paa" copy /Y "%PROJECT_DIR%logo.paa" "%OUTPUT_DIR%\logo.paa" >> "%BUILD_LOG%" 2>&1
+if exist "%PROJECT_DIR%logoSmall.paa" copy /Y "%PROJECT_DIR%logoSmall.paa" "%OUTPUT_DIR%\logoSmall.paa" >> "%BUILD_LOG%" 2>&1
 if exist "%PROJECT_DIR%mod.cpp" (
     copy /Y "%PROJECT_DIR%mod.cpp" "%OUTPUT_DIR%\mod.cpp" >> "%BUILD_LOG%" 2>&1
 ) else (
@@ -121,7 +134,7 @@ set "LOCAL_MOD=%ARMA_PATH%\%MOD_NAME%"
 set "WORKSHOP_CONTENT=F:\SteamLibrary\steamapps\workshop\content\107410\3684656708"
 
 if exist "%ARMA_PATH%" (
-    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%") do (
+    for %%T in ("%WORKSHOP_CONTENT%" "%LOCAL_MOD%" "%WORKSHOP_MOD%") do (
         if exist %%~T (
             echo [DEPLOY] Cible: %%~T >> "%BUILD_LOG%"
             echo [DEPLOY] Cible: %%~T
@@ -129,12 +142,16 @@ if exist "%ARMA_PATH%" (
             if exist "%%~T\addons\connect" rd /s /q "%%~T\addons\connect"
             if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
             if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
+            if exist "%%~T\addons\mavik_compat" rd /s /q "%%~T\addons\mavik_compat"
             if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
             copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
             copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\logoSmall.paa" copy /Y "%OUTPUT_DIR%\logoSmall.paa" "%%~T\logoSmall.paa" >> "%BUILD_LOG%" 2>&1
         ) else (
             echo [WARN] Cible absente: %%~T >> "%BUILD_LOG%"
             echo [WARN] Cible absente: %%~T
