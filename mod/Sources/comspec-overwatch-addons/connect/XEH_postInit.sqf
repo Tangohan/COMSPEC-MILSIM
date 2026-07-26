@@ -1,13 +1,22 @@
 if (!hasInterface) exitWith {};
 
+["INFO", "Boot", "PostInit client — warmup extension"] call comspec_overwatch_connect_fnc_log;
+
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
 // Re-applique compat Mavic après init settings CBA (au cas où PreInit était trop tôt)
 ["CBA_settingsInitialized", {
-    if (isNil "mavic_setting_enableConnectionDistance") then {
+    private _wasNil = isNil "mavic_setting_enableConnectionDistance";
+    if (_wasNil) then {
         mavic_setting_enableConnectionDistance = false;
     };
+    ["INFO", "Compat", format [
+        "CBA_settingsInitialized — mavic wasNil=%1 nowNil=%2",
+        _wasNil,
+        isNil "mavic_setting_enableConnectionDistance"
+    ]] call comspec_overwatch_connect_fnc_log;
+    ["boot"] call comspec_overwatch_connect_fnc_logDump;
 }] call CBA_fnc_addEventHandler;
 
 // Callbacks async extension → SQF (inspiré cTab IRL)
@@ -15,16 +24,19 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     COMSPEC_ExtensionCallbackEH = addMissionEventHandler ["ExtensionCallback", {
         _this call comspec_overwatch_connect_fnc_extensionCallback;
     }];
+    ["DEBUG", "Boot", "ExtensionCallback EH enregistré"] call comspec_overwatch_connect_fnc_log;
 };
 
 ["CBA_settingsInitialized", {
-    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+    if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {
+        ["WARN", "Boot", "Overwatch désactivé — pas de sync / ACE"] call comspec_overwatch_connect_fnc_log;
+    };
 
     // Menus ACE uniquement si l’option est activée (évite conflits pack au démarrage).
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["comspec_overwatch_ace_menus", false])) exitWith {
-            diag_log "[COMSPEC] Menus ACE désactivés (réglage comspec_overwatch_ace_menus)";
+            ["INFO", "ACE", "Menus ACE désactivés (réglage comspec_overwatch_ace_menus)"] call comspec_overwatch_connect_fnc_log;
         };
         if (isNull player) exitWith {
             [{
@@ -38,9 +50,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 
     // Handshake Athena (inspiré Remastered) puis sync lourde — hors thread principal
     0 spawn {
-        [] call comspec_overwatch_connect_fnc_waitAthenaReady;
+        ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
+        private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
+        ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         [] call comspec_overwatch_connect_fnc_startSyncLoops;
+        ["INFO", "Boot", "Boucles de sync démarrées"] call comspec_overwatch_connect_fnc_log;
     };
 
     // Alerte Windows (MessageBox) si compte Athena non lié — une fois / session

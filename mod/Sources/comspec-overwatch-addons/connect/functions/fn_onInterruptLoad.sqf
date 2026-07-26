@@ -23,5 +23,8 @@ _btn ctrlSetPosition [
 ];
 _btn ctrlCommit 0;
 _btn ctrlAddEventHandler ["ButtonClick", {
+    ["INFO", "Esc", "Bouton COMSPEC Overwatch cliqué"] call comspec_overwatch_connect_fnc_log;
     [] call comspec_overwatch_connect_fnc_pauseManagerShow;
 }];
+
+["DEBUG", "Esc", "Bouton menu pause injecté"] call comspec_overwatch_connect_fnc_log;

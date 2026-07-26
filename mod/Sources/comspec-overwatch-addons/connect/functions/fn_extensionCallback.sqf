@@ -35,6 +35,7 @@ switch (_function) do {
         private _msg = if (!(_data isEqualTo "")) then { _data } else { "Echec de liaison" };
         missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
+        ["WARN", "Athena", format ["Extension Error: %1", _msg]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
             systemChat format ["[Athena] %1", _msg];
@@ -63,6 +64,7 @@ switch (_function) do {
     };
     case "Debug": {
         if (!(_data isEqualTo "")) then {
+            ["DEBUG", "Ext", _data] call comspec_overwatch_connect_fnc_log;
             [format ["[Debug] %1", _data], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         };
     };

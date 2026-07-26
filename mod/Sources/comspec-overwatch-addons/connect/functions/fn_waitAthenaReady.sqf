@@ -60,6 +60,7 @@ missionNamespace setVariable ["COMSPEC_HandshakeQuiet", false, false];
 if (_ready) then {
     missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
     // Succès : journal seulement — pas de bandeau / systemChat au démarrage
+    ["INFO", "Athena", format ["Handshake OK après %1 essai(s)", _attempts]] call comspec_overwatch_connect_fnc_log;
     [format ["[Athena] Handshake OK après %1 essai(s).", _attempts]] call comspec_overwatch_connect_fnc_appendLinkLog;
     true
 } else {
@@ -68,6 +69,7 @@ if (_ready) then {
     missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkDetail", "Athena injoignable", false];
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+    ["WARN", "Athena", format ["Handshake abandonné après %1 essais — mode dégradé", _attempts]] call comspec_overwatch_connect_fnc_log;
     // Un seul message joueur si le handshake échoue vraiment
     ["Athena reste injoignable. La synchronisation reprendra dès que possible. Utilisez « Vérifier la liaison » dans le menu.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
     ["[Athena] Handshake abandonné — démarrage en mode dégradé."] call comspec_overwatch_connect_fnc_appendLinkLog;

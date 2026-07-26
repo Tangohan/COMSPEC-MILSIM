@@ -15,11 +15,22 @@ private _comspecCompatMavic = {
 };
 [] call _comspecCompatMavic;
 
+if (!isNil "comspec_overwatch_connect_fnc_log") then {
+    ["INFO", "Compat", format [
+        "Mavic setting isNil=%1 | ZEN addAttribute isNil=%2",
+        isNil "mavic_setting_enableConnectionDistance",
+        isNil "zen_attributes_fnc_addAttribute"
+    ]] call comspec_overwatch_connect_fnc_log;
+};
+
 // Stub ZEN attributes si ZEN incomplet dans le pack (évite zen_attributes_fnc_addAttribute nil)
 if (isNil "zen_attributes_fnc_addAttribute") then {
     zen_attributes_fnc_addAttribute = {
         // no-op compat — ZEN partiel / mauvais ordre de chargement
         false
+    };
+    if (!isNil "comspec_overwatch_connect_fnc_log") then {
+        ["WARN", "Compat", "Stub zen_attributes_fnc_addAttribute installé (ZEN incomplet ou absent)"] call comspec_overwatch_connect_fnc_log;
     };
 };
 
@@ -217,6 +228,21 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
         "Ajoute les entrées Overwatch / ATAK dans le menu d’interaction ACE (sur soi). Désactivez si votre pack de mods affiche des erreurs ACE au démarrage (Mavic, IED, ZEN…). Les raccourcis clavier et la tablette restent disponibles."
     ],
     "COMSPEC Overwatch",
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_log_level", "LIST",
+    [
+        "Journal technique (fichier RPT)",
+        "Écrit le diagnostic Overwatch dans le journal Arma (RPT). « Détaillé » aide au dépannage pack de mods ; laisser sur « Normal » en jeu courant."
+    ],
+    ["COMSPEC Overwatch", "Diagnostic"],
+    [
+        [0, 1, 2, 3, 4],
+        ["Muet", "Erreurs seulement", "Alertes", "Normal", "Détaillé"],
+        3
+    ],
     false
 ] call CBA_fnc_addSetting;
 
@@ -467,3 +493,10 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
     [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Extinction", "Niveau 2 : Écran détruit", "Niveau 3 : Destruction complète"], 0],
     1
 ] call CBA_fnc_addSetting;
+
+["INFO", "Boot", format [
+    "PreInit OK — connect v%1 | enabled=%2 | logLevel=%3",
+    getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr"),
+    missionNamespace getVariable ["comspec_overwatch_enabled", true],
+    missionNamespace getVariable ["comspec_overwatch_log_level", 3]
+]] call comspec_overwatch_connect_fnc_log;

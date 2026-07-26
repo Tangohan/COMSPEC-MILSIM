@@ -38,6 +38,8 @@ class CfgFunctions {
             class pauseManagerPageLoaded {};
             class pauseManagerJSDialog {};
             class onInterruptLoad {};
+            class log {};
+            class logDump {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};
