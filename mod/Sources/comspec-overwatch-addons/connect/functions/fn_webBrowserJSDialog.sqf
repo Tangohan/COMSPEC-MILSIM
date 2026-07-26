@@ -201,13 +201,15 @@ switch (true) do {
             _tail joinString "|"
         } else { "" };
         private _g = group player;
-        private _targetName = if (!isNull leader _g) then { groupId _g } else { name player };
+        private _hasGroupLeader = !isNull leader _g;
+        private _targetName = if (_hasGroupLeader) then { groupId _g } else { name player };
+        private _targetType = if (_hasGroupLeader) then { "group" } else { "solo" };
         private _body = if (_note isEqualTo "") then {
             format ["Demande %1 — grille %2", _casType, mapGridPosition (getPos player)]
         } else {
             format ["%1 — %2 — grille %3", _casType, _note, mapGridPosition (getPos player)]
         };
-        ["CAS", _targetName, _body, "URGENT", ""] call comspec_overwatch_connect_fnc_issueOrder;
+        ["CAS", _targetName, _body, "URGENT", "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
         ["Demande d’appui aérien transmise.", "order", "info"] call comspec_overwatch_connect_fnc_announce;
         call _fnc_refresh;
     };

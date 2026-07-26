@@ -1,12 +1,17 @@
 /*
     Crée un ordre C2 local + envoi backend via SendChat (fallback) / SubmitOrder (si dispo côté DLL).
+    _targetType (optionnel) : "group" | "solo" | "fire_team" | "channel" | "all" — remonté au
+    parseur PHP (AtakOrderRepository::parseOrderChatBody) pour un vrai routage web au lieu du
+    "all" fixé en dur quand ce champ est absent. Laisser vide si le type de cible n'est pas connu
+    à l'appel (comportement inchangé : diffusion à tous côté web, comme avant ce paramètre).
 */
 params [
     ["_orderType", "MOVE"],
     ["_target", ""],
     ["_payload", ""],
     ["_priority", "IMPORTANT"],
-    ["_parentOrderId", ""]
+    ["_parentOrderId", ""],
+    ["_targetType", ""]
 ];
 
 private _validTypes = ["MOVE", "HOLD", "RECON", "CAS", "QRF", "CUSTOM"];
@@ -44,7 +49,14 @@ _orderLog pushBack [
 ];
 missionNamespace setVariable ["COMSPEC_OrderLog", _orderLog, true];
 
-private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, _priority, _issuer, _payload];
+// "TT:<type>|" en tête du payload : rétrocompatible (un payload sans ce préfixe se comporte
+// exactement comme avant), parsé côté PHP sans décaler les positions ORDER|... existantes.
+private _encodedPayload = if (_targetType != "") then {
+    format ["TT:%1|%2", _targetType, _payload]
+} else {
+    _payload
+};
+private _encoded = format ["ORDER|%1|%2|%3|%4|%5|%6", _id, _orderType, _target, _priority, _issuer, _encodedPayload];
 "COMSPECExtension" callExtension ["SendChat", [_issuer, _encoded]];
 
 ["OnOrderIssued", _order] call comspec_overwatch_connect_fnc_publishEvent;

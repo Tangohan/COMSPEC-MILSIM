@@ -739,11 +739,27 @@ class AtakOrderRepository
         }
         $payload = count($parts) > 6 ? implode('|', array_slice($parts, 6)) : '';
 
+        // fn_issueOrder.sqf préfixe optionnellement le payload par "TT:<type>|" quand le type de
+        // cible est connu à l'émission (ex. menu ACE self-interact : "group" si le joueur a un
+        // groupe, sinon "solo"). Rétrocompatible : un payload sans ce préfixe garde 'all' comme
+        // avant (aucune régression sur les messages déjà en base ou émis par un ancien build).
+        $targetType = 'all';
+        if (strncmp($payload, 'TT:', 3) === 0) {
+            $sep = strpos($payload, '|');
+            if ($sep !== false) {
+                $targetType = $this->normalizeTargetType(substr($payload, 3, $sep - 3));
+                $payload = substr($payload, $sep + 1);
+            } else {
+                $targetType = $this->normalizeTargetType(substr($payload, 3));
+                $payload = '';
+            }
+        }
+
         return [
             'external_id' => trim((string) ($parts[1] ?? '')),
             'order_type' => $this->normalizeType((string) ($parts[2] ?? 'MOVE')),
             'target' => trim((string) ($parts[3] ?? '')),
-            'target_type' => 'all',
+            'target_type' => $targetType,
             'priority' => $this->normalizePriority((string) ($parts[4] ?? 'IMPORTANT')),
             'issuer' => trim((string) ($parts[5] ?? '')),
             'payload' => $payload,
