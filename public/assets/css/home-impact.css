@@ -758,6 +758,7 @@
   height: 100%;
   object-fit: cover;
   opacity: 0.6;
+  background-color: #000;
 }
 
 @media (prefers-reduced-motion: reduce) {

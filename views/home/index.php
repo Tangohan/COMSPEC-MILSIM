@@ -75,7 +75,7 @@ foreach ($heroClipGroups as $candidates) {
             $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.mp4', 'type' => 'video/mp4'];
         }
     } else {
-        // Chemins attendus : actifs dès dépôt des fichiers (le JS sonde aussi côté client).
+        // Chemins attendus : actifs dès dépôt des fichiers (data-present côté serveur).
         foreach ($candidates as $stem) {
             $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($stem) . '.webm', 'type' => 'video/webm'];
             $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($stem) . '.mp4', 'type' => 'video/mp4'];
@@ -766,7 +766,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var VOL_KEY = 'athena_immersive_vol';
             var IMAGE_INTERVAL_MS = 6000;
             var VIDEO_MAX_MS = 18000;
-            var PROBE_TIMEOUT_MS = 12000;
             var dlg = document.getElementById('immersive-consent');
             var btnLater = document.getElementById('btn-enable-immersive');
             var imageRoot = document.getElementById('heroImageSlides');
@@ -982,15 +981,15 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                                 try {
                                     nextVideo.load();
                                     nextVideo.play().catch(function () {
-                                        if (mode === 'videos') enableImageMode();
+                                        handleVideoError(nextSlide);
                                     });
                                 } catch (e) {
-                                    if (mode === 'videos') enableImageMode();
+                                    handleVideoError(nextSlide);
                                 }
                                 syncAvUi();
                                 return;
                             }
-                            if (mode === 'videos') enableImageMode();
+                            handleVideoError(nextSlide);
                             syncAvUi();
                         });
                         syncAvUi();
@@ -1013,6 +1012,20 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 playVideoAt(current + 1);
             }
 
+            function handleVideoError(slide) {
+                if (!slide) return;
+                var idx = videoSlides.indexOf(slide);
+                if (idx === -1) return;
+                videoSlides.splice(idx, 1);
+                slide.hidden = true;
+                if (!videoSlides.length) {
+                    enableImageMode();
+                    return;
+                }
+                if (current >= videoSlides.length) current = 0;
+                playVideoAt(current, { reset: true });
+            }
+
             function enableVideoMode(soundOn) {
                 if (!videoSlides.length || reducedMotion) {
                     enableImageMode();
@@ -1022,7 +1035,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
                 mode = 'videos';
                 stopImageSlider();
-                setImageStandby(true);
                 if (videoRoot) {
                     videoRoot.classList.remove('hi-hero-videos--idle');
                     videoRoot.setAttribute('aria-hidden', 'false');
@@ -1137,76 +1149,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 return kept > 0;
             }
 
-            function verifyHeroVideoPlayback(video, finish) {
-                var playAttempt = video.play();
-                if (playAttempt && playAttempt.then) {
-                    playAttempt.then(function () {
-                        finish(true);
-                    }).catch(function () {
-                        var sources = video.querySelectorAll('source');
-                        if (sources.length <= 1) {
-                            finish(false);
-                            return;
-                        }
-                        sources[0].remove();
-                        try {
-                            video.load();
-                        } catch (e) {
-                            finish(false);
-                            return;
-                        }
-                        video.addEventListener('canplay', function () {
-                            verifyHeroVideoPlayback(video, finish);
-                        }, { once: true });
-                        video.addEventListener('error', function () {
-                            finish(false);
-                        }, { once: true });
-                    });
-                    return;
-                }
-                finish(!video.error);
-            }
-
-            function probeSlide(slide) {
-                return new Promise(function (resolve) {
-                    var video = slide.querySelector('[data-hero-video]');
-                    if (!video || !video.querySelector('source')) {
-                        resolve(false);
-                        return;
-                    }
-                    if (!pruneUnplayableSources(video)) {
-                        resolve(false);
-                        return;
-                    }
-                    var settled = false;
-                    function finish(ok) {
-                        if (settled) return;
-                        settled = true;
-                        try {
-                            video.pause();
-                            video.currentTime = 0;
-                        } catch (e) {}
-                        resolve(!!ok);
-                    }
-                    var onFail = function () { finish(false); };
-                    video.addEventListener('canplay', function () {
-                        verifyHeroVideoPlayback(video, finish);
-                    }, { once: true });
-                    video.addEventListener('error', onFail, { once: true });
-                    window.setTimeout(function () {
-                        if (!settled) finish(false);
-                    }, PROBE_TIMEOUT_MS);
-                    try {
-                        video.muted = true;
-                        video.volume = 0;
-                        video.setAttribute('playsinline', '');
-                        video.load();
-                    } catch (e) {
-                        finish(false);
-                    }
-                });
-            }
-
             function bindVideoEvents() {
                 videoSlides.forEach(function (slide) {
                     var v = slide.querySelector('[data-hero-video]');
@@ -1215,6 +1157,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     v.addEventListener('play', syncAvUi);
                     v.addEventListener('pause', syncAvUi);
                     v.addEventListener('volumechange', syncAvUi);
+                    v.addEventListener('playing', function () {
+                        if (mode === 'videos') setImageStandby(true);
+                    });
+                    v.addEventListener('error', function () {
+                        if (mode === 'videos') handleVideoError(slide);
+                    });
                 });
             }
 
@@ -1259,50 +1207,16 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             });
             if (btnLater) btnLater.addEventListener('click', function () { enableVideoMode(true); });
 
-            // Affiche le poster pendant le sondage des clips.
             if (!reducedMotion && candidateSlides.length) {
-                setImageStandby(false);
-                if (imageSlides.length) {
-                    imageSlides[0].classList.add('opacity-100');
-                    imageSlides[0].classList.remove('opacity-0');
-                }
-
-                var knownPresent = candidateSlides.filter(function (slide) {
+                var presentSlides = candidateSlides.filter(function (slide) {
                     return slide.getAttribute('data-present') === '1';
                 });
-
-                var afterResolve = function (slides) {
-                    videoSlides = slides;
-                    candidateSlides.forEach(function (slide) {
-                        var ok = videoSlides.indexOf(slide) !== -1;
-                        slide.hidden = !ok;
-                        slide.setAttribute('data-present', ok ? '1' : '0');
-                    });
-                    bindVideoEvents();
-                    startHero();
-                };
-
-                var slidesToProbe = knownPresent.length ? knownPresent : candidateSlides;
-
-                // Toujours vérifier la lecture côté navigateur (HEVC / MP4 non supporté ≠ fichier présent).
-                enableImageMode();
-                Promise.all(slidesToProbe.map(probeSlide)).then(function (results) {
-                    var ok = slidesToProbe.filter(function (_slide, index) {
-                        return !!results[index];
-                    });
-                    if (ok.length) {
-                        afterResolve(ok);
-                        return;
-                    }
-                    if (knownPresent.length && slidesToProbe !== candidateSlides) {
-                        Promise.all(candidateSlides.map(probeSlide)).then(function (fallbackResults) {
-                            var fallback = candidateSlides.filter(function (_slide, index) {
-                                return !!fallbackResults[index];
-                            });
-                            if (fallback.length) afterResolve(fallback);
-                        });
-                    }
+                videoSlides = presentSlides.length ? presentSlides.slice() : candidateSlides.slice();
+                candidateSlides.forEach(function (slide) {
+                    slide.hidden = videoSlides.indexOf(slide) === -1;
                 });
+                bindVideoEvents();
+                startHero();
             } else {
                 videoSlides = [];
                 bindVideoEvents();
