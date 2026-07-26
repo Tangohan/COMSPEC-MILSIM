@@ -16,10 +16,7 @@ class CfgMods {
     class COMSPEC_Overwatch {
         dir = "@COMSPECOverwatch";
         name = "COMSPEC Overwatch (BÊTA)";
-        // Icône temporaire (tablette Athena, déjà utilisée dans l'UI) — à remplacer par un vrai
-        // logo dédié dès qu'un asset .paa est fourni (aucun outil de génération/encodage PAA
-        // disponible pour en produire un ici).
-        picture = "\z\comspec_overwatch\addons\connect\img\device\comspec_icon_tablet.paa";
+        picture = "\z\comspec_overwatch\addons\connect\img\comspec_atak_logo.paa";
         actionName = "Website";
         action = "https://athena.ttrd.fr/public";
         overview = "Accès anticipé — Reliez Arma 3 à Athena : carte tactique, messagerie, tablette et téléphone.";
