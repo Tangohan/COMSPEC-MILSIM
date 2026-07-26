@@ -28,6 +28,8 @@ class UserRepository
 
     private static ?bool $hasProfileBannerUrlColumn = null;
 
+    private static ?bool $hasDeletedAtColumn = null;
+
     /** @var array{join: string, grade_short: string, order_grade: string}|null */
     private static ?array $gradesConfigPublicRoster = null;
 
@@ -57,6 +59,16 @@ class UserRepository
         }
 
         return self::$hasServiceAccountColumn;
+    }
+
+    private function hasDeletedAtColumn(): bool
+    {
+        if (self::$hasDeletedAtColumn === null) {
+            $stmt = $this->pdo->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'deleted_at' LIMIT 1");
+            self::$hasDeletedAtColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasDeletedAtColumn;
     }
 
     private function hasAthenaIdentifierColumn(): bool
@@ -1398,6 +1410,49 @@ class UserRepository
         return $stmt->execute($params);
     }
 
+    /**
+     * Suppression douce (anonymisation) d'un compte depuis l'annuaire plateforme.
+     * Ne supprime jamais la ligne : ~99 clés étrangères (posts forum, dossiers personnel,
+     * formations, documents…) référencent users.id, la plupart en ON DELETE CASCADE —
+     * une vraie suppression SQL effacerait tout cet historique en cascade.
+     * Le compte reste identifié par son id mais devient inutilisable (email/mdp invalidés,
+     * status inactive) et ses données personnelles sont scrubées.
+     */
+    public function softDeleteAccount(int $userId, int $tenantId, int $actorUserId): bool
+    {
+        if (!$this->hasDeletedAtColumn()) {
+            return false;
+        }
+
+        $anonymizedEmail = 'deleted-' . $userId . '@deleted.invalid';
+        $invalidatedHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+
+        $set = [
+            '`status` = ?',
+            '`deleted_at` = NOW()',
+            '`deleted_by` = ?',
+            '`email` = ?',
+            '`display_name` = ?',
+            '`callsign` = NULL',
+            '`avatar_url` = NULL',
+            '`steam_id` = NULL',
+            '`password_hash` = ?',
+            '`updated_at` = NOW()',
+        ];
+        $params = ['inactive', $actorUserId, $anonymizedEmail, 'Compte supprimé', $invalidatedHash];
+
+        if ($this->hasProfileSlugColumn()) {
+            $set[] = '`profile_slug` = NULL';
+        }
+
+        $params[] = $userId;
+        $params[] = $tenantId;
+        $sql = 'UPDATE users SET ' . implode(', ', $set) . ' WHERE id = ? AND tenant_id = ?';
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute($params);
+    }
+
     /** Vérifie si un autre utilisateur (hors userId) a déjà cet email dans le tenant. */
     public function emailExistsInTenant(int $tenantId, string $email, ?int $excludeUserId = null): bool
     {
@@ -1615,6 +1670,7 @@ class UserRepository
         $pack = $this->technicalAccountExclusionPredicate('u');
         $parts = [$pack['sql']];
         $params = $pack['params'];
+        $hasDeletedAt = $this->hasDeletedAtColumn();
 
         $search = $search !== null ? trim($search) : '';
         if ($search !== '') {
@@ -1624,9 +1680,16 @@ class UserRepository
             $params[] = $term;
             $params[] = $term;
         }
-        if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
-            $parts[] = 'u.status = ?';
-            $params[] = $status;
+        if ($status === 'deleted' && $hasDeletedAt) {
+            $parts[] = 'u.deleted_at IS NOT NULL';
+        } else {
+            if ($hasDeletedAt) {
+                $parts[] = 'u.deleted_at IS NULL';
+            }
+            if ($status !== null && $status !== '' && in_array($status, ['active', 'inactive', 'pending_verification'], true)) {
+                $parts[] = 'u.status = ?';
+                $params[] = $status;
+            }
         }
         if ($tenantId !== null && $tenantId > 0) {
             $parts[] = 'u.tenant_id = ?';
@@ -1641,6 +1704,7 @@ class UserRepository
         $total = (int) $countStmt->fetchColumn();
 
         $sql = "SELECT u.id, u.tenant_id, u.email, u.display_name, u.callsign, u.status, u.created_at, u.updated_at,
+                       " . ($hasDeletedAt ? 'u.deleted_at' : 'NULL AS deleted_at') . ",
                        t.name AS tenant_name, t.slug AS tenant_slug,
                        r.name AS role_name
                 FROM users u
