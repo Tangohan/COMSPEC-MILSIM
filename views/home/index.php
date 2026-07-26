@@ -864,25 +864,27 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 }, IMAGE_INTERVAL_MS);
             }
 
-            var heroSection = document.getElementById('hero');
-
             function setImageStandby(standby) {
                 if (!imageRoot) return;
                 imageRoot.classList.toggle('hi-hero-images--standby', !!standby);
-                if (heroSection) heroSection.classList.toggle('is-video-mode', !!standby);
                 if (standby) {
                     imageSlides.forEach(function (s) {
                         s.classList.add('opacity-0');
                         s.classList.remove('opacity-100');
                     });
+                } else if (imageSlides.length) {
+                    imageSlides.forEach(function (s, i) {
+                        s.classList.toggle('opacity-100', i === current);
+                        s.classList.toggle('opacity-0', i !== current);
+                    });
                 }
             }
 
-            function stripVideoPosters() {
-                videoSlides.forEach(function (slide) {
-                    var v = slide.querySelector('[data-hero-video]');
-                    if (v) v.removeAttribute('poster');
-                });
+            function revealVideoFrame(video) {
+                if (!video || video.videoWidth <= 0) return false;
+                video.removeAttribute('poster');
+                if (mode === 'videos') setImageStandby(true);
+                return true;
             }
 
             function applyAudioToAll(muted, volume) {
@@ -983,7 +985,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 }
 
                 pruneUnplayableSources(nextVideo);
-                nextVideo.removeAttribute('poster');
 
                 function attemptPlayMutedFallback() {
                     nextVideo.muted = true;
@@ -1064,8 +1065,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 try { localStorage.setItem(KEY, withSound ? 'full' : 'silent'); } catch (e) {}
                 mode = 'videos';
                 stopImageSlider();
-                setImageStandby(true);
-                stripVideoPosters();
                 if (videoRoot) {
                     videoRoot.classList.remove('hi-hero-videos--idle');
                     videoRoot.setAttribute('aria-hidden', 'false');
@@ -1093,7 +1092,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 mode = 'images';
                 clearVideoSafety();
                 rotationPaused = false;
-                if (heroSection) heroSection.classList.remove('is-video-mode');
                 videoSlides.forEach(function (slide) {
                     var v = slide.querySelector('[data-hero-video]');
                     if (v) {
@@ -1189,8 +1187,11 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     v.addEventListener('play', syncAvUi);
                     v.addEventListener('pause', syncAvUi);
                     v.addEventListener('volumechange', syncAvUi);
+                    v.addEventListener('loadeddata', function () {
+                        if (mode === 'videos' && v === activeVideo()) revealVideoFrame(v);
+                    });
                     v.addEventListener('playing', function () {
-                        if (mode === 'videos') setImageStandby(true);
+                        if (mode === 'videos' && v === activeVideo()) revealVideoFrame(v);
                     });
                     v.addEventListener('error', function () {
                         if (mode === 'videos') handleVideoError(slide);
@@ -1240,6 +1241,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             if (btnLater) btnLater.addEventListener('click', function () { enableVideoMode(true); });
 
             if (!reducedMotion && candidateSlides.length) {
+                setImageStandby(false);
+                if (imageSlides.length) {
+                    imageSlides[0].classList.add('opacity-100');
+                    imageSlides[0].classList.remove('opacity-0');
+                }
+
                 var presentSlides = candidateSlides.filter(function (slide) {
                     return slide.getAttribute('data-present') === '1';
                 });
@@ -1248,6 +1255,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     slide.hidden = videoSlides.indexOf(slide) === -1;
                 });
                 bindVideoEvents();
+                enableImageMode();
                 startHero();
             } else {
                 videoSlides = [];
