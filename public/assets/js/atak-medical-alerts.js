@@ -701,6 +701,28 @@ window.ATAKMedicalAlerts = (function () {
     btn.hidden = n <= 0;
   }
 
+  /** Données affichées dans la bannière rouge (urgences + détections au sol). */
+  function buildBannerData(baseVisible) {
+    var alerts = ((baseVisible && baseVisible.alerts) || []).filter(function (a) {
+      var c = alertCategory(a);
+      return c === 'urgences' || c === 'suivi';
+    });
+    var units = ((baseVisible && baseVisible.criticalUnits) || []).filter(function (u) {
+      var c = unitCategory(u);
+      return c === 'urgences' || c === 'suivi';
+    });
+    var emergency = alerts.filter(function (a) {
+      return (a.severity || '') === 'critical';
+    }).length + units.filter(function (u) {
+      return (u.severity || '') === 'critical';
+    }).length;
+    return {
+      alerts: alerts,
+      criticalUnits: units,
+      counts: { emergency: emergency }
+    };
+  }
+
   function renderBanner(data) {
     var banner = document.getElementById('atak-medical-banner')
       || document.getElementById('overwatch-medical-banner')
@@ -881,24 +903,7 @@ window.ATAKMedicalAlerts = (function () {
     if (fp === lastFingerprint) return;
     var prev = lastFingerprint;
     lastFingerprint = fp;
-    // Bannière : urgences + au sol (pas les seuls bilans du filtre actif).
-    var bannerData = {
-      alerts: (baseVisible.alerts || []).filter(function (a) {
-        var c = alertCategory(a);
-        return c === 'urgences' || c === 'suivi';
-      }),
-      criticalUnits: (baseVisible.criticalUnits || []).filter(function (u) {
-        var c = unitCategory(u);
-        return c === 'urgences' || c === 'suivi';
-      }),
-      counts: { emergency: 0 }
-    };
-    bannerData.counts.emergency = bannerData.alerts.filter(function (a) {
-      return (a.severity || '') === 'critical';
-    }).length + bannerData.criticalUnits.filter(function (u) {
-      return (u.severity || '') === 'critical';
-    }).length;
-    renderBanner(bannerData);
+    renderBanner(buildBannerData(baseVisible));
     renderList(visible);
     // Toast : urgences critiques uniquement (évite le bruit « au sol »).
     var toastPool = applyCategoryFilter(baseVisible, 'urgences');
@@ -968,33 +973,41 @@ window.ATAKMedicalAlerts = (function () {
       return;
     }
     if (action === 'clear-all') {
-      dismissAllVisible(visible);
+      // La bannière agrège urgences + suivi ; ne pas se limiter à l’onglet actif.
+      dismissAllVisible(buildBannerData(filterData(lastData || {})));
       if (window.ATAKShowNotification) {
         window.ATAKShowNotification('Alertes masquées. Le journal Liaison et le tchat restent inchangés.');
       }
+      lastFingerprint = '';
       refreshFromLast();
       return;
     }
     var key = btn.getAttribute('data-dismiss-key') || '';
     if (action === 'dismiss-alert') {
-      var alert = (visible.alerts || []).find(function (a) { return alertKey(a) === key; });
+      var baseVisible = filterData(lastData || {});
+      var alert = (visible.alerts || []).find(function (a) { return alertKey(a) === key; })
+        || (baseVisible.alerts || []).find(function (a) { return alertKey(a) === key; });
       if (alert) dismissAlert(alert);
       else if (key) {
         var stA = readDismissed();
         stA.alerts[key] = Date.now();
         writeDismissed(stA);
       }
+      lastFingerprint = '';
       refreshFromLast();
       return;
     }
     if (action === 'dismiss-unit') {
-      var unit = (visible.criticalUnits || []).find(function (u) { return unitKey(u) === key; });
+      var baseVisibleU = filterData(lastData || {});
+      var unit = (visible.criticalUnits || []).find(function (u) { return unitKey(u) === key; })
+        || (baseVisibleU.criticalUnits || []).find(function (u) { return unitKey(u) === key; });
       if (unit) dismissUnit(unit);
       else if (key) {
         var stU = readDismissed();
         stU.units[key] = Date.now();
         writeDismissed(stU);
       }
+      lastFingerprint = '';
       refreshFromLast();
     }
   }

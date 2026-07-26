@@ -1310,7 +1310,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/api/atak/logistics', [AtakApiController::class, 'logisticsSnapshot']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->post('/api/atak/disconnect', [AtakApiController::class, 'disconnect']);
-$router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
+    $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
     $router->get('/api/atak/briefing-presence', [AtakApiController::class, 'briefingPresence']);
     $router->post('/api/atak/briefing-presence', [AtakApiController::class, 'briefingPresence']);
     $router->get('/api/atak/briefing-slides/{id}/comments', [AtakApiController::class, 'briefingSlideComments']);
@@ -1360,15 +1360,15 @@ $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSl
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
-$router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
-$router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
-$router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);
-$router->get('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesIndex']);
-$router->post('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesStore']);
-$router->delete('/api/atak/orders/templates/{id}', [AtakApiController::class, 'ordersTemplatesDelete']);
-$router->post('/api/atak/orders/templates/{id}/delete', [AtakApiController::class, 'ordersTemplatesDelete']);
-$router->patch('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
-$router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
+    $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
+    $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
+    $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);
+    $router->get('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesIndex']);
+    $router->post('/api/atak/orders/templates', [AtakApiController::class, 'ordersTemplatesStore']);
+    $router->delete('/api/atak/orders/templates/{id}', [AtakApiController::class, 'ordersTemplatesDelete']);
+    $router->post('/api/atak/orders/templates/{id}/delete', [AtakApiController::class, 'ordersTemplatesDelete']);
+    $router->patch('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
+    $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'ordersUpdateStatus']);
     $router->get('/api/medical-alerts', [AtakApiController::class, 'medicalAlertsIndex']);
     $router->post('/api/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
     $router->patch('/api/medical-alerts/{id}/triage', [AtakApiController::class, 'medicalAlertTriage']);
@@ -1431,9 +1431,7 @@ $router->post('/api/atak/orders/{id}/status', [AtakApiController::class, 'orders
     $router->get('/api/atak/zones/alerts', [AtakApiController::class, 'tacticalZonesAlerts']);
 
     // API ATAK — Nouvelles features Phase 2
-    // MEDEVAC 9-Line étendu avec triage TCCC
-    $router->get('/api/atak/medevac', [AtakApiController::class, 'medevacIndex']);
-    $router->post('/api/atak/medevac', [AtakApiController::class, 'medevacStore']);
+    // MEDEVAC 9-Line étendu (liste/création déjà déclarées plus haut)
     $router->get('/api/atak/medevac/{id}', [AtakApiController::class, 'medevacShow']);
     $router->patch('/api/atak/medevac/{id}/status', [AtakApiController::class, 'medevacUpdateStatus']);
     $router->post('/api/atak/medevac/{id}/assign', [AtakApiController::class, 'medevacAssignAsset']);

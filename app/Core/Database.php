@@ -12,6 +12,8 @@ final class Database
 {
     private static ?PDO $pdo = null;
 
+    private static ?self $instance = null;
+
     /**
      * Charge la config DB depuis app/Config/database.local.php (prioritaire), sinon .env / env().
      */
@@ -47,6 +49,12 @@ final class Database
             'password' => $pass,
             'charset'  => $charset,
         ];
+    }
+
+    /** Accès singleton pour les repositories ATAK Phase 2 (insert/fetchAll/…). */
+    public static function getInstance(): self
+    {
+        return self::$instance ??= new self();
     }
 
     public static function getPdo(): PDO
@@ -88,5 +96,54 @@ final class Database
     public static function disconnect(): void
     {
         self::$pdo = null;
+        self::$instance = null;
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function insert(string $sql, array $params = []): int
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) self::getPdo()->lastInsertId();
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return list<array<string, mixed>>
+     */
+    public function fetchAll(string $sql, array $params = []): array
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>|null
+     */
+    public function fetchOne(string $sql, array $params = []): ?array
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function execute(string $sql, array $params = []): int
+    {
+        $stmt = self::getPdo()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->rowCount();
     }
 }

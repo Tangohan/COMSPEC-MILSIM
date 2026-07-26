@@ -101,6 +101,12 @@ class Request
         return $this->query[$key] ?? $default;
     }
 
+    /** Alias query string (compat repositories ATAK Phase 2). */
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->query($key, $default);
+    }
+
     /** @return array<string, mixed> */
     public function queryParams(): array
     {
