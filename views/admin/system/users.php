@@ -28,6 +28,8 @@ $statusBadgeClass = static function (string $status): string {
     };
 };
 
+$currentActorId = (int) \App\Core\Session::get('user_id');
+
 $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $page): string {
     $params = [
         'q' => $overrides['q'] ?? $q,
@@ -106,6 +108,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                         <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Compte actif</option>
                         <option value="inactive" <?= $statusFilter === 'inactive' ? 'selected' : '' ?>>Compte désactivé</option>
                         <option value="pending_verification" <?= $statusFilter === 'pending_verification' ? 'selected' : '' ?>>En attente de vérification de l’e-mail</option>
+                        <option value="deleted" <?= $statusFilter === 'deleted' ? 'selected' : '' ?>>Comptes supprimés</option>
                     </select>
                 </div>
             </div>
@@ -149,6 +152,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                             $tenantName = (string) ($u['tenant_name'] ?? '');
                             $roleName = trim((string) ($u['role_name'] ?? ''));
                             $st = (string) ($u['status'] ?? '');
+                            $isDeleted = !empty($u['deleted_at']);
                             $primary = $callsign !== '' ? $callsign : ($display !== '' ? $display : $email);
                             $sanctionsUrl = url('admin/system/member-sanctions') . ($tid > 0 ? '?tenant_id=' . $tid : '');
                             ?>
@@ -165,13 +169,21 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                 <td class="px-4 py-3 text-slate-800"><?= htmlspecialchars($tenantName !== '' ? $tenantName : '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars($roleName !== '' ? $roleName : '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold <?= htmlspecialchars($statusBadgeClass($st), ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($statusLabel($st), ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
+                                    <?php if ($isDeleted): ?>
+                                        <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold bg-slate-200 text-slate-700">Compte supprimé</span>
+                                    <?php else: ?>
+                                        <span class="inline-flex rounded-md px-2 py-1 text-xs font-semibold <?= htmlspecialchars($statusBadgeClass($st), ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($statusLabel($st), ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex flex-col gap-2 min-w-[10rem]">
-                                        <?php if ($st === 'active'): ?>
+                                        <?php if ($isDeleted): ?>
+                                            <p class="text-xs text-slate-400">Aucune action possible.</p>
+                                        <?php elseif ($uid === $currentActorId): ?>
+                                            <p class="text-xs text-slate-400">C’est votre propre compte.</p>
+                                        <?php elseif ($st === 'active'): ?>
                                             <form method="post" action="<?= htmlspecialchars(url('admin/users/set-status'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Désactiver ce compte ? La personne ne pourra plus se connecter.');">
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="user_id" value="<?= $uid ?>">
@@ -194,6 +206,16 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                                 <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
                                                 <input type="hidden" name="return_page" value="<?= $page ?>">
                                                 <button type="submit" class="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Réactiver</button>
+                                            </form>
+                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/delete'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Supprimer définitivement le compte <?= htmlspecialchars(addslashes($primary), ENT_QUOTES, 'UTF-8') ?> ?\n\nSes données personnelles (e-mail, nom, avatar) seront anonymisées et la connexion sera coupée immédiatement. Cette action est irréversible.');">
+                                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                                <input type="hidden" name="tenant_id" value="<?= $tid ?>">
+                                                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
+                                                <input type="hidden" name="return_page" value="<?= $page ?>">
+                                                <button type="submit" class="w-full rounded-lg border border-rose-300 bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-200">Supprimer</button>
                                             </form>
                                         <?php endif; ?>
                                         <a href="<?= htmlspecialchars($sanctionsUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Sanctions</a>

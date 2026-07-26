@@ -37,6 +37,9 @@ final class AuditAction
     /** Changement de statut compte depuis l’annuaire plateforme. */
     public const USER_STATUS_UPDATED = 'user.status_updated';
 
+    /** Suppression (douce/anonymisation) d’un compte depuis l’annuaire plateforme. */
+    public const USER_DELETED = 'user.deleted';
+
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 

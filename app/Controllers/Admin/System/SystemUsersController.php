@@ -32,7 +32,7 @@ final class SystemUsersController
         $status = trim((string) $request->query('status', ''));
         $tenantFilter = (int) $request->query('tenant_id', 0);
         $page = max(1, (int) $request->query('page', 1));
-        $allowedStatus = ['active', 'inactive', 'pending_verification'];
+        $allowedStatus = ['active', 'inactive', 'pending_verification', 'deleted'];
         if ($status !== '' && !in_array($status, $allowedStatus, true)) {
             $status = '';
         }
@@ -125,6 +125,62 @@ final class SystemUsersController
                 ? 'Le compte a été réactivé.'
                 : 'Le compte a été désactivé. La personne ne pourra plus se connecter avec cet accès.'
         );
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /**
+     * Suppression douce (anonymisation) : la ligne reste (FK CASCADE sur tout l'historique
+     * lié — forum, formations, dossiers personnel, documents…), mais le compte devient
+     * inutilisable et ses données personnelles sont scrubées. Jamais de vraie suppression SQL.
+     */
+    public function delete(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorTenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $userId = (int) $request->input('user_id');
+        $tenantId = (int) $request->input('tenant_id');
+        if ($userId < 1 || $tenantId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if ($userId === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas supprimer votre propre compte depuis cet écran.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $target = $this->users->findById($userId, $tenantId);
+        if ($target === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $ok = $this->users->softDeleteAccount($userId, $tenantId, $actorId);
+        if (!$ok) {
+            Session::flash('error', 'Impossible de supprimer ce compte.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $this->audit->logChange(
+            AuditAction::USER_DELETED,
+            $actorTenantId > 0 ? $actorTenantId : $tenantId,
+            $actorId,
+            'user',
+            $userId,
+            ['status' => (string) ($target['status'] ?? ''), 'email' => (string) ($target['email'] ?? '')],
+            ['status' => 'deleted', 'platform_directory' => true],
+        );
+
+        Session::flash('success', 'Le compte a été supprimé. Ses données personnelles ont été anonymisées.');
 
         return Response::redirect($this->backUrl($request));
     }
