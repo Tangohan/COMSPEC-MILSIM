@@ -745,11 +745,17 @@
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity 1s ease-in-out;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+  transition: none;
 }
 
 .home-impact .hi-hero-vslide.is-active {
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 2;
 }
 
 .home-impact .hi-hero-vslide__video {

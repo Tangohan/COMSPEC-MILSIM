@@ -216,7 +216,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             class="hi-hero-vslide__video"
                             playsinline
                             muted
-                            preload="<?= (!empty($clip['present']) && $clipIndex === 0) ? 'metadata' : 'none' ?>"
+                            preload="none"
                             poster="<?= htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') ?>"
                             data-hero-video
                         >
@@ -946,26 +946,41 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 syncAvUi();
             }
 
+            function prepareVideoForPlay(video) {
+                if (!video) return;
+                if (video.getAttribute('preload') === 'none') {
+                    video.setAttribute('preload', 'auto');
+                    try { video.load(); } catch (e) {}
+                }
+            }
+
+            function pauseAllVideos(exceptVideo) {
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (!v || v === exceptVideo) return;
+                    v.pause();
+                    try { v.currentTime = 0; } catch (e) {}
+                });
+            }
+
             function playVideoAt(index, opts) {
                 opts = opts || {};
                 if (!videoSlides.length) return;
                 clearVideoSafety();
                 var next = (index + videoSlides.length) % videoSlides.length;
-                var prevSlide = videoSlides[current];
                 var nextSlide = videoSlides[next];
-                var prevVideo = prevSlide ? prevSlide.querySelector('[data-hero-video]') : null;
                 var nextVideo = nextSlide ? nextSlide.querySelector('[data-hero-video]') : null;
 
-                if (prevVideo && prevVideo !== nextVideo) {
-                    prevVideo.pause();
-                    try { prevVideo.currentTime = 0; } catch (e) {}
-                }
-                if (prevSlide) prevSlide.classList.remove('is-active');
+                pauseAllVideos(nextVideo);
+                videoSlides.forEach(function (slide, i) {
+                    slide.classList.toggle('is-active', i === next);
+                });
                 current = next;
-                if (nextSlide) nextSlide.classList.add('is-active');
                 syncDots();
 
                 if (!nextVideo) return;
+
+                prepareVideoForPlay(nextVideo);
 
                 if (withSound) {
                     nextVideo.muted = false;
@@ -1092,12 +1107,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 mode = 'images';
                 clearVideoSafety();
                 rotationPaused = false;
+                pauseAllVideos(null);
                 videoSlides.forEach(function (slide) {
-                    var v = slide.querySelector('[data-hero-video]');
-                    if (v) {
-                        v.pause();
-                        try { v.currentTime = 0; } catch (e) {}
-                    }
                     slide.classList.remove('is-active');
                 });
                 if (videoRoot) {
