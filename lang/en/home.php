@@ -22,6 +22,8 @@ return [
     'slideshow_dots' => 'Slideshow indicators',
     'video_controls' => 'Video controls',
     'play_video' => 'Play video',
+    'media_time' => 'Playback time',
+    'media_progress' => 'Media progress',
     'mute' => 'Mute',
     'volume' => 'Volume',
     'units_title' => 'Units on the platform',

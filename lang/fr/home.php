@@ -22,6 +22,8 @@ return [
     'slideshow_dots' => 'Indicateurs du diaporama',
     'video_controls' => 'Contrôles vidéo',
     'play_video' => 'Lancer la vidéo',
+    'media_time' => 'Temps de lecture',
+    'media_progress' => 'Progression du média',
     'mute' => 'Couper le son',
     'volume' => 'Volume',
     'units_title' => 'Unités sur la plateforme',

@@ -115,7 +115,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
     <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <?php endif; ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <link href="<?= $base ?>/assets/css/home-impact.css" rel="stylesheet">
+    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-5" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
@@ -216,8 +216,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             class="hi-hero-vslide__video"
                             playsinline
                             muted
-                            preload="none"
-                            poster="<?= htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') ?>"
+                            preload="<?= (!empty($clip['present']) && $clipIndex === 0) ? 'auto' : 'metadata' ?>"
                             data-hero-video
                         >
                             <?php foreach ($clip['sources'] as $source): ?>
@@ -227,7 +226,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     </div>
                     <?php endforeach; ?>
                 </div>
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/30"></div>
+                <div class="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-t from-black via-black/55 to-black/30"></div>
             </div>
 
             <div class="relative z-10 mx-auto flex w-full max-w-[100rem] flex-col items-start px-5 pb-10 pt-20 md:px-8 md:pb-14">
@@ -252,41 +251,49 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 </div>
             </div>
 
-            <div class="relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-sm">
-                <div class="mx-auto flex max-w-[100rem] flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-8">
-                    <div class="flex flex-wrap gap-x-6 gap-y-2 hi-body-sm text-[10px] uppercase tracking-[0.14em] text-white/45">
+            <div class="relative z-10 hi-media-chrome">
+                <div
+                    class="hi-media-chrome__progress"
+                    role="progressbar"
+                    aria-label="<?= htmlspecialchars(__('home.media_progress'), ENT_QUOTES, 'UTF-8') ?>"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    id="hero-media-progress"
+                >
+                    <span class="hi-media-chrome__progress-fill" style="transform: scaleX(0)" id="hero-media-progress-fill"></span>
+                </div>
+                <div class="hi-media-chrome__row mx-auto flex max-w-[100rem] flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between md:px-8">
+                    <div class="hi-media-chrome__meta flex flex-wrap gap-x-5 gap-y-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">
                         <span><?= htmlspecialchars(__('home.pill_multi'), ENT_QUOTES, 'UTF-8') ?></span>
                         <span><?= htmlspecialchars(__('home.pill_stack'), ENT_QUOTES, 'UTF-8') ?></span>
                         <span><?= htmlspecialchars(__('home.pill_atak'), ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2" aria-label="<?= htmlspecialchars(__('home.slideshow'), ENT_QUOTES, 'UTF-8') ?>" data-hero-pager>
-                            <button type="button" onclick="prevSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="<?= htmlspecialchars(__('home.prev_media'), ENT_QUOTES, 'UTF-8') ?>">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/></svg>
+                    <div class="hi-media-chrome__deck">
+                        <div class="hi-media-pager" aria-label="<?= htmlspecialchars(__('home.slideshow'), ENT_QUOTES, 'UTF-8') ?>" data-hero-pager>
+                            <button type="button" onclick="prevSlide()" class="hi-media-pager__nav" aria-label="<?= htmlspecialchars(__('home.prev_media'), ENT_QUOTES, 'UTF-8') ?>">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/></svg>
                             </button>
-                            <div class="flex gap-2" id="hero-dots" role="tablist" aria-label="<?= htmlspecialchars(__('home.slideshow_dots'), ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="hi-media-pager__dots" id="hero-dots" role="tablist" aria-label="<?= htmlspecialchars(__('home.slideshow_dots'), ENT_QUOTES, 'UTF-8') ?>">
                                 <?php
                                 $heroDotSlots = max(4, count($heroVideoClips));
                                 for ($dotIndex = 0; $dotIndex < $heroDotSlots; $dotIndex++):
                                 ?>
-                                <span class="dot h-1 w-1 rounded-full <?= $dotIndex === 0 ? 'bg-white' : 'bg-white/25' ?> transition-all" data-hero-dot="<?= $dotIndex ?>"<?= $dotIndex >= 4 ? ' hidden' : '' ?>></span>
+                                <span class="hi-media-dot<?= $dotIndex === 0 ? ' is-active' : '' ?>" data-hero-dot="<?= $dotIndex ?>"<?= $dotIndex >= 4 ? ' hidden' : '' ?>></span>
                                 <?php endfor; ?>
                             </div>
-                            <button type="button" onclick="nextSlide()" class="p-1 text-white/35 transition hover:text-white" aria-label="<?= htmlspecialchars(__('home.next_media'), ENT_QUOTES, 'UTF-8') ?>">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/></svg>
+                            <button type="button" onclick="nextSlide()" class="hi-media-pager__nav" aria-label="<?= htmlspecialchars(__('home.next_media'), ENT_QUOTES, 'UTF-8') ?>">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5l7 7-7 7"/></svg>
                             </button>
                         </div>
-                        <div class="flex items-center gap-3 hi-body-sm text-[10px] uppercase tracking-[0.14em] text-white/35">
-                            <span class="relative flex h-1.5 w-1.5">
-                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-40"></span>
-                                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                            </span>
-                            <span id="timestamp" class="tabular-nums text-white/55">--:--:--</span>
+                        <div class="hi-media-clock" title="<?= htmlspecialchars(__('home.media_time'), ENT_QUOTES, 'UTF-8') ?>">
+                            <span class="hi-media-clock__live" aria-hidden="true"></span>
+                            <span id="timestamp" class="hi-media-clock__time" aria-live="polite">--:-- / --:--</span>
                         </div>
                         <div class="hi-av" id="hero-av" role="group" aria-label="<?= htmlspecialchars(__('home.video_controls'), ENT_QUOTES, 'UTF-8') ?>">
                             <button type="button" id="hero-av-toggle" class="hi-av__btn" aria-label="<?= htmlspecialchars(__('home.play_video'), ENT_QUOTES, 'UTF-8') ?>" data-state="stopped">
                                 <svg class="hi-av__icon hi-av__icon--play" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12 8 5.14z"/></svg>
-                                <svg class="hi-av__icon hi-av__icon--stop" viewBox="0 0 24 24" aria-hidden="true" hidden><rect x="6" y="6" width="12" height="12" fill="currentColor" rx="1"/></svg>
+                                <svg class="hi-av__icon hi-av__icon--stop" viewBox="0 0 24 24" aria-hidden="true" hidden><path fill="currentColor" d="M7 6h3.2v12H7V6zm6.8 0H17v12h-3.2V6z"/></svg>
                             </button>
                             <div class="hi-av__audio">
                                 <button type="button" id="hero-av-mute" class="hi-av__btn hi-av__btn--mute" aria-label="<?= htmlspecialchars(__('home.mute'), ENT_QUOTES, 'UTF-8') ?>" aria-pressed="true">
@@ -753,8 +760,6 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var t = now.getHours().toString().padStart(2, '0') + ':' +
                 now.getMinutes().toString().padStart(2, '0') + ':' +
                 now.getSeconds().toString().padStart(2, '0');
-            var ts = document.getElementById('timestamp');
-            if (ts) ts.textContent = t;
             var hc = document.getElementById('home-header-clock');
             if (hc) hc.textContent = t;
         }
@@ -765,15 +770,18 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var KEY = 'athena_immersive_v1';
             var VOL_KEY = 'athena_immersive_vol';
             var IMAGE_INTERVAL_MS = 6000;
-            var VIDEO_MAX_MS = 18000;
+            var VIDEO_FALLBACK_MS = 30000;
             var dlg = document.getElementById('immersive-consent');
             var btnLater = document.getElementById('btn-enable-immersive');
             var imageRoot = document.getElementById('heroImageSlides');
             var videoRoot = document.getElementById('heroVideoSlides');
+            var mediaClock = document.getElementById('timestamp');
+            var mediaProgress = document.getElementById('hero-media-progress');
+            var mediaProgressFill = document.getElementById('hero-media-progress-fill');
             var imageSlides = imageRoot ? imageRoot.querySelectorAll('.slide') : [];
             var candidateSlides = videoRoot ? Array.prototype.slice.call(videoRoot.querySelectorAll('[data-hero-video-slide]')) : [];
             var videoSlides = [];
-            var dots = document.querySelectorAll('#hero-dots .dot');
+            var dots = document.querySelectorAll('#hero-dots .hi-media-dot');
             var toggleBtn = document.getElementById('hero-av-toggle');
             var muteBtn = document.getElementById('hero-av-mute');
             var volInput = document.getElementById('hero-av-volume');
@@ -790,10 +798,12 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var imageTimer = null;
             var videoSafetyTimer = null;
             var videoDecodeTimer = null;
+            var playToken = 0;
             var rotationPaused = false;
             var lastVol = 0.55;
             var saved = null;
             var withSound = false;
+            var imageSlideStartedAt = Date.now();
 
             try { saved = localStorage.getItem(KEY); } catch (e) {}
             // Ancien « off » = refus du son immersif, pas refus des vidéos muted.
@@ -812,12 +822,75 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 return slide ? slide.querySelector('[data-hero-video]') : null;
             }
 
+            function formatMediaClock(seconds) {
+                if (!isFinite(seconds) || seconds < 0) return '--:--';
+                var total = Math.floor(seconds);
+                var m = Math.floor(total / 60);
+                var s = total % 60;
+                return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+            }
+
+            function setMediaProgress(ratio) {
+                var pct = 0;
+                if (isFinite(ratio) && ratio > 0) {
+                    pct = Math.max(0, Math.min(1, ratio)) * 100;
+                }
+                if (mediaProgressFill) {
+                    var prev = parseFloat(mediaProgressFill.dataset.pct || '0') || 0;
+                    var jumpingBack = pct + 1.5 < prev;
+                    if (jumpingBack) {
+                        mediaProgressFill.style.transition = 'none';
+                    } else {
+                        mediaProgressFill.style.transition = '';
+                    }
+                    mediaProgressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
+                    mediaProgressFill.dataset.pct = String(pct);
+                    if (jumpingBack) {
+                        // Force reflow so the next tick can animate again.
+                        void mediaProgressFill.offsetWidth;
+                        mediaProgressFill.style.transition = '';
+                    }
+                }
+                if (mediaProgress) {
+                    mediaProgress.setAttribute('aria-valuenow', String(Math.round(pct)));
+                    mediaProgress.classList.toggle('is-active', pct > 0.5);
+                }
+            }
+
+            function updateMediaClock() {
+                if (mode === 'videos') {
+                    var video = activeVideo();
+                    if (!video) {
+                        if (mediaClock) mediaClock.textContent = '--:-- / --:--';
+                        setMediaProgress(0);
+                        return;
+                    }
+                    var cur = video.currentTime || 0;
+                    var dur = (isFinite(video.duration) && video.duration > 0) ? video.duration : 0;
+                    if (mediaClock) {
+                        mediaClock.textContent = formatMediaClock(cur) + ' / ' + (dur > 0 ? formatMediaClock(dur) : '--:--');
+                    }
+                    setMediaProgress(dur > 0 ? cur / dur : 0);
+                    return;
+                }
+                if (!imageSlides.length) {
+                    if (mediaClock) mediaClock.textContent = '--:-- / --:--';
+                    setMediaProgress(0);
+                    return;
+                }
+                var elapsed = Math.min(IMAGE_INTERVAL_MS / 1000, Math.max(0, (Date.now() - imageSlideStartedAt) / 1000));
+                var total = IMAGE_INTERVAL_MS / 1000;
+                if (mediaClock) {
+                    mediaClock.textContent = formatMediaClock(elapsed) + ' / ' + formatMediaClock(total);
+                }
+                setMediaProgress(total > 0 ? elapsed / total : 0);
+            }
+
             function syncDots() {
                 var count = mode === 'videos' ? videoSlides.length : imageSlides.length;
                 for (var i = 0; i < dots.length; i++) {
                     var on = i === current && i < count;
-                    dots[i].classList.toggle('bg-white', on);
-                    dots[i].classList.toggle('bg-white/25', !on);
+                    dots[i].classList.toggle('is-active', on);
                     dots[i].hidden = i >= count;
                 }
             }
@@ -835,7 +908,9 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 }
                 img = imageSlides[current] ? imageSlides[current].querySelector('img') : null;
                 if (img) img.style.transform = 'scale(1.08)';
+                imageSlideStartedAt = Date.now();
                 syncDots();
+                updateMediaClock();
             }
 
             function clearVideoSafety() {
@@ -868,6 +943,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (!imageRoot) return;
                 imageRoot.classList.toggle('hi-hero-images--standby', !!standby);
                 if (standby) {
+                    imageRoot.classList.remove('hi-hero-images--waiting');
+                    stopImageSlider();
                     imageSlides.forEach(function (s) {
                         s.classList.add('opacity-0');
                         s.classList.remove('opacity-100');
@@ -880,20 +957,85 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 }
             }
 
+            function setImagesWaiting(waiting) {
+                if (!imageRoot) return;
+                if (waiting) {
+                    imageRoot.classList.add('hi-hero-images--waiting');
+                    imageRoot.classList.remove('hi-hero-images--standby');
+                } else {
+                    imageRoot.classList.remove('hi-hero-images--waiting');
+                }
+            }
+
+            function pauseAllVideosExcept(keep) {
+                videoSlides.forEach(function (slide) {
+                    var v = slide.querySelector('[data-hero-video]');
+                    if (!v || v === keep) return;
+                    try { v.pause(); } catch (e) {}
+                    v.muted = true;
+                    v.volume = 0;
+                    try { v.currentTime = 0; } catch (e2) {}
+                });
+            }
+
+            function videoHasPaintedFrame(video) {
+                return !!(video && video.videoWidth > 0 && video.readyState >= 2);
+            }
+
             function revealVideoFrame(video) {
-                if (!video || video.videoWidth <= 0) return false;
-                video.removeAttribute('poster');
-                if (mode === 'videos') setImageStandby(true);
+                if (!video || mode !== 'videos') return false;
+                if (!videoHasPaintedFrame(video)) return false;
+                if (videoRoot) {
+                    videoRoot.classList.remove('hi-hero-videos--idle');
+                    videoRoot.setAttribute('aria-hidden', 'false');
+                }
+                setImagesWaiting(false);
+                setImageStandby(true);
+                applyAudioToActive();
                 return true;
             }
 
-            function applyAudioToAll(muted, volume) {
-                videoSlides.forEach(function (slide) {
+            function applyAudioToActive() {
+                var layerReady = !!(imageRoot && imageRoot.classList.contains('hi-hero-images--standby'));
+                videoSlides.forEach(function (slide, i) {
                     var v = slide.querySelector('[data-hero-video]');
                     if (!v) return;
-                    v.muted = muted;
-                    v.volume = volume;
+                    var isActive = i === current;
+                    if (isActive && withSound && layerReady) {
+                        v.muted = false;
+                        v.volume = lastVol > 0 ? lastVol : 0.55;
+                    } else {
+                        v.muted = true;
+                        v.volume = 0;
+                    }
                 });
+            }
+
+            function armFrameReveal(video, token) {
+                if (!video) return;
+
+                function tryReveal() {
+                    if (token !== playToken || mode !== 'videos') return true;
+                    return revealVideoFrame(video);
+                }
+
+                if (tryReveal()) return;
+
+                if (typeof video.requestVideoFrameCallback === 'function') {
+                    try {
+                        video.requestVideoFrameCallback(function () {
+                            tryReveal();
+                        });
+                    } catch (e) {}
+                }
+
+                var attempts = 0;
+                var poll = setInterval(function () {
+                    attempts++;
+                    if (token !== playToken || tryReveal() || attempts > 40) {
+                        clearInterval(poll);
+                    }
+                }, 100);
             }
 
             function syncAvUi() {
@@ -912,6 +1054,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         if (iconSpeaker) iconSpeaker.hidden = true;
                         if (iconMuted) iconMuted.hidden = false;
                     }
+                    updateMediaClock();
                     return;
                 }
                 var muted = video.muted || video.volume === 0;
@@ -927,6 +1070,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     if (iconSpeaker) iconSpeaker.hidden = muted;
                     if (iconMuted) iconMuted.hidden = !muted;
                 }
+                updateMediaClock();
             }
 
             function persistVol(vol) {
@@ -937,62 +1081,53 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 vol = Math.min(1, Math.max(0, vol));
                 if (vol > 0) lastVol = vol;
                 withSound = unmute ? vol > 0 : vol > 0;
-                var muted = !withSound || vol === 0;
-                applyAudioToAll(muted, muted ? 0 : vol);
                 persistVol(vol > 0 ? vol : lastVol);
                 try {
-                    localStorage.setItem(KEY, muted ? 'silent' : 'full');
+                    localStorage.setItem(KEY, withSound ? 'full' : 'silent');
                 } catch (e) {}
+                applyAudioToActive();
                 syncAvUi();
             }
 
-            function prepareVideoForPlay(video) {
-                if (!video) return;
-                if (video.getAttribute('preload') === 'none') {
-                    video.setAttribute('preload', 'auto');
-                    try { video.load(); } catch (e) {}
+            function scheduleVideoAdvance(token, video) {
+                if (videoSlides.length < 2) return;
+                clearTimeout(videoSafetyTimer);
+                videoSafetyTimer = null;
+                // Filet de sécurité : la fin naturelle passe par l’événement `ended`.
+                var remainingMs = VIDEO_FALLBACK_MS;
+                if (video && isFinite(video.duration) && video.duration > 0) {
+                    remainingMs = Math.max(1500, video.duration * 1000 + 1000);
                 }
-            }
-
-            function pauseAllVideos(exceptVideo) {
-                videoSlides.forEach(function (slide) {
-                    var v = slide.querySelector('[data-hero-video]');
-                    if (!v || v === exceptVideo) return;
-                    v.pause();
-                    try { v.currentTime = 0; } catch (e) {}
-                });
+                videoSafetyTimer = setTimeout(function () {
+                    videoSafetyTimer = null;
+                    if (token !== playToken || rotationPaused || mode !== 'videos') return;
+                    playVideoAt(current + 1);
+                }, remainingMs);
             }
 
             function playVideoAt(index, opts) {
                 opts = opts || {};
                 if (!videoSlides.length) return;
                 clearVideoSafety();
+                var token = ++playToken;
                 var next = (index + videoSlides.length) % videoSlides.length;
                 var nextSlide = videoSlides[next];
                 var nextVideo = nextSlide ? nextSlide.querySelector('[data-hero-video]') : null;
 
-                pauseAllVideos(nextVideo);
+                pauseAllVideosExcept(nextVideo);
                 videoSlides.forEach(function (slide, i) {
                     slide.classList.toggle('is-active', i === next);
                 });
                 current = next;
                 syncDots();
 
-                if (!nextVideo) return;
-
-                prepareVideoForPlay(nextVideo);
-
-                if (withSound) {
-                    nextVideo.muted = false;
-                    nextVideo.volume = lastVol > 0 ? lastVol : 0.55;
-                } else {
-                    nextVideo.muted = true;
-                    nextVideo.volume = 0;
+                if (!nextVideo) {
+                    updateMediaClock();
+                    return;
                 }
 
-                if (opts.reset !== false) {
-                    try { nextVideo.currentTime = 0; } catch (e) {}
-                }
+                nextVideo.muted = true;
+                nextVideo.volume = 0;
 
                 if (rotationPaused) {
                     syncAvUi();
@@ -1001,53 +1136,59 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 
                 pruneUnplayableSources(nextVideo);
 
-                function attemptPlayMutedFallback() {
-                    nextVideo.muted = true;
-                    nextVideo.volume = 0;
-                    withSound = false;
-                    return nextVideo.play().catch(function () {
-                        var sources = nextVideo.querySelectorAll('source');
-                        if (sources.length > 1) {
-                            sources[0].remove();
-                            try {
-                                nextVideo.load();
-                                return nextVideo.play().catch(function () {
-                                    handleVideoError(nextSlide);
-                                });
-                            } catch (e) {
-                                handleVideoError(nextSlide);
-                            }
-                            return;
-                        }
-                        handleVideoError(nextSlide);
-                    });
+                // Tant qu’aucune frame n’est peinte, garder le JPG visible au-dessus
+                // (uniquement au premier affichage — pas entre deux clips).
+                if (!videoHasPaintedFrame(nextVideo) && imageRoot && !imageRoot.classList.contains('hi-hero-images--standby')) {
+                    setImagesWaiting(true);
+                }
+
+                function afterPlayStarted() {
+                    if (token !== playToken || mode !== 'videos') return;
+                    armFrameReveal(nextVideo, token);
+                    scheduleVideoAdvance(token, nextVideo);
+                    syncAvUi();
+                }
+
+                if (opts.reset !== false) {
+                    try {
+                        if (nextVideo.currentTime > 0.05) nextVideo.currentTime = 0;
+                    } catch (e) {}
                 }
 
                 var playPromise = nextVideo.play();
-                if (playPromise && playPromise.catch) {
-                    playPromise.catch(function () {
-                        attemptPlayMutedFallback().then(function () {
-                            syncAvUi();
+                if (playPromise && playPromise.then) {
+                    playPromise.then(function () {
+                        if (token !== playToken) return;
+                        afterPlayStarted();
+                    }).catch(function () {
+                        if (token !== playToken) return;
+                        nextVideo.muted = true;
+                        nextVideo.volume = 0;
+                        withSound = false;
+                        nextVideo.play().then(function () {
+                            if (token !== playToken) return;
+                            afterPlayStarted();
                         }).catch(function () {
-                            syncAvUi();
+                            if (token !== playToken) return;
+                            handleVideoError(nextSlide);
                         });
                     });
+                } else {
+                    afterPlayStarted();
                 }
 
                 videoDecodeTimer = setTimeout(function () {
                     videoDecodeTimer = null;
-                    if (mode !== 'videos' || rotationPaused) return;
-                    if (!nextVideo || nextVideo.videoWidth > 0) return;
+                    if (token !== playToken || mode !== 'videos' || rotationPaused) return;
+                    if (!nextVideo) return;
+                    if (videoHasPaintedFrame(nextVideo)) {
+                        revealVideoFrame(nextVideo);
+                        return;
+                    }
+                    // Pas de frame après 5s → repli images
                     handleVideoError(nextSlide);
-                }, 4000);
+                }, 5000);
 
-                if (videoSlides.length > 1) {
-                    videoSafetyTimer = setTimeout(function () {
-                        if (!rotationPaused && mode === 'videos') {
-                            playVideoAt(current + 1);
-                        }
-                    }, VIDEO_MAX_MS);
-                }
                 syncAvUi();
             }
 
@@ -1061,8 +1202,15 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (!slide) return;
                 var idx = videoSlides.indexOf(slide);
                 if (idx === -1) return;
+                var doomed = slide.querySelector('[data-hero-video]');
+                if (doomed) {
+                    try { doomed.pause(); } catch (e) {}
+                    doomed.muted = true;
+                    doomed.volume = 0;
+                }
                 videoSlides.splice(idx, 1);
                 slide.hidden = true;
+                slide.classList.remove('is-active');
                 if (!videoSlides.length) {
                     enableImageMode();
                     return;
@@ -1084,6 +1232,9 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     videoRoot.classList.remove('hi-hero-videos--idle');
                     videoRoot.setAttribute('aria-hidden', 'false');
                 }
+                // JPG visibles jusqu’à la 1re frame (évite le fond noir).
+                setImagesWaiting(true);
+                setImageStandby(false);
                 rotationPaused = false;
                 if (videoSlides.length === 1) {
                     var only = videoSlides[0].querySelector('[data-hero-video]');
@@ -1105,9 +1256,10 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 
             function enableImageMode() {
                 mode = 'images';
+                playToken++;
                 clearVideoSafety();
                 rotationPaused = false;
-                pauseAllVideos(null);
+                pauseAllVideosExcept(null);
                 videoSlides.forEach(function (slide) {
                     slide.classList.remove('is-active');
                 });
@@ -1115,8 +1267,10 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     videoRoot.classList.add('hi-hero-videos--idle');
                     videoRoot.setAttribute('aria-hidden', 'true');
                 }
+                setImagesWaiting(false);
                 setImageStandby(false);
                 current = 0;
+                imageSlideStartedAt = Date.now();
                 updateImageSlide(0);
                 startImageSlider();
                 syncAvUi();
@@ -1132,15 +1286,23 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (!video) return;
                 if (video.paused) {
                     rotationPaused = false;
+                    var token = playToken;
+                    video.muted = true;
                     var playPromise = video.play();
-                    if (playPromise && playPromise.catch) playPromise.catch(function () {});
-                    if (videoSlides.length > 1) {
-                        clearVideoSafety();
-                        videoSafetyTimer = setTimeout(function () {
-                            if (!rotationPaused && mode === 'videos') playVideoAt(current + 1);
-                        }, Math.max(2000, VIDEO_MAX_MS - (video.currentTime * 1000 || 0)));
+                    if (playPromise && playPromise.then) {
+                        playPromise.then(function () {
+                            if (token !== playToken) return;
+                            armFrameReveal(video, token);
+                            scheduleVideoAdvance(token, video);
+                            syncAvUi();
+                        }).catch(function () {
+                            syncAvUi();
+                        });
+                    } else {
+                        armFrameReveal(video, token);
+                        scheduleVideoAdvance(token, video);
+                        syncAvUi();
                     }
-                    syncAvUi();
                     return;
                 }
                 rotationPaused = true;
@@ -1198,11 +1360,25 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     v.addEventListener('play', syncAvUi);
                     v.addEventListener('pause', syncAvUi);
                     v.addEventListener('volumechange', syncAvUi);
+                    v.addEventListener('timeupdate', function () {
+                        if (mode !== 'videos' || v !== activeVideo()) return;
+                        updateMediaClock();
+                        if (imageRoot && imageRoot.classList.contains('hi-hero-images--waiting')) {
+                            revealVideoFrame(v);
+                        }
+                    });
+                    v.addEventListener('loadedmetadata', function () {
+                        if (mode === 'videos' && v === activeVideo()) updateMediaClock();
+                    });
                     v.addEventListener('loadeddata', function () {
                         if (mode === 'videos' && v === activeVideo()) revealVideoFrame(v);
                     });
                     v.addEventListener('playing', function () {
-                        if (mode === 'videos' && v === activeVideo()) revealVideoFrame(v);
+                        if (mode === 'videos' && v === activeVideo()) {
+                            revealVideoFrame(v);
+                            pauseAllVideosExcept(v);
+                            applyAudioToActive();
+                        }
                     });
                     v.addEventListener('error', function () {
                         if (mode === 'videos') handleVideoError(slide);
@@ -1287,6 +1463,11 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotionChange);
                 else if (motionQuery.addListener) motionQuery.addListener(onMotionChange);
             } catch (e) {}
+
+            setInterval(function () {
+                if (mode === 'images') updateMediaClock();
+            }, 250);
+            updateMediaClock();
         })();
 
         (function newsletterForm() {

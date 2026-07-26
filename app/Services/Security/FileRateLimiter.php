@@ -33,6 +33,19 @@ final class FileRateLimiter
         return $this->mutate($key, $decaySeconds, false);
     }
 
+    /**
+     * Supprime le fichier de compteur pour une clé (déblocage ops / honeypot).
+     */
+    public function clear(string $key): bool
+    {
+        $path = base_path('storage/cache/ratelimit') . '/' . hash('sha256', $key) . '.json';
+        if (!is_file($path)) {
+            return true;
+        }
+
+        return @unlink($path);
+    }
+
     private function mutate(string $key, int $decaySeconds, bool $increment): int
     {
         $dir = base_path('storage/cache/ratelimit');

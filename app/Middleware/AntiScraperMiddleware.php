@@ -22,6 +22,13 @@ final class AntiScraperMiddleware
     private const TRAP_WINDOW_SECONDS = 3600;
 
     /**
+     * Nombre de visites honeypot avant ban IP site-wide.
+     * Un seul hit (ex. automation naviguant tous les liens, y compris aria-hidden)
+     * ne doit pas verrouiller un utilisateur légitime pendant 1 h.
+     */
+    private const TRAP_BAN_THRESHOLD = 3;
+
+    /**
      * Sous-chaînes User-Agent typiques des outils de mirroring / scraping abusif.
      * Comparaison insensible à la casse.
      *
@@ -107,13 +114,16 @@ final class AntiScraperMiddleware
             return $next($request);
         }
 
+        $trapKey = 'rl:mirror_trap:' . $ip;
+
         if ($path === self::TRAP_PATH || str_starts_with($path, self::TRAP_PATH . '/')) {
-            $this->limiter->hit('rl:mirror_trap:' . $ip, self::TRAP_WINDOW_SECONDS);
+            $this->limiter->hit($trapKey, self::TRAP_WINDOW_SECONDS);
 
             return $this->forbidden($request);
         }
 
-        if ($this->limiter->attempts('rl:mirror_trap:' . $ip, self::TRAP_WINDOW_SECONDS) > 0) {
+        // Ban site-wide seulement après plusieurs hits honeypot (évite un faux positif).
+        if ($this->limiter->attempts($trapKey, self::TRAP_WINDOW_SECONDS) >= self::TRAP_BAN_THRESHOLD) {
             return $this->forbidden($request);
         }
 
