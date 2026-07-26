@@ -419,5 +419,15 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             text = "Tablette Athena";
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_openTablet";
         };
+        // Sous BtnLink/BtnTablet : ouvre code + QR pour lier un vrai téléphone à l'ATAK Athena
+        // (à vérifier visuellement — dernière rangée du panneau, proche du bord bas).
+        class BtnPhoneQr: BtnLink
+        {
+            idc = 9735;
+            y = QUOTE(COMSPEC_ATHENA_H(8.78));
+            w = QUOTE(COMSPEC_ATHENA_W(2.88));
+            text = "Connecter mon téléphone (QR)";
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_showPhoneConnect";
+        };
     };
 };
