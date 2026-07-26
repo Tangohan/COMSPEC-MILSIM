@@ -37,6 +37,9 @@ class CfgFunctions {
             class pauseManagerOnLoad {};
             class pauseManagerPageLoaded {};
             class pauseManagerJSDialog {};
+            class onInterruptLoad {};
+            class log {};
+            class logDump {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};
@@ -342,27 +345,8 @@ class CfgFactionClasses
 #include "display_webbrowser.hpp"
 #include "display_pause_manager.hpp"
 
-// Bouton Échap "COMSPEC Overwatch" (comme RHS/ASC) — ouvre le panneau de gestion du mod.
-// Coin haut-gauche volontairement isolé : pas d'introspection possible en config sur les
-// contrôles ajoutés par d'autres mods, donc on évite de deviner leur mise en page.
-class RscDisplayInterrupt: RscDisplayInterrupt {
-    class controls: controls {
-        class COMSPEC_PauseManagerButton: RscButton {
-            idc = 9605;
-            text = "COMSPEC Overwatch";
-            x = safezoneX + 0.02 * safezoneW;
-            y = safezoneY + 0.02 * safezoneH;
-            w = 0.16 * safezoneW;
-            h = 0.032 * safezoneH;
-            sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.85)";
-            colorBackground[] = {0.02, 0.16, 0.14, 0.95};
-            colorBackgroundActive[] = {0.03, 0.24, 0.2, 0.95};
-            colorFocused[] = {0.03, 0.24, 0.2, 0.95};
-            colorText[] = {0.85, 0.95, 0.9, 1};
-            action = "[] call comspec_overwatch_connect_fnc_pauseManagerShow;";
-        };
-    };
-};
+// Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
+// — l’héritage config casse le démarrage Arma (Undefined base / Member already defined).
 
 // Modules Zeus temporairement désactivés (conflits pack ACE/ZEN).
 // Réactiver: #include "modules\module_roleplay_zone.hpp" + units[] + A3_Modules_F

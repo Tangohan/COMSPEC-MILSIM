@@ -1,15 +1,23 @@
 ﻿if (!hasInterface) exitWith {};
-if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
-if (isNil "ace_interact_menu_fnc_createAction") exitWith {};
-if (isNil "ace_interact_menu_fnc_addActionToObject") exitWith {};
+if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {
+    ["WARN", "ACE", "ace_interact_menu absent — menus non installés"] call comspec_overwatch_connect_fnc_log;
+};
+if (isNil "ace_interact_menu_fnc_createAction") exitWith {
+    ["ERROR", "ACE", "ace_interact_menu_fnc_createAction indéfini"] call comspec_overwatch_connect_fnc_log;
+};
+if (isNil "ace_interact_menu_fnc_addActionToObject") exitWith {
+    ["ERROR", "ACE", "ace_interact_menu_fnc_addActionToObject indéfini"] call comspec_overwatch_connect_fnc_log;
+};
 
 // Joueur pas encore prêt : reporter (évite addActionToObject sur objNull).
 if (isNull player) exitWith {
+    ["DEBUG", "ACE", "player null — report init +2s"] call comspec_overwatch_connect_fnc_log;
     [{ [] call comspec_overwatch_connect_fnc_initACE }, [], 2] call CBA_fnc_waitAndExecute;
 };
 
 if (missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
+["INFO", "ACE", "Installation menus ACE SelfActions"] call comspec_overwatch_connect_fnc_log;
 
 // Condition CBA : toujours un booléen (évite nil dans le menu ACE).
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
