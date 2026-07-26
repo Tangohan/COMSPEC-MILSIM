@@ -48,6 +48,10 @@ public static class Extension
     private static string _lastPostErrorPath = "";
     private static long _lastPostErrorAtTicks;
 
+    /// <summary>Chemin résolu du journal fichier COMSPEC Overwatch (cache : résolu une seule fois).</summary>
+    private static string? _resolvedLogPath;
+    private static readonly object LogFileLock = new();
+
     private static void NotePostError(int code, string url)
     {
         _lastPostErrorCode = code;
@@ -983,6 +987,17 @@ public static class Extension
             return $"OK|{_lastPostErrorCode}|{_lastPostErrorPath}|{ageSec}";
         }
 
+        // Journal fichier COMSPEC Overwatch (best-effort — diag_log/RPT côté SQF reste la source
+        // de vérité si ce fichier est indisponible). args[0] = ligne déjà formatée par
+        // comspec_overwatch_connect_fnc_log ; aucun secret n'y transite (clé Athena/tokens jamais
+        // inclus par l'appelant SQF). Retour OK|<chemin absolu> pour que le boot puisse le journaliser.
+        if (function == "LogWrite" && args.Length >= 1 && !string.IsNullOrEmpty(args[0]))
+        {
+            var path = ResolveLogFilePath();
+            if (path == null) return "ERR|no_writable_path";
+            return AppendLogLine(path, args[0]!) ? $"OK|{path}" : "ERR|write_failed";
+        }
+
         // Connect : mémorise URL/clé/tenant puis valide la clé via client-init synchrone.
         // Sans clé (et aucune clé déjà mémorisée après Redeem) → OK|connected (SQF : joignable non lié).
         // Avec clé → ERR|unauthorized / tenant_required si le portail refuse (plus de faux « Connecté »).
@@ -1819,6 +1834,78 @@ public static class Extension
             return "ERR|invalid";
         }
         return null;
+    }
+
+    /// <summary>
+    /// Chemin du journal fichier COMSPEC Overwatch : dossier profil Arma local en priorité
+    /// (%LOCALAPPDATA%\Arma 3, là où vit déjà le RPT et où GUIDE-INSTALLATION-TEST.md documente
+    /// COMSPECExtension.log), sinon à côté de la DLL, sinon dossier temporaire système.
+    /// Résolu une seule fois (le résultat est mis en cache) via une écriture de test.
+    /// </summary>
+    private static string? ResolveLogFilePath()
+    {
+        if (_resolvedLogPath != null) return _resolvedLogPath;
+
+        var candidates = new List<string>();
+        try
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrWhiteSpace(localAppData))
+                candidates.Add(Path.Combine(localAppData, "Arma 3", "COMSPECExtension.log"));
+        }
+        catch
+        {
+            // Résolution LOCALAPPDATA indisponible sur cette machine — on retombe sur les autres candidats.
+        }
+        candidates.Add(Path.Combine(AppContext.BaseDirectory, "COMSPECExtension.log"));
+        candidates.Add(Path.Combine(Path.GetTempPath(), "COMSPECExtension.log"));
+
+        foreach (var path in candidates)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.AppendAllText(path, "", Encoding.UTF8);
+                _resolvedLogPath = path;
+                return path;
+            }
+            catch
+            {
+                // Essaie le prochain chemin candidat.
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Append une ligne horodatée au journal fichier. Best-effort : tout échec (droits, disque
+    /// plein, chemin devenu indisponible) est avalé silencieusement — jamais de spam joueur, le
+    /// RPT (diag_log, toujours exécuté côté SQF avant cet appel) reste la trace de secours.
+    /// Rotation simple : renomme en .1 (écrase l'ancien .1) au-delà de ~5 Mo.
+    /// </summary>
+    private static bool AppendLogLine(string path, string line)
+    {
+        lock (LogFileLock)
+        {
+            try
+            {
+                var info = new FileInfo(path);
+                if (info.Exists && info.Length > 5 * 1024 * 1024)
+                {
+                    var rotated = path + ".1";
+                    try { File.Delete(rotated); } catch { /* ignore */ }
+                    File.Move(path, rotated);
+                }
+                var stamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                File.AppendAllText(path, $"[{stamp}] {line}{Environment.NewLine}", Encoding.UTF8);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 
     /// <summary>
