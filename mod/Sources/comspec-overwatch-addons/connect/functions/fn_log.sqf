@@ -1,5 +1,5 @@
 /*
-    Journal technique Overwatch → RPT Arma + tampon mémoire.
+    Journal technique Overwatch → RPT Arma + tampon mémoire + fichier .log (best-effort).
 
     Params:
         0: STRING — niveau "ERROR" | "WARN" | "INFO" | "DEBUG" (défaut INFO)
@@ -9,6 +9,11 @@
 
     Réglage CBA : comspec_overwatch_log_level
         0 = muet, 1 = erreurs, 2 = alertes, 3 = normal, 4 = détaillé
+    Réglage CBA : comspec_overwatch_log_to_file
+        Si activé, chaque ligne est aussi ajoutée à un fichier .log (via COMSPECExtension,
+        commande LogWrite) — best-effort : silencieux si l'extension est absente/indisponible,
+        le RPT (diag_log ci-dessous) reste alors la seule trace. Ne jamais faire transiter de
+        secret (clé Athena, tokens) dans _message/_detail : c'est écrit tel quel sur disque.
 */
 params [
     ["_level", "INFO", [""]],
@@ -48,3 +53,19 @@ if (count _buf > 120) then {
     _buf = _buf select [(count _buf) - 120, 120];
 };
 missionNamespace setVariable ["COMSPEC_DiagLog", _buf, false];
+
+// Fichier .log (best-effort) — jamais côté serveur dédié (pas d'interface/extension GUI).
+if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_file", true]}) then {
+    private _res = "COMSPECExtension" callExtension ["LogWrite", [_line]];
+    if (_res isEqualType "" && {(_res select [0, 3]) == "OK|"}) then {
+        if (!(missionNamespace getVariable ["COMSPEC_LogFilePathLogged", false])) then {
+            missionNamespace setVariable ["COMSPEC_LogFilePathLogged", true, false];
+            private _path = _res select [3, (count _res) - 3];
+            private _pathLine = format ["[COMSPEC Overwatch][INFO][Boot] Journal fichier : %1", _path];
+            diag_log _pathLine;
+            private _buf2 = missionNamespace getVariable ["COMSPEC_DiagLog", []];
+            _buf2 pushBack format ["%1 %2", diag_tickTime toFixed 1, _pathLine];
+            missionNamespace setVariable ["COMSPEC_DiagLog", _buf2, false];
+        };
+    };
+};

@@ -110,6 +110,7 @@ class CfgFunctions {
             class refreshBriefingSlides {};
             class getPhoneConnectInfo {};
             class phoneConnectShow {};
+            class phoneConnectDialogOnLoad {};
             class accountLinkShow {};
             class accountLinkOnLoad {};
             class accountLinkSubmit {};
@@ -185,6 +186,8 @@ class CfgFunctions {
             class webBrowserPageLoaded {};
             class webBrowserJSDialog {};
             class placeMarkerFromTablet {};
+            class mapContextMenuShow {};
+            class mapContextMenuClose {};
             class webBrowserOpenAthena {};
             class webBrowserOpenSystem {};
             class webBrowserJsEscape {};

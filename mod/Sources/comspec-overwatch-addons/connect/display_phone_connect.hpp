@@ -5,7 +5,8 @@
 class COMSPEC_PhoneConnect_Dialog {
     idd = 9971;
     movingEnable = 1;
-    onLoad = "";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_phoneConnectDialogOnLoad;";
+    onUnload = "uiNamespace setVariable ['COMSPEC_PhoneConnect_Display', displayNull];";
 
     class ControlsBackground {
         class PhoneBezel: RscPicture {
@@ -149,7 +150,7 @@ class COMSPEC_PhoneConnect_Dialog {
             h = COMSPEC_PHONE_PH(58);
             sizeEx = 0.026;
             colorBackground[] = {0.06, 0.18, 0.22, 0.95};
-            action = "[] call comspec_overwatch_connect_fnc_phoneConnectShow;";
+            action = "[findDisplay 9971] call comspec_overwatch_connect_fnc_phoneConnectDialogOnLoad;";
         };
 
         class CloseButton: RscButton {

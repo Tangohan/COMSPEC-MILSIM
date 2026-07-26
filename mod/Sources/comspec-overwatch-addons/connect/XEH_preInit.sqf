@@ -247,6 +247,16 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_overwatch_log_to_file", "CHECKBOX",
+    [
+        "Écrire aussi dans un fichier journal",
+        "En plus du journal Arma (RPT), enregistre les mêmes lignes dans un fichier texte séparé (COMSPECExtension.log), plus simple à retrouver et à envoyer au support. Sans effet si le journal RPT est réglé sur « Muet »."
+    ],
+    ["COMSPEC Overwatch", "Diagnostic"],
+    true
+] call CBA_fnc_addSetting;
+
+[
     "comspec_overwatch_radio_proximity_enabled", "CHECKBOX",
     ["Surveillance radio à proximité", "Détecte qui émet près de vous (ou de l’opérateur surveillé) et remonte l’état vers Athena. Nécessite un module radio (ACRE2 ou TFAR). Sans module : pastilles grisées."],
     "COMSPEC Overwatch", true

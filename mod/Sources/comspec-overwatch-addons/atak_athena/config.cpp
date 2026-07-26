@@ -56,6 +56,7 @@ class CfgFunctions
             class athena_snapshotVideoFeed {};
             class athena_installDesktopShortcut {};
             class athena_showLinkDialog {};
+            class athena_showPhoneConnect {};
         };
     };
 };

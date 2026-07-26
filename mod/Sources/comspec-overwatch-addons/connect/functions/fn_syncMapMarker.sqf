@@ -11,6 +11,18 @@ if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith {};
 
 if ((_markerName select [0, 1]) == "_") exitWith {};
 
+// Marqueurs déjà transmis à Athena via leur propre appel structuré (POI/QRF/MEDEVAC/service
+// véhicule/forme reçue) ou déjà relayés explicitement par leur fonction d'origine (marqueur
+// tablette) : les exclure du miroir générique évite une double émission de la même donnée et,
+// pour les marqueurs globaux (createMarker), une émission multipliée par client connecté (chaque
+// client reçoit MarkerCreated pour un marqueur global et relaierait sinon N fois le même événement).
+private _mirroredElsewherePrefixes = [
+    "poi_local_", "qrf_contact_", "medevac_lz_", "vehicle_service_",
+    "comspec_roleplay_zone_", "comspec_tabletmk_", "comspec_shape_"
+];
+private _nameLower = toLower _markerName;
+if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) exitWith {};
+
 if (_deleted) exitWith {
     "COMSPECExtension" callExtension ["SendMarker", [_markerName, "{}", "1", "1"]];
 };

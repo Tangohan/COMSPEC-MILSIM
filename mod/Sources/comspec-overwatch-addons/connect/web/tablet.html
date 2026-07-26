@@ -262,6 +262,10 @@
     color: var(--good); text-align: center; padding: 18px 8px;
     font-family: "Roboto Condensed", "Segoe UI", sans-serif;
   }
+  .phone-qr {
+    display: block; margin: 8px auto; width: 180px; height: 180px;
+    background: #fff; padding: 8px; border-radius: 4px;
+  }
   .acc-tx-bar {
     display: flex;
     align-items: center;
@@ -1368,7 +1372,8 @@
       </div>
 
       <div class="panel-view" id="view-phone">
-        <p class="form-hint">Saisissez ce code sur la page de connexion téléphone Athena pour lier votre appareil terrain.</p>
+        <p class="form-hint">Scannez ce QR code avec votre téléphone pour ouvrir l'ATAK Athena dédié, ou saisissez le code sur la page de connexion.</p>
+        <img class="phone-qr" id="phone-qr" alt="QR code de connexion téléphone" style="display:none;" />
         <div class="phone-code" id="phone-code">······</div>
         <p class="form-hint" id="phone-hint">Chargement du code…</p>
         <div class="form-actions">
@@ -2497,16 +2502,27 @@
   window.COMSPEC_setPhoneInfo = function (info) {
     var codeEl = document.getElementById("phone-code");
     var hintEl = document.getElementById("phone-hint");
+    var qrEl = document.getElementById("phone-qr");
     if (!info || !info.ok) {
       if (codeEl) codeEl.textContent = "——";
       if (hintEl) hintEl.textContent = (info && info.error) ? info.error : "Code indisponible pour le moment.";
+      if (qrEl) { qrEl.style.display = "none"; qrEl.removeAttribute("src"); }
       return;
     }
     if (codeEl) codeEl.textContent = info.code || "——";
     if (hintEl) {
       hintEl.textContent = info.expires
-        ? "Saisissez ce code sur Athena · expire bientôt"
-        : "Saisissez ce code sur la page de connexion téléphone Athena.";
+        ? "Scannez le QR ou saisissez ce code sur Athena · expire bientôt"
+        : "Scannez le QR avec votre téléphone, ou saisissez le code sur la page de connexion.";
+    }
+    if (qrEl) {
+      if (info.qrUrl) {
+        qrEl.src = info.qrUrl;
+        qrEl.style.display = "block";
+      } else {
+        qrEl.style.display = "none";
+        qrEl.removeAttribute("src");
+      }
     }
   };
 

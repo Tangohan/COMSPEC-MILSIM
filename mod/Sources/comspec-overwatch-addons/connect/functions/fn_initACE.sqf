@@ -93,8 +93,10 @@ private _orderMenu = [
             params ["_target", "_player", "_params"];
             _params params ["_orderType"];
             private _g = group _player;
-            private _targetName = if (!isNull leader _g) then { groupId _g } else { name _player };
-            [_orderType, _targetName, "", "IMPORTANT", ""] call comspec_overwatch_connect_fnc_issueOrder;
+            private _hasGroupLeader = !isNull leader _g;
+            private _targetName = if (_hasGroupLeader) then { groupId _g } else { name _player };
+            private _targetType = if (_hasGroupLeader) then { "group" } else { "solo" };
+            [_orderType, _targetName, "", "IMPORTANT", "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
             [format ["Ordre %1 transmis vers %2.", _orderType, _targetName], "order", "info"] call comspec_overwatch_connect_fnc_announce;
         },
         _condSync,
