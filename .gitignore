@@ -27,15 +27,17 @@ ressources/
 tcpdf/.git/
 
 # --- Mod Arma : artefacts de build / debug (ne jamais shipper sur Workshop) ---
-mod/@COMSPECOverwatch/**/*.pdb
-mod/@COMSPECOverwatch/net8.0/
-mod/@COMSPECOverwatch/COMSPECExtension_x64.pdb
-mod/COMSPECExtension/bin/
-mod/COMSPECExtension/obj/
-mod/COMSPECExtension/**/*.pdb
-mod/build_log.txt
-mod/build_tmp_out.txt
-# Staging Workshop régénéré par mod/workshop-pack.ps1
-mod/publisher/
-mod/COMSPECOverwatch-workshop.zip
+# Dossier de travail actif : mod/UptoDate/ (voir mod/UptoDate/README.md).
+# mod/Ancienne version de tout/ est une archive figée, non reconstruite.
+mod/UptoDate/@COMSPECOverwatch/**/*.pdb
+mod/UptoDate/@COMSPECOverwatch/net8.0/
+mod/UptoDate/@COMSPECOverwatch/COMSPECExtension_x64.pdb
+mod/UptoDate/COMSPECExtension/bin/
+mod/UptoDate/COMSPECExtension/obj/
+mod/UptoDate/COMSPECExtension/**/*.pdb
+mod/UptoDate/build_log.txt
+mod/UptoDate/build_tmp_out.txt
+# Staging Workshop régénéré par mod/UptoDate/workshop-pack.ps1
+mod/UptoDate/publisher/
+mod/UptoDate/COMSPECOverwatch-workshop.zip
 

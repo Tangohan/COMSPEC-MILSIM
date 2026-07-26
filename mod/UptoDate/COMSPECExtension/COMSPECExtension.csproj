@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <PublishAot>true</PublishAot>
+    <AssemblyName>COMSPECExtension_x64</AssemblyName>
+    <!-- Ne JAMAIS écrire le stub managé (~30 Ko) dans @COMSPECOverwatch :
+         seul `dotnet publish` (Native AOT) doit y déposer la vraie DLL (~5 Mo). -->
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <PublishDir>bin\publish\</PublishDir>
+    <!-- Réduit les chemins machine dans les artefacts Release (PathMap + CI). -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(Configuration)' == 'Release'">true</ContinuousIntegrationBuild>
+    <PathMap>$(MSBuildProjectDirectory)=/COMSPECExtension/</PathMap>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+</Project>
