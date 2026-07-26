@@ -53,7 +53,14 @@ _medevacData set ["pickup_grid", mapGridPosition _pickupPos];
 _medevacData set ["pickup_pos_x", _pickupPos select 0];
 _medevacData set ["pickup_pos_y", _pickupPos select 1];
 _medevacData set ["pickup_elevation", round((getPosASL player) select 2)];
-_medevacData set ["radio_frequency", (call acre_api_fnc_getCurrentRadio) call acre_api_fnc_getRadioChannel]; // ACRE
+private _radioFreq = "";
+if (!isNil "acre_api_fnc_getCurrentRadio" && {!isNil "acre_api_fnc_getRadioChannel"}) then {
+    private _radio = [] call acre_api_fnc_getCurrentRadio;
+    if (_radio isEqualType "" && {_radio != ""}) then {
+        _radioFreq = str ([_radio] call acre_api_fnc_getRadioChannel);
+    };
+};
+_medevacData set ["radio_frequency", _radioFreq];
 _medevacData set ["radio_callsign", groupId (group player)];
 _medevacData set ["patients_t1_urgent", _patientsT1];
 _medevacData set ["patients_t2_urgent", _patientsT2];

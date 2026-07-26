@@ -676,7 +676,7 @@ public static class Extension
     [UnmanagedCallersOnly(EntryPoint = "RVExtensionVersion")]
     public static void RvExtensionVersion(nint output, int outputSize)
     {
-            Output(output, outputSize, "COMSPECExtension 1.17");
+            Output(output, outputSize, "COMSPECExtension 2.0");
     }
 
     private static void Output(nint output, int outputSize, string data)
@@ -949,7 +949,13 @@ public static class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
-            return "OK|COMSPECExtension 1.17";
+            return "OK|COMSPECExtension 2.0";
+        }
+
+        // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
+        if (function == "GetVersion")
+        {
+            return FormatAtakExtArray("2.0", "COMSPEC Extension ATAK");
         }
 
         // Alerte Windows : marche à suivre pour lier le compte Athena (bloquant, thread OK).
@@ -1757,6 +1763,47 @@ public static class Extension
                 // Slash avant pour RscPicture / setObjectTexture sous Windows (Arma).
                 var armaPath = destPath.Replace('\\', '/');
                 return "OK|" + armaPath;
+            }
+
+            // --- Commandes ATAK Phase 1-2 (retour JSON ["OK"|"ERROR", message] pour SQF) ---
+            if (function == "SubmitTacticalReport" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/reports", json, token);
+            }
+            if (function == "CreatePOI" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/poi", json, token);
+            }
+            if (function == "RequestMEDEVAC" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/medevac", json, token);
+            }
+            if (function == "RequestQRF" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostAtakJsonSync("/api/atak/qrf", json, token);
+            }
+            if (function == "UpdateVehicleTracking" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/vehicles", out var vehUri, out var vehErr) || vehUri is null)
+                    return FormatAtakExtArray("ERROR", vehErr);
+                EnqueueOrSend(vehUri.AbsoluteUri, EnrichAtakPayload(json));
+                return FormatAtakExtArray("OK", "queued");
+            }
+            if (function == "RequestVehicleService" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostVehicleServiceSync(json, token);
             }
         }
         catch (OperationCanceledException)
@@ -2832,6 +2879,177 @@ public static class Extension
         catch
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Retour callExtension attendu par SQF Phase 1-2 : ["OK","msg"] ou ["ERROR","msg"].
+    /// </summary>
+    private static string FormatAtakExtArray(string status, string message)
+    {
+        var msg = (message ?? "").Replace('\n', ' ').Replace('\r', ' ').Replace('|', ' ');
+        if (msg.Length > 480) msg = msg.Substring(0, 480);
+        return $"[\"{EscapeJson(status)}\",\"{EscapeJson(msg)}\"]";
+    }
+
+    /// <summary>
+    /// Complète le JSON SQF avec mapId, steam_uid et session_token si absents.
+    /// </summary>
+    private static string EnrichAtakPayload(string? jsonBody)
+    {
+        if (string.IsNullOrWhiteSpace(jsonBody)) return "{\"mapId\":1}";
+        var trimmed = jsonBody.Trim();
+        if (!trimmed.StartsWith('{')) return "{\"mapId\":1}";
+        try
+        {
+            using var doc = JsonDocument.Parse(trimmed);
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                var hasMapId = false;
+                foreach (var prop in doc.RootElement.EnumerateObject())
+                {
+                    if (prop.NameEquals("mapId") || prop.NameEquals("map_id")) hasMapId = true;
+                    prop.WriteTo(writer);
+                }
+                if (!hasMapId) writer.WriteNumber("mapId", 1);
+                if (_steamUid.Length > 0 && !doc.RootElement.TryGetProperty("steam_uid", out _))
+                    writer.WriteString("steam_uid", _steamUid);
+                if (_sessionToken.Length > 0 && !doc.RootElement.TryGetProperty("session_token", out _))
+                    writer.WriteString("session_token", _sessionToken);
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return trimmed;
+        }
+    }
+
+    private static string PostAtakJsonSync(string relativePath, string jsonBody, CancellationToken token)
+    {
+        if (!TryBuildRequestUri(_baseUrl, relativePath, out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        try
+        {
+            var payload = EnrichAtakPayload(jsonBody);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            var body = ReadContentUtf8(resp, token);
+            if (resp.IsSuccessStatusCode)
+                return FormatAtakExtArray("OK", "Success");
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 401 || code == 403) return FormatAtakExtArray("ERROR", "unauthorized");
+            if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
+                return FormatAtakExtArray("ERROR", "migration_required");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Upsert véhicule par callsign puis POST /api/atak/vehicles/{id}/service.
+    /// </summary>
+    private static string PostVehicleServiceSync(string jsonBody, CancellationToken token)
+    {
+        try
+        {
+            var payload = EnrichAtakPayload(jsonBody);
+            using var doc = JsonDocument.Parse(payload);
+            var root = doc.RootElement;
+            var callsign = root.TryGetProperty("vehicle_callsign", out var cs) ? (cs.GetString() ?? "") : "";
+            if (callsign.Length == 0)
+                return FormatAtakExtArray("ERROR", "vehicle_callsign required");
+
+            var upsertSb = new StringBuilder("{\"mapId\":1,\"vehicle_callsign\":\"")
+                .Append(EscapeJson(callsign)).Append('"');
+            if (root.TryGetProperty("service_pos_x", out var px) && px.ValueKind == JsonValueKind.Number)
+                upsertSb.Append(",\"pos_x\":").Append(px.GetDouble().ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+            if (root.TryGetProperty("service_pos_y", out var py) && py.ValueKind == JsonValueKind.Number)
+                upsertSb.Append(",\"pos_y\":").Append(py.GetDouble().ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+            upsertSb.Append('}');
+            var upsertJson = upsertSb.ToString();
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/vehicles", out var upsertUri, out var upsertErr) || upsertUri is null)
+                return FormatAtakExtArray("ERROR", upsertErr);
+
+            var upsertResp = SendJsonPost(upsertUri.AbsoluteUri, EnrichAtakPayload(upsertJson), token);
+            var upsertBody = ReadContentUtf8(upsertResp, token);
+            if (!upsertResp.IsSuccessStatusCode)
+                return FormatAtakExtArray("ERROR", $"Vehicle lookup failed: HTTP {(int)upsertResp.StatusCode}");
+
+            using var upsertDoc = JsonDocument.Parse(upsertBody);
+            if (!upsertDoc.RootElement.TryGetProperty("id", out var idProp) || idProp.ValueKind != JsonValueKind.Number)
+                return FormatAtakExtArray("ERROR", "vehicle_id not returned");
+            var vehicleId = idProp.GetInt32();
+            if (vehicleId <= 0) return FormatAtakExtArray("ERROR", "vehicle_id invalid");
+
+            var serviceSb = new StringBuilder("{");
+            var first = true;
+            void AppendStr(string key, string? val)
+            {
+                if (string.IsNullOrEmpty(val)) return;
+                if (!first) serviceSb.Append(',');
+                serviceSb.Append('"').Append(key).Append("\":\"").Append(EscapeJson(val)).Append('"');
+                first = false;
+            }
+            void AppendNum(string key, double val)
+            {
+                if (!first) serviceSb.Append(',');
+                serviceSb.Append('"').Append(key).Append("\":")
+                    .Append(val.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+                first = false;
+            }
+            if (root.TryGetProperty("request_type", out var rt) && rt.ValueKind == JsonValueKind.String)
+                AppendStr("request_type", rt.GetString());
+            if (root.TryGetProperty("priority", out var pr) && pr.ValueKind == JsonValueKind.String)
+                AppendStr("priority", pr.GetString());
+            if (root.TryGetProperty("request_details", out var rd) && rd.ValueKind == JsonValueKind.String)
+                AppendStr("request_details", rd.GetString());
+            if (root.TryGetProperty("requested_by_callsign", out var rb) && rb.ValueKind == JsonValueKind.String)
+                AppendStr("requested_by_callsign", rb.GetString());
+            if (root.TryGetProperty("service_pos_x", out var sx) && sx.ValueKind == JsonValueKind.Number)
+                AppendNum("service_pos_x", sx.GetDouble());
+            if (root.TryGetProperty("service_pos_y", out var sy) && sy.ValueKind == JsonValueKind.Number)
+                AppendNum("service_pos_y", sy.GetDouble());
+            serviceSb.Append('}');
+            var serviceJson = serviceSb.ToString();
+            var servicePath = $"/api/atak/vehicles/{vehicleId}/service";
+            if (!TryBuildRequestUri(_baseUrl, servicePath, out var serviceUri, out var serviceErr) || serviceUri is null)
+                return FormatAtakExtArray("ERROR", serviceErr);
+
+            var serviceResp = SendJsonPost(serviceUri.AbsoluteUri, serviceJson, token);
+            var serviceBody = ReadContentUtf8(serviceResp, token);
+            if (serviceResp.IsSuccessStatusCode)
+                return FormatAtakExtArray("OK", "Service requested");
+            return FormatAtakExtArray("ERROR", $"HTTP {(int)serviceResp.StatusCode}: {(serviceBody.Length > 200 ? "" : serviceBody)}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
         }
     }
 
