@@ -1771,6 +1771,47 @@ class AtakApiController
             }
             throw $e;
         }
+
+        // fn_requestMEDEVAC.sqf envoie un 9-line structuré (patients par triage, sécurité LZ,
+        // fréquence radio, etc.) mais casRepo->createMedevac() ne lit que line1..line9 : ces champs
+        // étaient silencieusement perdus. On les persiste aussi dans le système MEDEVAC étendu
+        // (triage/golden hour/assignation) qui existe déjà mais n'était alimenté par aucun endpoint.
+        if (isset($body['pickup_grid']) || isset($body['patients_t1_urgent'])) {
+            try {
+                $extendedRepo = new \App\Repositories\AtakMedevacRepository();
+                $extendedRepo->create([
+                    'tenant_id' => $tenantId,
+                    'context_id' => $mapId,
+                    'medevac_number' => $extendedRepo->generateMedevacNumber($tenantId, $mapId),
+                    'priority' => $body['priority'] ?? 'URGENT',
+                    'pickup_grid' => $body['pickup_grid'] ?? null,
+                    'pickup_pos_x' => $body['pickup_pos_x'] ?? null,
+                    'pickup_pos_y' => $body['pickup_pos_y'] ?? null,
+                    'pickup_elevation' => $body['pickup_elevation'] ?? null,
+                    'radio_frequency' => $body['radio_frequency'] ?? null,
+                    'radio_callsign' => $body['radio_callsign'] ?? null,
+                    'patients_t1_urgent' => $body['patients_t1_urgent'] ?? 0,
+                    'patients_t2_urgent' => $body['patients_t2_urgent'] ?? 0,
+                    'patients_t3_delayed' => $body['patients_t3_delayed'] ?? 0,
+                    'patients_t4_expectant' => $body['patients_t4_expectant'] ?? 0,
+                    'patients_litter' => $body['patients_litter'] ?? 0,
+                    'patients_ambulatory' => $body['patients_ambulatory'] ?? 0,
+                    'security_status' => $body['security_status'] ?? 'NO_ENEMY',
+                    'lz_marking' => $body['lz_marking'] ?? 'NONE',
+                    'lz_marking_color' => $body['lz_marking_color'] ?? null,
+                    'patient_nationality' => $body['patient_nationality'] ?? 'FRIENDLY',
+                    'patient_status' => $body['patient_status'] ?? 'MILITARY',
+                    'nbc_contamination' => $body['nbc_contamination'] ?? 'NONE',
+                    'requested_by_callsign' => $body['requested_by_callsign'] ?? $author,
+                    'requested_by_unit' => $body['requested_by_unit'] ?? null,
+                ]);
+            } catch (\Throwable $e) {
+                // Best-effort : la table étendue peut ne pas être migrée sur tous les déploiements
+                // (migrations/2026_07_24_004_atak_medevac_extended.sql) — ne bloque jamais la réponse
+                // principale, qui reste celle du système historique (line1..line9) déjà en production.
+            }
+        }
+
         $this->activityLog->record(
             $tenantId,
             $mapId,

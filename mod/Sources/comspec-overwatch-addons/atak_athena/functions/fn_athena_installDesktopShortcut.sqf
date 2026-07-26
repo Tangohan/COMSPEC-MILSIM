@@ -98,7 +98,9 @@ COMSPEC_Athena_desktopShortcutPFH = [{
         _display setVariable ["COMSPEC_Athena_desktopShortcut", (_created select 0) select 0];
         _display setVariable ["COMSPEC_Athena_desktopShortcutLabel", (_created select 0) select 1];
     };
-}, 0.25] call CBA_fnc_addPerFrameHandler;
+// 1 s : détection de l'ouverture du téléphone cTab (pas d'event "display opened" disponible côté
+// cTab) — un délai d'1 s avant l'apparition des icônes reste imperceptible pour l'utilisateur.
+}, 1] call CBA_fnc_addPerFrameHandler;
 
 COMSPEC_Athena_desktopShortcutShowPFH = [{
     private _display = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
@@ -122,4 +124,6 @@ COMSPEC_Athena_desktopShortcutShowPFH = [{
         if (!isNull _ctrl) then { _ctrl ctrlShow _show; };
         if (!isNull _lbl) then { _lbl ctrlShow _show; };
     } forEach _pairs;
-}, 0.25] call CBA_fnc_addPerFrameHandler;
+// 0.5 s : suffisant pour suivre un changement de mode desktop/app sans le ressentir, pour 4x
+// moins de travail par seconde que le polling précédent (0.25 s).
+}, 0.5] call CBA_fnc_addPerFrameHandler;
