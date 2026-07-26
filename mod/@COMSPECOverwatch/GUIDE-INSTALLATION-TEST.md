@@ -52,6 +52,15 @@
    - Clé d'accès : `[VOTRE_TOKEN_ATAK]`
    - ID Communauté : `[ID_NUMERIQUE]`
 
+#### D. Réafficher l’accord d’accès anticipé (NDA)
+
+Sans console debug :
+
+1. **Options CBA** : Options → Configurer les mods → **COMSPEC Overwatch** → cocher **« Réafficher l’accord d’accès anticipé »** puis valider. L’accord s’ouvre à nouveau ; la case se décoche seule.
+2. **Hub** (Ctrl+Shift+K ou menu Applications) : bouton **« Relire l’accord »** à côté de Connexion Athena.
+
+L’inscription à l’accès anticipé déjà enregistrée n’est pas annulée ; seul le rappel d’acceptation locale est réinitialisé.
+
 ### 3. Vérification Extension
 
 Lancer mission → ouvrir console debug (Shift+Tab) :

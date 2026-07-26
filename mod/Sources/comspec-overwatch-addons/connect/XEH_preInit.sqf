@@ -1,3 +1,28 @@
+// Compat modpack : si Mavic/mavik lit ses settings CBA avant enregistrement
+// (ou si l’enregistrement a échoué), éviter le spam "variable indéfinie".
+private _comspecCompatMavic = {
+    if (isNil "mavic_setting_enableConnectionDistance") then {
+        mavic_setting_enableConnectionDistance = false;
+    };
+    // Variantes / settings souvent lus au connect drone
+    {
+        if (isNil _x) then { missionNamespace setVariable [_x, false]; };
+    } forEach [
+        "mavic_setting_enableConnectionDistance",
+        "mavic_setting_connectionDistance",
+        "mavic_setting_enableConnectDistance"
+    ];
+};
+[] call _comspecCompatMavic;
+
+// Stub ZEN attributes si ZEN incomplet dans le pack (évite zen_attributes_fnc_addAttribute nil)
+if (isNil "zen_attributes_fnc_addAttribute") then {
+    zen_attributes_fnc_addAttribute = {
+        // no-op compat — ZEN partiel / mauvais ordre de chargement
+        false
+    };
+};
+
 [
     "comspec_overwatch_enabled", "CHECKBOX",
     ["Enable Overwatch", "Athena connection"],
@@ -158,6 +183,41 @@
     "comspec_overwatch_athena_link_help", "CHECKBOX",
     ["Windows reminder - link Athena account", "At launch, if account not yet linked, displays Windows alert with instructions. Uncheck to stop seeing this reminder."],
     "COMSPEC Overwatch", true
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_reset_beta_nda", "CHECKBOX",
+    [
+        "Réafficher l’accord d’accès anticipé",
+        "Cochez puis validez : l’accord de confidentialité (accès anticipé) s’affiche à nouveau tout de suite si possible, sinon au prochain retour au menu principal. La case se décoche ensuite automatiquement. Votre inscription à l’accès anticipé n’est pas annulée."
+    ],
+    "COMSPEC Overwatch",
+    false,
+    false,
+    {
+        params ["_value"];
+        if (!_value) exitWith {};
+        0 spawn {
+            // Laisser CBA / le profil se stabiliser (preInit ou Options)
+            uiSleep 0.05;
+            if !(isNil "comspec_overwatch_connect_fnc_resetBetaNdaAck") then {
+                [] call comspec_overwatch_connect_fnc_resetBetaNdaAck;
+            };
+            if !(isNil "CBA_fnc_setSetting") then {
+                ["comspec_overwatch_reset_beta_nda", false, 0, "client", true] call CBA_fnc_setSetting;
+            };
+        };
+    }
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_ace_menus", "CHECKBOX",
+    [
+        "Menus ACE Overwatch",
+        "Ajoute les entrées Overwatch / ATAK dans le menu d’interaction ACE (sur soi). Désactivez si votre pack de mods affiche des erreurs ACE au démarrage (Mavic, IED, ZEN…). Les raccourcis clavier et la tablette restent disponibles."
+    ],
+    "COMSPEC Overwatch",
+    false
 ] call CBA_fnc_addSetting;
 
 [

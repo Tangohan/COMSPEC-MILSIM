@@ -1,22 +1,14 @@
-﻿#include "BIS_AddonInfo.hpp"
-class CfgPatches {
+﻿class CfgPatches {
     class comspec_overwatch_connect {
         name = "COMSPEC Overwatch Connect";
         units[] = {};
         weapons[] = {};
         requiredVersion = 1.0;
-        requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
+        requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings"};
         author = "COMSPEC";
         version = 1.20;
         versionStr = "1.2.0";
         versionAr[] = {1, 2, 0};
-    };
-};
-
-// CBA Extended Event Handlers
-class Extended_PostInit_EventHandlers {
-    class comspec_overwatch_connect {
-        clientInit = "call compile preprocessFileLineNumbers '\z\comspec_overwatch\addons\connect\XEH_postInitClient.sqf'";
     };
 };
 
@@ -40,6 +32,7 @@ class CfgFunctions {
             class forceSyncData {};
             class sendIntel {};
             class initACE {};
+            class aceAddSelfAction {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};
@@ -117,6 +110,12 @@ class CfgFunctions {
             class refreshAccountLinkStatusBar {};
             class showAthenaLinkHelp {};
             class showBetaAccessNote {};
+            class ndaTexts {};
+            class ndaOnLoad {};
+            class ndaSetLanguage {};
+            class ndaAccept {};
+            class ndaDecline {};
+            class resetBetaNdaAck {};
             class registerBetaClient {};
             class onMainMenuLoad {};
             class getCallsign {};
@@ -330,6 +329,7 @@ class CfgFactionClasses
 #include "display_briefing.hpp"
 #include "display_phone_connect.hpp"
 #include "display_account_link.hpp"
+#include "display_nda.hpp"
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
 #include "display_order_inbox.hpp"
@@ -337,6 +337,6 @@ class CfgFactionClasses
 #include "display_device.hpp"
 #include "display_webbrowser.hpp"
 
-// Modules Zeus/Eden roleplay
-#include "modules\module_roleplay_zone.hpp"
+// Modules Zeus temporairement désactivés (conflits pack ACE/ZEN).
+// Réactiver: #include "modules\module_roleplay_zone.hpp" + units[] + A3_Modules_F
 #include "CfgEventHandlers.hpp"

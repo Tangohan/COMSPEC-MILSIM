@@ -1,6 +1,6 @@
 /*
     Note d’accès anticipé (bêta) — une fois par profil jusqu’à confirmation.
-    Affichage via MessageBox Windows (menu principal ou repli mission).
+    Affiche un dialogue Arma natif (NDA FR/EN) ; MessageBox Windows en repli.
 */
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
@@ -13,9 +13,26 @@ if (_alreadyAck) exitWith {
     };
 };
 
+if (!isNull (uiNamespace getVariable ["COMSPEC_NDA_Display", displayNull])) exitWith {};
 if (missionNamespace getVariable ["COMSPEC_BetaAccessNoteShown", false]) exitWith {};
-missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
 
+private _opened = false;
+private _parent = findDisplay 0;
+if (isNull _parent) then { _parent = findDisplay 46; };
+if (!isNull _parent) then {
+    private _child = _parent createDisplay "COMSPEC_NDA_Dialog";
+    _opened = !isNull _child;
+};
+if (!_opened) then {
+    _opened = createDialog "COMSPEC_NDA_Dialog";
+};
+
+if (_opened) exitWith {
+    missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
+};
+
+// Repli : MessageBox Windows via l’extension
+missionNamespace setVariable ["COMSPEC_BetaAccessNoteShown", true, false];
 private _raw = ["COMSPECExtension" callExtension ["ShowBetaAccessNote", []]] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };

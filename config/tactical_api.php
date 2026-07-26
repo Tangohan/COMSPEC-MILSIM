@@ -13,6 +13,9 @@ return [
         '/api/atak/game-link/redeem',
         // Steam déjà lié au compte : l’UID Steam du client Arma fait office de preuve (pas de clé ATAK).
         '/api/atak/game-link/by-steam',
+        // Accès anticipé Overwatch : 1er lancement menu principal, sans clé ATAK
+        // (extension RegisterBeta — voir AtakApiController::betaRegister, rate-limité).
+        '/api/atak/beta-register',
         // QR téléphone : token dans l’URL (TTL court) — scannable / téléchargeable sans clé
         // (exemption dynamique dans ComspecApiKeyAuth::pathRequiresProtection pour …/qr.png).
     ],

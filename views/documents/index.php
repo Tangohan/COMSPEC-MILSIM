@@ -10,6 +10,8 @@ $entity_id = $entity_id ?? null;
 $collections = $collections ?? [];
 $viewerAccreditationLevel = $viewerAccreditationLevel ?? 'interne';
 $canManageCollections = (bool) ($canManageCollections ?? false);
+/** Même droit que la gestion documentaire : documents.upload ou accès administration */
+$canUploadDocuments = (bool) ($canUploadDocuments ?? $canManageCollections);
 $focus = (string) ($focus ?? '');
 /** @var array<int, list<array{label: string, href: string}>> $documentTrainingRefs */
 $documentTrainingRefs = $documentTrainingRefs ?? [];
@@ -41,16 +43,35 @@ $baseUrlList = url('documents');
         <!-- En-tête -->
         <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.14)]">
             <div class="border-b border-slate-100 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-6 py-8 md:px-10 md:py-10">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white">Portail</span>
-                    <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Lecture</span>
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="inline-flex rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white">Portail</span>
+                            <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Lecture</span>
+                            <?php if ($canUploadDocuments): ?>
+                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Publication autorisée</span>
+                            <?php endif; ?>
+                        </div>
+                        <h1 class="mt-5 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+                            Documents publiés
+                        </h1>
+                        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
+                            Doctrine, SOP, manuels et ressources opérationnelles accessibles selon vos droits. Recherchez par mot-clé, filtrez par catégorie ou type, triez par date ou par titre.
+                        </p>
+                    </div>
+                    <?php if ($canUploadDocuments): ?>
+                    <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                        <a href="<?= url('documents/gestion/ajout') ?>"
+                           class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800">
+                            Ajouter un document
+                        </a>
+                        <a href="<?= url('documents/gestion') ?>"
+                           class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-50">
+                            Gestion documentaire
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <h1 class="mt-5 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                    Documents publiés
-                </h1>
-                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
-                    Doctrine, SOP, manuels et ressources opérationnelles accessibles selon vos droits. Recherchez par mot-clé, filtrez par catégorie ou type, triez par date ou par titre.
-                </p>
                 <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
                         <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Résultats</p>
@@ -187,8 +208,8 @@ $baseUrlList = url('documents');
                         <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Collections</p>
                         <h2 class="mt-1 text-lg font-black text-slate-950">Collections & dossiers personnalisés</h2>
                     </div>
-                    <?php if ($canManageCollections): ?>
-                    <a href="<?= url('documents/gestion/ajout') ?>" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Créer une collection</a>
+                    <?php if ($canUploadDocuments): ?>
+                    <a href="<?= url('documents/gestion') ?>" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Ouvrir la gestion</a>
                     <?php endif; ?>
                 </div>
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -243,9 +264,15 @@ $baseUrlList = url('documents');
             <div class="px-6 py-10 md:px-8">
                 <?php
                 $ui_empty_title = 'Aucun document à afficher';
-                $ui_empty_description = 'Élargissez la recherche, changez de catégorie ou réinitialisez les filtres. Seuls les documents publiés et autorisés pour votre compte apparaissent ici.';
-                $ui_empty_primary_label = 'Voir tout le catalogue';
-                $ui_empty_primary_href = $baseUrlList;
+                $ui_empty_description = $canUploadDocuments
+                    ? 'Aucun document publié ne correspond à vos filtres. Vous pouvez ajouter un nouveau document ou élargir la recherche.'
+                    : 'Élargissez la recherche, changez de catégorie ou réinitialisez les filtres. Seuls les documents publiés et autorisés pour votre compte apparaissent ici.';
+                $ui_empty_primary_label = $canUploadDocuments ? 'Ajouter un document' : 'Voir tout le catalogue';
+                $ui_empty_primary_href = $canUploadDocuments ? url('documents/gestion/ajout') : $baseUrlList;
+                if ($canUploadDocuments) {
+                    $ui_empty_secondary_label = 'Voir tout le catalogue';
+                    $ui_empty_secondary_href = $baseUrlList;
+                }
                 require base_path('views/partials/ui/empty_state.php');
                 ?>
             </div>

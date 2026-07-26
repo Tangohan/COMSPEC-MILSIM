@@ -3,6 +3,13 @@ if (!hasInterface) exitWith {};
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
+// Re-applique compat Mavic après init settings CBA (au cas où PreInit était trop tôt)
+["CBA_settingsInitialized", {
+    if (isNil "mavic_setting_enableConnectionDistance") then {
+        mavic_setting_enableConnectionDistance = false;
+    };
+}] call CBA_fnc_addEventHandler;
+
 // Callbacks async extension → SQF (inspiré cTab IRL)
 if (isNil "COMSPEC_ExtensionCallbackEH") then {
     COMSPEC_ExtensionCallbackEH = addMissionEventHandler ["ExtensionCallback", {
@@ -13,7 +20,21 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
 ["CBA_settingsInitialized", {
     if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
-    [] call comspec_overwatch_connect_fnc_initACE;
+    // Menus ACE uniquement si l’option est activée (évite conflits pack au démarrage).
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["comspec_overwatch_ace_menus", false])) exitWith {
+            diag_log "[COMSPEC] Menus ACE désactivés (réglage comspec_overwatch_ace_menus)";
+        };
+        if (isNull player) exitWith {
+            [{
+                if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
+                    [] call comspec_overwatch_connect_fnc_initACE;
+                };
+            }, [], 2] call CBA_fnc_waitAndExecute;
+        };
+        [] call comspec_overwatch_connect_fnc_initACE;
+    }, [], 8] call CBA_fnc_waitAndExecute;
 
     // Handshake Athena (inspiré Remastered) puis sync lourde — hors thread principal
     0 spawn {
@@ -108,8 +129,12 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [] call comspec_overwatch_connect_fnc_checkAtakDamage;
     }, 10, []] call CBA_fnc_addPerFrameHandler; // Toutes les 10 secondes
     
-    // Ajouter actions ACE pour réparer l'ATAK
-    0 spawn comspec_overwatch_connect_fnc_addAtakRepairAction;
+    // Actions réparation ATAK — seulement si menus ACE activés
+    [{
+        if (missionNamespace getVariable ["comspec_overwatch_ace_menus", false]) then {
+            [] call comspec_overwatch_connect_fnc_addAtakRepairAction;
+        };
+    }, [], 9] call CBA_fnc_waitAndExecute;
 
     // Déconnexion ATAK à la sortie mission / quit Arma (sync extension, timeout court).
     // Réinitialiser à chaque mission (missionNamespace survit au changement de mission).

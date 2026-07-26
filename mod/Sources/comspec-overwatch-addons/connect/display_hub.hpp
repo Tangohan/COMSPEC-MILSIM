@@ -128,11 +128,23 @@ class COMSPEC_Hub_Dialog {
             text = "Connexion Athena";
             x = 0.355 * safezoneW + safezoneX;
             y = 0.378 * safezoneH + safezoneY;
-            w = 0.29 * safezoneW;
+            w = 0.14 * safezoneW;
             h = 0.032 * safezoneH;
             colorBackground[] = {0.08, 0.22, 0.2, 0.95};
             colorBackgroundActive[] = {0.12, 0.35, 0.3, 1};
             action = "['account'] call comspec_overwatch_connect_fnc_hubSelect;";
+        };
+
+        class BtnNdaReset: RscButton {
+            idc = 9121;
+            text = "Relire l’accord";
+            x = 0.505 * safezoneW + safezoneX;
+            y = 0.378 * safezoneH + safezoneY;
+            w = 0.14 * safezoneW;
+            h = 0.032 * safezoneH;
+            colorBackground[] = {0.08, 0.14, 0.18, 0.95};
+            colorBackgroundActive[] = {0.12, 0.28, 0.32, 1};
+            action = "[] spawn { closeDialog 0; uiSleep 0.05; [] call comspec_overwatch_connect_fnc_resetBetaNdaAck; };";
         };
 
         class BtnCallsign: RscButton {

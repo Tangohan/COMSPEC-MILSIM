@@ -101,5 +101,5 @@ Dossiers locaux : `mod/Sources/@SIT 1erGTD`, `mod/Sources/_sit_extract`
 
 ## TODO (liens à confirmer si besoin)
 
-- [ ] Remplacer l’URL générique GitHub du `mod.cpp` par le dépôt public du projet COMSPEC / Athena, dès qu’il est publié.
+- [x] Remplacer l’URL générique GitHub du `mod.cpp` — pointe désormais vers https://athena.ttrd.fr/public (aligné avec `CfgMods`).
 - [ ] Si une licence distincte est fournie pour l’édition NSWDG (Fredipedia) hors GPL cTab, l’ajouter ici.

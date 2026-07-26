@@ -1,4 +1,15 @@
-﻿if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
+﻿if (!hasInterface) exitWith {};
+if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {};
+if (isNil "ace_interact_menu_fnc_createAction") exitWith {};
+if (isNil "ace_interact_menu_fnc_addActionToObject") exitWith {};
+
+// Joueur pas encore prêt : reporter (évite addActionToObject sur objNull).
+if (isNull player) exitWith {
+    [{ [] call comspec_overwatch_connect_fnc_initACE }, [], 2] call CBA_fnc_waitAndExecute;
+};
+
+if (missionNamespace getVariable ["COMSPEC_ACEMenuReady", false]) exitWith {};
+missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
 
 // Condition CBA : toujours un booléen (évite nil dans le menu ACE).
 private _condEnabled = { missionNamespace getVariable ["comspec_overwatch_enabled", true] };
@@ -13,14 +24,14 @@ private _noChildren = { [] };
 private _mainAction = [
     "COMSPEC_Main", "COMSPEC Overwatch", "", {}, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions"], _mainAction] call ace_interact_menu_fnc_addActionToObject;
+[_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _tabletAction = [
     "COMSPEC_Tablet", "Ouvrir tablette Athena", "", {
         ["bft"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condUi, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _tabletAction] call ace_interact_menu_fnc_addActionToObject;
+[_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _pingAction = [
     "COMSPEC_Ping", "Envoyer Ping", "", {
@@ -28,7 +39,7 @@ private _pingAction = [
         ["Point d'intérêt transmis.", "ping", "info"] call comspec_overwatch_connect_fnc_announce;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _pingAction] call ace_interact_menu_fnc_addActionToObject;
+[_pingAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _medAction = [
     "COMSPEC_Med", "Transmettre Bilan Santé", "", {
@@ -47,7 +58,7 @@ private _medAction = [
         ["Bilan de santé transmis.", "medical", "info"] call comspec_overwatch_connect_fnc_announce;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _medAction] call ace_interact_menu_fnc_addActionToObject;
+[_medAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _medInboxAction = [
     "COMSPEC_MedInbox", "Alertes médicales (triage)", "", {
@@ -57,12 +68,12 @@ private _medInboxAction = [
         && {[] call comspec_overwatch_connect_fnc_canTriageMedical}
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _medInboxAction] call ace_interact_menu_fnc_addActionToObject;
+[_medInboxAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _orderMenu = [
     "COMSPEC_OrderMenu", "Ordres C2", "", {}, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _orderMenu] call ace_interact_menu_fnc_addActionToObject;
+[_orderMenu, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 {
     _x params ["_id", "_label", "_type"];
@@ -82,7 +93,7 @@ private _orderMenu = [
         _noChildren,
         [_type]
     ] call ace_interact_menu_fnc_createAction;
-    [player, 1, ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_OrderMenu"], _a] call ace_interact_menu_fnc_addActionToObject;
+    [_a, ["ACE_SelfActions", "COMSPEC_Main", "COMSPEC_OrderMenu"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 } forEach [
     ["COMSPEC_OrderMove", "Ordonner MOVE", "MOVE"],
     ["COMSPEC_OrderHold", "Ordonner HOLD", "HOLD"],
@@ -95,21 +106,21 @@ private _casAction = [
         ["cas"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condUi, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _casAction] call ace_interact_menu_fnc_addActionToObject;
+[_casAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _manifestAction = [
     "COMSPEC_Manifest", "Flight Manifest (tablette)", "", {
         ["manifest"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condUi, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _manifestAction] call ace_interact_menu_fnc_addActionToObject;
+[_manifestAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _reconAction = [
     "COMSPEC_Recon", "Envoyer photo Recon", "", {
         [] call comspec_overwatch_connect_fnc_captureReconImage;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _reconAction] call ace_interact_menu_fnc_addActionToObject;
+[_reconAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _helmetSnapAction = [
     "COMSPEC_HelmetSnap", "Envoyer aperçu casque", "", {
@@ -127,7 +138,7 @@ private _helmetSnapAction = [
         }
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _helmetSnapAction] call ace_interact_menu_fnc_addActionToObject;
+[_helmetSnapAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _droneSnapAction = [
     "COMSPEC_DroneSnap", "Envoyer aperçu drone", "", {
@@ -158,25 +169,25 @@ private _droneSnapAction = [
         }
     }, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _droneSnapAction] call ace_interact_menu_fnc_addActionToObject;
+[_droneSnapAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _laserAction = [
     "COMSPEC_LaserSync", "Synchroniser code laser", "", {
         [] call comspec_overwatch_connect_fnc_syncLaserCode;
     }, _condSync, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _laserAction] call ace_interact_menu_fnc_addActionToObject;
+[_laserAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _callsignAction = [
     "COMSPEC_Callsign", "Mon indicatif (tablette)", "", {
         ["callsign"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condUi, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _callsignAction] call ace_interact_menu_fnc_addActionToObject;
+[_callsignAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _ordersAction = [
     "COMSPEC_OrderInbox", "Ordres reçus (tablette)", "", {
         ["orders"] call comspec_overwatch_connect_fnc_openTabletView;
     }, _condUi, _noChildren
 ] call ace_interact_menu_fnc_createAction;
-[player, 1, ["ACE_SelfActions", "COMSPEC_Main"], _ordersAction] call ace_interact_menu_fnc_addActionToObject;
+[_ordersAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
