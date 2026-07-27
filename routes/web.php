@@ -612,6 +612,8 @@ return function (Router $router) {
     $router->get('/admin/users', [SystemUsersController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/set-status', [SystemUsersController::class, 'setStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/delete', [SystemUsersController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/purge', [SystemUsersController::class, 'purge'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/purge-anonymises', [SystemUsersController::class, 'purgeAnonymized'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1506,6 +1508,22 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->put('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
     $router->patch('/api/atak/poi/{id}', [AtakApiController::class, 'poiUpdate']);
     
+    // Waypoints partagés et itinéraires de patrouille
+    $router->get('/api/atak/waypoint-routes', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesIndex']);
+    $router->post('/api/atak/waypoint-routes', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesStore']);
+    $router->get('/api/atak/waypoint-routes/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesShow']);
+    $router->put('/api/atak/waypoint-routes/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesUpdate']);
+    $router->patch('/api/atak/waypoint-routes/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesUpdate']);
+    $router->delete('/api/atak/waypoint-routes/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesDestroy']);
+    $router->post('/api/atak/waypoint-routes/{id}/delete', [\App\Controllers\Api\AtakWaypointApiController::class, 'routesDestroy']);
+    $router->get('/api/atak/waypoints', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsIndex']);
+    $router->post('/api/atak/waypoints', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsStore']);
+    $router->put('/api/atak/waypoints/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsUpdate']);
+    $router->patch('/api/atak/waypoints/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsUpdate']);
+    $router->post('/api/atak/waypoints/{id}/reached', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsReached']);
+    $router->delete('/api/atak/waypoints/{id}', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsDestroy']);
+    $router->post('/api/atak/waypoints/{id}/delete', [\App\Controllers\Api\AtakWaypointApiController::class, 'waypointsDestroy']);
+
     // Zones tactiques (LZ, DZ, Objectives, Danger Zones)
     $router->get('/api/atak/zones', [AtakApiController::class, 'tacticalZonesIndex']);
     $router->post('/api/atak/zones', [AtakApiController::class, 'tacticalZonesStore']);

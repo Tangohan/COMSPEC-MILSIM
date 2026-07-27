@@ -535,6 +535,41 @@
   color: #475569;
 }
 
+/* Couverture : dit si l’indicateur produit réellement une valeur sur les fiches. */
+.bo-seniority__coverage--ok {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.bo-seniority__coverage--partial {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.bo-seniority__coverage--warn {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.bo-seniority__coverage--none {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.bo-seniority__coverage-list {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.bo-seniority__coverage-list strong {
+  color: #0f172a;
+}
+
 .bo-seniority__sort {
   width: 4.5rem;
   border: 1px solid #e2e8f0;

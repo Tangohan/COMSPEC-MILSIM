@@ -62,6 +62,49 @@ foreach ($definitions as $def) {
 asort($scopeOptions, SORT_NATURAL | SORT_FLAG_CASE);
 asort($calcOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
+$coverage = is_array($seniorityCoverage ?? null) ? $seniorityCoverage : [];
+$activeMembers = max(0, (int) ($seniorityActiveMembers ?? 0));
+
+/**
+ * Un indicateur peut être actif, visible, et pourtant n’afficher « — » sur toutes les
+ * fiches : il suffit qu’aucune période ne soit enregistrée. La colonne « Couverture »
+ * rend ce cas visible depuis la page plutôt qu’en ouvrant les dossiers un par un.
+ */
+$coverageFor = static function (int $definitionId) use ($coverage, $activeMembers): array {
+    $row = is_array($coverage[$definitionId] ?? null) ? $coverage[$definitionId] : [];
+    $members = (int) ($row['members'] ?? 0);
+    $unusable = (int) ($row['unusable_dates'] ?? 0);
+    $percent = $activeMembers > 0 ? (int) round($members * 100 / $activeMembers) : 0;
+
+    if ($members === 0) {
+        $state = 'none';
+        $text = 'Aucune période';
+    } elseif ($unusable > 0) {
+        $state = 'warn';
+        $text = $members . ' membre' . ($members > 1 ? 's' : '') . ' · ' . $unusable . ' date' . ($unusable > 1 ? 's' : '') . ' inutilisable' . ($unusable > 1 ? 's' : '');
+    } elseif ($activeMembers > 0 && $members < $activeMembers) {
+        $state = 'partial';
+        $text = $members . ' / ' . $activeMembers . ' membres · ' . $percent . ' %';
+    } else {
+        $state = 'ok';
+        $text = $members . ' membre' . ($members > 1 ? 's' : '');
+    }
+
+    return [
+        'state' => $state,
+        'text' => $text,
+        'members' => $members,
+        'periods' => (int) ($row['periods'] ?? 0),
+        'open' => (int) ($row['open_periods'] ?? 0),
+        'unusable' => $unusable,
+        'earliest' => $row['earliest_start'] ?? null,
+    ];
+};
+
+$coverageNone = 0;
+$coverageWarn = 0;
+$coveragePartial = 0;
+
 $rowsForJs = [];
 foreach ($definitions as $def) {
     $id = (int) ($def['id'] ?? 0);
@@ -78,6 +121,17 @@ foreach ($definitions as $def) {
     $hay = function_exists('mb_strtolower')
         ? mb_strtolower($label . ' ' . $scopeInfo['label'] . ' ' . $calcInfo['label'] . ' ' . $sourceTxt, 'UTF-8')
         : strtolower($label . ' ' . $scopeInfo['label'] . ' ' . $calcInfo['label'] . ' ' . $sourceTxt);
+    $cov = $coverageFor($id);
+    // Un indicateur inactif ne produit rien par choix : il ne compte pas comme un manque.
+    if (!empty($def['is_active'])) {
+        match ($cov['state']) {
+            'none' => $coverageNone++,
+            'warn' => $coverageWarn++,
+            'partial' => $coveragePartial++,
+            default => null,
+        };
+    }
+
     $rowsForJs[] = [
         'id' => $id,
         'label' => $label,
@@ -90,6 +144,7 @@ foreach ($definitions as $def) {
         'active' => !empty($def['is_active']),
         'visible' => !empty($def['is_visible']),
         'sort' => (int) ($def['sort_order'] ?? 0),
+        'coverage' => $cov,
         'hay' => $hay,
     ];
 }
@@ -224,6 +279,41 @@ if ($rowsJson === false) {
                 </div>
             </section>
 
+            <?php if ($definitions !== [] && ($coverageNone > 0 || $coverageWarn > 0 || $coveragePartial > 0)): ?>
+                <section class="bo-seniority__panel" aria-labelledby="bo-seniority-coverage-title">
+                    <div class="bo-seniority__panel-head">
+                        <h2 id="bo-seniority-coverage-title">État du calcul</h2>
+                        <p>
+                            Relevé sur les <?= (int) $activeMembers ?> membre<?= $activeMembers > 1 ? 's' : '' ?> actif<?= $activeMembers > 1 ? 's' : '' ?>.
+                            Un indicateur sans période affiche « — » sur toutes les fiches : il est déclaré, mais il ne calcule rien.
+                        </p>
+                    </div>
+                    <ul class="bo-seniority__coverage-list">
+                        <?php if ($coverageNone > 0): ?>
+                        <li>
+                            <strong><?= (int) $coverageNone ?></strong> indicateur<?= $coverageNone > 1 ? 's' : '' ?> actif<?= $coverageNone > 1 ? 's' : '' ?>
+                            sans aucune période enregistrée. Lancez « Mettre à jour tout le personnel » ou
+                            « Compléter depuis le dossier » pour les alimenter.
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($coveragePartial > 0): ?>
+                        <li>
+                            <strong><?= (int) $coveragePartial ?></strong> indicateur<?= $coveragePartial > 1 ? 's' : '' ?>
+                            ne couvre<?= $coveragePartial > 1 ? 'nt' : '' ?> qu’une partie des membres actifs. C’est normal
+                            pour un indicateur qui ne concerne qu’une population (grade, qualification, unité).
+                        </li>
+                        <?php endif; ?>
+                        <?php if ($coverageWarn > 0): ?>
+                        <li>
+                            <strong><?= (int) $coverageWarn ?></strong> indicateur<?= $coverageWarn > 1 ? 's' : '' ?>
+                            comporte<?= $coverageWarn > 1 ? 'nt' : '' ?> des périodes dont la date de début est vide ou invalide.
+                            Ces périodes sont ignorées dans le calcul : reprenez-les sur le dossier concerné.
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </section>
+            <?php endif; ?>
+
             <?php if ($definitions === []): ?>
                 <section class="bo-seniority__panel" aria-labelledby="bo-seniority-empty-title">
                     <div class="bo-seniority__empty">
@@ -311,6 +401,7 @@ if ($rowsJson === false) {
                                         <th scope="col">Indicateur</th>
                                         <th scope="col">Domaine</th>
                                         <th scope="col">Calcul</th>
+                                        <th scope="col">Couverture</th>
                                         <th scope="col" class="bo-seniority__col-num">Ordre</th>
                                         <th scope="col" class="bo-seniority__col-check">Actif</th>
                                         <th scope="col" class="bo-seniority__col-check">Afficher</th>
@@ -333,6 +424,19 @@ if ($rowsJson === false) {
                                         </td>
                                         <td data-label="Calcul">
                                             <span class="bo-seniority__badge bo-seniority__badge--calc" title="<?= htmlspecialchars($row['calcTitle'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($row['calcLabel'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </td>
+                                        <td data-label="Couverture">
+                                            <?php
+                                            $cov = is_array($row['coverage'] ?? null) ? $row['coverage'] : [];
+                                            $covState = (string) ($cov['state'] ?? 'none');
+                                            $covTitle = 'Périodes enregistrées : ' . (int) ($cov['periods'] ?? 0)
+                                                . ' · en cours : ' . (int) ($cov['open'] ?? 0)
+                                                . (($cov['earliest'] ?? null) ? ' · plus ancienne : ' . (string) $cov['earliest'] : '');
+                                            ?>
+                                            <span class="bo-seniority__badge bo-seniority__coverage bo-seniority__coverage--<?= htmlspecialchars($covState, ENT_QUOTES, 'UTF-8') ?>"
+                                                  title="<?= htmlspecialchars($covTitle, ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars((string) ($cov['text'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
                                         </td>
                                         <td class="bo-seniority__col-num" data-label="Ordre">
                                             <input
