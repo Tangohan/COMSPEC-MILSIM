@@ -1310,20 +1310,53 @@ poste d'opération, et son expiration remonte au bureau effectifs.
 
 ### P1 — Prioritaire
 
-| Id | Titre | Effort |
-|---|---|---|
-| P1-1 | Étendre `CsrfPostMiddleware` à `/admin/` | 1 j (dont recette) |
-| P1-2 | Valeur `event` dans `document_links.entity_type` + UI d'attachement | 1 j |
-| P1-3 | `required_qualification_id` sur `community_event_slots` + contrôle à l'inscription | 2 j |
-| P1-4 | `atak_units.user_id` alimentée à la liaison | 2 j |
-| P1-5 | Pré-remplissage du dossier depuis la candidature acceptée | 1 j |
-| P1-6 | Inscription automatique au parcours d'accueil à l'acceptation | 1 j |
-| P1-7 | Tests des 5 workflows critiques (candidature, certificat, RSVP, RBAC, tenant) | 5 j |
-| P1-8 | Journalisation des `catch (\Throwable)` des chemins métier | 2 j |
-| P1-9 | Fusion de `send-attendance-reminders.php` dans `CronRunner` | 0,5 j |
-| P1-10 | Correction du slot « Plus » de la barre mobile | 2 h |
-| P1-11 | Suppression de `certifications` / `user_certifications` + correction du score de readiness | 1 j |
-| P1-12 | Quick wins de contenu (P5–P8) | 1 j |
+| Id | Titre | Effort | État |
+|---|---|---|---|
+| P1-1 | Étendre `CsrfPostMiddleware` à `/admin/` | 1 j (dont recette) | **Fait** |
+| P1-2 | Valeur `event` dans `document_links.entity_type` + UI d'attachement | 1 j | À faire |
+| P1-3 | `required_qualification_id` sur `community_event_slots` + contrôle à l'inscription | 2 j | **Fait** (N1) |
+| P1-4 | `atak_units.user_id` alimentée à la liaison | 2 j | À faire |
+| P1-5 | Pré-remplissage du dossier depuis la candidature acceptée | 1 j | À faire |
+| P1-6 | Inscription automatique au parcours d'accueil à l'acceptation | 1 j | À faire |
+| P1-7 | Tests des 5 workflows critiques (candidature, certificat, RSVP, RBAC, tenant) | 5 j | À faire |
+| P1-8 | Journalisation des `catch (\Throwable)` des chemins métier | 2 j | À faire |
+| P1-9 | Fusion de `send-attendance-reminders.php` dans `CronRunner` | 0,5 j | **Fait** |
+| P1-10 | Correction du slot « Plus » de la barre mobile | 2 h | **Fait** |
+| P1-11 | Suppression de `certifications` / `user_certifications` + correction du score de readiness | 1 j | À faire |
+| P1-12 | Quick wins de contenu (P5–P8) | 1 j | À faire |
+
+#### Détail P1-1 — extension du filet CSRF
+
+Analyse de couverture menée **avant** modification, le middleware étant le point le plus
+sensible du socle :
+
+- 73 actions POST distinctes sous `/admin/` ; **66 validaient déjà** le jeton explicitement.
+- Les 7 restantes : 3 vivent en réalité sous `/back-office/` (donc déjà couvertes), et les
+  formulaires des 4 autres émettent bien un jeton (vérifié vue par vue).
+- **Aucun POST AJAX ne vise `/admin/`** : le JS passe par `/api/admin/…`, hors périmètre du
+  middleware et couvert par des validations en ligne.
+
+Le middleware est réécrit autour de deux listes explicites — `PROTECTED_PREFIXES`
+(`/back-office/`, `/admin/`) et `EXEMPT_PREFIXES` (webhook Stripe, `/integrations/`,
+abonnement calendrier, `/api/`). Au passage, **les exemptions étaient mortes** dans la version
+précédente : elles n'étaient testées qu'après le filtre `/back-office/`, qu'aucune d'elles ne
+pouvait satisfaire. Elles sont désormais évaluées en premier. Décision vérifiée sur 14 chemins.
+
+**Surface restante** : les routes membres et publiques (RSVP, documents, candidature, connexion…)
+restent sur validation en ligne. Les couvrir exigerait de vérifier chaque formulaire public, y
+compris ceux servis à des visiteurs non connectés — chantier distinct, à ne pas mener à l'aveugle.
+
+#### Détail P1-9 et P1-10
+
+**P1-9** — `AttendanceRemindersCronJob` rejoint le registre `CronRunner` (8 tâches). Les
+exécutions sont journalisées dans `cron_job_runs` et visibles en administration, ce dont le
+script autonome était privé. `send-attendance-reminders.php` est conservé mais délègue, pour ne
+pas casser les crontabs déjà en place.
+
+**P1-10** — le cinquième slot de la barre mobile pointait vers `hub`, comme « Accueil », avec un
+état actif câblé à `false` : 20 % de la navigation mobile ne servait à rien. Il devient
+« Ma fiche » (`personnel/me`), actif aussi sur `/dossier-operateur` et `/effectifs` — c'est là
+que le membre consulte désormais ses qualifications.
 
 ### P2 — Amélioration importante
 

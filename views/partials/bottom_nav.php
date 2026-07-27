@@ -15,7 +15,7 @@ $items = [
     ['label' => 'Manœuvres', 'path' => 'manoeuvres', 'match' => 'manoeuvres', 'icon' => 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 012.25 2.25v7.5'],
     ['label' => 'Messages', 'path' => 'boite-reception', 'match' => 'boite-reception', 'icon' => 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75'],
     ['label' => 'Doctrine', 'path' => 'documents', 'match' => 'documents', 'icon' => 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z'],
-    ['label' => 'Plus', 'path' => 'hub', 'match' => 'plus', 'icon' => 'M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z'],
+    ['label' => 'Ma fiche', 'path' => 'personnel/me', 'match' => 'personnel/me', 'icon' => 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z'],
 ];
 ?>
 <nav class="athena-bottom-nav" aria-label="Navigation principale mobile">
@@ -23,7 +23,11 @@ $items = [
         <?php
         $href = url($it['path']);
         $match = (string) $it['match'];
-        $active = $match === 'plus' ? false : ($bnActive($match) || ($match === 'manoeuvres' && ($bnActive('pointage') || $bnActive('evenements'))));
+        $active = $bnActive($match) || ($match === 'manoeuvres' && ($bnActive('pointage') || $bnActive('evenements')));
+        if ($match === 'personnel/me') {
+            // La fiche est aussi atteignable par /dossier-operateur et /effectifs.
+            $active = $active || $bnActive('dossier-operateur') || $bnActive('effectifs');
+        }
         if ($match === 'boite-reception') {
             $active = $bnActive('boite-reception') || $bnActive('activite') || $bnActive('messages');
         }

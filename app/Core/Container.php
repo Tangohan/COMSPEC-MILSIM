@@ -446,6 +446,12 @@ class Container
                 self::get(\App\Services\EmailService::class),
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
+            \App\Services\Cron\Jobs\AttendanceRemindersCronJob::class => new \App\Services\Cron\Jobs\AttendanceRemindersCronJob(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -455,6 +461,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AccountDeletionAnonymizeCronJob::class),
                     self::get(\App\Services\Cron\Jobs\TrainingForgottenDocsDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
