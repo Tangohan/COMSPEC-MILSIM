@@ -1,402 +1,422 @@
 <?php
 declare(strict_types=1);
 
-$presetMeta = $presetMeta ?? [];
-$customPresetKits = $customPresetKits ?? [];
-$allPermissions = $allPermissions ?? [];
-$roles = $roles ?? [];
+/**
+ * Profils de permissions — charte ATHENA.
+ *
+ * L’en-tête de page est rendu par la coque back-office. Trois étapes : choix du rôle,
+ * choix du profil, récapitulatif des ajouts et retraits avant confirmation.
+ *
+ * @var list<array{id: string, label: string, description: string}> $presetMeta
+ * @var list<array<string, mixed>> $customPresetKits
+ * @var list<array<string, mixed>> $allPermissions
+ * @var list<array<string, mixed>> $roles
+ * @var string $presetsPreviewUrl
+ */
+
+$presetMeta = is_array($presetMeta ?? null) ? $presetMeta : [];
+$customPresetKits = is_array($customPresetKits ?? null) ? $customPresetKits : [];
+$allPermissions = is_array($allPermissions ?? null) ? $allPermissions : [];
+$roles = is_array($roles ?? null) ? $roles : [];
 $presetsPreviewUrl = isset($presetsPreviewUrl) ? (string) $presetsPreviewUrl : url('back-office/roles/presets/preview');
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
+
+$maxKits = 24;
+$kitCount = count($customPresetKits);
 ?>
-<div class="mx-auto w-full min-w-0 max-w-6xl space-y-6 px-4 pb-10 pt-8 sm:px-6 lg:pb-12 lg:pt-10">
-    <header class="relative overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/[0.04] md:p-8">
-        <div class="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-600/85 via-sky-500/35 to-transparent" aria-hidden="true"></div>
-        <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase tracking-[0.32em] text-slate-500">Rôles communauté</p>
-                <h1 class="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Profils de permissions</h1>
-                <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
-                    Choisissez un rôle et un profil, puis consultez le <strong class="font-semibold text-slate-800">récapitulatif des changements</strong> avant d’appliquer.
-                    Les profils ne contiennent jamais les habilitations réservées à l’administration de <strong class="font-semibold text-slate-800">l’ensemble du site</strong>.
-                </p>
-            </div>
-            <div class="flex shrink-0 flex-wrap gap-2">
-                <a href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50">← Liste des rôles</a>
-                <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">Back-office</a>
-            </div>
+<?php if ($err): ?>
+<p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $err) ?></p>
+<?php endif; ?>
+<?php if ($ok): ?>
+<p class="ath-flash ath-flash--ok" role="status"><?= $h((string) $ok) ?></p>
+<?php endif; ?>
+
+<div class="ath-note" style="background:#fdf3e2;border-color:#f2ddb4;">
+    <p class="ath-note__title" style="color:#8a5a06;">Toujours exclus des profils automatiques</p>
+    <p class="ath-note__text" style="color:#8a5a06;">
+        Aucun profil ci-dessous n’accorde les habilitations réservées à l’administration de la plateforme
+        pour l’ensemble des communautés, ni la modération forum au niveau global. Cette exclusion est appliquée
+        par le service lui-même, pas par cet écran : elle ne peut pas être contournée depuis ici.
+    </p>
+</div>
+
+<?php if ($roles === []): ?>
+<div class="ath-card" style="padding:20px 22px;">
+    <p class="ath-panel__lead" style="margin:0;">
+        Aucun rôle communauté ou opérationnel n’est disponible. Créez d’abord des rôles depuis
+        <a href="<?= $h(url('back-office/roles')) ?>">la liste des rôles</a>.
+    </p>
+</div>
+<?php else: ?>
+
+<form method="post" action="<?= $h(url('back-office/roles/presets/apply')) ?>" id="preset-apply-form">
+    <?= \App\Core\Csrf::field() ?>
+
+    <div class="ath-panel ath-rise">
+        <span class="ath-step">1</span>
+        <h2 class="ath-panel__title">Rôle à configurer</h2>
+        <p class="ath-panel__lead">Rôles de votre communauté ou opérationnels. Les rôles verrouillés ne sont pas modifiables ici.</p>
+        <div class="ath-form__grid" style="margin-top:13px;">
+            <label class="ath-field">
+                <span class="ath-field__label">Rôle</span>
+                <select name="role_id" id="role_id" required class="ath-field__select">
+                    <option value="">— Choisir un rôle —</option>
+                    <?php foreach ($roles as $r): ?>
+                        <?php
+                        $rid = (int) ($r['id'] ?? 0);
+                        $layer = (string) ($r['role_layer'] ?? '');
+                        $layerFr = $layer === 'intra' ? 'Opérationnel' : 'Communauté';
+                        $locked = !empty($r['is_locked']);
+                        ?>
+                        <option value="<?= $rid ?>"<?= $locked ? ' disabled' : '' ?>><?= $h((string) ($r['name'] ?? '')) ?> (<?= $h($layerFr) ?>)<?= $locked ? ' — verrouillé' : '' ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
         </div>
-    </header>
-
-    <?php if ($err): ?>
-        <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-950 shadow-sm" role="alert"><?= htmlspecialchars($err, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
-    <?php if ($ok): ?>
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-950 shadow-sm" role="status"><?= htmlspecialchars($ok, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
-
-    <div class="rounded-2xl border border-amber-200/90 bg-amber-50/95 px-5 py-4 shadow-sm sm:px-6">
-        <h2 class="text-sm font-black uppercase tracking-wide text-amber-950">Toujours exclus des profils automatiques</h2>
-        <p class="mt-2 text-sm leading-relaxed text-amber-950/90">Aucun profil ci-dessous n’accorde les habilitations réservées à la maintenance de la plateforme pour toutes les communautés, ni la modération forum au niveau global.</p>
     </div>
 
-    <?php if (empty($roles)): ?>
-        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-600">
-            Aucun rôle communauté ou opérationnel. Créez d’abord des rôles (ou exécutez les migrations).
+    <div class="ath-panel ath-rise">
+        <span class="ath-step">2</span>
+        <h2 class="ath-panel__title">Profil à appliquer</h2>
+        <p class="ath-panel__lead">Chaque profil <strong>remplace intégralement</strong> les habilitations du rôle : il n’y a pas de fusion avec l’existant.</p>
+        <div class="ath-choice-grid" style="margin-top:13px;">
+            <?php foreach ($presetMeta as $meta): ?>
+                <?php
+                $pid = (string) ($meta['id'] ?? '');
+                if ($pid === '') {
+                    continue;
+                }
+                ?>
+                <label class="ath-choice">
+                    <input type="radio" name="preset_id" value="<?= $h($pid) ?>" required>
+                    <span class="ath-choice__body">
+                        <span class="ath-choice__name"><?= $h((string) ($meta['label'] ?? $pid)) ?></span>
+                        <span class="ath-choice__desc"><?= $h((string) ($meta['description'] ?? '')) ?></span>
+                    </span>
+                </label>
+            <?php endforeach; ?>
+            <?php foreach ($customPresetKits as $kit): ?>
+                <?php
+                $kid = (string) ($kit['id'] ?? '');
+                if ($kid === '') {
+                    continue;
+                }
+                $kDesc = trim((string) ($kit['description'] ?? ''));
+                $kCount = is_array($kit['permission_ids'] ?? null) ? count($kit['permission_ids']) : 0;
+                ?>
+                <label class="ath-choice">
+                    <input type="radio" name="preset_id" value="<?= $h('custom:' . $kid) ?>" required>
+                    <span class="ath-choice__body">
+                        <span class="ath-tag ath-tag--info" style="margin-bottom:5px;">Kit perso</span>
+                        <span class="ath-choice__name"><?= $h((string) ($kit['label'] ?? $kid)) ?></span>
+                        <span class="ath-choice__desc"><?= $h($kDesc !== '' ? $kDesc : 'Kit personnalisé de permissions.') ?></span>
+                        <span class="ath-choice__meta"><?= (int) $kCount ?> droit<?= $kCount > 1 ? 's' : '' ?> inclus</span>
+                    </span>
+                </label>
+            <?php endforeach; ?>
         </div>
-    <?php else: ?>
-        <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/apply'), ENT_QUOTES, 'UTF-8') ?>" id="preset-apply-form" class="space-y-6">
-            <?= \App\Core\Csrf::field() ?>
+    </div>
 
-            <div class="grid gap-6 lg:grid-cols-12 lg:items-stretch">
-                <div class="flex flex-col rounded-[1.75rem] border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-6 lg:col-span-4">
-                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">1</span>
-                    <h2 class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Rôle à configurer</h2>
-                    <p class="mt-2 text-xs leading-relaxed text-slate-600">Rôles de votre communauté ou opérationnels (hors plateforme).</p>
-                    <label for="role_id" class="sr-only">Rôle</label>
-                    <select name="role_id" id="role_id" required class="<?= htmlspecialchars(bo_select_class('mt-4 w-full rounded-xl border-slate-300 bg-white text-sm font-semibold text-slate-900'), ENT_QUOTES, 'UTF-8') ?>">
-                        <option value="">— Choisir un rôle —</option>
-                        <?php foreach ($roles as $r):
-                            $rid = (int) $r['id'];
-                            $layer = (string) ($r['role_layer'] ?? '');
-                            $layerFr = $layer === 'intra' ? 'Opérationnel' : 'Communauté';
-                            $locked = !empty($r['is_locked']);
-                            ?>
-                            <option value="<?= $rid ?>" <?= $locked ? 'disabled' : '' ?>><?= htmlspecialchars($r['name'] ?? '', ENT_QUOTES, 'UTF-8') ?> (<?= htmlspecialchars($layerFr, ENT_QUOTES, 'UTF-8') ?>)<?= $locked ? ' — verrouillé' : '' ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <p class="mt-3 text-[11px] leading-snug text-slate-500">Les rôles verrouillés ne sont pas modifiables ici.</p>
-                </div>
-
-                <div class="flex min-w-0 flex-col rounded-[1.75rem] border border-slate-200/90 bg-white p-5 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-6 lg:col-span-8">
-                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">2</span>
-                    <h2 class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Profil à appliquer</h2>
-                    <p class="mt-2 text-xs leading-relaxed text-slate-600">Chaque carte remplace <strong class="font-semibold text-slate-800">intégralement</strong> les habilitations du rôle (pas de fusion avec l’existant).</p>
-                    <div class="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        <?php foreach ($presetMeta as $meta):
-                            $pid = (string) ($meta['id'] ?? '');
-                            if ($pid === '') {
-                                continue;
-                            }
-                            $plab = (string) ($meta['label'] ?? $pid);
-                            $pdesc = (string) ($meta['description'] ?? '');
-                            ?>
-                            <label class="flex min-w-0 cursor-pointer gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition hover:border-sky-400/80 hover:bg-sky-50/40 has-[:checked]:border-sky-600 has-[:checked]:bg-sky-50/70 has-[:checked]:ring-2 has-[:checked]:ring-sky-200">
-                                <input type="radio" name="preset_id" value="<?= htmlspecialchars($pid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 border-slate-300 text-sky-600 focus:ring-sky-500">
-                                <span class="min-w-0 flex-1">
-                                    <span class="block text-sm font-bold text-slate-900"><?= htmlspecialchars($plab, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1 block text-xs leading-snug text-slate-600"><?= htmlspecialchars($pdesc, ENT_QUOTES, 'UTF-8') ?></span>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                        <?php foreach ($customPresetKits as $kit):
-                            $kid = (string) ($kit['id'] ?? '');
-                            if ($kid === '') {
-                                continue;
-                            }
-                            $kLabel = (string) ($kit['label'] ?? $kid);
-                            $kDesc = (string) ($kit['description'] ?? '');
-                            $kCount = is_array($kit['permission_ids'] ?? null) ? count($kit['permission_ids']) : 0;
-                            ?>
-                            <label class="flex min-w-0 cursor-pointer gap-3 rounded-2xl border border-violet-200 bg-violet-50/50 p-4 transition hover:border-violet-400 hover:bg-violet-50/80 has-[:checked]:border-violet-600 has-[:checked]:bg-violet-50 has-[:checked]:ring-2 has-[:checked]:ring-violet-200">
-                                <input type="radio" name="preset_id" value="<?= htmlspecialchars('custom:' . $kid, ENT_QUOTES, 'UTF-8') ?>" required class="mt-1 h-4 w-4 shrink-0 border-slate-300 text-violet-600 focus:ring-violet-500">
-                                <span class="min-w-0 flex-1">
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-violet-900">Kit perso</span>
-                                    <span class="mt-1 block text-sm font-bold text-slate-900"><?= htmlspecialchars($kLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1 block text-xs leading-snug text-slate-600"><?= htmlspecialchars($kDesc !== '' ? $kDesc : 'Kit personnalisé de permissions.', ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-1.5 block text-[11px] font-semibold text-violet-800"><?= (int) $kCount ?> droits inclus</span>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
+    <section class="ath-panel ath-panel--dashed ath-rise" aria-labelledby="preset-preview-heading">
+        <div class="ath-panel__head">
+            <div style="min-width:0;">
+                <span class="ath-step ath-step--accent">3</span>
+                <h2 class="ath-panel__title" id="preset-preview-heading">Récapitulatif avant application</h2>
+                <p class="ath-panel__lead">Calcule les <strong>ajouts</strong> et les <strong>retraits</strong> par rapport à l’état actuel du rôle. La confirmation vient ensuite.</p>
             </div>
+            <button type="button" id="btn-load-preview" class="ath-btn ath-btn--solid">Afficher le récapitulatif</button>
+        </div>
+        <p id="preview-status" class="ath-status ath-status--info" role="status" hidden></p>
+        <div id="preview-panel" style="margin-top:15px;" hidden></div>
+    </section>
 
-            <section class="overflow-hidden rounded-[1.75rem] border border-dashed border-slate-300/90 bg-slate-50/80 p-5 shadow-inner sm:p-6 md:p-8" aria-labelledby="preset-preview-heading">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div class="min-w-0">
-                        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-900 text-sm font-black text-white">3</span>
-                        <h2 id="preset-preview-heading" class="mt-3 text-sm font-black uppercase tracking-wide text-slate-900">Récapitulatif avant application</h2>
-                        <p class="mt-2 max-w-xl text-xs leading-relaxed text-slate-600">Calculez les <strong class="font-semibold text-slate-800">ajouts</strong> et <strong class="font-semibold text-slate-800">retraits</strong> par rapport à l’état actuel du rôle. Vous pourrez confirmer à l’étape suivante.</p>
-                    </div>
-                    <button type="button" id="btn-load-preview" class="inline-flex min-h-[2.75rem] w-full shrink-0 items-center justify-center rounded-xl bg-indigo-700 px-6 text-sm font-black text-white shadow-sm transition hover:bg-indigo-800 disabled:pointer-events-none disabled:opacity-45 lg:w-auto">
-                        Afficher le récapitulatif
-                    </button>
-                </div>
+    <div class="ath-warn">
+        <p class="ath-warn__title">Effet immédiat</p>
+        <p class="ath-warn__text">Après confirmation, les membres portant ce rôle disposent aussitôt du nouveau jeu de droits. Vérifiez la fiche du rôle après application.</p>
+    </div>
 
-                <div id="preview-status" class="mt-4 hidden text-sm font-semibold" role="status"></div>
-                <div id="preview-panel" class="mt-5 hidden min-w-0 space-y-5"></div>
-            </section>
+    <div class="ath-form__actions" style="border-top:0;padding-top:0;">
+        <button type="button" id="btn-open-confirm" class="ath-btn ath-btn--solid" disabled>Continuer vers la confirmation…</button>
+        <a href="<?= $h(url('back-office/roles')) ?>" class="ath-btn">Annuler</a>
+    </div>
 
-            <div class="rounded-2xl border border-rose-200/90 bg-rose-50/90 px-5 py-4 shadow-sm sm:px-6">
-                <p class="text-sm font-black uppercase tracking-wide text-rose-950">Rappel important</p>
-                <p class="mt-2 text-sm leading-relaxed text-rose-900/95">Après confirmation, les membres qui ont ce rôle disposent immédiatement du nouveau jeu de droits. Vérifiez la fiche du rôle après application.</p>
-            </div>
+    <dialog id="preset-confirm-dialog" class="ath-dialog">
+        <div class="ath-dialog__head">
+            <h2 class="ath-dialog__title">Confirmer l’application du profil</h2>
+            <p class="ath-dialog__sub">Cette action remplace toutes les habilitations du rôle sélectionné.</p>
+        </div>
+        <div id="dialog-summary-body" class="ath-dialog__body"></div>
+        <div class="ath-dialog__foot">
+            <button type="button" id="dialog-cancel" class="ath-btn">Retour</button>
+            <button type="submit" id="dialog-confirm-submit" class="ath-btn ath-btn--accent">Confirmer et appliquer</button>
+        </div>
+    </dialog>
+</form>
 
-            <div class="sticky bottom-0 z-10 -mx-4 border-t border-slate-200/80 bg-white/95 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:static sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                    <button type="button" id="btn-open-confirm" disabled class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-xl bg-slate-900 px-6 text-sm font-black text-white shadow-md transition hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-40 sm:w-auto">
-                        Continuer vers la confirmation…
-                    </button>
-                    <a href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.75rem] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-6 text-sm font-bold text-slate-700 transition hover:bg-slate-50 sm:w-auto">Annuler</a>
-                </div>
-            </div>
+<h2 class="ath-section-title">Kits personnalisés</h2>
 
-            <dialog id="preset-confirm-dialog" class="max-h-[min(90dvh,42rem)] w-[calc(100%-1.5rem)] max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/50 sm:w-full">
-                <div class="border-b border-slate-100 bg-slate-50/80 px-5 py-4 sm:px-6">
-                    <h2 class="text-lg font-black text-slate-900">Confirmer l’application du profil</h2>
-                    <p class="mt-1 text-xs text-slate-600">Cette action remplace toutes les habilitations du rôle sélectionné.</p>
-                </div>
-                <div id="dialog-summary-body" class="max-h-[min(50vh,22rem)] space-y-3 overflow-y-auto px-5 py-4 text-sm leading-relaxed text-slate-700 sm:px-6"></div>
-                <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 bg-slate-50/90 px-5 py-4 sm:px-6">
-                    <button type="button" id="dialog-cancel" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">Retour</button>
-                    <button type="submit" id="dialog-confirm-submit" class="inline-flex min-h-[2.5rem] items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-black text-white transition hover:bg-emerald-800">Confirmer et appliquer</button>
-                </div>
-            </dialog>
-        </form>
+<form method="post" action="<?= $h(url('back-office/roles/presets/kits/save')) ?>" class="ath-form ath-rise">
+    <div class="ath-form__head">
+        <span class="ath-form__title">Nouveau kit</span>
+        <span class="ath-form__hint"><?= $kitCount ?> / <?= $maxKits ?> kits · réutilisables comme un profil à l’étape 2</span>
+    </div>
+    <?= \App\Core\Csrf::field() ?>
+    <div class="ath-form__grid">
+        <label class="ath-field">
+            <span class="ath-field__label">Nom du kit</span>
+            <input type="text" name="kit_label" maxlength="90" required class="ath-field__input" placeholder="Cellule OPS">
+        </label>
+        <label class="ath-field">
+            <span class="ath-field__label">Description</span>
+            <input type="text" name="kit_description" maxlength="180" class="ath-field__input" placeholder="Courte phrase explicative">
+        </label>
+    </div>
+    <details class="ath-disclosure" style="margin-top:14px;">
+        <summary>
+            <span>Sélectionner les droits <span class="ath-disclosure__count">(<?= count($allPermissions) ?> disponibles)</span></span>
+            <span aria-hidden="true">▼</span>
+        </summary>
+        <div class="ath-picklist" style="padding:9px 12px 11px;">
+            <?php foreach ($allPermissions as $perm): ?>
+            <label class="ath-picklist__item">
+                <input type="checkbox" name="kit_permission_ids[]" value="<?= (int) ($perm['id'] ?? 0) ?>">
+                <span style="min-width:0;">
+                    <span class="ath-picklist__name"><?= $h((string) ($perm['name'] ?? '')) ?></span>
+                    <span class="ath-picklist__ref"><?= $h((string) ($perm['module'] ?? '')) ?> · <?= $h((string) ($perm['slug'] ?? '')) ?></span>
+                </span>
+            </label>
+            <?php endforeach; ?>
+        </div>
+    </details>
+    <div class="ath-form__actions">
+        <button type="submit" class="ath-btn ath-btn--solid"<?= $kitCount >= $maxKits ? ' disabled' : '' ?>>Enregistrer le kit</button>
+        <?php if ($kitCount >= $maxKits): ?>
+        <span class="ath-field__help" style="align-self:center;">Limite de <?= $maxKits ?> kits atteinte : supprimez-en un pour en créer un autre.</span>
+        <?php endif; ?>
+    </div>
+</form>
 
-        <section class="overflow-hidden rounded-[1.75rem] border border-violet-200/90 bg-gradient-to-br from-violet-50/90 via-white to-white p-5 shadow-sm ring-1 ring-violet-900/[0.05] sm:p-6 md:p-8" aria-labelledby="kits-perso-heading">
-            <div class="flex flex-col gap-3 border-b border-violet-200/60 pb-5 sm:flex-row sm:items-end sm:justify-between">
-                <div class="min-w-0">
-                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-violet-800/90">Hors application directe</p>
-                    <h2 id="kits-perso-heading" class="mt-1 text-lg font-black tracking-tight text-slate-900">Kits personnalisés</h2>
-                    <p class="mt-2 max-w-2xl text-sm text-slate-600">Créez des jeux de droits réutilisables (jusqu’à 24), puis sélectionnez-les comme un profil à l’étape 2.</p>
-                </div>
-                <p class="shrink-0 rounded-xl border border-violet-200 bg-white/80 px-3 py-2 text-center text-xs font-bold text-violet-900"><?= count($customPresetKits) ?> / 24 kits</p>
-            </div>
+<?php if ($customPresetKits !== []): ?>
+<?php
+$csrf = \App\Core\Csrf::token();
+$deleteUrl = url('back-office/roles/presets/kits/delete');
 
-            <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/kits/save'), ENT_QUOTES, 'UTF-8') ?>" class="mt-6 space-y-4">
-                <?= \App\Core\Csrf::field() ?>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <div>
-                        <label for="kit_label" class="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-600">Nom du kit</label>
-                        <input type="text" id="kit_label" name="kit_label" maxlength="90" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15" placeholder="Ex. : Cellule OPS">
-                    </div>
-                    <div>
-                        <label for="kit_description" class="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-slate-600">Description</label>
-                        <input type="text" id="kit_description" name="kit_description" maxlength="180" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15" placeholder="Courte phrase explicative">
-                    </div>
-                </div>
-                <details class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <summary class="cursor-pointer text-sm font-bold text-slate-800">Sélectionner les droits <span class="font-normal text-slate-500">(<?= count($allPermissions) ?> disponibles)</span></summary>
-                    <div class="mt-4 max-h-64 space-y-1.5 overflow-y-auto overscroll-contain pr-1">
-                        <?php foreach ($allPermissions as $perm): ?>
-                            <label class="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-xs text-slate-700 transition hover:border-violet-200 hover:bg-violet-50/30">
-                                <input type="checkbox" name="kit_permission_ids[]" value="<?= (int) ($perm['id'] ?? 0) ?>" class="mt-0.5 rounded border-slate-300 text-violet-600 focus:ring-violet-500">
-                                <span class="min-w-0">
-                                    <span class="font-semibold text-slate-900"><?= htmlspecialchars((string) ($perm['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="mt-0.5 block text-[11px] text-slate-500"><?= htmlspecialchars((string) ($perm['module'] ?? ''), ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars((string) ($perm['slug'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-                                </span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                </details>
-                <button type="submit" class="inline-flex min-h-[2.75rem] items-center justify-center rounded-xl bg-violet-700 px-6 text-sm font-black text-white shadow-sm transition hover:bg-violet-800">Enregistrer le kit</button>
-            </form>
+$athTableTitle = 'Kits enregistrés';
+$athTableCount = $kitCount;
+$athTableCols = ['KIT', 'DESCRIPTION', 'DROITS INCLUS|r'];
+$athTableRows = [];
+$athTableRowActions = [];
+foreach ($customPresetKits as $kit) {
+    $kid = (string) ($kit['id'] ?? '');
+    if ($kid === '') {
+        continue;
+    }
+    $kDesc = trim((string) ($kit['description'] ?? ''));
+    $athTableRows[] = [
+        (string) ($kit['label'] ?? $kid),
+        $kDesc !== '' ? $kDesc : '—',
+        (string) (is_array($kit['permission_ids'] ?? null) ? count($kit['permission_ids']) : 0),
+    ];
+    // Balisage d’action construit ici, échappements compris (cf. contrat de ath_table.php).
+    $athTableRowActions[] = '<form method="post" action="' . $h($deleteUrl) . '"'
+        . ' onsubmit="return confirm(\'Supprimer ce kit personnalisé ? Les rôles déjà configurés avec ce kit ne changent pas.\');">'
+        . '<input type="hidden" name="_csrf_token" value="' . $h($csrf) . '">'
+        . '<input type="hidden" name="kit_id" value="' . $h($kid) . '">'
+        . '<button type="submit" class="ath-row-action ath-row-action--danger">Supprimer</button>'
+        . '</form>';
+}
+$athTableActionsLabel = 'SUPPRESSION';
+$athTableFilters = [];
+$athTableMinWidth = '880px';
+$athTableShowCheckbox = false;
+$athTableExportUrl = null;
+$athTablePager = null;
+$athTableRowHrefs = null;
+$athTableFoot = 'Supprimer un kit ne retire aucun droit : les rôles déjà configurés conservent leurs habilitations.';
+require base_path('views/partials/ath_table.php');
+?>
+<?php endif; ?>
 
-            <?php if (!empty($customPresetKits)): ?>
-                <div class="mt-8 border-t border-violet-200/60 pt-6">
-                    <p class="text-[11px] font-black uppercase tracking-wide text-violet-900">Supprimer un kit</p>
-                    <ul class="mt-3 flex flex-wrap gap-2">
-                        <?php foreach ($customPresetKits as $kit): ?>
-                            <?php $kid = (string) ($kit['id'] ?? '');
-                            if ($kid === '') {
-                                continue;
-                            } ?>
-                            <li>
-                                <form method="post" action="<?= htmlspecialchars(url('back-office/roles/presets/kits/delete'), ENT_QUOTES, 'UTF-8') ?>" class="inline" onsubmit="return confirm('Supprimer ce kit personnalisé ?');">
-                                    <?= \App\Core\Csrf::field() ?>
-                                    <input type="hidden" name="kit_id" value="<?= htmlspecialchars($kid, ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-left text-xs font-bold text-rose-800 transition hover:bg-rose-50">Supprimer « <?= htmlspecialchars((string) ($kit['label'] ?? $kid), ENT_QUOTES, 'UTF-8') ?> »</button>
-                                </form>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
-        </section>
-
-        <script>
+<script>
+/*
+ * Assistant en trois temps : le récapitulatif est calculé côté serveur puis rendu ici.
+ * Le balisage produit reste sur la charte ATHENA (classes ath-*), sans quoi le panneau
+ * d'aperçu détonnerait avec le reste de la page.
+ */
 (function () {
-    var previewUrl = <?= json_encode($presetsPreviewUrl, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    var form = document.getElementById('preset-apply-form');
-    var roleEl = document.getElementById('role_id');
-    var btnPreview = document.getElementById('btn-load-preview');
-    var btnConfirm = document.getElementById('btn-open-confirm');
-    var panel = document.getElementById('preview-panel');
-    var statusEl = document.getElementById('preview-status');
-    var dialog = document.getElementById('preset-confirm-dialog');
-    var dialogBody = document.getElementById('dialog-summary-body');
-    var dialogCancel = document.getElementById('dialog-cancel');
+  var previewUrl = <?= json_encode($presetsPreviewUrl, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+  var form = document.getElementById('preset-apply-form');
+  var roleEl = document.getElementById('role_id');
+  var btnPreview = document.getElementById('btn-load-preview');
+  var btnConfirm = document.getElementById('btn-open-confirm');
+  var panel = document.getElementById('preview-panel');
+  var statusEl = document.getElementById('preview-status');
+  var dialog = document.getElementById('preset-confirm-dialog');
+  var dialogBody = document.getElementById('dialog-summary-body');
+  var dialogCancel = document.getElementById('dialog-cancel');
+  if (!form || !roleEl || !btnPreview || !btnConfirm || !panel || !statusEl) return;
 
-    var lastPreview = null;
+  var lastPreview = null;
 
-    function getPresetId() {
-        var r = form.querySelector('input[name="preset_id"]:checked');
-        return r ? r.value : '';
+  var escapeHtml = function (s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  };
+
+  var setStatus = function (tone, text) {
+    statusEl.className = 'ath-status ath-status--' + tone;
+    statusEl.textContent = text;
+    statusEl.hidden = false;
+  };
+
+  var getPresetId = function () {
+    var r = form.querySelector('input[name="preset_id"]:checked');
+    return r ? r.value : '';
+  };
+
+  var renderListGrouped = function (byModule, moduleLabels) {
+    var keys = Object.keys(byModule || {}).sort();
+    if (!keys.length) {
+      return '<p class="ath-panel__lead" style="margin:0;font-style:italic;">Aucune entrée dans cette liste.</p>';
     }
-
-    function moduleLabel(map, key) {
-        return map[key] || map['autre'] || key;
-    }
-
-    function renderListGrouped(byModule, moduleLabels) {
-        var keys = Object.keys(byModule).sort();
-        if (!keys.length) {
-            return '<p class="text-sm text-slate-500 italic">Aucune entrée dans cette liste.</p>';
+    var html = '';
+    keys.forEach(function (mod) {
+      var label = (moduleLabels && (moduleLabels[mod] || moduleLabels['autre'])) || mod;
+      var items = byModule[mod];
+      html += '<details class="ath-disclosure">';
+      html += '<summary><span>' + escapeHtml(label) + ' <span class="ath-disclosure__count">(' + items.length + ')</span></span><span aria-hidden="true">▼</span></summary>';
+      html += '<ul class="ath-disclosure__list">';
+      items.forEach(function (it) {
+        html += '<li><span class="ath-picklist__name">' + escapeHtml(it.name) + '</span>';
+        if (it.slug) {
+          html += '<code class="ath-disclosure__ref">' + escapeHtml(it.slug) + '</code>';
         }
-        var html = '';
-        keys.forEach(function (mod) {
-            var label = moduleLabel(moduleLabels, mod);
-            var items = byModule[mod];
-            html += '<details class="group mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white">';
-            html += '<summary class="flex cursor-pointer select-none items-center justify-between bg-slate-50/90 px-4 py-3 text-sm font-bold text-slate-800 hover:bg-slate-100">';
-            html += '<span>' + escapeHtml(label) + ' <span class="font-normal text-slate-500">(' + items.length + ')</span></span>';
-            html += '<span class="text-xs text-slate-400 transition-transform group-open:rotate-180">▼</span>';
-            html += '</summary>';
-            html += '<ul class="divide-y divide-slate-100 px-4 py-2 text-sm text-slate-700">';
-            items.forEach(function (it) {
-                html += '<li class="py-2">';
-                html += '<span class="font-medium text-slate-900">' + escapeHtml(it.name) + '</span>';
-                if (it.slug) {
-                    html += '<details class="mt-1"><summary class="cursor-pointer text-[11px] text-slate-500 hover:text-slate-700">Référence technique</summary>';
-                    html += '<code class="mt-1 block break-all rounded bg-slate-100 px-2 py-1 text-[11px] text-slate-600">' + escapeHtml(it.slug) + '</code></details>';
-                }
-                html += '</li>';
-            });
-            html += '</ul></details>';
+        html += '</li>';
+      });
+      html += '</ul></details>';
+    });
+    return html;
+  };
+
+  var invalidatePreview = function () {
+    lastPreview = null;
+    panel.hidden = true;
+    panel.innerHTML = '';
+    statusEl.hidden = true;
+    btnConfirm.disabled = true;
+  };
+
+  roleEl.addEventListener('change', invalidatePreview);
+  form.querySelectorAll('input[name="preset_id"]').forEach(function (r) {
+    r.addEventListener('change', invalidatePreview);
+  });
+
+  btnPreview.addEventListener('click', function () {
+    var rid = parseInt(roleEl.value, 10);
+    var pid = getPresetId();
+    if (!rid || !pid) {
+      setStatus('warn', 'Choisissez d’abord un rôle et un profil.');
+      return;
+    }
+    setStatus('info', 'Calcul du récapitulatif…');
+    btnPreview.disabled = true;
+
+    var u = previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?')
+      + 'role_id=' + encodeURIComponent(rid) + '&preset_id=' + encodeURIComponent(pid);
+
+    fetch(u, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            return { ok: false, error: 'Réponse inattendue du serveur.' };
+          }
         });
-        return html;
-    }
-
-    function escapeHtml(s) {
-        if (!s) return '';
-        var d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
-    }
-
-    function invalidatePreview() {
-        lastPreview = null;
-        panel.classList.add('hidden');
-        panel.innerHTML = '';
-        statusEl.classList.add('hidden');
-        btnConfirm.disabled = true;
-    }
-
-    roleEl.addEventListener('change', invalidatePreview);
-    form.querySelectorAll('input[name="preset_id"]').forEach(function (r) {
-        r.addEventListener('change', invalidatePreview);
-    });
-
-    btnPreview.addEventListener('click', function () {
-        var rid = parseInt(roleEl.value, 10);
-        var pid = getPresetId();
-        if (!rid || !pid) {
-            statusEl.className = 'mt-4 text-sm font-semibold text-amber-800';
-            statusEl.classList.remove('hidden');
-            statusEl.textContent = 'Choisissez d’abord un rôle et un profil.';
-            return;
+      })
+      .then(function (j) {
+        btnPreview.disabled = false;
+        if (!j || !j.ok) {
+          setStatus('err', (j && j.error) || 'Impossible de charger le récapitulatif.');
+          panel.hidden = true;
+          btnConfirm.disabled = true;
+          return;
         }
-        statusEl.classList.remove('hidden');
-        statusEl.className = 'mt-4 text-sm font-semibold text-slate-600';
-        statusEl.textContent = 'Calcul du récapitulatif…';
-        btnPreview.disabled = true;
+        lastPreview = { roleId: rid, presetId: pid, payload: j };
+        setStatus('ok', 'Récapitulatif à jour pour « ' + j.role_name + ' » et le profil « ' + j.preset_label + ' ».');
 
-        var u = previewUrl + (previewUrl.indexOf('?') >= 0 ? '&' : '?') + 'role_id=' + encodeURIComponent(rid) + '&preset_id=' + encodeURIComponent(pid);
-        fetch(u, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-            .then(function (res) {
-                return res.text().then(function (text) {
-                    try {
-                        return { httpOk: res.ok, j: JSON.parse(text) };
-                    } catch (e) {
-                        return { httpOk: false, j: { ok: false, error: 'Réponse inattendue du serveur.' } };
-                    }
-                });
-            })
-            .then(function (pack) {
-                btnPreview.disabled = false;
-                var j = pack.j;
-                if (!j || !j.ok) {
-                    statusEl.className = 'mt-4 text-sm font-semibold text-rose-800';
-                    statusEl.textContent = j.error || 'Impossible de charger le récapitulatif.';
-                    panel.classList.add('hidden');
-                    btnConfirm.disabled = true;
-                    return;
-                }
-                lastPreview = { roleId: rid, presetId: pid, payload: j };
-                statusEl.className = 'mt-4 text-sm font-semibold text-emerald-800';
-                statusEl.textContent = 'Récapitulatif à jour pour « ' + j.role_name + ' » et le profil « ' + j.preset_label + ' ».';
-
-                var d = j.diff;
-                var ml = j.module_labels || {};
-
-                var stats = '<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">';
-                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-slate-900">' + d.current_total + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">Avant</p></div>';
-                stats += '<div class="rounded-xl border border-emerald-200 bg-emerald-50/90 p-4 text-center shadow-sm"><p class="text-2xl font-black text-emerald-800">' + d.added_count + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800/80">Ajouts</p></div>';
-                stats += '<div class="rounded-xl border border-rose-200 bg-rose-50/90 p-4 text-center shadow-sm"><p class="text-2xl font-black text-rose-800">' + d.removed_count + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-rose-800/80">Retraits</p></div>';
-                stats += '<div class="rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm"><p class="text-2xl font-black text-indigo-900">' + d.preset_total + '</p><p class="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">Après</p></div>';
-                stats += '</div>';
-
-                if (j.preset_description) {
-                    stats += '<p class="mt-4 rounded-xl border border-slate-200/80 bg-slate-100/60 p-3 text-xs text-slate-600"><span class="font-bold text-slate-800">Contenu du profil :</span> ' + escapeHtml(j.preset_description) + '</p>';
-                }
-
-                var detail = '<div class="grid min-w-0 gap-6 lg:grid-cols-2">';
-                detail += '<div class="min-w-0"><h3 class="mb-2 text-[11px] font-black uppercase tracking-widest text-emerald-800">Habilitations ajoutées</h3>' + renderListGrouped(d.added_by_module, ml) + '</div>';
-                detail += '<div class="min-w-0"><h3 class="mb-2 text-[11px] font-black uppercase tracking-widest text-rose-800">Habilitations retirées</h3>' + renderListGrouped(d.removed_by_module, ml) + '</div>';
-                detail += '</div>';
-
-                if (d.unchanged_count > 0) {
-                    detail += '<p class="mt-4 text-center text-xs text-slate-500">' + d.unchanged_count + ' habilitation(s) déjà présente(s) et conservée(s) sans changement.</p>';
-                }
-
-                panel.innerHTML = stats + detail;
-                panel.classList.remove('hidden');
-                btnConfirm.disabled = false;
-            })
-            .catch(function () {
-                btnPreview.disabled = false;
-                statusEl.className = 'mt-4 text-sm font-semibold text-rose-800';
-                statusEl.textContent = 'Erreur réseau. Réessayez.';
-                btnConfirm.disabled = true;
-            });
-    });
-
-    btnConfirm.addEventListener('click', function () {
-        var rid = parseInt(roleEl.value, 10);
-        var pid = getPresetId();
-        if (!lastPreview || lastPreview.roleId !== rid || lastPreview.presetId !== pid) {
-            statusEl.classList.remove('hidden');
-            statusEl.className = 'mt-4 text-sm font-semibold text-amber-800';
-            statusEl.textContent = 'Le rôle ou le profil a changé : affichez à nouveau le récapitulatif.';
-            return;
-        }
-        var j = lastPreview.payload;
         var d = j.diff;
-        var html = '';
-        html += '<p><span class="font-bold text-slate-900">Rôle :</span> ' + escapeHtml(j.role_name) + '</p>';
-        html += '<p><span class="font-bold text-slate-900">Profil :</span> ' + escapeHtml(j.preset_label) + '</p>';
-        html += '<ul class="mt-2 list-inside list-disc space-y-1 text-slate-700">';
-        html += '<li><strong class="text-emerald-800">' + d.added_count + '</strong> habilitation(s) seront <strong>ajoutées</strong></li>';
-        html += '<li><strong class="text-rose-800">' + d.removed_count + '</strong> habilitation(s) seront <strong>retirées</strong></li>';
-        html += '<li><strong class="text-slate-800">' + d.unchanged_count + '</strong> resteront inchangées</li>';
-        html += '<li>Total après application : <strong class="text-slate-900">' + d.preset_total + '</strong></li>';
-        html += '</ul>';
-        html += '<p class="mt-3 text-xs text-slate-500">En confirmant, vous acceptez de remplacer l’ensemble des droits actuels de ce rôle.</p>';
-        dialogBody.innerHTML = html;
-        if (typeof dialog.showModal === 'function') {
-            dialog.showModal();
-        } else {
-            window.alert('Votre navigateur ne prend pas en charge les fenêtres de confirmation intégrées. Utilisez un navigateur récent.');
-        }
-    });
+        var ml = j.module_labels || {};
 
+        var html = '<div class="ath-stat-grid">';
+        html += '<div class="ath-stat"><p class="ath-stat__value">' + d.current_total + '</p><p class="ath-stat__label">Avant</p></div>';
+        html += '<div class="ath-stat ath-stat--add"><p class="ath-stat__value">' + d.added_count + '</p><p class="ath-stat__label">Ajouts</p></div>';
+        html += '<div class="ath-stat ath-stat--remove"><p class="ath-stat__value">' + d.removed_count + '</p><p class="ath-stat__label">Retraits</p></div>';
+        html += '<div class="ath-stat"><p class="ath-stat__value">' + d.preset_total + '</p><p class="ath-stat__label">Après</p></div>';
+        html += '</div>';
+
+        if (j.preset_description) {
+          html += '<p class="ath-panel__lead" style="margin-top:13px;"><strong>Contenu du profil :</strong> ' + escapeHtml(j.preset_description) + '</p>';
+        }
+
+        html += '<div style="display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:15px;">';
+        html += '<div style="min-width:0;"><p class="ath-field__label">Habilitations ajoutées</p><div style="margin-top:7px;">' + renderListGrouped(d.added_by_module, ml) + '</div></div>';
+        html += '<div style="min-width:0;"><p class="ath-field__label">Habilitations retirées</p><div style="margin-top:7px;">' + renderListGrouped(d.removed_by_module, ml) + '</div></div>';
+        html += '</div>';
+
+        if (d.unchanged_count > 0) {
+          html += '<p class="ath-panel__lead" style="margin-top:13px;">' + d.unchanged_count + ' habilitation(s) déjà présente(s), conservée(s) sans changement.</p>';
+        }
+
+        panel.innerHTML = html;
+        panel.hidden = false;
+        btnConfirm.disabled = false;
+      })
+      .catch(function () {
+        btnPreview.disabled = false;
+        setStatus('err', 'Erreur réseau. Réessayez.');
+        btnConfirm.disabled = true;
+      });
+  });
+
+  btnConfirm.addEventListener('click', function () {
+    var rid = parseInt(roleEl.value, 10);
+    var pid = getPresetId();
+    if (!lastPreview || lastPreview.roleId !== rid || lastPreview.presetId !== pid) {
+      setStatus('warn', 'Le rôle ou le profil a changé : affichez à nouveau le récapitulatif.');
+      return;
+    }
+    var j = lastPreview.payload;
+    var d = j.diff;
+    var html = '';
+    html += '<p><strong>Rôle :</strong> ' + escapeHtml(j.role_name) + '</p>';
+    html += '<p><strong>Profil :</strong> ' + escapeHtml(j.preset_label) + '</p>';
+    html += '<ul>';
+    html += '<li><strong>' + d.added_count + '</strong> habilitation(s) ajoutée(s)</li>';
+    html += '<li><strong>' + d.removed_count + '</strong> habilitation(s) retirée(s)</li>';
+    html += '<li><strong>' + d.unchanged_count + '</strong> inchangée(s)</li>';
+    html += '<li>Total après application : <strong>' + d.preset_total + '</strong></li>';
+    html += '</ul>';
+    html += '<p style="margin-top:11px;color:#6d7a80;">En confirmant, vous remplacez l’ensemble des droits actuels de ce rôle.</p>';
+    dialogBody.innerHTML = html;
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      form.submit();
+    }
+  });
+
+  if (dialogCancel) {
     dialogCancel.addEventListener('click', function () {
-        dialog.close();
+      dialog.close();
     });
+  }
 })();
-        </script>
-    <?php endif; ?>
-</div>
+</script>
+<?php endif; ?>

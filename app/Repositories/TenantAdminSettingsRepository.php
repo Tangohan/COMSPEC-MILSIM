@@ -36,6 +36,10 @@ final class TenantAdminSettingsRepository
                 'public_registrations' => $this->bool($current['portal']['public_registrations'] ?? true),
                 'manual_validation' => $this->bool($current['portal']['manual_validation'] ?? true),
                 'public_wall' => $this->bool($current['portal']['public_wall'] ?? false),
+                // Annonces programmées visibles d’avance sur /alertes. Désactivé par défaut :
+                // une communauté qui prépare ses annonces à l’avance ne veut pas forcément
+                // les dévoiler avant leur date de diffusion.
+                'show_upcoming_alerts' => $this->bool($current['portal']['show_upcoming_alerts'] ?? false),
                 'timezone' => $this->timezone((string) ($current['portal']['timezone'] ?? 'Europe/Paris')),
             ],
             'notifications' => [
@@ -49,6 +53,12 @@ final class TenantAdminSettingsRepository
                 'session_expiration_minutes' => $this->boundedInt($current['security']['session_expiration_minutes'] ?? 120, 15, 1440),
                 'account_lockout_attempts' => $this->boundedInt($current['security']['account_lockout_attempts'] ?? 5, 3, 20),
                 'extended_audit_logging' => $this->bool($current['security']['extended_audit_logging'] ?? false),
+            ],
+            'doctrine' => [
+                // Référentiel doctrinal proposé par les catalogues (ordres, échelons, formation).
+                'referential' => \App\Services\Doctrine\DoctrineReferential::sanitize(
+                    $current['doctrine']['referential'] ?? null
+                ),
             ],
             'atak_defaults' => [
                 'automatic_pairing' => $this->bool($current['atak_defaults']['automatic_pairing'] ?? true),
@@ -79,6 +89,7 @@ final class TenantAdminSettingsRepository
                 'public_registrations' => true,
                 'manual_validation' => true,
                 'public_wall' => false,
+                'show_upcoming_alerts' => false,
                 'timezone' => 'Europe/Paris',
             ],
             'notifications' => [
@@ -92,6 +103,9 @@ final class TenantAdminSettingsRepository
                 'session_expiration_minutes' => 120,
                 'account_lockout_attempts' => 5,
                 'extended_audit_logging' => false,
+            ],
+            'doctrine' => [
+                'referential' => \App\Services\Doctrine\DoctrineReferential::DEFAULT,
             ],
             'atak_defaults' => [
                 'automatic_pairing' => true,

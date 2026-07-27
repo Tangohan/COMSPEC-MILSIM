@@ -2,11 +2,16 @@
 declare(strict_types=1);
 
 /** @var list<array<string, mixed>> $alerts_active */
+/** @var list<array<string, mixed>> $alerts_upcoming */
 /** @var list<array<string, mixed>> $alerts_history */
+/** @var bool $alerts_show_upcoming */
 /** @var string|null $alerts_manage_url */
 
 $alertsActive = is_array($alerts_active ?? null) ? $alerts_active : [];
+$alertsUpcoming = is_array($alerts_upcoming ?? null) ? $alerts_upcoming : [];
 $alertsHistory = is_array($alerts_history ?? null) ? $alerts_history : [];
+// La section « à venir » n’apparaît que si la communauté l’a activée.
+$alertsShowUpcoming = (bool) ($alerts_show_upcoming ?? false);
 $alertsManageUrl = isset($alerts_manage_url) && is_string($alerts_manage_url) && $alerts_manage_url !== ''
     ? $alerts_manage_url
     : null;
@@ -84,7 +89,17 @@ $filterDefs = [
 $csrfToken = \App\Core\Csrf::token();
 $dismissUrl = url('api/alerts/dismiss');
 
-$renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $filterKeyForKind, $formatEndedAt): void {
+/**
+ * Rend une carte d’annonce.
+ *
+ * `$mode` distingue trois situations : `active` (diffusion en cours), `upcoming`
+ * (programmée, pas encore diffusée) et `archived` (diffusion terminée). Une annonce à
+ * venir n’est jamais masquable : la masquer avant sa diffusion la ferait disparaître
+ * sans avoir été lue.
+ */
+$renderCard = static function (array $item, string $mode = 'active') use ($kindLabelFr, $filterKeyForKind, $formatEndedAt): void {
+    $archived = $mode === 'archived';
+    $upcoming = $mode === 'upcoming';
     $rawKind = strtolower(trim((string) ($item['kind'] ?? 'info')));
     $filterKey = $filterKeyForKind($rawKind);
     $kind = $filterKey;
@@ -107,15 +122,17 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
     $scope = strtolower(trim((string) ($item['scope'] ?? 'tenant')));
     $alertId = (int) ($item['id'] ?? 0);
     $dismissible = !$archived
+        && !$upcoming
         && $alertId > 0
         && in_array($scope, ['platform', 'tenant'], true)
         && (!array_key_exists('dismissible', $item) || (bool) $item['dismissible']);
-    $isPinned = !$archived && (
+    $isPinned = !$archived && !$upcoming && (
         !empty($item['pinned'])
         || in_array($rawKind, ['forum_pin', 'notice'], true)
     );
     $endedLabel = $archived ? $formatEndedAt(isset($item['ended_at']) ? (string) $item['ended_at'] : null) : null;
-    $extraClass = $archived ? ' alerts-page__card--archived' : '';
+    $startsAtLabel = $upcoming ? $formatEndedAt(isset($item['starts_at']) ? (string) $item['starts_at'] : null) : null;
+    $extraClass = $archived ? ' alerts-page__card--archived' : ($upcoming ? ' alerts-page__card--upcoming' : '');
     $cardTag = ($ctaUrl !== null && !$dismissible) ? 'a' : 'article';
     $hrefAttr = ($cardTag === 'a') ? ' href="' . htmlspecialchars($ctaUrl, ENT_QUOTES, 'UTF-8') . '"' : '';
     ?>
@@ -137,6 +154,9 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
                 <?php endif; ?>
                 <?php if ($endedLabel !== null): ?>
                     <span class="alerts-page__chip alerts-page__chip--ended">Diffusion terminée le <?= htmlspecialchars($endedLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                <?php endif; ?>
+                <?php if ($startsAtLabel !== null): ?>
+                    <span class="alerts-page__chip alerts-page__chip--upcoming">Diffusion prévue le <?= htmlspecialchars($startsAtLabel, ENT_QUOTES, 'UTF-8') ?></span>
                 <?php endif; ?>
             </div>
             <h3 class="alerts-page__card-title"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h3>
@@ -278,7 +298,7 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
                         <div class="alerts-page__stack alerts-page__stack--active" data-alerts-active-stack>
                             <?php foreach ($alertsActive as $item): ?>
                                 <?php if (is_array($item)) {
-                                    $renderCard($item, false);
+                                    $renderCard($item, 'active');
                                 } ?>
                             <?php endforeach; ?>
                         </div>
@@ -286,6 +306,31 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
                     <?php endif; ?>
                 </div>
             </section>
+
+            <?php if ($alertsShowUpcoming): ?>
+            <section class="alerts-page__section" aria-labelledby="alerts-upcoming-heading">
+                <div class="alerts-page__section-head">
+                    <p class="alerts-page__section-kicker">Programmé</p>
+                    <h2 id="alerts-upcoming-heading" class="alerts-page__section-title">À venir</h2>
+                    <p class="alerts-page__section-lead">Annonces déjà préparées dont la diffusion commencera plus tard.</p>
+                </div>
+                <div class="alerts-page__section-body">
+                    <?php if ($alertsUpcoming === []): ?>
+                        <div class="alerts-page__empty">
+                            <p>Aucune annonce programmée pour l’instant.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="alerts-page__stack">
+                            <?php foreach ($alertsUpcoming as $item): ?>
+                                <?php if (is_array($item)) {
+                                    $renderCard($item, 'upcoming');
+                                } ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <section class="alerts-page__section" aria-labelledby="alerts-history-heading">
                 <div class="alerts-page__section-head">
@@ -302,7 +347,7 @@ $renderCard = static function (array $item, bool $archived) use ($kindLabelFr, $
                         <div class="alerts-page__stack">
                             <?php foreach ($alertsHistory as $item): ?>
                                 <?php if (is_array($item)) {
-                                    $renderCard($item, true);
+                                    $renderCard($item, 'archived');
                                 } ?>
                             <?php endforeach; ?>
                         </div>

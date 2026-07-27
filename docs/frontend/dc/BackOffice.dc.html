@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta charset="utf-8">
+<title>ATHENA — Administration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; background:#f6f8f9; font-family:'Archivo',system-ui,sans-serif; color:#0c1116; -webkit-font-smoothing:antialiased; }
+  a { color:#0b8a5c; text-decoration:none; }
+  a:hover { color:#0c1116; }
+  input, select, button, textarea { font-family:'Archivo',sans-serif; }
+  table { border-collapse:collapse; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:#c9d1d6; border-radius:5px; }
+  @keyframes athRise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes athGrow { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+  @keyframes athBar { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  @keyframes athPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.3; transform:scale(1.5); } }
+  @keyframes athSweep { from { background-position:-160% 0; } to { background-position:260% 0; } }
+  .ath-rise { animation:athRise .4s cubic-bezier(.2,.7,.3,1) both; }
+  .ath-grow { transform-origin:bottom; animation:athGrow .7s cubic-bezier(.2,.8,.25,1) both; }
+  .ath-barA { transform-origin:left; animation:athBar .8s cubic-bezier(.2,.8,.25,1) both; }
+  .ath-pulse { animation:athPulse 2s ease-in-out infinite; }
+  .ath-card { transition:transform .2s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease, border-color .2s ease; }
+  .ath-card:hover { transform:translateY(-2px); box-shadow:0 12px 30px rgba(12,17,22,.09); border-color:#c9d8d1; }
+  .ath-row { transition:background .12s ease; }
+  .ath-row:hover { background:#f2fbf7 !important; }
+  .ath-side { transition:background .16s ease, color .16s ease; }
+  .ath-side:hover { background:#12181c; color:#fff; }
+  .ath-btn { transition:background .18s ease, color .18s ease, transform .16s ease, border-color .18s ease; }
+  .ath-btn:hover { transform:translateY(-1px); }
+  .ath-sweep { background:linear-gradient(100deg,transparent 20%,rgba(18,209,142,.15) 45%,transparent 70%); background-size:200% 100%; animation:athSweep 5.5s linear infinite; }
+</style>
+</helmet>
+<div style="display:flex; min-height:100vh; align-items:stretch; background:#f6f8f9;">
+
+  <aside style="flex-shrink:0; background:#000; color:#8a938e; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; box-sizing:border-box; transition:width .24s cubic-bezier(.2,.8,.3,1); width: {{ sideW }};">
+    <div style="padding:16px 14px; border-bottom:1px solid #161b1e; display:flex; align-items:center; gap:10px;">
+      <div style="width:34px; height:34px; background:#fff; color:#000; font-size:17px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0;">A</div>
+      <div style="min-width:0; overflow:hidden; flex:1; display: {{ blockShow }};">
+        <div style="font-size:14px; font-weight:900; color:#fff; line-height:1; white-space:nowrap;">ATHENA<span style="color:#12d18e;">.</span></div>
+        <div style="font-size:8px; font-weight:800; letter-spacing:0.16em; color:#6b736e; margin-top:5px; white-space:nowrap;">ADMINISTRATION · 92E RI</div>
+      </div>
+      <div class="ath-btn" onClick="{{ toggleSide }}" title="Plier le menu" style="width:24px; height:24px; flex-shrink:0; border:1px solid #23292c; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#8a938e;" style-hover="border-color:#12d18e; color:#12d18e;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .24s ease; transform: {{ chevSide }};"><path d="m15 18-6-6 6-6"></path></svg>
+      </div>
+    </div>
+
+    <div style="flex:1; overflow-y:auto; overflow-x:hidden; padding:10px 0 16px 0;">
+      <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="5">
+        <div style="margin-bottom:2px;">
+          <div onClick="{{ g.toggle }}" style="align-items:center; gap:7px; padding:10px 14px 6px 14px; cursor:pointer; user-select:none; display: {{ labelShow }};">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#4b524e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; transition:transform .2s ease; transform: {{ g.chev }};"><path d="m9 18 6-6-6-6"></path></svg>
+            <span style="font-size:8px; font-weight:800; letter-spacing:0.24em; color:#4b524e; white-space:nowrap;">{{ g.label }}</span>
+          </div>
+          <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="3">
+                <div>
+                  <div class="ath-side" onClick="{{ n.go }}" title="{{ n.label }}" style="padding:8px 14px; display:flex; align-items:center; gap:10px; cursor:pointer; border-left:3px solid {{ n.bar }}; background: {{ n.bg }}; color: {{ n.fg }}; justify-content: {{ itemJustify }};">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="{{ n.icon }}"></path></svg>
+                    <span style="font-size:11.5px; font-weight:800; white-space:nowrap; flex:1; display: {{ labelShow }};">{{ n.label }}</span>
+                    <span style="font-size:9.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color: {{ n.badgeColor }}; display: {{ labelShow }};">{{ n.badge }}</span>
+                  </div>
+                  <sc-if value="{{ n.showKids }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex-direction:column; display: {{ labelShow }};">
+                      <sc-for list="{{ n.children }}" as="c" hint-placeholder-count="2">
+                        <div class="ath-side" onClick="{{ c.go }}" style="padding:6px 14px 6px 41px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:8px; color: {{ c.fg }}; background: {{ c.bg }};">
+                          <span style="width:4px; height:4px; border-radius:50%; flex-shrink:0; background: {{ c.dot }};"></span>{{ c.label }}
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <div style="margin:12px 11px 0 11px; border:1px solid #1b2124; background:#0a0d0e; padding:12px; position:relative; overflow:hidden; display: {{ blockShow }};">
+        <div class="ath-sweep" style="position:absolute; inset:0; pointer-events:none;"></div>
+        <div style="font-size:8px; font-weight:800; letter-spacing:0.2em; color:#12d18e;">SERVEUR TAK</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+          <div class="ath-pulse" style="width:6px; height:6px; border-radius:50%; background:#12d18e;"></div>
+          <span style="font-size:11.5px; font-weight:800; color:#fff;">Opérationnel</span>
+        </div>
+        <div style="font-size:10px; color:#6b736e; margin-top:4px; font-family:'JetBrains Mono',monospace;">tak.92ri.net:8089</div>
+      </div>
+    </div>
+
+    <div style="padding:12px 14px; border-top:1px solid #161b1e; display:flex; align-items:center; gap:10px;">
+      <div style="width:30px; height:30px; background:#12d18e; color:#04231a; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0;">NP</div>
+      <div style="min-width:0; display: {{ blockShow }};">
+        <div style="font-size:11.5px; font-weight:900; color:#fff; white-space:nowrap;">NOOPY</div>
+        <div style="font-size:8.5px; font-weight:800; letter-spacing:0.14em; color:#6b736e; white-space:nowrap;">COLONEL · OF-5</div>
+      </div>
+    </div>
+  </aside>
+
+  <main style="flex:1; min-width:0; display:flex; flex-direction:column;">
+
+    <div style="background:#fff; border-bottom:1px solid #e3e8ea; position:sticky; top:0; z-index:20;">
+      <div style="display:flex; align-items:center; gap:16px; padding:0 22px; height:54px;">
+        <div style="display:flex; align-items:center; gap:7px; font-size:11px; font-weight:700; color:#8c979b; min-width:0;">
+          <span style="white-space:nowrap;">{{ crumbGroup }}</span>
+          <span style="color:#c9d1d6;">/</span>
+          <span style="color:#0c1116; font-weight:800; white-space:nowrap;">{{ pTitle }}</span>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="display:flex; align-items:center; gap:8px; background:#f2f5f6; border:1px solid #e3e8ea; padding:0 11px; height:32px; width:240px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+          <input placeholder="Rechercher…" style="border:none; outline:none; background:transparent; font-size:11.5px; font-weight:600; width:100%; color:#0c1116;">
+          <span style="font-size:9.5px; font-weight:800; color:#a9b3b7; font-family:'JetBrains Mono',monospace;">⌘K</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <sc-for list="{{ topAlerts }}" as="a" hint-placeholder-count="3">
+            <div class="ath-btn" title="{{ a.title }}" style="display:flex; align-items:center; gap:6px; height:26px; padding:0 9px; border:1px solid {{ a.bd }}; background:{{ a.bg }}; cursor:pointer;">
+              <span style="width:5px; height:5px; border-radius:50%; background:{{ a.dot }};"></span>
+              <span style="font-size:10.5px; font-weight:800; color:{{ a.fg }}; white-space:nowrap;">{{ a.label }}</span>
+              <span style="font-size:10.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color:{{ a.dot }};">{{ a.n }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="width:1px; height:22px; background:#e3e8ea;"></div>
+        <div class="ath-btn" style="height:32px; padding:0 14px; background:#0c1116; color:#fff; display:flex; align-items:center; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; flex-shrink:0;" style-hover="background:#12d18e; color:#04231a;">{{ pAction }}</div>
+      </div>
+    </div>
+
+    <div style="padding:22px; display:flex; flex-direction:column; gap:16px;">
+
+      <div class="ath-rise" style="display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <div style="font-size:9px; font-weight:800; letter-spacing:0.22em; color:#0b8a5c;">{{ pKicker }}</div>
+          <h1 style="font-size:29px; font-weight:900; letter-spacing:-0.02em; margin:7px 0 0 0;">{{ pTitle }}</h1>
+          <p style="font-size:12.5px; color:#6d7a80; margin:6px 0 0 0; max-width:820px; line-height:1.5;">{{ pSub }}</p>
+        </div>
+        <div style="display:flex; gap:7px;">
+          <sc-for list="{{ pQuick }}" as="q" hint-placeholder-count="3">
+            <div class="ath-btn" style="border:1px solid #dbe2e5; background:#fff; height:31px; padding:0 12px; display:flex; align-items:center; font-size:11px; font-weight:800; color:#3c474c; cursor:pointer;" style-hover="border-color:#0c1116; color:#0c1116;">{{ q }}</div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasAlerts }}" hint-placeholder-val="{{ true }}">
+        <div class="ath-rise" style="border:1px solid #e3e8ea; background:#fff;">
+          <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="3">
+            <div class="ath-row" style="display:flex; align-items:center; gap:11px; padding:0 13px; height:36px; border-bottom:1px solid #f1f4f5;">
+              <span style="width:5px; height:5px; border-radius:50%; flex-shrink:0; background:{{ a.dot }};"></span>
+              <span style="font-size:9px; font-weight:800; letter-spacing:0.14em; color:{{ a.dot }}; width:64px; flex-shrink:0;">{{ a.tag }}</span>
+              <span style="font-size:11.5px; font-weight:700; color:#0c1116; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ a.msg }}</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:10.5px; color:#8c979b; font-family:'JetBrains Mono',monospace; white-space:nowrap;">{{ a.time }}</span>
+              <span class="ath-btn" style="font-size:10.5px; font-weight:800; color:#0b8a5c; cursor:pointer; white-space:nowrap;">{{ a.cta }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasKpis }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px;">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="5">
+            <div class="ath-card ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:14px 15px;">
+              <div style="font-size:9px; font-weight:800; letter-spacing:0.16em; color:#8c979b;">{{ k.label }}</div>
+              <div style="display:flex; align-items:baseline; gap:8px; margin-top:9px;">
+                <span style="font-size:26px; font-weight:900; letter-spacing:-0.03em;">{{ k.value }}</span>
+                <span style="font-size:11px; font-weight:800; color:{{ k.tone }};">{{ k.delta }}</span>
+              </div>
+              <div style="height:3px; background:#eef1f2; margin-top:11px;">
+                <div class="ath-barA" style="height:3px; width:{{ k.pct }}; background:{{ k.tone }};"></div>
+              </div>
+              <div style="font-size:10.5px; color:#8c979b; margin-top:7px;">{{ k.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; grid-template-columns:1.75fr 1fr; gap:16px;">
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
+              <div>
+                <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#8c979b;">ACTIVITÉ · 14 DERNIERS JOURS</div>
+                <div style="font-size:16px; font-weight:900; margin-top:5px;">Connexions portail vs. sessions ATAK</div>
+              </div>
+              <div style="display:flex; gap:14px;">
+                <span style="font-size:10.5px; font-weight:800; color:#0c1116; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; background:#0c1116;"></span>Portail</span>
+                <span style="font-size:10.5px; font-weight:800; color:#0b8a5c; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; background:#12d18e;"></span>ATAK</span>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:7px; height:180px; margin-top:20px; border-bottom:1px solid #e3e8ea;">
+              <sc-for list="{{ chart }}" as="b" hint-placeholder-count="14">
+                <div class="ath-grow" style="flex:1; display:flex; gap:2px; align-items:flex-end; height:{{ b.h }};">
+                  <div style="flex:1; background:#0c1116;"></div>
+                  <div style="flex:1; background:#12d18e; height:{{ b.h2 }}; align-self:flex-end;"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; margin-top:8px;">
+              <sc-for list="{{ chart }}" as="b" hint-placeholder-count="14">
+                <span style="flex:1; text-align:center; font-size:9px; font-weight:700; color:#a9b3b7; font-family:'JetBrains Mono',monospace;">{{ b.d }}</span>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ath-rise" style="background:#0c1116; color:#fff; padding:18px 20px; display:flex; flex-direction:column;">
+            <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#12d18e;">PROCHAINE OPÉRATION</div>
+            <div style="font-size:22px; font-weight:900; letter-spacing:-0.02em; margin-top:9px; line-height:1.15;">OP. FER ROUGE</div>
+            <div style="font-size:11.5px; color:#8a938e; margin-top:6px; font-family:'JetBrains Mono',monospace;">SAM 02/08 · 20:30 · Kamysh</div>
+            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:9px; margin-top:18px;">
+              <sc-for list="{{ rsvpMini }}" as="r" hint-placeholder-count="4">
+                <div style="border:1px solid #23292c; padding:10px 11px;">
+                  <div style="font-size:9px; font-weight:800; letter-spacing:0.12em; color:{{ r.tone }};">{{ r.label }}</div>
+                  <div style="font-size:21px; font-weight:900; margin-top:5px;">{{ r.n }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;"></div>
+            <div style="font-size:10.5px; color:#8a938e; margin-top:16px;">Clôture des inscriptions : ven. 01/08 à 22:00</div>
+            <div class="ath-btn" onClick="{{ goRsvp }}" style="margin-top:11px; background:#12d18e; color:#04231a; height:34px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:900; cursor:pointer;">OUVRIR LE RSVP</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRsvp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px;">
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+              <div style="width:62px; height:62px; background:#0c1116; color:#12d18e; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-size:9px; font-weight:800; letter-spacing:0.1em;">AOÛT</span>
+                <span style="font-size:23px; font-weight:900; line-height:1;">02</span>
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:19px; font-weight:900; letter-spacing:-0.01em;">Opération FER ROUGE</div>
+                <div style="font-size:11.5px; color:#6d7a80; margin-top:5px; line-height:1.55;">Assaut de nuit sur le complexe industriel de Kamysh. Alpha en appui, Bravo en pénétration. Briefing 20:00, départ 20:30.</div>
+                <div style="display:flex; gap:7px; margin-top:11px; flex-wrap:wrap;">
+                  <span style="font-size:10px; font-weight:800; border:1px solid #dbe2e5; padding:4px 8px; color:#3c474c;">OBLIGATOIRE</span>
+                  <span style="font-size:10px; font-weight:800; border:1px solid #dbe2e5; padding:4px 8px; color:#3c474c;">ATAK REQUIS</span>
+                  <span style="font-size:10px; font-weight:800; border:1px solid #dbe2e5; padding:4px 8px; color:#3c474c;">42 PLACES</span>
+                  <span style="font-size:10px; font-weight:800; background:#0c1116; color:#12d18e; padding:4px 8px;">INSCRIPTIONS OUVERTES</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#e3e8ea; margin-top:18px; border:1px solid #e3e8ea;">
+              <sc-for list="{{ rsvpMini }}" as="r" hint-placeholder-count="4">
+                <div style="background:#fff; padding:12px 13px;">
+                  <div style="font-size:9px; font-weight:800; letter-spacing:0.12em; color:{{ r.tone }};">{{ r.label }}</div>
+                  <div style="font-size:24px; font-weight:900; margin-top:5px;">{{ r.n }}</div>
+                  <div style="height:3px; background:#eef1f2; margin-top:9px;"><div class="ath-barA" style="height:3px; width:{{ r.pct }}; background:{{ r.tone }};"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#8c979b;">RÉPARTITION PAR SECTION</div>
+            <div style="display:flex; flex-direction:column; gap:11px; margin-top:14px;">
+              <sc-for list="{{ rsvpSections }}" as="s" hint-placeholder-count="5">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11.5px; font-weight:800;">
+                    <span>{{ s.name }}</span>
+                    <span style="font-family:'JetBrains Mono',monospace; color:#6d7a80;">{{ s.txt }}</span>
+                  </div>
+                  <div style="height:6px; background:#eef1f2; margin-top:6px;"><div class="ath-barA" style="height:6px; width:{{ s.pct }}; background:{{ s.tone }};"></div></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="border-top:1px solid #eef1f2; margin-top:16px; padding-top:13px; display:flex; gap:8px;">
+              <div class="ath-btn" style="flex:1; height:32px; background:#0c1116; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; cursor:pointer;">Relancer les sans-réponse</div>
+              <div class="ath-btn" style="height:32px; padding:0 12px; border:1px solid #dbe2e5; display:flex; align-items:center; font-size:11px; font-weight:800; color:#3c474c; cursor:pointer;">Clore</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAtakOp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div class="ath-rise" style="background:#0c1116; color:#fff; padding:18px 20px;">
+            <div style="display:flex; align-items:center; gap:13px;">
+              <div style="width:46px; height:46px; background:#12d18e; color:#04231a; font-size:15px; font-weight:900; display:flex; align-items:center; justify-content:center;">VK</div>
+              <div>
+                <div style="font-size:17px; font-weight:900;">VIPER-03</div>
+                <div style="font-size:10.5px; color:#8a938e; font-family:'JetBrains Mono',monospace; margin-top:3px;">M. Kervella · ATH-0155</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:17px;">
+              <sc-for list="{{ opIdent }}" as="i" hint-placeholder-count="6">
+                <div style="display:flex; justify-content:space-between; gap:10px; font-size:11px; border-bottom:1px solid #1b2124; padding-bottom:7px;">
+                  <span style="color:#8a938e; font-weight:700;">{{ i.k }}</span>
+                  <span style="font-weight:800; font-family:'JetBrains Mono',monospace;">{{ i.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#8c979b;">TERMINAL &amp; CERTIFICAT</div>
+            <div style="display:flex; flex-direction:column; gap:9px; margin-top:14px;">
+              <sc-for list="{{ opDevice }}" as="i" hint-placeholder-count="7">
+                <div style="display:flex; justify-content:space-between; gap:10px; font-size:11px; border-bottom:1px solid #f1f4f5; padding-bottom:7px;">
+                  <span style="color:#8c979b; font-weight:700;">{{ i.k }}</span>
+                  <span style="font-weight:800; font-family:'JetBrains Mono',monospace; color:{{ i.tone }};">{{ i.v }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#8c979b;">TÉLÉMÉTRIE DERNIÈRE SESSION</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:14px;">
+              <sc-for list="{{ opTelemetry }}" as="t" hint-placeholder-count="6">
+                <div style="border:1px solid #eef1f2; padding:10px 11px;">
+                  <div style="font-size:9px; font-weight:800; letter-spacing:0.1em; color:#8c979b;">{{ t.k }}</div>
+                  <div style="font-size:16px; font-weight:900; margin-top:5px; font-family:'JetBrains Mono',monospace;">{{ t.v }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:16px;">
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#8c979b;">CHECKLIST DES ÉLÉMENTS ESSENTIELS</div>
+            <div style="display:flex; flex-wrap:wrap; gap:7px; margin-top:13px;">
+              <sc-for list="{{ setupChecklist }}" as="c" hint-placeholder-count="8">
+                <div style="display:flex; align-items:center; gap:7px; border:1px solid {{ c.bd }}; background:{{ c.bg }}; color:{{ c.fg }}; padding:5px 11px; font-size:11px; font-weight:800;">
+                  <span>{{ c.mark }}</span>{{ c.label }}
+                </div>
+              </sc-for>
+            </div>
+            <div style="border-top:1px solid #f1f4f5; margin-top:16px; padding-top:14px; display:flex; flex-direction:column;">
+              <sc-for list="{{ setupFields }}" as="f" hint-placeholder-count="8">
+                <div style="display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid #f1f4f5;">
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:12px; font-weight:800;">{{ f.label }}</div>
+                    <div style="font-size:10.5px; color:#8c979b; margin-top:3px;">{{ f.help }}</div>
+                  </div>
+                  <div style="font-size:11.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color:{{ f.fg }}; background:{{ f.bg }}; border:1px solid {{ f.bd }}; padding:2px 9px; white-space:nowrap;">{{ f.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div class="ath-rise" style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background:#0c1116; color:#fff; padding:18px 20px;">
+              <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#12d18e;">PROFIL RENSEIGNÉ</div>
+              <div style="font-size:38px; font-weight:900; letter-spacing:-0.03em; margin-top:8px;">{{ setupPct }}</div>
+              <div style="font-size:11px; color:#8a938e; margin-top:4px;">{{ setupDone }}</div>
+              <div style="height:5px; background:#1b2124; margin-top:14px;"><div class="ath-barA" style="height:5px; width:{{ setupBar }}; background:#12d18e;"></div></div>
+            </div>
+            <div style="background:#fdf3e2; border:1px solid #f2ddb4; padding:16px 18px;">
+              <div style="font-size:9px; font-weight:800; letter-spacing:0.16em; color:#8a5a06;">À COMPLÉTER EN PRIORITÉ</div>
+              <div style="font-size:12px; color:#7a5407; margin-top:9px; line-height:1.55;">Sans e-mail de contact ni lien Discord, les candidats ne peuvent ni vous joindre ni rejoindre le serveur : le recrutement reste bloqué.</div>
+            </div>
+            <div style="background:#fff; border:1px solid #e3e8ea; padding:16px 18px;">
+              <div style="font-size:9px; font-weight:800; letter-spacing:0.16em; color:#8c979b;">PROFIL DE COMMUNAUTÉ</div>
+              <div style="font-size:17px; font-weight:900; margin-top:7px;">Complet</div>
+              <div style="font-size:11px; color:#6d7a80; margin-top:5px; line-height:1.5;">Tous les modules sont activés : opérations, ATAK, formations, recrutement et documentation.</div>
+              <div class="ath-btn" style="margin-top:13px; height:31px; border:1px solid #dbe2e5; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#3c474c; cursor:pointer;" style-hover="border-color:#0c1116; color:#0c1116;">Modifier le type de communauté</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isProfils }}" hint-placeholder-val="{{ false }}">
+        <div class="ath-rise" style="background:#fdf3e2; border:1px solid #f2ddb4; padding:13px 16px;">
+          <div style="font-size:9px; font-weight:800; letter-spacing:0.16em; color:#8a5a06;">TOUJOURS EXCLUS DES PROFILS AUTOMATIQUES</div>
+          <div style="font-size:11.5px; color:#7a5407; margin-top:6px; line-height:1.5;">Aucun profil n’accorde les habilitations réservées à la maintenance de la plateforme, ni la modération forum au niveau global.</div>
+        </div>
+        <div style="display:grid; grid-template-columns:0.8fr 2.2fr; gap:16px;">
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:24px; height:24px; background:#0c1116; color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center;">1</div>
+              <div style="font-size:10px; font-weight:800; letter-spacing:0.16em; color:#3c474c;">RÔLE À CONFIGURER</div>
+            </div>
+            <div style="font-size:11.5px; color:#6d7a80; margin-top:10px; line-height:1.5;">Rôles de votre communauté ou opérationnels, hors plateforme.</div>
+            <div style="margin-top:13px; height:34px; border:1px solid #dbe2e5; display:flex; align-items:center; justify-content:space-between; padding:0 11px; font-size:11.5px; font-weight:700; color:#3c474c; cursor:pointer;">
+              Officier formation
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="3" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg>
+            </div>
+            <div style="font-size:10.5px; color:#a9b3b7; margin-top:8px;">Les rôles verrouillés ne sont pas modifiables ici.</div>
+          </div>
+          <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:24px; height:24px; background:#0c1116; color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center;">2</div>
+              <div style="font-size:10px; font-weight:800; letter-spacing:0.16em; color:#3c474c;">PROFIL À APPLIQUER</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-top:14px;">
+              <sc-for list="{{ profiles }}" as="p" hint-placeholder-count="9">
+                <div class="ath-card" onClick="{{ p.pick }}" style="border:1px solid {{ p.bd }}; background:{{ p.bg }}; padding:13px 14px; cursor:pointer;">
+                  <div style="display:flex; align-items:flex-start; gap:9px;">
+                    <span style="width:13px; height:13px; border-radius:50%; border:2px solid {{ p.ring }}; background:{{ p.dot }}; flex-shrink:0; margin-top:2px;"></span>
+                    <div style="min-width:0;">
+                      <div style="font-size:12.5px; font-weight:900;">{{ p.name }}</div>
+                      <div style="font-size:10.5px; color:#6d7a80; margin-top:5px; line-height:1.5;">{{ p.desc }}</div>
+                      <div style="font-size:10px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#0b8a5c; margin-top:8px;">{{ p.count }}</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; border-top:1px solid #f1f4f5; margin-top:16px; padding-top:14px;">
+              <div style="width:24px; height:24px; background:#0c1116; color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center;">3</div>
+              <div style="font-size:11.5px; color:#6d7a80; flex:1;">Le récapitulatif calcule les ajouts et retraits par rapport à l’état actuel du rôle avant confirmation.</div>
+              <div class="ath-btn" style="height:32px; padding:0 16px; background:#0c1116; color:#fff; display:flex; align-items:center; font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap;" style-hover="background:#12d18e; color:#04231a;">Afficher le récapitulatif</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <sc-for list="{{ settingGroups }}" as="s" hint-placeholder-count="4">
+            <div class="ath-card ath-rise" style="background:#fff; border:1px solid #e3e8ea; padding:18px 20px;">
+              <div style="font-size:9px; font-weight:800; letter-spacing:0.18em; color:#0b8a5c;">{{ s.kicker }}</div>
+              <div style="font-size:15px; font-weight:900; margin-top:6px;">{{ s.title }}</div>
+              <div style="display:flex; flex-direction:column; margin-top:13px;">
+                <sc-for list="{{ s.rows }}" as="r" hint-placeholder-count="4">
+                  <div style="display:flex; align-items:center; gap:14px; padding:11px 0; border-top:1px solid #f1f4f5;">
+                    <div style="min-width:0; flex:1;">
+                      <div style="font-size:12px; font-weight:800;">{{ r.label }}</div>
+                      <div style="font-size:10.5px; color:#8c979b; margin-top:3px; line-height:1.45;">{{ r.help }}</div>
+                    </div>
+                    <div style="flex-shrink:0; display:flex; align-items:center; gap:9px;">
+                      <span style="font-size:10.5px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#3c474c;">{{ r.value }}</span>
+                      <div onClick="{{ r.toggle }}" style="width:34px; height:19px; border-radius:10px; background:{{ r.trackBg }}; position:relative; cursor:pointer; transition:background .2s ease;">
+                        <div style="position:absolute; top:2px; left:{{ r.knobX }}; width:15px; height:15px; border-radius:50%; background:#fff; transition:left .2s ease;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasTable }}" hint-placeholder-val="{{ true }}">
+        <div class="ath-rise" style="background:#fff; border:1px solid #e3e8ea;">
+          <div style="display:flex; align-items:center; gap:9px; padding:11px 13px; border-bottom:1px solid #e3e8ea; flex-wrap:wrap;">
+            <div style="font-size:12.5px; font-weight:900;">{{ tableTitle }}</div>
+            <div style="font-size:10.5px; font-weight:700; color:#8c979b; font-family:'JetBrains Mono',monospace;">{{ tableCount }}</div>
+            <div style="flex:1;"></div>
+            <div style="display:flex; align-items:center; gap:7px; background:#f6f8f9; border:1px solid #e3e8ea; padding:0 9px; height:28px; width:180px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+              <input placeholder="Filtrer…" style="border:none; outline:none; background:transparent; font-size:11px; font-weight:600; width:100%;">
+            </div>
+            <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+              <div class="ath-btn" style="height:28px; padding:0 10px; border:1px solid #e3e8ea; background:#fff; display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; color:#3c474c; cursor:pointer;" style-hover="border-color:#0c1116;">
+                {{ f }}
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg>
+              </div>
+            </sc-for>
+            <div class="ath-btn" style="height:28px; padding:0 11px; border:1px solid #0c1116; background:#0c1116; color:#fff; display:flex; align-items:center; font-size:10.5px; font-weight:800; cursor:pointer;" style-hover="background:#12d18e; color:#04231a; border-color:#12d18e;">Exporter CSV</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; min-width:{{ tableMinW }};">
+              <thead>
+                <tr style="background:#fafcfc;">
+                  <th style="width:34px; padding:0 0 0 13px; height:32px; border-bottom:1px solid #e3e8ea;"><div style="width:12px; height:12px; border:1.5px solid #c9d1d6;"></div></th>
+                  <sc-for list="{{ cols }}" as="c" hint-placeholder-count="9">
+                    <th style="padding:0 12px; height:32px; border-bottom:1px solid #e3e8ea; font-size:8.5px; font-weight:800; letter-spacing:0.14em; color:#8c979b; white-space:nowrap; text-align:{{ c.al }};">{{ c.label }}</th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+                  <tr class="ath-row" style="cursor:pointer;">
+                    <td style="padding:0 0 0 13px; height:35px; border-bottom:1px solid #f1f4f5;"><div style="width:12px; height:12px; border:1.5px solid #dbe2e5;"></div></td>
+                    <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="9">
+                      <td style="padding:0 12px; height:35px; border-bottom:1px solid #f1f4f5; white-space:nowrap; text-align:{{ c.al }};">
+                        <span style="display:inline-block; font-size:11.5px; line-height:16px; font-family:{{ c.ff }}; font-weight:{{ c.w }}; color:{{ c.fg }}; background:{{ c.bg }}; border:1px solid {{ c.bd }}; padding:{{ c.pad }};">{{ c.v }}</span>
+                      </td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 13px; border-top:1px solid #e3e8ea; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:10.5px; color:#8c979b; font-weight:700;">{{ tableFoot }}</div>
+            <div style="display:flex; gap:5px; align-items:center;">
+              <sc-for list="{{ pager }}" as="p" hint-placeholder-count="6">
+                <div class="ath-btn" style="min-width:26px; height:26px; padding:0 7px; border:1px solid {{ p.bd }}; background:{{ p.bg }}; color:{{ p.fg }}; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; cursor:pointer;">{{ p.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="height:6px;"></div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { page:'dash', collapsed:false, closed:{}, toggles:{}, profile:1 };
+
+  nav() {
+    return [
+      { key:'pilotage', label:'PILOTAGE', items:[
+        { p:'dash', label:'Tableau de bord', icon:ICO.dash },
+        { p:'wall', label:'Mur opérationnel', icon:ICO.wall, badge:'6' },
+        { p:'agenda', label:'Agenda', icon:ICO.cal, badge:'17' }
+      ]},
+      { key:'personnel', label:'PERSONNEL', items:[
+        { p:'members', label:'Membres', icon:ICO.users, badge:'156', children:[
+          { p:'members', label:'Annuaire complet' },
+          { p:'recrues', label:'Candidatures', warn:true },
+          { p:'sanctions', label:'Sanctions & absences' },
+          { p:'roleplay', label:'Suivi roleplay' }
+        ]},
+        { p:'orbat', label:'Ordre de bataille', icon:ICO.orbat, children:[
+          { p:'orbat', label:'Structure & effectifs' },
+          { p:'doctrine', label:'Doctrine des fonctions' },
+          { p:'attributions', label:'Attributions métier' }
+        ]},
+        { p:'formations', label:'Formations', icon:ICO.book, badge:'18' }
+      ]},
+      { key:'communaute', label:'COMMUNAUTÉ', items:[
+        { p:'setup', label:'Configuration initiale', icon:ICO.rocket, badge:'75 %', warn:true },
+        { p:'community', label:'Paramètres', icon:ICO.home, children:[
+          { p:'community', label:'Identité & options' },
+          { p:'publicPage', label:'Page d’accueil publique' },
+          { p:'medias', label:'Médias' }
+        ]},
+        { p:'annonces', label:'Annonces & alertes', icon:ICO.mail, badge:'4' },
+        { p:'onboarding', label:'Onboarding membres', icon:ICO.path, badge:'14' },
+        { p:'usage', label:'Indicateurs d’usage', icon:ICO.chart }
+      ]},
+      { key:'operations', label:'OPÉRATIONS', items:[
+        { p:'ops', label:'Opérations', icon:ICO.ops, badge:'48' },
+        { p:'rsvp', label:'RSVP', icon:ICO.rsvp, badge:'11', warn:true, children:[
+          { p:'rsvp', label:'Op. FER ROUGE', warn:true },
+          { p:'rsvpHist', label:'Historique' }
+        ]},
+        { p:'aar', label:'Comptes rendus', icon:ICO.aar, badge:'3', warn:true }
+      ]},
+      { key:'atak', label:'ATAK', items:[
+        { p:'atakDevices', label:'Terminaux', icon:ICO.phone, badge:'97', children:[
+          { p:'atakDevices', label:'Parc de terminaux' },
+          { p:'atakSessions', label:'Sessions & connexions' },
+          { p:'atakCerts', label:'Certificats', warn:true },
+          { p:'atakOp', label:'Fiche opérateur' }
+        ]},
+        { p:'atakSessions', label:'Sessions', icon:ICO.radio, badge:'41' },
+        { p:'atakCerts', label:'Certificats', icon:ICO.cert, badge:'3', warn:true }
+      ]},
+      { key:'systeme', label:'SYSTÈME', items:[
+        { p:'logs', label:'Journal d’audit', icon:ICO.audit },
+        { p:'roles', label:'Rôles & accès', icon:ICO.shield, badge:'27', children:[
+          { p:'roles', label:'Matrice des rôles' },
+          { p:'rolesTable', label:'Table des rôles' },
+          { p:'profils', label:'Profils de permissions' }
+        ]},
+        { p:'integrations', label:'Intégrations', icon:ICO.plug, badge:'1', warn:true },
+        { p:'settings', label:'Paramètres', icon:ICO.gear }
+      ]}
+    ];
+  }
+
+  go(p) { this.setState({ page:p }); if (typeof window !== 'undefined') window.scrollTo(0,0); }
+
+  cell(v, kind, isLast) {
+    const base = { v:v, al:'left', ff:"'Archivo',sans-serif", w:'600', fg:'#20282c', bg:'transparent', bd:'transparent', pad:'0' };
+    if (kind === 'm') { base.ff = "'JetBrains Mono',monospace"; base.w = '500'; base.fg = '#3c474c'; }
+    if (kind === 'r') { base.al = 'right'; base.ff = "'JetBrains Mono',monospace"; base.w = '700'; }
+    if (kind === 'b') { const t = toneOf(v); base.fg = t.fg; base.bg = t.bg; base.bd = t.bd; base.pad = '1px 8px'; base.w = '800'; }
+    return base;
+  }
+
+  renderVals() {
+    const st = this.state;
+    const page = PAGES[st.page] || PAGES.dash;
+    const col = st.collapsed;
+    const activeChain = {};
+    const groups = this.nav().map(g => {
+      const open = !st.closed[g.key];
+      return {
+        label: g.label,
+        open: open,
+        chev: open ? 'rotate(90deg)' : 'none',
+        toggle: () => this.setState(s => ({ closed: Object.assign({}, s.closed, { [g.key]: !s.closed[g.key] }) })),
+        items: g.items.map(n => {
+          const kids = n.children || [];
+          const active = st.page === n.p;
+          const kidActive = kids.some(c => c.p === st.page);
+          if (active || kidActive) activeChain.group = g.label;
+          return {
+            label: n.label, icon: n.icon,
+            badge: col ? '' : (n.badge || ''),
+            badgeColor: n.warn ? '#c98a12' : '#4b524e',
+            bar: active ? '#12d18e' : 'transparent',
+            bg: active ? '#0f1417' : 'transparent',
+            fg: active ? '#fff' : '#8a938e',
+            go: () => this.go(n.p),
+            showKids: !col && kids.length > 0 && (active || kidActive),
+            children: kids.map(c => ({
+              label: c.label,
+              fg: st.page === c.p ? '#12d18e' : '#6b736e',
+              bg: st.page === c.p ? '#0a0f11' : 'transparent',
+              dot: st.page === c.p ? '#12d18e' : (c.warn ? '#c98a12' : '#2e3538'),
+              go: () => this.go(c.p)
+            }))
+          };
+        })
+      };
+    });
+
+    const cols = (page.cols || []).map(c => {
+      const parts = String(c).split('|');
+      return { label: parts[0], kind: parts[1] || '', al: parts[1] === 'r' ? 'right' : 'left' };
+    });
+    const rows = (page.rows || []).map(r => ({
+      cells: r.map((v, i) => this.cell(v, cols[i] ? cols[i].kind : ''))
+    }));
+
+    const chartData = [
+      [58,38],[64,41],[52,30],[71,49],[83,58],[96,72],[74,55],
+      [61,40],[69,47],[88,66],[92,74],[79,60],[85,68],[97,79]
+    ];
+    const days = ['14','15','16','17','18','19','20','21','22','23','24','25','26','27'];
+
+    const settingGroups = (page.settings || []).map((s, gi) => ({
+      kicker: s[0], title: s[1],
+      rows: s[2].map((r, ri) => {
+        const key = gi + '-' + ri;
+        const on = st.toggles[key] === undefined ? r[3] : st.toggles[key];
+        return {
+          label: r[0], help: r[1], value: r[2],
+          trackBg: on ? '#12d18e' : '#d5dcdf',
+          knobX: on ? '17px' : '2px',
+          toggle: () => this.setState(s2 => ({ toggles: Object.assign({}, s2.toggles, { [key]: !on }) }))
+        };
+      })
+    }));
+
+    return {
+      sideW: col ? '62px' : '248px',
+      labelShow: col ? 'none' : 'flex',
+      blockShow: col ? 'none' : 'block',
+      itemJustify: col ? 'center' : 'flex-start',
+      chevSide: col ? 'rotate(180deg)' : 'none',
+      toggleSide: () => this.setState(s => ({ collapsed: !s.collapsed })),
+      navGroups: groups,
+      crumbGroup: page.group || activeChain.group || 'Administration',
+      pTitle: page.title, pSub: page.sub, pKicker: page.kicker,
+      pAction: page.action || 'Action', pQuick: page.quick || [],
+
+      topAlerts: [
+        { label:'RSVP', n:'11', dot:'#c98a12', fg:'#8a5a06', bg:'#fdf3e2', bd:'#f2ddb4', title:'11 sans-réponse' },
+        { label:'ATAK', n:'3', dot:'#c72e2e', fg:'#a32222', bg:'#fdecec', bd:'#f6cccc', title:'3 certificats expirants' },
+        { label:'DOSSIERS', n:'4', dot:'#1e6fbf', fg:'#1e4f80', bg:'#eaf2fb', bd:'#c9dcf0', title:'4 candidatures en retard' }
+      ],
+
+      hasAlerts: !!(page.alerts && page.alerts.length),
+      alerts: (page.alerts || []).map(a => ({ tag:a[0], dot:a[1], msg:a[2], time:a[3], cta:a[4] })),
+
+      hasKpis: !!(page.kpis && page.kpis.length),
+      kpis: (page.kpis || []).map(k => ({ label:k[0], value:k[1], delta:k[2], tone:k[3], pct:k[4], note:k[5] })),
+
+      isDash: st.page === 'dash',
+      isRsvp: st.page === 'rsvp',
+      isAtakOp: st.page === 'atakOp',
+      isSettings: st.page === 'settings' || st.page === 'community',
+      isSetup: st.page === 'setup',
+      isProfils: st.page === 'profils',
+      setupPct: page.setup ? page.setup.pct : '',
+      setupDone: page.setup ? page.setup.done : '',
+      setupBar: page.setup ? page.setup.bar : '0%',
+      setupChecklist: page.setup ? page.setup.checklist.map(c => {
+        const t = c[1] === 'ok' ? TONE.ok : TONE.warn;
+        return { label:c[0], mark: c[1] === 'ok' ? '✓' : '!', fg:t.fg, bg:t.bg, bd:t.bd };
+      }) : [],
+      setupFields: page.setup ? page.setup.fields.map(f => {
+        const t = f[3] === 'ok' ? TONE.neut : TONE.warn;
+        return { label:f[0], value:f[1], help:f[2], fg:t.fg, bg:t.bg, bd:t.bd };
+      }) : [],
+      profiles: (page.profiles || []).map((p, i) => ({
+        name:p[0], desc:p[1], count:p[2],
+        bd: st.profile === i ? '#12d18e' : '#e3e8ea',
+        bg: st.profile === i ? '#f2fbf7' : '#fff',
+        ring: st.profile === i ? '#0b8a5c' : '#c9d1d6',
+        dot: st.profile === i ? '#0b8a5c' : 'transparent',
+        pick: () => this.setState({ profile:i })
+      })),
+
+      chart: chartData.map((c, i) => ({ h: c[0] + '%', h2: Math.round(c[1] / c[0] * 100) + '%', d: days[i] })),
+
+      rsvpMini: [
+        { label:'CONFIRMÉS', n:'31', tone:'#12d18e', pct:'74%' },
+        { label:'PEUT-ÊTRE', n:'6', tone:'#e0a233', pct:'14%' },
+        { label:'DÉCLINÉS', n:'4', tone:'#7f8a8f', pct:'10%' },
+        { label:'SANS RÉPONSE', n:'11', tone:'#e0603f', pct:'26%' }
+      ],
+      rsvpSections: [
+        { name:'Alpha', txt:'11 / 12', pct:'92%', tone:'#12d18e' },
+        { name:'Bravo', txt:'8 / 12', pct:'67%', tone:'#12d18e' },
+        { name:'Charlie', txt:'5 / 10', pct:'50%', tone:'#e0a233' },
+        { name:'Delta', txt:'4 / 6', pct:'67%', tone:'#12d18e' },
+        { name:'Instruction', txt:'3 / 8', pct:'38%', tone:'#e0603f' }
+      ],
+      opIdent: [
+        { k:'Matricule', v:'ATH-0155' }, { k:'Grade', v:'Adjudant' },
+        { k:'Section', v:'Alpha' }, { k:'Rôle réseau', v:'Chef de groupe' },
+        { k:'Équipe CoT', v:'Cyan' }, { k:'Groupes TAK', v:'ALPHA / CMD / OPS' }
+      ],
+      opDevice: [
+        { k:'Terminal', v:'Samsung S22', tone:'#20282c' },
+        { k:'Système', v:'Android 14', tone:'#20282c' },
+        { k:'Client ATAK', v:'5.2.0.1', tone:'#0b6b47' },
+        { k:'UID', v:'a4f1-90cc', tone:'#20282c' },
+        { k:'Certificat', v:'0x4A11', tone:'#20282c' },
+        { k:'Expire le', v:'14/03/2027', tone:'#0b6b47' },
+        { k:'Empreinte', v:'9f:2c:11:a8', tone:'#20282c' }
+      ],
+      opTelemetry: [
+        { k:'DURÉE', v:'1 h 12' }, { k:'CoT ÉMIS', v:'1 204' },
+        { k:'DONNÉES', v:'214 Mo' }, { k:'LATENCE', v:'38 ms' },
+        { k:'PERTE', v:'0,1 %' }, { k:'BATTERIE', v:'78 %' }
+      ],
+      settingGroups: settingGroups,
+
+      hasTable: !!(page.cols && page.rows),
+      cols: cols, rows: rows,
+      filters: page.filters || [],
+      tableTitle: page.tableTitle || '',
+      tableCount: rows.length + ' lignes',
+      tableFoot: 'Affichage 1 – ' + rows.length + ' sur ' + rows.length + ' · mise à jour il y a 4 min',
+      tableMinW: page.minW || '1200px',
+      pager: [
+        { label:'‹', bg:'#fff', bd:'#e3e8ea', fg:'#8c979b' },
+        { label:'1', bg:'#0c1116', bd:'#0c1116', fg:'#fff' },
+        { label:'2', bg:'#fff', bd:'#e3e8ea', fg:'#3c474c' },
+        { label:'3', bg:'#fff', bd:'#e3e8ea', fg:'#3c474c' },
+        { label:'…', bg:'#fff', bd:'transparent', fg:'#a9b3b7' },
+        { label:'›', bg:'#fff', bd:'#e3e8ea', fg:'#3c474c' }
+      ],
+      goRsvp: () => this.go('rsvp')
+    };
+  }
+}
+
+
+const ICO = {
+  dash:"M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z",
+  wall:"M4 5h16v6H4zM4 14h7v5H4zM13 14h7v5h-7z",
+  cal:"M4 5h16v16H4zM8 3v4M16 3v4M4 10h16",
+  users:"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M22 21v-2a4 4 0 0 0-3-3.9",
+  orbat:"M12 3v4M6 21v-4M18 21v-4M4 7h16M6 17h12M12 7v10",
+  book:"M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM4 18h15",
+  ops:"M12 2v3M12 19v3M2 12h3M19 12h3M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10",
+  rsvp:"M4 5h16v14H4zM8 3v4M16 3v4M9 13l2 2 4-4",
+  aar:"M8 3h8l4 4v14H4V3zM9 12h6M9 16h4",
+  radio:"M12 12a2 2 0 1 0 .01 0M7.8 7.8a6 6 0 0 0 0 8.5M16.2 7.8a6 6 0 0 1 0 8.5M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2",
+  phone:"M7 2h10v20H7zM11 18h2",
+  cert:"M12 3l7 4v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V7zM9 12l2 2 4-4",
+  chart:"M4 20V10M10 20V4M16 20v-7M22 20H2",
+  audit:"M9 3h6M4 6h16v15H4zM8 11h8M8 15h5",
+  shield:"M12 3l8 4v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7z",
+  plug:"M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4",
+  gear:"M12 9a3 3 0 1 0 .01 0M20 12l2-1-2-3.5-2.3.6a6 6 0 0 0-1.6-.9L15.5 5h-4l-.6 2.2a6 6 0 0 0-1.6.9L7 7.5 5 11l2 1-2 1 2 3.5 2.3-.6c.5.4 1 .7 1.6.9l.6 2.2h4l.6-2.2c.6-.2 1.1-.5 1.6-.9l2.3.6L22 13z",
+  rocket:"M12 2c3 2 5 5.5 5 9.5L12 16l-5-4.5C7 7.5 9 4 12 2M9 17l-2 4 5-2 5 2-2-4",
+  home:"M4 11l8-7 8 7v9H4zM10 20v-6h4v6",
+  path:"M6 3v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v4M6 3a2 2 0 1 0 .01 0M18 21a2 2 0 1 0 .01 0",
+  mail:"M3 6h18v12H3zM3 7l9 6 9-6"
+};
+const TONE = {
+  ok:{fg:'#0b6b47',bg:'#e6f8f0',bd:'#bfe9d8'},
+  warn:{fg:'#8a5a06',bg:'#fdf3e2',bd:'#f2ddb4'},
+  bad:{fg:'#a32222',bg:'#fdecec',bd:'#f6cccc'},
+  info:{fg:'#1e4f80',bg:'#eaf2fb',bd:'#c9dcf0'},
+  neut:{fg:'#3c474c',bg:'#f2f5f6',bd:'#e3e8ea'}
+};
+const W_OK=['actif','validé','validée','présent','connecté','à jour','confirmé','conforme','signé','en ligne','succès','ouvert','oui','clos','approuvé','terminé','opérationnel','payé'];
+const W_WARN=['en attente','partiel','peut-être','retard','expire','à renouveler','en cours','brouillon','révision','différé','planifié','test'];
+const W_BAD=['inactif','refusé','absent','échec','expiré','bloqué','hors ligne','non','manquant','critique','suspendu','annulé','perdu','erreur'];
+function toneOf(v){
+  const s=String(v).toLowerCase().trim();
+  if(W_OK.some(w=>s===w||s.startsWith(w))) return TONE.ok;
+  if(W_WARN.some(w=>s===w||s.startsWith(w))) return TONE.warn;
+  if(W_BAD.some(w=>s===w||s.startsWith(w))) return TONE.bad;
+  return TONE.info;
+}
+const PAGES = {};
+
+PAGES.dash = {
+  group:'Pilotage', kicker:'PILOTAGE · VUE GÉNÉRALE', title:'Tableau de bord',
+  sub:"État de l'unité au 27 juillet 2026 : effectifs, activité portail et ATAK, opérations à venir et points nécessitant une décision.",
+  action:'Publier une consigne', quick:['7 jours','30 jours','Exporter'],
+  alerts:[
+    ['RSVP','#c98a12','11 membres sans réponse pour l’op. FER ROUGE — clôture dans 5 j','aujourd’hui 09:12','Relancer'],
+    ['ATAK','#c72e2e','3 certificats client expirent sous 14 jours (VIPER-03, KILO-11, SLATE-22)','aujourd’hui 07:40','Renouveler'],
+    ['DOSSIER','#1e6fbf','4 candidatures en attente d’entretien depuis plus de 7 jours','hier 21:05','Traiter']
+  ],
+  kpis:[
+    ['EFFECTIF ACTIF','128','+6','#0b8a5c','82%','sur 156 inscrits'],
+    ['PRÉSENCE MOY. 30 J','84 %','+3 pts','#0b8a5c','84%','objectif 80 %'],
+    ['TERMINAUX ATAK','97','+4','#0b8a5c','76%','76 % de l’effectif'],
+    ['CANDIDATURES','14','4 en retard','#c98a12','40%','délai moyen 5,2 j'],
+    ['INCIDENTS 30 J','3','-2','#0b8a5c','18%','1 non clos']
+  ],
+  tableTitle:'Journal d’activité récent', filters:['Type','Section','24 h'], minW:'1320px',
+  cols:['HORODATAGE|m','ACTEUR','SECTION','ÉVÉNEMENT','CANAL','CIBLE|m','NIVEAU|b','ADRESSE IP|m','DURÉE|r'],
+  rows:[
+    ['27/07 09:41:02','Viper','Alpha','Session ATAK ouverte','TAK Server','VIPER-03','Actif','10.20.4.31','1 h 12'],
+    ['27/07 09:38:55','Bishop','Charlie','RSVP confirmé — FER ROUGE','Portail','OP-2026-118','Confirmé','10.20.4.55','—'],
+    ['27/07 09:22:14','Noopy','État-major','Consigne publiée sur le mur','Portail','MUR-4412','Actif','10.20.4.2','—'],
+    ['27/07 08:57:36','Static','Delta','Certificat client régénéré','TAK Server','STATIC-08','Validé','10.20.4.77','—'],
+    ['27/07 08:41:09','Kilo','Bravo','Échec d’authentification (3e)','TAK Server','KILO-11','Échec','82.14.90.6','—'],
+    ['27/07 08:12:44','Echo','Alpha','Qualification drone validée','Formations','QUAL-DRN-2','Validé','10.20.4.61','—'],
+    ['26/07 23:04:18','Ghost','Bravo','RSVP décliné — FER ROUGE','Portail','OP-2026-118','Absent','10.20.4.44','—'],
+    ['26/07 22:47:51','Wraith','Bravo','Rapport post-op déposé','Documents','DOC-0912','Validé','10.20.4.19','—'],
+    ['26/07 21:30:02','Fennec','Instruction','Candidature soumise','Recrutement','CAND-0231','En attente','91.66.12.4','—'],
+    ['26/07 20:58:33','Slate','Charlie','Compte suspendu (absences)','Administration','ATH-0211','Bloqué','—','—'],
+    ['26/07 20:11:07','Havoc','Charlie','Terminal appairé','TAK Server','HAVOC-19','Actif','10.20.4.83','—'],
+    ['26/07 19:45:22','Nomad','Delta','Relance RSVP envoyée','Courrier','OP-2026-118','En attente','—','—']
+  ]
+};
+
+PAGES.rolesTable = {
+  group:'Système', kicker:'RÔLES · TABLE', title:'Table des rôles',
+  sub:'Liste structurée par famille opérationnelle. Le nombre de droits indique combien d’habilitations sont actives pour chaque rôle.',
+  action:'Créer un rôle', quick:['Gouvernance','Rôles opérationnels','Profils prêts'],
+  kpis:[
+    ['RÔLES','27','+2','#0b8a5c','80%','2 familles'],
+    ['DROITS DISTINCTS','171','+9','#1e4f80','76%','au catalogue'],
+    ['RÔLES VERROUILLÉS','3','—','#c98a12','11%','non modifiables'],
+    ['RÔLES SANS TITULAIRE','9','-1','#c98a12','33%','à pourvoir']
+  ],
+  tableTitle:'Rôles par famille', filters:['Périmètre','Type','Statut'], minW:'1600px',
+  cols:['CODE|m','RÔLE','LIBELLÉ TECHNIQUE|m','FAMILLE','TYPE','PÉRIMÈTRE','DROITS|r','MEMBRES|r','VERROUILLÉ','HÉRITE DE','MODIFIÉ LE|m','ÉTAT|b'],
+  rows:[
+    ['ORG-MGR','Gestionnaire d’organisation','organization_manager','Gouvernance','Commandement','Communauté','140','1','Oui','—','12/07/2026','Actif'],
+    ['ORG-ADM','Gestionnaire administratif','organization_administrator','Gouvernance','Commandement','Communauté','140','1','Non','ORG-MGR','12/07/2026','Actif'],
+    ['ORG-DEP','Chef adjoint d’organisation','deputy_organization_lead','Gouvernance','Commandement','Communauté','35','0','Non','ORG-ADM','12/07/2026','Actif'],
+    ['ORG-TEC','Administrateur technique local','local_technical_administrator','Gouvernance','Commandement','Communauté','17','1','Non','—','12/07/2026','Actif'],
+    ['ORG-REC','Recruteur','recruiter','Gouvernance','Emploi','Communauté','8','1','Non','—','12/07/2026','Actif'],
+    ['OPS-CAD','Cadre','supervisory_member','Opérationnels','Emploi','Unité','19','1','Non','—','09/07/2026','Actif'],
+    ['OPS-DIS','Officier discipline','discipline_officer','Opérationnels','Emploi','Unité','13','0','Non','OPS-CAD','09/07/2026','Actif'],
+    ['OPS-RCR','Officier recrutement','recruiting_officer','Opérationnels','Emploi','Unité','14','0','Non','OPS-CAD','09/07/2026','Actif'],
+    ['OPS-SEC','Officier sécurité','security_officer','Opérationnels','Emploi','Unité','12','0','Non','OPS-CAD','09/07/2026','Actif'],
+    ['OPS-FOR','Officier formation','training_officer','Opérationnels','Emploi','Unité','22','2','Non','OPS-CAD','09/07/2026','Actif'],
+    ['OPS-LIA','Officier liaison','liaison_officer','Opérationnels','Liaison','Unité','9','1','Non','—','09/07/2026','Actif'],
+    ['OPS-LOG','Soutien logistique','logistics_support','Opérationnels','Soutien','Unité','11','2','Non','—','04/07/2026','Actif'],
+    ['OPS-TAK','Référent ATAK','atak_specialist','Opérationnels','Spécialité','Unité','16','2','Non','—','04/07/2026','Actif'],
+    ['OPS-MED','Référent médical','medical_specialist','Opérationnels','Spécialité','Unité','10','1','Non','—','04/07/2026','Actif'],
+    ['OPS-MEM','Membre','member','Opérationnels','Statut affiché','Unité','6','128','Oui','—','12/07/2026','Actif']
+  ]
+};
+
+PAGES.profils = {
+  group:'Système', kicker:'RÔLES · PROFILS', title:'Profils de permissions',
+  sub:'Chaque profil remplace intégralement les habilitations du rôle sélectionné. Les droits réservés à l’administration de la plateforme ne sont jamais accordés.',
+  action:'Afficher le récapitulatif', quick:['Liste des rôles','Comparer','Historique'],
+  profiles:[
+    ['Membre actif','Forum (lecture et participation), documents standards, formations en consultation, annuaire en lecture.','18 droits'],
+    ['Instructeur / formateur','Base membre + assignation de formations, correction des rendus, consultation des résultats.','34 droits'],
+    ['RH & recrutement','Invitations, vue et gestion des membres, fiches personnel, grades et affectations.','46 droits'],
+    ['Modérateur forum','Toute la modération forum sur la communauté (épinglage, signalements, catégories), sans modération « site ».','29 droits'],
+    ['Gestion documentaire','Téléversement, versions, métadonnées, catégories et droits d’accès documentaires.','24 droits'],
+    ['Administration organisation','Toutes les permissions du catalogue communauté disponibles, hors droits plateforme réservés.','140 droits'],
+    ['Commandement unité','Pilotage ORBAT, membres, documents opérationnels, formations en lecture / correction ciblée, modération org.','88 droits'],
+    ['Pôle formation','Parcours LMS, assignations, notation, certifications et suivi pédagogique.','41 droits'],
+    ['Cellule recrutement','Invitations, dossiers candidats, profils et intégration, sans administration système.','37 droits']
+  ],
+  tableTitle:'Applications récentes de profils', filters:['Profil','Rôle','Auteur'], minW:'1440px',
+  cols:['RÉF.|m','RÔLE CIBLE','PROFIL APPLIQUÉ','AVANT|r','APRÈS|r','AJOUTS|r','RETRAITS|r','APPLIQUÉ LE|m','PAR','MEMBRES IMPACTÉS|r','ÉTAT|b'],
+  rows:[
+    ['APP-0142','Officier formation','Pôle formation','19','41','24','2','24/07/2026','Noopy','2','Validé'],
+    ['APP-0141','Recruteur','Cellule recrutement','8','37','29','0','23/07/2026','Noopy','1','Validé'],
+    ['APP-0139','Cadre','Commandement unité','19','88','71','2','19/07/2026','Noopy','1','Validé'],
+    ['APP-0136','Membre','Membre actif','6','18','12','0','12/07/2026','Noopy','128','Validé'],
+    ['APP-0134','Référent ATAK','Administration organisation','16','140','126','2','09/07/2026','Static','2','En attente'],
+    ['APP-0131','Officier discipline','Modérateur forum','13','29','18','2','04/07/2026','Noopy','0','Validé']
+  ]
+};
+
+PAGES.doctrine = {
+  group:'Personnel', kicker:'BACK-OFFICE · CELLULE S1', title:'Doctrine des fonctions',
+  sub:'Référentiel des fonctions, relations de commandement entre les rôles de la communauté et suivi des postes qui doivent être pourvus.',
+  action:'Enregistrer les fonctions', quick:['Référentiel','Obligatoires','Graphe'],
+  kpis:[
+    ['FONCTIONS','38','+3','#0b8a5c','76%','au référentiel'],
+    ['RÔLES RATTACHÉS','171','+9','#1e4f80','82%','toutes familles'],
+    ['RELATIONS','4','+1','#1e4f80','20%','liens de commandement'],
+    ['FONCTIONS OBLIGATOIRES','12','+2','#0b8a5c','60%','couverture 83 %'],
+    ['NON COUVERTES','2','-1','#c98a12','17%','à pourvoir']
+  ],
+  tableTitle:'Référentiel des fonctions', filters:['Catégorie','Obligatoire','Couverture'], minW:'1620px',
+  cols:['CODE|m','FONCTION','RÉFÉRENCE|m','CATÉGORIE','NIVEAU|r','RATTACHÉE À','RÔLES LIÉS|r','TITULAIRES|r','OBLIG.','SUPPLÉANT','COUVERTURE|r','ÉTAT|b'],
+  rows:[
+    ['FN-001','Commandant d’unité','unit_commander','Commandement','5','—','3','1','Oui','Oui','100 %','Conforme'],
+    ['FN-002','Gestionnaire d’unité','unit_manager','Commandement','4','Commandant d’unité','4','1','Oui','Non','100 %','Conforme'],
+    ['FN-003','Responsable d’unité','unit_lead','Commandement','4','Commandant d’unité','2','1','Oui','Oui','100 %','Conforme'],
+    ['FN-004','Chef de peloton','platoon_leader','Commandement','3','Responsable d’unité','3','2','Oui','Oui','100 %','Conforme'],
+    ['FN-005','Adjoint de section','section_deputy','Commandement','3','Chef de peloton','2','3','Oui','Non','100 %','Conforme'],
+    ['FN-006','Chef de groupe','squad_leader','Commandement','2','Adjoint de section','2','14','Oui','Oui','100 %','Conforme'],
+    ['FN-007','Chef d’équipe','team_leader','Commandement','1','Chef de groupe','1','9','Non','Non','90 %','Conforme'],
+    ['FN-008','Officier opérations','operations_officer','État-major','4','Commandant d’unité','5','1','Oui','Non','100 %','Conforme'],
+    ['FN-009','Officier renseignement','intelligence_officer','État-major','3','Officier opérations','3','0','Oui','Non','0 %','Manquant'],
+    ['FN-010','Officier transmissions','signals_officer','État-major','3','Officier opérations','4','1','Oui','Non','100 %','Conforme'],
+    ['FN-011','Chef cuisine de campagne','cater_field_kitchen_chief','Soutien','1','Officier logistique','1','0','Non','Non','0 %','Non couvert'],
+    ['FN-012','JTAC / FO','jtac','Appuis & feux','3','Officier opérations','2','2','Oui','Oui','100 %','Conforme'],
+    ['FN-013','Medic / secouriste','medic','Appuis & feux','2','Officier opérations','2','7','Oui','Oui','100 %','Conforme'],
+    ['FN-014','Instructeur','instructor','Instruction','2','Officier formation','3','6','Oui','Oui','100 %','Conforme'],
+    ['FN-015','Formateur','trainer','Instruction','1','Instructeur','2','4','Non','Non','80 %','Conforme']
+  ]
+};
+
+PAGES.attributions = {
+  group:'Personnel', kicker:'RÔLES MÉTIER · ATTRIBUTIONS', title:'Attributions rôles métier',
+  sub:'Un ou plusieurs emplois du référentiel par membre. L’emploi principal sert de référence pour le dossier et l’ORBAT ; les emplois additionnels restent visibles sur la fiche.',
+  action:'Attribuer un emploi', quick:['Sans emploi','Multi-emplois','Autorisations'],
+  kpis:[
+    ['MEMBRES AFFECTÉS','142','+6','#0b8a5c','91%','sur 156'],
+    ['SANS AUCUN EMPLOI','14','-4','#c98a12','9%','à traiter'],
+    ['MULTI-EMPLOIS','38','+5','#1e4f80','27%','jusqu’à 5 par personne'],
+    ['AUTORISATIONS LIÉES','75','+7','#0b8a5c','66%','droits hérités des emplois']
+  ],
+  tableTitle:'Attributions par membre', filters:['Emploi','Statut','Autorisations'], minW:'1740px',
+  cols:['MATRICULE|m','MEMBRE','STATUT|b','EMPLOI PRINCIPAL','CATÉGORIE','EMPLOIS ADDITIONNELS|r','PRÉCISION','AUTORISATIONS|r','LIBELLÉ DOSSIER','ATTRIBUÉ PAR','MODIFIÉ LE|m','FICHE'],
+  rows:[
+    ['ATH-0142','N. Perrin','Actif','Commandement › Commandant d’unité','Commandement','2','Chef de corps','140','Chef de corps','Système','12/03/2026','Ouvrir'],
+    ['ATH-0155','M. Kervella','Actif','Commandement › Chef de peloton','Commandement','3','Spécialiste gestionnaire administratif','88','Chef Alpha','Noopy','19/07/2026','Ouvrir'],
+    ['ATH-0161','L. Anquetil','Actif','Infanterie › Chef de groupe','Infanterie','1','—','31','Chef groupe A1','Viper','26/07/2026','Ouvrir'],
+    ['ATH-0164','J. Ferrand','Actif','Infanterie › Tireur désigné','Infanterie','2','Qualifié nuit','24','Chef Bravo','Noopy','14/07/2026','Ouvrir'],
+    ['ATH-0170','S. Rambaud','Actif','Infanterie › Chef d’équipe','Infanterie','0','—','19','Chef équipe B1','Wraith','02/07/2026','Ouvrir'],
+    ['ATH-0177','A. Trémaux','Actif','Appuis & feux › Medic','Appuis & feux','2','Référent médical','34','Médecin d’unité','Noopy','09/07/2026','Ouvrir'],
+    ['ATH-0181','R. Delaunay','Actif','Infanterie › Fusilier','Infanterie','0','—','12','Fusilier','Bishop','27/06/2026','Ouvrir'],
+    ['ATH-0188','C. Boulay','Actif','État-major › Officier transmissions','État-major','2','Référent ATAK','46','Chef Delta','Noopy','04/07/2026','Ouvrir'],
+    ['ATH-0193','F. Lechêne','En attente','—','—','0','—','6','—','—','22/02/2026','Ouvrir'],
+    ['ATH-0199','T. Marchal','Actif','Reconnaissance › Opérateur drone','Reconnaissance','1','Pilote confirmé','22','Drone Alpha','Viper','08/07/2026','Ouvrir'],
+    ['ATH-0204','P. Vasseur','Actif','Infanterie › Éclaireur','Infanterie','1','—','16','Éclaireur Bravo','Wraith','19/04/2026','Ouvrir'],
+    ['ATH-0211','O. Guérin','Suspendu','Infanterie › Fusilier','Infanterie','0','—','0','—','Noopy','26/07/2026','Ouvrir'],
+    ['ATH-0219','B. Aubry','En attente','Instruction › Recrue','Instruction','0','—','6','Recrue','Système','16/07/2026','Ouvrir']
+  ]
+};
+
+PAGES.roleplay = {
+  group:'Personnel', kicker:'MODULE · SUIVI', title:'Suivi roleplay',
+  sub:'Tutorat, avancement de dossier et échéances — trié par échéance la plus proche.',
+  action:'Configurer le module', quick:['Éligibles','Échéances','Tuteurs'],
+  alerts:[
+    ['ÉCHÉANCE','#c72e2e','4 dossiers arrivent à échéance sous 7 jours (entretien, médical, rotation)','aujourd’hui 07:15','Planifier'],
+    ['BILAN','#c98a12','6 membres suivis sans bilan RP enregistré','hier 20:40','Saisir']
+  ],
+  kpis:[
+    ['STATUT MODULE','Actif','—','#0b8a5c','100%','visible des tuteurs'],
+    ['DOSSIERS SUIVIS','18','+3','#0b8a5c','72%','sur 128 actifs'],
+    ['ÉLIGIBLES','11','+2','#0b8a5c','61%','dossier validé'],
+    ['ÉCHÉANCES < 7 J','4','+1','#c72e2e','22%','à traiter'],
+    ['AVANCEMENT MOYEN','78 %','+9 pts','#0b8a5c','78%','tous dossiers']
+  ],
+  tableTitle:'Dossiers suivis', filters:['Étape','Tuteur','Éligibilité'], minW:'1780px',
+  cols:['MEMBRE','ÉTAPE','TUTORAT','AVANCEMENT|r','FONCTION','FILIÈRE','PROFIL','ENTRETIEN|m','MÉDICAL|m','ROTATION|m','BILAN RP|m','ÉLIGIBILITÉ|b','DERNIER ÉVÉNEMENT','PRÉVU LE|m'],
+  rows:[
+    ['M. Kervella','Intégration active','M. Mesnel','100 %','Expert JTAC','Commandement','Interne','30/04/2026','30/04/2026','30/04/2026','02/10/2026','Éligible','Planification rotation de service','21/07/2026'],
+    ['N. Perrin','Intégration active','M. Mesnel','100 %','Expert JTAC','Commandement','Interne','30/04/2026','30/04/2026','30/04/2026','02/10/2026','Éligible','Formation JTAC — PT1','21/07/2026'],
+    ['L. Anquetil','Consolidation','M. Kervella','82 %','Chef de groupe','Infanterie','Interne','12/08/2026','04/09/2026','30/09/2026','—','Éligible','Validation chef de groupe','04/08/2026'],
+    ['J. Ferrand','Consolidation','M. Kervella','76 %','Tireur désigné','Infanterie','Interne','19/08/2026','12/09/2026','30/09/2026','12/06/2026','Éligible','Qualification tir de nuit','11/08/2026'],
+    ['A. Trémaux','Intégration active','N. Perrin','94 %','Référent médical','Soutien','Interne','02/08/2026','02/08/2026','30/10/2026','20/05/2026','Éligible','Mise à jour protocole médical','29/07/2026'],
+    ['C. Boulay','Consolidation','N. Perrin','88 %','Officier transmissions','État-major','Interne','09/08/2026','21/09/2026','30/11/2026','—','Éligible','Déploiement TAK 5.2','06/08/2026'],
+    ['T. Marchal','Découverte','L. Anquetil','61 %','Opérateur drone','Reconnaissance','Interne','26/08/2026','14/10/2026','—','—','En attente','Vol de qualification','18/08/2026'],
+    ['P. Vasseur','Découverte','J. Ferrand','54 %','Éclaireur','Infanterie','Interne','02/09/2026','30/10/2026','—','—','En attente','Patrouille encadrée','25/08/2026'],
+    ['R. Delaunay','Découverte','A. Trémaux','42 %','Fusilier','Infanterie','Interne','09/09/2026','—','—','—','En attente','Reprise après absence','01/09/2026'],
+    ['B. Aubry','Accueil','C. Boulay','24 %','Recrue','Instruction','Externe','16/09/2026','—','—','—','Non','Installation ATAK','30/07/2026'],
+    ['D. Roussel','Accueil','C. Boulay','18 %','Recrue','Instruction','Externe','23/09/2026','—','—','—','Non','Signature de la charte','02/08/2026'],
+    ['O. Guérin','Suspendu','—','8 %','—','—','Interne','—','—','—','—','Non','Dossier suspendu','—']
+  ]
+};
+
+PAGES.setup = {
+  group:'Communauté', kicker:'PREMIERS PAS', title:'Configuration initiale',
+  sub:'Votre communauté est en place. Complétez les derniers réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle d’accueil.',
+  action:'Terminer la configuration', quick:['Enregistrer','Reporter','Aide'],
+  setup:{
+    pct:'75 %', done:'6 / 8 éléments essentiels', bar:'75%',
+    checklist:[['Nom affiché','ok'],['Adresse publique','ok'],['Logo','ok'],['E-mail de contact','warn'],['Message d’accueil','ok'],['Mode d’inscription','ok'],['Rôles de la communauté','ok'],['Lien Discord','warn']],
+    fields:[
+      ['Nom affiché','92e Régiment d’Infanterie','Visible sur la page publique et le portail.','ok'],
+      ['Adresse publique','92ri.athena.fr','Slug de la vitrine publique.','ok'],
+      ['E-mail de contact','—','Affiché aux candidats et visiteurs.','warn'],
+      ['Lien Discord','—','Obligatoire pour le recrutement via Discord.','warn'],
+      ['Mode d’inscription','Sur candidature','Candidature soumise à validation.','ok'],
+      ['Rôle d’accueil','Recrue','Attribué automatiquement à l’arrivée.','ok'],
+      ['Profil de communauté','Complet','Détermine les modules et menus activés.','ok'],
+      ['Fuseau horaire','Europe/Paris','Base de tous les horodatages.','ok']
+    ]
+  }
+};
+
+PAGES.community = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · IDENTITÉ', title:'Paramètres de la communauté',
+  sub:'Identité, visibilité dans le registre des unités, options d’inscription et personnalisation de la navigation du portail.',
+  action:'Enregistrer', quick:['Identité','Visibilité','Navigation'],
+  settings:[
+    ['IDENTITÉ','Vitrine et portail',[
+      ['Nom affiché','Titre visible sur la page publique et le registre.','92e RI',true],
+      ['Logo','JPG, PNG ou WebP · 12 Mo maximum.','Défini',true],
+      ['Image d’en-tête','Bandeau paysage sur la carte du registre.','Définie',true],
+      ['Message d’accueil','Texte court affiché aux visiteurs.','Renseigné',true]
+    ]],
+    ['VISIBILITÉ','Registre des unités',[
+      ['Apparaître dans le registre public','Rend la communauté visible dans la liste des unités.','Public',true],
+      ['Forum réservé aux membres','Masque « Accéder au forum » aux visiteurs.','Réservé',true],
+      ['Page d’accueil publique','Vitrine consultable sans connexion.','En ligne',true],
+      ['Indexation moteurs','Autoriser le référencement de la vitrine.','Bloquée',false]
+    ]],
+    ['NAVIGATION','Portail',[
+      ['Sous-menu Opérations','Style d’affichage du sous-menu.','Cartes',true],
+      ['Couleur d’accent Opérations','Teinte appliquée au panneau latéral.','Sky',true],
+      ['Image du panneau latéral','Illustration affichée dans le menu.','Affichée',true],
+      ['Sous-menu Ressources','Style d’affichage du sous-menu.','Liste',false]
+    ]],
+    ['INSCRIPTION','Arrivée des membres',[
+      ['Mode d’inscription','Candidature soumise à validation manuelle.','Sur candidature',true],
+      ['Rôle d’accueil','Attribué automatiquement au nouvel arrivant.','Recrue',true],
+      ['Recrutement via Discord','Redirige le candidat vers le serveur.','Actif',true],
+      ['Fermeture temporaire','Suspend le dépôt de nouvelles candidatures.','Ouverte',false]
+    ]]
+  ]
+};
+
+PAGES.publicPage = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · VITRINE', title:'Page d’accueil publique',
+  sub:'Blocs composant la vitrine publique : ordre d’affichage, visibilité et dernière modification.',
+  action:'Prévisualiser', quick:['Réordonner','Masqués','Publier'],
+  kpis:[
+    ['BLOCS PUBLIÉS','9','+2','#0b8a5c','75%','sur 12 disponibles'],
+    ['VISITES 30 J','4 812','+18 %','#0b8a5c','68%','dont 61 % mobile'],
+    ['CANDIDATURES ISSUES','23','+7','#0b8a5c','48%','taux 0,5 %'],
+    ['TEMPS MOYEN','1 min 42','+11 s','#1e4f80','40%','sur la vitrine']
+  ],
+  tableTitle:'Blocs de la vitrine', filters:['Type','Visibilité','Auteur'], minW:'1480px',
+  cols:['ORDRE|r','BLOC','TYPE','CONTENU','VISIBILITÉ|b','APPAREIL','VUES 30 J|r','CLICS|r','MODIFIÉ LE|m','PAR','ÉTAT|b'],
+  rows:[
+    ['1','Bandeau principal','Héros','Image + accroche','Public','Tous','4 812','—','21/07 14:02','Noopy','Actif'],
+    ['2','Présentation de l’unité','Texte','420 mots','Public','Tous','4 209','—','18/07 20:31','Noopy','Actif'],
+    ['3','Chiffres clés','Statistiques','4 indicateurs','Public','Tous','3 980','—','12/07 19:04','Static','Actif'],
+    ['4','Galerie médias','Médias','18 images','Public','Tous','3 114','842','24/07 21:15','Bishop','Actif'],
+    ['5','Sections & spécialités','Grille','5 cartes','Public','Tous','2 806','611','10/07 18:22','Viper','Actif'],
+    ['6','Calendrier public','Agenda','6 prochains événements','Public','Ordinateur','2 402','388','26/07 09:40','Noopy','Actif'],
+    ['7','Témoignages','Citations','4 témoignages','Masqué','Tous','0','0','02/07 22:10','Bishop','Brouillon'],
+    ['8','Prérequis & attentes','Texte','280 mots','Public','Tous','2 118','—','09/07 20:55','Viper','Actif'],
+    ['9','Appel à candidature','Action','Bouton + Discord','Public','Tous','1 944','512','27/07 08:12','Noopy','Actif'],
+    ['10','FAQ','Accordéon','12 questions','Public','Tous','1 302','247','15/07 21:33','Bishop','Actif'],
+    ['11','Partenaires','Logos','6 logos','Masqué','Tous','0','0','28/06 19:47','Static','Brouillon']
+  ]
+};
+
+PAGES.medias = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · MÉDIAS', title:'Médias',
+  sub:'Bibliothèque d’images et vidéos utilisées sur la vitrine, le portail et les publications.',
+  action:'Téléverser', quick:['Images','Vidéos','Non utilisés'],
+  kpis:[
+    ['FICHIERS','214','+18','#0b8a5c','72%','images et vidéos'],
+    ['ESPACE UTILISÉ','6,4 Go','+0,8 Go','#1e4f80','52%','quota 12 Go'],
+    ['NON UTILISÉS','31','+5','#c98a12','24%','à nettoyer'],
+    ['POIDS MOYEN','1,9 Mo','-0,3 Mo','#0b8a5c','38%','après compression']
+  ],
+  tableTitle:'Bibliothèque', filters:['Type','Album','Utilisation'], minW:'1520px',
+  cols:['RÉF.|m','FICHIER','TYPE','ALBUM','DIMENSIONS|m','POIDS|r','FORMAT','TÉLÉVERSÉ LE|m','PAR','UTILISÉ DANS|r','VUES|r','ÉTAT|b'],
+  rows:[
+    ['MED-1042','banniere-registre.webp','Image','Identité','1920×640','412 Ko','WebP','21/07/2026','Noopy','3','4 812','Actif'],
+    ['MED-1038','logo-92ri.png','Image','Identité','512×512','88 Ko','PNG','12/03/2026','Noopy','12','—','Actif'],
+    ['MED-1035','op-lame-courte-01.jpg','Image','Opérations','2400×1600','2,1 Mo','JPEG','20/07/2026','Wraith','2','1 204','Actif'],
+    ['MED-1034','op-lame-courte-02.jpg','Image','Opérations','2400×1600','1,8 Mo','JPEG','20/07/2026','Wraith','1','980','Actif'],
+    ['MED-1029','instruction-tir.mp4','Vidéo','Instruction','1920×1080','184 Mo','MP4','14/07/2026','Dexter','1','642','Actif'],
+    ['MED-1026','portrait-alpha.jpg','Image','Sections','1600×1200','1,2 Mo','JPEG','09/07/2026','Viper','1','388','Actif'],
+    ['MED-1021','menu-operations.webp','Image','Navigation','1200×800','204 Ko','WebP','05/07/2026','Static','1','—','Actif'],
+    ['MED-1018','ancienne-banniere.jpg','Image','Archives','1920×640','2,4 Mo','JPEG','11/02/2026','Noopy','0','—','Non utilisé'],
+    ['MED-1014','test-compression.png','Image','Divers','800×600','1,1 Mo','PNG','28/06/2026','Static','0','—','Non utilisé'],
+    ['MED-1009','ceremonie-2026.mp4','Vidéo','Événements','1920×1080','312 Mo','MP4','21/06/2026','Bishop','1','1 402','Actif'],
+    ['MED-1004','carte-kamysh.png','Image','Opérations','2048×2048','3,4 Mo','PNG','02/07/2026','Wraith','2','711','Actif']
+  ]
+};
+
+PAGES.annonces = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · DIFFUSION', title:'Annonces & alertes',
+  sub:'Messages portail affichés en bandeau ou en encart : audience, période d’affichage et impact mesuré.',
+  action:'Créer une annonce', quick:['Actives','Programmées','Expirées'],
+  kpis:[
+    ['ANNONCES ACTIVES','4','+1','#0b8a5c','40%','dont 1 critique'],
+    ['PROGRAMMÉES','3','+2','#1e4f80','30%','sur 14 jours'],
+    ['TAUX DE LECTURE','88 %','+6 pts','#0b8a5c','88%','vues / membres actifs'],
+    ['FERMETURES','142','+31','#1e4f80','52%','bandeaux masqués']
+  ],
+  tableTitle:'Messages portail', filters:['Niveau','Audience','Statut'], minW:'1560px',
+  cols:['RÉF.|m','TITRE','NIVEAU|b','EMPLACEMENT','AUDIENCE','DÉBUT|m','FIN|m','VUES|r','CLICS|r','FERMÉES|r','AUTEUR','STATUT|b'],
+  rows:[
+    ['ANN-0312','Clôture RSVP FER ROUGE le 01/08','Critique','Bandeau haut','Tous','25/07 09:00','01/08 22:00','1 204','388','96','Noopy','Actif'],
+    ['ANN-0311','Maintenance serveur TAK dimanche','En attente','Encart tableau de bord','Tous','24/07 18:00','28/07 08:00','1 118','142','44','Static','Actif'],
+    ['ANN-0309','Nouvelle procédure médicale v3','Actif','Encart tableau de bord','Toutes sections','20/07 16:00','10/08 23:59','980','311','22','Bishop','Actif'],
+    ['ANN-0308','Session de recrutement août','Actif','Bandeau haut','Public','23/07 10:00','23/08 23:59','3 412','842','18','Bishop','Actif'],
+    ['ANN-0307','Rappel discipline radio','Actif','Encart section','Alpha, Bravo','—','—','—','—','—','Viper','Planifié'],
+    ['ANN-0306','Fermeture des candidatures','En attente','Bandeau haut','Public','24/08 00:00','—','—','—','—','Noopy','Planifié'],
+    ['ANN-0305','Exercice interunités du 30/08','Actif','Encart tableau de bord','Tous','01/08 09:00','30/08 20:00','—','—','—','Noopy','Planifié'],
+    ['ANN-0299','Annulation entraînement du 19/07','Critique','Bandeau haut','Tous','19/07 08:00','19/07 23:59','1 160','—','204','Noopy','Expiré'],
+    ['ANN-0294','Mise à jour ATAK 5.2','Actif','Encart tableau de bord','Tous','12/07 12:00','19/07 23:59','1 042','422','61','Static','Expiré']
+  ]
+};
+
+PAGES.usage = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · MESURE', title:'Indicateurs d’usage',
+  sub:'Fréquentation du portail par module : visiteurs uniques, sessions, profondeur de consultation et évolution.',
+  action:'Exporter le rapport', quick:['30 jours','90 jours','Par rôle'],
+  kpis:[
+    ['VISITEURS UNIQUES 30 J','412','+34','#0b8a5c','78%','dont 128 membres actifs'],
+    ['SESSIONS','3 918','+412','#0b8a5c','82%','9,5 par membre'],
+    ['DURÉE MOYENNE','7 min 24','+48 s','#0b8a5c','62%','par session'],
+    ['MODULE LE PLUS VU','Opérations','—','#1e4f80','100%','1 204 vues'],
+    ['TAUX DE REBOND','24 %','-5 pts','#0b8a5c','24%','vitrine publique']
+  ],
+  tableTitle:'Fréquentation par module', filters:['Période','Rôle','Appareil'], minW:'1520px',
+  cols:['MODULE','VUES 30 J|r','UNIQUES|r','SESSIONS|r','DURÉE MOY.|r','PAGES / SESSION|r','MOBILE|r','ORDINATEUR|r','ÉVOLUTION|r','PIC|m','TENDANCE|b'],
+  rows:[
+    ['Opérations','1 204','118','842','4 min 12','3,4','38 %','62 %','+18 %','19/07','Actif'],
+    ['RSVP','1 042','126','904','2 min 08','2,1','54 %','46 %','+31 %','25/07','Actif'],
+    ['Mur opérationnel','980','131','788','3 min 44','2,8','61 %','39 %','+9 %','27/07','Actif'],
+    ['Annuaire','742','104','512','2 min 51','4,2','29 %','71 %','+4 %','14/07','Actif'],
+    ['ATAK','611','82','402','6 min 18','5,1','12 %','88 %','+22 %','27/07','Actif'],
+    ['Formations','508','96','388','5 min 02','3,9','34 %','66 %','+6 %','12/07','Actif'],
+    ['Agenda','486','112','402','1 min 38','1,8','58 %','42 %','+2 %','21/07','Actif'],
+    ['Documents','344','71','244','8 min 41','6,2','18 %','82 %','-3 %','09/07','En attente'],
+    ['Vitrine publique','4 812','388','3 918','1 min 42','1,4','61 %','39 %','+18 %','23/07','Actif'],
+    ['Recrutement','812','204','611','3 min 22','2,6','66 %','34 %','+27 %','23/07','Actif']
+  ]
+};
+
+PAGES.onboarding = {
+  group:'Communauté', kicker:'COMMUNAUTÉ · ACCUEIL', title:'Onboarding membres',
+  sub:'Parcours d’accueil des nouveaux arrivants : étapes, relances automatiques et taux de complétion.',
+  action:'Modifier le parcours', quick:['Étapes','Relances','Abandons'],
+  alerts:[
+    ['RELANCE','#c98a12','5 nouveaux membres n’ont pas terminé l’étape « Installer ATAK » sous 7 jours','aujourd’hui 08:30','Relancer']
+  ],
+  kpis:[
+    ['EN PARCOURS','14','+4','#0b8a5c','58%','arrivés sous 30 j'],
+    ['COMPLÉTION MOYENNE','71 %','+8 pts','#0b8a5c','71%','objectif 85 %'],
+    ['DÉLAI MOYEN','9,2 j','-1,4 j','#0b8a5c','46%','de bout en bout'],
+    ['ABANDONS','3','-2','#0b8a5c','21%','sans activité 14 j']
+  ],
+  tableTitle:'Étapes du parcours', filters:['Obligatoire','Canal','État'], minW:'1520px',
+  cols:['ORDRE|r','ÉTAPE','OBLIG.','DÉCLENCHEUR','CANAL','DÉLAI CIBLE','TERMINÉE PAR|r','COMPLÉTION|r','DÉLAI MOYEN|r','RELANCES|r','BLOQUANTE','ÉTAT|b'],
+  rows:[
+    ['1','Valider son adresse e-mail','Oui','Inscription','Courriel','24 h','14','100 %','2 h','0','Oui','Actif'],
+    ['2','Compléter sa fiche personnelle','Oui','Validation compte','Portail','48 h','13','93 %','1,2 j','2','Oui','Actif'],
+    ['3','Lire la charte de l’unité','Oui','Fiche complétée','Portail','72 h','12','86 %','2,1 j','3','Oui','Actif'],
+    ['4','Rejoindre le serveur Discord','Oui','Charte signée','Discord','72 h','12','86 %','1,8 j','4','Non','Actif'],
+    ['5','Installer ATAK','Oui','Charte signée','Portail','7 j','9','64 %','5,4 j','7','Oui','Actif'],
+    ['6','Importer son data package','Oui','ATAK installé','ATAK','7 j','8','57 %','6,1 j','5','Oui','Actif'],
+    ['7','Suivre la formation ATAK N1','Non','Package importé','Formations','14 j','7','50 %','9,8 j','3','Non','Actif'],
+    ['8','Participer à un premier terrain','Non','Formation suivie','Opérations','30 j','6','43 %','16,4 j','1','Non','Actif'],
+    ['9','Entretien de fin de période','Oui','Premier terrain','Portail','45 j','5','36 %','22,1 j','0','Oui','Actif'],
+    ['10','Affectation en section','Oui','Entretien validé','Portail','45 j','5','36 %','24,0 j','0','Oui','Actif']
+  ]
+};
+
+PAGES.logs = {
+  group:'Système', kicker:'SYSTÈME · TRAÇABILITÉ', title:'Journal d’audit',
+  sub:'Toutes les actions administratives sont horodatées, attribuées et conservées 24 mois.',
+  action:'Exporter le journal', quick:['24 h','Critiques','Par acteur'],
+  kpis:[
+    ['ÉVÉNEMENTS 24 H','1 284','+142','#1e4f80','64%','toutes sources'],
+    ['ACTIONS ADMIN','38','+6','#0b8a5c','30%','12 acteurs'],
+    ['ALERTES SÉCURITÉ','4','+3','#c72e2e','22%','dont 3 auth. échouées'],
+    ['RÉTENTION','24 mois','—','#1e4f80','100%','conforme charte']
+  ],
+  tableTitle:'Événements système', filters:['Sévérité','Source','24 h'], minW:'1620px',
+  cols:['ID|m','HORODATAGE|m','SOURCE','ACTEUR','ACTION','OBJET|m','ANCIENNE VALEUR','NOUVELLE VALEUR','IP|m','AGENT','SÉVÉRITÉ|b'],
+  rows:[
+    ['LOG-99412','27/07 09:41:02','TAK Server','Viper','Ouverture de session','VIPER-03','—','Connecté','10.20.4.31','ATAK 5.2','Actif'],
+    ['LOG-99408','27/07 09:22:14','Portail','Noopy','Publication créée','MUR-4412','—','Publié','10.20.4.2','Chrome 128','Actif'],
+    ['LOG-99401','27/07 08:57:36','TAK Server','Static','Certificat régénéré','0x4A27','0x4A26','0x4A27','10.20.4.77','Console','Validé'],
+    ['LOG-99396','27/07 08:41:09','TAK Server','—','Échec authentification','KILO-11','—','Refusé','82.14.90.6','ATAK 4.9','Échec'],
+    ['LOG-99394','27/07 08:39:55','TAK Server','—','Échec authentification','KILO-11','—','Refusé','82.14.90.6','ATAK 4.9','Échec'],
+    ['LOG-99388','27/07 08:12:44','Portail','Bishop','Qualification validée','ATH-0199','—','QUAL-DRN-2','10.20.4.55','Chrome 128','Validé'],
+    ['LOG-99377','26/07 23:04:18','Portail','Ghost','Réponse RSVP','OP-2026-118','Sans réponse','Décliné','10.20.4.44','Firefox 131','Actif'],
+    ['LOG-99366','26/07 21:30:02','Portail','Fennec','Candidature soumise','CAND-0231','—','En attente','91.66.12.4','Safari 18','Actif'],
+    ['LOG-99354','26/07 20:58:33','Administration','Noopy','Compte suspendu','ATH-0211','Actif','Suspendu','10.20.4.2','Chrome 128','Critique'],
+    ['LOG-99341','26/07 20:11:07','TAK Server','Havoc','Terminal appairé','HAVOC-19','—','Appairé','10.20.4.83','ATAK 5.1','Actif'],
+    ['LOG-99330','26/07 19:02:11','Système','—','Sauvegarde nocturne','BKP-2026-207','—','2,4 Go','—','Cron','Validé'],
+    ['LOG-99318','26/07 18:40:55','Portail','Viper','Rôle modifié','ATH-0161','Opérateur','Chef de groupe','10.20.4.31','Chrome 128','Critique']
+  ]
+};
+
+PAGES.roles = {
+  group:'Système', kicker:'SYSTÈME · ACCÈS', title:'Rôles & permissions',
+  sub:'Matrice des rôles applicatifs : périmètre d’accès, actions autorisées et titulaires.',
+  action:'Créer un rôle', quick:['Rôles','Permissions','Titulaires'],
+  kpis:[
+    ['RÔLES DÉFINIS','8','+1','#1e4f80','60%','dont 2 techniques'],
+    ['TITULAIRES ADMIN','4','—','#c98a12','12%','accès total'],
+    ['PERMISSIONS','36','+4','#0b8a5c','80%','granularité par module'],
+    ['REVUE D’ACCÈS','12/07','à jour','#0b8a5c','100%','trimestrielle']
+  ],
+  tableTitle:'Matrice des rôles', filters:['Périmètre','Niveau','Actif'], minW:'1620px',
+  cols:['CODE|m','RÔLE','NIVEAU|r','TITULAIRES|r','MEMBRES','OPÉRATIONS','ATAK','FINANCES','SYSTÈME','SUPPRESSION','EXPORT','DERNIÈRE REVUE|m','ÉTAT|b'],
+  rows:[
+    ['ROL-ADM','Administrateur','5','2','Complet','Complet','Complet','Complet','Complet','Oui','Oui','12/07/2026','Actif'],
+    ['ROL-CMD','Commandement','4','4','Complet','Complet','Lecture','Lecture','Lecture','Oui','Oui','12/07/2026','Actif'],
+    ['ROL-SEC','Chef de section','3','5','Sa section','Sa section','Lecture','—','—','Non','Oui','12/07/2026','Actif'],
+    ['ROL-GRP','Chef de groupe','2','14','Son groupe','Lecture','Lecture','—','—','Non','Non','12/07/2026','Actif'],
+    ['ROL-INS','Instructeur','3','6','Instruction','Lecture','Lecture','—','—','Non','Oui','12/07/2026','Actif'],
+    ['ROL-TAK','Administrateur TAK','4','2','Lecture','Lecture','Complet','—','Partiel','Oui','Oui','12/07/2026','Actif'],
+    ['ROL-MEM','Membre','1','128','Sa fiche','Lecture','Sa fiche','—','—','Non','Non','12/07/2026','Actif'],
+    ['ROL-REC','Recrue','0','14','Sa fiche','—','—','—','—','Non','Non','12/07/2026','Actif']
+  ]
+};
+
+PAGES.integrations = {
+  group:'Système', kicker:'SYSTÈME · SERVICES', title:'Intégrations',
+  sub:'Services connectés au portail : état de la liaison, dernière synchronisation et volumétrie.',
+  action:'Connecter un service', quick:['Actives','En erreur','Clés API'],
+  alerts:[
+    ['SERVICE','#c72e2e','Passerelle SMS en erreur depuis 3 h — relances RSVP non envoyées','aujourd’hui 06:50','Diagnostiquer']
+  ],
+  kpis:[
+    ['SERVICES CONNECTÉS','9','+1','#0b8a5c','75%','dont 2 critiques'],
+    ['EN ERREUR','1','+1','#c72e2e','11%','passerelle SMS'],
+    ['APPELS API 24 H','14 902','+1 208','#1e4f80','66%','quota 40 000'],
+    ['CLÉS À RENOUVELER','2','—','#c98a12','20%','sous 30 jours']
+  ],
+  tableTitle:'Services connectés', filters:['Type','État','Criticité'], minW:'1580px',
+  cols:['SERVICE','TYPE','FOURNISSEUR','CRITICITÉ','DERNIÈRE SYNC|m','FRÉQUENCE','APPELS 24 H|r','ERREURS 24 H|r','LATENCE|r','QUOTA UTILISÉ|r','CLÉ EXPIRE|m','ÉTAT|b'],
+  rows:[
+    ['Serveur TAK','Temps réel','Auto-hébergé','Critique','27/07 09:41','continu','8 402','2','42 ms','—','—','Opérationnel'],
+    ['Discord','Notification','Discord','Haute','27/07 09:38','1 min','2 104','0','118 ms','21 %','12/09/2026','Opérationnel'],
+    ['Passerelle SMS','Notification','Twilio','Haute','27/07 06:44','5 min','88','88','—','4 %','30/11/2026','Échec'],
+    ['Courrier SMTP','Notification','OVH','Moyenne','27/07 09:12','continu','412','1','204 ms','12 %','—','Opérationnel'],
+    ['Stockage objets','Fichiers','Scaleway','Haute','27/07 09:40','continu','1 902','0','66 ms','38 %','04/08/2026','Opérationnel'],
+    ['Sauvegarde','Infrastructure','Auto-hébergé','Critique','27/07 03:00','quotidien','1','0','—','52 %','—','Opérationnel'],
+    ['Annuaire LDAP','Identité','Auto-hébergé','Critique','27/07 09:30','15 min','780','0','18 ms','—','—','Opérationnel'],
+    ['Calendrier','Agenda','CalDAV','Basse','27/07 08:00','1 h','96','0','142 ms','8 %','21/08/2026','Opérationnel'],
+    ['Supervision','Monitoring','Grafana','Moyenne','27/07 09:41','30 s','1 117','0','29 ms','—','—','Opérationnel']
+  ]
+};
+
+PAGES.settings = {
+  group:'Système', kicker:'SYSTÈME · CONFIGURATION', title:'Paramètres',
+  sub:'Réglages généraux du portail, politique de sécurité, notifications et paramètres ATAK par défaut.',
+  action:'Enregistrer', quick:['Général','Sécurité','ATAK'],
+  settings:[
+    ['GÉNÉRAL','Portail', [
+      ['Inscriptions publiques','Autoriser le dépôt de candidature sans invitation.','Ouvert',true],
+      ['Validation manuelle','Chaque compte doit être validé par l’état-major.','Requise',true],
+      ['Mur public','Rendre les publications marquées « public » visibles hors connexion.','Restreint',false],
+      ['Fuseau horaire','Utilisé pour l’ensemble des horodatages.','Europe/Paris',true]
+    ]],
+    ['SÉCURITÉ','Politique d’accès', [
+      ['Double authentification','Obligatoire pour les rôles de niveau 3 et plus.','Obligatoire',true],
+      ['Expiration de session','Déconnexion automatique après inactivité.','120 min',true],
+      ['Verrouillage de compte','Après échecs d’authentification consécutifs.','5 essais',true],
+      ['Journalisation étendue','Conserve le détail des requêtes administratives.','24 mois',true]
+    ]],
+    ['NOTIFICATIONS','Diffusion', [
+      ['Relance RSVP automatique','Envoi à J-3 puis J-1 aux sans-réponse.','J-3 / J-1',true],
+      ['Notification Discord','Publication des consignes sur le canal #ordres.','Actif',true],
+      ['SMS d’urgence','Réservé aux annulations et rappels critiques.','Suspendu',false],
+      ['Résumé hebdomadaire','Envoyé aux chefs de section le lundi.','Lundi 09:00',true]
+    ]],
+    ['ATAK','Valeurs par défaut', [
+      ['Appairage automatique','Génère un certificat dès la validation du compte.','Actif',true],
+      ['Version client minimale','Refuse la connexion en deçà de cette version.','5.0.0',true],
+      ['Durée des certificats','Validité des certificats client émis.','12 mois',true],
+      ['Partage de position hors op.','Autoriser la remontée GPS en dehors des créneaux.','Désactivé',false]
+    ]]
+  ]
+};
+
+PAGES.atakDevices = {
+  group:'ATAK', kicker:'ATAK · PARC', title:'Terminaux ATAK',
+  sub:'Inventaire des terminaux appairés au serveur TAK : matériel, version client, état du certificat et dernière position remontée.',
+  action:'Appairer un terminal', quick:['En ligne','Certificats','Versions'],
+  alerts:[
+    ['CERT','#c72e2e','3 certificats client expirent sous 14 jours','aujourd’hui 07:40','Renouveler'],
+    ['VERSION','#c98a12','9 terminaux en client 4.9.x — mise à jour 5.2 recommandée','hier 19:02','Planifier']
+  ],
+  kpis:[
+    ['TERMINAUX','97','+4','#0b8a5c','76%','76 % de l’effectif'],
+    ['EN LIGNE','41','+12','#0b8a5c','42%','sur les 15 dernières min'],
+    ['CERT. EXPIRANTS','3','+1','#c72e2e','12%','sous 14 jours'],
+    ['VERSIONS OBSOLÈTES','9','-3','#c98a12','24%','client < 5.0'],
+    ['NON APPAIRÉS','31','-4','#1e4f80','24%','membres sans terminal']
+  ],
+  tableTitle:'Parc de terminaux', filters:['État','Version','Section'], minW:'1840px',
+  cols:['CALLSIGN|m','MEMBRE','SECTION','MATÉRIEL','OS','CLIENT ATAK|m','UID|m','ÉTAT|b','DERNIÈRE CONNEXION|m','SESSIONS 30 J|r','DONNÉES|r','CERT. EXPIRE|m','GPS','BATTERIE|r','PLUGINS|r'],
+  rows:[
+    ['VIPER-03','Viper','Alpha','Samsung S22','Android 14','5.2.0.1','a4f1-90cc','Connecté','27/07 09:41','18','2,4 Go','14/03/2027','Fixé','78 %','6'],
+    ['DEXTER-07','Dexter','Alpha','Pixel 7','Android 14','5.2.0.1','b711-3d20','Hors ligne','27/07 01:12','16','1,9 Go','02/04/2027','—','—','5'],
+    ['WRAITH-02','Wraith','Bravo','Samsung S21','Android 13','5.1.0.4','c093-77ab','Connecté','27/07 09:16','21','3,1 Go','19/05/2027','Fixé','54 %','7'],
+    ['KILO-11','Kilo','Bravo','Xiaomi 12','Android 13','4.9.1.7','d5aa-1e64','Hors ligne','26/07 23:41','9','0,8 Go','04/08/2026','—','—','3'],
+    ['BISHOP-05','Bishop','Charlie','Pixel 6a','Android 14','5.2.0.1','e21b-c4f8','Connecté','27/07 09:36','19','2,2 Go','27/06/2027','Fixé','91 %','8'],
+    ['HAVOC-19','Havoc','Charlie','Samsung A54','Android 13','5.1.0.4','f38d-2200','Hors ligne','24/07 20:11','7','0,6 Go','12/12/2026','—','—','4'],
+    ['STATIC-08','Static','Delta','Samsung S23','Android 14','5.2.0.1','1c40-88de','Connecté','27/07 08:57','24','4,7 Go','08/07/2027','Fixé','63 %','11'],
+    ['ECHO-14','Echo','Alpha','Pixel 8','Android 15','5.2.0.1','2b77-a915','Connecté','27/07 09:28','14','3,8 Go','21/05/2027','Fixé','44 %','9'],
+    ['GHOST-21','Ghost','Bravo','OnePlus 11','Android 14','5.1.0.4','3e12-6d0f','Hors ligne','26/07 22:03','11','1,4 Go','30/09/2026','—','—','5'],
+    ['SLATE-22','Slate','Charlie','Samsung A52','Android 12','4.9.1.7','4f88-b3c1','Bloqué','23/06/2026','1','0,1 Go','01/08/2026','—','—','2'],
+    ['MARLIN-31','Marlin','Instruction','Pixel 6','Android 14','5.2.0.1','5a19-77e2','Connecté','27/07 09:09','3','0,3 Go','16/07/2027','Fixé','88 %','3'],
+    ['NOOPY-CMD','Noopy','État-major','Tablette T9','Android 14','5.2.0.1','6c55-0f4a','Connecté','27/07 09:41','27','6,2 Go','12/03/2027','Fixé','100 %','14']
+  ]
+};
+
+PAGES.atakSessions = {
+  group:'ATAK', kicker:'ATAK · SESSIONS', title:'Sessions & connexions',
+  sub:'Historique des connexions au serveur TAK : durée, volume échangé, canaux rejoints et qualité de liaison.',
+  action:'Forcer la déconnexion', quick:['24 h','7 jours','Échecs'],
+  kpis:[
+    ['SESSIONS 24 H','63','+11','#0b8a5c','72%','41 opérateurs distincts'],
+    ['DURÉE MOYENNE','1 h 47','+12 min','#0b8a5c','58%','par session'],
+    ['DONNÉES ÉCHANGÉES','18,4 Go','+2,1 Go','#1e4f80','64%','sur 24 h'],
+    ['ÉCHECS AUTH.','7','+5','#c72e2e','28%','dont 3 sur KILO-11'],
+    ['LATENCE MOY.','42 ms','-6 ms','#0b8a5c','30%','serveur EU-Ouest']
+  ],
+  tableTitle:'Journal des sessions TAK', filters:['Résultat','Callsign','24 h'], minW:'1780px',
+  cols:['SESSION|m','CALLSIGN|m','MEMBRE','DÉBUT|m','FIN|m','DURÉE|r','PROTOCOLE','ADRESSE IP|m','CANAUX|r','CoT ÉMIS|r','CoT REÇUS|r','DONNÉES|r','LATENCE|r','PERTE|r','RÉSULTAT|b'],
+  rows:[
+    ['SES-88412','VIPER-03','Viper','27/07 09:41','—','1 h 12','TLS 8089','10.20.4.31','4','1 204','8 911','214 Mo','38 ms','0,1 %','Actif'],
+    ['SES-88409','BISHOP-05','Bishop','27/07 09:36','—','1 h 17','TLS 8089','10.20.4.55','3','842','8 640','188 Mo','41 ms','0,0 %','Actif'],
+    ['SES-88404','ECHO-14','Echo','27/07 09:28','—','1 h 25','TLS 8089','10.20.4.61','5','2 118','9 302','402 Mo','36 ms','0,2 %','Actif'],
+    ['SES-88401','WRAITH-02','Wraith','27/07 09:16','—','1 h 37','TLS 8089','10.20.4.19','4','1 566','9 884','311 Mo','44 ms','0,1 %','Actif'],
+    ['SES-88396','STATIC-08','Static','27/07 08:57','09:51','54 min','TLS 8089','10.20.4.77','6','3 042','6 118','508 Mo','39 ms','0,0 %','Succès'],
+    ['SES-88391','KILO-11','Kilo','27/07 08:41','08:41','2 s','TLS 8089','82.14.90.6','0','0','0','0 Mo','—','—','Échec'],
+    ['SES-88388','KILO-11','Kilo','27/07 08:39','08:39','1 s','TLS 8089','82.14.90.6','0','0','0','0 Mo','—','—','Échec'],
+    ['SES-88384','NOOPY-CMD','Noopy','27/07 08:12','09:41','1 h 29','TLS 8089','10.20.4.2','8','1 902','12 440','622 Mo','33 ms','0,0 %','Actif'],
+    ['SES-88377','MARLIN-31','Marlin','27/07 09:09','—','1 h 44','TLS 8089','10.20.4.92','2','311','7 020','96 Mo','52 ms','0,4 %','Actif'],
+    ['SES-88361','DEXTER-07','Dexter','27/07 00:04','01:12','1 h 08','TLS 8089','10.20.4.44','4','1 188','5 902','241 Mo','47 ms','0,2 %','Succès'],
+    ['SES-88350','GHOST-21','Ghost','26/07 20:31','22:03','1 h 32','TLS 8089','10.20.4.66','3','1 044','6 511','198 Mo','58 ms','0,6 %','Succès'],
+    ['SES-88342','HAVOC-19','Havoc','26/07 19:04','20:11','1 h 07','TLS 8089','10.20.4.83','3','788','5 210','142 Mo','61 ms','0,9 %','Succès'],
+    ['SES-88331','SLATE-22','Slate','23/06 21:12','21:14','2 min','TLS 8089','88.120.6.4','1','12','88','2 Mo','—','—','Bloqué']
+  ]
+};
+
+PAGES.atakCerts = {
+  group:'ATAK', kicker:'ATAK · SÉCURITÉ', title:'Certificats & data packages',
+  sub:'Cycle de vie des certificats client, paquets de données diffusés et empreintes de validation.',
+  action:'Générer un certificat', quick:['Expirants','Révoqués','Paquets'],
+  kpis:[
+    ['CERTIFICATS ACTIFS','97','+4','#0b8a5c','88%','signés par CA interne'],
+    ['EXPIRENT < 30 J','5','+2','#c98a12','18%','renouvellement requis'],
+    ['RÉVOQUÉS 12 MOIS','6','+1','#1e4f80','12%','dont 2 pertes terminal'],
+    ['DATA PACKAGES','23','+3','#0b8a5c','70%','1,8 Go diffusés']
+  ],
+  tableTitle:'Certificats émis', filters:['État','Autorité','Échéance'], minW:'1700px',
+  cols:['SÉRIE|m','CALLSIGN|m','MEMBRE','TYPE','AUTORITÉ','ÉMIS LE|m','EXPIRE LE|m','JOURS REST.|r','ALGORITHME','EMPREINTE SHA-256|m','PAQUET ASSOCIÉ|m','TÉLÉCHARGÉ|r','ÉTAT|b'],
+  rows:[
+    ['0x4A11','VIPER-03','Viper','Client','CA-92RI-R2','14/03/2026','14/03/2027','230','RSA-4096','9f:2c:11:a8:04','DP-ALPHA-12','4','Actif'],
+    ['0x4A12','DEXTER-07','Dexter','Client','CA-92RI-R2','02/04/2026','02/04/2027','249','RSA-4096','1b:74:e0:33:9c','DP-ALPHA-12','3','Actif'],
+    ['0x4A15','WRAITH-02','Wraith','Client','CA-92RI-R2','19/05/2026','19/05/2027','296','RSA-4096','c4:08:aa:71:2f','DP-BRAVO-09','5','Actif'],
+    ['0x4A18','KILO-11','Kilo','Client','CA-92RI-R1','04/08/2025','04/08/2026','8','RSA-2048','7e:31:55:c0:88','DP-BRAVO-09','2','Expire'],
+    ['0x4A21','BISHOP-05','Bishop','Client','CA-92RI-R2','27/06/2026','27/06/2027','335','RSA-4096','2a:9d:6b:14:e7','DP-MED-04','6','Actif'],
+    ['0x4A24','HAVOC-19','Havoc','Client','CA-92RI-R1','12/12/2025','12/12/2026','138','RSA-2048','5c:40:12:bb:71','DP-CHARLIE-07','3','Actif'],
+    ['0x4A27','STATIC-08','Static','Client','CA-92RI-R2','08/07/2026','08/07/2027','346','RSA-4096','8f:aa:3e:90:22','DP-DELTA-11','7','Actif'],
+    ['0x4A30','ECHO-14','Echo','Client','CA-92RI-R2','21/05/2026','21/05/2027','298','RSA-4096','b0:17:c9:45:6d','DP-DRONE-02','4','Actif'],
+    ['0x4A33','GHOST-21','Ghost','Client','CA-92RI-R1','30/09/2025','30/09/2026','65','RSA-2048','3d:88:70:12:af','DP-BRAVO-09','2','Actif'],
+    ['0x4A36','SLATE-22','Slate','Client','CA-92RI-R1','01/08/2025','01/08/2026','5','RSA-2048','6e:55:d2:08:14','DP-CHARLIE-07','1','Révoqué'],
+    ['0x4A39','MARLIN-31','Marlin','Client','CA-92RI-R2','16/07/2026','16/07/2027','354','RSA-4096','af:23:81:6c:90','DP-INSTR-01','1','Actif'],
+    ['0x4A02','SERVEUR','—','Serveur','CA-92RI-R2','01/01/2026','01/01/2028','888','RSA-4096','04:cc:19:7a:3b','—','—','Actif']
+  ]
+};
+
+PAGES.atakOp = {
+  group:'ATAK', kicker:'ATAK · FICHE OPÉRATEUR', title:'Fiche ATAK — VIPER-03',
+  sub:'Vue consolidée des données ATAK rattachées à un opérateur : identité réseau, terminal, certificat, télémétrie et historique.',
+  action:'Régénérer le certificat', quick:['Terminal','Certificat','Sessions'],
+  tableTitle:'Historique des sessions de VIPER-03', filters:['30 jours','Canal','Résultat'], minW:'1520px',
+  cols:['SESSION|m','DATE|m','DÉBUT|m','DURÉE|r','OPÉRATION','CANAUX','CoT ÉMIS|r','DISTANCE|r','LATENCE|r','PERTE|r','BATTERIE FIN|r','RÉSULTAT|b'],
+  rows:[
+    ['SES-88412','27/07/2026','09:41','1 h 12','—','ALPHA, CMD','1 204','—','38 ms','0,1 %','78 %','Actif'],
+    ['SES-88203','19/07/2026','20:04','2 h 21','LAME COURTE','ALPHA, CMD, OPS','3 918','6,4 km','41 ms','0,2 %','31 %','Succès'],
+    ['SES-88090','12/07/2026','19:58','2 h 52','MUR BLANC','ALPHA, CMD','4 402','3,1 km','39 ms','0,1 %','24 %','Succès'],
+    ['SES-87944','05/07/2026','20:01','3 h 12','SILEX','ALPHA, CMD, OPS','5 118','8,8 km','44 ms','0,3 %','19 %','Succès'],
+    ['SES-87812','28/06/2026','20:12','1 h 44','CORNE DE BRUME','ALPHA','2 208','4,2 km','52 ms','0,5 %','48 %','Succès'],
+    ['SES-87688','21/06/2026','19:44','4 h 28','VERGLAS','ALPHA, CMD, INTER','6 902','11,7 km','47 ms','0,4 %','12 %','Succès'],
+    ['SES-87540','14/06/2026','20:06','2 h 04','ÉCHO SOURD','ALPHA','2 811','5,9 km','36 ms','0,1 %','52 %','Succès'],
+    ['SES-87401','07/06/2026','19:52','3 h 36','PIERRE NOIRE','ALPHA, CMD','5 640','7,2 km','43 ms','0,2 %','21 %','Succès'],
+    ['SES-87266','31/05/2026','20:09','1 h 58','ARC TENDU','ALPHA','2 402','9,4 km','58 ms','0,7 %','44 %','Succès'],
+    ['SES-87120','24/05/2026','19:47','2 h 31','FIL DE FER','ALPHA, CMD','3 344','4,8 km','61 ms','1,1 %','33 %','Succès']
+  ]
+};
+
+PAGES.ops = {
+  group:'Opérations', kicker:'OPÉRATIONS · REGISTRE', title:'Opérations',
+  sub:'Registre des opérations passées et à venir : effectif engagé, durée, pertes simulées et état du compte rendu.',
+  action:'Planifier une opération', quick:['À venir','Passées','Brouillons'],
+  kpis:[
+    ['OPS 12 MOIS','48','+5','#0b8a5c','80%','dont 9 majeures'],
+    ['PARTICIPATION MOY.','34','+2','#0b8a5c','71%','opérateurs engagés'],
+    ['TAUX DE RÉUSSITE','82 %','+4 pts','#0b8a5c','82%','objectifs atteints'],
+    ['CR MANQUANTS','3','+1','#c98a12','18%','sous 72 h']
+  ],
+  tableTitle:'Registre des opérations', filters:['Année','Type','Statut'], minW:'1620px',
+  cols:['RÉF.|m','OPÉRATION','DATE|m','TYPE','ZONE','COMMANDANT','ENGAGÉS|r','DURÉE|r','OBJECTIFS|r','PERTES|r','MÉTÉO','CR|b','STATUT|b'],
+  rows:[
+    ['OP-2026-118','FER ROUGE','02/08/2026','Assaut nocturne','Kamysh','Noopy','31','—','4','—','Nuit / pluie','—','Planifié'],
+    ['OP-2026-117','LAME COURTE','19/07/2026','Reconnaissance','Zone Est','Wraith','28','2 h 10','3/3','4','Nuit','Validé','Clos'],
+    ['OP-2026-116','MUR BLANC','12/07/2026','Défense','Poste 4','Viper','35','2 h 45','2/3','9','Jour','Validé','Clos'],
+    ['OP-2026-115','SILEX','05/07/2026','Assaut','Village Sud','Dexter','38','3 h 05','4/4','7','Aube','Validé','Clos'],
+    ['OP-2026-114','CORNE DE BRUME','28/06/2026','Extraction','Littoral','Bishop','22','1 h 40','2/2','1','Brouillard','En attente','Clos'],
+    ['OP-2026-113','VERGLAS','21/06/2026','Interunités','Terrain 7','Noopy','52','4 h 20','3/5','16','Jour','Validé','Clos'],
+    ['OP-2026-112','ÉCHO SOURD','14/06/2026','Reconnaissance','Forêt Nord','Ghost','19','2 h 00','3/3','0','Nuit','Validé','Clos'],
+    ['OP-2026-111','PIERRE NOIRE','07/06/2026','Assaut nocturne','Complexe 12','Wraith','33','3 h 30','3/4','11','Nuit','En attente','Clos'],
+    ['OP-2026-110','ARC TENDU','31/05/2026','Escorte','Route 9','Kilo','26','1 h 55','2/2','3','Jour','Validé','Clos'],
+    ['OP-2026-109','FIL DE FER','24/05/2026','Défense','Poste 2','Viper','30','2 h 25','1/3','14','Nuit / pluie','Manquant','Clos'],
+    ['OP-2026-119','VENT NOIR','16/08/2026','Assaut','Zone Est','Wraith','9','—','—','—','—','—','Planifié'],
+    ['OP-2026-120','SEL GRIS','30/08/2026','Interunités','Terrain 7','Noopy','22','—','—','—','—','—','Brouillon']
+  ]
+};
+
+PAGES.rsvp = {
+  group:'Opérations', kicker:'OPÉRATIONS · INSCRIPTIONS', title:'RSVP — Op. FER ROUGE',
+  sub:'Suivi nominatif des réponses pour l’opération du 2 août. Relances automatiques à J-3 et J-1.',
+  action:'Relancer les sans-réponse', quick:['Confirmés','Sans réponse','Historique'],
+  alerts:[
+    ['RELANCE','#c98a12','11 sans-réponse — relance automatique programmée le 30/07 à 20:00','aujourd’hui 09:12','Envoyer maintenant'],
+    ['ATAK','#c72e2e','2 confirmés n’ont pas de terminal ATAK opérationnel','aujourd’hui 08:05','Vérifier']
+  ],
+  kpis:[
+    ['CONFIRMÉS','31','+5','#0b8a5c','74%','sur 42 places'],
+    ['PEUT-ÊTRE','6','+1','#c98a12','14%','à reconfirmer J-1'],
+    ['DÉCLINÉS','4','+2','#1e4f80','10%','motif renseigné'],
+    ['SANS RÉPONSE','11','-6','#c98a12','26%','relance J-3'],
+    ['TAUX DE RÉPONSE','79 %','+11 pts','#0b8a5c','79%','objectif 90 %']
+  ],
+  tableTitle:'Réponses nominatives', filters:['Réponse','Section','ATAK'], minW:'1680px',
+  cols:['MATRICULE|m','INDICATIF','NOM','SECTION','RÔLE PRÉVU','RÉPONSE|b','RÉPONDU LE|m','DISPO. HORAIRE','ATAK|b','TERMINAL|m','RELANCES|r','PRÉSENCE HIST.|r','COMMENTAIRE'],
+  rows:[
+    ['ATH-0142','Noopy','N. Perrin','État-major','Commandement','Confirmé','24/07 09:15','20:00 – 00:00','Actif','VIPER-CMD','0','98 %','—'],
+    ['ATH-0155','Viper','M. Kervella','Alpha','Chef Alpha','Confirmé','24/07 09:41','20:00 – 00:00','Actif','VIPER-03','0','94 %','—'],
+    ['ATH-0161','Dexter','L. Anquetil','Alpha','Chef groupe 1','Confirmé','24/07 12:02','20:15 – 23:30','Actif','DEXTER-07','0','91 %','Départ anticipé'],
+    ['ATH-0164','Wraith','J. Ferrand','Bravo','Chef Bravo','Confirmé','24/07 10:28','20:00 – 00:00','Actif','WRAITH-02','0','89 %','—'],
+    ['ATH-0170','Kilo','S. Rambaud','Bravo','Chef groupe 1','Peut-être','25/07 22:14','—','Expiré','KILO-11','1','84 %','Contrainte pro'],
+    ['ATH-0177','Bishop','A. Trémaux','Charlie','Médecin','Confirmé','24/07 09:38','20:00 – 00:00','Actif','BISHOP-05','0','88 %','—'],
+    ['ATH-0181','Havoc','R. Delaunay','Charlie','Opérateur','Sans réponse','—','—','Actif','HAVOC-19','2','76 %','—'],
+    ['ATH-0188','Static','C. Boulay','Delta','Radio','Confirmé','24/07 11:50','19:45 – 00:00','Actif','STATIC-08','0','81 %','Arrive en avance'],
+    ['ATH-0193','Nomad','F. Lechêne','Delta','Opérateur','Sans réponse','—','—','Manquant','—','3','68 %','—'],
+    ['ATH-0199','Echo','T. Marchal','Alpha','Drone','Confirmé','24/07 13:22','20:00 – 23:00','Actif','ECHO-14','0','79 %','—'],
+    ['ATH-0204','Ghost','P. Vasseur','Bravo','Éclaireur','Décliné','26/07 23:04','—','Actif','GHOST-21','0','72 %','Indisponible'],
+    ['ATH-0211','Slate','O. Guérin','Charlie','—','Décliné','—','—','Expiré','SLATE-22','1','41 %','Suspendu'],
+    ['ATH-0218','Fennec','D. Roussel','Instruction','Observateur','Peut-être','25/07 19:11','—','Manquant','—','1','88 %','En instruction'],
+    ['ATH-0219','Marlin','B. Aubry','Instruction','Observateur','Confirmé','25/07 20:03','20:00 – 00:00','En attente','—','0','100 %','Premier terrain']
+  ]
+};
+
+PAGES.rsvpHist = {
+  group:'Opérations', kicker:'OPÉRATIONS · HISTORIQUE', title:'Historique des RSVP',
+  sub:'Taux de réponse et de présence effective sur les douze dernières opérations, comparés aux inscriptions.',
+  action:'Exporter la série', quick:['12 mois','Par section','Par membre'],
+  kpis:[
+    ['TAUX DE RÉPONSE MOY.','86 %','+7 pts','#0b8a5c','86%','12 dernières ops'],
+    ['CONFIRMÉS → PRÉSENTS','92 %','+2 pts','#0b8a5c','92%','fiabilité annonce'],
+    ['NO-SHOW','8 %','-2 pts','#0b8a5c','8%','24 cas sur 12 mois'],
+    ['DÉLAI MOYEN RÉPONSE','2,4 j','-0,6 j','#0b8a5c','48%','après ouverture']
+  ],
+  tableTitle:'Séries par opération', filters:['Année','Type','Section'], minW:'1540px',
+  cols:['RÉF.|m','OPÉRATION','DATE|m','PLACES|r','CONFIRMÉS|r','PEUT-ÊTRE|r','DÉCLINÉS|r','SANS RÉP.|r','PRÉSENTS|r','NO-SHOW|r','RÉPONSE|r','PRÉSENCE|r','CLÔTURE|b'],
+  rows:[
+    ['OP-2026-117','LAME COURTE','19/07/2026','32','28','2','1','1','28','0','97 %','100 %','Clos'],
+    ['OP-2026-116','MUR BLANC','12/07/2026','40','36','1','2','1','35','1','98 %','97 %','Clos'],
+    ['OP-2026-115','SILEX','05/07/2026','40','38','0','1','1','38','0','98 %','100 %','Clos'],
+    ['OP-2026-114','CORNE DE BRUME','28/06/2026','24','22','1','1','0','21','1','100 %','95 %','Clos'],
+    ['OP-2026-113','VERGLAS','21/06/2026','56','52','2','1','1','49','3','98 %','94 %','Clos'],
+    ['OP-2026-112','ÉCHO SOURD','14/06/2026','20','19','0','1','0','19','0','100 %','100 %','Clos'],
+    ['OP-2026-111','PIERRE NOIRE','07/06/2026','36','33','1','1','1','31','2','97 %','94 %','Clos'],
+    ['OP-2026-110','ARC TENDU','31/05/2026','28','26','1','1','0','25','1','100 %','96 %','Clos'],
+    ['OP-2026-109','FIL DE FER','24/05/2026','32','30','0','1','1','27','3','97 %','90 %','Clos'],
+    ['OP-2026-108','SABLE FIN','17/05/2026','28','24','3','1','0','23','1','100 %','96 %','Clos'],
+    ['OP-2026-107','TRAIT NOIR','10/05/2026','24','21','1','2','0','20','1','100 %','95 %','Clos'],
+    ['OP-2026-106','HALO','03/05/2026','36','29','4','2','1','27','2','97 %','93 %','Clos']
+  ]
+};
+
+PAGES.aar = {
+  group:'Opérations', kicker:'OPÉRATIONS · RETOURS', title:'Comptes rendus (AAR)',
+  sub:'Rapports post-opération, points d’amélioration relevés et suivi de leur traitement.',
+  action:'Déposer un rapport', quick:['En attente','Validés','Actions ouvertes'],
+  kpis:[
+    ['RAPPORTS 12 MOIS','45','+4','#0b8a5c','94%','sur 48 opérations'],
+    ['DÉLAI MOYEN DÉPÔT','1,8 j','-0,4 j','#0b8a5c','60%','cible 72 h'],
+    ['POINTS RELEVÉS','132','+11','#1e4f80','66%','toutes catégories'],
+    ['ACTIONS OUVERTES','14','-5','#0b8a5c','32%','dont 3 en retard']
+  ],
+  tableTitle:'Rapports post-opération', filters:['Opération','Auteur','Statut'], minW:'1520px',
+  cols:['RÉF.|m','OPÉRATION','DÉPOSÉ LE|m','AUTEUR','PAGES|r','POINTS FORTS|r','POINTS FAIBLES|r','ACTIONS|r','ACTIONS CLOSES|r','RELECTEUR','VALIDÉ LE|m','STATUT|b'],
+  rows:[
+    ['AAR-0912','LAME COURTE','21/07/2026','Wraith','6','4','3','3','3','Noopy','22/07/2026','Validé'],
+    ['AAR-0908','MUR BLANC','14/07/2026','Viper','8','3','5','5','4','Noopy','15/07/2026','Validé'],
+    ['AAR-0903','SILEX','06/07/2026','Dexter','5','5','2','2','2','Viper','07/07/2026','Validé'],
+    ['AAR-0899','CORNE DE BRUME','—','Bishop','—','—','—','—','—','Noopy','—','En attente'],
+    ['AAR-0894','VERGLAS','23/06/2026','Noopy','12','6','7','7','5','—','24/06/2026','Validé'],
+    ['AAR-0890','ÉCHO SOURD','15/06/2026','Ghost','4','4','1','1','1','Wraith','16/06/2026','Validé'],
+    ['AAR-0885','PIERRE NOIRE','—','Wraith','—','—','—','—','—','Noopy','—','En attente'],
+    ['AAR-0881','ARC TENDU','01/06/2026','Kilo','5','3','3','3','2','Viper','02/06/2026','Validé'],
+    ['AAR-0876','FIL DE FER','—','Viper','—','—','—','—','—','Noopy','—','Manquant'],
+    ['AAR-0872','SABLE FIN','19/05/2026','Dexter','7','4','4','4','4','Noopy','20/05/2026','Validé']
+  ]
+};
+
+PAGES.orbat = {
+  group:'Personnel', kicker:'PERSONNEL · STRUCTURE', title:'Ordre de bataille',
+  sub:'Composition des sections et groupes, chaîne de commandement, effectifs théoriques et réels.',
+  action:'Réaffecter', quick:['Sections','Groupes','Postes vacants'],
+  kpis:[
+    ['SECTIONS','5','—','#1e4f80','100%','dont 1 instruction'],
+    ['GROUPES','14','+1','#0b8a5c','88%','effectif moyen 8,4'],
+    ['POSTES VACANTS','9','-3','#0b8a5c','22%','dont 2 encadrement'],
+    ['TAUX DE COMBLEMENT','86 %','+5 pts','#0b8a5c','86%','objectif 90 %']
+  ],
+  tableTitle:'Structure de l’unité', filters:['Section','Type','Vacances'], minW:'1420px',
+  cols:['CODE|m','UNITÉ','TYPE','RATTACHÉE À','CHEF','ADJOINT','THÉORIQUE|r','RÉEL|r','VACANTS|r','PRÉSENCE|r','ÉTAT|b'],
+  rows:[
+    ['EM','État-major','Commandement','—','Noopy','Viper','6','6','0','96 %','Opérationnel'],
+    ['SEC-A','Section Alpha','Combat','État-major','Viper','Dexter','32','30','2','91 %','Opérationnel'],
+    ['SEC-A/1','Groupe Alpha 1','Groupe','Section Alpha','Dexter','Echo','10','10','0','93 %','Opérationnel'],
+    ['SEC-A/2','Groupe Alpha 2','Groupe','Section Alpha','Echo','—','10','9','1','88 %','Opérationnel'],
+    ['SEC-A/3','Groupe Alpha 3','Groupe','Section Alpha','—','—','10','9','1','86 %','Partiel'],
+    ['SEC-B','Section Bravo','Combat','État-major','Wraith','Kilo','32','29','3','84 %','Opérationnel'],
+    ['SEC-B/1','Groupe Bravo 1','Groupe','Section Bravo','Kilo','Ghost','10','10','0','87 %','Opérationnel'],
+    ['SEC-B/2','Groupe Bravo 2','Groupe','Section Bravo','Ghost','—','10','9','1','82 %','Opérationnel'],
+    ['SEC-C','Section Charlie','Appui','État-major','Bishop','Havoc','28','24','4','78 %','Partiel'],
+    ['SEC-C/1','Groupe médical','Groupe','Section Charlie','Bishop','—','8','7','1','89 %','Opérationnel'],
+    ['SEC-D','Section Delta','Transmissions','État-major','Static','—','18','16','2','83 %','Opérationnel'],
+    ['SEC-I','Section Instruction','Formation','État-major','Bishop','Dexter','20','18','2','74 %','Partiel']
+  ]
+};
+
+PAGES.formations = {
+  group:'Personnel', kicker:'PERSONNEL · QUALIFICATIONS', title:'Formations & qualifications',
+  sub:'Catalogue des qualifications, taux de détention par section et échéances de recyclage.',
+  action:'Créer une formation', quick:['Obligatoires','À recycler','Sessions']  ,
+  kpis:[
+    ['QUALIFICATIONS','18','+2','#0b8a5c','72%','au catalogue'],
+    ['DÉTENUES','412','+34','#0b8a5c','88%','toutes catégories'],
+    ['À RECYCLER < 60 J','23','+9','#c98a12','31%','dont 6 obligatoires'],
+    ['EXPIRÉES','7','-3','#0b8a5c','12%','blocage opérationnel']
+  ],
+  tableTitle:'Catalogue des qualifications', filters:['Catégorie','Obligatoire','Échéance'], minW:'1500px',
+  cols:['CODE|m','QUALIFICATION','CATÉGORIE','NIVEAU','OBLIG.','DURÉE VALIDITÉ','DÉTENTEURS|r','COUVERTURE|r','À RECYCLER|r','EXPIRÉES|r','INSTRUCTEUR','ÉTAT|b'],
+  rows:[
+    ['QUAL-BAS-1','Socle opérationnel','Fondamentaux','1','Oui','24 mois','128','100 %','4','0','Viper','À jour'],
+    ['QUAL-ATK-1','ATAK — utilisation','Transmissions','1','Oui','12 mois','97','76 %','9','2','Static','À renouveler'],
+    ['QUAL-ATK-2','ATAK — administration','Transmissions','2','Non','12 mois','11','9 %','1','0','Static','À jour'],
+    ['QUAL-RAD-1','Procédure radio','Transmissions','1','Oui','24 mois','116','91 %','3','1','Static','À jour'],
+    ['QUAL-MED-1','Secours au combat','Médical','1','Oui','12 mois','88','69 %','7','3','Bishop','À renouveler'],
+    ['QUAL-MED-2','Ramassage & évacuation','Médical','2','Non','24 mois','24','19 %','1','0','Bishop','À jour'],
+    ['QUAL-CQB-1','Combat en zone urbaine','Combat','1','Non','24 mois','74','58 %','2','0','Dexter','À jour'],
+    ['QUAL-CQB-2','CQB avancé','Combat','2','Non','24 mois','29','23 %','0','0','Dexter','À jour'],
+    ['QUAL-NOC-1','Opérations de nuit','Combat','1','Non','24 mois','61','48 %','2','1','Wraith','À jour'],
+    ['QUAL-DRN-1','Pilotage drone','Reconnaissance','1','Non','12 mois','12','9 %','1','0','Echo','À jour'],
+    ['QUAL-DRN-2','Drone — reconnaissance avancée','Reconnaissance','2','Non','12 mois','5','4 %','1','0','Echo','À renouveler'],
+    ['QUAL-CDG-1','Chef de groupe','Commandement','2','Non','36 mois','14','11 %','0','0','Noopy','À jour']
+  ]
+};
+
+PAGES.members = {
+  group:'Personnel', kicker:'PERSONNEL · ANNUAIRE', title:'Membres',
+  sub:'Annuaire complet de l’unité : identité, affectation, statut du compte, présence et rattachement ATAK.',
+  action:'Ajouter un membre', quick:['Actifs','Inactifs','Exporter'],
+  kpis:[
+    ['INSCRITS','156','+8','#0b8a5c','100%','toutes catégories'],
+    ['ACTIFS','128','+6','#0b8a5c','82%','connectés sous 30 j'],
+    ['EN ATTENTE','14','+4','#c98a12','9%','validation dossier'],
+    ['INACTIFS','11','-2','#1e4f80','7%','> 30 j sans activité'],
+    ['SUSPENDUS','3','+1','#c72e2e','2%','décision état-major']
+  ],
+  tableTitle:'Annuaire', filters:['Section','Grade','Statut','ATAK'], minW:'1720px',
+  cols:['MATRICULE|m','INDICATIF','NOM','GRADE','SECTION','FONCTION','STATUT|b','CONNEXION|b','DERNIÈRE ACTIVITÉ|m','OPS|r','PRÉSENCE|r','FORM.|r','ABS.|r','ATAK|b','ENGAGÉ LE|m'],
+  rows:[
+    ['ATH-0142','Noopy','N. Perrin','Colonel','État-major','Administrateur','Actif','Connecté','il y a 4 min','214','98 %','12','0','Actif','12/03/2023'],
+    ['ATH-0155','Viper','M. Kervella','Adjudant','Alpha','Chef de groupe','Actif','Connecté','il y a 11 min','186','94 %','9','1','Actif','04/06/2023'],
+    ['ATH-0161','Dexter','L. Anquetil','Sergent','Alpha','Opérateur','Actif','Hors ligne','il y a 2 h','171','91 %','8','0','Actif','21/06/2023'],
+    ['ATH-0164','Wraith','J. Ferrand','Sergent','Bravo','Tireur désigné','Actif','Connecté','il y a 26 min','168','89 %','10','0','Actif','02/07/2023'],
+    ['ATH-0170','Kilo','S. Rambaud','Caporal','Bravo','Opérateur','Actif','Hors ligne','hier 23:41','143','84 %','6','2','Expiré','18/09/2023'],
+    ['ATH-0177','Bishop','A. Trémaux','Caporal','Charlie','Médecin','Actif','Connecté','il y a 6 min','139','88 %','11','0','Actif','03/10/2023'],
+    ['ATH-0181','Havoc','R. Delaunay','Caporal','Charlie','Opérateur','Actif','Hors ligne','il y a 3 j','121','76 %','5','1','Actif','27/11/2023'],
+    ['ATH-0188','Static','C. Boulay','Soldat','Delta','Opérateur radio','Actif','Connecté','il y a 48 min','108','81 %','7','0','Actif','14/01/2024'],
+    ['ATH-0193','Nomad','F. Lechêne','Soldat','Delta','Opérateur','En attente','Hors ligne','il y a 9 j','94','68 %','4','0','Manquant','22/02/2024'],
+    ['ATH-0199','Echo','T. Marchal','Soldat','Alpha','Opérateur drone','Actif','Connecté','il y a 15 min','87','79 %','6','0','Actif','08/03/2024'],
+    ['ATH-0204','Ghost','P. Vasseur','Soldat','Bravo','Éclaireur','Actif','Hors ligne','il y a 5 h','76','72 %','3','1','Actif','19/04/2024'],
+    ['ATH-0211','Slate','O. Guérin','Soldat','Charlie','Opérateur','Suspendu','Hors ligne','il y a 34 j','52','41 %','2','3','Expiré','30/05/2024'],
+    ['ATH-0218','Fennec','D. Roussel','Recrue','Instruction','Recrue','En attente','Hors ligne','il y a 1 j','14','88 %','1','0','Manquant','11/07/2026'],
+    ['ATH-0219','Marlin','B. Aubry','Recrue','Instruction','Recrue','En attente','Connecté','il y a 32 min','9','100 %','1','0','En attente','16/07/2026'],
+    ['ATH-0220','Cobalt','H. Nadeau','Recrue','Instruction','Recrue','En attente','Hors ligne','il y a 2 j','6','67 %','0','0','Manquant','19/07/2026'],
+    ['ATH-0221','Torrent','K. Lemoine','Recrue','Instruction','Recrue','Refusé','Hors ligne','il y a 6 j','2','50 %','0','0','Manquant','21/07/2026']
+  ]
+};
+
+PAGES.recrues = {
+  group:'Personnel', kicker:'PERSONNEL · RECRUTEMENT', title:'Candidatures & recrues',
+  sub:'Suivi du pipeline de recrutement, de la candidature déposée à l’intégration en section.',
+  action:'Ouvrir une session', quick:['À traiter','Entretiens','Refusées'],
+  alerts:[
+    ['DÉLAI','#c98a12','4 candidatures dépassent le délai cible d’entretien (7 jours)','aujourd’hui 08:00','Planifier'],
+    ['DOSSIER','#1e6fbf','2 dossiers incomplets — pièce d’identité manquante','hier 17:22','Relancer']
+  ],
+  kpis:[
+    ['CANDIDATURES 30 J','23','+7','#0b8a5c','76%','session août'],
+    ['EN ENTRETIEN','8','+2','#0b8a5c','34%','délai moyen 5,2 j'],
+    ['INTÉGRÉES','6','+1','#0b8a5c','26%','taux 26 %'],
+    ['REFUSÉES','5','-1','#1e4f80','21%','motif principal : dispo.']
+  ],
+  tableTitle:'Pipeline de recrutement', filters:['Étape','Parrain','Session'], minW:'1560px',
+  cols:['RÉF.|m','CANDIDAT','ÂGE|r','DÉPOSÉE LE|m','ÉTAPE','PARRAIN','ENTRETIEN|m','DISPONIBILITÉ','ATAK','DOSSIER|b','SCORE|r','DÉCISION|b'],
+  rows:[
+    ['CAND-0231','D. Roussel','24','11/07/2026','Instruction','Viper','16/07 20:30','2 soirs / sem.','Installé','Complet','78','Approuvé'],
+    ['CAND-0232','B. Aubry','21','16/07/2026','Instruction','Bishop','19/07 20:00','3 soirs / sem.','Installé','Complet','82','Approuvé'],
+    ['CAND-0233','H. Nadeau','29','19/07/2026','Entretien','Dexter','29/07 21:00','1 soir / sem.','Non','En attente','61','En attente'],
+    ['CAND-0234','K. Lemoine','19','21/07/2026','Clôturée','—','24/07 20:30','Irrégulière','Non','Complet','38','Refusé'],
+    ['CAND-0235','S. Vidal','26','22/07/2026','Entretien','Wraith','30/07 20:00','2 soirs / sem.','Installé','Complet','74','En attente'],
+    ['CAND-0236','A. Rey','31','23/07/2026','Examen dossier','—','—','2 soirs / sem.','Non','Manquant','—','En attente'],
+    ['CAND-0237','L. Prigent','22','24/07/2026','Examen dossier','—','—','3 soirs / sem.','Installé','Complet','—','En attente'],
+    ['CAND-0238','M. Cazes','27','25/07/2026','Entretien','Static','31/07 21:00','2 soirs / sem.','En cours','Complet','69','En attente'],
+    ['CAND-0239','J. Ollivier','20','25/07/2026','Examen dossier','—','—','4 soirs / sem.','Non','Manquant','—','En attente'],
+    ['CAND-0240','T. Bardin','34','26/07/2026','Contact initial','Ghost','—','1 soir / sem.','Non','En attente','—','En attente'],
+    ['CAND-0241','P. Naud','23','26/07/2026','Contact initial','—','—','3 soirs / sem.','Installé','En attente','—','En attente'],
+    ['CAND-0242','C. Estève','25','27/07/2026','Contact initial','—','—','2 soirs / sem.','Non','En attente','—','En attente']
+  ]
+};
+
+PAGES.sanctions = {
+  group:'Personnel', kicker:'PERSONNEL · DISCIPLINE', title:'Sanctions & absences',
+  sub:'Registre disciplinaire : absences non justifiées, avertissements, mises à pied et décisions d’état-major.',
+  action:'Ouvrir un dossier', quick:['Ouvertes','Closes','Ce trimestre'],
+  kpis:[
+    ['DOSSIERS OUVERTS','5','+1','#c98a12','28%','dont 1 en appel'],
+    ['ABSENCES NJ 30 J','12','-4','#0b8a5c','40%','sur 128 actifs'],
+    ['AVERTISSEMENTS','7','stable','#1e4f80','35%','12 derniers mois'],
+    ['EXCLUSIONS','1','—','#c72e2e','8%','décision définitive']
+  ],
+  tableTitle:'Registre disciplinaire', filters:['Type','Section','Statut'], minW:'1440px',
+  cols:['RÉF.|m','MEMBRE','SECTION','MOTIF','TYPE','OUVERT LE|m','INSTRUIT PAR','DURÉE','ÉCHÉANCE|m','APPEL','STATUT|b'],
+  rows:[
+    ['DIS-0091','Slate','Charlie','3 absences non justifiées consécutives','Suspension','24/06/2026','Noopy','30 jours','24/07/2026','Non','Clos'],
+    ['DIS-0092','Kilo','Bravo','Discipline radio — canal saturé','Avertissement','02/07/2026','Viper','—','—','Non','Clos'],
+    ['DIS-0093','Havoc','Charlie','Retard répété au briefing','Rappel à l’ordre','09/07/2026','Bishop','—','—','Non','En cours'],
+    ['DIS-0094','Ghost','Bravo','Absence non justifiée op. LAME COURTE','Avertissement','15/07/2026','Wraith','—','—','Oui','En cours'],
+    ['DIS-0095','Nomad','Delta','Dossier ATAK non régularisé','Rappel à l’ordre','18/07/2026','Static','15 jours','02/08/2026','Non','En cours'],
+    ['DIS-0096','Torrent','Instruction','Comportement hors charte en sélection','Exclusion','24/07/2026','Noopy','Définitif','—','Non','Clos'],
+    ['DIS-0097','Slate','Charlie','Récidive — absence sans préavis','Mise à pied','26/07/2026','Noopy','60 jours','24/09/2026','Oui','En cours'],
+    ['DIS-0098','Kilo','Bravo','Échecs d’authentification répétés','Signalement','27/07/2026','Système','—','—','Non','En attente']
+  ]
+};
+
+PAGES.wall = {
+  group:'Pilotage', kicker:'PILOTAGE · DIFFUSION', title:'Mur opérationnel',
+  sub:'Publications, consignes et notes de service diffusées à l’unité. Chaque entrée est tracée, épinglable et archivable.',
+  action:'Nouvelle publication', quick:['Épinglées','Brouillons','Archivées'],
+  kpis:[
+    ['PUBLICATIONS 30 J','42','+9','#0b8a5c','70%','dont 6 épinglées'],
+    ['TAUX DE LECTURE','91 %','+4 pts','#0b8a5c','91%','sous 48 h'],
+    ['COMMENTAIRES','218','+31','#0b8a5c','62%','12 en attente de modération'],
+    ['SIGNALEMENTS','2','stable','#c98a12','12%','à examiner']
+  ],
+  tableTitle:'Publications', filters:['Catégorie','Auteur','Statut'], minW:'1340px',
+  cols:['RÉF.|m','TITRE','CATÉGORIE','AUTEUR','PUBLIÉ LE|m','PORTÉE','LECTURES|r','COMM.|r','ÉPINGLÉ','STATUT|b'],
+  rows:[
+    ['MUR-4412','Consigne de tenue — été 2026','Consigne','Noopy','27/07 09:22','Unité','118','14','Oui','Actif'],
+    ['MUR-4408','Rappel discipline radio réseau ALPHA','Note de service','Viper','26/07 18:40','Alpha, Bravo','86','9','Oui','Actif'],
+    ['MUR-4401','Compte rendu — Op. LAME COURTE','Compte rendu','Wraith','25/07 22:05','Unité','142','23','Non','Actif'],
+    ['MUR-4396','Mise à jour du serveur TAK v5.2','Technique','Static','24/07 14:12','Unité','97','7','Non','Actif'],
+    ['MUR-4390','Ouverture des candidatures — session août','Recrutement','Bishop','23/07 10:30','Public','311','41','Oui','Actif'],
+    ['MUR-4385','Planning d’instruction semaine 31','Planning','Dexter','22/07 19:55','Instruction','54','3','Non','Actif'],
+    ['MUR-4379','Retour d’expérience nocturne','Compte rendu','Ghost','21/07 23:18','Unité','88','16','Non','Archivé'],
+    ['MUR-4372','Procédure de secours médicale v3','Procédure','Bishop','20/07 16:02','Unité','129','11','Oui','Actif'],
+    ['MUR-4368','Annulation entraînement du 19/07','Annonce','Noopy','19/07 08:44','Unité','160','5','Non','Archivé'],
+    ['MUR-4360','Brouillon — charte des grades','Procédure','Noopy','—','—','0','0','Non','Brouillon'],
+    ['MUR-4354','Signalement — propos hors charte','Modération','Système','18/07 21:11','État-major','8','2','Non','En attente']
+  ]
+};
+
+PAGES.agenda = {
+  group:'Pilotage', kicker:'PILOTAGE · CALENDRIER', title:'Agenda de l’unité',
+  sub:'Opérations, entraînements, instructions et réunions d’état-major sur les huit prochaines semaines.',
+  action:'Créer un événement', quick:['Semaine','Mois','Trimestre'],
+  kpis:[
+    ['ÉVÉNEMENTS À VENIR','17','+3','#0b8a5c','68%','sur 8 semaines'],
+    ['OBLIGATOIRES','6','—','#1e4f80','35%','présence contrôlée'],
+    ['TAUX DE REMPLISSAGE','78 %','+6 pts','#0b8a5c','78%','places confirmées'],
+    ['CONFLITS DE PLANNING','2','à arbitrer','#c98a12','15%','sections Alpha & Delta']
+  ],
+  tableTitle:'Prochains événements', filters:['Type','Section','Statut'], minW:'1380px',
+  cols:['RÉF.|m','DATE|m','HEURE|m','ÉVÉNEMENT','TYPE','LIEU','ENCADRANT','SECTIONS','PLACES|r','INSCRITS|r','STATUT|b'],
+  rows:[
+    ['EVT-2026-118','02/08','20:30','Opération FER ROUGE','Opération','Kamysh','Noopy','Toutes','42','31','Ouvert'],
+    ['EVT-2026-119','05/08','20:00','Instruction — tir de nuit','Instruction','Stand 3','Viper','Instruction','20','18','Ouvert'],
+    ['EVT-2026-120','07/08','21:00','Réunion état-major','Réunion','Visio','Noopy','État-major','8','8','Confirmé'],
+    ['EVT-2026-121','09/08','20:30','Entraînement CQB','Entraînement','Maison de tir','Dexter','Alpha, Bravo','24','16','Ouvert'],
+    ['EVT-2026-122','12/08','20:00','Formation ATAK niveau 1','Formation','Salle B','Static','Recrues','16','12','Ouvert'],
+    ['EVT-2026-123','16/08','19:30','Opération VENT NOIR','Opération','Zone Est','Wraith','Toutes','48','9','Planifié'],
+    ['EVT-2026-124','19/08','20:00','Contrôle matériel trimestriel','Administratif','Dépôt','Bishop','Toutes','—','—','Planifié'],
+    ['EVT-2026-125','23/08','20:30','Sélection — session août','Recrutement','Camp Nord','Bishop','Instruction','12','14','Ouvert'],
+    ['EVT-2026-126','26/08','21:00','Débriefing mensuel','Réunion','Visio','Noopy','Toutes','—','—','Planifié'],
+    ['EVT-2026-127','30/08','20:00','Exercice interunités','Opération','Terrain 7','Viper','Toutes','60','22','Brouillon']
+  ]
+};
+
+</script>
+</body>
+</html>

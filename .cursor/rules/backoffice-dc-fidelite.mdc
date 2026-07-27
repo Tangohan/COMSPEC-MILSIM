@@ -1,0 +1,47 @@
+---
+description: Fidélité de la maquette BackOffice.dc.html lors du re-skin du back-office ATHENA (charte Archivo / JetBrains Mono, géométrie inline)
+globs: "views/back_office/**/*.php","views/partials/back_office_sidebar.php","views/admin/organization/**/*.php","public/assets/css/back-office-athena.css","app/Support/BackOffice/**/*.php"
+alwaysApply: false
+---
+
+# Back-office ATHENA — fidélité à la maquette `.dc`
+
+Référence complète : **`docs/prompts/cursor-backoffice-dc-integration-fr.md`**.
+Maquette : **`docs/frontend/dc/BackOffice.dc.html`**.
+
+## Trois faits à ne pas oublier
+
+1. `BackOffice.dc.html` **n'est pas du HTML collable**. C'est un template `.dc` interprété par un runtime React (`docs/frontend/dc/support.js`) : `{{ … }}`, `<sc-for>`, `<sc-if>`, `onClick`, `style-hover`, `<helmet>`, `hint-placeholder-*`. Ces syntaxes se **transpilent** en PHP (table §3 du brief) ; elles ne se recopient jamais telles quelles.
+2. La maquette est **une coquille générique + 32 jeux de données** (`PAGES`, lignes 792–1707), pas 32 pages. On porte la coquille une fois, puis chaque page ne fournit qu'un tableau `$page`.
+3. Les données de `PAGES` sont **fictives**. Le backend existe déjà (200+ routes `/back-office/*`). Ce chantier ne crée **aucune** route, table, migration ni repository.
+
+## Ce qui se copie au caractère près
+
+- Les hex : `#f6f8f9`, `#0c1116`, `#12d18e`, `#0b8a5c`, `#e3e8ea`, `#8a938e`, `#c98a12`, `#c72e2e`, `#1e4f80`. Pas d'équivalent Tailwind.
+- Les px, décimales comprises : `font-size:11.5px`, `font-size:8.5px`, `height:54px`, `width:248px` / `62px`, `border:1.5px`, `letter-spacing:0.22em`.
+- Les `style="…"` **restent inline**. Seuls les `:hover` (ex-`style-hover`) et les `@keyframes` vont dans `public/assets/css/back-office-athena.css`.
+- Les classes `.ath-rise`, `.ath-card`, `.ath-row`, `.ath-side`, `.ath-btn`, `.ath-sweep` gardent leur nom.
+- Les SVG inline, `stroke-width` compris.
+- Les libellés FR de la coquille : `Rechercher…`, `Filtrer…`, `Exporter CSV`, `Plier le menu`, `⌘K`, colonnes en capitales.
+
+## Exception assumée à *ui-theme-portail-unifie*
+
+Le back-office ATHENA a sa **propre charte** : fond `#f6f8f9`, rail noir `#000`, accent `#12d18e`, polices **Archivo** + **JetBrains Mono**, angles **carrés** (aucun `border-radius` hors puces circulaires). Ne pas « harmoniser » vers le thème slate/Inter du portail, ne pas arrondir, ne pas adoucir les couleurs, ne pas ajouter d'ombres absentes de la maquette.
+
+## Interdits
+
+- Embarquer `support.js` / React dans l'application.
+- Réécrire la géométrie en Tailwind, en classes utilitaires ou en variables CSS.
+- Laisser une valeur de `PAGES` en dur : zéro `VIPER-03`, `SES-88412`, `0x4A11`, `FER ROUGE`.
+- Créer un second shell à côté de `layout.main` + `isBackOfficeShell`.
+- Reconstruire la nav depuis `nav()` de la maquette : la nav réelle et son gating RBAC vivent dans `views/partials/back_office_sidebar.php` (`$boHrefAllowed`, filtrage par type de tenant). On restyle le rendu, on ne touche ni la structure de données ni le gating.
+- Inventer une donnée absente : afficher `—` / `N/D` et la consigner dans `docs/frontend/dc/ECARTS-MAQUETTE.md`.
+
+## Avant de considérer une page terminée
+
+```bash
+grep -rn "VIPER-03\|SES-884\|0x4A1\|FER ROUGE\|KILO-11" views/ app/          # doit être vide
+grep -rn "sc-for\|sc-if\|style-hover\|{{\|hint-placeholder" views/back_office views/partials/back_office_sidebar.php   # doit être vide
+```
+
+Plus la liste complète du §9 du brief (RBAC inchangé, états vide et erreur, phpunit + phpstan au même niveau).

@@ -271,9 +271,32 @@ Migration ultérieure possible page par page ; aucun blocage déploiement pour l
 
 ---
 
-## 8. Correctif critique appliqué (cette passe)
+## 8. Correctifs critiques appliqués
 
 - `tenant_alerts_index.php` référençait un partial inexistant (`ath_tenant_alerts_index.php`) → corrigé vers `ath_tenant_alerts.php`.
+- **`views/admin/system/platform_alerts_form.php` — À UPLOADER EN PRIORITÉ.** Le fichier
+  contenait une erreur de syntaxe (`'paid' => true';` au lieu de `'paid' => true];`) qui
+  fait planter `/admin/system/alerts/create` avec
+  `syntax error, unexpected single-quoted string ";", expecting "]"`.
+  Le correctif est dans le dépôt depuis la migration ATHENA, mais **ce fichier ne figurait
+  dans aucune liste de la section 2** : il a donc été omis à l’upload et la production est
+  restée sur la version cassée. Uploader ce seul fichier suffit à rétablir la page.
+
+## 9. Écueil connu de l’upload manuel
+
+Un fichier absent des listes de la section 2 n’est pas uploadé, et rien ne le signale : la
+page concernée casse en production alors que le dépôt est sain. Deux réflexes :
+
+1. Après un upload, lancer la vérification de la section 4 (`php -l`) **sur l’ensemble des
+   fichiers modifiés depuis le dernier déploiement**, pas seulement sur ceux de la liste.
+   Pour obtenir cette liste depuis le dépôt :
+
+   ```bash
+   git diff --name-only <dernier-commit-déployé>..HEAD -- 'views/**' 'app/**' 'public/**'
+   ```
+
+2. Transférer en mode **binaire**. Un transfert en mode ASCII peut réécrire les fins de
+   ligne et corrompre un fichier pourtant valide côté dépôt — même symptôme, autre cause.
 
 ---
 

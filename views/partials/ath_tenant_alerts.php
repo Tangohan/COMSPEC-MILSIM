@@ -76,6 +76,31 @@ $e = \App\Core\Session::getFlash('error');
 <?php if ($s): ?><div class="bo-settings-flash bo-settings-flash--ok ath-rise" role="status"><?= $h((string) $s) ?></div><?php endif; ?>
 <?php if ($e): ?><div class="bo-settings-flash bo-settings-flash--err ath-rise" role="alert"><?= $h((string) $e) ?></div><?php endif; ?>
 
+<?php
+// Option de diffusion : les membres voient-ils les annonces programmées avant leur date ?
+$showUpcoming = (bool) ($tenantAlertsShowUpcoming ?? false);
+?>
+<form method="post" action="<?= $h(url('back-office/alerts/affichage-a-venir')) ?>" class="ath-form ath-rise">
+    <div class="ath-form__head">
+        <span class="ath-form__title">Annonces à venir sur la page membre</span>
+        <span class="ath-form__hint">État actuel : <?= $showUpcoming ? 'visibles avant diffusion' : 'masquées jusqu’à leur date' ?></span>
+    </div>
+    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+    <input type="hidden" name="show_upcoming" value="<?= $showUpcoming ? '0' : '1' ?>">
+    <p class="ath-field__help" style="margin:0 0 11px;">
+        Une annonce dont la date de début est future n’apparaît pas encore sur
+        <strong>Alertes &amp; annonces</strong>. En activant cette option, les membres la voient
+        d’avance dans une section « À venir », avec sa date de diffusion prévue — utile pour
+        annoncer une opération longtemps à l’avance, à éviter si vous préparez vos annonces
+        sans vouloir les dévoiler.
+    </p>
+    <div class="ath-form__actions" style="border-top:0;padding-top:0;">
+        <button type="submit" class="ath-btn<?= $showUpcoming ? '' : ' ath-btn--solid' ?>">
+            <?= $showUpcoming ? 'Masquer les annonces à venir' : 'Afficher les annonces à venir' ?>
+        </button>
+    </div>
+</form>
+
 <div class="flex flex-wrap gap-2 ath-rise">
     <a href="<?= $h(url('back-office/alerts/create')) ?>" class="ath-btn ath-btn--solid">Nouvelle annonce</a>
     <a href="<?= $h(url('back-office')) ?>" class="ath-btn">Centre de pilotage</a>

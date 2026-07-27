@@ -1,7 +1,22 @@
 <?php
-/** @var list<array<string, mixed>> $actions */
-/** @var list<array<string, mixed>> $memberUsers */
-/** @var array<string, string> $moduleLabels */
+declare(strict_types=1);
+
+/**
+ * Restrictions membres (niveau organisation) — charte ATHENA.
+ *
+ * L’en-tête de page est rendu par la coque back-office ; cette vue produit le bandeau
+ * de périmètre, le formulaire de mesure et l’historique.
+ *
+ * @var list<array<string, mixed>> $actions
+ * @var list<array<string, mixed>> $memberUsers
+ * @var array<string, string> $moduleLabels
+ */
+
+$actions = is_array($actions ?? null) ? $actions : [];
+$memberUsers = is_array($memberUsers ?? null) ? $memberUsers : [];
+$moduleLabels = is_array($moduleLabels ?? null) ? $moduleLabels : [];
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
 $actionTypeLabel = static function (string $t): string {
     return match ($t) {
@@ -34,126 +49,242 @@ $modulesSummary = static function (?string $json): string {
 
     return implode(', ', $parts);
 };
-?>
-<div class="max-w-5xl mx-auto px-6 py-12">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Restrictions membres</h1>
-        <a href="<?= url('back-office') ?>" class="text-sm text-slate-600 hover:underline">Retour</a>
-    </div>
-    <div class="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950 mb-6">
-        <p class="font-semibold">Niveau organisation</p>
-        <p class="mt-1 text-amber-900/90">Ici vous limitez l’accès du membre à certains <strong>domaines du portail</strong> de votre communauté (formations, documents, candidatures, etc.). Les <strong>blocages e-mail / réseau</strong> déclenchés par la modération automatique du portail recrutement se lèvent dans <a class="font-semibold text-amber-950 underline hover:no-underline" href="<?= url('back-office/security-indicators') ?>">Blocages portail & sécurité</a>. Les mesures sur le compte, le forum, la messagerie ou les listes globales du site restent gérées par l’administration de la plateforme.</p>
-    </div>
-    <?php $f = \App\Core\Session::getFlash('error'); $s = \App\Core\Session::getFlash('success'); $w = \App\Core\Session::getFlash('warning'); ?>
-    <?php if ($f): ?><p class="text-red-600 text-sm mb-4"><?= htmlspecialchars($f) ?></p><?php endif; ?>
-    <?php if ($s): ?><p class="text-emerald-700 text-sm mb-4"><?= htmlspecialchars($s) ?></p><?php endif; ?>
-    <?php if ($w): ?><p class="text-amber-800 text-sm mb-4"><?= htmlspecialchars($w) ?></p><?php endif; ?>
 
-    <form method="post" action="<?= url('back-office/moderation/apply') ?>" class="grid md:grid-cols-2 gap-4 mb-10 border border-slate-200 rounded-lg p-4">
-        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-        <div class="md:col-span-2">
-            <h2 class="text-sm font-bold text-slate-800 mb-3">Nouvelle mesure</h2>
-        </div>
-        <div class="md:col-span-2">
-            <label class="block text-xs text-slate-500 mb-1">Membre concerné</label>
-            <select name="target_user_id" required class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
+$fmtDt = static function (mixed $raw): string {
+    $s = trim((string) ($raw ?? ''));
+    if ($s === '') {
+        return '—';
+    }
+    $t = strtotime($s);
+
+    return $t ? date('d/m/Y H:i', $t) : $s;
+};
+
+$revocable = ['mute', 'suspend', 'ban'];
+$activeCount = 0;
+$warnCount = 0;
+$revokedCount = 0;
+foreach ($actions as $a) {
+    $type = (string) ($a['action_type'] ?? '');
+    if (!empty($a['revoked_at'])) {
+        $revokedCount++;
+        continue;
+    }
+    if ($type === 'warn') {
+        $warnCount++;
+    } elseif (in_array($type, $revocable, true)) {
+        $activeCount++;
+    }
+}
+$total = count($actions);
+$pctOf = static fn (int $n): string => $total > 0 ? (string) (int) round($n / $total * 100) . '%' : '0%';
+
+$flashError = \App\Core\Session::getFlash('error');
+$flashSuccess = \App\Core\Session::getFlash('success');
+$flashWarning = \App\Core\Session::getFlash('warning');
+?>
+<div class="ath-note">
+    <p class="ath-note__title">Périmètre : votre communauté</p>
+    <p class="ath-note__text">
+        Vous limitez ici l’accès du membre à certains <strong>domaines du portail</strong> de votre communauté
+        (formations, documents, candidatures…). Les <strong>blocages e-mail et réseau</strong> déclenchés par la
+        modération automatique du portail recrutement se lèvent dans
+        <a href="<?= $h(url('back-office/security-indicators')) ?>">Blocages portail &amp; sécurité</a>.
+        Les mesures sur le compte, le forum, la messagerie ou les listes globales du site restent du ressort
+        de l’administration de la plateforme.
+    </p>
+</div>
+
+<?php if ($flashError): ?>
+<p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $flashError) ?></p>
+<?php endif; ?>
+<?php if ($flashSuccess): ?>
+<p class="ath-flash ath-flash--ok" role="status"><?= $h((string) $flashSuccess) ?></p>
+<?php endif; ?>
+<?php if ($flashWarning): ?>
+<p class="ath-flash" role="status" style="background:#fdf3e2;border-color:#f2ddb4;color:#8a5a06;"><?= $h((string) $flashWarning) ?></p>
+<?php endif; ?>
+
+<?php
+$athKpis = [
+    [
+        'label' => 'RESTRICTIONS EN COURS',
+        'value' => (string) $activeCount,
+        'delta' => '',
+        'tone' => $activeCount === 0 ? '#0b8a5c' : '#c72e2e',
+        'pct' => $pctOf($activeCount),
+        'note' => 'accès limité en ce moment',
+    ],
+    [
+        'label' => 'AVERTISSEMENTS',
+        'value' => (string) $warnCount,
+        'delta' => '',
+        'tone' => $warnCount === 0 ? '#0b8a5c' : '#c98a12',
+        'pct' => $pctOf($warnCount),
+        'note' => 'conservés au dossier',
+    ],
+    [
+        'label' => 'MESURES LEVÉES',
+        'value' => (string) $revokedCount,
+        'delta' => '',
+        'tone' => '#64748b',
+        'pct' => $pctOf($revokedCount),
+        'note' => 'historique conservé',
+    ],
+    [
+        'label' => 'MEMBRES CONCERNABLES',
+        'value' => (string) count($memberUsers),
+        'delta' => '',
+        'tone' => '#1e4f80',
+        'pct' => '100%',
+        'note' => 'comptes de la communauté',
+    ],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
+
+<form method="post" action="<?= $h(url('back-office/moderation/apply')) ?>" class="ath-form ath-rise">
+    <div class="ath-form__head">
+        <span class="ath-form__title">Nouvelle mesure</span>
+        <span class="ath-form__hint">Un avertissement reste au dossier sans limiter l’accès ; une restriction ferme les domaines cochés.</span>
+    </div>
+    <input type="hidden" name="_csrf_token" value="<?= $h(\App\Core\Csrf::token()) ?>">
+    <div class="ath-form__grid">
+        <label class="ath-field">
+            <span class="ath-field__label">Membre concerné</span>
+            <select name="target_user_id" required class="ath-field__select">
                 <option value="">— Choisir —</option>
                 <?php foreach ($memberUsers as $u): ?>
-                    <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= htmlspecialchars((string) ($u['email'] ?? '')) ?></option>
+                <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h((string) ($u['email'] ?? '')) ?></option>
                 <?php endforeach; ?>
             </select>
-        </div>
-        <div class="md:col-span-2">
-            <label class="block text-xs text-slate-500 mb-1">Type</label>
-            <select name="action_type" id="mod_action_type" class="w-full border border-slate-300 rounded px-3 py-2 text-sm">
-                <option value="warn">Avertissement (conservé sur le dossier)</option>
-                <option value="restriction">Restriction d’accès à des domaines du portail</option>
+        </label>
+        <label class="ath-field">
+            <span class="ath-field__label">Type de mesure</span>
+            <select name="action_type" id="mod_action_type" class="ath-field__select">
+                <option value="warn">Avertissement (conservé au dossier)</option>
+                <option value="restriction">Restriction d’accès à des domaines</option>
             </select>
-        </div>
-        <div id="mod_duration_wrap" class="md:col-span-2" style="display:none">
-            <label class="block text-xs text-slate-500 mb-1">Durée de la restriction</label>
-            <div class="space-y-2">
-                <label class="flex items-center gap-2 text-sm">
-                    <input type="radio" name="duration_mode" value="permanent" checked class="rounded border-slate-300"> Sans date de fin
-                </label>
-                <label class="flex items-center gap-2 text-sm">
-                    <input type="radio" name="duration_mode" value="temporary" class="rounded border-slate-300"> Jusqu’au bout de
-                </label>
-                <input type="number" name="duration_days" value="7" min="1" max="3650" class="w-full max-w-xs border border-slate-300 rounded px-3 py-2 text-sm" title="Nombre de jours si temporaire">
-                <span class="text-xs text-slate-500">jours</span>
-            </div>
-        </div>
-        <div class="md:col-span-2" id="mod_scope_wrap" style="display:none">
-            <p class="text-xs font-semibold text-slate-600 mb-2">Domaines concernés</p>
-            <p class="text-xs text-slate-500 mb-3">Cochez les parties du portail auxquelles le membre ne doit plus accéder dans votre communauté.</p>
-            <div class="grid sm:grid-cols-2 gap-2">
-                <?php foreach ($moduleLabels as $key => $label): ?>
-                    <label class="flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="modules_blocked[]" value="<?= htmlspecialchars($key) ?>" class="rounded border-slate-300">
-                        <?= htmlspecialchars($label) ?>
-                    </label>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <div class="md:col-span-2">
-            <label class="block text-xs text-slate-500 mb-1">Motif (visible pour les personnes habilitées sur la fiche)</label>
-            <textarea name="reason" rows="2" class="w-full border border-slate-300 rounded px-3 py-2 text-sm"></textarea>
-        </div>
-        <div class="md:col-span-2">
-            <button type="submit" class="px-4 py-2 bg-rose-700 text-white text-sm font-semibold rounded">Enregistrer</button>
-        </div>
-    </form>
+        </label>
+    </div>
 
-    <h2 class="text-lg font-bold text-slate-800 mb-2">Historique récent (organisation)</h2>
-    <table class="w-full text-sm border border-slate-200 rounded">
-        <thead class="bg-slate-50">
-            <tr>
-                <th class="text-left p-2">Date</th>
-                <th class="text-left p-2">Membre</th>
-                <th class="text-left p-2">Mesure</th>
-                <th class="text-left p-2">Domaines</th>
-                <th class="text-left p-2">Acteur</th>
-                <th class="text-left p-2"></th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($actions as $a): ?>
-            <tr class="border-t border-slate-100">
-                <td class="p-2"><?= htmlspecialchars((string) ($a['created_at'] ?? '')) ?></td>
-                <td class="p-2"><?= htmlspecialchars((string) ($a['target_email'] ?? '')) ?></td>
-                <td class="p-2"><?= htmlspecialchars($actionTypeLabel((string) ($a['action_type'] ?? ''))) ?></td>
-                <td class="p-2"><?= htmlspecialchars($modulesSummary(isset($a['restrictions_json']) ? (is_string($a['restrictions_json']) ? $a['restrictions_json'] : null) : null)) ?></td>
-                <td class="p-2"><?= htmlspecialchars((string) ($a['actor_email'] ?? '')) ?></td>
-                <td class="p-2">
-                    <?php if (empty($a['revoked_at']) && in_array((string) ($a['action_type'] ?? ''), ['mute', 'suspend', 'ban'], true)): ?>
-                    <form method="post" action="<?= url('back-office/moderation/revoke') ?>" class="inline">
-                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token()) ?>">
-                        <input type="hidden" name="action_id" value="<?= (int) ($a['id'] ?? 0) ?>">
-                        <button type="submit" class="text-rose-600 text-xs underline">Lever</button>
-                    </form>
-                    <?php elseif (!empty($a['revoked_at'])): ?>
-                        <span class="text-slate-400">Levée</span>
-                    <?php else: ?>
-                        <span class="text-slate-400">—</span>
-                    <?php endif; ?>
-                </td>
-            </tr>
+    <div id="mod_duration_wrap" hidden style="margin-top:14px;">
+        <span class="ath-field__label">Durée de la restriction</span>
+        <div class="ath-check-grid" style="margin-top:7px;">
+            <label class="ath-check">
+                <input type="radio" name="duration_mode" value="permanent" checked>
+                <span>Sans date de fin</span>
+            </label>
+            <label class="ath-check">
+                <input type="radio" name="duration_mode" value="temporary">
+                <span>Temporaire</span>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Nombre de jours</span>
+                <input type="number" name="duration_days" value="7" min="1" max="3650" class="ath-field__input">
+                <span class="ath-field__help">Utilisé uniquement si la mesure est temporaire.</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="mod_scope_wrap" hidden style="margin-top:14px;">
+        <span class="ath-field__label">Domaines concernés</span>
+        <p class="ath-field__help" style="margin:5px 0 8px;">Cochez les parties du portail auxquelles le membre ne doit plus accéder dans votre communauté.</p>
+        <div class="ath-check-grid">
+            <?php foreach ($moduleLabels as $key => $label): ?>
+            <label class="ath-check">
+                <input type="checkbox" name="modules_blocked[]" value="<?= $h((string) $key) ?>">
+                <span><?= $h((string) $label) ?></span>
+            </label>
             <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
-<script>
-(function () {
-    var sel = document.getElementById('mod_action_type');
-    var dur = document.getElementById('mod_duration_wrap');
-    var scope = document.getElementById('mod_scope_wrap');
-    function sync() {
-        if (!sel || !dur || !scope) return;
-        var w = sel.value === 'warn';
-        dur.style.display = w ? 'none' : '';
-        scope.style.display = w ? 'none' : '';
+        </div>
+    </div>
+
+    <div class="ath-form__grid ath-form__grid--wide" style="margin-top:14px;">
+        <label class="ath-field">
+            <span class="ath-field__label">Motif</span>
+            <textarea name="reason" rows="3" class="ath-field__textarea"></textarea>
+            <span class="ath-field__help">Visible par les personnes habilitées, sur la fiche du membre.</span>
+        </label>
+    </div>
+
+    <div class="ath-form__actions">
+        <button type="submit" class="ath-btn ath-btn--solid">Enregistrer la mesure</button>
+    </div>
+</form>
+
+<?php
+$csrf = \App\Core\Csrf::token();
+$revokeUrl = url('back-office/moderation/revoke');
+
+$athTableTitle = 'Historique récent';
+$athTableCount = $total;
+$athTableCols = ['DATE|m', 'MEMBRE|m', 'MESURE', 'DOMAINES', 'DÉCIDÉE PAR|m', 'ÉTAT|b'];
+$athTableRows = [];
+$athTableRowActions = [];
+foreach ($actions as $a) {
+    $type = (string) ($a['action_type'] ?? '');
+    $isRevoked = !empty($a['revoked_at']);
+    $restrictions = isset($a['restrictions_json']) && is_string($a['restrictions_json']) ? $a['restrictions_json'] : null;
+
+    if ($isRevoked) {
+        $state = 'Levée';
+    } elseif (in_array($type, $revocable, true)) {
+        $state = 'Actif';
+    } else {
+        $state = 'En attente';
     }
-    if (sel) sel.addEventListener('change', sync);
-    sync();
+
+    $athTableRows[] = [
+        $fmtDt($a['created_at'] ?? null),
+        (string) ($a['target_email'] ?? '—'),
+        $actionTypeLabel($type),
+        $modulesSummary($restrictions),
+        (string) ($a['actor_email'] ?? '—'),
+        $state,
+    ];
+
+    // Balisage d’action construit ici, échappements compris (cf. contrat de ath_table.php).
+    if (!$isRevoked && in_array($type, $revocable, true)) {
+        $athTableRowActions[] = '<form method="post" action="' . $h($revokeUrl) . '"'
+            . ' onsubmit="return confirm(\'Lever cette mesure ? Le membre retrouve immédiatement l\\\'accès aux domaines concernés.\');">'
+            . '<input type="hidden" name="_csrf_token" value="' . $h($csrf) . '">'
+            . '<input type="hidden" name="action_id" value="' . (int) ($a['id'] ?? 0) . '">'
+            . '<button type="submit" class="ath-row-action ath-row-action--accent">Lever</button>'
+            . '</form>';
+    } elseif ($isRevoked) {
+        $athTableRowActions[] = '<button type="button" class="ath-row-action" disabled>Levée</button>';
+    } else {
+        $athTableRowActions[] = null;
+    }
+}
+$athTableActionsLabel = 'LEVÉE';
+$athTableFilters = [];
+$athTableMinWidth = '1240px';
+$athTableShowCheckbox = false;
+$athTableExportUrl = null;
+$athTablePager = null;
+$athTableRowHrefs = null;
+$athTableFoot = $actions === []
+    ? 'Aucune mesure enregistrée pour cette communauté.'
+    : 'Les mesures levées restent visibles : l’historique n’est jamais effacé.';
+require base_path('views/partials/ath_table.php');
+?>
+
+<script>
+/* Le type de mesure commande l’affichage de la durée et des domaines : un avertissement
+   n’en a pas besoin. `hidden` plutôt qu’un style inline, pour rester accessible. */
+(function () {
+  var select = document.getElementById('mod_action_type');
+  var duration = document.getElementById('mod_duration_wrap');
+  var scope = document.getElementById('mod_scope_wrap');
+  if (!select || !duration || !scope) return;
+  var sync = function () {
+    var isWarning = select.value === 'warn';
+    duration.hidden = isWarning;
+    scope.hidden = isWarning;
+  };
+  select.addEventListener('change', sync);
+  sync();
 })();
 </script>

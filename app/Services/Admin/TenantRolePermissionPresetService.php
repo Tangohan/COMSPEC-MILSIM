@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Authorization\SystemReservedPermissions;
 use App\Authorization\TenantPermissionCatalog;
 use App\Repositories\PermissionRepository;
 
 /**
  * Profils prédéfinis de permissions pour les rôles d’espace communauté.
- * Ne couvre jamais les droits « site » : {@see EXCLUDED_SLUGS}.
+ * Ne couvre jamais les droits « site » : exclusions métier dans {@see EXCLUDED_SLUGS},
+ * barrière plateforme dans {@see SystemReservedPermissions}.
  */
 final class TenantRolePermissionPresetService
 {
@@ -236,9 +238,23 @@ final class TenantRolePermissionPresetService
     }
 
     /**
+     * Habilitations d’un profil, après retrait inconditionnel de tout ce qui est réservé
+     * à l’administration de la plateforme ({@see SystemReservedPermissions}).
+     *
+     * Le filtre est appliqué ici, en sortie unique, et non branche par branche : un futur
+     * profil ne peut pas ouvrir de droits plateforme par oubli d’exclusion.
+     *
      * @return list<string>
      */
     private function resolveSlugs(string $presetId): array
+    {
+        return SystemReservedPermissions::filter($this->resolveSlugsRaw($presetId));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveSlugsRaw(string $presetId): array
     {
         $excluded = self::EXCLUDED_SLUGS;
 

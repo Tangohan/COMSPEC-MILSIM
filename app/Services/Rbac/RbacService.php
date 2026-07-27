@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Rbac;
 
+use App\Authorization\SystemReservedPermissions;
 use App\Core\Database;
 use App\Core\Gate;
 use App\Repositories\UserRepository;
@@ -51,8 +52,11 @@ class RbacService
              WHERE rp.role_id = ?'
         );
         $stmt->execute([$roleId]);
+        $slugs = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        // Les rôles chargés ici relèvent d’une communauté : les habilitations plateforme
+        // ne peuvent jamais en provenir, même si une ligne héritée les rattache encore.
+        return SystemReservedPermissions::filter(is_array($slugs) ? array_map('strval', $slugs) : []);
     }
 
     /**
@@ -190,6 +194,11 @@ class RbacService
                 if ($slug === '') {
                     continue;
                 }
+                // `tenant_user_roles` ne porte que des rôles de communauté : une habilitation
+                // plateforme rattachée là est ignorée, en périmètre global comme unitaire.
+                if (SystemReservedPermissions::isReserved($slug)) {
+                    continue;
+                }
                 $rs = $this->normalizeRbacScope((string) ($p['rs'] ?? 'tenant'));
                 if ($orgUnitId === null || $orgUnitId < 1) {
                     if ($rs === 'global' || $rs === 'tenant') {
@@ -253,6 +262,12 @@ class RbacService
                 continue;
             }
             $grant = !empty($r['grant_flag']);
+            // Une surcharge utilisateur est rattachée à un tenant : elle ne peut pas accorder
+            // une habilitation plateforme. Le retrait (`grant_flag` faux) reste sans objet ici,
+            // puisque ces slugs n’entrent jamais dans l’ensemble.
+            if ($grant && SystemReservedPermissions::isReserved($slug)) {
+                continue;
+            }
             $ou = isset($r['org_unit_id']) && $r['org_unit_id'] !== null && $r['org_unit_id'] !== ''
                 ? (int) $r['org_unit_id']
                 : null;
