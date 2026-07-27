@@ -3191,3 +3191,213 @@ body:not(.ath-shell) .pjr-assign-slot {
   }
 }
 
+
+/* ——— Colonne d’actions dans un tableau ———
+   Les pages qui portent une action par ligne (activer une version, lever un blocage)
+   la rendent dans une dernière colonne collée à droite, sans casser le défilement
+   horizontal du tableau. */
+.ath-th-actions,
+.ath-td-actions {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.ath-td-actions {
+  padding-right: 13px;
+}
+
+.ath-td-actions form {
+  display: inline;
+}
+
+.ath-row-action {
+  height: 24px;
+  padding: 0 9px;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--ath-ink);
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.ath-row-action:hover {
+  border-color: var(--ath-ink);
+}
+
+.ath-row-action--accent:hover {
+  background: var(--ath-accent-bright);
+  border-color: var(--ath-accent-bright);
+  color: var(--ath-accent-dark);
+}
+
+.ath-row-action--danger {
+  color: #a32222;
+  border-color: #f6cccc;
+  background: #fdecec;
+}
+
+.ath-row-action--danger:hover {
+  border-color: #c72e2e;
+}
+
+.ath-row-action[disabled] {
+  cursor: default;
+  color: var(--ath-subtle);
+  border-color: var(--ath-line-soft);
+  background: var(--ath-line-soft);
+}
+
+/* ——— Formulaires ATHENA ———
+   Jeu minimal partagé par les pages back-office qui saisissent des données
+   (doctrine, médias, intégrations, raccourcis). Angles carrés, mêmes tokens
+   que le reste de la charte. */
+.ath-form {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  margin-bottom: 16px;
+  padding: 16px 18px 18px;
+}
+
+.ath-form__head {
+  align-items: baseline;
+  border-bottom: 1px solid var(--ath-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: -16px -18px 16px;
+  padding: 12px 18px;
+}
+
+.ath-form__title {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: var(--ath-ink);
+}
+
+.ath-form__hint {
+  color: var(--ath-subtle);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ath-form__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.ath-form__grid--wide {
+  grid-template-columns: 1fr;
+}
+
+.ath-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ath-field__label {
+  color: var(--ath-subtle);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ath-field__input,
+.ath-field__select,
+.ath-field__textarea {
+  background: var(--ath-bg);
+  border: 1px solid var(--ath-line);
+  color: var(--ath-ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 32px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.ath-field__textarea {
+  height: auto;
+  line-height: 1.5;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.ath-field__input:focus,
+.ath-field__select:focus,
+.ath-field__textarea:focus {
+  background: var(--ath-surface);
+  border-color: var(--ath-accent);
+  outline: none;
+}
+
+.ath-field__help {
+  color: var(--ath-subtle);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.ath-form__actions {
+  border-top: 1px solid var(--ath-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+/* ——— Bandeau d’information ——— */
+.ath-note {
+  background: #eaf2fb;
+  border: 1px solid #c9dcf0;
+  margin-bottom: 16px;
+  padding: 11px 13px;
+}
+
+.ath-note__title {
+  color: #1e4f80;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ath-note__text {
+  color: #1e4f80;
+  font-size: 11.5px;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ——— Messages éphémères ——— */
+.ath-flash {
+  border: 1px solid var(--ath-line);
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  padding: 9px 12px;
+}
+
+.ath-flash--ok {
+  background: #eefaf4;
+  border-color: #bfe6d5;
+  color: #0a6b48;
+}
+
+.ath-flash--err {
+  background: #fdecec;
+  border-color: #f6cccc;
+  color: #a32222;
+}

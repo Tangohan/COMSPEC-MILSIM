@@ -17,6 +17,19 @@ declare(strict_types=1);
  * @var string|null $athTableFilterName
  * @var string|null $athTableFilterValue
  * @var list<string|null>|null $athTableRowHrefs
+ * @var list<string|null>|null $athTableRowActions
+ * @var string|null $athTableActionsLabel
+ *
+ * `$athTableRowActions` porte, pour chaque ligne, un fragment HTML d’action (formulaire
+ * de validation, bouton de révocation…) rendu dans une dernière colonne. Ce fragment est
+ * inséré **tel quel** : il doit être construit par la vue avec ses propres échappements,
+ * et ne contenir que du balisage écrit côté serveur — jamais une valeur saisie par un
+ * utilisateur sans passer par `htmlspecialchars()`.
+ *
+ * Le champ « Filtrer… » agit côté client sur les lignes rendues (insensible à la casse
+ * et aux accents) : il affine ce que la page a déjà chargé, sans requête. Les pages qui
+ * filtrent côté serveur gardent leur propre formulaire au-dessus du tableau et passent
+ * `$athTableFilterValue` pour préremplir le champ.
  */
 
 use App\Support\AthUi;
@@ -33,6 +46,9 @@ $exportUrl = trim((string) ($athTableExportUrl ?? ''));
 $filterName = trim((string) ($athTableFilterName ?? 'q'));
 $filterValue = (string) ($athTableFilterValue ?? '');
 $rowHrefs = is_array($athTableRowHrefs ?? null) ? $athTableRowHrefs : [];
+$rowActions = is_array($athTableRowActions ?? null) ? $athTableRowActions : [];
+$hasActions = $rowActions !== [];
+$actionsLabel = trim((string) ($athTableActionsLabel ?? 'ACTION'));
 
 $cols = [];
 foreach ($rawCols as $col) {
@@ -61,28 +77,39 @@ if ($foot === '') {
 }
 
 $pager = is_array($athTablePager ?? null) ? $athTablePager : null;
+
+// Identifiant unique par tableau : plusieurs tableaux peuvent cohabiter dans une même
+// page (ex. insights de présence). Un `static` ne conviendrait pas — il est réinitialisé
+// à chaque `require` du même fichier dans un même appel, ce qui produirait des doublons.
+$GLOBALS['__athTableSeq'] = (int) ($GLOBALS['__athTableSeq'] ?? 0) + 1;
+$tableId = 'ath-table-' . $GLOBALS['__athTableSeq'];
 ?>
-<div class="ath-table-panel ath-rise">
+<div class="ath-table-panel ath-rise" data-ath-table-panel="<?= $h($tableId) ?>">
     <div class="ath-table-toolbar">
         <?php if ($title !== ''): ?>
         <span class="ath-table-toolbar__title"><?= $h($title) ?></span>
         <?php endif; ?>
-        <span class="ath-table-toolbar__count"><?= $h($countLabel) ?></span>
+        <span class="ath-table-toolbar__count" data-ath-count data-ath-count-base="<?= $h($countLabel) ?>"><?= $h($countLabel) ?></span>
         <span class="ath-table-toolbar__spacer" aria-hidden="true"></span>
         <label class="ath-table-toolbar__search">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
-            <input type="search" name="<?= $h($filterName) ?>" value="<?= $h($filterValue) ?>" placeholder="Filtrer…" autocomplete="off" spellcheck="false" aria-label="Filtrer le tableau">
+            <input type="search" name="<?= $h($filterName) ?>" value="<?= $h($filterValue) ?>" placeholder="Filtrer…" autocomplete="off" spellcheck="false" aria-label="Filtrer les lignes affichées" data-ath-filter>
         </label>
         <?php foreach ($filters as $filter): ?>
-        <button type="button" class="ath-table-toolbar__filter ath-btn">
-            <?= $h((string) $filter) ?>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
-        </button>
+            <?php if (is_array($filter) && trim((string) ($filter['href'] ?? '')) !== ''): ?>
+            <a href="<?= $h((string) $filter['href']) ?>" class="ath-table-toolbar__filter ath-btn"<?= !empty($filter['active']) ? ' aria-current="true"' : '' ?>>
+                <?= $h((string) ($filter['label'] ?? '')) ?>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </a>
+            <?php else: ?>
+            <button type="button" class="ath-table-toolbar__filter ath-btn" disabled>
+                <?= $h(is_array($filter) ? (string) ($filter['label'] ?? '') : (string) $filter) ?>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#a9b3b7" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <?php endif; ?>
         <?php endforeach; ?>
         <?php if ($exportUrl !== ''): ?>
         <a href="<?= $h($exportUrl) ?>" class="ath-table-toolbar__export ath-btn">Exporter CSV</a>
-        <?php else: ?>
-        <button type="button" class="ath-table-toolbar__export ath-btn">Exporter CSV</button>
         <?php endif; ?>
     </div>
     <div class="ath-table-wrap">
@@ -95,20 +122,32 @@ $pager = is_array($athTablePager ?? null) ? $athTablePager : null;
                     <?php foreach ($cols as $col): ?>
                     <th class="<?= $col['align'] === 'right' ? 'ath-th-num' : '' ?>" scope="col"><?= $h($col['label']) ?></th>
                     <?php endforeach; ?>
+                    <?php if ($hasActions): ?>
+                    <th class="ath-th-actions" scope="col"><?= $h($actionsLabel) ?></th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
             <?php if ($rows === []): ?>
                 <tr>
-                    <td colspan="<?= count($cols) + ($showCheck ? 1 : 0) ?>" class="ath-table-empty">Aucune donnée à afficher.</td>
+                    <td colspan="<?= count($cols) + ($showCheck ? 1 : 0) + ($hasActions ? 1 : 0) ?>" class="ath-table-empty">Aucune donnée à afficher.</td>
                 </tr>
             <?php endif; ?>
+            <tr class="ath-row ath-row--filter-empty" hidden>
+                <td colspan="<?= count($cols) + ($showCheck ? 1 : 0) + ($hasActions ? 1 : 0) ?>" class="ath-table-empty">Aucune ligne ne correspond au filtre.</td>
+            </tr>
             <?php foreach ($rows as $ri => $row): ?>
                 <?php
                 $rowHref = $rowHrefs[$ri] ?? null;
                 $rowHref = is_string($rowHref) ? trim($rowHref) : '';
+                // Empreinte de recherche : toutes les cellules de la ligne, en minuscules.
+                $searchBlob = '';
+                foreach ($cols as $ci => $col) {
+                    $searchBlob .= ' ' . (string) ($row[$ci] ?? '');
+                }
+                $searchBlob = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $searchBlob) ?? ''), 'UTF-8');
                 ?>
-                <tr class="ath-row<?= $rowHref !== '' ? ' ath-row--link' : '' ?>"<?= $rowHref !== '' ? ' data-href="' . $h($rowHref) . '"' : '' ?>>
+                <tr class="ath-row<?= $rowHref !== '' ? ' ath-row--link' : '' ?>" data-ath-search="<?= $h($searchBlob) ?>"<?= $rowHref !== '' ? ' data-href="' . $h($rowHref) . '"' : '' ?>>
                     <?php if ($showCheck): ?>
                     <td class="ath-td-check"><span class="ath-table-check" aria-hidden="true"></span></td>
                     <?php endif; ?>
@@ -124,6 +163,13 @@ $pager = is_array($athTablePager ?? null) ? $athTablePager : null;
                             </span>
                         </td>
                     <?php endforeach; ?>
+                    <?php if ($hasActions): ?>
+                    <?php $action = $rowActions[$ri] ?? null; ?>
+                    <td class="ath-td-actions">
+                        <?php // Fragment déjà échappé par la vue appelante (cf. en-tête du partial). ?>
+                        <?= is_string($action) && trim($action) !== '' ? $action : '<span class="ath-cell">—</span>' ?>
+                    </td>
+                    <?php endif; ?>
                 </tr>
             <?php endforeach; ?>
             </tbody>
@@ -151,14 +197,64 @@ $pager = is_array($athTablePager ?? null) ? $athTablePager : null;
         <?php endif; ?>
     </div>
 </div>
+<?php if (empty($GLOBALS['__athTableScriptEmitted'])): $GLOBALS['__athTableScriptEmitted'] = true; ?>
 <script>
+/*
+ * Comportements du tableau ATHENA, posés une seule fois par page : le partial peut être
+ * inclus plusieurs fois (plusieurs tableaux), d'où la délégation sur `document` plutôt
+ * qu'un branchement par ligne — sinon chaque inclusion rebranchait tous les tableaux
+ * déjà présents et les clics se déclenchaient en double.
+ */
 (function () {
-  document.querySelectorAll('.ath-row--link[data-href]').forEach(function (row) {
-    row.addEventListener('click', function (e) {
-      if (e.target.closest('a, button, input, label')) return;
-      var href = row.getAttribute('data-href');
-      if (href) window.location.href = href;
+  if (window.__athTableBound) return;
+  window.__athTableBound = true;
+
+  var deburr = function (s) {
+    return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  };
+
+  var applyFilter = function (input) {
+    var panel = input.closest('[data-ath-table-panel]');
+    if (!panel) return;
+    var q = deburr(input.value.trim());
+    var rows = panel.querySelectorAll('tbody .ath-row[data-ath-search]');
+    var shown = 0;
+    rows.forEach(function (row) {
+      var match = !q || deburr(row.getAttribute('data-ath-search')).indexOf(q) !== -1;
+      row.hidden = !match;
+      if (match) shown++;
     });
+    var emptyRow = panel.querySelector('.ath-row--filter-empty');
+    if (emptyRow) emptyRow.hidden = !(q && shown === 0);
+    var count = panel.querySelector('[data-ath-count]');
+    if (count) {
+      count.textContent = q
+        ? shown + ' / ' + rows.length + (rows.length > 1 ? ' lignes' : ' ligne')
+        : (count.getAttribute('data-ath-count-base') || '');
+    }
+  };
+
+  document.addEventListener('input', function (e) {
+    var input = e.target.closest('[data-ath-filter]');
+    if (input) applyFilter(input);
+  });
+
+  // Échap vide le filtre sans quitter le champ.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var input = e.target.closest('[data-ath-filter]');
+    if (!input || input.value === '') return;
+    input.value = '';
+    applyFilter(input);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('a, button, input, label, select, textarea')) return;
+    var row = e.target.closest('.ath-row--link[data-href]');
+    if (!row) return;
+    var href = row.getAttribute('data-href');
+    if (href) window.location.href = href;
   });
 })();
 </script>
+<?php endif; ?>
