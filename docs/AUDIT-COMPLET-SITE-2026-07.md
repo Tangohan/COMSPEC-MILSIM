@@ -821,7 +821,7 @@ Format : **Source → Destination → Données → Mécanisme → État → Prob
 | S2 | **CSRF global limité à `/back-office/`** | 181 routes `/admin/*` et toutes les routes membres dépendent d'appels manuels. `DocumentsController` : 3 routes POST, 0 validation | **P0** | **[C]** |
 | S3 | **Ouverture hors production** | Si `APP_ENV` ≠ `production`/`prod`, sans `X_COMSPEC_KEY` ni `TACTICAL_API_STRICT`, toutes les API tactiques sont ouvertes | **P1** | **[C]** |
 | S4 | **Erreurs qui fuient de l'information** | `public/index.php` renvoie « Cette fonctionnalité n'est pas encore prête sur le serveur. Demandez à un administrateur de lancer la mise à jour de la base » lorsqu'il détecte `1146`/`42S02` dans le message d'exception | **P2** | **[C]** |
-| S5 | **Session** | `session_set_cookie_params` correct (`httponly`, `samesite=Lax`) mais `secure` dépend de `config('auth')` — à vérifier en production | **P1** | **[V]** |
+| S5 | **Cookie de session non `secure` par défaut** | `app/Config/auth.php:7` fait défaut à `false`, et `.env.example:58` livre `SESSION_SECURE_COOKIE=false` **à côté de `APP_ENV=production` (ligne 8)**. Un déploiement qui recopie `.env.example` tel quel tourne en production avec un cookie de session transmissible en clair. `httponly` et `samesite=Lax` sont corrects, mais ne compensent pas un downgrade HTTP. | **P1** | **[C]** |
 | S6 | **Token CSRF unique par session, sans rotation** | `Csrf::token()` génère une fois et ne tourne jamais, même après `Session::regenerate()` | **P2** | **[C]** |
 
 ### 14.2 Architecture
@@ -844,8 +844,11 @@ Format : **Source → Destination → Données → Mécanisme → État → Prob
 **[C]** 22 fichiers de test pour ~317 000 lignes. Répartition : 18 unitaires, 2 de contrat API,
 2 sur le courrier. **Aucun test** ne couvre : le workflow de candidature, l'émission de certificat,
 le RSVP et les slots, l'API ATAK, le RBAC, la résolution de tenant, la génération de PDF.
-`phpstan.neon` existe avec une baseline **vide** (`phpstan-baseline.neon` = 33 octets) — **[V]** :
-soit le code est propre au niveau configuré, soit le niveau est très bas.
+**[C]** `phpstan.neon` est configuré en **`level: 0`**, le niveau le plus permissif de l'outil
+(il ne détecte guère que les classes et fonctions inconnues). La baseline vide
+(`phpstan-baseline.neon` = 33 octets) ne traduit donc pas un code sain : l'analyse statique est
+présente dans le projet mais pratiquement inerte. Monter progressivement à `level: 5` sur
+`app/Repositories` puis `app/Services`, baseline à l'appui, donnerait un filet réel.
 
 ### 14.4 Risques de régression classés
 
@@ -1179,7 +1182,7 @@ reviendrait à câbler un système sur des données qui n'existent pas.
 |---|---|---|---|
 | P0-1 | Protéger `/api/operations/*` (`config/tactical_api.php`) | 15 min | **Fait** |
 | P0-2 | CSRF sur les 3 POST de `DocumentsController` | 30 min | **Fait** |
-| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **En attente d'arbitrage** |
+| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **Audit fait — retrait en attente d'arbitrage** |
 | P0-4 | Émettre une qualification à l'émission d'un certificat | 2-3 j | **Fait** (socle) |
 
 #### Détail de la livraison P0
@@ -1213,6 +1216,52 @@ transmettent désormais `_csrf_token` : le lecteur de documents continue de fonc
 
 Reste à faire sur ce chantier, hors P0 : l'exposition UI (tableau de recyclage par unité — N5) et
 la consommation par les prérequis d'opération (N1).
+
+**P0-3 — résultat de l'audit du dump `u416380327_BDD_PROD.sql`** (782 Ko, racine du dépôt)
+
+Le fichier ne contient pas que le schéma : **106 lignes de données de production réelles**.
+
+| Table | Lignes | E-mails | Empreintes mot de passe | Jetons |
+|---|---|---|---|---|
+| `users` | 6 | 6 | **6 (argon2id)** | — |
+| `user_profiles` | 3 | — | — | — |
+| `personnel_profiles` | 3 | — | — | — |
+| `enlistments` | 2 | 2 | — | — |
+| `email_tokens` | 4 | — | — | 6 |
+| `password_resets` | 1 | — | — | 1 |
+| `login_attempts` | 28 | 28 | — | — |
+| `user_login_devices` | 4 | — | — | 4 |
+| `audit_logs` | 55 | 7 | — | — |
+
+S'y ajoutent **3 adresses IPv4 publiques** (donc rattachables à des personnes).
+
+Circonstances atténuantes, vérifiées :
+
+- Le dépôt est **privé**, `forks_count = 0`. L'exposition se limite aux personnes ayant accès au
+  dépôt (et aux environnements d'exécution qui le clonent, comme les sessions d'agent).
+- Les empreintes sont en **argon2id**, pas en MD5/SHA1 : même divulguées, elles résistent.
+- Les jetons (`email_tokens`, `password_resets`) datent d'avril 2026, soit environ 3,5 mois :
+  **[P]** expirés selon les TTL du code, donc non rejouables.
+
+Éléments aggravants :
+
+- **Aucune règle `.gitignore` ne couvre les `.sql`** — la récidive est probable.
+- Le fichier est présent dans **6 commits** : le retirer du répertoire de travail ne le retire pas
+  de l'historique.
+- Conserver des données de production dans un dépôt de code contrevient à la minimisation
+  (RGPD art. 5.1.c), indépendamment du caractère privé du dépôt.
+
+**Recommandation, en deux temps séparés :**
+
+1. *Sans risque, réversible* — retirer le fichier du répertoire de travail (`git rm --cached`),
+   ajouter `*.sql` (avec exception pour `migrations/*.sql`) au `.gitignore`, et conserver le dump
+   hors dépôt. Corrige le présent et prévient la récidive.
+2. *Irréversible, à arbitrer* — purge d'historique (`git filter-repo`) sur les 6 commits. Réécrit
+   `main`, invalide les clones et les PR ouvertes. Au vu du dépôt privé sans fork, la valeur
+   marginale est faible face au coût. **Non recommandé sauf obligation de conformité explicite.**
+
+Dans les deux cas, la mesure réellement protectrice est ailleurs : **faire tourner les 6 mots de
+passe concernés**, puisqu'ils ont circulé sous forme d'empreinte.
 
 ### P1 — Prioritaire
 
@@ -1274,18 +1323,20 @@ la consommation par les prérequis d'opération (N1).
 
 ## Annexe A — Points à vérifier
 
-Éléments que cet audit n'a **pas** pu trancher par lecture seule :
+Éléments que cet audit n'a pas pu trancher par lecture seule. Quatre ont depuis été résolus.
 
-1. **[V]** Le niveau PHPStan configuré (`phpstan.neon`, baseline vide de 33 octets).
-2. **[V]** Le rendu réel en tablette (768–1024 px) : très peu de classes `md:` observées.
-3. **[V]** `config('auth')['session_secure_cookie']` en production.
-4. **[V]** Le recouvrement exact entre `competencies/*` et `knowledge_units/module_*`.
-5. **[V]** L'alimentation de `personnel_profiles.readiness_score`.
-6. **[V]** L'usage effectif de `document_relations` (parent/enfant).
-7. **[V]** La couverture réelle de `portal_help_modal.php`.
-8. **[V]** Si `enlistment_timeline` trace bien **toutes** les transitions de statut.
-9. **[V]** Le contenu du dump `u416380327_BDD_PROD.sql` au regard des données personnelles.
-10. **[V]** Si l'UI expose réellement `community_event_slots.unit_id` comme filtre.
+| # | Point | État |
+|---|---|---|
+| 1 | Niveau PHPStan | **Résolu [C]** — `level: 0`. Analyse statique quasi inerte (cf. § 14.3) |
+| 2 | Rendu tablette (768–1024 px) | **[V]** — nécessite un rendu réel |
+| 3 | `session_secure_cookie` en production | **Résolu [C]** — défaut `false`, et `.env.example` le livre à `false` avec `APP_ENV=production` (cf. S5) |
+| 4 | Recouvrement `competencies/*` ↔ `knowledge_units/module_*` | **[V]** |
+| 5 | Alimentation de `personnel_profiles.readiness_score` | **[V]** |
+| 6 | Usage effectif de `document_relations` | **Résolu [C]** — **utilisée**, consommée par `AdminDocumentsController` via `DocumentRelationRepository`. Le constat « sous-exploité n° 11 » est donc à nuancer : la table vit, c'est son exposition produit qui est faible |
+| 7 | Couverture de `portal_help_modal.php` | **[V]** |
+| 8 | Exhaustivité de `enlistment_timeline` sur les transitions de statut | **[V]** |
+| 9 | Contenu du dump `u416380327_BDD_PROD.sql` | **Résolu [C]** — cf. § 24, P0-3 |
+| 10 | Exposition de `community_event_slots.unit_id` dans l'UI | **[V]** |
 
 ## Annexe B — Fichiers cités
 
