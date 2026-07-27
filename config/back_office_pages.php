@@ -110,7 +110,9 @@ return [
             ['label' => 'Actions ouvertes', 'href' => 'back-office/atak/comptes-rendus?open_actions=1'],
         ]],
         ['path' => 'back-office/atak/cycle-mission', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · POSTE DE COMMANDEMENT', 'title' => 'Cycle de mission', 'css' => ['back-office-mission-cycle.css']],
-        ['path' => 'back-office/atak/briefing-slides', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diapositives de briefing', 'css' => ['back-office-briefing-slides.css']],
+        ['path' => 'back-office/atak/briefing-slides', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diapositives de briefing', 'subtitle' => 'Images du briefing, ordre de passage et visibilité en jeu pour Arma et les téléphones ATAK.', 'quick' => [
+            ['label' => 'Configuration ATAK', 'href' => 'admin/atak-config'],
+        ]],
         ['path' => 'back-office/atak/fire-teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · TACTIQUE', 'title' => 'Équipes de feu', 'css' => ['back-office-fire-teams.css']],
         ['path' => 'back-office/atak/operateurs', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · TACTIQUE', 'title' => 'Effectifs en liaison'],
         ['path' => 'back-office/atak/realisme', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · ATAK', 'title' => 'Certificats et terminaux'],

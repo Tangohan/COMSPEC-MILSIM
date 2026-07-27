@@ -4083,3 +4083,211 @@ body:not(.ath-shell) .pjr-assign-slot {
   font-size: 10.5px;
   margin-top: 2px;
 }
+
+/* ——— Extrait de code copiable ———
+   Sert aux scripts à recopier dans Eden et aux adresses techniques. */
+.ath-snippet {
+  border: 1px solid var(--ath-line);
+  margin-bottom: 11px;
+}
+
+.ath-snippet__bar {
+  align-items: center;
+  background: #fafcfc;
+  border-bottom: 1px solid var(--ath-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: space-between;
+  padding: 7px 11px;
+}
+
+.ath-snippet__label {
+  color: var(--ath-subtle);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ath-snippet__code {
+  background: var(--ath-surface);
+  color: var(--ath-ink);
+  font-family: var(--ath-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-x: auto;
+  padding: 11px 12px;
+  white-space: pre;
+}
+
+.ath-copy {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  color: var(--ath-ink);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 9px;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.ath-copy:hover { border-color: var(--ath-ink); }
+
+.ath-copy.is-copied {
+  background: var(--ath-accent-bright);
+  border-color: var(--ath-accent-bright);
+  color: var(--ath-accent-dark);
+}
+
+/* Adresse technique sur une ligne, avec bouton de copie. */
+.ath-copyline {
+  align-items: center;
+  background: var(--ath-bg);
+  border: 1px solid var(--ath-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: space-between;
+  padding: 8px 11px;
+}
+
+.ath-copyline__value {
+  color: var(--ath-ink);
+  font-family: var(--ath-mono);
+  font-size: 11px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ——— Marche à suivre numérotée ——— */
+.ath-steps {
+  counter-reset: ath-step;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ath-steps > li {
+  border-top: 1px solid var(--ath-line-soft);
+  counter-increment: ath-step;
+  padding: 10px 0 10px 30px;
+  position: relative;
+}
+
+.ath-steps > li:first-child { border-top: 0; }
+
+.ath-steps > li::before {
+  align-items: center;
+  background: var(--ath-ink);
+  color: #fff;
+  content: counter(ath-step);
+  display: flex;
+  font-size: 10px;
+  font-weight: 900;
+  height: 19px;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  top: 11px;
+  width: 19px;
+}
+
+.ath-steps__title {
+  color: var(--ath-ink);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ath-steps__text {
+  color: var(--ath-muted);
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin-top: 3px;
+}
+
+/* ——— Vignette de diapositive ——— */
+.ath-slide {
+  background: var(--ath-surface);
+  border: 1px solid var(--ath-line);
+  margin-bottom: 14px;
+}
+
+.ath-slide__top {
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+}
+
+@media (max-width: 700px) {
+  .ath-slide__top { grid-template-columns: 1fr; }
+}
+
+.ath-slide__thumb {
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  background: var(--ath-bg);
+  border-right: 1px solid var(--ath-line);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 700px) {
+  .ath-slide__thumb {
+    border-bottom: 1px solid var(--ath-line);
+    border-right: 0;
+  }
+}
+
+.ath-slide__thumb img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.ath-slide__thumb-empty {
+  color: var(--ath-subtle);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ath-slide__head {
+  min-width: 0;
+  padding: 13px 15px;
+}
+
+.ath-slide__order {
+  color: var(--ath-subtle);
+  font-family: var(--ath-mono);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.ath-slide__title {
+  color: var(--ath-ink);
+  font-size: 13.5px;
+  font-weight: 900;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.ath-slide__detail {
+  color: var(--ath-muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+  margin: 6px 0 0;
+}
+
+.ath-slide__body {
+  border-top: 1px solid var(--ath-line);
+  padding: 13px 15px 15px;
+}
