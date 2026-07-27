@@ -327,6 +327,10 @@ $headHtml = ob_get_clean();
                 </div>
                 <?php else: ?>
                 <div class="lms-lesson-stage">
+                    <?php if ($useStagePlayer && $lessonType === 'slideshow'): ?>
+                    <?php /* Mode « scène » : hero sombre + progression du module, à la place du fil d'ariane. */ ?>
+                    <?php require base_path('views/training/partials/lesson_stage_hero.php'); ?>
+                    <?php else: ?>
                     <?php if ($currentModule): ?>
                     <p class="lms-module-crumb mb-1"><?= htmlspecialchars((string) ($currentModule['title'] ?? '')) ?></p>
                     <?php if (!empty($currentModule['subtitle'])): ?>
@@ -344,6 +348,7 @@ $headHtml = ob_get_clean();
                     <?php else: ?>
                     <p class="section-copy mb-8 text-sm text-slate-500">Progression liée à votre inscription au parcours.</p>
                     <?php endif; ?>
+                    <?php endif; /* fin du choix hero « scène » / en-tête classique */ ?>
 
                     <div class="lms-lesson-meta-board mb-5">
                         <div class="lms-lesson-meta-cell">
