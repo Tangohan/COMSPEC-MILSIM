@@ -127,6 +127,7 @@ class Container
                 self::get(\App\Services\Analytics\AnalyticsEventService::class),
                 self::get(\App\Repositories\CommunityMediaRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
+                self::get(\App\Repositories\CommunityEventRepository::class),
             ),
             \App\Controllers\Web\AnalyticsBeaconController::class => new \App\Controllers\Web\AnalyticsBeaconController(
                 self::get(\App\Services\Analytics\AnalyticsEventService::class)
@@ -1323,7 +1324,8 @@ class Container
                 self::get(\App\Repositories\AtakOperatorIdRepository::class),
                 self::get(\App\Repositories\FireTeamRepository::class),
                 self::get(UserRepository::class),
-                self::get(\App\Repositories\UserProfileRepository::class)
+                self::get(\App\Repositories\UserProfileRepository::class),
+                self::get(\App\Repositories\AtakRealismRepository::class)
             ),
             \App\Controllers\Api\FireTeamApiController::class => new \App\Controllers\Api\FireTeamApiController(
                 self::get(\App\Repositories\FireTeamRepository::class),
@@ -1333,7 +1335,13 @@ class Container
                     self::get(\App\Services\Tactical\AtakActivityLogService::class)
                 )
             ),
-            \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(),
+            \App\Controllers\Admin\AdminAtakModController::class => new \App\Controllers\Admin\AdminAtakModController(
+                self::get(\App\Services\Integrations\ModUpdateDiscordNotifier::class),
+            ),
+            \App\Services\Integrations\ModUpdateDiscordNotifier::class => new \App\Services\Integrations\ModUpdateDiscordNotifier(
+                self::get(\App\Services\Integrations\DiscordWebhookService::class),
+                self::get(\App\Repositories\TenantRepository::class),
+            ),
             \App\Controllers\Admin\AdminAtakModBlocklistController::class => new \App\Controllers\Admin\AdminAtakModBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),

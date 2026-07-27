@@ -799,6 +799,15 @@ class UnitRepository
             ]);
         }
         $id = (int) $this->pdo->lastInsertId();
+        $extraPublic = [];
+        foreach (['public_capacity', 'public_open_slots', 'public_accent_color'] as $extraCol) {
+            if (array_key_exists($extraCol, $data) && $this->columnExists('units', $extraCol)) {
+                $extraPublic[$extraCol] = $data[$extraCol];
+            }
+        }
+        if ($extraPublic !== []) {
+            $this->update($id, $tenantId, $extraPublic);
+        }
         $row = $this->findById($id, $tenantId);
         return $row ?? [];
     }
@@ -812,6 +821,15 @@ class UnitRepository
             $allowed[] = 'public_blurb';
             $allowed[] = 'public_tags';
             $allowed[] = 'show_on_public_page';
+        }
+        if ($this->columnExists('units', 'public_capacity')) {
+            $allowed[] = 'public_capacity';
+        }
+        if ($this->columnExists('units', 'public_open_slots')) {
+            $allowed[] = 'public_open_slots';
+        }
+        if ($this->columnExists('units', 'public_accent_color')) {
+            $allowed[] = 'public_accent_color';
         }
         if ($this->columnExists('units', 'orbat_mask_mode')) {
             $allowed[] = 'orbat_mask_mode';
@@ -843,6 +861,21 @@ class UnitRepository
                 $params[] = !empty($data[$key]) ? 1 : 0;
             } elseif ($key === 'parent_id' || $key === 'commander_user_id' || $key === 'display_order') {
                 $params[] = $data[$key] !== '' && $data[$key] !== null ? (int) $data[$key] : null;
+            } elseif ($key === 'public_capacity') {
+                $v = trim((string) ($data[$key] ?? ''));
+                $params[] = $v === '' ? null : max(0, (int) $v);
+            } elseif ($key === 'public_open_slots') {
+                $v = trim((string) ($data[$key] ?? ''));
+                if ($v === '' || strtolower($v) === 'hide' || strtolower($v) === 'masquer') {
+                    $params[] = null;
+                } elseif (strtolower($v) === 'open' || strtolower($v) === 'ouvert' || $v === '-1') {
+                    $params[] = -1;
+                } else {
+                    $params[] = max(0, (int) $v);
+                }
+            } elseif ($key === 'public_accent_color') {
+                $v = trim((string) ($data[$key] ?? ''));
+                $params[] = preg_match('/^#[0-9A-Fa-f]{6}$/', $v) ? strtoupper($v) : null;
             } elseif ($key === 'public_blurb') {
                 $v = trim((string) $data[$key]);
                 $params[] = $v === '' ? null : $v;

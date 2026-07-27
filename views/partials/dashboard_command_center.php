@@ -384,25 +384,23 @@ if (is_array($modpack) && !empty($modpack['id'])) {
                             <path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/>
                         </svg>
                     </button>
-                    <a href="<?= url('personnel/me') ?>" class="dash-idstrip__text-btn">
-                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <a href="<?= url('personnel/me') ?>" class="dash-idstrip__icon-btn" aria-label="Ma fiche" title="Ma fiche">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
-                        <span>Ma fiche</span>
                     </a>
-                    <a href="<?= url('publier') ?>" class="dash-idstrip__text-btn">
-                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    <a href="<?= url('publier') ?>" class="dash-idstrip__icon-btn" aria-label="Publier" title="Publier">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20h9"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
                         </svg>
-                        <span>Publier</span>
                     </a>
-                    <a href="<?= url('evenements') ?>" class="dash-idstrip__text-btn">
-                        <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <a href="<?= url('evenements') ?>" class="dash-idstrip__icon-btn" aria-label="Nouvelle manœuvre" title="Nouvelle manœuvre">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 22V15"/>
                         </svg>
-                        <span>Nouvelle manœuvre</span>
                     </a>
                     <a href="<?= url('messages') ?>" class="dash-idstrip__text-btn">
                         <svg class="dash-idstrip__btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -466,57 +464,66 @@ if (is_array($modpack) && !empty($modpack['id'])) {
             </div>
         </section>
 
-        <?php if ($canViewAtakOperators): ?>
-        <section class="dash-apps-full" aria-labelledby="dash-atak-operators-heading">
-            <p id="dash-atak-operators-heading" class="cc-section-label dash-apps-full__label">Liaison tactique</p>
-            <a
-                href="<?= url('back-office/atak/operateurs') ?>"
-                class="cc-card group flex flex-wrap items-center justify-between gap-4 overflow-hidden p-5 no-underline transition hover:border-emerald-300 hover:bg-emerald-50/40 sm:p-6"
-            >
-                <div class="min-w-0 flex-1">
-                    <p class="cc-kicker cc-kicker--primary">État-major</p>
-                    <h2 class="cc-card__title mt-1">Effectifs en liaison</h2>
-                    <p class="mt-2 text-sm leading-relaxed text-slate-600">
-                        Consultez le tableur des opérateurs actuellement connectés à la carte tactique.
-                    </p>
-                </div>
-                <div class="flex shrink-0 items-center gap-4">
-                    <?php if ($atakOperatorsLinkedCount !== null): ?>
-                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800/70">En liaison</p>
-                        <p class="mt-0.5 text-2xl font-black tabular-nums text-emerald-900"><?= (int) $atakOperatorsLinkedCount ?></p>
-                    </div>
-                    <?php endif; ?>
-                    <span class="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-800 group-hover:underline">
-                        Ouvrir le tableur
-                        <span aria-hidden="true">→</span>
-                    </span>
-                </div>
-            </a>
-        </section>
-        <?php endif; ?>
+        <?php
+        $showLiaisonStrip = $canViewAtakOperators;
+        $showRsvpQuick = is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0;
+        ?>
+        <?php if ($showLiaisonStrip || $showRsvpQuick): ?>
+        <div class="dash-ops-stack">
+            <div class="dash-ops-stack__inner">
+                <?php if ($showLiaisonStrip): ?>
+                <section class="dash-liaison" aria-labelledby="dash-atak-operators-heading">
+                    <p id="dash-atak-operators-heading" class="cc-section-label dash-ops-stack__label">Liaison tactique</p>
+                    <a href="<?= url('back-office/atak/operateurs') ?>" class="dash-liaison__card">
+                        <div class="dash-liaison__copy">
+                            <p class="cc-kicker cc-kicker--primary">État-major</p>
+                            <h2 class="dash-liaison__title">Effectifs en liaison</h2>
+                            <p class="dash-liaison__hint">
+                                Consultez le tableur des opérateurs actuellement connectés à la carte tactique.
+                            </p>
+                        </div>
+                        <div class="dash-liaison__aside">
+                            <?php if ($atakOperatorsLinkedCount !== null): ?>
+                            <div class="dash-liaison__stat" aria-label="<?= (int) $atakOperatorsLinkedCount ?> opérateurs en liaison">
+                                <span class="dash-liaison__stat-label">En liaison</span>
+                                <span class="dash-liaison__stat-value"><?= (int) $atakOperatorsLinkedCount ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <span class="dash-liaison__cta">
+                                Ouvrir le tableur
+                                <span aria-hidden="true">→</span>
+                            </span>
+                        </div>
+                    </a>
+                </section>
+                <?php endif; ?>
 
-        <?php if (is_array($mbOp) && (int) ($mbOp['id'] ?? 0) > 0): ?>
-        <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
-            <div class="dash-rsvp-quick__shell">
-                <div class="dash-rsvp-quick__info">
-                    <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
-                    <h2 id="dash-rsvp-quick-heading" class="dash-rsvp-quick__title">
-                        <?= htmlspecialchars((string) ($mbOp['title'] ?? 'Prochaine manœuvre'), ENT_QUOTES, 'UTF-8') ?>
-                    </h2>
-                    <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
-                    <p class="dash-rsvp-quick__meta">
-                        <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
-                    </p>
-                </div>
-                <?php
-                $rsvpEventId = (int) $mbOp['id'];
-                $rsvpCurrentStatus = (string) ($mbOp['rsvp_status'] ?? '');
-                $rsvpCompact = false;
-                require base_path('views/partials/dashboard_rsvp_buttons.php');
-                ?>
+                <?php if ($showRsvpQuick): ?>
+                <section class="dash-rsvp-quick" aria-labelledby="dash-rsvp-quick-heading">
+                    <div class="dash-rsvp-quick__shell">
+                        <div class="dash-rsvp-quick__info">
+                            <p class="cc-kicker cc-kicker--primary">Réponse rapide</p>
+                            <h2 id="dash-rsvp-quick-heading" class="dash-rsvp-quick__title">
+                                <?= htmlspecialchars((string) ($mbOp['title'] ?? 'Prochaine manœuvre'), ENT_QUOTES, 'UTF-8') ?>
+                            </h2>
+                            <?php $rsvpQuickTs = !empty($mbOp['starts_at']) ? strtotime((string) $mbOp['starts_at']) : false; ?>
+                            <p class="dash-rsvp-quick__meta">
+                                <?= $rsvpQuickTs !== false ? htmlspecialchars(date('d/m/Y H\hi', $rsvpQuickTs), ENT_QUOTES, 'UTF-8') : 'Date à confirmer' ?>
+                            </p>
+                        </div>
+                        <div class="dash-rsvp-quick__actions">
+                            <?php
+                            $rsvpEventId = (int) $mbOp['id'];
+                            $rsvpCurrentStatus = (string) ($mbOp['rsvp_status'] ?? '');
+                            $rsvpCompact = false;
+                            require base_path('views/partials/dashboard_rsvp_buttons.php');
+                            ?>
+                        </div>
+                    </div>
+                </section>
+                <?php endif; ?>
             </div>
-        </section>
+        </div>
         <?php endif; ?>
 
         <?php if (!empty($showcase_training_feature)): ?>
@@ -979,12 +986,114 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 
 .dash-apps-full {
     width: 100%;
+    max-width: 72rem;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
     padding: 2rem 1.25rem 2.5rem;
 }
 .dash-apps-full__label { padding: 0; }
 @media (min-width: 768px) {
     .dash-apps-full { padding: 2.25rem 2rem 2.75rem; }
 }
+
+/* Bande ops (liaison + RSVP) — largeur contrainte, pas d’écart extrême */
+.dash-ops-stack {
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+}
+.dash-ops-stack__inner {
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: 1.35rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+@media (min-width: 768px) {
+    .dash-ops-stack__inner { padding: 1.5rem 2rem 1.75rem; gap: 1rem; }
+}
+.dash-ops-stack__label { margin: 0 0 0.65rem; }
+
+.dash-liaison__card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 1.25rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    background: #f8fafc;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.dash-liaison__card:hover {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    box-shadow: 0 8px 22px -16px rgba(5, 150, 105, 0.45);
+}
+.dash-liaison__copy { min-width: 0; flex: 1 1 14rem; max-width: 36rem; }
+.dash-liaison__title {
+    margin: 0.2rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    line-height: 1.2;
+}
+.dash-liaison__hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: #64748b;
+}
+.dash-liaison__aside {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    flex: 0 0 auto;
+}
+.dash-liaison__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 4.5rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 0.7rem;
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+}
+.dash-liaison__stat-label {
+    font-size: 0.5625rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #047857;
+}
+.dash-liaison__stat-value {
+    margin-top: 0.1rem;
+    font-size: 1.35rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: #065f46;
+}
+.dash-liaison__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: #047857;
+}
+.dash-liaison__card:hover .dash-liaison__cta { text-decoration: underline; }
 
 .dash-train-hint {
     margin: 0;
@@ -1153,25 +1262,24 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 
 [x-cloak] { display: none !important; }
 
-.dash-rsvp-quick {
-    width: 100%;
-    padding: 0 1.25rem;
-    margin: 1.25rem 0 0;
-}
-@media (min-width: 768px) { .dash-rsvp-quick { padding: 0 2rem; } }
+.dash-rsvp-quick { width: 100%; margin: 0; padding: 0; }
 .dash-rsvp-quick__shell {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-radius: 1rem;
-    border: 1px solid #d1fae5;
-    background: linear-gradient(135deg, #ecfdf5 0%, #f8fafc 100%);
+    gap: 0.85rem 1.25rem;
+    padding: 0.95rem 1.1rem;
+    border-radius: 0.9rem;
+    border: 1px solid #a7f3d0;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 48%, #ffffff 100%);
 }
-.dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.0625rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; }
-.dash-rsvp-quick__meta { margin: 0.2rem 0 0; font-size: 0.75rem; color: #64748b; }
+.dash-rsvp-quick__info { min-width: 0; flex: 1 1 12rem; max-width: 28rem; }
+.dash-rsvp-quick__actions { flex: 0 0 auto; margin-left: 0; }
+@media (min-width: 640px) {
+    .dash-rsvp-quick__actions { margin-left: auto; }
+}
+.dash-rsvp-quick__title { margin: 0.15rem 0 0; font-size: 1.05rem; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
+.dash-rsvp-quick__meta { margin: 0.25rem 0 0; font-size: 0.75rem; font-weight: 600; color: #64748b; }
 
 .dash-rsvp { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .dash-rsvp--compact { margin-top: 0.6rem; }
@@ -1179,28 +1287,44 @@ if (is_array($modpack) && !empty($modpack['id'])) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.4rem 0.75rem;
+    padding: 0.5rem 0.85rem;
     border-radius: 0.6rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     background: #fff;
     color: #334155;
     font-size: 0.6875rem;
     font-weight: 800;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
-.dash-rsvp__btn:hover { background: #f8fafc; }
+.dash-rsvp__btn--yes {
+    border-color: #059669;
+    background: #059669;
+    color: #fff;
+    box-shadow: 0 6px 14px -8px rgba(5, 150, 105, 0.7);
+}
+.dash-rsvp__btn--yes:hover { background: #047857; border-color: #047857; }
+.dash-rsvp__btn--maybe:hover,
+.dash-rsvp__btn--no:hover { background: #f8fafc; border-color: #94a3b8; }
 .dash-rsvp__btn[disabled] { opacity: 0.55; cursor: wait; }
 .dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes,
 .dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe,
 .dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no {
     color: #fff;
     border-color: transparent;
+    box-shadow: none;
 }
 .dash-rsvp[data-rsvp-current="yes"] .dash-rsvp__btn--yes { background: #059669; }
 .dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--maybe { background: #d97706; }
+.dash-rsvp[data-rsvp-current="maybe"] .dash-rsvp__btn--yes,
+.dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--yes {
+    background: #fff;
+    color: #334155;
+    border-color: #cbd5e1;
+    box-shadow: none;
+}
 .dash-rsvp[data-rsvp-current="no"] .dash-rsvp__btn--no { background: #dc2626; }
 .dash-rsvp__status { font-size: 0.6875rem; font-weight: 700; color: #059669; min-height: 1em; }
 

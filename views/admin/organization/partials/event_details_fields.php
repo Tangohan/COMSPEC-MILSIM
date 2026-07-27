@@ -20,6 +20,7 @@ if ($scheduleRows === []) {
 $coverUrl = CommunityEventDetails::publicCoverUrl(isset($src['cover_image_path']) ? (string) $src['cover_image_path'] : null);
 $cg = (string) ($src['conditions_general'] ?? '');
 $cs = (string) ($src['conditions_special'] ?? '');
+$showOnPublicPage = !empty($src['show_on_public_page']);
 $toneOpts = CommunityEventDetails::scheduleToneOptions();
 $tagOpts = CommunityEventDetails::tagOptions();
 $scheduleInit = [];
@@ -62,6 +63,12 @@ $optSpan = $athForm ? '<span class="ath-event-show__opt">(optionnel)</span>' : '
             </label>
         <?php endforeach; ?>
     </div>
+
+    <label class="<?= $tagCheckClass ?>" style="margin-top:1rem;display:flex;align-items:flex-start;gap:0.5rem">
+        <input type="hidden" name="show_on_public_page" value="0">
+        <input type="checkbox" name="show_on_public_page" value="1" <?= $showOnPublicPage ? 'checked' : '' ?>>
+        <span>Afficher dans l’agenda public de la vitrine (page communauté)</span>
+    </label>
 
     <div class="<?= $gridClass ?>" style="margin-top:1rem">
         <div class="<?= $fullClass ?>">

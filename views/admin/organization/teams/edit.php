@@ -65,6 +65,24 @@ $sop = array_key_exists('show_on_public_page', $team) ? (int) $team['show_on_pub
                 <p class="mt-0.5 text-xs text-slate-500">Texte court visible sur la vitrine et la fiche de l’unité.</p>
                 <textarea id="public_blurb" name="public_blurb" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"><?= htmlspecialchars((string) ($team['public_blurb'] ?? '')) ?></textarea>
             </div>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div>
+                    <label for="public_capacity" class="block text-sm font-medium text-slate-700">Effectif max</label>
+                    <input type="number" min="0" id="public_capacity" name="public_capacity" value="<?= htmlspecialchars((string) ($team['public_capacity'] ?? '')) ?>" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm" placeholder="32">
+                </div>
+                <div>
+                    <label for="public_open_slots" class="block text-sm font-medium text-slate-700">Places ouvertes</label>
+                    <input type="text" id="public_open_slots" name="public_open_slots" value="<?php
+                        $slots = $team['public_open_slots'] ?? null;
+                        echo htmlspecialchars($slots === null || $slots === '' ? '' : ((int) $slots === -1 ? 'ouvert' : (string) (int) $slots));
+                    ?>" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm" placeholder="2 ou ouvert">
+                    <p class="mt-0.5 text-[11px] text-slate-500">Nombre, « ouvert », ou vide pour masquer.</p>
+                </div>
+                <div>
+                    <label for="public_accent_color" class="block text-sm font-medium text-slate-700">Couleur de bandeau</label>
+                    <input type="text" id="public_accent_color" name="public_accent_color" value="<?= htmlspecialchars((string) ($team['public_accent_color'] ?? '')) ?>" maxlength="7" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm font-mono" placeholder="#0B8A5C">
+                </div>
+            </div>
             <div>
                 <label for="public_tags" class="block text-sm font-medium text-slate-700">Mots-clés affichés (un par ligne)</label>
                 <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"><?= htmlspecialchars($publicTagsLines) ?></textarea>

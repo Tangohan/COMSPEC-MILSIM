@@ -242,7 +242,8 @@ final class TenantAlertsController
     private function normalize(Request $request, int $tenantId, ?array $existing): array
     {
         $kind = trim((string) $request->input('kind', 'info'));
-        if (!in_array($kind, TenantAlertVisuals::kindKeys(), true)) {
+        $existingKind = $existing !== null ? (string) ($existing['kind'] ?? '') : null;
+        if (!TenantAlertVisuals::isAllowedTenantKind($kind, $existingKind)) {
             $kind = 'info';
         }
         $title = trim((string) $request->input('title', ''));

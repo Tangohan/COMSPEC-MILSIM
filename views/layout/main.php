@@ -3,6 +3,7 @@ $title = $title ?? 'Athena';
 $content = $content ?? 'home';
 $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
+$communityRegistryPage = !empty($communityRegistryPage);
 $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
 $hideAdminSidebar = !empty($hideAdminSidebar);
 $isBackOfficeShell = !empty($isBackOfficeShell)
@@ -82,26 +83,26 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     // $cdnLibs : null = défauts (icons + animation) ; false/'none' = désactivé ; array = packs explicites
     require base_path('views/partials/cdn_media_libs.php');
 ?>
-    <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage): ?>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <?php if (is_file(base_path('public/assets/css/community-landing.css'))): ?>
+    <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <?php if (($communityShowcasePage || $communityRecruitmentOpeningPage) && is_file(base_path('public/assets/css/community-landing.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/community-landing.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if ($communityRegistryPage && is_file(base_path('public/assets/css/community-registry.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/community-registry.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <style>
-      .community-showcase-grain::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        opacity: .04;
-        background-image: radial-gradient(circle at 20% 20%, #000 0.5px, transparent 0.6px), radial-gradient(circle at 80% 70%, #000 0.5px, transparent 0.6px);
-        background-size: 18px 18px;
+      .community-public-vitrine,
+      .community-landing,
+      .community-registry {
+        font-family: 'Archivo', system-ui, sans-serif;
       }
-      .shadow-soft { box-shadow: 0 20px 70px -30px rgba(15,23,42,0.25); }
-      .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-      .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
-      .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-      .community-public-vitrine .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      .community-public-vitrine .font-mono,
+      .community-landing .font-mono,
+      .cl-mono,
+      .cr-mono {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
     </style>
     <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/styles.css'))): ?>
@@ -232,6 +233,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 $showBottomNav = (bool) \App\Core\Session::get('user_id')
     && empty($usesAdminSidebarShell)
     && empty($communityShowcasePage)
+    && empty($communityRegistryPage)
     && empty($hide_bottom_nav);
 $bodyClasses = 'layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen';
 if ($showBottomNav) {

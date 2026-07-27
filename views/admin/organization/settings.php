@@ -607,7 +607,7 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                 <div class="bo-setting-row bo-setting-row--stack">
                     <div class="bo-setting-row__copy">
                         <div class="bo-setting-row__label">Relais Discord (annonces)</div>
-                        <div class="bo-setting-row__help">Les annonces portail peuvent être relayées vers un salon Discord.</div>
+                        <div class="bo-setting-row__help">Les annonces portail et les mises à jour du pack Overwatch (changelog inclus) peuvent être relayées vers un salon Discord.</div>
                     </div>
                     <div class="bo-setting-row__control">
                         <input type="url" id="discord_webhook_url" name="discord_webhook_url" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…">

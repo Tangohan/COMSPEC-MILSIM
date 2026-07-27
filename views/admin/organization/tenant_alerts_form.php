@@ -22,12 +22,12 @@ $dt = static function (?string $sqlDt): string {
     return $t ? date('Y-m-d\TH:i', $t) : '';
 };
 
-$kindOptions = TenantAlertVisuals::kinds();
-$iconLabels = TenantAlertVisuals::iconLabels();
 $currentKind = (string) ($row['kind'] ?? 'info');
+$kindOptions = TenantAlertVisuals::kindsForTenantForm($isEdit ? $currentKind : null);
 if (!isset($kindOptions[$currentKind])) {
     $currentKind = 'info';
 }
+$iconLabels = TenantAlertVisuals::iconLabels();
 $currentIcon = trim((string) ($row['icon_key'] ?? ''));
 if ($currentIcon === '' || !isset($iconLabels[$currentIcon])) {
     $currentIcon = 'auto';

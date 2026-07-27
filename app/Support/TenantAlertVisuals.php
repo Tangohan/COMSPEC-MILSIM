@@ -9,6 +9,9 @@ namespace App\Support;
  */
 final class TenantAlertVisuals
 {
+    /** Types retirés du choix communauté (conservés pour libellés d’anciennes annonces). */
+    private const TENANT_EXCLUDED_KINDS = ['discount', 'maintenance'];
+
     /** @return array<string, array{label: string, hint: string, color: string}> */
     public static function kinds(): array
     {
@@ -66,10 +69,67 @@ final class TenantAlertVisuals
         ];
     }
 
+    /**
+     * Types proposés à la création / édition d’annonces communauté (milsim).
+     *
+     * @return array<string, array{label: string, hint: string, color: string}>
+     */
+    public static function kindsForTenant(): array
+    {
+        $kinds = self::kinds();
+        foreach (self::TENANT_EXCLUDED_KINDS as $key) {
+            unset($kinds[$key]);
+        }
+
+        return $kinds;
+    }
+
+    /**
+     * Options du formulaire communauté : types autorisés, plus le type actuel s’il est hérité.
+     *
+     * @return array<string, array{label: string, hint: string, color: string}>
+     */
+    public static function kindsForTenantForm(?string $currentKind = null): array
+    {
+        $options = self::kindsForTenant();
+        $currentKind = trim((string) $currentKind);
+        if ($currentKind === '' || isset($options[$currentKind])) {
+            return $options;
+        }
+        $all = self::kinds();
+        if (!isset($all[$currentKind])) {
+            return $options;
+        }
+
+        return [$currentKind => $all[$currentKind]] + $options;
+    }
+
     /** @return list<string> */
     public static function kindKeys(): array
     {
         return array_keys(self::kinds());
+    }
+
+    /** @return list<string> */
+    public static function kindKeysForTenant(): array
+    {
+        return array_keys(self::kindsForTenant());
+    }
+
+    /**
+     * Autorise les types communauté, ou le type déjà enregistré (annonces héritées).
+     */
+    public static function isAllowedTenantKind(string $kind, ?string $existingKind = null): bool
+    {
+        if (in_array($kind, self::kindKeysForTenant(), true)) {
+            return true;
+        }
+        $existingKind = $existingKind !== null ? trim($existingKind) : null;
+
+        return $existingKind !== null
+            && $existingKind !== ''
+            && $kind === $existingKind
+            && isset(self::kinds()[$kind]);
     }
 
     public static function kindLabel(string $kind): string

@@ -51,6 +51,38 @@ $publicAudienceSel = ($c['public_audience'] ?? 'unit') === 'platform' ? 'platfor
 $regionBadgesLines = implode("\n", is_array($c['public_region_badges'] ?? null) ? $c['public_region_badges'] : []);
 $specialtiesLines = implode("\n", is_array($c['public_specialties'] ?? null) ? $c['public_specialties'] : []);
 $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
+$prereqCatalog = \App\Services\Community\TenantCommunityProfileService::prerequisiteCatalog();
+$prereqSaved = [];
+foreach (is_array($c['public_prerequisites'] ?? null) ? $c['public_prerequisites'] : [] as $pr) {
+    if (!is_array($pr)) {
+        continue;
+    }
+    $pk = strtolower(trim((string) ($pr['key'] ?? '')));
+    if ($pk !== '') {
+        $prereqSaved[$pk] = $pr;
+    }
+}
+$pitchRows = is_array($c['public_pitch'] ?? null) ? $c['public_pitch'] : [];
+while (count($pitchRows) < 4) {
+    $pitchRows[] = ['title' => '', 'body' => ''];
+}
+$stepRows = is_array($c['public_process_steps'] ?? null) ? $c['public_process_steps'] : [];
+while (count($stepRows) < 5) {
+    $stepRows[] = ['title' => '', 'delay' => '', 'body' => '', 'highlight' => false];
+}
+$faqRows = is_array($c['public_faq'] ?? null) ? $c['public_faq'] : [];
+while (count($faqRows) < 4) {
+    $faqRows[] = ['q' => '', 'a' => ''];
+}
+$quoteRows = is_array($c['public_testimonials'] ?? null) ? $c['public_testimonials'] : [];
+while (count($quoteRows) < 3) {
+    $quoteRows[] = ['text' => '', 'name' => '', 'meta' => '', 'initials' => ''];
+}
+$videoChapterRows = is_array($c['public_video_chapters'] ?? null) ? $c['public_video_chapters'] : [];
+while (count($videoChapterRows) < 4) {
+    $videoChapterRows[] = ['time' => '', 'label' => ''];
+}
+$partnersLines = implode("\n", is_array($c['public_partners'] ?? null) ? $c['public_partners'] : []);
 $hasMilitaryContent = false;
 foreach ($military as $sec) {
     if (!is_array($sec)) {
@@ -336,6 +368,172 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <label class="block text-xs font-bold text-slate-700 mb-1">Spécialités (une par ligne)</label>
                 <textarea name="public_specialties" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($specialtiesLines) ?></textarea>
             </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Accroche &amp; présentation (vitrine mockup)</h3>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre d’accroche (hero)</label>
+                        <textarea name="public_hero_headline" rows="2" maxlength="220" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Une unité qui joue sérieusement…"><?= htmlspecialchars((string) ($c['public_hero_headline'] ?? '')) ?></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Session de recrutement (badge)</label>
+                        <input type="text" name="public_recruitment_session_label" value="<?= htmlspecialchars((string) ($c['public_recruitment_session_label'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Session août 2026">
+                        <label class="block text-xs font-bold text-slate-700 mb-1 mt-3">Année de fondation</label>
+                        <input type="text" name="public_founded_year" value="<?= htmlspecialchars((string) ($c['public_founded_year'] ?? '')) ?>" maxlength="12" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="2023">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre « Qui nous sommes »</label>
+                    <input type="text" name="public_about_title" value="<?= htmlspecialchars((string) ($c['public_about_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Du milsim structuré, pas militarisé">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte de présentation</label>
+                    <textarea name="public_about_body" rows="4" maxlength="8000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_about_body'] ?? '')) ?></textarea>
+                    <p class="mt-1 text-[11px] text-slate-500">Si vide, la présentation simple ou la mission publique sera utilisée.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Second paragraphe (optionnel)</label>
+                    <textarea name="public_about_body_secondary" rows="3" maxlength="4000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_about_body_secondary'] ?? '')) ?></textarea>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre du bloc sections / unités</label>
+                        <input type="text" name="public_sections_title" value="<?= htmlspecialchars((string) ($c['public_sections_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Sous-texte sections</label>
+                        <input type="text" name="public_sections_lead" value="<?= htmlspecialchars((string) ($c['public_sections_lead'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Les places ouvertes sont indiquées par section.">
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Vidéo de présentation</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Lien de la vidéo (YouTube, Vimeo…)</label>
+                    <input type="url" name="public_video_url" value="<?= htmlspecialchars((string) ($c['public_video_url'] ?? '')) ?>" maxlength="1024" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://">
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre</label>
+                        <input type="text" name="public_video_title" value="<?= htmlspecialchars((string) ($c['public_video_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Texte d’accompagnement</label>
+                        <textarea name="public_video_body" rows="2" maxlength="800" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_video_body'] ?? '')) ?></textarea>
+                    </div>
+                </div>
+                <p class="text-xs font-bold text-slate-700">Chapitres (optionnel)</p>
+                <?php foreach ($videoChapterRows as $i => $ch): ?>
+                <div class="grid gap-2 sm:grid-cols-[7rem_1fr]">
+                    <input type="text" name="public_video_chapter_time[]" value="<?= htmlspecialchars((string) ($ch['time'] ?? '')) ?>" maxlength="16" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="00:34">
+                    <input type="text" name="public_video_chapter_label[]" value="<?= htmlspecialchars((string) ($ch['label'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Briefing et distribution des ordres">
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Points forts (pitch)</h3>
+                <?php foreach ($pitchRows as $i => $pr): ?>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <input type="text" name="public_pitch_title[]" value="<?= htmlspecialchars((string) ($pr['title'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Titre">
+                    <input type="text" name="public_pitch_body[]" value="<?= htmlspecialchars((string) ($pr['body'] ?? '')) ?>" maxlength="400" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Description courte">
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Prérequis pour candidater</h3>
+                <p class="text-xs text-slate-600">Cochez les points à afficher, puis précisez s’ils sont exigés, souhaités ou non exigés.</p>
+                <div class="space-y-3">
+                    <?php foreach ($prereqCatalog as $pkey => $pinfo): ?>
+                        <?php
+                        $saved = $prereqSaved[$pkey] ?? null;
+                        $enabled = is_array($saved);
+                        $st = \App\Services\Community\TenantCommunityProfileService::normalizePrerequisiteStatus(is_array($saved) ? ($saved['status'] ?? 'required') : 'required');
+                        $det = is_array($saved) ? (string) ($saved['detail'] ?? '') : '';
+                        ?>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2">
+                        <label class="flex items-start gap-2 text-sm font-semibold text-slate-800">
+                            <input type="checkbox" name="public_prereq_enabled[]" value="<?= htmlspecialchars($pkey) ?>" class="mt-0.5" <?= $enabled ? 'checked' : '' ?>>
+                            <span><?= htmlspecialchars($pinfo['label']) ?></span>
+                        </label>
+                        <div class="grid gap-2 sm:grid-cols-[12rem_1fr] pl-6">
+                            <select name="public_prereq_status[<?= htmlspecialchars($pkey) ?>]" class="rounded border border-slate-300 px-2 py-1.5 text-sm">
+                                <option value="required" <?= $st === 'required' ? 'selected' : '' ?>>Exigé</option>
+                                <option value="optional" <?= $st === 'optional' ? 'selected' : '' ?>>Souhaité</option>
+                                <option value="not_required" <?= $st === 'not_required' ? 'selected' : '' ?>>Non exigé</option>
+                            </select>
+                            <input type="text" name="public_prereq_detail[<?= htmlspecialchars($pkey) ?>]" value="<?= htmlspecialchars($det) ?>" maxlength="240" class="rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="<?= htmlspecialchars($pinfo['hint']) ?>">
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Parcours candidature → terrain</h3>
+                <?php foreach ($stepRows as $i => $stRow): ?>
+                <div class="rounded-lg border border-slate-200 p-3 space-y-2">
+                    <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+                        <input type="text" name="public_step_title[]" value="<?= htmlspecialchars((string) ($stRow['title'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Étape <?= (int) $i + 1 ?>">
+                        <input type="text" name="public_step_delay[]" value="<?= htmlspecialchars((string) ($stRow['delay'] ?? '')) ?>" maxlength="40" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="sous 5 jours">
+                        <label class="inline-flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
+                            <input type="checkbox" name="public_step_highlight[<?= (int) $i ?>]" value="1" <?= !empty($stRow['highlight']) ? 'checked' : '' ?>>
+                            Mise en avant
+                        </label>
+                    </div>
+                    <textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Description"><?= htmlspecialchars((string) ($stRow['body'] ?? '')) ?></textarea>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Questions fréquentes</h3>
+                <?php foreach ($faqRows as $i => $fq): ?>
+                <div class="grid gap-2">
+                    <input type="text" name="public_faq_q[]" value="<?= htmlspecialchars((string) ($fq['q'] ?? '')) ?>" maxlength="200" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Question">
+                    <textarea name="public_faq_a[]" rows="2" maxlength="800" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Réponse"><?= htmlspecialchars((string) ($fq['a'] ?? '')) ?></textarea>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Témoignages</h3>
+                <?php foreach ($quoteRows as $i => $qr): ?>
+                <div class="rounded-lg border border-slate-200 p-3 space-y-2">
+                    <textarea name="public_quote_text[]" rows="2" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Citation"><?= htmlspecialchars((string) ($qr['text'] ?? '')) ?></textarea>
+                    <div class="grid gap-2 sm:grid-cols-3">
+                        <input type="text" name="public_quote_name[]" value="<?= htmlspecialchars((string) ($qr['name'] ?? '')) ?>" maxlength="80" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Indicatif">
+                        <input type="text" name="public_quote_meta[]" value="<?= htmlspecialchars((string) ($qr['meta'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Grade · section · ancienneté">
+                        <input type="text" name="public_quote_initials[]" value="<?= htmlspecialchars((string) ($qr['initials'] ?? '')) ?>" maxlength="4" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="BA">
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
+                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Partenaires &amp; appel final</h3>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Unités alliées / partenaires (un par ligne)</label>
+                    <textarea name="public_partners" rows="3" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($partnersLines) ?></textarea>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Sur-titre CTA</label>
+                        <input type="text" name="public_cta_kicker" value="<?= htmlspecialchars((string) ($c['public_cta_kicker'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre CTA</label>
+                        <input type="text" name="public_cta_title" value="<?= htmlspecialchars((string) ($c['public_cta_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte CTA</label>
+                    <textarea name="public_cta_body" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_cta_body'] ?? '')) ?></textarea>
+                </div>
             </div>
 
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">

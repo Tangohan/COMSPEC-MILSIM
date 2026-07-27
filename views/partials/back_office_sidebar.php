@@ -126,7 +126,7 @@ $boNavLmsCertificates = str_starts_with($p, $lmsResPath . '/certificates') || st
 $boNavLmsAuditTrail = str_starts_with($p, $lmsResPath . '/audit') || str_starts_with($p, $legacyLmsBo . '/audit');
 $boNavLmsCompetences = str_starts_with($p, $lmsResPath . '/competences') || str_starts_with($p, $legacyLmsBo . '/competences');
 $boNavPjrAssignments = str_starts_with($p, 'back-office/personnel-job-roles/assignments');
-$boNavAtakOperators = str_starts_with($p, 'back-office/atak/operateurs');
+$boNavAtakOperators = $p === 'back-office/atak/operateurs' || str_starts_with($p, 'back-office/atak/operateurs/');
 $canMurOperationnel = $gate->allows('operational.board.view')
     || $gate->allows('operational.board.edit')
     || $gate->allows('admin.organization')

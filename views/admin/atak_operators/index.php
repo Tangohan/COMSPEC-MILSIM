@@ -49,10 +49,10 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
     <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Tactique · Athena</p>
-                <h1 class="mt-2 text-2xl font-black text-slate-900">Effectifs en liaison</h1>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">ATAK · Sessions</p>
+                <h1 class="mt-2 text-2xl font-black text-slate-900">Sessions & connexions</h1>
                 <p class="mt-2 text-sm text-slate-600 max-w-3xl">
-                    Tableur des opérateurs actuellement connectés via leur terminal de situation.
+                    Opérateurs actuellement connectés via leur terminal de situation.
                     Une présence disparaît automatiquement après environ trois minutes sans mise à jour.
                 </p>
             </div>
@@ -151,6 +151,7 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Compte lié</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Dernière MAJ</th>
                             <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Carte</th>
+                            <th class="px-3 py-2.5 text-left font-semibold whitespace-nowrap">Fiche</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -160,9 +161,19 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                             $linkedName = trim((string) ($row['linked_display_name'] ?? ''));
                             $ftId = (int) ($row['fire_team_id'] ?? 0);
                             $ftLabel = trim((string) ($row['fire_team_label'] ?? ''));
+                            $callSign = trim((string) ($row['call_sign'] ?? ''));
+                            $ficheUrl = $callSign !== ''
+                                ? url('back-office/atak/fiche-operateur?indicatif=' . rawurlencode($callSign))
+                                : '';
                             ?>
                             <tr class="hover:bg-slate-50/90">
-                                <td class="px-3 py-2 font-semibold text-slate-900 whitespace-nowrap"><?= $h($row['call_sign'] ?? '') ?></td>
+                                <td class="px-3 py-2 font-semibold text-slate-900 whitespace-nowrap">
+                                    <?php if ($ficheUrl !== ''): ?>
+                                        <a class="underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($ficheUrl) ?>"><?= $h($callSign) ?></a>
+                                    <?php else: ?>
+                                        <?= $h($callSign) ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-3 py-2 text-slate-700 font-mono text-[12px] whitespace-nowrap"><?= $h($row['military_id'] ?? '') !== '' ? $h($row['military_id']) : '—' ?></td>
                                 <td class="px-3 py-2 text-slate-700 whitespace-nowrap"><?= $h($row['role_label'] ?? '') !== '' ? $h($row['role_label']) : '—' ?></td>
                                 <td class="px-3 py-2 whitespace-nowrap">
@@ -192,6 +203,13 @@ $refreshUrl = url('back-office/atak/operateurs?' . $baseQuery());
                                 <td class="px-3 py-2 text-slate-600 whitespace-nowrap" title="<?= $h($row['updated_at'] ?? '') ?>"><?= $h($row['updated_at_label'] ?? '—') ?></td>
                                 <td class="px-3 py-2 whitespace-nowrap">
                                     <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($row['map_url'] ?? url('atak')) ?>">Voir</a>
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <?php if ($ficheUrl !== ''): ?>
+                                        <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h($ficheUrl) ?>">Ouvrir</a>
+                                    <?php else: ?>
+                                        —
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

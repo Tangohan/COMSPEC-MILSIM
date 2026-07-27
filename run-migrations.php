@@ -2145,6 +2145,14 @@ try {
     echo '  [ATTENTION] community_media : ' . $e->getMessage() . "\n";
 }
 
+$communityShowcaseVitrineMigrate = require $root . '/bootstrap/community_showcase_vitrine_migration.php';
+try {
+    echo "Migration community_showcase_vitrine (places unités / agenda public)...\n";
+    $communityShowcaseVitrineMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_showcase_vitrine : ' . $e->getMessage() . "\n";
+}
+
 $communityMediaReelsMigrate = require $root . '/bootstrap/community_media_reels_migration.php';
 try {
     echo "Migration community_media reels (feed / social)...\n";

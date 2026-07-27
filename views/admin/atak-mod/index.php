@@ -11,6 +11,8 @@ $memberDownloadUrl = (string) ($memberDownloadUrl ?? url('atak/mod'));
 $sizeLabel = (string) ($modMeta['size_label'] ?? '—');
 $updatedAt = (string) ($modMeta['updated_at'] ?? '—');
 $version = (string) ($modMeta['version'] ?? '');
+$discordRelayReady = !empty($discordRelayReady);
+$organizationSettingsUrl = (string) ($organizationSettingsUrl ?? url('back-office/organisation/parametres'));
 ?>
 <div class="bo-atak-mod">
     <header class="bo-atak-mod__hero">
@@ -18,7 +20,7 @@ $version = (string) ($modMeta['version'] ?? '');
         <h1>Pack Overwatch</h1>
         <p class="bo-atak-mod__lead">
             Déposez ici l’archive du pack destiné aux joueurs. Une fois validée, elle devient téléchargeable
-            depuis la page membre, et une annonce peut prévenir la communauté.
+            depuis la page membre, et une annonce peut prévenir la communauté — y compris sur Discord.
         </p>
     </header>
 
@@ -99,6 +101,48 @@ $version = (string) ($modMeta['version'] ?? '');
                     <span class="bo-atak-mod__drop-hint">ou cliquer pour parcourir — format ZIP uniquement</span>
                 </div>
                 <p class="bo-atak-mod__file-name" id="bo-atak-mod-file-name" hidden></p>
+
+                <div class="bo-atak-mod__publish-opts">
+                    <label class="bo-atak-mod__field">
+                        <span class="bo-atak-mod__field-label">Notes de mise à jour <span class="bo-atak-mod__optional">(facultatif)</span></span>
+                        <span class="bo-atak-mod__field-help">
+                            Texte affiché sur Discord. Si vous laissez ce champ vide, Athena reprend automatiquement
+                            la section correspondante du journal des changements inclus dans l’archive, lorsqu’il est présent.
+                        </span>
+                        <textarea
+                            name="changelog_notes"
+                            id="bo-atak-mod-changelog"
+                            class="bo-atak-mod__textarea"
+                            rows="5"
+                            maxlength="4000"
+                            placeholder="Ex. Correctifs de stabilité, nouveau menu ACE, synchronisation des marqueurs…"
+                        ></textarea>
+                    </label>
+
+                    <label class="bo-atak-mod__check">
+                        <input type="hidden" name="notify_discord" value="0">
+                        <input
+                            type="checkbox"
+                            name="notify_discord"
+                            value="1"
+                            <?= $discordRelayReady ? 'checked' : '' ?>
+                            <?= $discordRelayReady ? '' : 'disabled' ?>
+                        >
+                        <span>
+                            <span class="bo-atak-mod__check-title">Annoncer aussi sur Discord</span>
+                            <span class="bo-atak-mod__check-hint">
+                                <?php if ($discordRelayReady): ?>
+                                    Publie automatiquement la mise à jour (version + journal des changements) sur le salon Discord de la communauté.
+                                <?php else: ?>
+                                    Aucun relais Discord n’est encore configuré.
+                                    <a href="<?= htmlspecialchars($organizationSettingsUrl, ENT_QUOTES, 'UTF-8') ?>">Configurer le relais Discord</a>
+                                    dans les réglages de la communauté, puis réessayez.
+                                <?php endif; ?>
+                            </span>
+                        </span>
+                    </label>
+                </div>
+
                 <div class="bo-atak-mod__actions">
                     <button type="submit" class="bo-atak-mod__btn bo-atak-mod__btn--primary">Vérifier et publier</button>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-config', ENT_QUOTES, 'UTF-8') ?>">Réglages ATAK</a>

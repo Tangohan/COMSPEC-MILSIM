@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
+use App\Repositories\CommunityEventRepository;
 use App\Repositories\CommunityMediaRepository;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
@@ -55,6 +56,7 @@ class CommunityController
         private AnalyticsEventService $analyticsEventService,
         private CommunityMediaRepository $communityMediaRepository,
         private TenantBrandingRepository $tenantBrandingRepository,
+        private CommunityEventRepository $communityEventRepository,
     ) {}
 
     /** Registre des unités / communautés (hors tenant placeholder). */
@@ -63,9 +65,10 @@ class CommunityController
         $tenants = $this->tenantRepository->listForRegistry();
 
         return Response::view('layout.main', [
-            'title' => 'Unités & communautés',
+            'title' => 'Communautés & unités',
             'content' => 'community.registry',
             'registryTenants' => $tenants,
+            'communityRegistryPage' => true,
         ]);
     }
 
@@ -169,6 +172,7 @@ class CommunityController
 
         $publicMediaItems = [];
         $publicMediaCollections = [];
+        $publicUpcomingEvents = [];
         $tenantBranding = [
             'logo_url' => null,
             'banner_url' => null,
@@ -186,6 +190,12 @@ class CommunityController
             $publicMediaCollections = $this->communityMediaRepository->listPublicCollections($tid);
             $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
             $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
+            $publicModules = is_array($communityConfig['public_modules'] ?? null)
+                ? $communityConfig['public_modules']
+                : [];
+            if (!empty($publicModules['events'])) {
+                $publicUpcomingEvents = $this->communityEventRepository->upcomingPublicForTenant($tid, 6);
+            }
         }
 
         return Response::view('layout.main', [
@@ -210,6 +220,7 @@ class CommunityController
             'recruitmentListUpdatedAt' => $recruitmentListUpdatedAt,
             'publicMediaItems' => $publicMediaItems,
             'publicMediaCollections' => $publicMediaCollections,
+            'publicUpcomingEvents' => $publicUpcomingEvents,
             'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
             'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,

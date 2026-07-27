@@ -30,17 +30,113 @@ final class DiscordWebhookService
     /** @return array{ok:bool, error?:string} */
     public function send(string $webhookUrl, string $content, ?string $username = null): array
     {
-        if (!$this->isValidWebhookUrl($webhookUrl)) {
-            return ['ok' => false, 'error' => 'URL de webhook Discord invalide (doit commencer par https://discord.com/api/webhooks/...).'];
-        }
+        $payload = [];
         $content = trim($content);
-        if ($content === '') {
-            return ['ok' => false, 'error' => 'Message vide.'];
+        if ($content !== '') {
+            $payload['content'] = mb_substr($content, 0, 2000);
         }
-        $payload = ['content' => mb_substr($content, 0, 2000)];
         $username = trim((string) $username);
         if ($username !== '') {
             $payload['username'] = mb_substr($username, 0, 80);
+        }
+
+        return $this->post($webhookUrl, $payload);
+    }
+
+    /**
+     * Message riche Discord (embed) — idéal pour changelog / mise à jour de pack.
+     *
+     * @param array{
+     *   title?:string,
+     *   description?:string,
+     *   url?:string,
+     *   color?:int,
+     *   fields?:list<array{name:string, value:string, inline?:bool}>,
+     *   footer?:array{text:string}
+     * } $embed
+     * @return array{ok:bool, error?:string}
+     */
+    public function sendEmbed(
+        string $webhookUrl,
+        array $embed,
+        ?string $content = null,
+        ?string $username = null
+    ): array {
+        $payload = [];
+        $content = trim((string) $content);
+        if ($content !== '') {
+            $payload['content'] = mb_substr($content, 0, 2000);
+        }
+        $username = trim((string) $username);
+        if ($username !== '') {
+            $payload['username'] = mb_substr($username, 0, 80);
+        }
+
+        $clean = [];
+        $title = trim((string) ($embed['title'] ?? ''));
+        if ($title !== '') {
+            $clean['title'] = mb_substr($title, 0, 256);
+        }
+        $description = trim((string) ($embed['description'] ?? ''));
+        if ($description !== '') {
+            $clean['description'] = mb_substr($description, 0, 4096);
+        }
+        $url = trim((string) ($embed['url'] ?? ''));
+        if ($url !== '' && filter_var($url, FILTER_VALIDATE_URL)) {
+            $clean['url'] = $url;
+        }
+        if (isset($embed['color']) && is_int($embed['color'])) {
+            $clean['color'] = max(0, min(0xFFFFFF, $embed['color']));
+        }
+        if (!empty($embed['fields']) && is_array($embed['fields'])) {
+            $fields = [];
+            foreach (array_slice($embed['fields'], 0, 25) as $field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+                $name = trim((string) ($field['name'] ?? ''));
+                $value = trim((string) ($field['value'] ?? ''));
+                if ($name === '' || $value === '') {
+                    continue;
+                }
+                $fields[] = [
+                    'name' => mb_substr($name, 0, 256),
+                    'value' => mb_substr($value, 0, 1024),
+                    'inline' => !empty($field['inline']),
+                ];
+            }
+            if ($fields !== []) {
+                $clean['fields'] = $fields;
+            }
+        }
+        if (!empty($embed['footer']) && is_array($embed['footer'])) {
+            $footerText = trim((string) ($embed['footer']['text'] ?? ''));
+            if ($footerText !== '') {
+                $clean['footer'] = ['text' => mb_substr($footerText, 0, 2048)];
+            }
+        }
+
+        if ($clean === [] && ($payload['content'] ?? '') === '') {
+            return ['ok' => false, 'error' => 'Message vide.'];
+        }
+        if ($clean !== []) {
+            $payload['embeds'] = [$clean];
+        }
+
+        return $this->post($webhookUrl, $payload);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array{ok:bool, error?:string}
+     */
+    private function post(string $webhookUrl, array $payload): array
+    {
+        if (!$this->isValidWebhookUrl($webhookUrl)) {
+            return ['ok' => false, 'error' => 'Lien Discord invalide. Vérifiez le relais configuré dans les réglages de la communauté.'];
+        }
+        if ($payload === []) {
+            return ['ok' => false, 'error' => 'Message vide.'];
         }
 
         $ch = curl_init($webhookUrl);
@@ -61,7 +157,7 @@ final class DiscordWebhookService
             return ['ok' => false, 'error' => 'Discord injoignable pour le moment.'];
         }
         if ($status < 200 || $status >= 300) {
-            return ['ok' => false, 'error' => 'Discord a refusé le message (code ' . $status . '). Vérifiez que le webhook existe toujours dans les paramètres du salon.'];
+            return ['ok' => false, 'error' => 'Discord a refusé le message (code ' . $status . '). Vérifiez que le relais existe toujours dans les paramètres du salon.'];
         }
 
         return ['ok' => true];

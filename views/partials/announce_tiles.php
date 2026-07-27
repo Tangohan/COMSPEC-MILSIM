@@ -25,7 +25,6 @@ $announceHeading = (string) ($announce_heading ?? 'Alertes & annonces');
 $announceKicker = (string) ($announce_kicker ?? 'Transmission');
 $announceEmpty = (string) ($announce_empty ?? 'Aucune alerte ni annonce pour le moment.');
 $announceId = (string) ($announce_id ?? 'dashboard-announce');
-$announceStartOpen = (bool) ($announce_start_open ?? true);
 
 $kindLabelFr = static function (string $kind): string {
     return match (strtolower(trim($kind))) {
@@ -60,15 +59,20 @@ $statusLine = $count === 0
         : $count . ' messages actifs');
 $panelId = $announceId . '-panel';
 $titleId = $announceId . '-title';
+/* Vide : replié par défaut (évite double message + bandeau creux). */
+$announceStartOpen = isset($announce_start_open)
+    ? (bool) $announce_start_open
+    : ($count > 0);
 ?>
 <section
     id="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
-    class="dash-announce scroll-mt-24<?= $announceStartOpen ? ' is-open' : '' ?>"
+    class="dash-announce scroll-mt-24<?= $announceStartOpen ? ' is-open' : '' ?><?= $count === 0 ? ' dash-announce--empty' : '' ?>"
     aria-labelledby="<?= htmlspecialchars($titleId, ENT_QUOTES, 'UTF-8') ?>"
     data-announce-collapse
     data-announce-persist="<?= htmlspecialchars($announceId, ENT_QUOTES, 'UTF-8') ?>"
     data-announce-default="<?= $announceStartOpen ? 'open' : 'closed' ?>"
 >
+    <div class="dash-announce__shell">
     <div class="dash-announce__brief">
         <div class="dash-announce__brief-main">
             <?php if ($announceListUrl !== null): ?>
@@ -184,6 +188,7 @@ $titleId = $announceId . '-title';
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+    </div>
     </div>
 </section>
 <script>

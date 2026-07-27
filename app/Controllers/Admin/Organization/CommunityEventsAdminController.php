@@ -416,7 +416,9 @@ final class CommunityEventsAdminController
         if (($cover['path'] ?? null) !== null) {
             $details['cover_image_path'] = $cover['path'];
         }
-        $this->events->updateDetails($eventId, $tenantId, $details);
+        $this->events->updateDetails($eventId, $tenantId, array_merge($details, [
+            'show_on_public_page' => (string) $request->input('show_on_public_page', '0') === '1' ? 1 : 0,
+        ]));
         $this->featureGate->recordQuotaUse($tenantId, 'events', (int) $user['id']);
         Session::flash('success', 'Événement créé.');
 
@@ -465,6 +467,9 @@ final class CommunityEventsAdminController
         }
 
         $this->events->updateDetails($id, $tenantId, $details);
+        $this->events->updateDetails($id, $tenantId, [
+            'show_on_public_page' => (string) $request->input('show_on_public_page', '0') === '1' ? 1 : 0,
+        ]);
         Session::flash('success', 'Détails du créneau enregistrés.');
 
         return $this->redirectToEvent($params, $id);

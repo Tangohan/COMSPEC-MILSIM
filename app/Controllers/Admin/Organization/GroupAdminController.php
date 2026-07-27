@@ -72,6 +72,9 @@ class GroupAdminController
             'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
             'public_tags' => $request->input('public_tags', ''),
             'show_on_public_page' => $request->input('show_on_public_page') ? 1 : 0,
+            'public_capacity' => trim((string) $request->input('public_capacity', '')),
+            'public_open_slots' => trim((string) $request->input('public_open_slots', '')),
+            'public_accent_color' => trim((string) $request->input('public_accent_color', '')),
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
@@ -168,6 +171,9 @@ class GroupAdminController
             'public_blurb' => trim((string) $request->input('public_blurb', '')) ?: null,
             'public_tags' => $request->input('public_tags', ''),
             'show_on_public_page' => $showPublic,
+            'public_capacity' => trim((string) $request->input('public_capacity', '')),
+            'public_open_slots' => trim((string) $request->input('public_open_slots', '')),
+            'public_accent_color' => trim((string) $request->input('public_accent_color', '')),
         ]);
         Session::flash('success', 'Groupe mis à jour.');
         return Response::redirect(url('back-office/groups/' . $id));

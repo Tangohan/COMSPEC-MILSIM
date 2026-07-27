@@ -36,6 +36,30 @@ class CommunityEventRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Prochains créneaux marqués pour l’agenda de la vitrine publique.
+     * Si la colonne n’existe pas encore, renvoie une liste vide (évite d’exposer tout le calendrier interne).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function upcomingPublicForTenant(int $tenantId, int $limit = 6): array
+    {
+        if (!$this->hasColumn('show_on_public_page')) {
+            return [];
+        }
+        $lim = max(1, min(20, $limit));
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM community_events
+             WHERE tenant_id = ? AND cancelled_at IS NULL
+               AND show_on_public_page = 1
+               AND COALESCE(ends_at, starts_at) >= NOW()
+             ORDER BY starts_at ASC LIMIT {$lim}"
+        );
+        $stmt->execute([$tenantId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     /** Créneaux vraiment terminés (non annulés). @return list<array<string, mixed>> */
     public function pastForTenant(int $tenantId, int $limit = 100): array
     {
@@ -204,6 +228,7 @@ class CommunityEventRepository
             'conditions_special' => 'conditions_special',
             'schedule_json' => 'schedule_json',
             'tags_json' => 'tags_json',
+            'show_on_public_page' => 'show_on_public_page',
         ];
         foreach ($map as $key => $col) {
             if (!array_key_exists($key, $data)) {
@@ -213,7 +238,11 @@ class CommunityEventRepository
                 continue;
             }
             $sets[] = "{$col} = ?";
-            $params[] = $data[$key];
+            if ($key === 'show_on_public_page') {
+                $params[] = !empty($data[$key]) ? 1 : 0;
+            } else {
+                $params[] = $data[$key];
+            }
         }
         if ($sets === []) {
             return false;

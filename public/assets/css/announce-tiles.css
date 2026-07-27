@@ -8,13 +8,20 @@
   background: var(--announce-bg);
   color: #fff;
   border-bottom: 1px solid #111;
-  padding: 1.25rem 1.25rem 1.5rem;
+  padding: 1rem 1.25rem 1.15rem;
 }
 
 @media (min-width: 768px) {
   .dash-announce {
-    padding: 1.35rem 2rem 1.75rem;
+    padding: 1.15rem 2rem 1.35rem;
   }
+}
+
+.dash-announce__shell {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .org-dash .dash-announce {
@@ -59,35 +66,43 @@
 }
 
 .dash-announce.is-open .dash-announce__brief {
-  margin-bottom: 1.1rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid var(--announce-line);
 }
 
-/* Titre à gauche · compteur + Gérer à droite · repli à l’extrémité — pas de position absolute */
+.dash-announce--empty.is-open .dash-announce__brief {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Titre + statut regroupés · toggle à droite — plus de vide horizontal */
 .dash-announce__brief-main {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
   width: 100%;
   min-width: 0;
+  gap: 0;
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.85rem;
-  transition: background 0.18s ease;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .dash-announce__brief-main:hover {
-  background: #0d0d0d;
+  background: #0f0f0f;
+  border-color: rgba(52, 211, 153, 0.22);
 }
 
 .dash-announce__brief-goto {
   display: flex;
-  flex: 1 1 12rem;
+  flex: 0 1 auto;
   align-items: center;
   min-width: 0;
+  max-width: 22rem;
   margin: 0;
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 1rem;
   text-align: left;
   color: inherit;
   text-decoration: none;
@@ -113,11 +128,11 @@
   flex: 0 1 auto;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.55rem 1rem;
+  justify-content: flex-start;
+  gap: 0.5rem 0.85rem;
   min-width: 0;
   margin: 0;
-  padding: 0.65rem 0.85rem;
+  padding: 0.65rem 0.35rem 0.65rem 0;
   align-self: center;
 }
 
@@ -129,7 +144,7 @@
   align-self: stretch;
   width: 2.75rem;
   min-height: 2.75rem;
-  margin: 0;
+  margin: 0 0 0 auto;
   padding: 0;
   color: inherit;
   cursor: pointer;
@@ -156,14 +171,14 @@
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #e5e5e5;
+  color: #a3a3a3;
 }
 
 .dash-announce__brief-title {
   margin: 0.2rem 0 0;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: #34d399;
   line-height: 1.15;
@@ -210,6 +225,7 @@
 @media (max-width: 639px) {
   .dash-announce__brief-goto {
     flex: 1 1 calc(100% - 2.75rem);
+    max-width: none;
     border-radius: 0.85rem 0 0 0;
   }
 
@@ -223,6 +239,7 @@
 
   .dash-announce__toggle {
     order: 2;
+    margin-left: 0;
     border-radius: 0 0.85rem 0 0;
   }
 }
@@ -233,8 +250,12 @@
 
 .dash-announce__empty {
   margin: 0;
-  padding: 1.25rem 0 0.35rem;
-  font-size: 0.875rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.8125rem;
+  line-height: 1.45;
   color: var(--announce-muted);
 }
 

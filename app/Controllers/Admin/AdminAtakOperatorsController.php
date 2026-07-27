@@ -10,9 +10,11 @@ use App\Core\Session;
 use App\Repositories\AtakDataRepository;
 use App\Repositories\AtakMapRepository;
 use App\Repositories\AtakOperatorIdRepository;
+use App\Repositories\AtakRealismRepository;
 use App\Repositories\FireTeamRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Support\ModuleFeatureAccess;
 
 /**
  * Tableur des opérateurs ATAK / Athena actuellement en liaison (back-office).
@@ -26,7 +28,9 @@ final class AdminAtakOperatorsController
         private FireTeamRepository $fireTeams,
         private UserRepository $userRepository,
         private UserProfileRepository $userProfileRepository,
+        private ?AtakRealismRepository $realismRepository = null,
     ) {
+        $this->realismRepository ??= new AtakRealismRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -40,7 +44,7 @@ final class AdminAtakOperatorsController
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_operators.index',
-            'title' => 'Effectifs en liaison',
+            'title' => 'Sessions et connexions',
             'atakOperators' => $bundle['rows'],
             'atakOperatorsStats' => $bundle['stats'],
             'atakOperatorsMaps' => $bundle['maps'],
@@ -48,6 +52,107 @@ final class AdminAtakOperatorsController
             'atakOperatorsFilter' => $bundle['filter'],
             'atakOperatorsQuery' => $bundle['q'],
             'atakOperatorsRefreshSeconds' => 30,
+        ]);
+    }
+
+    public function profile(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('login'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('view', 'back-office/atak/operateurs');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $roster = $this->buildRoster($tenantId, $request);
+        $terminals = $this->realismRepository->listTerminals($tenantId);
+        $certificates = $this->realismRepository->listCertificates($tenantId);
+
+        $choices = [];
+        foreach ($roster['rows'] as $row) {
+            $cs = trim((string) ($row['call_sign'] ?? ''));
+            if ($cs === '') {
+                continue;
+            }
+            $key = strtoupper($cs);
+            $choices[$key] = [
+                'call_sign' => $cs,
+                'label' => $cs . (trim((string) ($row['linked_display_name'] ?? '')) !== ''
+                    ? ' — ' . trim((string) $row['linked_display_name'])
+                    : ''),
+            ];
+        }
+        foreach ($terminals as $terminal) {
+            $cs = trim((string) ($terminal['operator_callsign'] ?? ''));
+            if ($cs === '') {
+                continue;
+            }
+            $key = strtoupper($cs);
+            if (isset($choices[$key])) {
+                continue;
+            }
+            $display = trim((string) ($terminal['display_name'] ?? ''));
+            $choices[$key] = [
+                'call_sign' => $cs,
+                'label' => $cs . ($display !== '' ? ' — ' . $display : ''),
+            ];
+        }
+        ksort($choices, SORT_NATURAL | SORT_FLAG_CASE);
+        $choiceList = array_values($choices);
+
+        $requested = trim((string) ($request->query('indicatif') ?? $request->query('callsign') ?? ''));
+        if ($requested === '' && $choiceList !== []) {
+            $requested = (string) $choiceList[0]['call_sign'];
+        }
+        $requestedKey = strtoupper($requested);
+
+        $live = null;
+        foreach ($roster['rows'] as $row) {
+            if (strtoupper(trim((string) ($row['call_sign'] ?? ''))) === $requestedKey) {
+                $live = $row;
+                break;
+            }
+        }
+
+        $terminal = null;
+        foreach ($terminals as $row) {
+            if (strtoupper(trim((string) ($row['operator_callsign'] ?? ''))) === $requestedKey) {
+                $terminal = $row;
+                break;
+            }
+        }
+
+        $certificate = null;
+        $terminalId = (int) ($terminal['id'] ?? 0);
+        foreach ($certificates as $row) {
+            $certCall = strtoupper(trim((string) ($row['callsign'] ?? '')));
+            $sameCall = $certCall !== '' && $certCall === $requestedKey;
+            $sameTerminal = $terminalId > 0 && (int) ($row['terminal_id'] ?? 0) === $terminalId;
+            if ($sameCall || $sameTerminal) {
+                $certificate = $row;
+                break;
+            }
+        }
+
+        $opId = $requested !== '' && $this->operatorIds->tablesReady()
+            ? $this->operatorIds->findByCallSign($tenantId, $requested)
+            : null;
+
+        $titleCall = $requested !== '' ? $requested : 'opérateur';
+
+        return Response::view('layout.main', [
+            'content' => 'admin.atak_operators.profile',
+            'title' => 'Fiche ATAK — ' . $titleCall,
+            'atakOperatorChoices' => $choiceList,
+            'atakOperatorSelected' => $requested,
+            'atakOperatorLive' => $live,
+            'atakOperatorTerminal' => $terminal,
+            'atakOperatorCertificate' => $certificate,
+            'atakOperatorMilitaryId' => is_array($opId) ? (string) ($opId['military_id'] ?? '') : '',
+            'atakOperatorMaps' => $roster['maps'],
+            'atakOperatorMapId' => $roster['mapId'],
         ]);
     }
 

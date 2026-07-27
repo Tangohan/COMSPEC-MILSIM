@@ -109,6 +109,21 @@ final class TenantCommunityProfileService
     public const BADGE_SEMI_MILSIM = 'semi_milsim';
     public const BADGE_CASUAL = 'casual';
 
+    /** Prérequis catalogue (choix fermés) — clé technique → libellé public. */
+    public const PREREQ_AGE_16 = 'age_16';
+    public const PREREQ_DISCORD_MIC = 'discord_mic';
+    public const PREREQ_ANDROID_ATAK = 'android_atak';
+    public const PREREQ_REGULAR_PRESENCE = 'regular_presence';
+    public const PREREQ_MILSIM_XP = 'milsim_experience';
+    public const PREREQ_PERSONAL_GEAR = 'personal_gear';
+    public const PREREQ_FRENCH = 'french_spoken';
+    public const PREREQ_ARMA = 'arma_owned';
+
+    /** Statuts d’un prérequis (jamais exposés bruts côté UI). */
+    public const PREREQ_STATUS_REQUIRED = 'required';
+    public const PREREQ_STATUS_OPTIONAL = 'optional';
+    public const PREREQ_STATUS_NOT_REQUIRED = 'not_required';
+
     /** @return array<string, string> slug => libellé affiché */
     public static function badgeLabels(): array
     {
@@ -117,6 +132,78 @@ final class TenantCommunityProfileService
             self::BADGE_SEMI_MILSIM => 'Semi-milsim',
             self::BADGE_CASUAL => 'Casual',
         ];
+    }
+
+    /**
+     * Catalogue des prérequis proposés aux administrateurs (cases à cocher).
+     *
+     * @return array<string, array{label: string, hint: string}>
+     */
+    public static function prerequisiteCatalog(): array
+    {
+        return [
+            self::PREREQ_AGE_16 => [
+                'label' => '16 ans minimum',
+                'hint' => 'Autorisation parentale demandée avant 18 ans.',
+            ],
+            self::PREREQ_DISCORD_MIC => [
+                'label' => 'Micro correct et Discord',
+                'hint' => 'La communication vocale est la base de tout.',
+            ],
+            self::PREREQ_ANDROID_ATAK => [
+                'label' => 'Un smartphone Android',
+                'hint' => 'Pour ATAK. iOS n’est souvent pas compatible avec le serveur de l’unité.',
+            ],
+            self::PREREQ_REGULAR_PRESENCE => [
+                'label' => 'Une présence régulière',
+                'hint' => 'Un terrain par semaine suffit en général à rester actif.',
+            ],
+            self::PREREQ_MILSIM_XP => [
+                'label' => 'Expérience milsim',
+                'hint' => 'Souvent non exigée : l’instruction est faite pour les débutants.',
+            ],
+            self::PREREQ_PERSONAL_GEAR => [
+                'label' => 'Matériel personnel',
+                'hint' => 'Souvent non exigé pour la période d’essai.',
+            ],
+            self::PREREQ_FRENCH => [
+                'label' => 'Français oral',
+                'hint' => 'Les briefings et la radio se font en français.',
+            ],
+            self::PREREQ_ARMA => [
+                'label' => 'Jeu de base installé',
+                'hint' => 'Selon le jeu principal de la communauté (ex. Arma).',
+            ],
+        ];
+    }
+
+    /** @return list<string> */
+    public static function allowedPrerequisiteKeys(): array
+    {
+        return array_keys(self::prerequisiteCatalog());
+    }
+
+    public static function prerequisiteStatusLabel(string $status): string
+    {
+        return match ($status) {
+            self::PREREQ_STATUS_REQUIRED => 'Exigé',
+            self::PREREQ_STATUS_OPTIONAL => 'Souhaité',
+            self::PREREQ_STATUS_NOT_REQUIRED => 'Non exigé',
+            default => 'À préciser',
+        };
+    }
+
+    public static function normalizePrerequisiteStatus(mixed $raw): string
+    {
+        $s = strtolower(trim((string) ($raw ?? '')));
+        if ($s === self::PREREQ_STATUS_OPTIONAL || $s === 'souhaite' || $s === 'souhaité') {
+            return self::PREREQ_STATUS_OPTIONAL;
+        }
+        if ($s === self::PREREQ_STATUS_NOT_REQUIRED || $s === 'non' || $s === 'no' || $s === 'none') {
+            return self::PREREQ_STATUS_NOT_REQUIRED;
+        }
+
+        return self::PREREQ_STATUS_REQUIRED;
     }
 
     /** @return list<string> */
@@ -317,6 +404,54 @@ final class TenantCommunityProfileService
         ];
         $c['public_modules'] = $mods;
 
+        $c['public_hero_headline'] = $this->clip((string) $request->input('public_hero_headline', ''), 220);
+        $c['public_founded_year'] = $this->clip((string) $request->input('public_founded_year', ''), 12);
+        $c['public_recruitment_session_label'] = $this->clip((string) $request->input('public_recruitment_session_label', ''), 80);
+        $c['public_about_title'] = $this->clip((string) $request->input('public_about_title', ''), 160);
+        $c['public_about_body'] = $this->clip((string) $request->input('public_about_body', ''), 8000);
+        $c['public_about_body_secondary'] = $this->clip((string) $request->input('public_about_body_secondary', ''), 4000);
+        $c['public_sections_title'] = $this->clip((string) $request->input('public_sections_title', ''), 160);
+        $c['public_sections_lead'] = $this->clip((string) $request->input('public_sections_lead', ''), 240);
+
+        $c['public_video_url'] = $this->sanitizeUrl((string) $request->input('public_video_url', ''), 1024);
+        $c['public_video_title'] = $this->clip((string) $request->input('public_video_title', ''), 160);
+        $c['public_video_body'] = $this->clip((string) $request->input('public_video_body', ''), 800);
+        $c['public_video_chapters'] = $this->parsePairList(
+            $request->input('public_video_chapter_time', []),
+            $request->input('public_video_chapter_label', []),
+            'time',
+            'label',
+            8,
+            16,
+            120
+        );
+
+        $c['public_pitch'] = $this->parsePairList(
+            $request->input('public_pitch_title', []),
+            $request->input('public_pitch_body', []),
+            'title',
+            'body',
+            8,
+            120,
+            400
+        );
+        $c['public_prerequisites'] = $this->parsePrerequisitesFromRequest($request);
+        $c['public_process_steps'] = $this->parseProcessStepsFromRequest($request);
+        $c['public_faq'] = $this->parsePairList(
+            $request->input('public_faq_q', []),
+            $request->input('public_faq_a', []),
+            'q',
+            'a',
+            12,
+            200,
+            800
+        );
+        $c['public_partners'] = $this->parseStringList((string) $request->input('public_partners', ''), 12, 80);
+        $c['public_testimonials'] = $this->parseTestimonialsFromRequest($request);
+        $c['public_cta_kicker'] = $this->clip((string) $request->input('public_cta_kicker', ''), 80);
+        $c['public_cta_title'] = $this->clip((string) $request->input('public_cta_title', ''), 160);
+        $c['public_cta_body'] = $this->clip((string) $request->input('public_cta_body', ''), 500);
+
         // Conserver clés existantes non gérées par ce formulaire
         foreach ([
             'community_locked', 'welcome_text', 'require_ai_ack',
@@ -415,12 +550,160 @@ final class TenantCommunityProfileService
             'analytics' => !empty($mods['analytics']),
         ];
 
+        $aboutBody = trim((string) ($community['public_about_body'] ?? ''));
+        if ($aboutBody === '') {
+            $aboutBody = trim((string) ($community['simple_body'] ?? ''));
+        }
+        if ($aboutBody === '') {
+            $aboutBody = trim((string) ($community['public_mission'] ?? ''));
+        }
+
+        $prereqs = [];
+        $catalog = self::prerequisiteCatalog();
+        foreach (is_array($community['public_prerequisites'] ?? null) ? $community['public_prerequisites'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $key = strtolower(trim((string) ($row['key'] ?? '')));
+            if ($key === '' || !isset($catalog[$key])) {
+                continue;
+            }
+            $status = self::normalizePrerequisiteStatus($row['status'] ?? self::PREREQ_STATUS_REQUIRED);
+            $detail = trim((string) ($row['detail'] ?? ''));
+            if ($detail === '') {
+                $detail = $catalog[$key]['hint'];
+            }
+            $prereqs[] = [
+                'key' => $key,
+                'label' => $catalog[$key]['label'],
+                'detail' => $detail,
+                'status' => $status,
+                'statusLabel' => self::prerequisiteStatusLabel($status),
+                'required' => $status === self::PREREQ_STATUS_REQUIRED,
+            ];
+        }
+
+        $pitch = [];
+        foreach (is_array($community['public_pitch'] ?? null) ? $community['public_pitch'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $t = trim((string) ($row['title'] ?? ''));
+            $b = trim((string) ($row['body'] ?? ''));
+            if ($t === '' && $b === '') {
+                continue;
+            }
+            $pitch[] = ['title' => $t, 'body' => $b];
+        }
+
+        $steps = [];
+        foreach (is_array($community['public_process_steps'] ?? null) ? $community['public_process_steps'] : [] as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $t = trim((string) ($row['title'] ?? ''));
+            $b = trim((string) ($row['body'] ?? ''));
+            $delay = trim((string) ($row['delay'] ?? ''));
+            if ($t === '' && $b === '') {
+                continue;
+            }
+            $steps[] = [
+                'n' => (string) ($i + 1),
+                'title' => $t,
+                'body' => $b,
+                'delay' => $delay,
+                'highlight' => !empty($row['highlight']),
+            ];
+        }
+
+        $faq = [];
+        foreach (is_array($community['public_faq'] ?? null) ? $community['public_faq'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $q = trim((string) ($row['q'] ?? ''));
+            $a = trim((string) ($row['a'] ?? ''));
+            if ($q === '' && $a === '') {
+                continue;
+            }
+            $faq[] = ['q' => $q, 'a' => $a];
+        }
+
+        $partners = [];
+        foreach (is_array($community['public_partners'] ?? null) ? $community['public_partners'] : [] as $p) {
+            if (is_string($p) && trim($p) !== '') {
+                $partners[] = trim($p);
+            }
+        }
+
+        $testimonials = [];
+        foreach (is_array($community['public_testimonials'] ?? null) ? $community['public_testimonials'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $text = trim((string) ($row['text'] ?? ''));
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($text === '' && $name === '') {
+                continue;
+            }
+            $initials = trim((string) ($row['initials'] ?? ''));
+            if ($initials === '' && $name !== '') {
+                $parts = preg_split('/\s+/', $name) ?: [];
+                $initials = '';
+                foreach (array_slice($parts, 0, 2) as $p) {
+                    $initials .= mb_strtoupper(mb_substr((string) $p, 0, 1));
+                }
+            }
+            $testimonials[] = [
+                'text' => $text,
+                'name' => $name,
+                'meta' => trim((string) ($row['meta'] ?? '')),
+                'initials' => $initials !== '' ? $initials : '·',
+            ];
+        }
+
+        $videoChapters = [];
+        foreach (is_array($community['public_video_chapters'] ?? null) ? $community['public_video_chapters'] : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $time = trim((string) ($row['time'] ?? ''));
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($time === '' && $label === '') {
+                continue;
+            }
+            $videoChapters[] = ['time' => $time, 'label' => $label];
+        }
+
+        $heroFacts = [];
+        if ($eff !== '') {
+            $heroFacts[] = ['v' => $eff, 'k' => 'MEMBRES ACTIFS'];
+        }
+        if ($uni !== '') {
+            $heroFacts[] = ['v' => $uni, 'k' => 'UNITÉS'];
+        }
+        if ($act !== '') {
+            $heroFacts[] = ['v' => $act, 'k' => 'ACTIVITÉ'];
+        }
+        $founded = trim((string) ($community['public_founded_year'] ?? ''));
+        if ($founded !== '') {
+            $heroFacts[] = ['v' => $founded, 'k' => 'FONDÉE'];
+        }
+
         return [
             'publicPageLayout' => self::resolvePublicPageLayout($community['public_page_layout'] ?? null),
             'heroSubtitle' => trim((string) ($community['public_hero_subtitle'] ?? '')),
+            'heroHeadline' => trim((string) ($community['public_hero_headline'] ?? '')),
+            'foundedYear' => $founded,
+            'recruitmentSessionLabel' => trim((string) ($community['public_recruitment_session_label'] ?? '')),
             'publicDoctrine' => trim((string) ($community['public_doctrine'] ?? '')),
             'publicAccessLabel' => trim((string) ($community['public_access_label'] ?? '')),
             'publicMission' => trim((string) ($community['public_mission'] ?? '')),
+            'aboutTitle' => trim((string) ($community['public_about_title'] ?? '')),
+            'aboutBody' => $aboutBody,
+            'aboutBodySecondary' => trim((string) ($community['public_about_body_secondary'] ?? '')),
+            'sectionsTitle' => trim((string) ($community['public_sections_title'] ?? '')),
+            'sectionsLead' => trim((string) ($community['public_sections_lead'] ?? '')),
             'regionBadges' => $regionBadges,
             'specialties' => $specialties,
             'stats' => [
@@ -430,12 +713,26 @@ final class TenantCommunityProfileService
                 'theatre' => $theatre,
             ],
             'statsMode' => $mode,
+            'heroFacts' => $heroFacts,
             'commandChain' => $commandChain,
             'publicRosterEnabled' => !empty($community['public_roster_enabled']),
             'recruitmentBadgeOpen' => !empty($community['public_recruitment_badge_open']),
             'publicModules' => $modules,
             'timezoneLabel' => (string) ($tenantMerge['timezone'] ?? ''),
             'rosterPublicCount' => (int) ($computed['roster_public_count'] ?? 0),
+            'videoUrl' => trim((string) ($community['public_video_url'] ?? '')),
+            'videoTitle' => trim((string) ($community['public_video_title'] ?? '')),
+            'videoBody' => trim((string) ($community['public_video_body'] ?? '')),
+            'videoChapters' => $videoChapters,
+            'pitch' => $pitch,
+            'prerequisites' => $prereqs,
+            'processSteps' => $steps,
+            'faq' => $faq,
+            'partners' => $partners,
+            'testimonials' => $testimonials,
+            'ctaKicker' => trim((string) ($community['public_cta_kicker'] ?? '')),
+            'ctaTitle' => trim((string) ($community['public_cta_title'] ?? '')),
+            'ctaBody' => trim((string) ($community['public_cta_body'] ?? '')),
         ];
     }
 
@@ -602,6 +899,134 @@ final class TenantCommunityProfileService
                 continue;
             }
             $out[] = ['role_label' => $rl, 'display_name' => $dn, 'hint' => $hint];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param mixed $keys
+     * @param mixed $vals
+     * @return list<array<string, string>>
+     */
+    private function parsePairList(mixed $keys, mixed $vals, string $keyA, string $keyB, int $max, int $maxA, int $maxB): array
+    {
+        if (!is_array($keys) || !is_array($vals)) {
+            return [];
+        }
+        $n = min(max(count($keys), count($vals)), $max);
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $a = isset($keys[$i]) ? $this->clip((string) $keys[$i], $maxA) : '';
+            $b = isset($vals[$i]) ? $this->clip((string) $vals[$i], $maxB) : '';
+            if ($a === '' && $b === '') {
+                continue;
+            }
+            $out[] = [$keyA => $a, $keyB => $b];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{key: string, status: string, detail: string}>
+     */
+    private function parsePrerequisitesFromRequest(Request $request): array
+    {
+        $enabled = $request->input('public_prereq_enabled', []);
+        if (!is_array($enabled)) {
+            $enabled = [];
+        }
+        $allowed = array_flip(self::allowedPrerequisiteKeys());
+        $statuses = $request->input('public_prereq_status', []);
+        $details = $request->input('public_prereq_detail', []);
+        if (!is_array($statuses)) {
+            $statuses = [];
+        }
+        if (!is_array($details)) {
+            $details = [];
+        }
+        $out = [];
+        foreach ($enabled as $key) {
+            $k = is_string($key) ? strtolower(trim($key)) : '';
+            if ($k === '' || !isset($allowed[$k])) {
+                continue;
+            }
+            $status = self::normalizePrerequisiteStatus($statuses[$k] ?? self::PREREQ_STATUS_REQUIRED);
+            $detail = isset($details[$k]) ? $this->clip((string) $details[$k], 240) : '';
+            $out[] = ['key' => $k, 'status' => $status, 'detail' => $detail];
+            if (count($out) >= 12) {
+                break;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{title: string, delay: string, body: string, highlight: bool}>
+     */
+    private function parseProcessStepsFromRequest(Request $request): array
+    {
+        $titles = $request->input('public_step_title', []);
+        $delays = $request->input('public_step_delay', []);
+        $bodies = $request->input('public_step_body', []);
+        $highlights = $request->input('public_step_highlight', []);
+        if (!is_array($titles) || !is_array($delays) || !is_array($bodies)) {
+            return [];
+        }
+        if (!is_array($highlights)) {
+            $highlights = [];
+        }
+        $n = min(max(count($titles), count($delays), count($bodies)), 8);
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $t = isset($titles[$i]) ? $this->clip((string) $titles[$i], 120) : '';
+            $d = isset($delays[$i]) ? $this->clip((string) $delays[$i], 40) : '';
+            $b = isset($bodies[$i]) ? $this->clip((string) $bodies[$i], 500) : '';
+            if ($t === '' && $b === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $t,
+                'delay' => $d,
+                'body' => $b,
+                'highlight' => !empty($highlights[$i]) || (string) ($highlights[$i] ?? '') === '1',
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{text: string, name: string, meta: string, initials: string}>
+     */
+    private function parseTestimonialsFromRequest(Request $request): array
+    {
+        $texts = $request->input('public_quote_text', []);
+        $names = $request->input('public_quote_name', []);
+        $metas = $request->input('public_quote_meta', []);
+        $initials = $request->input('public_quote_initials', []);
+        if (!is_array($texts) || !is_array($names)) {
+            return [];
+        }
+        if (!is_array($metas)) {
+            $metas = [];
+        }
+        if (!is_array($initials)) {
+            $initials = [];
+        }
+        $n = min(max(count($texts), count($names)), 6);
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $text = isset($texts[$i]) ? $this->clip((string) $texts[$i], 600) : '';
+            $name = isset($names[$i]) ? $this->clip((string) $names[$i], 80) : '';
+            $meta = isset($metas[$i]) ? $this->clip((string) $metas[$i], 120) : '';
+            $ini = isset($initials[$i]) ? $this->clip((string) $initials[$i], 4) : '';
+            if ($text === '' && $name === '') {
+                continue;
+            }
+            $out[] = ['text' => $text, 'name' => $name, 'meta' => $meta, 'initials' => $ini];
         }
 
         return $out;

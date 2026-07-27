@@ -9,6 +9,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantAlertRepository;
+use App\Services\Integrations\ModUpdateDiscordNotifier;
 use ZipArchive;
 
 class AdminAtakModController
@@ -16,6 +17,13 @@ class AdminAtakModController
     private const STORAGE_DIR = 'atak-mod';
     private const FILENAME = 'comspec-overwatch.zip';
     private const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
+    private const MAX_CHANGELOG_NOTES = 4000;
+
+    public function __construct(
+        private ?ModUpdateDiscordNotifier $modDiscord = null,
+    ) {
+        $this->modDiscord ??= new ModUpdateDiscordNotifier();
+    }
 
     private function getStoragePath(int $tenantId): string
     {
@@ -203,6 +211,8 @@ class AdminAtakModController
             'error' => Session::getFlash('error'),
             'errors' => Session::getFlash('errors') ?? [],
             'memberDownloadUrl' => url('atak/mod'),
+            'discordRelayReady' => $this->modDiscord->hasWebhookConfigured($tenantId),
+            'organizationSettingsUrl' => url('back-office/organisation/parametres'),
         ]);
     }
 
@@ -269,9 +279,35 @@ class AdminAtakModController
         $version = $this->readVersionFromZip($dest);
         $this->publishCommunityAlert($tenantId, $version);
 
+        $changelogNotes = trim((string) $request->input('changelog_notes', ''));
+        if (mb_strlen($changelogNotes) > self::MAX_CHANGELOG_NOTES) {
+            $changelogNotes = mb_substr($changelogNotes, 0, self::MAX_CHANGELOG_NOTES);
+        }
+
+        $notifyDiscord = $request->input('notify_discord') === '1'
+            || $request->input('notify_discord') === 'on';
+        $discordSuffix = '';
+        if ($notifyDiscord) {
+            $discordResult = $this->modDiscord->notifyModUpdate(
+                $tenantId,
+                $version,
+                url('atak/mod'),
+                $changelogNotes !== '' ? $changelogNotes : null,
+                $dest,
+            );
+            if ($discordResult['sent']) {
+                $discordSuffix = ' Une annonce a aussi été envoyée sur Discord.';
+            } elseif ($discordResult['skipped']) {
+                $discordSuffix = ' Aucun relais Discord n’est configuré : l’annonce Discord a été ignorée.';
+            } else {
+                $discordSuffix = ' L’annonce Discord n’a pas pu être envoyée (le pack reste bien publié).';
+            }
+        }
+
         Session::flash(
             'success',
             'Pack Overwatch enregistré. Il est disponible pour les membres, et une annonce a été publiée pour la communauté.'
+            . $discordSuffix
         );
 
         return Response::redirect(url('admin/atak-mod'));

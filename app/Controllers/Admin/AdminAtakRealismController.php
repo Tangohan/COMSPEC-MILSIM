@@ -32,7 +32,26 @@ final class AdminAtakRealismController
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.index',
-            'title' => 'ATAK - certificats et terminaux',
+            'title' => 'Parc de terminaux',
+            'atakRealismTerminals' => $this->realismRepository->listTerminals($tenantId),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function certificates(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('view');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        return Response::view('layout.main', [
+            'content' => 'admin.atak_realism.certificates',
+            'title' => 'Certificats ATAK',
             'atakRealismTerminals' => $this->realismRepository->listTerminals($tenantId),
             'atakRealismCertificates' => $this->realismRepository->listCertificates($tenantId),
             'csrfToken' => Csrf::token(),
@@ -77,7 +96,7 @@ final class AdminAtakRealismController
         }
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée. Réessayez.');
-            return Response::redirect(url('back-office/atak/realisme'));
+            return Response::redirect(url('back-office/atak/certificats'));
         }
         $forbidden = ModuleFeatureAccess::guardAtak('manage');
         if ($forbidden instanceof Response) {
@@ -101,6 +120,6 @@ final class AdminAtakRealismController
         ]);
         Session::flash('success', 'Certificat ATAK enregistré.');
 
-        return Response::redirect(url('back-office/atak/realisme'));
+        return Response::redirect(url('back-office/atak/certificats'));
     }
 }

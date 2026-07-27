@@ -53,7 +53,10 @@ $navFormationsActive = $boNavLmsRes || $boNavLmsSubPage;
 $navCommunityActive = $boNavOrgSettings;
 $navPublicPageActive = $boNavCommPres;
 $navMediasActive = $boNavMedia;
-$navAtakRealismActive = str_starts_with($p, 'back-office/atak/realisme');
+$navAtakDevicesActive = str_starts_with($p, 'back-office/atak/realisme');
+$navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
+$navAtakSessionsActive = $boNavAtakOperators;
+$navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
@@ -93,10 +96,10 @@ $rsvpChildren = array_values(array_filter([
 ], static fn (?array $row): bool => is_array($row)));
 
 $atakDeviceChildren = array_values(array_filter([
-    ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakRealismActive],
-    ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $boNavAtakOperators],
-    ['label' => 'Certificats', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakRealismActive, 'warn' => true],
-    ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/operateurs'), 'active' => $boNavAtakOperators],
+    ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
+    ['label' => 'Sessions & connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
+    ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive, 'warn' => true],
+    ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $rolesChildren = array_values(array_filter([
@@ -183,11 +186,11 @@ $athNavGroups = [
                 'label' => 'Terminaux',
                 'href' => url('back-office/atak/realisme'),
                 'icon' => 'phone',
-                'active' => $navAtakRealismActive || $boNavAtakOperators,
+                'active' => $navAtakDevicesActive || $navAtakSessionsActive || $navAtakCertsActive || $navAtakOpActive,
                 'children' => $atakDeviceChildren,
             ],
-            ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $boNavAtakOperators],
-            ['label' => 'Certificats', 'href' => url('back-office/atak/realisme'), 'icon' => 'cert', 'active' => $navAtakRealismActive, 'warn' => true],
+            ['label' => 'Sessions', 'href' => url('back-office/atak/operateurs'), 'icon' => 'radio', 'active' => $navAtakSessionsActive],
+            ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'icon' => 'cert', 'active' => $navAtakCertsActive, 'warn' => true],
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [
