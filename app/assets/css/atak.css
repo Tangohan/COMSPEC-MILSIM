@@ -148,6 +148,44 @@ body.atak-page.atak-theme-light {
   align-self: center;
 }
 
+.atak-phone-op-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: center;
+  margin-left: 0.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 2px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(14, 165, 233, 0.16);
+  color: #e0f2fe;
+  font-family: var(--atak-font-tactical);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  max-width: 13.5rem;
+}
+.atak-phone-op-badge__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+.atak-phone-op-badge__ttl {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: #7dd3fc;
+  font-weight: 800;
+}
+.atak-phone-op-badge.is-expiring .atak-phone-op-badge__ttl { color: #fbbf24; }
+.atak-phone-op-badge.is-expired {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.28);
+  color: #fecaca;
+}
+.atak-phone-op-badge.is-expired .atak-phone-op-badge__ttl { color: #fecaca; }
+
 .atak-header-chips {
   display: flex;
   align-items: center;
@@ -2359,6 +2397,19 @@ body.atak-hints-hidden .atak-panel-hint {
   flex: 1;
   overflow-y: auto;
 }
+.atak-cams-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem 0.35rem;
+  border-bottom: 1px solid var(--atak-border);
+}
+.atak-cams-toolbar-hint {
+  margin: 0;
+}
+.atak-cams-toolbar .atak-ops-btn {
+  align-self: flex-start;
+}
 .atak-cams-list { padding: 0.5rem; }
 .atak-intel-photos { padding: 0 0.5rem 0.65rem; }
 .atak-cam-item { margin-bottom: 0.5rem; }
@@ -4112,6 +4163,17 @@ body.atak-theme-light .atak-chat-messages {
   border-radius: 0 0 calc(var(--atak-radius) - 1px) calc(var(--atak-radius) - 1px);
 }
 .atak-map-tools__prefs[hidden] { display: none !important; }
+.atak-map-tools__prefs-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+}
+.atak-map-tools__prefs-presets .atak-map-tools__btn.is-active {
+  border-color: var(--atak-accent, #38bdf8);
+  color: #e0f2fe;
+  background: rgba(56, 189, 248, 0.12);
+}
 .atak-map-tools__prefs-title {
   margin: 0 0 0.4rem;
   color: #94a3b8;
@@ -4870,6 +4932,35 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   line-height: 1;
   cursor: pointer;
   font-family: inherit;
+}
+.atak-unit-vibrate {
+  flex-shrink: 0;
+  margin-left: 0.2rem;
+  padding: 0.12rem 0.4rem;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 4px;
+  background: rgba(14, 165, 233, 0.1);
+  color: #bae6fd;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.atak-unit-vibrate:hover,
+.atak-unit-vibrate:focus-visible {
+  color: #e0f2fe;
+  border-color: #38bdf8;
+  outline: none;
+  background: rgba(14, 165, 233, 0.2);
+}
+.atak-unit-vibrate--table {
+  margin-right: 0.25rem;
+  font-size: 0.55rem;
+  padding: 0.1rem 0.32rem;
 }
 .atak-unit-more:hover,
 .atak-unit-more:focus-visible {
@@ -8424,4 +8515,164 @@ body.atak-theme-light .atak-replay-banner-text {
 }
 body.atak-sitrep-picking .leaflet-container {
   cursor: crosshair !important;
+}
+
+/* === Medium pack: fire teams filter + IFF alerts + logistics === */
+.atak-ft-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: flex-end;
+  margin-top: 0.45rem;
+}
+.atak-ft-filter-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--atak-muted, #94a3b8);
+  flex: 1;
+  min-width: 10rem;
+}
+.atak-ft-filter-label select {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 0.28rem 0.45rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: var(--atak-text, #e2e8f0);
+  border-radius: 2px;
+}
+.atak-ft-composition {
+  margin: 0.35rem 0.15rem 0.5rem;
+}
+.atak-ft-compose-card {
+  border: 1px solid color-mix(in srgb, var(--ft-color, #64748b) 45%, transparent);
+  border-left: 3px solid var(--ft-color, #64748b);
+  background: rgba(15, 23, 42, 0.35);
+  padding: 0.5rem 0.55rem;
+  margin-bottom: 0.45rem;
+  border-radius: 2px;
+}
+.atak-ft-compose-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+.atak-ft-compose-count {
+  font-size: 0.68rem;
+  color: var(--atak-muted, #94a3b8);
+}
+.atak-ft-compose-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.atak-ft-compose-member {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  align-items: center;
+}
+.atak-ft-compose-cs { font-weight: 650; }
+.atak-ft-compose-role,
+.atak-ft-compose-live {
+  color: var(--atak-muted, #94a3b8);
+  font-size: 0.65rem;
+}
+.atak-iff-alert-banner {
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  background: rgba(127, 29, 29, 0.35);
+  color: #fecaca;
+  padding: 0.55rem 0.65rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+}
+.atak-iff-alert-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+.atak-iff-alert-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+.atak-iff-expire {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 650;
+  color: #6ee7b7;
+}
+.atak-iff-expire--soon { color: #fbbf24; }
+.atak-iff-expire--done { color: #f87171; }
+.atak-iff-valid--expired { color: #f87171 !important; }
+.atak-iff-asset--alert {
+  box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.35);
+}
+.atak-logistics-alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+.atak-logistics-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 2px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.68rem;
+  background: rgba(15, 23, 42, 0.4);
+  color: var(--atak-text, #e2e8f0);
+  cursor: default;
+}
+.atak-logistics-chip--crit {
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #fca5a5;
+}
+.atak-logistics-chip--low {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fcd34d;
+}
+.atak-logistics-chip--med {
+  cursor: pointer;
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7dd3fc;
+  background: rgba(8, 47, 73, 0.35);
+}
+.atak-logistics-requests {
+  margin-bottom: 0.55rem;
+  font-size: 0.72rem;
+}
+.atak-logistics-requests ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+.atak-logistics-feedback {
+  margin-top: 0.45rem;
+  font-size: 0.72rem;
+}
+.atak-logistics-feedback--ok { color: #6ee7b7; }
+.atak-logistics-feedback--err { color: #f87171; }
+.atak-ops-btn--sm {
+  padding: 0.18rem 0.4rem;
+  font-size: 0.65rem;
+}
+.atak-collapse-badge--warn {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
 }

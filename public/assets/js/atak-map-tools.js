@@ -736,6 +736,7 @@ window.ATAKMapTools = (function () {
 
   var LS_COLLAPSED = 'atak_map_tools_collapsed';
   var LS_VISIBLE = 'atak_map_tools_visible_v1';
+  var LS_PRESET = 'atak_map_tools_preset_v1';
 
   var TOOL_PREF_DEFS = [
     { id: 'goto', label: 'Grille' },
@@ -764,10 +765,85 @@ window.ATAKMapTools = (function () {
     view: ['radius', 'speed', 'speed-presets', 'metrics']
   };
 
+  /** Profils métier : TOC (tout), chef d’équipe (manœuvre), médecin (repères + mesure). */
+  var ROLE_PRESETS = {
+    toc: {
+      label: 'TOC',
+      ids: null // tous
+    },
+    sl: {
+      label: 'Chef d’équipe',
+      ids: ['goto', 'me', 'follow', 'measure', 'note', 'jackpot', 'search-zone', 'perimeter', 'aoi', 'line', 'clear-drawings', 'radius', 'speed', 'speed-presets', 'metrics', 'zoom']
+    },
+    medic: {
+      label: 'Médecin',
+      ids: ['goto', 'me', 'follow', 'measure', 'note', 'aoi', 'line', 'clear-drawings', 'radius', 'speed', 'speed-presets', 'metrics', 'zoom']
+    }
+  };
+
   function defaultVisibleMap() {
     var out = {};
     TOOL_PREF_DEFS.forEach(function (d) { out[d.id] = true; });
     return out;
+  }
+
+  function visibleMapFromPreset(presetId) {
+    var preset = ROLE_PRESETS[presetId];
+    if (!preset) return defaultVisibleMap();
+    if (!preset.ids) return defaultVisibleMap();
+    var out = {};
+    TOOL_PREF_DEFS.forEach(function (d) {
+      out[d.id] = preset.ids.indexOf(d.id) !== -1;
+    });
+    return out;
+  }
+
+  function loadPresetId() {
+    try {
+      var v = localStorage.getItem(LS_PRESET) || '';
+      return ROLE_PRESETS[v] ? v : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function savePresetId(id) {
+    try {
+      if (id && ROLE_PRESETS[id]) localStorage.setItem(LS_PRESET, id);
+      else localStorage.removeItem(LS_PRESET);
+    } catch (e) {}
+  }
+
+  function syncPresetButtons(activeId) {
+    var root = document.getElementById('atak-map-tools-prefs-presets');
+    if (!root) return;
+    root.querySelectorAll('[data-preset]').forEach(function (btn) {
+      var id = btn.getAttribute('data-preset');
+      var on = !!activeId && id === activeId;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function applyPreset(presetId, opts) {
+    opts = opts || {};
+    if (!ROLE_PRESETS[presetId]) return;
+    var map = visibleMapFromPreset(presetId);
+    saveVisibleMap(map);
+    savePresetId(presetId);
+    applyVisibleSlots(map);
+    syncPresetButtons(presetId);
+    var grid = document.getElementById('atak-map-tools-prefs-grid');
+    if (grid) {
+      grid.querySelectorAll('input[data-pref-slot]').forEach(function (cb) {
+        var slot = cb.getAttribute('data-pref-slot');
+        cb.checked = map[slot] !== false;
+      });
+    }
+    if (!opts.silent) {
+      var label = ROLE_PRESETS[presetId].label || presetId;
+      toast('Profil « ' + label + ' » appliqué');
+    }
   }
 
   function loadVisibleMap() {
@@ -836,12 +912,15 @@ window.ATAKMapTools = (function () {
         var next = loadVisibleMap();
         next[def.id] = !!cb.checked;
         saveVisibleMap(next);
+        savePresetId('');
+        syncPresetButtons('');
         applyVisibleSlots(next);
       });
       lab.appendChild(cb);
       lab.appendChild(document.createTextNode(def.label));
       grid.appendChild(lab);
     });
+    syncPresetButtons(loadPresetId());
   }
 
   function setPrefsOpen(open) {
@@ -888,10 +967,15 @@ window.ATAKMapTools = (function () {
       var panel = document.getElementById('atak-map-tools-prefs');
       setPrefsOpen(!(panel && !panel.hidden));
     } else if (action === 'prefs-close') setPrefsOpen(false);
-    else if (action === 'prefs-all') {
+    else if (action === 'preset') {
+      var presetId = ui.getAttribute('data-preset');
+      if (presetId) applyPreset(presetId);
+    } else if (action === 'prefs-all') {
       var all = defaultVisibleMap();
       saveVisibleMap(all);
+      savePresetId('toc');
       applyVisibleSlots(all);
+      syncPresetButtons('toc');
       var grid = document.getElementById('atak-map-tools-prefs-grid');
       if (grid) {
         grid.querySelectorAll('input[data-pref-slot]').forEach(function (cb) {

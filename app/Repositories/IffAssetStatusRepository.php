@@ -32,8 +32,18 @@ class IffAssetStatusRepository
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public function upsert(string $missionId, string $assetId, string $callsign, ?string $platformType = null, ?int $challengeId = null): array
-    {
+    /** Délai de grâce (minutes) avant qu’un contact sans réponse soit marqué inconnu. */
+    public const DEFAULT_GRACE_MINUTES = 5;
+
+    public function upsert(
+        string $missionId,
+        string $assetId,
+        string $callsign,
+        ?string $platformType = null,
+        ?int $challengeId = null,
+        ?int $graceMinutes = null
+    ): array {
+        $graceMins = $graceMinutes !== null ? max(1, min(60, $graceMinutes)) : self::DEFAULT_GRACE_MINUTES;
         $stmt = $this->pdo->prepare('SELECT id, current_challenge_id FROM iff_asset_status WHERE mission_id = ? AND asset_id = ?');
         $stmt->execute([$missionId, $assetId]);
         $existing = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -41,15 +51,23 @@ class IffAssetStatusRepository
             $prevChallenge = isset($existing['current_challenge_id']) ? (int) $existing['current_challenge_id'] : 0;
             $nextChallenge = $challengeId !== null ? (int) $challengeId : 0;
             if ($nextChallenge > 0 && $nextChallenge !== $prevChallenge) {
-                $this->pdo->prepare('UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = ?, response_status = ?, response_code = NULL, responded_at = NULL, updated_at = NOW() WHERE id = ?')
-                    ->execute([$callsign, $platformType, $challengeId, 'PENDING', $existing['id']]);
+                $this->pdo->prepare(
+                    'UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = ?,
+                     response_status = ?, response_code = NULL, responded_at = NULL,
+                     grace_until = DATE_ADD(NOW(), INTERVAL ? MINUTE), updated_at = NOW() WHERE id = ?'
+                )->execute([$callsign, $platformType, $challengeId, 'PENDING', $graceMins, $existing['id']]);
             } else {
-                $this->pdo->prepare('UPDATE iff_asset_status SET callsign = ?, platform_type = ?, current_challenge_id = COALESCE(?, current_challenge_id), updated_at = NOW() WHERE id = ?')
-                    ->execute([$callsign, $platformType, $challengeId, $existing['id']]);
+                $this->pdo->prepare(
+                    'UPDATE iff_asset_status SET callsign = ?, platform_type = ?,
+                     current_challenge_id = COALESCE(?, current_challenge_id), updated_at = NOW() WHERE id = ?'
+                )->execute([$callsign, $platformType, $challengeId, $existing['id']]);
             }
         } else {
-            $this->pdo->prepare('INSERT INTO iff_asset_status (mission_id, asset_id, callsign, platform_type, current_challenge_id, response_status) VALUES (?, ?, ?, ?, ?, ?)')
-                ->execute([$missionId, $assetId, $callsign, $platformType, $challengeId, 'PENDING']);
+            $this->pdo->prepare(
+                'INSERT INTO iff_asset_status
+                 (mission_id, asset_id, callsign, platform_type, current_challenge_id, response_status, grace_until)
+                 VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))'
+            )->execute([$missionId, $assetId, $callsign, $platformType, $challengeId, 'PENDING', $graceMins]);
         }
         $row = $this->getByAsset($missionId, $assetId);
         return $row ?? [];
@@ -57,8 +75,28 @@ class IffAssetStatusRepository
 
     public function setResponse(string $missionId, string $assetId, string $responseCode, string $responseStatus): bool
     {
-        $stmt = $this->pdo->prepare('UPDATE iff_asset_status SET response_code = ?, response_status = ?, responded_at = NOW(), updated_at = NOW() WHERE mission_id = ? AND asset_id = ?');
+        $stmt = $this->pdo->prepare(
+            'UPDATE iff_asset_status SET response_code = ?, response_status = ?, responded_at = NOW(),
+             grace_until = NULL, updated_at = NOW() WHERE mission_id = ? AND asset_id = ?'
+        );
         $stmt->execute([$responseCode, $responseStatus, $missionId, $assetId]);
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Marque les contacts PENDING dont le délai de grâce est dépassé comme UNKNOWN.
+     */
+    public function promoteUnknownAfterGrace(string $missionId): int
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE iff_asset_status SET response_status = 'UNKNOWN', updated_at = NOW()
+             WHERE mission_id = ?
+               AND response_status = 'PENDING'
+               AND grace_until IS NOT NULL
+               AND grace_until < NOW()"
+        );
+        $stmt->execute([$missionId]);
+
+        return $stmt->rowCount();
     }
 }

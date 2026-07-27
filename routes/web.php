@@ -57,7 +57,9 @@ use App\Controllers\Admin\AdminUnitsController;
 use App\Controllers\Admin\AdminModpackController;
 use App\Controllers\Admin\AdminAtakConfigController;
 use App\Controllers\Admin\AdminBriefingSlidesController;
+use App\Controllers\Admin\AdminMissionCycleController;
 use App\Controllers\Admin\AdminFireTeamsController;
+use App\Controllers\Api\MissionCycleApiController;
 use App\Controllers\Admin\AdminAtakOperatorsController;
 use App\Controllers\Admin\AdminAtakModController;
 use App\Controllers\Admin\AdminAtakModBlocklistController;
@@ -941,6 +943,12 @@ return function (Router $router) {
 $router->post('/back-office/atak/briefing-slides/{id}/update', [AdminBriefingSlidesController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/comment', [AdminBriefingSlidesController::class, 'storeComment'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSlidesController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+$router->post('/back-office/atak/briefing-slides/{id}/move', [AdminBriefingSlidesController::class, 'move'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+$router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBriefingSlidesController::class, 'togglePublish'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/cycle-mission', [AdminMissionCycleController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/cycle-mission', [AdminMissionCycleController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/cycle-mission/{id}/ouvrir', [AdminMissionCycleController::class, 'open'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/cycle-mission/{id}/cloturer', [AdminMissionCycleController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -963,6 +971,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->post('/admin/atak-beta/delete', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-beta/bulk', [\App\Controllers\Admin\AdminAtakBetaRegistrationsController::class, 'bulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-mod-reports', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/status', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateStatus'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/delete', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
@@ -1335,6 +1344,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->post('/api/atak/salute', [AtakApiController::class, 'saluteStore']);
     $router->get('/api/atak/perstat', [AtakApiController::class, 'perstatIndex']);
     $router->get('/api/atak/logistics', [AtakApiController::class, 'logisticsSnapshot']);
+    $router->post('/api/atak/logistics/resupply', [AtakApiController::class, 'logisticsResupplyRequest']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->post('/api/atak/disconnect', [AtakApiController::class, 'disconnect']);
     $router->get('/api/atak/briefing-slides', [AtakApiController::class, 'briefingSlidesIndex']);
@@ -1512,6 +1522,12 @@ $router->post('/back-office/atak/briefing-slides/{id}/delete', [AdminBriefingSli
     $router->get('/api/replay/events/{missionId}', [ReplayController::class, 'events']);
     $router->get('/api/replay/aar/{missionId}', [ReplayController::class, 'aar']);
     $router->get('/api/replay/aar/{missionId}/export.pdf', [ReplayController::class, 'aarExportPdf']);
+
+    $router->get('/api/mission-cycle/current', [MissionCycleApiController::class, 'current'], [AuthMiddleware::class]);
+    $router->get('/api/mission-cycle', [MissionCycleApiController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/api/mission-cycle', [MissionCycleApiController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/api/mission-cycle/{id}/open', [MissionCycleApiController::class, 'open'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/api/mission-cycle/{id}/close', [MissionCycleApiController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
 
     // API Operations (contrats unifiés /api/operations/*)
     $router->get('/api/operations/missions/{missionId}', [OperationsApiController::class, 'missionsTimeline']);

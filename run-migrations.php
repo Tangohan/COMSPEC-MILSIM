@@ -3093,6 +3093,16 @@ try {
 }
 $migrationEnsurePdo();
 
+$theatreMissionCycleMigrate = require $root . '/bootstrap/theatre_mission_cycle_migration.php';
+try {
+    echo "Migration theatre_mission_cycles (cycle briefing → exécution → après-action)...\n";
+    $migrationFlush();
+    $theatreMissionCycleMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] theatre_mission_cycles : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $tenantAtakExperienceMigrate = require $root . '/bootstrap/tenant_atak_experience_migration.php';
 try {
     echo "Migration tenant_atak_experience (expérience Overwatch par communauté)...\n";

@@ -73,6 +73,8 @@ window.ArmaMapMarkers = (function () {
 
   function armaColorHex(colorName) {
     var key = String(colorName || '').toLowerCase();
+    if (key.charAt(0) === '#') return key;
+    if (/^[0-9a-f]{6}$/i.test(key)) return '#' + key;
     if (key.indexOf('blufor') >= 0 || key.indexOf('west') >= 0) return '#4e9de0';
     if (key.indexOf('opfor') >= 0 || key.indexOf('east') >= 0) return '#d9534f';
     if (key.indexOf('independent') >= 0 || key.indexOf('guer') >= 0 || key.indexOf('resistance') >= 0) return '#4ec94e';
@@ -87,7 +89,7 @@ window.ArmaMapMarkers = (function () {
     if (key.indexOf('brown') >= 0 || key.indexOf('khaki') >= 0) return '#a16207';
     if (key.indexOf('white') >= 0) return '#f2f2f2';
     if (key.indexOf('black') >= 0) return '#222222';
-    if (key.charAt(0) === '#') return key;
+    if (key.indexOf('grey') >= 0 || key.indexOf('gray') >= 0) return '#b9b9b9';
     return '#ef4444';
   }
 
@@ -263,6 +265,11 @@ window.ArmaMapMarkers = (function () {
 
   function typeLabelFr(data) {
     if (!data) return 'Repère';
+    var src = String(data.source || '').toLowerCase();
+    if (src === 'ace_poi') return data.symbolName ? String(data.symbolName) : 'Point d’intérêt';
+    if (src.indexOf('medevac') >= 0) return 'Point d’évacuation sanitaire';
+    if (src.indexOf('qrf') >= 0) return 'Point de renfort';
+    if (src.indexOf('vehicle_service') >= 0) return 'Point de service véhicule';
     if (data.symbolName) return String(data.symbolName);
     var decoded = decodeType(data);
     if (decoded.catalogLabel) return decoded.catalogLabel;

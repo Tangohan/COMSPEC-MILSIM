@@ -171,4 +171,62 @@ class TacticalBriefingSlideRepository
 
         return $stmt->rowCount() > 0;
     }
+
+    /**
+     * Déplace une diapositive d’un cran (ordre d’affichage).
+     * @param 'up'|'down' $direction
+     */
+    public function moveOrder(int $id, int $tenantId, string $direction): bool
+    {
+        $row = $this->findByIdForTenant($id, $tenantId);
+        if (!$row) {
+            return false;
+        }
+        $current = (int) ($row['sort_order'] ?? 0);
+        $all = $this->allForTenant($tenantId);
+        $idx = -1;
+        foreach ($all as $i => $r) {
+            if ((int) ($r['id'] ?? 0) === $id) {
+                $idx = $i;
+                break;
+            }
+        }
+        if ($idx < 0) {
+            return false;
+        }
+        $swapIdx = $direction === 'up' ? $idx - 1 : $idx + 1;
+        if ($swapIdx < 0 || $swapIdx >= count($all)) {
+            return false;
+        }
+        $other = $all[$swapIdx];
+        $otherId = (int) ($other['id'] ?? 0);
+        $otherOrder = (int) ($other['sort_order'] ?? 0);
+        if ($otherId < 1) {
+            return false;
+        }
+        // Si ordres identiques, forcer un écart.
+        $newCurrent = $otherOrder;
+        $newOther = $current;
+        if ($newCurrent === $newOther) {
+            $newCurrent = $direction === 'up' ? $current - 1 : $current + 1;
+            $newOther = $current;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE tactical_briefing_slides SET sort_order = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
+        );
+        $st->execute([$newCurrent, $id, $tenantId]);
+        $st->execute([$newOther, $otherId, $tenantId]);
+
+        return true;
+    }
+
+    public function setActive(int $id, int $tenantId, bool $active): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE tactical_briefing_slides SET is_active = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?'
+        );
+        $stmt->execute([$active ? 1 : 0, $id, $tenantId]);
+
+        return $stmt->rowCount() > 0;
+    }
 }

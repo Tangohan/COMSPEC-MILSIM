@@ -84,6 +84,7 @@ return [
                         ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Overwatch', 'path' => 'overwatch', 'description' => 'Situation en carte et commandement'],
                         ['label' => 'TACMAP', 'path' => 'tacmap', 'description' => 'Cartographie tactique'],
+                        ['label' => 'Cycle de mission', 'path' => 'back-office/atak/cycle-mission', 'description' => 'Briefing, exécution et après-action', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Première liaison ATAK', 'path' => 'atak/premiere-liaison', 'description' => 'Mise en service guidée'],
                         ['label' => 'Mur opérationnel', 'path' => 'tableau-operationnel', 'permission' => 'operational.board.view', 'description' => 'Permanences et consignes publiées'],
                     ],
@@ -364,6 +365,7 @@ return [
                     'links' => [
                         ['label' => 'Modpacks', 'path' => 'back-office/ressources/modpacks', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration ATAK', 'path' => 'back-office/ressources/atak-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Cycle de mission', 'path' => 'back-office/atak/cycle-mission', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Créer, ouvrir et clôturer une mission (briefing → carte → après-action)'],
                         ['label' => 'Effectifs en liaison', 'path' => 'back-office/atak/operateurs', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Tableur des opérateurs connectés'],
                         ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],

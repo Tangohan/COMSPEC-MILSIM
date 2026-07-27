@@ -290,7 +290,14 @@ final class AtakPhoneConnectController
 
         }
 
-
+        try {
+            (new \App\Services\Tactical\AtakActivityLogService())->recordPhonePaired(
+                $tenantId,
+                $memberUserId > 0 ? null : 'Opérateur téléphone'
+            );
+        } catch (\Throwable) {
+            // Best-effort : ne bloque pas l’ouverture de la carte.
+        }
 
         return Response::redirect(url('atak'));
 

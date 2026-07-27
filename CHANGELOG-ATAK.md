@@ -7,6 +7,63 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.2] - 2026-07-27
+
+### Ajouté — Quick wins Athena / Tacmap
+
+#### Overwatch — libellés français
+- Panneaux **Relecture mission**, **État logistique**, **Calculateur d’appui-feu**, **Zones de danger**, **Identification ami / ennemi**
+- Onglet et santé « Relecture » ; bilan après-action en libellés métier (instantanés, signalements, anomalies)
+
+#### Barre d’outils — profils TOC / Chef d’équipe / Médecin
+- Presets dans **Personnaliser** : TOC (tout), Chef d’équipe, Médecin (outils adaptés)
+- Préférence enregistrée en localStorage (`atak_map_tools_visible_v1` + `atak_map_tools_preset_v1`)
+
+#### Badge opérateur téléphone + temps restant
+- Sur Tacmap en session téléphone : badge **Opérateur téléphone** + compte à rebours jusqu’à expiration
+
+#### Cams — aperçus assumés + demande de vue
+- Rappel UI : aperçus photo uniquement (pas de vidéo en direct)
+- Bouton **Demander une nouvelle vue** → journal TOC + message radio (confirmation)
+
+#### Effectifs BFT — Vibrer
+- Action **Vibrer** sur la liste / tableau des effectifs (API existante), avec confirmation
+
+#### Cycle de mission (briefing → exécution → après-action)
+- Hub **Cycle de mission** (`/back-office/atak/cycle-mission`) : créer, ouvrir, clôturer
+- Statuts métier : Préparation · En cours · Clôturée (`theatre_mission_cycles`)
+- Badge mission sur Tacmap / ATAK ; à la clôture, relecture + bilan bornés (`from` / `to`)
+- API `/api/mission-cycle/*` ; migration idempotente + ensure lazy
+
+#### Équipes de feu sur la carte (prio. moyenne)
+- Filtre BFT par équipe de feu (liste Effectifs + marqueurs carte)
+- Panneau **Composition des équipes de feu** pendant l’opération (couleur, liaison)
+- Couleurs d’équipe déjà sur marqueurs / puces conservées
+
+#### Identification IFF de conduite (prio. moyenne)
+- Alertes TOC + Overwatch pour contact / véhicule **inconnu**, **suspect**, défi **expiré**
+- Compte à rebours d’expiration du défi ; délai de grâce (5 min) → « Contact inconnu »
+- Panneau Identification TOC opérationnel (plus seulement Overwatch)
+
+#### Logistique mission (prio. moyenne)
+- Seuils stock bas / critique (≤ 35 % / ≤ 15 %) + pastilles d’alerte
+- Bouton **Ravitailler** → demande dans le journal d’activité TOC
+- Lien vers les évacuations sanitaires en cours depuis le suivi logistique
+
+#### Briefing diapos (prio. moyenne)
+- Actions **Monter / Descendre** pour l’ordre ; publication rapide Visible en jeu / brouillon
+- Présence briefing enrichie (compteurs téléphone / tableau en jeu)
+
+#### Rapports bugs Overwatch (prio. moyenne)
+- Suivi métier **Nouveau → En cours → Corrigé** (`new` / `in_progress` / `fixed`)
+- Affichage **version du pack** (+ extension) ; filtre par statut
+
+### Déploiement
+- Cache-bust `?v=202607270700` (css atak, map-tools, units, fire-teams, iff, ops-status, cams, mission-cycle)
+- FTP Hostinger → `athena.ttrd.fr` ; `.env` non modifié ; pas de rebuild PBO (aucun SQF)
+- Lancer `run-migrations` (ou UI migrations) pour créer `theatre_mission_cycles` ; colonne `workflow_status` auto via migration lazy rapports
+---
+
 ## [1.2.1] - 2026-07-26
 
 ### Ajouté — Athena WEB / TOC ATAK (branchement Overwatch)

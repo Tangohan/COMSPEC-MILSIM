@@ -12,6 +12,17 @@ use PDO;
  */
 final class AtakModReportRepository
 {
+    public const STATUS_NEW = 'new';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_FIXED = 'fixed';
+
+    /** @var array<string, string> */
+    public const STATUS_LABELS = [
+        self::STATUS_NEW => 'Nouveau',
+        self::STATUS_IN_PROGRESS => 'En cours',
+        self::STATUS_FIXED => 'Corrigé',
+    ];
+
     private PDO $pdo;
 
     public function __construct(?PDO $pdo = null)
@@ -139,37 +150,64 @@ final class AtakModReportRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listRecent(int $limit = 100, ?string $severity = null): array
+    public function listRecent(int $limit = 100, ?string $severity = null, ?string $workflowStatus = null): array
     {
         $limit = max(1, min(500, $limit));
+        $where = [];
+        $params = [];
         if ($severity !== null && $severity !== '') {
-            $sev = $this->normalizeSeverity($severity);
-            $st = $this->pdo->prepare(
-                'SELECT * FROM atak_mod_reports WHERE severity = ? ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit
-            );
-            $st->execute([$sev]);
-        } else {
-            $st = $this->pdo->query(
-                'SELECT * FROM atak_mod_reports ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit
-            );
+            $where[] = 'severity = ?';
+            $params[] = $this->normalizeSeverity($severity);
         }
-
-        $rows = $st ? $st->fetchAll(PDO::FETCH_ASSOC) : [];
+        if ($workflowStatus !== null && $workflowStatus !== '') {
+            $where[] = 'workflow_status = ?';
+            $params[] = $this->normalizeWorkflowStatus($workflowStatus);
+        }
+        $sql = 'SELECT * FROM atak_mod_reports';
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $sql .= ' ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit;
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
     }
 
-    public function countAll(?string $severity = null): int
+    public function countAll(?string $severity = null, ?string $workflowStatus = null): int
     {
+        $where = [];
+        $params = [];
         if ($severity !== null && $severity !== '') {
-            $st = $this->pdo->prepare('SELECT COUNT(*) FROM atak_mod_reports WHERE severity = ?');
-            $st->execute([$this->normalizeSeverity($severity)]);
-
-            return (int) $st->fetchColumn();
+            $where[] = 'severity = ?';
+            $params[] = $this->normalizeSeverity($severity);
         }
-        $n = $this->pdo->query('SELECT COUNT(*) FROM atak_mod_reports')?->fetchColumn();
+        if ($workflowStatus !== null && $workflowStatus !== '') {
+            $where[] = 'workflow_status = ?';
+            $params[] = $this->normalizeWorkflowStatus($workflowStatus);
+        }
+        $sql = 'SELECT COUNT(*) FROM atak_mod_reports';
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $where);
+        }
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
 
-        return (int) $n;
+        return (int) $st->fetchColumn();
+    }
+
+    public function updateWorkflowStatus(int $id, string $status): bool
+    {
+        if ($id < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE atak_mod_reports SET workflow_status = ? WHERE id = ?'
+        );
+        $st->execute([$this->normalizeWorkflowStatus($status), $id]);
+
+        return $st->rowCount() > 0;
     }
 
     public function deleteById(int $id): bool
@@ -181,6 +219,25 @@ final class AtakModReportRepository
         $st->execute([$id]);
 
         return $st->rowCount() > 0;
+    }
+
+    public function normalizeWorkflowStatus(string $raw): string
+    {
+        $s = strtolower(trim($raw));
+
+        return match ($s) {
+            'new', 'nouveau', 'open' => self::STATUS_NEW,
+            'in_progress', 'en_cours', 'progress', 'triaged', 'wip' => self::STATUS_IN_PROGRESS,
+            'fixed', 'corrige', 'corrigé', 'done', 'closed', 'resolved' => self::STATUS_FIXED,
+            default => self::STATUS_NEW,
+        };
+    }
+
+    public static function statusLabel(string $status): string
+    {
+        $key = strtolower(trim($status));
+
+        return self::STATUS_LABELS[$key] ?? self::STATUS_LABELS[self::STATUS_NEW];
     }
 
     private function normalizeSeverity(string $raw): string

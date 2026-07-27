@@ -3,10 +3,14 @@
 /** @var int $total */
 /** @var int $totalAll */
 /** @var string $severityFilter */
+/** @var string $statusFilter */
+/** @var array{new?:int,in_progress?:int,fixed?:int} $statusCounts */
 $rows = is_array($rows ?? null) ? $rows : [];
 $total = (int) ($total ?? count($rows));
 $totalAll = (int) ($totalAll ?? $total);
 $severityFilter = trim((string) ($severityFilter ?? ''));
+$statusFilter = trim((string) ($statusFilter ?? ''));
+$statusCounts = is_array($statusCounts ?? null) ? $statusCounts : [];
 
 $fmtDate = static function (mixed $raw): string {
     $s = trim((string) $raw);
@@ -44,6 +48,7 @@ $severityLabel = static function (string $sev): string {
 
 $csrfToken = \App\Core\Csrf::token();
 $base = url('admin/atak-mod-reports');
+$statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-atak-beta.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
@@ -53,7 +58,7 @@ $base = url('admin/atak-mod-reports');
         <h1>Rapports Overwatch</h1>
         <p class="bo-atak-beta__lead">
             Erreurs automatiques et signalements joueurs remontés depuis le jeu vers Athena.
-            Les doublons proches sont regroupés (compteur « occurrences »).
+            Suivez le traitement (Nouveau → En cours → Corrigé). Les doublons proches sont regroupés.
         </p>
         <nav class="bo-atak-beta__nav" aria-label="Liens associés">
             <a href="<?= htmlspecialchars(url('admin/atak-beta'), ENT_QUOTES, 'UTF-8') ?>">Accès anticipé</a>
@@ -77,6 +82,18 @@ $base = url('admin/atak-mod-reports');
             <strong><?= (int) $totalAll ?></strong>
         </div>
         <div class="bo-atak-beta__stat">
+            <span class="bo-atak-beta__stat-label">Nouveaux</span>
+            <strong><?= (int) ($statusCounts['new'] ?? 0) ?></strong>
+        </div>
+        <div class="bo-atak-beta__stat">
+            <span class="bo-atak-beta__stat-label">En cours</span>
+            <strong><?= (int) ($statusCounts['in_progress'] ?? 0) ?></strong>
+        </div>
+        <div class="bo-atak-beta__stat">
+            <span class="bo-atak-beta__stat-label">Corrigés</span>
+            <strong><?= (int) ($statusCounts['fixed'] ?? 0) ?></strong>
+        </div>
+        <div class="bo-atak-beta__stat">
             <span class="bo-atak-beta__stat-label">Affichés</span>
             <strong><?= (int) $total ?></strong>
         </div>
@@ -93,6 +110,17 @@ $base = url('admin/atak-mod-reports');
                 <option value="info" <?= $severityFilter === 'info' ? 'selected' : '' ?>>Infos</option>
             </select>
         </label>
+        <label>
+            <span style="display:block;font-size:.8rem;opacity:.75;margin-bottom:.25rem;">Suivi</span>
+            <select name="status">
+                <option value="" <?= $statusFilter === '' ? 'selected' : '' ?>>Tous les statuts</option>
+                <?php foreach ($statusChoices as $value => $label): ?>
+                    <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $statusFilter === $value ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
         <button type="submit" class="bo-atak-beta__btn">Filtrer</button>
     </form>
 
@@ -104,6 +132,7 @@ $base = url('admin/atak-mod-reports');
                 <thead>
                     <tr>
                         <th>Type</th>
+                        <th>Suivi</th>
                         <th>Message</th>
                         <th>Joueur</th>
                         <th>Module</th>
@@ -116,6 +145,10 @@ $base = url('admin/atak-mod-reports');
                 <?php foreach ($rows as $row): ?>
                     <?php
                     $sev = strtolower(trim((string) ($row['severity'] ?? 'error')));
+                    $wfRaw = strtolower(trim((string) ($row['workflow_status'] ?? 'new')));
+                    if (!isset($statusChoices[$wfRaw])) {
+                        $wfRaw = 'new';
+                    }
                     $msg = trim((string) ($row['message'] ?? ''));
                     $detail = trim((string) ($row['detail_text'] ?? ''));
                     $player = trim((string) ($row['player_name'] ?? ''));
@@ -124,9 +157,26 @@ $base = url('admin/atak-mod-reports');
                     if ($cs !== '') {
                         $who .= ' · ' . $cs;
                     }
+                    $packVer = trim((string) ($row['mod_version'] ?? ''));
+                    $extVer = trim((string) ($row['extension_version'] ?? ''));
                     ?>
                     <tr>
                         <td><span class="bo-atak-beta__badge"><?= htmlspecialchars($severityLabel($sev), ENT_QUOTES, 'UTF-8') ?></span></td>
+                        <td>
+                            <form method="post" action="<?= htmlspecialchars(url('admin/atak-mod-reports/status'), ENT_QUOTES, 'UTF-8') ?>" style="display:flex;flex-direction:column;gap:.35rem;min-width:8rem;">
+                                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="report_id" value="<?= (int) ($row['id'] ?? 0) ?>">
+                                <input type="hidden" name="return_severity" value="<?= htmlspecialchars($severityFilter, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
+                                <select name="workflow_status" aria-label="Statut de suivi" onchange="this.form.submit()">
+                                    <?php foreach ($statusChoices as $value => $label): ?>
+                                        <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $wfRaw === $value ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </form>
+                        </td>
                         <td>
                             <strong><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></strong>
                             <?php if ($detail !== ''): ?>
@@ -136,8 +186,8 @@ $base = url('admin/atak-mod-reports');
                                 </details>
                             <?php endif; ?>
                             <div style="font-size:.75rem;opacity:.65;margin-top:.25rem;">
-                                Pack <?= htmlspecialchars((string) ($row['mod_version'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
-                                · Ext <?= htmlspecialchars((string) ($row['extension_version'] ?? '—'), ENT_QUOTES, 'UTF-8') ?>
+                                Version du pack <?= htmlspecialchars($packVer !== '' ? $packVer : '—', ENT_QUOTES, 'UTF-8') ?>
+                                · Extension <?= htmlspecialchars($extVer !== '' ? $extVer : '—', ENT_QUOTES, 'UTF-8') ?>
                                 · Steam <?= htmlspecialchars($maskSteam($row['steam_uid'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                             </div>
                         </td>

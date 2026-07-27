@@ -3,6 +3,8 @@ window.ATAKUnits = (function () {
   var units = [];
   var filterLive = true;
   var filterText = '';
+  /** Filtre équipe de feu : '' = toutes, '__none__' = sans équipe, sinon id. */
+  var filterFireTeamId = '';
   /** Empreinte du dernier rendu liste/table — évite rebuild DOM à chaque poll. */
   var lastRenderFp = '';
   /** Aligné sur AtakDataRepository::UNIT_LIVE_TTL_SECONDS (sec). */
@@ -146,15 +148,33 @@ window.ATAKUnits = (function () {
     return '<span class="atak-unit-no-symbol" title="Sans symbole">Sans symbole</span>';
   }
 
+  function matchesFireTeamFilter(u) {
+    if (!filterFireTeamId) return true;
+    var tid = String(u.fire_team_id || '');
+    if (filterFireTeamId === '__none__') {
+      return !tid && !String(u.fire_team_label || '').trim();
+    }
+    return tid === String(filterFireTeamId);
+  }
+
+  function unitsForMap() {
+    if (!filterFireTeamId) return units;
+    return units.filter(matchesFireTeamFilter);
+  }
+
+  function pushMarkers() {
+    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
+      window.ATAKMap.setUnitsMarkers(unitsForMap());
+    }
+  }
+
   function fetchUnits() {
     if (!isNodeConfigured()) return;
     var url = getApiBase() + '/api/units?mapId=' + getMapId() + '&include_gateway=1';
     fetch(url, { credentials: 'include' }).then(function (r) { return r.json(); }).then(function (data) {
       units = Array.isArray(data) ? data : (data.units || []);
       render();
-      if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
-        window.ATAKMap.setUnitsMarkers(units);
-      }
+      pushMarkers();
       if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
         window.ATAKRadio.onUnitsUpdated();
       }
@@ -170,15 +190,20 @@ window.ATAKUnits = (function () {
   function setUnits(list) {
     units = Array.isArray(list) ? list : [];
     render();
-    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
-      window.ATAKMap.setUnitsMarkers(units);
-    }
+    pushMarkers();
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }
     try {
       window.dispatchEvent(new CustomEvent('atak:units-updated', { detail: { count: units.length } }));
     } catch (e) {}
+  }
+
+  function setFireTeamFilter(id) {
+    filterFireTeamId = id == null ? '' : String(id);
+    lastRenderFp = '';
+    render();
+    pushMarkers();
   }
 
   function vitalTone(kind, value) {
@@ -284,6 +309,9 @@ window.ATAKUnits = (function () {
         '<td class="atak-drawer-grid' + (gridRaw ? '' : ' atak-drawer-muted') + '">' + esc(grid) + '</td>' +
         '<td class="atak-drawer-notes">' + notesCellHtml(ex) + '</td>' +
         '<td class="atak-drawer-actions">' +
+        ((statusClass === 'linked' || statusClass === 'delayed')
+          ? '<button type="button" class="atak-unit-vibrate atak-unit-vibrate--table" data-unit-vibrate aria-label="Faire vibrer le terminal" title="Faire vibrer le terminal">Vibrer</button>'
+          : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
         '</td>' +
         '</tr>';
@@ -298,7 +326,7 @@ window.ATAKUnits = (function () {
         }
       }
       row.addEventListener('click', function (ev) {
-        if (ev.target.closest('a, button, [data-unit-more]')) return;
+        if (ev.target.closest('a, button, [data-unit-more], [data-unit-vibrate]')) return;
         focusUnit();
       });
       row.addEventListener('keydown', function (ev) {
@@ -308,6 +336,7 @@ window.ATAKUnits = (function () {
         }
       });
     });
+    bindVibrateButtons(body);
     if (window.ATAKUnitMenu && window.ATAKUnitMenu.bindListInteractions) {
       window.ATAKUnitMenu.bindListInteractions(body);
     }
@@ -360,6 +389,7 @@ window.ATAKUnits = (function () {
     updateSummary();
     var filtered = units.filter(function (u) {
       if (filterLive && !isInLiaison(u)) return false;
+      if (!matchesFireTeamFilter(u)) return false;
       if (filterText) {
         var t = filterText.toLowerCase();
         var ex = parseExtra(u);
@@ -380,7 +410,7 @@ window.ATAKUnits = (function () {
       }
       return true;
     });
-    var fp = filterLive + '|' + filterText + '\n' + displayFingerprint(filtered);
+    var fp = filterLive + '|' + filterText + '|' + filterFireTeamId + '\n' + displayFingerprint(filtered);
     if (fp === lastRenderFp) return;
     lastRenderFp = fp;
     renderTable(filtered);
@@ -505,6 +535,9 @@ window.ATAKUnits = (function () {
         '<div class="atak-unit-callsign">' + natoBadge + esc(u.call_sign || '—') + '</div>' +
         '<span class="atak-unit-status ' + statusClass + '">' + esc(statusLabel) + '</span>' +
         (userLink ? userLink : '') +
+        ((statusClass === 'linked' || statusClass === 'delayed')
+          ? '<button type="button" class="atak-unit-vibrate" data-unit-vibrate aria-label="Faire vibrer le terminal" title="Faire vibrer le terminal">Vibrer</button>'
+          : '') +
         '<button type="button" class="atak-unit-more" data-unit-more aria-label="Actions sur ce contact" title="Actions">⋯</button>' +
         '</div>' +
         bftLine +
@@ -519,7 +552,7 @@ window.ATAKUnits = (function () {
 
     listEl.querySelectorAll('.atak-unit-card').forEach(function (card) {
       card.addEventListener('click', function (ev) {
-        if (ev.target.closest('a, button, [data-unit-more]')) return;
+        if (ev.target.closest('a, button, [data-unit-more], [data-unit-vibrate]')) return;
         var x = this.getAttribute('data-x');
         var y = this.getAttribute('data-y');
         if (x && y && window.ATAKMap && window.ATAKMap.centerOn) {
@@ -527,9 +560,60 @@ window.ATAKUnits = (function () {
         }
       });
     });
+    bindVibrateButtons(listEl);
     if (window.ATAKUnitMenu && window.ATAKUnitMenu.bindListInteractions) {
       window.ATAKUnitMenu.bindListInteractions(listEl);
     }
+  }
+
+  function vibrateUnitFromList(unitId, callsign) {
+    var label = callsign ? String(callsign) : 'cet opérateur';
+    if (!window.confirm('Faire vibrer le terminal de ' + label + ' ?\n\nLe joueur recevra une vibration sur son téléphone ATAK en jeu.')) {
+      return;
+    }
+    var base = getApiBase();
+    if (!base || !unitId) {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de faire vibrer ce terminal.');
+      return;
+    }
+    fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/vibrate', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var err = new Error((body && body.message) || 'vibrate_failed');
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    }).then(function () {
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification('Le terminal de ' + label + ' vibre en jeu');
+      }
+    }).catch(function (err) {
+      if (window.ATAKShowError) {
+        window.ATAKShowError((err && err.body && err.body.message) || 'Impossible de faire vibrer ce terminal.');
+      }
+    });
+  }
+
+  function bindVibrateButtons(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-unit-vibrate]').forEach(function (btn) {
+      if (btn._atakVibBound) return;
+      btn._atakVibBound = true;
+      btn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var row = btn.closest('[data-unit-id]');
+        if (!row) return;
+        vibrateUnitFromList(row.getAttribute('data-unit-id'), row.getAttribute('data-callsign'));
+      });
+    });
   }
 
   function getUnitById(id) {
@@ -549,9 +633,7 @@ window.ATAKUnits = (function () {
     units = next;
     lastRenderFp = '';
     render();
-    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
-      window.ATAKMap.setUnitsMarkers(units);
-    }
+    pushMarkers();
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }
@@ -575,9 +657,7 @@ window.ATAKUnits = (function () {
     if (!changed) return;
     lastRenderFp = '';
     render();
-    if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
-      window.ATAKMap.setUnitsMarkers(units);
-    }
+    pushMarkers();
     if (window.ATAKRadio && window.ATAKRadio.onUnitsUpdated) {
       window.ATAKRadio.onUnitsUpdated();
     }
@@ -620,5 +700,7 @@ window.ATAKUnits = (function () {
     forceRender: forceRender,
     hasValidPosition: hasValidPosition,
     resolveLiveStatus: resolveLiveStatus,
+    setFireTeamFilter: setFireTeamFilter,
+    getFireTeamFilter: function () { return filterFireTeamId; },
   };
 })();

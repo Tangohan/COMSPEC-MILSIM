@@ -26,9 +26,11 @@ window.ATAKChat = (function () {
   }
 
   function getAuthor() {
+    var ph = window.ATAK_PHONE_SESSION;
+    if (ph && ph.label) return String(ph.label);
     var u = window.ATAK_USER;
     if (u && (u.callsign || u.displayName)) return u.callsign || u.displayName;
-    return 'User';
+    return 'Opérateur';
   }
 
   function getMyCallsigns() {

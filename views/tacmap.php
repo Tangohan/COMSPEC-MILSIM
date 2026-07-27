@@ -54,6 +54,8 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tacmap.css" rel="stylesheet">
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=202607270700" rel="stylesheet">
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
 </head>
 <body class="tacmap-body antialiased">
   <?php
@@ -67,6 +69,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
       <div class="tacmap-header__brand">
         <h1 class="tacmap-header__title">COMSPEC TACMAP</h1>
         <span id="tacmap-sync-badge" class="tacmap-badge">En attente</span>
+        <span id="mission-cycle-badge" class="tacmap-badge" hidden></span>
       </div>
 
       <div class="tacmap-header__controls">
@@ -100,6 +103,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
       <div class="tacmap-links">
         <a href="<?= htmlspecialchars(url('overwatch')) ?>">Commandement avancé</a>
         <a href="<?= htmlspecialchars(url('atak')) ?>">ATAK</a>
+        <a href="<?= htmlspecialchars(url('back-office/atak/cycle-mission')) ?>">Cycle de mission</a>
         <a href="<?= htmlspecialchars(url('dashboard')) ?>">Tableau de bord</a>
         <?php if (!empty($overwatchCanCreateCustomMaps)): ?>
         <a href="<?= htmlspecialchars(url('overwatch'), ENT_QUOTES, 'UTF-8') ?>#nouvelle-carte">Nouvelle carte image</a>
@@ -342,6 +346,15 @@ $pageTitle = $title ?? 'TACMAP — Athena';
           },
         });
         invalidateMapSoon();
+      }
+
+      if (window.MissionCycleBadge) {
+        window.overwatchContext = ctx;
+        MissionCycleBadge.start({
+          badgeId: 'mission-cycle-badge',
+          workspaceSelectId: 'tacmap-workspace',
+          hubUrl: <?= json_encode(url('back-office/atak/cycle-mission')) ?>,
+        });
       }
     })();
   </script>

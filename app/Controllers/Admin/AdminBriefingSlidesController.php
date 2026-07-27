@@ -253,6 +253,61 @@ final class AdminBriefingSlidesController
         return Response::redirect(url('back-office/atak/briefing-slides'));
     }
 
+    public function move(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $direction = strtolower(trim((string) $request->input('direction', 'up')));
+        if (!in_array($direction, ['up', 'down'], true)) {
+            $direction = 'up';
+        }
+        if ($id > 0 && $this->slides->moveOrder($id, $tenantId, $direction)) {
+            Session::flash('success', 'Ordre d’affichage mis à jour.');
+        } else {
+            Session::flash('error', 'Impossible de déplacer cette diapositive.');
+        }
+
+        return Response::redirect(url('back-office/atak/briefing-slides') . '#slide-' . $id);
+    }
+
+    public function togglePublish(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->slides->findByIdForTenant($id, $tenantId) : null;
+        if (!$row) {
+            Session::flash('error', 'Diapositive introuvable.');
+
+            return Response::redirect(url('back-office/atak/briefing-slides'));
+        }
+        $next = empty($row['is_active']);
+        $this->slides->setActive($id, $tenantId, $next);
+        Session::flash(
+            'success',
+            $next
+                ? 'Diapositive publiée : visible en jeu et sur les téléphones.'
+                : 'Diapositive repassée en brouillon (masquée en jeu).'
+        );
+
+        return Response::redirect(url('back-office/atak/briefing-slides') . '#slide-' . $id);
+    }
+
     /** @return array{path: ?string, error: ?string} */
     private function processUpload(int $tenantId): array
     {

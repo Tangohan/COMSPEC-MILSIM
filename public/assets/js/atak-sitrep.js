@@ -45,6 +45,8 @@ window.ATAKSitrep = (function () {
   }
 
   function author() {
+    var ph = window.ATAK_PHONE_SESSION;
+    if (ph && ph.label) return String(ph.label);
     var u = window.ATAK_USER || {};
     return u.callsign || u.displayName || 'TOC';
   }

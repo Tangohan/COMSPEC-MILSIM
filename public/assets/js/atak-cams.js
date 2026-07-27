@@ -186,6 +186,35 @@ window.ATAKCams = (function () {
     return html;
   }
 
+  function formatPhotoStamp(p) {
+    var raw = p && (p.created_at || p.captured_at || p.capturedAt || p.timestamp);
+    if (raw == null || raw === '') return '';
+    // Epoch secondes ou ms
+    if (typeof raw === 'number' || (/^\d+$/.test(String(raw)))) {
+      var n = Number(raw);
+      if (n < 1e12) n *= 1000;
+      var dNum = new Date(n);
+      if (!isNaN(dNum.getTime())) {
+        return formatStampDate(dNum);
+      }
+    }
+    var s = String(raw).trim();
+    var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return s;
+    return formatStampDate(d);
+  }
+
+  function formatStampDate(d) {
+    var dd = d.getUTCDate();
+    var mm = d.getUTCMonth() + 1;
+    var hh = d.getUTCHours();
+    var mi = d.getUTCMinutes();
+    return (dd < 10 ? '0' : '') + dd + '/' + (mm < 10 ? '0' : '') + mm +
+      ' · ' + (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi + ' Z';
+  }
+
   function renderPhotos(photos, title) {
     var list = Array.isArray(photos) ? photos : [];
     if (!list.length) return '';
@@ -203,13 +232,15 @@ window.ATAKCams = (function () {
       var caption = p.caption || '';
       var grid = p.grid_ref || p.grid || '';
       var label = deviceLabel(p);
+      var stamp = formatPhotoStamp(p);
       html +=
         '<article class="atak-cam-photo" data-id="' + escapeHtml(p.id || '') + '">' +
           (src
             ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
-            : '') +
+            : '<div class="atak-cam-photo-missing" role="status">Image indisponible — lien dégradé ou fichier manquant.</div>') +
           '<div class="atak-cam-photo-meta">' +
             '<span class="atak-cam-photo-kind">' + escapeHtml(label) + '</span>' +
+            (stamp ? '<time class="atak-cam-photo-stamp" datetime="">' + escapeHtml(stamp) + '</time>' : '') +
             (author ? '<strong>' + escapeHtml(author) + '</strong>' : '') +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
@@ -335,6 +366,100 @@ window.ATAKCams = (function () {
   function handleRemoteAnswer() {}
   function handleIceCandidate() {}
 
+  var requestBusy = false;
+
+  function requestNewView() {
+    if (requestBusy) return;
+    var ok = window.confirm(
+      'Demander une nouvelle vue photo aux opérateurs en liaison ?\n\n' +
+      'Une entrée sera ajoutée au journal du poste de commandement. Ce n’est pas une vidéo en direct.'
+    );
+    if (!ok) return;
+    var base = getApiBase();
+    if (!base) {
+      if (window.ATAKShowError) window.ATAKShowError('Liaison indisponible — réessayez dans un instant.');
+      return;
+    }
+    requestBusy = true;
+    var btn = document.getElementById('atak-cams-request-view');
+    if (btn) btn.disabled = true;
+    var mapId = getMapId();
+    var note = 'Demande d’une nouvelle vue caméra / photo terrain';
+    var author = 'Poste de commandement';
+    try {
+      var u = window.ATAK_USER || {};
+      if (u.callsign || u.displayName) author = u.callsign || u.displayName;
+      else if (window.ATAK_PHONE_SESSION && window.ATAK_PHONE_SESSION.label) author = window.ATAK_PHONE_SESSION.label;
+    } catch (e) {}
+
+    var activityPromise = fetch(base + '/api/atak/activity', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ mapId: mapId, note: note })
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        return { ok: r.ok, body: body };
+      });
+    }).catch(function () {
+      return { ok: false };
+    });
+
+    var chatPromise = fetch(base + '/api/chat', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        mapId: mapId,
+        author: author,
+        body: '📷 ' + note + ' — merci de transmettre un aperçu photo depuis le terrain.'
+      })
+    }).then(function (r) {
+      return { ok: r.ok };
+    }).catch(function () {
+      return { ok: false };
+    });
+
+    Promise.all([activityPromise, chatPromise]).then(function (parts) {
+      var activityOk = parts[0] && parts[0].ok;
+      var chatOk = parts[1] && parts[1].ok;
+      if (activityOk || chatOk) {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification('Demande de vue envoyée au poste de commandement');
+        }
+        if (window.ATAKActivity && typeof window.ATAKActivity.refresh === 'function') {
+          try { window.ATAKActivity.refresh(); } catch (e) {}
+        }
+        if (window.ATAKChat && typeof window.ATAKChat.fetchMessages === 'function') {
+          try { window.ATAKChat.fetchMessages(); } catch (e) {}
+        }
+      } else {
+        if (window.ATAKShowError) {
+          window.ATAKShowError('Impossible d’envoyer la demande de vue pour le moment.');
+        }
+      }
+    }).finally(function () {
+      requestBusy = false;
+      if (btn) btn.disabled = false;
+    });
+  }
+
+  function bindRequestButton() {
+    var btn = document.getElementById('atak-cams-request-view');
+    if (!btn || btn._atakBound) return;
+    btn._atakBound = true;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      requestNewView();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindRequestButton);
+  } else {
+    bindRequestButton();
+  }
+
   return {
     refresh: refresh,
     fetchIntelPhotos: function () { return refresh(); },
@@ -345,6 +470,7 @@ window.ATAKCams = (function () {
     attachStream: attachStream,
     handleRemoteOffer: handleRemoteOffer,
     handleRemoteAnswer: handleRemoteAnswer,
-    handleIceCandidate: handleIceCandidate
+    handleIceCandidate: handleIceCandidate,
+    requestNewView: requestNewView
   };
 })();

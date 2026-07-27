@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakMapRepository;
+use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TacticalGameLinkRepository;
 use App\Repositories\UserProfileRepository;
@@ -163,6 +164,7 @@ class AtakController
 
         $atakCaps = [
             'loggedIn' => (bool) $currentUser,
+            'phoneSession' => false,
             'canViewPersonnel' => function_exists('can')
                 && (can('personnel.profile.view') || can('admin.access') || can('admin.organization')),
             'canLinkPersonnel' => function_exists('can')
@@ -178,6 +180,10 @@ class AtakController
             'canPing' => true,
             // Compte connecté : la spécialité Médecin du profil de session débloque le triage.
             'canTriageMedical' => (bool) $currentUser,
+            /** Lecture BFT / médical / messagerie — membre ou session téléphone valide. */
+            'canViewBft' => true,
+            'canUseMedical' => true,
+            'canChat' => true,
         ];
         if (!$currentUser) {
             $atakCaps['canViewPersonnel'] = false;
@@ -190,6 +196,36 @@ class AtakController
         }
 
         $atakProfileHints = (new AtakSessionProfileHintService())->build($currentUser, $tenantId);
+
+        $phoneOperatorSession = null;
+        $phoneToken = trim((string) Session::get('atak_phone_pairing_token', ''));
+        if ($phoneToken !== '' && !$currentUser) {
+            $pairingRepo = new TacticalPhonePairingRepository();
+            $pairing = $pairingRepo->findValidByToken($phoneToken);
+            if (is_array($pairing) && ((int) ($pairing['tenant_id'] ?? 0) === $tenantId || $tenantId < 1)) {
+                $label = trim((string) Session::get('atak_phone_operator_label', ''));
+                if ($label === '') {
+                    $label = 'Opérateur téléphone';
+                    Session::set('atak_phone_operator_label', $label);
+                }
+                $phoneOperatorSession = [
+                    'active' => true,
+                    'label' => $label,
+                    'expires_at' => (string) ($pairing['expires_at'] ?? ''),
+                ];
+                $atakCaps['phoneSession'] = true;
+                $atakCaps['canViewBft'] = true;
+                $atakCaps['canUseMedical'] = true;
+                $atakCaps['canChat'] = true;
+                $atakUserForJs = [
+                    'id' => 0,
+                    'tenantId' => $tenantId > 0 ? $tenantId : (int) ($pairing['tenant_id'] ?? 0),
+                    'displayName' => $label,
+                    'callsign' => $label,
+                    'phoneSession' => true,
+                ];
+            }
+        }
 
         return Response::view('atak', [
             'atakToken' => $token,
@@ -218,6 +254,7 @@ class AtakController
             'gameLinkCreateUrl' => url('atak/game-link'),
             'atakMaintenanceActive' => $tenantId > 0 && $this->atakConfigRepository->isMaintenanceEnabled($tenantId),
             'atakMaintenanceMessage' => $tenantId > 0 ? $this->atakConfigRepository->getMaintenanceMessage($tenantId) : '',
+            'phoneOperatorSession' => $phoneOperatorSession,
         ]);
     }
 

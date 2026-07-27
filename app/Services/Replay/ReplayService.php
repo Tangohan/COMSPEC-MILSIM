@@ -60,28 +60,11 @@ class ReplayService
     }
 
     /**
-     * Chronologie intel dédiée au replay (AAR).
+     * Chronologie opérationnelle (contacts, MEDEVAC, ordres, marqueurs) pour le replay / AAR.
      */
     public function getEvents(string $missionId, ?string $from, ?string $to): array
     {
-        $rows = $this->repository->getIntelEvents($missionId, $from, $to);
-        $events = [];
-        foreach ($rows as $row) {
-            $events[] = [
-                'type' => 'intel',
-                'id' => (int) $row['id'],
-                'timestamp' => $row['last_seen_at'],
-                'source' => $row['source_callsign'],
-                'reportType' => $row['report_type'],
-                'targetType' => $row['target_type'],
-                'x' => (float) $row['pos_x'],
-                'y' => (float) $row['pos_y'],
-                'z' => $row['pos_z'] !== null ? (float) $row['pos_z'] : null,
-                'confidence' => (int) ($row['confidence_score'] ?? 0),
-                'status' => $row['status'] ?? 'TEMPORARY',
-                'mergedCount' => (int) ($row['merged_count'] ?? 1),
-            ];
-        }
+        $events = $this->repository->getOperationalEvents($missionId, $from, $to);
 
         return [
             'missionId' => $missionId,
@@ -253,6 +236,15 @@ class ReplayService
         }
         usort($unitSummaries, static fn (array $a, array $b): int => strcmp((string) $a['callsign'], (string) $b['callsign']));
 
+        $opsEvents = $this->repository->getOperationalEvents($missionId, $from, $to, 2000);
+        $counts = ['contact' => 0, 'medevac' => 0, 'order' => 0, 'marker' => 0];
+        foreach ($opsEvents as $ev) {
+            $t = (string) ($ev['type'] ?? '');
+            if (isset($counts[$t])) {
+                $counts[$t]++;
+            }
+        }
+
         return [
             'missionId' => $missionId,
             'window' => ['from' => $from, 'to' => $to],
@@ -262,10 +254,15 @@ class ReplayService
                 'unitCount' => count($unitSummaries),
                 'positionSamples' => count($timelineRows),
                 'intelEvents' => count($intelTimeline),
+                'contactEvents' => $counts['contact'],
+                'medevacEvents' => $counts['medevac'],
+                'orderEvents' => $counts['order'],
+                'markerEvents' => $counts['marker'],
                 'medianReactionDelaySeconds' => $medianReaction,
             ],
             'unitTracks' => $unitSummaries,
             'intelTimeline' => $intelTimeline,
+            'operationalEvents' => array_slice($opsEvents, 0, 80),
             'errors' => $errors,
         ];
     }

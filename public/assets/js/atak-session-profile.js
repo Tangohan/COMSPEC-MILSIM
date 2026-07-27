@@ -66,6 +66,13 @@ window.ATAKSessionProfile = (function () {
     return !!(window.ATAK_CAPS && window.ATAK_CAPS.loggedIn && window.ATAK_USER && window.ATAK_USER.id);
   }
 
+  /** Session ouverte via code / QR téléphone (/connect) — pas un simple invité carte. */
+  function isPhoneSession() {
+    if (window.ATAK_CAPS && window.ATAK_CAPS.phoneSession) return true;
+    var ph = window.ATAK_PHONE_SESSION;
+    return !!(ph && (ph.active || ph.label || ph.expires_at));
+  }
+
   function welcomeSeen() {
     try {
       return sessionStorage.getItem(welcomeKey()) === '1';
@@ -738,6 +745,12 @@ window.ATAKSessionProfile = (function () {
       state = null;
       window.ATAK_SESSION_PROFILE = null;
       applyGating();
+      if (isPhoneSession()) {
+        // Opérateur téléphone : entrée directe (BFT, médical, journal radio déjà autorisés côté session).
+        hideOverlay();
+        fireReady();
+        return;
+      }
       if (guestSeen()) {
         fireReady();
         return;
@@ -780,6 +793,7 @@ window.ATAKSessionProfile = (function () {
     canTriageMedicalUi: canTriageMedicalUi,
     hasSpecialty: hasSpecialty,
     isCommandRole: isCommandRole,
+    isPhoneSession: isPhoneSession,
     ROLES: ROLES,
     SPECIALTIES: SPECIALTIES
   };

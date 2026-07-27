@@ -115,6 +115,22 @@ if (_path isNotEqualTo "") exitWith {
     };
     if (_ok) then {
         ["COMSPEC_Info", ["Image de recon envoyée"]] call comspec_overwatch_connect_fnc_showNotification;
+    } else {
+        private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
+        private _msg = "Échec d’envoi de la photo vers Athena";
+        if ((_detail find "file_not_found") >= 0) then {
+            _msg = "Fichier photo introuvable — reprenez la capture";
+        };
+        if ((_detail find "file_too_large") >= 0 || {(_detail find "too_large") >= 0}) then {
+            _msg = "Photo trop lourde — essayez une capture plus légère";
+        };
+        if ((_detail find "not_connected") >= 0 || {(_detail find "unauthorized") >= 0}) then {
+            _msg = "Liaison Athena dégradée — reconnectez-vous puis réessayez";
+        };
+        if ((_detail find "file_empty") >= 0 || {(_detail find "read_failed") >= 0}) then {
+            _msg = "Capture illisible — reprenez une nouvelle photo";
+        };
+        ["COMSPEC_Error", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
     };
     _ok
 };
@@ -149,7 +165,18 @@ screenshot "COMSPEC_AthenaFeed";
     if (_ok) then {
         ["COMSPEC_Info", ["Aperçu envoyé vers Athena"]] call comspec_overwatch_connect_fnc_showNotification;
     } else {
-        ["COMSPEC_Error", ["Échec d’envoi de l’aperçu vers Athena"]] call comspec_overwatch_connect_fnc_showNotification;
+        private _low = toLower _t;
+        private _msg = "Échec d’envoi de l’aperçu vers Athena";
+        if ((_low find "file_not_found") >= 0) then {
+            _msg = "Aperçu introuvable — reprenez la capture";
+        };
+        if ((_low find "file_too_large") >= 0) then {
+            _msg = "Aperçu trop lourd — réessayez";
+        };
+        if ((_low find "not_connected") >= 0) then {
+            _msg = "Liaison Athena dégradée — reconnectez-vous";
+        };
+        ["COMSPEC_Error", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
     };
 };
 true

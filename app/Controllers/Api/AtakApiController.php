@@ -200,16 +200,27 @@ class AtakApiController
 
         $viewers = $this->activityLog->listBriefingPresence($tenantId);
         $out = [];
+        $phoneCount = 0;
+        $armaCount = 0;
         foreach ($viewers as $v) {
+            $src = (string) ($v['source'] ?? 'phone');
+            if ($src === 'arma') {
+                $armaCount++;
+            } elseif ($src === 'phone') {
+                $phoneCount++;
+            }
             $out[] = [
                 'label' => $v['label'],
-                'source' => $v['source'],
+                'source' => $src,
+                'last_seen_at' => $v['last_seen_at'] ?? null,
             ];
         }
 
         return Response::json([
             'viewers' => $out,
             'count' => count($out),
+            'phone_count' => $phoneCount,
+            'arma_count' => $armaCount,
         ]);
     }
 
@@ -2142,8 +2153,11 @@ class AtakApiController
         if ($r instanceof Response) {
             return $r;
         }
-        $units = $this->atak->getUnits($r, $this->mapId($request));
+        $tenantId = $r;
+        $mapId = $this->mapId($request);
+        $units = $this->atak->getUnits($tenantId, $mapId);
         $rows = [];
+        $alerts = ['critical' => 0, 'low' => 0];
         foreach ($units as $u) {
             $status = strtolower(trim((string) ($u['status'] ?? '')));
             if ($status === 'offline') {
@@ -2164,14 +2178,35 @@ class AtakApiController
             $fuel = null;
             if ($fuelRaw !== null && $fuelRaw !== '' && is_numeric($fuelRaw)) {
                 $fuel = (float) $fuelRaw;
+                if ($fuel <= 1.0) {
+                    $fuel *= 100.0;
+                }
             }
             $ammo = ($ammoRaw !== null && $ammoRaw !== '' && strtolower((string) $ammoRaw) !== 'n/a')
                 ? (string) $ammoRaw
                 : null;
+            $ammoLevel = $this->ammoStockLevel($ammo);
             if ($fuel === null && $ammo === null) {
                 continue;
             }
+            $fuelLevel = $fuel === null ? 'unknown' : ($fuel <= 15 ? 'critical' : ($fuel <= 35 ? 'low' : 'ok'));
+            $needsResupply = ($fuelLevel === 'critical' || $fuelLevel === 'low' || $ammoLevel === 'critical' || $ammoLevel === 'low');
+            if ($fuelLevel === 'critical' || $ammoLevel === 'critical') {
+                $alerts['critical']++;
+            } elseif ($fuelLevel === 'low' || $ammoLevel === 'low') {
+                $alerts['low']++;
+            }
             $cs = trim((string) ($u['call_sign'] ?? ''));
+            $signal = null;
+            if ($fuelLevel === 'critical') {
+                $signal = 'Carburant critique';
+            } elseif ($ammoLevel === 'critical') {
+                $signal = 'Munitions critiques';
+            } elseif ($fuelLevel === 'low') {
+                $signal = 'Carburant bas';
+            } elseif ($ammoLevel === 'low') {
+                $signal = 'Munitions basses';
+            }
             $rows[] = [
                 'call_sign' => $cs,
                 'team' => $this->perstatTeamKey($cs),
@@ -2181,21 +2216,193 @@ class AtakApiController
                 'status' => $status,
                 'grid_ref' => (string) ($u['grid_ref'] ?? ''),
                 'updated_at' => (string) ($u['updated_at'] ?? ''),
-                'fuel_level' => $fuel === null ? 'unknown' : ($fuel <= 15 ? 'critical' : ($fuel <= 35 ? 'low' : 'ok')),
+                'fuel_level' => $fuelLevel,
+                'ammo_level' => $ammoLevel,
+                'needs_resupply' => $needsResupply,
+                'signal' => $signal,
+                'thresholds' => [
+                    'fuel_critical' => 15,
+                    'fuel_low' => 35,
+                ],
             ];
         }
         usort($rows, static function (array $a, array $b): int {
+            $rank = static function (array $r): int {
+                $f = (string) ($r['fuel_level'] ?? '');
+                $aLvl = (string) ($r['ammo_level'] ?? '');
+                if ($f === 'critical' || $aLvl === 'critical') {
+                    return 0;
+                }
+                if ($f === 'low' || $aLvl === 'low') {
+                    return 1;
+                }
+
+                return 2;
+            };
+            $cmp = $rank($a) <=> $rank($b);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
             $fa = $a['fuel'] ?? 999;
             $fb = $b['fuel'] ?? 999;
 
             return $fa <=> $fb;
         });
 
+        $medevacOpen = 0;
+        $transportHint = null;
+        try {
+            $medevacs = $this->casRepo->listMedevac($tenantId, $mapId, null);
+            if (is_array($medevacs)) {
+                foreach ($medevacs as $m) {
+                    if (!is_array($m)) {
+                        continue;
+                    }
+                    $st = strtolower(trim((string) ($m['status'] ?? '')));
+                    if (in_array($st, ['open', 'pending', 'requested', 'en_route', 'assigned', 'active'], true) || $st === '') {
+                        $medevacOpen++;
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $medevacOpen = 0;
+        }
+
+        $resupply = [];
+        try {
+            $result = $this->activityLog->listFiltered($tenantId, $mapId, [
+                'limit' => 40,
+                'type' => AtakActivityLogService::TYPE_TOC_NOTE,
+            ]);
+            $events = is_array($result['events'] ?? null) ? $result['events'] : [];
+            foreach ($events as $ev) {
+                if (!is_array($ev)) {
+                    continue;
+                }
+                $meta = is_array($ev['meta'] ?? null) ? $ev['meta'] : [];
+                if (($meta['kind'] ?? '') !== 'resupply_request') {
+                    continue;
+                }
+                $resupply[] = [
+                    'id' => (int) ($ev['id'] ?? 0),
+                    'at' => (string) ($ev['at'] ?? ''),
+                    'call_sign' => (string) ($meta['call_sign'] ?? $ev['actor'] ?? ''),
+                    'need' => (string) ($meta['need'] ?? 'ravitaillement'),
+                    'note' => (string) ($meta['note'] ?? ''),
+                    'grid_ref' => (string) ($meta['grid_ref'] ?? ''),
+                ];
+                if (count($resupply) >= 12) {
+                    break;
+                }
+            }
+        } catch (\Throwable) {
+            $resupply = [];
+        }
+
+        if ($medevacOpen > 0) {
+            $transportHint = $medevacOpen === 1
+                ? '1 évacuation sanitaire en cours — vérifier le volet médical.'
+                : $medevacOpen . ' évacuations sanitaires en cours — vérifier le volet médical.';
+        }
+
         return Response::json([
             'rows' => $rows,
             'count' => count($rows),
+            'alerts' => $alerts,
+            'low_stock_count' => $alerts['critical'] + $alerts['low'],
+            'resupply_requests' => $resupply,
+            'medevac_open' => $medevacOpen,
+            'transport_hint' => $transportHint,
             'generated_at' => gmdate('c'),
         ]);
+    }
+
+    /**
+     * Demande de ravitaillement depuis le TOC (liée au suivi logistique).
+     * POST /api/atak/logistics/resupply
+     */
+    public function logisticsResupplyRequest(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        $callSign = trim((string) ($body['call_sign'] ?? $body['callSign'] ?? ''));
+        $need = trim((string) ($body['need'] ?? 'ravitaillement'));
+        $note = trim((string) ($body['note'] ?? ''));
+        $grid = trim((string) ($body['grid_ref'] ?? $body['grid'] ?? ''));
+        if ($callSign === '') {
+            return Response::json([
+                'error' => 'call_sign_required',
+                'message' => 'Indiquez l’indicatif concerné par le ravitaillement.',
+            ], 400);
+        }
+        $needKey = strtolower($need);
+        $needLabel = match (true) {
+            str_contains($needKey, 'fuel') || str_contains($needKey, 'carbur') => 'Carburant',
+            str_contains($needKey, 'ammo') || str_contains($needKey, 'munition') => 'Munitions',
+            str_contains($needKey, 'both') || str_contains($needKey, 'complet') => 'Carburant et munitions',
+            default => 'Ravitaillement',
+        };
+        $label = 'Demande de ravitaillement — ' . $callSign . ' · ' . $needLabel;
+        if ($grid !== '') {
+            $label .= ' · ' . $grid;
+        }
+        $this->activityLog->record(
+            $tenantId,
+            $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            $label,
+            $callSign,
+            [
+                'kind' => 'resupply_request',
+                'call_sign' => $callSign,
+                'need' => $needLabel,
+                'note' => $note !== '' ? mb_substr($note, 0, 500) : '',
+                'grid_ref' => $grid,
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'message' => 'Demande de ravitaillement enregistrée pour ' . $callSign . '.',
+        ], 201);
+    }
+
+    private function ammoStockLevel(?string $ammo): string
+    {
+        if ($ammo === null || $ammo === '') {
+            return 'unknown';
+        }
+        $raw = strtolower(trim($ammo));
+        if (in_array($raw, ['empty', '0', 'winchester', 'out', 'vide', 'épuisé', 'epuise'], true)) {
+            return 'critical';
+        }
+        if (preg_match('/^(\d+(?:[.,]\d+)?)\s*%?$/', $raw, $m)) {
+            $n = (float) str_replace(',', '.', $m[1]);
+            if ($n <= 1.0) {
+                $n *= 100.0;
+            }
+            if ($n <= 15) {
+                return 'critical';
+            }
+            if ($n <= 35) {
+                return 'low';
+            }
+
+            return 'ok';
+        }
+        if (preg_match('/(low|bas|faible|limited|critique|critical)/', $raw)) {
+            return str_contains($raw, 'crit') ? 'critical' : 'low';
+        }
+        if (preg_match('/(full|plein|ok|green)/', $raw)) {
+            return 'ok';
+        }
+
+        return 'unknown';
     }
 
     private function perstatTeamKey(string $callSign): string
@@ -2673,7 +2880,7 @@ class AtakApiController
             $decoded = [];
         }
 
-        if (!isset($decoded['source'])) {
+        if (!isset($decoded['source']) || trim((string) $decoded['source']) === '') {
             $decoded['source'] = 'arma';
         }
         if (empty($decoded['text']) && empty($decoded['label']) && $armaName !== '') {
@@ -2681,6 +2888,10 @@ class AtakApiController
             if (!str_starts_with($armaName, 'comspec_')) {
                 $decoded['text'] = $armaName;
             }
+        }
+        // Alias label → text pour le rendu web unifié.
+        if (empty($decoded['text']) && !empty($decoded['label'])) {
+            $decoded['text'] = (string) $decoded['label'];
         }
         if (isset($decoded['pos']) && is_array($decoded['pos'])) {
             $decoded['pos'] = array_map(static function ($v) {
@@ -2692,9 +2903,97 @@ class AtakApiController
             }, $decoded['pos']);
         }
 
+        // Type CfgMarkers : clé normalisée (mil_warning, hd_dot, b_inf…).
+        if (!empty($decoded['type']) && is_string($decoded['type'])) {
+            $decoded['type'] = strtolower(trim(str_replace([' ', '-'], '_', $decoded['type'])));
+        } elseif (!empty($decoded['icon']) && is_string($decoded['icon']) && empty($decoded['type'])) {
+            $decoded['type'] = strtolower(trim(str_replace([' ', '-'], '_', $decoded['icon'])));
+        }
+
+        // Couleur Arma (ColorRed / ColorWEST…) → hex stable pour le miroir web.
+        if (!empty($decoded['color']) && is_string($decoded['color'])) {
+            $decoded['color'] = $this->normalizeArmaMarkerColor((string) $decoded['color']);
+        }
+
+        if (!empty($decoded['shape']) && is_string($decoded['shape'])) {
+            $decoded['shape'] = strtoupper(trim((string) $decoded['shape']));
+        }
+        if (isset($decoded['dir']) || isset($decoded['heading'])) {
+            $dir = $decoded['dir'] ?? $decoded['heading'];
+            if (is_string($dir)) {
+                $dir = str_replace(',', '.', $dir);
+            }
+            if (is_numeric($dir)) {
+                $n = fmod((float) $dir, 360.0);
+                if ($n < 0) {
+                    $n += 360.0;
+                }
+                $decoded['dir'] = $n;
+            }
+        }
+        if (isset($decoded['alpha'])) {
+            $a = $decoded['alpha'];
+            if (is_string($a)) {
+                $a = str_replace(',', '.', $a);
+            }
+            if (is_numeric($a)) {
+                $decoded['alpha'] = max(0.0, min(1.0, (float) $a));
+            }
+        }
+
         $encoded = json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return is_string($encoded) ? $encoded : '{}';
+    }
+
+    /** Couleurs CfgMarkerColors / noms courants → hex. */
+    private function normalizeArmaMarkerColor(string $colorName): string
+    {
+        $key = strtolower(trim($colorName));
+        if ($key !== '' && $key[0] === '#') {
+            return $key;
+        }
+        // Déjà un hex sans # (rare)
+        if (preg_match('/^[0-9a-f]{6}$/i', $key)) {
+            return '#' . $key;
+        }
+        static $map = [
+            'colorred' => '#d9534f',
+            'colorblue' => '#4e9de0',
+            'colorgreen' => '#4ec94e',
+            'coloryellow' => '#e7cc5b',
+            'colororange' => '#e9974a',
+            'colorpink' => '#a78bfa',
+            'colorpurple' => '#a78bfa',
+            'colorbrown' => '#a16207',
+            'colorkhaki' => '#a16207',
+            'colorwhite' => '#f2f2f2',
+            'colorblack' => '#222222',
+            'colorgrey' => '#b9b9b9',
+            'colorgray' => '#b9b9b9',
+            'colorwest' => '#4e9de0',
+            'colorblufor' => '#4e9de0',
+            'coloreast' => '#d9534f',
+            'coloropfor' => '#d9534f',
+            'colorguer' => '#4ec94e',
+            'colorindependent' => '#4ec94e',
+            'colorresistance' => '#4ec94e',
+            'colorciv' => '#cfcfcf',
+            'colorcivilian' => '#cfcfcf',
+            'colorunknown' => '#b9b9b9',
+            'default' => '#ef4444',
+        ];
+        $compact = preg_replace('/[^a-z0-9]/', '', $key) ?? $key;
+        if (isset($map[$compact])) {
+            return $map[$compact];
+        }
+        foreach (['blufor', 'west', 'opfor', 'east', 'independent', 'guer', 'civilian', 'civ', 'unknown', 'red', 'blue', 'green', 'yellow', 'orange', 'white', 'black'] as $needle) {
+            if (str_contains($compact, $needle)) {
+                return $map['color' . $needle] ?? $map[$needle] ?? '#ef4444';
+            }
+        }
+
+        return $colorName !== '' ? $colorName : '#ef4444';
     }
 
     public function unitsIndex(Request $request, array $params = []): Response
@@ -6796,8 +7095,29 @@ class AtakApiController
         $author = $_POST['author'] ?? $_POST['callsign'] ?? 'Unknown';
         $posX = isset($_POST['pos_x']) ? (float) $_POST['pos_x'] : null;
         $posY = isset($_POST['pos_y']) ? (float) $_POST['pos_y'] : null;
-        if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-            return Response::json(['error' => 'Missing or invalid photo'], 400);
+        if (empty($_FILES['photo'])) {
+            return Response::json([
+                'error' => 'missing_photo',
+                'message' => 'Aucune photo reçue. Reprenez la capture depuis le terrain.',
+            ], 400);
+        }
+        $uploadErr = (int) ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadErr !== UPLOAD_ERR_OK) {
+            $msg = match ($uploadErr) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+                UPLOAD_ERR_PARTIAL => 'Envoi interrompu — la liaison semble dégradée. Réessayez.',
+                UPLOAD_ERR_NO_FILE => 'Fichier photo introuvable. Reprenez la capture.',
+                default => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
+            };
+
+            return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
+        }
+        $maxBytes = 12 * 1024 * 1024;
+        if (!empty($_FILES['photo']['size']) && (int) $_FILES['photo']['size'] > $maxBytes) {
+            return Response::json([
+                'error' => 'file_too_large',
+                'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+            ], 413);
         }
         $dir = dirname(__DIR__, 2) . '/../public/uploads/intel';
         if (!is_dir($dir)) {
@@ -6807,7 +7127,10 @@ class AtakApiController
         $filename = date('YmdHis') . '-' . ($_FILES['photo']['name'] ?: 'photo.' . $ext);
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $path)) {
-            return Response::json(['error' => 'Upload failed'], 500);
+            return Response::json([
+                'error' => 'save_failed',
+                'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
+            ], 500);
         }
         $relativePath = 'intel/' . $filename;
         $row = $this->atak->addIntelPhoto($tenantId, $mapId, $filename, $relativePath, $author, $posX, $posY);
@@ -7041,11 +7364,29 @@ class AtakApiController
             return $actor;
         }
         if (empty($_FILES['image']) && empty($_FILES['photo'])) {
-            return Response::json(['error' => 'Missing image file'], 400);
+            return Response::json([
+                'error' => 'missing_image',
+                'message' => 'Aucune image reçue. Reprenez la capture depuis le terrain.',
+            ], 400);
         }
         $file = $_FILES['image'] ?? $_FILES['photo'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            return Response::json(['error' => 'Upload failed'], 400);
+        $uploadErr = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadErr !== UPLOAD_ERR_OK) {
+            $msg = match ($uploadErr) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+                UPLOAD_ERR_PARTIAL => 'Envoi interrompu — la liaison semble dégradée. Réessayez.',
+                UPLOAD_ERR_NO_FILE => 'Fichier photo introuvable. Reprenez la capture.',
+                default => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
+            };
+
+            return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
+        }
+        $maxBytes = 12 * 1024 * 1024;
+        if (!empty($file['size']) && (int) $file['size'] > $maxBytes) {
+            return Response::json([
+                'error' => 'file_too_large',
+                'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
+            ], 413);
         }
         $dir = dirname(__DIR__, 2) . '/../public/uploads/recon';
         if (!is_dir($dir)) {
@@ -7055,7 +7396,10 @@ class AtakApiController
         $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '.' . $ext;
         $path = $dir . '/' . $filename;
         if (!move_uploaded_file($file['tmp_name'], $path)) {
-            return Response::json(['error' => 'Save failed'], 500);
+            return Response::json([
+                'error' => 'save_failed',
+                'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
+            ], 500);
         }
         $rawDevice = (string) ($_POST['device_type'] ?? $_POST['device'] ?? 'CTAB');
         $deviceNorm = strtoupper(trim($rawDevice));

@@ -411,7 +411,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           <button type="button" data-tab="danger-zones" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Zones</button>
           <button type="button" data-tab="logistics" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Logistique</button>
           <button type="button" data-tab="sitrep" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Situation</button>
-          <button type="button" data-tab="replay" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Replay</button>
+          <button type="button" data-tab="replay" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Relecture</button>
           <button type="button" data-tab="iff" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Identification</button>
           <button type="button" data-tab="command-chat" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Tchat</button>
           <button type="button" data-tab="medical" class="tab-btn px-3 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Urgences <span id="overwatch-medical-tab-badge" class="ml-1 inline-flex min-w-[1.1rem] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-black items-center justify-center" hidden></span></button>
@@ -456,7 +456,7 @@ $leafletJs = is_file(base_path('public/assets/vendor/leaflet-1.9.4/leaflet.js'))
           <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Logistique</span><span id="health-logistics" class="font-mono font-bold text-slate-700">—</span></div>
           <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Situation</span><span id="health-sitrep" class="font-mono font-bold text-slate-700">—</span></div>
           <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Identification</span><span id="health-iff" class="font-mono font-bold text-slate-700">—</span></div>
-          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Replay</span><span id="health-replay" class="font-mono font-bold text-slate-700">—</span></div>
+          <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Relecture</span><span id="health-replay" class="font-mono font-bold text-slate-700">—</span></div>
           <div class="flex justify-between items-center gap-2 p-2 rounded-lg bg-slate-50"><span class="text-slate-600">Tchat</span><span id="health-chat" class="font-mono font-bold text-slate-700">—</span></div>
         </div>
         <div class="px-4 pb-3">
@@ -2083,18 +2083,24 @@ function setWorkspace(mapId) {
           });
         });
       })();
-      document.getElementById('sitrep-test-submit') && document.getElementById('sitrep-test-submit').addEventListener('click', function () {
+      document.getElementById('sitrep-ops-submit') && document.getElementById('sitrep-ops-submit').addEventListener('click', function () {
         var missionId = getMissionId();
-        var target = document.getElementById('sitrep-test-target');
-        var x = document.getElementById('sitrep-test-x');
-        var y = document.getElementById('sitrep-test-y');
-        var source = document.getElementById('sitrep-test-source');
+        var target = document.getElementById('sitrep-ops-target');
+        var x = document.getElementById('sitrep-ops-x');
+        var y = document.getElementById('sitrep-ops-y');
+        var source = document.getElementById('sitrep-ops-source');
+        var posX = x ? parseFloat(x.value) : NaN;
+        var posY = y ? parseFloat(y.value) : NaN;
+        if (isNaN(posX) || isNaN(posY)) {
+          window.alert('Indiquez les positions Est et Nord du signalement.');
+          return;
+        }
         var payload = {
           missionId: missionId,
           target_type: target ? target.value.trim() || 'UNKNOWN' : 'UNKNOWN',
-          pos_x: x ? parseFloat(x.value) || 0 : 0,
-          pos_y: y ? parseFloat(y.value) || 0 : 0,
-          source_callsign: source ? source.value.trim() || 'TOC' : 'TOC',
+          pos_x: posX,
+          pos_y: posY,
+          source_callsign: source ? source.value.trim() || 'PC' : 'PC',
           report_type: 'SITREP'
         };
         fetch(apiBase + '/intel/report', {
@@ -2133,18 +2139,18 @@ function setWorkspace(mapId) {
             var s = data.summary || {};
             var errors = data.errors || [];
             var line = [];
-            line.push('<p><strong>Unités</strong>: ' + (s.unitCount || 0) + '</p>');
-            line.push('<p><strong>Samples</strong>: ' + (s.positionSamples || 0) + '</p>');
-            line.push('<p><strong>Intel</strong>: ' + (s.intelEvents || 0) + '</p>');
-            line.push('<p><strong>Délai médian</strong>: ' + (s.medianReactionDelaySeconds != null ? s.medianReactionDelaySeconds + ' s' : 'N/A') + '</p>');
+            line.push('<p><strong>Unités</strong> : ' + (s.unitCount || 0) + '</p>');
+            line.push('<p><strong>Instantanés de position</strong> : ' + (s.positionSamples || 0) + '</p>');
+            line.push('<p><strong>Signalements</strong> : ' + (s.intelEvents || 0) + '</p>');
+            line.push('<p><strong>Délai médian de réaction</strong> : ' + (s.medianReactionDelaySeconds != null ? s.medianReactionDelaySeconds + ' s' : 'Non disponible') + '</p>');
             if (errors.length > 0) {
-              line.push('<p class="mt-2"><strong>Erreurs détectées</strong>:</p><ul class="list-disc pl-4">');
+              line.push('<p class="mt-2"><strong>Anomalies détectées</strong> :</p><ul class="list-disc pl-4">');
               errors.forEach(function (e) {
-                line.push('<li>' + (e.label || e.code || 'Erreur') + ' (' + (e.count || 0) + ')</li>');
+                line.push('<li>' + (e.label || e.code || 'Anomalie') + ' (' + (e.count || 0) + ')</li>');
               });
               line.push('</ul>');
             } else {
-              line.push('<p class="mt-2 text-emerald-700">Aucune erreur automatique détectée.</p>');
+              line.push('<p class="mt-2 text-emerald-700">Aucune anomalie automatique détectée.</p>');
             }
             box.innerHTML = line.join('');
           })
@@ -2167,7 +2173,22 @@ function setWorkspace(mapId) {
             var codeEl = document.getElementById('iff-challenge-code');
             var validEl = document.getElementById('iff-valid-until');
             if (codeEl) codeEl.textContent = c.code || '—';
-            if (validEl) validEl.textContent = c.valid_until ? 'Valable jusqu’à ' + c.valid_until : 'Aucun défi actif.';
+            if (validEl) {
+              if (c.valid_until) {
+                var untilTs = Date.parse(String(c.valid_until).replace(' ', 'T'));
+                var rem = !isNaN(untilTs) ? Math.floor((untilTs - Date.now()) / 1000) : null;
+                if (rem != null && rem <= 0) {
+                  validEl.textContent = 'Défi expiré depuis ' + c.valid_until + '. Publiez-en un nouveau.';
+                } else if (rem != null) {
+                  var mins = Math.ceil(rem / 60);
+                  validEl.textContent = 'Valable jusqu’à ' + c.valid_until + ' (expire dans ' + mins + ' min)';
+                } else {
+                  validEl.textContent = 'Valable jusqu’à ' + c.valid_until;
+                }
+              } else {
+                validEl.textContent = 'Aucun défi actif.';
+              }
+            }
           });
         fetch(apiBase + '/iff/assets?missionId=' + encodeURIComponent(getMissionId()), { credentials: 'include' })
           .then(function (r) { return r.json(); })
@@ -2175,13 +2196,33 @@ function setWorkspace(mapId) {
             overwatchHealthStatus.iff = 'OK';
             if (window.refreshHealthPanel) refreshHealthPanel();
             var el = document.getElementById('iff-assets-list');
+            var alertEl = document.getElementById('iff-alert-banner');
             if (!el) return;
-            if (!assets || assets.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucune unité inscrite.</p>'; return; }
-            var statusLabels = { FRIENDLY: 'Ami confirmé', SUSPECT: 'Suspect', EXPIRED: 'Défi expiré', PENDING: 'En attente' };
+            if (!assets || assets.length === 0) { el.innerHTML = '<p class="text-slate-500 text-xs">Aucune unité inscrite.</p>'; if (alertEl) { alertEl.classList.add('hidden'); alertEl.innerHTML = ''; } return; }
+            var statusLabels = { FRIENDLY: 'Ami confirmé', SUSPECT: 'Suspect', EXPIRED: 'Défi expiré', PENDING: 'En attente', UNKNOWN: 'Contact inconnu' };
+            var alerts = assets.filter(function (a) {
+              var st = a.response_status || '';
+              return st === 'UNKNOWN' || st === 'SUSPECT' || st === 'EXPIRED';
+            });
+            if (alertEl) {
+              if (alerts.length) {
+                alertEl.classList.remove('hidden');
+                alertEl.innerHTML = '<strong>Attention :</strong> ' + alerts.map(function (a) {
+                  return (a.callsign || a.asset_id) + ' — ' + (statusLabels[a.response_status] || a.response_status);
+                }).join(' · ');
+              } else {
+                alertEl.classList.add('hidden');
+                alertEl.innerHTML = '';
+              }
+            }
             el.innerHTML = assets.map(function (a) {
               var st = a.response_status || 'PENDING';
-              var color = st === 'FRIENDLY' ? 'bg-blue-100 border-blue-300' : st === 'SUSPECT' ? 'bg-red-100 border-red-300' : st === 'EXPIRED' ? 'bg-amber-100 border-amber-300' : 'bg-slate-100 border-slate-300';
-              return '<div class="rounded-lg border p-2 ' + color + '"><span class="font-bold">' + (a.callsign || a.asset_id) + '</span> — ' + (statusLabels[st] || st) + '</div>';
+              var color = st === 'FRIENDLY' ? 'bg-blue-100 border-blue-300' : st === 'SUSPECT' || st === 'UNKNOWN' ? 'bg-red-100 border-red-300' : st === 'EXPIRED' ? 'bg-amber-100 border-amber-300' : 'bg-slate-100 border-slate-300';
+              var grace = '';
+              if (st === 'PENDING' && a.grace_remaining_sec != null) {
+                grace = ' · délai ' + Math.max(0, Math.ceil(a.grace_remaining_sec / 60)) + ' min';
+              }
+              return '<div class="rounded-lg border p-2 ' + color + '"><span class="font-bold">' + (a.callsign || a.asset_id) + '</span> — ' + (statusLabels[st] || st) + grace + '</div>';
             }).join('');
           })
           .catch(function () { overwatchHealthStatus.iff = 'Erreur'; if (window.refreshHealthPanel) refreshHealthPanel(); });

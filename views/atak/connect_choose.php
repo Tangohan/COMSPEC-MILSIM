@@ -160,7 +160,7 @@ $carteUrl = (string) ($carteUrl ?? url('atak'));
             <div class="choices">
                 <a class="choice choice--map" href="<?= htmlspecialchars($carteUrl, ENT_QUOTES, 'UTF-8') ?>">
                     <span class="label">Carte ATAK</span>
-                    <span class="desc">Carte tactique complète : positions, outils et suivi de mission sur votre téléphone.</span>
+                    <span class="desc">Carte tactique : effectifs en liaison, alertes médicales, journal radio et outils essentiels sur votre téléphone.</span>
                 </a>
                 <a class="choice" href="<?= htmlspecialchars($slidesUrl, ENT_QUOTES, 'UTF-8') ?>">
                     <span class="label">Diapositives</span>

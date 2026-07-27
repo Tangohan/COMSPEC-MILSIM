@@ -1,0 +1,54 @@
+/**
+ * Badge cycle de mission (Tacmap / ATAK) — styles légers, indépendants.
+ */
+#mission-cycle-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+#mission-cycle-badge[hidden] {
+  display: none !important;
+}
+
+#mission-cycle-badge.is-live {
+  border-color: rgba(16, 185, 129, 0.65);
+  background: rgba(6, 78, 59, 0.55);
+  color: #6ee7b7;
+}
+
+#mission-cycle-badge.is-prep {
+  border-color: rgba(148, 163, 184, 0.55);
+  background: rgba(51, 65, 85, 0.45);
+  color: #e2e8f0;
+}
+
+#mission-cycle-badge.is-done {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(30, 58, 138, 0.45);
+  color: #bfdbfe;
+}
+
+.tacmap-body #mission-cycle-badge {
+  background: var(--tm-surface-2, #1e293b);
+  border-color: var(--tm-border, #334155);
+  color: var(--tm-muted, #94a3b8);
+}
+
+.tacmap-body #mission-cycle-badge.is-live {
+  border-color: var(--tm-ok, #10b981);
+  background: var(--tm-ok-soft, rgba(16, 185, 129, 0.15));
+  color: var(--tm-ok, #10b981);
+}

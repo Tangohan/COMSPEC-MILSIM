@@ -75,34 +75,48 @@ class ReplayController
             $summary = $aar['summary'] ?? [];
             $errors = $aar['errors'] ?? [];
             $intelTimeline = $aar['intelTimeline'] ?? [];
+            $opsEvents = $aar['operationalEvents'] ?? [];
 
-            $html = '<h1>After Action Review</h1>';
-            $html .= '<p><strong>Mission:</strong> ' . htmlspecialchars($missionId, ENT_QUOTES, 'UTF-8') . '</p>';
-            $html .= '<p><strong>Fenêtre:</strong> ' . htmlspecialchars((string) ($aar['window']['from'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') . ' → ' . htmlspecialchars((string) ($aar['window']['to'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') . '</p>';
+            $html = '<h1>Bilan après-action</h1>';
+            $html .= '<p><strong>Mission :</strong> ' . htmlspecialchars($missionId, ENT_QUOTES, 'UTF-8') . '</p>';
+            $html .= '<p><strong>Fenêtre :</strong> ' . htmlspecialchars((string) ($aar['window']['from'] ?? 'Début'), ENT_QUOTES, 'UTF-8') . ' → ' . htmlspecialchars((string) ($aar['window']['to'] ?? 'Fin'), ENT_QUOTES, 'UTF-8') . '</p>';
             $html .= '<h3>Synthèse</h3><ul>';
-            $html .= '<li>Début: ' . htmlspecialchars((string) ($summary['missionStart'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') . '</li>';
-            $html .= '<li>Fin: ' . htmlspecialchars((string) ($summary['missionEnd'] ?? 'N/A'), ENT_QUOTES, 'UTF-8') . '</li>';
-            $html .= '<li>Unités: ' . (int) ($summary['unitCount'] ?? 0) . '</li>';
-            $html .= '<li>Échantillons positions: ' . (int) ($summary['positionSamples'] ?? 0) . '</li>';
-            $html .= '<li>Événements intel: ' . (int) ($summary['intelEvents'] ?? 0) . '</li>';
-            $html .= '<li>Délai médian réaction (s): ' . (($summary['medianReactionDelaySeconds'] ?? null) !== null ? (int) $summary['medianReactionDelaySeconds'] : 'N/A') . '</li>';
+            $html .= '<li>Début : ' . htmlspecialchars((string) ($summary['missionStart'] ?? '—'), ENT_QUOTES, 'UTF-8') . '</li>';
+            $html .= '<li>Fin : ' . htmlspecialchars((string) ($summary['missionEnd'] ?? '—'), ENT_QUOTES, 'UTF-8') . '</li>';
+            $html .= '<li>Unités : ' . (int) ($summary['unitCount'] ?? 0) . '</li>';
+            $html .= '<li>Instantanés de position : ' . (int) ($summary['positionSamples'] ?? 0) . '</li>';
+            $html .= '<li>Contacts / signalements : ' . (int) ($summary['contactEvents'] ?? $summary['intelEvents'] ?? 0) . '</li>';
+            $html .= '<li>MEDEVAC : ' . (int) ($summary['medevacEvents'] ?? 0) . '</li>';
+            $html .= '<li>Ordres : ' . (int) ($summary['orderEvents'] ?? 0) . '</li>';
+            $html .= '<li>Repères carte : ' . (int) ($summary['markerEvents'] ?? 0) . '</li>';
+            $html .= '<li>Délai médian de réaction (s) : ' . (($summary['medianReactionDelaySeconds'] ?? null) !== null ? (int) $summary['medianReactionDelaySeconds'] : '—') . '</li>';
             $html .= '</ul>';
 
-            $html .= '<h3>Erreurs détectées</h3>';
+            $html .= '<h3>Points d’attention</h3>';
             if (is_array($errors) && $errors !== []) {
                 $html .= '<ul>';
                 foreach ($errors as $error) {
-                    $label = htmlspecialchars((string) ($error['label'] ?? 'Erreur'), ENT_QUOTES, 'UTF-8');
+                    $label = htmlspecialchars((string) ($error['label'] ?? 'Alerte'), ENT_QUOTES, 'UTF-8');
                     $count = (int) ($error['count'] ?? 0);
                     $html .= '<li>' . $label . ' (' . $count . ')</li>';
                 }
                 $html .= '</ul>';
             } else {
-                $html .= '<p>Aucune erreur automatique détectée.</p>';
+                $html .= '<p>Aucun état critique automatique détecté.</p>';
             }
 
-            $html .= '<h3>Chronologie intel (extrait)</h3>';
-            if (is_array($intelTimeline) && $intelTimeline !== []) {
+            $html .= '<h3>Chronologie opérationnelle (extrait)</h3>';
+            if (is_array($opsEvents) && $opsEvents !== []) {
+                $html .= '<ol>';
+                $max = min(40, count($opsEvents));
+                for ($i = 0; $i < $max; $i++) {
+                    $evt = $opsEvents[$i];
+                    $ts = htmlspecialchars((string) ($evt['timestamp'] ?? ''), ENT_QUOTES, 'UTF-8');
+                    $lab = htmlspecialchars((string) ($evt['label'] ?? $evt['type'] ?? 'Événement'), ENT_QUOTES, 'UTF-8');
+                    $html .= '<li>' . $ts . ' — ' . $lab . '</li>';
+                }
+                $html .= '</ol>';
+            } elseif (is_array($intelTimeline) && $intelTimeline !== []) {
                 $html .= '<ol>';
                 $max = min(25, count($intelTimeline));
                 for ($i = 0; $i < $max; $i++) {
@@ -110,19 +124,20 @@ class ReplayController
                     $ts = htmlspecialchars((string) ($evt['timestamp'] ?? ''), ENT_QUOTES, 'UTF-8');
                     $target = htmlspecialchars((string) ($evt['targetType'] ?? ''), ENT_QUOTES, 'UTF-8');
                     $source = htmlspecialchars((string) ($evt['source'] ?? ''), ENT_QUOTES, 'UTF-8');
-                    $html .= '<li>' . $ts . ' — ' . $target . ' (source: ' . $source . ')</li>';
+                    $html .= '<li>' . $ts . ' — ' . $target . ' (source : ' . $source . ')</li>';
                 }
                 $html .= '</ol>';
             } else {
-                $html .= '<p>Pas d’événement intel.</p>';
+                $html .= '<p>Aucun événement opérationnel enregistré.</p>';
             }
 
+            $pdf->SetTitle('Bilan après-action ' . $missionId);
             $pdf->writeHTML($html, true, false, true, false, '');
             $binary = (string) $pdf->Output('', 'S');
 
             return (new Response())
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="AAR-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $missionId) . '.pdf"')
+                ->header('Content-Disposition', 'attachment; filename="Bilan-' . preg_replace('/[^a-zA-Z0-9_-]+/', '-', $missionId) . '.pdf"')
                 ->setBody($binary);
         });
     }

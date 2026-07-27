@@ -1,11 +1,12 @@
 <div id="panel-iff" class="panel-tab">
-  <h2 class="text-lg font-black uppercase tracking-tight mb-4">Identification (IFF)</h2>
+  <h2 class="text-lg font-black uppercase tracking-tight mb-4">Identification ami / ennemi</h2>
   <p class="text-xs text-slate-500 mb-3">Défi / réponse pour confirmer qu’une unité est amie. Le poste de commandement publie un défi ; les unités répondent avec le code convenu.</p>
   <div class="space-y-4">
     <div id="iff-current" class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
       <p class="text-xs font-bold uppercase text-slate-500">Défi courant</p>
       <p id="iff-challenge-code" class="font-mono font-bold text-lg">—</p>
       <p id="iff-valid-until" class="text-xs text-slate-500">Aucun défi actif.</p>
+      <div id="iff-alert-banner" class="mt-2 hidden rounded-lg border border-red-300 bg-red-50 p-2 text-xs text-red-800" role="alert"></div>
     </div>
     <div class="border border-slate-200 rounded-lg p-2 bg-white space-y-2">
       <p class="text-xs font-bold text-slate-600">Publier un défi</p>

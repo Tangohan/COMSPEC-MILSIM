@@ -234,6 +234,24 @@ foreach ($rows as $r) {
                                                 <span class="bo-briefing__pill">Ordre <?= $sortOrder ?></span>
                                                 <span class="bo-briefing__pill"><?= $commentCount ?> commentaire<?= $commentCount > 1 ? 's' : '' ?></span>
                                             </div>
+                                            <div class="bo-briefing__card-actions" style="margin-bottom:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
+                                                <form method="post" action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/move'), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= \App\Core\Csrf::field() ?>
+                                                    <input type="hidden" name="direction" value="up">
+                                                    <button type="submit" class="bo-briefing__btn bo-briefing__btn--ghost" <?= $index === 0 ? 'disabled' : '' ?> title="Monter dans l’ordre">Monter</button>
+                                                </form>
+                                                <form method="post" action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/move'), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= \App\Core\Csrf::field() ?>
+                                                    <input type="hidden" name="direction" value="down">
+                                                    <button type="submit" class="bo-briefing__btn bo-briefing__btn--ghost" <?= $index >= count($rows) - 1 ? 'disabled' : '' ?> title="Descendre dans l’ordre">Descendre</button>
+                                                </form>
+                                                <form method="post" action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/toggle-publish'), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= \App\Core\Csrf::field() ?>
+                                                    <button type="submit" class="bo-briefing__btn <?= $isActive ? 'bo-briefing__btn--ghost' : 'bo-briefing__btn--primary' ?>">
+                                                        <?= $isActive ? 'Passer en brouillon' : 'Publier (visible en jeu)' ?>
+                                                    </button>
+                                                </form>
+                                            </div>
                                             <form
                                                 method="post"
                                                 action="<?= htmlspecialchars(url('back-office/atak/briefing-slides/' . $id . '/update'), ENT_QUOTES, 'UTF-8') ?>"

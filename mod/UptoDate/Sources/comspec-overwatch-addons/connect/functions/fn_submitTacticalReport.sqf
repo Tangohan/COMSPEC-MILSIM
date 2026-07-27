@@ -71,6 +71,31 @@ if (_ok) then {
         ["type", _reportType],
         ["priority", _priority]
     ]] call comspec_overwatch_connect_fnc_publishEvent;
+
+    // Alimente aussi le tableau de situation fusionné (CONTACT / SITREP / SPOTREP).
+    private _upper = toUpper _reportType;
+    if (_upper in ["CONTACT", "SITREP", "SPOTREP", "SALUTE"]) then {
+        private _targetType = "UNKNOWN";
+        if (_upper isEqualTo "CONTACT") then { _targetType = "INFANTRY"; };
+        private _missionId = missionNamespace getVariable ["COMSPEC_MissionId", ""];
+        if (_missionId isEqualTo "") then {
+            private _tid = missionNamespace getVariable ["COMSPEC_TenantId", 1];
+            private _mid = missionNamespace getVariable ["COMSPEC_MapId", 1];
+            _missionId = format ["mission_%1_map_%2", _tid, _mid];
+        };
+        private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_cs isEqualTo "") then { _cs = groupId (group player); };
+        private _intelPayload = format [
+            "{""missionId"":""%1"",""target_type"":""%2"",""pos_x"":%3,""pos_y"":%4,""source_callsign"":""%5"",""report_type"":""%6""}",
+            _missionId,
+            _targetType,
+            _position select 0,
+            _position select 1,
+            _cs,
+            _upper
+        ];
+        ["COMSPECExtension" callExtension ["Intel.Report", [_intelPayload]]] call comspec_overwatch_connect_fnc_extResult;
+    };
     true
 } else {
     [([

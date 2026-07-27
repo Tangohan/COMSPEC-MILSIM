@@ -18,38 +18,56 @@ function run_atak_mod_reports_migration(PDO $pdo): void
             return (bool) $st->fetchColumn();
         };
 
-        if ($hasTable('atak_mod_reports')) {
-            return;
+        if (!$hasTable('atak_mod_reports')) {
+            $pdo->exec(
+                "CREATE TABLE atak_mod_reports (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    severity VARCHAR(16) NOT NULL DEFAULT 'error',
+                    workflow_status VARCHAR(24) NOT NULL DEFAULT 'new',
+                    channel VARCHAR(64) NOT NULL DEFAULT 'Core',
+                    message VARCHAR(512) NOT NULL,
+                    detail_text TEXT NULL,
+                    context_json LONGTEXT NULL,
+                    fingerprint VARCHAR(64) DEFAULT NULL,
+                    source VARCHAR(32) NOT NULL DEFAULT 'auto',
+                    steam_uid VARCHAR(32) DEFAULT NULL,
+                    player_uid VARCHAR(64) DEFAULT NULL,
+                    player_name VARCHAR(128) DEFAULT NULL,
+                    callsign VARCHAR(64) DEFAULT NULL,
+                    client_ip VARCHAR(45) DEFAULT NULL,
+                    mod_version VARCHAR(32) DEFAULT NULL,
+                    extension_version VARCHAR(32) DEFAULT NULL,
+                    arma_build VARCHAR(64) DEFAULT NULL,
+                    hit_count INT UNSIGNED NOT NULL DEFAULT 1,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY idx_amr_severity_seen (severity, last_seen_at),
+                    KEY idx_amr_workflow (workflow_status, last_seen_at),
+                    KEY idx_amr_fingerprint (fingerprint),
+                    KEY idx_amr_steam (steam_uid),
+                    KEY idx_amr_created (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
         }
 
-        $pdo->exec(
-            "CREATE TABLE atak_mod_reports (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                severity VARCHAR(16) NOT NULL DEFAULT 'error',
-                channel VARCHAR(64) NOT NULL DEFAULT 'Core',
-                message VARCHAR(512) NOT NULL,
-                detail_text TEXT NULL,
-                context_json LONGTEXT NULL,
-                fingerprint VARCHAR(64) DEFAULT NULL,
-                source VARCHAR(32) NOT NULL DEFAULT 'auto',
-                steam_uid VARCHAR(32) DEFAULT NULL,
-                player_uid VARCHAR(64) DEFAULT NULL,
-                player_name VARCHAR(128) DEFAULT NULL,
-                callsign VARCHAR(64) DEFAULT NULL,
-                client_ip VARCHAR(45) DEFAULT NULL,
-                mod_version VARCHAR(32) DEFAULT NULL,
-                extension_version VARCHAR(32) DEFAULT NULL,
-                arma_build VARCHAR(64) DEFAULT NULL,
-                hit_count INT UNSIGNED NOT NULL DEFAULT 1,
-                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY (id),
-                KEY idx_amr_severity_seen (severity, last_seen_at),
-                KEY idx_amr_fingerprint (fingerprint),
-                KEY idx_amr_steam (steam_uid),
-                KEY idx_amr_created (created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-        );
+        // Colonne de suivi métier (Nouveau / En cours / Corrigé) — idempotent.
+        $hasCol = static function (string $table, string $column) use ($pdo): bool {
+            $st = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+
+            return (bool) $st->fetchColumn();
+        };
+        if ($hasTable('atak_mod_reports') && !$hasCol('atak_mod_reports', 'workflow_status')) {
+            $pdo->exec(
+                "ALTER TABLE atak_mod_reports
+                 ADD COLUMN workflow_status VARCHAR(24) NOT NULL DEFAULT 'new' AFTER severity,
+                 ADD KEY idx_amr_workflow (workflow_status, last_seen_at)"
+            );
+        }
     } catch (Throwable) {
         // Idempotent best-effort ; ne pas faire échouer le bootstrap API.
     }

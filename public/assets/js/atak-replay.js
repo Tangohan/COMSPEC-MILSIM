@@ -1,6 +1,7 @@
 /* COMSPEC ATAK — Relecture mission (positions enregistrées + après-action) */
 window.ATAKReplay = (function () {
   var timeline = [];
+  var events = [];
   var index = 0;
   var timer = null;
   var active = false;
@@ -34,6 +35,8 @@ window.ATAKReplay = (function () {
   }
 
   function missionId() {
+    var w = window.ATAK_MISSION_CYCLE_WINDOW;
+    if (w && w.missionId) return String(w.missionId);
     return 'mission_' + tenantId() + '_map_' + mapId();
   }
 
@@ -102,6 +105,65 @@ window.ATAKReplay = (function () {
     });
   }
 
+  function parseTsMs(ts) {
+    if (!ts) return NaN;
+    var s = String(ts).trim();
+    if (/^\d+$/.test(s)) {
+      var n = Number(s);
+      return n < 1e12 ? n * 1000 : n;
+    }
+    var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+    return Date.parse(iso);
+  }
+
+  function eventTone(type) {
+    if (type === 'medevac') return 'med';
+    if (type === 'order') return 'order';
+    if (type === 'marker') return 'marker';
+    return 'contact';
+  }
+
+  function eventsNearFrame(frameTs) {
+    var t = parseTsMs(frameTs);
+    if (isNaN(t) || !events.length) return [];
+    var windowMs = 90 * 1000;
+    return events.filter(function (ev) {
+      var et = parseTsMs(ev.timestamp);
+      if (isNaN(et)) return false;
+      return Math.abs(et - t) <= windowMs;
+    }).slice(0, 8);
+  }
+
+  function renderEventsList(nearOnly) {
+    var box = el('atak-replay-events');
+    if (!box) return;
+    var list = nearOnly && timeline.length
+      ? eventsNearFrame(timeline[index] && timeline[index].timestamp)
+      : events.slice(0, 40);
+    if (!list.length) {
+      if (!events.length) {
+        box.hidden = true;
+        box.innerHTML = '';
+        return;
+      }
+      box.hidden = false;
+      box.innerHTML = '<p class="atak-panel-hint">Aucun événement clé à cet instant.</p>';
+      return;
+    }
+    box.hidden = false;
+    var html = '<p class="atak-replay-events-title">Événements clés</p><ul class="atak-replay-events-list">';
+    list.forEach(function (ev) {
+      var tone = eventTone(ev.type);
+      var lab = String(ev.label || ev.type || 'Événement').replace(/</g, '&lt;');
+      html += '<li class="atak-replay-event atak-replay-event--' + tone + '" data-x="' + (ev.x != null ? ev.x : '') + '" data-y="' + (ev.y != null ? ev.y : '') + '">' +
+        '<span class="atak-replay-event-ts">' + formatTs(ev.timestamp) + '</span> ' +
+        '<span class="atak-replay-event-label">' + lab + '</span></li>';
+    });
+    html += '</ul>';
+    box.innerHTML = html;
+  }
+
   function applyFrame(i, opts) {
     opts = opts || {};
     if (!timeline.length) return;
@@ -113,6 +175,7 @@ window.ATAKReplay = (function () {
     if (info) {
       info.textContent = (index + 1) + ' / ' + timeline.length + ' · ' + formatTs(frame && frame.timestamp);
     }
+    renderEventsList(true);
     if (!opts.previewOnly) {
       if (!active) setActive(true);
       if (window.ATAKMap && window.ATAKMap.setUnitsMarkers) {
@@ -132,6 +195,33 @@ window.ATAKReplay = (function () {
     }
   }
 
+  function windowQuery() {
+    var w = window.ATAK_MISSION_CYCLE_WINDOW;
+    if (!w) return '';
+    var parts = [];
+    if (w.from) parts.push('from=' + encodeURIComponent(String(w.from)));
+    if (w.to) parts.push('to=' + encodeURIComponent(String(w.to)));
+    return parts.length ? ('?' + parts.join('&')) : '';
+  }
+
+  function loadEvents() {
+    var tid = tenantId();
+    if (tid < 1) return Promise.resolve();
+    var url = apiRoot() + '/api/replay/events/' + encodeURIComponent(missionId()) + windowQuery();
+    return fetch(url, { credentials: 'include' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('events_http_' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        events = Array.isArray(data && data.events) ? data.events : [];
+        renderEventsList(!!timeline.length);
+      })
+      .catch(function () {
+        events = [];
+      });
+  }
+
   function loadTimeline() {
     var tid = tenantId();
     var info = el('atak-replay-info');
@@ -140,13 +230,16 @@ window.ATAKReplay = (function () {
       return Promise.resolve();
     }
     if (info) info.textContent = 'Chargement des positions…';
-    var url = apiRoot() + '/api/replay/mission/' + encodeURIComponent(missionId());
-    return fetch(url, { credentials: 'include' })
-      .then(function (r) {
+    var url = apiRoot() + '/api/replay/mission/' + encodeURIComponent(missionId()) + windowQuery();
+    return Promise.all([
+      fetch(url, { credentials: 'include' }).then(function (r) {
         if (!r.ok) throw new Error('replay_http_' + r.status);
         return r.json();
-      })
-      .then(function (data) {
+      }),
+      loadEvents()
+    ])
+      .then(function (pair) {
+        var data = pair[0];
         timeline = Array.isArray(data && data.timeline) ? data.timeline : [];
         loaded = true;
         index = 0;
@@ -159,6 +252,7 @@ window.ATAKReplay = (function () {
         }
         if (!timeline.length) {
           updateEmptyInfo();
+          renderEventsList(false);
           return;
         }
         if (info) info.textContent = timeline.length + ' instantané(s) · ' + formatTs(timeline[0].timestamp);
@@ -182,7 +276,10 @@ window.ATAKReplay = (function () {
       + '<div class="atak-replay-stats">'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Unités</span><strong>' + (s.unitCount || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Instantanés</span><strong>' + (s.positionSamples || 0) + '</strong></div>'
-      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Renseignements</span><strong>' + (s.intelEvents || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Contacts</span><strong>' + (s.contactEvents != null ? s.contactEvents : (s.intelEvents || 0)) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">MEDEVAC</span><strong>' + (s.medevacEvents || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Ordres</span><strong>' + (s.orderEvents || 0) + '</strong></div>'
+      + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Repères</span><strong>' + (s.markerEvents || 0) + '</strong></div>'
       + '<div class="atak-replay-stat"><span class="atak-replay-stat-label">Délai médian</span><strong>' + delayLabel + '</strong></div>'
       + '</div>';
     if (errors.length) {
@@ -204,7 +301,7 @@ window.ATAKReplay = (function () {
       return;
     }
     if (box) box.innerHTML = '<p class="atak-panel-hint">Analyse en cours…</p>';
-    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId());
+    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + windowQuery();
     fetch(url, { credentials: 'include' })
       .then(function (r) {
         if (!r.ok) throw new Error('aar_http_' + r.status);
@@ -251,7 +348,7 @@ window.ATAKReplay = (function () {
       if (window.ATAKShowError) window.ATAKShowError('Connectez-vous pour exporter le bilan.');
       return;
     }
-    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + '/export.pdf';
+    var url = apiRoot() + '/api/replay/aar/' + encodeURIComponent(missionId()) + '/export.pdf' + windowQuery();
     window.open(url, '_blank', 'noopener');
   }
 
@@ -296,6 +393,23 @@ window.ATAKReplay = (function () {
     if (speed) {
       speed.addEventListener('change', function () {
         if (timer) play();
+      });
+    }
+
+    var eventsBox = el('atak-replay-events');
+    if (eventsBox) {
+      eventsBox.addEventListener('click', function (e) {
+        var li = e.target && e.target.closest ? e.target.closest('[data-x]') : null;
+        if (!li) return;
+        var x = parseFloat(li.getAttribute('data-x'));
+        var y = parseFloat(li.getAttribute('data-y'));
+        if (isNaN(x) || isNaN(y)) return;
+        if (window.ATAKMap && typeof window.ATAKMap.setView === 'function') {
+          window.ATAKMap.setView(y, x, 5);
+        } else if (window.ATAKMap && window.ATAKMap.getMap) {
+          var map = window.ATAKMap.getMap();
+          if (map && map.setView) map.setView([y, x], map.getZoom());
+        }
       });
     }
 
