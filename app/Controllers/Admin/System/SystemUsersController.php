@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserRepository;
 use App\Services\Account\AccountDeletionService;
+use App\Services\Account\AccountPurgeService;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
 
@@ -24,6 +25,7 @@ final class SystemUsersController
         private TenantRepository $tenants,
         private ?AuditService $audit = null,
         private ?AccountDeletionService $accountDeletion = null,
+        private ?AccountPurgeService $accountPurge = null,
     ) {
         $this->audit ??= new AuditService();
     }
@@ -31,6 +33,11 @@ final class SystemUsersController
     private function deletionService(): AccountDeletionService
     {
         return $this->accountDeletion ??= \App\Core\Container::get(AccountDeletionService::class);
+    }
+
+    private function purgeService(): AccountPurgeService
+    {
+        return $this->accountPurge ??= new AccountPurgeService();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -183,6 +190,149 @@ final class SystemUsersController
         );
 
         Session::flash('success', 'Le compte a été supprimé. Ses données personnelles ont été anonymisées. L’adresse e-mail peut être réutilisée pour une nouvelle inscription.');
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /**
+     * Suppression définitive : la ligne `users` et tout ce qui décrit la personne quittent
+     * la base. Aucune reprise possible — d’où la confirmation par saisie de l’adresse, et
+     * la journalisation *avant* exécution : après, il ne reste plus rien à relier.
+     */
+    public function purge(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorTenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+        $userId = (int) $request->input('user_id');
+        $tenantId = (int) $request->input('tenant_id');
+        if ($userId < 1 || $tenantId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if ($userId === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas supprimer votre propre compte depuis cet écran.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $target = $this->users->findById($userId, $tenantId);
+        if ($target === null) {
+            Session::flash('error', 'Compte introuvable.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $email = strtolower(trim((string) ($target['email'] ?? '')));
+        $confirmation = strtolower(trim((string) $request->input('confirm_email', '')));
+        if ($email === '' || $confirmation !== $email) {
+            Session::flash('error', 'Adresse de confirmation incorrecte : le compte n’a pas été touché.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        // Les comptes partageant l’adresse partent ensemble, comme pour l’anonymisation :
+        // n’en purger qu’un laisserait des doublons impossibles à retrouver ensuite.
+        $siblingIds = !str_ends_with($email, '@deleted.invalid')
+            ? $this->users->listIdsByEmailNormalized($email)
+            : [$userId];
+
+        // Journaliser avant : la purge peut effacer des lignes du journal elles-mêmes
+        // rattachées au compte, et l’entrée doit survivre à l’opération.
+        $this->audit->logChange(
+            AuditAction::USER_PURGED,
+            $actorTenantId > 0 ? $actorTenantId : $tenantId,
+            $actorId,
+            'user',
+            $userId,
+            [
+                'status' => (string) ($target['status'] ?? ''),
+                'email' => $email,
+                'display_name' => (string) ($target['display_name'] ?? ''),
+            ],
+            ['status' => 'purged', 'platform_directory' => true, 'target_user_ids' => array_map('intval', $siblingIds)],
+        );
+
+        $report = $this->purgeService()->purge($userId, $siblingIds);
+        if (!$report['ok'] && $report['purged_user_ids'] === []) {
+            Session::flash(
+                'error',
+                'Suppression définitive impossible : ' . ($report['errors'][0] ?? 'erreur inconnue') . '.'
+            );
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $message = 'Compte supprimé définitivement — '
+            . count($report['purged_user_ids']) . ' compte' . (count($report['purged_user_ids']) > 1 ? 's' : '')
+            . ', ' . $report['rows_deleted'] . ' ligne' . ($report['rows_deleted'] > 1 ? 's' : '') . ' effacée'
+            . ($report['rows_deleted'] > 1 ? 's' : '')
+            . ', ' . $report['rows_detached'] . ' référence' . ($report['rows_detached'] > 1 ? 's' : '')
+            . ' détachée' . ($report['rows_detached'] > 1 ? 's' : '') . '.';
+        if ($report['errors'] !== []) {
+            $message .= ' ' . count($report['errors']) . ' avertissement'
+                . (count($report['errors']) > 1 ? 's' : '') . ' — voir le journal serveur.';
+            foreach (array_slice($report['errors'], 0, 20) as $error) {
+                error_log('[account_purge] user #' . $userId . ' : ' . $error);
+            }
+        }
+        Session::flash('success', $message);
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /**
+     * Purge en série les fiches « Compte supprimé » laissées par l’anonymisation.
+     */
+    public function purgeAnonymized(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if (strtolower(trim((string) $request->input('confirm_phrase', ''))) !== 'supprimer definitivement') {
+            Session::flash('error', 'Phrase de confirmation incorrecte : aucun compte n’a été touché.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $actorTenantId = (int) Session::get('tenant_id');
+        $actorId = (int) Session::get('user_id');
+
+        $this->audit->logChange(
+            AuditAction::USER_PURGED,
+            $actorTenantId > 0 ? $actorTenantId : 0,
+            $actorId,
+            'user',
+            0,
+            ['scope' => 'anonymized_accounts'],
+            ['status' => 'purged', 'platform_directory' => true, 'bulk' => true],
+        );
+
+        $result = $this->purgeService()->purgeAnonymizedAccounts();
+        foreach (array_slice($result['errors'], 0, 20) as $error) {
+            error_log('[account_purge_bulk] ' . $error);
+        }
+
+        if ($result['purged'] === 0 && $result['failed'] === 0) {
+            Session::flash('success', 'Aucune fiche anonymisée à supprimer.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        Session::flash(
+            $result['failed'] > 0 ? 'error' : 'success',
+            $result['purged'] . ' fiche' . ($result['purged'] > 1 ? 's' : '') . ' anonymisée'
+            . ($result['purged'] > 1 ? 's' : '') . ' supprimée' . ($result['purged'] > 1 ? 's' : '')
+            . ' définitivement (' . $result['rows_deleted'] . ' lignes)'
+            . ($result['failed'] > 0 ? ' · ' . $result['failed'] . ' en échec, voir le journal serveur.' : '.')
+        );
 
         return Response::redirect($this->backUrl($request));
     }

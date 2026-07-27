@@ -30,6 +30,40 @@ $statusBadgeClass = static function (string $status): string {
 
 $currentActorId = (int) \App\Core\Session::get('user_id');
 
+/**
+ * Formulaire de suppression définitive.
+ *
+ * Distinct de « Anonymiser », qui garde la ligne `users` sous le libellé « Compte
+ * supprimé » : ici la ligne et tout ce qui décrit la personne quittent la base. Comme
+ * rien n’est récupérable ensuite, l’adresse exacte doit être saisie pour confirmer —
+ * un `confirm()` se clique trop vite.
+ */
+$purgeForm = static function (int $uid, int $tid, string $email, array $ctx): string {
+    $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+    $formId = 'purge-form-' . $uid;
+    $emailJs = htmlspecialchars(json_encode($email, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '""', ENT_QUOTES, 'UTF-8');
+
+    return '<form method="post" action="' . $h(url('admin/users/purge')) . '" id="' . $h($formId) . '"'
+        . ' onsubmit="return athPurgeConfirm(this, ' . $emailJs . ');">'
+        . '<input type="hidden" name="_csrf_token" value="' . $h(\App\Core\Csrf::token()) . '">'
+        . '<input type="hidden" name="user_id" value="' . $uid . '">'
+        . '<input type="hidden" name="tenant_id" value="' . $tid . '">'
+        . '<input type="hidden" name="confirm_email" value="">'
+        . '<input type="hidden" name="return_q" value="' . $h((string) ($ctx['q'] ?? '')) . '">'
+        . '<input type="hidden" name="return_status" value="' . $h((string) ($ctx['status'] ?? '')) . '">'
+        . '<input type="hidden" name="return_tenant_id" value="' . $h((string) ($ctx['tenant_id'] ?? '')) . '">'
+        . '<input type="hidden" name="return_page" value="' . $h((string) ($ctx['page'] ?? '1')) . '">'
+        . '<button type="submit" class="w-full rounded-lg border border-rose-700 bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800">Supprimer définitivement</button>'
+        . '</form>';
+};
+
+$returnCtx = [
+    'q' => $q,
+    'status' => $statusFilter,
+    'tenant_id' => $tenantFilter > 0 ? (string) $tenantFilter : '',
+    'page' => (string) $page,
+];
+
 $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFilter, $page): string {
     $params = [
         'q' => $overrides['q'] ?? $q,
@@ -181,7 +215,12 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                 <td class="px-4 py-3">
                                     <div class="flex flex-col gap-2 min-w-[10rem]">
                                         <?php if ($isDeleted): ?>
-                                            <p class="text-xs text-slate-400">Aucune action possible.</p>
+                                            <?php if ($uid === $currentActorId): ?>
+                                                <p class="text-xs text-slate-400">C’est votre propre compte.</p>
+                                            <?php else: ?>
+                                                <p class="text-xs text-slate-500">Fiche anonymisée. Elle reste dans les annuaires tant qu’elle n’est pas supprimée définitivement.</p>
+                                                <?= $purgeForm($uid, $tid, $email, $returnCtx) ?>
+                                            <?php endif; ?>
                                         <?php elseif ($uid === $currentActorId): ?>
                                             <p class="text-xs text-slate-400">C’est votre propre compte.</p>
                                         <?php elseif ($st === 'active'): ?>
@@ -208,7 +247,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                                 <input type="hidden" name="return_page" value="<?= $page ?>">
                                                 <button type="submit" class="w-full rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-950 hover:bg-emerald-100">Réactiver</button>
                                             </form>
-                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/delete'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Supprimer définitivement le compte <?= htmlspecialchars(addslashes($primary), ENT_QUOTES, 'UTF-8') ?> ?\n\nSes données personnelles (e-mail, nom, avatar) seront anonymisées et la connexion sera coupée immédiatement. Cette action est irréversible.');">
+                                            <form method="post" action="<?= htmlspecialchars(url('admin/users/delete'), ENT_QUOTES, 'UTF-8') ?>" onsubmit="return confirm('Anonymiser le compte <?= htmlspecialchars(addslashes($primary), ENT_QUOTES, 'UTF-8') ?> ?\n\nSes données personnelles (e-mail, nom, avatar) sont effacées et la connexion est coupée immédiatement, mais la fiche reste dans les annuaires sous « Compte supprimé » et son historique reste rattaché.\n\nPour tout effacer de la base, utilisez « Supprimer définitivement ».');">
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="user_id" value="<?= $uid ?>">
                                                 <input type="hidden" name="tenant_id" value="<?= $tid ?>">
@@ -216,8 +255,9 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                                                 <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
                                                 <input type="hidden" name="return_page" value="<?= $page ?>">
-                                                <button type="submit" class="w-full rounded-lg border border-rose-300 bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-200">Supprimer</button>
+                                                <button type="submit" class="w-full rounded-lg border border-rose-300 bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-950 hover:bg-rose-200">Anonymiser</button>
                                             </form>
+                                            <?= $purgeForm($uid, $tid, $email, $returnCtx) ?>
                                         <?php endif; ?>
                                         <a href="<?= htmlspecialchars($sanctionsUrl, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-50">Sanctions</a>
                                     </div>
@@ -244,5 +284,53 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
                 <?php endif; ?>
             </nav>
         <?php endif; ?>
+
+        <section class="rounded-2xl border border-rose-200 bg-rose-50 p-5">
+            <h2 class="text-base font-semibold text-rose-950">Purge des fiches anonymisées</h2>
+            <p class="mt-2 max-w-3xl text-sm text-rose-900">
+                Les comptes anonymisés avant l’arrivée de la suppression définitive restent
+                présents en base sous « Compte supprimé », adresse <span class="font-mono">deleted-…@deleted.invalid</span>,
+                et continuent d’apparaître dans les annuaires. Cette action les efface tous, avec
+                ce qui les décrit. Les traces qu’ils ont laissées sur les dossiers d’autres membres
+                sont conservées mais détachées : elles n’attribuent plus rien à personne.
+            </p>
+            <p class="mt-2 text-sm font-semibold text-rose-950">Aucune restauration n’est possible après coup.</p>
+            <form method="post" action="<?= htmlspecialchars(url('admin/users/purge-anonymises'), ENT_QUOTES, 'UTF-8') ?>"
+                  class="mt-4 flex flex-wrap items-end gap-3">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_q" value="<?= htmlspecialchars($q, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_status" value="<?= htmlspecialchars($statusFilter, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_tenant_id" value="<?= $tenantFilter > 0 ? $tenantFilter : '' ?>">
+                <label class="flex-1 min-w-[16rem]">
+                    <span class="block text-xs font-semibold uppercase tracking-wide text-rose-900">Tapez « supprimer definitivement » pour confirmer</span>
+                    <input type="text" name="confirm_phrase" autocomplete="off" required
+                           class="mt-1 w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm text-slate-900">
+                </label>
+                <button type="submit" class="rounded-lg border border-rose-700 bg-rose-700 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-800">
+                    Purger les fiches anonymisées
+                </button>
+            </form>
+        </section>
     </div>
 </div>
+
+<script>
+// La saisie de l’adresse remplace un simple confirm() : la suppression est définitive,
+// et rien ne permettra de revenir en arrière si le mauvais compte est visé.
+function athPurgeConfirm(form, expectedEmail) {
+    var saisi = window.prompt(
+        'Suppression DÉFINITIVE du compte ' + expectedEmail + '.\n\n'
+        + 'La fiche et tout ce qui la décrit quittent la base. Aucune restauration n’est possible.\n\n'
+        + 'Retapez l’adresse exacte pour confirmer :'
+    );
+    if (saisi === null) {
+        return false;
+    }
+    if (saisi.trim().toLowerCase() !== String(expectedEmail).trim().toLowerCase()) {
+        window.alert('Adresse incorrecte : le compte n’a pas été touché.');
+        return false;
+    }
+    form.querySelector('input[name="confirm_email"]').value = saisi.trim();
+    return true;
+}
+</script>

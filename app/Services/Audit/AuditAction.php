@@ -40,6 +40,12 @@ final class AuditAction
     /** Suppression (douce/anonymisation) d’un compte depuis l’annuaire plateforme. */
     public const USER_DELETED = 'user.deleted';
 
+    /**
+     * Suppression définitive : la ligne users et tout ce qui décrit la personne sont
+     * effacés de la base. Journalisée avant exécution — après, il ne reste rien à relier.
+     */
+    public const USER_PURGED = 'user.purged';
+
     /** Journalisation convention slugs site.* / community.* / intra.* (migration progressive). */
     public const PERMISSION_SCOPE_MIGRATION = 'permission.scope_migration';
 
