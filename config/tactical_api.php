@@ -38,6 +38,16 @@ return [
         '/api/intel/',
         '/api/replay/',
         '/api/iff/',
+        // Contrats unifiés /api/operations/* (timeline mission, SITREP, AAR/RETEX,
+        // readiness, médical, logistique, comms, doctrine). Mêmes données tactiques
+        // que /api/replay/ et /api/intel/, donc même niveau d’exigence.
+        //
+        // Note : /api/operations/doctrine/documents (DoctrineApiController) porte déjà
+        // AuthMiddleware. Une session membre valide satisfait la garde tactique
+        // (ComspecApiKeyAuth::authenticatedBrowserSessionMayAccessTactical), sauf si le
+        // déploiement a explicitement posé TACTICAL_API_ALLOW_SESSION=false — auquel cas
+        // une clé d’accès est requise, ce qui est le comportement voulu dans ce mode.
+        '/api/operations/',
     ],
     'exempt_paths' => [],
 ];

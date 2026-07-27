@@ -1175,12 +1175,44 @@ reviendrait à câbler un système sur des données qui n'existent pas.
 
 ### P0 — Correction critique
 
-| Id | Titre | Effort |
-|---|---|---|
-| P0-1 | Protéger `/api/operations/*` (`config/tactical_api.php`) | 15 min |
-| P0-2 | CSRF sur les 3 POST de `DocumentsController` | 30 min |
-| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h |
-| P0-4 | Émettre une qualification à l'émission d'un certificat, sous transaction | 2-3 j |
+| Id | Titre | Effort | État |
+|---|---|---|---|
+| P0-1 | Protéger `/api/operations/*` (`config/tactical_api.php`) | 15 min | **Fait** |
+| P0-2 | CSRF sur les 3 POST de `DocumentsController` | 30 min | **Fait** |
+| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **En attente d'arbitrage** |
+| P0-4 | Émettre une qualification à l'émission d'un certificat | 2-3 j | **Fait** (socle) |
+
+#### Détail de la livraison P0
+
+**P0-1** — `/api/operations/` ajouté aux `protected_prefixes`. Les 14 routes passent sous
+`ComspecApiKeyAuth` (clé plateforme, clé de communauté ou session membre), au même niveau que
+`/api/replay/` et `/api/intel/`. Aucun consommateur interne n'a été trouvé dans le dépôt (ni JS,
+ni vues, ni `mod/`) : le risque de régression est nul côté web.
+
+**P0-2** — `DocumentsController::csrfGuard()` ajouté et appelé par `unlock()`, `signature()` et
+`accessTrack()`, avec un 419 JSON explicite. Les trois `fetch` de `views/documents/show.php`
+transmettent désormais `_csrf_token` : le lecteur de documents continue de fonctionner.
+
+**P0-4** — Socle du chaînon Formation → Qualification :
+
+- `bootstrap/personnel_qualifications_training_link_migration.php` (idempotent, enregistré dans
+  `run-migrations.php`) : ajoute `tenant_id`, `training_course_id`, `training_certificate_id`,
+  `source`, remplit `tenant_id` pour les lignes historiques, et pose un **index unique sur
+  `training_certificate_id`** qui rend l'émission idempotente.
+- `PersonnelQualificationRepository` : `upsertFromCertificate()`, `revokeForCertificate()`,
+  `syncStatusesForTenant()`, `listExpiringForTenant()`, `userIdsQualifiedForCourse()`,
+  `userHasValidQualificationForCourse()`. La table passe d'un usage strictement en lecture à un
+  cycle de vie complet. `trainingLinkReady()` neutralise proprement l'émission sur un déploiement
+  non migré, sans erreur.
+- `TrainingCertificateService` : émission de la qualification à la création du certificat **et**
+  rattrapage sur les certificats antérieurs (branche « certificat déjà valide »), révocation
+  propagée. Synchronisation best-effort et journalisée : un échec ne peut pas invalider un
+  certificat légitimement acquis.
+- `TrainingExpireCronJob` : fait vivre les statuts dans le temps (`expiring` à 30 jours,
+  `expired` à échéance) et désactive les qualifications adossées à un certificat non valide.
+
+Reste à faire sur ce chantier, hors P0 : l'exposition UI (tableau de recyclage par unité — N5) et
+la consommation par les prérequis d'opération (N1).
 
 ### P1 — Prioritaire
 

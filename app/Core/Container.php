@@ -1130,6 +1130,7 @@ class Container
                 self::get(UserRepository::class),
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
             ),
             \App\Services\Training\TrainingEnrollmentPolicyService::class => new \App\Services\Training\TrainingEnrollmentPolicyService(
                 self::get(\App\Repositories\TrainingEnrollmentRepository::class),

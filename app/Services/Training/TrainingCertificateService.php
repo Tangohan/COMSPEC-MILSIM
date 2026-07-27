@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Training;
 
+use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TrainingCertificateRepository;
 use App\Repositories\TrainingEnrollmentRepository;
@@ -33,7 +34,64 @@ class TrainingCertificateService
         private UserRepository $userRepository,
         private TenantRepository $tenantRepository,
         private UserNotificationPreferencesRepository $notificationPreferencesRepository,
+        private PersonnelQualificationRepository $personnelQualificationRepository,
     ) {}
+
+    /**
+     * Reporte le certificat au dossier personnel sous forme de qualification.
+     *
+     * C'est le chaînon Formation → Qualification → Effectif : sans lui, une formation
+     * certifiante produit un PDF que le reste du système ne sait pas interroger
+     * (« qui est formé à quoi ? », « quelle qualification expire ? »).
+     *
+     * Best-effort volontaire : un échec ici ne doit jamais invalider un certificat
+     * légitimement acquis. L'incident est journalisé pour rattrapage.
+     *
+     * @param array<string, mixed> $course
+     */
+    private function syncQualificationFromCertificate(
+        int $tenantId,
+        int $userId,
+        int $certificateId,
+        array $course,
+        ?string $issuedAt,
+        ?string $expiresAt,
+        ?int $issuedByStaffUserId
+    ): void {
+        try {
+            $name = trim((string) ($course['title'] ?? ''));
+            if ($name === '') {
+                $name = 'Formation #' . (int) ($course['id'] ?? 0);
+            }
+            $this->personnelQualificationRepository->upsertFromCertificate(
+                $tenantId,
+                $userId,
+                $certificateId,
+                (int) ($course['id'] ?? 0),
+                $name,
+                [
+                    'level' => ($course['level'] ?? null) !== null ? (string) $course['level'] : null,
+                    'obtained_at' => $issuedAt !== null ? substr($issuedAt, 0, 10) : null,
+                    'expires_at' => $expiresAt !== null ? substr($expiresAt, 0, 10) : null,
+                    'issued_by' => $issuedByStaffUserId,
+                ]
+            );
+        } catch (\Throwable $e) {
+            try {
+                \App\Support\AppLog::logger()->error(
+                    'Qualification non synchronisée depuis un certificat de formation',
+                    [
+                        'tenant_id' => $tenantId,
+                        'user_id' => $userId,
+                        'certificate_id' => $certificateId,
+                        'error' => $e->getMessage(),
+                    ]
+                );
+            } catch (\Throwable) {
+                error_log('Qualification non synchronisée (certificat #' . $certificateId . ') : ' . $e->getMessage());
+            }
+        }
+    }
 
     /**
      * Émet un certificat si les conditions sont remplies (formation complétée, score, etc.).
@@ -58,6 +116,17 @@ class TrainingCertificateService
         if ($existing && ($existing['status'] ?? '') === 'valid') {
             $eid = (int) ($existing['id'] ?? 0);
             if ($eid > 0) {
+                // Rattrapage : certificats émis avant la mise en place du chaînon
+                // Formation → Qualification (opération idempotente).
+                $this->syncQualificationFromCertificate(
+                    $tenantId,
+                    $userId,
+                    $eid,
+                    $course,
+                    isset($existing['issued_at']) ? (string) $existing['issued_at'] : null,
+                    isset($existing['expires_at']) && $existing['expires_at'] !== null ? (string) $existing['expires_at'] : null,
+                    $issuedByStaffUserId
+                );
                 $rel = trim((string) ($existing['pdf_path'] ?? ''));
                 if ($rel === '' || !is_file(base_path($rel))) {
                     $this->generatePdfOrLogFailure($eid, $tenantId);
@@ -89,6 +158,17 @@ class TrainingCertificateService
             'final_score' => $finalScore,
             'status' => 'valid',
         ]);
+        // Chaînon Formation → Qualification : reporter au dossier personnel avant
+        // la génération du PDF, qui est la partie la plus faillible de l'émission.
+        $this->syncQualificationFromCertificate(
+            $tenantId,
+            $userId,
+            $id,
+            $course,
+            $issuedAt,
+            $expiresAt,
+            $issuedByStaffUserId
+        );
         $this->generatePdfOrLogFailure($id, $tenantId);
         $cert = $this->certificateRepository->findById($id, $tenantId);
         $this->auditService->logCertificateIssued($tenantId, $userId, $id, [
@@ -120,6 +200,13 @@ class TrainingCertificateService
             throw new \InvalidArgumentException('Certificate not found.');
         }
         $this->certificateRepository->revoke($certificateId);
+        // La qualification adossée suit le sort du certificat : conservée pour la
+        // traçabilité, mais elle cesse d'ouvrir des droits.
+        try {
+            $this->personnelQualificationRepository->revokeForCertificate($certificateId);
+        } catch (\Throwable $e) {
+            error_log('Qualification non révoquée (certificat #' . $certificateId . ') : ' . $e->getMessage());
+        }
         $this->auditService->logCertificateRevoked($tenantId, $userId, $certificateId);
     }
 

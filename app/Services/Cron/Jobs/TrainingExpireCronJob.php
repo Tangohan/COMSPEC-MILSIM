@@ -12,6 +12,9 @@ use PDO;
  */
 final class TrainingExpireCronJob implements CronJobInterface
 {
+    /** Fenêtre d'alerte avant échéance d'une qualification (jours). */
+    private const EXPIRING_WINDOW_DAYS = 30;
+
     public function __construct(private PDO $pdo) {}
 
     public function key(): string
@@ -54,12 +57,54 @@ final class TrainingExpireCronJob implements CronJobInterface
             $certificates = $stmt->rowCount();
         }
 
+        // Chaînon Formation → Qualification : aligner le dossier personnel sur les échéances.
+        // Traité toutes communautés confondues (la table porte tenant_id depuis la migration
+        // personnel_qualifications_training_link) ; sans cette colonne, on ne touche à rien.
+        $qualificationsExpired = 0;
+        $qualificationsExpiring = 0;
+        $chk3 = $this->pdo->query(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_qualifications'
+               AND COLUMN_NAME IN ('tenant_id', 'training_certificate_id')"
+        );
+        if ($chk3 && (int) $chk3->fetchColumn() === 2) {
+            $stmt = $this->pdo->prepare(
+                "UPDATE personnel_qualifications SET status = 'expired', updated_at = NOW()
+                 WHERE expires_at IS NOT NULL AND expires_at < CURDATE() AND status <> 'expired'"
+            );
+            $stmt->execute();
+            $qualificationsExpired = $stmt->rowCount();
+
+            $stmt = $this->pdo->prepare(
+                "UPDATE personnel_qualifications SET status = 'expiring', updated_at = NOW()
+                 WHERE expires_at IS NOT NULL
+                   AND expires_at >= CURDATE()
+                   AND expires_at <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
+                   AND status NOT IN ('expiring', 'in_progress')"
+            );
+            $stmt->execute([self::EXPIRING_WINDOW_DAYS]);
+            $qualificationsExpiring = $stmt->rowCount();
+
+            // Un certificat révoqué ou expiré ne doit plus porter une qualification valide.
+            $stmt = $this->pdo->prepare(
+                "UPDATE personnel_qualifications pq
+                 INNER JOIN training_certificates tc ON tc.id = pq.training_certificate_id
+                 SET pq.status = 'expired', pq.updated_at = NOW()
+                 WHERE tc.status <> 'valid' AND pq.status IN ('valid', 'expiring')"
+            );
+            $stmt->execute();
+            $qualificationsExpired += $stmt->rowCount();
+        }
+
         return [
             'ok' => true,
-            'summary' => "Parcours expirés : {$enrollments} · Certificats expirés : {$certificates}",
+            'summary' => "Parcours expirés : {$enrollments} · Certificats expirés : {$certificates}"
+                . " · Qualifications expirées : {$qualificationsExpired} · à renouveler : {$qualificationsExpiring}",
             'details' => [
                 'enrollments' => $enrollments,
                 'certificates' => $certificates,
+                'qualifications_expired' => $qualificationsExpired,
+                'qualifications_expiring' => $qualificationsExpiring,
             ],
         ];
     }

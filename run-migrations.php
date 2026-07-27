@@ -414,6 +414,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] competency_progression_framework : ' . $e->getMessage() . "\n";
 }
+$personnelQualificationsTrainingLinkMigrate = require $root . '/bootstrap/personnel_qualifications_training_link_migration.php';
+try {
+    $personnelQualificationsTrainingLinkMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] personnel_qualifications_training_link : ' . $e->getMessage() . "\n";
+}
 $pedagogyChainMigrate = require $root . '/bootstrap/pedagogy_chain_migration.php';
 try {
     $pedagogyChainMigrate($pdo);
