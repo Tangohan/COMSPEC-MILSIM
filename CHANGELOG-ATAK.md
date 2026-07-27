@@ -58,9 +58,34 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Suivi métier **Nouveau → En cours → Corrigé** (`new` / `in_progress` / `fixed`)
 - Affichage **version du pack** (+ extension) ; filtre par statut
 
+### Ajouté — Pack priorité haute (TOC / terrain)
+
+#### Parité téléphone ATAK
+- Session `/connect` : entrée directe carte (plus de hub invité) + caps BFT / médical / journal radio
+- Badge **Opérateur téléphone** + TTL (déjà en place) ; auteur radio = libellé téléphone
+- Journal d’activité à l’ouverture carte téléphone
+
+#### Fidélité des repères
+- Normalisation API enrichie (couleur Arma → hex, type, forme, dir, alpha)
+- Libellés FR ACE (POI, MEDEVAC, renfort, service) ; couleurs hex sans `#`
+
+#### Photos terrain
+- Messages d’échec métier (manquant / trop lourd / liaison dégradée)
+- Galerie TOC horodatée Zulu + message si image indisponible
+- Notifs mod selon détail d’échec d’envoi
+
+#### SITREP ops-ready
+- Overwatch : plus de cadrage « test » — signalement poste de commandement
+- ACE SITREP / CONTACT / SPOTREP → tableau de situation fusionné
+
+#### Replay AAR exploitable
+- Timeline contacts / MEDEVAC / ordres / repères (`/api/replay/events`)
+- Bilan + PDF export en français avec compteurs opérationnels
+
 ### Déploiement
-- Cache-bust `?v=202607270700` (css atak, map-tools, units, fire-teams, iff, ops-status, cams, mission-cycle)
-- FTP Hostinger → `athena.ttrd.fr` ; `.env` non modifié ; pas de rebuild PBO (aucun SQF)
+- Cache-bust Tacmap `?v=202607270730` (session-profile, chat, sitrep, cams, replay, arma-map-markers, atak.css)
+- FTP Hostinger → `athena.ttrd.fr` (`public_html` + dual `assets/`) ; `.env` non modifié
+- Rebuild mod OK (`build_mod.bat`) — SQF photos + SITREP fusion
 - Lancer `run-migrations` (ou UI migrations) pour créer `theatre_mission_cycles` ; colonne `workflow_status` auto via migration lazy rapports
 ---
 
