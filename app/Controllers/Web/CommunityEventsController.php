@@ -127,6 +127,11 @@ final class CommunityEventsController
             return Response::redirect(url('evenements'));
         }
         Session::flash('success', $result['status'] === 'waitlisted' ? 'Poste complet : vous êtes en liste d’attente.' : 'Inscription au poste confirmée.');
+        // Prérequis de qualification non satisfait en mode « advisory » : l'inscription passe,
+        // mais le membre doit savoir qu'il lui manque une qualification.
+        if (!empty($result['warning'])) {
+            Session::flash('warning', (string) $result['warning']);
+        }
 
         return Response::redirect(url('evenements'));
     }

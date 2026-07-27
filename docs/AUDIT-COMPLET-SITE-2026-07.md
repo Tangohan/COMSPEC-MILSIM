@@ -1182,7 +1182,7 @@ reviendrait à câbler un système sur des données qui n'existent pas.
 |---|---|---|---|
 | P0-1 | Protéger `/api/operations/*` (`config/tactical_api.php`) | 15 min | **Fait** |
 | P0-2 | CSRF sur les 3 POST de `DocumentsController` | 30 min | **Fait** |
-| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **Audit fait — retrait en attente d'arbitrage** |
+| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **Audit fait · dépôt nettoyé · purge d'historique en attente d'arbitrage** |
 | P0-4 | Émettre une qualification à l'émission d'un certificat | 2-3 j | **Fait** (socle) |
 
 #### Détail de la livraison P0
@@ -1262,6 +1262,37 @@ Circonstances atténuantes, vérifiées :
 
 Dans les deux cas, la mesure réellement protectrice est ailleurs : **faire tourner les 6 mots de
 passe concernés**, puisqu'ils ont circulé sous forme d'empreinte.
+
+**Suite donnée** — étape 1 appliquée : `git rm --cached` sur le dump (le fichier reste sur disque
+et reste récupérable par `git show HEAD~1:u416380327_BDD_PROD.sql`), et `.gitignore` couvre
+désormais `*.sql`, `*.sql.gz`, `*.sql.zip`, `*.dump`, avec exception explicite pour
+`migrations/**`, `bootstrap/**` et `docs/**`. Vérifié : 92 migrations restent suivies, aucun
+fichier suivi n'a été perdu. **Étape 2 (purge d'historique) non exécutée — décision de l'équipe.**
+
+#### P1 traités dans la foulée
+
+**S5 — cookie de session `secure`.** `app/Config/auth.php` déduit désormais la valeur d'`APP_ENV`
+lorsque `SESSION_SECURE_COOKIE` est absente ou vide : `secure` est actif d'office en production.
+Une valeur explicite reste prioritaire, pour la préproduction sans TLS. `.env.example` passe à
+`true` avec le commentaire correspondant. Six scénarios vérifiés (production/local × absente/vide/
+forcée) : le comportement en développement local est inchangé.
+
+**N1 — prérequis de qualification sur les postes d'opération.** C'est ce qui rend le chantier P0-4
+utile côté métier : la qualification cesse d'être une donnée d'affichage pour devenir une condition.
+
+- Migration idempotente `community_event_slot_qualification_migration.php` :
+  `required_training_course_id` et `qualification_enforcement` sur `community_event_slots`.
+- `CommunityEventSlotService::qualificationGapForSlot()` puis contrôle dans `signUp()`.
+- **Deux modes, défaut prudent** : `advisory` (inscription acceptée + avertissement nommant la
+  formation manquante) et `strict` (refus). Le défaut est `advisory` pour qu'activer un prérequis
+  sur une communauté existante ne bloque personne du jour au lendemain.
+- Sur un déploiement non migré, `trainingLinkReady()` neutralise le contrôle : personne n'est
+  bloqué. Table de décision vérifiée sur 6 scénarios.
+- L'avertissement remonte via un flash `warning`, rendu par
+  `views/partials/layout_flash_toasts.php` (inclus par `views/layout/main.php:252`).
+
+Reste sur ce chantier : l'UI d'administration pour **choisir** la formation requise sur un poste
+(aujourd'hui la colonne existe mais n'est renseignable qu'en base), et N5 (tableau de recyclage).
 
 ### P1 — Prioritaire
 

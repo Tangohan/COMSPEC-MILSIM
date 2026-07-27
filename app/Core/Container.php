@@ -492,7 +492,9 @@ class Container
                 self::get(\App\Repositories\CommunityEventSlotRepository::class),
                 self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
                 self::get(\App\Repositories\CommunityEventRepository::class),
-                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class)
+                self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
+                self::get(\App\Repositories\PersonnelQualificationRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class)
             ),
             \App\Controllers\Admin\Organization\CommunityEventsAdminController::class => new \App\Controllers\Admin\Organization\CommunityEventsAdminController(
                 self::get(\App\Repositories\CommunityEventRepository::class),

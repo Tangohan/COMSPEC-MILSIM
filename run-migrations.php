@@ -420,6 +420,12 @@ try {
 } catch (Throwable $e) {
     echo '  [ATTENTION] personnel_qualifications_training_link : ' . $e->getMessage() . "\n";
 }
+$communityEventSlotQualificationMigrate = require $root . '/bootstrap/community_event_slot_qualification_migration.php';
+try {
+    $communityEventSlotQualificationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_event_slot_qualification : ' . $e->getMessage() . "\n";
+}
 $pedagogyChainMigrate = require $root . '/bootstrap/pedagogy_chain_migration.php';
 try {
     $pedagogyChainMigrate($pdo);
