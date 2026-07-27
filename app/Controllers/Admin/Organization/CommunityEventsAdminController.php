@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\CommunityEventSlotAssignmentRepository;
 use App\Repositories\CommunityEventSlotRepository;
+use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UnitRepository;
 use App\Repositories\UserRepository;
 use App\Services\Attendance\CommunityEventAttendanceService;
@@ -28,8 +29,40 @@ final class CommunityEventsAdminController
         private CommunityEventAttendanceService $attendance,
         private CommunityEventSlotRepository $slots,
         private CommunityEventSlotAssignmentRepository $slotAssignments,
-        private UnitRepository $units
+        private UnitRepository $units,
+        private TrainingCourseRepository $courses
     ) {}
+
+    /**
+     * Prérequis de qualification saisi sur un poste.
+     * Retourne un tableau vide si le déploiement n'a pas encore la migration : l'écriture
+     * se fait alors sans ces champs, sans erreur.
+     *
+     * @return array{required_training_course_id?: ?int, qualification_enforcement?: string}
+     */
+    private function slotQualificationInput(Request $request, int $tenantId): array
+    {
+        if (!$this->slots->qualificationColumnsReady()) {
+            return [];
+        }
+        $courseId = (int) $request->input('required_training_course_id', 0);
+        if ($courseId > 0) {
+            // Ne jamais référencer une formation d'une autre communauté.
+            $course = $this->courses->findByIdForViewer($courseId, $tenantId);
+            if (!$course) {
+                $courseId = 0;
+            }
+        }
+        $mode = (string) $request->input('qualification_enforcement', 'advisory');
+        if (!in_array($mode, ['advisory', 'strict'], true)) {
+            $mode = 'advisory';
+        }
+
+        return [
+            'required_training_course_id' => $courseId > 0 ? $courseId : null,
+            'qualification_enforcement' => $mode,
+        ];
+    }
 
     public function index(Request $request, array $params = []): Response
     {
@@ -316,6 +349,22 @@ final class CommunityEventsAdminController
         $slots = $this->slots->listForEventWithCounts($id);
         $slotAssignmentsBySlot = $this->slotAssignments->listForEventGroupedBySlot($id);
 
+        // Prérequis de qualification : seules les formations certifiantes produisent une
+        // qualification exploitable (cf. TrainingCertificateService), donc seules elles
+        // peuvent être exigées sur un poste.
+        $qualificationCourses = [];
+        $slotQualificationsEnabled = $this->slots->qualificationColumnsReady();
+        if ($slotQualificationsEnabled) {
+            foreach ($this->courses->listForTenant($tenantId, 'published') as $course) {
+                if ((int) ($course['is_certifying'] ?? 0) === 1) {
+                    $qualificationCourses[] = [
+                        'id' => (int) $course['id'],
+                        'title' => (string) ($course['title'] ?? ''),
+                    ];
+                }
+            }
+        }
+
         return Response::view('layout.main', [
             'title' => 'Participants — ' . (string) ($event['title'] ?? ''),
             'content' => 'admin.organization.event_show',
@@ -328,6 +377,8 @@ final class CommunityEventsAdminController
             'eventSlots' => $slots,
             'eventSlotAssignmentsBySlot' => $slotAssignmentsBySlot,
             'eventUnits' => $this->units->allForTenant($tenantId),
+            'eventSlotQualificationsEnabled' => $slotQualificationsEnabled,
+            'eventQualificationCourses' => $qualificationCourses,
         ]);
     }
 
@@ -357,12 +408,12 @@ final class CommunityEventsAdminController
         }
         $capacity = max(1, min(200, (int) $request->input('capacity', 1)));
         $unitId = (int) $request->input('unit_id', 0);
-        $this->slots->create($tenantId, $id, [
+        $this->slots->create($tenantId, $id, array_merge([
             'label' => mb_substr($label, 0, 160),
             'unit_id' => $unitId > 0 ? $unitId : null,
             'capacity' => $capacity,
             'loadout_notes' => trim((string) $request->input('loadout_notes', '')) ?: null,
-        ]);
+        ], $this->slotQualificationInput($request, $tenantId)));
         Session::flash('success', 'Poste ajouté.');
 
         return $this->redirectToEvent($params, $id);
@@ -395,12 +446,12 @@ final class CommunityEventsAdminController
         }
         $capacity = max(1, min(200, (int) $request->input('capacity', 1)));
         $unitId = (int) $request->input('unit_id', 0);
-        $updated = $this->slots->update($slotId, $id, [
+        $updated = $this->slots->update($slotId, $id, array_merge([
             'label' => mb_substr($label, 0, 160),
             'unit_id' => $unitId > 0 ? $unitId : null,
             'capacity' => $capacity,
             'loadout_notes' => trim((string) $request->input('loadout_notes', '')) ?: null,
-        ]);
+        ], $this->slotQualificationInput($request, $tenantId)));
         Session::flash($updated ? 'success' : 'error', $updated ? 'Poste modifié.' : 'Poste introuvable.');
 
         return $this->redirectToEvent($params, $id);

@@ -1042,6 +1042,18 @@
   color: #64748b;
 }
 
+/* Prérequis de qualification bloquant sur un poste (mode « strict »). */
+.bo-events__chip--danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* Le badge de prérequis se place sous le nom du poste, pas à sa suite. */
+.bo-events__member-name + .bo-events__chip {
+  margin-top: 0.25rem;
+}
+
 .bo-events__panel--danger {
   border-color: #fecaca;
 }

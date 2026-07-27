@@ -504,7 +504,8 @@ class Container
                 self::get(\App\Services\Attendance\CommunityEventAttendanceService::class),
                 self::get(\App\Repositories\CommunityEventSlotRepository::class),
                 self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
-                self::get(\App\Repositories\UnitRepository::class)
+                self::get(\App\Repositories\UnitRepository::class),
+                self::get(\App\Repositories\TrainingCourseRepository::class)
             ),
             \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
                 self::get(\App\Repositories\CommunityEventRepository::class),

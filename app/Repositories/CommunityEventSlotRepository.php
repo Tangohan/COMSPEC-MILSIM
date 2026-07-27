@@ -15,9 +15,36 @@ class CommunityEventSlotRepository
 {
     private PDO $pdo;
 
+    /** Cache : colonnes de prérequis de qualification présentes (déploiement migré ou non). */
+    private ?bool $qualificationColumnsReady = null;
+
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+    }
+
+    /**
+     * Le prérequis de qualification est-il disponible sur les postes ?
+     * Sur un déploiement non migré, l'UI et les écritures l'ignorent silencieusement.
+     */
+    public function qualificationColumnsReady(): bool
+    {
+        if ($this->qualificationColumnsReady !== null) {
+            return $this->qualificationColumnsReady;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_event_slots'
+                   AND COLUMN_NAME IN ('required_training_course_id', 'qualification_enforcement')"
+            );
+            $st->execute();
+            $this->qualificationColumnsReady = (int) $st->fetchColumn() === 2;
+        } catch (\Throwable) {
+            $this->qualificationColumnsReady = false;
+        }
+
+        return $this->qualificationColumnsReady;
     }
 
     /**
@@ -106,11 +133,8 @@ class CommunityEventSlotRepository
 
     public function create(int $tenantId, int $eventId, array $data): int
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO community_event_slots (tenant_id, event_id, label, unit_id, capacity, loadout_notes, position, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW())'
-        );
-        $stmt->execute([
+        $columns = ['tenant_id', 'event_id', 'label', 'unit_id', 'capacity', 'loadout_notes', 'position'];
+        $values = [
             $tenantId,
             $eventId,
             $data['label'],
@@ -118,7 +142,21 @@ class CommunityEventSlotRepository
             $data['capacity'] ?? 1,
             $data['loadout_notes'] ?? null,
             $data['position'] ?? $this->nextPositionForEvent($eventId),
-        ]);
+        ];
+
+        if ($this->qualificationColumnsReady()) {
+            $columns[] = 'required_training_course_id';
+            $values[] = $data['required_training_course_id'] ?? null;
+            $columns[] = 'qualification_enforcement';
+            $values[] = $data['qualification_enforcement'] ?? 'advisory';
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO community_event_slots (' . implode(', ', $columns) . ', created_at)
+             VALUES (' . $placeholders . ', NOW())'
+        );
+        $stmt->execute($values);
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -126,6 +164,10 @@ class CommunityEventSlotRepository
     public function update(int $slotId, int $eventId, array $data): bool
     {
         $cols = ['label', 'unit_id', 'capacity', 'loadout_notes', 'position'];
+        if ($this->qualificationColumnsReady()) {
+            $cols[] = 'required_training_course_id';
+            $cols[] = 'qualification_enforcement';
+        }
         $sets = [];
         $params = [];
         foreach ($cols as $col) {
