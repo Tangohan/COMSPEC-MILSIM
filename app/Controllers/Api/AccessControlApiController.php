@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Api;
 
+use App\Authorization\SystemReservedPermissions;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
@@ -47,9 +48,17 @@ final class AccessControlApiController
             return Response::json(['ok' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
         }
 
-        $st = $this->pdo->prepare('INSERT INTO permissions (tenant_id, code, slug, label, name, category, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
         $code = (string) $request->input('code');
         $label = (string) $request->input('label', $code);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Communauté active requise.'], 400);
+        }
+        // Un slug réservé créé dans le périmètre du tenant deviendrait attribuable
+        // par les écrans de rôles : refusé à la source.
+        if (SystemReservedPermissions::isReserved($code)) {
+            return Response::json(['ok' => false, 'error' => 'Cette habilitation est réservée à l’administration de la plateforme.'], 403);
+        }
+        $st = $this->pdo->prepare('INSERT INTO permissions (tenant_id, code, slug, label, name, category, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())');
         $st->execute([$tenantId, $code, $code, $label, $label, (string) $request->input('category', 'module')]);
 
         return Response::json(['ok' => true, 'id' => (int) $this->pdo->lastInsertId()]);
@@ -57,9 +66,33 @@ final class AccessControlApiController
 
     public function rolePermissions(Request $request, array $params = []): Response
     {
+        $tenantId = (int) Session::get('tenant_id');
         $roleId = (int) $request->input('role_id');
         $permissionId = (int) $request->input('permission_id');
         $allowed = $request->input('allowed') ? 1 : 0;
+        if ($tenantId < 1 || $roleId < 1 || $permissionId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Requête incomplète.'], 400);
+        }
+
+        // Le rôle doit appartenir à la communauté active : jamais un rôle site,
+        // jamais le rôle d’une autre communauté.
+        $roleCheck = $this->pdo->prepare('SELECT 1 FROM roles WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $roleCheck->execute([$roleId, $tenantId]);
+        if (!$roleCheck->fetchColumn()) {
+            return Response::json(['ok' => false, 'error' => 'Rôle hors du périmètre de votre communauté.'], 403);
+        }
+
+        // La permission doit elle aussi appartenir au tenant, et ne pas être réservée
+        // à la plateforme — sinon un rôle communauté deviendrait super-administrateur.
+        $permCheck = $this->pdo->prepare('SELECT slug FROM permissions WHERE id = ? AND tenant_id = ? LIMIT 1');
+        $permCheck->execute([$permissionId, $tenantId]);
+        $slug = $permCheck->fetchColumn();
+        if ($slug === false) {
+            return Response::json(['ok' => false, 'error' => 'Habilitation hors du périmètre de votre communauté.'], 403);
+        }
+        if (SystemReservedPermissions::isReserved((string) $slug)) {
+            return Response::json(['ok' => false, 'error' => 'Cette habilitation est réservée à l’administration de la plateforme.'], 403);
+        }
 
         $this->pdo->prepare('DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?')->execute([$roleId, $permissionId]);
         $this->pdo->prepare('INSERT INTO role_permissions (role_id, permission_id, allowed) VALUES (?, ?, ?)')->execute([$roleId, $permissionId, $allowed]);
