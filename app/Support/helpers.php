@@ -513,6 +513,121 @@ if (!function_exists('back_office_path_suffix')) {
     }
 }
 
+if (!function_exists('back_office_nav_href_to_path')) {
+    /**
+     * Extrait le chemin applicatif normalisé d’un href de menu back-office.
+     */
+    function back_office_nav_href_to_path(string $href): string
+    {
+        $path = $href;
+        if (preg_match('#^https?://#i', $href)) {
+            $parsed = parse_url($href, PHP_URL_PATH);
+            $path = is_string($parsed) ? $parsed : '';
+        }
+        $path = trim((string) $path, '/');
+        foreach (['public/', 'index.php/'] as $strip) {
+            if (str_starts_with($path, $strip)) {
+                $path = substr($path, strlen($strip));
+            }
+        }
+
+        return $path;
+    }
+}
+
+if (!function_exists('back_office_nav_path_match_score')) {
+    /**
+     * Score de correspondance chemin courant ↔ entrée de menu (exact > préfixe le plus long).
+     */
+    function back_office_nav_path_match_score(string $itemPath, string $currentPath): int
+    {
+        $itemPath = trim($itemPath, '/');
+        $currentPath = trim($currentPath, '/');
+        if ($itemPath === '' && $currentPath === '') {
+            return 10000;
+        }
+        if ($itemPath === '' || $currentPath === '') {
+            return 0;
+        }
+        if ($currentPath === $itemPath) {
+            return 1000 + strlen($itemPath);
+        }
+        if (str_starts_with($currentPath, $itemPath . '/')) {
+            return strlen($itemPath);
+        }
+
+        return 0;
+    }
+}
+
+if (!function_exists('back_office_nav_resolve_sibling_active')) {
+    /**
+     * Parmi des entrées sœurs, ne conserve l’état actif que sur la correspondance la plus spécifique.
+     *
+     * @param list<array<string, mixed>> $items
+     * @return list<array<string, mixed>>
+     */
+    function back_office_nav_resolve_sibling_active(array $items, string $currentPath): array
+    {
+        if ($items === []) {
+            return $items;
+        }
+
+        $candidates = [];
+        foreach ($items as $index => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $hrefPath = back_office_nav_href_to_path((string) ($item['href'] ?? ''));
+            $pathScore = back_office_nav_path_match_score($hrefPath, $currentPath);
+            $explicit = !empty($item['active']);
+            if ($pathScore > 0 || $explicit) {
+                $candidates[] = [
+                    'index' => $index,
+                    'path' => $hrefPath,
+                    'pathScore' => $pathScore,
+                ];
+            }
+        }
+
+        if ($candidates === []) {
+            foreach ($items as &$item) {
+                if (is_array($item)) {
+                    $item['active'] = false;
+                }
+            }
+            unset($item);
+
+            return $items;
+        }
+
+        usort($candidates, static function (array $a, array $b): int {
+            if ($a['pathScore'] !== $b['pathScore']) {
+                return $b['pathScore'] <=> $a['pathScore'];
+            }
+            if ($a['pathScore'] > 0 && $b['pathScore'] === 0) {
+                return -1;
+            }
+            if ($b['pathScore'] > 0 && $a['pathScore'] === 0) {
+                return 1;
+            }
+
+            return $a['index'] <=> $b['index'];
+        });
+
+        $winnerIndex = $candidates[0]['index'];
+        foreach ($items as $index => &$item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $item['active'] = $index === $winnerIndex;
+        }
+        unset($item);
+
+        return $items;
+    }
+}
+
 if (!function_exists('is_back_office_request')) {
     function is_back_office_request(): bool
     {

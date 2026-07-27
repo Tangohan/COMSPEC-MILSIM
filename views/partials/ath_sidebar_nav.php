@@ -240,9 +240,27 @@ $athNavFilterGroup = static function (array $groups) use ($boHrefAllowed): array
 
 $athNavGroups = $athNavFilterGroup($athNavGroups);
 
+$athNavResolveGroups = static function (array $groups) use ($p): array {
+    foreach ($groups as &$group) {
+        foreach ($group['items'] as &$item) {
+            $children = is_array($item['children'] ?? null) ? $item['children'] : [];
+            if ($children !== []) {
+                $item['children'] = back_office_nav_resolve_sibling_active($children, $p);
+            }
+        }
+        unset($item);
+        $group['items'] = back_office_nav_resolve_sibling_active($group['items'], $p);
+    }
+    unset($group);
+
+    return $groups;
+};
+
+$athNavGroups = $athNavResolveGroups($athNavGroups);
+
 $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
     $children = is_array($item['children'] ?? null) ? $item['children'] : [];
-    $active = !empty($item['active']);
+    $selfActive = !empty($item['active']);
     $childActive = false;
     foreach ($children as $child) {
         if (!empty($child['active'])) {
@@ -250,14 +268,13 @@ $renderAthNavItem = static function (array $item) use ($h, $athIco): void {
             break;
         }
     }
-    $parentActive = $active || $childActive;
-    $showKids = $children !== [] && $parentActive;
+    $showKids = $children !== [] && ($selfActive || $childActive);
     $badge = isset($item['badge']) && (string) $item['badge'] !== '' ? (string) $item['badge'] : null;
     $warn = !empty($item['warn']);
     $iconMarkup = $athIco((string) ($item['icon'] ?? ''));
     ?>
     <div class="ath-sidebar__nav-block">
-        <a href="<?= $h((string) $item['href']) ?>" class="ath-sidebar__item<?= $parentActive ? ' is-active' : '' ?>" title="<?= $h((string) $item['label']) ?>">
+        <a href="<?= $h((string) $item['href']) ?>" class="ath-sidebar__item<?= $selfActive ? ' is-active' : '' ?>" title="<?= $h((string) $item['label']) ?>">
             <?php if ($iconMarkup !== ''): ?><?= $iconMarkup ?><?php endif; ?>
             <span class="ath-sidebar__item-label"><?= $h((string) $item['label']) ?></span>
             <?php if ($badge !== null): ?>

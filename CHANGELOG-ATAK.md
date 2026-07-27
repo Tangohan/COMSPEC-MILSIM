@@ -9,6 +9,18 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.2.2] - 2026-07-27
 
+### Ajouté — Waypoints partagés & itinéraires de patrouille (portail)
+
+#### API & schéma
+- Tables `atak_waypoint_routes` / `atak_waypoints` (`migrations/2026_07_27_001_atak_waypoints.sql`) ; filet lazy `AtakWaypointsSchema` si la base était déjà installée
+- Routes : `/api/atak/waypoint-routes` (CRUD), `/api/atak/waypoints` (CRUD), `POST /api/atak/waypoints/{id}/reached`
+- Création d’itinéraire avec points en un seul appel ; `GET …/waypoint-routes/{id}` expose `next_waypoint` pour le guidage client
+- Progression automatique de l’itinéraire : Planifié → Actif (1er point atteint) → Terminé
+
+#### Pack mod
+- Changelog Workshop / dépôt pack alignés sur **1.2.2** ; versions addons `main` / `connect` / `mavik_compat` → `1.2.2`, `atak_athena` → `1.0.7`
+- Guidage SQF (marqueurs numérotés + sondage `reached`) prévu dans une prochaine livraison pack — API déjà consommable
+
 ### Ajouté — Réalisme ATAK (terminal & certificat)
 
 #### API mod ↔ registre communauté

@@ -11,6 +11,14 @@
 - Extension `COMSPECExtension` : `RegisterTerminal`, `RegisterCertificate`, `GetTerminalRealism`.
 - Rebuild requis : `connect.pbo`, `atak_athena.pbo`, `COMSPECExtension_x64.dll`.
 
+### Versions pack
+- Addons `main` / `connect` / `mavik_compat` : **1.2.2**
+- Addon `atak_athena` : **1.0.7**
+
+### Côté Athena (compatible avec ce pack)
+- Back-office **Certificats et terminaux**, comptes rendus post-op, réponses nominatives, matrice rôles & permissions.
+- API waypoints / itinéraires de patrouille prête côté portail (guidage en jeu prévu dans une prochaine version du pack).
+
 ---
 
 ## 1.2.1 — 2026-07-26

@@ -6,9 +6,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"cba_main", "cba_xeh", "A3_UI_F"};
         author = "COMSPEC";
-        version = 1.20;
-        versionStr = "1.2.0";
-        versionAr[] = {1, 2, 0};
+        version = 1.22;
+        versionStr = "1.2.2";
+        versionAr[] = {1, 2, 2};
     };
 };
 

@@ -50,7 +50,7 @@ return static function (PDO $pdo): void {
                 tenant_id INT UNSIGNED NOT NULL,
                 role_id INT UNSIGNED NOT NULL,
                 module_key VARCHAR(32) NOT NULL,
-                access_level VARCHAR(32) NOT NULL DEFAULT ''none'',
+                access_level VARCHAR(32) NOT NULL DEFAULT \'none\',
                 can_delete TINYINT(1) NOT NULL DEFAULT 0,
                 can_export TINYINT(1) NOT NULL DEFAULT 0,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -1,15 +1,15 @@
-COMSPEC Overwatch — 27/07/2026
+COMSPEC Overwatch 1.2.2 — 27/07/2026
 
-Réalisme ATAK & liaison terminal
+Réalisme ATAK (terminal & certificat)
 
-• Identité terminal stable par installation (persistée entre les sessions)
+• Identité terminal stable par installation (conservée entre les sessions)
 • Enregistrement automatique du terminal et du certificat vers Athena à la liaison compte, à la connexion téléphone et au changement d’indicatif
-• Écran État ATAK : certificat (actif, expiré, en attente, révoqué) et identité terminal en libellés français
-• Messages clairs en jeu si l’appairage ou la délivrance du certificat échoue
-• Respect du réglage communauté « appairage automatique » côté serveur Athena
+• Écran État ATAK : certificat (actif, expiré, en attente, révoqué) et identité terminal, en français
+• Messages clairs en jeu si l’appairage ou la délivrance échoue
+• Respect du réglage communauté « appairage automatique » sur Athena
 
-Rappel — déjà en place depuis la 1.2.1
+Rappel — déjà en place (1.2.1)
 
-• Stabilisation respawn, menu ACE ATAK, briefing, appui aérien, marqueurs carte web, contact HQ, photos, liaison téléphone /atak/connect, vibration terminal depuis le TOC, signalement d’erreurs vers Athena
+• Stabilisation respawn, menu ACE ATAK, briefing, appui aérien, marqueurs sur la carte web, contact HQ, photos, liaison téléphone, vibration terminal depuis le TOC, signalement d’erreurs vers Athena
 
-Relancez Arma après mise à jour. Hard-refresh recommandé sur athena.ttrd.fr pour les nouveautés web (comptes rendus, permissions, réponses nominatives).
+Après mise à jour : relancez Arma. Sur athena.ttrd.fr, un hard-refresh est recommandé pour les nouveautés web (certificats / terminaux, comptes rendus, réponses nominatives).

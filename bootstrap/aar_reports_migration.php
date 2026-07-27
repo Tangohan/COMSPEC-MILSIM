@@ -25,7 +25,7 @@ return static function (PDO $pdo): void {
             validated_by_user_id INT UNSIGNED DEFAULT NULL,
             title VARCHAR(200) NOT NULL,
             operation_label VARCHAR(200) DEFAULT NULL,
-            status VARCHAR(32) NOT NULL DEFAULT ''pending'',
+            status VARCHAR(32) NOT NULL DEFAULT \'pending\',
             reported_at DATETIME DEFAULT NULL,
             validated_at DATETIME DEFAULT NULL,
             mission_started_at DATETIME DEFAULT NULL,
