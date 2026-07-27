@@ -367,9 +367,9 @@ if (!empty($isBackOfficeShell)) {
 
             <div class="ath-main relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden<?= (!empty($isBackOfficeShell)) ? '' : (( !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? ' bg-[#050505]' : ' bg-slate-50') ?>">
                 <?php
-                require base_path('views/partials/navbar_info_banners.php');
-                // Bandeau TRANSMISSION / Alertes & annonces : portail membre uniquement (pas le shell back-office).
+                // Bandeaux TRANSMISSION / annonces navbar : portail membre uniquement (pas le shell back-office).
                 if (empty($isBackOfficeShell)) {
+                    require base_path('views/partials/navbar_info_banners.php');
                     require base_path('views/partials/alert_banners.php');
                 }
                 require base_path('views/partials/forum_moderation_alerts.php');

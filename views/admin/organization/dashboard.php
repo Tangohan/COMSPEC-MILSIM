@@ -293,17 +293,6 @@ $discordInviteMissing = !empty($discordInviteMissing);
             </div>
         </header>
 
-        <?php
-        $announce_items = is_array($orgAnnounceItems ?? null) ? $orgAnnounceItems : [];
-        $announce_heading = 'Alertes & annonces';
-        $announce_kicker = 'Transmission';
-        $announce_empty = 'Aucune alerte ni annonce publiée — créez-en depuis la gestion des messages.';
-        $announce_id = 'org-announce';
-        $announce_list_url = url('alertes');
-        $announce_manage_url = url('back-office/alerts');
-        require base_path('views/partials/announce_tiles.php');
-        ?>
-
         <nav class="org-dash__tabs" aria-label="Sections du tableau de bord">
             <button type="button" class="org-dash__tab" :class="tab === 'overview' && 'is-active'" @click="tab = 'overview'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search); }">Synthèse</button>
             <button type="button" class="org-dash__tab" :class="tab === 'rh' && 'is-active'" @click="tab = 'rh'; if (history.replaceState) { history.replaceState(null, '', window.location.pathname + window.location.search + '#rh'); }">RH &amp; recrutement</button>
