@@ -683,6 +683,8 @@ return function (Router $router) {
     $router->get('/back-office/analytics', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/analytics/conversion', [OrganizationAnalyticsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/integrations', [OrganizationIntegrationsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/doctrine/referentiel', [\App\Controllers\Admin\Organization\DoctrineReferentialController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/doctrine', [DoctrineAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine', [DoctrineAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/doctrine/versions/{versionId}/activate', [DoctrineAdminController::class, 'activate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

@@ -54,6 +54,12 @@ final class TenantAdminSettingsRepository
                 'account_lockout_attempts' => $this->boundedInt($current['security']['account_lockout_attempts'] ?? 5, 3, 20),
                 'extended_audit_logging' => $this->bool($current['security']['extended_audit_logging'] ?? false),
             ],
+            'doctrine' => [
+                // Référentiel doctrinal proposé par les catalogues (ordres, échelons, formation).
+                'referential' => \App\Services\Doctrine\DoctrineReferential::sanitize(
+                    $current['doctrine']['referential'] ?? null
+                ),
+            ],
             'atak_defaults' => [
                 'automatic_pairing' => $this->bool($current['atak_defaults']['automatic_pairing'] ?? true),
                 'minimum_client_version' => $this->clip((string) ($current['atak_defaults']['minimum_client_version'] ?? '5.1.8'), 32),
@@ -97,6 +103,9 @@ final class TenantAdminSettingsRepository
                 'session_expiration_minutes' => 120,
                 'account_lockout_attempts' => 5,
                 'extended_audit_logging' => false,
+            ],
+            'doctrine' => [
+                'referential' => \App\Services\Doctrine\DoctrineReferential::DEFAULT,
             ],
             'atak_defaults' => [
                 'automatic_pairing' => true,

@@ -122,6 +122,9 @@ return [
         ['path' => 'back-office/security-indicators', 'group' => 'Système', 'kicker' => 'SYSTÈME · SÉCURITÉ', 'title' => 'Blocages & sécurité'],
         ['path' => 'back-office/forum-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · FORUM', 'title' => 'Modération forum'],
         ['path' => 'back-office/courrier/traceabilite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Traçabilité courrier'],
+        ['path' => 'back-office/doctrine/referentiel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS · DOCTRINE', 'title' => 'Référentiel doctrinal', 'quick' => [
+            ['label' => 'Doctrine & SOP', 'href' => 'back-office/doctrine'],
+        ]],
         ['path' => 'back-office/doctrine', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Doctrine & SOP'],
         ['path' => 'back-office/conformite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Export conformité'],
         ['path' => 'back-office/recruitments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Recrutement'],
