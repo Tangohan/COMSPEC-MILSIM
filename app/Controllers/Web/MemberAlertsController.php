@@ -29,7 +29,9 @@ final class MemberAlertsController
             'title' => 'Alertes & annonces',
             'content' => 'alerts.index',
             'alerts_active' => $payload['active'],
+            'alerts_upcoming' => $payload['upcoming'],
             'alerts_history' => $payload['history'],
+            'alerts_show_upcoming' => $payload['show_upcoming'],
             'alerts_manage_url' => $payload['manage_url'],
         ]);
     }

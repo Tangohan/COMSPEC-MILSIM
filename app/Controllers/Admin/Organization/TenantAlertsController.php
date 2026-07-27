@@ -23,7 +23,8 @@ final class TenantAlertsController
     public function __construct(
         private ?TenantAlertRepository $alerts = null,
         private ?TenantRepository $tenants = null,
-        private ?DiscordWebhookService $discordWebhook = null
+        private ?DiscordWebhookService $discordWebhook = null,
+        private ?\App\Repositories\TenantAdminSettingsRepository $adminSettingsRepository = null
     ) {
         $this->alerts ??= new TenantAlertRepository();
         $this->tenants ??= new TenantRepository();
@@ -37,11 +38,55 @@ final class TenantAlertsController
             return Response::redirect(url('dashboard'));
         }
 
+        $showUpcoming = false;
+        try {
+            $settings = $this->adminSettings()->getForTenant($tenantId);
+            $showUpcoming = !empty($settings['portal']['show_upcoming_alerts']);
+        } catch (\Throwable) {
+            $showUpcoming = false;
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.tenant_alerts_index',
             'title' => 'Annonces & alertes',
             'tenantAlerts' => $this->alerts->allForTenantOrdered($tenantId),
+            'tenantAlertsShowUpcoming' => $showUpcoming,
         ]);
+    }
+
+    /**
+     * Active ou désactive l’affichage des annonces programmées sur la page membre
+     * « Alertes & annonces ». Le réglage vit dans les paramètres de la communauté
+     * (`portal.show_upcoming_alerts`) et ne touche pas les annonces elles-mêmes.
+     */
+    public function updateUpcomingVisibility(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId <= 0) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect(url('back-office/alerts'));
+        }
+
+        $enabled = (bool) $request->input('show_upcoming');
+        $repository = $this->adminSettings();
+        $settings = $repository->getForTenant($tenantId);
+        $settings['portal']['show_upcoming_alerts'] = $enabled;
+        $repository->saveForTenant($tenantId, $settings);
+
+        Session::flash('success', $enabled
+            ? 'Les annonces programmées sont maintenant visibles par les membres, avant leur date de diffusion.'
+            : 'Les annonces programmées ne sont plus visibles avant leur date de diffusion.');
+
+        return Response::redirect(url('back-office/alerts'));
+    }
+
+    private function adminSettings(): \App\Repositories\TenantAdminSettingsRepository
+    {
+        return $this->adminSettingsRepository ??= new \App\Repositories\TenantAdminSettingsRepository();
     }
 
     public function create(Request $request, array $params = []): Response

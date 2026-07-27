@@ -827,6 +827,7 @@ return function (Router $router) {
     $router->get('/back-office/alerts/{id}/edit', [TenantAlertsController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/{id}/update', [TenantAlertsController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/alerts/{id}/delete', [TenantAlertsController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/alerts/affichage-a-venir', [TenantAlertsController::class, 'updateUpcomingVisibility'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/alerts', [TenantAlertsController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement', [RecruitmentWorkspaceController::class, 'dashboard'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ressources/recrutement/analyses', [RecruitmentWorkspaceController::class, 'analytics'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

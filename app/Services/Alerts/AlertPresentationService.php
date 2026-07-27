@@ -151,6 +151,58 @@ final class AlertPresentationService
         return array_slice($out, 0, $limit);
     }
 
+    /**
+     * Annonces programmées dont la diffusion commencera plus tard, du plus proche au plus
+     * lointain. Le filtrage d’audience est identique aux annonces en cours : une personne ne
+     * voit à l’avance que ce qui la concernera.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function upcomingForCurrentRequest(int $limit = 40): array
+    {
+        $userId = Session::get('user_id') ? (int) Session::get('user_id') : 0;
+        $tenantId = Session::get('tenant_id') ? (int) Session::get('tenant_id') : 0;
+
+        $hasPaid = false;
+        if ($tenantId > 0) {
+            $row = $this->tenants->findById($tenantId);
+            if ($row) {
+                $st = (string) ($row['subscription_status'] ?? 'none');
+                $hasPaid = in_array($st, ['active', 'trialing'], true);
+            }
+        }
+
+        $platformRows = $this->platformAlerts->listUpcoming($limit);
+        $platformRows = array_values(array_filter(
+            $platformRows,
+            fn (array $r) => $this->matchesAudience($r, $userId > 0, $tenantId, $hasPaid)
+        ));
+
+        $tenantRows = [];
+        if ($userId > 0 && $tenantId > 0) {
+            $tenantRows = $this->tenantAlerts->listUpcomingForTenant($tenantId, $limit);
+        }
+
+        $out = [];
+        foreach ([['platform', $platformRows], ['tenant', $tenantRows]] as [$scope, $rows]) {
+            foreach ($rows as $r) {
+                $item = $this->normalizeRow($scope, $r);
+                $item['starts_at'] = isset($r['starts_at']) && $r['starts_at'] !== '' ? (string) $r['starts_at'] : null;
+                $item['ended_at'] = isset($r['ends_at']) && $r['ends_at'] !== '' ? (string) $r['ends_at'] : null;
+                $out[] = $item;
+            }
+        }
+
+        usort($out, static function (array $a, array $b): int {
+            $ta = strtotime((string) ($a['starts_at'] ?? '')) ?: PHP_INT_MAX;
+            $tb = strtotime((string) ($b['starts_at'] ?? '')) ?: PHP_INT_MAX;
+
+            return $ta <=> $tb;
+        });
+
+        return array_slice($out, 0, $limit);
+    }
+
     /** @param array<string, mixed> $row */
     private function normalizeRow(string $scope, array $row): array
     {

@@ -13,7 +13,10 @@ $secureCookieDefault = $appEnv === 'production' || $appEnv === 'prod';
 $secureCookieRaw = env('SESSION_SECURE_COOKIE', null);
 
 return [
-    'session_lifetime' => (int) env('SESSION_LIFETIME', 120),
+    // Durée en minutes. 300 = 5 h : une séance d'administration ou une opération ne doit
+    // pas être coupée en pleine saisie. Le serveur applique la même durée côté données
+    // (cf. App\Core\Session::start()), sans quoi le cookie survivrait à la session.
+    'session_lifetime' => max(15, (int) env('SESSION_LIFETIME', 300)),
     'session_secure_cookie' => $secureCookieRaw === null || $secureCookieRaw === ''
         ? $secureCookieDefault
         : filter_var($secureCookieRaw, FILTER_VALIDATE_BOOL),

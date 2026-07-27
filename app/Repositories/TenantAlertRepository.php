@@ -163,6 +163,36 @@ class TenantAlertRepository
         }
     }
 
+    /**
+     * Annonces communautaires dont la diffusion n’a pas encore commencé.
+     *
+     * Une annonce sans `starts_at` est déjà diffusée : elle n’est jamais « à venir ».
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listUpcomingForTenant(int $tenantId, int $limit = 40): array
+    {
+        $limit = max(1, min(100, $limit));
+        try {
+            $now = date('Y-m-d H:i:s');
+            $sql = 'SELECT * FROM tenant_alerts WHERE tenant_id = ?
+                AND is_active = 1
+                AND starts_at IS NOT NULL AND starts_at > ?
+                AND (ends_at IS NULL OR ends_at > ?)
+                ORDER BY starts_at ASC, sort_order ASC, id ASC
+                LIMIT ' . $limit;
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$tenantId, $now, $now]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
     /** @param array<string, mixed> $data */
     public function insert(int $tenantId, array $data): int
     {

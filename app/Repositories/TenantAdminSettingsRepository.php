@@ -36,6 +36,10 @@ final class TenantAdminSettingsRepository
                 'public_registrations' => $this->bool($current['portal']['public_registrations'] ?? true),
                 'manual_validation' => $this->bool($current['portal']['manual_validation'] ?? true),
                 'public_wall' => $this->bool($current['portal']['public_wall'] ?? false),
+                // Annonces programmées visibles d’avance sur /alertes. Désactivé par défaut :
+                // une communauté qui prépare ses annonces à l’avance ne veut pas forcément
+                // les dévoiler avant leur date de diffusion.
+                'show_upcoming_alerts' => $this->bool($current['portal']['show_upcoming_alerts'] ?? false),
                 'timezone' => $this->timezone((string) ($current['portal']['timezone'] ?? 'Europe/Paris')),
             ],
             'notifications' => [
@@ -79,6 +83,7 @@ final class TenantAdminSettingsRepository
                 'public_registrations' => true,
                 'manual_validation' => true,
                 'public_wall' => false,
+                'show_upcoming_alerts' => false,
                 'timezone' => 'Europe/Paris',
             ],
             'notifications' => [

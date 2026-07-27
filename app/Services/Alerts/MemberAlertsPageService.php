@@ -18,12 +18,21 @@ final class MemberAlertsPageService
         private AlertPresentationService $alerts,
         private TenantDashboardPinService $pins,
         private ForumTopicRepository $forumTopics,
-    ) {}
+        private ?\App\Repositories\TenantAdminSettingsRepository $adminSettings = null,
+    ) {
+        $this->adminSettings ??= new \App\Repositories\TenantAdminSettingsRepository();
+    }
 
     /**
+     * `upcoming` n’est peuplé que si la communauté a activé l’affichage des annonces
+     * programmées (`portal.show_upcoming_alerts`) : sans ce réglage, la liste reste vide et
+     * la page ne montre rien de plus qu’avant.
+     *
      * @return array{
      *   active: list<array<string, mixed>>,
+     *   upcoming: list<array<string, mixed>>,
      *   history: list<array<string, mixed>>,
+     *   show_upcoming: bool,
      *   manage_url: ?string
      * }
      */
@@ -123,6 +132,36 @@ final class MemberAlertsPageService
             $history = [];
         }
 
+        $showUpcoming = false;
+        if ($tenantId > 0) {
+            try {
+                $settings = $this->adminSettings->getForTenant($tenantId);
+                $showUpcoming = !empty($settings['portal']['show_upcoming_alerts']);
+            } catch (\Throwable) {
+                // Réglage indisponible : on reste sur le comportement d’origine.
+                $showUpcoming = false;
+            }
+        }
+
+        $upcoming = [];
+        if ($showUpcoming) {
+            try {
+                foreach ($this->alerts->upcomingForCurrentRequest(40) as $alert) {
+                    $item = $this->mapAlertRow($alert, false);
+                    // Une annonce déjà visible ailleurs sur la page ne doit pas réapparaître ici.
+                    if (isset($activeKeys[$this->itemKey($item)])) {
+                        continue;
+                    }
+                    $item['status'] = 'upcoming';
+                    $item['starts_at'] = $alert['starts_at'] ?? null;
+                    $item['dismissible'] = false;
+                    $upcoming[] = $item;
+                }
+            } catch (\Throwable) {
+                $upcoming = [];
+            }
+        }
+
         $gate = Gate::getInstance();
         $manageUrl = $gate->allows('dashboard.pins.manage')
             || $gate->allows('admin.organization')
@@ -132,7 +171,9 @@ final class MemberAlertsPageService
 
         return [
             'active' => $active,
+            'upcoming' => $upcoming,
             'history' => $history,
+            'show_upcoming' => $showUpcoming,
             'manage_url' => $manageUrl,
         ];
     }

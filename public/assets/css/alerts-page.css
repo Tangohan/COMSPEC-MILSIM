@@ -487,6 +487,27 @@ a.alerts-page__card:hover {
   opacity: 0.65;
 }
 
+/* Annonce programmée : même mise en page qu'une annonce en cours, mais visuellement
+   en attente — bord tireté et rail atténué, pour qu'on ne la confonde pas avec une
+   consigne déjà en vigueur. */
+.alerts-page__card--upcoming {
+  background: #fcfdff;
+  border-style: dashed;
+}
+
+.alerts-page__card--upcoming .alerts-page__card-rail {
+  opacity: 0.45;
+}
+
+.alerts-page__chip--upcoming {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 0.72rem;
+}
 .alerts-page__card-main {
   display: flex;
   flex-direction: column;
