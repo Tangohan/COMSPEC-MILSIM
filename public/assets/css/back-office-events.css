@@ -1169,3 +1169,275 @@
     padding-top: 0.35rem;
   }
 }
+
+/* —— Fiche créneau ATHENA —— */
+.ath-event-show__section {
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.ath-event-show__section--danger {
+  border-color: #fecaca;
+}
+
+.ath-event-show__section-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef1f2;
+  background: linear-gradient(180deg, #fafbfc, #fff);
+}
+
+.ath-event-show__section-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #1a1f21;
+}
+
+.ath-event-show__section-head p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #8c979b;
+  line-height: 1.45;
+}
+
+.ath-event-show__section-body {
+  padding: 16px 18px 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.ath-event-show__form {
+  padding: 0 18px 18px;
+}
+
+.ath-event-show__form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .ath-event-show__form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ath-event-show__field--full { grid-column: 1 / -1; }
+.ath-event-show__field--grow { min-width: 0; }
+
+.ath-event-show__form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ath-event-show__opt {
+  font-weight: 600;
+  color: #8c979b;
+}
+
+.ath-event-show__hint {
+  margin: 0 0 16px;
+  max-width: 42rem;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8c979b;
+}
+
+.ath-event-show__collapse-head {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 0;
+  background: linear-gradient(180deg, #fafbfc, #fff);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ath-event-show__collapse-head h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #1a1f21;
+}
+
+.ath-event-show__collapse-head p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #8c979b;
+}
+
+.ath-event-show__collapse-head--danger h2 { color: #991b1b; }
+.ath-event-show__collapse-head--danger p { color: #b42318; }
+
+.ath-event-show__chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #8c979b;
+  transition: transform 0.15s ease;
+}
+
+.ath-event-show__search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.ath-event-show__hit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #e8ecee;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ath-event-show__hit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid #f1f3f4;
+}
+
+.ath-event-show__hit:first-child { border-top: 0; }
+
+.ath-event-show__hit-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1f21;
+}
+
+.ath-event-show__hit-call,
+.ath-event-show__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #8c979b;
+}
+
+.ath-event-show__hit-note,
+.ath-event-show__empty-inline {
+  font-size: 12px;
+  color: #8c979b;
+}
+
+.ath-event-show__inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ath-event-show__inline-form--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .ath-event-show__inline-form--stack {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.ath-event-show__empty {
+  padding: 28px 18px;
+  text-align: center;
+  font-size: 13px;
+  color: #8c979b;
+  border-top: 1px solid #eef1f2;
+}
+
+.ath-event-show__tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ath-event-show__tag-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid #e8ecee;
+  background: #f8f9fa;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.ath-event-show__tag-check input { accent-color: #0b8a5c; }
+
+.ath-event-show__cover-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.ath-event-show__cover-preview img {
+  max-width: 12rem;
+  max-height: 7rem;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e8ecee;
+}
+
+.ath-event-show__schedule-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ath-event-show__schedule-row {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e8ecee;
+  background: #f8f9fa;
+}
+
+.ath-event-show__schedule-phase {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .ath-event-show__schedule-phase {
+    grid-template-columns: 11rem 8.5rem minmax(0, 1fr);
+    align-items: end;
+  }
+}
+
+.ath-event-show__details summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.ath-event-show__details summary::-webkit-details-marker { display: none; }
+
+.ath-event-show__rsvp-table .bo-select {
+  min-width: 9rem;
+  max-width: 100%;
+}

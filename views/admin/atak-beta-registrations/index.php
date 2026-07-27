@@ -61,8 +61,6 @@ $csrfToken = \App\Core\Csrf::token();
 $baseBeta = url('admin/atak-beta');
 $blocksUrl = url('admin/atak-mod-blocks');
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-atak-beta.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-
 <div class="bo-atak-beta">
     <header class="bo-atak-beta__hero">
         <p class="bo-atak-beta__eyebrow">Tactique · Mod Arma</p>

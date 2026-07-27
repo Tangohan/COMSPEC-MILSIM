@@ -2,6 +2,15 @@
  * Back-office — cycle de mission (briefing → exécution → après-action)
  * Aligné sur le shell BO (rail sombre, accent émeraude, deck clair).
  */
+
+.ath-main .bo-mcycle__hero {
+  display: none;
+}
+
+.ath-main .bo-mcycle {
+  background: transparent;
+}
+
 .bo-mcycle {
   --bo-void: #050505;
   --bo-ink: #0f172a;

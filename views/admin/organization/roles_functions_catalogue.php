@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+if (!empty($isBackOfficeShell)) {
+    require base_path('views/partials/ath_roles_catalogue.php');
+    return;
+}
+
 use App\Support\RoleDoctrineUiLabels;
 
 $roleDefinitions = is_array($roleDefinitions ?? null) ? $roleDefinitions : [];

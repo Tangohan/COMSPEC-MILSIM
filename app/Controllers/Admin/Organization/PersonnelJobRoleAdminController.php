@@ -336,7 +336,7 @@ class PersonnelJobRoleAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.personnel_job_roles.assignments',
-            'title' => 'Attributions rôles métier',
+            'title' => 'Attributions métier',
             'assignmentRows' => $rows,
             'assignmentPivot' => $assignmentPivot,
             'jobRoleOptions' => $jobRoleOptions,

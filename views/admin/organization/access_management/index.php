@@ -173,7 +173,32 @@ $tabLead = match ($activeTab) {
     default => 'Créez des rôles pour votre communauté et consultez le catalogue des droits disponibles.',
 };
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-access.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<?php if (!empty($isBackOfficeShell)): ?>
+<?php
+$athKpis = [
+    ['label' => 'RÔLES', 'value' => (string) $rolesCount, 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'définis pour la communauté'],
+    ['label' => 'DROITS', 'value' => (string) $permsCount, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'catalogue disponible'],
+    ['label' => 'RÈGLES ACTIVES', 'value' => (string) $activeRulesCount, 'delta' => '', 'tone' => '#c98a12', 'pct' => $rulesCount > 0 ? (int) round($activeRulesCount / $rulesCount * 100) . '%' : '0%', 'note' => $rulesCount . ' au total'],
+    ['label' => 'MEMBRES', 'value' => (string) count($users), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'pour simulation'],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
+<div class="flex flex-wrap gap-2 ath-rise">
+    <a href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Rôles communauté</a>
+    <a href="<?= htmlspecialchars(url('back-office/roles/presets'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Profils prêts</a>
+    <a href="<?= htmlspecialchars(url('back-office/roles-permissions'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Matrice des rôles</a>
+</div>
+<div class="flex flex-wrap gap-2 ath-rise">
+    <?php foreach ($tabs as $key => $label): ?>
+    <a
+        href="<?= htmlspecialchars(url('back-office/access-management?tab=' . $key), ENT_QUOTES, 'UTF-8') ?>"
+        class="ath-btn<?= $activeTab === $key ? ' ath-btn--solid' : '' ?>"
+        <?= $activeTab === $key ? 'aria-current="page"' : '' ?>
+    ><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <div class="bo-access" x-data="{
     targetType: 'ROLE',
@@ -182,7 +207,7 @@ $tabLead = match ($activeTab) {
     simTitle: '',
     simDetail: ''
 }">
-    <header class="bo-access__hero">
+    <header class="bo-access__hero<?= !empty($isBackOfficeShell) ? ' bo-access__hero--legacy' : '' ?>">
         <div class="bo-access__hero-inner">
             <div>
                 <p class="bo-access__eyebrow">Communauté · Habilitations</p>
@@ -231,7 +256,8 @@ $tabLead = match ($activeTab) {
             </div>
         </div>
 
-        <div class="bo-access__toolbar">
+        <div class="bo-access__toolbar<?= !empty($isBackOfficeShell) ? ' bo-access__toolbar--ath' : '' ?>">
+            <?php if (empty($isBackOfficeShell)): ?>
             <div>
                 <h2><?= htmlspecialchars($tabs[$activeTab], ENT_QUOTES, 'UTF-8') ?></h2>
                 <p><?= htmlspecialchars($tabLead, ENT_QUOTES, 'UTF-8') ?></p>
@@ -245,6 +271,9 @@ $tabLead = match ($activeTab) {
                     ><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
                 <?php endforeach; ?>
             </nav>
+            <?php else: ?>
+            <p class="ath-body" style="color:#8c979b;margin:0;"><?= htmlspecialchars($tabLead, ENT_QUOTES, 'UTF-8') ?></p>
+            <?php endif; ?>
         </div>
 
         <?php if ($activeTab === 'roles'): ?>

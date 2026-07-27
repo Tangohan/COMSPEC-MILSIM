@@ -11,6 +11,10 @@ missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 [] call comspec_overwatch_connect_fnc_sendFactionSettings;
 [] call comspec_overwatch_connect_fnc_pollModModules;
 [] call comspec_overwatch_connect_fnc_pollExperience;
+0 spawn {
+    uiSleep 2;
+    [] call comspec_overwatch_connect_fnc_syncAtakRealism;
+};
 
 private _interval = missionNamespace getVariable ["comspec_overwatch_position_interval", 3];
 if (!(_interval isEqualType 0)) then { _interval = 2; };

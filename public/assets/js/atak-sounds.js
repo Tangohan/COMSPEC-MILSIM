@@ -8,6 +8,7 @@ window.ATAKSounds = (function () {
   var STORAGE_KEY = 'atak_notif_sound';
   var STORAGE_KEY_VOLUME = 'atak_alert_volume';
   var STORAGE_KEY_AUDIBLE = 'atak_notif_sound_audible';
+  var STORAGE_KEY_CATEGORIES = 'atak_alert_categories';
   var PREFS = {
     silent_vib: { label: 'Silencieux — vibration seule', file: null, vibrate: true },
     stalker: { label: 'Ambiance tension', file: 'sound_1_stalker.ogg', vibrate: false },
@@ -27,6 +28,11 @@ window.ATAKSounds = (function () {
   var DEFAULT_PREF = 'stalker';
   var DEFAULT_AUDIBLE = 'stalker';
   var DEFAULT_VOLUME = 70;
+  var DEFAULT_CATEGORIES = {
+    liaison: true,
+    orders: true,
+    medical: true
+  };
   var COOLDOWN_MS = 450;
   var VIBRATE_PATTERN = [35, 45, 35];
   var pref = DEFAULT_PREF;
@@ -38,6 +44,7 @@ window.ATAKSounds = (function () {
   var audioCache = {};
   var baseUrl = '';
   var syncingUi = false;
+  var categories = Object.assign({}, DEFAULT_CATEGORIES);
 
   function resolveBase() {
     var raw = (window.ATAK_API_BASE || window.ATAK_SOUNDS_BASE || '').replace(/\/$/, '');
@@ -69,6 +76,60 @@ window.ATAKSounds = (function () {
     if (EVENTS[n]) return n;
     return '';
   }
+  function normalizeCategories(raw) {
+    var src = raw && typeof raw === 'object' ? raw : {};
+    return {
+      liaison: src.liaison !== false,
+      orders: src.orders !== false,
+      medical: src.medical !== false
+    };
+  }
+  function categoryForEvent(eventKey) {
+    switch (String(eventKey || '')) {
+      case 'start':
+      case 'disconnect':
+        return 'liaison';
+      case 'order':
+      case 'order_priority':
+        return 'orders';
+      case 'unconscious':
+      case 'death':
+      case 'medevac':
+        return 'medical';
+      default:
+        return '';
+    }
+  }
+  function categoryForActivity(type) {
+    switch (String(type || '')) {
+      case 'client_init':
+      case 'disconnect':
+      case 'callsign_change':
+      case 'auth':
+      case 'phone':
+        return 'liaison';
+      case 'order':
+      case 'tactical_alert':
+      case 'chat':
+      case 'ping':
+      case 'marker':
+      case 'intel':
+      case 'nine_line':
+      case 'designator':
+      case 'laser':
+      case 'flight':
+      case 'sigint':
+        return 'orders';
+      case 'medevac':
+        return 'medical';
+      default:
+        return '';
+    }
+  }
+  function isCategoryEnabled(name) {
+    if (!name) return true;
+    return categories[name] !== false;
+  }
   function loadPref() {
     try {
       pref = normalizePref(localStorage.getItem(STORAGE_KEY));
@@ -84,6 +145,15 @@ window.ATAKSounds = (function () {
       lastAudiblePref = pref;
     }
     return pref;
+  }
+  function loadCategories() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+      categories = normalizeCategories(raw ? JSON.parse(raw) : null);
+    } catch (e) {
+      categories = normalizeCategories(null);
+    }
+    return categories;
   }
   function loadVolume() {
     try {
@@ -119,6 +189,14 @@ window.ATAKSounds = (function () {
     applyVolumeToCache();
     syncUi();
     return volume;
+  }
+  function saveCategories(next) {
+    categories = normalizeCategories(Object.assign({}, categories, next || {}));
+    try {
+      localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories));
+    } catch (e) { /* stockage indisponible */ }
+    syncUi();
+    return categories;
   }
   function soundUrl(file) {
     if (!baseUrl) baseUrl = resolveBase();
@@ -321,6 +399,7 @@ window.ATAKSounds = (function () {
     var eventKey = normalizeEvent(name);
     var meta = eventKey ? EVENTS[eventKey] : null;
     if (!meta || !meta.file) return false;
+    if (!isCategoryEnabled(categoryForEvent(eventKey))) return false;
     var now = Date.now();
     var cool = typeof meta.cooldown === 'number' ? meta.cooldown : 2000;
     if (!opts.force && now - (lastEventAt[eventKey] || 0) < cool) return false;
@@ -345,6 +424,7 @@ window.ATAKSounds = (function () {
   }
   /** Types d’activité de liaison qui méritent un son (pas le bruit de fond position). */
   function shouldPlayForActivity(type) {
+    if (!isCategoryEnabled(categoryForActivity(type))) return false;
     switch (String(type || '')) {
       case 'client_init':
       case 'disconnect':
@@ -414,6 +494,14 @@ window.ATAKSounds = (function () {
     if (silence) silence.checked = isMute || isSilentVib;
     if (novib) novib.checked = isMute;
   }
+  function setCategoryChecks() {
+    var liaison = document.getElementById('atak-alert-cat-liaison');
+    var orders = document.getElementById('atak-alert-cat-orders');
+    var medical = document.getElementById('atak-alert-cat-medical');
+    if (liaison) liaison.checked = categories.liaison !== false;
+    if (orders) orders.checked = categories.orders !== false;
+    if (medical) medical.checked = categories.medical !== false;
+  }
   function syncUi() {
     if (syncingUi) return;
     syncingUi = true;
@@ -424,6 +512,7 @@ window.ATAKSounds = (function () {
       if (label && PREFS[pref]) label.textContent = PREFS[pref].label;
       setVolumeInputs(volume);
       setSilenceChecks();
+      setCategoryChecks();
       refreshMuteHint();
     } finally {
       syncingUi = false;
@@ -494,11 +583,30 @@ window.ATAKSounds = (function () {
     var novib = document.getElementById('atak-alert-silence-novib');
     if (silence) silence.addEventListener('change', onSilenceChange);
     if (novib) novib.addEventListener('change', onSilenceChange);
+    var liaison = document.getElementById('atak-alert-cat-liaison');
+    if (liaison) {
+      liaison.addEventListener('change', function () {
+        saveCategories({ liaison: !!liaison.checked });
+      });
+    }
+    var orders = document.getElementById('atak-alert-cat-orders');
+    if (orders) {
+      orders.addEventListener('change', function () {
+        saveCategories({ orders: !!orders.checked });
+      });
+    }
+    var medical = document.getElementById('atak-alert-cat-medical');
+    if (medical) {
+      medical.addEventListener('change', function () {
+        saveCategories({ medical: !!medical.checked });
+      });
+    }
   }
   function init() {
     baseUrl = resolveBase();
     loadPref();
     loadVolume();
+    loadCategories();
     bindUnlock();
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function () {

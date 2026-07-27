@@ -31,6 +31,8 @@ window.ATAKMap = (function () {
     iconSize: 16,
     labelSize: 7,
     showFtFrame: true,
+    autoCenterSelf: false,
+    showDelayedUnits: true,
     positionDelayEnabled: false,
     positionDelayMs: 2000,
     packetLossEnabled: false,
@@ -42,6 +44,7 @@ window.ATAKMap = (function () {
   var unitPosDisplayed = {};
   var unitPosLiveSeen = {};
   var posSimFlushTimer = null;
+  var selfAutoCentered = false;
 
   function normalizeUnitMarkerPriority(v) {
     return v === 'avatar' ? 'avatar' : UNIT_MARKER_PRIORITY_DEFAULT;
@@ -84,6 +87,8 @@ window.ATAKMap = (function () {
       iconSize: clampNum(src.iconSize, 8, 48, DISPLAY_PREFS_DEFAULT.iconSize),
       labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
       showFtFrame: src.showFtFrame !== false,
+      autoCenterSelf: !!src.autoCenterSelf,
+      showDelayedUnits: src.showDelayedUnits !== false,
       positionDelayEnabled: !!src.positionDelayEnabled,
       positionDelayMs: Math.round(clampNum(src.positionDelayMs, 500, 10000, DISPLAY_PREFS_DEFAULT.positionDelayMs)),
       packetLossEnabled: !!src.packetLossEnabled,
@@ -265,6 +270,10 @@ window.ATAKMap = (function () {
     if (labelVal) labelVal.textContent = String(p.labelSize);
     var ftEl = document.getElementById('atak-unit-ft-frame');
     if (ftEl) ftEl.checked = !!p.showFtFrame;
+    var autoCenterSelf = document.getElementById('atak-auto-center-self');
+    if (autoCenterSelf) autoCenterSelf.checked = !!p.autoCenterSelf;
+    var showDelayedUnits = document.getElementById('atak-show-delayed-units');
+    if (showDelayedUnits) showDelayedUnits.checked = !!p.showDelayedUnits;
     var delayEn = document.getElementById('atak-pos-delay-enabled');
     var delaySec = document.getElementById('atak-pos-delay-sec');
     var delayVal = document.getElementById('atak-pos-delay-sec-val');
@@ -347,6 +356,22 @@ window.ATAKMap = (function () {
     if (ftEl) {
       ftEl.addEventListener('change', function () {
         patchDisplayPrefs({ showFtFrame: !!ftEl.checked });
+      });
+    }
+
+    var autoCenterSelf = document.getElementById('atak-auto-center-self');
+    if (autoCenterSelf) {
+      autoCenterSelf.addEventListener('change', function () {
+        selfAutoCentered = false;
+        patchDisplayPrefs({ autoCenterSelf: !!autoCenterSelf.checked });
+      });
+    }
+
+    var showDelayedUnits = document.getElementById('atak-show-delayed-units');
+    if (showDelayedUnits) {
+      showDelayedUnits.addEventListener('change', function () {
+        patchDisplayPrefs({ showDelayedUnits: !!showDelayedUnits.checked });
+        syncDisplayPrefsUi();
       });
     }
 
@@ -1340,9 +1365,16 @@ window.ATAKMap = (function () {
       }
       return String((u && u.status) || '').toLowerCase();
     }
+    function currentUserCallsignKey() {
+      if (!window.ATAK_USER) return '';
+      var raw = String(window.ATAK_USER.callsign || window.ATAK_USER.armaCallsign || '').trim();
+      return raw.toUpperCase();
+    }
+    var ownCallsignKey = currentUserCallsignKey();
     (Array.isArray(list) ? list : []).forEach(function (u) {
       var live = unitLive(u);
       if (live === 'offline') return;
+      if (!prefs.showDelayedUnits && live === 'delayed') return;
       var id = 'unit_' + (u.id != null ? u.id : (u.call_sign || Math.random()));
       var x = u.pos_x != null ? parseFloat(u.pos_x) : NaN;
       var y = u.pos_y != null ? parseFloat(u.pos_y) : NaN;
@@ -1357,6 +1389,11 @@ window.ATAKMap = (function () {
       var liveLatlng = L.latLng(applied[0], applied[1]);
       var existing = unitsById[id];
       var latlng = resolveSimulatedLatLng(id, liveLatlng, existing);
+      var unitCallsignKey = String(u.call_sign || '').toUpperCase().trim();
+      if (!selfAutoCentered && prefs.autoCenterSelf && ownCallsignKey !== '' && unitCallsignKey === ownCallsignKey) {
+        centerOn(y, x);
+        selfAutoCentered = true;
+      }
       var extra = {};
       try {
         if (typeof u.extra === 'string') extra = JSON.parse(u.extra || '{}');

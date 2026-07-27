@@ -581,10 +581,36 @@ class CommunityEventRepository
 
     public function markReminderSent(int $eventId, int $userId): void
     {
-        $stmt = $this->pdo->prepare(
-            'UPDATE community_event_rsvps SET reminder_sent_at = NOW(), updated_at = NOW() WHERE event_id = ? AND user_id = ?'
-        );
+        if ($this->columnExists('community_event_rsvps', 'reminder_count')) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE community_event_rsvps SET reminder_sent_at = NOW(), reminder_count = reminder_count + 1, updated_at = NOW() WHERE event_id = ? AND user_id = ?'
+            );
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE community_event_rsvps SET reminder_sent_at = NOW(), updated_at = NOW() WHERE event_id = ? AND user_id = ?'
+            );
+        }
         $stmt->execute([$eventId, $userId]);
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        static $cache = [];
+        $key = $table . '.' . $column;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table, $column]);
+            $cache[$key] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$key] = false;
+        }
+
+        return $cache[$key];
     }
 
     /**
@@ -774,5 +800,116 @@ class CommunityEventRepository
         $next = isset($row['next_60']) ? (float) $row['next_60'] : 0.0;
 
         return $next - $first;
+    }
+
+    /**
+     * Registre opérations — créneaux enrichis (commandant, effectifs, postes).
+     *
+     * Filtres acceptés : vue (a_venir|passes|annules), annee, type, statut (planifie|en_cours|clos|annule), q.
+     *
+     * @param array<string, mixed> $filters
+     * @return list<array<string, mixed>>
+     */
+    public function registryForTenant(int $tenantId, array $filters = [], int $limit = 150): array
+    {
+        $lim = max(1, min(200, $limit));
+        $vue = trim((string) ($filters['vue'] ?? 'a_venir'));
+        if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
+            $vue = 'a_venir';
+        }
+
+        $where = ['ce.tenant_id = ?'];
+        $params = [$tenantId];
+
+        if ($vue === 'annules') {
+            $where[] = 'ce.cancelled_at IS NOT NULL';
+        } else {
+            $where[] = 'ce.cancelled_at IS NULL';
+            if ($vue === 'passes') {
+                $where[] = 'COALESCE(ce.ends_at, ce.starts_at) < NOW()';
+            } else {
+                $where[] = 'COALESCE(ce.ends_at, ce.starts_at) >= NOW()';
+            }
+        }
+
+        $annee = (int) ($filters['annee'] ?? 0);
+        if ($annee >= 2000 && $annee <= 2100) {
+            $where[] = 'YEAR(ce.starts_at) = ?';
+            $params[] = $annee;
+        }
+
+        $type = trim((string) ($filters['type'] ?? ''));
+        if (in_array($type, ['operation', 'evenement', 'formation', 'autre'], true)) {
+            $where[] = 'ce.event_type = ?';
+            $params[] = $type;
+        }
+
+        $statut = trim((string) ($filters['statut'] ?? ''));
+        $statusExpr = "CASE
+            WHEN ce.cancelled_at IS NOT NULL THEN 'annule'
+            WHEN ce.starts_at > NOW() THEN 'planifie'
+            WHEN COALESCE(ce.ends_at, ce.starts_at) >= NOW() THEN 'en_cours'
+            ELSE 'clos'
+        END";
+        if (in_array($statut, ['planifie', 'en_cours', 'clos', 'annule'], true)) {
+            $where[] = "{$statusExpr} = ?";
+            $params[] = $statut;
+        }
+
+        $q = trim((string) ($filters['q'] ?? ''));
+        if ($q !== '') {
+            $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+            $where[] = '(ce.title LIKE ? OR ce.location LIKE ? OR ce.campaign_tag LIKE ? OR CAST(ce.id AS CHAR) LIKE ?)';
+            array_push($params, $like, $like, $like, $like);
+        }
+
+        $order = $vue === 'passes' || $vue === 'annules'
+            ? 'ce.starts_at DESC'
+            : 'ce.starts_at ASC';
+
+        $slotTable = $this->tableExists('community_event_slots');
+        $slotSub = $slotTable
+            ? '(SELECT COUNT(*) FROM community_event_slots s WHERE s.event_id = ce.id)'
+            : '0';
+
+        $sql = "SELECT ce.*,
+                       {$statusExpr} AS registry_status,
+                       u.callsign AS commander_callsign,
+                       u.display_name AS commander_name,
+                       (SELECT COUNT(*) FROM community_event_rsvps r
+                        WHERE r.event_id = ce.id AND r.status IN ('yes', 'maybe')) AS engaged_count,
+                       (SELECT COUNT(*) FROM community_event_rsvps r
+                        WHERE r.event_id = ce.id AND r.status = 'yes' AND r.checked_in_at IS NOT NULL) AS checked_in_count,
+                       {$slotSub} AS slot_count
+                FROM community_events ce
+                LEFT JOIN users u ON u.id = ce.created_by_user_id
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY {$order}
+                LIMIT {$lim}";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+            );
+            $st->execute([$table]);
+            $cache[$table] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$table] = false;
+        }
+
+        return $cache[$table];
     }
 }

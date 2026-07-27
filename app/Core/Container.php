@@ -512,7 +512,8 @@ class Container
                 self::get(\App\Repositories\CommunityEventSlotRepository::class),
                 self::get(\App\Repositories\CommunityEventSlotAssignmentRepository::class),
                 self::get(\App\Repositories\UnitRepository::class),
-                self::get(\App\Repositories\TrainingCourseRepository::class)
+                self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Repositories\AarReportRepository::class)
             ),
             \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
@@ -1340,6 +1341,10 @@ class Container
                 self::get(UserRepository::class),
             ),
             \App\Repositories\AtakBetaRegistrationRepository::class => new \App\Repositories\AtakBetaRegistrationRepository(),
+            \App\Repositories\AtakRealismRepository::class => new \App\Repositories\AtakRealismRepository(
+                null,
+                self::get(\App\Repositories\AtakOperatorIdRepository::class)
+            ),
             \App\Repositories\AtakModReportRepository::class => new \App\Repositories\AtakModReportRepository(),
             \App\Controllers\Admin\AdminAtakBetaRegistrationsController::class => new \App\Controllers\Admin\AdminAtakBetaRegistrationsController(
                 self::get(\App\Repositories\AtakBetaRegistrationRepository::class),
@@ -1362,6 +1367,12 @@ class Container
             ),
             \App\Controllers\Admin\SiteSettingsApiController::class => new \App\Controllers\Admin\SiteSettingsApiController(
                 self::get(\App\Repositories\SiteSettingsRepository::class)
+            ),
+            \App\Repositories\TenantAdminSettingsRepository::class => new \App\Repositories\TenantAdminSettingsRepository(
+                self::get(TenantRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class => new \App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController(
+                self::get(\App\Repositories\TenantAdminSettingsRepository::class)
             ),
             \App\Controllers\Admin\ForumModerationAdminApiController::class => new \App\Controllers\Admin\ForumModerationAdminApiController(
                 self::get(\App\Repositories\ForumBannedWordRepository::class),
@@ -1973,12 +1984,64 @@ class Container
             \App\Repositories\TacticalBriefingSlideRepository::class => new \App\Repositories\TacticalBriefingSlideRepository(),
             \App\Repositories\TacticalBriefingSlideCommentRepository::class => new \App\Repositories\TacticalBriefingSlideCommentRepository(),
             \App\Repositories\TacticalPhonePairingRepository::class => new \App\Repositories\TacticalPhonePairingRepository(),
+            \App\Repositories\AarReportRepository::class => new \App\Repositories\AarReportRepository(),
             \App\Repositories\AtakOrderRepository::class => new \App\Repositories\AtakOrderRepository(),
             \App\Repositories\AtakOrderTemplateRepository::class => new \App\Repositories\AtakOrderTemplateRepository(),
             \App\Repositories\AtakOrderTypeRepository::class => new \App\Repositories\AtakOrderTypeRepository(),
             \App\Repositories\AtakOperatorIdRepository::class => new \App\Repositories\AtakOperatorIdRepository(),
             \App\Repositories\AtakMedicalTriageRepository::class => new \App\Repositories\AtakMedicalTriageRepository(),
             \App\Services\Tactical\AtakActivityLogService::class => new \App\Services\Tactical\AtakActivityLogService(),
+            \App\Controllers\Admin\AdminAtakRealismController::class => new \App\Controllers\Admin\AdminAtakRealismController(
+                self::get(\App\Repositories\AtakRealismRepository::class)
+            ),
+            \App\Controllers\Api\AtakRealismApiController::class => new \App\Controllers\Api\AtakRealismApiController(
+                self::get(\App\Repositories\AtakRealismRepository::class),
+                self::get(\App\Repositories\TacticalPhonePairingRepository::class)
+            ),
+            \App\Controllers\Admin\AdminAarReportsController::class => new \App\Controllers\Admin\AdminAarReportsController(
+                self::get(\App\Repositories\AarReportRepository::class),
+                new \App\Repositories\TheatreMissionCycleRepository()
+            ),
+            \App\Controllers\Api\AarReportsApiController::class => new \App\Controllers\Api\AarReportsApiController(
+                self::get(\App\Repositories\AarReportRepository::class)
+            ),
+            \App\Repositories\RolePermissionMatrixRepository::class => new \App\Repositories\RolePermissionMatrixRepository(
+                null,
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\PermissionRepository::class)
+            ),
+            \App\Services\Rbac\RolePermissionMatrixService::class => new \App\Services\Rbac\RolePermissionMatrixService(
+                self::get(\App\Repositories\RolePermissionMatrixRepository::class),
+                self::get(\App\Repositories\RoleRepository::class),
+                self::get(\App\Repositories\PermissionRepository::class),
+                self::get(\App\Services\Admin\RolePermissionService::class)
+            ),
+            \App\Controllers\Admin\Organization\RolePermissionMatrixController::class => new \App\Controllers\Admin\Organization\RolePermissionMatrixController(
+                self::get(\App\Repositories\RolePermissionMatrixRepository::class),
+                self::get(\App\Services\Rbac\RolePermissionMatrixService::class)
+            ),
+            \App\Controllers\Api\RolePermissionMatrixApiController::class => new \App\Controllers\Api\RolePermissionMatrixApiController(
+                self::get(\App\Repositories\RolePermissionMatrixRepository::class),
+                self::get(\App\Services\Rbac\RolePermissionMatrixService::class)
+            ),
+            \App\Repositories\EventRsvpNominativeRepository::class => new \App\Repositories\EventRsvpNominativeRepository(
+                null,
+                self::get(\App\Repositories\CommunityEventRepository::class)
+            ),
+            \App\Services\Attendance\EventRsvpNominativeService::class => new \App\Services\Attendance\EventRsvpNominativeService(
+                self::get(\App\Repositories\EventRsvpNominativeRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\EventRsvpNominativeAdminController::class => new \App\Controllers\Admin\Organization\EventRsvpNominativeAdminController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\EventRsvpNominativeRepository::class),
+                self::get(\App\Services\Attendance\EventRsvpNominativeService::class),
+                self::get(\App\Services\Platform\FeatureGateService::class)
+            ),
+            \App\Controllers\Api\EventRsvpNominativeApiController::class => new \App\Controllers\Api\EventRsvpNominativeApiController(
+                self::get(\App\Repositories\CommunityEventRepository::class),
+                self::get(\App\Repositories\EventRsvpNominativeRepository::class),
+                self::get(\App\Services\Attendance\EventRsvpNominativeService::class)
+            ),
             \App\Controllers\Api\AtakApiController::class => new \App\Controllers\Api\AtakApiController(
                 atak: self::get(\App\Repositories\AtakDataRepository::class),
                 casRepo: self::get(\App\Repositories\CasNineLineRepository::class),

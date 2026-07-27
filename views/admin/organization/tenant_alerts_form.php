@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+if (!empty($isBackOfficeShell)) {
+    require base_path('views/partials/ath_tenant_alerts_form.php');
+    return;
+}
+
 use App\Support\TenantAlertVisuals;
 
 /** @var array<string, mixed>|null $tenantAlert */
@@ -32,6 +37,8 @@ $currentColor = TenantAlertVisuals::sanitizeHexColor((string) ($row['accent_colo
 $imageUrl = TenantAlertVisuals::publicUrl(isset($row['image_path']) ? (string) $row['image_path'] : null);
 $bannerUrl = TenantAlertVisuals::publicUrl(isset($row['banner_path']) ? (string) $row['banner_path'] : null);
 
+$isAthShell = !empty($isBackOfficeShell);
+
 $iconSvg = [
     'auto' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h10M4 18h14"/></svg>',
     'info' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
@@ -43,7 +50,13 @@ $iconSvg = [
     'wrench' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
     'shield' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
     'flag' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>',
+    'graduation' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
+    'users' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>',
+    'training' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
+    'recruitment' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>',
+    'security' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
 ];
+$currentFeatures = \App\Support\TenantAlertFeatures::decodeJson($row['features_json'] ?? null);
 ?>
 <style>
 .ta-kind-card:has(input:checked),
@@ -92,10 +105,17 @@ $iconSvg = [
 }
 .ta-preview__icon svg { width: 1.25rem; height: 1.25rem; }
 </style>
-<div class="min-h-0 flex-1 bg-slate-50">
+<div class="min-h-0 flex-1 bg-slate-50<?= $isAthShell ? ' ta-alerts-form--ath' : '' ?>">
     <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
-        <header class="relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+        <?php if ($isAthShell): ?>
+        <div class="flex flex-wrap gap-2 ath-rise">
+            <a href="<?= url('back-office/alerts') ?>" class="ath-btn">← Liste des annonces</a>
+            <a href="<?= url('back-office/alerts/create') ?>" class="ath-btn<?= !$isEdit ? ' ath-btn--solid' : '' ?>">Nouvelle annonce</a>
+        </div>
+        <?php endif; ?>
+
+        <header class="ta-alerts__hero relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
             <div class="absolute inset-y-0 left-0 w-1 bg-emerald-600" aria-hidden="true"></div>
             <div class="relative px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
@@ -143,24 +163,20 @@ $iconSvg = [
                 </fieldset>
 
                 <?php
-                $tenantDisplayOptions = \App\Support\AlertDisplayStyle::tenantOptions();
+                $tenantDisplayOptions = \App\Support\AlertDisplayStyle::tenantOptionsWithMeta();
                 $currentTenantDisplay = \App\Support\AlertDisplayStyle::sanitizeTenant(
                     isset($row['display_style']) ? (string) $row['display_style'] : null
                 );
                 ?>
                 <fieldset>
                     <legend class="block text-sm font-semibold text-slate-800 mb-3">Emplacement d’affichage</legend>
-                    <div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Emplacement d’affichage">
-                        <?php foreach ($tenantDisplayOptions as $value => $lab): ?>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Emplacement d’affichage">
+                        <?php foreach ($tenantDisplayOptions as $value => $meta): ?>
                             <label class="ta-kind-card flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:border-emerald-300">
                                 <input type="radio" name="display_style" value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= $currentTenantDisplay === $value ? 'checked' : '' ?>>
                                 <span class="min-w-0">
-                                    <span class="font-semibold text-slate-900"><?= htmlspecialchars($lab, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <?php if ($value === \App\Support\AlertDisplayStyle::IMPORTANT): ?>
-                                        <span class="mt-0.5 block text-xs text-slate-500 leading-relaxed">Barre jaune pleine largeur sous le menu, pour les annonces vraiment prioritaires de votre communauté.</span>
-                                    <?php else: ?>
-                                        <span class="mt-0.5 block text-xs text-slate-500 leading-relaxed">Bandeau habituel dans la zone d’annonces du portail.</span>
-                                    <?php endif; ?>
+                                    <span class="font-semibold text-slate-900"><?= htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="mt-0.5 block text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($meta['hint'], ENT_QUOTES, 'UTF-8') ?></span>
                                 </span>
                             </label>
                         <?php endforeach; ?>
@@ -285,6 +301,23 @@ $iconSvg = [
                         class="w-full max-w-xs rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
                         placeholder="Ex. BIENVENUE2026">
                 </div>
+            </div>
+
+            <div class="border-y border-slate-100 bg-slate-50/80 px-5 sm:px-6 py-4">
+                <h2 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Options</h2>
+                <p class="mt-0.5 text-xs text-slate-500">Comportement de l’annonce une fois publiée.</p>
+            </div>
+            <div class="p-5 sm:p-6 space-y-3">
+                <?php foreach (\App\Support\TenantAlertFeatures::definitions() as $featureKey => $featureMeta): ?>
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                        <input type="hidden" name="feature_<?= htmlspecialchars($featureKey, ENT_QUOTES, 'UTF-8') ?>" value="0">
+                        <input type="checkbox" name="feature_<?= htmlspecialchars($featureKey, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" <?= !empty($currentFeatures[$featureKey]) ? 'checked' : '' ?>>
+                        <span>
+                            <span class="block text-sm font-semibold text-slate-800"><?= htmlspecialchars($featureMeta['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="block text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($featureMeta['hint'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
             </div>
 
             <div class="border-y border-slate-100 bg-slate-50/80 px-5 sm:px-6 py-4">

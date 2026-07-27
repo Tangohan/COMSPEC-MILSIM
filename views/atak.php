@@ -404,6 +404,21 @@ if ($atakMapConfig) {
             <span>Masquer les aides des panneaux</span>
           </span>
         </label>
+        <h4 class="atak-account-section-subtitle">Confort de lecture</h4>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-auto-center-self">
+          <span class="atak-sound-pref-key">Recentrage personnel</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-auto-center-self" />
+            <span>Au début de la session, recadrer la carte sur votre position dès qu’elle remonte</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-delayed-units">
+          <span class="atak-sound-pref-key">Contacts en retard</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-delayed-units" checked />
+            <span>Afficher aussi les contacts dont la position arrive avec retard</span>
+          </span>
+        </label>
         <h4 class="atak-account-section-subtitle">Simulation de liaison</h4>
         <p class="atak-game-link-hint">Pour l’entraînement : ralentir ou faire « sauter » certaines mises à jour de position sur la carte uniquement (la liste Effectifs reste à jour).</p>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-pos-delay-enabled">
@@ -444,6 +459,28 @@ if ($atakMapConfig) {
             <option value="health">Signal médical</option>
             <option value="mute">Silencieux — sans vibration</option>
           </select>
+        </label>
+        <h4 class="atak-account-section-subtitle">Types d’alertes</h4>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-alert-cat-liaison">
+          <span class="atak-sound-pref-key">État de liaison</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-alert-cat-liaison" checked />
+            <span>Signaler les arrivées, départs et changements liés à la liaison</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-alert-cat-orders">
+          <span class="atak-sound-pref-key">Ordres et urgences</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-alert-cat-orders" checked />
+            <span>Garder les alertes pour les ordres, demandes d’appui et messages urgents</span>
+          </span>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-alert-cat-medical">
+          <span class="atak-sound-pref-key">Alerte médicale</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-alert-cat-medical" checked />
+            <span>Signaler les blessures graves, pertes et évacuations</span>
+          </span>
         </label>
         <button type="button" class="atak-game-config-copy" id="atak-notif-sound-preview" title="Écouter le son choisi">Écouter</button>
       </section>
@@ -1645,7 +1682,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=202607270730"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=202607261735"></script>
-  <script src="<?= $base ?>/assets/js/atak-map.js?v=202607261945"></script>
+  <script src="<?= $base ?>/assets/js/atak-map.js?v=202607271230"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=202607270700"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=202607261905"></script>
   <script src="<?= $base ?>/assets/js/atak-units.js?v=202607270700"></script>
@@ -1678,7 +1715,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
   <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-sounds.js?v=202607262000"></script>
+  <script src="<?= $base ?>/assets/js/atak-sounds.js?v=202607271230"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=202607261900"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>

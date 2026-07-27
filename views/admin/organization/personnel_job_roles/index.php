@@ -1,4 +1,11 @@
 <?php
+declare(strict_types=1);
+
+if (!empty($isBackOfficeShell)) {
+    require base_path('views/partials/ath_personnel_job_roles_index.php');
+    return;
+}
+
 $categories = $categories ?? [];
 $roles = $roles ?? [];
 $permCounts = $permCounts ?? [];
@@ -11,7 +18,7 @@ $personnelProfilesJobRoleReady = $personnelProfilesJobRoleReady ?? true;
     <?php require __DIR__ . '/_nav.php'; ?>
     <?php if (empty($personnelProfilesJobRoleReady)): ?>
     <div class="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-        Les colonnes dossier (<code class="rounded bg-amber-100 px-1">personnel_job_role_id</code>) ne sont pas encore en base : le référentiel est éditable, mais les <strong>attributions effectifs</strong> et le dossier personnel nécessitent la migration complète.
+        Les colonnes dossier ne sont pas encore en base : le référentiel est éditable, mais les attributions effectifs et le dossier personnel nécessitent la migration complète.
     </div>
     <?php endif; ?>
     <div class="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-start">

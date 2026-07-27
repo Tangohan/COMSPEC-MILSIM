@@ -17,6 +17,9 @@ final class AlertDisplayStyle
     public const BREAKING = 'breaking';
     public const IMPORTANT = 'important';
     public const POPUP = 'popup';
+    public const ACTIVITY_FEED = 'activity_feed';
+    public const MEMBERS_ONLY = 'members_only';
+    public const BACK_OFFICE = 'back_office';
 
     /** @var list<string> */
     private const PLATFORM_STYLES = [
@@ -34,6 +37,9 @@ final class AlertDisplayStyle
         self::CLASSIC,
         self::IMPORTANT,
         self::POPUP,
+        self::ACTIVITY_FEED,
+        self::MEMBERS_ONLY,
+        self::BACK_OFFICE,
     ];
 
     /** @var list<string> */
@@ -67,10 +73,41 @@ final class AlertDisplayStyle
      */
     public static function tenantOptions(): array
     {
+        $meta = self::tenantOptionsWithMeta();
+
+        return array_map(static fn (array $m): string => $m['label'], $meta);
+    }
+
+    /**
+     * @return array<string, array{label: string, hint: string}>
+     */
+    public static function tenantOptionsWithMeta(): array
+    {
         return [
-            self::CLASSIC => 'Bandeau classique',
-            self::IMPORTANT => 'Annonce importante (barre jaune sous le menu)',
-            self::POPUP => 'Pop-up éphémère (fenêtre à l’arrivée sur le tableau de bord)',
+            self::CLASSIC => [
+                'label' => 'Bandeau classique',
+                'hint' => 'Bandeau habituel dans la zone d’annonces du portail.',
+            ],
+            self::IMPORTANT => [
+                'label' => 'Annonce importante',
+                'hint' => 'Barre jaune pleine largeur sous le menu, pour les messages vraiment prioritaires.',
+            ],
+            self::POPUP => [
+                'label' => 'Pop-up éphémère',
+                'hint' => 'Fenêtre à l’arrivée sur le tableau de bord, affichée une fois par membre.',
+            ],
+            self::ACTIVITY_FEED => [
+                'label' => 'Fil d’activité',
+                'hint' => 'Message visible dans « Mon activité », avec les alertes et échanges récents.',
+            ],
+            self::MEMBERS_ONLY => [
+                'label' => 'Espace membre uniquement',
+                'hint' => 'Réservé aux membres connectés : masqué sur les pages publiques du portail.',
+            ],
+            self::BACK_OFFICE => [
+                'label' => 'Back-office uniquement',
+                'hint' => 'Visible des responsables dans le centre de pilotage, pas sur le portail membre.',
+            ],
         ];
     }
 
@@ -113,14 +150,49 @@ final class AlertDisplayStyle
 
     public static function isClassicStyle(string $style): bool
     {
-        return !self::isNavbarStyle($style) && !self::isPopupStyle($style);
+        $n = self::normalize($style);
+
+        return !self::isNavbarStyle($n)
+            && !self::isPopupStyle($n)
+            && !self::isActivityFeedStyle($n)
+            && !self::isBackOfficeStyle($n);
+    }
+
+    public static function isActivityFeedStyle(string $style): bool
+    {
+        return self::normalize($style) === self::ACTIVITY_FEED;
+    }
+
+    public static function isMembersOnlyStyle(string $style): bool
+    {
+        return self::normalize($style) === self::MEMBERS_ONLY;
+    }
+
+    public static function isBackOfficeStyle(string $style): bool
+    {
+        return self::normalize($style) === self::BACK_OFFICE;
+    }
+
+    /**
+     * Emplacements visibles sur le portail membre (hors back-office et fil d’activité dédié).
+     */
+    public static function isPortalPlacement(string $style): bool
+    {
+        $n = self::normalize($style);
+
+        return !self::isBackOfficeStyle($n) && !self::isActivityFeedStyle($n);
     }
 
     public static function label(string $style): string
     {
-        $all = self::platformOptions() + self::tenantOptions();
+        $n = self::normalize($style);
+        $tenant = self::tenantOptionsWithMeta();
+        if (isset($tenant[$n])) {
+            return $tenant[$n]['label'];
+        }
+        $platform = self::platformOptions();
 
-        return $all[self::normalize($style)] ?? 'Bandeau classique';
+        return $platform[$n] ?? 'Bandeau classique';
     }
 
     /** Libellé court du badge sur la mini-barre. */

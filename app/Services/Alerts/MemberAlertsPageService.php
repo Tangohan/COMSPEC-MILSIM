@@ -164,12 +164,13 @@ final class MemberAlertsPageService
     private static function priorityForKind(string $kind): int
     {
         return match (strtolower(trim($kind))) {
-            'urgent' => 0,
+            'urgent', 'security' => 0,
             'forum_pin' => 1,
             'notice' => 2,
-            'novelty' => 3,
-            'discount' => 4,
-            default => 5,
+            'novelty', 'training' => 3,
+            'recruitment' => 4,
+            'discount' => 5,
+            default => 6,
         };
     }
 

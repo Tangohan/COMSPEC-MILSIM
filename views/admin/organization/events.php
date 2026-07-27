@@ -91,7 +91,10 @@ $dowLabel = static function (int $day): string {
 };
 $nEv = count($events);
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-events.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<?php if (!empty($isBackOfficeShell)): ?>
+<?php require base_path('views/partials/ath_events_ops.php'); return; ?>
+<?php endif; ?>
 
 <div class="bo-events" x-data="{ insightsOpen: false, formOpen: <?= $canCreateEvent ? 'true' : 'false' ?> }">
     <header class="bo-events__hero">

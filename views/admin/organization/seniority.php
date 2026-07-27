@@ -100,7 +100,6 @@ $visible = (int) ($stats['visible'] ?? 0);
 $inactive = (int) ($stats['inactive'] ?? 0);
 $hidden = (int) ($stats['hidden'] ?? 0);
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-seniority.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <?php
 $rowsJson = json_encode(

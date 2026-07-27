@@ -74,6 +74,11 @@ class OrganizationAdminMiddleware
                 || $gate->allows('media.manage')
             )) {
                 $scopedOrgAccess = true;
+            } elseif (str_starts_with($path, '/back-office/roles-permissions') && (
+                $gate->allows('admin.roles.manage')
+                || $gate->allows('admin.permissions.manage')
+            )) {
+                $scopedOrgAccess = true;
             }
         }
         if (!$scopedOrgAccess) {

@@ -189,7 +189,8 @@ $card = static function (string $href, string $title, string $desc, string $acce
             <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 <?php $card(url('back-office/users'), 'Utilisateurs', 'Comptes, désactivation, fiches liées.'); ?>
                 <?php $card(url('back-office/invitations'), 'Invitations', 'Inviter par e-mail avec rôle proposé.'); ?>
-                <?php $card(url('back-office/roles'), 'Rôles & permissions', 'Liste des rôles et détail des droits.'); ?>
+                <?php $card(url('back-office/roles-permissions'), 'Rôles & permissions', 'Matrice d’accès par module et titulaires.'); ?>
+                <?php $card(url('back-office/roles'), 'Rôles communautaires', 'Liste des rôles et détail des droits.'); ?>
                 <?php $card(url('back-office/roles-functions'), 'Rôles & fonctions (toile)', 'Catalogue FR/US, graphe, unités, templates.'); ?>
                 <?php $card(url('back-office/roles/presets'), 'Profils de permissions', 'Appliquer un jeu complet de droits à un rôle en une fois (hors droits plateforme).'); ?>
                 <?php $card(url('back-office/recruitments'), 'Candidatures', 'Dossiers, décisions, file d’attente.' . ($pendingEnlist > 0 ? ' (' . $pendingEnlist . ' en attente)' : '')); ?>

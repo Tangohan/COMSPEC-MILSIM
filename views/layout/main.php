@@ -11,6 +11,11 @@ $isPlatformAdminShell = !empty($isPlatformAdminShell)
     || (function_exists('is_platform_site_admin_shell_request') && is_platform_site_admin_shell_request());
 $isFormationWorkspace = !empty($isFormationWorkspace)
     || (function_exists('is_formation_workspace_request') && is_formation_workspace_request());
+
+foreach (\App\Support\BackOfficePageContext::apply(get_defined_vars()) as $_boKey => $_boVal) {
+    ${$_boKey} = $_boVal;
+}
+
 $usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     ? 'Administration communauté'
@@ -24,7 +29,8 @@ $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
  * La largeur au repos reste stable ; le panneau s’ouvre en overlay sans écraser le contenu (min-w-0).
  */
 $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspace))
-    && (($backOfficeHoverRail ?? true) !== false);
+    && (($backOfficeHoverRail ?? true) !== false)
+    && empty($isBackOfficeShell);
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(function_exists('html_lang') ? html_lang() : 'fr', ENT_QUOTES, 'UTF-8') ?>">
@@ -150,7 +156,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <style>
       [x-cloak]{display:none!important}
       body.bo-shell {
-        font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+        font-family: Archivo, Inter, system-ui, -apple-system, Segoe UI, sans-serif;
       }
       /* Shell admin : largeur aside bornée pour ne pas écraser la colonne contenu */
       #back-office-sidebar,
@@ -162,7 +168,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
         overflow-x: hidden;
       }
       @media (min-width: 1024px) {
-        #back-office-sidebar,
+        #back-office-sidebar:not(.ath-sidebar-aside),
         #platform-admin-sidebar {
           position: static;
           width: 18rem;
@@ -170,9 +176,14 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
           max-width: 18rem;
           transform: none !important;
         }
+        #back-office-sidebar.ath-sidebar-aside:not(.is-collapsed) {
+          width: var(--ath-side-w, 248px);
+          min-width: var(--ath-side-w, 248px);
+          max-width: var(--ath-side-w, 248px);
+        }
       }
       @media (min-width: 1280px) {
-        #back-office-sidebar,
+        #back-office-sidebar:not(.ath-sidebar-aside),
         #platform-admin-sidebar {
           width: 20rem;
           min-width: 20rem;
@@ -197,6 +208,10 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/css/back-office-rail.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-rail.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/css/back-office-shell.css'))): ?>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+    <link href="<?= htmlspecialchars(asset_url('assets/css/back-office-shell.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php
     $backOfficePageCss = isset($backOfficePageCss) && is_array($backOfficePageCss) ? $backOfficePageCss : [];
@@ -228,10 +243,15 @@ if (!empty($backOfficeHoverRail)) {
 if (!empty($usesAdminSidebarShell)) {
     $bodyClasses .= ' bo-shell';
 }
+if (!empty($isBackOfficeShell)) {
+    $bodyClasses .= ' ath-bo-shell';
+}
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
     <div class="grain" aria-hidden="true"></div>
+    <?php if (empty($isBackOfficeShell)): ?>
     <?php require base_path('views/partials/header_portal.php'); ?>
+    <?php endif; ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/navigation.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/ui_confirm_modal.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -240,7 +260,9 @@ if (!empty($usesAdminSidebarShell)) {
     <?php if (is_file(base_path('public/assets/js/athena-header.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/athena-header.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
-    <?php if ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
+    <?php if (!empty($isBackOfficeShell) && is_file(base_path('public/assets/js/back-office-sidebar.js'))): ?>
+    <script defer src="<?= htmlspecialchars(asset_url('assets/js/back-office-sidebar.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
+    <?php elseif ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if (empty($usesAdminSidebarShell)): ?>
@@ -248,14 +270,29 @@ if (!empty($usesAdminSidebarShell)) {
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <?php endif; ?>
-    <main class="<?= !empty($usesAdminSidebarShell) ? 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]' : 'min-h-[80vh]' ?>">
+    <main class="<?= !empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]' ?>">
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
             x-data="{ navOpen: false }"
             @keydown.escape.window="navOpen = false"
-            class="bo-shell-row relative z-[1] isolate flex min-h-[inherit] flex-col bg-slate-50 lg:flex-row<?= !empty($backOfficeHoverRail) ? ' bo-shell-row--hover-rail' : '' ?>"
+            class="bo-shell-row ath-shell-row relative z-[1] isolate flex min-h-[inherit] flex-col lg:flex-row<?= !empty($backOfficeHoverRail) ? ' bo-shell-row--hover-rail' : '' ?>"
         >
+            <?php if (!empty($isBackOfficeShell)): ?>
+            <div class="ath-mobile-bar lg:hidden">
+                <button
+                    type="button"
+                    class="ath-mobile-bar__menu"
+                    @click="navOpen = true"
+                    aria-expanded="false"
+                    :aria-expanded="navOpen ? 'true' : 'false'"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+                    Menu
+                </button>
+                <span class="ath-mobile-bar__title"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+            <?php else: ?>
             <div class="sticky top-0 z-[90] flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5 shadow-sm lg:hidden">
                 <button
                     type="button"
@@ -269,6 +306,7 @@ if (!empty($usesAdminSidebarShell)) {
                 </button>
                 <span class="truncate text-sm font-bold text-slate-900"><?= htmlspecialchars($adminSidebarShellMobileTitle, ENT_QUOTES, 'UTF-8') ?></span>
             </div>
+            <?php endif; ?>
 
             <div
                 x-show="navOpen"
@@ -285,7 +323,7 @@ if (!empty($usesAdminSidebarShell)) {
             ></div>
 
             <aside
-                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-[#050505] text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-72 lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
+                class="fixed inset-y-0 left-0 z-[210] w-80 max-w-full overflow-x-hidden border-r border-white/10 bg-black text-white shadow-2xl transition-transform duration-200 ease-out lg:static lg:z-auto lg:shrink-0 lg:!translate-x-0 lg:self-stretch lg:border-r lg:shadow-none<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? ' back-office-rail-aside' : '' ?><?= !empty($isBackOfficeShell) ? ' ath-sidebar-aside' : '' ?><?= !empty($backOfficeHoverRail) ? ' bo-aside--hover-rail' : '' ?>"
                 :class="navOpen ? 'translate-x-0' : '-translate-x-full'"
                 id="<?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) ? 'back-office-sidebar' : 'platform-admin-sidebar' ?>"
                 aria-label="Menu latéral"
@@ -309,14 +347,19 @@ if (!empty($usesAdminSidebarShell)) {
                 </div>
             </aside>
 
-            <div class="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden <?= (!empty($isBackOfficeShell) || !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? 'bg-[#050505]' : 'bg-slate-50' ?>">
+            <div class="ath-main relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden<?= (!empty($isBackOfficeShell)) ? '' : (( !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? ' bg-[#050505]' : ' bg-slate-50') ?>">
                 <?php
-                // Dans la colonne contenu pour ne pas chevaucher le rail (isolate + hover fixed).
                 require base_path('views/partials/navbar_info_banners.php');
                 require base_path('views/partials/alert_banners.php');
                 require base_path('views/partials/forum_moderation_alerts.php');
                 ?>
-                <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+                <?php if (!empty($isBackOfficeShell)): ?>
+                    <?php require base_path('views/partials/back_office_topbar.php'); ?>
+                <?php endif; ?>
+                <div class="ath-main__body flex min-h-0 min-w-0 flex-1 flex-col">
+                <?php if (!empty($isBackOfficeShell) && empty($boSkipPageHead)): ?>
+                    <?php require base_path('views/partials/back_office_page_head.php'); ?>
+                <?php endif; ?>
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');

@@ -49,8 +49,6 @@ foreach ($rows as $r) {
     $nextOrder = max($nextOrder, (int) ($r['sort_order'] ?? 0) + 1);
 }
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-briefing-slides.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-
 <div class="bo-briefing" data-bo-briefing>
     <header class="bo-briefing__hero">
         <div class="bo-briefing__hero-inner">

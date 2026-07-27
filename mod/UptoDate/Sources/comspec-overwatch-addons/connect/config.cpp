@@ -166,6 +166,12 @@ class CfgFunctions {
             class hashMapToJson {};
             class formatTimestamp {};
             class syncCallsignFromAthena {};
+            class getTerminalUid {};
+            class registerAtakTerminal {};
+            class registerAtakCertificate {};
+            class syncAtakRealism {};
+            class realismErrorMessage {};
+            class certStatusLabel {};
             class callsignDialogShow {};
             class callsignDialogOnLoad {};
             class callsignDialogSubmit {};

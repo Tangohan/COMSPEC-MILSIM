@@ -129,7 +129,6 @@ class RolesFunctionsAdminController
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles_functions_referentiel',
             'title' => 'Référentiel des fonctions',
-            'hideAdminSidebar' => true,
             'roleDefinitions' => $roleDefinitions,
             'definitionRelations' => $definitionRelations,
         ]);
@@ -151,7 +150,6 @@ class RolesFunctionsAdminController
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles_functions_catalogue',
             'title' => 'Catalogue des fonctions',
-            'hideAdminSidebar' => true,
             'roleDefinitions' => $roleDefinitions,
         ]);
     }

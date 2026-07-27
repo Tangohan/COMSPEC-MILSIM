@@ -63,9 +63,13 @@ $rolePickerJson = json_encode($rolePickerItems, JSON_UNESCAPED_UNICODE | JSON_HE
 if ($rolePickerJson === false) {
     $rolePickerJson = '[]';
 }
+$isAthShell = !empty($isBackOfficeShell);
 ?>
+<?php if (!$isAthShell): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/invitations-sheet.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<div class="inv-compose">
+<?php endif; ?>
+<div class="inv-compose<?= $isAthShell ? ' inv-compose--ath' : '' ?>">
+    <?php if (!$isAthShell): ?>
     <header class="inv-compose__hero">
         <div class="inv-compose__hero-inner">
             <div>
@@ -88,8 +92,21 @@ if ($rolePickerJson === false) {
             </div>
         </div>
     </header>
+    <?php endif; ?>
 
     <div class="inv-compose__deck">
+        <?php if ($isAthShell): ?>
+        <?php
+        $invTotal = max(1, (int) ($inviteStatusCounts['total'] ?? 0));
+        $athKpis = [
+            ['label' => 'EN ATTENTE', 'value' => (string) (int) ($inviteStatusCounts['pending'] ?? 0), 'delta' => '', 'tone' => '#c98a12', 'pct' => (int) round((int) ($inviteStatusCounts['pending'] ?? 0) / $invTotal * 100) . '%', 'note' => 'sans réponse'],
+            ['label' => 'RATTACHÉES', 'value' => (string) (int) ($inviteStatusCounts['accepted'] ?? 0), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => (int) round((int) ($inviteStatusCounts['accepted'] ?? 0) / $invTotal * 100) . '%', 'note' => 'comptes créés'],
+            ['label' => 'ANNULÉES', 'value' => (string) (int) ($inviteStatusCounts['revoked'] ?? 0), 'delta' => '', 'tone' => '#64748b', 'pct' => '—', 'note' => 'liens révoqués'],
+            ['label' => 'EXPIRÉES', 'value' => (string) (int) ($inviteStatusCounts['expired'] ?? 0), 'delta' => '', 'tone' => '#64748b', 'pct' => '—', 'note' => 'délai dépassé'],
+        ];
+        require base_path('views/partials/ath_kpis.php');
+        ?>
+        <?php else: ?>
         <dl class="inv-compose__kpi-grid">
             <div class="inv-compose__kpi">
                 <dt class="inv-compose__kpi-label inv-compose__kpi-label--amber">En attente</dt>
@@ -108,6 +125,7 @@ if ($rolePickerJson === false) {
                 <dd class="inv-compose__kpi-value"><?= (int) $inviteStatusCounts['expired'] ?></dd>
             </div>
         </dl>
+        <?php endif; ?>
 
         <?php $f = \App\Core\Session::getFlash('error'); $s = \App\Core\Session::getFlash('success'); ?>
         <?php if ($f): ?>

@@ -16,7 +16,6 @@ $teamsCount = (int) ($stats['teams'] ?? 0);
 $rolesCount = (int) ($stats['roles'] ?? 0);
 $gradesCount = (int) ($stats['grades'] ?? 0);
 $jobRolesCount = (int) ($stats['job_roles'] ?? 0);
-$communityName = trim((string) ($communityName ?? 'Communauté'));
 
 $fmtCount = static function (int $n, string $one, string $many): string {
     if ($n < 1) {
@@ -193,208 +192,178 @@ if ($rowsJson === false) {
 }
 
 $toolsCount = count($visibleRows);
-?>
-<?php if (is_file(base_path('public/assets/css/effectifs_lms.css'))): ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/effectifs_lms.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<?php endif; ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-effectifs-hub.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$domainBadge = static function (string $key): array {
+    return match ($key) {
+        'rh' => ['fg' => '#0b8a5c', 'bg' => '#ecfdf5', 'bd' => '#a7f3d0'],
+        'structure' => ['fg' => '#1e4f80', 'bg' => '#eff6ff', 'bd' => '#bfdbfe'],
+        'roles' => ['fg' => '#6d28d9', 'bg' => '#f5f3ff', 'bd' => '#ddd6fe'],
+        'refs' => ['fg' => '#c98a12', 'bg' => '#fffbeb', 'bd' => '#fde68a'],
+        'indicateurs' => ['fg' => '#475569', 'bg' => '#f8fafc', 'bd' => '#e2e8f0'],
+        default => ['fg' => '#3c474c', 'bg' => '#f6f8f9', 'bd' => '#e2e8f0'],
+    };
+};
+
+$effectifsUrl = function_exists('effectifs_workspace_url')
+    ? effectifs_workspace_url()
+    : url('back-office/ressources/effectifs');
+
+$athKpis = [
+    ['label' => 'MEMBRES ACTIFS', 'value' => (string) $membersActive, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $membersActive > 0 ? '100%' : '0%', 'note' => 'comptes en service'],
+    ['label' => 'REGROUPEMENTS', 'value' => (string) $groupsCount, 'delta' => '', 'tone' => '#1e4f80', 'pct' => $groupsCount > 0 ? '100%' : '0%', 'note' => $fmtCount($teamsCount, 'équipe', 'équipes')],
+    ['label' => 'RÔLES', 'value' => (string) $rolesCount, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'gouvernance et opérations'],
+    ['label' => 'OUTILS', 'value' => (string) $toolsCount, 'delta' => '', 'tone' => '#c98a12', 'pct' => '—', 'note' => 'selon vos droits'],
+];
+?>
 <div
-    class="bo-eff-hub"
-    x-data="{
+    class="bo-eff-hub ath-dash-page"
+    x-data="boEffHub(<?= $h($rowsJson) ?>)"
+>
+    <?php require base_path('views/partials/ath_kpis.php'); ?>
+
+    <div class="bo-eff-hub__shortcuts ath-rise">
+        <a href="<?= $h($effectifsUrl) ?>" class="ath-btn ath-btn--solid">Tableur des membres</a>
+        <?php if ($canStructureRecruitmentHub): ?>
+            <a href="<?= $h(url('back-office/organisation/structure')) ?>" class="ath-btn">Structure</a>
+        <?php endif; ?>
+        <?php if ($canStructure): ?>
+            <a href="<?= $h(url('back-office/groups')) ?>" class="ath-btn">Regroupements</a>
+            <a href="<?= $h(url('back-office/teams')) ?>" class="ath-btn">Équipes</a>
+        <?php endif; ?>
+        <?php if ($canRolesList): ?>
+            <a href="<?= $h(url('back-office/roles')) ?>" class="ath-btn">Rôles</a>
+        <?php endif; ?>
+        <?php if ($canGrades): ?>
+            <a href="<?= $h(url('back-office/referentiels/grades')) ?>" class="ath-btn">Grades</a>
+        <?php endif; ?>
+        <?php if ($canSeniorityAdmin): ?>
+            <a href="<?= $h(url('back-office/organisation/anciennete')) ?>" class="ath-btn">Ancienneté</a>
+        <?php endif; ?>
+    </div>
+
+    <div class="ath-table-panel ath-rise">
+        <div class="ath-table-toolbar">
+            <span class="ath-table-toolbar__title">Catalogue des outils</span>
+            <span class="ath-table-toolbar__count" x-text="visibleCount + ' / <?= $toolsCount ?> affiché(s)'"></span>
+            <span class="ath-table-toolbar__spacer" aria-hidden="true"></span>
+            <label class="ath-table-toolbar__search">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c979b" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path></svg>
+                <input
+                    id="bo-eff-hub-q"
+                    type="search"
+                    x-model="q"
+                    placeholder="Rechercher un outil…"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-label="Rechercher dans le catalogue"
+                >
+            </label>
+            <label class="bo-eff-hub__domain-filter">
+                <span class="visually-hidden">Domaine</span>
+                <select id="bo-eff-hub-domain" x-model="domain" aria-label="Filtrer par domaine">
+                    <option value="">Tous les domaines</option>
+                    <?php foreach ($domainOptions as $domainKey => $domainLabel): ?>
+                        <option value="<?= $h($domainKey) ?>"><?= $h($domainLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <button
+                type="button"
+                class="ath-btn"
+                x-show="q !== '' || domain !== ''"
+                x-cloak
+                @click="q = ''; domain = ''"
+            >Réinitialiser</button>
+        </div>
+
+        <?php if ($visibleRows === []): ?>
+            <div class="ath-table-empty bo-eff-hub__empty-state">
+                <strong>Aucun outil disponible</strong>
+                <p>Votre compte n’a pas encore les droits nécessaires pour l’organisation des effectifs.</p>
+            </div>
+        <?php else: ?>
+            <div
+                class="ath-table-empty bo-eff-hub__empty-state"
+                x-show="visibleCount === 0"
+                x-cloak
+            >
+                <strong>Aucun outil ne correspond</strong>
+                <p>Élargissez la recherche ou changez de domaine.</p>
+            </div>
+
+            <div class="ath-table-wrap" x-show="visibleCount > 0">
+                <table class="ath-table bo-eff-hub__table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Outil</th>
+                            <th scope="col">Domaine</th>
+                            <th scope="col">Volume</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($visibleRows as $row):
+                        $badge = $domainBadge((string) $row['domainKey']);
+                        $volumeIsCount = preg_match('/^\d+\s/', $row['volume']) === 1;
+                        ?>
+                        <tr x-show="matchById('<?= $h((string) $row['id']) ?>')">
+                            <td data-label="Outil">
+                                <span class="bo-eff-hub__tool-name"><?= $h($row['title']) ?></span>
+                                <span class="bo-eff-hub__tool-desc"><?= $h($row['desc']) ?></span>
+                            </td>
+                            <td data-label="Domaine">
+                                <span
+                                    class="ath-cell ath-cell--badge"
+                                    style="color:<?= $h($badge['fg']) ?>;background:<?= $h($badge['bg']) ?>;border-color:<?= $h($badge['bd']) ?>"
+                                ><?= $h($row['domain']) ?></span>
+                            </td>
+                            <td data-label="Volume" class="<?= $volumeIsCount ? 'ath-td-num' : '' ?>">
+                                <span class="bo-eff-hub__volume<?= $volumeIsCount ? '' : ' bo-eff-hub__volume--muted' ?>">
+                                    <?= $h($row['volume']) ?>
+                                </span>
+                            </td>
+                            <td data-label="Action">
+                                <a
+                                    href="<?= $h($row['href']) ?>"
+                                    class="ath-btn<?= !empty($row['primary']) ? ' ath-btn--solid' : '' ?>"
+                                ><?= $h($row['cta']) ?></a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="ath-table-foot">
+                <div class="ath-table-foot__meta">
+                    Les réglages réservés à l’ensemble de la plateforme restent dans l’administration système.
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+<script>
+function boEffHub(rows) {
+    return {
         q: '',
         domain: '',
-        rows: <?= $rowsJson ?>,
-        match(row) {
-            const needle = (this.q || '').trim().toLowerCase();
+        rows: Array.isArray(rows) ? rows : [],
+        match: function (row) {
+            var needle = (this.q || '').trim().toLowerCase();
             if (needle && !(row.hay || '').includes(needle)) return false;
             if (this.domain && row.domainKey !== this.domain) return false;
             return true;
         },
+        matchById: function (id) {
+            var row = this.rows.find(function (r) { return r.id === id; });
+            return row ? this.match(row) : false;
+        },
         get visibleCount() {
-            return this.rows.filter((r) => this.match(r)).length;
+            var self = this;
+            return this.rows.filter(function (r) { return self.match(r); }).length;
         }
-    }"
->
-    <header class="bo-eff-hub__hero">
-        <div class="bo-eff-hub__hero-inner">
-            <div>
-                <p class="bo-eff-hub__eyebrow">Communauté · Effectifs &amp; RH</p>
-                <h1 class="bo-eff-hub__title">Structure &amp; grades</h1>
-                <p class="bo-eff-hub__lead">
-                    Vue d’ensemble non nominative pour <?= htmlspecialchars($communityName, ENT_QUOTES, 'UTF-8') ?> :
-                    structure, rôles, référentiels et indicateurs utiles aux fiches personnel.
-                    Pour le tableur nominatif (profils, statuts, élévations), direction le Bureau effectifs ci-contre.
-                </p>
-            </div>
-            <div class="bo-eff-hub__hero-actions">
-                <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="bo-eff-hub__btn bo-eff-hub__btn--ghost">Centre de pilotage</a>
-                <a
-                    href="<?= htmlspecialchars(function_exists('effectifs_workspace_url') ? effectifs_workspace_url() : url('back-office/ressources/effectifs'), ENT_QUOTES, 'UTF-8') ?>"
-                    class="bo-eff-hub__btn bo-eff-hub__btn--solid"
-                >Tableur des membres</a>
-            </div>
-        </div>
-    </header>
-
-    <div class="bo-eff-hub__deck">
-        <div class="bo-eff-hub__kpi-grid" aria-label="Synthèse de la communauté">
-            <div class="bo-eff-hub__kpi">
-                <p class="bo-eff-hub__kpi-label">Membres actifs</p>
-                <p class="bo-eff-hub__kpi-value"><?= $membersActive ?></p>
-                <p class="bo-eff-hub__kpi-meta">Comptes en service</p>
-            </div>
-            <div class="bo-eff-hub__kpi">
-                <p class="bo-eff-hub__kpi-label">Regroupements</p>
-                <p class="bo-eff-hub__kpi-value"><?= $groupsCount ?></p>
-                <p class="bo-eff-hub__kpi-meta"><?= $fmtCount($teamsCount, 'équipe', 'équipes') ?></p>
-            </div>
-            <div class="bo-eff-hub__kpi">
-                <p class="bo-eff-hub__kpi-label">Rôles</p>
-                <p class="bo-eff-hub__kpi-value"><?= $rolesCount ?></p>
-                <p class="bo-eff-hub__kpi-meta">Gouvernance et opérations</p>
-            </div>
-            <div class="bo-eff-hub__kpi">
-                <p class="bo-eff-hub__kpi-label">Outils accessibles</p>
-                <p class="bo-eff-hub__kpi-value"><?= $toolsCount ?></p>
-                <p class="bo-eff-hub__kpi-meta">Selon vos droits</p>
-            </div>
-        </div>
-
-        <div class="eff-catalog">
-            <div class="eff-catalog__head">
-                <div class="min-w-0">
-                    <p class="eff-catalog__kicker">Catalogue</p>
-                    <h2 class="eff-catalog__title">Tableur d’organisation</h2>
-                    <p class="eff-catalog__lead">
-                        Filtrez par domaine ou recherchez un outil, puis ouvrez la page concernée.
-                        Les volumes reflètent l’état actuel de la communauté.
-                    </p>
-                </div>
-                <div class="eff-catalog__tools">
-                    <span class="eff-catalog__btn" x-text="visibleCount + ' / <?= $toolsCount ?> affiché(s)'"></span>
-                    <button
-                        type="button"
-                        class="eff-catalog__btn"
-                        x-show="q !== '' || domain !== ''"
-                        x-cloak
-                        @click="q = ''; domain = ''"
-                    >Réinitialiser</button>
-                </div>
-            </div>
-
-            <div class="eff-catalog-filters">
-                <div>
-                    <label for="bo-eff-hub-q">Recherche</label>
-                    <input
-                        id="bo-eff-hub-q"
-                        type="search"
-                        x-model="q"
-                        placeholder="Nom, domaine, description…"
-                        autocomplete="off"
-                    >
-                </div>
-                <div>
-                    <label for="bo-eff-hub-domain">Domaine</label>
-                    <select id="bo-eff-hub-domain" x-model="domain">
-                        <option value="">Tous les domaines</option>
-                        <?php foreach ($domainOptions as $domainKey => $domainLabel): ?>
-                            <option value="<?= htmlspecialchars($domainKey, ENT_QUOTES, 'UTF-8') ?>">
-                                <?= htmlspecialchars($domainLabel, ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-
-            <?php if ($visibleRows === []): ?>
-                <div class="eff-catalog__empty">
-                    <strong>Aucun outil disponible</strong>
-                    Votre compte n’a pas encore les droits nécessaires pour l’organisation des effectifs.
-                </div>
-            <?php else: ?>
-                <div
-                    class="eff-catalog__empty"
-                    x-show="visibleCount === 0"
-                    x-cloak
-                >
-                    <strong>Aucun outil ne correspond</strong>
-                    Élargissez la recherche ou changez de domaine.
-                </div>
-
-                <div
-                    class="eff-sheets"
-                    role="region"
-                    aria-label="Tableur d’organisation des effectifs"
-                    tabindex="0"
-                    x-show="visibleCount > 0"
-                >
-                    <table class="eff-sheets__table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Outil</th>
-                                <th scope="col">Domaine</th>
-                                <th scope="col">Volume</th>
-                                <th scope="col">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($visibleRows as $row):
-                            $jsRow = $rowsForJs[$row['id']] ?? ['hay' => '', 'domainKey' => $row['domainKey']];
-                            $filterPayload = htmlspecialchars(json_encode([
-                                'hay' => $jsRow['hay'],
-                                'domainKey' => $jsRow['domainKey'],
-                            ], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
-                            $volumeIsCount = preg_match('/^\d+\s/', $row['volume']) === 1;
-                            ?>
-                            <tr x-show="match(<?= $filterPayload ?>)">
-                                <td data-label="Outil">
-                                    <span class="eff-sheets__tool-name"><?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="eff-sheets__tool-desc"><?= htmlspecialchars($row['desc'], ENT_QUOTES, 'UTF-8') ?></span>
-                                </td>
-                                <td data-label="Domaine">
-                                    <span class="eff-sheets__badge eff-sheets__badge--scope"><?= htmlspecialchars($row['domain'], ENT_QUOTES, 'UTF-8') ?></span>
-                                </td>
-                                <td data-label="Volume">
-                                    <span class="eff-sheets__volume<?= $volumeIsCount ? '' : ' eff-sheets__volume--muted' ?>">
-                                        <?= htmlspecialchars($row['volume'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                </td>
-                                <td data-label="Actions">
-                                    <div class="eff-sheets__actions">
-                                        <a
-                                            href="<?= htmlspecialchars($row['href'], ENT_QUOTES, 'UTF-8') ?>"
-                                            class="<?= !empty($row['primary']) ? 'is-primary' : '' ?>"
-                                        ><?= htmlspecialchars($row['cta'], ENT_QUOTES, 'UTF-8') ?></a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="eff-catalog-foot">
-                    <p style="margin:0;font-size:0.75rem;color:#64748b">
-                        Les réglages réservés à l’ensemble de la plateforme restent dans l’administration système.
-                    </p>
-                    <div class="eff-catalog-foot__links">
-                        <?php if ($canStructureRecruitmentHub): ?>
-                            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/organisation/structure'), ENT_QUOTES, 'UTF-8') ?>">Structure</a>
-                        <?php endif; ?>
-                        <?php if ($canStructure): ?>
-                            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/groups'), ENT_QUOTES, 'UTF-8') ?>">Regroupements</a>
-                            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/teams'), ENT_QUOTES, 'UTF-8') ?>">Équipes</a>
-                        <?php endif; ?>
-                        <?php if ($canRolesList): ?>
-                            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/roles'), ENT_QUOTES, 'UTF-8') ?>">Rôles</a>
-                        <?php endif; ?>
-                        <?php if ($canSeniorityAdmin): ?>
-                            <a class="eff-catalog__btn" href="<?= htmlspecialchars(url('back-office/organisation/anciennete'), ENT_QUOTES, 'UTF-8') ?>">Ancienneté</a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
+    };
+}
+</script>

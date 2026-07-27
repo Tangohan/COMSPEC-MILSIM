@@ -211,6 +211,8 @@ if (_prefix == "OK") then {
             0 spawn {
                 uiSleep 0.5;
                 [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
+                uiSleep 0.5;
+                [] spawn comspec_overwatch_connect_fnc_syncAtakRealism;
             };
         };
     } else {
@@ -234,6 +236,8 @@ if (_prefix == "OK") then {
             0 spawn {
                 uiSleep 0.5;
                 [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
+                uiSleep 0.5;
+                [] spawn comspec_overwatch_connect_fnc_syncAtakRealism;
             };
         };
     };

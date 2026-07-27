@@ -31,6 +31,8 @@ final class TenantPermissionCatalog
     {
         return array_merge(
             self::adminDefinitions(),
+            self::atakDefinitions(),
+            self::financesDefinitions(),
             self::operationalBoardDefinitions(),
             self::transmissionDefinitions(),
             self::operationsDomainDefinitions(),
@@ -146,6 +148,35 @@ final class TenantPermissionCatalog
             ['slug' => 'operations.comms.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Piloter les communications opérationnelles'],
             ['slug' => 'operations.doctrine.view', 'module' => 'operations', 'action' => 'view', 'name' => 'Consulter la doctrine opérationnelle'],
             ['slug' => 'operations.doctrine.manage', 'module' => 'operations', 'action' => 'manage', 'name' => 'Gérer la doctrine opérationnelle'],
+        ];
+    }
+
+  /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function atakDefinitions(): array
+    {
+        return [
+            ['slug' => 'atak.terminals.view', 'module' => 'atak', 'action' => 'view', 'name' => 'Consulter les terminaux ATAK'],
+            ['slug' => 'atak.terminals.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les terminaux ATAK'],
+            ['slug' => 'atak.certificates.view', 'module' => 'atak', 'action' => 'view', 'name' => 'Consulter les certificats ATAK'],
+            ['slug' => 'atak.certificates.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les certificats ATAK'],
+            ['slug' => 'atak.certificates.export', 'module' => 'atak', 'action' => 'export', 'name' => 'Exporter le registre certificats ATAK'],
+            ['slug' => 'atak.config.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Configurer l’environnement ATAK'],
+            ['slug' => 'atak.mission_cycle.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Piloter le cycle de mission ATAK'],
+            ['slug' => 'atak.aar.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les comptes rendus post-opération ATAK'],
+        ];
+    }
+
+    /**
+     * @return list<array{slug: string, module: string, action: string|null, name: string}>
+     */
+    private static function financesDefinitions(): array
+    {
+        return [
+            ['slug' => 'finances.view', 'module' => 'finances', 'action' => 'view', 'name' => 'Consulter les finances de la communauté'],
+            ['slug' => 'finances.manage', 'module' => 'finances', 'action' => 'manage', 'name' => 'Gérer les finances de la communauté'],
+            ['slug' => 'finances.export', 'module' => 'finances', 'action' => 'export', 'name' => 'Exporter les données financières'],
         ];
     }
 

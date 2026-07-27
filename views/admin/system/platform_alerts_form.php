@@ -35,7 +35,7 @@ $displayStyleOptions = \App\Support\AlertDisplayStyle::platformOptions();
 $currentDisplayStyle = \App\Support\AlertDisplayStyle::sanitizePlatform(
     isset($row['display_style']) ? (string) $row['display_style'] : null
 );
-$aud = ['guest' => true, 'authenticated' => true, 'free' => true, 'paid' => true';
+$aud = ['guest' => true, 'authenticated' => true, 'free' => true, 'paid' => true];
 if ($row && !empty($row['audience_json'])) {
     $raw = $row['audience_json'];
     if (is_string($raw)) {

@@ -13,6 +13,7 @@ class TenantAlertRepository
 
     private static ?bool $hasVisualColumns = null;
     private static ?bool $hasDisplayStyleColumn = null;
+    private static ?bool $hasFeaturesColumn = null;
 
     public function __construct()
     {
@@ -51,6 +52,39 @@ class TenantAlertRepository
         }
 
         return self::$hasDisplayStyleColumn;
+    }
+
+    private function hasFeaturesColumn(): bool
+    {
+        if (self::$hasFeaturesColumn !== null) {
+            return self::$hasFeaturesColumn;
+        }
+        try {
+            $stmt = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_alerts' AND COLUMN_NAME = 'features_json' LIMIT 1"
+            );
+            self::$hasFeaturesColumn = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            self::$hasFeaturesColumn = false;
+        }
+
+        return self::$hasFeaturesColumn;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listActiveForTenantDisplayByStyle(int $tenantId, string $displayStyle): array
+    {
+        $all = $this->listActiveForTenantDisplay($tenantId);
+        $want = \App\Support\AlertDisplayStyle::sanitizeTenant($displayStyle);
+
+        return array_values(array_filter(
+            $all,
+            static fn (array $r): bool => \App\Support\AlertDisplayStyle::sanitizeTenant(
+                isset($r['display_style']) ? (string) $r['display_style'] : null
+            ) === $want
+        ));
     }
 
     /** @return list<array<string, mixed>> */
@@ -135,7 +169,33 @@ class TenantAlertRepository
         $displayStyle = \App\Support\AlertDisplayStyle::sanitizeTenant(
             isset($data['display_style']) ? (string) $data['display_style'] : null
         );
-        if ($this->hasVisualColumns() && $this->hasDisplayStyleColumn()) {
+        $featuresJson = isset($data['features_json']) ? (string) $data['features_json'] : null;
+        if ($this->hasVisualColumns() && $this->hasDisplayStyleColumn() && $this->hasFeaturesColumn()) {
+            $stmt = $this->pdo->prepare('INSERT INTO tenant_alerts (
+                tenant_id, kind, display_style, title, body, cta_label, cta_url, coupon_code,
+                accent_color, icon_key, image_path, banner_path,
+                starts_at, ends_at, sort_order, is_active, features_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())');
+            $stmt->execute([
+                $tenantId,
+                $data['kind'] ?? 'info',
+                $displayStyle,
+                $data['title'] ?? '',
+                $data['body'] ?? null,
+                $data['cta_label'] ?? null,
+                $data['cta_url'] ?? null,
+                $data['coupon_code'] ?? null,
+                $data['accent_color'] ?? null,
+                $data['icon_key'] ?? null,
+                $data['image_path'] ?? null,
+                $data['banner_path'] ?? null,
+                $data['starts_at'] ?? null,
+                $data['ends_at'] ?? null,
+                (int) ($data['sort_order'] ?? 0),
+                !empty($data['is_active']) ? 1 : 0,
+                $featuresJson,
+            ]);
+        } elseif ($this->hasVisualColumns() && $this->hasDisplayStyleColumn()) {
             $stmt = $this->pdo->prepare('INSERT INTO tenant_alerts (
                 tenant_id, kind, display_style, title, body, cta_label, cta_url, coupon_code,
                 accent_color, icon_key, image_path, banner_path,
@@ -230,6 +290,37 @@ class TenantAlertRepository
         $displayStyle = \App\Support\AlertDisplayStyle::sanitizeTenant(
             isset($data['display_style']) ? (string) $data['display_style'] : null
         );
+        $featuresJson = isset($data['features_json']) ? (string) $data['features_json'] : null;
+        if ($this->hasVisualColumns() && $this->hasDisplayStyleColumn() && $this->hasFeaturesColumn()) {
+            $stmt = $this->pdo->prepare('UPDATE tenant_alerts SET
+                kind = ?, display_style = ?, title = ?, body = ?, cta_label = ?, cta_url = ?, coupon_code = ?,
+                accent_color = ?, icon_key = ?, image_path = ?, banner_path = ?,
+                starts_at = ?, ends_at = ?, sort_order = ?, is_active = ?, features_json = ?, updated_at = NOW()
+                WHERE id = ? AND tenant_id = ?');
+            $stmt->execute([
+                $data['kind'] ?? 'info',
+                $displayStyle,
+                $data['title'] ?? '',
+                $data['body'] ?? null,
+                $data['cta_label'] ?? null,
+                $data['cta_url'] ?? null,
+                $data['coupon_code'] ?? null,
+                $data['accent_color'] ?? null,
+                $data['icon_key'] ?? null,
+                $data['image_path'] ?? null,
+                $data['banner_path'] ?? null,
+                $data['starts_at'] ?? null,
+                $data['ends_at'] ?? null,
+                (int) ($data['sort_order'] ?? 0),
+                !empty($data['is_active']) ? 1 : 0,
+                $featuresJson,
+                $id,
+                $tenantId,
+            ]);
+
+            return;
+        }
+
         if ($this->hasVisualColumns() && $this->hasDisplayStyleColumn()) {
             $stmt = $this->pdo->prepare('UPDATE tenant_alerts SET
                 kind = ?, display_style = ?, title = ?, body = ?, cta_label = ?, cta_url = ?, coupon_code = ?,

@@ -696,6 +696,12 @@ return function (Router $router) {
     $router->get('/back-office/events/insights', [CommunityEventsAdminController::class, 'insights'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events', [CommunityEventsAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}/export-presences', [CommunityEventsAdminController::class, 'exportPresences'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/{id}/reponses-nominatives', [\App\Controllers\Admin\Organization\EventRsvpNominativeAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/events/{id}/reponses-nominatives/export', [\App\Controllers\Admin\Organization\EventRsvpNominativeAdminController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/events/{id}/reponses-nominatives/meta', [\App\Controllers\Admin\Organization\EventRsvpNominativeAdminController::class, 'updateMeta'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/events/{id}/reponses-nominatives', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/events/{id}/reponses-nominatives/export', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/events/{id}/reponses-nominatives/{userId}', [\App\Controllers\Api\EventRsvpNominativeApiController::class, 'updateMeta'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/events/{id}', [CommunityEventsAdminController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/details', [CommunityEventsAdminController::class, 'updateDetails'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/participant/rsvp', [CommunityEventsAdminController::class, 'updateParticipantRsvp'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -706,6 +712,8 @@ return function (Router $router) {
     $router->post('/back-office/events/{id}/slots', [CommunityEventsAdminController::class, 'storeSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}', [CommunityEventsAdminController::class, 'updateSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/events/{id}/slots/{slotId}/supprimer', [CommunityEventsAdminController::class, 'deleteSlot'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/evenements', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/evenements/insights', fn (\App\Core\Request $r, array $p) => \App\Core\Response::redirect(url('back-office/events/insights')), [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/courrier/traceabilite', [CourrierDashboardController::class, 'traceability'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions', [RolesFunctionsAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles-functions/referentiel', [RolesFunctionsAdminController::class, 'referentiel'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -715,6 +723,13 @@ return function (Router $router) {
     $router->post('/back-office/roles-functions/relations/store', [RolesFunctionsAdminController::class, 'storeRoleRelation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/required/save', [RolesFunctionsAdminController::class, 'saveRequiredDefinitions'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/roles-functions/quick-assign-role', [RolesFunctionsAdminController::class, 'quickAssignRole'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles-permissions', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-permissions/save', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/roles-permissions/revue', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'markReviewed'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/roles-permissions/export', [\App\Controllers\Admin\Organization\RolePermissionMatrixController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/admin/roles-permissions', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/api/admin/roles-permissions/export', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'export'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/admin/roles-permissions/{id}', [\App\Controllers\Api\RolePermissionMatrixApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles', [RoleAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets', [RoleAdminController::class, 'presets'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/roles/presets/preview', [RoleAdminController::class, 'presetsPreview'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -959,6 +974,14 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/fire-teams/{id}/delete', [AdminFireTeamsController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/operateurs', [AdminAtakOperatorsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/operateurs/export', [AdminAtakOperatorsController::class, 'exportCsv'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/realisme', [\App\Controllers\Admin\AdminAtakRealismController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/realisme/terminaux', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeTerminal'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/realisme/certificats', [\App\Controllers\Admin\AdminAtakRealismController::class, 'storeCertificate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'show'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/comptes-rendus/{id}/edit', [\App\Controllers\Admin\AdminAarReportsController::class, 'edit'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus', [\App\Controllers\Admin\AdminAarReportsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/comptes-rendus/{id}', [\App\Controllers\Admin\AdminAarReportsController::class, 'update'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/admin/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/admin/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -1463,6 +1486,14 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Rapports tactiques (SPOTREP, SITREP, SALUTE, CONTACT)
     $router->get('/api/atak/reports', [AtakApiController::class, 'tacticalReportsIndex']);
     $router->post('/api/atak/reports', [AtakApiController::class, 'tacticalReportsStore']);
+    $router->get('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
+    $router->post('/api/atak/terminals', [\App\Controllers\Api\AtakRealismApiController::class, 'terminals']);
+    $router->get('/api/atak/certificates', [\App\Controllers\Api\AtakRealismApiController::class, 'certificates']);
+    $router->post('/api/atak/certificates', [\App\Controllers\Api\AtakRealismApiController::class, 'certificates']);
+    $router->get('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'index']);
+    $router->get('/api/atak/aar-reports/export', [\App\Controllers\Api\AarReportsApiController::class, 'export']);
+    $router->post('/api/atak/aar-reports', [\App\Controllers\Api\AarReportsApiController::class, 'store']);
+    $router->post('/api/atak/aar-reports/{id}', [\App\Controllers\Api\AarReportsApiController::class, 'store']);
     $router->get('/api/atak/reports/{id}', [AtakApiController::class, 'tacticalReportsShow']);
     $router->post('/api/atak/reports/{id}/acknowledge', [AtakApiController::class, 'tacticalReportsAcknowledge']);
     
@@ -1574,6 +1605,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/admin/forum-categories', [\App\Controllers\Admin\ForumCategoriesApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/admin/site-settings', [\App\Controllers\Admin\SiteSettingsApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/admin/platform-brief-settings', [\App\Controllers\Admin\PlatformBriefSettingsApiController::class, 'handle'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'show'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/api/back-office/runtime-settings', [\App\Controllers\Admin\Organization\AdminRuntimeSettingsApiController::class, 'save'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/api/alerts/dismiss', [AlertDismissController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/back-office/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/admin/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);

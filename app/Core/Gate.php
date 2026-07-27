@@ -85,4 +85,10 @@ class Gate
     {
         return !$this->allows($permission);
     }
+
+    /** @return list<string> */
+    public function permissionSlugs(): array
+    {
+        return $this->permissions;
+    }
 }

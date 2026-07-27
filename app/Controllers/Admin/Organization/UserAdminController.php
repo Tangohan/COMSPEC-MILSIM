@@ -227,7 +227,19 @@ class UserAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.index',
-            'title' => 'Utilisateurs',
+            'title' => 'Membres',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Personnel',
+            'boPageTitle' => 'Membres',
+            'boPageKicker' => 'PERSONNEL · ANNUAIRE',
+            'boPageSubtitle' => 'Annuaire complet de l’unité : identité, affectation, statut du compte, présence et rattachement ATAK.',
+            'boPageAction' => 'Ajouter un membre',
+            'boPageActionUrl' => url('back-office/users/create'),
+            'boPageQuick' => [
+                ['label' => 'Actifs', 'href' => url('back-office/users') . '?status=active'],
+                ['label' => 'Inactifs', 'href' => url('back-office/users') . '?status=inactive'],
+                ['label' => 'Exporter', 'href' => url('back-office/users') . '?export=csv'],
+            ],
             'users' => $users,
             'roles' => $roles,
             'completenessByUser' => $completenessByUser,
@@ -244,9 +256,29 @@ class UserAdminController
             'usersPage' => $page,
             'usersPerPage' => $perPage,
             'usersTotalPages' => $totalPages,
+            'athUserKpis' => $this->buildUserListKpis($tenantId),
             'backOfficePageCss' => ['back-office-users.css'],
             'showPortalFooter' => false,
         ]);
+    }
+
+    /**
+     * @return list<array{label: string, value: string, delta: string, tone: string, pct: string, note: string}>
+     */
+    private function buildUserListKpis(int $tenantId): array
+    {
+        $total = $this->userRepository->countListForTenant($tenantId, null, null, null, true, null, null);
+        $active = $this->userRepository->countListForTenant($tenantId, null, 'active', null, true, null, null);
+        $pending = $this->userRepository->countListForTenant($tenantId, null, 'pending_verification', null, true, null, null);
+        $inactive = $this->userRepository->countListForTenant($tenantId, null, 'inactive', null, true, null, null);
+        $pctActive = $total > 0 ? (int) round($active / $total * 100) : 0;
+
+        return [
+            ['label' => 'INSCRITS', 'value' => (string) $total, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'toutes catégories'],
+            ['label' => 'ACTIFS', 'value' => (string) $active, 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $pctActive . '%', 'note' => 'comptes actifs'],
+            ['label' => 'EN ATTENTE', 'value' => (string) $pending, 'delta' => '', 'tone' => '#c98a12', 'pct' => $total > 0 ? (int) round($pending / $total * 100) . '%' : '0%', 'note' => 'validation dossier'],
+            ['label' => 'INACTIFS', 'value' => (string) $inactive, 'delta' => '', 'tone' => '#1e4f80', 'pct' => $total > 0 ? (int) round($inactive / $total * 100) . '%' : '0%', 'note' => 'comptes inactifs'],
+        ];
     }
 
     private function queryString(mixed $v): ?string
@@ -292,9 +324,22 @@ class UserAdminController
         if ($userRoleIds === [] && !empty($user['role_id'])) {
             $userRoleIds = [(int) $user['role_id']];
         }
+        $displayName = trim((string) ($user['display_name'] ?? ''));
+        $headName = $displayName !== '' ? $displayName : 'Fiche membre';
+        $headEmail = trim((string) ($user['email'] ?? ''));
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.users.show',
-            'title' => 'Fiche utilisateur',
+            'title' => $headName,
+            'boPageGroup' => 'Personnel',
+            'boPageKicker' => 'PERSONNEL · FICHE MEMBRE',
+            'boPageTitle' => $headName,
+            'boPageSubtitle' => $headEmail !== '' ? $headEmail : 'Synthèse du compte et du dossier opérationnel.',
+            'boPageQuick' => [
+                ['label' => 'Liste des membres', 'href' => url('back-office/users')],
+                ['label' => 'Réglages du compte', 'href' => url('back-office/users/' . $id . '/edit')],
+                ['label' => 'Fiche personnelle', 'href' => url('personnel/' . $id . '/edit')],
+            ],
             'user' => $user,
             'userRoleIds' => $userRoleIds,
             'userProfile' => $userProfile,

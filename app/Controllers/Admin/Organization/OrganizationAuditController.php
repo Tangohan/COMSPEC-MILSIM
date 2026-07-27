@@ -47,7 +47,20 @@ final class OrganizationAuditController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.audit',
-            'title' => 'Journal d\'activité',
+            'title' => 'Journal d\'audit',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Système',
+            'boPageTitle' => 'Journal d\'audit',
+            'boPageKicker' => 'SYSTÈME · TRAÇABILITÉ',
+            'boPageSubtitle' => 'Toutes les actions administratives sont horodatées, attribuées et conservées 24 mois.',
+            'boPageAction' => 'Exporter le journal',
+            'boPageActionUrl' => url('back-office/audit'),
+            'boPageQuick' => [
+                ['label' => '24 h', 'href' => url('back-office/audit') . '?date_from=' . date('Y-m-d', strtotime('-1 day'))],
+                ['label' => 'Critiques', 'href' => url('back-office/audit') . '?action_domain=security'],
+                ['label' => 'Par acteur', 'href' => url('back-office/audit')],
+            ],
+            'hideAuditPageHeader' => true,
             'auditRows' => $result['rows'],
             'auditTotal' => $result['total'],
             'auditPage' => $page,

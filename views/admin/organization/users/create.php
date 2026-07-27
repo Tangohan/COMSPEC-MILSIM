@@ -14,7 +14,6 @@ $inviteUrl = url('back-office/invitations');
 $flashOk = \App\Core\Session::getFlash('success');
 $flashErr = \App\Core\Session::getFlash('error');
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-users.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 <div class="bo-user-edit">
     <header class="bo-user-edit__hero">
         <div class="bo-user-edit__hero-inner">

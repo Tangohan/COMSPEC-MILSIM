@@ -13,6 +13,7 @@ use App\Core\Session;
 use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\ForumNotificationRepository;
 use App\Repositories\TenantMessageRepository;
+use App\Services\Alerts\AlertPresentationService;
 use App\Services\Moderation\ModerationRestrictionResolver;
 use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Notifications\ActivityHubPresentationService;
@@ -25,6 +26,7 @@ final class ActivityHubController
         private CourrierDocumentNotificationRepository $courrierNotifications,
         private TenantMessageRepository $tenantMessages,
         private ActivityHubPresentationService $presentation,
+        private AlertPresentationService $alertPresentation,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -66,12 +68,30 @@ final class ActivityHubController
         $unreadCounts = Container::get(PersonalMessageUnreadCounter::class)
             ->countsForUser($tenantId, $userId, $gate);
 
+        $activityAnnounceItems = [];
+        try {
+            foreach ($this->alertPresentation->activityFeedForCurrentRequest() as $alert) {
+                $href = isset($alert['cta_url']) && $alert['cta_url'] !== '' ? (string) $alert['cta_url'] : url('alertes');
+                $activityAnnounceItems[] = [
+                    'title' => (string) ($alert['title'] ?? ''),
+                    'detail' => trim((string) ($alert['body'] ?? '')),
+                    'href' => $href,
+                    'unread' => true,
+                    'at' => date('Y-m-d H:i:s'),
+                    'kind' => (string) ($alert['kind'] ?? 'info'),
+                ];
+            }
+        } catch (\Throwable) {
+            $activityAnnounceItems = [];
+        }
+
         return Response::view('layout.main', [
             'title' => 'Votre activité',
             'content' => 'notifications.hub',
             'activity_forum_items' => $forumItems,
             'activity_courrier_items' => $courrierItems,
             'activity_message_items' => $messageItems,
+            'activity_announce_items' => $activityAnnounceItems,
             'activity_forum_available' => $activity_forum_available,
             'activity_courrier_available' => $activity_courrier_available,
             'activity_unread_counts' => $unreadCounts,

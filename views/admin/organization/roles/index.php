@@ -86,7 +86,10 @@ $tierLinks = [
     'status' => 'Statut affiché',
 ];
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-roles.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+
+<?php if (!empty($isBackOfficeShell)): ?>
+<?php require base_path('views/partials/ath_roles_table.php'); return; ?>
+<?php endif; ?>
 
 <div
     class="bo-roles"

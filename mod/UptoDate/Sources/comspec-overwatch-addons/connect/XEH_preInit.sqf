@@ -521,26 +521,26 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
 
 [
     "comspec_overwatch_roleplay_enabled", "CHECKBOX",
-    ["Activer le mode roleplay", "Active les dysfonctionnements simulés (réseau, capteurs). Configuration détaillée via l'administration web du portail."],
-    "COMSPEC Overwatch — Roleplay", false
+    ["Activer le mode roleplay", "Active les dysfonctionnements simulés (réseau, capteurs). Configuration détaillée via l'administration web du portail. Le « mode troll » communauté se règle sur Athena (Configuration ATAK → Expérience en jeu)."],
+    ["COMSPEC Overwatch", "Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_network_failures", "CHECKBOX",
     ["Simulations réseau", "Active les délais, pertes de paquets et déconnexions temporaires. Les paramètres (latence, taux de perte) sont configurés sur le portail."],
-    "COMSPEC Overwatch — Roleplay", false
+    ["COMSPEC Overwatch", "Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_sensor_failures", "CHECKBOX",
-    ["Défauts capteurs médicaux", "Simule des dysfonctionnements du capteur de rythme cardiaque (valeurs manquantes, erronées ou nulles). Les taux de défaillance sont configurés sur le portail."],
-    "COMSPEC Overwatch — Roleplay", false
+    ["Défauts capteurs médicaux", "Simule des dysfonctionnements du capteur de rythme cardiaque sur la carte tactique web (valeurs manquantes, erronées ou nulles). Les taux de défaillance sont configurés sur le portail (administration roleplay)."],
+    ["COMSPEC Overwatch", "Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_visual_effects", "CHECKBOX",
     ["Effets visuels de dégradation", "Affiche des glitchs, parasites et messages d'erreur dans l'interface ATAK web quand la liaison se dégrade."],
-    "COMSPEC Overwatch — Roleplay", true
+    ["COMSPEC Overwatch", "Roleplay"], true
 ] call CBA_fnc_addSetting;
 
 [
@@ -549,7 +549,7 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
         "Réalisme ATAK (dommages physiques)",
         "Les blessures au torse peuvent endommager l'ATAK. Niveau 1 : peut s'éteindre (réparable). Niveau 2 : écran peut être détruit (connexion OK). Niveau 3 : ATAK peut être détruit (connexion coupée)."
     ],
-    "COMSPEC Overwatch — Roleplay",
+    ["COMSPEC Overwatch", "Roleplay"],
     [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Extinction", "Niveau 2 : Écran détruit", "Niveau 3 : Destruction complète"], 0],
     1
 ] call CBA_fnc_addSetting;

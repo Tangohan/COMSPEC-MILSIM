@@ -241,6 +241,25 @@ _body = _body + ([
 ] call _row);
 _body = _body + (["Carte / contexte", format ["n° %1", _mapId], "#e8f4f0"] call _row);
 _body = _body + (["Terminal", _deviceTxt, _deviceColor] call _row);
+
+private _certStatus = missionNamespace getVariable ["COMSPEC_CertStatus", ""];
+private _certExpires = missionNamespace getVariable ["COMSPEC_CertExpires", ""];
+private _certLabel = [_certStatus, _certExpires] call comspec_overwatch_connect_fnc_certStatusLabel;
+private _certColor = switch (toLower _certStatus) do {
+    case "active";
+    case "issued": { "#7dffb0" };
+    case "expired";
+    case "revoked": { "#ff8a7a" };
+    case "missing": { "#ffd27a" };
+    default { "#8aa0b4" };
+};
+_body = _body + (["Certificat terminal", _certLabel, _certColor] call _row);
+
+private _terminalUid = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];
+if (_terminalUid isNotEqualTo "") then {
+    _body = _body + (["Identité terminal", _terminalUid, "#c8e8ff"] call _row);
+};
+
 _body = _body + (["Zone radio", _zoneTxt, if (_zoneTxt isEqualTo "Aucune") then { "#7dffb0" } else { "#ffd27a" }] call _row);
 
 private _sumCtrl = _group controlsGroupCtrl 9801;

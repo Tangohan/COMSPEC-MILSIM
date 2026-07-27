@@ -80,7 +80,12 @@ final class TenantAlertsController
         }
         unset($data['_error']);
         $this->alerts->insert($tenantId, $data);
-        $this->notifyDiscord($tenantId, (string) $data['title'], (string) ($data['body'] ?? ''), isset($data['cta_url']) ? (string) $data['cta_url'] : null);
+        if (\App\Support\TenantAlertFeatures::isEnabled(
+            \App\Support\TenantAlertFeatures::decodeJson($data['features_json'] ?? null),
+            \App\Support\TenantAlertFeatures::NOTIFY_DISCORD
+        )) {
+            $this->notifyDiscord($tenantId, (string) $data['title'], (string) ($data['body'] ?? ''), isset($data['cta_url']) ? (string) $data['cta_url'] : null);
+        }
         Session::flash('success', 'L’annonce a été créée. Les membres la verront selon la période et l’activation choisies.');
 
         return Response::redirect(url('back-office/alerts'));
@@ -258,6 +263,16 @@ final class TenantAlertsController
             $bannerPath = $banUp['path'];
         }
 
+        $featureInput = [];
+        foreach (\App\Support\TenantAlertFeatures::keys() as $featureKey) {
+            $featureInput[$featureKey] = $request->input('feature_' . $featureKey, '0');
+        }
+        $features = \App\Support\TenantAlertFeatures::fromRequest($featureInput);
+        $sortOrder = (int) $request->input('sort_order', 0);
+        if (!empty($features[\App\Support\TenantAlertFeatures::HIGHLIGHT]) && $sortOrder >= 0) {
+            $sortOrder = min($sortOrder, -1);
+        }
+
         return [
             'kind' => $kind,
             'display_style' => \App\Support\AlertDisplayStyle::sanitizeTenant(
@@ -274,8 +289,9 @@ final class TenantAlertsController
             'banner_path' => $bannerPath,
             'starts_at' => $starts,
             'ends_at' => $ends,
-            'sort_order' => (int) $request->input('sort_order', 0),
+            'sort_order' => $sortOrder,
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
+            'features_json' => \App\Support\TenantAlertFeatures::encodeJson($features),
             '_error' => '',
         ];
     }

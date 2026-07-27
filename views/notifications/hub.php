@@ -6,6 +6,7 @@
 $activity_forum_items = $activity_forum_items ?? [];
 $activity_courrier_items = $activity_courrier_items ?? [];
 $activity_message_items = $activity_message_items ?? [];
+$activity_announce_items = $activity_announce_items ?? [];
 $activity_forum_available = (bool) ($activity_forum_available ?? true);
 $activity_courrier_available = (bool) ($activity_courrier_available ?? true);
 $activity_unread_counts = $activity_unread_counts ?? [
@@ -89,6 +90,20 @@ $renderItems = static function (array $items) use ($formatActivityAt): void {
         </div>
 
         <div class="act-hub__grid">
+            <?php if ($activity_announce_items !== []): ?>
+            <section class="act-hub__panel act-hub__panel--full" aria-labelledby="act-hub-announce-title">
+                <div class="act-hub__panel-head">
+                    <div>
+                        <p class="act-hub__panel-kicker">Communauté</p>
+                        <h2 id="act-hub-announce-title" class="act-hub__panel-title">Annonces</h2>
+                        <p class="act-hub__panel-desc">Messages publiés par votre communauté et affichés dans ce fil d’activité.</p>
+                    </div>
+                </div>
+                <div class="act-hub__panel-body">
+                    <?php $renderItems($activity_announce_items); ?>
+                </div>
+            </section>
+            <?php endif; ?>
             <section class="act-hub__panel" aria-labelledby="act-hub-forum-title">
                 <div class="act-hub__panel-head">
                     <div>

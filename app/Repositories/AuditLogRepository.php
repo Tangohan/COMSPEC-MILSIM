@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Support\Audit\AuditSnapshotPresenter;
 use PDO;
 
 final class AuditLogRepository
@@ -202,7 +203,7 @@ final class AuditLogRepository
             );
             $stmt->execute([$tenantId]);
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            return $this->enrichRows($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
         }
 
         $excludedActions = ['site_role.assigned', 'site_role.revoked', 'permission.scope_migration'];
@@ -216,7 +217,7 @@ final class AuditLogRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $excludedActions));
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->enrichRows($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
     }
 
     /**
@@ -257,7 +258,19 @@ final class AuditLogRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(array_merge([$tenantId], $focusActions, $excludedActions));
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        return $this->enrichRows($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function enrichRows(array $rows): array
+    {
+        return array_map(
+            static fn (array $row): array => AuditSnapshotPresenter::enrichListRow($row),
+            $rows
+        );
     }
 
     private function likeEscape(string $s): string

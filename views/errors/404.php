@@ -119,7 +119,7 @@ if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleSer
                         <span class="text-[7px] font-bold text-white/30 tracking-[0.3em] uppercase max-w-md"><?= htmlspecialchars(__('errors.404_alert_sub'), ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                     <div class="text-right flex flex-col items-end">
-                        <span id="err404-timestamp" class="text-[9px] font-mono text-white/40 tracking-widest uppercase mb-1"></span>
+                        <span id="err404-timestamp" class="text-[9px] font-mono text-white/40 tracking-widest uppercase mb-1"><?= htmlspecialchars(date('d/m/Y H:i:s'), ENT_QUOTES, 'UTF-8') ?></span>
                         <span class="text-[7px] font-bold text-white/20 tracking-[0.5em] uppercase"><?= htmlspecialchars(__('errors.404_sector'), ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                 </div>
@@ -142,6 +142,9 @@ if (empty($GLOBALS['__app_locale']) && class_exists(\App\Services\I18n\LocaleSer
                         <?php if ($loggedIn): ?>
                         <a href="<?= htmlspecialchars(url('dashboard')) ?>" class="inline-flex items-center justify-center px-5 py-3 rounded-2xl border border-white/15 bg-white/[0.04] text-white text-[10px] font-black uppercase tracking-[0.22em] hover:bg-white/[0.08] transition-colors">
                             <?= htmlspecialchars(__('common.dashboard'), ENT_QUOTES, 'UTF-8') ?>
+                        </a>
+                        <a href="<?= htmlspecialchars(url('back-office')) ?>" class="inline-flex items-center justify-center px-5 py-3 rounded-2xl border border-white/15 bg-white/[0.04] text-white text-[10px] font-black uppercase tracking-[0.22em] hover:bg-white/[0.08] transition-colors">
+                            Commandement
                         </a>
                         <?php else: ?>
                         <a href="<?= htmlspecialchars(url('login')) ?>" class="inline-flex items-center justify-center px-5 py-3 rounded-2xl border border-white/15 bg-white/[0.04] text-white text-[10px] font-black uppercase tracking-[0.22em] hover:bg-white/[0.08] transition-colors">

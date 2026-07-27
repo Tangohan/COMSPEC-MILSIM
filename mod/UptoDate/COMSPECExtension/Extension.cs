@@ -1853,6 +1853,115 @@ public static class Extension
                 if (simplified.Length == 0) return "ERR|invalid_response";
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            // Terminal ATAK (réalisme) : enregistrement / mise à jour côté Athena.
+            // args: terminalUid, terminalLabel, terminalType, operatorCallsign, pairingToken, status, platformLabel
+            if (function == "RegisterTerminal")
+            {
+                if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+                var terminalUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (terminalUid.Length == 0) return "ERR|missing_terminal_uid";
+                var terminalLabel = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var terminalType = args.Length > 2 ? (args[2] ?? "tablet").Trim() : "tablet";
+                var operatorCallsign = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                var pairingToken = args.Length > 4 ? (args[4] ?? "").Trim() : "";
+                var status = args.Length > 5 ? (args[5] ?? "active").Trim() : "active";
+                var platformLabel = args.Length > 6 ? (args[6] ?? "").Trim() : "";
+                if (operatorCallsign.Length == 0 && _callSign.Length > 0)
+                    operatorCallsign = _callSign;
+                if (platformLabel.Length == 0 && _modVersion.Length > 0)
+                    platformLabel = "Arma 3 · COMSPEC " + _modVersion;
+
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals", out var termUri, out _) || termUri is null)
+                    return "ERR|invalid_url";
+
+                var payload =
+                    $"{{\"terminal_uid\":\"{EscapeJson(terminalUid)}\"," +
+                    $"\"terminal_label\":\"{EscapeJson(terminalLabel)}\"," +
+                    $"\"terminal_type\":\"{EscapeJson(terminalType)}\"," +
+                    $"\"operator_callsign\":\"{EscapeJson(operatorCallsign)}\"," +
+                    $"\"platform_label\":\"{EscapeJson(platformLabel)}\"," +
+                    $"\"pairing_token\":\"{EscapeJson(pairingToken)}\"," +
+                    $"\"status\":\"{EscapeJson(status)}\"{ModVersionJsonFragment()}}}";
+                var resp = SendJsonPost(termUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 422) return "ERR|pairing_invalid";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyTerminalRegisterJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + simplified;
+            }
+            // Certificat métier (pas de PKI réelle) pour un terminal enregistré.
+            // args: terminalId, certificateRef, commonName, serialNumber, fingerprintSha256
+            if (function == "RegisterCertificate")
+            {
+                if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+                var terminalId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (terminalId.Length == 0) return "ERR|missing_terminal_id";
+                var certificateRef = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var commonName = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var serialNumber = args.Length > 3 ? (args[3] ?? "").Trim() : "";
+                var fingerprint = args.Length > 4 ? (args[4] ?? "").Trim() : "";
+                if (commonName.Length == 0 && _callSign.Length > 0)
+                    commonName = _callSign;
+
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/certificates", out var certUri, out _) || certUri is null)
+                    return "ERR|invalid_url";
+
+                var payload =
+                    $"{{\"terminal_id\":{EscapeJsonIntOrString(terminalId)}," +
+                    $"\"certificate_ref\":\"{EscapeJson(certificateRef)}\"," +
+                    $"\"certificate_type\":\"device\"," +
+                    $"\"status\":\"active\"," +
+                    $"\"common_name\":\"{EscapeJson(commonName)}\"," +
+                    $"\"serial_number\":\"{EscapeJson(serialNumber)}\"," +
+                    $"\"fingerprint_sha256\":\"{EscapeJson(fingerprint)}\"" +
+                    $"{ModVersionJsonFragment()}}}";
+                var resp = SendJsonPost(certUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403)
+                    {
+                        if (respBody.Contains("automatic_pairing_disabled", StringComparison.Ordinal))
+                            return "ERR|pairing_disabled";
+                        return "ERR|unauthorized";
+                    }
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyCertificateRegisterJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + simplified;
+            }
+            // État terminal + certificat + réglages communauté (GET /api/atak/terminals?terminal_uid=…).
+            if (function == "GetTerminalRealism" && args.Length >= 1)
+            {
+                if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+                var terminalUid = (args[0] ?? "").Trim();
+                if (terminalUid.Length == 0) return "ERR|missing_terminal_uid";
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals", out var statusUri, out _) || statusUri is null)
+                    return "ERR|invalid_url";
+                var url = statusUri.AbsoluteUri + "?terminal_uid=" + Uri.EscapeDataString(terminalUid);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    return "ERR|http_" + code;
+                }
+                var simplified = SimplifyTerminalRealismJson(respBody);
+                if (simplified.Length == 0) return "ERR|invalid_response";
+                return "OK|" + simplified;
+            }
             // Profil site (nom, callsign, photo) d'un joueur identifié par son SteamUID, résolu via
             // le compte Athena lié (voir RedeemGameLink). Format : displayName\tcallsign\tavatarUrl —
             // l'avatar se télécharge ensuite via DownloadBriefingSlideImage(avatarUrl, "avatar_<uid>")
@@ -2606,6 +2715,118 @@ public static class Extension
             if (displayName.Length == 0 && callsign.Length == 0) return "";
             return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
                 + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId;
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// POST /api/atak/terminals — terminal_id, terminal_uid, status (tab).
+    /// </summary>
+    private static string SimplifyTerminalRegisterJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("terminal", out var term) || term.ValueKind != JsonValueKind.Object)
+                return "";
+            var id = term.TryGetProperty("id", out var idEl) ? idEl.ToString() : "";
+            var uid = term.TryGetProperty("terminal_uid", out var uidEl) ? (uidEl.GetString() ?? "") : "";
+            var status = term.TryGetProperty("status", out var stEl) ? (stEl.GetString() ?? "") : "";
+            if (id.Length == 0 && uid.Length == 0) return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            return Clean(id) + "\t" + Clean(uid) + "\t" + Clean(status);
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// POST /api/atak/certificates — certificate_ref, status, expires_at (tab).
+    /// </summary>
+    private static string SimplifyCertificateRegisterJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("certificate", out var cert) || cert.ValueKind != JsonValueKind.Object)
+                return "";
+            var reference = cert.TryGetProperty("certificate_ref", out var refEl) ? (refEl.GetString() ?? "") : "";
+            var status = cert.TryGetProperty("status", out var stEl) ? (stEl.GetString() ?? "") : "";
+            var expires = cert.TryGetProperty("expires_at", out var exEl) ? (exEl.GetString() ?? "") : "";
+            if (reference.Length == 0) return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            if (expires.Length > 19) expires = expires.Replace('T', ' ').Substring(0, 19);
+            return Clean(reference) + "\t" + Clean(status) + "\t" + Clean(expires);
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// GET /api/atak/terminals?terminal_uid=… — lignes clé\tvaleur pour SQF.
+    /// </summary>
+    private static string SimplifyTerminalRealismJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+            static void AppendLine(StringBuilder sb, string key, string val)
+            {
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(Clean(key)).Append('\t').Append(Clean(val));
+            }
+
+            if (root.TryGetProperty("terminal", out var term) && term.ValueKind == JsonValueKind.Object)
+            {
+                if (term.TryGetProperty("id", out var idEl))
+                    AppendLine(sb, "terminal_id", idEl.ToString());
+                if (term.TryGetProperty("terminal_uid", out var uidEl))
+                    AppendLine(sb, "terminal_uid", uidEl.GetString() ?? "");
+                if (term.TryGetProperty("status", out var stEl))
+                    AppendLine(sb, "terminal_status", stEl.GetString() ?? "");
+            }
+
+            var certStatus = "missing";
+            var certExpires = "";
+            var certRef = "";
+            if (root.TryGetProperty("certificate", out var cert) && cert.ValueKind == JsonValueKind.Object)
+            {
+                certRef = cert.TryGetProperty("certificate_ref", out var refEl) ? (refEl.GetString() ?? "") : "";
+                var rawStatus = cert.TryGetProperty("status", out var cst) ? (cst.GetString() ?? "") : "";
+                certExpires = cert.TryGetProperty("expires_at", out var exEl) ? (exEl.GetString() ?? "") : "";
+                if (certExpires.Length > 19) certExpires = certExpires.Replace('T', ' ').Substring(0, 19);
+                certStatus = rawStatus.Length > 0 ? rawStatus : "active";
+                if (certStatus is "active" or "issued" && certExpires.Length > 0)
+                {
+                    if (DateTime.TryParse(certExpires, System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.AssumeUniversal, out var exp)
+                        && exp.ToUniversalTime() < DateTime.UtcNow)
+                    {
+                        certStatus = "expired";
+                    }
+                }
+                if (certRef.Length > 0) AppendLine(sb, "certificate_ref", certRef);
+            }
+            AppendLine(sb, "cert_status", certStatus);
+            if (certExpires.Length > 0) AppendLine(sb, "cert_expires", certExpires);
+
+            if (root.TryGetProperty("atak_defaults", out var defs) && defs.ValueKind == JsonValueKind.Object)
+            {
+                if (defs.TryGetProperty("automatic_pairing", out var ap))
+                    AppendLine(sb, "auto_pairing", ap.ValueKind == JsonValueKind.True || (ap.ValueKind == JsonValueKind.Number && ap.GetInt32() != 0) ? "1" : "0");
+                if (defs.TryGetProperty("minimum_client_version", out var mv))
+                    AppendLine(sb, "min_client_version", mv.GetString() ?? "");
+                if (defs.TryGetProperty("certificate_duration_days", out var cd))
+                    AppendLine(sb, "cert_duration_days", cd.ToString());
+            }
+
+            return sb.ToString();
         }
         catch { return ""; }
     }
@@ -3649,6 +3870,16 @@ public static class Extension
         {
             return FormatAtakExtArray("ERROR", ex.Message);
         }
+    }
+
+    private static string EscapeJsonIntOrString(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "0";
+        raw = raw.Trim();
+        if (long.TryParse(raw, System.Globalization.NumberStyles.Integer,
+                System.Globalization.CultureInfo.InvariantCulture, out var n))
+            return n.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return "\"" + EscapeJson(raw) + "\"";
     }
 
     private static string EscapeJson(string s)

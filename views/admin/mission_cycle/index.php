@@ -35,7 +35,6 @@ $phaseActive = static function (?array $m, string $phase): bool {
     };
 };
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-mission-cycle.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <div class="bo-mcycle" data-bo-mcycle>
     <header class="bo-mcycle__hero">

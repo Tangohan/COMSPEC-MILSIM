@@ -87,13 +87,15 @@ foreach ($alertBanners as $a) {
   var labels = {
     discount: 'Promotion', novelty: 'Nouveau', urgent: 'Urgent', info: 'Information',
     notice: 'Consigne', event: 'Événement', maintenance: 'Maintenance',
+    training: 'Formation', recruitment: 'Recrutement', security: 'Sécurité',
     star: 'Annonce', tag: 'Offre', alert: 'Attention', megaphone: 'Annonce',
     calendar: 'Agenda', wrench: 'Maintenance', shield: 'Sécurité', flag: 'Signal'
   };
 
   var kindClass = {
     info: 'info', discount: 'discount', novelty: 'novelty', urgent: 'urgent',
-    notice: 'notice', event: 'novelty', maintenance: 'discount'
+    notice: 'notice', event: 'novelty', maintenance: 'discount',
+    training: 'novelty', recruitment: 'info', security: 'urgent'
   };
 
   function setOpen(shell, open) {

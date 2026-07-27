@@ -559,4 +559,96 @@ final class AuditSnapshotPresenter
 
         return '—';
     }
+
+    public static function actionDomain(string $action): string
+    {
+        $action = trim($action);
+        if ($action === '') {
+            return '';
+        }
+        $parts = explode('.', $action, 2);
+
+        return count($parts) === 2 ? $parts[0] : '';
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function channelLabel(array $row): string
+    {
+        $domain = trim((string) ($row['action_domain'] ?? ''));
+        if ($domain === '') {
+            $domain = self::actionDomain((string) ($row['action'] ?? ''));
+        }
+
+        return match ($domain) {
+            'auth', 'security' => 'Sécurité',
+            'training', 'course' => 'Formations',
+            'moderation', 'forum' => 'Modération',
+            'deployment' => 'Déploiement',
+            default => 'Portail',
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    public static function sectionLabel(array $row): string
+    {
+        $domain = trim((string) ($row['action_domain'] ?? ''));
+        if ($domain === '') {
+            $domain = self::actionDomain((string) ($row['action'] ?? ''));
+        }
+
+        return match ($domain) {
+            'auth', 'security' => 'Sécurité',
+            'user', 'role', 'group', 'invitation' => 'Personnel',
+            'tenant' => 'Communauté',
+            'training', 'course' => 'Formations',
+            'moderation', 'forum' => 'Modération',
+            'document' => 'Documents',
+            'deployment', 'platform', 'audit', 'site_role' => 'Système',
+            default => 'Général',
+        };
+    }
+
+    public static function severityLabelForAction(string $action): string
+    {
+        $a = mb_strtolower($action, 'UTF-8');
+        if (str_contains($a, 'fail') || str_contains($a, 'lock') || str_contains($a, 'suspend') || str_contains($a, 'sanction')) {
+            return 'Critique';
+        }
+        if (str_contains($a, 'delete') || str_contains($a, 'reject')) {
+            return 'Échec';
+        }
+        if (str_contains($a, 'valid') || str_contains($a, 'approv')) {
+            return 'Validé';
+        }
+
+        return 'Actif';
+    }
+
+    /**
+     * Champs d’affichage pour listes / widgets (tableau de bord, activité récente).
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public static function enrichListRow(array $row): array
+    {
+        $action = (string) ($row['action'] ?? '');
+        $domain = self::actionDomain($action);
+        $target = self::entityTargetLabels($row);
+
+        $row['action_domain'] = $domain;
+        $row['actor_name'] = self::actorPrimaryLabel($row);
+        $row['action_label'] = audit_action_label_fr($action);
+        $row['section'] = self::sectionLabel($row);
+        $row['channel'] = self::channelLabel($row);
+        $row['target'] = $target['primary'] !== '—' ? $target['primary'] : '';
+        $row['level_label'] = self::severityLabelForAction($action);
+        $row['ip'] = self::maskIpForDisplay(isset($row['ip']) ? (string) $row['ip'] : null);
+
+        return $row;
+    }
 }

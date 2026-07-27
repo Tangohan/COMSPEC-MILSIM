@@ -52,6 +52,16 @@ final class AdminMissionCycleController
         return Response::view('layout.main', [
             'content' => 'admin.mission_cycle.index',
             'title' => 'Cycle de mission',
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => 'Cycle de mission',
+            'boPageKicker' => 'OPÉRATIONS · POSTE DE COMMANDEMENT',
+            'boPageSubtitle' => 'Préparez le briefing, ouvrez la mission pour l’exécution sur la carte, puis clôturez pour le bilan après-action.',
+            'boPageQuick' => [
+                ['label' => 'Créer une mission', 'href' => '#bo-mcycle-create'],
+                ['label' => 'Diapositives de briefing', 'href' => url('back-office/atak/briefing-slides')],
+                ['label' => 'Carte tactique', 'href' => url('tacmap')],
+            ],
+            'backOfficePageCss' => ['back-office-mission-cycle.css'],
             'missionCycleList' => $presented,
             'missionCycleFocus' => $focus,
             'missionCycleWorkspaces' => $workspaces,

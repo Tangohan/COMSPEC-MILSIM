@@ -34,14 +34,14 @@ if ($pjrComboSelectedId > 0) {
     <input type="hidden" name="<?= htmlspecialchars($pjrComboName, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars($hiddenValue, ENT_QUOTES, 'UTF-8') ?>" class="pjr-role-combobox-value">
     <button
         type="button"
-        class="pjr-role-combobox-trigger flex w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+        class="pjr-role-combobox-trigger"
         aria-haspopup="listbox"
         aria-expanded="false"
         id="<?= htmlspecialchars($pjrComboId, ENT_QUOTES, 'UTF-8') ?>-btn"
         aria-labelledby="<?= htmlspecialchars($pjrComboId, ENT_QUOTES, 'UTF-8') ?>-lbl"
     >
-        <span id="<?= htmlspecialchars($pjrComboId, ENT_QUOTES, 'UTF-8') ?>-lbl" class="pjr-role-combobox-label min-w-0 flex-1 truncate font-medium"><?= htmlspecialchars($initialLabel, ENT_QUOTES, 'UTF-8') ?></span>
-        <svg class="h-4 w-4 shrink-0 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <span id="<?= htmlspecialchars($pjrComboId, ENT_QUOTES, 'UTF-8') ?>-lbl" class="pjr-role-combobox-label"><?= htmlspecialchars($initialLabel, ENT_QUOTES, 'UTF-8') ?></span>
+        <svg class="pjr-role-combobox-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
         </svg>
     </button>

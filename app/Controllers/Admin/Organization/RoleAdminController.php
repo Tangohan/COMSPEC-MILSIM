@@ -72,7 +72,20 @@ class RoleAdminController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.roles.index',
-            'title' => 'Rôles communauté',
+            'title' => 'Table des rôles',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Système',
+            'boPageTitle' => 'Table des rôles',
+            'boPageKicker' => 'RÔLES · TABLE',
+            'boPageSubtitle' => 'Liste structurée par famille opérationnelle. Le nombre de droits indique combien d’habilitations sont actives pour chaque rôle.',
+            'boPageAction' => 'Créer un rôle',
+            'boPageActionUrl' => url('back-office/access-management'),
+            'boPageQuick' => [
+                ['label' => 'Gouvernance', 'href' => url('back-office/roles') . '?layer=community'],
+                ['label' => 'Rôles opérationnels', 'href' => url('back-office/roles') . '?layer=intra'],
+                ['label' => 'Profils prêts', 'href' => url('back-office/roles/presets')],
+            ],
+            'backOfficePageCss' => ['back-office-roles.css'],
             'roles' => $roles,
             'permissionCounts' => $permissionCounts,
             'memberCounts' => $memberCounts,

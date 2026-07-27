@@ -19,6 +19,8 @@ return [
         // Rapports d’erreurs / bugs Overwatch : avant ou sans liaison (ReportDiag / signalement),
         // rate-limité — voir AtakApiController::modReport.
         '/api/atak/mod-report',
+        // Terminal / certificat réalisme : NON exemptés — le mod utilise la clé communauté
+        // (RegisterTerminal / RegisterCertificate / GetTerminalRealism → AtakRealismApiController).
         // QR téléphone : token dans l’URL (TTL court) — scannable / téléchargeable sans clé
         // (exemption dynamique dans ComspecApiKeyAuth::pathRequiresProtection pour …/qr.png).
     ],

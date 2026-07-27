@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 $user = $user ?? null;
 $userProfile = is_array($userProfile ?? null) ? $userProfile : [];
 $userRoleIds = $userRoleIds ?? [];
@@ -7,14 +9,19 @@ $completenessAccount = $completenessAccount ?? ($completeness ?? ['score' => 0, 
 $completenessPersonnel = $completenessPersonnel ?? null;
 $isServiceAccount = $isServiceAccount ?? false;
 $showPlatformDiagnostics = $showPlatformDiagnostics ?? false;
+
 if (!$user) {
     echo '<p>Utilisateur introuvable.</p>';
     return;
 }
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
 $uid = (int) $user['id'];
 $personnelEditUrl = url('personnel/' . $uid . '/edit');
 $displayName = trim((string) ($user['display_name'] ?? ''));
 $email = (string) ($user['email'] ?? '');
+$callsign = trim((string) ($user['callsign'] ?? ''));
 $avatarSrc = function_exists('user_media_public_url')
     ? user_media_public_url($user['avatar_url'] ?? null)
     : null;
@@ -27,165 +34,201 @@ $statusLabel = match ($ust) {
     'active' => 'Compte actif',
     'inactive' => 'Compte inactif',
     'pending_verification' => 'En attente de vérification de l’e-mail',
-    default => $ust !== '' ? 'Statut à clarifier' : '—',
+    default => $ust !== '' ? 'Statut à clarifier' : 'Statut inconnu',
 };
-$statusBadgeMod = match ($ust) {
-    'active' => 'bo-user-edit__badge--ok',
-    'inactive' => 'bo-user-edit__badge--muted',
-    default => 'bo-user-edit__badge--warn',
+$statusTagClass = match ($ust) {
+    'active' => 'ath-tag--ok',
+    'inactive' => 'ath-tag--neut',
+    default => 'ath-tag--warn',
+};
+
+$displayValue = static function (?string $value, string $emptyLabel = 'Non renseigné') use ($h): string {
+    $trimmed = trim((string) $value);
+
+    return $trimmed !== '' ? $h($trimmed) : '<span class="ath-member-show__empty">' . $h($emptyLabel) . '</span>';
 };
 
 $levelBadge = static function (string $level): array {
     return match ($level) {
         \App\Services\Admin\ProfileCompletenessService::LEVEL_BLOCKING => [
             'text' => 'Indispensable',
-            'class' => 'bg-rose-50 text-rose-900 ring-rose-200',
+            'class' => 'ath-tag--bad',
         ],
         \App\Services\Admin\ProfileCompletenessService::LEVEL_RECOMMENDED => [
             'text' => 'À prévoir',
-            'class' => 'bg-amber-50 text-amber-900 ring-amber-200',
+            'class' => 'ath-tag--warn',
         ],
         \App\Services\Admin\ProfileCompletenessService::LEVEL_ADMINISTRATIVE => [
             'text' => 'Ergonomie du compte',
-            'class' => 'bg-slate-100 text-slate-700 ring-slate-200',
+            'class' => 'ath-tag--neut',
         ],
         default => [
             'text' => 'À compléter',
-            'class' => 'bg-slate-50 text-slate-600 ring-slate-200',
+            'class' => 'ath-tag--neut',
         ],
     };
 };
+
 $listUrl = url('back-office/users');
 $editUrl = url('back-office/users/' . $uid . '/edit');
+
+$roleNames = [];
+foreach ($roles as $rr) {
+    if (in_array((int) ($rr['id'] ?? 0), $userRoleIds, true)) {
+        $roleNames[] = (string) ($rr['name'] ?? '');
+    }
+}
+$roleNames = array_values(array_filter($roleNames, static fn (string $n): bool => trim($n) !== ''));
+
+$accScore = (int) ($completenessAccount['score'] ?? 100);
+$pScore = $completenessPersonnel !== null ? (int) ($completenessPersonnel['score'] ?? 100) : null;
+$profileIncomplete = !$isServiceAccount && ($accScore < 100 || ($pScore !== null && $pScore < 100));
+
+$flashOk = \App\Core\Session::getFlash('success');
+$flashErr = \App\Core\Session::getFlash('error');
+$flashWarn = \App\Core\Session::getFlash('warning');
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-users.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<div class="bo-user-edit">
-    <header class="bo-user-edit__hero">
-        <div class="bo-user-edit__hero-inner">
-            <div class="min-w-0">
-                <a href="<?= htmlspecialchars($listUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__back">← Liste des membres</a>
-                <div class="bo-user-edit__identity">
-                    <div class="bo-user-edit__avatar" aria-hidden="true">
-                        <?php if ($avatarSrc): ?>
-                            <img src="<?= htmlspecialchars($avatarSrc, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-full w-full object-cover" data-img-fallback="avatar" data-img-initials="<?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>">
-                        <?php else: ?>
-                            <?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?>
-                        <?php endif; ?>
-                    </div>
-                    <div class="min-w-0">
-                        <p class="bo-user-edit__eyebrow">Membres · Fiche</p>
-                        <h1 class="bo-user-edit__title"><?= htmlspecialchars($displayName !== '' ? $displayName : 'Fiche membre', ENT_QUOTES, 'UTF-8') ?></h1>
-                        <p class="bo-user-edit__lead" style="margin-top:0.35rem"><?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></p>
-                        <div class="mt-3 flex flex-wrap items-center gap-2">
-                            <span class="bo-user-edit__badge <?= htmlspecialchars($statusBadgeMod, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if ($isServiceAccount): ?>
-                            <span class="bo-user-edit__badge bo-user-edit__badge--muted">Compte technique</span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="bo-user-edit__hero-actions">
-                <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--ghost">Fiche personnelle</a>
-                <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>" class="bo-user-edit__btn bo-user-edit__btn--solid">Réglages du compte</a>
-            </div>
-        </div>
-    </header>
+<div class="ath-member-show ath-rise">
+    <?php if ($flashOk): ?>
+    <div class="ath-banner-warn ath-member-show__flash" style="background:#e6f8f0;border-color:#bfe9d8;" role="status">
+        <div class="ath-banner-warn__text" style="color:#0b6b47;"><?= $h((string) $flashOk) ?></div>
+    </div>
+    <?php endif; ?>
+    <?php if ($flashWarn): ?>
+    <div class="ath-banner-warn ath-member-show__flash" role="status">
+        <div class="ath-banner-warn__text"><?= $h((string) $flashWarn) ?></div>
+    </div>
+    <?php endif; ?>
+    <?php if ($flashErr): ?>
+    <div class="ath-banner-warn ath-member-show__flash ath-member-show__flash--err" role="alert">
+        <div class="ath-banner-warn__text"><?= $h((string) $flashErr) ?></div>
+    </div>
+    <?php endif; ?>
 
-    <div class="bo-user-edit__deck">
-        <?php if (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
-        <section class="bo-user-edit__panel bo-user-edit__panel--amber mb-4" style="margin-bottom:1rem">
-            <form method="post" action="<?= url('back-office/users/' . $uid . '/deactivate') ?>" class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" onsubmit="return confirm('Désactiver l’accès de ce membre ?');">
-                <?= \App\Core\Csrf::field() ?>
-                <label class="flex max-w-xl items-start gap-2 text-xs text-slate-600">
-                    <input type="checkbox" name="block_email_rejoin" value="1" class="mt-0.5 rounded border-slate-300">
-                    <span>Empêcher aussi toute nouvelle inscription ou candidature avec la même adresse e-mail dans cette communauté.</span>
-                </label>
-                <button type="submit" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-800 transition hover:bg-rose-50">
-                    Désactiver l’accès
-                </button>
-            </form>
-        </section>
-        <?php endif; ?>
-
-        <?php $flashOk = \App\Core\Session::getFlash('success'); $flashErr = \App\Core\Session::getFlash('error'); $flashWarn = \App\Core\Session::getFlash('warning'); ?>
-        <?php if ($flashOk): ?><div class="bo-user-edit__flash bo-user-edit__flash--ok" role="status"><?= htmlspecialchars((string) $flashOk) ?></div><?php endif; ?>
-        <?php if ($flashWarn): ?><div class="bo-user-edit__flash bo-user-edit__flash--warn" role="status"><?= htmlspecialchars((string) $flashWarn) ?></div><?php endif; ?>
-        <?php if ($flashErr): ?><div class="bo-user-edit__flash bo-user-edit__flash--err" role="alert"><?= htmlspecialchars((string) $flashErr) ?></div><?php endif; ?>
-
-        <?php if ($showPlatformDiagnostics): ?>
-        <div class="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-950 mb-4">
-            <strong class="font-semibold">Vue diagnostic plateforme.</strong> Vous voyez des critères supplémentaires (ex. photo de profil) et la liste complète des contrôles dossier ; les administrateurs de l’unité sans ce niveau d’habilitation ont une vue simplifiée.
-        </div>
-        <?php endif; ?>
-
-        <?php if ($isServiceAccount): ?>
-        <div class="bo-user-edit__panel mb-4" style="margin-bottom:1rem">
-            <strong class="text-slate-900">Compte technique</strong> — utilisé pour la modération automatique et les traitements internes. Il n’a pas de fiche personnage jouable.
-        </div>
-        <?php endif; ?>
-
-        <?php if ($ust === 'pending_verification' && !$isServiceAccount): ?>
-        <div class="bo-user-edit__panel bo-user-edit__panel--amber mb-4" style="margin-bottom:1rem">
-            <p class="font-semibold text-amber-950">Compte en attente de confirmation</p>
-            <p class="mt-1 text-sm text-amber-900/90">Le membre doit ouvrir le lien reçu par e-mail pour activer son accès. Vous pouvez renvoyer un nouveau lien s’il a expiré ou n’a pas été reçu.</p>
-            <form method="post" action="<?= url('back-office/users/' . $uid . '/resend-verification') ?>" class="mt-3">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="inline-flex items-center rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900 transition-colors">
-                    Renvoyer le lien de confirmation
-                </button>
-            </form>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!$isServiceAccount && (($completenessAccount['score'] ?? 100) < 100 || ($completenessPersonnel !== null && ($completenessPersonnel['score'] ?? 100) < 100))): ?>
-        <div class="bo-user-edit__panel mb-4" style="margin-bottom:1rem">
-            <p class="font-semibold text-amber-950">Profil incomplet — rappel par courriel</p>
-            <p class="mt-1 text-sm text-slate-600">Un message est envoyé à l’adresse du compte avec un lien direct vers la fiche personnelle.</p>
-            <form method="post" action="<?= url('back-office/users/' . $uid . '/notify-profile') ?>" class="mt-3">
-                <?= \App\Core\Csrf::field() ?>
-                <button type="submit" class="inline-flex items-center rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800 transition-colors">
-                    Envoyer un rappel par e-mail
-                </button>
-            </form>
-        </div>
-        <?php endif; ?>
-
-        <section aria-labelledby="legend-comp" class="bo-user-edit__panel" style="margin-bottom:1rem">
-            <h2 id="legend-comp" class="bo-user-edit__panel-title">Légende — complétude du compte</h2>
-            <div class="mt-3 flex flex-wrap gap-3 text-xs text-slate-600">
-                <span class="inline-flex items-center gap-1.5 rounded-lg ring-1 ring-inset px-2.5 py-1 font-semibold bg-rose-50 text-rose-900 ring-rose-200">Indispensable</span>
-                <span class="text-slate-500">bloque les vérifications essentielles tant que ce n’est pas renseigné.</span>
-            </div>
-            <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-600">
-                <span class="inline-flex items-center gap-1.5 rounded-lg ring-1 ring-inset px-2.5 py-1 font-semibold bg-amber-50 text-amber-900 ring-amber-200">À prévoir</span>
-                <span class="text-slate-500">recommandé pour une fiche exploitable par l’état-major.</span>
-            </div>
-            <?php if ($showPlatformDiagnostics): ?>
-            <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-600">
-                <span class="inline-flex items-center gap-1.5 rounded-lg ring-1 ring-inset px-2.5 py-1 font-semibold bg-slate-100 text-slate-700 ring-slate-200">Ergonomie du compte</span>
-                <span class="text-slate-500">critère d’affichage côté produit, sans impact sur les habilitations.</span>
-            </div>
+    <div class="ath-member-show__meta ath-card">
+        <div class="ath-member-show__avatar" aria-hidden="true">
+            <?php if ($avatarSrc): ?>
+            <img src="<?= $h($avatarSrc) ?>" alt="" data-img-fallback="avatar" data-img-initials="<?= $h($initials) ?>">
+            <?php else: ?>
+            <?= $h($initials) ?>
             <?php endif; ?>
-        </section>
+        </div>
+        <div class="ath-member-show__identity">
+            <p class="ath-member-show__kicker">Fiche membre</p>
+            <p class="ath-member-show__name"><?= $h($displayName !== '' ? $displayName : 'Membre sans nom affiché') ?></p>
+            <p class="ath-member-show__email"><?= $h($email) ?></p>
+            <div class="ath-member-show__tags">
+                <span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span>
+                <?php if ($callsign !== ''): ?>
+                <span class="ath-tag ath-tag--neut">Indicatif <?= $h($callsign) ?></span>
+                <?php endif; ?>
+                <?php if ($isServiceAccount): ?>
+                <span class="ath-tag ath-tag--info">Compte technique</span>
+                <?php endif; ?>
+                <?php if ($profileIncomplete): ?>
+                <span class="ath-tag ath-tag--warn">Profil à compléter</span>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="ath-member-show__meta-actions">
+            <a href="<?= $h($listUrl) ?>" class="ath-btn">← Liste des membres</a>
+            <a href="<?= $h($personnelEditUrl) ?>" class="ath-btn">Fiche personnelle</a>
+            <a href="<?= $h($editUrl) ?>" class="ath-btn ath-btn--solid">Réglages du compte</a>
+        </div>
+    </div>
 
-        <div class="grid gap-4 lg:grid-cols-2" style="margin-top:1rem">
-            <div class="bo-user-edit__panel flex flex-col">
-                <h2 class="bo-user-edit__panel-title">Compte</h2>
-                <p class="bo-user-edit__panel-lead">Connexion, identité affichée sur le portail, rôle dans l’unité.</p>
+    <?php if ($showPlatformDiagnostics): ?>
+    <div class="ath-banner-warn ath-member-show__callout ath-member-show__callout--info" role="note">
+        <p class="ath-banner-warn__kicker">Vue approfondie</p>
+        <p class="ath-banner-warn__text">Vous consultez une vue enrichie avec des critères supplémentaires (photo de profil, identité civile) et l’ensemble des contrôles dossier. Les administrateurs sans habilitation plateforme voient une version simplifiée.</p>
+    </div>
+    <?php endif; ?>
 
-                <?php if (($completenessAccount['score'] ?? 100) < 100): ?>
-                <?php $accScore = (int) ($completenessAccount['score'] ?? 0); ?>
-                <div class="mb-5 mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <span class="text-sm font-bold text-slate-900">Complétude du compte</span>
-                        <span class="text-lg font-black tabular-nums text-slate-900"><?= $accScore ?>%</span>
+    <?php if ($isServiceAccount): ?>
+    <div class="ath-card ath-member-show__callout-card">
+        <p class="ath-member-show__callout-title">Compte technique</p>
+        <p class="ath-body">Utilisé pour la modération automatique et les traitements internes. Il n’a pas de fiche personnage jouable.</p>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($ust === 'pending_verification' && !$isServiceAccount): ?>
+    <div class="ath-banner-warn ath-member-show__callout">
+        <p class="ath-banner-warn__kicker">Confirmation en attente</p>
+        <p class="ath-banner-warn__text">Le membre doit ouvrir le lien reçu par e-mail pour activer son accès. Vous pouvez renvoyer un nouveau lien s’il a expiré ou n’a pas été reçu.</p>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/resend-verification')) ?>" class="ath-member-show__inline-form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="ath-btn ath-btn--solid">Renvoyer le lien de confirmation</button>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($profileIncomplete): ?>
+    <div class="ath-banner-warn ath-member-show__callout">
+        <p class="ath-banner-warn__kicker">Rappel par courriel</p>
+        <p class="ath-banner-warn__text">Envoyez un message à l’adresse du compte avec un lien direct vers la fiche personnelle pour l’aider à finaliser son profil.</p>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/notify-profile')) ?>" class="ath-member-show__inline-form">
+            <?= \App\Core\Csrf::field() ?>
+            <button type="submit" class="ath-btn ath-btn--accent">Envoyer un rappel par e-mail</button>
+        </form>
+    </div>
+    <?php endif; ?>
+
+    <?php if (($user['status'] ?? '') !== 'inactive' && !$isServiceAccount): ?>
+    <section class="ath-card ath-member-show__danger-card" aria-labelledby="member-deactivate">
+        <div class="ath-member-show__section-head">
+            <h2 id="member-deactivate">Désactiver l’accès</h2>
+            <p>Le membre ne pourra plus se connecter à cette communauté.</p>
+        </div>
+        <form method="post" action="<?= $h(url('back-office/users/' . $uid . '/deactivate')) ?>" class="ath-member-show__danger-form" onsubmit="return confirm('Désactiver l’accès de ce membre ?');">
+            <?= \App\Core\Csrf::field() ?>
+            <label class="ath-member-show__check">
+                <input type="checkbox" name="block_email_rejoin" value="1">
+                <span>Empêcher aussi toute nouvelle inscription ou candidature avec la même adresse e-mail dans cette communauté.</span>
+            </label>
+            <button type="submit" class="ath-btn ath-member-show__danger-btn">Désactiver l’accès</button>
+        </form>
+    </section>
+    <?php endif; ?>
+
+    <section class="ath-card ath-member-show__legend" aria-labelledby="legend-comp">
+        <div class="ath-member-show__section-head ath-member-show__section-head--compact">
+            <h2 id="legend-comp">Légende des niveaux</h2>
+            <p>Priorité des éléments à compléter sur le compte et le dossier.</p>
+        </div>
+        <ul class="ath-member-show__legend-list">
+            <li>
+                <span class="ath-tag ath-tag--bad">Indispensable</span>
+                <span class="ath-member-show__legend-copy">Bloque les vérifications essentielles tant que ce n’est pas renseigné.</span>
+            </li>
+            <li>
+                <span class="ath-tag ath-tag--warn">À prévoir</span>
+                <span class="ath-member-show__legend-copy">Recommandé pour une fiche exploitable par l’état-major.</span>
+            </li>
+            <?php if ($showPlatformDiagnostics): ?>
+            <li>
+                <span class="ath-tag ath-tag--neut">Ergonomie du compte</span>
+                <span class="ath-member-show__legend-copy">Critère d’affichage sur le portail, sans impact sur les habilitations.</span>
+            </li>
+            <?php endif; ?>
+        </ul>
+    </section>
+
+    <div class="ath-member-show__grid">
+        <section class="ath-card ath-member-show__panel">
+            <div class="ath-member-show__section-head">
+                <h2>Compte</h2>
+                <p>Connexion, identité affichée sur le portail et rôle dans l’unité.</p>
+            </div>
+            <div class="ath-member-show__section-body">
+                <?php if ($accScore < 100): ?>
+                <div class="ath-member-show__progress">
+                    <div class="ath-kpi__label">Complétude du compte</div>
+                    <div class="ath-kpi__row">
+                        <span class="ath-kpi__value"><?= $accScore ?>%</span>
                     </div>
-                    <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
-                        <div class="h-full rounded-full bg-slate-800 transition-all" style="width: <?= min(100, max(0, $accScore)) ?>%"></div>
-                    </div>
+                    <div class="ath-kpi__bar"><span class="ath-barA" style="width:<?= min(100, max(0, $accScore)) ?>%;background:var(--ath-accent);"></span></div>
                     <?php if (!empty($completenessAccount['missing'])): ?>
-                    <ul class="mt-4 space-y-2 list-none">
+                    <ul class="ath-member-show__missing">
                         <?php foreach ($completenessAccount['missing'] as $m):
                             $lv = (string) ($m['level'] ?? '');
                             if ($lv === \App\Services\Admin\ProfileCompletenessService::LEVEL_ADMINISTRATIVE && !$showPlatformDiagnostics) {
@@ -193,122 +236,112 @@ $editUrl = url('back-office/users/' . $uid . '/edit');
                             }
                             $b = $levelBadge($lv);
                             ?>
-                        <li class="flex flex-wrap items-start gap-2 text-sm">
-                            <span class="inline-flex shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($b['class']) ?>"><?= htmlspecialchars($b['text']) ?></span>
-                            <span class="text-slate-800 leading-snug"><?= htmlspecialchars((string) ($m['label'] ?? '')) ?></span>
+                        <li>
+                            <span class="ath-tag <?= $h($b['class']) ?>"><?= $h($b['text']) ?></span>
+                            <span><?= $h((string) ($m['label'] ?? '')) ?></span>
                         </li>
                         <?php endforeach; ?>
                     </ul>
                     <?php endif; ?>
                 </div>
                 <?php else: ?>
-                <p class="text-sm font-medium text-emerald-800 mb-5 mt-4 flex items-center gap-2">
-                    <span class="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                <p class="ath-member-show__complete">
+                    <span class="ath-member-show__complete-dot" aria-hidden="true"></span>
                     Informations minimales du compte présentes.
                 </p>
                 <?php endif; ?>
 
-                <dl class="space-y-3 text-sm border-t border-slate-100 pt-5 mt-auto">
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Adresse e-mail</dt>
-                        <dd class="mt-0.5 text-slate-900 break-all"><?= htmlspecialchars($user['email']) ?></dd>
+                <dl class="ath-member-show__data">
+                    <div class="ath-member-show__data-row">
+                        <dt>Adresse e-mail</dt>
+                        <dd><?= $displayValue($email, 'Aucune adresse') ?></dd>
                     </div>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Nom affiché (portail)</dt>
-                        <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($user['display_name'] ?? '—') ?></dd>
+                    <div class="ath-member-show__data-row">
+                        <dt>Nom affiché sur le portail</dt>
+                        <dd><?= $displayValue($displayName) ?></dd>
                     </div>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Indicatif (compte)</dt>
-                        <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($user['callsign'] ?? '—') ?></dd>
+                    <div class="ath-member-show__data-row">
+                        <dt>Indicatif du compte</dt>
+                        <dd><?= $displayValue($callsign) ?></dd>
                     </div>
                     <?php if ($showPlatformDiagnostics): ?>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Prénom (état civil) <span class="font-normal normal-case text-slate-400">— vue plateforme</span></dt>
-                        <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($userProfile['first_name'] ?? '—') ?></dd>
+                    <div class="ath-member-show__data-row">
+                        <dt>Prénom (état civil)</dt>
+                        <dd><?= $displayValue($userProfile['first_name'] ?? null) ?></dd>
                     </div>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Nom (état civil) <span class="font-normal normal-case text-slate-400">— vue plateforme</span></dt>
-                        <dd class="mt-0.5 text-slate-900"><?= htmlspecialchars($userProfile['last_name'] ?? '—') ?></dd>
+                    <div class="ath-member-show__data-row">
+                        <dt>Nom (état civil)</dt>
+                        <dd><?= $displayValue($userProfile['last_name'] ?? null) ?></dd>
                     </div>
                     <?php endif; ?>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Rôles dans l’unité</dt>
-                        <dd class="mt-0.5 text-slate-900">
-                            <?php
-                            $roleNames = [];
-                            foreach ($roles as $rr) {
-                                if (in_array((int) ($rr['id'] ?? 0), $userRoleIds, true)) {
-                                    $roleNames[] = (string) ($rr['name'] ?? '');
-                                }
-                            }
-                            echo $roleNames !== [] ? htmlspecialchars(implode(', ', $roleNames)) : '—';
-                            ?>
+                    <div class="ath-member-show__data-row">
+                        <dt>Rôles dans l’unité</dt>
+                        <dd>
+                            <?php if ($roleNames !== []): ?>
+                                <?php foreach ($roleNames as $rn): ?>
+                                <span class="ath-tag ath-tag--neut ath-member-show__role-tag"><?= $h($rn) ?></span>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <span class="ath-member-show__empty">Aucun rôle attribué</span>
+                            <?php endif; ?>
                         </dd>
                     </div>
-                    <div>
-                        <dt class="text-xs font-semibold text-slate-500">Statut du compte</dt>
-                        <dd class="mt-0.5">
-                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold <?= $ust === 'active' ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200' : ($ust === 'inactive' ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' : 'bg-amber-50 text-amber-900 ring-1 ring-amber-200') ?>"><?= htmlspecialchars($statusLabel) ?></span>
-                        </dd>
+                    <div class="ath-member-show__data-row">
+                        <dt>Statut du compte</dt>
+                        <dd><span class="ath-tag <?= $h($statusTagClass) ?>"><?= $h($statusLabel) ?></span></dd>
                     </div>
                 </dl>
             </div>
+        </section>
 
-            <div class="bo-user-edit__panel flex flex-col">
-                <h2 class="bo-user-edit__panel-title">Dossier opérationnel</h2>
-                <p class="bo-user-edit__panel-lead">Personnage, affectation, clearance et qualifications — distinct du compte de connexion.</p>
-
+        <section class="ath-card ath-member-show__panel">
+            <div class="ath-member-show__section-head">
+                <h2>Dossier opérationnel</h2>
+                <p>Personnage, affectation, clearance et qualifications — distinct du compte de connexion.</p>
+            </div>
+            <div class="ath-member-show__section-body ath-member-show__section-body--stack">
                 <?php if ($isServiceAccount): ?>
-                <p class="mt-4 text-sm text-slate-500">Non applicable pour un compte technique.</p>
+                <p class="ath-body">Non applicable pour un compte technique.</p>
                 <?php elseif ($completenessPersonnel !== null): ?>
-                    <?php if (($completenessPersonnel['score'] ?? 100) < 100): ?>
-                    <?php $pScore = (int) ($completenessPersonnel['score'] ?? 0); ?>
-                <div class="mb-5 mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <span class="text-sm font-bold text-slate-900">Complétude du dossier</span>
-                        <span class="text-lg font-black tabular-nums text-slate-900"><?= $pScore ?>%</span>
+                    <?php if ($pScore !== null && $pScore < 100): ?>
+                <div class="ath-member-show__progress">
+                    <div class="ath-kpi__label">Complétude du dossier</div>
+                    <div class="ath-kpi__row">
+                        <span class="ath-kpi__value"><?= $pScore ?>%</span>
                     </div>
-                    <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
-                        <div class="h-full rounded-full bg-blue-700 transition-all" style="width: <?= min(100, max(0, $pScore)) ?>%"></div>
-                    </div>
+                    <div class="ath-kpi__bar"><span class="ath-barA" style="width:<?= min(100, max(0, $pScore)) ?>%;background:var(--ath-info);"></span></div>
                     <?php if (!empty($completenessPersonnel['sections_critiques'])): ?>
-                    <p class="mt-4 text-xs font-bold uppercase tracking-wide text-rose-800">Points à traiter en priorité</p>
-                    <ul class="mt-2 space-y-1.5 list-none text-sm text-rose-900">
-                        <?php foreach ($completenessPersonnel['sections_critiques'] as $c): ?>
-                        <li class="flex gap-2 items-start">
-                            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" aria-hidden="true"></span>
-                            <span><?= htmlspecialchars($c) ?></span>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
+                    <div class="ath-member-show__priority">
+                        <p class="ath-member-show__priority-title">Points à traiter en priorité</p>
+                        <ul class="ath-member-show__priority-list">
+                            <?php foreach ($completenessPersonnel['sections_critiques'] as $c): ?>
+                            <li><?= $h((string) $c) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                     <?php endif; ?>
                     <?php if (!empty($completenessPersonnel['missing_labels'])): ?>
-                    <p class="mt-4 text-xs font-bold uppercase tracking-wide text-slate-600">Autres éléments à compléter</p>
-                    <ul class="mt-2 space-y-1.5 list-none text-sm text-slate-700">
-                        <?php foreach ($completenessPersonnel['missing_labels'] as $lbl): ?>
-                        <li class="flex gap-2 items-start">
-                            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
-                            <span><?= htmlspecialchars($lbl) ?></span>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
+                    <div class="ath-member-show__other">
+                        <p class="ath-member-show__other-title">Autres éléments à compléter</p>
+                        <ul class="ath-member-show__other-list">
+                            <?php foreach ($completenessPersonnel['missing_labels'] as $lbl): ?>
+                            <li><?= $h((string) $lbl) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                     <?php endif; ?>
                 </div>
                     <?php else: ?>
-                <p class="text-sm font-medium text-emerald-800 mb-5 mt-4 flex items-center gap-2">
-                    <span class="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                <p class="ath-member-show__complete">
+                    <span class="ath-member-show__complete-dot" aria-hidden="true"></span>
                     Éléments principaux du dossier renseignés.
                 </p>
                     <?php endif; ?>
-                <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>" class="mt-auto inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800 transition-colors">
-                    Ouvrir la fiche personnelle
-                </a>
+                <div class="ath-member-show__panel-actions">
+                    <a href="<?= $h($personnelEditUrl) ?>" class="ath-btn ath-btn--solid">Ouvrir la fiche personnelle</a>
+                </div>
                 <?php endif; ?>
             </div>
-        </div>
-
-        <p class="bo-user-edit__footer-link" style="margin-top:1.25rem">
-            <a href="<?= htmlspecialchars($listUrl, ENT_QUOTES, 'UTF-8') ?>">Retour à la liste des membres</a>
-        </p>
+        </section>
     </div>
 </div>

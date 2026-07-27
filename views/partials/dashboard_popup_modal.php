@@ -87,7 +87,8 @@ $popupLoggedIn = (bool) \App\Core\Session::get('user_id');
         var canDismiss = a.dismissible !== false && a.dismissible !== 0;
         var kindLabels = {
             urgent: 'Urgent', info: 'Information', notice: 'Consigne',
-            event: 'Événement', novelty: 'Nouveauté', discount: 'Promotion', maintenance: 'Maintenance'
+            event: 'Événement', novelty: 'Nouveauté', discount: 'Promotion', maintenance: 'Maintenance',
+            training: 'Formation', recruitment: 'Recrutement', security: 'Sécurité'
         };
         var visual = a.banner_url || a.image_url || null;
 

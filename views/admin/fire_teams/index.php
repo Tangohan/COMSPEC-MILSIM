@@ -43,7 +43,6 @@ $emptyCopy = match ($tab) {
 $createMissionUrl = url('back-office/atak/fire-teams/create?type=mission');
 $createOrgaUrl = url('back-office/atak/fire-teams/create?type=organigramme');
 ?>
-<link href="<?= $h(asset_url('assets/css/back-office-fire-teams.css')) ?>" rel="stylesheet">
 <div class="bo-ft">
     <div class="bo-ft__frame">
         <header class="bo-ft__hero">

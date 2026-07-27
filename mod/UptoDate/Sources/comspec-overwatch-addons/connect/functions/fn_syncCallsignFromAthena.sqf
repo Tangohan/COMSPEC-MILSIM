@@ -42,4 +42,8 @@ if (!_force && {!(_local isEqualTo "")} && {!(_local isEqualTo (name player))} &
 };
 
 [_callsign, true, "athena"] call comspec_overwatch_connect_fnc_setCallsign;
+0 spawn {
+    uiSleep 0.5;
+    ["", true] call comspec_overwatch_connect_fnc_syncAtakRealism;
+};
 true

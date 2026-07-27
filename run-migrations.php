@@ -2099,6 +2099,13 @@ try {
     echo '  [ATTENTION] alert_display_style : ' . $e->getMessage() . "\n";
 }
 
+$tenantAlertsFeaturesMigrate = require $root . '/bootstrap/tenant_alerts_features_migration.php';
+try {
+    $tenantAlertsFeaturesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tenant_alerts_features : ' . $e->getMessage() . "\n";
+}
+
 $communityEventsDetailsMigrate = require $root . '/bootstrap/community_events_details_migration.php';
 try {
     echo "Migration community_events (détails / image / conditions)...\n";
@@ -3112,6 +3119,46 @@ try {
     $theatreMissionCycleMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] theatre_mission_cycles : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakRealismRegistryMigrate = require $root . '/bootstrap/atak_realism_registry_migration.php';
+try {
+    echo "Migration atak_realism_registry (terminaux ATAK, certificats, rattachements opérateur)...\n";
+    $migrationFlush();
+    $atakRealismRegistryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_realism_registry : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$aarReportsMigrate = require $root . '/bootstrap/aar_reports_migration.php';
+try {
+    echo "Migration aar_reports (comptes rendus post-op structurés)...\n";
+    $migrationFlush();
+    $aarReportsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] aar_reports : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$rolePermissionMatrixMigrate = require $root . '/bootstrap/role_permission_matrix_migration.php';
+try {
+    echo "Migration role_permission_matrix (matrice rôles & permissions par module)...\n";
+    $migrationFlush();
+    $rolePermissionMatrixMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] role_permission_matrix : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$communityEventRsvpNominativeMigrate = require $root . '/bootstrap/community_event_rsvp_nominative_migration.php';
+try {
+    echo "Migration community_event_rsvp_nominative (disponibilité, relances, commentaires orga)...\n";
+    $migrationFlush();
+    $communityEventRsvpNominativeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_event_rsvp_nominative : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

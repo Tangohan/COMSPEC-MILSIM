@@ -58,21 +58,41 @@ final class AlertPresentationService
         $dismissed = $this->dismissals->dismissedSetsForUser($userId, $pIds, $tIds);
 
         $out = [];
+        $userLoggedIn = $userId > 0;
+        $inBackOffice = function_exists('is_back_office_request') && is_back_office_request();
         foreach ($platformRows as $r) {
             $id = (int) $r['id'];
             $dismissible = !isset($r['dismissible']) || (int) $r['dismissible'] === 1;
             if ($dismissible && isset($dismissed['platform'][$id])) {
                 continue;
             }
-            $out[] = $this->normalizeRow('platform', $r);
+            $item = $this->normalizeRow('platform', $r);
+            if (!$this->shouldExposeOnCurrentSurface($item, $userLoggedIn, $inBackOffice)) {
+                continue;
+            }
+            $out[] = $item;
         }
         foreach ($tenantRows as $r) {
             $id = (int) $r['id'];
-            if (isset($dismissed['tenant'][$id])) {
+            $item = $this->normalizeRow('tenant', $r);
+            if (!empty($item['dismissible']) && isset($dismissed['tenant'][$id])) {
                 continue;
             }
-            $out[] = $this->normalizeRow('tenant', $r);
+            if (!$this->shouldExposeOnCurrentSurface($item, $userLoggedIn, $inBackOffice)) {
+                continue;
+            }
+            $out[] = $item;
         }
+
+        usort($out, static function (array $a, array $b): int {
+            $ha = !empty($a['highlight']) ? 0 : 1;
+            $hb = !empty($b['highlight']) ? 0 : 1;
+            if ($ha !== $hb) {
+                return $ha <=> $hb;
+            }
+
+            return 0;
+        });
 
         self::$cachedForRequest = $out;
 
@@ -146,6 +166,10 @@ final class AlertPresentationService
             $iconKey = $kind;
         }
 
+        $features = $scope === 'tenant'
+            ? \App\Support\TenantAlertFeatures::decodeJson($row['features_json'] ?? null)
+            : ['dismissible' => !isset($row['dismissible']) || (int) $row['dismissible'] === 1];
+
         return [
             'scope' => $scope,
             'id' => (int) $row['id'],
@@ -162,8 +186,107 @@ final class AlertPresentationService
             'icon_key' => $iconKey,
             'image_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($row['image_path']) ? (string) $row['image_path'] : null),
             'banner_url' => \App\Support\TenantAlertVisuals::publicUrl(isset($row['banner_path']) ? (string) $row['banner_path'] : null),
-            'dismissible' => $scope !== 'platform' || !isset($row['dismissible']) || (int) $row['dismissible'] === 1,
+            'dismissible' => !empty($features['dismissible']),
+            'highlight' => !empty($features['highlight']),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $item normalized alert row
+     */
+    private function shouldExposeOnCurrentSurface(array $item, bool $userLoggedIn, bool $inBackOffice): bool
+    {
+        $style = (string) ($item['display_style'] ?? 'classic');
+        if (\App\Support\AlertDisplayStyle::isBackOfficeStyle($style)) {
+            return $inBackOffice;
+        }
+        if (\App\Support\AlertDisplayStyle::isActivityFeedStyle($style)) {
+            return false;
+        }
+        if (\App\Support\AlertDisplayStyle::isMembersOnlyStyle($style) && !$userLoggedIn) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Annonces pour le fil d’activité membre (emplacement dédié).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function activityFeedForCurrentRequest(): array
+    {
+        $userId = Session::get('user_id') ? (int) Session::get('user_id') : 0;
+        $tenantId = Session::get('tenant_id') ? (int) Session::get('tenant_id') : 0;
+        if ($userId <= 0 || $tenantId <= 0) {
+            return [];
+        }
+
+        $rows = $this->tenantAlerts->listActiveForTenantDisplayByStyle(
+            $tenantId,
+            \App\Support\AlertDisplayStyle::ACTIVITY_FEED
+        );
+        $ids = array_map(static fn (array $r) => (int) $r['id'], $rows);
+        $dismissed = $this->dismissals->dismissedSetsForUser($userId, [], $ids);
+
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) $r['id'];
+            if (isset($dismissed['tenant'][$id])) {
+                continue;
+            }
+            $item = $this->normalizeRow('tenant', $r);
+            if (empty($item['dismissible'])) {
+                // still show non-dismissible items
+            }
+            $out[] = $item;
+        }
+
+        usort($out, static function (array $a, array $b): int {
+            $ha = !empty($a['highlight']) ? 0 : 1;
+            $hb = !empty($b['highlight']) ? 0 : 1;
+            if ($ha !== $hb) {
+                return $ha <=> $hb;
+            }
+
+            return 0;
+        });
+
+        return $out;
+    }
+
+    /**
+     * Annonces back-office pour le tableau de bord responsables.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function backOfficeForTenant(int $tenantId): array
+    {
+        if ($tenantId <= 0) {
+            return [];
+        }
+
+        $rows = $this->tenantAlerts->listActiveForTenantDisplayByStyle(
+            $tenantId,
+            \App\Support\AlertDisplayStyle::BACK_OFFICE
+        );
+        $out = [];
+        foreach ($rows as $r) {
+            $out[] = $this->normalizeRow('tenant', $r);
+        }
+
+        usort($out, static function (array $a, array $b): int {
+            $ha = !empty($a['highlight']) ? 0 : 1;
+            $hb = !empty($b['highlight']) ? 0 : 1;
+            if ($ha !== $hb) {
+                return $ha <=> $hb;
+            }
+
+            return 0;
+        });
+
+        return $out;
     }
 
     /**

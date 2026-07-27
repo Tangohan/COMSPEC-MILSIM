@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\AarReportRepository;
 use App\Repositories\CommunityEventRepository;
 use App\Repositories\CommunityEventSlotAssignmentRepository;
 use App\Repositories\CommunityEventSlotRepository;
@@ -30,7 +31,8 @@ final class CommunityEventsAdminController
         private CommunityEventSlotRepository $slots,
         private CommunityEventSlotAssignmentRepository $slotAssignments,
         private UnitRepository $units,
-        private TrainingCourseRepository $courses
+        private TrainingCourseRepository $courses,
+        private AarReportRepository $aarReports,
     ) {}
 
     /**
@@ -85,19 +87,41 @@ final class CommunityEventsAdminController
         if (!in_array($vue, ['a_venir', 'passes', 'annules'], true)) {
             $vue = 'a_venir';
         }
-        $rows = match ($vue) {
-            'passes' => $this->events->pastForTenant($tenantId, 100),
-            'annules' => $this->events->cancelledForTenant($tenantId, 100),
-            default => $this->events->upcomingForTenant($tenantId, 100),
-        };
+        $registryFilters = [
+            'vue' => $vue,
+            'annee' => (int) $request->query('annee', 0),
+            'type' => trim((string) $request->query('type', '')),
+            'statut' => trim((string) $request->query('statut', '')),
+            'q' => trim((string) $request->query('q', '')),
+        ];
+        if ($request->query('export') === 'csv') {
+            return $this->exportRegistry($tenantId, $registryFilters);
+        }
+        $rows = $this->events->registryForTenant($tenantId, $registryFilters, 150);
         $insights = $this->buildAttendanceInsights($tenantId);
         $quota = $this->featureGate->quotaStatusForFeature($tenantId, 'events');
+        $aarCrIndex = $this->aarReports->operationStatusIndexForTenant($tenantId);
 
         return Response::view('layout.main', [
-            'title' => 'Gérer les événements',
+            'title' => 'Opérations',
             'content' => 'admin.organization.events',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageTitle' => 'Opérations',
+            'boPageKicker' => 'OPÉRATIONS · REGISTRE',
+            'boPageSubtitle' => 'Registre des opérations passées et à venir : effectifs engagés, durée et état des comptes rendus.',
+            'boPageAction' => 'Planifier une opération',
+            'boPageActionUrl' => url('back-office/events') . '#nouveau',
+            'boPageQuick' => [
+                ['label' => 'À venir', 'href' => url('back-office/events') . '?vue=a_venir'],
+                ['label' => 'Passées', 'href' => url('back-office/events') . '?vue=passes'],
+                ['label' => 'Annulées', 'href' => url('back-office/events') . '?vue=annules'],
+            ],
+            'backOfficePageCss' => ['back-office-events.css'],
             'events' => $rows,
             'eventsVue' => $vue,
+            'eventsRegistryFilters' => $registryFilters,
+            'eventsAarIndex' => $aarCrIndex,
             'eventsQuota' => $quota,
             'canCreateEvent' => $this->featureGate->allows($tenantId, 'events'),
             'eventsAttendanceKpis' => $insights['kpis'],
@@ -106,6 +130,197 @@ final class CommunityEventsAdminController
             'eventsRegularityScores' => $insights['regularityScores'],
             'eventsNewMemberParticipationDelta' => $insights['newMemberParticipationDelta'],
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function exportRegistry(int $tenantId, array $filters): Response
+    {
+        $rows = $this->events->registryForTenant($tenantId, $filters, 500);
+        $aarIndex = $this->aarReports->operationStatusIndexForTenant($tenantId);
+        $sep = ';';
+        $lines = [];
+        $lines[] = implode($sep, [
+            'Référence', 'Opération', 'Date', 'Type', 'Zone', 'Commandant', 'Engagés', 'Durée',
+            'Objectifs', 'Pertes', 'Météo', 'Compte rendu', 'Statut',
+        ]);
+        foreach ($rows as $ev) {
+            $mapped = $this->mapRegistryRow($ev, $aarIndex);
+            $lines[] = implode($sep, array_map(
+                static fn (string $cell): string => '"' . str_replace('"', '""', $cell) . '"',
+                $mapped
+            ));
+        }
+        $body = "\xEF\xBB\xBF" . implode("\r\n", $lines) . "\r\n";
+        $vue = (string) ($filters['vue'] ?? 'a_venir');
+        $filename = 'registre-operations-' . $vue . '-' . date('Y-m-d') . '.csv';
+
+        return (new Response())
+            ->header('Content-Type', 'text/csv; charset=utf-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($body);
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     * @param array<string, array{id:int, status:string, status_label:string}> $aarIndex
+     * @return list<string>
+     */
+    private function mapRegistryRow(array $ev, array $aarIndex): array
+    {
+        $eid = (int) ($ev['id'] ?? 0);
+        $startsRaw = isset($ev['starts_at']) ? (string) $ev['starts_at'] : '';
+        $startsTs = $startsRaw !== '' ? strtotime($startsRaw) : false;
+        $refYear = $startsTs !== false ? (int) date('Y', $startsTs) : (int) date('Y');
+        $ref = 'OP-' . $refYear . '-' . str_pad((string) $eid, 3, '0', STR_PAD_LEFT);
+        $title = trim((string) ($ev['title'] ?? ''));
+        $et = (string) ($ev['event_type'] ?? 'evenement');
+        $typeLabel = match ($et) {
+            'operation' => 'Opération',
+            'formation' => 'Formation',
+            'autre' => 'Autre',
+            default => 'Événement',
+        };
+        $date = $startsTs !== false ? date('d/m/Y', $startsTs) : '—';
+        $zone = trim((string) ($ev['location'] ?? ''));
+        $commander = trim((string) ($ev['commander_callsign'] ?? ''));
+        if ($commander === '') {
+            $commander = trim((string) ($ev['commander_name'] ?? ''));
+        }
+        $engaged = (int) ($ev['engaged_count'] ?? 0);
+        $duration = $this->formatRegistryDuration(
+            isset($ev['starts_at']) ? (string) $ev['starts_at'] : null,
+            isset($ev['ends_at']) ? (string) $ev['ends_at'] : null
+        );
+        $objectives = $this->formatRegistryObjectives($ev);
+        $weather = $this->formatRegistryWeather($ev);
+        $cr = $this->formatRegistryCr($ev, $aarIndex);
+        $status = $this->formatRegistryStatus($ev);
+
+        return [
+            $ref,
+            $title !== '' ? $title : '—',
+            $date,
+            $typeLabel,
+            $zone !== '' ? $zone : '—',
+            $commander !== '' ? $commander : '—',
+            $engaged > 0 ? (string) $engaged : '—',
+            $duration,
+            $objectives,
+            '—',
+            $weather,
+            $cr,
+            $status,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     */
+    private function formatRegistryDuration(?string $starts, ?string $ends): string
+    {
+        if ($starts === null || trim($starts) === '' || $ends === null || trim($ends) === '') {
+            return '—';
+        }
+        $s = strtotime($starts);
+        $e = strtotime($ends);
+        if ($s === false || $e === false || $e <= $s) {
+            return '—';
+        }
+        $mins = (int) round(($e - $s) / 60);
+        $h = intdiv($mins, 60);
+        $m = $mins % 60;
+        if ($h > 0 && $m > 0) {
+            return $h . 'h' . str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+        }
+        if ($h > 0) {
+            return $h . 'h';
+        }
+
+        return $m . ' min';
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     */
+    private function formatRegistryObjectives(array $ev): string
+    {
+        $phases = CommunityEventDetails::decodeSchedule($ev['schedule_json'] ?? null);
+        $phaseCount = 0;
+        foreach ($phases as $phase) {
+            if (($phase['type'] ?? '') === 'phase') {
+                $phaseCount++;
+            }
+        }
+        if ($phaseCount > 0) {
+            return (string) $phaseCount;
+        }
+        $slots = (int) ($ev['slot_count'] ?? 0);
+        if ($slots > 0) {
+            return (string) $slots;
+        }
+
+        return '—';
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     */
+    private function formatRegistryWeather(array $ev): string
+    {
+        $text = trim((string) ($ev['conditions_special'] ?? ''));
+        if ($text === '') {
+            $text = trim((string) ($ev['conditions_general'] ?? ''));
+        }
+        if ($text === '') {
+            return '—';
+        }
+        $line = trim((string) (preg_split('/\R/u', $text)[0] ?? $text));
+        if ($line === '') {
+            return '—';
+        }
+        if (mb_strlen($line) > 40) {
+            return mb_substr($line, 0, 37) . '…';
+        }
+
+        return $line;
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     * @param array<string, array{id:int, status:string, status_label:string}> $aarIndex
+     */
+    private function formatRegistryCr(array $ev, array $aarIndex): string
+    {
+        $registryStatus = (string) ($ev['registry_status'] ?? '');
+        if (in_array($registryStatus, ['planifie', 'en_cours'], true)) {
+            return '—';
+        }
+        $titleKey = AarReportRepository::normalizeOperationKey((string) ($ev['title'] ?? ''));
+        $aar = $titleKey !== '' ? ($aarIndex[$titleKey] ?? null) : null;
+        if ($aar === null) {
+            $tagKey = AarReportRepository::normalizeOperationKey((string) ($ev['campaign_tag'] ?? ''));
+            $aar = $tagKey !== '' ? ($aarIndex[$tagKey] ?? null) : null;
+        }
+        if ($aar === null) {
+            return $registryStatus === 'annule' ? '—' : 'Manquant';
+        }
+
+        return (string) ($aar['status_label'] ?? 'En attente');
+    }
+
+    /**
+     * @param array<string, mixed> $ev
+     */
+    private function formatRegistryStatus(array $ev): string
+    {
+        return match ((string) ($ev['registry_status'] ?? '')) {
+            'annule' => 'Annulé',
+            'en_cours' => 'En cours',
+            'clos' => 'Clos',
+            default => 'Planifié',
+        };
     }
 
     public function insights(Request $request, array $params = []): Response
@@ -365,9 +580,48 @@ final class CommunityEventsAdminController
             }
         }
 
+        $eventTitle = trim((string) ($event['title'] ?? ''));
+        $typeLabel = match ((string) ($event['event_type'] ?? 'evenement')) {
+            'operation' => 'Opération',
+            'formation' => 'Formation',
+            'autre' => 'Autre',
+            default => 'Événement',
+        };
+        $startsRaw = isset($event['starts_at']) ? (string) $event['starts_at'] : '';
+        $startsTs = $startsRaw !== '' ? strtotime($startsRaw) : false;
+        $subtitleParts = [];
+        if ($startsTs !== false) {
+            $subtitleParts[] = date('j/n/Y · H:i', $startsTs);
+            if (!empty($event['ends_at'])) {
+                $endsTs = strtotime((string) $event['ends_at']);
+                if ($endsTs !== false) {
+                    $subtitleParts[0] .= ' → ' . date('H:i', $endsTs);
+                }
+            }
+        }
+        $location = trim((string) ($event['location'] ?? ''));
+        if ($location !== '') {
+            $subtitleParts[] = $location;
+        }
+        $subtitleParts[] = $typeLabel;
+        if (!empty($event['cancelled_at'])) {
+            $subtitleParts[] = 'Annulé';
+        }
+
         return Response::view('layout.main', [
-            'title' => 'Participants — ' . (string) ($event['title'] ?? ''),
+            'title' => $eventTitle !== '' ? $eventTitle : 'Fiche créneau',
             'content' => 'admin.organization.event_show',
+            'isBackOfficeShell' => true,
+            'boPageGroup' => 'Opérations',
+            'boPageKicker' => 'OPÉRATIONS · CRÉNEAU',
+            'boPageTitle' => $eventTitle !== '' ? $eventTitle : 'Fiche créneau',
+            'boPageSubtitle' => implode(' · ', $subtitleParts),
+            'boPageQuick' => [
+                ['label' => 'Réponses nominatives', 'href' => url('back-office/events/' . $id . '/reponses-nominatives')],
+                ['label' => 'Feuille de présence', 'href' => url('back-office/events/' . $id . '/export-presences')],
+                ['label' => 'Registre', 'href' => url('back-office/events')],
+            ],
+            'backOfficePageCss' => ['back-office-events.css'],
             'event' => $event,
             'eventRsvps' => $rsvps,
             'eventMemberLookup' => $memberLookup,

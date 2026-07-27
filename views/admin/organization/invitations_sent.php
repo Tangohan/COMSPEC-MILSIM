@@ -103,10 +103,14 @@ $filterTabs = [
 $baseSentUrl = url('back-office/invitations/envoyees');
 $composeUrl = url('back-office/invitations');
 $rowCount = count($invitations);
+$isAthShell = !empty($isBackOfficeShell);
 ?>
+<?php if (!$isAthShell): ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/invitations-sheet.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-<div class="inv-sheet" x-data="{ q: '' }">
+<?php endif; ?>
+<div class="inv-sheet<?= $isAthShell ? ' inv-sheet--ath' : '' ?>" x-data="{ q: '' }">
     <header class="inv-sheet__top">
+        <?php if (!$isAthShell): ?>
         <div class="inv-sheet__top-main">
             <div>
                 <p class="inv-sheet__kicker">Membres · Suivi</p>
@@ -124,6 +128,20 @@ $rowCount = count($invitations);
                 <a href="<?= htmlspecialchars(url('back-office/users'), ENT_QUOTES, 'UTF-8') ?>" class="inv-sheet__btn inv-sheet__btn--ghost">Membres</a>
             </div>
         </div>
+        <?php endif; ?>
+
+        <?php if ($isAthShell): ?>
+        <?php
+        $invTotal = max(1, (int) ($inviteStatusCounts['total'] ?? 0));
+        $athKpis = [
+            ['label' => 'TOTAL', 'value' => (string) $rowCount, 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'lignes affichées'],
+            ['label' => 'EN ATTENTE', 'value' => (string) (int) ($inviteStatusCounts['pending'] ?? 0), 'delta' => '', 'tone' => '#c98a12', 'pct' => (int) round((int) ($inviteStatusCounts['pending'] ?? 0) / $invTotal * 100) . '%', 'note' => 'sans réponse'],
+            ['label' => 'RATTACHÉES', 'value' => (string) (int) ($inviteStatusCounts['accepted'] ?? 0), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => (int) round((int) ($inviteStatusCounts['accepted'] ?? 0) / $invTotal * 100) . '%', 'note' => 'comptes créés'],
+            ['label' => 'ANNULÉES', 'value' => (string) (int) ($inviteStatusCounts['revoked'] ?? 0), 'delta' => '', 'tone' => '#64748b', 'pct' => '—', 'note' => 'liens révoqués'],
+        ];
+        require base_path('views/partials/ath_kpis.php');
+        ?>
+        <?php endif; ?>
 
         <?php $f = \App\Core\Session::getFlash('error'); $s = \App\Core\Session::getFlash('success'); ?>
         <?php if ($f): ?>

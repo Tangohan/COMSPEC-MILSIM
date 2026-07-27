@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Controllers\Admin\Organization;
 
+use App\Core\Container;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TenantBrandingRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Admin\RolePermissionService;
 use App\Services\Auth\AuthService;
 use App\Services\Community\TenantCommunityProfileService;
 use App\Services\Community\TenantSlugService;
 use App\Services\Community\TenantTypeConfig;
 use App\Services\Community\TenantTypeSwitchService;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Support\OrganizationRoleLabels;
 
 /**
  * Hub de paramétrage de la communauté : identité, images (logo, bannière, favicon,
@@ -51,8 +54,10 @@ final class OrganizationSettingsController
         private TenantBrandingRepository $brandingRepository,
         private DiscordWebhookService $discordWebhook,
         private ?TenantTypeSwitchService $tenantTypeSwitchService = null,
+        private ?RolePermissionService $rolePermissionService = null,
     ) {
         $this->tenantTypeSwitchService ??= new TenantTypeSwitchService($this->tenantRepository);
+        $this->rolePermissionService ??= Container::get(RolePermissionService::class);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -87,6 +92,8 @@ final class OrganizationSettingsController
             'tenantTypeOptions' => TenantTypeConfig::availableTypes(),
             'currentTenantType' => TenantTypeConfig::normalizeType((string) ($tenant['tenant_type'] ?? 'full')),
             'tenantTypeFormAction' => url('back-office/organisation/profil'),
+            'roleOptions' => $this->loadRoleOptions($tenantId, $tenant, $community),
+            'defaultGuestRoleSlug' => trim((string) ($community['default_guest_role_slug'] ?? 'invite')),
         ]);
     }
 
@@ -265,6 +272,22 @@ final class OrganizationSettingsController
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+
+        $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
+        if ($guestSlug !== '') {
+            $validSlugs = [];
+            foreach ($this->rolePermissionService->listOrganizationRoles($tenantId) as $role) {
+                $s = trim((string) ($role['slug'] ?? ''));
+                if ($s !== '') {
+                    $validSlugs[$s] = true;
+                }
+            }
+            if (isset($validSlugs[$guestSlug])) {
+                $community['default_guest_role_slug'] = $guestSlug;
+            }
+        }
+
+        $community['portal_nav'] = $this->parsePortalNav($request, is_array($community['portal_nav'] ?? null) ? $community['portal_nav'] : []);
 
         $locale = strtolower(trim((string) $request->input('default_locale', 'fr')));
         $community['default_locale'] = in_array($locale, ['fr', 'en', 'fr-fr', 'en-us'], true)
@@ -612,5 +635,56 @@ final class OrganizationSettingsController
         ];
 
         return in_array($normalized, $reserved, true);
+    }
+
+    /**
+     * @param array<string, mixed> $tenant
+     * @param array<string, mixed> $community
+     * @return list<array{slug: string, name: string}>
+     */
+    private function loadRoleOptions(int $tenantId, array $tenant, array $community): array
+    {
+        $labelMode = OrganizationRoleLabels::mode($community, $tenant);
+        $out = [];
+        foreach ($this->rolePermissionService->listOrganizationRoles($tenantId) as $role) {
+            $slug = trim((string) ($role['slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+            $out[] = [
+                'slug' => $slug,
+                'name' => OrganizationRoleLabels::displayName($role, $labelMode),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $existing
+     * @return array<string, mixed>
+     */
+    private function parsePortalNav(Request $request, array $existing): array
+    {
+        $out = $existing;
+        foreach (['operations', 'resources'] as $slot) {
+            $acc = strtolower(trim((string) $request->input('nav_' . $slot . '_accent', '')));
+            if (!in_array($acc, TenantCommunityProfileService::allowedNavAccents(), true)) {
+                $acc = ($slot === 'operations') ? 'sky' : 'amber';
+            }
+
+            $style = strtolower(trim((string) $request->input('nav_' . $slot . '_submenu_style', '')));
+            if (!in_array($style, TenantCommunityProfileService::allowedNavSubmenuStyles(), true)) {
+                $style = ($slot === 'operations') ? 'cards' : 'minimal';
+            }
+
+            $out[$slot] = [
+                'accent' => $acc,
+                'image_enabled' => (string) $request->input('nav_' . $slot . '_image_enabled', '1') === '1',
+                'submenu_style' => $style,
+            ];
+        }
+
+        return $out;
     }
 }

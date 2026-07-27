@@ -24,22 +24,35 @@
 
 @media (min-width: 1024px) {
   #back-office-sidebar.back-office-rail-aside,
-  #back-office-sidebar {
+  #back-office-sidebar:not(.ath-sidebar-aside) {
     position: static;
     width: 18rem;
     min-width: 18rem;
     max-width: 18rem;
     transform: none !important;
   }
+
+  #back-office-sidebar.ath-sidebar-aside:not(.is-collapsed) {
+    width: var(--ath-side-w, 248px);
+    min-width: var(--ath-side-w, 248px);
+    max-width: var(--ath-side-w, 248px);
+  }
 }
 
 @media (min-width: 1280px) {
   #back-office-sidebar.back-office-rail-aside,
-  #back-office-sidebar {
+  #back-office-sidebar:not(.ath-sidebar-aside) {
     width: 20rem;
     min-width: 20rem;
     max-width: 20rem;
   }
+}
+
+#back-office-sidebar.ath-sidebar-aside.is-collapsed {
+  width: var(--ath-side-w-collapsed, 62px) !important;
+  min-width: var(--ath-side-w-collapsed, 62px) !important;
+  max-width: var(--ath-side-w-collapsed, 62px) !important;
+  overflow-x: visible;
 }
 
 #back-office-sidebar .bo-rail {

@@ -53,6 +53,8 @@ final class InvitationAdminController
         return Response::view('layout.main', [
             'title' => 'Nouvelle invitation',
             'content' => 'admin.organization.invitations',
+            'boPageAction' => 'Invitations envoyées',
+            'boPageActionUrl' => url('back-office/invitations/envoyees'),
             'rolesOrganization' => $rolesOrganization,
             'inviteUnits' => $units,
             'inviteJobRoleOptions' => $jobRoleOptions,
@@ -86,6 +88,8 @@ final class InvitationAdminController
         return Response::view('layout.main', [
             'title' => 'Invitations envoyées',
             'content' => 'admin.organization.invitations_sent',
+            'boPageAction' => 'Nouvelle invitation',
+            'boPageActionUrl' => url('back-office/invitations'),
             'invitations' => $rows,
             'inviteUnits' => $units,
             'inviteJobRoleOptions' => $jobRoleOptions,

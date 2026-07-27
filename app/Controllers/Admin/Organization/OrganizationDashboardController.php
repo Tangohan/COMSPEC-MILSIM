@@ -152,6 +152,13 @@ class OrganizationDashboardController
         }
         try {
             foreach ($this->tenantAlertRepository->listActiveForTenantDisplay($tenantId) as $alert) {
+                $style = \App\Support\AlertDisplayStyle::sanitizeTenant(
+                    isset($alert['display_style']) ? (string) $alert['display_style'] : null
+                );
+                if (\App\Support\AlertDisplayStyle::isActivityFeedStyle($style)
+                    || \App\Support\AlertDisplayStyle::isBackOfficeStyle($style)) {
+                    continue;
+                }
                 $orgAnnounceItems[] = [
                     'scope' => 'tenant',
                     'kind' => (string) ($alert['kind'] ?? 'info'),
@@ -165,6 +172,23 @@ class OrganizationDashboardController
             }
         } catch (\Throwable) {
             // Les annonces publiées restent optionnelles ; l’alerte Discord ci-dessus est conservée.
+        }
+        try {
+            foreach (\App\Core\Container::get(\App\Services\Alerts\AlertPresentationService::class)
+                ->backOfficeForTenant($tenantId) as $alert) {
+                $orgAnnounceItems[] = [
+                    'scope' => 'tenant',
+                    'kind' => (string) ($alert['kind'] ?? 'info'),
+                    'title' => (string) ($alert['title'] ?? ''),
+                    'body' => trim((string) ($alert['body'] ?? '')),
+                    'cta_label' => $alert['cta_label'] ?? null,
+                    'cta_url' => $alert['cta_url'] ?? null,
+                    'accent_color' => $alert['accent_color'] ?? null,
+                    'image_url' => $alert['image_url'] ?? null,
+                ];
+            }
+        } catch (\Throwable) {
+            // Annonces back-office optionnelles.
         }
         try {
             $pinRows = (new \App\Repositories\TenantDashboardPinRepository())->listOrderedForTenant($tenantId);
@@ -206,8 +230,19 @@ class OrganizationDashboardController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
-            'title' => 'Administration organisationnelle',
+            'title' => 'Tableau de bord',
             'isBackOfficeShell' => true,
+            'boPageGroup' => 'Pilotage',
+            'boPageTitle' => 'Tableau de bord',
+            'boPageKicker' => 'PILOTAGE · VUE GÉNÉRALE',
+            'boPageSubtitle' => 'Synthèse de votre communauté : effectifs, activité, formations et points nécessitant une décision.',
+            'boPageAction' => 'Publier une consigne',
+            'boPageActionUrl' => url('back-office/alerts'),
+            'boPageQuick' => [
+                ['label' => '7 jours', 'href' => url('back-office')],
+                ['label' => '30 jours', 'href' => url('back-office')],
+                ['label' => 'Exporter', 'href' => url('back-office/audit')],
+            ],
             'backOfficePageCss' => ['back-office-dashboard.css', 'announce-tiles.css'],
             'adminKpis' => $metrics['kpis'],
             'adminKpiBlockError' => $metrics['blockError'],
@@ -532,7 +567,7 @@ class OrganizationDashboardController
 
         return Response::view('layout.main', [
             'content' => 'admin.organization.effectifs_hub',
-            'title' => 'Structure & grades',
+            'title' => 'Structure & effectifs',
             'isBackOfficeShell' => true,
             'hubStats' => $hubStats,
             'communityName' => $tenantName !== '' ? $tenantName : 'Communauté',

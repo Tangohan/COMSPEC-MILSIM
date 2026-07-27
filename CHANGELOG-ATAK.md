@@ -9,6 +9,71 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.2.2] - 2026-07-27
 
+### Ajouté — Réalisme ATAK (terminal & certificat)
+
+#### API mod ↔ registre communauté
+- `GET/POST /api/atak/terminals` et `POST /api/atak/certificates` — protégés par clé d’accès communauté (pas d’exemption dans `config/tactical_api.php`)
+- Le mod (extension `RegisterTerminal`, `RegisterCertificate`, `GetTerminalRealism`) s’authentifie via la clé ATAK ; résolution `user_id` par `steam_uid` à l’enregistrement
+- `GET /api/atak/terminals?terminal_uid=…` : état terminal + dernier certificat + réglages `atak_defaults` (dont `automatic_pairing`) ; le client jeu ne peut pas lister tous les terminaux
+- `POST` certificat refusé si `automatic_pairing` désactivé pour la communauté (`403 automatic_pairing_disabled`)
+- Back-office **Certificats et terminaux** (`/back-office/atak/realisme`) ; tables `atak_terminals` / `atak_certificates` (migration lazy)
+
+### Ajouté — Réglages d’exécution portail (runtime admin)
+
+#### Persistance & API
+- `TenantAdminSettingsRepository` — réglages `admin_runtime` par communauté (fusion dans `tenant_settings`)
+- `GET/POST /api/back-office/runtime-settings` — lecture / enregistrement pour les admins organisation
+- Quatre blocs métier : **Portail**, **Notifications**, **Sécurité**, **Défauts ATAK** (sanitisation serveur, valeurs bornées)
+
+#### Portail
+- Inscriptions publiques, validation manuelle des comptes, mur public, fuseau horaire
+
+#### Notifications
+- Rappels RSVP automatiques, notifications Discord, SMS d’urgence, récapitulatif hebdomadaire
+
+#### Sécurité
+- Authentification à deux facteurs, expiration de session, verrouillage après échecs, journal d’audit étendu
+
+#### Défauts ATAK (consommés par le réalisme terminal)
+- Appairage automatique des certificats, version client minimale, durée de validité des certificats, partage de position hors opération
+
+### Ajouté — Comptes rendus post-op structurés (AAR)
+
+- Back-office **Comptes rendus post-op** (`/back-office/atak/comptes-rendus`) : liste, fiche, édition, dépôt
+- Lien optionnel avec un **cycle de mission** ; statuts **En attente** / **Validé**
+- Champs structurés : synthèse, points forts et faibles, actions ouvertes / clôturées, scores et métriques opérationnelles
+- Filtres rapides (en attente, validés, actions ouvertes) ; KPIs en tête de liste
+- Table `aar_reports` (migration lazy `aar_reports_migration`)
+
+### Ajouté — Matrice rôles & permissions
+
+- Page **Rôles & permissions** (`/back-office/roles-permissions`) : vue matricielle par rôle et par module
+- Modules : Membres, Opérations, ATAK, Finances, Systèmes — niveaux d’accès en libellés métier (Complet, Sa section, Lecture, etc.)
+- Filtres (recherche, périmètre, niveau, actif), édition inline, export CSV, marquage **revue d’accès** trimestrielle
+- APIs `/api/admin/roles-permissions` (liste, export, sauvegarde par rôle)
+- Migration `role_permission_matrix_migration`
+
+### Ajouté — Réponses nominatives (événements)
+
+- Vue **Réponses nominatives** (`/back-office/events/{id}/reponses-nominatives`) depuis la fiche créneau
+- Tableau par membre : réponse RSVP (Confirmé, Peut-être, Sans réponse, Décliné), section, état terminal / certificat ATAK
+- Filtres par réponse, section et état ATAK ; export CSV ; édition des métadonnées orga par ligne
+- APIs `/api/events/{id}/reponses-nominatives` (liste, export, mise à jour)
+- Migration `community_event_rsvp_nominative_migration`
+
+### Ajouté — Contrôle d’accès modules (`ModuleFeatureAccess`)
+
+- Garde unifiée `guardAtak` / `guardOperations` / `guardSystems` branchée sur la matrice RBAC
+- Appliquée au réalisme ATAK, aux comptes rendus post-op, aux réponses nominatives et à la matrice permissions
+- Redirection back-office avec message métier si droits insuffisants (pas de vocabulaire technique côté utilisateur)
+
+### Ajouté — Préférences carte ATAK (panneau compte)
+
+- **Recentrage personnel** : recadrer la carte sur sa position dès qu’elle remonte en début de session
+- **Contacts en retard** : afficher ou masquer les effectifs dont la position arrive avec délai
+- **Alertes sonores par catégorie** : liaison, ordres / urgences, médical — cases à cocher + persistance locale (`atak_alert_categories`)
+- Volume et style des sons d’alerte regroupés dans le même panneau (complète la barre latérale)
+
 ### Ajouté — Quick wins Athena / Tacmap
 
 #### Overwatch — libellés français
@@ -83,10 +148,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Bilan + PDF export en français avec compteurs opérationnels
 
 ### Déploiement
-- Cache-bust Tacmap `?v=202607270730` (session-profile, chat, sitrep, cams, replay, arma-map-markers, atak.css)
+- Cache-bust Tacmap `?v=202607270730` (session-profile, chat, sitrep, cams, replay, arma-map-markers, atak-sounds, atak-map, atak.css)
 - FTP Hostinger → `athena.ttrd.fr` (`public_html` + dual `assets/`) ; `.env` non modifié
-- Rebuild mod OK (`build_mod.bat`) — SQF photos + SITREP fusion
-- Lancer `run-migrations` (ou UI migrations) pour créer `theatre_mission_cycles` ; colonne `workflow_status` auto via migration lazy rapports
+- Rebuild mod OK (`build_mod.bat`) — réalisme terminal / certificat + sync liaison
+- Lancer `run-migrations` (ou UI migrations) : `atak_realism_registry`, `aar_reports`, `role_permission_matrix`, `community_event_rsvp_nominative` ; `theatre_mission_cycles` et `workflow_status` rapports mod si absent
 ---
 
 ## [1.2.1] - 2026-07-26

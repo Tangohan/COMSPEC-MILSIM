@@ -1,27 +1,15 @@
-COMSPEC Overwatch — 26/07/2026
+COMSPEC Overwatch — 27/07/2026
 
-Stabilisation & Athena / ATAK Enhanced
+Réalisme ATAK & liaison terminal
 
-• Correctifs crash au respawn (REAPP) et liaison plus stable
-• Menu ACE ATAK rebranché (POI, rapports, appui, messagerie, photos…)
-• Briefing / diaporama accessible depuis ACE, bureau ATAK et panneau Athena
-• Demande d’appui aérien : formulaire dédié (plus seulement la boîte à ordres)
-• Manifeste de vol : formulaire dédié + libellés français
-• Viewer 9-lignes ouvert à la réception d’une demande d’appui
-• Marqueurs enrichis : vanilla Arma + MarkersPlus + Metis (libellés FR jeu/web)
-• Marqueurs ATAK Enhanced / cTab / Marker Dropper remontés sur la carte web (formes, préfixes, diamants, sync immédiate)
-• Contact permanent HQ → messages vers le poste de commandement Athena
-• Photos Quick Pictures + sélection dans l’app Athena
-• Liaison téléphone : adresse mobile + code d’appariement ; page web /atak/connect (saisie du code PC)
-• Terminal ATAK requis par défaut pour utiliser les fonctions
-• Faire vibrer le terminal depuis le TOC web
-• En-tête carte Athena : clusters d’actions, bouton « Lier le jeu », badge BÊTA
-• Signalement d’erreurs du mod remonte vers Athena (journal admin)
-• Demande de renfort : message clair si la position du contact manque
-• Accord d’accès anticipé qui ne se redemande plus à chaque lancement
-• Filtres : réglages d’affichage hors journal radio ; messages de groupe restent en jeu
-• Suivi Blue Force lié à l’indicatif (identifiant de suivi)
-• Packs sonores renommés clairement (silencieux, tension, signal médical)
-• Compatibilité Mavic / Options CBA (sessions précédentes du jour)
+• Identité terminal stable par installation (persistée entre les sessions)
+• Enregistrement automatique du terminal et du certificat vers Athena à la liaison compte, à la connexion téléphone et au changement d’indicatif
+• Écran État ATAK : certificat (actif, expiré, en attente, révoqué) et identité terminal en libellés français
+• Messages clairs en jeu si l’appairage ou la délivrance du certificat échoue
+• Respect du réglage communauté « appairage automatique » côté serveur Athena
 
-Relancez Arma après mise à jour. Hard-refresh recommandé sur athena.ttrd.fr.
+Rappel — déjà en place depuis la 1.2.1
+
+• Stabilisation respawn, menu ACE ATAK, briefing, appui aérien, marqueurs carte web, contact HQ, photos, liaison téléphone /atak/connect, vibration terminal depuis le TOC, signalement d’erreurs vers Athena
+
+Relancez Arma après mise à jour. Hard-refresh recommandé sur athena.ttrd.fr pour les nouveautés web (comptes rendus, permissions, réponses nominatives).

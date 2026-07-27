@@ -48,6 +48,21 @@ final class TenantAlertVisuals
                 'hint' => 'Interruption ou travaux techniques prévus.',
                 'color' => '#64748b',
             ],
+            'training' => [
+                'label' => 'Formation',
+                'hint' => 'Parcours, module ou session de formation à venir.',
+                'color' => '#7c3aed',
+            ],
+            'recruitment' => [
+                'label' => 'Recrutement',
+                'hint' => 'Ouverture de postes, campagne ou appel à candidatures.',
+                'color' => '#0369a1',
+            ],
+            'security' => [
+                'label' => 'Sécurité',
+                'hint' => 'Consigne de sécurité, rappel OPSEC ou mesure de protection.',
+                'color' => '#b45309',
+            ],
         ];
     }
 
@@ -89,6 +104,8 @@ final class TenantAlertVisuals
             'wrench' => 'Maintenance',
             'shield' => 'Sécurité',
             'flag' => 'Drapeau',
+            'graduation' => 'Formation',
+            'users' => 'Recrutement',
         ];
     }
 

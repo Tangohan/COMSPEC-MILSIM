@@ -64,6 +64,9 @@ if (!$requiredRoleDefinitionsFeature) {
     unset($navSections['rf-obligatoires']);
 }
 ?>
+<?php if (!empty($isBackOfficeShell)): ?>
+<?php require base_path('views/partials/ath_roles_functions.php'); return; ?>
+<?php endif; ?>
 <style>
 .rf-sheet { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
 .rf-sheet thead th {
@@ -91,7 +94,7 @@ if (!$requiredRoleDefinitionsFeature) {
 <div class="min-h-0 flex-1 bg-slate-50">
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-12 space-y-8">
 
-    <header class="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+    <header class="rf-doctrine__hero relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
         <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/50 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
         <div class="relative px-5 sm:px-8 py-7 lg:py-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div class="min-w-0 flex-1">
@@ -138,6 +141,24 @@ if (!$requiredRoleDefinitionsFeature) {
             </div>
         </div>
     </header>
+
+    <?php if (!empty($isBackOfficeShell)): ?>
+    <?php
+    $athKpis = [
+        ['label' => 'FONCTIONS', 'value' => (string) count($roleDefinitions), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'référentiel'],
+        ['label' => 'RÔLES', 'value' => (string) count($tenantRoles), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'communauté'],
+        ['label' => 'RELATIONS', 'value' => (string) count($roleRelations), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '—', 'note' => 'graphe'],
+        ['label' => 'COUVERTURE', 'value' => $coverageTotal > 0 ? $coverageFilled . '/' . $coverageTotal : '—', 'delta' => '', 'tone' => '#c98a12', 'pct' => $coverageTotal > 0 ? (int) round($coverageFilled / $coverageTotal * 100) . '%' : '0%', 'note' => 'postes pourvus'],
+    ];
+    require base_path('views/partials/ath_kpis.php');
+    ?>
+    <div class="flex flex-wrap gap-2 ath-rise">
+        <a href="<?= htmlspecialchars(url('back-office/roles-functions/referentiel'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid">Référentiel</a>
+        <a href="<?= htmlspecialchars(url('back-office/roles-functions/catalogue'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Catalogue</a>
+        <a href="<?= htmlspecialchars(url('back-office/personnel-job-roles'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Emplois &amp; missions</a>
+        <a href="<?= htmlspecialchars(url('back-office/personnel-job-roles/assignments'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn">Affectations</a>
+    </div>
+    <?php endif; ?>
 
     <?php if ($success): ?>
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800" role="status"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></div>

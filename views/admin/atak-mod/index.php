@@ -12,8 +12,6 @@ $sizeLabel = (string) ($modMeta['size_label'] ?? '—');
 $updatedAt = (string) ($modMeta['updated_at'] ?? '—');
 $version = (string) ($modMeta['version'] ?? '');
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-atak-mod.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-
 <div class="bo-atak-mod">
     <header class="bo-atak-mod__hero">
         <p class="bo-atak-mod__eyebrow">Ressources tactiques</p>

@@ -31,7 +31,6 @@ $shortcuts = [
     ['href' => url('back-office/onboarding-members'), 'title' => 'Accueil des nouveaux membres', 'desc' => 'Suivi des arrivants et relances utiles.'],
 ];
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-onboarding-recovery.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <div class="bo-recovery">
     <header class="bo-recovery__hero">

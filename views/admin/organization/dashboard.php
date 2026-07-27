@@ -183,6 +183,31 @@ $modActionLabelFr = static function (string $t): string {
 $setupBanner = is_array($initialSetupBanner ?? null) ? $initialSetupBanner : null;
 $discordInviteMissing = !empty($discordInviteMissing);
 ?>
+<?php if (!empty($isBackOfficeShell)): ?>
+<div class="ath-dash-page">
+    <?php if ($discordInviteMissing): ?>
+    <div class="ath-banner-warn ath-rise" role="alert">
+        <div class="ath-banner-warn__kicker">Recrutement Discord</div>
+        <div class="ath-banner-warn__text">Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné. Les candidats ne peuvent pas rejoindre votre serveur depuis le formulaire.</div>
+        <a href="<?= htmlspecialchars(url('back-office/organisation/parametres') . '#contact', ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid" style="margin-top:12px;display:inline-flex;">Renseigner le lien</a>
+    </div>
+    <?php endif; ?>
+    <?php if ($setupBanner !== null): ?>
+    <div class="ath-banner-warn ath-rise" role="status">
+        <div class="ath-banner-warn__kicker">Configuration initiale · <?= (int) ($setupBanner['percent'] ?? 0) ?> %</div>
+        <div class="ath-banner-warn__text">Finalisez les réglages essentiels : logo, contact, inscription et modules publics.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <a href="<?= htmlspecialchars(url('back-office/configuration-initiale'), ENT_QUOTES, 'UTF-8') ?>" class="ath-btn ath-btn--solid">Continuer</a>
+            <form method="post" action="<?= htmlspecialchars(url('back-office/configuration-initiale/dismiss'), ENT_QUOTES, 'UTF-8') ?>" class="inline">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="ath-btn">Plus tard</button>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
+    <?php require base_path('views/partials/ath_dashboard_dash.php'); ?>
+</div>
+<?php else: ?>
 <div class="min-h-0 flex-1 flex flex-col">
 <div
     class="org-dash"
@@ -1231,3 +1256,4 @@ $discordInviteMissing = !empty($discordInviteMissing);
     </div>
 </div>
 </div>
+<?php endif; ?>

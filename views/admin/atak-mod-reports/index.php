@@ -50,8 +50,6 @@ $csrfToken = \App\Core\Csrf::token();
 $base = url('admin/atak-mod-reports');
 $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-atak-beta.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-
 <div class="bo-atak-beta">
     <header class="bo-atak-beta__hero">
         <p class="bo-atak-beta__eyebrow">Tactique · Mod Arma</p>

@@ -1,4 +1,9 @@
 <?php
+if (!empty($isBackOfficeShell)) {
+    require base_path('views/partials/ath_event_show.php');
+    return;
+}
+
 /** @var array<string, mixed> $event */
 /** @var list<array<string, mixed>> $eventRsvps */
 /** @var list<array<string, mixed>> $eventMemberLookup */
@@ -122,7 +127,6 @@ $when = $formatWhen(isset($event['starts_at']) ? (string) $event['starts_at'] : 
 $ends = !empty($event['ends_at']) ? $formatWhen((string) $event['ends_at']) : null;
 $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
 ?>
-<link href="<?= htmlspecialchars(asset_url('assets/css/back-office-events.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 
 <div class="bo-events" x-data="{ addOpen: <?= $addOpen ? 'true' : 'false' ?>, dangerOpen: false }">
     <header class="bo-events__hero">
@@ -156,7 +160,8 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                 </div>
             </div>
             <div class="bo-events__hero-actions">
-                <a href="<?= url('back-office/events/' . $eid . '/export-presences') ?>" class="bo-events__btn bo-events__btn--solid">Télécharger la feuille</a>
+                <a href="<?= url('back-office/events/' . $eid . '/reponses-nominatives') ?>" class="bo-events__btn bo-events__btn--solid">Réponses nominatives</a>
+                <a href="<?= url('back-office/events/' . $eid . '/export-presences') ?>" class="bo-events__btn bo-events__btn--ghost">Télécharger la feuille</a>
                 <a href="<?= url('back-office/events') ?>" class="bo-events__btn bo-events__btn--ghost">Retour</a>
             </div>
         </div>

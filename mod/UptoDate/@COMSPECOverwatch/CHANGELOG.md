@@ -1,5 +1,18 @@
 # Changelog — COMSPEC Overwatch
 
+## 1.2.2 — 2026-07-27
+
+### Réalisme ATAK (terminal & certificat)
+- Identité terminal stable par installation (`terminal_uid` persisté en profil Arma).
+- Synchronisation automatique du réalisme à la **liaison compte**, à la **connexion téléphone** (token d’appairage) et au **changement d’indicatif** ; boucle périodique tant que la liaison est active.
+- Enregistrement terminal puis certificat métier vers Athena ; respect du réglage communauté « appairage automatique ».
+- Écran **État ATAK** : identité terminal, certificat (actif, expiré, en attente, révoqué, non délivré) avec libellés français et date de validité.
+- Messages d’erreur métier en jeu si l’enregistrement ou la délivrance échoue (appairage désactivé, terminal inconnu, etc.).
+- Extension `COMSPECExtension` : `RegisterTerminal`, `RegisterCertificate`, `GetTerminalRealism`.
+- Rebuild requis : `connect.pbo`, `atak_athena.pbo`, `COMSPECExtension_x64.dll`.
+
+---
+
 ## 1.2.1 — 2026-07-26
 
 ### Stabilisation
