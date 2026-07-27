@@ -3918,3 +3918,40 @@ body:not(.ath-shell) .pjr-assign-slot {
   border-color: var(--ath-ink);
   color: #fff;
 }
+
+/* ——— Variantes de fenêtre ———
+   Le formulaire d’invitation embarque la matrice des rôles : il lui faut plus de largeur
+   et un corps qui défile sans pousser le pied de fenêtre hors de l’écran. */
+.ath-dialog--wide { max-width: 62rem; }
+
+.ath-dialog__form {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.ath-dialog__form .ath-dialog__body {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+}
+
+.ath-dialog__close {
+  background: transparent;
+  border: 0;
+  color: var(--ath-subtle);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  padding: 3px 6px;
+}
+
+.ath-dialog__close:hover { color: var(--ath-ink); }
+
+.ath-dialog__head--split {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}

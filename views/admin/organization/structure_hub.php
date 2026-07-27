@@ -1,233 +1,245 @@
 <?php
 declare(strict_types=1);
 
-$structureHubOpen = $structureHubOpen ?? '';
-$groupParents = $groupParents ?? [];
-$teamParents = $teamParents ?? [];
-$usersForCommander = $usersForCommander ?? [];
-$roles = $roles ?? [];
-$roleMatrix = $roleMatrix ?? ['roles' => [], 'permissions' => [], 'byRole' => []];
-$grades = $grades ?? [];
-$gradeCategories = $gradeCategories ?? [];
+/**
+ * Structure & recrutement — charte ATHENA.
+ *
+ * L’en-tête de page est rendu par la coque back-office. La page pose la barre d’actions,
+ * délègue l’organigramme interactif à `views/partials/orbat/orbat_canvas.php`, puis
+ * fournit les trois fenêtres de création (membre, regroupement, équipe).
+ *
+ * @var string $structureHubOpen Fenêtre à ouvrir au chargement ('membre' | 'groupe' | 'equipe' | '')
+ * @var list<array{id: int, name: string}> $groupParents
+ * @var list<array{id: int, name: string}> $teamParents
+ * @var list<array<string, mixed>> $usersForCommander
+ * @var list<array<string, mixed>> $roles
+ * @var array{roles: list<mixed>, permissions: list<mixed>, byRole: array<mixed>} $roleMatrix
+ * @var list<array<string, mixed>> $grades
+ * @var list<array<string, mixed>> $gradeCategories
+ * @var string $organizationRoleLabelMode
+ */
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$structureHubOpen = (string) ($structureHubOpen ?? '');
+$groupParents = is_array($groupParents ?? null) ? $groupParents : [];
+$teamParents = is_array($teamParents ?? null) ? $teamParents : [];
+$usersForCommander = is_array($usersForCommander ?? null) ? $usersForCommander : [];
+$roles = is_array($roles ?? null) ? $roles : [];
+$roleMatrix = is_array($roleMatrix ?? null) ? $roleMatrix : ['roles' => [], 'permissions' => [], 'byRole' => []];
+$grades = is_array($grades ?? null) ? $grades : [];
+$gradeCategories = is_array($gradeCategories ?? null) ? $gradeCategories : [];
 $organizationRoleLabelMode = $organizationRoleLabelMode ?? \App\Support\OrganizationRoleLabels::MODE_FR;
 
 $okOpen = in_array($structureHubOpen, ['membre', 'groupe', 'equipe'], true);
 $hubFlashError = \App\Core\Session::getFlash('error');
 $hubFlashSuccess = \App\Core\Session::getFlash('success');
+
+/**
+ * Libellé d’un responsable dans les listes déroulantes.
+ *
+ * `display_name` peut être une chaîne vide plutôt que `null` : un simple `??` laissait
+ * alors une option sans texte, impossible à choisir à l’aveugle.
+ *
+ * @param array<string, mixed> $user
+ */
+$commanderLabel = static function (array $user): string {
+    $name = trim((string) ($user['display_name'] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+    $email = trim((string) ($user['email'] ?? ''));
+
+    return $email !== '' ? $email : 'Membre #' . (int) ($user['id'] ?? 0);
+};
+
+/**
+ * Les fenêtres « regroupement » et « équipe » ne diffèrent que par leur cible et leurs
+ * parents possibles : une seule description évite d’entretenir deux fois le même
+ * formulaire de six champs.
+ *
+ * @var array<string, array{id: string, title: string, action: string, prefix: string, parents: list<array{id: int, name: string}>, submit: string}>
+ */
+$unitDialogs = [
+    'groupe' => [
+        'id' => 'hub-dlg-groupe',
+        'title' => 'Nouveau regroupement',
+        'action' => url('back-office/groups/store'),
+        'prefix' => 'hub_grp',
+        'parents' => $groupParents,
+        'submit' => 'Créer le regroupement',
+    ],
+    'equipe' => [
+        'id' => 'hub-dlg-equipe',
+        'title' => 'Nouvelle équipe',
+        'action' => url('back-office/teams/store'),
+        'prefix' => 'hub_team',
+        'parents' => $teamParents,
+        'submit' => 'Créer l’équipe',
+    ],
+];
 ?>
-<div class="bg-slate-50 min-h-[calc(100vh-3.5rem)]">
-    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 py-6 space-y-4">
-        <?php if ($hubFlashError): ?>
-            <?php $flash_variant = 'error'; $flash_message = (string) $hubFlashError; $flash_margin_class = 'mb-0'; require base_path('views/partials/flash_message.php'); ?>
-        <?php endif; ?>
-        <?php if ($hubFlashSuccess): ?>
-            <?php $flash_variant = 'success'; $flash_message = (string) $hubFlashSuccess; $flash_margin_class = 'mb-0'; require base_path('views/partials/flash_message.php'); ?>
-        <?php endif; ?>
+<?php if ($hubFlashError): ?>
+<p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $hubFlashError) ?></p>
+<?php endif; ?>
+<?php if ($hubFlashSuccess): ?>
+<p class="ath-flash ath-flash--ok" role="status"><?= $h((string) $hubFlashSuccess) ?></p>
+<?php endif; ?>
 
-        <header class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-1">Back-office communauté</p>
-                <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Structure & recrutement</h1>
-                <p class="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
-                    Organigramme interactif : créez des regroupements, des équipes ou invitez un membre depuis la barre d’actions ou par clic droit sur une carte du type correspondant.
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" id="hub-btn-membre" class="rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-slate-800">Inviter un membre</button>
-                <button type="button" id="hub-btn-groupe" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50">Nouveau regroupement</button>
-                <button type="button" id="hub-btn-equipe" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50">Nouvelle équipe</button>
-                <a href="<?= url('back-office/organisation-effectifs') ?>" class="inline-flex items-center rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Structure &amp; grades</a>
-            </div>
-        </header>
-
-        <script>
-        (function () {
-            var initialOpen = <?= json_encode($okOpen ? $structureHubOpen : '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
-            function showDlg(id) {
-                var el = document.getElementById(id);
-                if (el && typeof el.showModal === 'function') el.showModal();
-            }
-            window.orbatHubOpenRecruitmentModal = function (kind, parentUnitId) {
-                parentUnitId = parentUnitId || 0;
-                if (kind === 'groupe') {
-                    var sg = document.getElementById('hub_grp_parent_id');
-                    if (sg) {
-                        var v = parentUnitId > 0 ? String(parentUnitId) : '';
-                        if (v && !sg.querySelector('option[value="' + v + '"]')) {
-                            sg.value = '';
-                        } else {
-                            sg.value = v;
-                        }
-                    }
-                    showDlg('hub-dlg-groupe');
-                } else if (kind === 'equipe') {
-                    var st = document.getElementById('hub_team_parent_id');
-                    if (st) {
-                        var v2 = parentUnitId > 0 ? String(parentUnitId) : '';
-                        if (v2 && !st.querySelector('option[value="' + v2 + '"]')) {
-                            st.value = '';
-                        } else {
-                            st.value = v2;
-                        }
-                    }
-                    showDlg('hub-dlg-equipe');
-                } else if (kind === 'membre') {
-                    showDlg('hub-dlg-membre');
-                }
-            };
-            document.getElementById('hub-btn-membre') && document.getElementById('hub-btn-membre').addEventListener('click', function () {
-                window.orbatHubOpenRecruitmentModal('membre', 0);
-            });
-            document.getElementById('hub-btn-groupe') && document.getElementById('hub-btn-groupe').addEventListener('click', function () {
-                window.orbatHubOpenRecruitmentModal('groupe', 0);
-            });
-            document.getElementById('hub-btn-equipe') && document.getElementById('hub-btn-equipe').addEventListener('click', function () {
-                window.orbatHubOpenRecruitmentModal('equipe', 0);
-            });
-            document.addEventListener('DOMContentLoaded', function () {
-                if (initialOpen === 'membre') window.orbatHubOpenRecruitmentModal('membre', 0);
-                if (initialOpen === 'groupe') window.orbatHubOpenRecruitmentModal('groupe', 0);
-                if (initialOpen === 'equipe') window.orbatHubOpenRecruitmentModal('equipe', 0);
-            });
-        })();
-        </script>
-
-        <?php
-        require base_path('views/partials/orbat/orbat_canvas.php');
-        ?>
-
-        <dialog id="hub-dlg-membre" class="max-w-4xl w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
-            <form method="post" action="<?= url('back-office/users/store') ?>" class="flex max-h-[90vh] flex-col">
-                <div class="border-b border-slate-100 px-5 py-4 flex items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-lg font-black text-slate-900">Inviter un membre</h2>
-                        <p class="text-xs text-slate-500 mt-1">Un e-mail permettra à la personne de définir son mot de passe.</p>
-                    </div>
-                    <button type="button" value="cancel" class="rounded-lg px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" data-hub-close="hub-dlg-membre" aria-label="Fermer">✕</button>
-                </div>
-                <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                    <?= \App\Core\Csrf::field() ?>
-                    <?php
-                    $fieldIdPrefix = 'hub-user-';
-                    $matrixRootId = 'hub-role-matrix-wrap';
-                    require base_path('views/admin/organization/partials/user_invite_form_fields.php');
-                    ?>
-                </div>
-                <div class="border-t border-slate-100 px-5 py-3 flex flex-wrap justify-end gap-2">
-                    <button type="button" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-hub-close="hub-dlg-membre">Annuler</button>
-                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Créer et envoyer l’e-mail</button>
-                </div>
-            </form>
-        </dialog>
-
-        <dialog id="hub-dlg-groupe" class="max-w-lg w-[calc(100%-1.5rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
-            <form method="post" action="<?= url('back-office/groups/store') ?>" class="flex max-h-[90vh] flex-col">
-                <div class="border-b border-slate-100 px-5 py-4 flex items-start justify-between gap-3">
-                    <h2 class="text-lg font-black text-slate-900">Nouveau regroupement</h2>
-                    <button type="button" class="rounded-lg px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" data-hub-close="hub-dlg-groupe" aria-label="Fermer">✕</button>
-                </div>
-                <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                    <?= \App\Core\Csrf::field() ?>
-                    <div>
-                        <label for="hub_grp_name" class="block text-sm font-medium text-slate-700">Nom *</label>
-                        <input type="text" id="hub_grp_name" name="name" required class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_grp_slug" class="block text-sm font-medium text-slate-700">Adresse courte dans l’URL</label>
-                        <input type="text" id="hub_grp_slug" name="slug" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_grp_code" class="block text-sm font-medium text-slate-700">Code</label>
-                        <input type="text" id="hub_grp_code" name="code" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_grp_parent_id" class="block text-sm font-medium text-slate-700">Rattaché sous</label>
-                        <select id="hub_grp_parent_id" name="parent_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
-                            <option value="">— Racine —</option>
-                            <?php foreach ($groupParents as $p): ?>
-                            <option value="<?= (int) $p['id'] ?>"><?= htmlspecialchars((string) ($p['name'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hub_grp_commander" class="block text-sm font-medium text-slate-700">Responsable</label>
-                        <select id="hub_grp_commander" name="commander_user_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
-                            <option value="">—</option>
-                            <?php foreach ($usersForCommander as $u): ?>
-                            <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hub_grp_order" class="block text-sm font-medium text-slate-700">Ordre d’affichage</label>
-                        <input type="number" id="hub_grp_order" name="display_order" value="0" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                </div>
-                <div class="border-t border-slate-100 px-5 py-3 flex flex-wrap justify-end gap-2">
-                    <button type="button" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-hub-close="hub-dlg-groupe">Annuler</button>
-                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Créer</button>
-                </div>
-            </form>
-        </dialog>
-
-        <dialog id="hub-dlg-equipe" class="max-w-lg w-[calc(100%-1.5rem)] rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
-            <form method="post" action="<?= url('back-office/teams/store') ?>" class="flex max-h-[90vh] flex-col">
-                <div class="border-b border-slate-100 px-5 py-4 flex items-start justify-between gap-3">
-                    <h2 class="text-lg font-black text-slate-900">Nouvelle équipe</h2>
-                    <button type="button" class="rounded-lg px-2 py-1 text-sm text-slate-500 hover:bg-slate-100" data-hub-close="hub-dlg-equipe" aria-label="Fermer">✕</button>
-                </div>
-                <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4 space-y-3">
-                    <?= \App\Core\Csrf::field() ?>
-                    <div>
-                        <label for="hub_team_name" class="block text-sm font-medium text-slate-700">Nom *</label>
-                        <input type="text" id="hub_team_name" name="name" required class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_team_slug" class="block text-sm font-medium text-slate-700">Adresse courte dans l’URL</label>
-                        <input type="text" id="hub_team_slug" name="slug" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_team_code" class="block text-sm font-medium text-slate-700">Code</label>
-                        <input type="text" id="hub_team_code" name="code" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                    <div>
-                        <label for="hub_team_parent_id" class="block text-sm font-medium text-slate-700">Rattaché sous</label>
-                        <select id="hub_team_parent_id" name="parent_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
-                            <option value="">— Racine —</option>
-                            <?php foreach ($teamParents as $p): ?>
-                            <option value="<?= (int) $p['id'] ?>"><?= htmlspecialchars((string) ($p['name'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hub_team_commander" class="block text-sm font-medium text-slate-700">Responsable</label>
-                        <select id="hub_team_commander" name="commander_user_id" class="<?= htmlspecialchars(bo_select_class('mt-1'), ENT_QUOTES, 'UTF-8') ?>">
-                            <option value="">—</option>
-                            <?php foreach ($usersForCommander as $u): ?>
-                            <option value="<?= (int) $u['id'] ?>"><?= htmlspecialchars((string) ($u['display_name'] ?? $u['email'] ?? '')) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hub_team_order" class="block text-sm font-medium text-slate-700">Ordre d’affichage</label>
-                        <input type="number" id="hub_team_order" name="display_order" value="0" class="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm">
-                    </div>
-                </div>
-                <div class="border-t border-slate-100 px-5 py-3 flex flex-wrap justify-end gap-2">
-                    <button type="button" class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-hub-close="hub-dlg-equipe">Annuler</button>
-                    <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800">Créer</button>
-                </div>
-            </form>
-        </dialog>
-
-        <script>
-        document.querySelectorAll('[data-hub-close]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var id = btn.getAttribute('data-hub-close');
-                var d = id ? document.getElementById(id) : null;
-                if (d && typeof d.close === 'function') d.close();
-            });
-        });
-        </script>
-    </div>
+<div class="ath-note">
+    <p class="ath-note__title">Organigramme interactif</p>
+    <p class="ath-note__text">
+        Créez un regroupement, une équipe ou invitez un membre depuis la barre d’actions,
+        ou par clic droit sur une carte du type correspondant dans l’organigramme.
+    </p>
 </div>
+
+<div class="ath-form__actions" style="border-top:0;margin:0 0 16px;padding-top:0;">
+    <button type="button" id="hub-btn-membre" class="ath-btn ath-btn--solid">Inviter un membre</button>
+    <button type="button" id="hub-btn-groupe" class="ath-btn">Nouveau regroupement</button>
+    <button type="button" id="hub-btn-equipe" class="ath-btn">Nouvelle équipe</button>
+    <a href="<?= $h(url('back-office/organisation-effectifs')) ?>" class="ath-btn">Structure &amp; grades</a>
+</div>
+
+<?php require base_path('views/partials/orbat/orbat_canvas.php'); ?>
+
+<dialog id="hub-dlg-membre" class="ath-dialog ath-dialog--wide">
+    <form method="post" action="<?= $h(url('back-office/users/store')) ?>" class="ath-dialog__form">
+        <div class="ath-dialog__head ath-dialog__head--split">
+            <div>
+                <h2 class="ath-dialog__title">Inviter un membre</h2>
+                <p class="ath-dialog__sub">Un e-mail permettra à la personne de définir son mot de passe.</p>
+            </div>
+            <button type="button" class="ath-dialog__close" data-hub-close="hub-dlg-membre" aria-label="Fermer">✕</button>
+        </div>
+        <div class="ath-dialog__body">
+            <?= \App\Core\Csrf::field() ?>
+            <?php
+            $fieldIdPrefix = 'hub-user-';
+            $matrixRootId = 'hub-role-matrix-wrap';
+            require base_path('views/admin/organization/partials/user_invite_form_fields.php');
+            ?>
+        </div>
+        <div class="ath-dialog__foot">
+            <button type="button" class="ath-btn" data-hub-close="hub-dlg-membre">Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--solid">Créer et envoyer l’e-mail</button>
+        </div>
+    </form>
+</dialog>
+
+<?php foreach ($unitDialogs as $dialog): ?>
+<dialog id="<?= $h($dialog['id']) ?>" class="ath-dialog">
+    <form method="post" action="<?= $h($dialog['action']) ?>" class="ath-dialog__form">
+        <div class="ath-dialog__head ath-dialog__head--split">
+            <h2 class="ath-dialog__title"><?= $h($dialog['title']) ?></h2>
+            <button type="button" class="ath-dialog__close" data-hub-close="<?= $h($dialog['id']) ?>" aria-label="Fermer">✕</button>
+        </div>
+        <div class="ath-dialog__body">
+            <?= \App\Core\Csrf::field() ?>
+            <div class="ath-form__grid ath-form__grid--wide">
+                <label class="ath-field">
+                    <span class="ath-field__label">Nom *</span>
+                    <input type="text" id="<?= $h($dialog['prefix']) ?>_name" name="name" required class="ath-field__input">
+                </label>
+                <label class="ath-field">
+                    <span class="ath-field__label">Adresse courte dans l’URL</span>
+                    <input type="text" id="<?= $h($dialog['prefix']) ?>_slug" name="slug" class="ath-field__input">
+                    <span class="ath-field__help">Laissez vide pour la déduire du nom.</span>
+                </label>
+                <label class="ath-field">
+                    <span class="ath-field__label">Code</span>
+                    <input type="text" id="<?= $h($dialog['prefix']) ?>_code" name="code" class="ath-field__input">
+                </label>
+                <label class="ath-field">
+                    <span class="ath-field__label">Rattaché sous</span>
+                    <select id="<?= $h($dialog['prefix']) ?>_parent_id" name="parent_id" class="ath-field__select">
+                        <option value="">— Racine —</option>
+                        <?php foreach ($dialog['parents'] as $p): ?>
+                        <option value="<?= (int) ($p['id'] ?? 0) ?>"><?= $h((string) ($p['name'] ?? '')) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="ath-field">
+                    <span class="ath-field__label">Responsable</span>
+                    <select id="<?= $h($dialog['prefix']) ?>_commander" name="commander_user_id" class="ath-field__select">
+                        <option value="">—</option>
+                        <?php foreach ($usersForCommander as $u): ?>
+                        <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= $h($commanderLabel($u)) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="ath-field">
+                    <span class="ath-field__label">Ordre d’affichage</span>
+                    <input type="number" id="<?= $h($dialog['prefix']) ?>_order" name="display_order" value="0" class="ath-field__input">
+                </label>
+            </div>
+        </div>
+        <div class="ath-dialog__foot">
+            <button type="button" class="ath-btn" data-hub-close="<?= $h($dialog['id']) ?>">Annuler</button>
+            <button type="submit" class="ath-btn ath-btn--solid"><?= $h($dialog['submit']) ?></button>
+        </div>
+    </form>
+</dialog>
+<?php endforeach; ?>
+
+<script>
+/*
+ * `orbatHubOpenRecruitmentModal` est appelée depuis l’organigramme (clic droit sur une
+ * carte) : elle reste exposée sur `window` et présélectionne l’unité de rattachement.
+ */
+(function () {
+  var initialOpen = <?= json_encode($okOpen ? $structureHubOpen : '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE) ?>;
+
+  var showDialog = function (id) {
+    var el = document.getElementById(id);
+    if (el && typeof el.showModal === 'function') {
+      el.showModal();
+    }
+  };
+
+  var presetParent = function (selectId, parentUnitId) {
+    var select = document.getElementById(selectId);
+    if (!select) return;
+    var value = parentUnitId > 0 ? String(parentUnitId) : '';
+    // Un parent hors de la liste (autre type d’unité) retombe sur la racine.
+    select.value = value && select.querySelector('option[value="' + value + '"]') ? value : '';
+  };
+
+  window.orbatHubOpenRecruitmentModal = function (kind, parentUnitId) {
+    parentUnitId = parentUnitId || 0;
+    if (kind === 'groupe') {
+      presetParent('hub_grp_parent_id', parentUnitId);
+      showDialog('hub-dlg-groupe');
+    } else if (kind === 'equipe') {
+      presetParent('hub_team_parent_id', parentUnitId);
+      showDialog('hub-dlg-equipe');
+    } else if (kind === 'membre') {
+      showDialog('hub-dlg-membre');
+    }
+  };
+
+  ['membre', 'groupe', 'equipe'].forEach(function (kind) {
+    var btn = document.getElementById('hub-btn-' + kind);
+    if (btn) {
+      btn.addEventListener('click', function () {
+        window.orbatHubOpenRecruitmentModal(kind, 0);
+      });
+    }
+  });
+
+  document.querySelectorAll('[data-hub-close]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var dialog = document.getElementById(btn.getAttribute('data-hub-close'));
+      if (dialog && typeof dialog.close === 'function') {
+        dialog.close();
+      }
+    });
+  });
+
+  if (initialOpen) {
+    document.addEventListener('DOMContentLoaded', function () {
+      window.orbatHubOpenRecruitmentModal(initialOpen, 0);
+    });
+  }
+})();
+</script>
