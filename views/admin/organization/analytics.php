@@ -3,44 +3,67 @@ declare(strict_types=1);
 
 use App\Services\Analytics\TenantAnalyticsLabels;
 
-/** @var int $activeApprox */
-/** @var int $dashboardEvents */
-/** @var string $since */
-/** @var int $analyticsDays */
-/** @var list<array<string, mixed>> $trainingCourseStats */
-/** @var list<array<string, mixed>> $recruitmentOpeningStats */
-/** @var array{public_views: int, public_duration_avg: ?float, enlistment_opens: int, enlistment_submits: int, cta_clicks: int} $publicEngagement */
-/** @var list<array{category: string, events: int}> $tenantCategoryBreakdown */
-/** @var list<array{actor_label: string, events: int}> $tenantTopActors */
-/** @var array{total_events: int, distinct_actors: int, events_with_duration: int, avg_duration_seconds: ?float} $tenantUsageSummary */
-/** @var list<array{day: string, events: int}> $tenantDailyEvents */
-/** @var list<array{name: string, events: int}> $tenantTopEventNames */
-/** @var int $trainingCatalogViews */
-/** @var array{visits:int,cta_clicks:int,applications:int,accepted:int,median_visit_to_first_contact_hours:?float} $conversionFunnel */
-/** @var array{visits:int,cta_clicks:int,applications:int,accepted:int,median_visit_to_first_contact_hours:?float} $funnelLast7 */
-/** @var array{visits:int,cta_clicks:int,applications:int,accepted:int} $funnelPrev7Only */
-/** @var string $analyticsFocus */
-$trainingCourseStats = $trainingCourseStats ?? [];
-$recruitmentOpeningStats = $recruitmentOpeningStats ?? [];
-$tenantCategoryBreakdown = $tenantCategoryBreakdown ?? [];
-$tenantTopActors = $tenantTopActors ?? [];
-$tenantDailyEvents = $tenantDailyEvents ?? [];
-$tenantTopEventNames = $tenantTopEventNames ?? [];
+/**
+ * Indicateurs d’usage — charte ATHENA.
+ *
+ * L’en-tête de page est rendu par la coque back-office. Deux familles de chiffres sont
+ * distinguées : ceux comptés dans la base du portail (fiables en toute circonstance) et
+ * ceux issus du suivi d’usage, qui dépendent du consentement « mesure d’audience ».
+ *
+ * @var int $activeApprox
+ * @var int $dashboardEvents
+ * @var string $since
+ * @var int $analyticsDays
+ * @var list<array<string, mixed>> $trainingCourseStats
+ * @var list<array<string, mixed>> $recruitmentOpeningStats
+ * @var array{public_views: int, public_duration_avg: ?float, enlistment_opens: int, enlistment_submits: int, cta_clicks: int} $publicEngagement
+ * @var list<array{category: string, events: int}> $tenantCategoryBreakdown
+ * @var list<array{actor_label: string, events: int}> $tenantTopActors
+ * @var array{total_events: int, distinct_actors: int, events_with_duration: int, avg_duration_seconds: ?float} $tenantUsageSummary
+ * @var list<array{day: string, events: int}> $tenantDailyEvents
+ * @var list<array{name: string, events: int}> $tenantTopEventNames
+ * @var int $trainingCatalogViews
+ * @var array<string, mixed> $conversionFunnel
+ * @var array<string, mixed> $funnelLast7
+ * @var array<string, mixed> $funnelPrev7Only
+ * @var array<string, mixed> $operationalKpis
+ * @var list<array{status: string, count: int}> $enlistmentStatusBreakdown
+ * @var array<string, mixed> $documentInsights
+ * @var string $analyticsFocus
+ */
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+$trainingCourseStats = is_array($trainingCourseStats ?? null) ? $trainingCourseStats : [];
+$recruitmentOpeningStats = is_array($recruitmentOpeningStats ?? null) ? $recruitmentOpeningStats : [];
+$tenantCategoryBreakdown = is_array($tenantCategoryBreakdown ?? null) ? $tenantCategoryBreakdown : [];
+$tenantTopActors = is_array($tenantTopActors ?? null) ? $tenantTopActors : [];
+$tenantDailyEvents = is_array($tenantDailyEvents ?? null) ? $tenantDailyEvents : [];
+$tenantTopEventNames = is_array($tenantTopEventNames ?? null) ? $tenantTopEventNames : [];
 $trainingCatalogViews = (int) ($trainingCatalogViews ?? 0);
-$tenantUsageSummary = $tenantUsageSummary ?? [
+$activeApprox = (int) ($activeApprox ?? 0);
+$dashboardEvents = (int) ($dashboardEvents ?? 0);
+$since = (string) ($since ?? '');
+$analyticsDays = (int) ($analyticsDays ?? 30);
+$analyticsFocus = (string) ($analyticsFocus ?? 'overview');
+
+$tenantUsageSummary = is_array($tenantUsageSummary ?? null) ? $tenantUsageSummary : [];
+$tenantUsageSummary += [
     'total_events' => 0,
     'distinct_actors' => 0,
     'events_with_duration' => 0,
     'avg_duration_seconds' => null,
 ];
-$publicEngagement = $publicEngagement ?? [
+$publicEngagement = is_array($publicEngagement ?? null) ? $publicEngagement : [];
+$publicEngagement += [
     'public_views' => 0,
     'public_duration_avg' => null,
     'enlistment_opens' => 0,
     'enlistment_submits' => 0,
     'cta_clicks' => 0,
 ];
-$operationalKpis = is_array($operationalKpis ?? null) ? $operationalKpis : [
+$operationalKpis = is_array($operationalKpis ?? null) ? $operationalKpis : [];
+$operationalKpis += [
     'members_active_total' => 0,
     'members_registered_in_period' => 0,
     'audit_actions_in_period' => 0,
@@ -51,8 +74,8 @@ $operationalKpis = is_array($operationalKpis ?? null) ? $operationalKpis : [
     'training_completions_in_period' => 0,
 ];
 $enlistmentStatusBreakdown = is_array($enlistmentStatusBreakdown ?? null) ? $enlistmentStatusBreakdown : [];
-$analyticsDays = (int) ($analyticsDays ?? 30);
-$documentInsights = is_array($documentInsights ?? null) ? $documentInsights : [
+$documentInsights = is_array($documentInsights ?? null) ? $documentInsights : [];
+$documentInsights += [
     'total_documents' => 0,
     'published_documents' => 0,
     'updated_in_period' => 0,
@@ -61,7 +84,8 @@ $documentInsights = is_array($documentInsights ?? null) ? $documentInsights : [
     'expiring_soon_documents' => 0,
     'top_types' => [],
 ];
-$conversionFunnel = is_array($conversionFunnel ?? null) ? $conversionFunnel : [
+$conversionFunnel = is_array($conversionFunnel ?? null) ? $conversionFunnel : [];
+$conversionFunnel += [
     'visits' => 0,
     'cta_clicks' => 0,
     'applications' => 0,
@@ -69,13 +93,8 @@ $conversionFunnel = is_array($conversionFunnel ?? null) ? $conversionFunnel : [
     'median_visit_to_first_contact_hours' => null,
 ];
 $funnelLast7 = is_array($funnelLast7 ?? null) ? $funnelLast7 : $conversionFunnel;
-$funnelPrev7Only = is_array($funnelPrev7Only ?? null) ? $funnelPrev7Only : [
-    'visits' => 0,
-    'cta_clicks' => 0,
-    'applications' => 0,
-    'accepted' => 0,
-];
-$analyticsFocus = (string) ($analyticsFocus ?? 'overview');
+$funnelPrev7Only = is_array($funnelPrev7Only ?? null) ? $funnelPrev7Only : [];
+$funnelPrev7Only += ['visits' => 0, 'cta_clicks' => 0, 'applications' => 0, 'accepted' => 0];
 
 $enlistmentStatusLabelAnalytics = static function (string $status): string {
     return match ($status) {
@@ -87,23 +106,7 @@ $enlistmentStatusLabelAnalytics = static function (string $status): string {
     };
 };
 
-$dailyMax = 0;
-foreach ($tenantDailyEvents as $de) {
-    $dailyMax = max($dailyMax, (int) ($de['events'] ?? 0));
-}
-
-$periodLinks = static function (int $current): string {
-    $base = url('back-office/analytics');
-    $opts = [7 => '7 jours', 30 => '30 jours', 90 => '90 jours'];
-    $parts = [];
-    foreach ($opts as $d => $label) {
-        $active = $d === $current ? ' font-black text-emerald-700' : ' text-slate-600 hover:text-slate-900';
-        $parts[] = '<a class="text-sm' . $active . '" href="' . htmlspecialchars($base . '?days=' . $d, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
-    }
-
-    return implode('<span class="text-slate-300 mx-2">|</span>', $parts);
-};
-
+$int = static fn (mixed $v): string => number_format((int) $v, 0, ',', ' ');
 $ratioPct = static function (int $num, int $den): string {
     if ($den < 1) {
         return '—';
@@ -111,479 +114,395 @@ $ratioPct = static function (int $num, int $den): string {
 
     return number_format(100.0 * $num / $den, 1, ',', ' ') . ' %';
 };
-$ctaRateLast7 = ((int) ($funnelLast7['visits'] ?? 0)) > 0 ? ((int) ($funnelLast7['cta_clicks'] ?? 0) / (int) ($funnelLast7['visits'] ?? 0)) : null;
-$ctaRatePrev7 = ((int) ($funnelPrev7Only['visits'] ?? 0)) > 0 ? ((int) ($funnelPrev7Only['cta_clicks'] ?? 0) / (int) ($funnelPrev7Only['visits'] ?? 0)) : null;
+$clampPct = static function (int $num, int $den): string {
+    if ($den < 1) {
+        return '0%';
+    }
+
+    return (string) max(0, min(100, (int) round(100.0 * $num / $den))) . '%';
+};
+$seconds = static function (mixed $v): string {
+    if ($v === null || $v === '') {
+        return '—';
+    }
+    $s = (int) round((float) $v);
+    if ($s < 60) {
+        return $s . ' s';
+    }
+
+    return intdiv($s, 60) . ' min ' . str_pad((string) ($s % 60), 2, '0', STR_PAD_LEFT) . ' s';
+};
+
+// Conseil de pilotage : calculé sur les 7 derniers jours contre les 7 précédents.
+$ctaRateLast7 = ((int) ($funnelLast7['visits'] ?? 0)) > 0
+    ? (int) ($funnelLast7['cta_clicks'] ?? 0) / (int) ($funnelLast7['visits'] ?? 0)
+    : null;
+$ctaRatePrev7 = ((int) ($funnelPrev7Only['visits'] ?? 0)) > 0
+    ? (int) ($funnelPrev7Only['cta_clicks'] ?? 0) / (int) ($funnelPrev7Only['visits'] ?? 0)
+    : null;
 $ctaRateDrop = $ctaRateLast7 !== null && $ctaRatePrev7 !== null && $ctaRateLast7 < $ctaRatePrev7;
 
 $suggestions = [];
 if ($ctaRateDrop) {
-    $suggestions[] = 'La conversion visite → CTA baisse sur 7 jours : mettez en avant un CTA principal unique (Rejoindre / Candidater / Contacter) dans la section hero.';
+    $suggestions[] = 'La conversion visite → CTA baisse sur 7 jours : mettez en avant un appel à l’action principal unique (Rejoindre, Candidater ou Contacter) dans la première section de la page publique.';
 }
-if ((int) ($conversionFunnel['applications'] ?? 0) > 0 && (int) ($conversionFunnel['accepted'] ?? 0) === 0) {
-    $suggestions[] = 'Des candidatures sont déposées mais aucune acceptée : revoyez le délai de traitement et les critères de qualification.';
+if ((int) $conversionFunnel['applications'] > 0 && (int) $conversionFunnel['accepted'] === 0) {
+    $suggestions[] = 'Des candidatures sont déposées mais aucune n’est acceptée : revoyez le délai de traitement et les critères de qualification.';
 }
-if (($conversionFunnel['median_visit_to_first_contact_hours'] ?? null) !== null && (float) $conversionFunnel['median_visit_to_first_contact_hours'] > 48.0) {
-    $suggestions[] = 'Le délai médian visite → premier contact dépasse 48h : activez une routine quotidienne de réponse aux candidatures.';
+if ($conversionFunnel['median_visit_to_first_contact_hours'] !== null
+    && (float) $conversionFunnel['median_visit_to_first_contact_hours'] > 48.0) {
+    $suggestions[] = 'Le délai médian entre la visite et le premier contact dépasse 48 h : instaurez une revue quotidienne des candidatures.';
 }
 if ($suggestions === []) {
-    $suggestions[] = 'Conversion stable cette semaine : poursuivez les tests A/B de vos accroches et maintenez la fréquence de réponse.';
+    $suggestions[] = 'Conversion stable cette semaine : poursuivez les essais sur vos accroches et maintenez la fréquence de réponse.';
 }
+
+$periodOptions = [7 => '7 jours', 30 => '30 jours', 90 => '90 jours'];
 ?>
-<div class="max-w-6xl mx-auto px-6 py-10">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Indicateurs d’usage</h1>
-            <p class="text-sm text-slate-600 mt-1">Synthèse pour votre communauté sur <?= (int) $analyticsDays ?> jours glissants (à partir du <?= htmlspecialchars($since) ?> — fuseau serveur).</p>
+<nav class="ath-periods" aria-label="Période d’observation">
+    <span class="ath-periods__label">Période</span>
+    <?php foreach ($periodOptions as $days => $label): ?>
+    <a href="<?= $h(url('back-office/analytics') . '?days=' . $days) ?>" class="ath-btn"<?= $days === $analyticsDays ? ' aria-current="true"' : '' ?>><?= $h($label) ?></a>
+    <?php endforeach; ?>
+    <span class="ath-table-toolbar__spacer" aria-hidden="true"></span>
+    <a href="<?= $h(url('back-office/analytics/conversion') . '?days=' . $analyticsDays) ?>" class="ath-btn"<?= $analyticsFocus === 'conversion' ? ' aria-current="true"' : '' ?>>Entonnoir de conversion</a>
+</nav>
+
+<div class="ath-note">
+    <p class="ath-note__title">Deux familles de chiffres</p>
+    <p class="ath-note__text">
+        Les indicateurs « activité portail » sont comptés directement dans la base (comptes, journal d’audit, forum,
+        candidatures, formations) : ils restent fiables en toute circonstance. Le « suivi d’usage » et les durées
+        dépendent du consentement « mesure d’audience » des visiteurs et peuvent donc sous-estimer la réalité.
+        Fenêtre observée : <?= (int) $analyticsDays ?> jours glissants<?= $since !== '' ? ', à partir du ' . $h($since) : '' ?> (fuseau du serveur).
+    </p>
+</div>
+
+<h2 class="ath-section-title">Activité portail</h2>
+
+<?php
+$membersTotal = max(1, (int) $operationalKpis['members_active_total']);
+$athKpis = [
+    ['label' => 'MEMBRES ACTIFS', 'value' => $int($operationalKpis['members_active_total']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'comptes en activité'],
+    ['label' => 'ARRIVÉES', 'value' => $int($operationalKpis['members_registered_in_period']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $clampPct((int) $operationalKpis['members_registered_in_period'], $membersTotal), 'note' => 'sur la période'],
+    ['label' => 'ACTIONS JOURNALISÉES', 'value' => $int($operationalKpis['audit_actions_in_period']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'journal d’audit'],
+    ['label' => 'CANDIDATURES', 'value' => $int($operationalKpis['enlistments_created_in_period']), 'delta' => '', 'tone' => '#c98a12', 'pct' => '100%', 'note' => 'déposées sur la période'],
+];
+require base_path('views/partials/ath_kpis.php');
+
+$athKpis = [
+    ['label' => 'SUJETS DE FORUM', 'value' => $int($operationalKpis['forum_topics_in_period']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'ouverts sur la période'],
+    ['label' => 'MESSAGES DE FORUM', 'value' => $int($operationalKpis['forum_posts_in_period']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'publiés sur la période'],
+    ['label' => 'FORMATIONS ASSIGNÉES', 'value' => $int($operationalKpis['training_enrollments_assigned_in_period']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'inscriptions créées'],
+    [
+        'label' => 'FORMATIONS ACHEVÉES',
+        'value' => $int($operationalKpis['training_completions_in_period']),
+        'delta' => '',
+        'tone' => '#0b8a5c',
+        'pct' => $clampPct((int) $operationalKpis['training_completions_in_period'], max(1, (int) $operationalKpis['training_enrollments_assigned_in_period'])),
+        'note' => 'sur les inscriptions de la période',
+    ],
+];
+require base_path('views/partials/ath_kpis.php');
+
+$enlistTotal = 0;
+foreach ($enlistmentStatusBreakdown as $es) {
+    $enlistTotal += (int) ($es['count'] ?? 0);
+}
+$athTableTitle = 'Candidatures de la période, par état';
+$athTableCount = $enlistTotal;
+$athTableCols = ['ÉTAT|b', 'CANDIDATURES|r', 'PART|r'];
+$athTableRows = [];
+foreach ($enlistmentStatusBreakdown as $es) {
+    $n = (int) ($es['count'] ?? 0);
+    $athTableRows[] = [
+        $enlistmentStatusLabelAnalytics((string) ($es['status'] ?? '')),
+        $int($n),
+        $ratioPct($n, $enlistTotal),
+    ];
+}
+$athTableFilters = [];
+$athTableMinWidth = '680px';
+$athTableShowCheckbox = false;
+$athTableExportUrl = null;
+$athTablePager = null;
+$athTableRowHrefs = null;
+$athTableRowActions = null;
+$athTableFoot = $enlistmentStatusBreakdown === []
+    ? 'Aucune candidature déposée sur la période.'
+    : 'Compté à la date de dépôt, indépendamment de la date de décision.';
+require base_path('views/partials/ath_table.php');
+?>
+
+<h2 class="ath-section-title">Suivi d’usage</h2>
+
+<?php
+$athKpis = [
+    ['label' => 'ÉVÉNEMENTS', 'value' => $int($tenantUsageSummary['total_events']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'sur la période'],
+    ['label' => 'PERSONNES DISTINCTES', 'value' => $int($tenantUsageSummary['distinct_actors']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'acteurs identifiés'],
+    ['label' => 'AVEC DURÉE MESURÉE', 'value' => $int($tenantUsageSummary['events_with_duration']), 'delta' => '', 'tone' => '#c98a12', 'pct' => $clampPct((int) $tenantUsageSummary['events_with_duration'], max(1, (int) $tenantUsageSummary['total_events'])), 'note' => 'nécessite le consentement'],
+    ['label' => 'DURÉE MOYENNE', 'value' => $seconds($tenantUsageSummary['avg_duration_seconds']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'par consultation mesurée'],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
+
+<?php if ($tenantDailyEvents !== []): ?>
+<?php
+$dailyMax = 0;
+foreach ($tenantDailyEvents as $de) {
+    $dailyMax = max($dailyMax, (int) ($de['events'] ?? 0));
+}
+$firstDay = (string) ($tenantDailyEvents[0]['day'] ?? '');
+$lastDay = (string) ($tenantDailyEvents[count($tenantDailyEvents) - 1]['day'] ?? '');
+$fmtDay = static function (string $raw): string {
+    $t = strtotime($raw);
+
+    return $t ? date('d/m', $t) : $raw;
+};
+?>
+<div class="ath-panel ath-rise">
+    <h2 class="ath-panel__title" style="margin-top:0;">Répartition par jour</h2>
+    <p class="ath-panel__lead">Un bâtonnet par jour sur <?= (int) $analyticsDays ?> jours. Sommet de l’échelle : <?= $int($dailyMax) ?> événement<?= $dailyMax > 1 ? 's' : '' ?>.</p>
+    <div class="ath-spark" role="img" aria-label="Activité quotidienne sur <?= (int) $analyticsDays ?> jours">
+        <?php foreach ($tenantDailyEvents as $de): ?>
+            <?php
+            $n = (int) ($de['events'] ?? 0);
+            $day = $fmtDay((string) ($de['day'] ?? ''));
+            $pct = $dailyMax > 0 ? max(2, (int) round($n / $dailyMax * 100)) : 2;
+            ?>
+        <span class="ath-spark__bar<?= $n === 0 ? ' ath-spark__bar--empty' : '' ?>"
+              style="height:<?= $pct ?>%"
+              title="<?= $h($day . ' — ' . $int($n) . ' événement' . ($n > 1 ? 's' : '')) ?>"></span>
+        <?php endforeach; ?>
+    </div>
+    <div class="ath-spark__axis">
+        <span><?= $h($fmtDay($firstDay)) ?></span>
+        <span><?= $h($fmtDay($lastDay)) ?></span>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php
+$actorsTotal = 0;
+foreach ($tenantTopActors as $row) {
+    $actorsTotal += (int) ($row['events'] ?? 0);
+}
+$athTableTitle = 'Membres les plus actifs';
+$athTableCount = count($tenantTopActors);
+$athTableCols = ['MEMBRE', 'ÉVÉNEMENTS|r', 'PART|r'];
+$athTableRows = [];
+foreach ($tenantTopActors as $row) {
+    $n = (int) ($row['events'] ?? 0);
+    $athTableRows[] = [
+        (string) ($row['actor_label'] ?? '—'),
+        $int($n),
+        $ratioPct($n, $actorsTotal),
+    ];
+}
+$athTableMinWidth = '760px';
+$athTableFoot = $tenantTopActors === []
+    ? 'Aucun acteur identifié sur la période.'
+    : 'Part calculée sur les événements des membres listés, pas sur le total de la communauté.';
+require base_path('views/partials/ath_table.php');
+
+$catTotal = 0;
+foreach ($tenantCategoryBreakdown as $row) {
+    $catTotal += (int) ($row['events'] ?? 0);
+}
+$athTableTitle = 'Volume par rubrique';
+$athTableCount = count($tenantCategoryBreakdown);
+$athTableCols = ['RUBRIQUE', 'ÉVÉNEMENTS|r', 'PART|r'];
+$athTableRows = [];
+foreach ($tenantCategoryBreakdown as $row) {
+    $n = (int) ($row['events'] ?? 0);
+    $athTableRows[] = [
+        TenantAnalyticsLabels::categoryLabel((string) ($row['category'] ?? '')),
+        $int($n),
+        $ratioPct($n, $catTotal),
+    ];
+}
+$athTableMinWidth = '760px';
+$athTableFoot = $tenantCategoryBreakdown === []
+    ? 'Aucun événement enregistré sur la période.'
+    : 'Formations, fiche publique, recrutement et portail.';
+require base_path('views/partials/ath_table.php');
+
+$athTableTitle = 'Actions les plus fréquentes';
+$athTableCount = count($tenantTopEventNames);
+$athTableCols = ['ACTION', 'OCCURRENCES|r'];
+$athTableRows = [];
+foreach ($tenantTopEventNames as $row) {
+    $athTableRows[] = [
+        TenantAnalyticsLabels::eventNameLabel((string) ($row['name'] ?? '')),
+        $int((int) ($row['events'] ?? 0)),
+    ];
+}
+$athTableMinWidth = '640px';
+$athTableFoot = $tenantTopEventNames === [] ? 'Aucune action enregistrée sur la période.' : null;
+require base_path('views/partials/ath_table.php');
+?>
+
+<h2 class="ath-section-title">Gouvernance documentaire</h2>
+
+<?php
+$docsTotal = max(1, (int) $documentInsights['total_documents']);
+$athKpis = [
+    ['label' => 'DOCUMENTS', 'value' => $int($documentInsights['total_documents']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'toutes catégories'],
+    ['label' => 'PUBLIÉS', 'value' => $int($documentInsights['published_documents']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $clampPct((int) $documentInsights['published_documents'], $docsTotal), 'note' => 'visibles des membres'],
+    ['label' => 'MIS À JOUR', 'value' => $int($documentInsights['updated_in_period']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $clampPct((int) $documentInsights['updated_in_period'], $docsTotal), 'note' => 'sur la période'],
+    [
+        'label' => 'REVUE EN RETARD',
+        'value' => $int($documentInsights['review_overdue_documents']),
+        'delta' => (int) $documentInsights['expiring_soon_documents'] > 0 ? $int($documentInsights['expiring_soon_documents']) . ' à échéance' : '',
+        'tone' => (int) $documentInsights['review_overdue_documents'] === 0 ? '#0b8a5c' : '#c72e2e',
+        'pct' => $clampPct((int) $documentInsights['review_overdue_documents'], $docsTotal),
+        'note' => 'dont ' . $int($documentInsights['stale_published_documents']) . ' publiés sans révision',
+    ],
+];
+require base_path('views/partials/ath_kpis.php');
+
+$topTypes = is_array($documentInsights['top_types'] ?? null) ? $documentInsights['top_types'] : [];
+$athTableTitle = 'Types de documents les plus représentés';
+$athTableCount = count($topTypes);
+$athTableCols = ['TYPE', 'DOCUMENTS|r'];
+$athTableRows = [];
+foreach ($topTypes as $t) {
+    $athTableRows[] = [
+        (string) ($t['document_type'] ?? '—'),
+        $int((int) ($t['count'] ?? 0)),
+    ];
+}
+$athTableMinWidth = '620px';
+$athTableFoot = $topTypes === [] ? 'Aucun document enregistré.' : null;
+require base_path('views/partials/ath_table.php');
+?>
+
+<h2 class="ath-section-title">Espace membre</h2>
+
+<?php
+$athKpis = [
+    ['label' => 'MEMBRES VUS ACTIFS', 'value' => $int($activeApprox), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => '100%', 'note' => 'estimation sur la période'],
+    ['label' => 'CONSULTATIONS DU HUB', 'value' => $int($dashboardEvents), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'ouvertures du tableau de bord'],
+    ['label' => 'CATALOGUE FORMATIONS', 'value' => $int($trainingCatalogViews), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'consultations du catalogue'],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
+
+<h2 class="ath-section-title">Fiche publique &amp; recrutement</h2>
+
+<?php
+$athKpis = [
+    ['label' => 'VISITES PUBLIQUES', 'value' => $int($publicEngagement['public_views']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'pages de la vitrine'],
+    ['label' => 'DURÉE MOYENNE', 'value' => $seconds($publicEngagement['public_duration_avg']), 'delta' => '', 'tone' => '#1e4f80', 'pct' => '100%', 'note' => 'si mesure autorisée'],
+    ['label' => 'CLICS D’ACTION', 'value' => $int($publicEngagement['cta_clicks']), 'delta' => '', 'tone' => '#0b8a5c', 'pct' => $clampPct((int) $publicEngagement['cta_clicks'], max(1, (int) $publicEngagement['public_views'])), 'note' => 'sur les visites publiques'],
+    ['label' => 'FORMULAIRES OUVERTS', 'value' => $int($publicEngagement['enlistment_opens']), 'delta' => '', 'tone' => '#c98a12', 'pct' => '100%', 'note' => 'page de candidature'],
+    [
+        'label' => 'CANDIDATURES ENVOYÉES',
+        'value' => $int($publicEngagement['enlistment_submits']),
+        'delta' => '',
+        'tone' => '#0b8a5c',
+        'pct' => $clampPct((int) $publicEngagement['enlistment_submits'], max(1, (int) $publicEngagement['enlistment_opens'])),
+        'note' => 'sur les formulaires ouverts',
+    ],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
+
+<h2 class="ath-section-title" id="conversion-funnel">Entonnoir de conversion</h2>
+
+<div class="ath-panel<?= $analyticsFocus === 'conversion' ? '' : ' ath-panel--dashed' ?> ath-rise">
+    <div class="ath-stat-grid">
+        <div class="ath-stat">
+            <p class="ath-stat__value"><?= $int($conversionFunnel['visits']) ?></p>
+            <p class="ath-stat__label">Visites publiques</p>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-            <?= $periodLinks($analyticsDays) ?>
-            <a href="<?= htmlspecialchars(url('back-office/analytics/conversion') . '?days=' . (int) $analyticsDays, ENT_QUOTES, 'UTF-8') ?>" class="text-sm <?= $analyticsFocus === 'conversion' ? 'font-black text-emerald-700' : 'text-slate-600 hover:text-slate-900' ?>">Conversion</a>
-            <a href="<?= htmlspecialchars(url('back-office'), ENT_QUOTES, 'UTF-8') ?>" class="text-sm text-slate-500 hover:text-slate-800 ml-2">Retour</a>
+        <div class="ath-stat">
+            <p class="ath-stat__value"><?= $int($conversionFunnel['cta_clicks']) ?></p>
+            <p class="ath-stat__label">Clics d’action</p>
+        </div>
+        <div class="ath-stat">
+            <p class="ath-stat__value"><?= $int($conversionFunnel['applications']) ?></p>
+            <p class="ath-stat__label">Candidatures</p>
+        </div>
+        <div class="ath-stat ath-stat--add">
+            <p class="ath-stat__value"><?= $int($conversionFunnel['accepted']) ?></p>
+            <p class="ath-stat__label">Acceptations</p>
         </div>
     </div>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Activité portail (données enregistrées)</h2>
-        <p class="text-sm text-slate-600 mb-4 max-w-3xl">
-            Ces chiffres sont comptés directement dans la base du portail (comptes, journal d’audit, forum, candidatures, formations).
-            Ils reflètent l’activité réelle même lorsque le suivi d’usage optionnel (section suivante) est peu alimenté.
-        </p>
-        <dl class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Membres actifs (total)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['members_active_total'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Nouveaux comptes sur la période</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['members_registered_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Écritures dans le journal d’audit</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['audit_actions_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures déposées (période)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['enlistments_created_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Sujets de forum créés</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['forum_topics_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Messages de forum publiés</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['forum_posts_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Inscriptions aux parcours (période)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1 tabular-nums"><?= (int) ($operationalKpis['training_enrollments_assigned_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50/80 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-emerald-900">Parcours terminés (période)</dt>
-                <dd class="text-3xl font-black text-emerald-950 mt-1 tabular-nums"><?= (int) ($operationalKpis['training_completions_in_period'] ?? 0) ?></dd>
-            </div>
-        </dl>
-        <?php if ($enlistmentStatusBreakdown !== []): ?>
-            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm max-w-xl">
-                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/80">
-                    <h3 class="text-sm font-bold text-slate-800">Candidatures déposées sur la période — répartition par état</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Uniquement les dossiers dont la date de dépôt tombe dans la fenêtre affichée.</p>
-                </div>
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                            <th class="px-4 py-2 font-bold">État</th>
-                            <th class="px-4 py-2 font-bold text-right">Volume</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($enlistmentStatusBreakdown as $es): ?>
-                            <tr class="border-b border-slate-100 last:border-0">
-                                <td class="px-4 py-2.5 font-medium text-slate-900"><?= htmlspecialchars($enlistmentStatusLabelAnalytics((string) ($es['status'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-2.5 text-right tabular-nums"><?= (int) ($es['count'] ?? 0) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Volume d’activité (suivi d’usage)</h2>
-        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Indicateurs agrégés à partir du journal d’usage du portail (y compris actions anonymes ou sans membre identifié). Les durées moyennes ne portent que sur les visites où une mesure d’audience a été acceptée. Si ces totaux restent bas alors que l’activité ci-dessus est forte, vérifiez le consentement cookies côté visiteurs.</p>
-        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Événements enregistrés (période)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['total_events'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Membres distincts (connectés)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['distinct_actors'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Mesures de durée reçues</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($tenantUsageSummary['events_with_duration'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Durée moyenne (ces mesures)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= isset($tenantUsageSummary['avg_duration_seconds']) && $tenantUsageSummary['avg_duration_seconds'] !== null ? (int) round((float) $tenantUsageSummary['avg_duration_seconds']) . ' s' : '—' ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50/80 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-emerald-900">Ouvertures du catalogue formations</dt>
-                <dd class="text-3xl font-black text-emerald-950 mt-1"><?= $trainingCatalogViews ?></dd>
-            </div>
-        </dl>
-
-        <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm mb-6">
-            <h3 class="text-sm font-bold text-slate-800 mb-4">Répartition par jour (un point par jour sur <?= (int) $analyticsDays ?> jours)</h3>
-            <?php if ($tenantDailyEvents === []): ?>
-                <p class="text-sm text-slate-500 py-6 text-center">Pas encore de données journalières sur cette période.</p>
-            <?php else: ?>
-                <div class="flex items-end gap-1 h-36 px-1" role="img" aria-label="Histogramme du nombre d’événements par jour">
-                    <?php foreach ($tenantDailyEvents as $de):
-                        $cnt = (int) ($de['events'] ?? 0);
-                        $barPx = $dailyMax > 0 ? max($cnt > 0 ? 3 : 0, (int) round(132 * $cnt / $dailyMax)) : 0;
-                        $dayRaw = (string) ($de['day'] ?? '');
-                        $dayLabel = $dayRaw !== '' ? date('d/m', strtotime($dayRaw)) : '—';
-                        ?>
-                    <div class="flex-1 min-w-[18px] flex flex-col items-center justify-end h-full">
-                        <span class="text-[10px] font-semibold text-slate-600 mb-0.5 tabular-nums"><?= $cnt > 0 ? (string) $cnt : '' ?></span>
-                        <div class="w-full max-w-[22px] mx-auto rounded-t bg-emerald-500/90 shrink-0" style="height: <?= $barPx ?>px" title="<?= (int) $cnt ?> événement(s) le <?= htmlspecialchars($dayLabel, ENT_QUOTES, 'UTF-8') ?>"></div>
-                        <span class="text-[9px] text-slate-500 mt-1.5 leading-none text-center w-full truncate"><?= htmlspecialchars($dayLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                        <th class="px-4 py-3 font-bold">Type d’action</th>
-                        <th class="px-4 py-3 font-bold text-right">Occurrences</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php if ($tenantTopEventNames === []): ?>
-                    <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune action recensée sur la période.</td></tr>
-                <?php else: ?>
-                    <?php foreach ($tenantTopEventNames as $row): ?>
-                    <tr class="border-b border-slate-100">
-                        <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(TenantAnalyticsLabels::eventNameLabel((string) ($row['name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Gouvernance documentaire</h2>
-        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Pilotage automatique de l’hygiène documentaire (obsolescence, revue, échéances) calculé depuis les métadonnées des documents.</p>
-        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Documents référencés</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['total_documents'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Documents publiés</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['published_documents'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Mis à jour sur la période</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) ($documentInsights['updated_in_period'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-amber-200 rounded-xl p-4 bg-amber-50/70 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-amber-800">Publiés obsolètes (action requise)</dt>
-                <dd class="text-3xl font-black text-amber-900 mt-1"><?= (int) ($documentInsights['stale_published_documents'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-orange-200 rounded-xl p-4 bg-orange-50/70 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-orange-800">Revues en retard</dt>
-                <dd class="text-3xl font-black text-orange-900 mt-1"><?= (int) ($documentInsights['review_overdue_documents'] ?? 0) ?></dd>
-            </div>
-            <div class="border border-rose-200 rounded-xl p-4 bg-rose-50/70 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-rose-800">Expirent &lt; 30 jours</dt>
-                <dd class="text-3xl font-black text-rose-900 mt-1"><?= (int) ($documentInsights['expiring_soon_documents'] ?? 0) ?></dd>
-            </div>
-        </dl>
-        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm max-w-2xl">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                        <th class="px-4 py-3 font-bold">Type documentaire</th>
-                        <th class="px-4 py-3 font-bold text-right">Volume</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (($documentInsights['top_types'] ?? []) === []): ?>
-                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucun type documentaire identifié.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ((array) ($documentInsights['top_types'] ?? []) as $t): ?>
-                        <tr class="border-b border-slate-100">
-                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(str_replace('_', ' ', (string) ($t['document_type'] ?? 'non_renseigne')), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($t['count'] ?? 0) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Espace membre</h2>
-        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Comptes actifs (audit, période)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $activeApprox ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Ouvertures du tableau de bord</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $dashboardEvents ?></dd>
-            </div>
-        </dl>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Fiche publique &amp; recrutement</h2>
-        <dl class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Consultations de la fiche publique</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $publicEngagement['public_views'] ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Temps moyen sur la fiche (visiteurs ayant accepté la mesure d’audience)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= $publicEngagement['public_duration_avg'] !== null ? (int) round((float) $publicEngagement['public_duration_avg']) . ' s' : '—' ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Clics vers le formulaire de candidature</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $publicEngagement['cta_clicks'] ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Ouvertures du formulaire de candidature</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $publicEngagement['enlistment_opens'] ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures envoyées (période)</dt>
-                <dd class="text-3xl font-black text-slate-900 mt-1"><?= (int) $publicEngagement['enlistment_submits'] ?></dd>
-            </div>
-            <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50/80 shadow-sm">
-                <dt class="text-[10px] uppercase tracking-wider text-emerald-800">Taux de passage au dépôt (sur ouvertures du formulaire)</dt>
-                <dd class="text-3xl font-black text-emerald-900 mt-1"><?= $ratioPct((int) $publicEngagement['enlistment_submits'], (int) $publicEngagement['enlistment_opens']) ?></dd>
-            </div>
-        </dl>
-        <p class="text-xs text-slate-500 leading-relaxed max-w-3xl">Les durées et certains clics ne sont comptés que si le visiteur a accepté les cookies « mesure d’audience » sur le portail.</p>
-    </section>
-
-    <section id="conversion-funnel" class="mb-10 <?= $analyticsFocus === 'conversion' ? 'ring-2 ring-emerald-300 rounded-2xl p-4 bg-emerald-50/30' : '' ?>">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Entonnoir conversion communauté</h2>
-        <div class="grid gap-4 lg:grid-cols-4 mb-4">
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Visites publiques</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['visits'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Clics CTA</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['cta_clicks'] ?? 0) ?></p>
-                <p class="text-xs text-slate-500 mt-1">Taux visite → action CTA: <strong><?= $ratioPct((int) ($conversionFunnel['cta_clicks'] ?? 0), (int) ($conversionFunnel['visits'] ?? 0)) ?></strong></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['applications'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-emerald-800">Acceptations</p>
-                <p class="mt-1 text-3xl font-black text-emerald-900 tabular-nums"><?= (int) ($conversionFunnel['accepted'] ?? 0) ?></p>
-                <p class="text-xs text-emerald-800 mt-1">Taux candidature → acceptation: <strong><?= $ratioPct((int) ($conversionFunnel['accepted'] ?? 0), (int) ($conversionFunnel['applications'] ?? 0)) ?></strong></p>
-            </div>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm mb-4">
-            <p class="text-xs text-slate-600">Délai médian visite → premier contact (approximation via date de revue candidature): <strong><?= ($conversionFunnel['median_visit_to_first_contact_hours'] ?? null) !== null ? number_format((float) $conversionFunnel['median_visit_to_first_contact_hours'], 1, ',', ' ') . ' h' : '—' ?></strong></p>
-        </div>
-        <div class="rounded-xl border <?= $ctaRateDrop ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/60' ?> p-4 shadow-sm">
-            <p class="text-[10px] uppercase tracking-wider <?= $ctaRateDrop ? 'text-amber-800' : 'text-emerald-800' ?>">Prochaine action admin (pilotage 7 jours)</p>
-            <ul class="mt-2 space-y-1.5 text-sm <?= $ctaRateDrop ? 'text-amber-900' : 'text-emerald-900' ?>">
-                <?php foreach ($suggestions as $suggestion): ?>
-                    <li>• <?= htmlspecialchars($suggestion, ENT_QUOTES, 'UTF-8') ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Entonnoir conversion communauté</h2>
-        <div class="grid gap-4 lg:grid-cols-4 mb-4">
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Visites publiques</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['visits'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Clics CTA</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['cta_clicks'] ?? 0) ?></p>
-                <p class="text-xs text-slate-500 mt-1">Taux visite → action CTA: <strong><?= $ratioPct((int) ($conversionFunnel['cta_clicks'] ?? 0), (int) ($conversionFunnel['visits'] ?? 0)) ?></strong></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-slate-500">Candidatures</p>
-                <p class="mt-1 text-3xl font-black text-slate-900 tabular-nums"><?= (int) ($conversionFunnel['applications'] ?? 0) ?></p>
-            </div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-wider text-emerald-800">Acceptations</p>
-                <p class="mt-1 text-3xl font-black text-emerald-900 tabular-nums"><?= (int) ($conversionFunnel['accepted'] ?? 0) ?></p>
-                <p class="text-xs text-emerald-800 mt-1">Taux candidature → acceptation: <strong><?= $ratioPct((int) ($conversionFunnel['accepted'] ?? 0), (int) ($conversionFunnel['applications'] ?? 0)) ?></strong></p>
-            </div>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm mb-4">
-            <p class="text-xs text-slate-600">Délai médian visite → premier contact (approximation via date de revue candidature): <strong><?= ($conversionFunnel['median_visit_to_first_contact_hours'] ?? null) !== null ? number_format((float) $conversionFunnel['median_visit_to_first_contact_hours'], 1, ',', ' ') . ' h' : '—' ?></strong></p>
-        </div>
-        <div class="rounded-xl border <?= $ctaRateDrop ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/60' ?> p-4 shadow-sm">
-            <p class="text-[10px] uppercase tracking-wider <?= $ctaRateDrop ? 'text-amber-800' : 'text-emerald-800' ?>">Prochaine action admin (pilotage 7 jours)</p>
-            <ul class="mt-2 space-y-1.5 text-sm <?= $ctaRateDrop ? 'text-amber-900' : 'text-emerald-900' ?>">
-                <?php foreach ($suggestions as $suggestion): ?>
-                    <li>• <?= htmlspecialchars($suggestion, ENT_QUOTES, 'UTF-8') ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Détails back-office (usage interne)</h2>
-        <p class="text-sm text-slate-600 mb-4 max-w-3xl">Membres les plus actifs sur le suivi d’usage, et volume par grande rubrique (formations, fiche publique, recrutement, portail).</p>
-        <div class="grid lg:grid-cols-2 gap-4 mb-4">
-            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                            <th class="px-4 py-3 font-bold">Membre</th>
-                            <th class="px-4 py-3 font-bold text-right">Événements</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($tenantTopActors === []): ?>
-                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucun acteur interne identifiable pour cette période.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($tenantTopActors as $row): ?>
-                        <tr class="border-b border-slate-100">
-                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars((string) ($row['actor_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                            <th class="px-4 py-3 font-bold">Rubrique</th>
-                            <th class="px-4 py-3 font-bold text-right">Événements</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php if ($tenantCategoryBreakdown === []): ?>
-                        <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">Aucune rubrique recensée sur la période.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($tenantCategoryBreakdown as $row): ?>
-                        <?php
-                        $catKey = (string) ($row['category'] ?? $row['label'] ?? '');
-                        ?>
-                        <tr class="border-b border-slate-100">
-                            <td class="px-4 py-3 font-medium text-slate-900"><?= htmlspecialchars(TenantAnalyticsLabels::categoryLabel($catKey), ENT_QUOTES, 'UTF-8') ?></td>
-                            <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['events'] ?? 0) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <p class="text-xs text-slate-500 max-w-3xl">La colonne « Membres » ne compte que les événements liés à un compte connecté. Les visites publiques sans compte apparaissent surtout dans les rubriques « Fiche publique » et « Recrutement » ci-dessus.</p>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Formations (catalogue)</h2>
-        <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                        <th class="px-4 py-3 font-bold">Parcours</th>
-                        <th class="px-4 py-3 font-bold text-right">Consultations</th>
-                        <th class="px-4 py-3 font-bold text-right">Temps moyen (fiche)</th>
-                        <th class="px-4 py-3 font-bold text-right">Favoris</th>
-                        <th class="px-4 py-3 font-bold text-right">J’aime</th>
-                        <th class="px-4 py-3 font-bold text-right">Commentaires</th>
-                        <th class="px-4 py-3 font-bold text-right">Avis publiés</th>
-                        <th class="px-4 py-3 font-bold text-right">Accès par code</th>
-                        <th class="px-4 py-3 font-bold text-right">Terminées</th>
-                        <th class="px-4 py-3 font-bold text-right">Inscriptions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php if ($trainingCourseStats === []): ?>
-                    <tr><td colspan="10" class="px-4 py-8 text-center text-slate-500">Aucun parcours à afficher pour le moment.</td></tr>
-                <?php else: ?>
-                    <?php foreach ($trainingCourseStats as $row): ?>
-                    <tr class="border-b border-slate-100 hover:bg-slate-50/80">
-                        <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) ($row['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['views_count'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= isset($row['avg_page_seconds']) && $row['avg_page_seconds'] !== null ? (int) round((float) $row['avg_page_seconds']) . ' s' : '—' ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['favorites_count'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['likes_count'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['comments_count'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['reviews_count'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['code_uses'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['enrollments_completed'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($row['enrollments_total'] ?? 0) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="mb-10">
-        <h2 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Postes ouverts (avis de vacance)</h2>
-        <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
-            <table class="min-w-full text-sm">
-                <thead>
-                    <tr class="border-b border-slate-200 bg-slate-50 text-left text-[10px] uppercase tracking-wider text-slate-500">
-                        <th class="px-4 py-3 font-bold">Intitulé</th>
-                        <th class="px-4 py-3 font-bold">Référence</th>
-                        <th class="px-4 py-3 font-bold text-right">Consultations (fiche)</th>
-                        <th class="px-4 py-3 font-bold text-right">Temps moyen</th>
-                        <th class="px-4 py-3 font-bold text-right">Candidatures (période)</th>
-                        <th class="px-4 py-3 font-bold text-right">Candidatures (total)</th>
-                        <th class="px-4 py-3 font-bold text-right">Conversion (période)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php if ($recruitmentOpeningStats === []): ?>
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Aucun poste publié ou archivé à analyser.</td></tr>
-                <?php else: ?>
-                    <?php foreach ($recruitmentOpeningStats as $ro): ?>
-                    <?php
-                    $views = (int) ($ro['views_count'] ?? 0);
-                    $appsP = (int) ($ro['applications_period'] ?? 0);
-                    ?>
-                    <tr class="border-b border-slate-100 hover:bg-slate-50/80">
-                        <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) ($ro['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="px-4 py-3 text-slate-600 font-mono text-xs"><?= htmlspecialchars((string) ($ro['reference_public'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= $views ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= isset($ro['avg_page_seconds']) && $ro['avg_page_seconds'] !== null ? (int) round((float) $ro['avg_page_seconds']) . ' s' : '—' ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= $appsP ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums"><?= (int) ($ro['applications_total'] ?? 0) ?></td>
-                        <td class="px-4 py-3 text-right tabular-nums font-medium text-slate-800"><?= $ratioPct($appsP, $views) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <p class="text-xs text-slate-500 mt-3 max-w-3xl">La conversion compare les candidatures enregistrées sur la période aux consultations de la fiche poste sur la même période (approximation indicative).</p>
-    </section>
+    <p class="ath-panel__lead" style="margin-top:13px;">
+        Visite → clic d’action : <strong><?= $h($ratioPct((int) $conversionFunnel['cta_clicks'], (int) $conversionFunnel['visits'])) ?></strong> ·
+        candidature → acceptation : <strong><?= $h($ratioPct((int) $conversionFunnel['accepted'], (int) $conversionFunnel['applications'])) ?></strong> ·
+        délai médian visite → premier contact :
+        <strong><?= $conversionFunnel['median_visit_to_first_contact_hours'] !== null
+            ? $h(number_format((float) $conversionFunnel['median_visit_to_first_contact_hours'], 1, ',', ' ') . ' h')
+            : '—' ?></strong>
+        (approché par la date de revue de la candidature).
+    </p>
 </div>
+
+<?php
+// Un recul de la conversion sur 7 jours passe le bandeau en ambre : c’est un signal,
+// pas une erreur, d’où le ton d’avertissement plutôt que rouge.
+$noteStyle = $ctaRateDrop ? 'background:#fdf3e2;border-color:#f2ddb4;' : '';
+$noteTextStyle = $ctaRateDrop ? 'color:#8a5a06;' : '';
+?>
+<div class="ath-note" style="<?= $h($noteStyle) ?>">
+    <p class="ath-note__title" style="<?= $h($noteTextStyle) ?>">Prochaine action recommandée</p>
+    <?php foreach ($suggestions as $suggestion): ?>
+    <p class="ath-note__text" style="<?= $h($noteTextStyle) ?>"><?= $h($suggestion) ?></p>
+    <?php endforeach; ?>
+</div>
+
+<h2 class="ath-section-title">Formations du catalogue</h2>
+
+<?php
+$athTableTitle = 'Consultations et engagement par formation';
+$athTableCount = count($trainingCourseStats);
+$athTableCols = ['FORMATION', 'VUES|r', 'DURÉE MOY.|r', 'INSCRITS|r', 'ACHEVÉES|r', 'TAUX|r', 'FAVORIS|r', 'AVIS|r', 'MENTIONS|r', 'COMMENTAIRES|r', 'ACCÈS PAR CODE|r'];
+$athTableRows = [];
+foreach ($trainingCourseStats as $row) {
+    $enrolled = (int) ($row['enrollments_total'] ?? 0);
+    $done = (int) ($row['enrollments_completed'] ?? 0);
+    $athTableRows[] = [
+        (string) ($row['title'] ?? '—'),
+        $int((int) ($row['views_count'] ?? 0)),
+        $seconds($row['avg_page_seconds'] ?? null),
+        $int($enrolled),
+        $int($done),
+        $ratioPct($done, $enrolled),
+        $int((int) ($row['favorites_count'] ?? 0)),
+        $int((int) ($row['reviews_count'] ?? 0)),
+        $int((int) ($row['likes_count'] ?? 0)),
+        $int((int) ($row['comments_count'] ?? 0)),
+        $int((int) ($row['code_uses'] ?? 0)),
+    ];
+}
+$athTableMinWidth = '1620px';
+$athTableFoot = $trainingCourseStats === []
+    ? 'Aucune formation consultée sur la période.'
+    : 'Le taux compare les formations achevées aux inscriptions, toutes périodes confondues.';
+require base_path('views/partials/ath_table.php');
+?>
+
+<h2 class="ath-section-title">Postes ouverts</h2>
+
+<?php
+$athTableTitle = 'Avis de vacance et candidatures';
+$athTableCount = count($recruitmentOpeningStats);
+$athTableCols = ['POSTE', 'RÉFÉRENCE|m', 'VUES|r', 'DURÉE MOY.|r', 'CANDIDATURES PÉRIODE|r', 'CANDIDATURES TOTAL|r'];
+$athTableRows = [];
+foreach ($recruitmentOpeningStats as $ro) {
+    $athTableRows[] = [
+        (string) ($ro['title'] ?? '—'),
+        (string) ($ro['reference_public'] ?? '—'),
+        $int((int) ($ro['views_count'] ?? 0)),
+        $seconds($ro['avg_page_seconds'] ?? null),
+        $int((int) ($ro['applications_period'] ?? 0)),
+        $int((int) ($ro['applications_total'] ?? 0)),
+    ];
+}
+$athTableMinWidth = '1180px';
+$athTableFoot = $recruitmentOpeningStats === []
+    ? 'Aucun poste ouvert consulté sur la période.'
+    : 'Les durées ne sont comptées que si le visiteur a accepté la mesure d’audience.';
+require base_path('views/partials/ath_table.php');
