@@ -300,6 +300,7 @@ return static function (PDO &$pdo): void {
         '2026_07_24_005_atak_qrf_system.sql' => 'QRF',
         '2026_07_24_006_atak_vehicle_tracking.sql' => 'véhicules',
         '2026_07_24_007_atak_intelligence_enhancements.sql' => 'extensions intelligence',
+        '2026_07_27_001_atak_waypoints.sql' => 'waypoints et itinéraires',
     ];
 
     foreach ($files as $file => $label) {
@@ -486,6 +487,8 @@ return static function (PDO &$pdo): void {
         'atak_vehicle_maintenance_log',
         'atak_poi_correlations',
         'atak_intelligence_analysis',
+        'atak_waypoint_routes',
+        'atak_waypoints',
     ];
     $missing = [];
     foreach ($expected as $t) {
