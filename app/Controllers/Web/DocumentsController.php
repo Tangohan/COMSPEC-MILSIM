@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Csrf;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
@@ -342,8 +343,28 @@ class DocumentsController
         return $response;
     }
 
+    /**
+     * Garde CSRF des points POST JSON du lecteur de documents (déverrouillage, signature,
+     * traçage de lecture). Le middleware global ne couvre que /back-office/ : ces routes
+     * doivent donc valider le jeton elles-mêmes.
+     */
+    private function csrfGuard(Request $request): ?Response
+    {
+        if (Csrf::validate($request->input('_csrf_token'))) {
+            return null;
+        }
+
+        return (new Response())->setStatusCode(419)->json([
+            'ok' => false,
+            'message' => 'Session expirée. Rechargez la page.',
+        ]);
+    }
+
     public function unlock(Request $request, array $params = []): Response
     {
+        if (($deny = $this->csrfGuard($request)) !== null) {
+            return $deny;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {
@@ -374,6 +395,9 @@ class DocumentsController
 
     public function signature(Request $request, array $params = []): Response
     {
+        if (($deny = $this->csrfGuard($request)) !== null) {
+            return $deny;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {
@@ -415,6 +439,9 @@ class DocumentsController
 
     public function accessTrack(Request $request, array $params = []): Response
     {
+        if (($deny = $this->csrfGuard($request)) !== null) {
+            return $deny;
+        }
         $tenantId = (int) Session::get('tenant_id');
         $userId = (int) Session::get('user_id');
         if ($tenantId <= 0 || $userId <= 0) {

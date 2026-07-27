@@ -291,6 +291,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
 (function() {
   const docId = <?= (int) $document['id'] ?>;
   const token = <?= json_encode($securitySessionToken) ?>;
+  const csrfToken = <?= json_encode(\App\Core\Csrf::token()) ?>;
   const requiresAccessCode = <?= $requiresAccessCode ? 'true' : 'false' ?>;
   const requiresSignature = <?= $requiresSignature ? 'true' : 'false' ?>;
   const isAccessCodeUnlocked = <?= $isAccessCodeUnlocked ? 'true' : 'false' ?>;
@@ -298,6 +299,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
   const msg = document.getElementById('doc-security-message');
   const track = (eventType, readSeconds) => {
     const fd = new FormData();
+    fd.append('_csrf_token', csrfToken);
     fd.append('security_session_token', token);
     fd.append('event_type', eventType);
     if (readSeconds) fd.append('read_seconds', String(readSeconds));
@@ -320,6 +322,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
     unlockBtn.addEventListener('click', function() {
       const code = document.getElementById('doc-access-code-input').value || '';
       const fd = new FormData();
+      fd.append('_csrf_token', csrfToken);
       fd.append('security_session_token', token);
       fd.append('access_code', code);
       fetch(<?= json_encode(url('documents/' . (int) $document['id'] . '/unlock')) ?>, { method: 'POST', body: fd, credentials: 'same-origin' })
@@ -354,6 +357,7 @@ $expiresAt = !empty($document['expires_at']) ? date('d/m/Y', strtotime((string) 
       const signatureName = (document.getElementById('doc-sign-name').value || '').trim();
       const dataUrl = pad.toDataURL('image/png');
       const fd = new FormData();
+      fd.append('_csrf_token', csrfToken);
       fd.append('security_session_token', token);
       fd.append('signature_name', signatureName);
       fd.append('signature_data_url', dataUrl);
