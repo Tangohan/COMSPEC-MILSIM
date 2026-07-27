@@ -1,78 +1,129 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * Groupes opérationnels — charte ATHENA.
+ *
+ * L’en-tête de page est rendu par la coque back-office.
+ *
+ * @var list<array<string, mixed>> $groups
+ */
+
 $groups = is_array($groups ?? null) ? $groups : [];
+
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
 $success = \App\Core\Session::get('success');
 $error = \App\Core\Session::get('error');
 \App\Core\Session::forget('success');
 \App\Core\Session::forget('error');
+
+// Un groupe est public par défaut : l’absence de colonne vaut « visible ».
+$publicComplete = 0;
+$publicIncomplete = 0;
+$hidden = 0;
+foreach ($groups as $g) {
+    $isPublic = !array_key_exists('show_on_public_page', $g) || (int) ($g['show_on_public_page'] ?? 0) === 1;
+    if (!$isPublic) {
+        $hidden++;
+        continue;
+    }
+    if (trim((string) ($g['public_blurb'] ?? '')) !== '') {
+        $publicComplete++;
+    } else {
+        $publicIncomplete++;
+    }
+}
+$total = count($groups);
+$pctOf = static fn (int $n): string => $total > 0 ? (string) (int) round($n / $total * 100) . '%' : '0%';
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Organigramme</p>
-                <h1 class="mt-2 text-2xl font-black text-slate-900">Groupes opérationnels</h1>
-                <p class="mt-2 text-sm text-slate-600">Vue consolidée des groupes, avec accès rapide aux fiches et à la publication sur la page publique.</p>
-            </div>
-            <a href="<?= url('back-office/groups/create') ?>" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Créer un groupe</a>
-        </div>
-        <div class="mt-5 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-xl bg-slate-50 p-3">
-                <p class="text-xs uppercase text-slate-500">Total groupes</p>
-                <p class="text-2xl font-black text-slate-900"><?= count($groups) ?></p>
-            </div>
-            <div class="rounded-xl bg-slate-50 p-3">
-                <p class="text-xs uppercase text-slate-500">Navigation</p>
-                <a class="text-sm font-semibold text-blue-700 underline" href="<?= url('back-office/organisation/structure') ?>">Ouvrir le hub structure</a>
-            </div>
-        </div>
-    </header>
+<?php if ($error): ?>
+<p class="ath-flash ath-flash--err" role="alert"><?= $h((string) $error) ?></p>
+<?php endif; ?>
+<?php if ($success): ?>
+<p class="ath-flash ath-flash--ok" role="status"><?= $h((string) $success) ?></p>
+<?php endif; ?>
 
-    <?php if ($success): ?><p class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-    <?php if ($error): ?><p class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+<?php
+$athKpis = [
+    [
+        'label' => 'GROUPES',
+        'value' => (string) $total,
+        'delta' => '',
+        'tone' => '#1e4f80',
+        'pct' => $total > 0 ? '100%' : '0%',
+        'note' => 'dans l’organigramme',
+    ],
+    [
+        'label' => 'VITRINE COMPLÈTE',
+        'value' => (string) $publicComplete,
+        'delta' => '',
+        'tone' => '#0b8a5c',
+        'pct' => $pctOf($publicComplete),
+        'note' => 'présentation renseignée',
+    ],
+    [
+        'label' => 'PRÉSENTATION À ÉCRIRE',
+        'value' => (string) $publicIncomplete,
+        'delta' => '',
+        'tone' => $publicIncomplete === 0 ? '#0b8a5c' : '#c98a12',
+        'pct' => $pctOf($publicIncomplete),
+        'note' => 'visibles mais sans texte',
+    ],
+    [
+        'label' => 'MASQUÉS',
+        'value' => (string) $hidden,
+        'delta' => '',
+        'tone' => '#64748b',
+        'pct' => $pctOf($hidden),
+        'note' => 'hors page publique',
+    ],
+];
+require base_path('views/partials/ath_kpis.php');
+?>
 
-    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <?php if ($groups === []): ?>
-            <div class="p-6 text-sm text-slate-500">Aucun groupe enregistré.</div>
-        <?php else: ?>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase text-slate-500">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Groupe</th>
-                            <th class="px-4 py-3 text-left">Code</th>
-                            <th class="px-4 py-3 text-left">Page publique</th>
-                            <th class="px-4 py-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        <?php foreach ($groups as $g): ?>
-                            <?php
-                            $isPublic = !array_key_exists('show_on_public_page', $g) || (int) ($g['show_on_public_page'] ?? 0) === 1;
-                            $hasBlurb = trim((string) ($g['public_blurb'] ?? '')) !== '';
-                            ?>
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 font-semibold text-slate-900"><?= htmlspecialchars((string) ($g['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-3 text-slate-700"><?= htmlspecialchars((string) ($g['code'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td class="px-4 py-3 text-slate-700">
-                                    <?php if ($isPublic && $hasBlurb): ?>
-                                        <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">Visible · présentation renseignée</span>
-                                    <?php elseif ($isPublic): ?>
-                                        <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">Visible · présentation à compléter</span>
-                                    <?php else: ?>
-                                        <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">Masquée</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex flex-wrap gap-2">
-                                        <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= url('back-office/groups/' . (int) ($g['id'] ?? 0)) ?>">Voir</a>
-                                        <a class="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100" href="<?= url('back-office/groups/' . (int) ($g['id'] ?? 0) . '/edit') ?>">Modifier</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </section>
+<div class="ath-form__actions" style="border-top:0;margin:0 0 16px;padding-top:0;">
+    <a href="<?= $h(url('back-office/groups/create')) ?>" class="ath-btn ath-btn--solid">Créer un groupe</a>
+    <a href="<?= $h(url('back-office/organisation/structure')) ?>" class="ath-btn">Hub structure</a>
 </div>
+
+<?php
+$athTableTitle = 'Groupes';
+$athTableCount = $total;
+$athTableCols = ['GROUPE', 'CODE|m', 'PAGE PUBLIQUE|b'];
+$athTableRows = [];
+$athTableRowActions = [];
+$athTableRowHrefs = [];
+foreach ($groups as $g) {
+    $id = (int) ($g['id'] ?? 0);
+    $isPublic = !array_key_exists('show_on_public_page', $g) || (int) ($g['show_on_public_page'] ?? 0) === 1;
+    $hasBlurb = trim((string) ($g['public_blurb'] ?? '')) !== '';
+
+    if (!$isPublic) {
+        $state = 'Masqué';
+    } elseif ($hasBlurb) {
+        $state = 'Visible';
+    } else {
+        $state = 'À compléter';
+    }
+
+    $athTableRows[] = [
+        (string) ($g['name'] ?? '—'),
+        (string) ($g['code'] ?? '—'),
+        $state,
+    ];
+    $athTableRowHrefs[] = url('back-office/groups/' . $id);
+    // Balisage d’action construit ici, échappements compris (cf. contrat de ath_table.php).
+    $athTableRowActions[] = '<a href="' . $h(url('back-office/groups/' . $id)) . '" class="ath-row-action">Voir</a> '
+        . '<a href="' . $h(url('back-office/groups/' . $id . '/edit')) . '" class="ath-row-action">Modifier</a>';
+}
+$athTableActionsLabel = 'FICHE';
+$athTableFilters = [];
+$athTableMinWidth = '900px';
+$athTableShowCheckbox = false;
+$athTableExportUrl = null;
+$athTablePager = null;
+$athTableFoot = $groups === []
+    ? 'Aucun groupe enregistré.'
+    : 'Un groupe visible sans présentation apparaît sur la page publique avec un encadré vide.';
+require base_path('views/partials/ath_table.php');
