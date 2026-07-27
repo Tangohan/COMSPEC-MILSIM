@@ -202,6 +202,59 @@ class SeniorityRepository
         return $out;
     }
 
+    /**
+     * Couverture de chaque indicateur : combien de membres ont une période exploitable,
+     * combien de périodes, combien sont encore ouvertes, et combien portent une date
+     * inutilisable.
+     *
+     * Sans ce relevé, la page d’administration ne dit pas si un indicateur produit
+     * réellement quelque chose : un indicateur actif et visible mais sans aucune période
+     * s’affiche « — » sur toutes les fiches, sans que rien ne l’explique.
+     *
+     * @return array<int, array{members: int, periods: int, open_periods: int, unusable_dates: int, earliest_start: ?string}>
+     */
+    public function coverageByDefinitionForTenant(int $tenantId): array
+    {
+        if (!$this->schemaReady() || $tenantId < 1) {
+            return [];
+        }
+
+        try {
+            $st = $this->pdo()->prepare(
+                "SELECT definition_id,
+                        COUNT(DISTINCT user_id) AS members,
+                        COUNT(*) AS periods,
+                        SUM(CASE WHEN end_date IS NULL THEN 1 ELSE 0 END) AS open_periods,
+                        SUM(CASE WHEN start_date IS NULL OR start_date = '' OR start_date = '0000-00-00' THEN 1 ELSE 0 END) AS unusable_dates,
+                        MIN(CASE WHEN start_date IS NULL OR start_date = '' OR start_date = '0000-00-00' THEN NULL ELSE start_date END) AS earliest_start
+                 FROM seniority_periods
+                 WHERE tenant_id = ?
+                 GROUP BY definition_id"
+            );
+            $st->execute([$tenantId]);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $definitionId = (int) ($row['definition_id'] ?? 0);
+            if ($definitionId < 1) {
+                continue;
+            }
+            $earliest = trim((string) ($row['earliest_start'] ?? ''));
+            $out[$definitionId] = [
+                'members' => (int) ($row['members'] ?? 0),
+                'periods' => (int) ($row['periods'] ?? 0),
+                'open_periods' => (int) ($row['open_periods'] ?? 0),
+                'unusable_dates' => (int) ($row['unusable_dates'] ?? 0),
+                'earliest_start' => $earliest !== '' ? $earliest : null,
+            ];
+        }
+
+        return $out;
+    }
+
     public function findPeriodIdByRelatedType(int $tenantId, int $userId, int $definitionId, string $relatedEntityType): ?int
     {
         if (!$this->schemaReady() || $tenantId < 1 || $userId < 1 || $definitionId < 1 || trim($relatedEntityType) === '') {

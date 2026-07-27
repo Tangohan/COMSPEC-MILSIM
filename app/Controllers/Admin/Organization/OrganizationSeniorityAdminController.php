@@ -41,12 +41,21 @@ final class OrganizationSeniorityAdminController
         $definitions = $schemaReady ? $this->seniorityRepository->listAllDefinitionsForTenant($tenantId) : [];
         $stats = $this->buildDefinitionStats($definitions);
 
+        // Couverture réelle : un indicateur peut être actif et visible sans produire la
+        // moindre valeur. Sans ce relevé, la page ne permet pas de s’en apercevoir.
+        $coverage = $schemaReady ? $this->seniorityRepository->coverageByDefinitionForTenant($tenantId) : [];
+        $activeMembers = $schemaReady
+            ? count(Container::get(\App\Repositories\UserRepository::class)->listActiveUserIdsForTenant($tenantId))
+            : 0;
+
         return Response::view('layout.main', [
             'title' => 'Ancienneté',
             'content' => 'admin.organization.seniority',
             'senioritySchemaReady' => $schemaReady,
             'seniorityDefinitions' => $definitions,
             'seniorityDefinitionStats' => $stats,
+            'seniorityCoverage' => $coverage,
+            'seniorityActiveMembers' => $activeMembers,
             'seniorityCsrf' => Csrf::token(),
         ]);
     }
