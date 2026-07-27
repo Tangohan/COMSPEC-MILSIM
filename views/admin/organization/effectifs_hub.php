@@ -223,7 +223,8 @@ $athKpis = [
 >
     <?php require base_path('views/partials/ath_kpis.php'); ?>
 
-    <div class="bo-eff-hub__shortcuts ath-rise">
+    <nav class="bo-eff-hub__shortcuts ath-rise" aria-label="Accès rapide">
+        <span class="bo-eff-hub__shortcuts-label">Accès rapide</span>
         <a href="<?= $h($effectifsUrl) ?>" class="ath-btn ath-btn--solid">Tableur des membres</a>
         <?php if ($canStructureRecruitmentHub): ?>
             <a href="<?= $h(url('back-office/organisation/structure')) ?>" class="ath-btn">Structure</a>
@@ -241,7 +242,7 @@ $athKpis = [
         <?php if ($canSeniorityAdmin): ?>
             <a href="<?= $h(url('back-office/organisation/anciennete')) ?>" class="ath-btn">Ancienneté</a>
         <?php endif; ?>
-    </div>
+    </nav>
 
     <div class="ath-table-panel ath-rise">
         <div class="ath-table-toolbar">
@@ -261,7 +262,7 @@ $athKpis = [
                 >
             </label>
             <label class="bo-eff-hub__domain-filter">
-                <span class="visually-hidden">Domaine</span>
+                <span class="visually-hidden">Filtrer par domaine</span>
                 <select id="bo-eff-hub-domain" x-model="domain" aria-label="Filtrer par domaine">
                     <option value="">Tous les domaines</option>
                     <?php foreach ($domainOptions as $domainKey => $domainLabel): ?>
@@ -295,6 +296,12 @@ $athKpis = [
 
             <div class="ath-table-wrap" x-show="visibleCount > 0">
                 <table class="ath-table bo-eff-hub__table">
+                    <colgroup>
+                        <col class="bo-eff-hub__col-tool">
+                        <col class="bo-eff-hub__col-domain">
+                        <col class="bo-eff-hub__col-volume">
+                        <col class="bo-eff-hub__col-action">
+                    </colgroup>
                     <thead>
                         <tr>
                             <th scope="col">Outil</th>
@@ -310,8 +317,10 @@ $athKpis = [
                         ?>
                         <tr x-show="matchById('<?= $h((string) $row['id']) ?>')">
                             <td data-label="Outil">
-                                <span class="bo-eff-hub__tool-name"><?= $h($row['title']) ?></span>
-                                <span class="bo-eff-hub__tool-desc"><?= $h($row['desc']) ?></span>
+                                <div class="bo-eff-hub__tool">
+                                    <span class="bo-eff-hub__tool-name"><?= $h($row['title']) ?></span>
+                                    <span class="bo-eff-hub__tool-desc"><?= $h($row['desc']) ?></span>
+                                </div>
                             </td>
                             <td data-label="Domaine">
                                 <span
@@ -325,10 +334,7 @@ $athKpis = [
                                 </span>
                             </td>
                             <td data-label="Action">
-                                <a
-                                    href="<?= $h($row['href']) ?>"
-                                    class="ath-btn<?= !empty($row['primary']) ? ' ath-btn--solid' : '' ?>"
-                                ><?= $h($row['cta']) ?></a>
+                                <a href="<?= $h($row['href']) ?>" class="ath-btn"><?= $h($row['cta']) ?></a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

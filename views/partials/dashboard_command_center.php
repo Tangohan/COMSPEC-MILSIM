@@ -986,18 +986,26 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 
 .dash-apps-full {
     width: 100%;
-    max-width: 72rem;
+    max-width: 100rem;
     margin-left: auto;
     margin-right: auto;
     box-sizing: border-box;
     padding: 2rem 1.25rem 2.5rem;
 }
-.dash-apps-full__label { padding: 0; }
+.dash-apps-full__label {
+    padding: 0;
+    margin: 0 0 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #0f172a;
+}
 @media (min-width: 768px) {
     .dash-apps-full { padding: 2.25rem 2rem 2.75rem; }
 }
 
-/* Bande ops (liaison + RSVP) — largeur contrainte, pas d’écart extrême */
+/* Bande ops (liaison + RSVP) — largeur alignée sur les tableaux dashboard */
 .dash-ops-stack {
     width: 100%;
     background: #fff;
@@ -1005,7 +1013,7 @@ if (is_array($modpack) && !empty($modpack['id'])) {
 }
 .dash-ops-stack__inner {
     width: 100%;
-    max-width: 72rem;
+    max-width: 100rem;
     margin: 0 auto;
     box-sizing: border-box;
     padding: 1.35rem 1.25rem 1.5rem;

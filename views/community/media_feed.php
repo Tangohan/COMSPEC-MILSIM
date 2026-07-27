@@ -13,6 +13,7 @@ $slug = (string) ($tenant['slug'] ?? '');
 $tenantName = trim((string) ($tenant['name'] ?? 'Communauté'));
 $items = is_array($mediaFeedItems ?? null) ? $mediaFeedItems : [];
 $backHref = url('c/' . rawurlencode($slug));
+$reelsHref = url('c/' . rawurlencode($slug) . '/reels');
 $mediaCount = count($items);
 $mediaLikesEnabled = !empty($mediaLikesEnabled);
 $mediaViewerCanLike = !empty($mediaViewerCanLike);
@@ -37,6 +38,10 @@ if ($mediaCount >= 4) {
 } elseif ($mediaCount >= 2) {
     $galleryLayout = 'cluster';
 }
+
+$countLabel = $mediaCount === 0
+    ? 'Aucun média'
+    : ($mediaCount === 1 ? '1 média' : $mediaCount . ' médias');
 ?>
 <div class="community-landing community-media-page"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
     <section
@@ -52,44 +57,71 @@ if ($mediaCount >= 4) {
         data-media-likes-login="<?= htmlspecialchars($mediaLoginUrl, ENT_QUOTES, 'UTF-8') ?>"
         <?php endif; ?>
     >
-        <div class="community-landing__media-shell">
-            <div class="community-landing__media-inner">
+        <header class="community-media-page__hero">
+            <div class="community-media-page__hero-glow" aria-hidden="true"></div>
+            <div class="community-landing__media-inner community-media-page__hero-inner">
                 <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="community-media-page__back">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                     <span>Retour à <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></span>
                 </a>
 
-                <div class="community-landing__media-head">
-                    <div class="community-landing__media-intro">
-                        <p class="community-landing__section-kicker">Galerie</p>
-                        <h1 id="medias-page-title" class="community-landing__section-title">Images &amp; vidéos</h1>
-                        <p class="community-landing__section-lead">
+                <div class="community-media-page__hero-grid">
+                    <div class="community-media-page__hero-copy">
+                        <p class="community-media-page__kicker">Galerie</p>
+                        <h1 id="medias-page-title" class="community-media-page__title">Images &amp; vidéos</h1>
+                        <p class="community-media-page__lead">
                             <?php if ($mediaCount === 0): ?>
-                                Aucun média publié pour le moment.
+                                Les publications visuelles de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?> apparaîtront ici.
                             <?php elseif ($mediaCount === 1): ?>
                                 Cliquez sur le média pour l’afficher en grand. Fermez avec la croix, Échap, ou un clic en dehors.
                             <?php else: ?>
                                 Cliquez sur un média pour l’afficher en grand. Naviguez avec les flèches ; fermez avec la croix, Échap, ou un clic en dehors.
                             <?php endif; ?>
                         </p>
+
+                        <div class="community-media-page__actions">
+                            <?php if ($mediaCount > 0): ?>
+                            <a href="<?= htmlspecialchars($reelsHref, ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--primary community-media-page__cta">
+                                Voir le fil
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                            <?php endif; ?>
+                            <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost community-media-page__cta">
+                                Retour à la communauté
+                            </a>
+                        </div>
                     </div>
-                    <?php if ($mediaCount > 0): ?>
-                    <p class="community-media-page__count" aria-live="polite">
-                        <?= $mediaCount === 1 ? '1 média' : $mediaCount . ' médias' ?>
-                    </p>
-                    <?php endif; ?>
+
+                    <aside class="community-media-page__hero-aside" aria-label="Résumé de la galerie">
+                        <p class="community-media-page__count" aria-live="polite"><?= htmlspecialchars($countLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                        <p class="community-media-page__aside-hint">
+                            <?php if ($mediaCount === 0): ?>
+                                Rien à afficher pour le moment
+                            <?php elseif ($mediaCount === 1): ?>
+                                Affichage plein écran au clic
+                            <?php else: ?>
+                                Grille · un média par écran dans le fil
+                            <?php endif; ?>
+                        </p>
+                    </aside>
                 </div>
             </div>
+        </header>
 
+        <div class="community-landing__media-shell community-media-page__body">
             <?php if ($items === []): ?>
-            <div class="community-landing__media-empty">
-                <p>Les images et vidéos publiées par la communauté apparaîtront ici.</p>
+            <div class="community-landing__media-empty community-media-page__empty" role="status">
+                <span class="community-media-page__empty-icon" aria-hidden="true">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5.5-5.5L8 18"/></svg>
+                </span>
+                <p class="community-media-page__empty-title">Aucun média publié pour le moment</p>
+                <p>Les images et vidéos partagées par la communauté apparaîtront ici dès qu’elles seront disponibles.</p>
                 <p class="community-media-page__empty-link">
-                    <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>">Retour à la fiche communauté →</a>
+                    <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost community-media-page__cta">Retour à la fiche communauté</a>
                 </p>
             </div>
             <?php else: ?>
-            <div class="community-landing__gallery community-landing__gallery--<?= htmlspecialchars($galleryLayout, ENT_QUOTES, 'UTF-8') ?>" data-media-gallery>
+            <div class="community-landing__gallery community-landing__gallery--<?= htmlspecialchars($galleryLayout, ENT_QUOTES, 'UTF-8') ?> community-media-page__gallery" data-media-gallery>
                 <div class="community-landing__gallery-track">
                     <?php foreach ($items as $mi): ?>
                         <?php
@@ -117,6 +149,7 @@ if ($mediaCount >= 4) {
                         $likeUrl = $mediaItemId > 0
                             ? url('c/' . rawurlencode($slug) . '/medias/' . $mediaItemId . '/like')
                             : '';
+                        $hasCaption = $mtitle !== '' || $mcap !== '';
                         ?>
                     <article
                         class="<?= htmlspecialchars($itemClass, ENT_QUOTES, 'UTF-8') ?>"
@@ -162,6 +195,12 @@ if ($mediaCount >= 4) {
                             <div class="community-landing__gallery-placeholder" aria-hidden="true"></div>
                             <?php endif; ?>
                             <span class="community-landing__gallery-kind"><?= htmlspecialchars($kindLabel) ?></span>
+                            <?php if ($hasCaption): ?>
+                            <div class="community-media-page__tile-caption" aria-hidden="true">
+                                <?php if ($mtitle !== ''): ?><p class="community-media-page__tile-title"><?= htmlspecialchars($mtitle) ?></p><?php endif; ?>
+                                <?php if ($mcap !== ''): ?><p class="community-media-page__tile-text"><?= htmlspecialchars($mcap) ?></p><?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($mediaLikesEnabled && $mediaItemId > 0): ?>
                             <button
                                 type="button"
@@ -175,8 +214,8 @@ if ($mediaCount >= 4) {
                             </button>
                             <?php endif; ?>
                         </div>
-                        <?php if ($mtitle !== '' || $mcap !== ''): ?>
-                        <div class="community-landing__caption">
+                        <?php if ($hasCaption): ?>
+                        <div class="community-landing__caption community-media-page__caption-sr">
                             <?php if ($mtitle !== ''): ?><p class="community-landing__caption-title"><?= htmlspecialchars($mtitle) ?></p><?php endif; ?>
                             <?php if ($mcap !== ''): ?><p class="community-landing__caption-text"><?= htmlspecialchars($mcap) ?></p><?php endif; ?>
                         </div>

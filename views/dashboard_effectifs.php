@@ -120,7 +120,7 @@ require base_path('views/partials/alert_banners.php');
 
     <?php if ($can_view_personnel_directory && $dashboard_effectifs_rows !== []): ?>
     <section class="bg-[#f8fafc]">
-        <div class="mx-auto max-w-6xl px-6 py-10 md:px-10">
+        <div class="mx-auto max-w-[100rem] px-4 py-10 sm:px-6 md:px-10">
             <div class="mb-6">
                 <p class="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700">Aperçu</p>
                 <h3 class="mt-2 text-2xl font-black uppercase tracking-tight text-slate-900">Effectifs récents</h3>

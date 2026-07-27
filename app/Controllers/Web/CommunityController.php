@@ -159,6 +159,7 @@ class CommunityController
         }
 
         $fromRegistry = trim((string) $request->query('ref', '')) === 'registry';
+        $showcaseBackUrl = $this->resolveShowcaseBackUrl($request, (string) ($tenant['slug'] ?? ''));
         $this->analyticsEventService->record(
             $tid,
             $this->authService->check() && Session::get('user_id') ? (int) Session::get('user_id') : null,
@@ -215,6 +216,7 @@ class CommunityController
             'unitMemberCounts' => $unitMemberCounts,
             'commanderNames' => $commanderNames,
             'communityShowcasePage' => $publicLayout === 'showcase',
+            'showcaseBackUrl' => $showcaseBackUrl,
             'recruitmentPublishedOpenings' => $recruitmentPublishedOpenings,
             'recruitmentProspectionRef' => $recruitmentProspectionRef,
             'recruitmentListUpdatedAt' => $recruitmentListUpdatedAt,
@@ -353,6 +355,69 @@ class CommunityController
             /* Charge community-landing.css + masque la nav bas (même shell que la vitrine). */
             'communityShowcasePage' => true,
         ]);
+    }
+
+    /**
+     * Fil vertical public type « Reels » (un média par écran, défilement vertical).
+     */
+    public function reelsFeed(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $tenant = $this->tenantRepository->findBySlug($slug);
+        if (!$tenant) {
+            return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
+        }
+        $tid = (int) ($tenant['id'] ?? 0);
+        $viewerUserId = $this->authService->check() && Session::get('user_id')
+            ? (int) Session::get('user_id')
+            : null;
+        $items = $this->communityMediaRepository->attachLikeState(
+            $this->communityMediaRepository->listReelsFeedItems($tid),
+            $viewerUserId
+        );
+        $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
+        $tenantBranding = $this->tenantBrandingRepository->mergeWithTenantLogo($tenant, $brandingRow);
+
+        $this->analyticsEventService->record(
+            $tid,
+            $viewerUserId,
+            AnalyticsEventCategory::TENANT_PUBLIC,
+            AnalyticsEventName::TENANT_PUBLIC_VIEW,
+            AnalyticsSubjectType::TENANT,
+            $tid,
+            null,
+            ['reels_feed' => true]
+        );
+
+        return Response::view('layout.main', [
+            'title' => 'Fil média — ' . trim((string) ($tenant['name'] ?? 'Communauté')),
+            'content' => 'community.reels_feed',
+            'tenant' => $tenant,
+            'reelsFeedItems' => $items,
+            'mediaLikesEnabled' => $this->communityMediaRepository->likesTableExists(),
+            'mediaViewerCanLike' => $viewerUserId !== null && $viewerUserId > 0,
+            'tenantBranding' => $tenantBranding,
+            'communityShowcasePage' => true,
+            'communityReelsPage' => true,
+            'showPortalFooter' => false,
+        ]);
+    }
+
+    /**
+     * Raccourci /reels → fil de la communauté active en session (sinon registre).
+     */
+    public function reelsRedirect(Request $request, array $params = []): Response
+    {
+        $tid = (int) (Session::get('tenant_id') ?? 0);
+        if ($tid > 1) {
+            $tenant = $this->tenantRepository->findById($tid);
+            $slug = trim((string) ($tenant['slug'] ?? ''));
+            if ($slug !== '') {
+                return Response::redirect(url('c/' . rawurlencode($slug) . '/reels'));
+            }
+        }
+
+        return Response::redirect(url('communities'));
     }
 
     /**
@@ -1348,5 +1413,41 @@ class CommunityController
                 'display_order' => 0,
             ],
         ];
+    }
+
+    /**
+     * Destination « Retour » pour la vitrine publique.
+     * Priorité : Referer interne sûr → registre (/communities) si connecté → accueil.
+     */
+    private function resolveShowcaseBackUrl(Request $request, string $slug): string
+    {
+        $base = rtrim(url(''), '/');
+        $selfPath = '/c/' . rawurlencode($slug);
+        $referer = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+        if ($referer !== '' && str_starts_with($referer, $base)) {
+            $pathWithQuery = substr($referer, strlen($base));
+            if ($pathWithQuery === false || $pathWithQuery === '') {
+                $pathWithQuery = '/';
+            }
+            $pathOnly = parse_url($pathWithQuery, PHP_URL_PATH);
+            $pathOnly = is_string($pathOnly) ? $pathOnly : $pathWithQuery;
+            $pathOnly = '/' . ltrim($pathOnly, '/');
+            $isSelf = $pathOnly === $selfPath
+                || str_starts_with($pathOnly, $selfPath . '/');
+            if (!$isSelf && !str_starts_with($pathWithQuery, '//') && !str_contains($pathWithQuery, '://')) {
+                if ($pathWithQuery === '/') {
+                    return url('');
+                }
+
+                return url(ltrim($pathWithQuery, '/'));
+            }
+        }
+
+        if ($this->authService->check()) {
+            // Registre des communautés ; le tableau de bord reste accessible via Referer.
+            return url('communities');
+        }
+
+        return url('');
     }
 }

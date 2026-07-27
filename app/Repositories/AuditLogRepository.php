@@ -221,6 +221,51 @@ final class AuditLogRepository
     }
 
     /**
+     * Connexions portail réussies par jour (14 j par défaut) — pour le graphique du tableau de bord.
+     *
+     * @return list<array{day:string, count:int}>
+     */
+    public function dailyLoginCountsForTenant(int $tenantId, int $days = 14): array
+    {
+        $days = max(1, min(60, $days));
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $end = (new \DateTimeImmutable('today'))->setTime(0, 0, 0);
+            $start = $end->modify('-' . ($days - 1) . ' days');
+        } catch (\Throwable) {
+            return [];
+        }
+        $since = $start->format('Y-m-d') . ' 00:00:00';
+        $map = [];
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT DATE(created_at) AS d, COUNT(*) AS cnt
+                 FROM audit_logs
+                 WHERE tenant_id = ? AND action = 'auth.login_success' AND created_at >= ?
+                 GROUP BY DATE(created_at)"
+            );
+            $stmt->execute([$tenantId, $since]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $day = (string) ($row['d'] ?? '');
+                if ($day !== '') {
+                    $map[$day] = (int) ($row['cnt'] ?? 0);
+                }
+            }
+        } catch (\Throwable) {
+            $map = [];
+        }
+        $out = [];
+        for ($d = $start; $d <= $end; $d = $d->modify('+1 day')) {
+            $key = $d->format('Y-m-d');
+            $out[] = ['day' => $key, 'count' => (int) ($map[$key] ?? 0)];
+        }
+
+        return $out;
+    }
+
+    /**
      * Dernières actions « RH / effectifs » : comptes, rôles, groupes, invitations, inscriptions.
      * Mêmes exclusions d’actions plateforme que le journal organisation.
      *

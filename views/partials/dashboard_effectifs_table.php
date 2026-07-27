@@ -78,15 +78,23 @@ $statusBadge = static function (string $raw): string {
 $rowCount = count($rows);
 ?>
 <div class="das-stack">
-    <article class="das-card" aria-labelledby="dash-effectifs-title">
+    <article class="das-card das-card--effectifs" aria-labelledby="dash-effectifs-title">
         <div class="das-card__head">
-            <div>
+            <div class="das-card__head-main">
                 <p class="das-kicker">Effectifs</p>
-                <h2 id="dash-effectifs-title" class="das-card__title">Tableau rapide — <?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></h2>
+                <div class="das-card__title-row">
+                    <h2 id="dash-effectifs-title" class="das-card__title">Tableau rapide — <?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></h2>
+                    <?php if ($rowCount > 0): ?>
+                        <span class="das-card__count" aria-label="<?= (int) $rowCount ?> membre<?= $rowCount > 1 ? 's' : '' ?>"><?= (int) $rowCount ?></span>
+                    <?php endif; ?>
+                </div>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
+            <div class="das-card__actions">
                 <?php if ($canOpenWorkspace): ?>
-                    <a href="<?= htmlspecialchars($workspaceUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-card__link">Bureau effectifs</a>
+                    <a href="<?= htmlspecialchars($workspaceUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-card__cta">
+                        Bureau effectifs
+                        <span aria-hidden="true">→</span>
+                    </a>
                 <?php endif; ?>
                 <a href="<?= htmlspecialchars($directoryUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-card__link">Annuaire complet</a>
             </div>
@@ -97,19 +105,99 @@ $rowCount = count($rows);
                 <p>Aucun membre à afficher pour le moment dans cette communauté.</p>
             </div>
         <?php else: ?>
-            <p class="das-scroll-hint">Faites défiler horizontalement pour voir toutes les colonnes.</p>
-            <div class="das-sheet">
+            <p class="das-scroll-hint">Faites défiler horizontalement pour les colonnes secondaires.</p>
+
+            <ul class="das-cards das-cards--effectifs" aria-label="Effectifs">
+                <?php foreach ($rows as $row): ?>
+                    <?php
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    $uid = (int) ($row['id'] ?? 0);
+                    if ($uid < 1) {
+                        continue;
+                    }
+                    $displayName = trim((string) ($row['display_name'] ?? ''));
+                    if ($displayName === '') {
+                        $displayName = 'Membre';
+                    }
+                    $callsign = trim((string) ($row['callsign'] ?? ''));
+                    $character = trim((string) ($row['character_name'] ?? ''));
+                    $slug = trim((string) ($row['profile_slug'] ?? ''));
+                    $target = $slug !== '' ? $slug : (string) $uid;
+                    $ficheUrl = url('personnel/' . $target);
+                    $avatarRaw = trim((string) ($row['avatar_url'] ?? ''));
+                    $avatar = $avatarRaw !== '' && function_exists('user_media_public_url')
+                        ? (string) (user_media_public_url($avatarRaw) ?? '')
+                        : $avatarRaw;
+                    $gradeLabel = $gradeLabelFor($row);
+                    $unitName = trim((string) ($row['unit_name'] ?? ''));
+                    $unitCode = trim((string) ($row['unit_code'] ?? ''));
+                    $assignment = $unitName !== '' ? $unitName : ($unitCode !== '' ? $unitCode : '');
+                    $primaryRole = trim((string) ($row['primary_role'] ?? ''));
+                    $status = trim((string) ($row['status'] ?? ''));
+                    $playtimeLabel = trim((string) ($row['arma_playtime_label'] ?? ''));
+                    $playtimeSeconds = (int) ($row['arma_playtime_seconds'] ?? 0);
+                    if ($playtimeLabel === '' && $playtimeSeconds > 0 && function_exists('format_arma_playtime_french')) {
+                        $playtimeLabel = format_arma_playtime_french($playtimeSeconds);
+                    }
+                    $cardBits = array_values(array_filter([
+                        $gradeLabel !== '' ? $gradeLabel : null,
+                        $assignment !== '' ? $assignment : null,
+                        $callsign !== '' ? $callsign : null,
+                    ]));
+                    ?>
+                    <li class="das-cards__item">
+                        <div class="das-cards__top">
+                            <div class="dash-eff-id">
+                                <div class="dash-eff-id__avatar" aria-hidden="true">
+                                    <?php if ($avatar !== ''): ?>
+                                        <img src="<?= htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy" decoding="async">
+                                    <?php else: ?>
+                                        <span><?= htmlspecialchars($initialsOf($displayName), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="dash-eff-id__text">
+                                    <span class="dash-eff-id__name"><?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($cardBits !== []): ?>
+                                        <span class="dash-eff-id__meta"><?= htmlspecialchars(implode(' · ', $cardBits), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php elseif ($character !== ''): ?>
+                                        <span class="dash-eff-id__meta">RP · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php if ($canSeeInactive): ?>
+                                <span class="das-badge <?= htmlspecialchars($statusBadge($status), ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($primaryRole !== '' || $playtimeLabel !== ''): ?>
+                            <p class="das-cards__step">
+                                <?= $primaryRole !== '' ? htmlspecialchars($primaryRole, ENT_QUOTES, 'UTF-8') : '' ?>
+                                <?php if ($primaryRole !== '' && $playtimeLabel !== ''): ?> · <?php endif; ?>
+                                <?php if ($playtimeLabel !== ''): ?>
+                                    <span class="dash-eff-playtime"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </p>
+                        <?php endif; ?>
+                        <a href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>" class="das-btn das-btn--block">Ouvrir la fiche</a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
+            <div class="das-sheet das-sheet--effectifs">
                 <table class="das-sheet__table">
                     <thead>
                         <tr>
-                            <th scope="col">Membre</th>
-                            <th scope="col">Indicatif</th>
+                            <th scope="col" class="das-sticky-col">Membre</th>
+                            <th scope="col" class="das-hide-sm">Indicatif</th>
                             <th scope="col">Grade</th>
                             <th scope="col">Affectation</th>
-                            <th scope="col">Fonction</th>
-                            <th scope="col">Temps en mission</th>
+                            <th scope="col" class="das-hide-md">Fonction</th>
+                            <th scope="col" class="das-hide-lg">Temps en mission</th>
                             <?php if ($canSeeInactive): ?>
-                            <th scope="col">Statut</th>
+                            <th scope="col" class="das-hide-md">Statut</th>
                             <?php endif; ?>
                             <th scope="col" class="text-right">Fiche</th>
                         </tr>
@@ -150,7 +238,7 @@ $rowCount = count($rows);
                             }
                             ?>
                             <tr>
-                                <td>
+                                <td class="das-sticky-col">
                                     <div class="dash-eff-id">
                                         <div class="dash-eff-id__avatar" aria-hidden="true">
                                             <?php if ($avatar !== ''): ?>
@@ -167,14 +255,14 @@ $rowCount = count($rows);
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="das-hide-sm">
                                     <?php if ($callsign !== ''): ?>
                                         <span class="dash-eff-callsign"><?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php else: ?>
                                         <span class="das-muted">—</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td class="das-sheet__cell-strong">
                                     <?php if ($gradeLabel !== ''): ?>
                                         <?= htmlspecialchars($gradeLabel, ENT_QUOTES, 'UTF-8') ?>
                                     <?php else: ?>
@@ -188,14 +276,14 @@ $rowCount = count($rows);
                                         <span class="das-muted">Non affecté</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td class="das-hide-md">
                                     <?php if ($primaryRole !== ''): ?>
                                         <?= htmlspecialchars($primaryRole, ENT_QUOTES, 'UTF-8') ?>
                                     <?php else: ?>
                                         <span class="das-muted">—</span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td class="das-hide-lg">
                                     <?php if ($playtimeLabel !== ''): ?>
                                         <span class="dash-eff-playtime" title="Temps de mission transmis par la liaison terrain"><?= htmlspecialchars($playtimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php else: ?>
@@ -203,7 +291,7 @@ $rowCount = count($rows);
                                     <?php endif; ?>
                                 </td>
                                 <?php if ($canSeeInactive): ?>
-                                <td>
+                                <td class="das-hide-md">
                                     <span class="das-badge <?= htmlspecialchars($statusBadge($status), ENT_QUOTES, 'UTF-8') ?>">
                                         <?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
@@ -225,7 +313,7 @@ $rowCount = count($rows);
     </article>
 </div>
 <style>
-.das-stack { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
+.das-stack { display: flex; flex-direction: column; gap: 1.25rem; width: 100%; }
 .das-card {
     width: 100%;
     border: 1px solid #e2e8f0;
@@ -237,45 +325,98 @@ $rowCount = count($rows);
 .das-card__head {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
-    gap: 0.5rem 1rem;
-    padding: 0.95rem 1.1rem;
-    border-bottom: 1px solid #f1f5f9;
+    gap: 0.75rem 1.25rem;
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
+.das-card__head-main { min-width: 0; flex: 1 1 12rem; }
 .das-kicker {
     margin: 0;
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 800;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #059669;
 }
+.das-card__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem 0.65rem;
+    margin-top: 0.2rem;
+}
 .das-card__title {
-    margin: 0.15rem 0 0;
-    font-size: 0.95rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: -0.025em;
     color: #0f172a;
     line-height: 1.2;
 }
-.das-card__link {
-    font-size: 0.625rem;
+.das-card__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.55rem;
+    height: 1.55rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+    font-size: 0.75rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+.das-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.85rem;
+}
+.das-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 0.55rem;
+    border: 1px solid #059669;
+    background: #059669;
+    color: #fff;
+    font-size: 0.6875rem;
     font-weight: 800;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 6px 14px -8px rgba(5, 150, 105, 0.7);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.das-card__cta:hover {
+    background: #047857;
+    border-color: #047857;
+    color: #fff;
+    transform: translateY(-1px);
+}
+.das-card__link {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #059669;
+    color: #047857;
     text-decoration: none;
     white-space: nowrap;
 }
 .das-card__link:hover { color: #065f46; text-decoration: underline; }
 .das-card__foot {
     margin: 0;
-    padding: 0.65rem 1.1rem 0.9rem;
-    font-size: 0.6875rem;
+    padding: 0.65rem 1.15rem 0.9rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #94a3b8;
-    border-top: 1px solid #f8fafc;
+    color: #475569;
+    border-top: 1px solid #f1f5f9;
 }
 .das-empty {
     margin: 1rem;
@@ -285,83 +426,152 @@ $rowCount = count($rows);
     padding: 1.25rem 1rem;
     text-align: center;
 }
-.das-empty p { margin: 0; font-size: 0.8125rem; font-weight: 550; color: #334155; }
+.das-empty p { margin: 0; font-size: 0.875rem; font-weight: 550; color: #334155; }
 .das-scroll-hint {
-    margin: 0.6rem 1.1rem 0;
-    font-size: 0.6875rem;
+    margin: 0.55rem 1.15rem 0;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: #64748b;
 }
-@media (min-width: 1280px) {
+@media (min-width: 1100px) {
     .das-scroll-hint { display: none; }
 }
-.das-sheet { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.das-sheet__table {
+
+.das-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.das-cards__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+}
+.das-cards__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+}
+.das-cards__step {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.das-sheet {
     width: 100%;
-    min-width: <?= $canSeeInactive ? '58rem' : '50rem' ?>;
-    border-collapse: collapse;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 0.55rem;
+    overflow: auto;
+    max-height: min(32rem, 68vh);
+    -webkit-overflow-scrolling: touch;
+}
+.das-sheet--effectifs .das-sheet__table {
+    width: 100%;
+    min-width: 28rem;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.8125rem;
 }
-.das-sheet__table th {
-    padding: 0.65rem 1rem;
-    text-align: left;
-    font-size: 0.625rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #64748b;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    white-space: nowrap;
+@media (min-width: 1100px) {
+    .das-sheet--effectifs .das-sheet__table { min-width: 40rem; }
 }
+@media (min-width: 1400px) {
+    .das-sheet--effectifs .das-sheet__table { min-width: <?= $canSeeInactive ? '52rem' : '46rem' ?>; }
+}
+.das-sheet__table th,
 .das-sheet__table td {
-    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.55rem 0.7rem;
     vertical-align: middle;
-    border-bottom: 1px solid #f1f5f9;
-    color: #0f172a;
-    font-weight: 550;
+    text-align: left;
 }
-.das-sheet__table tbody tr:hover { background: #f8fafc; }
-.das-sheet__table .text-right { text-align: right; }
-.das-muted { color: #94a3b8; font-weight: 500; font-style: italic; }
-.das-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.625rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-.das-badge--emerald { background: #ecfdf5; color: #047857; }
-.das-badge--amber { background: #fffbeb; color: #b45309; }
-.das-badge--slate { background: #f1f5f9; color: #475569; }
-.das-badge--muted { background: #f8fafc; color: #64748b; }
-.das-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.35rem 0.7rem;
-    border-radius: 0.55rem;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #0f172a;
+.das-sheet__table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #0f172a;
+    color: #e2e8f0;
     font-size: 0.625rem;
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 1px solid #1e293b;
+}
+.das-sheet__table tbody tr:nth-child(even) td { background: #f8fafc; }
+.das-sheet__table tbody tr:hover td { background: #ecfdf5; }
+.das-sheet__table .text-right { text-align: right; }
+.das-sheet__cell-strong { color: #0f172a; font-weight: 700; }
+
+.das-sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fff;
+    box-shadow: 1px 0 0 #e2e8f0;
+    min-width: 11rem;
+    max-width: 16rem;
+}
+.das-sheet__table thead .das-sticky-col {
+    z-index: 4;
+    background: #0f172a;
+    box-shadow: 1px 0 0 #1e293b;
+}
+.das-sheet__table tbody tr:nth-child(even) .das-sticky-col { background: #f8fafc; }
+.das-sheet__table tbody tr:hover .das-sticky-col { background: #ecfdf5; }
+
+.das-muted { color: #64748b; font-weight: 550; }
+.das-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid transparent;
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     white-space: nowrap;
 }
-.das-btn:hover { border-color: #059669; color: #047857; background: #ecfdf5; }
-.dash-eff-id { display: flex; align-items: center; gap: 0.65rem; min-width: 0; }
+.das-badge--emerald { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
+.das-badge--amber { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.das-badge--slate { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+.das-badge--muted { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+.das-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid #0f172a;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.das-btn:hover { background: #059669; border-color: #059669; }
+.das-btn--block { width: 100%; }
+
+.dash-eff-id { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
 .dash-eff-id__avatar {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 0.55rem;
-    border: 1px solid #e2e8f0;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 0.45rem;
+    border: 1px solid #cbd5e1;
     background: #f1f5f9;
     overflow: hidden;
     flex-shrink: 0;
@@ -370,33 +580,33 @@ $rowCount = count($rows);
     justify-content: center;
     font-size: 0.625rem;
     font-weight: 800;
-    color: #64748b;
+    color: #1e293b;
 }
 .dash-eff-id__avatar img { width: 100%; height: 100%; object-fit: cover; }
-.dash-eff-id__text { min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.dash-eff-id__text { min-width: 0; display: flex; flex-direction: column; gap: 0.08rem; }
 .dash-eff-id__name {
     font-weight: 800;
     color: #0f172a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 14rem;
+    max-width: 13rem;
 }
 .dash-eff-id__meta {
-    font-size: 0.6875rem;
+    font-size: 0.7rem;
     font-weight: 550;
-    color: #94a3b8;
+    color: #475569;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 14rem;
+    max-width: 13rem;
 }
 .dash-eff-callsign {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: #334155;
+    color: #1e293b;
 }
 .dash-eff-playtime {
     font-variant-numeric: tabular-nums;
@@ -404,5 +614,23 @@ $rowCount = count($rows);
     font-weight: 700;
     color: #0f766e;
     white-space: nowrap;
+}
+
+@media (max-width: 1099.98px) {
+    .das-hide-md { display: none !important; }
+}
+@media (max-width: 1399.98px) {
+    .das-hide-lg { display: none !important; }
+}
+@media (max-width: 899.98px) {
+    .das-hide-sm { display: none !important; }
+    .das-sheet--effectifs .das-sheet__table { min-width: 24rem; }
+}
+@media (max-width: 719.98px) {
+    .das-cards { display: flex; }
+    .das-sheet,
+    .das-scroll-hint { display: none !important; }
+    .das-card__actions { width: 100%; }
+    .das-card__cta { flex: 1 1 auto; justify-content: center; }
 }
 </style>

@@ -231,10 +231,10 @@
 
 /* Section titres pleine largeur */
 .dash-cc .cc-section-label {
-  margin: 0 0 0.75rem;
-  font-size: 0.6875rem;
+  margin: 0 0 0.85rem;
+  font-size: 0.75rem;
   font-weight: 900;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #0f172a;
 }
@@ -261,7 +261,7 @@
 }
 
 .dash-cc .cc-shell {
-  max-width: 72rem;
+  max-width: 100rem;
   margin-left: auto;
   margin-right: auto;
   padding-left: 1.25rem;
@@ -1890,7 +1890,7 @@ body.dashboard-shell main {
   align-items: center;
   justify-content: flex-start;
   gap: 0.55rem 0.7rem;
-  max-width: 80rem;
+  max-width: 100rem;
   margin: 0 auto;
   padding: 0.7rem 1rem 0.8rem;
 }

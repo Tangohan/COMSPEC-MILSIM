@@ -52,22 +52,54 @@ $regionBadgesLines = implode("\n", is_array($c['public_region_badges'] ?? null) 
 $specialtiesLines = implode("\n", is_array($c['public_specialties'] ?? null) ? $c['public_specialties'] : []);
 $statsModeSel = ($c['public_stats_mode'] ?? 'manual') === 'computed' ? 'computed' : 'manual';
 $prereqCatalog = \App\Services\Community\TenantCommunityProfileService::prerequisiteCatalog();
-$prereqSaved = [];
+$prereqRows = [];
 foreach (is_array($c['public_prerequisites'] ?? null) ? $c['public_prerequisites'] : [] as $pr) {
     if (!is_array($pr)) {
         continue;
     }
     $pk = strtolower(trim((string) ($pr['key'] ?? '')));
-    if ($pk !== '') {
-        $prereqSaved[$pk] = $pr;
+    if ($pk !== '' && !isset($prereqCatalog[$pk])) {
+        $pk = '';
     }
+    $plabel = trim((string) ($pr['label'] ?? ''));
+    if ($plabel === '' && $pk !== '') {
+        $plabel = $prereqCatalog[$pk]['label'];
+    }
+    if ($plabel === '' && $pk === '') {
+        continue;
+    }
+    $prereqRows[] = [
+        'key' => $pk,
+        'label' => $plabel,
+        'status' => \App\Services\Community\TenantCommunityProfileService::normalizePrerequisiteStatus($pr['status'] ?? 'required'),
+        'detail' => (string) ($pr['detail'] ?? ''),
+    ];
+}
+if ($prereqRows === []) {
+    $prereqRows[] = ['key' => '', 'label' => '', 'status' => 'required', 'detail' => ''];
 }
 $pitchRows = is_array($c['public_pitch'] ?? null) ? $c['public_pitch'] : [];
 while (count($pitchRows) < 4) {
     $pitchRows[] = ['title' => '', 'body' => ''];
 }
-$stepRows = is_array($c['public_process_steps'] ?? null) ? $c['public_process_steps'] : [];
-while (count($stepRows) < 5) {
+$stepRows = [];
+foreach (is_array($c['public_process_steps'] ?? null) ? $c['public_process_steps'] : [] as $st) {
+    if (!is_array($st)) {
+        continue;
+    }
+    $stTitle = trim((string) ($st['title'] ?? ''));
+    $stBody = trim((string) ($st['body'] ?? ''));
+    if ($stTitle === '' && $stBody === '') {
+        continue;
+    }
+    $stepRows[] = [
+        'title' => $stTitle,
+        'delay' => (string) ($st['delay'] ?? ''),
+        'body' => $stBody,
+        'highlight' => !empty($st['highlight']),
+    ];
+}
+if ($stepRows === []) {
     $stepRows[] = ['title' => '', 'delay' => '', 'body' => '', 'highlight' => false];
 }
 $faqRows = is_array($c['public_faq'] ?? null) ? $c['public_faq'] : [];
@@ -99,6 +131,8 @@ $profileChecklist = [
         'Sous-titre public (hero)' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
         'Présentation (texte ou sections)' => trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
         'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
+        'Prérequis (page publique)' => $prereqRows !== [] && trim((string) ($prereqRows[0]['label'] ?? '')) !== '',
+        'Étapes de recrutement' => $stepRows !== [] && trim((string) ($stepRows[0]['title'] ?? '')) !== '',
         'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
     ],
     'Visuel' => [
@@ -445,28 +479,56 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             </div>
 
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Prérequis pour candidater</h3>
-                <p class="text-xs text-slate-600">Cochez les points à afficher, puis précisez s’ils sont exigés, souhaités ou non exigés.</p>
-                <div class="space-y-3">
-                    <?php foreach ($prereqCatalog as $pkey => $pinfo): ?>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Prérequis pour candidater</h3>
+                        <p class="text-xs text-slate-600 mt-1">Liste affichée dans la section « Prérequis » de la page publique. Ajoutez, réordonnez ou retirez des points.</p>
+                    </div>
+                    <button type="button" id="add-prereq-row" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Prérequis</button>
+                </div>
+                <div id="prereq-rows" class="space-y-3" data-prereq-max="16">
+                    <?php foreach ($prereqRows as $i => $prRow): ?>
                         <?php
-                        $saved = $prereqSaved[$pkey] ?? null;
-                        $enabled = is_array($saved);
-                        $st = \App\Services\Community\TenantCommunityProfileService::normalizePrerequisiteStatus(is_array($saved) ? ($saved['status'] ?? 'required') : 'required');
-                        $det = is_array($saved) ? (string) ($saved['detail'] ?? '') : '';
+                        $st = (string) ($prRow['status'] ?? 'required');
+                        $pkeySel = (string) ($prRow['key'] ?? '');
                         ?>
-                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2">
-                        <label class="flex items-start gap-2 text-sm font-semibold text-slate-800">
-                            <input type="checkbox" name="public_prereq_enabled[]" value="<?= htmlspecialchars($pkey) ?>" class="mt-0.5" <?= $enabled ? 'checked' : '' ?>>
-                            <span><?= htmlspecialchars($pinfo['label']) ?></span>
-                        </label>
-                        <div class="grid gap-2 sm:grid-cols-[12rem_1fr] pl-6">
-                            <select name="public_prereq_status[<?= htmlspecialchars($pkey) ?>]" class="rounded border border-slate-300 px-2 py-1.5 text-sm">
-                                <option value="required" <?= $st === 'required' ? 'selected' : '' ?>>Exigé</option>
-                                <option value="optional" <?= $st === 'optional' ? 'selected' : '' ?>>Souhaité</option>
-                                <option value="not_required" <?= $st === 'not_required' ? 'selected' : '' ?>>Non exigé</option>
-                            </select>
-                            <input type="text" name="public_prereq_detail[<?= htmlspecialchars($pkey) ?>]" value="<?= htmlspecialchars($det) ?>" maxlength="240" class="rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="<?= htmlspecialchars($pinfo['hint']) ?>">
+                    <div class="cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2" data-prereq-row>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Point <span data-row-index><?= (int) $i + 1 ?></span></span>
+                            <div class="flex flex-wrap gap-1">
+                                <button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>
+                                <button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>
+                                <button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>
+                            </div>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Libellé affiché</label>
+                                <input type="text" name="public_prereq_label[]" value="<?= htmlspecialchars((string) ($prRow['label'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Micro correct et Discord">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Catégorie (optionnel)</label>
+                                <select name="public_prereq_key[]" class="w-full rounded border border-slate-300 px-3 py-2 text-sm cp-prereq-cat">
+                                    <option value="">Libre (texte seul)</option>
+                                    <?php foreach ($prereqCatalog as $ck => $cinfo): ?>
+                                    <option value="<?= htmlspecialchars($ck) ?>" <?= $pkeySel === $ck ? 'selected' : '' ?> data-hint="<?= htmlspecialchars($cinfo['hint'], ENT_QUOTES, 'UTF-8') ?>" data-label="<?= htmlspecialchars($cinfo['label'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($cinfo['label']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-[12rem_1fr]">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Niveau d’exigence</label>
+                                <select name="public_prereq_status[]" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm">
+                                    <option value="required" <?= $st === 'required' ? 'selected' : '' ?>>Exigé</option>
+                                    <option value="optional" <?= $st === 'optional' ? 'selected' : '' ?>>Souhaité</option>
+                                    <option value="not_required" <?= $st === 'not_required' ? 'selected' : '' ?>>Non exigé</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Précision (optionnel)</label>
+                                <input type="text" name="public_prereq_detail[]" value="<?= htmlspecialchars((string) ($prRow['detail'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="Court complément affiché sous le libellé">
+                            </div>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -474,20 +536,48 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             </div>
 
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Parcours candidature → terrain</h3>
-                <?php foreach ($stepRows as $i => $stRow): ?>
-                <div class="rounded-lg border border-slate-200 p-3 space-y-2">
-                    <div class="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
-                        <input type="text" name="public_step_title[]" value="<?= htmlspecialchars((string) ($stRow['title'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Étape <?= (int) $i + 1 ?>">
-                        <input type="text" name="public_step_delay[]" value="<?= htmlspecialchars((string) ($stRow['delay'] ?? '')) ?>" maxlength="40" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="sous 5 jours">
-                        <label class="inline-flex items-center gap-2 text-xs text-slate-600 whitespace-nowrap">
-                            <input type="checkbox" name="public_step_highlight[<?= (int) $i ?>]" value="1" <?= !empty($stRow['highlight']) ? 'checked' : '' ?>>
-                            Mise en avant
-                        </label>
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Étapes de recrutement</h3>
+                        <p class="text-xs text-slate-600 mt-1">Parcours candidature → terrain sur la page publique. Titre + courte description ; délai et mise en avant optionnels.</p>
                     </div>
-                    <textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Description"><?= htmlspecialchars((string) ($stRow['body'] ?? '')) ?></textarea>
+                    <button type="button" id="add-step-row" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Étape</button>
                 </div>
-                <?php endforeach; ?>
+                <div id="step-rows" class="space-y-3" data-step-max="12">
+                    <?php foreach ($stepRows as $i => $stRow): ?>
+                    <div class="cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2" data-step-row>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Étape <span data-row-index><?= (int) $i + 1 ?></span></span>
+                            <div class="flex flex-wrap gap-1">
+                                <button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>
+                                <button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>
+                                <button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>
+                            </div>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_10rem]">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Titre</label>
+                                <input type="text" name="public_step_title[]" value="<?= htmlspecialchars((string) ($stRow['title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Candidature en ligne">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Délai</label>
+                                <input type="text" name="public_step_delay[]" value="<?= htmlspecialchars((string) ($stRow['delay'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="sous 5 jours">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Affichage</label>
+                                <select name="public_step_highlight[]" class="w-full rounded border border-slate-300 px-2 py-2 text-sm">
+                                    <option value="0" <?= empty($stRow['highlight']) ? 'selected' : '' ?>>Normale</option>
+                                    <option value="1" <?= !empty($stRow['highlight']) ? 'selected' : '' ?>>Mise en avant</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Description courte</label>
+                            <textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ce que le candidat doit savoir à cette étape"><?= htmlspecialchars((string) ($stRow['body'] ?? '')) ?></textarea>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
 
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
@@ -1070,6 +1160,138 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             '</div>' +
             '<textarea name="military_body[]" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"></textarea>';
         container.appendChild(wrap);
+    });
+})();
+(function () {
+    function reindex(container) {
+        var rows = container.querySelectorAll('[data-prereq-row], [data-step-row]');
+        rows.forEach(function (row, i) {
+            var idx = row.querySelector('[data-row-index]');
+            if (idx) idx.textContent = String(i + 1);
+        });
+    }
+    function bindList(containerId, addBtnId, rowAttr, maxAttr, buildHtml) {
+        var container = document.getElementById(containerId);
+        var addBtn = document.getElementById(addBtnId);
+        if (!container || !addBtn) return;
+        var max = parseInt(container.getAttribute(maxAttr) || '12', 10) || 12;
+        function rows() {
+            return container.querySelectorAll('[' + rowAttr + ']');
+        }
+        addBtn.addEventListener('click', function () {
+            if (rows().length >= max) return;
+            var wrap = document.createElement('div');
+            wrap.className = 'cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2';
+            wrap.setAttribute(rowAttr, '');
+            wrap.innerHTML = buildHtml(rows().length + 1);
+            container.appendChild(wrap);
+            reindex(container);
+        });
+        container.addEventListener('click', function (e) {
+            var t = e.target;
+            if (!t || !t.closest) return;
+            var row = t.closest('[' + rowAttr + ']');
+            if (!row) return;
+            if (t.closest('.cp-remove-row')) {
+                if (rows().length <= 1) {
+                    row.querySelectorAll('input[type="text"], textarea').forEach(function (el) { el.value = ''; });
+                    row.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
+                    reindex(container);
+                    return;
+                }
+                row.remove();
+                reindex(container);
+                return;
+            }
+            if (t.closest('.cp-move-up')) {
+                var prev = row.previousElementSibling;
+                if (prev && prev.hasAttribute(rowAttr)) {
+                    container.insertBefore(row, prev);
+                    reindex(container);
+                }
+                return;
+            }
+            if (t.closest('.cp-move-down')) {
+                var next = row.nextElementSibling;
+                if (next && next.hasAttribute(rowAttr)) {
+                    container.insertBefore(next, row);
+                    reindex(container);
+                }
+            }
+        });
+        return container;
+    }
+    var prereqCatOptions = '';
+    <?php foreach ($prereqCatalog as $ck => $cinfo): ?>
+    prereqCatOptions += '<option value="<?= htmlspecialchars($ck, ENT_QUOTES, 'UTF-8') ?>" data-hint="<?= htmlspecialchars($cinfo['hint'], ENT_QUOTES, 'UTF-8') ?>" data-label="<?= htmlspecialchars($cinfo['label'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($cinfo['label'], ENT_QUOTES, 'UTF-8') ?></option>';
+    <?php endforeach; ?>
+    var prereqContainer = bindList('prereq-rows', 'add-prereq-row', 'data-prereq-row', 'data-prereq-max', function (n) {
+        return '' +
+            '<div class="flex flex-wrap items-center justify-between gap-2">' +
+            '<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Point <span data-row-index>' + n + '</span></span>' +
+            '<div class="flex flex-wrap gap-1">' +
+            '<button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>' +
+            '<button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>' +
+            '<button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>' +
+            '</div></div>' +
+            '<div class="grid gap-2 sm:grid-cols-2">' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Libellé affiché</label>' +
+            '<input type="text" name="public_prereq_label[]" value="" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Micro correct et Discord"></div>' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Catégorie (optionnel)</label>' +
+            '<select name="public_prereq_key[]" class="w-full rounded border border-slate-300 px-3 py-2 text-sm cp-prereq-cat">' +
+            '<option value="">Libre (texte seul)</option>' + prereqCatOptions +
+            '</select></div></div>' +
+            '<div class="grid gap-2 sm:grid-cols-[12rem_1fr]">' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Niveau d’exigence</label>' +
+            '<select name="public_prereq_status[]" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm">' +
+            '<option value="required" selected>Exigé</option>' +
+            '<option value="optional">Souhaité</option>' +
+            '<option value="not_required">Non exigé</option>' +
+            '</select></div>' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Précision (optionnel)</label>' +
+            '<input type="text" name="public_prereq_detail[]" value="" maxlength="240" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="Court complément affiché sous le libellé"></div>' +
+            '</div>';
+    });
+    if (prereqContainer) {
+        prereqContainer.addEventListener('change', function (e) {
+            var sel = e.target;
+            if (!sel || !sel.classList || !sel.classList.contains('cp-prereq-cat')) return;
+            var row = sel.closest('[data-prereq-row]');
+            if (!row) return;
+            var opt = sel.options[sel.selectedIndex];
+            if (!opt || !opt.value) return;
+            var labelInput = row.querySelector('input[name="public_prereq_label[]"]');
+            var detailInput = row.querySelector('input[name="public_prereq_detail[]"]');
+            var catLabel = opt.getAttribute('data-label') || '';
+            var catHint = opt.getAttribute('data-hint') || '';
+            if (labelInput && labelInput.value.trim() === '') {
+                labelInput.value = catLabel;
+            }
+            if (detailInput && detailInput.value === '' && catHint) {
+                detailInput.placeholder = catHint;
+            }
+        });
+    }
+    bindList('step-rows', 'add-step-row', 'data-step-row', 'data-step-max', function (n) {
+        return '' +
+            '<div class="flex flex-wrap items-center justify-between gap-2">' +
+            '<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Étape <span data-row-index>' + n + '</span></span>' +
+            '<div class="flex flex-wrap gap-1">' +
+            '<button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>' +
+            '<button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>' +
+            '<button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>' +
+            '</div></div>' +
+            '<div class="grid gap-2 sm:grid-cols-[1fr_8rem_10rem]">' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Titre</label>' +
+            '<input type="text" name="public_step_title[]" value="" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Candidature en ligne"></div>' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Délai</label>' +
+            '<input type="text" name="public_step_delay[]" value="" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="sous 5 jours"></div>' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Affichage</label>' +
+            '<select name="public_step_highlight[]" class="w-full rounded border border-slate-300 px-2 py-2 text-sm">' +
+            '<option value="0" selected>Normale</option><option value="1">Mise en avant</option></select></div>' +
+            '</div>' +
+            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Description courte</label>' +
+            '<textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ce que le candidat doit savoir à cette étape"></textarea></div>';
     });
 })();
 (function () {

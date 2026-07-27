@@ -509,21 +509,33 @@ final class TenantCommunityProfileService
         $eff = $mode === 'computed'
             ? (string) ($computed['effectif_actifs'] ?? '')
             : (string) ($manual['effectif'] ?? '');
+        if ($eff === '' && isset($computed['effectif_actifs']) && (string) $computed['effectif_actifs'] !== '') {
+            $eff = (string) $computed['effectif_actifs'];
+        }
         $uni = $mode === 'computed'
             ? (string) ($computed['unites_public'] ?? '')
             : (string) ($manual['unites'] ?? '');
+        if ($uni === '' && isset($computed['unites_public']) && (string) $computed['unites_public'] !== '') {
+            $uni = (string) $computed['unites_public'];
+        }
         if ($mode === 'computed') {
             $ap = $computed['activite_pct'] ?? null;
-            $act = $ap !== null && $ap !== '' ? (string) $ap . '%' : '—';
+            $act = $ap !== null && $ap !== '' ? (string) $ap . '%' : '';
         } else {
             $act = (string) ($manual['activite_percent'] ?? '');
             if ($act !== '' && !str_contains($act, '%')) {
                 $act .= '%';
             }
+            if ($act === '' && isset($computed['activite_pct']) && $computed['activite_pct'] !== null && $computed['activite_pct'] !== '') {
+                $act = (string) $computed['activite_pct'] . '%';
+            }
         }
         $theatre = $mode === 'computed'
             ? (string) ($computed['theatre_default'] ?? '')
             : (string) ($manual['theatre'] ?? '');
+        if ($theatre === '' && isset($computed['theatre_default'])) {
+            $theatre = (string) $computed['theatre_default'];
+        }
 
         $regionBadges = is_array($community['public_region_badges'] ?? null) ? $community['public_region_badges'] : [];
         $specialties = is_array($community['public_specialties'] ?? null) ? $community['public_specialties'] : [];
@@ -565,17 +577,24 @@ final class TenantCommunityProfileService
                 continue;
             }
             $key = strtolower(trim((string) ($row['key'] ?? '')));
-            if ($key === '' || !isset($catalog[$key])) {
+            if ($key !== '' && !isset($catalog[$key])) {
+                $key = '';
+            }
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($label === '' && $key !== '') {
+                $label = $catalog[$key]['label'];
+            }
+            if ($label === '') {
                 continue;
             }
             $status = self::normalizePrerequisiteStatus($row['status'] ?? self::PREREQ_STATUS_REQUIRED);
             $detail = trim((string) ($row['detail'] ?? ''));
-            if ($detail === '') {
+            if ($detail === '' && $key !== '') {
                 $detail = $catalog[$key]['hint'];
             }
             $prereqs[] = [
                 'key' => $key,
-                'label' => $catalog[$key]['label'],
+                'label' => $label,
                 'detail' => $detail,
                 'status' => $status,
                 'statusLabel' => self::prerequisiteStatusLabel($status),
@@ -929,15 +948,80 @@ final class TenantCommunityProfileService
     }
 
     /**
-     * @return list<array{key: string, status: string, detail: string}>
+     * Liste ordonnée de prérequis (libellé libre + catégorie catalogue optionnelle).
+     *
+     * @return list<array{key: string, label: string, status: string, detail: string}>
      */
     private function parsePrerequisitesFromRequest(Request $request): array
     {
+        $labels = $request->input('public_prereq_label', []);
+        $keys = $request->input('public_prereq_key', []);
+        $statuses = $request->input('public_prereq_status', []);
+        $details = $request->input('public_prereq_detail', []);
+
+        // Ancien format (cases à cocher catalogue) — migration douce si le nouveau formulaire n’est pas envoyé
+        if (!is_array($labels) || $labels === []) {
+            return $this->parsePrerequisitesLegacyCheckbox($request);
+        }
+
+        if (!is_array($keys)) {
+            $keys = [];
+        }
+        if (!is_array($statuses)) {
+            $statuses = [];
+        }
+        if (!is_array($details)) {
+            $details = [];
+        }
+
+        $allowed = array_flip(self::allowedPrerequisiteKeys());
+        $catalog = self::prerequisiteCatalog();
+        $n = min(max(count($labels), count($keys), count($statuses), count($details)), 16);
+        $out = [];
+        for ($i = 0; $i < $n; $i++) {
+            $label = isset($labels[$i]) ? $this->clip(trim((string) $labels[$i]), 160) : '';
+            $k = isset($keys[$i]) ? strtolower(trim((string) $keys[$i])) : '';
+            if ($k !== '' && !isset($allowed[$k])) {
+                $k = '';
+            }
+            if ($label === '' && $k !== '') {
+                $label = $catalog[$k]['label'] ?? '';
+            }
+            if ($label === '' && $k === '') {
+                continue;
+            }
+            $statusRaw = $statuses[$i] ?? self::PREREQ_STATUS_REQUIRED;
+            // Compat : anciens formulaires indexés par clé catalogue
+            if (is_array($statuses) && $k !== '' && isset($statuses[$k]) && !isset($statuses[$i])) {
+                $statusRaw = $statuses[$k];
+            }
+            $status = self::normalizePrerequisiteStatus($statusRaw);
+            $detail = isset($details[$i]) ? $this->clip((string) $details[$i], 240) : '';
+            if ($detail === '' && $k !== '' && is_array($details) && isset($details[$k]) && !isset($details[$i])) {
+                $detail = $this->clip((string) $details[$k], 240);
+            }
+            $out[] = [
+                'key' => $k,
+                'label' => $label,
+                'status' => $status,
+                'detail' => $detail,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{key: string, label: string, status: string, detail: string}>
+     */
+    private function parsePrerequisitesLegacyCheckbox(Request $request): array
+    {
         $enabled = $request->input('public_prereq_enabled', []);
-        if (!is_array($enabled)) {
-            $enabled = [];
+        if (!is_array($enabled) || $enabled === []) {
+            return [];
         }
         $allowed = array_flip(self::allowedPrerequisiteKeys());
+        $catalog = self::prerequisiteCatalog();
         $statuses = $request->input('public_prereq_status', []);
         $details = $request->input('public_prereq_detail', []);
         if (!is_array($statuses)) {
@@ -954,7 +1038,12 @@ final class TenantCommunityProfileService
             }
             $status = self::normalizePrerequisiteStatus($statuses[$k] ?? self::PREREQ_STATUS_REQUIRED);
             $detail = isset($details[$k]) ? $this->clip((string) $details[$k], 240) : '';
-            $out[] = ['key' => $k, 'status' => $status, 'detail' => $detail];
+            $out[] = [
+                'key' => $k,
+                'label' => $catalog[$k]['label'] ?? $k,
+                'status' => $status,
+                'detail' => $detail,
+            ];
             if (count($out) >= 12) {
                 break;
             }
@@ -972,13 +1061,19 @@ final class TenantCommunityProfileService
         $delays = $request->input('public_step_delay', []);
         $bodies = $request->input('public_step_body', []);
         $highlights = $request->input('public_step_highlight', []);
-        if (!is_array($titles) || !is_array($delays) || !is_array($bodies)) {
+        if (!is_array($titles)) {
             return [];
+        }
+        if (!is_array($delays)) {
+            $delays = [];
+        }
+        if (!is_array($bodies)) {
+            $bodies = [];
         }
         if (!is_array($highlights)) {
             $highlights = [];
         }
-        $n = min(max(count($titles), count($delays), count($bodies)), 8);
+        $n = min(max(count($titles), count($delays), count($bodies), count($highlights)), 12);
         $out = [];
         for ($i = 0; $i < $n; $i++) {
             $t = isset($titles[$i]) ? $this->clip((string) $titles[$i], 120) : '';
@@ -987,11 +1082,12 @@ final class TenantCommunityProfileService
             if ($t === '' && $b === '') {
                 continue;
             }
+            $hl = $highlights[$i] ?? '0';
             $out[] = [
                 'title' => $t,
                 'delay' => $d,
                 'body' => $b,
-                'highlight' => !empty($highlights[$i]) || (string) ($highlights[$i] ?? '') === '1',
+                'highlight' => $hl === true || $hl === 1 || (string) $hl === '1',
             ];
         }
 

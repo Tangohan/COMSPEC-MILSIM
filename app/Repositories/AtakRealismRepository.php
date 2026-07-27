@@ -296,6 +296,51 @@ final class AtakRealismRepository
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * Terminaux ATAK vus par jour (last_seen_at) — proxy « sessions » pour le graphique.
+     *
+     * @return list<array{day:string, count:int}>
+     */
+    public function dailyTerminalSeenCountsForTenant(int $tenantId, int $days = 14): array
+    {
+        $days = max(1, min(60, $days));
+        if ($tenantId < 1) {
+            return [];
+        }
+        try {
+            $end = (new \DateTimeImmutable('today'))->setTime(0, 0, 0);
+            $start = $end->modify('-' . ($days - 1) . ' days');
+        } catch (\Throwable) {
+            return [];
+        }
+        $since = $start->format('Y-m-d') . ' 00:00:00';
+        $map = [];
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT DATE(last_seen_at) AS d, COUNT(*) AS cnt
+                 FROM atak_terminals
+                 WHERE tenant_id = ? AND last_seen_at IS NOT NULL AND last_seen_at >= ?
+                 GROUP BY DATE(last_seen_at)'
+            );
+            $stmt->execute([$tenantId, $since]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $day = (string) ($row['d'] ?? '');
+                if ($day !== '') {
+                    $map[$day] = (int) ($row['cnt'] ?? 0);
+                }
+            }
+        } catch (\Throwable) {
+            $map = [];
+        }
+        $out = [];
+        for ($d = $start; $d <= $end; $d = $d->modify('+1 day')) {
+            $key = $d->format('Y-m-d');
+            $out[] = ['day' => $key, 'count' => (int) ($map[$key] ?? 0)];
+        }
+
+        return $out;
+    }
+
     private function clip(string $value, int $max): string
     {
         $value = trim($value);

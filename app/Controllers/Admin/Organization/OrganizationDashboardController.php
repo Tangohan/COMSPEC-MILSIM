@@ -19,16 +19,20 @@ use App\Repositories\UserRepository;
 use App\Support\OrganizationRoleLabels;
 use App\Support\OrbatRosterPayload;
 use App\Repositories\AuditLogRepository;
+use App\Repositories\AtakRealismRepository;
 use App\Repositories\CommunityEventRepository;
+use App\Repositories\ElevationRequestRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
 use App\Repositories\OpsBoardRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
+use App\Repositories\TenantMessageRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\TrainingEnrollmentRepository;
 use App\Repositories\TrainingQuizRepository;
 use App\Services\Admin\AdminDashboardMetricsService;
+use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Platform\FeatureGateService;
 use App\Services\Training\TrainingEnrollmentCompletionAnalytics;
 
@@ -44,6 +48,10 @@ class OrganizationDashboardController
         private ?TenantAlertRepository $tenantAlertRepository = null,
         private ?OpsBoardRepository $opsBoardRepository = null,
         private ?TrainingEnrollmentCompletionAnalytics $trainingFeedCompletionAnalytics = null,
+        private ?ElevationRequestRepository $elevationRequests = null,
+        private ?TenantMessageRepository $tenantMessages = null,
+        private ?AtakRealismRepository $atakRealism = null,
+        private ?UserRepository $users = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -57,6 +65,10 @@ class OrganizationDashboardController
             new TrainingEnrollmentRepository(),
             new TrainingQuizRepository()
         );
+        $this->elevationRequests ??= new ElevationRequestRepository();
+        $this->tenantMessages ??= new TenantMessageRepository();
+        $this->atakRealism ??= new AtakRealismRepository();
+        $this->users ??= new UserRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -228,6 +240,97 @@ class OrganizationDashboardController
             $initialSetupBanner = null;
         }
 
+        $chartDays = 14;
+        $orgActivityChart = ['days' => [], 'portal' => [], 'atak' => [], 'max' => 1];
+        try {
+            $portalSeries = $this->auditLogs->dailyLoginCountsForTenant($tenantId, $chartDays);
+            $atakSeries = $this->atakRealism->dailyTerminalSeenCountsForTenant($tenantId, $chartDays);
+            $days = [];
+            $portal = [];
+            $atak = [];
+            $max = 1;
+            $n = max(count($portalSeries), count($atakSeries));
+            for ($i = 0; $i < $n; $i++) {
+                $pRow = $portalSeries[$i] ?? null;
+                $aRow = $atakSeries[$i] ?? null;
+                $day = is_array($pRow) ? (string) ($pRow['day'] ?? '') : (is_array($aRow) ? (string) ($aRow['day'] ?? '') : '');
+                $p = is_array($pRow) ? (int) ($pRow['count'] ?? 0) : 0;
+                $a = is_array($aRow) ? (int) ($aRow['count'] ?? 0) : 0;
+                $days[] = $day !== '' ? date('d', strtotime($day) ?: time()) : '';
+                $portal[] = $p;
+                $atak[] = $a;
+                $max = max($max, $p, $a);
+            }
+            $orgActivityChart = [
+                'days' => $days,
+                'portal' => $portal,
+                'atak' => $atak,
+                'max' => $max,
+                'period_days' => $chartDays,
+            ];
+        } catch (\Throwable) {
+            $orgActivityChart = ['days' => [], 'portal' => [], 'atak' => [], 'max' => 1, 'period_days' => $chartDays];
+        }
+
+        $orgNextOperation = null;
+        try {
+            $upcoming = $this->eventRepository->upcomingForTenant($tenantId, 1);
+            $event = $upcoming[0] ?? null;
+            if (is_array($event) && (int) ($event['id'] ?? 0) > 0) {
+                $eid = (int) $event['id'];
+                $summaries = $this->eventRepository->rsvpSummariesForEvents([$eid]);
+                $sum = $summaries[$eid] ?? ['yes' => [], 'maybe' => [], 'no' => []];
+                $yes = count($sum['yes'] ?? []);
+                $maybe = count($sum['maybe'] ?? []);
+                $no = count($sum['no'] ?? []);
+                $activeMembers = 0;
+                try {
+                    $activeMembers = $this->users->countActiveForTenant($tenantId);
+                } catch (\Throwable) {
+                    $activeMembers = 0;
+                }
+                $answered = $yes + $maybe + $no;
+                $noReply = max(0, $activeMembers - $answered);
+                $startsAt = (string) ($event['starts_at'] ?? '');
+                $startsFmt = $startsAt !== '' ? date('d/m/Y H\hi', strtotime($startsAt) ?: time()) : '';
+                $orgNextOperation = [
+                    'id' => $eid,
+                    'title' => trim((string) ($event['title'] ?? 'Manœuvre')),
+                    'starts_at' => $startsAt,
+                    'starts_label' => $startsFmt,
+                    'href' => url('back-office/events/' . $eid),
+                    'rsvp' => [
+                        'yes' => $yes,
+                        'maybe' => $maybe,
+                        'no' => $no,
+                        'no_reply' => $noReply,
+                    ],
+                ];
+            }
+        } catch (\Throwable) {
+            $orgNextOperation = null;
+        }
+
+        $orgElevationOpen = [];
+        $orgElevationOpenCount = 0;
+        try {
+            $orgElevationOpen = $this->elevationRequests->listOpenForTenant($tenantId, 6);
+            $orgElevationOpenCount = $this->elevationRequests->countOpenForTenant($tenantId);
+        } catch (\Throwable) {
+            $orgElevationOpen = [];
+            $orgElevationOpenCount = 0;
+        }
+
+        $orgMessagesRecent = [];
+        $viewerId = (int) Session::get('user_id');
+        if ($viewerId > 0) {
+            try {
+                $orgMessagesRecent = $this->tenantMessages->listActivityThreadsForUser($tenantId, $viewerId, 2);
+            } catch (\Throwable) {
+                $orgMessagesRecent = [];
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.dashboard',
             'title' => 'Tableau de bord',
@@ -266,6 +369,12 @@ class OrganizationDashboardController
             'tenantName' => $tenantName,
             'initialSetupBanner' => $initialSetupBanner,
             'discordInviteMissing' => $discordInviteMissing,
+            'orgActivityChart' => $orgActivityChart,
+            'orgNextOperation' => $orgNextOperation,
+            'orgElevationOpen' => $orgElevationOpen,
+            'orgElevationOpenCount' => $orgElevationOpenCount,
+            'orgElevationKindLabels' => EffectifsStaffAlertService::ELEVATION_KIND_LABELS,
+            'orgMessagesRecent' => $orgMessagesRecent,
         ]);
     }
 

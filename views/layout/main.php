@@ -5,6 +5,7 @@ $baseUrl = url('');
 $communityShowcasePage = !empty($communityShowcasePage);
 $communityRegistryPage = !empty($communityRegistryPage);
 $communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
+$communityReelsPage = !empty($communityReelsPage);
 $hideAdminSidebar = !empty($hideAdminSidebar);
 $isBackOfficeShell = !empty($isBackOfficeShell)
     || (function_exists('is_back_office_request') && is_back_office_request());
@@ -83,10 +84,13 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     // $cdnLibs : null = défauts (icons + animation) ; false/'none' = désactivé ; array = packs explicites
     require base_path('views/partials/cdn_media_libs.php');
 ?>
-    <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage): ?>
+    <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage || $communityReelsPage): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <?php if (($communityShowcasePage || $communityRecruitmentOpeningPage) && is_file(base_path('public/assets/css/community-landing.css'))): ?>
+    <?php if (($communityShowcasePage || $communityRecruitmentOpeningPage) && !$communityReelsPage && is_file(base_path('public/assets/css/community-landing.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/community-landing.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
+    <?php if ($communityReelsPage && is_file(base_path('public/assets/css/community-reels.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/community-reels.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
     <?php if ($communityRegistryPage && is_file(base_path('public/assets/css/community-registry.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/community-registry.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
@@ -94,7 +98,8 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <style>
       .community-public-vitrine,
       .community-landing,
-      .community-registry {
+      .community-registry,
+      .community-reels {
         font-family: 'Archivo', system-ui, sans-serif;
       }
       .community-public-vitrine .font-mono,
@@ -234,8 +239,15 @@ $showBottomNav = (bool) \App\Core\Session::get('user_id')
     && empty($usesAdminSidebarShell)
     && empty($communityShowcasePage)
     && empty($communityRegistryPage)
+    && empty($communityReelsPage)
     && empty($hide_bottom_nav);
 $bodyClasses = 'layout-light bg-slate-50 text-slate-900 font-sans antialiased min-h-screen';
+if ($communityReelsPage) {
+    $bodyClasses = 'community-reels-page bg-[#070a0c] text-white font-sans antialiased min-h-screen';
+}
+if ($communityShowcasePage) {
+    $bodyClasses .= ' community-showcase-page';
+}
 if ($showBottomNav) {
     $bodyClasses .= ' athena-has-bottom-nav';
 }
@@ -250,8 +262,10 @@ if (!empty($isBackOfficeShell)) {
 }
 ?>
 <body class="<?= htmlspecialchars($bodyClasses, ENT_QUOTES, 'UTF-8') ?>">
+    <?php if (empty($communityReelsPage)): ?>
     <div class="grain" aria-hidden="true"></div>
-    <?php if (empty($isBackOfficeShell)): ?>
+    <?php endif; ?>
+    <?php if (empty($isBackOfficeShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
     <?php require base_path('views/partials/header_portal.php'); ?>
     <?php endif; ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/portal-alerts.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
@@ -267,13 +281,15 @@ if (!empty($isBackOfficeShell)) {
     <?php elseif ((!empty($isBackOfficeShell) || !empty($isFormationWorkspace)) && is_file(base_path('public/assets/js/dashboard-rail.js'))): ?>
     <script defer src="<?= htmlspecialchars(asset_url('assets/js/dashboard-rail.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
-    <?php if (empty($usesAdminSidebarShell)): ?>
+    <?php if (empty($usesAdminSidebarShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
     <?php require base_path('views/partials/navbar_info_banners.php'); ?>
     <?php require base_path('views/partials/alert_banners.php'); ?>
     <?php require base_path('views/partials/forum_moderation_alerts.php'); ?>
     <?php endif; ?>
-    <main class="<?= !empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]' ?>">
+    <main class="<?= (!empty($communityReelsPage) || !empty($communityShowcasePage)) ? 'min-h-dvh' : (!empty($usesAdminSidebarShell) ? (!empty($isBackOfficeShell) ? 'min-h-dvh' : 'min-h-[calc(100dvh-5rem)] lg:min-h-[calc(100dvh-5.5rem)]') : 'min-h-[80vh]') ?>">
+        <?php if (empty($communityReelsPage)): ?>
         <?php require base_path('views/partials/layout_flash_toasts.php'); ?>
+        <?php endif; ?>
         <?php if (!empty($usesAdminSidebarShell)): ?>
         <div
             x-data="{ navOpen: false }"
@@ -352,7 +368,10 @@ if (!empty($isBackOfficeShell)) {
             <div class="ath-main relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden<?= (!empty($isBackOfficeShell)) ? '' : (( !empty($isFormationWorkspace) || !empty($isPlatformAdminShell)) ? ' bg-[#050505]' : ' bg-slate-50') ?>">
                 <?php
                 require base_path('views/partials/navbar_info_banners.php');
-                require base_path('views/partials/alert_banners.php');
+                // Bandeau TRANSMISSION / Alertes & annonces : portail membre uniquement (pas le shell back-office).
+                if (empty($isBackOfficeShell)) {
+                    require base_path('views/partials/alert_banners.php');
+                }
                 require base_path('views/partials/forum_moderation_alerts.php');
                 ?>
                 <?php if (!empty($isBackOfficeShell)): ?>
@@ -386,7 +405,7 @@ if (!empty($isBackOfficeShell)) {
         ?>
         <?php endif; ?>
     </main>
-    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace) && empty($isBackOfficeShell) && empty($isPlatformAdminShell)): ?>
+    <?php if (empty($trainingAdminNav) && ($showPortalFooter ?? true) && empty($usesAdminSidebarShell) && empty($isFormationWorkspace) && empty($isBackOfficeShell) && empty($isPlatformAdminShell) && empty($communityReelsPage) && empty($communityShowcasePage)): ?>
         <?php require base_path('views/partials/portal_footer.php'); ?>
     <?php endif; ?>
     <?php if (!empty($showBottomNav)): ?>

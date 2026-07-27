@@ -183,6 +183,41 @@ final class CommunityMediaRepository
     }
 
     /**
+     * Fil vertical « Reels » : vidéos courtes d’abord, puis images, puis vidéos longues.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listReelsFeedItems(int $tenantId): array
+    {
+        if (!$this->tablesExist()) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM community_media_items
+             WHERE tenant_id = ?
+               AND show_on_public_page = 1
+               AND status = ?
+             ORDER BY
+               CASE media_kind
+                 WHEN ? THEN 0
+                 WHEN ? THEN 1
+                 ELSE 2
+               END ASC,
+               is_hero DESC,
+               sort_order ASC,
+               id DESC'
+        );
+        $st->execute([
+            $tenantId,
+            CommunityMediaDetails::STATUS_PUBLISHED,
+            CommunityMediaDetails::KIND_SHORT_VIDEO,
+            CommunityMediaDetails::KIND_IMAGE,
+        ]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
      * Médias publics enrichis avec compteurs et état « j’aime » (si table présente).
      *
      * @param list<array<string, mixed>> $items
