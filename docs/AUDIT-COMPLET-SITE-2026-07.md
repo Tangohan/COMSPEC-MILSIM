@@ -1291,8 +1291,22 @@ utile côté métier : la qualification cesse d'être une donnée d'affichage po
 - L'avertissement remonte via un flash `warning`, rendu par
   `views/partials/layout_flash_toasts.php` (inclus par `views/layout/main.php:252`).
 
-Reste sur ce chantier : l'UI d'administration pour **choisir** la formation requise sur un poste
-(aujourd'hui la colonne existe mais n'est renseignable qu'en base), et N5 (tableau de recyclage).
+**UI d'administration du prérequis** — livrée : sélection de la formation requise et du mode
+(avertir / refuser) dans les formulaires de création et d'édition d'un poste. Seules les
+formations **certifiantes publiées** sont proposées, puisque ce sont les seules qui délivrent une
+qualification vérifiable. Le contrôleur revalide l'appartenance au tenant avant écriture. Badge
+« Exige » / « Recommande » dans le tableau des postes.
+
+**N5 — tableau de recyclage** — livré : `/back-office/ressources/effectifs/qualifications`,
+huitième entrée du bureau effectifs, avec badge de rappel visible depuis toutes les pages de
+l'espace. Sépare les qualifications **échues** des qualifications **à renouveler**, horizon
+réglable (30 / 60 / 90 jours), lien vers la fiche du membre, et état de repli explicite si la base
+n'a pas encore reçu la migration. C'est la réponse à la question métier « quelle qualification
+expire bientôt ? », restée sans réponse jusqu'ici.
+
+La boucle Formation → Qualification → Effectif → Opération est donc fermée de bout en bout :
+une formation certifiante délivre une qualification, la qualification conditionne l'accès à un
+poste d'opération, et son expiration remonte au bureau effectifs.
 
 ### P1 — Prioritaire
 
