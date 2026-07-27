@@ -17,6 +17,18 @@ config/cdn_libraries.local.php
 /storage/intel/*
 !/storage/intel/.gitkeep
 composer.lock
+
+# --- Exports / dumps de base : jamais dans le dépôt ---
+# Contiennent des données de production (e-mails, empreintes de mots de passe, IP,
+# jetons). Les migrations versionnées, elles, restent suivies.
+*.sql
+!migrations/**/*.sql
+!bootstrap/**/*.sql
+!docs/**/*.sql
+*.sql.gz
+*.sql.zip
+*.dump
+
 .idea/
 .vscode/
 *.log

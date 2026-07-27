@@ -17,6 +17,23 @@ $eventStaffActionsEnabled = $eventStaffActionsEnabled ?? false;
 $eventSlots = $eventSlots ?? [];
 $eventSlotAssignmentsBySlot = $eventSlotAssignmentsBySlot ?? [];
 $eventUnits = $eventUnits ?? [];
+/** @var bool $eventSlotQualificationsEnabled */
+$eventSlotQualificationsEnabled = (bool) ($eventSlotQualificationsEnabled ?? false);
+/** @var list<array{id:int,title:string}> $eventQualificationCourses */
+$eventQualificationCourses = $eventQualificationCourses ?? [];
+/** Libellé de la formation exigée sur un poste, pour l'affichage du tableau. */
+$eventQualificationLabel = static function (?int $courseId) use ($eventQualificationCourses): string {
+    if ($courseId === null || $courseId < 1) {
+        return '';
+    }
+    foreach ($eventQualificationCourses as $c) {
+        if ((int) $c['id'] === $courseId) {
+            return (string) $c['title'];
+        }
+    }
+
+    return 'Formation #' . $courseId;
+};
 $cancelled = !empty($event['cancelled_at']);
 $eid = (int) ($event['id'] ?? 0);
 
@@ -323,6 +340,27 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php if ($eventSlotQualificationsEnabled): ?>
+                    <div>
+                        <label class="bo-events__label" for="slot-course">Qualification requise <span>(optionnel)</span></label>
+                        <select id="slot-course" name="required_training_course_id" class="bo-events__select">
+                            <option value="0">Aucune</option>
+                            <?php foreach ($eventQualificationCourses as $c): ?>
+                            <option value="<?= (int) $c['id'] ?>"><?= htmlspecialchars((string) $c['title']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php if ($eventQualificationCourses === []): ?>
+                        <p class="bo-events__hint">Aucune formation certifiante publiée : seule une formation certifiante délivre une qualification vérifiable.</p>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <label class="bo-events__label" for="slot-enforcement">Si la qualification manque</label>
+                        <select id="slot-enforcement" name="qualification_enforcement" class="bo-events__select">
+                            <option value="advisory" selected>Avertir, laisser s’inscrire</option>
+                            <option value="strict">Refuser l’inscription</option>
+                        </select>
+                    </div>
+                    <?php endif; ?>
                     <div class="bo-events__field--full">
                         <label class="bo-events__label" for="slot-notes">Notes de loadout <span>(optionnel)</span></label>
                         <textarea id="slot-notes" name="loadout_notes" rows="2" class="bo-events__textarea" placeholder="Ex. Tenue standard + AT4, munitions fournies au dépôt"></textarea>
@@ -364,7 +402,21 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                 $unitName = trim((string) ($slot['unit_name'] ?? ''));
                                 ?>
                                 <tr>
-                                    <td data-label="Poste"><span class="bo-events__member-name"><?= htmlspecialchars((string) ($slot['label'] ?? '')) ?></span></td>
+                                    <td data-label="Poste">
+                                        <span class="bo-events__member-name"><?= htmlspecialchars((string) ($slot['label'] ?? '')) ?></span>
+                                        <?php
+                                        $slotCourseLabel = $eventSlotQualificationsEnabled
+                                            ? $eventQualificationLabel((int) ($slot['required_training_course_id'] ?? 0))
+                                            : '';
+                                        ?>
+                                        <?php if ($slotCourseLabel !== ''): ?>
+                                            <?php $isStrict = (string) ($slot['qualification_enforcement'] ?? 'advisory') === 'strict'; ?>
+                                            <div class="bo-events__chip <?= $isStrict ? 'bo-events__chip--danger' : 'bo-events__chip--muted' ?>"
+                                                 title="<?= $isStrict ? 'Inscription refusée sans cette qualification' : 'Inscription possible, avec avertissement' ?>">
+                                                <?= $isStrict ? 'Exige' : 'Recommande' ?> : <?= htmlspecialchars($slotCourseLabel) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
                                     <td data-label="Unité"><?= $unitName !== '' ? htmlspecialchars($unitName) : '—' ?></td>
                                     <td data-label="Places">
                                         <?= $confirmedN ?> / <?= $capacity ?>
@@ -406,6 +458,26 @@ $addOpen = $eventMemberLookupQuery !== '' || $eventMemberLookup !== [];
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </div>
+                                                        <?php if ($eventSlotQualificationsEnabled): ?>
+                                                        <?php $slotCourseId = (int) ($slot['required_training_course_id'] ?? 0); ?>
+                                                        <div>
+                                                            <label class="bo-events__label" for="slot-course-<?= $sid ?>">Qualification requise</label>
+                                                            <select id="slot-course-<?= $sid ?>" name="required_training_course_id" class="bo-events__select">
+                                                                <option value="0">Aucune</option>
+                                                                <?php foreach ($eventQualificationCourses as $c): ?>
+                                                                <option value="<?= (int) $c['id'] ?>" <?= $slotCourseId === (int) $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) $c['title']) ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="bo-events__label" for="slot-enforcement-<?= $sid ?>">Si la qualification manque</label>
+                                                            <?php $slotMode = (string) ($slot['qualification_enforcement'] ?? 'advisory'); ?>
+                                                            <select id="slot-enforcement-<?= $sid ?>" name="qualification_enforcement" class="bo-events__select">
+                                                                <option value="advisory" <?= $slotMode !== 'strict' ? 'selected' : '' ?>>Avertir, laisser s’inscrire</option>
+                                                                <option value="strict" <?= $slotMode === 'strict' ? 'selected' : '' ?>>Refuser l’inscription</option>
+                                                            </select>
+                                                        </div>
+                                                        <?php endif; ?>
                                                         <div class="bo-events__field--full">
                                                             <label class="bo-events__label" for="slot-notes-<?= $sid ?>">Notes de loadout</label>
                                                             <textarea id="slot-notes-<?= $sid ?>" name="loadout_notes" rows="2" class="bo-events__textarea"><?= htmlspecialchars((string) ($slot['loadout_notes'] ?? '')) ?></textarea>

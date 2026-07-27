@@ -821,7 +821,7 @@ Format : **Source → Destination → Données → Mécanisme → État → Prob
 | S2 | **CSRF global limité à `/back-office/`** | 181 routes `/admin/*` et toutes les routes membres dépendent d'appels manuels. `DocumentsController` : 3 routes POST, 0 validation | **P0** | **[C]** |
 | S3 | **Ouverture hors production** | Si `APP_ENV` ≠ `production`/`prod`, sans `X_COMSPEC_KEY` ni `TACTICAL_API_STRICT`, toutes les API tactiques sont ouvertes | **P1** | **[C]** |
 | S4 | **Erreurs qui fuient de l'information** | `public/index.php` renvoie « Cette fonctionnalité n'est pas encore prête sur le serveur. Demandez à un administrateur de lancer la mise à jour de la base » lorsqu'il détecte `1146`/`42S02` dans le message d'exception | **P2** | **[C]** |
-| S5 | **Session** | `session_set_cookie_params` correct (`httponly`, `samesite=Lax`) mais `secure` dépend de `config('auth')` — à vérifier en production | **P1** | **[V]** |
+| S5 | **Cookie de session non `secure` par défaut** | `app/Config/auth.php:7` fait défaut à `false`, et `.env.example:58` livre `SESSION_SECURE_COOKIE=false` **à côté de `APP_ENV=production` (ligne 8)**. Un déploiement qui recopie `.env.example` tel quel tourne en production avec un cookie de session transmissible en clair. `httponly` et `samesite=Lax` sont corrects, mais ne compensent pas un downgrade HTTP. | **P1** | **[C]** |
 | S6 | **Token CSRF unique par session, sans rotation** | `Csrf::token()` génère une fois et ne tourne jamais, même après `Session::regenerate()` | **P2** | **[C]** |
 
 ### 14.2 Architecture
@@ -844,8 +844,11 @@ Format : **Source → Destination → Données → Mécanisme → État → Prob
 **[C]** 22 fichiers de test pour ~317 000 lignes. Répartition : 18 unitaires, 2 de contrat API,
 2 sur le courrier. **Aucun test** ne couvre : le workflow de candidature, l'émission de certificat,
 le RSVP et les slots, l'API ATAK, le RBAC, la résolution de tenant, la génération de PDF.
-`phpstan.neon` existe avec une baseline **vide** (`phpstan-baseline.neon` = 33 octets) — **[V]** :
-soit le code est propre au niveau configuré, soit le niveau est très bas.
+**[C]** `phpstan.neon` est configuré en **`level: 0`**, le niveau le plus permissif de l'outil
+(il ne détecte guère que les classes et fonctions inconnues). La baseline vide
+(`phpstan-baseline.neon` = 33 octets) ne traduit donc pas un code sain : l'analyse statique est
+présente dans le projet mais pratiquement inerte. Monter progressivement à `level: 5` sur
+`app/Repositories` puis `app/Services`, baseline à l'appui, donnerait un filet réel.
 
 ### 14.4 Risques de régression classés
 
@@ -1179,7 +1182,7 @@ reviendrait à câbler un système sur des données qui n'existent pas.
 |---|---|---|---|
 | P0-1 | Protéger `/api/operations/*` (`config/tactical_api.php`) | 15 min | **Fait** |
 | P0-2 | CSRF sur les 3 POST de `DocumentsController` | 30 min | **Fait** |
-| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **En attente d'arbitrage** |
+| P0-3 | Audit du dump SQL versionné (données personnelles) puis décision de retrait | 2 h | **Audit fait · dépôt nettoyé · purge d'historique en attente d'arbitrage** |
 | P0-4 | Émettre une qualification à l'émission d'un certificat | 2-3 j | **Fait** (socle) |
 
 #### Détail de la livraison P0
@@ -1214,22 +1217,146 @@ transmettent désormais `_csrf_token` : le lecteur de documents continue de fonc
 Reste à faire sur ce chantier, hors P0 : l'exposition UI (tableau de recyclage par unité — N5) et
 la consommation par les prérequis d'opération (N1).
 
+**P0-3 — résultat de l'audit du dump `u416380327_BDD_PROD.sql`** (782 Ko, racine du dépôt)
+
+Le fichier ne contient pas que le schéma : **106 lignes de données de production réelles**.
+
+| Table | Lignes | E-mails | Empreintes mot de passe | Jetons |
+|---|---|---|---|---|
+| `users` | 6 | 6 | **6 (argon2id)** | — |
+| `user_profiles` | 3 | — | — | — |
+| `personnel_profiles` | 3 | — | — | — |
+| `enlistments` | 2 | 2 | — | — |
+| `email_tokens` | 4 | — | — | 6 |
+| `password_resets` | 1 | — | — | 1 |
+| `login_attempts` | 28 | 28 | — | — |
+| `user_login_devices` | 4 | — | — | 4 |
+| `audit_logs` | 55 | 7 | — | — |
+
+S'y ajoutent **3 adresses IPv4 publiques** (donc rattachables à des personnes).
+
+Circonstances atténuantes, vérifiées :
+
+- Le dépôt est **privé**, `forks_count = 0`. L'exposition se limite aux personnes ayant accès au
+  dépôt (et aux environnements d'exécution qui le clonent, comme les sessions d'agent).
+- Les empreintes sont en **argon2id**, pas en MD5/SHA1 : même divulguées, elles résistent.
+- Les jetons (`email_tokens`, `password_resets`) datent d'avril 2026, soit environ 3,5 mois :
+  **[P]** expirés selon les TTL du code, donc non rejouables.
+
+Éléments aggravants :
+
+- **Aucune règle `.gitignore` ne couvre les `.sql`** — la récidive est probable.
+- Le fichier est présent dans **6 commits** : le retirer du répertoire de travail ne le retire pas
+  de l'historique.
+- Conserver des données de production dans un dépôt de code contrevient à la minimisation
+  (RGPD art. 5.1.c), indépendamment du caractère privé du dépôt.
+
+**Recommandation, en deux temps séparés :**
+
+1. *Sans risque, réversible* — retirer le fichier du répertoire de travail (`git rm --cached`),
+   ajouter `*.sql` (avec exception pour `migrations/*.sql`) au `.gitignore`, et conserver le dump
+   hors dépôt. Corrige le présent et prévient la récidive.
+2. *Irréversible, à arbitrer* — purge d'historique (`git filter-repo`) sur les 6 commits. Réécrit
+   `main`, invalide les clones et les PR ouvertes. Au vu du dépôt privé sans fork, la valeur
+   marginale est faible face au coût. **Non recommandé sauf obligation de conformité explicite.**
+
+Dans les deux cas, la mesure réellement protectrice est ailleurs : **faire tourner les 6 mots de
+passe concernés**, puisqu'ils ont circulé sous forme d'empreinte.
+
+**Suite donnée** — étape 1 appliquée : `git rm --cached` sur le dump (le fichier reste sur disque
+et reste récupérable par `git show HEAD~1:u416380327_BDD_PROD.sql`), et `.gitignore` couvre
+désormais `*.sql`, `*.sql.gz`, `*.sql.zip`, `*.dump`, avec exception explicite pour
+`migrations/**`, `bootstrap/**` et `docs/**`. Vérifié : 92 migrations restent suivies, aucun
+fichier suivi n'a été perdu. **Étape 2 (purge d'historique) non exécutée — décision de l'équipe.**
+
+#### P1 traités dans la foulée
+
+**S5 — cookie de session `secure`.** `app/Config/auth.php` déduit désormais la valeur d'`APP_ENV`
+lorsque `SESSION_SECURE_COOKIE` est absente ou vide : `secure` est actif d'office en production.
+Une valeur explicite reste prioritaire, pour la préproduction sans TLS. `.env.example` passe à
+`true` avec le commentaire correspondant. Six scénarios vérifiés (production/local × absente/vide/
+forcée) : le comportement en développement local est inchangé.
+
+**N1 — prérequis de qualification sur les postes d'opération.** C'est ce qui rend le chantier P0-4
+utile côté métier : la qualification cesse d'être une donnée d'affichage pour devenir une condition.
+
+- Migration idempotente `community_event_slot_qualification_migration.php` :
+  `required_training_course_id` et `qualification_enforcement` sur `community_event_slots`.
+- `CommunityEventSlotService::qualificationGapForSlot()` puis contrôle dans `signUp()`.
+- **Deux modes, défaut prudent** : `advisory` (inscription acceptée + avertissement nommant la
+  formation manquante) et `strict` (refus). Le défaut est `advisory` pour qu'activer un prérequis
+  sur une communauté existante ne bloque personne du jour au lendemain.
+- Sur un déploiement non migré, `trainingLinkReady()` neutralise le contrôle : personne n'est
+  bloqué. Table de décision vérifiée sur 6 scénarios.
+- L'avertissement remonte via un flash `warning`, rendu par
+  `views/partials/layout_flash_toasts.php` (inclus par `views/layout/main.php:252`).
+
+**UI d'administration du prérequis** — livrée : sélection de la formation requise et du mode
+(avertir / refuser) dans les formulaires de création et d'édition d'un poste. Seules les
+formations **certifiantes publiées** sont proposées, puisque ce sont les seules qui délivrent une
+qualification vérifiable. Le contrôleur revalide l'appartenance au tenant avant écriture. Badge
+« Exige » / « Recommande » dans le tableau des postes.
+
+**N5 — tableau de recyclage** — livré : `/back-office/ressources/effectifs/qualifications`,
+huitième entrée du bureau effectifs, avec badge de rappel visible depuis toutes les pages de
+l'espace. Sépare les qualifications **échues** des qualifications **à renouveler**, horizon
+réglable (30 / 60 / 90 jours), lien vers la fiche du membre, et état de repli explicite si la base
+n'a pas encore reçu la migration. C'est la réponse à la question métier « quelle qualification
+expire bientôt ? », restée sans réponse jusqu'ici.
+
+La boucle Formation → Qualification → Effectif → Opération est donc fermée de bout en bout :
+une formation certifiante délivre une qualification, la qualification conditionne l'accès à un
+poste d'opération, et son expiration remonte au bureau effectifs.
+
 ### P1 — Prioritaire
 
-| Id | Titre | Effort |
-|---|---|---|
-| P1-1 | Étendre `CsrfPostMiddleware` à `/admin/` | 1 j (dont recette) |
-| P1-2 | Valeur `event` dans `document_links.entity_type` + UI d'attachement | 1 j |
-| P1-3 | `required_qualification_id` sur `community_event_slots` + contrôle à l'inscription | 2 j |
-| P1-4 | `atak_units.user_id` alimentée à la liaison | 2 j |
-| P1-5 | Pré-remplissage du dossier depuis la candidature acceptée | 1 j |
-| P1-6 | Inscription automatique au parcours d'accueil à l'acceptation | 1 j |
-| P1-7 | Tests des 5 workflows critiques (candidature, certificat, RSVP, RBAC, tenant) | 5 j |
-| P1-8 | Journalisation des `catch (\Throwable)` des chemins métier | 2 j |
-| P1-9 | Fusion de `send-attendance-reminders.php` dans `CronRunner` | 0,5 j |
-| P1-10 | Correction du slot « Plus » de la barre mobile | 2 h |
-| P1-11 | Suppression de `certifications` / `user_certifications` + correction du score de readiness | 1 j |
-| P1-12 | Quick wins de contenu (P5–P8) | 1 j |
+| Id | Titre | Effort | État |
+|---|---|---|---|
+| P1-1 | Étendre `CsrfPostMiddleware` à `/admin/` | 1 j (dont recette) | **Fait** |
+| P1-2 | Valeur `event` dans `document_links.entity_type` + UI d'attachement | 1 j | À faire |
+| P1-3 | `required_qualification_id` sur `community_event_slots` + contrôle à l'inscription | 2 j | **Fait** (N1) |
+| P1-4 | `atak_units.user_id` alimentée à la liaison | 2 j | À faire |
+| P1-5 | Pré-remplissage du dossier depuis la candidature acceptée | 1 j | À faire |
+| P1-6 | Inscription automatique au parcours d'accueil à l'acceptation | 1 j | À faire |
+| P1-7 | Tests des 5 workflows critiques (candidature, certificat, RSVP, RBAC, tenant) | 5 j | À faire |
+| P1-8 | Journalisation des `catch (\Throwable)` des chemins métier | 2 j | À faire |
+| P1-9 | Fusion de `send-attendance-reminders.php` dans `CronRunner` | 0,5 j | **Fait** |
+| P1-10 | Correction du slot « Plus » de la barre mobile | 2 h | **Fait** |
+| P1-11 | Suppression de `certifications` / `user_certifications` + correction du score de readiness | 1 j | À faire |
+| P1-12 | Quick wins de contenu (P5–P8) | 1 j | À faire |
+
+#### Détail P1-1 — extension du filet CSRF
+
+Analyse de couverture menée **avant** modification, le middleware étant le point le plus
+sensible du socle :
+
+- 73 actions POST distinctes sous `/admin/` ; **66 validaient déjà** le jeton explicitement.
+- Les 7 restantes : 3 vivent en réalité sous `/back-office/` (donc déjà couvertes), et les
+  formulaires des 4 autres émettent bien un jeton (vérifié vue par vue).
+- **Aucun POST AJAX ne vise `/admin/`** : le JS passe par `/api/admin/…`, hors périmètre du
+  middleware et couvert par des validations en ligne.
+
+Le middleware est réécrit autour de deux listes explicites — `PROTECTED_PREFIXES`
+(`/back-office/`, `/admin/`) et `EXEMPT_PREFIXES` (webhook Stripe, `/integrations/`,
+abonnement calendrier, `/api/`). Au passage, **les exemptions étaient mortes** dans la version
+précédente : elles n'étaient testées qu'après le filtre `/back-office/`, qu'aucune d'elles ne
+pouvait satisfaire. Elles sont désormais évaluées en premier. Décision vérifiée sur 14 chemins.
+
+**Surface restante** : les routes membres et publiques (RSVP, documents, candidature, connexion…)
+restent sur validation en ligne. Les couvrir exigerait de vérifier chaque formulaire public, y
+compris ceux servis à des visiteurs non connectés — chantier distinct, à ne pas mener à l'aveugle.
+
+#### Détail P1-9 et P1-10
+
+**P1-9** — `AttendanceRemindersCronJob` rejoint le registre `CronRunner` (8 tâches). Les
+exécutions sont journalisées dans `cron_job_runs` et visibles en administration, ce dont le
+script autonome était privé. `send-attendance-reminders.php` est conservé mais délègue, pour ne
+pas casser les crontabs déjà en place.
+
+**P1-10** — le cinquième slot de la barre mobile pointait vers `hub`, comme « Accueil », avec un
+état actif câblé à `false` : 20 % de la navigation mobile ne servait à rien. Il devient
+« Ma fiche » (`personnel/me`), actif aussi sur `/dossier-operateur` et `/effectifs` — c'est là
+que le membre consulte désormais ses qualifications.
 
 ### P2 — Amélioration importante
 
@@ -1274,18 +1401,20 @@ la consommation par les prérequis d'opération (N1).
 
 ## Annexe A — Points à vérifier
 
-Éléments que cet audit n'a **pas** pu trancher par lecture seule :
+Éléments que cet audit n'a pas pu trancher par lecture seule. Quatre ont depuis été résolus.
 
-1. **[V]** Le niveau PHPStan configuré (`phpstan.neon`, baseline vide de 33 octets).
-2. **[V]** Le rendu réel en tablette (768–1024 px) : très peu de classes `md:` observées.
-3. **[V]** `config('auth')['session_secure_cookie']` en production.
-4. **[V]** Le recouvrement exact entre `competencies/*` et `knowledge_units/module_*`.
-5. **[V]** L'alimentation de `personnel_profiles.readiness_score`.
-6. **[V]** L'usage effectif de `document_relations` (parent/enfant).
-7. **[V]** La couverture réelle de `portal_help_modal.php`.
-8. **[V]** Si `enlistment_timeline` trace bien **toutes** les transitions de statut.
-9. **[V]** Le contenu du dump `u416380327_BDD_PROD.sql` au regard des données personnelles.
-10. **[V]** Si l'UI expose réellement `community_event_slots.unit_id` comme filtre.
+| # | Point | État |
+|---|---|---|
+| 1 | Niveau PHPStan | **Résolu [C]** — `level: 0`. Analyse statique quasi inerte (cf. § 14.3) |
+| 2 | Rendu tablette (768–1024 px) | **[V]** — nécessite un rendu réel |
+| 3 | `session_secure_cookie` en production | **Résolu [C]** — défaut `false`, et `.env.example` le livre à `false` avec `APP_ENV=production` (cf. S5) |
+| 4 | Recouvrement `competencies/*` ↔ `knowledge_units/module_*` | **[V]** |
+| 5 | Alimentation de `personnel_profiles.readiness_score` | **[V]** |
+| 6 | Usage effectif de `document_relations` | **Résolu [C]** — **utilisée**, consommée par `AdminDocumentsController` via `DocumentRelationRepository`. Le constat « sous-exploité n° 11 » est donc à nuancer : la table vit, c'est son exposition produit qui est faible |
+| 7 | Couverture de `portal_help_modal.php` | **[V]** |
+| 8 | Exhaustivité de `enlistment_timeline` sur les transitions de statut | **[V]** |
+| 9 | Contenu du dump `u416380327_BDD_PROD.sql` | **Résolu [C]** — cf. § 24, P0-3 |
+| 10 | Exposition de `community_event_slots.unit_id` dans l'UI | **[V]** |
 
 ## Annexe B — Fichiers cités
 

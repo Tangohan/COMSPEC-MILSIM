@@ -14,6 +14,7 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PersonnelAssignmentRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PersonnelProfileRepository;
+use App\Repositories\PersonnelQualificationRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\SeniorityRepository;
 use App\Repositories\TenantRepository;
@@ -50,8 +51,59 @@ class EffectifsWorkspaceController
         private MemberDepartureRepository $memberDepartureRepository,
         private PersonnelStructureChangeNotificationService $structureChangeNotification,
         private ?ElevationRequestRepository $elevationRequestRepository = null,
+        private ?PersonnelQualificationRepository $personnelQualificationRepository = null,
     ) {
         $this->elevationRequestRepository ??= new ElevationRequestRepository();
+        $this->personnelQualificationRepository ??= new PersonnelQualificationRepository();
+    }
+
+    /**
+     * Tableau des recyclages : qualifications échues ou proches de l'échéance.
+     *
+     * Répond à la question métier « quelle qualification expire bientôt ? », restée sans
+     * réponse tant que `personnel_qualifications` n'était jamais alimentée.
+     */
+    public function qualifications(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $tenantId = (int) Session::get('tenant_id');
+
+        // Fenêtre d'observation : 30 / 60 / 90 jours, 60 par défaut.
+        $within = (int) $request->query('horizon', 60);
+        if (!in_array($within, [30, 60, 90], true)) {
+            $within = 60;
+        }
+
+        $ready = $this->personnelQualificationRepository->trainingLinkReady();
+        $rows = $ready
+            ? $this->personnelQualificationRepository->listExpiringForTenant($tenantId, $within, 300)
+            : [];
+
+        // Répartition : déjà échues vs à renouveler, pour hiérarchiser l'action.
+        $expired = [];
+        $expiring = [];
+        $today = date('Y-m-d');
+        foreach ($rows as $row) {
+            $exp = substr((string) ($row['expires_at'] ?? ''), 0, 10);
+            if ($exp !== '' && $exp < $today) {
+                $expired[] = $row;
+            } else {
+                $expiring[] = $row;
+            }
+        }
+
+        return $this->shell('admin.effectifs_workspace.qualifications', [
+            'title' => 'Qualifications',
+            'effectifsNav' => 'qualifications',
+            'qualificationsReady' => $ready,
+            'qualificationsHorizon' => $within,
+            'qualificationsExpired' => $expired,
+            'qualificationsExpiring' => $expiring,
+            'qualificationsExpiringCount' => count($expired) + count($expiring),
+        ]);
     }
 
     public function roster(Request $request, array $params = []): Response
@@ -1116,11 +1168,23 @@ class EffectifsWorkspaceController
             $elevationOpen = 0;
         }
 
+        // Badge « Qualifications » du rail : visible depuis toutes les pages de l'espace,
+        // pas seulement depuis la page qualifications elle-même.
+        $qualifExpiring = $extra['qualificationsExpiringCount'] ?? null;
+        if ($qualifExpiring === null) {
+            try {
+                $qualifExpiring = count($this->personnelQualificationRepository->listExpiringForTenant($tenantId, 60, 300));
+            } catch (\Throwable) {
+                $qualifExpiring = 0;
+            }
+        }
+
         return Response::view('layout.effectifs_lms', array_merge([
             'content' => $content,
             'showPortalFooter' => false,
             'rosterCounts' => $counts,
             'elevationOpenCount' => $elevationOpen,
+            'qualificationsExpiringCount' => $qualifExpiring,
             'viewerName' => (string) (Session::get('display_name') ?? Session::get('email') ?? ''),
         ], $extra));
     }

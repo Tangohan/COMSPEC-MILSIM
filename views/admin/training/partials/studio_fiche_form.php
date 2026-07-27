@@ -86,6 +86,21 @@ $validityDaysField = $course['validity_days'] ?? null;
                 </select>
                 <p class="ts-field__hint">Les parcours publiés apparaissent dans le catalogue apprenant. Les brouillons restent réservés au Studio.</p>
             </div>
+            <?php if (!empty($lessonPlayerModeAvailable)): ?>
+            <?php $curPlayer = (string) ($course['lesson_player_mode'] ?? 'legacy'); ?>
+            <div class="ts-field">
+                <label for="fiche-lesson-player">Lecteur des leçons à diapositives</label>
+                <select id="fiche-lesson-player" name="lesson_player_mode">
+                    <option value="legacy" <?= $curPlayer !== 'stage' ? 'selected' : '' ?>>Classique — défilement d’images</option>
+                    <option value="stage" <?= $curPlayer === 'stage' ? 'selected' : '' ?>>Scène 16:9 — étape par étape, navigation clavier</option>
+                </select>
+                <p class="ts-field__hint">
+                    Ne concerne que les leçons de type « diaporama ». La scène 16:9 affiche une étape à la fois,
+                    avec progression et navigation aux flèches. Vous pouvez la prévisualiser sans basculer le parcours
+                    en ajoutant <code>?player=stage</code> à l’adresse d’une leçon.
+                </p>
+            </div>
+            <?php endif; ?>
             <div class="ts-field md:col-span-2">
                 <span>Portée du catalogue</span>
                 <?php if ($studioCanSetPlatformScope): ?>

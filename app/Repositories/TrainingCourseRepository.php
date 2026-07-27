@@ -20,6 +20,33 @@ class TrainingCourseRepository
         $this->pdo = Database::getPdo();
     }
 
+    /** Cache : colonne du sélecteur de lecteur présente (déploiement migré ou non). */
+    private ?bool $lessonPlayerModeColumn = null;
+
+    /**
+     * La bascule de lecteur de leçon est-elle disponible ?
+     * Sur un déploiement non migré, l'UI masque le réglage et l'écriture est ignorée.
+     */
+    public function hasLessonPlayerModeColumn(): bool
+    {
+        if ($this->lessonPlayerModeColumn !== null) {
+            return $this->lessonPlayerModeColumn;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'training_courses'
+                   AND COLUMN_NAME = 'lesson_player_mode' LIMIT 1"
+            );
+            $st->execute();
+            $this->lessonPlayerModeColumn = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->lessonPlayerModeColumn = false;
+        }
+
+        return $this->lessonPlayerModeColumn;
+    }
+
     /** @return list<string> valeurs distinctes de category pour autocomplétion, sans catalogue dédié. */
     public function listDistinctCategoriesForTenant(int $tenantId): array
     {
@@ -292,7 +319,7 @@ class TrainingCourseRepository
     {
         $fields = [];
         $params = [];
-        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id'];
+        $allowed = ['title', 'slug', 'course_code', 'short_description', 'description', 'learning_objectives', 'theme_json', 'enrollment_policy_json', 'enrollment_share_code', 'instruction_audio_url', 'instruction_audio_instructor_optional', 'instruction_audio_notes', 'thumbnail_path', 'banner_path', 'showcase_cycle_date', 'showcase_location', 'showcase_badge', 'showcase_card_style', 'showcase_sort_order', 'category', 'level', 'language_code', 'estimated_minutes', 'passing_score', 'is_mandatory', 'is_certifying', 'validity_days', 'visibility', 'updated_by', 'lms_created_with_version', 'lms_last_saved_with_version', 'lms_scope', 'pedagogical_owner_user_id', 'final_validator_user_id', 'lesson_player_mode'];
         foreach ($allowed as $k) {
             if (array_key_exists($k, $data)) {
                 $fields[] = "`$k` = ?";

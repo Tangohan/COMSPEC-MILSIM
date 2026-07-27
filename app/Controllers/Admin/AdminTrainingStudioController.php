@@ -495,6 +495,7 @@ class AdminTrainingStudioController
             'visibilityOptions' => self::VISIBILITY,
             'levelOptions' => self::LEVELS,
             'canPublish' => $canPublish,
+            'lessonPlayerModeAvailable' => $this->courseRepository->hasLessonPlayerModeColumn(),
             'publishElevationRecipients' => $publishElevationRecipients,
             'publishElevationCooldownSec' => $publishElevationCooldownSec,
             'trainingStudioMode' => 'edit',
@@ -796,6 +797,13 @@ class AdminTrainingStudioController
         ];
         if (function_exists('lms_platform_version')) {
             $patch['lms_last_saved_with_version'] = lms_platform_version();
+        }
+        // Lecteur de diapositives : bascule progressive par formation. Le champ n'est écrit
+        // que si la colonne existe (déploiement migré) et que le formulaire l'a effectivement
+        // envoyé, pour ne pas réinitialiser un réglage posé directement en base.
+        if ($this->courseRepository->hasLessonPlayerModeColumn() && $request->input('lesson_player_mode') !== null) {
+            $mode = (string) $request->input('lesson_player_mode', 'legacy');
+            $patch['lesson_player_mode'] = in_array($mode, ['legacy', 'stage'], true) ? $mode : 'legacy';
         }
         if ($this->pedagogyRepository->trainingCoursesHavePedagogyColumns()) {
             $oid = max(0, (int) $request->input('pedagogical_owner_user_id', (int) ($course['pedagogical_owner_user_id'] ?? 0)));
