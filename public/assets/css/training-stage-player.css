@@ -1,0 +1,349 @@
+/**
+ * Lecteur de leçon « scène 16:9 » — nouvelle lecture de formation.
+ *
+ * Coexiste avec lesson_slideshow_player (Swiper, images seules) et canvas_lesson_player :
+ * la bascule se fait par formation (training_courses.lesson_player_mode). Aucun style ici
+ * ne cible les sélecteurs des lecteurs existants.
+ *
+ * Typographie : Inter pour l'interface, Source Serif 4 pour les titres de diapositive.
+ * Les deux sont déjà chargées par athena-ds/fonts.css — aucune police supplémentaire.
+ */
+
+.stage-player {
+  --stage-ink: #0f172a;
+  --stage-muted: #475569;
+  --stage-faint: #6b7280;
+  --stage-line: #e2e8f0;
+  --stage-surface: #ffffff;
+  --stage-canvas: #f8fafc;
+  --stage-void: #0b0f14;
+  --stage-deep: #0b1220;
+  --stage-mint: #2dd4a7;
+  --stage-go: #16a34a;
+  --stage-go-strong: #15803d;
+  --stage-teal: #0e7490;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+/* ---------- Barre de commande ---------- */
+
+.stage-player__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stage-player__hint {
+  font-size: 0.8125rem;
+  color: var(--stage-faint);
+  margin: 0;
+}
+
+.stage-player__hint strong {
+  color: var(--stage-ink);
+  font-weight: 700;
+}
+
+.stage-player__controls {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.stage-player__btn {
+  border: 1px solid var(--stage-line);
+  background: var(--stage-surface);
+  color: #374151;
+  border-radius: 0.5rem;
+  /* 44 px de zone tactile minimum. */
+  padding: 0.6875rem 1.125rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.stage-player__btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.stage-player__btn:focus-visible {
+  outline: 2px solid var(--stage-go);
+  outline-offset: 2px;
+}
+
+.stage-player__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stage-player__btn--go {
+  border-color: var(--stage-go);
+  background: var(--stage-go);
+  color: #fff;
+  font-weight: 700;
+}
+
+.stage-player__btn--go:hover:not(:disabled) {
+  background: var(--stage-go-strong);
+  border-color: var(--stage-go-strong);
+}
+
+/* ---------- Progression des étapes ---------- */
+
+.stage-player__meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: #374151;
+}
+
+.stage-player__meter-count {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-player__meter {
+  height: 7px;
+  background: #eef1f5;
+  border-radius: 4px;
+  margin-top: 0.625rem;
+  overflow: hidden;
+}
+
+.stage-player__meter-fill {
+  height: 100%;
+  background: var(--stage-go);
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+/* ---------- Scène 16:9 ---------- */
+
+.stage-player__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--stage-void);
+  border-radius: 0.625rem;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
+}
+
+/* Repli pour les navigateurs sans aspect-ratio. */
+@supports not (aspect-ratio: 16 / 9) {
+  .stage-player__stage {
+    height: 0;
+    padding-bottom: 56.25%;
+  }
+}
+
+.stage-player__slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 4% 6%;
+  background: var(--stage-canvas);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.stage-player__slide[hidden] {
+  display: none;
+}
+
+/* Diapositive de titre : fond sombre, comme l'ouverture d'un module. */
+.stage-player__slide--cover {
+  background: linear-gradient(125deg, var(--stage-deep), #0e2a22);
+  justify-content: center;
+  color: #fff;
+}
+
+.stage-player__eyebrow {
+  font-size: clamp(9px, 0.9vw, 12px);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--stage-teal);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.stage-player__slide--cover .stage-player__eyebrow {
+  color: var(--stage-mint);
+  letter-spacing: 0.24em;
+}
+
+.stage-player__title {
+  font-family: var(--ds-font-serif, "Source Serif 4", Georgia, serif);
+  font-size: clamp(20px, 2.4vw, 36px);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.5rem 0 0;
+  color: var(--stage-ink);
+}
+
+.stage-player__slide--cover .stage-player__title {
+  font-size: clamp(28px, 3.6vw, 58px);
+  line-height: 1.12;
+  margin-top: 1.125rem;
+  color: #fff;
+}
+
+.stage-player__lead {
+  font-size: clamp(13px, 1.3vw, 19px);
+  color: #cbd5e1;
+  margin: 1rem 0 0;
+  line-height: 1.55;
+  max-width: 60%;
+}
+
+.stage-player__body {
+  flex: 1;
+  min-height: 0;
+  margin-top: 3%;
+  overflow-y: auto;
+  font-size: clamp(11px, 1.05vw, 15px);
+  color: #334155;
+  line-height: 1.6;
+}
+
+.stage-player__body > * + * {
+  margin-top: 0.75em;
+}
+
+/* Diapositive image : l'image occupe la scène sans être déformée. */
+.stage-player__slide--image {
+  padding: 0;
+  background: #0b0f14;
+}
+
+.stage-player__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.stage-player__caption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.stage-player__caption-title {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--stage-ink);
+  margin: 0;
+}
+
+.stage-player__caption-text {
+  font-size: 0.75rem;
+  color: var(--stage-muted);
+  margin: 0.25rem 0 0;
+}
+
+.stage-player__chips {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+  margin-top: 1.75rem;
+}
+
+.stage-player__chip {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 0.375rem 0.875rem;
+  font-size: clamp(10px, 1vw, 13px);
+  color: #94a3b8;
+}
+
+/* ---------- Pastilles de navigation ---------- */
+
+.stage-player__dots {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.stage-player__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.stage-player__dot:hover {
+  background: #94a3b8;
+}
+
+.stage-player__dot:focus-visible {
+  outline: 2px solid var(--stage-go);
+  outline-offset: 2px;
+}
+
+.stage-player__dot[aria-current="true"] {
+  background: var(--stage-go);
+  transform: scale(1.35);
+}
+
+.stage-player__dot--seen {
+  background: #86efac;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 640px) {
+  .stage-player__bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stage-player__controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stage-player__btn {
+    width: 100%;
+  }
+
+  /* La scène 16:9 devient illisible sous ~380 px : on la laisse respirer en 4:3. */
+  .stage-player__stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  .stage-player__lead {
+    max-width: 100%;
+  }
+
+  .stage-player__slide {
+    padding: 5% 6%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-player__meter-fill,
+  .stage-player__dot {
+    transition: none;
+  }
+}

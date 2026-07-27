@@ -11,6 +11,23 @@ if (!$lesson || !$enrollment || !$course) {
     return;
 }
 $lessonType = $lesson['lesson_type'] ?? 'richtext';
+
+/**
+ * Bascule progressive du lecteur de diapositives (training_courses.lesson_player_mode).
+ * `stage` = lecteur « scène 16:9 » ; toute autre valeur, ou colonne absente sur un
+ * déploiement non migré, conserve le lecteur Swiper historique.
+ *
+ * `?player=stage` permet à un membre habilité de prévisualiser sans basculer la formation.
+ */
+$lessonPlayerMode = strtolower(trim((string) ($course['lesson_player_mode'] ?? 'legacy')));
+if (isset($_GET['player']) && in_array($_GET['player'], ['stage', 'legacy'], true)) {
+    $gateForPreview = \App\Core\Gate::getInstance();
+    if ($gateForPreview->allows('training.manage') || $gateForPreview->allows('training.update') || $gateForPreview->allows('admin.access')) {
+        $lessonPlayerMode = (string) $_GET['player'];
+    }
+}
+$useStagePlayer = $lessonPlayerMode === 'stage';
+
 $currentModule = $currentModule ?? null;
 $prevLesson = $prevLesson ?? null;
 $nextLesson = $nextLesson ?? null;
@@ -173,7 +190,13 @@ if (!$lessonAlreadyCompleted) {
 }
 
 $lmsExtraHead = '';
-$needsSwiper = in_array($lessonType, ['canvas', 'slideshow'], true);
+// Le lecteur « scène » n'utilise pas Swiper : ne pas charger la librairie inutilement.
+$needsSwiper = in_array($lessonType, ['canvas', 'slideshow'], true)
+    && !($useStagePlayer && $lessonType === 'slideshow');
+if ($useStagePlayer && $lessonType === 'slideshow') {
+    $lmsExtraHead .= '<link href="' . htmlspecialchars($base) . '/assets/css/training-stage-player.css" rel="stylesheet">' . "\n";
+    $lmsExtraHead .= '<script defer src="' . htmlspecialchars($base) . '/assets/js/training-stage-player.js"></script>' . "\n";
+}
 if ($needsSwiper) {
     $lmsExtraHead .= '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">' . "\n";
     $lmsExtraHead .= '<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>' . "\n";
@@ -405,7 +428,9 @@ $headHtml = ob_get_clean();
                 require base_path('views/training/partials/lesson_modals_player.php'); ?>
                 <?php elseif ($lessonType === 'slideshow' && $showDeck): ?>
                 <?php $deck = $showDeck;
-                require base_path('views/training/partials/lesson_slideshow_player.php'); ?>
+                require base_path($useStagePlayer
+                    ? 'views/training/partials/lesson_stage_player.php'
+                    : 'views/training/partials/lesson_slideshow_player.php'); ?>
                 <?php elseif ($lessonType === 'richtext' && !empty($lesson['content'])): ?>
                 <div class="prose prose-slate max-w-none" <?= $autoLessonComplete ? 'data-lms-richtext-root="1"' : '' ?>>
                     <?= $lesson['content'] ?>
