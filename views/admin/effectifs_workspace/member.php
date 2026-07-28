@@ -7,6 +7,7 @@ $assignments = is_array($memberAssignments ?? null) ? $memberAssignments : [];
 $roleNames = is_array($memberRoleNames ?? null) ? $memberRoleNames : [];
 $jobRoles = is_array($memberJobRoles ?? null) ? $memberJobRoles : [];
 $units = is_array($orgUnits ?? null) ? $orgUnits : [];
+$profile = is_array($memberPersonnelProfile ?? null) ? $memberPersonnelProfile : [];
 $canEditProfiles = (bool) ($canEditProfiles ?? false);
 $canManageStatus = (bool) ($canManageStatus ?? false);
 $canManageAssignments = (bool) ($canManageAssignments ?? false);
@@ -62,6 +63,20 @@ $clearanceLabels = \App\Services\Documents\DocumentAccessService::getClassificat
 $clearanceLabel = $clearanceRaw !== '' ? ($clearanceLabels[$clearanceRaw] ?? $clearanceRaw) : '';
 $clearanceReviewedAt = trim((string) ($m['clearance_reviewed_at'] ?? ''));
 $clearanceOverdue = \App\Support\ClearanceReviewPolicy::isOverdue($clearanceRaw, $clearanceReviewedAt);
+$nicknamePrimary = trim((string) ($profile['nickname_primary'] ?? ''));
+$medalRackItems = [];
+$medalRackJson = $profile['medal_rack_json'] ?? null;
+if (is_string($medalRackJson) && $medalRackJson !== '') {
+    $decodedMedals = json_decode($medalRackJson, true);
+    if (is_array($decodedMedals)) {
+        foreach ($decodedMedals as $medalItem) {
+            $medalItem = trim((string) $medalItem);
+            if ($medalItem !== '') {
+                $medalRackItems[] = $medalItem;
+            }
+        }
+    }
+}
 
 $statusLabel = static function (string $raw): string {
     return match ($raw) {
@@ -96,6 +111,10 @@ $statusLabel = static function (string $raw): string {
             <div>
                 <dt>Indicatif</dt>
                 <dd><?= htmlspecialchars($callsign !== '' ? $callsign : '—', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <div>
+                <dt>Surnom principal</dt>
+                <dd><?= htmlspecialchars($nicknamePrimary !== '' ? $nicknamePrimary : '—', ENT_QUOTES, 'UTF-8') ?></dd>
             </div>
             <div>
                 <dt>Adresse e-mail</dt>
@@ -178,6 +197,12 @@ $statusLabel = static function (string $raw): string {
                 </dd>
             </div>
             <?php endif; ?>
+            <?php if ($medalRackItems !== []): ?>
+            <div>
+                <dt>Décorations / placards</dt>
+                <dd><?= htmlspecialchars(implode(' · ', $medalRackItems), ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <?php endif; ?>
         </dl>
 
         <?php if ($assignments !== []): ?>
@@ -243,6 +268,8 @@ $statusLabel = static function (string $raw): string {
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <label for="eff-member-unit-reason">Motif du changement</label>
+                <input id="eff-member-unit-reason" type="text" name="reason" maxlength="255" placeholder="Ex. Renfort, rotation, remplacement">
                 <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’affectation</button>
             </form>
         <?php endif; ?>

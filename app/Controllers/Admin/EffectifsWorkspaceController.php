@@ -513,6 +513,7 @@ class EffectifsWorkspaceController
         }
 
         $actorId = (int) Session::get('user_id');
+        $assignmentReason = trim((string) $request->input('reason', ''));
         $updated = 0;
         foreach ($ids as $id) {
             $user = $this->userRepository->findById($id, $tenantId);
@@ -535,7 +536,8 @@ class EffectifsWorkspaceController
                 $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                     $id,
                     $unitId > 0 ? $unitId : null,
-                    $roleName !== '' ? $roleName : 'Membre'
+                    $roleName !== '' ? $roleName : 'Membre',
+                    $assignmentReason !== '' ? $assignmentReason : null
                 );
                 $this->adminAuditService->logUserUpdated(
                     $tenantId,
@@ -721,6 +723,7 @@ class EffectifsWorkspaceController
         $tenantId = (int) Session::get('tenant_id');
         $id = (int) ($params['id'] ?? 0);
         $unitId = (int) $request->input('unit_id', 0);
+        $assignmentReason = trim((string) $request->input('reason', ''));
         if ($id < 1) {
             Session::flash('error', 'Membre introuvable.');
 
@@ -761,7 +764,8 @@ class EffectifsWorkspaceController
             $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier(
                 $id,
                 $unitId > 0 ? $unitId : null,
-                $roleName !== '' ? $roleName : 'Membre'
+                $roleName !== '' ? $roleName : 'Membre',
+                $assignmentReason !== '' ? $assignmentReason : null
             );
             $actorId = (int) Session::get('user_id');
             $this->adminAuditService->logUserUpdated(

@@ -113,7 +113,8 @@ class PersonnelProfileRepository
     public function update(int $userId, array $data): bool
     {
         $allowed = [
-            'character_name', 'callsign', 'rank_display', 'rank_display_override',
+            'character_name', 'callsign', 'nickname_primary', 'nicknames_json', 'medal_rack_json',
+            'rank_display', 'rank_display_override',
             'primary_unit_id', 'clearance_level', 'character_portrait_path', 'character_banner_path',
             'blood_type', 'nationality', 'languages', 'enlistment_date', 'motto',
             'sex', 'family_situation', 'weight_kg', 'operator_status', 'operator_tags',

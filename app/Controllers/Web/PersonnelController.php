@@ -143,6 +143,48 @@ class PersonnelController
         return $slug !== '' ? $slug : (string) ($userRow['id'] ?? '');
     }
 
+    /** @return list<string> */
+    private function normalizeMultilineList(string $raw, int $maxItems = 12, int $maxLen = 120): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+        $items = [];
+        foreach ($lines as $line) {
+            $value = trim((string) $line);
+            if ($value === '') {
+                continue;
+            }
+            if (function_exists('mb_strlen') && mb_strlen($value) > $maxLen) {
+                $value = mb_substr($value, 0, $maxLen);
+            } elseif (strlen($value) > $maxLen) {
+                $value = substr($value, 0, $maxLen);
+            }
+            if (!in_array($value, $items, true)) {
+                $items[] = $value;
+            }
+            if (count($items) >= $maxItems) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    private function normalizeReasonLabel(string $raw, int $maxLen = 255): ?string
+    {
+        $value = trim($raw);
+        if ($value === '') {
+            return null;
+        }
+        if (function_exists('mb_strlen') && mb_strlen($value) > $maxLen) {
+            return mb_substr($value, 0, $maxLen);
+        }
+        if (strlen($value) > $maxLen) {
+            return substr($value, 0, $maxLen);
+        }
+
+        return $value;
+    }
+
     /**
      * Prénom/nom : `user_profiles`, sinon dernière candidature d’enrôlement, sinon découpage prudent du nom d’affichage.
      *
@@ -1069,6 +1111,32 @@ class PersonnelController
                 $rpTutorChoices[] = ['id' => $id, 'label' => $label];
             }
         }
+        $nicknames = [];
+        $nicknamesJson = $personnelProfile['nicknames_json'] ?? null;
+        if (is_string($nicknamesJson) && $nicknamesJson !== '') {
+            $decodedNicknames = json_decode($nicknamesJson, true);
+            if (is_array($decodedNicknames)) {
+                foreach ($decodedNicknames as $nickname) {
+                    $nickname = trim((string) $nickname);
+                    if ($nickname !== '') {
+                        $nicknames[] = $nickname;
+                    }
+                }
+            }
+        }
+        $medalRackItems = [];
+        $medalRackJson = $personnelProfile['medal_rack_json'] ?? null;
+        if (is_string($medalRackJson) && $medalRackJson !== '') {
+            $decodedMedalRack = json_decode($medalRackJson, true);
+            if (is_array($decodedMedalRack)) {
+                foreach ($decodedMedalRack as $item) {
+                    $item = trim((string) $item);
+                    if ($item !== '') {
+                        $medalRackItems[] = $item;
+                    }
+                }
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'personnel.edit',
@@ -1086,17 +1154,21 @@ class PersonnelController
             'completeness' => $completeness,
             'matriculeDisplay' => $matricule,
             'personnelAssignments' => $personnelAssignments,
+            'currentUnitAssignments' => $personnelAssignments,
             'dossierPresets' => $dossierPresets,
             'jobRolesEnabled' => $jobRolesEnabled,
             'jobRoleOptions' => $jobRoleOptions,
             'jobRoleSlugToId' => $jobRoleSlugToId,
             'currentJobRoles' => $currentJobRoles,
             'maxJobRolesPerMember' => $maxJobRolesPerMember,
+            'maxUnitAssignmentsPerMember' => 8,
             'forumOrgRoleChoices' => $forumOrgRoleChoices,
             'memberCanChooseDisplayRole' => $memberCanChooseDisplayRole,
             'roleplayFollowupConfig' => $roleplayFollowupConfig,
             'rpTutorChoices' => $rpTutorChoices,
             'roleplayEventTypes' => $roleplayEventTypes,
+            'nicknames' => $nicknames,
+            'medalRackItems' => $medalRackItems,
             'clearanceLevelOptions' => \App\Services\Documents\DocumentAccessService::getClassificationLevelLabels(),
         ]);
     }
@@ -1128,17 +1200,64 @@ class PersonnelController
         $readinessScore = ($readinessRaw === null || $readinessRaw === '') ? null : max(0, min(100, (int) $readinessRaw));
         $roleplayFollowupConfig = $this->roleplayFollowupConfig($tenantId);
         $existingProfile = $this->personnelProfileRepository->getByUserId((int) $target['id']) ?? [];
+        $assignmentReason = $this->normalizeReasonLabel((string) $request->input('assignment_change_reason'));
+        $jobRoleReason = $this->normalizeReasonLabel((string) $request->input('job_role_change_reason'));
 
-        $primaryUnitIdRaw = $request->input('primary_unit_id');
-        $primaryUnitId = $primaryUnitIdRaw ? (int) $primaryUnitIdRaw : null;
-        if ($primaryUnitId !== null && $primaryUnitId > 0) {
-            $unitRow = $this->unitRepository->findById($primaryUnitId, $tenantId);
-            if (!$unitRow) {
-                Session::flash('error', 'Unité sélectionnée introuvable pour cette communauté.');
-                return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+        $unitAssignmentsParsed = [];
+        $rowsIn = $request->input('unit_assignments');
+        if (is_array($rowsIn)) {
+            foreach ($rowsIn as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $unitId = (int) ($row['unit_id'] ?? 0);
+                if ($unitId <= 0) {
+                    continue;
+                }
+                $unitRow = $this->unitRepository->findById($unitId, $tenantId);
+                if (!$unitRow) {
+                    Session::flash('error', 'Une unité sélectionnée est introuvable pour cette communauté.');
+                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                }
+                $unitAssignmentsParsed[] = [
+                    'unit_id' => $unitId,
+                    'role_name' => mb_substr(trim((string) ($row['role_name'] ?? '')), 0, 120),
+                    'is_primary' => false,
+                    'change_reason' => $assignmentReason,
+                ];
             }
-        } else {
-            $primaryUnitId = null;
+        }
+        if ($unitAssignmentsParsed === []) {
+            $primaryUnitIdRaw = $request->input('primary_unit_id');
+            $primaryUnitId = $primaryUnitIdRaw ? (int) $primaryUnitIdRaw : null;
+            if ($primaryUnitId !== null && $primaryUnitId > 0) {
+                $unitRow = $this->unitRepository->findById($primaryUnitId, $tenantId);
+                if (!$unitRow) {
+                    Session::flash('error', 'Unité sélectionnée introuvable pour cette communauté.');
+                    return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+                }
+                $unitAssignmentsParsed[] = [
+                    'unit_id' => $primaryUnitId,
+                    'role_name' => '',
+                    'is_primary' => true,
+                    'change_reason' => $assignmentReason,
+                ];
+            }
+        }
+
+        $primaryUnitId = null;
+        $primaryAssignmentIdx = (int) $request->input('unit_assignments_primary', 0);
+        if ($unitAssignmentsParsed !== []) {
+            if ($primaryAssignmentIdx < 0 || $primaryAssignmentIdx >= count($unitAssignmentsParsed)) {
+                $primaryAssignmentIdx = 0;
+            }
+            foreach ($unitAssignmentsParsed as $idx => &$assignment) {
+                $assignment['is_primary'] = ($idx === $primaryAssignmentIdx);
+                if ($assignment['is_primary']) {
+                    $primaryUnitId = (int) $assignment['unit_id'];
+                }
+            }
+            unset($assignment);
         }
 
         $jobRolesEnabled = $this->personnelJobRoleRepository->tablesExist() && $this->personnelJobRoleRepository->pivotTableExists();
@@ -1186,6 +1305,15 @@ class PersonnelController
         $data = [
             'character_name' => trim((string) $request->input('character_name')),
             'callsign' => trim((string) $request->input('callsign')),
+            'nickname_primary' => $this->normalizeReasonLabel((string) $request->input('nickname_primary'), 120),
+            'nicknames_json' => json_encode(
+                $this->normalizeMultilineList((string) $request->input('nicknames_text'), 12, 120),
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ),
+            'medal_rack_json' => json_encode(
+                $this->normalizeMultilineList((string) $request->input('medal_rack_text'), 24, 160),
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            ),
             'primary_unit_id' => $primaryUnitId,
             // clearance_level volontairement absent : se modifie uniquement via une demande d'élévation
             // (EffectifsWorkspaceController + ElevationApprovalService), pas par cette route directe,
@@ -1396,11 +1524,82 @@ class PersonnelController
         }
 
         $assignmentRole = $primaryRoleStr;
+        if ($assignmentRole === '' && $unitAssignmentsParsed !== []) {
+            foreach ($unitAssignmentsParsed as $assignment) {
+                if (!empty($assignment['is_primary'])) {
+                    $assignmentRole = $assignment['role_name'];
+                    break;
+                }
+            }
+        }
         try {
-            $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier((int) $target['id'], $primaryUnitId, $assignmentRole);
+            if ($unitAssignmentsParsed !== []) {
+                foreach ($unitAssignmentsParsed as &$assignment) {
+                    if (trim((string) $assignment['role_name']) === '') {
+                        $assignment['role_name'] = !empty($assignment['is_primary']) && $assignmentRole !== ''
+                            ? $assignmentRole
+                            : 'Membre';
+                    }
+                }
+                unset($assignment);
+                $this->personnelAssignmentRepository->replaceActiveAssignmentsFromDossier((int) $target['id'], $unitAssignmentsParsed);
+            } else {
+                $this->personnelAssignmentRepository->syncPrimaryAssignmentFromDossier((int) $target['id'], $primaryUnitId, $assignmentRole, $assignmentReason);
+            }
         } catch (\Throwable) {
             Session::flash('error', 'Le dossier a été enregistré, mais la synchronisation ORBAT / affectation a échoué. Réessayez ou contactez un administrateur.');
             return Response::redirect(url('personnel/' . $this->personPathSegment($target) . '/edit'));
+        }
+
+        $actorHistoryId = (int) Session::get('user_id');
+        $oldUnitId = (int) ($existingProfile['primary_unit_id'] ?? 0);
+        $newUnitId = (int) ($primaryUnitId ?? 0);
+        if ($assignmentReason !== null && $oldUnitId !== $newUnitId) {
+            $fromUnit = $oldUnitId > 0 ? $this->unitRepository->findById($oldUnitId, $tenantId) : null;
+            $toUnit = $newUnitId > 0 ? $this->unitRepository->findById($newUnitId, $tenantId) : null;
+            $fromLabel = trim((string) ($fromUnit['name'] ?? ''));
+            $toLabel = trim((string) ($toUnit['name'] ?? ''));
+            $historyTitle = $oldUnitId > 0 && $newUnitId > 0 ? 'Mutation d’unité' : ($newUnitId > 0 ? 'Affectation d’unité' : 'Retrait d’affectation');
+            $historyDescription = 'De ' . ($fromLabel !== '' ? $fromLabel : 'aucune unité')
+                . ' vers ' . ($toLabel !== '' ? $toLabel : 'aucune unité') . '.';
+            $this->personnelServiceHistoryRepository->add(
+                (int) $target['id'],
+                'assignment',
+                $historyTitle,
+                $historyDescription,
+                date('Y-m-d'),
+                $actorHistoryId > 0 ? $actorHistoryId : null,
+                $assignmentReason
+            );
+            $this->personnelOrgHistoryRepository->append(
+                $tenantId,
+                (int) $target['id'],
+                $actorHistoryId > 0 ? $actorHistoryId : null,
+                $historyTitle . ' — motif : ' . $assignmentReason
+            );
+        }
+
+        $oldRoleLabel = trim((string) ($existingProfile['primary_role'] ?? ''));
+        $newRoleLabel = trim((string) $primaryRoleStr);
+        if ($jobRoleReason !== null && $oldRoleLabel !== $newRoleLabel) {
+            $historyTitle = $oldRoleLabel !== '' && $newRoleLabel !== '' ? 'Changement de fonction' : ($newRoleLabel !== '' ? 'Attribution de fonction' : 'Retrait de fonction');
+            $historyDescription = 'De ' . ($oldRoleLabel !== '' ? $oldRoleLabel : 'aucune fonction')
+                . ' vers ' . ($newRoleLabel !== '' ? $newRoleLabel : 'aucune fonction') . '.';
+            $this->personnelServiceHistoryRepository->add(
+                (int) $target['id'],
+                'assignment',
+                $historyTitle,
+                $historyDescription,
+                date('Y-m-d'),
+                $actorHistoryId > 0 ? $actorHistoryId : null,
+                $jobRoleReason
+            );
+            $this->personnelOrgHistoryRepository->append(
+                $tenantId,
+                (int) $target['id'],
+                $actorHistoryId > 0 ? $actorHistoryId : null,
+                $historyTitle . ' — motif : ' . $jobRoleReason
+            );
         }
 
         try {
@@ -1417,10 +1616,18 @@ class PersonnelController
 
         if ($isSelf) {
             $this->userProfileRepository->ensureRow((int) $target['id']);
+            $firstName = trim((string) $request->input('civil_first_name'));
+            $lastName = trim((string) $request->input('civil_last_name'));
             $this->userProfileRepository->upsert((int) $target['id'], [
+                'first_name' => $firstName !== '' ? $firstName : null,
+                'last_name' => $lastName !== '' ? $lastName : null,
                 'bio' => trim((string) $request->input('civil_bio')) ?: null,
                 'timezone' => trim((string) $request->input('civil_timezone')) ?: null,
                 'language' => trim((string) $request->input('civil_language')) ?: null,
+            ]);
+            $this->userLegalIdentityRepository->upsert((int) $target['id'], $tenantId, [
+                'first_name' => $firstName,
+                'last_name' => $lastName,
             ]);
         }
 

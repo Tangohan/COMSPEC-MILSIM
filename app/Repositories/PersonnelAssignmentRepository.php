@@ -11,6 +11,7 @@ use PDO;
 class PersonnelAssignmentRepository
 {
     private PDO $pdo;
+    private ?bool $changeReasonColumnReady = null;
 
     public function __construct()
     {
@@ -87,6 +88,110 @@ class PersonnelAssignmentRepository
             $ok = $stmt->rowCount() > 0;
             $this->pdo->commit();
             return $ok;
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Remplace les affectations d'unité actives par la liste fournie.
+     *
+     * @param list<array{unit_id:int, role_name:string, is_primary?:bool}> $assignments
+     */
+    public function replaceActiveAssignmentsFromDossier(int $userId, array $assignments): void
+    {
+        $hasPa = $this->personnelAssignmentsTableExists();
+        $hasUu = $this->userUnitsTableExists();
+        $hasChangeReason = $hasPa && $this->changeReasonColumnReady();
+        if ((!$hasPa && !$hasUu) || $userId < 1) {
+            return;
+        }
+
+        $normalized = [];
+        $seenPrimary = false;
+        $seenUnits = [];
+        foreach ($assignments as $assignment) {
+            if (!is_array($assignment)) {
+                continue;
+            }
+            $unitId = (int) ($assignment['unit_id'] ?? 0);
+            if ($unitId <= 0 || isset($seenUnits[$unitId])) {
+                continue;
+            }
+            $seenUnits[$unitId] = true;
+            $roleName = trim((string) ($assignment['role_name'] ?? ''));
+            $isPrimary = !empty($assignment['is_primary']) && !$seenPrimary;
+            if ($isPrimary) {
+                $seenPrimary = true;
+            }
+            $normalized[] = [
+                'unit_id' => $unitId,
+                'role_name' => $roleName !== '' ? $roleName : 'Membre',
+                'is_primary' => $isPrimary,
+                'change_reason' => $this->normalizeReasonLabel($assignment['change_reason'] ?? null),
+            ];
+        }
+
+        if ($normalized !== [] && !$seenPrimary) {
+            $normalized[0]['is_primary'] = true;
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            if ($hasUu) {
+                $this->pdo->prepare(
+                    'UPDATE user_units SET ended_at = NOW() WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
+                )->execute([$userId]);
+            }
+            if ($hasPa) {
+                $this->pdo->prepare(
+                    "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
+                     WHERE user_id = ? AND status = 'active'"
+                )->execute([$userId]);
+            }
+
+            if ($normalized !== []) {
+                if ($hasPa) {
+                    if ($hasChangeReason) {
+                        $insertPa = $this->pdo->prepare(
+                            'INSERT INTO personnel_assignments (user_id, unit_id, role_name, change_reason, is_primary, started_at, ended_at, status, created_at)
+                             VALUES (?, ?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
+                        );
+                    } else {
+                        $insertPa = $this->pdo->prepare(
+                            'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
+                             VALUES (?, ?, ?, ?, CURDATE(), NULL, \'active\', NOW())'
+                        );
+                    }
+                } else {
+                    $insertPa = null;
+                }
+
+                if ($hasUu) {
+                    $insertUu = $this->pdo->prepare(
+                        'INSERT INTO user_units (user_id, unit_id, is_primary, assigned_at, ended_at, assignment_type) VALUES (?, ?, ?, NOW(), NULL, ?)'
+                    );
+                } else {
+                    $insertUu = null;
+                }
+
+                foreach ($normalized as $assignment) {
+                    $isPrimary = !empty($assignment['is_primary']) ? 1 : 0;
+                    if ($insertPa !== null) {
+                        if ($hasChangeReason) {
+                            $insertPa->execute([$userId, $assignment['unit_id'], $assignment['role_name'], $assignment['change_reason'], $isPrimary]);
+                        } else {
+                            $insertPa->execute([$userId, $assignment['unit_id'], $assignment['role_name'], $isPrimary]);
+                        }
+                    }
+                    if ($insertUu !== null) {
+                        $insertUu->execute([$userId, $assignment['unit_id'], $isPrimary, $assignment['role_name']]);
+                    }
+                }
+            }
+
+            $this->pdo->commit();
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
             throw $e;
@@ -307,53 +412,59 @@ class PersonnelAssignmentRepository
         }
     }
 
+    private function changeReasonColumnReady(): bool
+    {
+        if ($this->changeReasonColumnReady !== null) {
+            return $this->changeReasonColumnReady;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_assignments'
+                   AND COLUMN_NAME = 'change_reason' LIMIT 1"
+            );
+            $stmt->execute();
+            $this->changeReasonColumnReady = (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            $this->changeReasonColumnReady = false;
+        }
+
+        return $this->changeReasonColumnReady;
+    }
+
+    private function normalizeReasonLabel(mixed $value): ?string
+    {
+        $reason = trim((string) $value);
+        if ($reason === '') {
+            return null;
+        }
+        if (function_exists('mb_strlen') && mb_strlen($reason) > 255) {
+            return mb_substr($reason, 0, 255);
+        }
+        if (strlen($reason) > 255) {
+            return substr($reason, 0, 255);
+        }
+
+        return $reason;
+    }
+
     /**
      * Aligne personnel_assignments et user_units sur le dossier (unité principale + rôle d’affectation).
      * Indispensable pour la fiche personnelle, l’ORBAT et les indicateurs « sans unité » (user_units).
      */
-    public function syncPrimaryAssignmentFromDossier(int $userId, ?int $unitId, string $roleName): void
+    public function syncPrimaryAssignmentFromDossier(int $userId, ?int $unitId, string $roleName, ?string $changeReason = null): void
     {
-        $roleName = trim($roleName) !== '' ? trim($roleName) : 'Membre';
-        $hasPa = $this->personnelAssignmentsTableExists();
-        $hasUu = $this->userUnitsTableExists();
-        if (!$hasPa && !$hasUu) {
-            return;
+        $assignments = [];
+        if ($unitId !== null && $unitId > 0) {
+            $assignments[] = [
+                'unit_id' => $unitId,
+                'role_name' => $roleName,
+                'is_primary' => true,
+                'change_reason' => $changeReason,
+            ];
         }
 
-        $this->pdo->beginTransaction();
-        try {
-            if ($hasUu) {
-                $this->pdo->prepare(
-                    'UPDATE user_units SET ended_at = NOW() WHERE user_id = ? AND (ended_at IS NULL OR ended_at > NOW())'
-                )->execute([$userId]);
-            }
-            if ($hasPa) {
-                $this->pdo->prepare(
-                    "UPDATE personnel_assignments SET status = 'inactive', ended_at = CURDATE(), is_primary = 0, updated_at = NOW()
-                     WHERE user_id = ? AND status = 'active'"
-                )->execute([$userId]);
-            }
-            if ($unitId === null || $unitId <= 0) {
-                $this->pdo->commit();
-
-                return;
-            }
-            if ($hasPa) {
-                $this->pdo->prepare(
-                    'INSERT INTO personnel_assignments (user_id, unit_id, role_name, is_primary, started_at, ended_at, status, created_at)
-                     VALUES (?, ?, ?, 1, CURDATE(), NULL, \'active\', NOW())'
-                )->execute([$userId, $unitId, $roleName]);
-            }
-            if ($hasUu) {
-                $this->pdo->prepare(
-                    'INSERT INTO user_units (user_id, unit_id, is_primary, assigned_at, ended_at, assignment_type) VALUES (?, ?, 1, NOW(), NULL, ?)'
-                )->execute([$userId, $unitId, $roleName]);
-            }
-            $this->pdo->commit();
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
-        }
+        $this->replaceActiveAssignmentsFromDossier($userId, $assignments);
     }
 
     /**

@@ -20,6 +20,7 @@ class PersonnelQualificationRepository
 
     /** Cache de présence des colonnes du chaînon formation (déploiement pas encore migré). */
     private ?bool $trainingLinkReady = null;
+    private ?bool $reasonLabelColumnReady = null;
 
     public function __construct()
     {
@@ -73,6 +74,11 @@ class PersonnelQualificationRepository
             $options['issued_by'] ?? null,
         ];
 
+        if ($this->reasonLabelColumnReady()) {
+            $columns[] = 'reason_label';
+            $values[] = $this->normalizeReasonLabel($options['reason_label'] ?? null);
+        }
+
         if ($this->trainingLinkReady()) {
             $columns[] = 'tenant_id';
             $values[] = isset($options['tenant_id']) ? (int) $options['tenant_id'] : null;
@@ -92,6 +98,42 @@ class PersonnelQualificationRepository
         $stmt->execute($values);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    public function reasonLabelColumnReady(): bool
+    {
+        if ($this->reasonLabelColumnReady !== null) {
+            return $this->reasonLabelColumnReady;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'personnel_qualifications'
+                   AND COLUMN_NAME = 'reason_label' LIMIT 1"
+            );
+            $st->execute();
+            $this->reasonLabelColumnReady = (bool) $st->fetchColumn();
+        } catch (Throwable) {
+            $this->reasonLabelColumnReady = false;
+        }
+
+        return $this->reasonLabelColumnReady;
+    }
+
+    private function normalizeReasonLabel(?string $reasonLabel): ?string
+    {
+        $reasonLabel = trim((string) $reasonLabel);
+        if ($reasonLabel === '') {
+            return null;
+        }
+        if (function_exists('mb_strlen') && mb_strlen($reasonLabel) > 255) {
+            return mb_substr($reasonLabel, 0, 255);
+        }
+        if (strlen($reasonLabel) > 255) {
+            return substr($reasonLabel, 0, 255);
+        }
+
+        return $reasonLabel;
     }
 
     public function updateStatus(int $id, string $status): bool

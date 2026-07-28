@@ -304,6 +304,36 @@ $rpOriginLabel = match ($rpOriginRaw) {
     default => '',
 };
 $rpNotes = trim((string) ($personnelProfile['rp_followup_notes'] ?? ''));
+$nicknamePrimary = trim((string) ($personnelProfile['nickname_primary'] ?? ''));
+$nicknamesList = [];
+$nicknamesJson = $personnelProfile['nicknames_json'] ?? null;
+if (is_string($nicknamesJson) && $nicknamesJson !== '') {
+    $decodedNicknames = json_decode($nicknamesJson, true);
+    if (is_array($decodedNicknames)) {
+        foreach ($decodedNicknames as $nicknameItem) {
+            $nicknameItem = trim((string) $nicknameItem);
+            if ($nicknameItem !== '' && !in_array($nicknameItem, $nicknamesList, true)) {
+                $nicknamesList[] = $nicknameItem;
+            }
+        }
+    }
+}
+if ($nicknamePrimary !== '' && !in_array($nicknamePrimary, $nicknamesList, true)) {
+    array_unshift($nicknamesList, $nicknamePrimary);
+}
+$medalRackItems = [];
+$medalRackJson = $personnelProfile['medal_rack_json'] ?? null;
+if (is_string($medalRackJson) && $medalRackJson !== '') {
+    $decodedMedalRack = json_decode($medalRackJson, true);
+    if (is_array($decodedMedalRack)) {
+        foreach ($decodedMedalRack as $medalItem) {
+            $medalItem = trim((string) $medalItem);
+            if ($medalItem !== '') {
+                $medalRackItems[] = $medalItem;
+            }
+        }
+    }
+}
 $rpDateFr = static function (?string $date): ?string {
     $raw = trim((string) $date);
     if ($raw === '') {
@@ -591,6 +621,9 @@ $personnelFileShell = $personnelFileIsRhFull
                         <?php if ($callsign): ?>
                         <span class="text-lg md:text-xl font-black text-slate-300 italic"><?= htmlspecialchars($callsign) ?></span>
                         <?php endif; ?>
+                        <?php if ($nicknamePrimary !== ''): ?>
+                        <span class="text-[11px] font-black uppercase tracking-[0.24em] text-amber-200/90">Surnom <?= htmlspecialchars($nicknamePrimary, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
                         <?php if ($matricule && !empty($showMatriculePublic)): ?>
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Matricule <?= htmlspecialchars($matricule) ?></span>
                         <?php endif; ?>
@@ -797,6 +830,18 @@ $personnelFileShell = $personnelFileIsRhFull
                         <div>
                             <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Unité</p>
                             <p class="text-sm font-black text-slate-900"><?= htmlspecialchars($unitName) ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($nicknamesList !== []): ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Surnoms</p>
+                            <p class="text-sm font-black text-slate-900"><?= htmlspecialchars(implode(' · ', $nicknamesList), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($medalRackItems !== []): ?>
+                        <div>
+                            <p class="text-[7px] font-black text-slate-400 uppercase mb-0.5">Décorations</p>
+                            <p class="text-xs font-semibold leading-relaxed text-slate-700"><?= htmlspecialchars(implode(' · ', $medalRackItems), ENT_QUOTES, 'UTF-8') ?></p>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -1700,6 +1745,7 @@ $personnelFileShell = $personnelFileIsRhFull
                     <div class="space-y-4">
                         <?php foreach ($serviceHistory as $event):
                             $evTypeLabel = $serviceHistoryEventTypeFr((string) ($event['event_type'] ?? ''));
+                            $evReason = trim((string) ($event['reason_label'] ?? ''));
                             ?>
                         <div class="flex gap-4 border-l-2 border-emerald-200 pl-4 py-2">
                             <span class="text-[10px] font-semibold tabular-nums text-slate-500 shrink-0 w-16"><?= date('m/Y', strtotime((string) ($event['event_date'] ?? 'now'))) ?></span>
@@ -1708,6 +1754,7 @@ $personnelFileShell = $personnelFileIsRhFull
                                 <p class="text-[9px] font-black uppercase tracking-wider text-emerald-800/90 mb-1"><?= htmlspecialchars($evTypeLabel) ?></p>
                                 <?php endif; ?>
                                 <p class="text-sm font-black text-slate-900"><?= htmlspecialchars((string) ($event['title'] ?? '')) ?></p>
+                                <?php if ($evReason !== ''): ?><p class="mt-1 text-[11px] font-semibold text-emerald-900/80">Motif : <?= htmlspecialchars($evReason, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                                 <?php if (!empty($event['description'])): ?><p class="text-xs text-slate-600 mt-1 leading-relaxed"><?= nl2br(htmlspecialchars((string) $event['description'])) ?></p><?php endif; ?>
                             </div>
                         </div>

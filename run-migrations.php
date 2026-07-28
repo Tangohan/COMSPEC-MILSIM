@@ -135,6 +135,7 @@ $bootstrapFiles = [
     'positions_admin_category_migration.php',
     'personnel_profile_extended_details_migration.php',
     'personnel_profile_rp_identity_migration.php',
+    'personnel_personal_dossier_enhancements_migration.php',
     'user_deletion_request_migration.php',
     'hr_charter_lms_migration.php',
     'recon_pv_tammuc_migration.php',
@@ -266,6 +267,7 @@ run_personnel_stage_bilans_migration($pdo);
 run_personnel_absences_migration($pdo);
 run_personnel_profile_extended_details_migration($pdo);
 run_personnel_profile_rp_identity_migration($pdo);
+run_personnel_personal_dossier_enhancements_migration($pdo);
 run_user_deletion_request_migration($pdo);
 run_hr_charter_lms_migration($pdo);
 run_recon_pv_tammuc_migration($pdo);

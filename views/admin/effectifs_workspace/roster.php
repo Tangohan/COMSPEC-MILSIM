@@ -241,6 +241,7 @@ $exportUrl = effectifs_workspace_url('export') . ($exportQuery ? '?' . http_buil
                     <option value="<?= (int) ($u['id'] ?? 0) ?>"><?= htmlspecialchars(trim((string) ($u['assignment_path'] ?? $u['name'] ?? '')), ENT_QUOTES, 'UTF-8') ?></option>
                 <?php endforeach; ?>
             </select>
+            <input type="text" name="reason" maxlength="255" placeholder="Motif du changement" style="border:1px solid #cbd5e1;border-radius:.4rem;padding:.35rem .5rem;font-size:12px;min-width:14rem">
             <button type="submit" formaction="<?= htmlspecialchars(effectifs_workspace_url('bulk/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-catalog__btn eff-catalog__btn--primary" data-eff-bulk-submit disabled>Affecter l’unité</button>
             <?php endif; ?>
         </form>

@@ -7,10 +7,12 @@ $currentGrade = $currentGrade ?? null;
 $completeness = $completeness ?? ['score' => 0, 'missing_labels' => []];
 $matriculeDisplay = $matriculeDisplay ?? null;
 $personnelAssignments = $personnelAssignments ?? [];
+$currentUnitAssignments = $currentUnitAssignments ?? $personnelAssignments;
 $dossierPresets = $dossierPresets ?? [];
 $jobRolesEnabled = $jobRolesEnabled ?? false;
 $jobRoleOptions = $jobRoleOptions ?? [];
 $jobRoleSlugToId = $jobRoleSlugToId ?? [];
+$maxUnitAssignmentsPerMember = (int) ($maxUnitAssignmentsPerMember ?? 8);
 $forumQuickMode = $forumQuickMode ?? '';
 $forumFocus = $forumFocus ?? '';
 $forumPreHideLevel = !empty($forumPreHideLevel);
@@ -51,6 +53,10 @@ $bloodOptions = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Inconnu'
 $rpStages = is_array($roleplayFollowupConfig['stages'] ?? null) ? $roleplayFollowupConfig['stages'] : [];
 $rpTracks = is_array($roleplayFollowupConfig['recruitment_tracks'] ?? null) ? $roleplayFollowupConfig['recruitment_tracks'] : [];
 $rpOriginSel = trim((string) ($p['rp_recruitment_origin'] ?? ''));
+$nicknames = is_array($nicknames ?? null) ? $nicknames : [];
+$medalRackItems = is_array($medalRackItems ?? null) ? $medalRackItems : [];
+$nicknamesText = implode("\n", array_map(static fn ($item) => trim((string) $item), $nicknames));
+$medalRackText = implode("\n", array_map(static fn ($item) => trim((string) $item), $medalRackItems));
 
 $editNavGroups = [
     [
@@ -184,8 +190,18 @@ $editValidTabIds = implode(',', array_map(
           </div>
           <div class="space-y-8 p-6 sm:p-8">
             <div>
-              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Préférences</h3>
+              <h3 class="mb-4 border-b border-indigo-100 pb-2 text-xs font-black uppercase tracking-wider text-indigo-900/70">Identité nominative &amp; préférences</h3>
               <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="civil_first_name" class="mb-1 block text-xs font-bold text-slate-600">Prénom</label>
+                  <input type="text" name="civil_first_name" id="civil_first_name" value="<?= htmlspecialchars((string) ($up['first_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="given-name">
+                  <p class="mt-1 text-[11px] text-slate-500">Non demandé à l’inscription. Sert aux vues nominatives du dossier.</p>
+                </div>
+                <div>
+                  <label for="civil_last_name" class="mb-1 block text-xs font-bold text-slate-600">Nom</label>
+                  <input type="text" name="civil_last_name" id="civil_last_name" value="<?= htmlspecialchars((string) ($up['last_name'] ?? '')) ?>" placeholder="Optionnel" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="100" autocomplete="family-name">
+                  <p class="mt-1 text-[11px] text-slate-500">N’efface pas le nom de personnage ni l’indicatif en mission.</p>
+                </div>
                 <div>
                   <label for="civil_timezone" class="mb-1 block text-xs font-bold text-slate-600">Fuseau horaire</label>
                   <input type="text" name="civil_timezone" id="civil_timezone" value="<?= htmlspecialchars((string) ($up['timezone'] ?? '')) ?>" placeholder="Europe/Paris" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="50">
@@ -239,6 +255,16 @@ $editValidTabIds = implode(',', array_map(
                 <div class="md:col-span-2">
                   <label for="motto" class="mb-1 block text-xs font-bold text-slate-600">Devise</label>
                   <input type="text" name="motto" id="motto" value="<?= htmlspecialchars((string) ($p['motto'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255">
+                </div>
+                <div>
+                  <label for="nickname_primary" class="mb-1 block text-xs font-bold text-slate-600">Surnom principal</label>
+                  <input type="text" name="nickname_primary" id="nickname_primary" value="<?= htmlspecialchars((string) ($p['nickname_primary'] ?? '')) ?>" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="120" placeholder="Ex. Le Renard">
+                  <p class="mt-1 text-[11px] text-slate-500">Nom court complémentaire au nom du personnage ou à l’indicatif.</p>
+                </div>
+                <div>
+                  <label for="nicknames_text" class="mb-1 block text-xs font-bold text-slate-600">Autres surnoms</label>
+                  <textarea name="nicknames_text" id="nicknames_text" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Un surnom par ligne"><?= htmlspecialchars($nicknamesText) ?></textarea>
+                  <p class="mt-1 text-[11px] text-slate-500">Pratique pour les variantes radio, sobriquets d’unité ou noms d’usage.</p>
                 </div>
               </div>
             </div>
@@ -356,7 +382,7 @@ $editValidTabIds = implode(',', array_map(
         <section id="edit-orbat" x-show="tab === 'edit-orbat'" class="scroll-mt-24 overflow-hidden rounded-2xl border border-cyan-200/90 bg-white shadow-sm ring-1 ring-cyan-900/[0.04]">
           <div class="border-b border-cyan-100 bg-cyan-50/70 px-6 py-5">
             <h2 class="text-base font-black tracking-tight text-cyan-950">Unité &amp; rôle</h2>
-            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Unité principale et fonction dans l’organigramme. L’enregistrement met à jour le dossier et l’affectation visible sur la fiche et le forum.</p>
+            <p class="mt-1.5 max-w-2xl text-xs leading-relaxed text-cyan-900/85">Vous pouvez renseigner une affectation principale et des affectations complémentaires. La principale sert de référence pour le dossier, la fiche et le forum.</p>
           </div>
           <div class="space-y-4 p-6">
             <?php if (!empty($personnelAssignments)): ?>
@@ -381,23 +407,74 @@ $editValidTabIds = implode(',', array_map(
               </table>
             </div>
             <?php else: ?>
-            <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune affectation active — après enregistrement avec une <strong>unité</strong> et un <strong>rôle dans l’unité</strong>, une ligne sera créée dans l’organigramme.</p>
+            <p class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-950">Aucune affectation active. Ajoutez au moins une unité ci-dessous si la personne doit apparaître dans l’organigramme.</p>
             <?php endif; ?>
 
             <div class="grid gap-4 md:grid-cols-2">
               <div class="md:col-span-2">
-                <label for="primary_unit_id" class="mb-1 block text-xs font-bold text-slate-600">Unité principale</label>
-                <?php if (empty($units)): ?>
-                <p class="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                  Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
-                </p>
-                <?php endif; ?>
-                <select name="primary_unit_id" id="primary_unit_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                  <option value="">— Aucune —</option>
-                  <?php foreach ($units as $u): ?>
-                  <option value="<?= (int) $u['id'] ?>" <?= (isset($p['primary_unit_id']) && (int) $p['primary_unit_id'] === (int) $u['id']) ? 'selected' : '' ?>><?= htmlspecialchars($u['name']) ?></option>
-                  <?php endforeach; ?>
-                </select>
+                <?php
+                $unitAssignmentsSeed = [];
+                foreach ($currentUnitAssignments as $idx => $assignmentRow) {
+                    $unitAssignmentsSeed[] = [
+                        'unit_id' => (int) ($assignmentRow['unit_id'] ?? 0),
+                        'role_name' => (string) ($assignmentRow['role_name'] ?? ''),
+                        'is_primary' => !empty($assignmentRow['is_primary']),
+                    ];
+                }
+                if ($unitAssignmentsSeed === [] && !empty($p['primary_unit_id'])) {
+                    $unitAssignmentsSeed[] = [
+                        'unit_id' => (int) $p['primary_unit_id'],
+                        'role_name' => '',
+                        'is_primary' => true,
+                    ];
+                }
+                $unitOptionsJson = htmlspecialchars(json_encode(array_map(static function (array $u): array {
+                    return [
+                        'id' => (int) ($u['id'] ?? 0),
+                        'name' => (string) ($u['name'] ?? ''),
+                    ];
+                }, $units), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
+                $currentUnitAssignmentsJson = htmlspecialchars(json_encode($unitAssignmentsSeed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]', ENT_QUOTES, 'UTF-8');
+                ?>
+                <div x-data="personnelUnitAssignmentsEditor(<?= $currentUnitAssignmentsJson ?>, <?= $unitOptionsJson ?>, <?= (int) $maxUnitAssignmentsPerMember ?>)" class="space-y-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-bold text-slate-600">Affectations d’unité</label>
+                      <p class="text-[11px] text-slate-500">Renseignez une ou plusieurs lignes. Cochez l’affectation principale pour indiquer celle qui sert de référence partout sur le portail.</p>
+                    </div>
+                    <button type="button" class="rounded-lg border border-dashed border-cyan-300 px-3 py-1.5 text-xs font-semibold text-cyan-800 hover:bg-cyan-50" @click="addRow()" x-show="rows.length < maxRows">Ajouter une affectation</button>
+                  </div>
+                  <?php if (empty($units)): ?>
+                  <p class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                    Aucune unité : créez la structure dans l’<a class="font-semibold underline" href="<?= htmlspecialchars(url('orbat')) ?>">organigramme</a>.
+                  </p>
+                  <?php endif; ?>
+                  <input type="hidden" name="primary_unit_id" :value="primaryUnitId()">
+                  <template x-for="(row, idx) in rows" :key="row.key">
+                    <div class="rounded-2xl border border-cyan-200 bg-cyan-50/30 p-4">
+                      <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+                        <label class="flex shrink-0 items-center gap-2 text-xs font-bold text-slate-700">
+                          <input type="radio" name="unit_assignments_primary" :value="idx" x-model.number="primaryIdx" class="text-emerald-600">
+                          Affectation principale
+                        </label>
+                        <div class="min-w-[220px] flex-1">
+                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Unité</label>
+                          <select :name="'unit_assignments[' + idx + '][unit_id]'" x-model.number="row.unit_id" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                            <option value="0">— Aucune —</option>
+                            <template x-for="unit in unitOptions" :key="unit.id">
+                              <option :value="unit.id" x-text="unit.name"></option>
+                            </template>
+                          </select>
+                        </div>
+                        <div class="min-w-[220px] flex-1">
+                          <label class="mb-1 block text-[11px] font-bold text-slate-600">Rôle dans l’unité</label>
+                          <input type="text" :name="'unit_assignments[' + idx + '][role_name]'" x-model="row.role_name" maxlength="120" placeholder="Ex. Chef d’équipe, tireur, appui…" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                        </div>
+                        <button type="button" class="rounded-lg border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50" @click="removeRow(idx)" x-show="rows.length > 1">Retirer</button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
               </div>
               <div class="md:col-span-2 space-y-3" id="job_roles_editor">
                 <?php if ($jobRolesEnabled): ?>
@@ -456,6 +533,18 @@ $editValidTabIds = implode(',', array_map(
               <a href="<?= htmlspecialchars(url('orbat')) ?>" class="font-semibold text-cyan-800 underline-offset-2 hover:underline">Voir l’organigramme</a>
               — Vue d’ensemble des unités ; les affectations détaillées peuvent aussi être gérées par le personnel habilité.
             </p>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label for="assignment_change_reason" class="mb-1 block text-xs font-bold text-slate-600">Motif du changement d’affectation</label>
+                <input type="text" name="assignment_change_reason" id="assignment_change_reason" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255" placeholder="Ex. Renfort section Alfa, rotation trimestrielle">
+                <p class="mt-1 text-[11px] text-slate-500">Ajoute un motif lisible dans l’historique si l’unité principale change.</p>
+              </div>
+              <div>
+                <label for="job_role_change_reason" class="mb-1 block text-xs font-bold text-slate-600">Motif du changement de fonction</label>
+                <input type="text" name="job_role_change_reason" id="job_role_change_reason" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" maxlength="255" placeholder="Ex. Validation stage leader, besoin de cellule appui">
+                <p class="mt-1 text-[11px] text-slate-500">Ajoute un motif lisible dans l’historique si la fonction principale change.</p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -789,6 +878,11 @@ $editValidTabIds = implode(',', array_map(
               <input type="checkbox" name="deployable" id="deployable" value="1" <?= ($p['deployable'] ?? 1) ? 'checked' : '' ?> class="h-4 w-4 rounded border-slate-300 text-emerald-600">
               <label for="deployable" class="text-sm font-semibold text-slate-800">Déployable</label>
             </div>
+            <div class="md:col-span-2">
+              <label for="medal_rack_text" class="mb-1 block text-xs font-bold text-slate-600">Décorations et placards</label>
+              <textarea name="medal_rack_text" id="medal_rack_text" rows="4" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm" placeholder="Un élément par ligne&#10;Ex. Croix de la Valeur militaire&#10;Placard commémoratif - opération Atlas"><?= htmlspecialchars($medalRackText) ?></textarea>
+              <p class="mt-1 text-[11px] text-slate-500">Base déclarative pour préparer la fiche visuelle des décorations, sans imposer encore un format graphique figé.</p>
+            </div>
           </div>
         </section>
 
@@ -894,6 +988,56 @@ function personnelJobRolesEditor(initialRows, jobRoleOptions, maxRoles) {
       window.addEventListener('personnel-preset-job-role', function (ev) {
         self.applyPresetRole(ev.detail);
       });
+    }
+  };
+}
+
+function personnelUnitAssignmentsEditor(initialRows, unitOptions, maxRows) {
+  var rows = (initialRows || []).map(function (row, index) {
+    return {
+      key: index,
+      unit_id: row.unit_id || 0,
+      role_name: row.role_name || '',
+      is_primary: !!row.is_primary
+    };
+  });
+  if (rows.length === 0) {
+    rows = [{ key: 0, unit_id: 0, role_name: '', is_primary: true }];
+  }
+  var primaryIdx = 0;
+  rows.forEach(function (row, index) {
+    if (row.is_primary) {
+      primaryIdx = index;
+    }
+  });
+  return {
+    rows: rows,
+    unitOptions: unitOptions || [],
+    maxRows: maxRows || 8,
+    primaryIdx: primaryIdx,
+    nextKey: rows.length,
+    addRow: function () {
+      if (this.rows.length >= this.maxRows) return;
+      this.rows.push({ key: this.nextKey++, unit_id: 0, role_name: '', is_primary: false });
+    },
+    removeRow: function (idx) {
+      if (this.rows.length <= 1) {
+        this.rows[0].unit_id = 0;
+        this.rows[0].role_name = '';
+        this.primaryIdx = 0;
+        return;
+      }
+      this.rows.splice(idx, 1);
+      if (this.primaryIdx === idx) {
+        this.primaryIdx = 0;
+      } else if (this.primaryIdx > idx) {
+        this.primaryIdx--;
+      }
+    },
+    primaryUnitId: function () {
+      if (!this.rows.length) return '';
+      var row = this.rows[this.primaryIdx] || this.rows[0];
+      return row && row.unit_id ? String(row.unit_id) : '';
     }
   };
 }
