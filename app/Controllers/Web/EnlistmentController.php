@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers\Web;
 
+use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -57,8 +58,8 @@ class EnlistmentController
         private PersonnelJobRoleRepository $personnelJobRoleRepository,
         private UnitRepository $unitRepository,
         private TenantBrandingRepository $tenantBrandingRepository,
-        private RecruitmentDiscordQuestionRepository $recruitmentDiscordQuestionRepository,
-        private RecruitmentInviteCodeRepository $inviteCodeRepository,
+        private ?RecruitmentDiscordQuestionRepository $recruitmentDiscordQuestionRepository = null,
+        private ?RecruitmentInviteCodeRepository $inviteCodeRepository = null,
     ) {}
 
     public function show(Request $request, array $params = []): Response
@@ -163,7 +164,7 @@ class EnlistmentController
                 'content' => 'enlistment.discord',
                 'title' => 'Rejoindre sur Discord — ' . $tenantName,
                 'discordInviteUrl' => trim((string) ($communityConfig['contact_discord_url'] ?? '')),
-                'discordQuestions' => $this->recruitmentDiscordQuestionRepository->listForTenant($targetTenantId, true),
+                'discordQuestions' => $this->recruitmentDiscordQuestionRepository()->listForTenant($targetTenantId, true),
             ]));
         }
 
@@ -474,14 +475,14 @@ class EnlistmentController
         // Gestion du code d'invitation
         $inviteCode = trim((string) $request->input('invite_code', ''));
         $inviteCodeData = null;
-        if ($inviteCode !== '' && $this->inviteCodeRepository->tablesExist()) {
-            $inviteCodeData = $this->inviteCodeRepository->findByCode($targetTenantId, $inviteCode);
+        if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
+            $inviteCodeData = $this->inviteCodeRepository()->findByCode($targetTenantId, $inviteCode);
             if ($inviteCodeData === null) {
                 Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'existe pas.');
                 return Response::redirect(url('enlistment/error'));
             }
 
-            if (!$this->inviteCodeRepository->isCodeValid($targetTenantId, $inviteCode)) {
+            if (!$this->inviteCodeRepository()->isCodeValid($targetTenantId, $inviteCode)) {
                 Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
                 return Response::redirect(url('enlistment/error'));
             }
@@ -510,7 +511,7 @@ class EnlistmentController
 
         // Enregistrer l'utilisation du code d'invitation
         if ($inviteCodeData !== null && $enlistmentId > 0) {
-            $this->inviteCodeRepository->recordUse(
+            $this->inviteCodeRepository()->recordUse(
                 $targetTenantId,
                 (int) $inviteCodeData['id'],
                 $enlistmentId,
@@ -594,7 +595,7 @@ class EnlistmentController
             return Response::redirect(url('enlistment/error'));
         }
 
-        $questions = $this->recruitmentDiscordQuestionRepository->listForTenant($targetTenantId, true);
+        $questions = $this->recruitmentDiscordQuestionRepository()->listForTenant($targetTenantId, true);
         $answers = [];
         foreach ($questions as $q) {
             $field = 'discord_q_' . $q['id'];
@@ -629,14 +630,14 @@ class EnlistmentController
         // Gestion du code d'invitation
         $inviteCode = trim((string) $request->input('invite_code', ''));
         $inviteCodeData = null;
-        if ($inviteCode !== '' && $this->inviteCodeRepository->tablesExist()) {
-            $inviteCodeData = $this->inviteCodeRepository->findByCode($targetTenantId, $inviteCode);
+        if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
+            $inviteCodeData = $this->inviteCodeRepository()->findByCode($targetTenantId, $inviteCode);
             if ($inviteCodeData === null) {
                 Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'existe pas.');
                 return Response::redirect(url('enlistment/error'));
             }
 
-            if (!$this->inviteCodeRepository->isCodeValid($targetTenantId, $inviteCode)) {
+            if (!$this->inviteCodeRepository()->isCodeValid($targetTenantId, $inviteCode)) {
                 Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
                 return Response::redirect(url('enlistment/error'));
             }
@@ -662,7 +663,7 @@ class EnlistmentController
 
         // Enregistrer l'utilisation du code d'invitation
         if ($inviteCodeData !== null && $enlistmentId > 0) {
-            $this->inviteCodeRepository->recordUse(
+            $this->inviteCodeRepository()->recordUse(
                 $targetTenantId,
                 (int) $inviteCodeData['id'],
                 $enlistmentId,
@@ -792,6 +793,18 @@ class EnlistmentController
                 // La candidature est déjà enregistrée ; l’échec mail ne doit pas bloquer l’utilisateur.
             }
         }
+    }
+
+    private function recruitmentDiscordQuestionRepository(): RecruitmentDiscordQuestionRepository
+    {
+        return $this->recruitmentDiscordQuestionRepository
+            ??= Container::get(RecruitmentDiscordQuestionRepository::class);
+    }
+
+    private function inviteCodeRepository(): RecruitmentInviteCodeRepository
+    {
+        return $this->inviteCodeRepository
+            ??= Container::get(RecruitmentInviteCodeRepository::class);
     }
 
     /** @param array<string,mixed> $tenant */
