@@ -94,7 +94,7 @@ private _shortcuts = [
 
         "\A3\ui_f\data\gui\rsc\rscdisplayarsenal\binoculars_ca.paa",
 
-        "Photos Athena — envoyer une capture vers le commandement",
+        "Photos Athena — les captures remontent seules vers le commandement",
 
         "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Photos<br/>Athena</t>",
 
@@ -128,6 +128,20 @@ private _shortcuts = [
 
         "atak_status"
 
+    ],
+
+    [
+
+        198726, 198727, 880,
+
+        "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa",
+
+        "Sons ATAK — style d’alerte, volumes, mode discret",
+
+        "<t align='center' size='0.55' color='#e8f4f0' shadow='1'>Sons</t>",
+
+        "atak_sound"
+
     ]
 
 ];
@@ -159,12 +173,16 @@ missionNamespace setVariable ["COMSPEC_Athena_desktopClick", {
             [] call comspec_overwatch_connect_fnc_orderInboxShow;
         } else {
             if (_tab isEqualTo "briefing") then {
-                [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+                [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
             } else {
                 if (_tab isEqualTo "atak_status" || {_tab isEqualTo "status"}) then {
                     [] call comspec_overwatch_atak_athena_fnc_athena_openStatus;
                 } else {
-                    [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
+                    if (_tab isEqualTo "atak_sound" || {_tab isEqualTo "sound" || {_tab isEqualTo "sons"}}) then {
+                        [] call comspec_overwatch_atak_athena_fnc_athena_openSound;
+                    } else {
+                        [_tab] call comspec_overwatch_atak_athena_fnc_athena_openFeature;
+                    };
                 };
             };
         };

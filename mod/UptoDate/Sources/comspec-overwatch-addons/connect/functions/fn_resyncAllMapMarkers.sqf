@@ -24,10 +24,7 @@ private _mirroredElsewherePrefixes = [
 
 {
     private _name = _x;
-    if ((_name select [0, 1]) == "_") then {
-        private _ul = toLower _name;
-        if ((_ul find "_user_defined") < 0 && {(_ul find "user_defined") < 0}) then { continue };
-    };
+    if ((_name select [0, 1]) == "_" && {!([_name] call comspec_overwatch_connect_fnc_isSyncableMapMarker)}) then { continue };
 
     private _nameLower = toLower _name;
     if (({ (_nameLower find _x) == 0 } count _mirroredElsewherePrefixes) > 0) then { continue };

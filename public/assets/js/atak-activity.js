@@ -111,6 +111,19 @@ window.ATAKActivity = (function () {
       case 'medevac': return 'MEDEVAC';
       case 'tactical_alert':
         if (/réglages|affichage/i.test(labelHint)) return 'Carte';
+        var kindMeta = String((ev && ev.meta && ev.meta.kind) || '').toLowerCase();
+        if (kindMeta === 'frago') return 'FRAGO';
+        if (kindMeta === 'eagle_down') return 'À terre';
+        if (kindMeta === 'bda') return 'BDA';
+        if (kindMeta === 'salute') return 'SALUTE';
+        if (kindMeta === 'tic') return 'Contact';
+        if (kindMeta === 'tic_clear') return 'Fin contact';
+        if (/fragmentaire|frago/i.test(labelHint)) return 'FRAGO';
+        if (/à terre|eagle/i.test(labelHint)) return 'À terre';
+        if (/salute/i.test(labelHint)) return 'SALUTE';
+        if (/dégâts|bda/i.test(labelHint)) return 'BDA';
+        if (/fin de contact/i.test(labelHint)) return 'Fin contact';
+        if (/^contact\b/i.test(labelHint)) return 'Contact';
         return 'Alerte';
       case 'toc_note': return 'Note TOC';
       case 'fire_team': return 'Équipe';
@@ -227,6 +240,185 @@ window.ATAKActivity = (function () {
     return (Date.now() - d.getTime()) > (windowSec * 1000);
   }
 
+  var EYE_SVG = '<svg class="atak-activity-jump-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 5c-5.5 0-9.7 4.2-11 7 1.3 2.8 5.5 7 11 7s9.7-4.2 11-7c-1.3-2.8-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.2a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6z"/></svg>';
+
+  function isMedicalActivity(ev) {
+    var type = String((ev && ev.type) || '');
+    if (type === 'medevac' || type === 'nine_line') return true;
+    var label = String((ev && ev.label) || '');
+    if (/assistance m[ée]dicale|triage m[ée]dical|m[ée]devac/i.test(label)) return true;
+    var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var kind = String(meta.kind || '').toLowerCase();
+    return ['unconscious', 'cardiac_arrest', 'death', 'kia', 'dead', 'injured', 'wounded'].indexOf(kind) >= 0;
+  }
+
+  function resolveJumpTarget(ev) {
+    if (!ev) return null;
+    var type = String(ev.type || '');
+    var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var chatId = meta.chat_id != null && meta.chat_id !== '' ? String(meta.chat_id) : '';
+    var orderId = meta.order_id != null && meta.order_id !== '' ? String(meta.order_id) : '';
+    var callSign = String(meta.call_sign || meta.callsign || ev.actor || '').trim();
+
+    if (type === 'order' || orderId) {
+      return { tab: 'orders', orderId: orderId, title: 'Voir l’ordre' };
+    }
+    if (type === 'tactical_alert') {
+      return { tab: 'chat', chatId: chatId, callSign: callSign, openTactical: true, title: 'Voir le signalement' };
+    }
+    if (isMedicalActivity(ev)) {
+      return { tab: 'medical', chatId: chatId, callSign: callSign, title: 'Voir l’onglet Médical' };
+    }
+    if (type === 'chat' || type === 'ping') {
+      return { tab: 'chat', chatId: chatId, callSign: callSign, title: 'Voir le message' };
+    }
+    if (type === 'phone' || type === 'sigint') {
+      return { tab: 'radio', title: 'Ouvrir la radio' };
+    }
+    if (type === 'marker') {
+      return { tab: 'markers', title: 'Ouvrir les marqueurs' };
+    }
+    if (type === 'intel') {
+      return { tab: 'personnes', title: 'Ouvrir les personnes' };
+    }
+    if (type === 'toc_note') {
+      return { tab: 'notes', title: 'Ouvrir les notes' };
+    }
+    if (type === 'designator' || type === 'laser' || type === 'flight') {
+      return { tab: 'jtac', title: 'Ouvrir JTAC' };
+    }
+    if (type === 'client_init' || type === 'disconnect' || type === 'callsign_change' || type === 'auth' || type === 'fire_team') {
+      return { tab: 'etat', callSign: callSign, title: 'Voir l’état du personnel' };
+    }
+    return null;
+  }
+
+  function selectAtakTab(tab) {
+    if (!tab) return;
+    if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.selectTab === 'function') {
+      try { window.ATAKPanelChrome.selectTab(tab); return; } catch (e) { /* fall through */ }
+    }
+    var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]')
+      || document.querySelector('.atak-tab[data-tab="' + tab + '"]');
+    if (btn) {
+      try { btn.click(); } catch (e2) { /* ignore */ }
+    }
+  }
+
+  function jumpToEvent(ev) {
+    var target = resolveJumpTarget(ev);
+    if (!target) {
+      openEventDetails(ev);
+      return;
+    }
+    if (target.openTactical && window.TacmapTacticalAlerts && typeof window.TacmapTacticalAlerts.openDetail === 'function') {
+      var alertObj = alertFromActivityEvent(ev);
+      if (alertObj) {
+        window.TacmapTacticalAlerts.openDetail(alertObj, function (x, y) {
+          try {
+            window.dispatchEvent(new CustomEvent('atak:locate', { detail: { x: x, y: y } }));
+          } catch (err) { /* ignore */ }
+        });
+        return;
+      }
+    }
+    selectAtakTab(target.tab);
+    setTimeout(function () {
+      if (target.tab === 'orders' && target.orderId) {
+        if (window.ATAKOrders && typeof window.ATAKOrders.openOrder === 'function') {
+          window.ATAKOrders.openOrder(target.orderId);
+        } else if (typeof window.ATAKOpenOrder === 'function') {
+          window.ATAKOpenOrder(target.orderId);
+        }
+        return;
+      }
+      if (target.tab === 'chat' && window.ATAKChat && typeof window.ATAKChat.focusMessage === 'function') {
+        window.ATAKChat.focusMessage(target.chatId, { callSign: target.callSign });
+        return;
+      }
+      if (target.tab === 'medical' && window.ATAKMedicalAlerts && typeof window.ATAKMedicalAlerts.focusFromActivity === 'function') {
+        window.ATAKMedicalAlerts.focusFromActivity({
+          chatId: target.chatId,
+          callSign: target.callSign
+        });
+        return;
+      }
+      if (target.callSign && typeof window.focusUnitByCallsign === 'function') {
+        try { window.focusUnitByCallsign(target.callSign); } catch (e3) { /* ignore */ }
+      }
+    }, 140);
+  }
+
+  function certStatusLabelFr(raw) {
+    var s = String(raw || '').toLowerCase();
+    var map = {
+      active: 'Certificat actif',
+      issued: 'Certificat délivré',
+      valid: 'Certificat valide',
+      pending: 'Certificat en attente',
+      expired: 'Certificat expiré',
+      revoked: 'Certificat révoqué',
+      missing: 'Sans certificat',
+      inactive: 'Certificat inactif',
+      lost: 'Certificat perdu'
+    };
+    return map[s] || (s ? ('Certificat · ' + s) : '');
+  }
+
+  function linkStateLabelFr(raw) {
+    var s = String(raw || '').toLowerCase();
+    var map = {
+      ok: 'Liaison OK',
+      linked: 'Liaison établie',
+      connected: 'Connecté',
+      degraded: 'Liaison dégradée',
+      poor: 'Liaison faible',
+      lost: 'Liaison perdue',
+      offline: 'Hors liaison',
+      disconnected: 'Déconnecté'
+    };
+    return map[s] || (s ? ('Liaison · ' + s) : '');
+  }
+
+  function buildMetaChipsHtml(ev) {
+    var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var chips = [];
+    function pushChip(cls, text) {
+      var t = String(text || '').trim();
+      if (!t) return;
+      chips.push('<span class="atak-activity-chip' + (cls ? ' ' + cls : '') + '">' + escapeHtml(t) + '</span>');
+    }
+    if (meta.latency_ms != null && meta.latency_ms !== '' && !isNaN(Number(meta.latency_ms))) {
+      pushChip('atak-activity-chip--ms', String(Math.round(Number(meta.latency_ms))) + ' ms');
+    }
+    if (meta.cert_status) {
+      pushChip('atak-activity-chip--cert', certStatusLabelFr(meta.cert_status));
+    } else if (meta.certificate_ref) {
+      pushChip('atak-activity-chip--cert', 'Certificat ' + String(meta.certificate_ref));
+    }
+    if (meta.radio_freq) {
+      var freq = String(meta.radio_freq).trim();
+      if (freq && !/mhz|hz/i.test(freq) && /^[\d.]+$/.test(freq)) freq += ' MHz';
+      pushChip('atak-activity-chip--freq', freq);
+    }
+    if (meta.link_state) {
+      pushChip('atak-activity-chip--link', linkStateLabelFr(meta.link_state));
+    }
+    if (meta.packet_loss != null && meta.packet_loss !== '' && !isNaN(Number(meta.packet_loss))) {
+      var pl = Number(meta.packet_loss);
+      if (pl > 0) pushChip('atak-activity-chip--loss', pl + ' % perte');
+    }
+    var grid = String(meta.grid || meta.grid_ref || '').trim();
+    if (grid) pushChip('atak-activity-chip--grid', 'Grille ' + grid);
+    if (meta.group_name) pushChip('atak-activity-chip--group', String(meta.group_name));
+    else if (meta.group_id) pushChip('atak-activity-chip--group', 'Groupe ' + String(meta.group_id));
+    if (meta.kind_label) pushChip('', String(meta.kind_label));
+    else if (meta.health) pushChip('', formatMetaValue('health', meta.health));
+    if (meta.mod_version) pushChip('atak-activity-chip--mod', 'Overwatch ' + String(meta.mod_version));
+    if (!chips.length) return '';
+    return '<div class="atak-activity-chips">' + chips.join('') + '</div>';
+  }
+
   function renderItem(ev) {
     var type = ev.type || '';
     var li = document.createElement('li');
@@ -256,13 +448,20 @@ window.ATAKActivity = (function () {
       li.style.setProperty('--ft-color', ftColor);
       li.className += ' atak-activity-item--fire-team';
     }
-    var labelText = String(ev.label || '').trim();
+    var chipsHtml = buildMetaChipsHtml(ev);
+    var labelText = activityLabelPreview(ev);
     var labelPreview = summaryLine(labelText, 110);
     var actorStr = String(ev.actor || '').trim();
     var actorRedundant = !!(actorStr && labelText.toLowerCase().indexOf(actorStr.toLowerCase()) >= 0);
-    var needsExpand = labelText.length > labelPreview.length || !!ftChip || (!!actorStr && !actorRedundant);
+    var needsExpand = labelText.length > labelPreview.length || !!ftChip || !!chipsHtml || (!!actorStr && !actorRedundant);
     var foldKey = 'act-' + String(ev.id || (ev.at || '') + '-' + type);
     var typeFr = typeLabelFr(type, ev);
+    var infoBtnLabel = type === 'tactical_alert' ? 'Ouvrir' : 'Fiche';
+    var infoBtnTitle = type === 'tactical_alert' ? 'Ouvrir le signalement' : 'Ouvrir la fiche';
+    var jump = resolveJumpTarget(ev);
+    var jumpBtn = jump
+      ? ('<button type="button" class="atak-activity-jump-btn" data-activity-jump="' + escapeHtml(String(ev.id || '')) + '" title="' + escapeHtml(jump.title || 'Voir dans l’onglet') + '" aria-label="' + escapeHtml(jump.title || 'Voir dans l’onglet') + '">' + EYE_SVG + '</button>')
+      : '';
     li.innerHTML =
       '<span class="atak-activity-rail" aria-hidden="true"></span>' +
       '<details class="atak-activity-fold' + (needsExpand ? '' : ' atak-activity-fold--plain') + '" data-atak-collapse="' + escapeHtml(foldKey) + '" data-atak-collapse-default="0">' +
@@ -271,12 +470,14 @@ window.ATAKActivity = (function () {
             '<span class="atak-activity-type">' + escapeHtml(typeFr) + staleTag + archivedTag + '</span>' +
             '<div class="atak-activity-top-actions">' +
               '<span class="atak-activity-time">' + escapeHtml(formatTime(ev.at)) + '</span>' +
-              '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="Ouvrir la fiche" aria-label="Ouvrir la fiche de l’événement">Fiche</button>' +
+              jumpBtn +
+              '<button type="button" class="atak-activity-info-btn" data-activity-info="' + escapeHtml(String(ev.id || '')) + '" title="' + escapeHtml(infoBtnTitle) + '" aria-label="' + escapeHtml(infoBtnTitle) + '">' + escapeHtml(infoBtnLabel) + '</button>' +
             '</div>' +
           '</div>' +
           (labelPreview
             ? '<p class="atak-activity-label atak-activity-label--preview">' + escapeHtml(labelPreview) + '</p>'
             : '<p class="atak-activity-label atak-activity-label--preview atak-activity-label--empty">Événement sans résumé</p>') +
+          chipsHtml +
           (needsExpand
             ? '<span class="atak-activity-fold-hint"><span class="atak-activity-fold-hint-open">Voir le détail</span><span class="atak-activity-fold-hint-close">Masquer</span></span>'
             : '') +
@@ -294,7 +495,26 @@ window.ATAKActivity = (function () {
       infoBtns[bi].addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        if (type === 'tactical_alert' && window.TacmapTacticalAlerts && typeof window.TacmapTacticalAlerts.openDetail === 'function') {
+          var alertObj = alertFromActivityEvent(ev);
+          if (alertObj) {
+            window.TacmapTacticalAlerts.openDetail(alertObj, function (x, y) {
+              try {
+                window.dispatchEvent(new CustomEvent('atak:locate', { detail: { x: x, y: y } }));
+              } catch (err) { /* ignore */ }
+            });
+            return;
+          }
+        }
         openEventDetails(ev);
+      });
+    }
+    var jumpBtns = li.querySelectorAll('[data-activity-jump]');
+    for (var ji = 0; ji < jumpBtns.length; ji++) {
+      jumpBtns[ji].addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        jumpToEvent(ev);
       });
     }
     var fold = li.querySelector('.atak-activity-fold');
@@ -306,7 +526,7 @@ window.ATAKActivity = (function () {
       var sum = fold.querySelector('summary');
       if (sum) {
         sum.addEventListener('click', function (e) {
-          if (e.target && e.target.closest && e.target.closest('[data-activity-info]')) return;
+          if (e.target && e.target.closest && e.target.closest('[data-activity-info], [data-activity-jump]')) return;
           e.preventDefault();
         });
       }
@@ -346,6 +566,9 @@ window.ATAKActivity = (function () {
     mentions: 'Mentions',
     source: 'Origine',
     kind: 'Type',
+    kind_label: 'Libellé',
+    order_id: 'Ordre lié',
+    summary: 'Détail',
     method: 'Méthode',
     path_hint: 'Chemin',
     action: 'Action',
@@ -358,22 +581,157 @@ window.ATAKActivity = (function () {
     member_role: 'Rôle dans l’équipe',
     member_count: 'Effectif',
     added: 'Ajouts',
-    removed: 'Retraits'
+    removed: 'Retraits',
+    terminal_uid: 'Terminal',
+    cert_status: 'Certificat',
+    certificate_ref: 'Référence certificat',
+    radio_freq: 'Fréquence radio',
+    link_state: 'État de liaison',
+    latency_ms: 'Latence',
+    packet_loss: 'Perte de paquets',
+    packets_sent: 'Paquets envoyés',
+    packets_received: 'Paquets reçus',
+    chat_id: 'Message lié',
+    group_id: 'Groupe',
+    channel: 'Canal'
   };
 
   var META_PRIMARY_ORDER = [
     'display_name', 'user_id', 'call_sign', 'callsign', 'profile_callsign',
     'steam_uid', 'mod_version', 'tenant_id', 'map_id', 'grid', 'grid_ref',
-    'role', 'group_name', 'pos_x', 'pos_y', 'asl_z', 'heading', 'health',
-    'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'source', 'side', 'affiliation',
+    'role', 'group_name', 'radio_freq', 'latency_ms', 'packet_loss',
+    'cert_status', 'certificate_ref', 'link_state', 'terminal_uid',
+    'pos_x', 'pos_y', 'asl_z', 'heading', 'health',
+    'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'kind_label', 'order_id', 'summary', 'source', 'side', 'affiliation',
     'action', 'fire_team_label', 'fire_team_color', 'member_callsign', 'member_role',
-    'member_count', 'added', 'removed'
+    'member_count', 'added', 'removed', 'chat_id'
   ];
+
+  function activityLabelPreview(ev) {
+    var type = ev && ev.type ? String(ev.type) : '';
+    var raw = String((ev && ev.label) || '').trim();
+    if (type !== 'tactical_alert') return raw;
+    var meta = (ev && ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var kind = String(meta.kind || '').toLowerCase();
+    if (!kind) {
+      if (/fragmentaire|\bfrago\b/i.test(raw)) kind = 'frago';
+      else if (/à terre|eagle/i.test(raw)) kind = 'eagle_down';
+      else if (/\bbda\b|dégâts/i.test(raw)) kind = 'bda';
+      else if (/salute/i.test(raw)) kind = 'salute';
+      else if (/fin de contact/i.test(raw)) kind = 'tic_clear';
+      else if (/^contact\b/i.test(raw)) kind = 'tic';
+    }
+    var callSign = String(meta.call_sign || meta.callsign || ev.actor || '');
+    var grid = String(meta.grid || meta.grid_ref || '');
+    if (!grid) {
+      var gm = raw.match(/Grille\s+(\S+)/i);
+      if (gm) grid = gm[1];
+    }
+    var summary = String(meta.summary || raw || '');
+    var kindLabel = String(meta.kind_label || '').trim();
+    if (!kindLabel) {
+      var labels = {
+        frago: 'Ordre fragmentaire', bda: 'Bilan des dégâts', eagle_down: 'Opérateur à terre',
+        tic: 'Contact', tic_clear: 'Fin de contact', salute: 'Compte rendu SALUTE'
+      };
+      kindLabel = labels[kind] || typeLabelFr('tactical_alert', ev) || 'Alerte';
+    }
+    if (window.TacmapTacticalAlerts && typeof window.TacmapTacticalAlerts.cleanSummary === 'function') {
+      var cleaned = window.TacmapTacticalAlerts.cleanSummary(summary, kind || 'tic', callSign, grid);
+      var alertLike = {
+        kind: kind || 'tic',
+        kind_label: kindLabel,
+        call_sign: callSign,
+        grid: grid,
+        summary: cleaned,
+        frago: meta.frago,
+        salute: meta.salute,
+      };
+      if (typeof window.TacmapTacticalAlerts.bodyPreview === 'function') {
+        var preview = window.TacmapTacticalAlerts.bodyPreview(alertLike);
+        if (preview && preview !== 'Aucun détail textuel.' && preview.toLowerCase() !== kindLabel.toLowerCase()) {
+          return kindLabel + ' — ' + preview;
+        }
+      }
+      if (cleaned && cleaned.toLowerCase() !== kindLabel.toLowerCase()) {
+        return kindLabel + (grid ? ' — Grille ' + grid : '') + ' — ' + cleaned;
+      }
+    }
+    return kindLabel + (grid ? ' — Grille ' + grid : '');
+  }
+
+  function alertFromActivityEvent(ev) {
+    if (!ev) return null;
+    var meta = (ev.meta && typeof ev.meta === 'object') ? ev.meta : {};
+    var raw = String(ev.label || '');
+    var kind = String(meta.kind || '').toLowerCase();
+    if (!kind) {
+      if (/fragmentaire|\bfrago\b/i.test(raw)) kind = 'frago';
+      else if (/à terre|eagle/i.test(raw)) kind = 'eagle_down';
+      else if (/\bbda\b|dégâts/i.test(raw)) kind = 'bda';
+      else if (/salute/i.test(raw)) kind = 'salute';
+      else if (/fin de contact/i.test(raw)) kind = 'tic_clear';
+      else if (/^contact\b/i.test(raw)) kind = 'tic';
+      else kind = 'tic';
+    }
+    var callSign = String(meta.call_sign || meta.callsign || ev.actor || '');
+    var grid = String(meta.grid || meta.grid_ref || '');
+    if (!grid) {
+      var gm = raw.match(/Grille\s+(\S+)/i);
+      if (gm) grid = gm[1];
+    }
+    var labels = {
+      frago: 'Ordre fragmentaire', bda: 'Bilan des dégâts', eagle_down: 'Opérateur à terre',
+      tic: 'Contact', tic_clear: 'Fin de contact', salute: 'Compte rendu SALUTE'
+    };
+    var summary = String(meta.summary || '');
+    if (!summary && raw) {
+      summary = raw;
+    }
+    if (window.TacmapTacticalAlerts && window.TacmapTacticalAlerts.cleanSummary) {
+      summary = window.TacmapTacticalAlerts.cleanSummary(summary, kind, callSign, grid);
+    }
+    return {
+      id: ev.id,
+      kind: kind,
+      kind_label: meta.kind_label || labels[kind] || typeLabelFr('tactical_alert', ev),
+      call_sign: callSign,
+      author: ev.actor || '',
+      grid: grid,
+      summary: summary,
+      order_id: meta.order_id || undefined,
+      pos_x: meta.pos_x,
+      pos_y: meta.pos_y,
+      frago: meta.frago,
+      salute: meta.salute,
+      bda: meta.bda,
+      created_at: ev.at,
+      severity: (kind === 'eagle_down' || kind === 'tic') ? 'critical' : 'high',
+    };
+  }
 
   function formatMetaValue(key, value) {
     if (key === 'ok') return value ? 'Réussi' : 'Échec';
     if (key === 'has_ctab' || key === 'has_atak_enhanced' || key === 'has_athena_ctab' || key === 'mod_athena') {
       return value ? 'Oui' : 'Non';
+    }
+    if (key === 'cert_status') {
+      return certStatusLabelFr(value) || '—';
+    }
+    if (key === 'link_state') {
+      return linkStateLabelFr(value) || '—';
+    }
+    if (key === 'latency_ms' && value != null && value !== '' && !isNaN(Number(value))) {
+      return Math.round(Number(value)) + ' ms';
+    }
+    if (key === 'packet_loss' && value != null && value !== '' && !isNaN(Number(value))) {
+      return Number(value) + ' %';
+    }
+    if (key === 'radio_freq') {
+      var freq = String(value || '').trim();
+      if (!freq) return '—';
+      if (!/mhz|hz/i.test(freq) && /^[\d.]+$/.test(freq)) return freq + ' MHz';
+      return freq;
     }
     if (key === 'action') {
       var a = String(value || '');

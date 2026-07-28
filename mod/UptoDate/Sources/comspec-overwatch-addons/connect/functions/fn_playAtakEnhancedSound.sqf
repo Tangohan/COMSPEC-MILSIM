@@ -30,10 +30,15 @@ private _sound = switch (_soundType) do {
     case "screen_broken": {
         ["A3\Sounds_F\sfx\ui\vehicles\vehicle_collision.wss", 0.7]
     };
+    case "crash": {
+        ["A3\Sounds_F\sfx\ui\vehicles\vehicle_collision.wss", 0.9]
+    };
     default { nil };
 };
 
 if (isNil "_sound") exitWith {};
 
 _sound params ["_file", "_volume"];
-playSound3D [_file, player, false, getPosASL player, _volume, 1, 10];
+private _gain = ["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+if (_gain <= 0.01) exitWith {};
+playSound3D [_file, player, false, getPosASL player, (_volume * _gain) min 2, 1, 10];

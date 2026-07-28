@@ -47,8 +47,13 @@ _poiData set ["reported_by_unit", groupId (group player)];
 
 private _jsonString = [_poiData] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["CreatePOI", [_jsonString]]
-] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+    "CreatePOI",
+    [_jsonString],
+    format ["POI %1", _poiName],
+    true,
+    true,
+    "liaison"
+] call comspec_overwatch_connect_fnc_callExtLogged;
 _parsed params ["_ok", "", "_detail"];
 
 if (_ok) then {

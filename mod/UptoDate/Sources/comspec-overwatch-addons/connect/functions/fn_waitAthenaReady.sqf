@@ -62,6 +62,7 @@ if (_ready) then {
     // Succès : journal seulement — pas de bandeau / systemChat au démarrage
     ["INFO", "Athena", format ["Handshake OK après %1 essai(s)", _attempts]] call comspec_overwatch_connect_fnc_log;
     [format ["[Athena] Handshake OK après %1 essai(s).", _attempts]] call comspec_overwatch_connect_fnc_appendLinkLog;
+    ["COMSPEC_AthenaLinkChanged", ["ready"]] call CBA_fnc_localEvent;
     true
 } else {
     // Mode dégradé : on démarre quand même pour ne pas bloquer la mission
@@ -73,5 +74,6 @@ if (_ready) then {
     // Un seul message joueur si le handshake échoue vraiment
     ["Athena reste injoignable. La synchronisation reprendra dès que possible. Utilisez « Vérifier la liaison » dans le menu.", "link", "warn"] call comspec_overwatch_connect_fnc_announce;
     ["[Athena] Handshake abandonné — démarrage en mode dégradé."] call comspec_overwatch_connect_fnc_appendLinkLog;
+    ["COMSPEC_AthenaLinkChanged", ["degraded"]] call CBA_fnc_localEvent;
     false
 };

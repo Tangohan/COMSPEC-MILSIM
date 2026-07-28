@@ -28,8 +28,10 @@ private _success = false;
 switch (_repairType) do {
     case "power": {
         // Rallumer l'ATAK (gratuit)
-        if (!(_atakState get "powered_on")) then {
+        if (!(_atakState getOrDefault ["powered_on", true]) || {_atakState getOrDefault ["device_crashed", false]}) then {
             _atakState set ["powered_on", true];
+            _atakState set ["device_crashed", false];
+            _atakState set ["crash_until", -1];
             ["ATAK rallumé", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Clear_F";
             _success = true;

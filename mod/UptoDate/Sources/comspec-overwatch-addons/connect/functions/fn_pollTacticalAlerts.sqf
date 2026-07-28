@@ -6,6 +6,9 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 
+private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
+
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 
@@ -31,6 +34,7 @@ if (_myCs isEqualTo "") then { _myCs = name player; };
 
 private _added = 0;
 private _notifyTitles = [];
+private _playUnconscious = false;
 
 {
     private _line = _x;
@@ -53,7 +57,8 @@ private _notifyTitles = [];
         case "tic_clear": { "TIC_CLEAR" };
         case "frago": { "FRAGO" };
         case "salute": { "SALUTE" };
-        case "eagle_down": { "EAGLE_DOWN" };
+        case "eagle_down";
+        case "panic": { "EAGLE_DOWN" };
         case "bda": { "BDA" };
         default { toUpper _kindRaw };
     };
@@ -88,6 +93,7 @@ private _notifyTitles = [];
     private _fromMe = (toLower _from) isEqualTo (toLower _myCs) || {(toLower _from) isEqualTo (toLower (name player))};
     if (!_fromMe) then {
         _notifyTitles pushBack format ["%1 — %2", _kindLabel, if (_from isEqualTo "") then { "Athena" } else { _from }];
+        if (_kindKey isEqualTo "EAGLE_DOWN") then { _playUnconscious = true; };
         private _detail = format [
             "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
             _kindLabel,
@@ -118,6 +124,9 @@ if (_added > 0) then {
     if ((count _notifyTitles) > 0) then {
         private _title = _notifyTitles select ((count _notifyTitles) - 1);
         ["ATHENA", _title, 6] call comspec_overwatch_connect_fnc_addScreenToast;
+    };
+    if (_playUnconscious && {!isNil "comspec_overwatch_connect_fnc_playAtakNotification"}) then {
+        ["unconscious"] call comspec_overwatch_connect_fnc_playAtakNotification;
     };
 };
 

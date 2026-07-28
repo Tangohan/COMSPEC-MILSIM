@@ -331,5 +331,64 @@ class COMSPEC_Hub_Dialog {
             w = 0.31 * safezoneW;
             h = 0.018 * safezoneH;
         };
+
+        // Overlays roleplay (liaison / zones / dommages appareil) — mis à jour par fn_updateAtakEnhancedRoleplay
+        class RoleplayOverlayDisconnect: RscStructuredText {
+            idc = 9200;
+            style = ST_CENTER;
+            text = "";
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.38 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.12 * safezoneH;
+            colorBackground[] = {0.08, 0.02, 0.02, 0.88};
+            show = 0;
+        };
+
+        class RoleplayOverlayZone: RscStructuredText {
+            idc = 9201;
+            style = ST_LEFT;
+            text = "";
+            x = 0.345 * safezoneW + safezoneX;
+            y = 0.2 * safezoneH + safezoneY;
+            w = 0.31 * safezoneW;
+            h = 0.05 * safezoneH;
+            colorBackground[] = {0.06, 0.08, 0.12, 0.75};
+            show = 0;
+        };
+
+        class RoleplayOverlayPacketLoss: RscStructuredText {
+            idc = 9202;
+            style = ST_CENTER;
+            text = "";
+            x = 0.345 * safezoneW + safezoneX;
+            y = 0.755 * safezoneH + safezoneY;
+            w = 0.31 * safezoneW;
+            h = 0.028 * safezoneH;
+            colorBackground[] = {0.1, 0.06, 0.02, 0.7};
+            show = 0;
+        };
+
+        class RoleplayOverlayScreenBroken: RscStructuredText {
+            idc = 9203;
+            style = ST_CENTER;
+            text = "";
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.08 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.89 * safezoneH;
+            colorBackground[] = {0.02, 0.02, 0.02, 0.92};
+            show = 0;
+        };
+
+        class RoleplayOverlayGlitch: RscText {
+            idc = 9204;
+            x = 0.33 * safezoneW + safezoneX;
+            y = 0.08 * safezoneH + safezoneY;
+            w = 0.34 * safezoneW;
+            h = 0.89 * safezoneH;
+            colorBackground[] = {0.8, 0, 0, 0.15};
+            show = 0;
+        };
     };
 };

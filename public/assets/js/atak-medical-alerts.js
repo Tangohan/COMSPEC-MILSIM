@@ -729,9 +729,42 @@ window.ATAKMedicalAlerts = (function () {
       try { btn.click(); } catch (e) {}
       return;
     }
-    if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.openTab === 'function') {
-      try { window.ATAKPanelChrome.openTab('medical'); } catch (e2) {}
+    if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.selectTab === 'function') {
+      try { window.ATAKPanelChrome.selectTab('medical'); } catch (e2) {}
+    } else if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.openTab === 'function') {
+      try { window.ATAKPanelChrome.openTab('medical'); } catch (e3) {}
     }
+  }
+
+  function focusFromActivity(opts) {
+    opts = opts || {};
+    var chatId = opts.chatId != null ? String(opts.chatId).trim() : '';
+    var callSign = opts.callSign != null ? String(opts.callSign).trim() : '';
+    openMedicalTab();
+    setTimeout(function () {
+      var list = document.getElementById('atak-medical-list')
+        || document.getElementById('overwatch-medical-list');
+      if (!list) return;
+      var el = null;
+      if (chatId) {
+        el = list.querySelector('.atak-medical-item[data-chat-id="' + chatId.replace(/"/g, '') + '"]');
+      }
+      if (!el && callSign) {
+        el = list.querySelector('.atak-medical-item[data-callsign="' + callSign.replace(/"/g, '') + '"]');
+      }
+      if (!el) return;
+      document.querySelectorAll('.atak-medical-item--focus').forEach(function (n) {
+        n.classList.remove('atak-medical-item--focus');
+      });
+      el.classList.add('atak-medical-item--focus');
+      try { el.open = true; } catch (eOpen) { /* ignore */ }
+      if (typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setTimeout(function () {
+        try { el.classList.remove('atak-medical-item--focus'); } catch (eRm) { /* ignore */ }
+      }, 4200);
+    }, 160);
   }
 
   function renderBanner(data) {
@@ -858,6 +891,8 @@ window.ATAKMedicalAlerts = (function () {
         // Évite de répéter le titre (indicatif) dans le détail si le libellé est redondant.
         var showDetail = detailLabel && detailLabel !== title && detailLabel.indexOf(title) !== 0;
         return '<details class="atak-medical-item atak-medical-' + sev + '"'
+          + ' data-callsign="' + escapeHtml(cs) + '"'
+          + (alertId != null && alertId !== '' ? ' data-chat-id="' + escapeHtml(String(alertId)) + '"' : '')
           + ' data-atak-collapse="med-alert-' + ak + '" data-atak-collapse-default="0">' +
           '<summary class="atak-medical-item-sum">' +
           '<span class="atak-medical-item-sum-main">' +
@@ -1496,6 +1531,7 @@ window.ATAKMedicalAlerts = (function () {
     dismissAllVisible: dismissAllVisible,
     bindUi: bindUi,
     submitTriage: submitTriage,
+    focusFromActivity: focusFromActivity,
     ACTIVE_WINDOW_MS: ACTIVE_WINDOW_MS
   };
 })();

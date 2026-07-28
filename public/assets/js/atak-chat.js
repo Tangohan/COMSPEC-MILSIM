@@ -326,15 +326,20 @@ window.ATAKChat = (function () {
     var groupMsg = (!orderHtml && !medical && !tactical && window.TacmapTacticalAlerts && window.TacmapTacticalAlerts.parseGroupBody)
       ? window.TacmapTacticalAlerts.parseGroupBody(bodyRaw)
       : null;
+    var mine = getMyCallsigns();
+    var groupOutgoing = !!(groupMsg && (
+      (author && mine.indexOf(String(m.author || '').toUpperCase()) >= 0) ||
+      (groupMsg.call_sign && mine.indexOf(String(groupMsg.call_sign).toUpperCase()) >= 0)
+    ));
     var groupHtml = (!orderHtml && !medicalHtml && !tacticalHtml && groupMsg && window.TacmapTacticalAlerts.formatGroupChatBody)
-      ? window.TacmapTacticalAlerts.formatGroupChatBody(bodyRaw)
+      ? window.TacmapTacticalAlerts.formatGroupChatBody(bodyRaw, { outgoing: groupOutgoing })
       : null;
 
     var cls = 'atak-chat-msg'
       + (orderHtml ? ' atak-chat-msg-order' : '')
       + (medical ? ' atak-chat-msg-medical' + (medical.severity === 'critical' ? ' atak-chat-msg-medical-critical' : '') : '')
       + (tactical ? ' atak-chat-msg-tactical' + (tactical.severity === 'critical' ? ' atak-chat-msg-tactical-critical' : '') : '')
-      + (groupMsg ? ' atak-chat-msg-group' : '')
+      + (groupMsg ? ' atak-chat-msg-group' + (groupOutgoing ? ' atak-chat-msg-group--out' : ' atak-chat-msg-group--in') : '')
       + (mentionedMe ? ' atak-chat-msg-mention' : '');
 
     var parsed = (!orderHtml && !medicalHtml && !tacticalHtml && !groupHtml) ? parseCommsBody(bodyRaw) : null;
@@ -349,7 +354,8 @@ window.ATAKChat = (function () {
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(medicalHtml) + '</div>';
     } else if (tacticalHtml) {
       line1Tags = tagHtml('CTAB');
-      line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(tacticalHtml) + '</div>';
+      line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(tacticalHtml) +
+        ' <button type="button" class="atak-chat-talert-open" data-talert-chat-open="1">Ouvrir</button></div>';
     } else if (groupHtml) {
       line1Tags = tagHtml('GROUPE');
       line2 = '<div class="atak-chat-msg-line atak-chat-msg-body">' + wrapBodyHtml(groupHtml) + '</div>';
@@ -369,8 +375,13 @@ window.ATAKChat = (function () {
         '</div>';
     }
 
+    var msgIdAttr = (m && m.id != null && m.id !== '')
+      ? (' data-chat-id="' + escapeHtml(String(m.id)) + '"')
+      : '';
+
     return (
-      '<div class="' + cls + '">' +
+      '<div class="' + cls + '"' + msgIdAttr +
+        (tactical ? ' data-talert-body="' + escapeHtml(bodyRaw) + '"' : '') + '>' +
         '<div class="atak-chat-msg-line atak-chat-msg-meta">' +
           '<span class="atak-chat-author">' + author + '</span>' +
           (line1Tags ? ' ' + line1Tags : '') +
@@ -381,6 +392,39 @@ window.ATAKChat = (function () {
           : '') +
       '</div>'
     );
+  }
+
+  function focusMessage(chatId, opts) {
+    var id = String(chatId || '').trim();
+    var callSign = opts && opts.callSign ? String(opts.callSign).trim() : '';
+    var list = document.getElementById('atak-chat-list')
+      || document.getElementById('atak-chat-messages')
+      || document.querySelector('.atak-chat-list, #atak-panel-chat .atak-chat-msgs');
+    var el = null;
+    if (id) {
+      el = document.querySelector('.atak-chat-msg[data-chat-id="' + id.replace(/"/g, '') + '"]');
+    }
+    if (!el && callSign && list) {
+      var authors = list.querySelectorAll('.atak-chat-msg .atak-chat-author');
+      for (var i = authors.length - 1; i >= 0; i--) {
+        if (String(authors[i].textContent || '').trim().toUpperCase() === callSign.toUpperCase()) {
+          el = authors[i].closest('.atak-chat-msg');
+          break;
+        }
+      }
+    }
+    if (!el) return false;
+    document.querySelectorAll('.atak-chat-msg--focus').forEach(function (n) {
+      n.classList.remove('atak-chat-msg--focus');
+    });
+    el.classList.add('atak-chat-msg--focus');
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    setTimeout(function () {
+      try { el.classList.remove('atak-chat-msg--focus'); } catch (e) { /* ignore */ }
+    }, 4200);
+    return true;
   }
 
   function fetchMessages() {
@@ -704,6 +748,25 @@ window.ATAKChat = (function () {
     var btn = document.getElementById('atak-chat-send');
     var input = document.getElementById('atak-chat-input');
     var clearBtn = document.getElementById('atak-chat-clear');
+    var chatEl = document.getElementById('atak-chat-messages');
+    if (chatEl && !chatEl._talertOpenBound) {
+      chatEl._talertOpenBound = true;
+      chatEl.addEventListener('click', function (ev) {
+        var openBtn = ev.target && ev.target.closest ? ev.target.closest('[data-talert-chat-open]') : null;
+        if (!openBtn) return;
+        ev.preventDefault();
+        var wrap = openBtn.closest('[data-talert-body]');
+        var raw = wrap ? wrap.getAttribute('data-talert-body') : '';
+        if (!raw || !window.TacmapTacticalAlerts || typeof window.TacmapTacticalAlerts.parseChatBody !== 'function') return;
+        var parsed = window.TacmapTacticalAlerts.parseChatBody(raw);
+        if (!parsed) return;
+        window.TacmapTacticalAlerts.openDetail(parsed, function (x, y) {
+          try {
+            window.dispatchEvent(new CustomEvent('atak:locate', { detail: { x: x, y: y } }));
+          } catch (e) { /* ignore */ }
+        });
+      });
+    }
     if (btn) btn.addEventListener('click', send);
     if (input) {
       input.addEventListener('input', updateMentionsFromInput);
@@ -758,6 +821,7 @@ window.ATAKChat = (function () {
     formatMsg: formatMsg,
     extractMentionTokens: extractMentionTokens,
     consumeMentionToast: consumeMentionToast,
+    focusMessage: focusMessage,
     getCachedMessages: function () { return cachedMessages.slice(); }
   };
 })();

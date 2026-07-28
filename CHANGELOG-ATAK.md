@@ -7,6 +7,131 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.1] - 2026-07-28
+
+### Ajouté — Portail SSE classifié (`/atak/sse`)
+
+- Sas d’accès double entrée : membre habilité + code, ou invité code seul
+- Dossiers d’affaire (classification, notes, preuves, rattachement fiches personnes)
+- Codes temporaires délivrés par le commandement (`atak.sse.grant`)
+- Croisements listes de surveillance + export PDF classifié
+- Permissions `atak.sse.*`, update config tenants `SSE_PORTAL_V1`
+- Guide / formation module 7 + lien depuis l’onglet Personnes du Tacmap
+
+---
+
+## [1.4.0] - 2026-07-28
+
+### Ajouté — Renseignement interpersonnel (SSE)
+
+#### Mod
+- Terminal « Renseignement interpersonnel » (idd 9991) : identité, statut, circonstances, déclarations
+- Photo du visage (`UploadSsePhoto`) + simulation empreintes (`SubmitSseBiometricsSim`)
+- Préremplissage inventaire / ACE restrain ; menu ACE « Enregistrer une personne »
+- Extension : `SubmitSsePerson`, `UploadSsePhoto`, `SubmitSseBiometricsSim`
+- Versions addons `main` / `connect` / `mavik_compat` → **1.4.0**
+
+#### Portail
+- API `/api/sse/persons` (+ photos, biométrie sim)
+- Tables `sse_persons`, `sse_person_photos` (+ sites / watchlist / custody préparées)
+- Onglet TOC **Personnes** (`atak-sse-persons.js`)
+- Module pont `sse_person` + update config tenants `SSE_PERSONS_V1`
+- Guide Overwatch + formation module 7 mis à jour ; changelog site `/nouveautes`
+
+Voir aussi `mod/UptoDate/STEAM_CHANGELOG.txt` et `mod/UptoDate/docs/contrat-api-sse.md`.
+
+---
+
+## [1.3.1] - 2026-07-28
+
+### Corrigé — Messagerie Groups / radio jeu ↔ web
+
+#### Cause
+- Le pont `Iceman_ATAK_GroupMessage` n’envoyait plus vers Athena (journal local seul)
+- Aucun poll chat pour faire remonter les messages TOC → inbox Athena en jeu
+
+#### Mod
+- Restauration envoi `GROUPE|…` via `SendChat` (`fn_athena_bridgeIcemanGroup`)
+- `GetChatMessages` (extension) + `fn_pollChatMessages` → messages web / HQ dans l’inbox Athena
+- Rebuild : `connect.pbo`, `atak_athena.pbo`, `COMSPECExtension_x64.dll`
+
+#### Portail
+- Enrichissement `GroupMessageParser` sur `POST /api/chat`
+
+### Ajouté — Signalements tactiques lisibles (FRAGO / Reports)
+
+#### Mod
+- Alertes tactiques : corps métier seul (plus de duplication type / indicatif / grille)
+- FRAGO : SMEAC structuré + `ORDER_ID` pour ouvrir l’ordre lié
+- Inbox Athena : détail FRAGO par rubriques
+
+#### Portail
+- `TacticalAlertParser` : `cleanSummary`, `parseFragoSections`, `activityLabel`, `order_id` / `frago`
+- `tacmap-tactical-alerts.js` : cartes + modal **Ouvrir le FRAGO** / **Ouvrir** / carte / ordre
+- `atak-activity.js` / `atak-chat.js` / `atak-orders.js` : ouverture fiche + `ATAKOpenOrder`
+- Styles modal / boutons (`tacmap.css`, `atak.css`)
+
+### Ajouté — Photos CTAB automatiques vers ATAK web
+
+#### Mod (`atak_athena`)
+- Upload auto à la capture (EH BCE / Iceman + poll Photo Library)
+- Retry si fichier pas encore écrit ou liaison absente ; flush à la reconnexion
+- UI : « Renvoyer la photo » en secours uniquement
+
+### Corrigé — Marqueurs Marker Widget / Dropper (BCE) vers ATAK web
+
+#### Cause
+- Widget = BCE Compat cTab (`_USER_DEFINED` / `_IcTab_DEFINED #…` + `setMarker*Local`), pas Iceman
+- Filtre / timing COMSPEC rataient ces marqueurs ; « Forcer une resynchronisation » ne poussait que la position
+
+#### Mod (`connect` / `atak_athena`)
+- `fn_isSyncableMapMarker` / `fn_forceSyncMapMarkers`
+- Acceptation noms BCE ; re-sync différé ; hooks PlaceMarker / onMapDoubleClick
+- EH marqueurs dès PostInit ; diagnostic **Renvoyer les marqueurs carte**
+- Force sync hub / pause manager inclut les marqueurs
+
+### Versions
+- `connect` **1.3.1** · `atak_athena` **1.0.11**
+- Rebuild : `connect.pbo`, `atak_athena.pbo`, `COMSPECExtension_x64.dll` + déploiement PHP/JS/CSS Athena
+
+---
+
+## [1.3.0] - 2026-07-28
+
+### Ajouté — Réalisme liaison ATAK (roleplay réseau & appareil)
+
+#### Mod (`connect` 1.3.0)
+- **`fn_canTransmit`** : gate central avant envois extension (position, polls, marqueurs) — modes `full` / `position_only` / `none`
+- **Hub overlays** IDC 9200–9204 : déconnexion, zone, pertes, écran cassé, glitch (`display_hub.hpp`)
+- **Dommages enrichis** : chocs Hit/Explosion, bras blessé, lien KAM (pneumothorax, SpO2 → capteur HR roleplay)
+- **`fn_getMedicalState`** : champs KAM optionnels (SpO2, voies aériennes, pneumothorax) propagés vers Athena
+- **État crash ATAK** : gel terminal distinct offline réseau (`fn_triggerAtakCrash`, ppEffects)
+- **Modules Zeus/Eden** réactivés : `COMSPEC_Module_NoCoverage`, `Interference`, `Degraded`, `Jammer`
+- **Sync zones portail** : `fn_pollRoleplayConfig` / `fn_syncRoleplayZonesFromPortal` (poll 90 s)
+- **Reprise JIP** : `fn_initCrashRecovery`, `fn_restoreAtakSession`, `fn_clearDisconnectedAtakState`
+- **Callbacks extension** : `NetworkDisconnected` / `NetworkReconnected`
+- **Assets** : overlays roleplay + logo web (brouillons IA) — doc `docs/design/atak-assets-roleplay.md`
+
+#### Extension `COMSPECExtension`
+- `GetRoleplayConfig` → `GET /api/atak/roleplay-stats` (format tabulaire SQF)
+- `GetSessionRestore` → `GET /api/atak/session-restore`
+
+#### Portail Athena
+- `roleplayStats` : `zones_enabled`, `zones_json`, `session_ttl_sec`
+- `GET /api/atak/session-restore?steam_uid=…` — snapshot TTL 10 min (`AtakDisconnectRecoveryRepository`)
+- Snapshot auto à chaque `POST /api/atak/position` (indicatif, liaison, position)
+- Assets web : `atak-eagle-logo.png`, `atak-link-lost-icon.png` (alerte roleplay JS)
+
+### Modifié
+- Versions addons `main` / `connect` / `mavik_compat` → **1.3.0**
+- `atak-roleplay-effects.js` : icône liaison perdue au lieu de l’emoji seul
+
+### Rebuild pack
+- **Obligatoire** : `connect.pbo`, `COMSPECExtension_x64.dll`
+- Recommandé : `main.pbo`, `mavik_compat.pbo` (version affichée hub)
+
+---
+
 ## [1.2.2] - 2026-07-27
 
 ### Ajouté — Waypoints partagés & itinéraires de patrouille (portail)

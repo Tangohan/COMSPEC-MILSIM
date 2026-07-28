@@ -26,7 +26,7 @@ if (isNull _parent) then {
     ["AtakStatus"] call comspec_overwatch_atak_athena_fnc_athena_openAtakApp;
     uiSleep 0.15;
     if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Status_group", controlNull])) then {
-        ["cTab_Android_dlg", [["showMenu", ["COMSPEC_ATAK_Status", true, ["", -1], createHashMap]]], true, true] call cTab_fnc_setSettings;
+        ["cTab_Android_dlg", [["showMenu", ["AtakStatus", true, ["", -1], createHashMap]]], true, true] call cTab_fnc_setSettings;
         uiSleep 0.12;
     };
 

@@ -12,7 +12,7 @@ _tab = toLower (trim _tab);
 
 // Formulaires dédiés (hors onglets panneau)
 if (_tab isEqualTo "briefing") exitWith {
-    [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+    [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
 };
 if (_tab isEqualTo "cas") exitWith {
     [] call comspec_overwatch_connect_fnc_casRequestShow;

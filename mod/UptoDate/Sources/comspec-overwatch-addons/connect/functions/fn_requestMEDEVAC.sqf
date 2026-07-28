@@ -74,8 +74,13 @@ if (_remarks isNotEqualTo "") then {
 
 private _jsonString = [_medevacData] call comspec_overwatch_connect_fnc_hashMapToJson;
 private _parsed = [
-    "COMSPECExtension" callExtension ["RequestMEDEVAC", [_jsonString]]
-] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+    "RequestMEDEVAC",
+    [_jsonString],
+    "MEDEVAC",
+    true,
+    true,
+    "medical"
+] call comspec_overwatch_connect_fnc_callExtLogged;
 _parsed params ["_ok", "", "_detail"];
 
 if (_ok) then {

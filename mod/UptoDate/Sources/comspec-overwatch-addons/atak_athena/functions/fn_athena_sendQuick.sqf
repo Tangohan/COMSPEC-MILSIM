@@ -20,8 +20,11 @@ if (_cs isEqualTo "") then { _cs = name player; };
 private _timeStr = [daytime, "HH:MM"] call BIS_fnc_timeToString;
 
 private _body = switch (_kindKey) do {
-    case "FRAGO": { format ["Ordre fragmentaire — %1 · grille %2 · %3", _cs, _grid, _timeStr]; };
-    case "BDA": { format ["Bilan des dégâts — position actuelle · grille %1 · %2", _grid, _timeStr]; };
+    case "FRAGO": { "" };
+    case "BDA": { "Bilan des dégâts à la position actuelle." };
+    case "EAGLE_DOWN": { "Opérateur nécessite une assistance immédiate." };
+    case "TIC": { "Contact ennemi signalé." };
+    case "TIC_CLEAR": { "Fin de contact." };
     default { "" };
 };
 
@@ -48,7 +51,7 @@ if (_kindKey isEqualTo "MANIFEST" || {_kindKey isEqualTo "MANIFESTE"} || {_kindK
     [] call comspec_overwatch_connect_fnc_flightManifestShow;
 };
 if (_kindKey isEqualTo "BRIEFING" || {_kindKey isEqualTo "BRIEF"}) exitWith {
-    [] call comspec_overwatch_connect_fnc_openBriefingBoard;
+    [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
 };
 
 [_kindKey, _body, getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;

@@ -12,32 +12,34 @@ if (_type isEqualTo "") exitWith {};
 // Vérifier si les effets sonores sont activés
 if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", false])) exitWith {};
 
+private _vol = ["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+if (_vol <= 0.01) exitWith {};
+
+private _play = {
+    params ["_snd"];
+    if (_snd isEqualTo "") exitWith {};
+    playSoundUI [_snd, _vol, 1];
+};
+
 switch (_type) do {
     case "disconnect": {
-        // Son de déconnexion (static + bip)
-        playSound "FD_CP_Not_Clear_F";
+        ["FD_CP_Not_Clear_F"] call _play;
         [{
-            playSound "AddItemFailed";
-        }, [], 0.3] call CBA_fnc_waitAndExecute;
+            params ["_vol"];
+            if ((["fx"] call comspec_overwatch_connect_fnc_getAtakSoundVolume) <= 0.01) exitWith {};
+            playSoundUI ["AddItemFailed", _vol, 1];
+        }, [_vol], 0.3] call CBA_fnc_waitAndExecute;
     };
-    
     case "reconnect": {
-        // Son de reconnexion (bip positif)
-        playSound "FD_CP_Clear_F";
+        ["FD_CP_Clear_F"] call _play;
     };
-    
     case "glitch": {
-        // Son de glitch/parasite
-        playSound "AddItemFailed";
+        ["AddItemFailed"] call _play;
     };
-    
     case "warning": {
-        // Son d'avertissement
-        playSound "Orange_NotificationDefault_01";
+        ["Orange_NotificationDefault_01"] call _play;
     };
-    
     case "degraded": {
-        // Son de qualité dégradée
-        playSound "Orange_NotificationDefault_02";
+        ["Orange_NotificationDefault_02"] call _play;
     };
 };

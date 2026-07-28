@@ -50,13 +50,13 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js?v=202607262015"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js?v=202607282040"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>
   <script src="<?= htmlspecialchars(asset_url('assets/js/comspec-operational-map.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/atak-map-popups.css" rel="stylesheet">
-  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tacmap.css" rel="stylesheet">
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/tacmap.css?v=202607282040" rel="stylesheet">
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=202607270700" rel="stylesheet">
   <script src="<?= htmlspecialchars($base) ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
 </head>

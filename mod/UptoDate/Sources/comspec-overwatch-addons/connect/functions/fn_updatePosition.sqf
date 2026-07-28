@@ -138,6 +138,14 @@ private _shouldSend = _force
     || _txUrgent;
 if (!_shouldSend) exitWith {};
 
+// Pipeline liaison unifié — position seule si écran cassé, blocage si hors couverture
+private _txGate = [false] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_txGate getOrDefault ["can_transmit", true]) exitWith {
+    if (_force) then { _txGate getOrDefault ["reason", "blocked"] } else { nil };
+};
+private _txMode = _txGate getOrDefault ["mode", "full"];
+private _linkState = _txGate getOrDefault ["link_state", missionNamespace getVariable ["COMSPEC_LinkState", "linked"]];
+
 private _velocity = velocity _unit;
 private _speed = vectorMagnitude _velocity;
 private _heading = getDir _unit;
@@ -269,6 +277,49 @@ _vehJson = _vehJson + format [
     if (_hasEnhanced) then { "true" } else { "false" },
     if (_hasAthenaCtab) then { "true" } else { "false" }
 ];
+private _pktStats = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
+private _escLink = (_linkState splitString """" joinString "");
+_vehJson = _vehJson + format [
+    ",""link_state"":""%1"",""transmit_mode"":""%2"",""packet_loss"":%3,""packets_sent"":%4,""packets_received"":%5",
+    _escLink,
+    _txMode,
+    _pktStats getOrDefault ["packet_loss_percent", 0],
+    _pktStats getOrDefault ["packets_sent", 0],
+    _pktStats getOrDefault ["packets_received", 0]
+];
+private _compromise = toLower (missionNamespace getVariable ["COMSPEC_CompromiseState", "none"]);
+if (!(_compromise in ["none", "captured", "compromised"])) then { _compromise = "none"; };
+private _terminalUidPos = [] call comspec_overwatch_connect_fnc_getTerminalUid;
+if (!(_terminalUidPos isEqualType "")) then { _terminalUidPos = ""; };
+_terminalUidPos = (_terminalUidPos splitString """" joinString "");
+_vehJson = _vehJson + format [
+    ",""compromise_state"":""%1"",""terminal_uid"":""%2"",""zone_type"":""%3""",
+    _compromise,
+    _terminalUidPos,
+    (((missionNamespace getVariable ["COMSPEC_ZoneEffects", createHashMap]) getOrDefault ["type", ""]) splitString """" joinString "")
+];
+private _latencyMs = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
+if (_latencyMs isEqualType 0 && {_latencyMs >= 0}) then {
+    _vehJson = _vehJson + format [",""latency_ms"":%1", round _latencyMs];
+};
+private _certStatus = toLower (str (missionNamespace getVariable ["COMSPEC_CertStatus", ""]));
+private _certRef = str (missionNamespace getVariable ["COMSPEC_CertRef", ""]);
+_certStatus = (_certStatus splitString """" joinString "");
+_certRef = (_certRef splitString """" joinString "");
+if (!(_certStatus in ["", "nil", "<null>", "any"])) then {
+    _vehJson = _vehJson + format [",""cert_status"":""%1""", _certStatus];
+};
+if (!(_certRef in ["", "nil", "<null>", "any"])) then {
+    _vehJson = _vehJson + format [",""certificate_ref"":""%1""", _certRef];
+};
+if (count _medicalParts >= 8) then {
+    _vehJson = _vehJson + format [
+        ",""spo2"":""%1"",""airway"":""%2"",""pneumothorax"":""%3""",
+        _medicalParts select 5,
+        _medicalParts select 6,
+        _medicalParts select 7
+    ];
+};
 _vehJson = _vehJson + "}";
 
 private _steamUid = getPlayerUID player;
@@ -331,6 +382,14 @@ missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, true];
 missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, true];
 missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
+
+private _atakSync = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
+if (_atakSync isEqualType createHashMap) then {
+    player setVariable ["COMSPEC_AtakState", _atakSync, true];
+    player setVariable ["COMSPEC_LinkState", _linkState, true];
+    [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
+};
+
 [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 
 if (_force) then { "ok" } else { nil };

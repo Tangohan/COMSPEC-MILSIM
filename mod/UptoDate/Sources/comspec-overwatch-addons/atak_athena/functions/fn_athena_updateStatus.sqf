@@ -4,7 +4,12 @@
 if (!hasInterface) exitWith {};
 
 private _group = uiNamespace getVariable ["COMSPEC_ATAK_Status_group", controlNull];
-if (isNull _group) exitWith {};
+if (isNull _group || {!ctrlShown _group}) exitWith {};
+
+// Ne pas écrire si une autre app ATAK est affichée (Reports, etc.).
+// BCE stocke le nom du tiroir (« AtakStatus »), pas le PAGE_CTRL (« COMSPEC_ATAK_Status »).
+private _page = (["cTab_Android_dlg", "showMenu"] call cTab_fnc_getSettings) param [0, ""];
+if (_page isNotEqualTo "" && {!(_page in ["AtakStatus", "COMSPEC_ATAK_Status", "atak_status", "status"])}) exitWith {};
 
 // Mesures à jour
 [] call comspec_overwatch_connect_fnc_measureLatency;
@@ -244,6 +249,7 @@ _body = _body + (["Terminal", _deviceTxt, _deviceColor] call _row);
 
 private _certStatus = missionNamespace getVariable ["COMSPEC_CertStatus", ""];
 private _certExpires = missionNamespace getVariable ["COMSPEC_CertExpires", ""];
+private _certRef = missionNamespace getVariable ["COMSPEC_CertRef", ""];
 private _certLabel = [_certStatus, _certExpires] call comspec_overwatch_connect_fnc_certStatusLabel;
 private _certColor = switch (toLower _certStatus) do {
     case "active";
@@ -253,11 +259,55 @@ private _certColor = switch (toLower _certStatus) do {
     case "missing": { "#ffd27a" };
     default { "#8aa0b4" };
 };
-_body = _body + (["Certificat terminal", _certLabel, _certColor] call _row);
+_body = _body + (["Certificat", _certLabel, _certColor] call _row);
+if (_certRef isEqualType "" && {_certRef isNotEqualTo ""} && {(toLower _certRef) find "<null" < 0}) then {
+    _body = _body + (["Réf. certificat", _certRef, "#c8e8ff"] call _row);
+};
 
 private _terminalUid = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];
-if (_terminalUid isNotEqualTo "") then {
+if (_terminalUid isEqualType "" && {_terminalUid isNotEqualTo ""} && {(toLower _terminalUid) find "<null" < 0}) then {
     _body = _body + (["Identité terminal", _terminalUid, "#c8e8ff"] call _row);
+} else {
+    _body = _body + (["Identité terminal", "Non synchronisé", "#ffd27a"] call _row);
+};
+
+private _termStatus = missionNamespace getVariable ["COMSPEC_TerminalStatus", ""];
+if (_termStatus isEqualType "" && {_termStatus isNotEqualTo ""}) then {
+    private _tsLabel = switch (toLower _termStatus) do {
+        case "active": { "Actif" };
+        case "pending": { "En attente" };
+        case "inactive": { "Inactif" };
+        case "lost": { "Perdu" };
+        case "revoked": { "Révoqué" };
+        default { _termStatus };
+    };
+    _body = _body + (["Statut terminal", _tsLabel, "#e8f4f0"] call _row);
+};
+
+private _atakId = missionNamespace getVariable ["COMSPEC_AtakId", ""];
+if (_atakId isEqualType "" && {_atakId isNotEqualTo ""}) then {
+    _body = _body + (["ID ATAK", _atakId, "#e8f4f0"] call _row);
+};
+private _mid = missionNamespace getVariable ["COMSPEC_MilitaryId", ""];
+if (_mid isEqualTo "") then { _mid = profileNamespace getVariable ["COMSPEC_MilitaryId", ""]; };
+if (_mid isEqualType "" && {_mid isNotEqualTo ""}) then {
+    _body = _body + (["ID militaire", _mid, "#e8f4f0"] call _row);
+};
+
+private _realismErr = missionNamespace getVariable ["COMSPEC_AtakRealismLastError", ""];
+if (_realismErr isEqualType "" && {_realismErr isNotEqualTo ""}) then {
+    _body = _body + (["Dernière anomalie", _realismErr, "#ff8a7a"] call _row);
+};
+
+private _lastRealism = missionNamespace getVariable ["COMSPEC_AtakRealismLastSync", -1];
+if (_lastRealism > 0) then {
+    private _age = diag_tickTime - _lastRealism;
+    private _ageTxt = if (_age < 60) then {
+        format ["il y a %1 s", round _age]
+    } else {
+        format ["il y a %1 min", round (_age / 60)]
+    };
+    _body = _body + (["Sync. terminal", _ageTxt, "#8aa0b4"] call _row);
 };
 
 _body = _body + (["Zone radio", _zoneTxt, if (_zoneTxt isEqualTo "Aucune") then { "#7dffb0" } else { "#ffd27a" }] call _row);

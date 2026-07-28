@@ -26,9 +26,20 @@ missionNamespace setVariable ["COMSPEC_ForceSyncAt", _now, false];
 
 private _result = [player, true] call comspec_overwatch_connect_fnc_updatePosition;
 
+// Aussi renvoyer tous les marqueurs Marker Widget / Dropper / cTab
+private _mkCount = 0;
+if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
+    _mkCount = [false] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+    if (!(_mkCount isEqualType 0)) then { _mkCount = 0; };
+};
+
 private _ok = (_result isEqualTo "ok");
-if (_ok) then {
-    ["Position et données transmises.", "link", "info", true] call comspec_overwatch_connect_fnc_announce;
+if (_ok || {_mkCount > 0}) then {
+    if (_mkCount > 0) then {
+        [format ["Position transmise — %1 marqueur(s) renvoyé(s).", _mkCount], "link", "info", true] call comspec_overwatch_connect_fnc_announce;
+    } else {
+        ["Position et données transmises.", "link", "info", true] call comspec_overwatch_connect_fnc_announce;
+    };
 } else {
     private _msg = switch (_result) do {
         case "origin": { "Position non valide — déplacez-vous un peu." };
@@ -38,4 +49,4 @@ if (_ok) then {
     [_msg, "link", "warn", true] call comspec_overwatch_connect_fnc_announce;
 };
 
-_ok
+(_ok || {_mkCount > 0})

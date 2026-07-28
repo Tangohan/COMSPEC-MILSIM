@@ -17,6 +17,7 @@ private _disconnectInfo = [] call comspec_overwatch_connect_fnc_getNetworkDiscon
 private _zoneInfo = [] call comspec_overwatch_connect_fnc_getPlayerRoleplayZone;
 private _atakStatus = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
 
+private _isCrashed = _atakStatus getOrDefault ["device_crashed", false];
 private _isDisconnected = _disconnectInfo get "is_disconnected";
 private _packetLoss = _packetLossStats get "packet_loss_percent";
 
@@ -24,13 +25,36 @@ private _packetLoss = _packetLossStats get "packet_loss_percent";
 private _wasDisconnected = missionNamespace getVariable ["COMSPEC_Roleplay_WasDisconnected", false];
 private _wasInZone = missionNamespace getVariable ["COMSPEC_Roleplay_WasInZone", false];
 private _wasScreenBroken = missionNamespace getVariable ["COMSPEC_Roleplay_WasScreenBroken", false];
+private _wasCrashed = missionNamespace getVariable ["COMSPEC_Roleplay_WasCrashed", false];
 
-// IDC des contrôles roleplay (à ajouter dans display_hub.hpp)
-private _ctrlDisconnect = _display displayCtrl 9200; // Overlay déconnexion
-private _ctrlZoneWarning = _display displayCtrl 9201; // Avertissement zone
-private _ctrlPacketLoss = _display displayCtrl 9202; // Indicateur packet loss
-private _ctrlScreenBroken = _display displayCtrl 9203; // Écran cassé
-private _ctrlGlitch = _display displayCtrl 9204; // Effet glitch
+// IDC des contrôles roleplay
+private _ctrlDisconnect = _display displayCtrl 9200;
+private _ctrlZoneWarning = _display displayCtrl 9201;
+private _ctrlPacketLoss = _display displayCtrl 9202;
+private _ctrlScreenBroken = _display displayCtrl 9203;
+private _ctrlGlitch = _display displayCtrl 9204;
+
+// === GEL APPAREIL (crash ATAK) ===
+if (_isCrashed && {!isNull _ctrlScreenBroken}) then {
+    if (!_wasCrashed) then {
+        ["crash"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        missionNamespace setVariable ["COMSPEC_Roleplay_WasCrashed", true];
+    };
+    _ctrlScreenBroken ctrlSetStructuredText parseText (
+        "<t align='center' size='1.4' color='#cccccc'>TERMINAL BLOQUÉ</t><br/>" +
+        "<t align='center' size='0.9' color='#888888'>Redémarrage automatique en cours…</t>"
+    );
+    _ctrlScreenBroken ctrlShow true;
+    {
+        private _ctrl = _display displayCtrl _x;
+        if (!isNull _ctrl) then { _ctrl ctrlShow false; };
+    } forEach [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108];
+    exitWith {};
+} else {
+    if (_wasCrashed) then {
+        missionNamespace setVariable ["COMSPEC_Roleplay_WasCrashed", false];
+    };
+};
 
 // === ÉCRAN CASSÉ/ÉTEINT ===
 if (!(_atakStatus get "can_display")) then {

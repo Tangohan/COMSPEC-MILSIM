@@ -30,6 +30,7 @@ switch (_function) do {
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+        ["COMSPEC_AthenaLinkChanged", ["linked"]] call CBA_fnc_localEvent;
     };
     case "Error": {
         private _msg = if (!(_data isEqualTo "")) then { _data } else { "Echec de liaison" };
@@ -53,6 +54,7 @@ switch (_function) do {
         private _msg = if (!(_data isEqualTo "")) then { _data } else {
             "Athena est saturé — synchronisation ralentie quelques instants."
         };
+        ["WARN", "Tx", format ["Rate limit — pause %1 s", round _next], _msg] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1 (pause %2 s)", _msg, round _next], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
             systemChat format ["[Athena] Synchronisation ralentie (%1 s).", round _next];
@@ -182,7 +184,35 @@ switch (_function) do {
             case "cancelled": { "Chargement annulé." };
             default { if (_message isEqualTo "") then { "Échec du chargement Google Slides." } else { _message } };
         };
+        ["google_deck_error", _human, format ["%1|%2", _code, _message], "Athena", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
         ["COMSPEC_Warning", [_human]] call comspec_overwatch_connect_fnc_showNotification;
+    };
+    case "PostError": {
+        // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
+        // data = "code|path|ageSec"
+        private _parts = _data splitString "|";
+        private _code = if ((count _parts) > 0) then { _parts select 0 } else { "?" };
+        private _path = if ((count _parts) > 1) then { _parts select 1 } else { "" };
+        private _age = if ((count _parts) > 2) then { _parts select 2 } else { "0" };
+        private _label = if (_path isEqualTo "") then { "POST" } else { _path };
+        ["HTTP POST", "fail", format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    };
+    case "NetworkDisconnected": {
+        missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
+        missionNamespace setVariable ["COMSPEC_LinkDetail", "Liaison interrompue", false];
+        ["WARN", "Athena", "Liaison interrompue", _data] call comspec_overwatch_connect_fnc_log;
+        [format ["[Athena] %1", if (_data isEqualTo "") then { "Liaison interrompue" } else { _data }], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+        ["disconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
+    };
+    case "NetworkReconnected": {
+        missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+        missionNamespace setVariable ["COMSPEC_LinkDetail", "", false];
+        missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
+        ["INFO", "Athena", "Liaison rétablie"] call comspec_overwatch_connect_fnc_log;
+        [format ["[Athena] Liaison rétablie"], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
+        ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+        [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     default {};
 };

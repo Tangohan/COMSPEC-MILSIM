@@ -2,6 +2,10 @@
     Poll GetMapShapes from extension, parse minimal JSON and create/update/delete local markers.
     Enrichi : extrait coordinates / points pour LINE / POLYLINE (comme cTabIRL createLine).
 */
+if (!hasInterface) exitWith {};
+private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
+
 private _raw = ["COMSPECExtension" callExtension ["GetMapShapes", ["1", ""]]] call comspec_overwatch_connect_fnc_extResult;
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 private _json = _raw select [3, count _raw - 3];

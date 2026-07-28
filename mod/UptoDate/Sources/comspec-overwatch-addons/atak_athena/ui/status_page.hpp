@@ -107,9 +107,9 @@ class COMSPEC_ATAK_Status: ATAK_Message
             idc = 9803;
             x = QUOTE(COMSPEC_STATUS_W(0.08));
             y = QUOTE(COMSPEC_STATUS_H(7.10));
-            w = QUOTE(COMSPEC_STATUS_W(1.38));
+            w = QUOTE(COMSPEC_STATUS_W(0.90));
             h = QUOTE(COMSPEC_STATUS_H(0.52));
-            size = QUOTE(COMSPEC_STATUS_H(0.30));
+            size = QUOTE(COMSPEC_STATUS_H(0.28));
             text = "Actualiser";
             colorBackground[] = STATUS_BTN;
             colorBackground2[] = STATUS_BTN;
@@ -118,10 +118,18 @@ class COMSPEC_ATAK_Status: ATAK_Message
             class Attributes { align = "center"; valign = "middle"; };
         };
 
+        class BtnSound: BtnRefresh
+        {
+            idc = 9805;
+            x = QUOTE(COMSPEC_STATUS_W(1.05));
+            text = "Sons";
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_openSound";
+        };
+
         class BtnAthena: BtnRefresh
         {
             idc = 9804;
-            x = QUOTE(COMSPEC_STATUS_W(1.54));
+            x = QUOTE(COMSPEC_STATUS_W(2.02));
             text = "Athena";
             onButtonClick = "['all'] call comspec_overwatch_atak_athena_fnc_athena_openFeature";
         };

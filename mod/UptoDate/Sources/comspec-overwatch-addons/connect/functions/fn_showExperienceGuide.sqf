@@ -7,6 +7,8 @@ if (missionNamespace getVariable ["COMSPEC_ExperienceGuideShown", false]) exitWi
 if (isNull player) exitWith {};
 
 private _map = missionNamespace getVariable ["COMSPEC_TenantExperience", createHashMap];
+if (!(_map isEqualType createHashMap)) exitWith {};
+
 private _guide = _map getOrDefault ["guide", ""];
 if (_guide isEqualTo "") exitWith {};
 
@@ -21,11 +23,10 @@ player createDiaryRecord [
     ["Guide configuration", _guide]
 ];
 
+// Réalisme : journal seulement, pas de bandeau / chat.
+if ((_map getOrDefault ["realism", "0"]) isEqualTo "1") exitWith {};
+
 private _headline = "Guide Overwatch — journal de mission (COMSPEC Athena).";
-if ((_map getOrDefault ["realism", "0"]) isEqualTo "1") then {
-    // Réalisme : journal seulement, pas de bandeau / chat.
-    exitWith {};
-};
 if ((_map getOrDefault ["troll", "0"]) isEqualTo "1") then {
     _headline = "Mode troll actif — journal COMSPEC Athena.";
 };

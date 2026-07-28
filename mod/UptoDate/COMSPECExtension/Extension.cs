@@ -61,6 +61,8 @@ public static class Extension
     private static string? _resolvedLogPath;
     private static readonly object LogFileLock = new();
 
+    private static long _lastPostErrorCbTicks;
+
     private static void NotePostError(int code, string url)
     {
         _lastPostErrorCode = code;
@@ -68,6 +70,13 @@ public static class Extension
         try { path = new Uri(url).AbsolutePath; } catch { path = url; }
         _lastPostErrorPath = path.Replace("|", "/");
         System.Threading.Interlocked.Exchange(ref _lastPostErrorAtTicks, DateTime.UtcNow.Ticks);
+
+        // Remonte vers le journal SQF (anti-spam : 1 callback / 3 s max).
+        var now = DateTime.UtcNow.Ticks;
+        var prev = System.Threading.Interlocked.Read(ref _lastPostErrorCbTicks);
+        if (now - prev < TimeSpan.FromSeconds(3).Ticks) return;
+        if (System.Threading.Interlocked.CompareExchange(ref _lastPostErrorCbTicks, now, prev) != prev) return;
+        InvokeCallback("PostError", $"{code}|{_lastPostErrorPath}|0");
     }
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -794,6 +803,41 @@ public static class Extension
             && ((str[0] == '"' && str[^1] == '"') || (str[0] == '\'' && str[^1] == '\'')))
             return str.Substring(1, str.Length - 2);
         return str;
+    }
+
+    /// <summary>
+    /// SQF peut livrer un JSON avec guillemets doublés non décodés → json_decode PHP vide → callsign « Unknown ».
+    /// </summary>
+    private static string NormalizeArmaJson(string? raw)
+    {
+        var s = (raw ?? string.Empty).Trim();
+        if (s.Length == 0) return "{}";
+        try
+        {
+            using var _ = JsonDocument.Parse(s);
+            return s;
+        }
+        catch
+        {
+            // ignore — tentative de normalisation ci-dessous
+        }
+
+        // Cas fréquent : {""mapId"":1,""callsign"":""N-10""}
+        if (s.Contains("\"\"", StringComparison.Ordinal))
+        {
+            var doubled = s.Replace("\"\"", "\"", StringComparison.Ordinal);
+            try
+            {
+                using var _ = JsonDocument.Parse(doubled);
+                return doubled;
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        return s;
     }
 
     /// <summary>
@@ -1626,6 +1670,37 @@ public static class Extension
                 var simplified = SimplifyExperienceJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
+            if (function == "GetRoleplayConfig")
+            {
+                var resp = SendGet(_baseUrl + "/api/atak/roleplay-stats", token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401) return "ERR|unauthorized";
+                    if (code == 403) return "ERR|forbidden";
+                    return "ERR|http_" + code;
+                }
+                var respBody = ReadContentUtf8(resp, token);
+                var simplified = SimplifyRoleplayConfigJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            if (function == "GetSessionRestore")
+            {
+                var steamUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (steamUid.Length < 10) return "ERR|no_steam";
+                var url = _baseUrl + "/api/atak/session-restore?steam_uid=" + Uri.EscapeDataString(steamUid);
+                var resp = SendGet(url, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401) return "ERR|unauthorized";
+                    return "ERR|http_" + code;
+                }
+                var respBody = ReadContentUtf8(resp, token);
+                var simplified = SimplifySessionRestoreJson(respBody);
+                return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
             if (function == "GetLaserCodes")
             {
                 var mapId = args.Length > 0 ? (args[0] ?? "1") : "1";
@@ -1677,6 +1752,33 @@ public static class Extension
                 }
                 var simplified = SimplifyFireTeamsJson(respBody);
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
+            }
+            // Messagerie radio Athena (journal /api/chat) → jeu (Groups / inbox Athena).
+            // Lignes : id\tauthor\tbody\tcreated_at
+            // args: [mapId, limit?, afterId?] — afterId = ne renvoyer que id > afterId
+            if (function == "GetChatMessages")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var limit = args.Length > 1 && !string.IsNullOrWhiteSpace(args[1]) ? args[1]!.Trim() : "25";
+                var afterId = args.Length > 2 && !string.IsNullOrWhiteSpace(args[2]) ? args[2]!.Trim() : "";
+                var url = _baseUrl + "/api/chat?mapId=" + Uri.EscapeDataString(mapId)
+                    + "&limit=" + Uri.EscapeDataString(limit);
+                if (!string.IsNullOrEmpty(afterId) && afterId != "0")
+                    url += "&after=" + Uri.EscapeDataString(afterId);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var simplifiedChat = SimplifyChatMessagesJson(respBody);
+                // Garder les messages les plus récents sous la limite extension (sinon le TOC→jeu disparaît).
+                simplifiedChat = TruncateTabLinesKeepingNewest(simplifiedChat, MaxOutputBytes - 4);
+                return "OK|" + simplifiedChat;
             }
             // Alertes tactiques Athena (Contact / FRAGO / BDA / …) → inbox cTab.
             // Lignes : id\tkind\tkind_label\tcall_sign\tgrid\tsummary\tcreated_at\tseverity
@@ -1859,7 +1961,13 @@ public static class Extension
             {
                 if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
                 var terminalUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
-                if (terminalUid.Length == 0) return "ERR|missing_terminal_uid";
+                if (terminalUid.Length == 0
+                    || terminalUid.Equals("null", StringComparison.OrdinalIgnoreCase)
+                    || terminalUid.Equals("<null>", StringComparison.OrdinalIgnoreCase)
+                    || terminalUid.Equals("<nul>", StringComparison.OrdinalIgnoreCase)
+                    || terminalUid.Equals("nil", StringComparison.OrdinalIgnoreCase)
+                    || terminalUid.StartsWith("<null", StringComparison.OrdinalIgnoreCase))
+                    return "ERR|missing_terminal_uid";
                 var terminalLabel = args.Length > 1 ? (args[1] ?? "").Trim() : "";
                 var terminalType = args.Length > 2 ? (args[2] ?? "tablet").Trim() : "tablet";
                 var operatorCallsign = args.Length > 3 ? (args[3] ?? "").Trim() : "";
@@ -1939,6 +2047,55 @@ public static class Extension
                 var simplified = SimplifyCertificateRegisterJson(respBody);
                 if (simplified.Length == 0) return "ERR|invalid_response";
                 return "OK|" + simplified;
+            }
+            // Compromission / capture terminal (données illisibles côté viewer).
+            // args: terminalUid, state(captured|compromised), reason?
+            if (function == "CompromiseTerminal")
+            {
+                if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+                var terminalUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (terminalUid.Length == 0) return "ERR|missing_terminal_uid";
+                var state = args.Length > 1 ? (args[1] ?? "captured").Trim().ToLowerInvariant() : "captured";
+                if (state != "captured" && state != "compromised") state = "captured";
+                var reason = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals/compromise", out var compUri, out _) || compUri is null)
+                    return "ERR|invalid_url";
+                var payload =
+                    $"{{\"terminal_uid\":\"{EscapeJson(terminalUid)}\"," +
+                    $"\"state\":\"{EscapeJson(state)}\"," +
+                    $"\"reason\":\"{EscapeJson(reason)}\"" +
+                    $"{ModVersionJsonFragment()}}}";
+                var resp = SendJsonPost(compUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    return "ERR|http_" + code;
+                }
+                return "OK|compromised";
+            }
+            if (function == "ClearCompromise")
+            {
+                if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+                var terminalUid = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (terminalUid.Length == 0) return "ERR|missing_terminal_uid";
+                if (!TryBuildRequestUri(_baseUrl, "/api/atak/terminals/clear-compromise", out var clearUri, out _) || clearUri is null)
+                    return "ERR|invalid_url";
+                var payload =
+                    $"{{\"terminal_uid\":\"{EscapeJson(terminalUid)}\"" +
+                    $"{ModVersionJsonFragment()}}}";
+                var resp = SendJsonPost(clearUri.AbsoluteUri, EnrichAtakPayload(payload), token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    return "ERR|http_" + code;
+                }
+                return "OK|cleared";
             }
             // État terminal + certificat + réglages communauté (GET /api/atak/terminals?terminal_uid=…).
             if (function == "GetTerminalRealism" && args.Length >= 1)
@@ -2087,6 +2244,20 @@ public static class Extension
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/reports", json, token);
             }
+            if (function == "SubmitSsePerson" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                return PostSsePersonSync(json, token);
+            }
+            if (function == "SubmitSseBiometricsSim" && args.Length >= 2)
+            {
+                var personId = (args[0] ?? "").Trim();
+                var json = args[1] ?? "{}";
+                if (string.IsNullOrWhiteSpace(personId)) return FormatAtakExtArray("ERROR", "person_id empty");
+                if (string.IsNullOrWhiteSpace(json)) json = "{}";
+                return PostAtakJsonSync("/api/sse/persons/" + Uri.EscapeDataString(personId) + "/biometrics-sim", json, token);
+            }
             if (function == "CreatePOI" && args.Length >= 1)
             {
                 var json = args[0] ?? "{}";
@@ -2132,6 +2303,10 @@ public static class Extension
             if (function == "UploadImage" && args.Length >= 1)
             {
                 return BeginUploadIntelPhoto(args);
+            }
+            if (function == "UploadSsePhoto" && args.Length >= 2)
+            {
+                return BeginUploadSsePhoto(args);
             }
         }
         catch (OperationCanceledException)
@@ -2390,6 +2565,132 @@ public static class Extension
         catch { return ""; }
     }
 
+    /// <summary>
+    /// Simplifie GET /api/atak/roleplay-stats pour SQF (clef\tvaleur par ligne).
+    /// </summary>
+    private static string SimplifyRoleplayConfigJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+
+            static void AppendLine(StringBuilder sb, string key, string val)
+            {
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(Clean(key)).Append('\t').Append(Clean(val));
+            }
+
+            if (doc.RootElement.TryGetProperty("network", out var network) && network.ValueKind == JsonValueKind.Object)
+            {
+                var enabled = network.TryGetProperty("enabled", out var en)
+                    && (en.ValueKind == JsonValueKind.True || (en.ValueKind == JsonValueKind.Number && en.GetInt32() != 0));
+                AppendLine(sb, "network_enabled", enabled ? "1" : "0");
+                if (network.TryGetProperty("mode", out var mode) && mode.ValueKind == JsonValueKind.String)
+                    AppendLine(sb, "network_mode", mode.GetString() ?? "normal");
+                if (network.TryGetProperty("packet_loss", out var pl) && pl.ValueKind == JsonValueKind.Number)
+                    AppendLine(sb, "packet_loss_percent", pl.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            if (doc.RootElement.TryGetProperty("zones_enabled", out var zonesEn))
+            {
+                var on = zonesEn.ValueKind == JsonValueKind.True
+                    || (zonesEn.ValueKind == JsonValueKind.Number && zonesEn.GetInt32() != 0);
+                AppendLine(sb, "zones_enabled", on ? "1" : "0");
+            }
+
+            if (doc.RootElement.TryGetProperty("zones_json", out var zonesJson))
+            {
+                JsonElement? zonesArray = null;
+                if (zonesJson.ValueKind == JsonValueKind.Array)
+                    zonesArray = zonesJson;
+                else if (zonesJson.ValueKind == JsonValueKind.String)
+                {
+                    var raw = zonesJson.GetString() ?? "";
+                    if (!string.IsNullOrWhiteSpace(raw))
+                    {
+                        try
+                        {
+                            using var zdoc = JsonDocument.Parse(raw);
+                            if (zdoc.RootElement.ValueKind == JsonValueKind.Array)
+                                zonesArray = zdoc.RootElement.Clone();
+                        }
+                        catch { /* ignore */ }
+                    }
+                }
+
+                if (zonesArray.HasValue && zonesArray.Value.ValueKind == JsonValueKind.Array)
+                {
+                    var arr = zonesArray.Value;
+                    foreach (var zone in arr.EnumerateArray())
+                    {
+                        if (sb.Length > 0) sb.Append('\n');
+                        var name = zone.TryGetProperty("name", out var zn) && zn.ValueKind == JsonValueKind.String
+                            ? Clean(zn.GetString() ?? "Zone") : "Zone";
+                        var type = zone.TryGetProperty("type", out var zt) && zt.ValueKind == JsonValueKind.String
+                            ? Clean(zt.GetString() ?? "degraded")
+                            : (zone.TryGetProperty("effect", out var ze) && ze.ValueKind == JsonValueKind.String
+                                ? Clean(ze.GetString() ?? "degraded") : "degraded");
+                        double x = 0, y = 0, radius = 300, intensity = 50;
+                        if (zone.TryGetProperty("center", out var center) && center.ValueKind == JsonValueKind.Array)
+                        {
+                            var cArr = center.EnumerateArray().ToArray();
+                            if (cArr.Length > 0 && cArr[0].ValueKind == JsonValueKind.Number) x = cArr[0].GetDouble();
+                            if (cArr.Length > 1 && cArr[1].ValueKind == JsonValueKind.Number) y = cArr[1].GetDouble();
+                        }
+                        if (zone.TryGetProperty("radius", out var zr) && zr.ValueKind == JsonValueKind.Number) radius = zr.GetDouble();
+                        if (zone.TryGetProperty("intensity", out var zi) && zi.ValueKind == JsonValueKind.Number) intensity = zi.GetDouble();
+                        sb.Append(name).Append('\t').Append(type).Append('\t')
+                            .Append(x.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                            .Append(y.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                            .Append(radius.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('\t')
+                            .Append(intensity.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    }
+                    AppendLine(sb, "zones_lines_count", arr.GetArrayLength().ToString());
+                }
+                else
+                {
+                    var z = zonesJson.ValueKind == JsonValueKind.String
+                        ? zonesJson.GetString() ?? ""
+                        : zonesJson.GetRawText();
+                    z = z.Replace("\r\n", "\n").Replace('\r', '\n').Replace("\n", " ");
+                    AppendLine(sb, "zones_json", z);
+                }
+            }
+
+            if (doc.RootElement.TryGetProperty("session_ttl_sec", out var ttl) && ttl.ValueKind == JsonValueKind.Number)
+                AppendLine(sb, "session_ttl_sec", ttl.GetInt32().ToString());
+
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Simplifie GET /api/atak/session-restore pour SQF.
+    /// Ligne : callsign\tlink_state
+    /// </summary>
+    private static string SimplifySessionRestoreJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\r", " ").Replace("\n", " ").Replace("|", "-");
+
+            var cs = "";
+            var link = "linked";
+            if (doc.RootElement.TryGetProperty("callsign", out var c) && c.ValueKind == JsonValueKind.String)
+                cs = Clean(c.GetString() ?? "");
+            if (doc.RootElement.TryGetProperty("link_state", out var l) && l.ValueKind == JsonValueKind.String)
+                link = Clean(l.GetString() ?? "linked");
+            return Clean(cs) + "\t" + link;
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyModModulesJson(string json)
     {
         try
@@ -2436,6 +2737,76 @@ public static class Extension
             return "";
         }
     }
+    /// <summary>
+    /// Simplifie GET /api/chat pour SQF.
+    /// Lignes : id\tauthor\tbody\tcreated_at
+    /// </summary>
+    private static string SimplifyChatMessagesJson(string json)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                return "";
+            static string Clean(string s) =>
+                (s ?? "").Replace("\t", " ").Replace("\n", " — ").Replace("\r", "");
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                var id = el.TryGetProperty("id", out var i)
+                    ? (i.ValueKind == JsonValueKind.Number ? i.GetInt32().ToString() : (i.GetString() ?? ""))
+                    : "";
+                if (string.IsNullOrEmpty(id) || id == "0") continue;
+                var author = el.TryGetProperty("author", out var au) ? (au.GetString() ?? "") : "";
+                var body = el.TryGetProperty("body", out var b) ? (b.GetString() ?? "") : "";
+                if (body.Length > 280) body = body.Substring(0, 280);
+                var created = "";
+                if (el.TryGetProperty("created_at", out var ca))
+                {
+                    created = ca.ValueKind == JsonValueKind.Number
+                        ? ca.GetDouble().ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        : (ca.GetString() ?? "");
+                }
+                sb.Append(Clean(id)).Append('\t')
+                  .Append(Clean(author)).Append('\t')
+                  .Append(Clean(body)).Append('\t')
+                  .Append(Clean(created)).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
+    /// Coupe un payload multi-lignes en gardant la fin (messages les plus récents).
+    /// Un Substring(0, max) classique coupait les messages TOC tout juste postés.
+    /// </summary>
+    private static string TruncateTabLinesKeepingNewest(string payload, int maxLen)
+    {
+        if (string.IsNullOrEmpty(payload) || maxLen <= 0) return "";
+        if (payload.Length <= maxLen) return payload;
+        var lines = payload.Split('\n');
+        var sb = new StringBuilder();
+        for (var i = lines.Length - 1; i >= 0; i--)
+        {
+            var line = lines[i];
+            if (string.IsNullOrEmpty(line)) continue;
+            var candidate = line + "\n" + sb;
+            if (candidate.Length > maxLen)
+            {
+                if (sb.Length == 0)
+                {
+                    // Une seule ligne trop longue : garder la fin utile.
+                    var keep = Math.Min(line.Length, maxLen);
+                    return line.Substring(line.Length - keep);
+                }
+                break;
+            }
+            sb.Insert(0, line + "\n");
+        }
+        return sb.ToString();
+    }
+
     private static string SimplifyTacticalAlertsJson(string json)
     {
         try
@@ -2801,17 +3172,30 @@ public static class Extension
                 var rawStatus = cert.TryGetProperty("status", out var cst) ? (cst.GetString() ?? "") : "";
                 certExpires = cert.TryGetProperty("expires_at", out var exEl) ? (exEl.GetString() ?? "") : "";
                 if (certExpires.Length > 19) certExpires = certExpires.Replace('T', ' ').Substring(0, 19);
-                certStatus = rawStatus.Length > 0 ? rawStatus : "active";
-                if (certStatus is "active" or "issued" && certExpires.Length > 0)
+                // Sentinelles Arma « <null> » → considérer comme absent pour forcer une réémission
+                if (certRef.Length == 0
+                    || certRef.Contains("<null", StringComparison.OrdinalIgnoreCase)
+                    || certRef.Contains("<nul>", StringComparison.OrdinalIgnoreCase)
+                    || certRef.Equals("null", StringComparison.OrdinalIgnoreCase)
+                    || certRef.Contains("-null", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (DateTime.TryParse(certExpires, System.Globalization.CultureInfo.InvariantCulture,
-                            System.Globalization.DateTimeStyles.AssumeUniversal, out var exp)
-                        && exp.ToUniversalTime() < DateTime.UtcNow)
-                    {
-                        certStatus = "expired";
-                    }
+                    certRef = "";
+                    certStatus = "missing";
                 }
-                if (certRef.Length > 0) AppendLine(sb, "certificate_ref", certRef);
+                else
+                {
+                    certStatus = rawStatus.Length > 0 ? rawStatus : "active";
+                    if (certStatus is "active" or "issued" && certExpires.Length > 0)
+                    {
+                        if (DateTime.TryParse(certExpires, System.Globalization.CultureInfo.InvariantCulture,
+                                System.Globalization.DateTimeStyles.AssumeUniversal, out var exp)
+                            && exp.ToUniversalTime() < DateTime.UtcNow)
+                        {
+                            certStatus = "expired";
+                        }
+                    }
+                    if (certRef.Length > 0) AppendLine(sb, "certificate_ref", certRef);
+                }
             }
             AppendLine(sb, "cert_status", certStatus);
             if (certExpires.Length > 0) AppendLine(sb, "cert_expires", certExpires);
@@ -3136,8 +3520,8 @@ public static class Extension
 
             if (function == "SendFlightManifest" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                var json = args[0] ?? "{}";
-                EnqueueOrSend(_baseUrl + "/api/atak/flight-manifest", json);
+                var json = NormalizeArmaJson(args[0]);
+                EnqueueOrSend(_baseUrl + "/api/atak/flight-manifest", EnrichAtakPayload(json));
                 return;
             }
 
@@ -3181,6 +3565,12 @@ public static class Extension
             if (function == "UploadReconImage" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 // Géré en synchrone par TryGetSyncResponse (BeginUploadReconImage).
+                return;
+            }
+
+            if (function == "UploadSsePhoto" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
+            {
+                // Géré en synchrone par TryGetSyncResponse (BeginUploadSsePhoto).
                 return;
             }
 
@@ -3235,8 +3625,12 @@ public static class Extension
         if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
         var rawPath = args.Length > 0 ? (args[0] ?? "") : "";
         var author = args.Length > 1 ? (args[1] ?? "Unknown") : "Unknown";
-        var resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
-        if (resolved == null) return "ERR|file_not_found";
+        var resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(180));
+        if (resolved == null)
+        {
+            var hint = string.IsNullOrWhiteSpace(rawPath) ? "empty_path" : Path.GetFileName(rawPath.Replace('/', '\\'));
+            return $"ERR|file_not_found|{hint}";
+        }
         try
         {
             var fi = new FileInfo(resolved);
@@ -3267,6 +3661,52 @@ public static class Extension
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
             multipart.Add(fileContent, "image", fileName);
             return QueueMultipartUpload("/api/recon/images", multipart);
+        }
+        catch
+        {
+            return "ERR|read_failed";
+        }
+    }
+
+    /// <summary>
+    /// Photo visage SSE : args[0]=personId, args[1]=path, args[2]=author, args[3]=angle, args[4..6]=pos.
+    /// </summary>
+    private static string BeginUploadSsePhoto(string?[] args)
+    {
+        if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+        var personId = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+        if (string.IsNullOrEmpty(personId)) return "ERR|person_id_empty";
+        var rawPath = args.Length > 1 ? (args[1] ?? "") : "";
+        var author = args.Length > 2 ? (args[2] ?? "Unknown") : "Unknown";
+        var angle = args.Length > 3 && !string.IsNullOrEmpty(args[3]) ? args[3]! : "face";
+        string? resolved = null;
+        if (!string.IsNullOrWhiteSpace(rawPath))
+            resolved = ResolveLocalImagePath(rawPath, TimeSpan.FromSeconds(120));
+        if (resolved == null)
+            resolved = FindNewestScreenshot(TimeSpan.FromSeconds(90));
+        if (resolved == null) return "ERR|file_not_found";
+        try
+        {
+            var fi = new FileInfo(resolved);
+            if (!fi.Exists) return "ERR|file_not_found";
+            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
+            if (fi.Length < 32) return "ERR|file_empty";
+            var bytes = File.ReadAllBytes(resolved);
+            var multipart = new MultipartFormDataContent();
+            multipart.Add(new StringContent(author), "author");
+            multipart.Add(new StringContent(angle), "angle");
+            AddOptionalForm(multipart, "pos_x", args, 4);
+            AddOptionalForm(multipart, "pos_y", args, 5);
+            AddOptionalForm(multipart, "pos_z", args, 6);
+            AddOptionalForm(multipart, "caption", args, 7);
+            if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
+            if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
+            var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            multipart.Add(fileContent, "image", fileName);
+            var path = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
+            return QueueMultipartUpload(path, multipart);
         }
         catch
         {
@@ -3461,26 +3901,44 @@ public static class Extension
 
         path = path.Replace('/', '\\');
 
-        foreach (var candidate in ExpandLocalImageCandidates(path))
+        // BCE / Arma_ScreenShot_Extension : gros PNG (10–15 Mo) souvent pas encore flushés.
+        for (var attempt = 0; attempt < 12; attempt++)
         {
-            try
+            foreach (var candidate in ExpandLocalImageCandidates(path))
             {
-                if (File.Exists(candidate))
-                    return Path.GetFullPath(candidate);
+                try
+                {
+                    if (File.Exists(candidate))
+                    {
+                        var fi = new FileInfo(candidate);
+                        // Taille stable = écriture terminée (évite de lire un fichier à moitié).
+                        if (fi.Length >= 32)
+                            return Path.GetFullPath(candidate);
+                    }
+                }
+                catch { /* ignore */ }
             }
-            catch { /* ignore */ }
+
+            var fileName = Path.GetFileName(path);
+            if (!string.IsNullOrWhiteSpace(fileName))
+            {
+                var byName = FindScreenshotByFileName(fileName);
+                if (byName != null)
+                    return byName;
+            }
+
+            if (newestFallback.HasValue)
+            {
+                var newest = FindNewestScreenshot(newestFallback.Value);
+                if (newest != null)
+                    return newest;
+            }
+
+            if (attempt < 11)
+                System.Threading.Thread.Sleep(250);
         }
 
-        // Nom seul / mauvaise extension / mauvais profil → chercher dans les dossiers Screenshots.
-        var fileName = Path.GetFileName(path);
-        if (!string.IsNullOrWhiteSpace(fileName))
-        {
-            var byName = FindScreenshotByFileName(fileName);
-            if (byName != null)
-                return byName;
-        }
-
-        return newestFallback.HasValue ? FindNewestScreenshot(newestFallback.Value) : null;
+        return null;
     }
 
     /// <summary>
@@ -3628,18 +4086,26 @@ public static class Extension
                 && !dirs.Contains(p, StringComparer.OrdinalIgnoreCase))
                 dirs.Add(p);
         }
+        void AddScreenshotsUnder(string root)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return;
+            AddIfExists(Path.Combine(root, "Screenshots"));
+            try
+            {
+                foreach (var sub in Directory.EnumerateDirectories(root))
+                    AddIfExists(Path.Combine(sub, "Screenshots"));
+            }
+            catch { /* ignore */ }
+        }
         try
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             if (!string.IsNullOrWhiteSpace(docs))
             {
                 AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
-                var other = Path.Combine(docs, "Arma 3 - Other Profiles");
-                if (Directory.Exists(other))
-                {
-                    foreach (var profileDir in Directory.EnumerateDirectories(other))
-                        AddIfExists(Path.Combine(profileDir, "Screenshots"));
-                }
+                AddScreenshotsUnder(Path.Combine(docs, "Arma 3 - Other Profiles"));
+                // Profils déplacés / -profiles= parfois sous Documents\Arma 3\<name>
+                AddScreenshotsUnder(Path.Combine(docs, "Arma 3"));
             }
         }
         catch { /* ignore */ }
@@ -3649,12 +4115,26 @@ public static class Extension
             if (!string.IsNullOrWhiteSpace(userProfile))
             {
                 AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
-                var odOther = Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles");
-                if (Directory.Exists(odOther))
-                {
-                    foreach (var profileDir in Directory.EnumerateDirectories(odOther))
-                        AddIfExists(Path.Combine(profileDir, "Screenshots"));
-                }
+                AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles"));
+                AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3"));
+            }
+        }
+        catch { /* ignore */ }
+        try
+        {
+            var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrWhiteSpace(local))
+                AddScreenshotsUnder(Path.Combine(local, "Arma 3"));
+        }
+        catch { /* ignore */ }
+        // Dossier courant / install Arma (BCE parfois écrit un nom seul relatif au cwd).
+        try
+        {
+            var cwd = Directory.GetCurrentDirectory();
+            if (!string.IsNullOrWhiteSpace(cwd))
+            {
+                AddIfExists(Path.Combine(cwd, "Screenshots"));
+                AddIfExists(cwd);
             }
         }
         catch { /* ignore */ }
@@ -3765,6 +4245,57 @@ public static class Extension
             if (code == 401 || code == 403) return FormatAtakExtArray("ERROR", "unauthorized");
             if (code == 503 && body.Contains("migration", StringComparison.OrdinalIgnoreCase))
                 return FormatAtakExtArray("ERROR", "migration_required");
+            var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
+            return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
+        }
+        catch (OperationCanceledException)
+        {
+            return FormatAtakExtArray("TIMEOUT", "Request timeout");
+        }
+        catch (HttpRequestException ex)
+        {
+            return FormatAtakExtArray("NETWORK_ERROR", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return FormatAtakExtArray("ERROR", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Crée une fiche SSE et renvoie l’id personne dans le détail OK (pour photo / biométrie).
+    /// </summary>
+    private static string PostSsePersonSync(string jsonBody, CancellationToken token)
+    {
+        if (!TryBuildRequestUri(_baseUrl, "/api/sse/persons", out var uri, out var err) || uri is null)
+            return FormatAtakExtArray("ERROR", err);
+        try
+        {
+            var payload = EnrichAtakPayload(jsonBody);
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, token);
+            var body = ReadContentUtf8(resp, token);
+            if (resp.IsSuccessStatusCode)
+            {
+                var id = "";
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("id", out var idEl))
+                        id = idEl.ValueKind == JsonValueKind.Number
+                            ? idEl.GetInt32().ToString()
+                            : (idEl.GetString() ?? "");
+                }
+                catch
+                {
+                    // ignore parse
+                }
+                return FormatAtakExtArray("OK", string.IsNullOrEmpty(id) ? "Success" : id);
+            }
+            var code = (int)resp.StatusCode;
+            var modBlock = MapModAccessBlockError(body);
+            if (modBlock != null)
+                return FormatAtakExtArray("ERROR", modBlock.Replace("ERR|", "", StringComparison.Ordinal));
+            if (code == 401 || code == 403) return FormatAtakExtArray("ERROR", "unauthorized");
             var errMsg = body.Length > 240 ? $"HTTP {code}" : body;
             return FormatAtakExtArray("ERROR", $"HTTP {code}: {errMsg}");
         }

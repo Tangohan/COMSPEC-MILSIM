@@ -142,6 +142,29 @@ private _poiAction = [
 
 [_poiAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+// SSE — renseignement interpersonnel
+private _condSse = {
+    (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+    && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+    && {
+        private _mods = missionNamespace getVariable ["COMSPEC_AthenaModules", createHashMap];
+        if (!(_mods isEqualType createHashMap)) exitWith { true };
+        _mods getOrDefault ["sse_person", true]
+    }
+};
+private _sseAction = [
+    "comspec_atak_sse",
+    "Enregistrer une personne",
+    "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
+    {
+        [] call comspec_overwatch_connect_fnc_ssePersonDialogShow;
+    },
+    _condSse,
+    _noChildren
+] call ace_interact_menu_fnc_createAction;
+
+[_sseAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 // Sous-menu: Appui
 private _supportAction = [
     "comspec_atak_support",

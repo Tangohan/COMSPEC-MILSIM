@@ -61,16 +61,20 @@ if (_target isEqualTo "" && {_targetType isNotEqualTo "all"}) then {
     if (_target isEqualTo "") then { _target = name player; };
 };
 
-[_orderType, _target, _payload, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
+private _order = [_orderType, _target, _payload, _prio, "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
+private _orderId = if (_order isEqualType createHashMap) then {
+    _order getOrDefault ["id", ""]
+} else {
+    ""
+};
 
 if (_isFrago) then {
-    private _grid = mapGridPosition player;
-    private _cs = "";
-    if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
-        _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+    // Corps = rubriques SMEAC uniquement (+ lien ordre pour le bouton « Ouvrir »)
+    private _alertBody = if (_orderId isNotEqualTo "") then {
+        format ["ORDER_ID=%1|%2", _orderId, _payload]
+    } else {
+        _payload
     };
-    if (_cs isEqualTo "") then { _cs = name player; };
-    private _alertBody = format ["FRAGO — %1 · grille %2 — %3", _cs, _grid, _payload];
     ["FRAGO", _alertBody, getPos player] call comspec_overwatch_connect_fnc_sendTacticalAlert;
 };
 

@@ -6,6 +6,9 @@
 if (!hasInterface) exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
+private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
+
 private _raw = ["COMSPECExtension" callExtension ["GetMedicalAlerts", ["1", "25"]]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 private _parts = _raw splitString "|";

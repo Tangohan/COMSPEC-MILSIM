@@ -27,18 +27,38 @@ _interval = (_interval max 1) min 15;
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
 
 if (isNil "COMSPEC_MapMarkerEHs") then {
+    private _resyncSoon = {
+        params ["_marker"];
+        [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+        [{
+            params ["_m"];
+            if (_m in allMapMarkers) then {
+                [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            };
+        }, [_marker], 0.1] call CBA_fnc_waitAndExecute;
+        [{
+            params ["_m"];
+            if (_m in allMapMarkers) then {
+                [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            };
+            if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
+                [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+            };
+        }, [_marker], 0.45] call CBA_fnc_waitAndExecute;
+    };
+    missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
     COMSPEC_MapMarkerEHs = [
         addMissionEventHandler ["MarkerCreated", {
             params ["_marker"];
-            [_marker, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
         }],
         addMissionEventHandler ["MarkerUpdated", {
             params ["_marker"];
-            [_marker, false] call comspec_overwatch_connect_fnc_syncMapMarker;
+            [_marker, false, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         }],
         addMissionEventHandler ["MarkerDeleted", {
             params ["_marker"];
-            [_marker, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            [_marker, true, false] call comspec_overwatch_connect_fnc_syncMapMarker;
         }]
     ];
 };
@@ -56,7 +76,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
     [] call comspec_overwatch_connect_fnc_queueMapMarker;
     [] call comspec_overwatch_connect_fnc_resyncAllMapMarkers;
-}, 25, []] call CBA_fnc_addPerFrameHandler;
+}, 5, []] call CBA_fnc_addPerFrameHandler;
 
 private _casPollInterval = 10;
 [{
@@ -64,6 +84,8 @@ private _casPollInterval = 10;
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+        if !(_txGate getOrDefault ["can_transmit", true]) exitWith {};
         // Sans indicatif : ne pas interroger avec un fallback « Pilot » (faux positifs / 9-line vide)
         private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
         if (_callsign isEqualTo "") exitWith {};
@@ -133,6 +155,14 @@ private _casPollInterval = 10;
     [{
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollChatMessages;
+    }, [], "pollChatMessages"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 6, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         [] call comspec_overwatch_connect_fnc_pollMapShapes;
     }, [], "pollMapShapes"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 10, []] call CBA_fnc_addPerFrameHandler;
@@ -189,6 +219,20 @@ private _casPollInterval = 10;
         [] call comspec_overwatch_connect_fnc_pollExperience;
     }, [], "pollExperience"] call comspec_overwatch_connect_fnc_profileWrap;
 }, 60, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    [{
+        if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
+        if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
+        [] call comspec_overwatch_connect_fnc_pollRoleplayConfig;
+    }, [], "pollRoleplayConfig"] call comspec_overwatch_connect_fnc_profileWrap;
+}, 90, []] call CBA_fnc_addPerFrameHandler;
+
+[{
+    if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) exitWith {};
+    if (isNull (uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull])) exitWith {};
+    [] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay;
+}, 1, []] call CBA_fnc_addPerFrameHandler;
 
 ["OnTrackingAnomaly", {
     params ["_alert"];

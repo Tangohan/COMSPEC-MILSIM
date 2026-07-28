@@ -37,14 +37,12 @@ private _appendList = {
 if (!isNil "cTabUserMarkerList") then { [cTabUserMarkerList] call _appendList; };
 [missionNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _appendList;
 [missionNamespace getVariable ["cTab_userMarkerList", []]] call _appendList;
-[missionNamespace getVariable ["Iceman_ATAK_MarkerDropper", []]] call _appendList;
-[missionNamespace getVariable ["Iceman_ATAK_DroppedMarkers", []]] call _appendList;
-[missionNamespace getVariable ["Iceman_ATAK_Markers", []]] call _appendList;
 [uiNamespace getVariable ["cTabUserMarkerList", []]] call _appendList;
 [uiNamespace getVariable ["Iceman_ATAK_UserMarkers", []]] call _appendList;
 
 // Repli : listes brutes cTab (par clé de chiffrement) → traduction locale
-if ((count _list) < 1 && {!isNil "cTab_userMarkerLists"} && {!isNil "cTab_fnc_translateUserMarker"}) then {
+// Toujours fusionner (BCE remplit cTabUserMarkerList avec un format mixte)
+if (!isNil "cTab_userMarkerLists") then {
     private _pairs = missionNamespace getVariable ["cTab_userMarkerLists", []];
     if (_pairs isEqualType []) then {
         {
@@ -56,9 +54,15 @@ if ((count _list) < 1 && {!isNil "cTab_userMarkerLists"} && {!isNil "cTab_fnc_tr
                 private _id = _x select 0;
                 private _raw = _x select 1;
                 if (!(_raw isEqualType [])) then { continue };
-                private _translated = _raw call cTab_fnc_translateUserMarker;
-                if (_translated isEqualType []) then {
-                    [ [[_id, _translated, _raw]] ] call _appendList;
+                if (!isNil "cTab_fnc_translateUserMarker") then {
+                    private _translated = _raw call cTab_fnc_translateUserMarker;
+                    if (_translated isEqualType []) then {
+                        [ [[_id, _translated, _raw]] ] call _appendList;
+                    } else {
+                        [ [[_id, _raw]] ] call _appendList;
+                    };
+                } else {
+                    [ [[_id, _raw]] ] call _appendList;
                 };
             } forEach _rawList;
         } forEach _pairs;

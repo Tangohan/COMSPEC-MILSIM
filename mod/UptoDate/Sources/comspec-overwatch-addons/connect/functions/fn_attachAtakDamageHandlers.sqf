@@ -1,0 +1,37 @@
+/*
+    Branche Hit + Explosion sur l’unité joueur (réalisme ATAK).
+    Idempotent par unité — à rappeler après Respawn (les EH objet sont perdus).
+*/
+if (!hasInterface) exitWith { false };
+if (isNull player || {!alive player}) exitWith { false };
+
+private _unit = player;
+
+if ((_unit getVariable ["COMSPEC_AtakHitEH", -1]) < 0) then {
+    private _hitId = _unit addEventHandler ["Hit", {
+        if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+        params ["", "", "_damage"];
+        if (_damage > 0.1) then {
+            private _prev = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
+            missionNamespace setVariable ["COMSPEC_LastAtakImpact", _prev max _damage, false];
+        };
+        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+    }];
+    _unit setVariable ["COMSPEC_AtakHitEH", _hitId];
+};
+
+// Explosion = EH objet (pas Mission EH) — params: unit, damage, explosionSource
+if ((_unit getVariable ["COMSPEC_AtakExplosionEH", -1]) < 0) then {
+    private _expId = _unit addEventHandler ["Explosion", {
+        if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
+        params ["", "_damage"];
+        if (_damage > 0.05) then {
+            private _prev = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
+            missionNamespace setVariable ["COMSPEC_LastAtakImpact", _prev max (_damage min 1), false];
+        };
+        [] call comspec_overwatch_connect_fnc_checkAtakDamage;
+    }];
+    _unit setVariable ["COMSPEC_AtakExplosionEH", _expId];
+};
+
+true

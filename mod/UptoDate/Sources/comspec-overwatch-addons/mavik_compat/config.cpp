@@ -7,9 +7,9 @@ class CfgPatches {
         // Charge uniquement si Mavic est present, et APRES lui
         requiredAddons[] = {"cba_main", "cba_settings", "cba_xeh", "Mavic_Core"};
         author = "COMSPEC";
-        version = 1.22;
-        versionStr = "1.2.2";
-        versionAr[] = {1, 2, 2};
+        version = 1.41;
+        versionStr = "1.4.2";
+        versionAr[] = {1, 4, 1};
     };
 };
 

@@ -62,21 +62,47 @@ final class TacticalAlertParser
             $grid = (string) ($parts[3] ?? '');
             $posX = self::parseCoord($parts[4] ?? null);
             $posY = self::parseCoord($parts[5] ?? null);
-            $summary = trim(implode(' — ', array_slice($parts, 6)));
+            $tailParts = array_values(array_filter(
+                array_slice($parts, 6),
+                static fn ($p) => trim((string) $p) !== ''
+            ));
+
+            $orderId = '';
+            if ($tailParts !== [] && preg_match('/^ORDER_ID=(.+)$/i', (string) $tailParts[0], $om) === 1) {
+                $orderId = trim((string) ($om[1] ?? ''));
+                array_shift($tailParts);
+            }
+
+            $summary = trim(implode(' — ', $tailParts));
+            $rawForBda = $summary;
+            $summary = self::cleanSummary($summary, $kind, $callSign, $grid);
             if ($summary === '') {
-                $summary = self::kindLabelFr($kind) . ($callSign !== '' ? ' — ' . $callSign : '');
-                if ($grid !== '') {
-                    $summary .= ' — Grille ' . $grid;
-                }
+                $summary = self::kindLabelFr($kind);
             }
 
             $salute = null;
             if ($kind === 'salute') {
-                $salute = self::parseSaluteFields(array_slice($parts, 6));
+                $salute = self::parseSaluteFields($tailParts);
                 if ($salute !== null) {
                     $built = self::formatSaluteSummary($salute);
                     if ($built !== '') {
                         $summary = $built;
+                    }
+                }
+            }
+
+            $frago = null;
+            if ($kind === 'frago') {
+                $frago = self::parseFragoSections($summary);
+            }
+
+            $bda = null;
+            if ($kind === 'bda') {
+                $bda = self::parseBdaFields($rawForBda !== '' ? $rawForBda : $summary);
+                if ($bda !== null) {
+                    $builtBda = self::formatBdaSummary($bda);
+                    if ($builtBda !== '') {
+                        $summary = $builtBda;
                     }
                 }
             }
@@ -92,8 +118,17 @@ final class TacticalAlertParser
                 'summary' => $summary,
                 'severity' => self::severityForKind($kind),
             ];
+            if ($orderId !== '') {
+                $out['order_id'] = $orderId;
+            }
             if ($salute !== null) {
                 $out['salute'] = $salute;
+            }
+            if ($frago !== null && $frago !== []) {
+                $out['frago'] = $frago;
+            }
+            if ($bda !== null && $bda !== []) {
+                $out['bda'] = $bda;
             }
 
             return $out;
@@ -357,6 +392,223 @@ final class TacticalAlertParser
             'BDA', 'BDA_REPORT', 'BDAREPORT' => 'bda',
             default => 'tic',
         };
+    }
+
+    /**
+     * Retire les préfixes redondants (type / indicatif / grille) déjà présents dans les champs dédiés.
+     */
+    public static function cleanSummary(string $summary, string $kind, string $callSign = '', string $grid = ''): string
+    {
+        $summary = trim($summary);
+        if ($summary === '') {
+            return '';
+        }
+
+        // ORDER_ID=… résiduel
+        if (preg_match('/^ORDER_ID=[^\s|—\-]+[\s|—\-]*/iu', $summary) === 1) {
+            $summary = trim((string) preg_replace('/^ORDER_ID=[^\s|—\-]+[\s|—\-]*/iu', '', $summary));
+        }
+
+        $label = self::kindLabelFr($kind);
+        $patterns = [
+            '/^' . preg_quote($label, '/') . '\s*[—\-–·|]+\s*/iu',
+            '/^FRAGO\s*[—\-–·|]+\s*/iu',
+            '/^Bilan des dégâts\s*[—\-–·|]+\s*/iu',
+            '/^Opérateur à terre\s*[—\-–·|]+\s*/iu',
+            '/^Contact\s*[—\-–·|]+\s*/iu',
+            '/^Fin de contact\s*[—\-–·|]+\s*/iu',
+        ];
+        if ($callSign !== '') {
+            $patterns[] = '/^' . preg_quote($callSign, '/') . '\s*[—\-–·|]+\s*/iu';
+            // Avec ou sans séparateur final (souvent fin de chaîne)
+            $patterns[] = '/^' . preg_quote($callSign, '/') . '\s*[·•]\s*grille\s+\S+(?:\s*[—\-–·|]+\s*)?/iu';
+            $patterns[] = '/^' . preg_quote($callSign, '/') . '\s*[—\-–]\s*Grille\s+\S+(?:\s*[—\-–·|]+\s*)?/iu';
+        }
+        if ($grid !== '') {
+            $patterns[] = '/^Grille\s+' . preg_quote($grid, '/') . '(?:\s*[—\-–·|]+\s*)?/iu';
+            $patterns[] = '/^[·•]\s*grille\s+' . preg_quote($grid, '/') . '(?:\s*[—\-–·|]+\s*)?/iu';
+        }
+        $patterns[] = '/^grille\s+\S+(?:\s*[—\-–·|]+\s*)?/iu';
+        $patterns[] = '/^' . preg_quote($label, '/') . '$/iu';
+
+        $prev = null;
+        while ($prev !== $summary) {
+            $prev = $summary;
+            foreach ($patterns as $re) {
+                $summary = trim((string) preg_replace($re, '', $summary));
+            }
+        }
+
+        // « FRAGO — CS · grille X — » collé en tête des anciens messages
+        $summary = trim((string) preg_replace(
+            '/^FRAGO\s*[—\-–]\s*[^\—\-–]+[·•]\s*grille\s+\S+\s*[—\-–]\s*/iu',
+            '',
+            $summary
+        ));
+
+        return trim($summary, " \t—\-–·|");
+    }
+
+    /**
+     * Libellé court pour le journal d’activité (sans duplication type/indicatif/grille).
+     *
+     * @param array<string, mixed> $tactical
+     */
+    public static function activityLabel(array $tactical): string
+    {
+        $kind = (string) ($tactical['kind'] ?? 'tic');
+        $label = self::kindLabelFr($kind);
+        $callSign = trim((string) ($tactical['call_sign'] ?? ''));
+        $grid = trim((string) ($tactical['grid'] ?? ''));
+        $summary = self::cleanSummary((string) ($tactical['summary'] ?? ''), $kind, $callSign, $grid);
+
+        if ($kind === 'frago' && isset($tactical['frago']) && is_array($tactical['frago'])) {
+            $fragoLabels = [
+                'situation' => 'Situation',
+                'mission' => 'Mission',
+                'execution' => 'Exécution',
+                'support' => 'Soutien',
+                'command' => 'Commandement',
+            ];
+            $bits = [];
+            foreach ($fragoLabels as $id => $fr) {
+                $v = trim((string) ($tactical['frago'][$id] ?? ''));
+                if ($v === '') {
+                    continue;
+                }
+                $bits[] = $fr . ' : ' . $v;
+                if (count($bits) >= 2) {
+                    break;
+                }
+            }
+            if ($bits !== []) {
+                $out = $label . ' — ' . implode(' · ', $bits);
+                if ($grid !== '' && mb_stripos($out, $grid) === false) {
+                    $out .= ' — Grille ' . $grid;
+                }
+
+                return mb_strlen($out) > 160 ? (mb_substr($out, 0, 157) . '…') : $out;
+            }
+        }
+
+        if ($summary !== '' && mb_strtolower($summary) !== mb_strtolower($label)) {
+            $out = $label . ' — ' . $summary;
+        } else {
+            $out = $label;
+        }
+        if ($grid !== '' && mb_stripos($out, $grid) === false) {
+            $out .= ' — Grille ' . $grid;
+        }
+
+        return mb_strlen($out) > 160 ? (mb_substr($out, 0, 157) . '…') : $out;
+    }
+
+    /**
+     * Champs structurés d’un bilan des dégâts (Iceman ATAK_BDA / Athena).
+     *
+     * @return array<string, string>|null
+     */
+    public static function parseBdaFields(string $summary): ?array
+    {
+        $s = trim(html_entity_decode(strip_tags($summary), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($s === '') {
+            return null;
+        }
+        $s = str_replace(["\r\n", "\r"], "\n", $s);
+        $s = preg_replace('/\s*[|·•]+\s*/u', "\n", $s) ?? $s;
+        $s = preg_replace('/\s+[—–]\s+(?=\d\.\s)/u', "\n", $s) ?? $s;
+
+        /** @var list<array{0:string,1:string}> */
+        $rules = [
+            ['observer', '/^(?:Observer|Observateur|Émetteur)\s*:\s*(.+)$/iu'],
+            ['grid', '/^(?:Grid|Grille)\s*:\s*(.+)$/iu'],
+            ['time', '/^(?:Time|Heure)\s*:\s*(.+)$/iu'],
+            ['target', '/^(?:1\.\s*)?(?:Target\/?Objective|Cible(?:\s*\/\s*Objectif)?)\s*:\s*(.+)$/iu'],
+            ['damage', '/^(?:2\.\s*)?(?:Damage\s*Observed|Dégâts(?:\s*observés)?)\s*:\s*(.+)$/iu'],
+            ['enemy', '/^(?:3\.\s*)?(?:Enemy\s*BDA|Effets\s*ennemis)\s*:\s*(.+)$/iu'],
+            ['friendly', '/^(?:4\.\s*)?(?:Friendly\/?Civilian\s*Effects|Effets\s*amis(?:\s*\/\s*civils)?)\s*:\s*(.+)$/iu'],
+            ['munitions', '/^(?:5\.\s*)?(?:Munitions\/?Method|Munitions(?:\s*\/\s*méthode)?)\s*:\s*(.+)$/iu'],
+            ['remarks', '/^(?:6\.\s*)?(?:Remarks|Remarques)\s*:\s*(.+)$/iu'],
+        ];
+
+        $out = [];
+        foreach (preg_split('/\n+/u', $s) ?: [] as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || preg_match('/^BDA(?:\s*REPORT)?$/iu', $line) === 1) {
+                continue;
+            }
+            foreach ($rules as [$id, $re]) {
+                if (isset($out[$id])) {
+                    continue;
+                }
+                if (preg_match($re, $line, $m) === 1) {
+                    $val = trim((string) ($m[1] ?? ''), " \t—\-–·|");
+                    if ($val !== '' && preg_match('/^(n\/?a|—|-)$/i', $val) !== 1) {
+                        $out[$id] = $val;
+                    }
+                    break;
+                }
+            }
+        }
+
+        return $out === [] ? null : $out;
+    }
+
+    /**
+     * @param array<string, string> $bda
+     */
+    public static function formatBdaSummary(array $bda): string
+    {
+        $labels = [
+            'target' => 'Cible',
+            'damage' => 'Dégâts observés',
+            'enemy' => 'Effets ennemis',
+            'friendly' => 'Effets amis / civils',
+            'munitions' => 'Munitions / méthode',
+            'remarks' => 'Remarques',
+        ];
+        $bits = [];
+        foreach ($labels as $id => $fr) {
+            $v = trim((string) ($bda[$id] ?? ''));
+            if ($v !== '') {
+                $bits[] = $fr . ' : ' . $v;
+            }
+        }
+
+        return implode(' — ', $bits);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function parseFragoSections(string $summary): array
+    {
+        $summary = trim($summary);
+        if ($summary === '') {
+            return [];
+        }
+        $keys = [
+            'situation' => 'Situation',
+            'mission' => 'Mission',
+            'execution' => 'Exécution',
+            'support' => 'Soutien',
+            'command' => 'Commandement',
+        ];
+        $out = [];
+        foreach ($keys as $id => $label) {
+            if (preg_match(
+                '/' . preg_quote($label, '/') . '\s*:\s*(.+?)(?=\s*[—\-–]\s*(?:Situation|Mission|Exécution|Soutien|Commandement)\s*:|$)/iu',
+                $summary,
+                $m
+            ) === 1) {
+                $val = trim((string) ($m[1] ?? ''));
+                if ($val !== '') {
+                    $out[$id] = $val;
+                }
+            }
+        }
+
+        return $out;
     }
 
     private static function stripCommsPrefix(string $body): string

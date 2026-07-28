@@ -61,7 +61,7 @@ if ($atakMapConfig) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
-  <link href="<?= $base ?>/assets/css/atak.css?v=202607270730" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak.css?v=202607290100" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
@@ -599,6 +599,12 @@ if ($atakMapConfig) {
           </div>
         </div>
       </details>
+      <details class="atak-details" open>
+        <summary>Alertes appareils</summary>
+        <div class="atak-details-body" id="atak-device-alerts-list">
+          <p class="atak-health-muted">Chargement…</p>
+        </div>
+      </details>
       <details class="atak-details">
         <summary>Contacts &amp; échanges</summary>
         <div class="atak-details-body atak-health-grid">
@@ -623,6 +629,7 @@ if ($atakMapConfig) {
     </div>
   </aside>
 
+  <div class="atak-intel-banner" id="atak-intel-banner" role="status" aria-live="polite" hidden></div>
   <div class="atak-connection-lost" id="atak-connection-lost" role="alert"><span id="atak-connection-lost-msg">Connexion perdue. Reconnexion…</span></div>
   <div class="atak-error-toast" id="atak-error-toast" role="alert" aria-live="polite"></div>
   <div class="atak-notification-toast" id="atak-notification-toast" role="status" aria-live="polite"></div>
@@ -767,6 +774,20 @@ if ($atakMapConfig) {
               </div>
             </fieldset>
 
+            <fieldset class="atak-session-hub__fieldset">
+              <legend class="atak-session-hub__legend">Renseignement interpersonnel <span class="atak-session-hub__legend-opt">(facultatif)</span></legend>
+              <label class="atak-session-hub__select-label" for="atak-session-sse">
+                Accès renseignement pour cette session
+              </label>
+              <select id="atak-session-sse" name="atak-session-sse" class="atak-session-hub__select">
+                <option value="">Sans accès renseignement</option>
+                <option value="sse">Consulter les personnes identifiées (TOC)</option>
+              </select>
+              <p class="atak-session-hub__field-hint">
+                Active l’onglet Personnes sur la carte. Le portail classifié (dossiers, codes) reste accessible séparément avec un code du commandement.
+              </p>
+            </fieldset>
+
             <div class="atak-session-hub__actions">
               <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-session-profile-reset">Repartir des suggestions</button>
               <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-profile-back" hidden>Retour</button>
@@ -852,6 +873,7 @@ if ($atakMapConfig) {
       <nav class="atak-left-aside" role="tablist" aria-label="Panneaux latéraux">
         <button type="button" class="atak-tab active" role="tab" aria-selected="true" data-tab="cams" title="Cams"><span class="atak-tab-label">Cams</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="photos" title="Photos terrain"><span class="atak-tab-label">Photos</span></button>
+        <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="personnes" title="Personnes identifiées (renseignement interpersonnel)"><span class="atak-tab-label">Personnes</span> <span class="atak-tab-badge" id="atak-sse-tab-badge" hidden></span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="markers" title="Marqueurs"><span class="atak-tab-label">Marqueurs</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="chat" title="Tchat"><span class="atak-tab-label">Tchat</span></button>
         <button type="button" class="atak-tab" role="tab" aria-selected="false" data-tab="orders" title="Ordres"><span class="atak-tab-label">Ordres</span> <span class="atak-tab-badge" id="atak-orders-tab-badge" hidden></span></button>
@@ -910,6 +932,32 @@ if ($atakMapConfig) {
               <div class="atak-empty-state-icon" aria-hidden="true">◫</div>
               <p class="atak-empty-state-title">Aucune photo reçue</p>
               <p class="atak-empty-state-text">Les vues capturées depuis la tablette ou les caméras casque apparaîtront ici dès leur remontée.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="atak-tabs-content" id="tab-personnes">
+        <div class="atak-cams-panel">
+          <div class="atak-cams-toolbar">
+            <p class="atak-panel-hint atak-cams-toolbar-hint">Personnes enregistrées sur le terrain (identité, photo du visage, statut).
+              <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>" class="atak-ops-link" style="margin-left:.35rem;">Portail SSE classifié</a>
+            </p>
+            <label class="atak-panel-hint" for="atak-sse-status-filter" style="display:flex;align-items:center;gap:.4rem;margin:0;">
+              <span>Statut</span>
+              <select id="atak-sse-status-filter" class="atak-ops-btn" title="Filtrer par statut">
+                <option value="">Tous</option>
+                <option value="civil">Civil</option>
+                <option value="combattant">Combattant</option>
+                <option value="detenu">Détenu</option>
+                <option value="prioritaire">Personne prioritaire</option>
+              </select>
+            </label>
+          </div>
+          <div class="atak-cams-list" id="atak-sse-persons-list">
+            <div class="atak-empty-state">
+              <div class="atak-empty-state-icon" aria-hidden="true">◎</div>
+              <p class="atak-empty-state-title">Aucune personne identifiée</p>
+              <p class="atak-empty-state-text">Les fiches créées depuis le terminal de renseignement interpersonnel apparaîtront ici.</p>
             </div>
           </div>
         </div>
@@ -1334,6 +1382,7 @@ if ($atakMapConfig) {
           <div class="atak-notes-toolbar-actions">
             <span class="atak-notes-dirty-label" id="atak-notes-dirty-label" hidden>Modifications non enregistrées</span>
             <button type="button" class="atak-ops-btn" id="atak-notes-expand" title="Élargir le panneau pour afficher les colonnes">Agrandir</button>
+            <button type="button" class="atak-ops-btn" id="atak-notes-export" title="Télécharger le bloc-notes en fichier texte">Exporter .txt</button>
             <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-notes-save">Enregistrer les notes</button>
           </div>
         </div>
@@ -1341,7 +1390,7 @@ if ($atakMapConfig) {
 
         <details class="atak-notes-block" open>
           <summary class="atak-notes-block-sum" id="atak-notepad-title">Bloc-notes</summary>
-          <textarea id="atak-notepad" class="atak-notepad" rows="6" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
+          <textarea id="atak-notepad" class="atak-notepad" data-atak-notepad="1" rows="6" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
         </details>
 
         <details class="atak-notes-block" open>
@@ -1659,6 +1708,17 @@ if ($atakMapConfig) {
           <div id="atak-ft-composition"></div>
         </div>
       </details>
+      <details class="atak-effectifs-notepad atak-collapse" data-atak-collapse="effectifs-notepad" data-atak-collapse-default="1" open>
+        <summary class="atak-collapse-sum">Bloc-notes</summary>
+        <div class="atak-collapse-body">
+          <p class="atak-panel-hint">Notes de session pour cette carte — synchronisées avec l’onglet Notes.</p>
+          <textarea id="atak-notepad-effectifs" class="atak-notepad atak-notepad--effectifs" data-atak-notepad="1" rows="5" maxlength="20000" placeholder="Notes libres de session…" spellcheck="true"></textarea>
+          <div class="atak-effectifs-notepad-actions">
+            <button type="button" class="atak-ops-btn atak-ops-btn--sm" id="atak-notes-export-effectifs" title="Télécharger le bloc-notes en fichier texte">Exporter .txt</button>
+            <button type="button" class="atak-ops-btn atak-ops-btn--sm atak-ops-btn--primary" id="atak-notes-save-effectifs">Enregistrer</button>
+          </div>
+        </div>
+      </details>
       <div class="atak-units-list" id="atak-units-list">
         <div class="atak-units-empty" id="atak-units-empty">
           <div class="atak-units-empty-icon" aria-hidden="true">
@@ -1672,7 +1732,7 @@ if ($atakMapConfig) {
   </div>
 
   <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-session-profile.js?v=202607270730"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-profile.js?v=202607282341"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
   <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
@@ -1690,16 +1750,16 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-fire-teams.js?v=202607270700"></script>
   <script src="<?= $base ?>/assets/js/atak-replay.js?v=202607270730"></script>
   <script src="<?= $base ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/tacmap-tactical-alerts.js"></script>
+  <script src="<?= $base ?>/assets/js/tacmap-tactical-alerts.js?v=202607290100"></script>
   <script src="<?= $base ?>/assets/js/tacmap-weather.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-chat.js?v=202607270730"></script>
-  <script src="<?= $base ?>/assets/js/atak-orders.js?v=202607261905"></script>
+  <script src="<?= $base ?>/assets/js/atak-chat.js?v=202607290030"></script>
+  <script src="<?= $base ?>/assets/js/atak-orders.js?v=202607282040"></script>
   <script src="<?= $base ?>/assets/js/atak-collapse.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=202607262010"></script>
-  <script src="<?= $base ?>/assets/js/atak-medevac.js?v=202607262010"></script>
+  <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=202607290030"></script>
+  <script src="<?= $base ?>/assets/js/atak-medevac.js?v=202607282100"></script>
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-session-workspace.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=202607282200"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
   <script src="<?= $base ?>/assets/js/atak-markers.js?v=202607261735"></script>
   <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=202607262015"></script>
@@ -1712,15 +1772,17 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=202607270700"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
   <script src="<?= $base ?>/assets/js/atak-cams.js?v=202607270730"></script>
+  <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=202607282200"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-activity.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-activity.js?v=202607290100"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
   <script src="<?= $base ?>/assets/js/atak-sounds.js?v=202607271230"></script>
   <script src="<?= $base ?>/assets/js/atak-panel-chrome.js"></script>
   <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=202607261900"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
+  <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=202607282200"></script>
   <script>
     (function () {
       var HINTS_KEY = 'atak_hide_panel_hints';

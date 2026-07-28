@@ -62,8 +62,13 @@ private _ackTerminalSignal = {
     };
 };
 
+private _orderStatus = toUpper (_order getOrDefault ["status", "PENDING"]);
+private _alreadyConsumed = _orderStatus in ["ACK", "DONE", "EXEC", "CANCELLED", "FAILED", "CLOSED"];
+
 // Signal haptique TOC : buzz réel du terminal — pas un ordre C2 à acquitter manuellement
 if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
+    // Déjà reçu / confirmé : ne pas rejouer à la reconnexion
+    if (_alreadyConsumed) exitWith {};
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onVibrate") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onVibrate;
     } else {
@@ -81,6 +86,7 @@ if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
 
 // Notification TOC : entrée cliquable dans Athena — pas un ordre C2
 if ((toUpper _type) isEqualTo "NOTIFY") exitWith {
+    if (_alreadyConsumed) exitWith {};
     if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onNotify;
     } else {

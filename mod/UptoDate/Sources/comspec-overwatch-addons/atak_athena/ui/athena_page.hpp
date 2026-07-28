@@ -74,6 +74,17 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             colorBackground[] = ATHENA_ACCENT;
         };
 
+        // Fond opaque du panneau (évite le bleu Desktop qui transparaît entre les contrôles)
+        class PanelFill: RscText
+        {
+            idc = -1;
+            x = 0;
+            y = QUOTE(COMSPEC_ATHENA_H(0.68));
+            w = QUOTE(COMSPEC_ATHENA_W(3));
+            h = QUOTE(COMSPEC_ATHENA_H(12.60));
+            colorBackground[] = {0.02, 0.05, 0.07, 0.94};
+        };
+
         class Status: RscStructuredText
         {
             idc = 9701;
@@ -366,9 +377,10 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             text = "<t size='0.62' color='#5a9e88'>APPUI & BRIEFING</t>";
         };
 
+        // idc 975x — ne pas réutiliser 9740-9742 (onglets Tout / Messages / Photos)
         class BtnCas: BCE_RscButtonMenu
         {
-            idc = 9740;
+            idc = 9750;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
             y = QUOTE(COMSPEC_ATHENA_H(9.66));
             w = QUOTE(COMSPEC_ATHENA_W(0.90));
@@ -383,7 +395,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         };
         class BtnManifest: BtnCas
         {
-            idc = 9741;
+            idc = 9751;
             x = QUOTE(COMSPEC_ATHENA_W(1.05));
             text = "Manifeste";
             colorBackground[] = ATHENA_BTN;
@@ -393,7 +405,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
         };
         class BtnBriefing: BtnCas
         {
-            idc = 9742;
+            idc = 9752;
             x = QUOTE(COMSPEC_ATHENA_W(2.02));
             text = "Briefing";
             colorBackground[] = ATHENA_BTN_ACCENT;
@@ -410,7 +422,7 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             w = QUOTE(COMSPEC_ATHENA_W(2.84));
             h = QUOTE(COMSPEC_ATHENA_H(0.46));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
-            text = "Envoyer la photo sélectionnée";
+            text = "Renvoyer la photo (si besoin)";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
             colorBackgroundFocused[] = ATHENA_BTN_FOCUS;

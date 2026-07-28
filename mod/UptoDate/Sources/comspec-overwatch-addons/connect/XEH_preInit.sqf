@@ -127,13 +127,45 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_notif_sound", "LIST",
-    ["Son des notifications", "Joué avec les alertes (messages, ordres, connexion). Les urgences médicales ont un son dédié, y compris en mode Silencieux — vibration seule. Seul Silencieux — sans vibration coupe tout. Le mode discret ne coupe pas ces sons."],
+    ["Son des notifications", "Joué avec les alertes (messages, ordres, connexion). Les urgences médicales ont un son dédié, y compris en mode Silencieux — vibration seule. Seul Silencieux — sans vibration coupe tout. Le mode discret ne coupe pas ces sons. Réglable aussi depuis l’app Sons de l’ATAK."],
     "COMSPEC Overwatch",
     [
         ["silent_vib", "stalker", "health", "mute"],
         ["Silencieux — vibration seule", "Ambiance tension", "Signal médical", "Silencieux — sans vibration"],
         0
     ],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_sound_master", "SLIDER",
+    ["Volume général ATAK", "Multiplie tous les sons du terminal (alertes, vibration, effets de liaison). 0 = silence total. Réglable depuis l’app Sons de l’ATAK."],
+    "COMSPEC Overwatch",
+    [0, 1, 1, 2],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_sound_notif_vol", "SLIDER",
+    ["Volume des alertes", "Volume des sons de notification (connexion, ordres, alertes). Réglable depuis l’app Sons de l’ATAK."],
+    "COMSPEC Overwatch",
+    [0, 1, 1, 2],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_sound_vibrate_vol", "SLIDER",
+    ["Volume de vibration", "Intensité du buzz quand l’état-major fait vibrer le terminal. Réglable depuis l’app Sons de l’ATAK."],
+    "COMSPEC Overwatch",
+    [0, 1, 1, 2],
+    false
+] call CBA_fnc_addSetting;
+
+[
+    "comspec_overwatch_sound_fx_vol", "SLIDER",
+    ["Volume des effets de liaison", "Sons de zone, coupure réseau, écran endommagé, etc. Réglable depuis l’app Sons de l’ATAK."],
+    "COMSPEC Overwatch",
+    [0, 1, 0.8, 2],
     false
 ] call CBA_fnc_addSetting;
 
@@ -599,4 +631,8 @@ if (isNil "COMSPEC_NDA_ResetBootEh") then {
     COMSPEC_NDA_ResetBootEh = ["CBA_settingsInitialized", {
         [{ missionNamespace setVariable ["COMSPEC_NDA_ResetBootGuard", false, false]; }, [], 8] call CBA_fnc_waitAndExecute;
     }] call CBA_fnc_addEventHandler;
+};
+
+if (isServer) then {
+    [] call comspec_overwatch_connect_fnc_initCrashRecovery;
 };

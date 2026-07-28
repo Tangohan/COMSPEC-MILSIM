@@ -32,6 +32,12 @@ _ev = switch (_ev) do {
     case "dead";
     case "killed";
     case "mort": { "death" };
+    case "panic";
+    case "eagle_down";
+    case "eagle-down";
+    case "eagledown";
+    case "operator_down";
+    case "a_terre": { "unconscious" };
     case "order_prio";
     case "order-priority";
     case "urgent_order": { "order_priority" };
@@ -79,4 +85,8 @@ if ((toLower _pref) isEqualTo "silent_vib" && {!_isMedicalCritical} && {!_isOrde
 
 if (_sound isEqualTo "") exitWith {};
 
-playSound [_sound, true];
+private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+if (_vol <= 0.01) exitWith {};
+
+// playSoundUI : volume réglable (playSound ignore le gain joueur)
+playSoundUI [_sound, _vol, 1];

@@ -26,14 +26,17 @@ use App\Repositories\TacticalBriefingSlideRepository;
 use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TacticalGameLinkRepository;
+use App\Repositories\AtakDisconnectRecoveryRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\AtakBetaRegistrationRepository;
 use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
+use App\Services\Tactical\AtakIntelViewService;
 use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
+use App\Support\GroupMessageParser;
 use App\Support\MedicalAlertParser;
 use App\Support\TacticalAlertParser;
 use App\Support\SteamId;
@@ -48,6 +51,7 @@ class AtakApiController
 
     private AtakArmaWriteGuard $armaGuard;
     private RoleplaySimulationService $roleplaySim;
+    private AtakIntelViewService $intelView;
 
     public function __construct(
         private AtakDataRepository $atak,
@@ -75,6 +79,7 @@ class AtakApiController
         private ?\App\Repositories\AtakModReportRepository $modReportRepository = null,
         ?AtakArmaWriteGuard $armaGuard = null,
         ?RoleplaySimulationService $roleplaySim = null,
+        ?AtakIntelViewService $intelView = null,
     ) {
         $this->briefingSlideRepository ??= new TacticalBriefingSlideRepository();
         $this->briefingSlideCommentRepository ??= new TacticalBriefingSlideCommentRepository();
@@ -93,6 +98,7 @@ class AtakApiController
         $this->medicalTriageRepository ??= new AtakMedicalTriageRepository();
         $this->armaGuard = $armaGuard ?? new AtakArmaWriteGuard($this->userRepository, $this->activityLog);
         $this->roleplaySim = $roleplaySim ?? new RoleplaySimulationService($this->tenantAtakConfigRepository);
+        $this->intelView = $intelView ?? new AtakIntelViewService(null, $this->tenantAtakConfigRepository, $this->atak);
     }
 
     private function modReports(): \App\Repositories\AtakModReportRepository
@@ -1038,7 +1044,141 @@ class AtakApiController
             }
         }
 
+        $pickStr = static function (array $sources, array $keys, int $maxLen = 96): string {
+            foreach ($sources as $src) {
+                if (!is_array($src)) {
+                    continue;
+                }
+                foreach ($keys as $k) {
+                    $v = trim((string) ($src[$k] ?? ''));
+                    if ($v !== '' && mb_strlen($v) <= $maxLen) {
+                        return $v;
+                    }
+                }
+            }
+
+            return '';
+        };
+        $sources = [$body];
+        if (is_array($extra)) {
+            $sources[] = $extra;
+        }
+
+        $terminalUid = $pickStr($sources, ['terminal_uid', 'terminalUid', 'terminal_id']);
+        if ($terminalUid !== '') {
+            $meta['terminal_uid'] = $terminalUid;
+        }
+        $certStatus = strtolower($pickStr($sources, ['cert_status', 'certificate_status', 'certStatus'], 32));
+        if ($certStatus !== '') {
+            $meta['cert_status'] = $certStatus;
+        }
+        $certRef = $pickStr($sources, ['certificate_ref', 'cert_ref', 'certificateRef'], 80);
+        if ($certRef !== '') {
+            $meta['certificate_ref'] = $certRef;
+        }
+        $radioFreq = $pickStr($sources, ['radio_freq', 'radio_frequency', 'freq', 'wr_freq'], 32);
+        if ($radioFreq !== '') {
+            $meta['radio_freq'] = $radioFreq;
+        }
+        $linkState = strtolower($pickStr($sources, ['link_state', 'linkState'], 24));
+        if ($linkState !== '') {
+            $meta['link_state'] = $linkState;
+        }
+
+        foreach (['latency_ms', 'packet_loss', 'packets_sent', 'packets_received'] as $numKey) {
+            $rawNum = $body[$numKey] ?? (is_array($extra) ? ($extra[$numKey] ?? null) : null);
+            if ($rawNum === null || $rawNum === '') {
+                continue;
+            }
+            if (is_numeric($rawNum)) {
+                $meta[$numKey] = str_contains($numKey, 'packet_loss')
+                    ? round((float) $rawNum, 1)
+                    : (int) round((float) $rawNum);
+            }
+        }
+
+        // Compléter certificat / latence / fréquence depuis la dernière télémétrie BFT de l’unité.
+        $this->mergeUnitTelemetryIntoActivityMeta($tenantId, $mapId, $meta);
+
         return $meta;
+    }
+
+    /**
+     * @param array<string, mixed> $meta
+     */
+    private function mergeUnitTelemetryIntoActivityMeta(int $tenantId, int $mapId, array &$meta): void
+    {
+        $cs = trim((string) ($meta['call_sign'] ?? $meta['callsign'] ?? ''));
+        if ($cs === '' || $mapId < 1) {
+            return;
+        }
+        try {
+            $unit = $this->atak->getUnitByCallSign($tenantId, $mapId, $cs);
+        } catch (\Throwable) {
+            return;
+        }
+        if (!is_array($unit)) {
+            return;
+        }
+        $extraRaw = $unit['extra'] ?? null;
+        $extra = is_array($extraRaw) ? $extraRaw : null;
+        if ($extra === null && is_string($extraRaw) && $extraRaw !== '') {
+            $decoded = json_decode($extraRaw, true);
+            $extra = is_array($decoded) ? $decoded : null;
+        }
+        if (!is_array($extra)) {
+            $extra = [];
+        }
+        $vehicle = (isset($extra['vehicle']) && is_array($extra['vehicle'])) ? $extra['vehicle'] : [];
+        $sources = [$extra, $vehicle, $unit];
+
+        $fillStr = static function (array &$meta, string $key, array $sources, array $keys, int $maxLen = 80): void {
+            if (isset($meta[$key]) && $meta[$key] !== '') {
+                return;
+            }
+            foreach ($sources as $src) {
+                if (!is_array($src)) {
+                    continue;
+                }
+                foreach ($keys as $k) {
+                    $v = trim((string) ($src[$k] ?? ''));
+                    if ($v !== '' && mb_strlen($v) <= $maxLen) {
+                        $meta[$key] = $v;
+
+                        return;
+                    }
+                }
+            }
+        };
+        $fillStr($meta, 'cert_status', $sources, ['cert_status', 'certificate_status', 'certStatus'], 32);
+        $fillStr($meta, 'certificate_ref', $sources, ['certificate_ref', 'cert_ref', 'certificateRef'], 80);
+        $fillStr($meta, 'radio_freq', $sources, ['radio_freq', 'radio_frequency', 'freq', 'wr_freq'], 32);
+        $fillStr($meta, 'link_state', $sources, ['link_state', 'linkState'], 24);
+        $fillStr($meta, 'terminal_uid', $sources, ['terminal_uid', 'terminalUid', 'terminal_id'], 64);
+        if (!isset($meta['group_name']) || $meta['group_name'] === '') {
+            $fillStr($meta, 'group_name', $sources, ['group_name', 'groupName', 'group'], 96);
+        }
+
+        foreach (['latency_ms', 'packet_loss'] as $numKey) {
+            if (isset($meta[$numKey]) && $meta[$numKey] !== '') {
+                continue;
+            }
+            foreach ($sources as $src) {
+                if (!is_array($src) || !isset($src[$numKey]) || $src[$numKey] === '' || !is_numeric($src[$numKey])) {
+                    continue;
+                }
+                $meta[$numKey] = str_contains($numKey, 'packet_loss')
+                    ? round((float) $src[$numKey], 1)
+                    : (int) round((float) $src[$numKey]);
+                break;
+            }
+        }
+        if (isset($meta['cert_status'])) {
+            $meta['cert_status'] = strtolower((string) $meta['cert_status']);
+        }
+        if (isset($meta['link_state'])) {
+            $meta['link_state'] = strtolower((string) $meta['link_state']);
+        }
     }
 
     private function truthyFlag(mixed $raw): bool
@@ -1297,6 +1437,76 @@ class AtakApiController
     }
 
     /**
+     * @return array{mode:string, reason:string, reason_label:string, intensity:float, scramble_enabled:bool}
+     */
+    private function resolveIntelView(Request $request, int $tenantId, int $mapId): array
+    {
+        $terminalUid = trim((string) ($request->query('terminal_uid')
+            ?? $request->query('terminalUid')
+            ?? ($this->jsonBody($request)['terminal_uid'] ?? '')
+            ?? ''));
+        $userId = (int) Session::get('user_id');
+        $jam = $request->query('jam_intensity');
+        $identity = $this->intelView->identityFromRequest(
+            $terminalUid !== '' ? $terminalUid : null,
+            $userId > 0 ? $userId : null,
+            is_numeric($jam) ? (float) $jam : null,
+            trim((string) ($request->query('link_state') ?? '')) ?: null,
+            trim((string) ($request->query('zone_type') ?? '')) ?: null
+        );
+
+        return $this->intelView->resolveViewerMode($tenantId, $mapId, $identity);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function applyIntelScramble(Request $request, int $tenantId, int $mapId, string $type, array $rows): array
+    {
+        $view = $this->resolveIntelView($request, $tenantId, $mapId);
+        if (($view['mode'] ?? '') === AtakIntelViewService::MODE_CLEAR) {
+            return $rows;
+        }
+
+        return $this->intelView->scrambleList($view, $type, $rows);
+    }
+
+    public function intelViewIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $mapId = $this->mapId($request);
+        $view = $this->resolveIntelView($request, $r, $mapId);
+
+        return Response::json(['ok' => true, 'intel_view' => $view]);
+    }
+
+    public function deviceAlertsIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $mapId = $this->mapId($request);
+        $alerts = $this->intelView->collectDeviceAlerts($r, $mapId);
+
+        return Response::json([
+            'ok' => true,
+            'mapId' => $mapId,
+            'alerts' => $alerts,
+            'counts' => [
+                'total' => count($alerts),
+                'critical' => count(array_filter($alerts, static fn ($a) => ($a['severity'] ?? '') === 'critical')),
+                'warn' => count(array_filter($alerts, static fn ($a) => ($a['severity'] ?? '') === 'warn')),
+            ],
+            'intel_view' => $this->resolveIntelView($request, $r, $mapId),
+        ]);
+    }
+
+    /**
      * Garde écriture Arma : clé déjà vérifiée + Steam lié (si fourni) + session + anti-spoof.
      *
      * @return array{steam_uid: ?string, session_ok: bool}|Response
@@ -1333,19 +1543,69 @@ class AtakApiController
                 'network' => ['enabled' => false],
                 'sensor' => ['enabled' => false],
                 'measured_packet_loss' => null,
+                'zones_enabled' => false,
+                'zones_json' => '',
+                'session_ttl_sec' => 600,
             ]);
         }
 
         $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
         $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
-
-        // Récupérer la dernière mesure de packet loss depuis les unités
         $measuredLoss = $this->getMeasuredPacketLoss($tenantId);
+        $roleplayCfg = ($this->tenantAtakConfigRepository ?? new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
+
+        $zonesJson = '';
+        $zonesArray = null;
+        if (!empty($roleplayCfg['zones_config'])) {
+            $decoded = is_string($roleplayCfg['zones_config'])
+                ? json_decode($roleplayCfg['zones_config'], true)
+                : $roleplayCfg['zones_config'];
+            if (is_array($decoded)) {
+                $zonesArray = $decoded;
+                $zonesJson = json_encode($decoded, JSON_UNESCAPED_UNICODE) ?: '';
+            } elseif (is_string($roleplayCfg['zones_config'])) {
+                $zonesJson = $roleplayCfg['zones_config'];
+            }
+        }
 
         return Response::json([
             'network' => $networkStats,
             'sensor' => $sensorStats,
             'measured_packet_loss' => $measuredLoss,
+            'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
+            'zones_json' => $zonesArray ?? $zonesJson,
+            'session_ttl_sec' => 600,
+        ]);
+    }
+
+    /**
+     * Reprise session ATAK post-CTD (TTL court, identité Steam).
+     */
+    public function sessionRestore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId === null || $tenantId < 1) {
+            return Response::json(['error' => 'Tenant required'], 400);
+        }
+
+        $steamUid = trim((string) ($request->query('steam_uid') ?? $request->query('steamUid') ?? ''));
+        if ($steamUid === '') {
+            return Response::json(['error' => 'steam_uid required'], 400);
+        }
+
+        $repo = new AtakDisconnectRecoveryRepository();
+        $snapshot = $repo->get($tenantId, $steamUid);
+        if ($snapshot === null) {
+            return Response::json(['error' => 'not_found'], 404);
+        }
+
+        return Response::json([
+            'callsign' => (string) ($snapshot['callsign'] ?? ''),
+            'link_state' => (string) ($snapshot['link_state'] ?? 'linked'),
+            'saved_at' => (int) ($snapshot['saved_at'] ?? 0),
         ]);
     }
 
@@ -2025,6 +2285,33 @@ class AtakApiController
         }
 
         return Response::json($row);
+    }
+
+    /** Suppression définitive d’une demande MEDEVAC (9-line). */
+    public function medevacDelete(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            return Response::json(['error' => 'Introuvable', 'message' => 'Cette demande MEDEVAC est introuvable.'], 404);
+        }
+        $existing = $this->casRepo->getCas($r, $id);
+        if ($existing === null) {
+            return Response::json(['error' => 'Introuvable', 'message' => 'Cette demande MEDEVAC est introuvable.'], 404);
+        }
+        $kind = strtolower(trim((string) ($existing['mission_kind'] ?? $existing['missionKind'] ?? '')));
+        // Anciennes lignes sans mission_kind : accepter la suppression via l’endpoint MEDEVAC.
+        if ($kind !== '' && $kind !== CasNineLineRepository::KIND_MEDEVAC) {
+            return Response::json(['error' => 'Introuvable', 'message' => 'Cette demande MEDEVAC est introuvable.'], 404);
+        }
+        if (!$this->casRepo->deleteCas($r, $id)) {
+            return Response::json(['error' => 'Introuvable', 'message' => 'Cette demande MEDEVAC est introuvable.'], 404);
+        }
+
+        return Response::json(['ok' => true, 'deleted' => true, 'id' => $id]);
     }
 
     /** Compte rendu SALUTE structuré → canal messagerie + journal. */
@@ -2727,6 +3014,8 @@ class AtakApiController
         $since = $request->query('since');
         $rows = $this->atak->getMarkers($tenantId, $mapId, $since);
         $out = array_map(fn ($r) => ['id' => $r['id'], 'layerId' => $r['layerId'], 'markerData' => $r['markerData'], 'updated_at' => $r['updated_at']], $rows);
+        $out = $this->applyIntelScramble($request, $tenantId, $mapId, 'marker', $out);
+
         return Response::json($out);
     }
 
@@ -3095,6 +3384,8 @@ class AtakApiController
         if ($includeGateway) {
             $rows = array_merge($rows, $this->collectGatewayMirrorUnits($tenantId));
         }
+
+        $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $rows);
 
         return Response::json($rows);
     }
@@ -4150,6 +4441,48 @@ class AtakApiController
         } catch (\Throwable) {
         }
         $upsert = $this->atak->upsertUnitPosition($tenantId, $mapId, $callSign, $posX, $posY, $heading, $role, json_encode($extra));
+        $terminalUidPos = trim((string) ($extra['terminal_uid'] ?? ''));
+        $compromisePos = strtolower(trim((string) ($extra['compromise_state'] ?? '')));
+        if ($terminalUidPos !== '' && in_array($compromisePos, ['none', 'captured', 'compromised'], true)) {
+            try {
+                $realism = new \App\Repositories\AtakRealismRepository();
+                $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
+                $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
+                if ($existing !== null && $prev !== $compromisePos) {
+                    $realism->setTerminalCompromise(
+                        $tenantId,
+                        $terminalUidPos,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    if ($compromisePos !== 'none') {
+                        $this->activityLog->record(
+                            $tenantId,
+                            $mapId,
+                            AtakActivityLogService::TYPE_INTEL,
+                            $compromisePos === 'captured'
+                                ? 'Appareil capturé — données illisibles'
+                                : 'Appareil compromis — données illisibles',
+                            (string) $callSign,
+                            ['terminal_uid' => $terminalUidPos, 'compromise_state' => $compromisePos, 'source' => 'position']
+                        );
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+        if ($steamNorm !== null && $steamNorm !== '') {
+            try {
+                (new AtakDisconnectRecoveryRepository())->save($tenantId, $steamNorm, [
+                    'callsign' => $callSign,
+                    'link_state' => (string) ($extra['link_state'] ?? 'linked'),
+                    'pos_x' => $posX,
+                    'pos_y' => $posY,
+                    'heading' => $heading,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
         $healthNow = strtolower(trim((string) ($extra['health'] ?? $body['health'] ?? '')));
         if (MedicalAlertParser::isRecoveredHealth($healthNow)) {
             try {
@@ -4249,9 +4582,15 @@ class AtakApiController
         
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 100);
+        $afterRaw = $request->query('after');
+        $afterId = ($afterRaw !== null && $afterRaw !== '') ? (int) $afterRaw : 0;
         // Sur-échantillonner puis filtrer le bruit technique (réglages camps) déjà en base.
         $fetchLimit = min(max((int) ($limit * 2), $limit), 500);
-        $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+        if ($afterId > 0) {
+            $rows = $this->atak->getChatMessagesAfter($tenantId, $mapId, $afterId, $fetchLimit);
+        } else {
+            $rows = $this->atak->getChatMessages($tenantId, $mapId, $fetchLimit);
+        }
         $rows = array_values(array_filter(
             is_array($rows) ? $rows : [],
             static function ($row): bool {
@@ -4277,6 +4616,8 @@ class AtakApiController
         if (count($rows) > $limit) {
             $rows = array_slice($rows, -$limit);
         }
+
+        $rows = $this->applyIntelScramble($request, $tenantId, $mapId, 'chat', $rows);
 
         return Response::json($rows);
     }
@@ -4317,6 +4658,9 @@ class AtakApiController
             }
         }
 
+        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
+        $criticalUnits = $this->applyIntelScramble($request, $tenantId, $mapId, 'unit', $criticalUnits);
+
         return Response::json([
             'mapId' => $mapId,
             'alerts' => $alerts,
@@ -4335,6 +4679,7 @@ class AtakApiController
                 ],
                 MedicalAlertParser::TRIAGE_STATUSES
             ),
+            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
         ]);
     }
 
@@ -4351,6 +4696,7 @@ class AtakApiController
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 40);
         $alerts = $this->atak->getTacticalAlertsFromChat($tenantId, $mapId, min($limit, 100));
+        $alerts = $this->applyIntelScramble($request, $tenantId, $mapId, 'alert', $alerts);
 
         return Response::json([
             'mapId' => $mapId,
@@ -4363,6 +4709,7 @@ class AtakApiController
                 ],
                 TacticalAlertParser::KINDS
             ),
+            'intel_view' => $this->resolveIntelView($request, $tenantId, $mapId),
         ]);
     }
 
@@ -5199,15 +5546,59 @@ class AtakApiController
             $row = $this->atak->addChatMessage($tenantId, $mapId, $author, $bodyText);
         }
 
+        // Messages de groupe ATAK Enhanced (GROUPE|…)
+        $groupMsg = GroupMessageParser::enrichChatRow(is_array($row) ? $row : []);
+        if ($groupMsg !== null && is_array($row)) {
+            $row['group'] = $groupMsg;
+            $this->activityLog?->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_CHAT,
+                'Message de groupe — ' . (string) (($groupMsg['call_sign'] ?? '') !== ''
+                    ? $groupMsg['call_sign']
+                    : $author),
+                (string) (($groupMsg['call_sign'] ?? '') !== '' ? $groupMsg['call_sign'] : $author),
+                array_merge($chatActivityMeta, [
+                    'channel' => 'GROUPE',
+                    'group_id' => (string) ($groupMsg['group_id'] ?? ''),
+                    'grid' => (string) ($groupMsg['grid'] ?? ''),
+                    'summary' => (string) ($groupMsg['text'] ?? ''),
+                    'chat_id' => (int) ($row['id'] ?? 0),
+                ])
+            );
+        }
+
         // Alertes tactiques TIC / CLEAR / FRAGO / SALUTE / Eagle Down
         $tactical = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         if ($tactical !== null) {
             if (is_array($row)) {
                 $row['tactical'] = $tactical;
             }
-            $tacSummary = trim((string) ($tactical['summary'] ?? ''));
-            if ($tacSummary === '') {
-                $tacSummary = (string) (($tactical['kind_label'] ?? 'Alerte') . ' — ' . $author);
+            $tacSummary = TacticalAlertParser::activityLabel($tactical);
+            $tacMeta = array_merge($chatActivityMeta, [
+                'kind' => (string) ($tactical['kind'] ?? ''),
+                'kind_label' => (string) ($tactical['kind_label'] ?? ''),
+                'grid' => (string) ($tactical['grid'] ?? ''),
+                'summary' => (string) ($tactical['summary'] ?? ''),
+                'chat_id' => (int) ($row['id'] ?? 0),
+            ]);
+            if (!empty($tactical['order_id'])) {
+                $tacMeta['order_id'] = (string) $tactical['order_id'];
+            }
+            if (isset($tactical['pos_x'])) {
+                $tacMeta['pos_x'] = $tactical['pos_x'];
+            }
+            if (isset($tactical['pos_y'])) {
+                $tacMeta['pos_y'] = $tactical['pos_y'];
+            }
+            if (!empty($tactical['frago']) && is_array($tactical['frago'])) {
+                $tacMeta['frago'] = $tactical['frago'];
+            }
+            if (!empty($tactical['salute']) && is_array($tactical['salute'])) {
+                $tacMeta['salute'] = $tactical['salute'];
+            }
+            if (!empty($tactical['bda']) && is_array($tactical['bda'])) {
+                $tacMeta['bda'] = $tactical['bda'];
             }
             $this->activityLog?->record(
                 $tenantId,
@@ -5215,7 +5606,7 @@ class AtakApiController
                 AtakActivityLogService::TYPE_TACTICAL_ALERT,
                 $tacSummary,
                 (string) (($tactical['call_sign'] ?? '') !== '' ? $tactical['call_sign'] : $author),
-                array_merge($chatActivityMeta, ['kind' => $tactical['kind'] ?? ''])
+                $tacMeta
             );
             // Coords (x/y ou grille) → atak_units pour effectifs / carte web.
             $tcs = trim((string) ($tactical['call_sign'] ?? ''));
@@ -5285,6 +5676,10 @@ class AtakApiController
                 if (isset($medical['grid']) && trim((string) $medical['grid']) !== '') {
                     $medMeta['grid'] = trim((string) $medical['grid']);
                 }
+                $medMeta['chat_id'] = (int) ($row['id'] ?? 0);
+                if (isset($medical['summary']) && trim((string) $medical['summary']) !== '') {
+                    $medMeta['summary'] = trim((string) $medical['summary']);
+                }
                 $this->activityLog?->record(
                     $tenantId,
                     $mapId,
@@ -5321,8 +5716,9 @@ class AtakApiController
             } catch (\Throwable) {
             }
         } elseif (
-            // Déjà journalisé métier (ordre / alerte tactique / réglages camps) : pas de doublon « Message envoyé ».
+            // Déjà journalisé métier (ordre / alerte tactique / groupe / réglages camps) : pas de doublon « Message envoyé ».
             !isset($row['order'])
+            && !isset($row['group'])
             && $tactical === null
         ) {
             $mentionSummary = $this->applyChatMentions(
@@ -5499,9 +5895,18 @@ class AtakApiController
         $maxUpdated = '';
         foreach ($rows as $row) {
             $orderType = strtoupper((string) ($row['order_type'] ?? ''));
+            $isTerminalSignal = in_array($orderType, AtakOrderRepository::TERMINAL_SIGNAL_TYPES, true);
             // Signaux terminal : visibles côté jeu uniquement, jamais dans le panneau ordres web.
-            if (!$forGame && in_array($orderType, AtakOrderRepository::TERMINAL_SIGNAL_TYPES, true)) {
+            if (!$forGame && $isTerminalSignal) {
                 continue;
+            }
+            // Vibration / notif : one-shot. Une fois ACK (ou annulé), ne plus les renvoyer
+            // au poll jeu — sinon chaque reconnexion Arma rejoue le buzz.
+            if ($forGame && $isTerminalSignal) {
+                $signalStatus = strtoupper((string) ($row['status'] ?? 'PENDING'));
+                if (!in_array($signalStatus, ['PENDING', 'DELIVERED'], true)) {
+                    continue;
+                }
             }
 
             $serialized = $this->serializeOrder($row);
@@ -5542,6 +5947,7 @@ class AtakApiController
 
         $serverTime = date('Y-m-d H:i:s');
         $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : $serverTime);
+        $orders = $this->applyIntelScramble($request, $r, $mapId, 'order', $orders);
 
         return Response::json([
             'ok' => true,
@@ -5560,6 +5966,7 @@ class AtakApiController
                 'custom_templates' => $this->orderTemplateRepository?->tablesReady() ?? false,
                 'custom_types' => $this->orderTypeRepository?->tablesReady() ?? false,
             ],
+            'intel_view' => $this->resolveIntelView($request, $r, $mapId),
         ]);
     }
 
@@ -7180,7 +7587,7 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
-        $callsign = $body['callsign'] ?? $body['call_sign'] ?? 'Unknown';
+        $callsign = $this->resolveFlightManifestCallsign($tenantId, $mapId, $body, $actor);
         $missionToken = getenv('ATAK_MISSION_AUTH_TOKEN') ?: getenv('COMSPEC_MISSION_AUTH') ?: '';
         $status = $body['status'] ?? 'IN-FLIGHT';
         if ($missionToken !== '' && ($body['auth'] ?? $body['authCode'] ?? '') !== $missionToken) {
@@ -7188,6 +7595,8 @@ class AtakApiController
         }
         $data = array_merge($body, [
             'status' => $status,
+            'callsign' => $callsign,
+            'call_sign' => $callsign,
             'pos_x' => isset($body['pos']) && is_array($body['pos']) ? ($body['pos'][0] ?? null) : ($body['pos_x'] ?? null),
             'pos_y' => isset($body['pos']) && is_array($body['pos']) ? ($body['pos'][1] ?? null) : ($body['pos_y'] ?? null),
             'pos_z' => isset($body['pos']) && is_array($body['pos']) && isset($body['pos'][2]) ? $body['pos'][2] : ($body['pos_z'] ?? null),
@@ -7199,9 +7608,55 @@ class AtakApiController
             $mapId,
             AtakActivityLogService::TYPE_FLIGHT,
             'Manifeste de vol déclaré — ' . $callsign,
-            (string) $callsign
+            $callsign,
+            $this->buildActivityMeta($tenantId, $mapId, $body, is_array($actor) ? $actor : null, $callsign, [
+                'model' => (string) ($data['model'] ?? ''),
+                'aircraft_type' => (string) ($data['aircraft_type'] ?? $data['aircraftType'] ?? ''),
+                'laser' => (string) ($data['laser'] ?? ''),
+            ])
         );
         return Response::json($row, 201);
+    }
+
+    /**
+     * Indicatif manifeste : jamais le libellé technique anglais « Unknown ».
+     *
+     * @param array<string, mixed> $body
+     * @param array{steam_uid?: ?string}|null $actor
+     */
+    private function resolveFlightManifestCallsign(int $tenantId, int $mapId, array $body, ?array $actor): string
+    {
+        $candidates = [
+            $body['callsign'] ?? null,
+            $body['call_sign'] ?? null,
+            $body['pilot'] ?? null,
+            $body['unit'] ?? null,
+        ];
+        foreach ($candidates as $raw) {
+            $cs = trim((string) ($raw ?? ''));
+            if ($cs === '') {
+                continue;
+            }
+            if (strcasecmp($cs, 'Unknown') === 0 || strcasecmp($cs, 'Inconnu') === 0) {
+                continue;
+            }
+            return $cs;
+        }
+
+        $steam = is_array($actor) ? trim((string) ($actor['steam_uid'] ?? '')) : '';
+        if ($steam !== '' && $tenantId > 0 && $mapId > 0) {
+            try {
+                $unit = $this->atak->findUnitBySteamUid($tenantId, $mapId, $steam);
+                $fromUnit = trim((string) ($unit['call_sign'] ?? $unit['callsign'] ?? ''));
+                if ($fromUnit !== '' && strcasecmp($fromUnit, 'Unknown') !== 0 && strcasecmp($fromUnit, 'Inconnu') !== 0) {
+                    return $fromUnit;
+                }
+            } catch (\Throwable) {
+                // ignore — repli ci-dessous
+            }
+        }
+
+        return 'Sans indicatif';
     }
 
     // --- CAS / 9-Line ---

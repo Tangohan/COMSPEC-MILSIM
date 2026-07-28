@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.7;
-        versionStr = "1.0.7";
-        versionAr[] = {1, 0, 7};
+        version = 1.0.15;
+        versionStr = "1.0.16";
+        versionAr[] = {1, 0, 15};
     };
 };
 
@@ -69,9 +69,18 @@ class CfgFunctions
             class athena_statusOnOpened {};
             class athena_updateStatus {};
             class athena_openStatus {};
+            class athena_soundOnOpened {};
+            class athena_updateSound {};
+            class athena_soundAction {};
+            class athena_openSound {};
+            class athena_briefingOnOpened {};
+            class athena_applyBriefingSlide {};
+            class athena_openBriefing {};
+            class athena_bdaOnOpened {};
         };
     };
     // Workaround BCE: Check_Layout uses undefined _line (Compat updateInterface)
+    // + getMarkerColor: cache / RGBA sûrs pour lbSetPictureColor (display ATAK)
     class BCE
     {
         class ATAK
@@ -79,6 +88,14 @@ class CfgFunctions
             class ATAK_Check_Layout
             {
                 file = "z\comspec_overwatch\addons\atak_athena\functions\fn_ATAK_Check_Layout.sqf";
+                recompile = 1;
+            };
+        };
+        class Components
+        {
+            class getMarkerColor
+            {
+                file = "z\comspec_overwatch\addons\atak_athena\functions\fn_getMarkerColor.sqf";
             };
         };
     };
@@ -107,9 +124,13 @@ class BCE_RscButtonMenu;
 class RscStructuredText;
 class RscListBox;
 class RscText;
+class RscPictureKeepAspect;
 
 #include "ui\athena_page.hpp"
 #include "ui\status_page.hpp"
+#include "ui\sound_page.hpp"
+#include "ui\briefing_page.hpp"
+#include "ui\bda_host_page.hpp"
 
 class ATAK_APPs
 {
@@ -136,6 +157,43 @@ class ATAK_APPs
             ORDER = 3.6;
             PAGE_CTRL = "COMSPEC_ATAK_Status";
             Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
+        };
+    };
+    class AtakSound: message
+    {
+        text = "<t size='1'>Sons</t>";
+        textureNoShortcut = "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.7;
+            PAGE_CTRL = "COMSPEC_ATAK_Sound";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_soundOnOpened";
+        };
+    };
+    class AtakBriefing: message
+    {
+        text = "<t size='1'>Briefing</t>";
+        textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 3.4;
+            PAGE_CTRL = "COMSPEC_ATAK_Briefing";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
+        };
+    };
+    // Stub BCE BDA_Report : PAGE_CTRL/Opened vides → erreur "Opened function...". On le répare.
+    class BDA_Report: message
+    {
+        text = "<t size='1'>BDA Report</t>";
+        textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+        onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+        class Menu_Property
+        {
+            ORDER = 7;
+            PAGE_CTRL = "COMSPEC_ATAK_BdaHost";
+            Opened = "comspec_overwatch_atak_athena_fnc_athena_bdaOnOpened";
         };
     };
 };
@@ -167,6 +225,42 @@ class RscTitles
                 ORDER = 3.6;
                 PAGE_CTRL = "COMSPEC_ATAK_Status";
                 Opened = "comspec_overwatch_atak_athena_fnc_athena_statusOnOpened";
+            };
+        };
+        class AtakSound: message
+        {
+            text = "<t size='1'>Sons</t>";
+            textureNoShortcut = "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.7;
+                PAGE_CTRL = "COMSPEC_ATAK_Sound";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_soundOnOpened";
+            };
+        };
+        class AtakBriefing: message
+        {
+            text = "<t size='1'>Briefing</t>";
+            textureNoShortcut = "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 3.4;
+                PAGE_CTRL = "COMSPEC_ATAK_Briefing";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_briefingOnOpened";
+            };
+        };
+        class BDA_Report: message
+        {
+            text = "<t size='1'>BDA Report</t>";
+            textureNoShortcut = "a3\ui_f\data\igui\cfg\holdactions\holdaction_search_ca.paa";
+            onButtonClick = "[_this # 0] call BCE_fnc_ATAK_ChangeTool";
+            class Menu_Property
+            {
+                ORDER = 7;
+                PAGE_CTRL = "COMSPEC_ATAK_BdaHost";
+                Opened = "comspec_overwatch_atak_athena_fnc_athena_bdaOnOpened";
             };
         };
     };

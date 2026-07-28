@@ -67,13 +67,14 @@ class COMSPEC_FlightManifest_Dialog {
             text = "<t size='0.48' color='#8aa0b4'>INDICATIF</t>";
             x = 0.330 * safezoneW + safezoneX; y = 0.248 * safezoneH + safezoneY; w = 0.165 * safezoneW; h = 0.016 * safezoneH;
         };
-        class ValCallsign: RscText {
+        class ValCallsign: RscEdit {
             idc = 1501;
             text = "";
             x = 0.330 * safezoneW + safezoneX; y = 0.264 * safezoneH + safezoneY; w = 0.165 * safezoneW; h = 0.028 * safezoneH;
             sizeEx = 0.034;
             colorText[] = {0.95, 0.98, 0.9, 1};
             colorBackground[] = {0.04, 0.08, 0.12, 1};
+            autocomplete = "";
         };
         class LblType: RscStructuredText {
             idc = -1;
@@ -95,13 +96,14 @@ class COMSPEC_FlightManifest_Dialog {
             text = "<t size='0.48' color='#8aa0b4'>AÉRONEF</t>";
             x = 0.330 * safezoneW + safezoneX; y = 0.302 * safezoneH + safezoneY; w = 0.165 * safezoneW; h = 0.016 * safezoneH;
         };
-        class ValModel: RscText {
+        class ValModel: RscEdit {
             idc = 1502;
             text = "";
             x = 0.330 * safezoneW + safezoneX; y = 0.318 * safezoneH + safezoneY; w = 0.165 * safezoneW; h = 0.028 * safezoneH;
             sizeEx = 0.032;
             colorText[] = {0.95, 0.98, 0.9, 1};
             colorBackground[] = {0.04, 0.08, 0.12, 1};
+            autocomplete = "";
         };
         class LblFreq: RscStructuredText {
             idc = -1;
@@ -120,7 +122,7 @@ class COMSPEC_FlightManifest_Dialog {
         // Ligne 3 aide
         class IdentNote: RscStructuredText {
             idc = -1;
-            text = "<t size='0.45' color='#6a7a88'>Données relevées automatiquement depuis l’appareil et la radio.</t>";
+            text = "<t size='0.45' color='#6a7a88'>Indicatif et aéronef sont modifiables (utile en déclaration depuis le sol). En aéronef, le modèle est détecté automatiquement.</t>";
             x = 0.330 * safezoneW + safezoneX; y = 0.358 * safezoneH + safezoneY; w = 0.340 * safezoneW; h = 0.036 * safezoneH;
         };
 

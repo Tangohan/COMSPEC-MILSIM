@@ -67,4 +67,8 @@ if (_isLocalSender) then {
         _timeStr
     ] call comspec_overwatch_atak_athena_fnc_athena_pushNotification;
     ["COMSPEC_AthenaInboxUpdated", []] call CBA_fnc_localEvent;
+    // Réception Panic / à terre → son alerte santé inconscient
+    if (_kindKey isEqualTo "EAGLE_DOWN" && {!isNil "comspec_overwatch_connect_fnc_playAtakNotification"}) then {
+        ["unconscious"] call comspec_overwatch_connect_fnc_playAtakNotification;
+    };
 };

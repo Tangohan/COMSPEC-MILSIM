@@ -399,10 +399,13 @@ private _applyLocalQrfFeedback = {
 private _jsonString = [_qrfData] call comspec_overwatch_connect_fnc_hashMapToJson;
 
 private _parsed = [
-
-    "COMSPECExtension" callExtension ["RequestQRF", [_jsonString]]
-
-] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+    "RequestQRF",
+    [_jsonString],
+    "QRF",
+    true,
+    true,
+    "liaison"
+] call comspec_overwatch_connect_fnc_callExtLogged;
 
 _parsed params ["_ok", "", "_detail"];
 

@@ -74,6 +74,7 @@ private _isOk = {
 private _fnc_uploadPath = {
     params ["_uploadPath"];
     if (!(_uploadPath isEqualType "") || {_uploadPath isEqualTo ""}) exitWith { false };
+    ["UploadReconImage", "attempt", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     private _raw = ["COMSPECExtension" callExtension [
         "UploadReconImage",
         [
@@ -97,6 +98,11 @@ private _fnc_uploadPath = {
     private _ok = [_raw] call _isOk;
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _raw, false];
+    if (_ok) then {
+        ["UploadReconImage", "ok", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    } else {
+        ["UploadReconImage", "fail", str _raw, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    };
     _ok
 };
 
@@ -140,6 +146,7 @@ screenshot "COMSPEC_AthenaFeed";
 [_author, _device, _caption, _feedId, _pos, _grid, _dir, _sideStr, _missionId, _unitName] spawn {
     params ["_author", "_device", "_caption", "_feedId", "_pos", "_grid", "_dir", "_sideStr", "_missionId", "_unitName"];
     uiSleep 0.9;
+    ["UploadLatestScreenshot", "attempt", _device, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     private _raw = ["COMSPECExtension" callExtension [
         "UploadLatestScreenshot",
         [
@@ -163,8 +170,10 @@ screenshot "COMSPEC_AthenaFeed";
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _t, false];
     if (_ok) then {
+        ["UploadLatestScreenshot", "ok", _t, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         ["COMSPEC_Info", ["Aperçu envoyé vers Athena"]] call comspec_overwatch_connect_fnc_showNotification;
     } else {
+        ["UploadLatestScreenshot", "fail", _t, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         private _low = toLower _t;
         private _msg = "Échec d’envoi de l’aperçu vers Athena";
         if ((_low find "file_not_found") >= 0) then {

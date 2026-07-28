@@ -19,6 +19,11 @@ params [
     ["_intensity", -1, [0]]
 ];
 
+if (!isServer && {isMultiplayer}) exitWith {
+    _this remoteExecCall ["comspec_overwatch_connect_fnc_createRoleplayZone", 2];
+    createHashMap
+};
+
 // Convertir objet en position
 if (_position isEqualType objNull) then {
     _position = getPos _position;
@@ -66,19 +71,16 @@ private _color = switch (_type) do {
 };
 _zone set ["color", _color];
 
-// Créer le marqueur visuel (si Zeus/Eden)
-if (!isNil "bis_fnc_moduleCurator" || {!isMultiplayer}) then {
-    private _markerName = format ["comspec_roleplay_zone_%1", _zone get "id"];
-    private _marker = createMarker [_markerName, _position];
-    _marker setMarkerShape "ELLIPSE";
-    _marker setMarkerSize [_radius, _radius];
-    _marker setMarkerColor _color;
-    _marker setMarkerBrush "Border";
-    _marker setMarkerAlpha 0.5;
-    _marker setMarkerText format ["%1 (%2m - %3%%)", _typeName, _radius, _intensity];
-    
-    _zone set ["marker", _markerName];
-};
+// Créer le marqueur visuel (toujours — Zeus / Eden / script)
+private _markerName = format ["comspec_roleplay_zone_%1", _zone get "id"];
+private _marker = createMarker [_markerName, _position];
+_marker setMarkerShape "ELLIPSE";
+_marker setMarkerSize [_radius, _radius];
+_marker setMarkerColor _color;
+_marker setMarkerBrush "Border";
+_marker setMarkerAlpha 0.55;
+_marker setMarkerText format ["%1 (%2m)", _typeName, round _radius];
+_zone set ["marker", _markerName];
 
 // Ajouter à la liste globale
 if (isNil "COMSPEC_RoleplayZones") then {
@@ -86,6 +88,15 @@ if (isNil "COMSPEC_RoleplayZones") then {
 };
 COMSPEC_RoleplayZones pushBack _zone;
 publicVariable "COMSPEC_RoleplayZones";
+
+// Activer le moteur roleplay sur toutes les machines (sinon zones inertes)
+[
+    {
+        missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, false];
+        missionNamespace setVariable ["comspec_overwatch_roleplay_visual_effects", true, false];
+        missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, false];
+    }
+] remoteExecCall ["call", 0, true];
 
 // Log
 diag_log format ["[COMSPEC Roleplay] Zone créée: %1 à %2 (rayon %3m, intensité %4%%)", 

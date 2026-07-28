@@ -56,7 +56,7 @@ if (_path isEqualTo "" && {_fileName isNotEqualTo ""}) then {
 
 if (_path isEqualTo "") exitWith {
     [
-        "Aucune photo à remonter — ouvrez l’onglet Photos, sélectionnez une capture, ou prenez d’abord une vue depuis l’app Photos d’ATAK.",
+        "Aucune photo à renvoyer — prenez d’abord une vue depuis l’app Photos d’ATAK (elle remonte seule vers ATAK web).",
         "warn",
         7
     ] call comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback;

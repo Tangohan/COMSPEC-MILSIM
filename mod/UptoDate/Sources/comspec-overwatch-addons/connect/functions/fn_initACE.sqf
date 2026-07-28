@@ -1,12 +1,12 @@
 if (!hasInterface) exitWith {};
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {
-    ["WARN", "ACE", "ace_interact_menu absent — menus non installés"] call comspec_overwatch_connect_fnc_log;
+    ["initACE", "ace_interact_menu absent — menus non installés", nil, "ACE", "WARN"] call comspec_overwatch_connect_fnc_logFnError;
 };
 if (isNil "ace_interact_menu_fnc_createAction") exitWith {
-    ["ERROR", "ACE", "ace_interact_menu_fnc_createAction indéfini"] call comspec_overwatch_connect_fnc_log;
+    ["initACE", "ace_interact_menu_fnc_createAction indéfini", nil, "ACE", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
 };
 if (isNil "ace_interact_menu_fnc_addActionToObject") exitWith {
-    ["ERROR", "ACE", "ace_interact_menu_fnc_addActionToObject indéfini"] call comspec_overwatch_connect_fnc_log;
+    ["initACE", "ace_interact_menu_fnc_addActionToObject indéfini", nil, "ACE", "ERROR"] call comspec_overwatch_connect_fnc_logFnError;
 };
 
 // Joueur pas encore prêt : reporter (évite addActionToObject sur objNull).
@@ -263,5 +263,32 @@ private _bugAction = [
     }, _condEnabled, _noChildren
 ] call ace_interact_menu_fnc_createAction;
 [_bugAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
+// Action sur un autre joueur : saisir / marquer ATAK capturé (clé incorrecte)
+private _captureAtakAction = [
+    "COMSPEC_CaptureAtak",
+    "Saisir l’ATAK (capturer)",
+    "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa",
+    {
+        params ["_target"];
+        [_target] call comspec_overwatch_connect_fnc_captureEnemyAtak;
+    },
+    {
+        params ["_target"];
+        (missionNamespace getVariable ["comspec_overwatch_enabled", true])
+        && { !isNull _target }
+        && { isPlayer _target }
+        && { !(_target isEqualTo player) }
+        && { (player distance _target) < 4 }
+        && {
+            (!alive _target)
+            || { lifeState _target == "INCAPACITATED" }
+            || { captive _target }
+            || { _target getVariable ["ACE_isUnconscious", false] }
+        }
+    },
+    _noChildren
+] call ace_interact_menu_fnc_createAction;
+["CAManBase", 0, ["ACE_MainActions"], _captureAtakAction, true] call ace_interact_menu_fnc_addActionToClass;
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];

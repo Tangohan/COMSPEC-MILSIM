@@ -78,9 +78,10 @@ if (_connectUrl isEqualTo "") exitWith {
     []
 };
 
-0 spawn {
+[_token] spawn {
+    params ["_pairingToken"];
     uiSleep 0.3;
-    [_token, true] call comspec_overwatch_connect_fnc_syncAtakRealism;
+    [_pairingToken, true] call comspec_overwatch_connect_fnc_syncAtakRealism;
 };
 
 [_token, _shortCode, _connectUrl, _qrImageUrl, _expiresAt]

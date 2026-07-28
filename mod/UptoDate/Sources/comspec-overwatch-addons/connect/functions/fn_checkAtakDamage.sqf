@@ -1,113 +1,138 @@
 /*
-    Vérifie l'état de l'ATAK selon les blessures du joueur.
-    Appelé périodiquement et lors de blessures.
-    
-    3 niveaux de dommages :
-    1. ATAK éteint (temporaire, redémarrage possible)
-    2. Écran détruit (connexion active mais pas d'affichage)
-    3. ATAK détruit (connexion coupée + écran détruit)
+    Vérifie l'état de l'ATAK selon les blessures, chocs et environnement.
+    3 niveaux : éteint temporaire | écran endommagé | appareil détruit
 */
 
 if (!hasInterface) exitWith {};
 if (!alive player) exitWith {};
 
-// Vérifier si le réalisme ATAK est activé
 private _realism = missionNamespace getVariable ["comspec_overwatch_atak_realism", 0];
-if (_realism == 0) exitWith {}; // Désactivé
+if (_realism == 0) exitWith {};
 
-// Récupérer l'état actuel de l'ATAK
 private _atakState = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 if (_atakState isEqualTo createHashMap) then {
-    _atakState set ["powered_on", true];
-    _atakState set ["screen_destroyed", false];
-    _atakState set ["device_destroyed", false];
-    _atakState set ["last_check", time];
+    _atakState = createHashMapFromArray [
+        ["powered_on", true],
+        ["screen_destroyed", false],
+        ["device_destroyed", false],
+        ["last_check", time]
+    ];
     missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];
 };
 
-// Si déjà détruit, rien à faire
-if (_atakState get "device_destroyed") exitWith {};
+if (_atakState getOrDefault ["device_destroyed", false]) exitWith {};
 
-// Vérifier les blessures ACE Medical
-if (!isClass (configFile >> "CfgPatches" >> "ace_medical")) exitWith {};
-
-private _unit = player;
-private _hitpoints = getAllHitPointsDamage _unit;
-if (count _hitpoints < 2) exitWith {};
-
-private _bodyParts = _hitpoints select 0;
-private _damages = _hitpoints select 2;
-
-// Chercher les dommages au torse
-private _chestDamage = 0;
-{
-    if (_x in ["HitChest", "HitBody", "HitTorso"]) then {
-        private _index = _bodyParts find _x;
-        if (_index >= 0) then {
-            _chestDamage = _chestDamage max (_damages select _index);
+// Choc / explosion récente (définie par EH Hit / Explosion)
+private _impact = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
+if (_impact > 0.25) then {
+    missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false];
+    if (_realism >= 2 && {random 100 < (_impact * 50)}) then {
+        _atakState set ["screen_destroyed", true];
+        _atakState set ["powered_on", false];
+        ["Écran ATAK endommagé par choc", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+        playSound "FD_CP_Not_Clear_F";
+    } else {
+        if (_realism >= 1 && {random 100 < (_impact * 40)}) then {
+            _atakState set ["powered_on", false];
+            ["ATAK éteint par choc", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+            [{
+                private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
+                if (_state getOrDefault ["device_destroyed", false]) exitWith {};
+                _state set ["powered_on", true];
+                missionNamespace setVariable ["COMSPEC_AtakState", _state, false];
+            }, [], 20] call CBA_fnc_waitAndExecute;
         };
     };
-} forEach _bodyParts;
+};
 
-// Ancien état
-private _wasPowered = _atakState get "powered_on";
-private _wasScreenDestroyed = _atakState get "screen_destroyed";
+private _unit = player;
+private _chestDamage = 0;
+private _armDamage = 0;
 
-// Logique selon le niveau de réalisme
+if (isClass (configFile >> "CfgPatches" >> "ace_medical")) then {
+    private _hitpoints = getAllHitPointsDamage _unit;
+    if (count _hitpoints >= 2) then {
+        private _bodyParts = _hitpoints select 0;
+        private _damages = _hitpoints select 2;
+        {
+            private _index = _bodyParts find _x;
+            if (_index >= 0) then {
+                private _d = _damages select _index;
+                if (_x in ["HitChest", "HitBody", "HitTorso"]) then {
+                    _chestDamage = _chestDamage max _d;
+                };
+                if (_x in ["HitLeftArm", "HitRightArm", "HitHands"]) then {
+                    _armDamage = _armDamage max _d;
+                };
+            };
+        } forEach _bodyParts;
+    };
+};
+
+// KAM : pneumothorax / thorax → aggravation dommages torse
+private _hasKam = isClass (configFile >> "CfgPatches" >> "kat_advancedMedical")
+    || {isClass (configFile >> "CfgPatches" >> "kat_medical")};
+if (_hasKam) then {
+    if (_unit getVariable ["kat_pneumothorax", false]) then { _chestDamage = _chestDamage max 0.75; };
+    if (_unit getVariable ["kat_hemonpneumothorax", false]) then { _chestDamage = _chestDamage max 0.85; };
+    private _spo2 = _unit getVariable ["kat_bloodGas_spo2", 100];
+    if (_spo2 isEqualType 0 && {_spo2 < 85}) then {
+        _atakState set ["sensor_hr_unreliable", true];
+    };
+};
+
+// Bras très blessé → impossibilité de tenir l'appareil (niveau 1)
+if (_armDamage > 0.65 && {_realism >= 1} && {random 100 < 25}) then {
+    if (_atakState getOrDefault ["powered_on", true]) then {
+        _atakState set ["powered_on", false];
+        ["Impossible de tenir l'ATAK — bras blessé", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+        [{
+            private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
+            if (_state getOrDefault ["device_destroyed", false]) exitWith {};
+            _state set ["powered_on", true];
+            missionNamespace setVariable ["COMSPEC_AtakState", _state, false];
+        }, [], 45] call CBA_fnc_waitAndExecute;
+    };
+};
+
+private _wasPowered = _atakState getOrDefault ["powered_on", true];
+private _wasScreenDestroyed = _atakState getOrDefault ["screen_destroyed", false];
+
 switch (_realism) do {
     case 1: {
-        // Niveau 1 : ATAK peut s'éteindre (réparable)
         if (_chestDamage > 0.5 && {random 100 < 30}) then {
-            // 30% de chance si dommages modérés
             _atakState set ["powered_on", false];
-            
             if (_wasPowered) then {
                 ["ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
                 playSound "addItemFailed";
-                
-                // Peut être rallumé après 30 secondes
                 [{
                     private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
+                    if (_state getOrDefault ["device_destroyed", false]) exitWith {};
                     _state set ["powered_on", true];
+                    missionNamespace setVariable ["COMSPEC_AtakState", _state, false];
                     ["ATAK rétabli", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
                 }, [], 30] call CBA_fnc_waitAndExecute;
             };
         };
     };
-    
     case 2: {
-        // Niveau 2 : Écran peut être détruit (connexion OK)
         if (_chestDamage > 0.7 && {!_wasScreenDestroyed} && {random 100 < 40}) then {
-            // 40% de chance si dommages sévères
             _atakState set ["screen_destroyed", true];
             _atakState set ["powered_on", false];
-            
             ["Écran ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
-            
-            // Log pour debug
-            diag_log "[COMSPEC] Écran ATAK détruit par blessure au torse";
         };
     };
-    
     case 3: {
-        // Niveau 3 : ATAK peut être complètement détruit
         if (_chestDamage > 0.8 && {random 100 < 50}) then {
-            // 50% de chance si dommages critiques
             _atakState set ["device_destroyed", true];
             _atakState set ["screen_destroyed", true];
             _atakState set ["powered_on", false];
-            
             ["ATAK hors service — liaison coupée", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
-            
-            // Forcer la déconnexion
             [] call comspec_overwatch_connect_fnc_disconnect;
-            
-            diag_log "[COMSPEC] ATAK complètement détruit par blessure au torse";
         };
     };
 };
 
-// Sauvegarder l'état
 missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];

@@ -4,7 +4,7 @@
       close
       refresh
       toggle:enabled | toggle:aceMenus | toggle:quiet | toggle:milsim
-      tool:forcesync | tool:replaynda | tool:reinitace
+      tool:forcesync | tool:syncmarkers | tool:replaynda | tool:reinitace
 */
 params ["_ctrl", "_isConfirmDialog", "_message"];
 
@@ -61,6 +61,14 @@ switch (true) do {
     };
     case (_cmd isEqualTo "tool:forcesync"): {
         [] call comspec_overwatch_connect_fnc_forceSyncData;
+        call _fnc_refresh;
+    };
+    case (_cmd isEqualTo "tool:syncmarkers"): {
+        if (!isNil "comspec_overwatch_connect_fnc_forceSyncMapMarkers") then {
+            [true] call comspec_overwatch_connect_fnc_forceSyncMapMarkers;
+        } else {
+            ["COMSPEC_Warning", ["Module marqueurs indisponible — redémarrez avec le mod à jour."]] call comspec_overwatch_connect_fnc_showNotification;
+        };
         call _fnc_refresh;
     };
     case (_cmd isEqualTo "tool:replaynda"): {

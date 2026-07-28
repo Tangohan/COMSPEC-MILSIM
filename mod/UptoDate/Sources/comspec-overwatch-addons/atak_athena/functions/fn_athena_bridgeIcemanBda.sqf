@@ -12,9 +12,13 @@ private _from = if (isNull _sender) then { "—" } else { name _sender };
 private _grid = if ((count _pos) >= 2) then { mapGridPosition _pos } else { "" };
 private _timeStr = if (_time isEqualTo "") then { [daytime, "HH:MM"] call BIS_fnc_timeToString } else { _time };
 private _summary = _bodyHtml;
-_summary = [_summary, "<br/>", " | "] call BIS_fnc_replaceString;
-_summary = [_summary, "<br>", " | "] call BIS_fnc_replaceString;
+_summary = [_summary, "<br/>", " · "] call BIS_fnc_replaceString;
+_summary = [_summary, "<br>", " · "] call BIS_fnc_replaceString;
 _summary = [_summary, "<t color='#ffd36a'>BDA REPORT</t>", "BDA"] call BIS_fnc_replaceString;
+// Nettoyer balises HTML restantes + pipe (sinon ALERTE TACTIQUE|… est tronqué).
+_summary = (_summary splitString "<>") joinString "";
+_summary = (_summary splitString "|") joinString " · ";
+_summary = trim _summary;
 
 private _isLocal = !isNull _sender && { _sender isEqualTo player };
 

@@ -208,6 +208,7 @@ if (_prefix == "OK") then {
                 ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
             };
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
+            ["COMSPEC_AthenaLinkChanged", ["linked"]] call CBA_fnc_localEvent;
             0 spawn {
                 uiSleep 0.5;
                 [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
@@ -233,6 +234,7 @@ if (_prefix == "OK") then {
                 ["start"] call comspec_overwatch_connect_fnc_playAtakNotification;
             };
             [] call comspec_overwatch_connect_fnc_updateLinkDiary;
+            ["COMSPEC_AthenaLinkChanged", ["linked"]] call CBA_fnc_localEvent;
             0 spawn {
                 uiSleep 0.5;
                 [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;

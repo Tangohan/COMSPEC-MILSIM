@@ -37,8 +37,17 @@ missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", _requestId];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingUrl", _url];
 missionNamespace setVariable ["COMSPEC_GoogleBriefingPendingIndex", floor _index];
 
-if (isNull (findDisplay 9970)) then {
-    createDialog "COMSPEC_Briefing_Dialog";
+if (isNull (uiNamespace getVariable ["COMSPEC_ATAK_Briefing_group", controlNull])
+    && {isNull (findDisplay 9970)}
+) then {
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_openBriefing"
+        && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
+    ) then {
+        [] call comspec_overwatch_atak_athena_fnc_athena_openBriefing;
+    } else {
+        // Repli hors ATAK uniquement
+        createDialog "COMSPEC_Briefing_Dialog";
+    };
 };
 
 ["COMSPEC_Info", ["Téléchargement de la présentation Google…"]] call comspec_overwatch_connect_fnc_showNotification;

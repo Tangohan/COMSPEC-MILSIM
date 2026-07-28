@@ -71,7 +71,12 @@ switch (_type) do {
             name _unit
         };
         if (_author isEqualTo "") then { _author = name _unit; };
-        "COMSPECExtension" callExtension ["SendPing", [_author, str (_data select 0), str (_data select 1), _extra]];
+        ["SendPing", "attempt", format ["PING %1", _author], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _raw = "COMSPECExtension" callExtension ["SendPing", [_author, str (_data select 0), str (_data select 1), _extra]];
+        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+            ["SendPing", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        };
     };
     case "CHAT": {
         // Auteur = indicatif tactique (évite doublon NewPI vs N-10 sur alertes médicales).
@@ -81,10 +86,30 @@ switch (_type) do {
             name _unit
         };
         if (_author isEqualTo "") then { _author = name _unit; };
-        "COMSPECExtension" callExtension ["SendChat", [_author, _data]];
+        ["SendChat", "attempt", format ["CHAT %1", _author], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data]];
+        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+            ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        } else {
+            // Empreinte anti-écho pour fn_pollChatMessages (évite de rejouer son propre envoi).
+            private _dataStr = if (_data isEqualType "") then { _data } else { str _data };
+            private _fpLen = (count _dataStr) min 80;
+            private _fp = toUpper (_author + "|" + (_dataStr select [0, _fpLen]));
+            private _fps = missionNamespace getVariable ["COMSPEC_ChatSentFingerprints", []];
+            if (!(_fps isEqualType [])) then { _fps = []; };
+            if (!(_fp in _fps)) then { _fps pushBack _fp; };
+            while { (count _fps) > 40 } do { _fps deleteAt 0; };
+            missionNamespace setVariable ["COMSPEC_ChatSentFingerprints", _fps, false];
+        };
     };
     case "PHOTO": {
-        "COMSPECExtension" callExtension ["UploadImage", [_data, _extra]];
+        ["UploadImage", "attempt", "PHOTO", nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _raw = "COMSPECExtension" callExtension ["UploadImage", [_data, _extra]];
+        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "OK") != 0}) then {
+            ["UploadImage", "fail", _text, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        };
     };
     default {
         private _author = if (_unit isEqualTo player) then {
@@ -94,7 +119,12 @@ switch (_type) do {
         };
         if (_author isEqualTo "") then { _author = name _unit; };
         private _payload = format ["INTEL|%1|%2|%3|%4", _type, _source, _score, _data];
-        "COMSPECExtension" callExtension ["SendChat", [_author, _payload]];
+        ["SendChat", "attempt", format ["INTEL %1", _type], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _payload]];
+        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+            ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        };
     };
 };
 

@@ -26,6 +26,7 @@ if (_armaName isEqualTo "") exitWith {
     } forEach _queue;
     missionNamespace setVariable ["COMSPEC_PendingMarkers", [], false];
     if (_n > 0) then {
+        ["SendMarker", "attempt", format ["file d’attente ×%1", _n], nil, false, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         ["INFO", "Markers", format ["File d’attente marqueurs vidée (%1)", _n]] call comspec_overwatch_connect_fnc_log;
     };
     _n

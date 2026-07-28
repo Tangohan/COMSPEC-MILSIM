@@ -181,16 +181,82 @@ if (!(_alerts isEqualType [])) then { _alerts = []; };
     private _fromTxt = if (_from isEqualTo "") then { _cs } else { _from };
     private _title = format ["%1 · %2", _label, _fromTxt];
     if (_grid isNotEqualTo "") then { _title = _title + format [" · %1", _grid]; };
+
+    // Corps lisible : FRAGO SMEAC en lignes, sans répéter type/indicatif/grille
+    private _bodyHtml = "";
+    private _sum = _summary;
+    // Retirer ORDER_ID=… éventuel
+    if ((_sum find "ORDER_ID=") == 0) then {
+        private _bar = _sum find "|";
+        if (_bar > 0) then {
+            _sum = _sum select [_bar + 1, count _sum];
+        } else {
+            private _sp = _sum find "—";
+            if (_sp < 0) then { _sp = _sum find " - "; };
+            if (_sp > 0) then { _sum = trim (_sum select [_sp + 1, count _sum]); } else { _sum = ""; };
+        };
+    };
+    if ((toUpper _kind) isEqualTo "FRAGO" || {(toLower _label) find "fragmentaire" >= 0}) then {
+        private _lines = [];
+        {
+            _x params ["_key", "_fr"];
+            private _needle = _key + ": ";
+            private _p = _sum find _needle;
+            if (_p < 0) then { _needle = _fr + ": "; _p = _sum find _needle; };
+            if (_p >= 0) then {
+                private _rest = _sum select [_p + count _needle, count _sum];
+                private _cut = 1e9;
+                {
+                    private _n2 = _x + ": ";
+                    private _q = _rest find _n2;
+                    if (_q >= 0 && {_q < _cut}) then { _cut = _q; };
+                } forEach ["Situation", "Mission", "Exécution", "Soutien", "Commandement", " — "];
+                // Couper sur " — Situation" etc.
+                private _dashKeys = [" — Situation:", " — Mission:", " — Exécution:", " — Soutien:", " — Commandement:"];
+                {
+                    private _q = _rest find _x;
+                    if (_q >= 0 && {_q < _cut}) then { _cut = _q; };
+                } forEach _dashKeys;
+                private _val = if (_cut < 1e9) then { trim (_rest select [0, _cut]) } else { trim _rest };
+                // Retirer séparateur final
+                if ((_val find " — ") == ((count _val) - 3) && {(count _val) >= 3}) then {
+                    _val = trim (_val select [0, (count _val) - 3]);
+                };
+                if (_val isNotEqualTo "") then {
+                    _lines pushBack format ["<t color='#8aa0b4'>%1</t><br/><t color='#e8f4f0'>%2</t>", _fr, _val];
+                };
+            };
+        } forEach [
+            ["Situation", "Situation"],
+            ["Mission", "Mission"],
+            ["Exécution", "Exécution"],
+            ["Soutien", "Soutien"],
+            ["Commandement", "Commandement"]
+        ];
+        if ((count _lines) > 0) then {
+            _bodyHtml = "<br/><br/>" + (_lines joinString "<br/><br/>");
+        } else {
+            if (_sum isNotEqualTo "") then {
+                _bodyHtml = format ["<br/><br/><t color='#e8f4f0'>%1</t>", _sum];
+            };
+        };
+    } else {
+        if (_sum isNotEqualTo "") then {
+            _bodyHtml = format ["<br/><br/><t color='#e8f4f0'>%1</t>", _sum];
+        };
+    };
+
     private _detail = format [
-        "<t color='#ffd27a'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/>%5",
+        "<t color='#ffd27a' size='1.05'>%1</t><br/><t color='#8aa0b4'>De</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4%5",
         _label,
         if (_from isEqualTo "") then { "—" } else { _from },
         if (_grid isEqualTo "") then { "—" } else { _grid },
         if (_time isEqualTo "") then { "—" } else { _time },
-        if (_summary isEqualTo "") then { "" } else { format ["<br/>%1", _summary] }
+        _bodyHtml
     ];
     private _sortKey = if (_alertId isNotEqualTo "") then { _alertId } else { _time };
-    _entries pushBack [_entryKind, _title, _detail, _sortKey, []];
+    private _pushKind = if ((toUpper _kind) isEqualTo "FRAGO") then { "order" } else { _entryKind };
+    _entries pushBack [_pushKind, _title, _detail, _sortKey, []];
 } forEach _alerts;
 
 // --- BDA stockés par ATAK Enhanced (récupération locale) ---
@@ -227,14 +293,24 @@ if (!(_groupMsgs isEqualType [])) then { _groupMsgs = []; };
     private _gId = _x select 2;
     private _gGrid = _x select 3;
     private _gText = _x select 4;
-    private _title = format ["Groupe · %1 · %2", _gSender, _gGrid];
+    private _myCs = [] call comspec_overwatch_connect_fnc_getCallsign;
+    private _isOut = (_myCs isNotEqualTo "") && {(toLower _gSender) isEqualTo (toLower _myCs)};
+    private _dirLabel = if (_isOut) then { "Transmis" } else { "Reçu" };
+    private _dirColor = if (_isOut) then { "#7dd3fc" } else { "#86efac" };
+    private _title = if (_isOut) then {
+        format ["Groupe · Transmis · %1", _gSender]
+    } else {
+        format ["Groupe · Reçu · %1", _gSender]
+    };
     private _detail = format [
-        "<t color='#c8e6c9'>Message de groupe</t><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Groupe</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4<br/><br/>%5",
+        "<t color='%6'>%7</t>  <t color='#c8e6c9'>Message de groupe</t><br/><br/><t color='#f8fafc' size='1.05'>%5</t><br/><br/><t color='#8aa0b4'>De</t>  %1<br/><t color='#8aa0b4'>Groupe</t>  %2<br/><t color='#8aa0b4'>Grille</t>  %3<br/><t color='#8aa0b4'>Heure</t>  %4",
         _gSender,
         if (_gId isEqualTo "") then { "—" } else { _gId },
         if (_gGrid isEqualTo "") then { "—" } else { _gGrid },
         if (_gTime isEqualTo "") then { "—" } else { _gTime },
-        _gText
+        _gText,
+        _dirColor,
+        _dirLabel
     ];
     _entries pushBack ["messages", _title, _detail, _gTime, []];
 } forEach _groupMsgs;
@@ -253,12 +329,22 @@ if (!(_localPhotos isEqualType [])) then { _localPhotos = []; };
     private _grid = if ((count _x) > 2) then { _x select 2 } else { mapGridPosition player };
     private _author = if ((count _x) > 3) then { _x select 3 } else { name player };
     if (_filePath isEqualTo "") then { continue };
+    private _photoKey = toLower _filePath;
+    private _alreadyUp = missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []];
+    if (!(_alreadyUp isEqualType [])) then { _alreadyUp = []; };
     private _short = if (_fileName isEqualTo "") then { "Capture" } else { _fileName };
     private _title = format ["Photo · %1 · %2", _short, _grid];
-    private _detail = format [
-        "<t size='0.85' color='#c8e8ff'>Photo à remonter</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Sélectionnez cette ligne, puis appuyez sur « Envoyer la photo sélectionnée ».</t>",
-        _author, _grid, _short
-    ];
+    private _detail = if (_photoKey in _alreadyUp) then {
+        format [
+            "<t size='0.85' color='#7dffb0'>Photo remontée automatiquement</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>Visible sur ATAK web (onglet Photos). Utilisez « Renvoyer » seulement en cas de besoin.</t>",
+            _author, _grid, _short
+        ]
+    } else {
+        format [
+            "<t size='0.85' color='#c8e8ff'>Remontée en cours</t><br/><t color='#8aa0b4'>Auteur</t>  %1<br/><t color='#8aa0b4'>Grille</t>  %2<br/><t color='#8aa0b4'>Nom</t>  %3<br/><br/><t color='#b8c8d4'>La photo part seule vers ATAK web. Aucune action n’est nécessaire.</t>",
+            _author, _grid, _short
+        ]
+    };
     _entries pushBack ["photo", _title, _detail, _short, [_filePath, _short]];
 } forEach _localPhotos;
 
@@ -404,7 +490,48 @@ if (_tab isEqualTo "urgences" || {_tab isEqualTo "notif"} || {_tab isEqualTo "al
     _entries = _entries select { (_x select 0) in ["alert", "order", "medical", "messages"] };
 } else {
     if (_tab isEqualTo "liaison") then {
+        private _linkState = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+        private _cs = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then {
+            [] call comspec_overwatch_connect_fnc_getCallsign
+        } else { "" };
+        if (_cs isEqualTo "") then { _cs = name player; };
+        private _termUid = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];
+        private _certSt = missionNamespace getVariable ["COMSPEC_CertStatus", ""];
+        private _certExp = missionNamespace getVariable ["COMSPEC_CertExpires", ""];
+        private _certRef = missionNamespace getVariable ["COMSPEC_CertRef", ""];
+        private _certTxt = [_certSt, _certExp] call comspec_overwatch_connect_fnc_certStatusLabel;
+        private _mid = missionNamespace getVariable ["COMSPEC_MilitaryId", ""];
+        if (_mid isEqualTo "") then { _mid = profileNamespace getVariable ["COMSPEC_MilitaryId", ""]; };
+        private _atakId = missionNamespace getVariable ["COMSPEC_AtakId", ""];
+        private _termOk = (_termUid isEqualType "") && {_termUid isNotEqualTo ""} && {(toLower _termUid) find "<null" < 0};
+        private _certOk = (_certRef isEqualType "") && {_certRef isNotEqualTo ""} && {(toLower _certRef) find "<null" < 0};
+
         _entries = [
+            [
+                "liaison",
+                "Identité réseau",
+                format [
+                    "<t color='#5a9e88'>Identité</t><br/><t color='#b8c8d4'>Indicatif</t>  %1<br/><t color='#b8c8d4'>ID militaire</t>  %2<br/><t color='#b8c8d4'>ID ATAK</t>  %3<br/><t color='#b8c8d4'>Liaison</t>  %4",
+                    _cs,
+                    if (_mid isEqualTo "") then { "—" } else { _mid },
+                    if (_atakId isEqualTo "") then { "—" } else { _atakId },
+                    if (_linkState isEqualTo "linked") then { "En liaison" } else { "Hors liaison" }
+                ],
+                "identity",
+                []
+            ],
+            [
+                "liaison",
+                "Terminal & certificat",
+                format [
+                    "<t color='#5a9e88'>Terminal</t><br/><t color='#b8c8d4'>Identifiant</t>  %1<br/><t color='#b8c8d4'>Certificat</t>  %2<br/><t color='#b8c8d4'>Référence</t>  %3",
+                    if (_termOk) then { _termUid } else { "Non synchronisé — rouvrez État ATAK" },
+                    _certTxt,
+                    if (_certOk) then { _certRef } else { "—" }
+                ],
+                "terminal",
+                []
+            ],
             [
                 "liaison",
                 "Adresse mobile + code",
@@ -456,7 +583,7 @@ if (!isNull _listCtrl) then {
         if (!isNull _detailCtrl) then {
             private _empty = switch (_tab) do {
                 case "bda": { "Aucun bilan des dégâts pour le moment." };
-                case "photo": { "Aucune photo à remonter pour le moment." };
+                case "photo": { "Aucune photo récente pour le moment." };
                 case "order": { "Aucun ordre reçu pour le moment." };
                 case "urgences";
                 case "alert";
@@ -465,7 +592,7 @@ if (!isNull _listCtrl) then {
                 default { "Aucune alerte, ordre, bilan ni photo pour le moment." };
             };
             private _hint = switch (_tab) do {
-                case "photo": { "Ouvrez l’app Photos d’ATAK, prenez une vue (Quick Picture), puis revenez sur l’onglet Photos ici pour la sélectionner et l’envoyer." };
+                case "photo": { "Ouvrez l’app Photos d’ATAK et prenez une vue : elle remonte seule vers ATAK web." };
                 case "notif": { "Les nouveaux ordres et alertes apparaissent dans la zone ci-dessus." };
                 default { "Sélectionnez une entrée du journal ci-dessous." };
             };

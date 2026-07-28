@@ -1,0 +1,190 @@
+/*
+    Soumet la fiche SSE (identité + armes) puis photo / biométrie optionnelles.
+*/
+if (!hasInterface) exitWith {};
+
+private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+if (isNull _disp) then { _disp = findDisplay 9991; };
+if (isNull _disp) exitWith {};
+
+private _last = trim (ctrlText (_disp displayCtrl 9501));
+private _first = trim (ctrlText (_disp displayCtrl 9502));
+private _alias = trim (ctrlText (_disp displayCtrl 9503));
+private _ageStr = trim (ctrlText (_disp displayCtrl 9504));
+private _nat = trim (ctrlText (_disp displayCtrl 9507));
+private _lang = trim (ctrlText (_disp displayCtrl 9508));
+private _marks = trim (ctrlText (_disp displayCtrl 9509));
+private _affil = trim (ctrlText (_disp displayCtrl 9510));
+private _stmt = trim (ctrlText (_disp displayCtrl 9512));
+
+if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) exitWith {
+    ["Indiquez au moins un nom, un prénom ou un alias.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#ff8a4a' align='center'>Nom, prénom ou alias requis.</t>";
+};
+
+private _statusCtrl = _disp displayCtrl 9505;
+private _statusIdx = lbCurSel _statusCtrl;
+private _status = if (_statusIdx < 0) then { "civil" } else { _statusCtrl lbData _statusIdx };
+if (_status isEqualTo "") then { _status = "civil"; };
+
+private _circCtrl = _disp displayCtrl 9506;
+private _circIdx = lbCurSel _circCtrl;
+private _circ = if (_circIdx < 0) then { "controle" } else { _circCtrl lbData _circIdx };
+if (_circ isEqualTo "") then { _circ = "controle"; };
+
+private _age = -1;
+if (_ageStr isNotEqualTo "") then {
+    _age = floor (parseNumber _ageStr);
+};
+
+private _pos = getPosASL player;
+private _grid = mapGridPosition player;
+private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
+if (_callsign isEqualTo "") then { _callsign = groupId (group player); };
+private _steam = getPlayerUID player;
+
+private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
+private _netId = if (!isNull _target) then { netId _target } else { "" };
+
+private _weapons = uiNamespace getVariable ["COMSPEC_SsePerson_WeaponsCache", []];
+private _equipment = uiNamespace getVariable ["COMSPEC_SsePerson_EquipmentCache", []];
+if (!(_weapons isEqualType [])) then { _weapons = []; };
+if (!(_equipment isEqualType [])) then { _equipment = []; };
+
+private _escape = {
+    params ["_s"];
+    private _o = "";
+    private _dq = toString [34];
+    private _bs = toString [92];
+    if (isNil "_s" || { _s isEqualTo "" }) exitWith { "" };
+    _s = str _s;
+    if (count _s > 1) then { _s = _s select [1, count _s - 2]; };
+    {
+        if (_x == 34) then { _o = _o + _bs + _dq; }
+        else { if (_x == 92) then { _o = _o + _bs + _bs; } else { _o = _o + toString [_x]; }; };
+    } forEach toArray _s;
+    _o
+};
+
+// Point décimal invariant (évite virgule locale FR → JSON invalide).
+private _fnc_num = { (_this select 0) toFixed (_this select 1) };
+
+private _wArr = [];
+{
+    _wArr pushBack format ["{""name"":""%1"",""type"":""weapon""}", [_x] call _escape];
+} forEach _weapons;
+private _eArr = [];
+{
+    _eArr pushBack format ["{""name"":""%1"",""type"":""item""}", [_x] call _escape];
+} forEach (_equipment select [0, (count _equipment) min 12]);
+
+private _bio = uiNamespace getVariable ["COMSPEC_SsePerson_BioPending", false];
+private _photoPending = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
+private _ageJson = if (_age >= 0) then { str _age } else { "null" };
+private _posX = [_pos select 0, 2] call _fnc_num;
+private _posY = [_pos select 1, 2] call _fnc_num;
+private _posZ = [_pos select 2, 2] call _fnc_num;
+
+(_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#8aa0b4' align='center'>Transmission en cours…</t>";
+
+private _json = format [
+    '{"mapId":1,"status":"%1","last_name":"%2","first_name":"%3","alias":"%4","age_estimated":%5,"nationality":"%6","language_spoken":"%7","distinguishing_marks":"%8","affiliation":"%9","circumstances":"%10","statements":"%11","confidence_level":"moyenne","weapons":[%12],"equipment":[%13],"biometrics_simulated":%14,"consent_recorded":true,"pos_x":%15,"pos_y":%16,"pos_z":%17,"grid_reference":"%18","submitter_callsign":"%19","submitter_steam_id":"%20","target_unit_netid":"%21"}',
+    _status,
+    [_last] call _escape,
+    [_first] call _escape,
+    [_alias] call _escape,
+    _ageJson,
+    [_nat] call _escape,
+    [_lang] call _escape,
+    [_marks] call _escape,
+    [_affil] call _escape,
+    _circ,
+    [_stmt] call _escape,
+    _wArr joinString ",",
+    _eArr joinString ",",
+    if (_bio) then { "true" } else { "false" },
+    _posX,
+    _posY,
+    _posZ,
+    [_grid] call _escape,
+    [_callsign] call _escape,
+    [_steam] call _escape,
+    [_netId] call _escape
+];
+
+private _parsed = [
+    "SubmitSsePerson",
+    [_json],
+    "SSE fiche personne",
+    true,
+    true,
+    "system"
+] call comspec_overwatch_connect_fnc_callExtLogged;
+_parsed params ["_ok", "", "_detail"];
+
+if (!_ok) exitWith {
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#ff8a4a' align='center'>Échec de transmission — vérifiez la liaison.</t>";
+    [([
+        _detail,
+        "Impossible d’enregistrer la personne — vérifiez la liaison Athena."
+    ] call comspec_overwatch_connect_fnc_atakExtFailMessage), "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+};
+
+// Détail OK = id personne (PostSsePersonSync) ou "Success"
+private _personId = "";
+if (_detail isEqualType "" && { _detail != "Success" } && { (parseNumber _detail) > 0 }) then {
+    _personId = str (floor (parseNumber _detail));
+};
+
+if (_bio && { _personId isNotEqualTo "" }) then {
+    private _bioJson = format [
+        '{"kind":"empreintes","submitter_callsign":"%1"}',
+        [_callsign] call _escape
+    ];
+    private _bioParsed = [
+        "SubmitSseBiometricsSim",
+        [_personId, _bioJson],
+        "SSE biométrie simulée",
+        true,
+        true,
+        "system"
+    ] call comspec_overwatch_connect_fnc_callExtLogged;
+    _bioParsed params ["_bioOk", "", "_bioDetail"];
+    if (!_bioOk) then {
+        ["ssePersonDialogSubmit", format ["Biométrie non transmise — %1", _bioDetail], _bioDetail, "Fn", "WARN"] call comspec_overwatch_connect_fnc_logFnError;
+    };
+};
+
+if (_photoPending && { _personId isNotEqualTo "" }) then {
+    ["UploadSsePhoto", "attempt", format ["personne %1", _personId], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    private _shot = [
+        "COMSPECExtension" callExtension ["UploadSsePhoto", [
+            _personId,
+            "",
+            _callsign,
+            "face",
+            _posX,
+            _posY,
+            _posZ,
+            "Photo du visage"
+        ]]
+    ] call comspec_overwatch_connect_fnc_extResult;
+    if (((toUpper _shot) find "OK") != 0) then {
+        ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        ["Fiche enregistrée. Aucune capture récente trouvée pour la photo du visage — refaites une capture d’écran face à la personne puis réessayez.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+    } else {
+        ["UploadSsePhoto", "ok", format ["personne %1", _personId], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+    };
+};
+
+["Personne enregistrée — fiche transmise au poste de commandement.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+
+if (!isNull _disp) then {
+    _disp closeDisplay 1;
+} else {
+    closeDialog 0;
+};
+
+if (!isNil "comspec_overwatch_atak_athena_fnc_athena_updatePanel") then {
+    [] call comspec_overwatch_atak_athena_fnc_athena_updatePanel;
+};

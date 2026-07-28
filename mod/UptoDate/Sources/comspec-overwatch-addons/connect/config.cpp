@@ -1,14 +1,19 @@
 class CfgPatches {
     class comspec_overwatch_connect {
         name = "COMSPEC Overwatch Connect";
-        units[] = {};
+        units[] = {
+            "COMSPEC_Module_NoCoverage",
+            "COMSPEC_Module_Interference",
+            "COMSPEC_Module_Degraded",
+            "COMSPEC_Module_Jammer"
+        };
         weapons[] = {};
         requiredVersion = 1.0;
-        requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings"};
+        requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.22;
-        versionStr = "1.2.2";
-        versionAr[] = {1, 2, 2};
+        version = 1.41;
+        versionStr = "1.4.5";
+        versionAr[] = {1, 4, 1};
     };
 };
 
@@ -26,6 +31,9 @@ class CfgFunctions {
             class tacticalAlertDialogShow {};
             class saluteDialogShow {};
             class saluteDialogSubmit {};
+            class ssePersonDialogShow {};
+            class ssePersonDialogOnLoad {};
+            class ssePersonDialogSubmit {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
             class casRequestShow {};
@@ -49,6 +57,9 @@ class CfgFunctions {
             class onInterruptLoad {};
             class log {};
             class logDump {};
+            class logTransmission {};
+            class logFnError {};
+            class callExtLogged {};
             class submitChat {};
             class submitChatPhoto {};
             class openHub {};
@@ -115,6 +126,7 @@ class CfgFunctions {
             class orderConcernsPlayer {};
             class pollOrders {};
             class pollTacticalAlerts {};
+            class pollChatMessages {};
             class orderInboxShow {};
             class orderInboxOnLoad {};
             class orderRespond {};
@@ -176,6 +188,8 @@ class CfgFunctions {
             class callsignDialogOnLoad {};
             class callsignDialogSubmit {};
             class playAtakNotification {};
+            class getAtakSoundVolume {};
+            class setAtakSoundSetting {};
             class shouldShowScreenNotification {};
             class addScreenToast {};
             class showNotification {};
@@ -236,6 +250,8 @@ class CfgFunctions {
             class canOpenOverwatchUi {};
             class openAtakEnhanced {};
             class syncMapMarker {};
+            class isSyncableMapMarker {};
+            class forceSyncMapMarkers {};
             class queueMapMarker {};
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
@@ -252,6 +268,7 @@ class CfgFunctions {
             class playRoleplaySound {};
             class injectRoleplayEffectsInBrowser {};
             class checkAtakDamage {};
+            class attachAtakDamageHandlers {};
             class isAtakFunctional {};
             class repairAtak {};
             class addAtakRepairAction {};
@@ -262,10 +279,27 @@ class CfgFunctions {
             class getPlayerRoleplayZone {};
             class applyZoneEffects {};
             class listRoleplayZones {};
+            class canTransmit {};
+            class applyRoleplayPpEffects {};
+            class triggerAtakCrash {};
+            class pollRoleplayConfig {};
+            class syncRoleplayZonesFromPortal {};
+            class initCrashRecovery {};
+            class restoreAtakSession {};
+            class clearDisconnectedAtakState {};
             class moduleNoCoverage {};
             class moduleInterference {};
             class moduleDegraded {};
             class moduleJammer {};
+            class moduleApplyRoleplayZone {};
+            class createRoleplayZoneFromZeus {};
+            class registerZenRoleplayModules {};
+            class applyZeusAtakEffect {};
+            class syncTerminalCompromise {};
+            class captureEnemyAtak {};
+            class syncPlayerAtakPublicVars {};
+            class zeusShowPlayerAtak {};
+            class registerZenAtakPlayerActions {};
         };
     };
 };
@@ -387,6 +421,7 @@ class CfgFactionClasses
 #include "display_nda.hpp"
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
+#include "display_sse_person.hpp"
 #include "display_medevac.hpp"
 #include "display_bug_report.hpp"
 #include "display_order_inbox.hpp"
@@ -399,6 +434,6 @@ class CfgFactionClasses
 // Bouton menu Échap : injecté en SQF (DisplayLoad), pas via héritage RscDisplayInterrupt
 // — l’héritage config casse le démarrage Arma (Undefined base / Member already defined).
 
-// Modules Zeus temporairement désactivés (conflits pack ACE/ZEN).
-// Réactiver: #include "modules\module_roleplay_zone.hpp" + units[] + A3_Modules_F
+// Modules Zeus/Eden roleplay (zones sans couverture, brouillage, etc.)
+#include "modules\module_roleplay_zone.hpp"
 #include "CfgEventHandlers.hpp"

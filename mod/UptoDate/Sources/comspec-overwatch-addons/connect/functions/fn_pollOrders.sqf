@@ -10,7 +10,8 @@ if (!hasInterface) exitWith { false };
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 
-
+private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
+if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 
@@ -174,7 +175,11 @@ private _newOnes = [];
 
     _byId set [_id, _order];
 
-    _newOnes pushBack _order;
+    // Ne rejouer notif / vibration que si encore à livrer (évite re-buzz à la reconnexion).
+    private _stUp = toUpper _status;
+    if (_stUp in ["PENDING", "DELIVERED", ""]) then {
+        _newOnes pushBack _order;
+    };
 
     _added = _added + 1;
 

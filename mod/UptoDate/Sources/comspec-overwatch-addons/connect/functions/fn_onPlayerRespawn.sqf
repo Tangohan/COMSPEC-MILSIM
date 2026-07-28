@@ -25,6 +25,9 @@ if (!isNull player) then {
 missionNamespace setVariable ["COMSPEC_lastSendTime", diag_tickTime, true];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
+// Hit / Explosion sont des EH objet : perdus avec l’ancienne unité
+[] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
+
 ["INFO", "Respawn", format ["Grâce %1s — médical / MessageBox / sync gelés", _graceSec]] call comspec_overwatch_connect_fnc_log;
 
 // Une seule ré-armement planifié (dernier respawn gagne)

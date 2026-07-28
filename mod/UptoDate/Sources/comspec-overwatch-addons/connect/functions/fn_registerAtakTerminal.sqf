@@ -9,13 +9,28 @@ if (!hasInterface) exitWith { [] };
 if ((missionNamespace getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "linked") exitWith { [] };
 
 private _terminalUid = [] call comspec_overwatch_connect_fnc_getTerminalUid;
-if (_terminalUid isEqualTo "") exitWith { [] };
+if (!(_terminalUid isEqualType "") || {_terminalUid isEqualTo ""}) exitWith {
+    missionNamespace setVariable ["COMSPEC_AtakRealismLastError", "Identifiant terminal manquant — réessayez.", false];
+    []
+};
+
+// Garde-fou : Arma peut stringifier nil en "<null>" dans callExtension
+private _uidLower = toLower _terminalUid;
+if (_uidLower in ["null", "<null>", "<nul>", "nil"] || {(_uidLower select [0, 6]) isEqualTo "<null"}) then {
+    profileNamespace setVariable ["comspec_overwatch_terminal_uid", ""];
+    _terminalUid = [] call comspec_overwatch_connect_fnc_getTerminalUid;
+};
+if (!(_terminalUid isEqualType "") || {_terminalUid isEqualTo ""}) exitWith { [] };
+
+if (!(_pairingToken isEqualType "")) then { _pairingToken = ""; };
 
 private _callsign = [] call comspec_overwatch_connect_fnc_getCallsign;
-if (_callsign isEqualTo "") then { _callsign = name player; };
+if (!(_callsign isEqualType "") || {_callsign isEqualTo ""}) then { _callsign = name player; };
+if (!(_callsign isEqualType "")) then { _callsign = "Operateur"; };
 
 private _label = format ["Terminal %1", _callsign];
 private _modVersion = [] call comspec_overwatch_connect_fnc_getModVersion;
+if (!(_modVersion isEqualType "")) then { _modVersion = "1.0"; };
 private _platform = format ["Arma 3 · COMSPEC %1", _modVersion];
 
 private _raw = ["COMSPECExtension" callExtension [
@@ -42,8 +57,14 @@ private _terminalId = _cols select 0;
 private _uid = _cols select 1;
 private _status = if (count _cols >= 3) then { _cols select 2 } else { "active" };
 
+// Ne jamais remplacer un bon UID local par un "<null>" renvoyé / stocké côté API
+if (!(_uid isEqualType "") || {_uid isEqualTo ""} || {(toLower _uid) in ["null", "<null>", "<nul>", "nil"]}) then {
+    _uid = _terminalUid;
+};
+
 missionNamespace setVariable ["COMSPEC_TerminalId", _terminalId, false];
 missionNamespace setVariable ["COMSPEC_TerminalUid", _uid, false];
 missionNamespace setVariable ["COMSPEC_TerminalStatus", _status, false];
+player setVariable ["COMSPEC_TerminalUid", _uid, true];
 
 [_terminalId, _uid, _status]

@@ -5,6 +5,48 @@ if (!hasInterface) exitWith {};
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
+// EH marqueurs dès le PostInit (avant handshake) — file d’attente si Athena pas prêt
+if (isNil "COMSPEC_MapMarkerEHsEarly") then {
+    COMSPEC_MapMarkerEHsEarly = true;
+    if (isNil "COMSPEC_MapMarkerEHs") then {
+        private _resyncSoon = {
+            params ["_marker"];
+            [_marker, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            [{
+                params ["_m"];
+                if (_m in allMapMarkers) then {
+                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+                };
+            }, [_marker], 0.15] call CBA_fnc_waitAndExecute;
+            [{
+                params ["_m"];
+                if (_m in allMapMarkers) then {
+                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+                };
+                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+                };
+            }, [_marker], 0.5] call CBA_fnc_waitAndExecute;
+        };
+        missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
+        COMSPEC_MapMarkerEHs = [
+            addMissionEventHandler ["MarkerCreated", {
+                params ["_marker"];
+                [_marker] call (missionNamespace getVariable ["COMSPEC_MarkerResyncSoon", {}]);
+            }],
+            addMissionEventHandler ["MarkerUpdated", {
+                params ["_marker"];
+                [_marker, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }],
+            addMissionEventHandler ["MarkerDeleted", {
+                params ["_marker"];
+                [_marker, true, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+            }]
+        ];
+        ["INFO", "Markers", "EH MarkerCreated/Updated/Deleted enregistrés (early)"] call comspec_overwatch_connect_fnc_log;
+    };
+};
+
 // Re-applique compat Mavic apres init settings CBA (au cas ou PreInit etait trop tot)
 ["CBA_settingsInitialized", {
     if (isNil "mavic_setting_enableConnectionDistance") then {
@@ -204,14 +246,28 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
     [{
         [] call comspec_overwatch_connect_fnc_applyZoneEffects;
     }, 2, []] call CBA_fnc_addPerFrameHandler; // Vérifier toutes les 2 secondes
+
+    // Zeus Enhanced : modules roleplay posables (carte / objet / joueur)
+    [{
+        [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
+        [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
+    }, [], 2] call CBA_fnc_waitAndExecute;
+    [{
+        [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
+        [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
+    }, [], 8] call CBA_fnc_waitAndExecute;
+
+    // Identifiants ATAK visibles côté Zeus
+    [{
+        [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
+    }, [], 5] call CBA_fnc_waitAndExecute;
+    [{
+        if (!hasInterface || {isNull player}) exitWith {};
+        [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
+    }, 60, []] call CBA_fnc_addPerFrameHandler;
     
-    // Réalisme ATAK : Hit une seule fois (évite double EH si re-settings)
-    if (isNil "COMSPEC_AtakHitEH") then {
-        COMSPEC_AtakHitEH = player addEventHandler ["Hit", {
-            if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
-            [] call comspec_overwatch_connect_fnc_checkAtakDamage;
-        }];
-    };
+    // Réalisme ATAK : Hit + Explosion sur l’unité (rebranchés au Respawn)
+    [] call comspec_overwatch_connect_fnc_attachAtakDamageHandlers;
 
     if (isNil "COMSPEC_AtakDamagePFH") then {
         COMSPEC_AtakDamagePFH = [{
