@@ -103,6 +103,19 @@ $communityLocked = !empty($c['community_locked']);
 $contactFormEnabled = !empty($c['contact_form_enabled']);
 $requireAiAck = !array_key_exists('require_ai_ack', $c) || !empty($c['require_ai_ack']);
 $recruitmentBadgeOpen = !empty($c['public_recruitment_badge_open']);
+$unitAffiliation = is_array($c['unit_affiliation'] ?? null) ? $c['unit_affiliation'] : [];
+$unitAffiliationIsReal = !empty($unitAffiliation['is_real']);
+$unitAffiliationMode = $unitAffiliation !== [] ? ($unitAffiliationIsReal ? 'real' : 'fictional') : '';
+$unitAffiliationCountry = strtoupper(trim((string) ($unitAffiliation['country'] ?? '')));
+$unitAffiliationFictionalLabel = trim((string) ($unitAffiliation['fictional_label'] ?? ''));
+$unitAffiliationUnitIds = [];
+foreach (($unitAffiliation['unit_ids'] ?? []) as $unitId) {
+    if (is_string($unitId) && trim($unitId) !== '') {
+        $unitAffiliationUnitIds[] = trim($unitId);
+    }
+}
+$unitCountryLabels = \App\Services\Community\RealUnitAffiliationCatalog::countryLabels();
+$unitCatalogPayload = \App\Services\Community\RealUnitAffiliationCatalog::frontendPayload();
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -155,6 +168,13 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
             <a href="#inscription">Renseigner le lien Discord</a>
         </div>
     <?php endif; ?>
+    <div class="bo-settings-flash bo-settings-flash--warn" role="status">
+        De nouveaux éléments de configuration sont disponibles. Vous pouvez maintenant préremplir
+        la représentation de votre communauté, le pays de rattachement, la ou les unités choisies
+        pour un même pays, ainsi que le cadre fictif si vous ne représentez pas une unité réelle.
+        <a href="#representation-unite">Compléter ces informations</a>
+        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Ouvrir la page publique</a>
+    </div>
 
     <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
         <?= \App\Core\Csrf::field() ?>
@@ -248,6 +268,50 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                         </div>
                         <div class="bo-setting-row__control">
                             <input type="text" id="game_label" name="game_label" class="bo-setting-row__field" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3">
+                        </div>
+                    </div>
+                    <div class="bo-setting-row bo-setting-row--stack" id="representation-unite">
+                        <div class="bo-setting-row__copy">
+                            <div class="bo-setting-row__label">Représentation de la communauté</div>
+                            <div class="bo-setting-row__help">Indiquez si votre communauté représente une unité réelle ou un cadre fictif.</div>
+                        </div>
+                        <div class="bo-setting-row__control" style="align-items:flex-start;">
+                            <div style="display:grid;gap:10px;width:min(100%, 760px);">
+                                <div style="display:flex;flex-wrap:wrap;gap:16px;">
+                                    <label style="display:inline-flex;align-items:center;gap:8px;">
+                                        <input type="radio" name="unit_affiliation_mode" value="real" <?= $unitAffiliationMode === 'real' ? 'checked' : '' ?>>
+                                        <span>Unité réelle</span>
+                                    </label>
+                                    <label style="display:inline-flex;align-items:center;gap:8px;">
+                                        <input type="radio" name="unit_affiliation_mode" value="fictional" <?= $unitAffiliationMode === 'fictional' ? 'checked' : '' ?>>
+                                        <span>Unité fictive</span>
+                                    </label>
+                                </div>
+
+                                <div id="bo-unit-affiliation-fictional" class="<?= $unitAffiliationMode === 'fictional' ? '' : 'hidden' ?>">
+                                    <input
+                                        type="text"
+                                        name="unit_affiliation_fictional_label"
+                                        id="unit_affiliation_fictional_label"
+                                        class="bo-setting-row__field--wide"
+                                        maxlength="200"
+                                        value="<?= $h($unitAffiliationFictionalLabel) ?>"
+                                        placeholder="Ex. Task Force Phoenix"
+                                    >
+                                </div>
+
+                                <div id="bo-unit-affiliation-real" class="<?= $unitAffiliationMode === 'real' ? '' : 'hidden' ?>" style="display:grid;gap:10px;">
+                                    <select name="unit_affiliation_country" id="unit_affiliation_country" class="bo-setting-row__field">
+                                        <option value="">Choisir un pays</option>
+                                        <?php foreach ($unitCountryLabels as $countryCode => $countryLabel): ?>
+                                            <option value="<?= $h($countryCode) ?>" <?= $unitAffiliationCountry === $countryCode ? 'selected' : '' ?>><?= $h($countryLabel) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <input type="search" id="unit_affiliation_search" class="bo-setting-row__field--wide" placeholder="Rechercher une unité, un régiment, un commando...">
+                                    <div id="unit_affiliation_units" style="max-height:220px;overflow:auto;border:1px solid var(--ath-line);border-radius:12px;background:#fff;padding:10px;"></div>
+                                    <p class="bo-settings-note" id="unit_affiliation_summary">Aucune unité sélectionnée.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -691,5 +755,96 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
             });
         }
     }
+
+    var unitCatalog = <?= json_encode($unitCatalogPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var selectedIds = <?= json_encode($unitAffiliationUnitIds, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var countrySelect = document.getElementById('unit_affiliation_country');
+    var fictionalWrap = document.getElementById('bo-unit-affiliation-fictional');
+    var realWrap = document.getElementById('bo-unit-affiliation-real');
+    var unitsWrap = document.getElementById('unit_affiliation_units');
+    var searchInput = document.getElementById('unit_affiliation_search');
+    var summary = document.getElementById('unit_affiliation_summary');
+
+    function currentAffiliationMode() {
+        var checked = document.querySelector('input[name="unit_affiliation_mode"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function syncAffiliationPanels() {
+        var mode = currentAffiliationMode();
+        if (fictionalWrap) fictionalWrap.classList.toggle('hidden', mode !== 'fictional');
+        if (realWrap) realWrap.classList.toggle('hidden', mode !== 'real');
+        renderUnitOptions();
+    }
+
+    function renderUnitOptions() {
+        if (!unitsWrap || !countrySelect) return;
+        unitsWrap.innerHTML = '';
+        var mode = currentAffiliationMode();
+        if (mode !== 'real') {
+            if (summary) summary.textContent = 'Aucune unité sélectionnée.';
+            return;
+        }
+        var country = countrySelect.value || '';
+        var rows = (unitCatalog.units && unitCatalog.units[country]) ? unitCatalog.units[country] : [];
+        var query = searchInput ? String(searchInput.value || '').toLowerCase().trim() : '';
+        var names = [];
+        rows.forEach(function (row) {
+            var name = String(row.name || '');
+            if (query && name.toLowerCase().indexOf(query) === -1) return;
+            var label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'flex-start';
+            label.style.gap = '8px';
+            label.style.padding = '8px 10px';
+            label.style.borderRadius = '10px';
+            label.style.cursor = 'pointer';
+            label.style.paddingLeft = (10 + ((parseInt(row.indent || 0, 10) || 0) * 18)) + 'px';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.name = 'unit_affiliation_unit_ids[]';
+            cb.value = row.id;
+            cb.checked = selectedIds.indexOf(row.id) !== -1;
+            cb.addEventListener('change', function () {
+                if (cb.checked) {
+                    if (selectedIds.indexOf(row.id) === -1) selectedIds.push(row.id);
+                } else {
+                    selectedIds = selectedIds.filter(function (id) { return id !== row.id; });
+                }
+                renderUnitOptions();
+            });
+            var text = document.createElement('span');
+            text.textContent = name;
+            label.appendChild(cb);
+            label.appendChild(text);
+            unitsWrap.appendChild(label);
+            if (cb.checked) names.push(name);
+        });
+        if (!unitsWrap.children.length) {
+            var empty = document.createElement('div');
+            empty.className = 'bo-settings-note';
+            empty.textContent = query ? 'Aucune unité ne correspond à votre recherche.' : 'Choisissez un pays pour afficher les unités disponibles.';
+            unitsWrap.appendChild(empty);
+        }
+        if (summary) {
+            summary.textContent = names.length > 0
+                ? names.length + ' unité(s) sélectionnée(s) : ' + names.join(', ')
+                : 'Aucune unité sélectionnée.';
+        }
+    }
+
+    document.querySelectorAll('input[name="unit_affiliation_mode"]').forEach(function (input) {
+        input.addEventListener('change', syncAffiliationPanels);
+    });
+    if (countrySelect) {
+        countrySelect.addEventListener('change', function () {
+            selectedIds = [];
+            renderUnitOptions();
+        });
+    }
+    if (searchInput) {
+        searchInput.addEventListener('input', renderUnitOptions);
+    }
+    syncAffiliationPanels();
 })();
 </script>

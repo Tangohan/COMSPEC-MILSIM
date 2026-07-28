@@ -62,6 +62,70 @@ final class TenantCommunityProfileService
         return trim((string) ($community['contact_discord_url'] ?? '')) === '';
     }
 
+    /**
+     * @param array<string, mixed>|null $existing
+     * @return array{is_real: bool, fictional_label: ?string, country: ?string, country_label: ?string, unit_ids: list<string>, unit_labels: list<string>}|null
+     */
+    public static function normalizeUnitAffiliationFromRequest(Request $request, ?array $existing = null): ?array
+    {
+        $raw = $request->input('unit_affiliation_mode', '');
+        $mode = is_string($raw) ? strtolower(trim($raw)) : '';
+        if (!in_array($mode, ['real', 'fictional'], true)) {
+            return $existing;
+        }
+
+        if ($mode === 'fictional') {
+            $label = trim((string) $request->input('unit_affiliation_fictional_label', ''));
+
+            return [
+                'is_real' => false,
+                'fictional_label' => $label !== '' ? self::clipStatic($label, 200) : null,
+                'country' => null,
+                'country_label' => null,
+                'unit_ids' => [],
+                'unit_labels' => [],
+            ];
+        }
+
+        $country = strtoupper(trim((string) $request->input('unit_affiliation_country', '')));
+        if (!in_array($country, RealUnitAffiliationCatalog::allowedCountryCodes(), true)) {
+            return [
+                'is_real' => true,
+                'fictional_label' => null,
+                'country' => null,
+                'country_label' => null,
+                'unit_ids' => [],
+                'unit_labels' => [],
+            ];
+        }
+
+        $rawIds = $request->input('unit_affiliation_unit_ids', []);
+        if (!is_array($rawIds)) {
+            $rawIds = [];
+        }
+        $ids = [];
+        foreach ($rawIds as $rawId) {
+            if (!is_string($rawId)) {
+                continue;
+            }
+            $id = trim($rawId);
+            if ($id !== '') {
+                $ids[$id] = true;
+            }
+        }
+        $resolved = RealUnitAffiliationCatalog::resolveSelectedUnits($country, array_keys($ids));
+        $labels = RealUnitAffiliationCatalog::countryLabels();
+
+        return [
+            'is_real' => true,
+            'fictional_label' => null,
+            'country' => $country,
+            'country_label' => $labels[$country] ?? $country,
+            'unit_ids' => array_column($resolved, 'id'),
+            'unit_labels' => array_column($resolved, 'name'),
+        ];
+    }
+
     /** Modèle de page publique : classique (carte) ou vitrine (pleine page). */
     public static function resolvePublicPageLayout(mixed $raw): string
     {
@@ -837,6 +901,15 @@ final class TenantCommunityProfileService
     }
 
     private function clip(string $s, int $max): string
+    {
+        if (mb_strlen($s) <= $max) {
+            return $s;
+        }
+
+        return mb_substr($s, 0, $max);
+    }
+
+    private static function clipStatic(string $s, int $max): string
     {
         if (mb_strlen($s) <= $max) {
             return $s;

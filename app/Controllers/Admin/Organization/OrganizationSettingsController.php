@@ -272,6 +272,20 @@ final class OrganizationSettingsController
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+        $unitAffiliation = TenantCommunityProfileService::normalizeUnitAffiliationFromRequest(
+            $request,
+            is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : null
+        );
+        if ($unitAffiliation !== null) {
+            $community['unit_affiliation'] = $unitAffiliation;
+            if (!empty($unitAffiliation['is_real'])) {
+                $registryTags = is_array($community['registry_tags'] ?? null) ? $community['registry_tags'] : [];
+                if (!in_array('soar', $registryTags, true)) {
+                    $registryTags[] = 'soar';
+                }
+                $community['registry_tags'] = array_values(array_unique($registryTags));
+            }
+        }
 
         $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
         if ($guestSlug !== '') {

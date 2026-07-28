@@ -691,9 +691,102 @@ class CommunityController
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'wizardPermissionGroups' => CommunityOnboardingValidationService::wizardPermissionFieldGroups(),
+            'subscriptionOfferCards' => $this->subscriptionOfferCards($stripeConfigured),
             'communityCreateDraft' => Session::get('community_create_draft') ?? [],
             'onboardingStep' => Session::getFlash('onboarding_step'),
         ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function subscriptionOfferCards(bool $stripeConfigured): array
+    {
+        $rows = [];
+        foreach ($this->subscriptionPlanRepository->allOrdered() as $row) {
+            $slug = strtolower(trim((string) ($row['slug'] ?? '')));
+            if ($slug === '') {
+                continue;
+            }
+            $rows[$slug] = $row;
+        }
+        $standardInterval = $this->preferredPlanInterval($rows['standard'] ?? null);
+        $proInterval = $this->preferredPlanInterval($rows['pro'] ?? null);
+        $proPlusInterval = $this->preferredPlanInterval($rows['pro_plus'] ?? null);
+
+        return [
+            [
+                'slug' => 'free',
+                'title' => 'Quartier libre',
+                'eyebrow' => 'Sans engagement',
+                'description' => 'Forum, documents et formations de base pour démarrer sans frais.',
+                'meta' => 'Gratuit',
+                'limits' => ['50 membres', '5 formations', '3 événements par mois', 'ATAK non inclus'],
+                'value' => 'free',
+                'paid' => false,
+                'available' => true,
+            ],
+            [
+                'slug' => 'standard',
+                'title' => 'Standard',
+                'eyebrow' => 'Équipe',
+                'description' => 'Pour une unité active avec événements réguliers et carte tactique.',
+                'meta' => 'Abonnement',
+                'limits' => ['200 membres', '25 formations', 'Événements inclus', 'ATAK inclus'],
+                'value' => 'standard|' . $standardInterval,
+                'paid' => true,
+                'available' => $stripeConfigured && $standardInterval !== '',
+            ],
+            [
+                'slug' => 'pro',
+                'title' => 'Pro',
+                'eyebrow' => 'Complet',
+                'description' => 'Ajoute le pilotage avancé et les statistiques pour les communautés structurées.',
+                'meta' => 'Abonnement',
+                'limits' => ['2 000 membres', '100 formations', 'ATAK inclus', 'Analytics inclus'],
+                'value' => 'pro|' . $proInterval,
+                'paid' => true,
+                'available' => $stripeConfigured && $proInterval !== '',
+            ],
+            [
+                'slug' => 'pro_plus',
+                'title' => 'Pro+',
+                'eyebrow' => 'Intégrations',
+                'description' => 'Périmètre maximal avec intégrations avancées et plafonds relevés.',
+                'meta' => 'Abonnement',
+                'limits' => ['10 000 membres', 'Formations illimitées', 'Integrations avancees', 'ATAK + analytics'],
+                'value' => 'pro_plus|' . $proPlusInterval,
+                'paid' => true,
+                'available' => $stripeConfigured && $proPlusInterval !== '',
+            ],
+            [
+                'slug' => 'heart_support',
+                'title' => 'Support du coeur a 2 EUR',
+                'eyebrow' => 'Soutien volontaire',
+                'description' => 'Même accès que Quartier libre, avec une contribution unique pour soutenir Athena.',
+                'meta' => '2 EUR · une seule fois',
+                'limits' => ['Creation immediate', 'Aucun engagement', 'Paiement securise', 'Soutien au projet'],
+                'value' => 'heart_support',
+                'paid' => $stripeConfigured,
+                'heart' => true,
+                'available' => true,
+            ],
+        ];
+    }
+
+    private function preferredPlanInterval(?array $row): string
+    {
+        if (!is_array($row)) {
+            return '';
+        }
+        if (trim((string) ($row['stripe_price_id_monthly'] ?? '')) !== '') {
+            return 'monthly';
+        }
+        if (trim((string) ($row['stripe_price_id_yearly'] ?? '')) !== '') {
+            return 'yearly';
+        }
+
+        return '';
     }
 
     /**

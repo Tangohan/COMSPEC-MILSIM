@@ -18,6 +18,7 @@ $gradesUsGrouped = $gradesUsGrouped ?? [];
 $badgeLabels = $badgeLabels ?? \App\Services\Community\TenantCommunityProfileService::badgeLabels();
 $wizardPermissionGroups = $wizardPermissionGroups ?? \App\Services\Community\CommunityOnboardingValidationService::wizardPermissionFieldGroups();
 $tenantTypes = \App\Services\Community\TenantTypeConfig::availableTypes();
+$subscriptionOfferCards = is_array($subscriptionOfferCards ?? null) ? $subscriptionOfferCards : [];
 $realUnitCatalogJson = json_encode(
     \App\Services\Community\RealUnitAffiliationCatalog::frontendPayload(),
     JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
@@ -619,25 +620,48 @@ $wizardSteps = [
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Formule</h2>
-                        <p class="cc-section__text">Quartier libre pour démarrer sans frais. Support du cœur pour soutenir le projet Athena d’un geste unique.</p>
-                        <div class="cc-choice-grid cc-choice-grid--2 mt-5">
-                            <label class="cc-choice cc-choice--dark min-h-[14rem]">
-                                <input type="radio" name="plan_choice" value="free" class="sr-only" checked data-paid="0">
-                                <span class="cc-choice__eyebrow">Sans engagement</span>
-                                <span class="cc-choice__title">Quartier libre</span>
-                                <span class="cc-choice__text">Création immédiate. Forum, documents et formations selon la configuration de la plateforme.</span>
-                                <span class="cc-choice__meta text-emerald-300">Gratuit</span>
+                        <p class="cc-section__text">Choisissez la formule adaptée à votre unité. Les restrictions de capacité et d’accès dépendent de l’offre retenue.</p>
+                        <div class="cc-choice-grid cc-choice-grid--3 mt-5">
+                            <?php foreach ($subscriptionOfferCards as $idx => $offer): ?>
+                            <?php
+                            $offerValue = (string) ($offer['value'] ?? '');
+                            $offerPaid = !empty($offer['paid']);
+                            $offerHeart = !empty($offer['heart']);
+                            $offerAvailable = !array_key_exists('available', $offer) || !empty($offer['available']);
+                            $offerLimits = is_array($offer['limits'] ?? null) ? $offer['limits'] : [];
+                            $offerClass = $offerHeart ? 'cc-choice--heart' : ($offerPaid ? '' : 'cc-choice--dark');
+                            ?>
+                            <label class="cc-choice <?= $offerClass ?> min-h-[14rem] <?= !$offerAvailable ? 'opacity-70' : '' ?>">
+                                <input
+                                    type="radio"
+                                    name="plan_choice"
+                                    value="<?= htmlspecialchars($offerValue, ENT_QUOTES, 'UTF-8') ?>"
+                                    class="sr-only"
+                                    <?= $idx === 0 ? 'checked' : '' ?>
+                                    data-paid="<?= $offerPaid ? '1' : '0' ?>"
+                                    data-heart="<?= $offerHeart ? '1' : '0' ?>"
+                                    data-plan-label="<?= htmlspecialchars((string) ($offer['title'] ?? $offerValue), ENT_QUOTES, 'UTF-8') ?>"
+                                    <?= !$offerAvailable ? 'disabled' : '' ?>
+                                >
+                                <span class="cc-choice__eyebrow"><?= htmlspecialchars((string) ($offer['eyebrow'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__title"><?= htmlspecialchars((string) ($offer['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="cc-choice__text"><?= htmlspecialchars((string) ($offer['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($offerLimits !== []): ?>
+                                <span class="mt-3 block text-xs text-slate-600">
+                                    <?= htmlspecialchars(implode(' · ', array_map('strval', $offerLimits)), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php endif; ?>
+                                <span class="cc-choice__meta <?= $offerHeart ? 'text-rose-700' : ($offerPaid ? 'text-sky-700' : 'text-emerald-300') ?>">
+                                    <?= htmlspecialchars((string) ($offer['meta'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php if (!$offerAvailable): ?>
+                                <span class="mt-2 block text-xs font-semibold text-amber-700">Souscription indisponible pour le moment</span>
+                                <?php endif; ?>
                             </label>
-                            <label class="cc-choice cc-choice--heart min-h-[14rem]">
-                                <input type="radio" name="plan_choice" value="heart_support" class="sr-only" data-paid="<?= $stripeConfigured ? '1' : '0' ?>" data-heart="1">
-                                <span class="cc-choice__eyebrow">Soutien volontaire</span>
-                                <span class="cc-choice__title">Support du cœur à 2&nbsp;€</span>
-                                <span class="cc-choice__text">Même accès que Quartier libre, avec une contribution unique de 2&nbsp;€ pour soutenir Athena. La communauté est créée tout de suite.</span>
-                                <span class="cc-choice__meta text-rose-700">2&nbsp;€ · une seule fois</span>
-                            </label>
+                            <?php endforeach; ?>
                         </div>
                         <div id="paid-hint" class="cc-soft cc-soft--rose mt-4 hidden">
-                            Après création, vous pourrez finaliser le <strong>soutien de 2&nbsp;€</strong> sur une page de paiement sécurisée. La communauté reste créée même si vous annulez ce geste.
+                            Après validation, vous serez redirigé vers une page de paiement sécurisée pour finaliser l’abonnement ou le soutien choisi. Les limitations du site restent ensuite alignées sur la formule active.
                         </div>
                     </section>
 
@@ -816,11 +840,15 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         var reg = currentRegistrationMode();
         var locked = form.querySelector('[name="community_locked"]') && form.querySelector('[name="community_locked"]').checked;
         var plan = '';
+        var planText = '';
         form.querySelectorAll('input[name="plan_choice"]').forEach(function (el) {
-            if (el.checked) plan = el.value;
+            if (el.checked) {
+                plan = el.value;
+                planText = el.getAttribute('data-plan-label') || el.value;
+            }
         });
         var regLabel = reg === 'simple' ? 'Formulaire court' : (reg === 'discord' ? 'Recrutement via Discord' : 'Dossier MilSim complet');
-        var planLabel = plan === 'heart_support' ? 'Support du cœur à 2 €' : (plan === 'free' ? 'Quartier libre' : (plan || '—'));
+        var planLabel = planText || '—';
         var lines = [];
         lines.push('Nom : ' + (name || '—'));
         if (slug) lines.push('Adresse courte : ' + slug);
@@ -871,6 +899,7 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         if (hint) hint.classList.toggle('hidden', !paid);
         if (btn) {
             if (paid && heart) btn.textContent = 'Créer et soutenir (2 €)';
+            else if (paid) btn.textContent = 'Créer et poursuivre le paiement';
             else btn.textContent = 'Créer la communauté';
         }
     }

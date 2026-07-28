@@ -12,6 +12,8 @@ use App\Support\SteamId;
  */
 final class SteamWebApiService
 {
+    private const AVATAR_CACHE_TTL = 604800;
+
     private function apiKey(): string
     {
         $k = (string) (($_ENV['STEAM_WEB_API_KEY'] ?? null) ?: (getenv('STEAM_WEB_API_KEY') ?: ''));
@@ -149,6 +151,12 @@ final class SteamWebApiService
         if ($avatar === '') {
             $avatar = isset($p['avatar']) ? trim((string) $p['avatar']) : '';
         }
+        if ($avatar !== '') {
+            $cachedAvatar = $this->cacheAvatarLocally($sid, $avatar);
+            if ($cachedAvatar !== null) {
+                $avatar = $cachedAvatar;
+            }
+        }
         if ($name === '' && $avatar === '') {
             return null;
         }
@@ -158,5 +166,88 @@ final class SteamWebApiService
             'personaname' => $name,
             'avatar_url' => $avatar,
         ];
+    }
+
+    private function cacheAvatarLocally(string $steamId64, string $remoteUrl): ?string
+    {
+        $remoteUrl = trim($remoteUrl);
+        if ($remoteUrl === '' || !$this->isAllowedAvatarHost($remoteUrl)) {
+            return null;
+        }
+
+        $dir = base_path('public/uploads/avatars/steam');
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return null;
+        }
+
+        foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+            $candidate = $dir . DIRECTORY_SEPARATOR . $steamId64 . '.' . $ext;
+            if (is_file($candidate) && (time() - (int) @filemtime($candidate)) < self::AVATAR_CACHE_TTL) {
+                return 'uploads/avatars/steam/' . basename($candidate);
+            }
+        }
+
+        $ctx = stream_context_create([
+            'http' => [
+                'timeout' => 15,
+                'ignore_errors' => true,
+                'header' => "Accept: image/avif,image/webp,image/apng,image/*,*/*;q=0.8\r\nUser-Agent: AthenaSteamAvatarCache/1.0\r\n",
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+        $binary = @file_get_contents($remoteUrl, false, $ctx);
+        if (!is_string($binary) || $binary === '') {
+            return null;
+        }
+
+        $info = @getimagesizefromstring($binary);
+        $mime = is_array($info) ? (string) ($info['mime'] ?? '') : '';
+        $ext = match ($mime) {
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => '',
+        };
+        if ($ext === '') {
+            return null;
+        }
+
+        foreach (['jpg', 'jpeg', 'png', 'webp'] as $oldExt) {
+            $oldPath = $dir . DIRECTORY_SEPARATOR . $steamId64 . '.' . $oldExt;
+            if (is_file($oldPath) && $oldExt !== $ext) {
+                @unlink($oldPath);
+            }
+        }
+
+        $dest = $dir . DIRECTORY_SEPARATOR . $steamId64 . '.' . $ext;
+        if (@file_put_contents($dest, $binary) === false) {
+            return null;
+        }
+
+        return 'uploads/avatars/steam/' . $steamId64 . '.' . $ext;
+    }
+
+    private function isAllowedAvatarHost(string $url): bool
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        foreach ([
+            'steamstatic.com',
+            'akamaihd.net',
+            'steamusercontent.com',
+            'steamcommunity.com',
+        ] as $suffix) {
+            if ($host === $suffix || str_ends_with($host, '.' . $suffix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
