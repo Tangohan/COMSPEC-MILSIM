@@ -54,29 +54,25 @@ final class ModUpdateDiscordNotifier
         if ($notes === '' && $zipPath !== null && is_file($zipPath)) {
             $notes = (string) $this->extractChangelogExcerpt($zipPath, $versionLabel);
         }
-        $notes = $this->formatChangelogForDiscord($notes);
+        $summary = $this->buildChangelogSummary($notes);
+        $publishedAt = date(DATE_ATOM);
 
         $description = $versionLabel !== null
-            ? 'Une nouvelle version du pack Overwatch (**' . $versionLabel . '**) est disponible pour la communauté.'
-            : 'Une nouvelle version du pack Overwatch est disponible pour la communauté.';
-
-        if ($notes !== '') {
-            $description .= "\n\n**Journal des changements**\n" . $notes;
-        }
+            ? 'La version **' . $versionLabel . '** du pack Overwatch est disponible.'
+            : 'Une nouvelle version du pack Overwatch est disponible.';
 
         $embed = [
             'title' => $title,
             'description' => $description,
             'url' => $downloadUrl,
             'color' => self::EMBED_COLOR,
-            'fields' => [
-                [
-                    'name' => 'Téléchargement',
-                    'value' => '[Ouvrir la page membre](' . $downloadUrl . ')',
-                    'inline' => false,
-                ],
+            'author' => [
+                'name' => 'Athena · Overwatch',
+                'url' => $downloadUrl,
             ],
+            'fields' => $this->buildEmbedFields($versionLabel, $downloadUrl, $summary),
             'footer' => ['text' => 'Athena — mise à jour automatique'],
+            'timestamp' => $publishedAt,
         ];
 
         try {
@@ -196,14 +192,92 @@ final class ModUpdateDiscordNotifier
         if ($notes === '') {
             return '';
         }
-        // Titre de section markdown → gras Discord
-        $notes = preg_replace('/^##\s+(.+)$/m', '**$1**', $notes) ?? $notes;
-        $notes = preg_replace('/^###\s+(.+)$/m', '*$1*', $notes) ?? $notes;
-        // Limite pour rester dans la description d'embed
-        if (mb_strlen($notes) > 2800) {
-            $notes = mb_substr($notes, 0, 2790) . '…';
+        $notes = preg_replace('/^##\s+(.+)$/m', '$1', $notes) ?? $notes;
+        $notes = preg_replace('/^###\s+(.+)$/m', '$1', $notes) ?? $notes;
+        $notes = preg_replace('/^\s*[-*]\s*/m', '• ', $notes) ?? $notes;
+        $notes = preg_replace("/\n{3,}/", "\n\n", $notes) ?? $notes;
+        if (mb_strlen($notes) > 2200) {
+            $notes = mb_substr($notes, 0, 2190) . '…';
         }
 
         return $notes;
+    }
+
+    /**
+     * @return list<array{name:string, value:string, inline?:bool}>
+     */
+    private function buildEmbedFields(?string $versionLabel, string $downloadUrl, string $summary): array
+    {
+        $fields = [];
+        if ($versionLabel !== null) {
+            $fields[] = [
+                'name' => 'Version',
+                'value' => $versionLabel,
+                'inline' => true,
+            ];
+        }
+        $fields[] = [
+            'name' => 'Publication',
+            'value' => date('d/m/Y'),
+            'inline' => true,
+        ];
+        $fields[] = [
+            'name' => 'Téléchargement',
+            'value' => '[Ouvrir la page membre](' . $downloadUrl . ')',
+            'inline' => false,
+        ];
+        if ($summary !== '') {
+            $fields[] = [
+                'name' => 'Points clés',
+                'value' => $summary,
+                'inline' => false,
+            ];
+        }
+
+        return $fields;
+    }
+
+    private function buildChangelogSummary(string $notes): string
+    {
+        $notes = $this->formatChangelogForDiscord($notes);
+        if ($notes === '') {
+            return '';
+        }
+
+        $lines = preg_split("/\n+/", $notes) ?: [];
+        $title = null;
+        $bullets = [];
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            if ($title === null && !str_starts_with($line, '• ')) {
+                $title = $line;
+                continue;
+            }
+            if (str_starts_with($line, '• ')) {
+                $bullets[] = $line;
+            } elseif ($title !== null && $bullets === []) {
+                $bullets[] = '• ' . $line;
+            }
+            if (count($bullets) >= 4) {
+                break;
+            }
+        }
+
+        $parts = [];
+        if ($title !== null) {
+            $parts[] = '**' . $title . '**';
+        }
+        if ($bullets !== []) {
+            $parts[] = implode("\n", $bullets);
+        }
+        $summary = trim(implode("\n", $parts));
+        if (mb_strlen($summary) > 1000) {
+            $summary = mb_substr($summary, 0, 990) . '…';
+        }
+
+        return $summary;
     }
 }

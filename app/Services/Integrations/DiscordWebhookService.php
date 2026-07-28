@@ -52,7 +52,9 @@ final class DiscordWebhookService
      *   url?:string,
      *   color?:int,
      *   fields?:list<array{name:string, value:string, inline?:bool}>,
-     *   footer?:array{text:string}
+     *   footer?:array{text:string},
+     *   author?:array{name:string, url?:string},
+     *   timestamp?:string
      * } $embed
      * @return array{ok:bool, error?:string}
      */
@@ -114,6 +116,21 @@ final class DiscordWebhookService
             if ($footerText !== '') {
                 $clean['footer'] = ['text' => mb_substr($footerText, 0, 2048)];
             }
+        }
+        if (!empty($embed['author']) && is_array($embed['author'])) {
+            $authorName = trim((string) ($embed['author']['name'] ?? ''));
+            if ($authorName !== '') {
+                $author = ['name' => mb_substr($authorName, 0, 256)];
+                $authorUrl = trim((string) ($embed['author']['url'] ?? ''));
+                if ($authorUrl !== '' && filter_var($authorUrl, FILTER_VALIDATE_URL)) {
+                    $author['url'] = $authorUrl;
+                }
+                $clean['author'] = $author;
+            }
+        }
+        $timestamp = trim((string) ($embed['timestamp'] ?? ''));
+        if ($timestamp !== '') {
+            $clean['timestamp'] = $timestamp;
         }
 
         if ($clean === [] && ($payload['content'] ?? '') === '') {

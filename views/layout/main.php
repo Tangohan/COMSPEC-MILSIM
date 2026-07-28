@@ -18,6 +18,12 @@ foreach (\App\Support\BackOfficePageContext::apply(get_defined_vars()) as $_boKe
     ${$_boKey} = $_boVal;
 }
 
+/* Re-assert après BackOfficePageContext (évite de perdre le flag vitrine). */
+$communityShowcasePage = !empty($communityShowcasePage) || (($publicLayout ?? '') === 'showcase');
+$communityRegistryPage = !empty($communityRegistryPage);
+$communityRecruitmentOpeningPage = !empty($communityRecruitmentOpeningPage);
+$communityReelsPage = !empty($communityReelsPage);
+
 $usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
     ? 'Administration communauté'
@@ -86,15 +92,45 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 ?>
     <?php if ($communityShowcasePage || $communityRecruitmentOpeningPage || $communityRegistryPage || $communityReelsPage): ?>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <?php if (($communityShowcasePage || $communityRecruitmentOpeningPage) && !$communityReelsPage && is_file(base_path('public/assets/css/community-landing.css'))): ?>
-    <link href="<?= htmlspecialchars(asset_url('assets/css/community-landing.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-    <?php endif; ?>
-    <?php if ($communityReelsPage && is_file(base_path('public/assets/css/community-reels.css'))): ?>
-    <link href="<?= htmlspecialchars(asset_url('assets/css/community-reels.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-    <?php endif; ?>
-    <?php if ($communityRegistryPage && is_file(base_path('public/assets/css/community-registry.css'))): ?>
-    <link href="<?= htmlspecialchars(asset_url('assets/css/community-registry.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
-    <?php endif; ?>
+    <?php
+      /* Vitrine : LiteSpeed a mis en cache un 404 sur community-landing.css (et alias).
+         On injecte le CSS lu par PHP (inline) plutôt que de pointer vers l’asset HTTP cassé. */
+      $communityVitrineCssLinked = false;
+      if (($communityShowcasePage || $communityRecruitmentOpeningPage) && !$communityReelsPage) {
+          $communityVitrineCssLinked = (bool) require base_path('views/partials/community_vitrine_css.php');
+          if (!$communityVitrineCssLinked) {
+              foreach (['athena-community-vitrine.css', 'cl-vitrine-20260728a.css', 'cl-vitrine.css', 'community-landing.css'] as $communityCssCandidate) {
+                  $communityCssFs = base_path('public/assets/css/' . $communityCssCandidate);
+                  if (!is_readable($communityCssFs)) {
+                      continue;
+                  }
+                  $communityCssHref = asset_url('assets/css/' . $communityCssCandidate) . '&t=' . (int) filemtime($communityCssFs);
+                  echo '    <link href="' . htmlspecialchars($communityCssHref, ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">' . "\n";
+                  $communityVitrineCssLinked = true;
+                  break;
+              }
+              unset($communityCssCandidate, $communityCssFs, $communityCssHref);
+          }
+      }
+      $communityCssLinks = [
+          [$communityReelsPage, 'community-reels.css'],
+          [$communityRegistryPage, 'community-registry.css'],
+      ];
+      foreach ($communityCssLinks as [$communityCssOn, $communityCssFile]) {
+          if (!$communityCssOn) {
+              continue;
+          }
+          $communityCssFs = base_path('public/assets/css/' . $communityCssFile);
+          if (!is_readable($communityCssFs)) {
+              continue;
+          }
+          $communityCssHref = asset_url('assets/css/' . $communityCssFile) . '&t=' . (int) filemtime($communityCssFs);
+          ?>
+    <link href="<?= htmlspecialchars($communityCssHref, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php
+      }
+      unset($communityVitrineCssLinked, $communityCssLinks, $communityCssOn, $communityCssFile, $communityCssFs, $communityCssHref);
+    ?>
     <style>
       .community-public-vitrine,
       .community-landing,
