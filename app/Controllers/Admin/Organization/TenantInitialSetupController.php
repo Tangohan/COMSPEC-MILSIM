@@ -106,7 +106,12 @@ final class TenantInitialSetupController
             return Response::redirect(url('dashboard'));
         }
 
-        $this->saveCommunityFromRequest($tenantId, $request);
+        $communityError = $this->saveCommunityFromRequest($tenantId, $request);
+        if ($communityError !== null) {
+            Session::flash('error', $communityError);
+
+            return Response::redirect($redirectTo);
+        }
 
         $logoOutcome = $this->processLogoUpload($tenantId, $tenant, $request);
         if ($logoOutcome['error'] !== null) {
@@ -169,7 +174,12 @@ final class TenantInitialSetupController
 
         // Enregistrer d’abord le formulaire si soumis avec « Terminer ».
         if ((string) $request->input('save_before_complete', '0') === '1') {
-            $this->saveCommunityFromRequest($tenantId, $request);
+            $communityError = $this->saveCommunityFromRequest($tenantId, $request);
+            if ($communityError !== null) {
+                Session::flash('error', $communityError);
+
+                return Response::redirect(url('back-office/configuration-initiale'));
+            }
             $logoOutcome = $this->processLogoUpload($tenantId, $tenant, $request);
             if ($logoOutcome['error'] !== null) {
                 Session::flash('error', $logoOutcome['error']);
@@ -264,12 +274,21 @@ final class TenantInitialSetupController
         return ['error' => null];
     }
 
-    private function saveCommunityFromRequest(int $tenantId, Request $request): void
+    private function saveCommunityFromRequest(int $tenantId, Request $request): ?string
     {
         $settings = $this->tenantRepository->getSettings($tenantId);
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
 
-        $community['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
+        $rawContactEmail = trim((string) $request->input('contact_email', ''));
+        if ($rawContactEmail !== '') {
+            $sanitizedContact = $this->sanitizeEmail($rawContactEmail);
+            if ($sanitizedContact === '') {
+                return 'L’adresse e-mail de contact n’est pas valide.';
+            }
+            $community['contact_email'] = $sanitizedContact;
+        } else {
+            $community['contact_email'] = '';
+        }
         $community['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
@@ -305,6 +324,8 @@ final class TenantInitialSetupController
             'community' => $community,
             'initial_setup_version' => TenantInitialSetupService::VERSION,
         ]);
+
+        return null;
     }
 
     private function writeImage(string $tmpPath, string $destPath, int $maxWidth, bool $keepAlpha): bool

@@ -53,6 +53,9 @@ $fileMailerNotice = \email_file_mailer_notice();
             <?php if (!empty($error)): ?>
                 <?php $flash_variant = 'error'; $flash_message = (string) $error; $flash_surface = 'dark'; $flash_margin_class = 'mb-6 text-left'; require base_path('views/partials/flash_message.php'); ?>
             <?php endif; ?>
+            <?php if (!empty($warning)): ?>
+                <?php $flash_variant = 'warning'; $flash_message = (string) $warning; $flash_surface = 'dark'; $flash_margin_class = 'mb-6 text-left'; require base_path('views/partials/flash_message.php'); ?>
+            <?php endif; ?>
 
             <?php if ($fileMailerNotice !== ''): ?>
                 <p class="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-left text-sm text-amber-100/90">

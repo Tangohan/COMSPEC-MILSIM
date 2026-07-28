@@ -51,7 +51,14 @@ final class VerifyEmailController
         }
 
         $this->emailTokens->markConsumed((int) $row['id']);
-        $this->userRepository->markEmailVerified($userId, $tenantId);
+        try {
+            $this->userRepository->markEmailVerified($userId, $tenantId);
+        } catch (\Throwable $e) {
+            error_log('[verify-email] ' . $e->getMessage());
+            Session::flash('error', 'La confirmation n’a pas pu être enregistrée. Réessayez ou demandez un nouveau lien depuis la page de connexion.');
+
+            return Response::redirect(url('login'));
+        }
 
         $tenant = $this->tenantRepository->findById($tenantId);
         $tenantName = email_community_label(is_array($tenant) ? $tenant : null, (string) ($tenant['name'] ?? ''));
@@ -92,6 +99,7 @@ final class VerifyEmailController
             'title' => 'Confirmez votre e-mail',
             'email' => (string) $email,
             'error' => Session::getFlash('error'),
+            'warning' => Session::getFlash('warning'),
         ]);
     }
 
@@ -198,13 +206,13 @@ final class VerifyEmailController
         }
 
         if ($attemptedSend && $lastMailError !== null && $lastMailError !== '') {
-            Session::flash('error', 'L’e-mail n’a pas pu être envoyé : ' . $lastMailError);
+            Session::flash('error', 'L’e-mail n’a pas pu être envoyé. Réessayez dans quelques minutes ou contactez le support.');
 
             return Response::redirect(url('login'));
         }
 
         if ($attemptedSend) {
-            Session::flash('error', 'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration SMTP dans .env ou contactez un administrateur.');
+            Session::flash('error', 'L’e-mail n’a pas pu être envoyé pour le moment. Réessayez dans quelques minutes ou contactez le support.');
 
             return Response::redirect(url('login'));
         }

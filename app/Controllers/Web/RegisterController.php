@@ -25,6 +25,7 @@ use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Rbac\RbacService;
 use App\Services\Steam\SteamWebApiService;
+use App\Support\UserFacingExceptionMapper;
 use Throwable;
 
 final class RegisterController
@@ -239,9 +240,10 @@ final class RegisterController
                 $this->userRepository->update($userId, $tenantId, $steamPatch);
             }
             $pdo->commit();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             $pdo->rollBack();
-            Session::flash('error', 'Inscription impossible pour le moment. Réessayez.');
+            error_log('[auth.register] ' . $e->getMessage());
+            $flashBack(UserFacingExceptionMapper::registrationMessage($e), 2);
 
             return Response::redirect(url('register'));
         }
@@ -266,26 +268,33 @@ final class RegisterController
         Session::set('register_pending_email', $emailNorm);
 
         if (!$sentOk) {
-            $detail = trim((string) ($this->emailService->getLastSendError() ?? ''));
             Session::flash(
                 'error',
-                'Compte créé, mais l’e-mail de confirmation n’a pas pu être envoyé'
-                    . ($detail !== '' ? ' : ' . $detail : '')
-                    . '. Vous pouvez utiliser « Renvoyer le lien » ci-dessous une fois la configuration corrigée.'
+                'Votre compte a été créé, mais l’e-mail de confirmation n’a pas pu être envoyé. Utilisez « Renvoyer le lien » ci-dessous ou contactez le support si le problème persiste.'
             );
 
             return Response::redirect(url('register/check-email'));
         }
 
-        $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
-        $this->emailTokens->create(
-            $tenantId,
-            $userId,
-            EmailTokenPurpose::REGISTER_CONFIRM,
-            $tokenHash,
-            bin2hex(random_bytes(16)),
-            $expires
-        );
+        try {
+            $this->emailTokens->deletePendingForUserPurpose($userId, EmailTokenPurpose::REGISTER_CONFIRM);
+            $this->emailTokens->create(
+                $tenantId,
+                $userId,
+                EmailTokenPurpose::REGISTER_CONFIRM,
+                $tokenHash,
+                bin2hex(random_bytes(16)),
+                $expires
+            );
+        } catch (Throwable $e) {
+            error_log('[auth.register.token] ' . $e->getMessage());
+            Session::flash(
+                'warning',
+                'Compte créé, mais le lien de confirmation n’a pas pu être enregistré. Utilisez « Renvoyer le lien » depuis la page suivante.'
+            );
+
+            return Response::redirect(url('register/check-email'));
+        }
 
         $this->emailService->sendRegisterSecurityCompanion(
             $emailNorm,

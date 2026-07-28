@@ -58,9 +58,21 @@ class PendingCommunityCreateRepository
     public function setTenantIdForToken(string $token, int $tenantId): void
     {
         $stmt = $this->pdo->prepare(
-            'UPDATE pending_community_creates SET tenant_id = ? WHERE token = ?'
+            'UPDATE pending_community_creates SET tenant_id = ?, creation_error = NULL WHERE token = ?'
         );
         $stmt->execute([$tenantId, $token]);
+    }
+
+    public function setCreationError(string $token, string $message): void
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE pending_community_creates SET creation_error = ? WHERE token = ?'
+            );
+            $stmt->execute([mb_substr(trim($message), 0, 2000), $token]);
+        } catch (\PDOException $e) {
+            error_log('[pending_community] setCreationError: ' . $e->getMessage());
+        }
     }
 
     public function deleteById(int $id): void

@@ -1,6 +1,7 @@
 <?php
 $error = \App\Core\Session::getFlash('error');
 $success = \App\Core\Session::getFlash('success');
+$warning = \App\Core\Session::getFlash('warning');
 $stripeConfigured = $stripeConfigured ?? false;
 /** @var list<array<string,mixed>> $gradesFr */
 $gradesFr = $gradesFr ?? [];
@@ -18,6 +19,13 @@ $badgeLabels = $badgeLabels ?? \App\Services\Community\TenantCommunityProfileSer
 $wizardPermissionGroups = $wizardPermissionGroups ?? \App\Services\Community\CommunityOnboardingValidationService::wizardPermissionFieldGroups();
 $tenantTypes = \App\Services\Community\TenantTypeConfig::availableTypes();
 $baseUrl = url('');
+$communityCreateDraft = is_array($communityCreateDraft ?? null) ? $communityCreateDraft : [];
+$onboardingStepKey = is_string($onboardingStep ?? null) ? strtolower(trim($onboardingStep)) : '';
+$wizardStepMap = ['identity' => 1, 'organization' => 3, 'roles' => 3, 'grades' => 4, 'review' => 5];
+$resumeWizardStep = $wizardStepMap[$onboardingStepKey] ?? 1;
+if ($resumeWizardStep < 1 || $resumeWizardStep > 5) {
+    $resumeWizardStep = 1;
+}
 
 $wizardSteps = [
     1 => 'Identité',
@@ -41,6 +49,9 @@ $wizardSteps = [
 
         <?php if ($error): ?>
         <div class="cc-flash cc-flash--error" role="alert"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        <?php if ($warning): ?>
+        <div class="cc-flash cc-flash--error" role="alert"><?= htmlspecialchars($warning) ?></div>
         <?php endif; ?>
         <?php if ($success): ?>
         <div class="cc-flash cc-flash--ok"><?= htmlspecialchars($success) ?></div>
@@ -927,6 +938,47 @@ $wizardSteps = [
         });
     });
 
-    showStep(1);
+    var wizardDraft = <?= json_encode($communityCreateDraft, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
+    var resumeWizardStep = <?= (int) $resumeWizardStep ?>;
+
+    function restoreWizardDraft() {
+        if (!wizardDraft || typeof wizardDraft !== 'object') return;
+        Object.keys(wizardDraft).forEach(function (key) {
+            if (key === 'wizard_custom_roles' || key.indexOf('wizard_custom_roles[') === 0) return;
+            var val = wizardDraft[key];
+            if (val === null || val === undefined) return;
+            var nodes = form.querySelectorAll('[name="' + key.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"]');
+            if (!nodes.length) return;
+            var first = nodes[0];
+            if (first.type === 'radio') {
+                nodes.forEach(function (n) { n.checked = (String(n.value) === String(val)); });
+            } else if (first.type === 'checkbox') {
+                if (nodes.length === 1) {
+                    first.checked = val === '1' || val === 1 || val === true || val === 'on';
+                }
+            } else {
+                first.value = String(val);
+            }
+        });
+        if (wizardDraft.wizard_custom_community_slug) {
+            if (customCommunitySlugCb) customCommunitySlugCb.checked = true;
+            syncCommunitySlugUi();
+        }
+        if (wizardDraft.wizard_units_json && unitsHidden) {
+            unitsHidden.value = String(wizardDraft.wizard_units_json);
+            if (orbatBuilder) {
+                try { orbatBuilder.loadUnits(JSON.parse(String(wizardDraft.wizard_units_json))); } catch (e) { /* ignore */ }
+            }
+        }
+        if (wizardDraft.wizard_grade_system_code) {
+            var gsRadio = form.querySelector('input[name="wizard_grade_system_code"][value="' + wizardDraft.wizard_grade_system_code + '"]');
+            if (gsRadio) gsRadio.checked = true;
+        }
+        syncRegistrationModeUi();
+        syncPaid();
+    }
+
+    restoreWizardDraft();
+    showStep(resumeWizardStep);
 })();
 </script>

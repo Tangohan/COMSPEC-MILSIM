@@ -35,6 +35,7 @@ use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
 use App\Services\Analytics\AnalyticsSubjectType;
+use App\Support\UserFacingExceptionMapper;
 
 class CommunityController
 {
@@ -690,6 +691,8 @@ class CommunityController
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'wizardPermissionGroups' => CommunityOnboardingValidationService::wizardPermissionFieldGroups(),
+            'communityCreateDraft' => Session::get('community_create_draft') ?? [],
+            'onboardingStep' => Session::getFlash('onboarding_step'),
         ]);
     }
 
@@ -699,6 +702,8 @@ class CommunityController
     public function createPreview(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
+            Session::flash('error', 'Connexion requise pour créer une communauté.');
+
             return Response::redirect(url('login'));
         }
         if ($request->isPost()) {
@@ -711,7 +716,8 @@ class CommunityController
             unset($data['_csrf_token']);
             $user = $this->authService->user();
             $uid = $user ? (int) ($user['id'] ?? 0) : 0;
-            foreach ($this->communityWizardUploadService->processUploads($uid) as $k => $v) {
+            $uploadResult = $this->communityWizardUploadService->processUploadsWithFeedback($uid);
+            foreach ($uploadResult['urls'] as $k => $v) {
                 $data[$k] = $v;
             }
             Session::set('community_create_preview', $data);
@@ -819,10 +825,13 @@ class CommunityController
     public function create(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
+            Session::flash('error', 'Connexion requise pour créer une communauté.');
+
             return Response::redirect(url('login'));
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
+
             return Response::redirect(url('communities/create'));
         }
         $name = trim((string) $request->input('name'));
@@ -831,11 +840,12 @@ class CommunityController
             $slug = '';
         }
         if ($name === '') {
-            Session::flash('error', 'Le nom de la communauté est requis.');
-            return Response::redirect(url('communities/create'));
+            return $this->flashCommunityCreateErrorAndRedirect($request, 'Le nom de la communauté est requis.', 'identity');
         }
         $user = $this->authService->user();
         if (!$user) {
+            Session::flash('error', 'Connexion requise pour créer une communauté.');
+
             return Response::redirect(url('login'));
         }
         $planChoice = trim((string) $request->input('plan_choice', 'free'));
@@ -859,32 +869,33 @@ class CommunityController
             ];
 
             $wizardRaw = $this->buildWizardFromRequest($request);
+            $uploadWarnings = is_array($wizardRaw['_upload_warnings'] ?? null) ? $wizardRaw['_upload_warnings'] : [];
+            unset($wizardRaw['_upload_warnings']);
             $validator = new CommunityOnboardingValidationService();
             $v = $validator->validate($wizardRaw);
             if (!$v['ok']) {
                 $msg = implode(' ', $v['errors'] ?? ['Configuration invalide.']);
-                Session::flash('error', $msg);
-                Session::flash('onboarding_step', $v['step'] ?? '');
 
-                return Response::redirect(url('communities/create'));
+                return $this->flashCommunityCreateErrorAndRedirect($request, $msg, (string) ($v['step'] ?? ''), $uploadWarnings);
             }
             $optionsBase['wizard_normalized'] = $v['normalized'];
 
             if ($paid !== null) {
                 [$planSlug, $interval] = $paid;
                 if ((getenv('STRIPE_SECRET_KEY') ?: '') === '') {
-                    Session::flash('error', 'Le paiement en ligne n’est pas disponible pour le moment.');
-                    return Response::redirect(url('communities/create'));
+                    return $this->flashCommunityCreateErrorAndRedirect($request, 'Le paiement en ligne n’est pas disponible pour le moment.', 'review');
                 }
                 $planRow = $this->subscriptionPlanRepository->findBySlug($planSlug);
                 if (!$planRow) {
-                    Session::flash('error', 'Cette formule n’est pas disponible.');
-                    return Response::redirect(url('communities/create'));
+                    return $this->flashCommunityCreateErrorAndRedirect($request, 'Cette formule n’est pas disponible.', 'review');
                 }
                 $priceId = $this->stripePriceIdForInterval($planRow, $interval);
                 if ($priceId === null) {
-                    Session::flash('error', 'Cette formule n’est pas encore ouverte à la souscription. Choisissez Quartier libre ou Support du cœur.');
-                    return Response::redirect(url('communities/create'));
+                    return $this->flashCommunityCreateErrorAndRedirect(
+                        $request,
+                        'Cette formule n’est pas encore ouverte à la souscription. Choisissez Quartier libre ou Support du cœur.',
+                        'review'
+                    );
                 }
                 $payload = json_encode([
                     'name' => $name,
@@ -893,6 +904,7 @@ class CommunityController
                 ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 $token = bin2hex(random_bytes(32));
                 $this->pendingCommunityRepository->create($token, (int) $user['id'], $payload, $planSlug, $priceId);
+                Session::forget('community_create_draft');
 
                 return Response::redirect(url('communities/create/pay?token=' . rawurlencode($token)));
             }
@@ -901,20 +913,18 @@ class CommunityController
                 'plan_slug' => 'free',
             ]));
             Session::forget('pending_referrer_code');
+            Session::forget('community_create_draft');
 
-            return $this->finalizeFreeCommunityCreation($name, $slug, $result, $wantsHeartSupport);
+            return $this->finalizeFreeCommunityCreation($name, $slug, $result, $wantsHeartSupport, $uploadWarnings);
         } catch (\InvalidArgumentException $e) {
-            Session::flash('error', $e->getMessage());
-            return Response::redirect(url('communities/create'));
+            return $this->flashCommunityCreateErrorAndRedirect($request, $e->getMessage());
         } catch (\Throwable $e) {
-            $msg = $e->getMessage();
-            if ($e instanceof \RuntimeException && $msg !== '' && !preg_match('/SQLSTATE|Unknown column|PDOException/i', $msg)) {
-                Session::flash('error', $msg);
-            } else {
-                error_log('[community.create] ' . $msg);
-                Session::flash('error', 'Impossible de créer la communauté pour le moment. Réessayez plus tard ou contactez le support.');
-            }
-            return Response::redirect(url('communities/create'));
+            error_log('[community.create] ' . $e->getMessage());
+
+            return $this->flashCommunityCreateErrorAndRedirect(
+                $request,
+                UserFacingExceptionMapper::communityCreationMessage($e)
+            );
         }
     }
 
@@ -953,7 +963,9 @@ class CommunityController
 
             return Response::redirect($session['url']);
         } catch (\Throwable $e) {
-            Session::flash('error', $e->getMessage());
+            error_log('[community.pay] ' . $e->getMessage());
+            Session::flash('error', 'Le paiement en ligne n’a pas pu être démarré. Réessayez ou choisissez une formule gratuite.');
+
             return Response::redirect(url('communities/create'));
         }
     }
@@ -978,11 +990,32 @@ class CommunityController
             Session::flash('error', 'Paiement non associé à votre compte.');
             return Response::redirect(url('communities/create'));
         }
+        $creationError = trim((string) ($pending['creation_error'] ?? ''));
+        if ($creationError !== '') {
+            Session::flash('error', $creationError);
+
+            return Response::redirect(url('communities/create'));
+        }
         if (empty($pending['tenant_id'])) {
+            $wait = max(0, (int) $request->query('wait', 0));
+            if ($wait >= 20) {
+                return Response::view('layout.main', [
+                    'title' => 'Paiement en cours de validation',
+                    'content' => 'community.create_pending',
+                    'sessionId' => $sessionId,
+                    'timedOut' => true,
+                    'retryUrl' => url('communities/create/complete') . '?session_id=' . rawurlencode($sessionId),
+                ]);
+            }
+            $nextWait = $wait + 1;
+            $retryUrl = url('communities/create/complete') . '?session_id=' . rawurlencode($sessionId) . '&wait=' . $nextWait;
+
             return Response::view('layout.main', [
                 'title' => 'Paiement en cours de validation',
                 'content' => 'community.create_pending',
                 'sessionId' => $sessionId,
+                'timedOut' => false,
+                'retryUrl' => $retryUrl,
             ]);
         }
 
@@ -1029,7 +1062,7 @@ class CommunityController
     /**
      * @param array{tenant_id: int, user_id: int} $result
      */
-    private function finalizeFreeCommunityCreation(string $name, string $slugInput, array $result, bool $withHeartSupport = false): Response
+    private function finalizeFreeCommunityCreation(string $name, string $slugInput, array $result, bool $withHeartSupport = false, array $uploadWarnings = []): Response
     {
         Session::forget('pending_referrer_code');
         $newUserId = (int) $result['user_id'];
@@ -1051,6 +1084,13 @@ class CommunityController
                     $tenantId
                 );
             }
+        } else {
+            Session::flash(
+                'warning',
+                'La communauté a été créée, mais la connexion automatique a échoué. Connectez-vous pour accéder à votre espace.'
+            );
+
+            return Response::redirect(url('login'));
         }
         $audit = \App\Core\Container::get(AuditService::class);
         $audit->log(AuditAction::TENANT_CREATED, $tenantId, $newUserId, 'tenant', $tenantId, null, (string) $name);
@@ -1096,8 +1136,34 @@ class CommunityController
         } else {
             Session::flash('success', 'Communauté créée. Finalisez les derniers réglages essentiels.');
         }
+        if ($uploadWarnings !== []) {
+            Session::flash('warning', implode(' ', $uploadWarnings));
+        }
 
         return Response::redirect($setupUrl);
+    }
+
+    /**
+     * @param list<string> $uploadWarnings
+     */
+    private function flashCommunityCreateErrorAndRedirect(
+        Request $request,
+        string $message,
+        string $wizardStep = '',
+        array $uploadWarnings = []
+    ): Response {
+        Session::flash('error', $message);
+        if ($wizardStep !== '') {
+            Session::flash('onboarding_step', $wizardStep);
+        }
+        if ($uploadWarnings !== []) {
+            Session::flash('warning', implode(' ', $uploadWarnings));
+        }
+        $draft = $request->all();
+        unset($draft['_csrf_token']);
+        Session::set('community_create_draft', $draft);
+
+        return Response::redirect(url('communities/create'));
     }
 
     private function resolveReferrerUserId(int $currentUserId): ?int
@@ -1288,9 +1354,10 @@ class CommunityController
             $raw = trim((string) $request->input('wizard_units_json', ''));
             if ($raw !== '') {
                 $decoded = json_decode($raw, true);
-                if (is_array($decoded)) {
-                    $units = $decoded;
+                if (!is_array($decoded)) {
+                    throw new \InvalidArgumentException('La structure des unités n’est pas valide. Vérifiez l’organigramme à l’étape Organisation.');
                 }
+                $units = $decoded;
             }
         }
 
@@ -1336,8 +1403,12 @@ class CommunityController
 
         $user = $this->authService->user();
         $uid = $user ? (int) ($user['id'] ?? 0) : 0;
-        foreach ($this->communityWizardUploadService->processUploads($uid) as $k => $v) {
+        $uploadResult = $this->communityWizardUploadService->processUploadsWithFeedback($uid);
+        foreach ($uploadResult['urls'] as $k => $v) {
             $wizard[$k] = $v;
+        }
+        if ($uploadResult['warnings'] !== []) {
+            $wizard['_upload_warnings'] = $uploadResult['warnings'];
         }
 
         return $wizard;

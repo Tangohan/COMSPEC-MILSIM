@@ -13,6 +13,7 @@ use App\Services\Billing\AtakDonationFulfillmentService;
 use App\Services\Community\TenantBootstrapService;
 use App\Support\Stripe\StripeWebhookSignature;
 use App\Support\Stripe\WebhookSignatureException;
+use App\Support\UserFacingExceptionMapper;
 use JsonException;
 
 /**
@@ -144,7 +145,17 @@ class StripeWebhookController
         $options['plan_slug'] = (string) $row['plan_slug'];
         $options['skip_founder_trial'] = true;
 
-        $result = $this->tenantBootstrapService->createCommunity((int) $row['user_id'], $name, $slug, $options);
+        try {
+            $result = $this->tenantBootstrapService->createCommunity((int) $row['user_id'], $name, $slug, $options);
+        } catch (\Throwable $e) {
+            error_log('[stripe.pending_community] ' . $e->getMessage());
+            $this->pendingCommunityRepository->setCreationError(
+                $token,
+                UserFacingExceptionMapper::communityCreationMessage($e)
+            );
+
+            return;
+        }
 
         $customer = $sessionObj->customer ?? null;
         $customerStr = is_string($customer) ? $customer : null;

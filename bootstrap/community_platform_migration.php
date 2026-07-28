@@ -242,6 +242,12 @@ function run_community_platform_migration(PDO $pdo): void
         KEY pcc_tenant (tenant_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $pccErr = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pending_community_creates' AND COLUMN_NAME = 'creation_error'");
+    if ($pccErr && !$pccErr->fetch()) {
+        echo "Ajout pending_community_creates.creation_error...\n";
+        $pdo->exec('ALTER TABLE pending_community_creates ADD COLUMN creation_error text DEFAULT NULL AFTER tenant_id');
+    }
+
     $profSlug = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug'");
     if ($profSlug && !$profSlug->fetch()) {
         echo "Ajout users.profile_slug...\n";

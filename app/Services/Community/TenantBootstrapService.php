@@ -39,13 +39,13 @@ final class TenantBootstrapService
             $slug = TenantSlugService::ensureUnique($base, fn (string $s) => $this->tenantRepository->slugExists($s));
         } else {
             if (!TenantSlugService::isValidFormat($slug)) {
-                throw new \InvalidArgumentException('Le slug ne peut contenir que des lettres minuscules, chiffres et tirets (max. 50 caractères).');
+                throw new \InvalidArgumentException('L’adresse courte ne peut contenir que des lettres minuscules, des chiffres et des tirets (50 caractères maximum).');
             }
             if (TenantSlugService::isReserved($slug)) {
-                throw new \InvalidArgumentException('Ce slug est réservé.');
+                throw new \InvalidArgumentException('Cette adresse courte est réservée.');
             }
             if ($this->tenantRepository->slugExists($slug)) {
-                throw new \RuntimeException('Une communauté avec ce slug existe déjà.');
+                throw new \RuntimeException('Une communauté utilise déjà cette adresse courte.');
             }
         }
 
