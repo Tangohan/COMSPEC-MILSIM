@@ -89,6 +89,12 @@ final class CommunityOnboardingValidationService
             $step = $step ?? 'identity';
         }
 
+        $affErr = $this->validateUnitAffiliation($wizard);
+        if ($affErr !== []) {
+            $errors = array_merge($errors, $affErr);
+            $step = $step ?? 'identity';
+        }
+
         $orbat = trim((string) ($wizard['orbat_visibility'] ?? 'members'));
         $allowedVis = ['public', 'members', 'command'];
         if (!in_array($orbat, $allowedVis, true)) {
@@ -305,7 +311,122 @@ final class CommunityOnboardingValidationService
             }
         }
 
+        $aff = $this->normalizeUnitAffiliation($wizard);
+        if ($aff !== null) {
+            $out['unit_affiliation'] = $aff;
+            if (!empty($aff['is_real'])) {
+                $tags = is_array($out['registry_tags'] ?? null) ? $out['registry_tags'] : [];
+                if (!in_array('soar', $tags, true)) {
+                    $tags[] = 'soar';
+                }
+                $out['registry_tags'] = array_values(array_unique($tags));
+            }
+        }
+
         return $out;
+    }
+
+    /** @return list<string> */
+    private function validateUnitAffiliation(array $wizard): array
+    {
+        $errors = [];
+        $raw = $wizard['wizard_represents_real_unit'] ?? null;
+        if ($raw === null || $raw === '') {
+            $errors[] = 'Indiquez si votre communauté représente une unité réelle.';
+
+            return $errors;
+        }
+        $isReal = in_array((string) $raw, ['1', 'yes', 'true', 'on'], true);
+        if (!$isReal) {
+            $label = trim((string) ($wizard['wizard_fictional_unit_label'] ?? ''));
+            if ($label === '' || mb_strlen($label) < 2) {
+                $errors[] = 'Précisez quelle unité fictive votre communauté représente.';
+            } elseif (mb_strlen($label) > 200) {
+                $errors[] = 'Le nom de l’unité fictive est trop long (200 caractères max).';
+            }
+
+            return $errors;
+        }
+
+        $country = strtoupper(trim((string) ($wizard['wizard_real_unit_country'] ?? '')));
+        if (!in_array($country, RealUnitAffiliationCatalog::allowedCountryCodes(), true)) {
+            $errors[] = 'Sélectionnez le pays de l’unité réelle représentée.';
+
+            return $errors;
+        }
+
+        $ids = $wizard['wizard_real_unit_ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $cleanIds = [];
+        foreach ($ids as $id) {
+            if (is_string($id) && trim($id) !== '') {
+                $cleanIds[] = trim($id);
+            }
+        }
+        $cleanIds = array_values(array_unique($cleanIds));
+        if ($cleanIds === []) {
+            $errors[] = 'Sélectionnez au moins une unité réelle dans la liste proposée.';
+
+            return $errors;
+        }
+
+        $resolved = RealUnitAffiliationCatalog::resolveSelectedUnits($country, $cleanIds);
+        if ($resolved === []) {
+            $errors[] = 'Les unités sélectionnées ne sont pas valides pour le pays choisi.';
+        } elseif (count($resolved) !== count($cleanIds)) {
+            $errors[] = 'Certaines unités sélectionnées ne correspondent pas au pays choisi.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return array{is_real: bool, fictional_label: ?string, country: ?string, country_label: ?string, unit_ids: list<string>, unit_labels: list<string>}|null
+     */
+    private function normalizeUnitAffiliation(array $wizard): ?array
+    {
+        $raw = $wizard['wizard_represents_real_unit'] ?? null;
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        $isReal = in_array((string) $raw, ['1', 'yes', 'true', 'on'], true);
+        if (!$isReal) {
+            $label = trim((string) ($wizard['wizard_fictional_unit_label'] ?? ''));
+
+            return [
+                'is_real' => false,
+                'fictional_label' => $this->clip($label, 200),
+                'country' => null,
+                'country_label' => null,
+                'unit_ids' => [],
+                'unit_labels' => [],
+            ];
+        }
+
+        $country = strtoupper(trim((string) ($wizard['wizard_real_unit_country'] ?? '')));
+        $ids = $wizard['wizard_real_unit_ids'] ?? [];
+        if (!is_array($ids)) {
+            $ids = [];
+        }
+        $cleanIds = [];
+        foreach ($ids as $id) {
+            if (is_string($id) && trim($id) !== '') {
+                $cleanIds[] = trim($id);
+            }
+        }
+        $resolved = RealUnitAffiliationCatalog::resolveSelectedUnits($country, $cleanIds);
+        $labels = RealUnitAffiliationCatalog::countryLabels();
+
+        return [
+            'is_real' => true,
+            'fictional_label' => null,
+            'country' => $country,
+            'country_label' => $labels[$country] ?? $country,
+            'unit_ids' => array_column($resolved, 'id'),
+            'unit_labels' => array_column($resolved, 'name'),
+        ];
     }
 
     private function clip(string $s, int $max): string

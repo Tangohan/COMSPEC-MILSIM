@@ -87,6 +87,7 @@ class TenantRepository
             $row['registry_tagline'] = $meta['tagline'];
             $row['registry_style_badge_labels'] = $meta['style_badge_labels'];
             $row['registry_tag_labels'] = $meta['registry_tag_labels'];
+            $row['registry_unit_affiliation_label'] = $meta['unit_affiliation_label'] ?? '';
             $row['game_label'] = trim((string) ($community['game_label'] ?? ''));
             $row['registry_locked'] = !empty($community['community_locked']);
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';

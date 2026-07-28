@@ -18,6 +18,10 @@ $gradesUsGrouped = $gradesUsGrouped ?? [];
 $badgeLabels = $badgeLabels ?? \App\Services\Community\TenantCommunityProfileService::badgeLabels();
 $wizardPermissionGroups = $wizardPermissionGroups ?? \App\Services\Community\CommunityOnboardingValidationService::wizardPermissionFieldGroups();
 $tenantTypes = \App\Services\Community\TenantTypeConfig::availableTypes();
+$realUnitCatalogJson = json_encode(
+    \App\Services\Community\RealUnitAffiliationCatalog::frontendPayload(),
+    JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE
+);
 $baseUrl = url('');
 $communityCreateDraft = is_array($communityCreateDraft ?? null) ? $communityCreateDraft : [];
 $onboardingStepKey = is_string($onboardingStep ?? null) ? strtolower(trim($onboardingStep)) : '';
@@ -115,6 +119,55 @@ $wizardSteps = [
                                     <option value="<?= htmlspecialchars($z, ENT_QUOTES, 'UTF-8') ?>" <?= $z === 'Europe/Paris' ? 'selected' : '' ?>><?= htmlspecialchars($z, ENT_QUOTES, 'UTF-8') ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cc-section" id="unit-affiliation-section">
+                        <h2 class="cc-section__title">Représentation de l’unité</h2>
+                        <p class="cc-section__text">Aide les visiteurs à comprendre si votre communauté s’inspire d’une unité réelle ou d’un cadre fictif.</p>
+
+                        <div class="mt-5">
+                            <p class="cc-label">Votre communauté représente-t-elle une unité réelle&nbsp;?</p>
+                            <div class="cc-choice-grid cc-choice-grid--2 mt-3">
+                                <label class="cc-choice">
+                                    <input type="radio" name="wizard_represents_real_unit" value="1" class="sr-only" data-unit-affiliation-mode="real">
+                                    <span class="cc-choice__title">Oui</span>
+                                    <span class="cc-choice__text">Unité ou composante existante (forces spéciales).</span>
+                                </label>
+                                <label class="cc-choice">
+                                    <input type="radio" name="wizard_represents_real_unit" value="0" class="sr-only" data-unit-affiliation-mode="fictional">
+                                    <span class="cc-choice__title">Non</span>
+                                    <span class="cc-choice__text">Cadre fictif, inspiré ou original.</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="unit-affiliation-fictional" class="mt-5 hidden">
+                            <label class="cc-label" for="wizard-fictional-unit-label">Quelle unité fictive représentez-vous&nbsp;?</label>
+                            <input type="text" name="wizard_fictional_unit_label" id="wizard-fictional-unit-label" maxlength="200" class="cc-field" placeholder="ex. Task Force Phoenix, 1er régiment fictif…">
+                            <p class="cc-hint">Nom tel qu’il apparaîtra sur la fiche registre.</p>
+                        </div>
+
+                        <div id="unit-affiliation-real" class="mt-5 hidden space-y-4">
+                            <div>
+                                <label class="cc-label" for="wizard-real-unit-country">Pays de rattachement</label>
+                                <select name="wizard_real_unit_country" id="wizard-real-unit-country" class="cc-select max-w-md">
+                                    <option value="">— Choisir un pays —</option>
+                                    <?php foreach (\App\Services\Community\RealUnitAffiliationCatalog::countryLabels() as $code => $label): ?>
+                                    <option value="<?= htmlspecialchars($code, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="cc-hint">Vous pouvez sélectionner plusieurs unités, mais uniquement au sein d’un même pays.</p>
+                            </div>
+
+                            <div id="unit-affiliation-real-picker" class="hidden">
+                                <label class="cc-label" for="wizard-real-unit-search">Rechercher une unité</label>
+                                <input type="search" id="wizard-real-unit-search" class="cc-field" placeholder="Tapez un nom, un régiment, un commando…" autocomplete="off">
+
+                                <div class="cc-unit-affiliation-list mt-3" id="wizard-real-unit-list" role="group" aria-label="Unités de forces spéciales"></div>
+
+                                <p class="cc-hint mt-2" id="wizard-real-unit-selection-summary">Aucune unité sélectionnée.</p>
                             </div>
                         </div>
                     </section>
@@ -620,7 +673,11 @@ $wizardSteps = [
     </div>
 </div>
 
+<script>
+window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
+</script>
 <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/community-orbat-builder.js"></script>
+<script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>/assets/js/community-unit-affiliation.js"></script>
 <script>
 (function () {
     var form = document.getElementById('community-create-form');
@@ -976,6 +1033,9 @@ $wizardSteps = [
         }
         syncRegistrationModeUi();
         syncPaid();
+        if (window.CommunityUnitAffiliation && typeof window.CommunityUnitAffiliation.restore === 'function') {
+            window.CommunityUnitAffiliation.restore(wizardDraft);
+        }
     }
 
     restoreWizardDraft();

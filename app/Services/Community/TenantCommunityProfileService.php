@@ -760,7 +760,8 @@ final class TenantCommunityProfileService
      * @return array{
      *   tagline: string,
      *   style_badge_labels: list<string>,
-     *   registry_tag_labels: list<string>
+     *   registry_tag_labels: list<string>,
+     *   unit_affiliation_label: string
      * }
      */
     public static function registryCardMeta(array $community): array
@@ -801,11 +802,38 @@ final class TenantCommunityProfileService
             $tagline = (string) $community['game_label'];
         }
 
+        $unitAffiliationLabel = self::unitAffiliationSummary($community);
+
         return [
             'tagline' => $tagline,
             'style_badge_labels' => $styleBadgeLabels,
             'registry_tag_labels' => $registryTagLabels,
+            'unit_affiliation_label' => $unitAffiliationLabel,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $community
+     */
+    public static function unitAffiliationSummary(array $community): string
+    {
+        $aff = $community['unit_affiliation'] ?? null;
+        if (!is_array($aff)) {
+            return '';
+        }
+        if (!empty($aff['is_real'])) {
+            $labels = $aff['unit_labels'] ?? [];
+            if (!is_array($labels) || $labels === []) {
+                return '';
+            }
+            $country = trim((string) ($aff['country_label'] ?? ''));
+            $prefix = $country !== '' ? $country . ' — ' : '';
+
+            return $prefix . implode(', ', array_map('strval', $labels));
+        }
+        $fict = trim((string) ($aff['fictional_label'] ?? ''));
+
+        return $fict !== '' ? 'Unité fictive : ' . $fict : '';
     }
 
     private function clip(string $s, int $max): string

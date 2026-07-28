@@ -133,6 +133,7 @@ if ($registryCount === 0) {
           $excerpt = trim((string) ($t['registry_excerpt'] ?? ''));
           $styleBadgeLabels = is_array($t['registry_style_badge_labels'] ?? null) ? $t['registry_style_badge_labels'] : [];
           $registryTagLabels = is_array($t['registry_tag_labels'] ?? null) ? $t['registry_tag_labels'] : [];
+          $unitAffiliationLabel = trim((string) ($t['registry_unit_affiliation_label'] ?? ''));
           $gameLabel = trim((string) ($t['game_label'] ?? ''));
           $coverUrl = $registryCoverUrl($slug);
           $gradientStyle = $registryCoverGradient($slug);
@@ -145,6 +146,7 @@ if ($registryCount === 0) {
               $simpleReg ? 'inscription simple' : 'parcours milsim',
               implode(' ', array_map('strval', $styleBadgeLabels)),
               implode(' ', array_map('strval', $registryTagLabels)),
+              $unitAffiliationLabel,
           ]))));
           $delayClass = 'cr-rise cr-rise-d' . min(3, 1 + ($i % 3));
           ?>
@@ -176,6 +178,9 @@ if ($registryCount === 0) {
                 <h3 class="cr-card__name"><?= htmlspecialchars($name) ?></h3>
                 <?php if ($gameLabel !== ''): ?>
                 <p class="cr-card__game"><?= htmlspecialchars($gameLabel) ?></p>
+                <?php endif; ?>
+                <?php if ($unitAffiliationLabel !== ''): ?>
+                <p class="cr-card__unit"><?= htmlspecialchars($unitAffiliationLabel) ?></p>
                 <?php endif; ?>
               </div>
               <?php if ($logoUrl !== '' && filter_var($logoUrl, FILTER_VALIDATE_URL)): ?>
