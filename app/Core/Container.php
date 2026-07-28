@@ -751,6 +751,7 @@ class Container
             \App\Repositories\EnlistmentTimelineRepository::class => new \App\Repositories\EnlistmentTimelineRepository(),
             \App\Repositories\EnlistmentRecruitmentEngagementRepository::class => new \App\Repositories\EnlistmentRecruitmentEngagementRepository(),
             \App\Repositories\RecruitmentPresetRepository::class => new \App\Repositories\RecruitmentPresetRepository(),
+            \App\Repositories\RecruitmentInviteCodeRepository::class => new \App\Repositories\RecruitmentInviteCodeRepository(),
             \App\Controllers\Web\EnlistmentController::class => new \App\Controllers\Web\EnlistmentController(
                 self::get(\App\Repositories\EnlistmentRepository::class),
                 self::get(\App\Repositories\EnlistmentTimelineRepository::class),
@@ -771,6 +772,7 @@ class Container
                 self::get(\App\Repositories\UnitRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Repositories\RecruitmentDiscordQuestionRepository::class),
+                self::get(\App\Repositories\RecruitmentInviteCodeRepository::class),
             ),
             \App\Repositories\RecruitmentDiscordQuestionRepository::class => new \App\Repositories\RecruitmentDiscordQuestionRepository(),
             \App\Repositories\DocumentRepository::class => new \App\Repositories\DocumentRepository(),
