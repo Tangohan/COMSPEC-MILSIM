@@ -1,0 +1,9 @@
+﻿PAA found   : 132
+PNG created : 131
+Failures    : 1
+Dest root   : E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\public\assets\markers\arma\ctab
+Converter   : Pal2PacE (C:\Users\tetar\Documents\Paascripts\Pal2PacE.exe)
+Include     : img
+
+Failures:
+F:\SteamLibrary\steamapps\common\Arma 3\!Workshop\@# S.O.A.R - EQ\Addons\cTab\img\helmet_list.paa => E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\public\assets\markers\arma\ctab\img\helmet_list.png | C:\Users\tetar\AppData\Local\Temp\paa2png_8330f33426904645b2ffa4799fd5dcff\helmet_list.paa->C:\Users\tetar\AppData\Local\Temp\paa2png_8330f33426904645b2ffa4799fd5dcff\helmet_list.png Error (Img is not of power of 2 size) C:\Users\tetar\AppData\Local\Temp\paa2png_8330f33426904645b2ffa4799fd5dcff\helmet_list.paa->C:\Users\tetar\AppData\Local\Temp\paa2png_8330f33426904645b2ffa4799fd5dcff\helmet_list.png

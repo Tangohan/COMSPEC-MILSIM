@@ -1,0 +1,8 @@
+﻿PAA found   : 1408
+PNG created : 1408
+Failures    : 0
+Dest root   : E:\Developpement\compsec.ttrd.fr\COMSPEC-MILSIM\public\assets\markers\arma\z\mts\addons\markers\data
+Converter   : Pal2PacE (C:\Users\tetar\Documents\Paascripts\Pal2PacE.exe)
+
+Failures:
+
