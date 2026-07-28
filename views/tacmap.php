@@ -36,13 +36,16 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
+  </script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-map-crs.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milsymbol/milsymbol.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/nato-sidc-icons.js"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-marker-catalog.js?v=202607261745"></script>
-  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js?v=202607261745"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-marker-catalog.js?v=202607281250"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/arma-map-markers.js?v=202607281250"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-unit-popup.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-medical-alerts.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-terrain-tools.js?v=202607262015"></script>

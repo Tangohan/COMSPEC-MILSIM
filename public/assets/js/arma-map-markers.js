@@ -497,8 +497,63 @@ window.ArmaMapMarkers = (function () {
     return color;
   }
 
+  /** Base CDN icônes PAA→PNG (injectée côté page, sinon défaut relatif). */
+  function markerIconsCdnBase() {
+    var fromWin = (typeof window !== 'undefined' && window.ATAK_MARKER_ICONS_CDN)
+      ? String(window.ATAK_MARKER_ICONS_CDN).replace(/\/$/, '')
+      : '';
+    return fromWin || '';
+  }
+
   /**
-   * @returns {{ html: string, color: string, typeKey: string, label: string, iconSize: number[], iconAnchor: number[], kind: string }}
+   * \A3\ui_f\...\warning_CA.paa → {CDN}/a3/ui_f/.../warning_ca.png
+   */
+  function armaTextureToPngUrl(texturePath) {
+    var raw = String(texturePath || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    if (!raw) return '';
+    raw = raw.replace(/^[a-z]:\//i, '');
+    if (/\.paa$/i.test(raw)) raw = raw.replace(/\.paa$/i, '.png');
+    else if (!/\.(png|jpe?g|webp|svg)$/i.test(raw)) raw += '.png';
+    raw = raw.toLowerCase();
+    var parts = raw.split('/').filter(function (p) {
+      return p && p !== '.' && p !== '..';
+    }).map(encodeURIComponent);
+    if (!parts.length) return '';
+    var base = markerIconsCdnBase();
+    if (!base) return '';
+    return base + '/' + parts.join('/');
+  }
+
+  function resolvePngUrl(data) {
+    if (!data || typeof data !== 'object') return '';
+    var direct = data.pngUrl || data.png_url || '';
+    if (direct) return String(direct);
+    if (window.ArmaMarkerCatalog && typeof window.ArmaMarkerCatalog.get === 'function') {
+      var cat = window.ArmaMarkerCatalog.get(data.type || data.icon || '');
+      if (cat && cat.pngUrl) return String(cat.pngUrl);
+    }
+    var tex = data.texture || data.iconPath || '';
+    if (!tex) return '';
+    return armaTextureToPngUrl(tex);
+  }
+
+  function escapeAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function labelSpanHtml(label, labelColor) {
+    return '<span style="font:700 8px/1.1 ui-sans-serif,system-ui,sans-serif;color:' + labelColor +
+      ';text-shadow:0 0 2px #000,0 1px 2px #000;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;">' +
+      String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').slice(0, 18) +
+      '</span>';
+  }
+
+  /**
+   * @returns {{ html: string, color: string, typeKey: string, label: string, iconSize: number[], iconAnchor: number[], kind: string, pngUrl?: string, iconUrl?: string }}
    */
   function buildIconSpec(data) {
     var decoded = decodeType(data || {});
@@ -508,6 +563,14 @@ window.ArmaMapMarkers = (function () {
     var dir = readDir(data);
     var typeKey = decoded.typeKey;
     var mutedLabel = !rawLabel || label.indexOf('Repère') === 0;
+    var labelColor = mutedLabel ? '#94a3b8' : color;
+    var pngUrl = resolvePngUrl(data);
+
+    var glyphHtml = '';
+    var kind = decoded.kind;
+    var iconSize = [88, 30];
+    var iconAnchor = [44, 10];
+    var isNatoSvg = false;
 
     if (decoded.kind === 'nato' && window.NatoSidcIcons && typeof window.NatoSidcIcons.svgMarkup === 'function') {
       var natoOpts = natoOptsFromData(data, decoded);
@@ -517,41 +580,68 @@ window.ArmaMapMarkers = (function () {
         natoOpts.label = displayLabelOf(data);
         natoOpts.showLabel = true;
       }
-      var natoHtml = window.NatoSidcIcons.svgMarkup(natoOpts);
+      glyphHtml = window.NatoSidcIcons.svgMarkup(natoOpts);
+      kind = 'nato';
+      isNatoSvg = true;
+      iconSize = [80, label ? 44 : 32];
+      iconAnchor = [40, label ? 22 : 16];
+    } else {
+      var rotateStyle = '';
+      if (dir && needsRotation(typeKey)) {
+        rotateStyle = 'transform:rotate(' + dir + 'deg);transform-origin:center center;';
+      }
+      var shape = shapeHtml(typeKey, color);
+      // Diamant rouge pour repères hostiles simples (Marker Dropper)
+      if ((decoded.kind === 'handdrawn' || decoded.kind === 'unknown') && /red|opfor|east/i.test(String((data && data.color) || ''))) {
+        if (typeKey === 'dot' || typeKey === 'marker') {
+          shape = shapeHtml('destroy', color);
+        }
+      }
+      var badge = prefixBadgeHtml(data, color);
+      glyphHtml = '<span style="display:inline-flex;align-items:center;justify-content:center;gap:2px;' + rotateStyle + '">' + shape + badge + '</span>';
+    }
+
+    // Texture / PNG : img prioritaire, repli SVG/glyph si 404 (Phase 0 sans assets).
+    if (pngUrl) {
+      var rotImg = (dir && needsRotation(typeKey) && !isNatoSvg) ? 'transform:rotate(' + dir + 'deg);' : '';
+      var onErr = "this.style.display='none';var f=this.nextElementSibling;if(f){f.style.display='flex';}";
+      var htmlPng = '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:none;">' +
+        '<img class="arma-marker-paa-png" src="' + escapeAttr(pngUrl) + '" alt="" width="28" height="28" ' +
+        'style="width:28px;height:28px;object-fit:contain;' + rotImg + 'display:block;" onerror="' + onErr + '" />' +
+        '<div class="arma-marker-paa-fallback" style="display:none;flex-direction:column;align-items:center;gap:1px;">' +
+        glyphHtml +
+        '</div>' +
+        (isNatoSvg ? '' : labelSpanHtml(label, labelColor)) +
+        '</div>';
       return {
-        html: natoHtml,
+        html: htmlPng,
+        color: color,
+        typeKey: typeKey,
+        label: label,
+        kind: kind,
+        pngUrl: pngUrl,
+        iconUrl: pngUrl,
+        iconSize: iconSize,
+        iconAnchor: iconAnchor
+      };
+    }
+
+    if (isNatoSvg) {
+      return {
+        html: glyphHtml,
         color: color,
         typeKey: typeKey,
         label: label,
         kind: 'nato',
-        iconSize: [80, label ? 44 : 32],
-        iconAnchor: [40, label ? 22 : 16]
+        iconSize: iconSize,
+        iconAnchor: iconAnchor
       };
     }
 
-    var rotateStyle = '';
-    if (dir && needsRotation(typeKey)) {
-      rotateStyle = 'transform:rotate(' + dir + 'deg);transform-origin:center center;';
-    }
-
-    var shape = shapeHtml(typeKey, color);
-    // Diamant rouge pour repères hostiles simples (Marker Dropper)
-    if ((decoded.kind === 'handdrawn' || decoded.kind === 'unknown') && /red|opfor|east/i.test(String((data && data.color) || ''))) {
-      if (typeKey === 'dot' || typeKey === 'marker') {
-        shape = shapeHtml('destroy', color);
-      }
-    }
-    var badge = prefixBadgeHtml(data, color);
-    var labelColor = mutedLabel ? '#94a3b8' : color;
-    var html = '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:none;">' +
-      '<span style="display:inline-flex;align-items:center;justify-content:center;gap:2px;' + rotateStyle + '">' + shape + badge + '</span>' +
-      '<span style="font:700 8px/1.1 ui-sans-serif,system-ui,sans-serif;color:' + labelColor +
-        ';text-shadow:0 0 2px #000,0 1px 2px #000;white-space:nowrap;max-width:88px;overflow:hidden;text-overflow:ellipsis;">' +
-        String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;').slice(0, 18) +
-        '</span>' +
-      '</div>';
     return {
-      html: html,
+      html: '<div style="display:flex;flex-direction:column;align-items:center;gap:1px;pointer-events:none;">' +
+        glyphHtml + labelSpanHtml(label, labelColor) +
+        '</div>',
       color: color,
       typeKey: typeKey,
       label: label,
@@ -562,10 +652,20 @@ window.ArmaMapMarkers = (function () {
   }
 
   function leafletDivIcon(L, data) {
-    if (!L || !L.divIcon) return null;
+    if (!L) return null;
     var spec = buildIconSpec(data);
+    // L.icon pur si PNG connu et pas de libellé (sinon divIcon + img + repli).
+    if (spec.iconUrl && L.icon && !spec.label) {
+      return L.icon({
+        iconUrl: spec.iconUrl,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        className: 'arma-map-marker-icon arma-map-marker-png'
+      });
+    }
+    if (!L.divIcon) return null;
     return L.divIcon({
-      className: 'arma-map-marker-icon',
+      className: 'arma-map-marker-icon' + (spec.iconUrl ? ' arma-map-marker-png' : ''),
       html: spec.html,
       iconSize: spec.iconSize,
       iconAnchor: spec.iconAnchor
@@ -751,6 +851,8 @@ window.ArmaMapMarkers = (function () {
     readDir: readDir,
     readShape: readShape,
     readBrush: readBrush,
-    readSize: readSize
+    readSize: readSize,
+    resolvePngUrl: resolvePngUrl,
+    armaTextureToPngUrl: armaTextureToPngUrl
   };
 })();

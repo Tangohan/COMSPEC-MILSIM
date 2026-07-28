@@ -72,6 +72,7 @@ if ($atakMapConfig) {
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
     window.ATAK_TENANT_ID = <?= (int) ($atakTenantId ?? ($atakUserForJs['tenantId'] ?? 0)) ?>;
     window.NODE_ATAK_URL = '';
+    window.ATAK_MARKER_ICONS_CDN = <?= json_encode(function_exists('atak_marker_icons_cdn_base') ? atak_marker_icons_cdn_base() : rtrim($base, '/') . '/assets/markers/arma') ?>;
     window.ATAK_TEAM_CONFIG = <?= json_encode($atakConfig ?: new stdClass()) ?>;
     window.ATAK_USER = <?= json_encode($atakUserForJs ?: new stdClass()) ?>;
     <?php if ($atakMapConfigForJs): ?>window.ATAK_MAP_CONFIG = <?= json_encode($atakMapConfigForJs) ?>;<?php endif; ?>
@@ -1678,8 +1679,8 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
-  <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=202607261745"></script>
-  <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=202607270730"></script>
+  <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=202607281250"></script>
+  <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=202607281250"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
   <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=202607261735"></script>
   <script src="<?= $base ?>/assets/js/atak-map.js?v=202607271230"></script>

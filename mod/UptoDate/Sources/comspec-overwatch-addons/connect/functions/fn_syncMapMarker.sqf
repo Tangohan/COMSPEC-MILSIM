@@ -64,8 +64,16 @@ if (_shape isEqualTo "POLYLINE") then {
     _pos = [_pts select 0, _pts select 1, 0];
 };
 
+private _texture = "";
+if (_type isNotEqualTo "" && {!(_shape isEqualTo "POLYLINE")}) then {
+    _texture = getText (configFile >> "CfgMarkers" >> _type >> "icon");
+};
+private _bs = toString [92];
+private _texForJson = (_texture splitString _bs joinString "/");
+_texForJson = (_texForJson splitString """" joinString "'");
+
 private _json = format [
-    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""arma"",""callsign"":""%14"",""grid"":""%15""}",
+    "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":%7,""alpha"":%8,""shape"":""%9"",""size"":[%10,%11],""brush"":""%12"",""polyline"":%13,""source"":""arma"",""callsign"":""%14"",""grid"":""%15"",""texture"":""%16""}",
     _pos select 0,
     _pos select 1,
     if (count _pos > 2) then { _pos select 2 } else { 0 },
@@ -80,7 +88,8 @@ private _json = format [
     _brush,
     _polyJson,
     (([] call comspec_overwatch_connect_fnc_getCallsign) splitString """" joinString "'"),
-    mapGridPosition _pos
+    mapGridPosition _pos,
+    _texForJson
 ];
 
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {

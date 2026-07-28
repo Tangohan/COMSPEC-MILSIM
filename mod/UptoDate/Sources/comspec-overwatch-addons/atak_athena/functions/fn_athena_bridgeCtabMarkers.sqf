@@ -335,14 +335,18 @@ private _sendMarker = {
     private _armaName = format ["ctab_u_%1", _id];
     private _text = [_type, _textRaw] call _labelFrFromType;
     _text = (_text splitString """" joinString "'");
-    private _sig = format ["%1|%2|%3|%4|%5|%6|%7", _pos select 0, _pos select 1, _type, _text, _color, _dir, _groupSize];
+    // Chemin texture PAA normalisé (/) pour le miroir web → PNG CDN
+    private _bs = toString [92];
+    private _texForJson = (_tex splitString _bs joinString "/");
+    _texForJson = (_texForJson splitString """" joinString "'");
+    private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8", _pos select 0, _pos select 1, _type, _text, _color, _dir, _groupSize, _texForJson];
     _next set [_armaName, _sig];
 
     if ((_prev getOrDefault [_armaName, ""]) isEqualTo _sig) then { continue };
 
     private _sizeA = (1 max _drawSize) * (if (_groupSize > 0) then { 1 + (_groupSize * 0.15) } else { 1 });
     private _json = format [
-        "{""pos"":[%1,%2,0],""type"":""%3"",""text"":""%4"",""color"":""%5"",""dir"":%6,""alpha"":1,""shape"":""ICON"",""size"":[%7,%7],""brush"":""Solid"",""polyline"":[],""source"":""ctab_user"",""groupSize"":%8}",
+        "{""pos"":[%1,%2,0],""type"":""%3"",""text"":""%4"",""color"":""%5"",""dir"":%6,""alpha"":1,""shape"":""ICON"",""size"":[%7,%7],""brush"":""Solid"",""polyline"":[],""source"":""ctab_user"",""groupSize"":%8,""texture"":""%9""}",
         _pos select 0,
         _pos select 1,
         _type,
@@ -350,7 +354,8 @@ private _sendMarker = {
         _color,
         _dir,
         _sizeA,
-        _groupSize
+        _groupSize,
+        _texForJson
     ];
     [_armaName, _json, false] call _sendMarker;
     [format ["Marqueur ATAK · %1", _text]] call comspec_overwatch_connect_fnc_appendModuleLog;

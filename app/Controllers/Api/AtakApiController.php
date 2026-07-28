@@ -2910,6 +2910,25 @@ class AtakApiController
             $decoded['type'] = strtolower(trim(str_replace([' ', '-'], '_', $decoded['icon'])));
         }
 
+        // Texture PAA Arma → pngUrl CDN (Phase 0 miroir icônes).
+        $textureRaw = '';
+        if (!empty($decoded['texture']) && is_string($decoded['texture'])) {
+            $textureRaw = trim(str_replace('\\', '/', (string) $decoded['texture']));
+        } elseif (!empty($decoded['iconPath']) && is_string($decoded['iconPath'])) {
+            $textureRaw = trim(str_replace('\\', '/', (string) $decoded['iconPath']));
+        }
+        if ($textureRaw !== '') {
+            $decoded['texture'] = $textureRaw;
+            if (empty($decoded['pngUrl']) || !is_string($decoded['pngUrl'])) {
+                $png = function_exists('atak_marker_icon_url') ? atak_marker_icon_url($textureRaw) : null;
+                if (is_string($png) && $png !== '') {
+                    $decoded['pngUrl'] = $png;
+                }
+            }
+        } elseif (!empty($decoded['pngUrl']) && is_string($decoded['pngUrl'])) {
+            $decoded['pngUrl'] = trim((string) $decoded['pngUrl']);
+        }
+
         // Couleur Arma (ColorRed / ColorWEST…) → hex stable pour le miroir web.
         if (!empty($decoded['color']) && is_string($decoded['color'])) {
             $decoded['color'] = $this->normalizeArmaMarkerColor((string) $decoded['color']);

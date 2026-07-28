@@ -420,6 +420,73 @@ if (!function_exists('atak_tile_cdn_base')) {
     }
 }
 
+if (!function_exists('atak_marker_icons_cdn_base')) {
+    /**
+     * Base CDN des icônes marqueurs Arma (PAA→PNG), sans slash final.
+     * Env : ATAK_MARKER_ICONS_CDN — défaut local /assets/markers/arma
+     */
+    function atak_marker_icons_cdn_base(): string
+    {
+        $raw = trim((string) env('ATAK_MARKER_ICONS_CDN', ''));
+        if ($raw !== '') {
+            return rtrim($raw, '/');
+        }
+
+        return rtrim(url('assets/markers/arma'), '/');
+    }
+}
+
+if (!function_exists('atak_marker_icon_relpath')) {
+    /**
+     * Normalise un chemin texture Arma (.paa) vers un chemin relatif PNG minuscule.
+     * Ex. \A3\ui_f\data\map\markers\military\warning_CA.paa
+     *   → a3/ui_f/data/map/markers/military/warning_ca.png
+     */
+    function atak_marker_icon_relpath(?string $texturePath): ?string
+    {
+        $raw = trim((string) $texturePath);
+        if ($raw === '') {
+            return null;
+        }
+        $normalized = str_replace('\\', '/', $raw);
+        $normalized = ltrim($normalized, '/');
+        if ($normalized === '') {
+            return null;
+        }
+        // Retirer un éventuel préfixe drive Windows (rare hors jeu)
+        $normalized = (string) preg_replace('#^[a-z]:/#i', '', $normalized);
+        if (preg_match('/\.paa$/i', $normalized) === 1) {
+            $normalized = (string) preg_replace('/\.paa$/i', '.png', $normalized);
+        } elseif (preg_match('/\.(png|jpg|jpeg|webp|svg)$/i', $normalized) !== 1) {
+            $normalized .= '.png';
+        }
+        $normalized = strtolower($normalized);
+        // Segments sûrs uniquement
+        $parts = array_values(array_filter(explode('/', $normalized), static fn ($p) => $p !== '' && $p !== '.' && $p !== '..'));
+        if ($parts === []) {
+            return null;
+        }
+
+        return implode('/', $parts);
+    }
+}
+
+if (!function_exists('atak_marker_icon_url')) {
+    /**
+     * URL absolue (ou sous APP_URL) d’une icône marqueur PNG dérivée d’un chemin PAA Arma.
+     */
+    function atak_marker_icon_url(?string $texturePath): ?string
+    {
+        $rel = atak_marker_icon_relpath($texturePath);
+        if ($rel === null || $rel === '') {
+            return null;
+        }
+        $segments = array_map('rawurlencode', explode('/', $rel));
+
+        return atak_marker_icons_cdn_base() . '/' . implode('/', $segments);
+    }
+}
+
 if (!function_exists('atak_resolve_tile_pattern')) {
     /**
      * Résout un motif de tuiles Leaflet ({z}/{x}/{y}) en URL absolue.

@@ -265,6 +265,7 @@ window.ArmaMarkerCatalog = (function () {
   function get(type) {
     var key = normalize(type);
     if (!key) return null;
+    // Entrées optionnelles : pngUrl (URL PNG miroir PAA) si présente — pas de regen catalogue.
     if (ENTRIES[key]) return Object.assign({ typeKey: key }, ENTRIES[key]);
 
     // Metis composite classnames / texture basenames
