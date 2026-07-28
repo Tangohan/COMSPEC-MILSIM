@@ -11,6 +11,8 @@ use App\Core\Request;
  */
 final class TenantCommunityProfileService
 {
+    private const HERO_LEAD_MAX_LENGTH = 320;
+
     /** Modes d’inscription publique supportés (candidature / enrôlement). */
     public const REGISTRATION_MODE_MILSIM = 'milsim';
     public const REGISTRATION_MODE_SIMPLE = 'simple';
@@ -626,6 +628,32 @@ final class TenantCommunityProfileService
             'analytics' => !empty($mods['analytics']),
         ];
 
+        $heroLead = trim((string) ($community['public_hero_subtitle'] ?? ''));
+        if ($heroLead === '') {
+            $heroLead = self::excerptText(
+                trim((string) ($community['simple_body'] ?? '')),
+                self::HERO_LEAD_MAX_LENGTH
+            );
+        }
+        if ($heroLead === '') {
+            $heroLead = self::excerptText(
+                trim((string) ($community['welcome_text'] ?? '')),
+                self::HERO_LEAD_MAX_LENGTH
+            );
+        }
+        if ($heroLead === '') {
+            $heroLead = self::excerptText(
+                trim((string) ($community['public_about_body'] ?? '')),
+                self::HERO_LEAD_MAX_LENGTH
+            );
+        }
+        if ($heroLead === '') {
+            $heroLead = self::excerptText(
+                trim((string) ($community['public_mission'] ?? '')),
+                self::HERO_LEAD_MAX_LENGTH
+            );
+        }
+
         $aboutBody = trim((string) ($community['public_about_body'] ?? ''));
         if ($aboutBody === '') {
             $aboutBody = trim((string) ($community['simple_body'] ?? ''));
@@ -775,7 +803,7 @@ final class TenantCommunityProfileService
 
         return [
             'publicPageLayout' => self::resolvePublicPageLayout($community['public_page_layout'] ?? null),
-            'heroSubtitle' => trim((string) ($community['public_hero_subtitle'] ?? '')),
+            'heroSubtitle' => $heroLead,
             'heroHeadline' => trim((string) ($community['public_hero_headline'] ?? '')),
             'foundedYear' => $founded,
             'recruitmentSessionLabel' => trim((string) ($community['public_recruitment_session_label'] ?? '')),
@@ -916,6 +944,19 @@ final class TenantCommunityProfileService
         }
 
         return mb_substr($s, 0, $max);
+    }
+
+    private static function excerptText(string $text, int $max): string
+    {
+        $text = trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+        if ($text === '') {
+            return '';
+        }
+        if (mb_strlen($text) <= $max) {
+            return $text;
+        }
+
+        return rtrim(mb_substr($text, 0, max(1, $max - 1))) . '…';
     }
 
     private function sanitizeUrl(string $url, int $maxLen): string

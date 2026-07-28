@@ -128,8 +128,8 @@ foreach ($military as $sec) {
 $profileChecklist = [
     'Profil' => [
         'Nom de communauté' => trim((string) ($tenant['name'] ?? '')) !== '',
-        'Sous-titre public (hero)' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
-        'Présentation (texte ou sections)' => trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
+        'Bio courte du hero' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '',
+        'Présentation “Qui sommes-nous ?”' => trim((string) ($c['public_about_body'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
         'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
         'Prérequis (page publique)' => $prereqRows !== [] && trim((string) ($prereqRows[0]['label'] ?? '')) !== '',
         'Étapes de recrutement' => $stepRows !== [] && trim((string) ($stepRows[0]['title'] ?? '')) !== '',
@@ -362,8 +362,9 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
                 <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Bandeau &amp; repères visuels</h3>
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Sous-titre / accroche (hero)</label>
-                <textarea name="public_hero_subtitle" rows="3" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_hero_subtitle'] ?? '')) ?></textarea>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Bio courte du hero</label>
+                <textarea name="public_hero_subtitle" rows="3" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Quelques lignes pour situer votre communauté dès l’arrivée sur la page."><?= htmlspecialchars((string) ($c['public_hero_subtitle'] ?? '')) ?></textarea>
+                <p class="mt-1 text-[11px] text-slate-500">Visible dans le bandeau d’accueil. Si vous laissez ce champ vide, la bio courte existante pourra être reprise automatiquement.</p>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Badges libres (une ligne = un badge, ex. FR / OTAN)</label>
@@ -423,9 +424,9 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                     <input type="text" name="public_about_title" value="<?= htmlspecialchars((string) ($c['public_about_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Du milsim structuré, pas militarisé">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte de présentation</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte “Qui sommes-nous ?”</label>
                     <textarea name="public_about_body" rows="4" maxlength="8000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_about_body'] ?? '')) ?></textarea>
-                    <p class="mt-1 text-[11px] text-slate-500">Si vide, la présentation simple ou la mission publique sera utilisée.</p>
+                    <p class="mt-1 text-[11px] text-slate-500">Bloc long affiché dans la section de présentation. Si vous le laissez vide, la présentation déjà en place pourra être reprise pour ne pas casser l’existant.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Second paragraphe (optionnel)</label>

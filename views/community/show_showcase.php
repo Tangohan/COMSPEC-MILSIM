@@ -49,18 +49,9 @@ $mods = is_array($sv['publicModules'] ?? null) ? $sv['publicModules'] : [];
 
 $heroHeadline = trim((string) ($sv['heroHeadline'] ?? ''));
 if ($heroHeadline === '') {
-    $heroHeadline = trim((string) ($sv['heroSubtitle'] ?? ''));
+    $heroHeadline = $name;
 }
 $heroLead = trim((string) ($sv['heroSubtitle'] ?? ''));
-if ($heroLead === '' || $heroLead === $heroHeadline) {
-    $heroLead = trim((string) ($sv['publicMission'] ?? ''));
-}
-if ($heroLead === '') {
-    $heroLead = trim((string) ($cp['simpleBody'] ?? ''));
-}
-if ($heroLead === '') {
-    $heroLead = trim((string) ($cp['welcomeText'] ?? ''));
-}
 if ($heroHeadline === '') {
     $heroHeadline = $name;
 }
@@ -83,9 +74,7 @@ if ($aboutBody === '') {
     $aboutBody = trim((string) ($cp['welcomeText'] ?? ''));
 }
 if ($aboutBody === '') {
-    $aboutBody = $heroLead !== '' && $heroLead !== $heroHeadline
-        ? $heroLead
-        : 'Une communauté milsim structurée : opérations régulières, progression individuelle et un accueil soigné pour les nouveaux membres.';
+    $aboutBody = 'Une communauté milsim structurée : opérations régulières, progression individuelle et un accueil soigné pour les nouveaux membres.';
 }
 $aboutBodySecondary = trim((string) ($sv['aboutBodySecondary'] ?? ''));
 $sectionsTitle = trim((string) ($sv['sectionsTitle'] ?? ''));

@@ -295,6 +295,7 @@ final class CommunityOnboardingValidationService
         }, $badges)));
 
         $out['simple_body'] = $this->clip((string) ($wizard['wizard_simple_body'] ?? ''), 8000);
+        $out['public_about_body'] = $this->clip((string) ($wizard['wizard_public_about_body'] ?? ''), 8000);
         $out['expectations'] = $this->clip((string) ($wizard['wizard_expectations'] ?? ''), 8000);
         $out['game_label'] = $this->clip((string) ($wizard['wizard_game_label'] ?? ''), 120);
 

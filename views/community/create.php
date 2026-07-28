@@ -225,8 +225,14 @@ $wizardSteps = [
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="cc-label">Présentation courte</label>
-                                    <textarea name="wizard_simple_body" rows="3" maxlength="8000" class="cc-area" placeholder="Qui êtes-vous, cadre, ambiance…"></textarea>
+                                    <label class="cc-label">Bio courte du hero</label>
+                                    <textarea name="wizard_simple_body" rows="2" maxlength="8000" class="cc-area" placeholder="Quelques lignes pour présenter l’esprit de la communauté dès l’arrivée sur la page…"></textarea>
+                                    <p class="cc-hint">Texte court affiché dans le bandeau d’accueil.</p>
+                                </div>
+                                <div>
+                                    <label class="cc-label">Qui sommes-nous ?</label>
+                                    <textarea name="wizard_public_about_body" rows="5" maxlength="8000" class="cc-area" placeholder="Présentez votre histoire, votre cadre de jeu, votre manière d’accueillir et ce qui vous distingue."></textarea>
+                                    <p class="cc-hint">Cette zone sert au texte de présentation plus détaillé sous le bandeau.</p>
                                 </div>
                                 <div>
                                     <label class="cc-label">Attentes / mot d’ordre</label>

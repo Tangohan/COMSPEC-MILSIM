@@ -866,6 +866,7 @@ class CommunityController
             'welcome_text' => trim((string) ($data['welcome_text'] ?? '')),
             'presentation_mode' => ((string) ($data['wizard_presentation_mode'] ?? 'simple')) === 'military' ? 'military' : 'simple',
             'simple_body' => trim((string) ($data['wizard_simple_body'] ?? '')),
+            'public_about_body' => trim((string) ($data['wizard_public_about_body'] ?? '')),
             'expectations' => trim((string) ($data['wizard_expectations'] ?? '')),
             'game_label' => trim((string) ($data['wizard_game_label'] ?? '')),
             'style_badges' => $styleBadges,
@@ -957,6 +958,7 @@ class CommunityController
                 'referrer_user_id' => $referrerUserId,
                 'public_page_layout' => ((string) $request->input('wizard_public_page_layout', 'legacy')) === 'showcase' ? 'showcase' : 'legacy',
                 'public_hero_subtitle' => trim((string) $request->input('wizard_public_hero_subtitle', '')),
+                'public_about_body' => trim((string) $request->input('wizard_public_about_body', '')),
                 'public_doctrine' => trim((string) $request->input('wizard_public_doctrine', '')),
                 'tenant_type' => $tenantType,
             ];

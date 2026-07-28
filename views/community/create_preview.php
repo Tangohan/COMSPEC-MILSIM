@@ -37,10 +37,17 @@ foreach (is_array($c['style_badges'] ?? null) ? $c['style_badges'] : [] as $slug
         <?php endforeach; ?>
     </div>
 
-    <?php if (($c['presentation_mode'] ?? 'simple') === 'simple' && trim((string) ($c['simple_body'] ?? '')) !== ''): ?>
-        <div class="prose prose-slate max-w-none mb-8">
-            <h2 class="text-lg font-black text-slate-900 mb-2">Présentation</h2>
+    <?php if (trim((string) ($c['simple_body'] ?? '')) !== ''): ?>
+        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800 mb-2">Bandeau d’accueil</p>
             <div class="text-sm text-slate-700 whitespace-pre-wrap"><?= htmlspecialchars((string) $c['simple_body']) ?></div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (trim((string) ($c['public_about_body'] ?? '')) !== ''): ?>
+        <div class="prose prose-slate max-w-none mb-8">
+            <h2 class="text-lg font-black text-slate-900 mb-2">Qui sommes-nous ?</h2>
+            <div class="text-sm text-slate-700 whitespace-pre-wrap"><?= htmlspecialchars((string) $c['public_about_body']) ?></div>
         </div>
     <?php endif; ?>
 
