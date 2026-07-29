@@ -1574,6 +1574,7 @@ class AtakApiController
             'measured_packet_loss' => $measuredLoss,
             'zones_enabled' => (bool) ($roleplayCfg['zones_enabled'] ?? false),
             'zones_json' => $zonesArray ?? $zonesJson,
+            'intel_scramble_enabled' => (bool) ($roleplayCfg['intel_scramble_enabled'] ?? false),
             'session_ttl_sec' => 600,
         ]);
     }

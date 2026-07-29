@@ -247,9 +247,15 @@ _body = _body + ([
 _body = _body + (["Carte / contexte", format ["n° %1", _mapId], "#e8f4f0"] call _row);
 _body = _body + (["Terminal", _deviceTxt, _deviceColor] call _row);
 
+private _intelScramble = missionNamespace getVariable ["COMSPEC_IntelScramble", false];
+private _intelLabel = if (_intelScramble) then { "Actif — données chiffrées" } else { "Inactif" };
+private _intelColor = if (_intelScramble) then { "#7dffb0" } else { "#8aa0b4" };
+_body = _body + (["Chiffrement intel", _intelLabel, _intelColor] call _row);
+
 private _certStatus = missionNamespace getVariable ["COMSPEC_CertStatus", ""];
 private _certExpires = missionNamespace getVariable ["COMSPEC_CertExpires", ""];
 private _certRef = missionNamespace getVariable ["COMSPEC_CertRef", ""];
+private _certDurationDays = missionNamespace getVariable ["COMSPEC_CertDurationDays", ""];
 private _certLabel = [_certStatus, _certExpires] call comspec_overwatch_connect_fnc_certStatusLabel;
 private _certColor = switch (toLower _certStatus) do {
     case "active";
@@ -261,7 +267,10 @@ private _certColor = switch (toLower _certStatus) do {
 };
 _body = _body + (["Certificat", _certLabel, _certColor] call _row);
 if (_certRef isEqualType "" && {_certRef isNotEqualTo ""} && {(toLower _certRef) find "<null" < 0}) then {
-    _body = _body + (["Réf. certificat", _certRef, "#c8e8ff"] call _row);
+    _body = _body + (["ID certificat", _certRef, "#c8e8ff"] call _row);
+};
+if (_certDurationDays isEqualType "" && {_certDurationDays isNotEqualTo ""}) then {
+    _body = _body + (["Durée du certificat", format ["%1 jours", _certDurationDays], "#c8e8ff"] call _row);
 };
 
 private _terminalUid = missionNamespace getVariable ["COMSPEC_TerminalUid", ""];

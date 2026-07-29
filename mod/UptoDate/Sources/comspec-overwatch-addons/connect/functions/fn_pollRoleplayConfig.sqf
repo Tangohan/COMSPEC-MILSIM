@@ -28,7 +28,7 @@ private _zoneLines = [];
     if (_key in ["zones_lines_count"]) then { continue };
 
     // Lignes zone : name\ttype\tx\ty\tradius\tintensity (6 colonnes, pas une clef connue)
-    if ((count _parts) >= 5 && {!(_key in ["network_enabled", "zones_enabled", "network_mode", "packet_loss_percent", "zones_json", "session_ttl_sec"])}) then {
+    if ((count _parts) >= 5 && {!(_key in ["network_enabled", "zones_enabled", "network_mode", "packet_loss_percent", "zones_json", "session_ttl_sec", "intel_scramble_enabled"])}) then {
         _zoneLines pushBack _line;
     } else {
         _map set [_key, _val];
@@ -43,6 +43,8 @@ missionNamespace setVariable ["COMSPEC_PortalRoleplayConfig", _map, false];
 
 private _netEnabled = (_map getOrDefault ["network_enabled", "0"]) isEqualTo "1";
 private _zonesEnabled = (_map getOrDefault ["zones_enabled", "0"]) isEqualTo "1";
+private _intelScramble = (_map getOrDefault ["intel_scramble_enabled", "0"]) isEqualTo "1";
+missionNamespace setVariable ["COMSPEC_IntelScramble", _intelScramble, false];
 
 if (_netEnabled) then {
     missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, false];

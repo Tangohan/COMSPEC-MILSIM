@@ -172,6 +172,11 @@ private _certExpires = _map getOrDefault ["cert_expires", ""];
 
 private _certRef = _map getOrDefault ["certificate_ref", ""];
 
+private _certDurationDays = _map getOrDefault ["cert_duration_days", ""];
+if (_certDurationDays isNotEqualTo "") then {
+    missionNamespace setVariable ["COMSPEC_CertDurationDays", _certDurationDays, false];
+};
+
 if ([_certRef] call _isBadStr) then {
 
     _certRef = "";

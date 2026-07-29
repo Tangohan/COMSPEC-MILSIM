@@ -2660,6 +2660,13 @@ public static class Extension
                 }
             }
 
+            if (doc.RootElement.TryGetProperty("intel_scramble_enabled", out var ise))
+            {
+                var on = ise.ValueKind == JsonValueKind.True
+                    || (ise.ValueKind == JsonValueKind.Number && ise.GetInt32() != 0);
+                AppendLine(sb, "intel_scramble_enabled", on ? "1" : "0");
+            }
+
             if (doc.RootElement.TryGetProperty("session_ttl_sec", out var ttl) && ttl.ValueKind == JsonValueKind.Number)
                 AppendLine(sb, "session_ttl_sec", ttl.GetInt32().ToString());
 
