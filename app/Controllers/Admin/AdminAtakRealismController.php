@@ -30,6 +30,8 @@ final class AdminAtakRealismController
             return $forbidden;
         }
 
+        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
+
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.index',
             'title' => 'Parc de terminaux',
@@ -49,11 +51,15 @@ final class AdminAtakRealismController
             return $forbidden;
         }
 
+        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
+        $this->realismRepository->ensureDefaultCryptoDomain($tenantId);
+
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.certificates',
             'title' => 'Certificats ATAK',
             'atakRealismTerminals' => $this->realismRepository->listTerminals($tenantId),
             'atakRealismCertificates' => $this->realismRepository->listCertificates($tenantId),
+            'atakCryptoDomains' => $this->realismRepository->listCryptoDomains($tenantId),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -109,7 +115,7 @@ final class AdminAtakRealismController
             'terminal_id' => $request->input('terminal_id'),
             'user_id' => $request->input('user_id'),
             'certificate_type' => $request->input('certificate_type'),
-            'status' => $request->input('status'),
+            'status' => $request->input('status') ?: 'active',
             'common_name' => $request->input('common_name'),
             'serial_number' => $request->input('serial_number'),
             'fingerprint_sha256' => $request->input('fingerprint_sha256'),
@@ -117,8 +123,91 @@ final class AdminAtakRealismController
             'expires_at' => $request->input('expires_at'),
             'duration_days' => $request->input('duration_days'),
             'revoked_reason' => $request->input('revoked_reason'),
+            'crypto_domain_id' => $request->input('crypto_domain_id'),
         ]);
         Session::flash('success', 'Certificat ATAK enregistré.');
+
+        return Response::redirect(url('back-office/atak/certificats'));
+    }
+
+    public function storeCryptoDomain(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/certificats'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $this->realismRepository->upsertCryptoDomain($tenantId, [
+            'domain_ref' => $request->input('domain_ref'),
+            'label' => $request->input('label'),
+            'faction_key' => $request->input('faction_key'),
+            'status' => $request->input('status') ?: 'active',
+        ]);
+        Session::flash('success', 'Réseau de chiffrement enregistré.');
+
+        return Response::redirect(url('back-office/atak/certificats'));
+    }
+
+    public function revokeCertificate(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/certificats'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $id = (int) ($params['id'] ?? $request->input('id') ?? 0);
+        $reason = trim((string) $request->input('revoked_reason', ''));
+        $updated = $this->realismRepository->revokeCertificate(
+            $tenantId,
+            $id,
+            $reason !== '' ? $reason : 'Révoqué depuis le back-office'
+        );
+        if ($updated === null) {
+            Session::flash('error', 'Certificat introuvable.');
+        } else {
+            Session::flash('success', 'Certificat révoqué.');
+        }
+
+        return Response::redirect(url('back-office/atak/certificats'));
+    }
+
+    public function deleteCertificate(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('dashboard'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+            return Response::redirect(url('back-office/atak/certificats'));
+        }
+        $forbidden = ModuleFeatureAccess::guardAtak('manage');
+        if ($forbidden instanceof Response) {
+            return $forbidden;
+        }
+
+        $id = (int) ($params['id'] ?? $request->input('id') ?? 0);
+        if ($this->realismRepository->deleteCertificate($tenantId, $id)) {
+            Session::flash('success', 'Certificat supprimé.');
+        } else {
+            Session::flash('error', 'Certificat introuvable.');
+        }
 
         return Response::redirect(url('back-office/atak/certificats'));
     }

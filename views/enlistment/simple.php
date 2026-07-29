@@ -19,6 +19,15 @@ $showMilsimUnavailableNotice = $showMilsimUnavailableNotice ?? false;
 $simpleEnlistmentUrl = $simpleEnlistmentUrl ?? $formAction;
 $selectedRecruitmentOpening = is_array($selectedRecruitmentOpening ?? null) ? $selectedRecruitmentOpening : null;
 $enlistmentMemberOpeningInsight = is_array($enlistmentMemberOpeningInsight ?? null) ? $enlistmentMemberOpeningInsight : null;
+$milsimPack = $milsimPack ?? \App\Services\Community\EnlistmentMilsimPackService::defaultPack();
+$simpleMotivation = \App\Services\Community\EnlistmentMilsimPackService::normalizeMotivationSection(
+    is_array($milsimPack['motivation'] ?? null) ? $milsimPack['motivation'] : null,
+    is_array($milsimPack['fields'] ?? null) ? $milsimPack['fields'] : null
+);
+$simpleMotivationLabel = (string) ($simpleMotivation['why_join']['label'] ?? 'Motivation');
+$simpleMotivationPlaceholder = (string) ($simpleMotivation['why_join']['placeholder'] ?? 'Pourquoi souhaitez-vous rejoindre la communauté ?');
+$simpleMotivationHelp = trim((string) ($simpleMotivation['why_join']['help'] ?? ''));
+$simpleMotivationRequired = !empty($simpleMotivation['why_join']['required']);
 ?>
 <script>
 document.addEventListener('alpine:init', function () {
@@ -68,8 +77,13 @@ document.addEventListener('alpine:init', function () {
     <?php elseif ($hasMembershipOnTarget && $switchToTargetUrl): ?>
         <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-sm text-amber-950">
             <p class="font-bold">Autre communauté active</p>
-            <p class="mt-1">Vous avez un compte sur cette communauté : basculez le contexte pour utiliser le mode compte.</p>
+            <p class="mt-1">Vous avez un compte sur cette communauté : basculez le contexte pour utiliser le dossier membre local (optionnel si le mode compte est déjà proposé).</p>
             <a href="<?= htmlspecialchars($switchToTargetUrl) ?>" class="mt-3 inline-flex text-xs font-black uppercase tracking-widest text-amber-950 underline">Basculer et continuer</a>
+        </div>
+    <?php else: ?>
+        <div class="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-700">
+            <p class="font-bold">Compte Athena</p>
+            <p class="mt-1">Vous avez déjà un compte ? <a href="<?= htmlspecialchars(url('login')) ?>" class="font-semibold text-slate-900 underline">Connectez-vous</a> pour l’associer à votre candidature. Sinon, continuez en invité.</p>
         </div>
     <?php endif; ?>
 
@@ -184,8 +198,11 @@ document.addEventListener('alpine:init', function () {
                 <input type="text" name="availability" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Soirs, week-end...">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">Motivation</label>
-                <textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="Pourquoi souhaitez-vous rejoindre la communauté ?"></textarea>
+                <label class="block text-xs font-bold text-slate-600 mb-1"><?= htmlspecialchars($simpleMotivationLabel) ?><?php if ($simpleMotivationRequired): ?> <span class="font-normal text-slate-400">(obligatoire)</span><?php endif; ?></label>
+                <?php if ($simpleMotivationHelp !== ''): ?>
+                    <p class="text-xs text-slate-500 mb-1"><?= htmlspecialchars($simpleMotivationHelp) ?></p>
+                <?php endif; ?>
+                <textarea name="motivation_why_join" rows="4" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm" placeholder="<?= htmlspecialchars($simpleMotivationPlaceholder) ?>"<?= $simpleMotivationRequired ? ' required' : '' ?>></textarea>
             </div>
         </div>
 

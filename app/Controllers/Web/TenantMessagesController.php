@@ -34,6 +34,10 @@ final class TenantMessagesController
         if (!$tenantId || !$userId) {
             return Response::redirect(url('dashboard'));
         }
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$featureGate->allows($tenantId, 'messages')) {
+            return \App\Support\PlanFeatureDenial::upgradeView('messages');
+        }
         $user = $this->authService->user();
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);

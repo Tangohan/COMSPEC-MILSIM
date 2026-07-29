@@ -63,7 +63,7 @@ final class AlertDisplayStyle
             self::MINI_SUCCESS => 'Barre sous le menu — Succès / confirmation',
             self::MINI_WARNING => 'Barre sous le menu — Attention',
             self::MINI_DANGER => 'Barre sous le menu — Critique',
-            self::BREAKING => 'Bandeau Breaking (défilement — maj / maintenance)',
+            self::BREAKING => 'Bandeau Attention (défilement — maj / maintenance)',
             self::POPUP => 'Pop-up éphémère (fenêtre à l’arrivée sur le tableau de bord)',
         ];
     }
@@ -202,7 +202,7 @@ final class AlertDisplayStyle
             self::MINI_SUCCESS => 'Succès',
             self::MINI_WARNING => 'Alerte',
             self::MINI_DANGER => 'Critique',
-            self::BREAKING => 'Breaking',
+            self::BREAKING => 'Attention',
             self::IMPORTANT => 'Important',
             default => 'Info',
         };

@@ -227,9 +227,28 @@ window.ATAKSessionWorkspace = (function () {
     return rows;
   }
 
+  function notepadEls() {
+    return Array.prototype.slice.call(document.querySelectorAll('[data-atak-notepad="1"]'));
+  }
+
+  function setNotepadValue(text, exceptEl) {
+    var v = text == null ? '' : String(text);
+    state.notepad = v;
+    notepadEls().forEach(function (el) {
+      if (exceptEl && el === exceptEl) return;
+      if (el.value !== v) el.value = v;
+    });
+  }
+
   function syncFromDom() {
-    var note = document.getElementById('atak-notepad');
-    if (note) state.notepad = note.value || '';
+    var active = document.activeElement;
+    if (active && active.getAttribute && active.getAttribute('data-atak-notepad') === '1') {
+      state.notepad = active.value || '';
+    } else {
+      var note = document.getElementById('atak-notepad') || document.getElementById('atak-notepad-effectifs');
+      if (note) state.notepad = note.value || '';
+    }
+    setNotepadValue(state.notepad);
     state.soi = readSheet('soi');
     state.eta = readSheet('eta');
     state.allied_ids = readSheet('allied_ids');
@@ -254,8 +273,7 @@ window.ATAKSessionWorkspace = (function () {
     state.updated_at = data.updated_at || null;
     state.updated_by = data.updated_by || null;
     state.dirty = false;
-    var note = document.getElementById('atak-notepad');
-    if (note) note.value = state.notepad;
+    setNotepadValue(state.notepad);
     renderSoi();
     renderEta();
     renderAllied();
@@ -312,6 +330,40 @@ window.ATAKSessionWorkspace = (function () {
       });
   }
 
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function exportTxt() {
+    syncFromDom();
+    var text = state.notepad || '';
+    var now = new Date();
+    var stamp = now.getFullYear()
+      + pad2(now.getMonth() + 1)
+      + pad2(now.getDate())
+      + '-'
+      + pad2(now.getHours())
+      + pad2(now.getMinutes());
+    var filename = 'atak-bloc-notes-carte' + mapId() + '-' + stamp + '.txt';
+    try {
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      if (window.ATAKShowNotification) {
+        window.ATAKShowNotification('Bloc-notes exporté.');
+      }
+    } catch (e) {
+      if (window.ATAKShowError) window.ATAKShowError('Export impossible sur cet appareil.');
+    }
+  }
+
   function addRow(sheet) {
     syncFromDom();
     if (sheet === 'soi') state.soi.push(emptySoi());
@@ -334,51 +386,79 @@ window.ATAKSessionWorkspace = (function () {
     markDirty();
   }
 
+  function onNotepadInput(ev) {
+    var el = ev.target;
+    if (!el || el.getAttribute('data-atak-notepad') !== '1') return;
+    setNotepadValue(el.value || '', el);
+    markDirty();
+  }
+
   function bind() {
     var root = document.getElementById('tab-notes');
-    if (!root || root._atakNotesBound) return;
-    root._atakNotesBound = true;
+    if (root && !root._atakNotesBound) {
+      root._atakNotesBound = true;
 
-    var note = document.getElementById('atak-notepad');
-    if (note) {
-      note.addEventListener('input', markDirty);
+      root.addEventListener('input', function (ev) {
+        if (ev.target && ev.target.classList && ev.target.classList.contains('atak-sheet-input')) {
+          markDirty();
+        }
+      });
+      root.addEventListener('change', function (ev) {
+        if (ev.target && ev.target.classList && ev.target.classList.contains('atak-sheet-input')) {
+          markDirty();
+        }
+      });
+
+      root.addEventListener('click', function (ev) {
+        var t = ev.target;
+        if (!t) return;
+        if (t.id === 'atak-notes-expand' || (t.closest && t.closest('#atak-notes-expand'))) {
+          ev.preventDefault();
+          toggleExpanded();
+          return;
+        }
+        if (t.id === 'atak-notes-export' || (t.closest && t.closest('#atak-notes-export'))) {
+          ev.preventDefault();
+          exportTxt();
+          return;
+        }
+        if (t.id === 'atak-notes-save' || (t.closest && t.closest('#atak-notes-save'))) {
+          ev.preventDefault();
+          if (state.saveTimer) clearTimeout(state.saveTimer);
+          save(true);
+          return;
+        }
+        if (t.classList && t.classList.contains('atak-sheet-add')) {
+          ev.preventDefault();
+          addRow(t.getAttribute('data-sheet') || 'soi');
+          return;
+        }
+        if (t.classList && t.classList.contains('atak-sheet-del')) {
+          ev.preventDefault();
+          delRow(t.getAttribute('data-sheet') || 'soi', parseInt(t.getAttribute('data-i') || '-1', 10));
+        }
+      });
     }
 
-    root.addEventListener('input', function (ev) {
-      if (ev.target && ev.target.classList && ev.target.classList.contains('atak-sheet-input')) {
-        markDirty();
-      }
-    });
-    root.addEventListener('change', function (ev) {
-      if (ev.target && ev.target.classList && ev.target.classList.contains('atak-sheet-input')) {
-        markDirty();
-      }
-    });
+    if (!document.documentElement._atakNotepadBound) {
+      document.documentElement._atakNotepadBound = true;
+      document.addEventListener('input', onNotepadInput);
 
-    root.addEventListener('click', function (ev) {
-      var t = ev.target;
-      if (!t) return;
-      if (t.id === 'atak-notes-expand' || (t.closest && t.closest('#atak-notes-expand'))) {
-        ev.preventDefault();
-        toggleExpanded();
-        return;
-      }
-      if (t.id === 'atak-notes-save' || (t.closest && t.closest('#atak-notes-save'))) {
-        ev.preventDefault();
-        if (state.saveTimer) clearTimeout(state.saveTimer);
-        save(true);
-        return;
-      }
-      if (t.classList && t.classList.contains('atak-sheet-add')) {
-        ev.preventDefault();
-        addRow(t.getAttribute('data-sheet') || 'soi');
-        return;
-      }
-      if (t.classList && t.classList.contains('atak-sheet-del')) {
-        ev.preventDefault();
-        delRow(t.getAttribute('data-sheet') || 'soi', parseInt(t.getAttribute('data-i') || '-1', 10));
-      }
-    });
+      document.addEventListener('click', function (ev) {
+        var t = ev.target;
+        if (!t) return;
+        if (t.id === 'atak-notes-export-effectifs' || (t.closest && t.closest('#atak-notes-export-effectifs'))) {
+          ev.preventDefault();
+          exportTxt();
+          return;
+        }
+        if (t.id === 'atak-notes-save-effectifs' || (t.closest && t.closest('#atak-notes-save-effectifs'))) {
+          ev.preventDefault();
+          if (state.saveTimer) clearTimeout(state.saveTimer);
+          save(true);
+        }
+      });
+    }
   }
 
   function init() {
@@ -396,6 +476,7 @@ window.ATAKSessionWorkspace = (function () {
   return {
     load: load,
     save: save,
+    exportTxt: exportTxt,
     init: init,
     setPanelWide: setPanelWide,
     toggleExpanded: toggleExpanded

@@ -1,0 +1,31 @@
+---
+description: Documenter chaque bug identifié dans docs/bugs avec un format court et exploitable
+alwaysApply: true
+---
+
+# Documentation des bugs
+
+À chaque fois qu'un bug est **identifié de manière concrète** pendant le travail :
+
+1. créer ou mettre à jour une note dans `docs/bugs/`,
+2. expliquer le **symptôme**, la **cause racine** et le **correctif**,
+3. citer les **fichiers touchés** et la **vérification** effectuée.
+
+## Format attendu
+
+Créer un fichier `docs/bugs/YYYY-MM-DD-slug-court.md` avec au minimum :
+
+- `Contexte`
+- `Symptôme`
+- `Cause`
+- `Correctif`
+- `Fichiers touchés`
+- `Vérification`
+- `Statut`
+
+## Règles
+
+- Une note courte et utile vaut mieux qu'un roman.
+- Si le bug est une variante directe d'un bug déjà documenté le même jour, enrichir le fichier existant au lieu d'en créer 5.
+- Si aucun correctif n'est encore appliqué, documenter quand même le diagnostic et marquer `Statut : identifié`.
+- Si le bug touche l'UI ou le gameplay, écrire la note en français clair, orientée usage réel.

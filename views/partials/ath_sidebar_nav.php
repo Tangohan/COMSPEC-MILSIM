@@ -30,6 +30,7 @@ $athIcoPaths = [
     'home' => 'M4 11l8-7 8 7v9H4zM10 20v-6h4v6',
     'path' => 'M6 3v6a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4v4M6 3a2 2 0 1 0 .01 0M18 21a2 2 0 1 0 .01 0',
     'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
+    'roleplay' => 'M12 3c3 0 5 2 5 5 0 2-1 3.5-2.5 4.5L12 21l-2.5-8.5C8 11.5 7 10 7 8c0-3 2-5 5-5z',
 ];
 
 $athIco = static function (string $key) use ($athIcoPaths, $h): string {
@@ -46,12 +47,15 @@ $navMembersActive = $boNavUsers;
 $navRecruesActive = $boNavRec && !$boNavRecSettings && !$boNavRecMessages;
 $navSanctionsActive = $boNavMod;
 $navRoleplayActive = $boNavRoleplayFollowup;
+$navRoleplayImmersionActive = $boNavRoleplayImmersion;
+$navRoleplaySectionActive = $boNavRoleplaySection;
 $navOrbatActive = $boNavEff || $boNavEffWorkspace;
 $navDoctrineActive = $boNavRolesFx;
 $navAttributionsActive = $boNavPjrAssignments || ($boNavPjr && !$boNavPjrAssignments);
 $navFormationsActive = $boNavLmsRes || $boNavLmsSubPage;
 $navCommunityActive = $boNavOrgSettings;
 $navPublicPageActive = $boNavCommPres;
+$navInscriptionActive = $boNavCommInscription;
 $navMediasActive = $boNavMedia;
 $navAtakDevicesActive = str_starts_with($p, 'back-office/atak/realisme');
 $navAtakCertsActive = str_starts_with($p, 'back-office/atak/certificats');
@@ -73,7 +77,11 @@ $membersChildren = array_values(array_filter([
     $canMemberModeration
         ? ['label' => 'Sanctions & absences', 'href' => url('back-office/moderation'), 'active' => $navSanctionsActive]
         : null,
-    ['label' => 'Suivi roleplay', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive],
+], static fn (?array $row): bool => is_array($row)));
+
+$roleplayChildren = array_values(array_filter([
+    ['label' => 'Bureau de suivi', 'href' => url('back-office/roleplay-followup'), 'active' => $navRoleplayActive],
+    ['label' => 'Réglages d’immersion', 'href' => url('back-office/roleplay/immersion'), 'active' => $navRoleplayImmersionActive],
 ], static fn (?array $row): bool => is_array($row)));
 
 $orbatChildren = array_values(array_filter([
@@ -84,6 +92,7 @@ $orbatChildren = array_values(array_filter([
 
 $communityChildren = array_values(array_filter([
     ['label' => 'Identité & options', 'href' => url('back-office/community'), 'active' => $navCommunityActive],
+    ['label' => 'Paramètres d’inscription', 'href' => url('back-office/community/inscription'), 'active' => $navInscriptionActive],
     ['label' => 'Page d’accueil publique', 'href' => url('back-office/community/presentation'), 'active' => $navPublicPageActive],
     $canMediaBo
         ? ['label' => 'Médias', 'href' => url('back-office/media'), 'active' => $navMediasActive]
@@ -128,7 +137,7 @@ $athNavGroups = [
                 'label' => 'Membres',
                 'href' => url('back-office/users'),
                 'icon' => 'users',
-                'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive || $navRoleplayActive,
+                'active' => $navMembersActive || $navRecruesActive || $navSanctionsActive,
                 'badge' => $recBadgeStr,
                 'warn' => $recBadgeStr !== null,
                 'children' => $membersChildren,
@@ -146,6 +155,19 @@ $athNavGroups = [
         ], static fn (?array $row): bool => is_array($row))),
     ],
     [
+        'key' => 'roleplay',
+        'label' => 'ROLEPLAY',
+        'items' => array_values(array_filter([
+            [
+                'label' => 'Immersion & tutorat',
+                'href' => url('back-office/roleplay-followup'),
+                'icon' => 'roleplay',
+                'active' => $navRoleplaySectionActive,
+                'children' => $roleplayChildren,
+            ],
+        ], static fn (?array $row): bool => is_array($row))),
+    ],
+    [
         'key' => 'communaute',
         'label' => 'COMMUNAUTÉ',
         'items' => array_values(array_filter([
@@ -154,7 +176,7 @@ $athNavGroups = [
                 'label' => 'Paramètres',
                 'href' => url('back-office/community'),
                 'icon' => 'home',
-                'active' => $navCommunityActive || $navPublicPageActive || $navMediasActive,
+                'active' => $navCommunityActive || $navPublicPageActive || $navInscriptionActive || $navMediasActive,
                 'children' => $communityChildren,
             ],
             ['label' => 'Annonces & alertes', 'href' => url('back-office/alerts'), 'icon' => 'mail', 'active' => $boNavAlerts],

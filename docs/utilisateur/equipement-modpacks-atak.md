@@ -24,11 +24,14 @@ Les **modpacks** regroupent les **extensions** ou **collections de mods** valid�
 
 Les **cartes** intégrées au site (**TACMAP**, **Overwatch**) offrent des vues cartographiques ou de synthèse pour le jeu ou l’entraînement — le détail dépend de la configuration de votre organisation.
 
+Pour la **légende des symboles** (amis, adverses, points d’intérêt, repères tactiques), ouvrez la [bibliothèque de marqueurs](bibliotheque-marqueurs.md) (page interactive sur le portail : `/documentation/marqueurs`).
+
 ## Interstitiel de sortie (liens externes)
 
 Lorsque vous quittez le portail vers un **lien externe**, une page d’**avertissement** peut s’afficher pour rappeler les règles de sécurité (ne pas partager d’informations sensibles, vérifier l’URL).
 
 ## Voir aussi
 
+- [Bibliothèque de marqueurs](bibliotheque-marqueurs.md) — légende visuelle des symboles carte.
 - [Documents](documents.md) — manuels et procédures liés au matériel.
 - [Navigation et tableau de bord](tableau-de-bord-et-navigation.md).

@@ -7,6 +7,52 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.4.11] - 2026-07-29
+
+### Corrigé
+
+- Gel violent à la prise de photo ATAK : résolution fichier image allégée dans `COMSPECExtension` (fin du polling 7 s + scans récursifs disque à chaque cliché) ; délais pré-upload SQF réduits.
+
+### Ajouté — Carte web
+
+- Style **Point discret** pour les effectifs (même repère violet que les clichés terrain), choix à l’étape profil de session et dans Compte → Affichage.
+- Option pour **masquer les points des photos** sur la carte (panneau Cams inchangé).
+- Fin du doublon **Photo tablette + Aperçu casque** à chaque cliché ATAK (aperçu auto ne recycle plus la capture BCE).
+- **Demande caméra casque** depuis le menu contextuel d’un opérateur en liaison : photo, photo HD, ou flux d’aperçus rapides (~5 s / 3 min).
+- **Écran endommagé** : l’opérateur reste visible sur le web (position seule, liaison dégradée) au lieu de disparaître ; libellé terminal corrigé (plus de « éteint · écran endommagé » cumulé).
+- **Fin de brouillage** : la liaison ne reste plus bloquée sur « Hors liaison » (recalcul automatique de l’état Athena).
+- **Signalement in-game** : le formulaire ACE peut joindre le **journal de session** Overwatch (fichier + tampon mémoire) pour faciliter le diagnostic côté admin.
+- **Journaux Overwatch** : un **nouveau fichier par lancement Arma** (`%LOCALAPPDATA%\\Arma 3\\COMSPEC\\logs\\COMSPEC_*.log`), purge auto des plus anciens (12 conservés).
+- **parseSimpleArray** : plus de crash Arma sur les réponses extension mal formées ou chemins Windows.
+- **Ordres C2** : « En cours » uniquement après **Confirmé** ; refus possible dès la réception (Reçu/Émis).
+- **Points de mission** : clic droit carte → ordre de déplacement avec grille, itinéraire, ETA ; transmission ATAK ; confirmé/refusé in-game ; marqueur + trait après acceptation.
+
+---
+
+## [1.4.8] - 2026-07-29
+
+### Ajouté — Médical ACE (roleplay)
+
+- Détection auto : inconscient, arrêt cardiaque (ACE Medical uniquement — états transmissibles via l’ATAK)
+
+### Retiré — Détections KAT non roleplay
+
+- Plus d’alertes auto voies obstruées, pneumothorax ou hypoxie SpO2 (données internes KAT non visibles sur un terminal tactique)
+
+### Ajouté — Portail ATAK (carte & photos)
+
+- Barre d’outils carte : traits, zones, périmètres, mesure, personnalisation
+- Formulaire zones : icône au centre en liste déroulante
+- Photos recon : flou, commentaire, masquage local, transfert SSE, effets roleplay visuels
+- Détections « Au sol / suivi » retirées à la déconnexion opérateur
+
+### Corrigé
+
+- Flou photo recon en aperçu agrandi (lightbox)
+- Upload photos sans gel ; marqueurs web JSON ; scroll page statut ATAK
+
+---
+
 ## [1.4.1] - 2026-07-28
 
 ### Ajouté — Portail SSE classifié (`/atak/sse`)

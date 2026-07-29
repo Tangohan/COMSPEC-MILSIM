@@ -57,8 +57,9 @@ $quotaRatio = $maxUses !== null && $maxUses > 0 ? (int) round($usesCount / $maxU
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;">
             <span class="ath-tag <?= $inviteCodeValid ? 'ath-tag--ok' : 'ath-tag--neut' ?>"><?= $inviteCodeValid ? 'Actif' : 'Inactif' ?></span>
+            <span class="ath-tag">Prioritaire · candidature</span>
             <?php if ($autoAccept): ?>
-            <span class="ath-tag ath-tag--warn">Validation automatique</span>
+            <span class="ath-tag ath-tag--warn">Acceptation automatique</span>
             <?php endif; ?>
         </div>
     </div>
@@ -76,7 +77,7 @@ $quotaRatio = $maxUses !== null && $maxUses > 0 ? (int) round($usesCount / $maxU
     <?php endif; ?>
     <div class="ath-item__actions">
         <a href="<?= $h($baseUrl . '/' . $codeId . '/modifier') ?>" class="ath-btn ath-btn--solid">Modifier</a>
-        <a href="<?= $h($baseUrl) ?>" class="ath-btn">Retour aux codes</a>
+        <a href="<?= $h($baseUrl) ?>" class="ath-btn">Retour aux codes prioritaires</a>
     </div>
 </div>
 
@@ -101,7 +102,8 @@ $quotaRatio = $maxUses !== null && $maxUses > 0 ? (int) round($usesCount / $maxU
 
 <?php
 $settingsRows = [
-    ['Validation automatique', $autoAccept ? 'Oui' : 'Non', $autoAccept ? 'Actif' : 'Sur revue'],
+    ['Type', 'Invitation prioritaire (candidature)', 'Actif'],
+    ['Acceptation automatique', $autoAccept ? 'Oui' : 'Non', $autoAccept ? 'Actif' : 'Sur revue'],
 ];
 if ($linkedRecruitmentOpening !== null) {
     $openingTitle = trim((string) ($linkedRecruitmentOpening['title'] ?? ''));
@@ -165,11 +167,12 @@ require base_path('views/partials/ath_table.php');
 <div class="ath-warn">
     <p class="ath-warn__title">Désactivation définitive</p>
     <p class="ath-warn__text">
-        Désactiver ce code l’empêche immédiatement d’être utilisé. L’opération est irréversible :
-        les candidatures déjà validées avec ce code ne sont pas remises en cause.
+        Désactiver ce code prioritaire l’empêche immédiatement d’être utilisé sur le formulaire
+        de candidature. L’opération est irréversible : les candidatures déjà validées avec ce code
+        ne sont pas remises en cause.
     </p>
     <form method="post" action="<?= $h($baseUrl . '/' . $codeId . '/desactiver') ?>" style="margin-top:11px;"
-          onsubmit="return confirm('Désactiver ce code ? L’opération est irréversible.');">
+          onsubmit="return confirm('Désactiver ce code prioritaire ? L’opération est irréversible.');">
         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
         <button type="submit" class="ath-row-action ath-row-action--danger">Désactiver ce code</button>
     </form>

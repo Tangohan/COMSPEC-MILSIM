@@ -80,6 +80,13 @@ switch (_repairType) do {
 // Sauvegarder
 if (_success) then {
     missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false];
+    [
+        "INFO",
+        "Terminal",
+        format ["Réparation %1 effectuée", _repairType],
+        "system"
+    ] call comspec_overwatch_connect_fnc_logAtakEvent;
+    [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
 };
 
 _success

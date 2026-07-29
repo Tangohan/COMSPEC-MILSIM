@@ -540,6 +540,17 @@ final class OrbatApiController
             $data['public_blurb'] = $blurb === '' ? null : mb_substr($blurb, 0, 8000);
         }
 
+        if ($request->input('public_founded_on') !== null && $this->unitRepository->hasTableColumn('units', 'public_founded_on')) {
+            $data['public_founded_on'] = trim((string) $request->input('public_founded_on', ''));
+        }
+        if ($request->input('public_custom_date') !== null && $this->unitRepository->hasTableColumn('units', 'public_custom_date')) {
+            $data['public_custom_date'] = trim((string) $request->input('public_custom_date', ''));
+        }
+        if ($request->input('public_custom_date_label') !== null && $this->unitRepository->hasTableColumn('units', 'public_custom_date_label')) {
+            $label = trim((string) $request->input('public_custom_date_label', ''));
+            $data['public_custom_date_label'] = $label === '' ? null : mb_substr($label, 0, 80);
+        }
+
         if ($request->input('show_on_public_page') !== null) {
             $data['show_on_public_page'] = $request->input('show_on_public_page') ? 1 : 0;
             // Fiche publique : garantir une adresse courte si l’unité n’en a pas encore.

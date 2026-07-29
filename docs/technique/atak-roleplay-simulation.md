@@ -48,7 +48,19 @@ roleplay_sensor_missing_percent DECIMAL(5,2) DEFAULT 0.00
 -- Zones géographiques (à venir)
 roleplay_zones_enabled TINYINT(1) DEFAULT 0
 roleplay_zones_config TEXT DEFAULT NULL
+
+-- Données chiffrées (certificat / capture)
+roleplay_intel_scramble_enabled TINYINT(1) DEFAULT 0
+roleplay_intel_scramble_reviewed TINYINT(1) DEFAULT 0
 ```
+
+#### 1bis. Données chiffrées (intel view)
+
+**Service** : `app/Services/Tactical/AtakIntelViewService.php`  
+**APIs** : `GET /api/atak/intel-view`, `GET /api/atak/device-alerts`, `POST /api/atak/terminals/compromise`  
+**Flag** : `intel_scramble_enabled` dans le roleplay admin (`#intel-scramble`).
+
+Sans certificat valide ou si terminal capturé/compromis → masquage déterministe du chat, ordres, markers, unités. Brouillage → corruption partielle. TOC web authentifié reste en clair.
 
 #### 2. Service de simulation
 

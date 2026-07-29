@@ -13,6 +13,7 @@ if (_page isNotEqualTo "" && {!(_page in ["AtakStatus", "COMSPEC_ATAK_Status", "
 
 // Mesures à jour
 [] call comspec_overwatch_connect_fnc_measureLatency;
+[] call comspec_overwatch_connect_fnc_refreshLinkState;
 private _ext = [] call comspec_overwatch_connect_fnc_extensionStatus;
 _ext params [["_extOk", false], ["_extCode", "not_loaded"]];
 
@@ -103,12 +104,14 @@ private _stabColor = switch (true) do {
 
 private _stateLabel = switch (_state) do {
     case "linked": { "En liaison" };
+    case "degraded": { "Liaison dégradée" };
     case "connecting": { "Connexion…" };
     case "disabled": { "Désactivé" };
     default { "Hors liaison" };
 };
 private _stateColor = switch (_state) do {
     case "linked": { "#7dffb0" };
+    case "degraded": { "#ffd27a" };
     case "connecting": { "#ffd27a" };
     default { "#ff8a7a" };
 };
@@ -325,7 +328,22 @@ private _sumCtrl = _group controlsGroupCtrl 9801;
 if (!isNull _sumCtrl) then {
     _sumCtrl ctrlSetStructuredText parseText _summary;
 };
-private _bodyCtrl = _group controlsGroupCtrl 9802;
+private _bodyViewport = _group controlsGroupCtrl 9806;
+private _bodyCtrl = if (!isNull _bodyViewport) then { _bodyViewport controlsGroupCtrl 9802 } else { controlNull };
 if (!isNull _bodyCtrl) then {
     _bodyCtrl ctrlSetStructuredText parseText _body;
+    private _h = ctrlTextHeight _bodyCtrl;
+    private _phoneW = safezoneW * 0.8;
+    private _phoneH = _phoneW * 4 / 3;
+    private _minH = ((5.35 * 60) / 2048) * _phoneH;
+    if (_h < _minH) then { _h = _minH; };
+    _h = _h + ((16 / 2048) * _phoneH);
+    private _pos = ctrlPosition _bodyCtrl;
+    _bodyCtrl ctrlSetPosition [_pos select 0, _pos select 1, _pos select 2, _h];
+    _bodyCtrl ctrlCommit 0;
+    if (!isNull _bodyViewport) then {
+        _bodyViewport ctrlSetScrollValues [0, 0];
+    };
 };
+
+[] call comspec_overwatch_connect_fnc_logAtakStateChange;

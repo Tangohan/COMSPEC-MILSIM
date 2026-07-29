@@ -2,7 +2,7 @@
 $base = url('');
 $success = \App\Core\Session::getFlash('success');
 $error = \App\Core\Session::getFlash('error');
-$ref = 'JTFO-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
+$ref = 'JTN-' . str_pad((string) random_int(1, 999999), 6, '0', STR_PAD_LEFT);
 $tenant = $tenant ?? [];
 $communityConfig = $communityConfig ?? [];
 $formAction = $formAction ?? url('enlistment');
@@ -10,18 +10,34 @@ $tenantName = trim((string) ($tenant['name'] ?? 'Athena'));
 $requireAiAck = array_key_exists('require_ai_ack', $communityConfig) ? (bool) $communityConfig['require_ai_ack'] : true;
 $milsimPack = $milsimPack ?? \App\Services\Community\EnlistmentMilsimPackService::defaultPack();
 $p = $milsimPack;
+$motivationSection = \App\Services\Community\EnlistmentMilsimPackService::normalizeMotivationSection(
+    is_array($p['motivation'] ?? null) ? $p['motivation'] : null,
+    is_array($p['fields'] ?? null) ? $p['fields'] : null
+);
+$motivationSectionTitle = trim((string) ($motivationSection['title'] ?? '')) !== ''
+    ? (string) $motivationSection['title']
+    : (string) ($p['section_3'] ?? 'Motivation');
 $fld = static function (string $k) use ($p): array {
     if (is_array($p['fields'][$k] ?? null)) {
         return $p['fields'][$k];
     }
     return ['label' => $k, 'placeholder' => '', 'widget' => 'text', 'options' => []];
 };
+$availabilitySlots = \App\Services\Community\EnlistmentMilsimPackService::normalizeAvailabilitySlots($p['availability_slots'] ?? []);
 $enlistSlug = trim((string) ($tenant['slug'] ?? 'default'));
 $enlistmentContext = $enlistmentContext ?? [];
 $canUseAccount = !empty($enlistmentContext['canUseAccount']);
 $prefill = array_merge([
-    'full_name' => '', 'email' => '', 'callsign' => '', 'age' => '', 'timezone' => '', 'weekly_availability' => '',
+    'full_name' => '', 'email' => '', 'age' => '', 'timezone' => '', 'weekly_availability' => '',
 ], is_array($enlistmentContext['prefill'] ?? null) ? $enlistmentContext['prefill'] : []);
+$prefillAvailabilitySelected = [];
+if ($availabilitySlots !== [] && trim((string) ($prefill['weekly_availability'] ?? '')) !== '') {
+    $prefillAvailabilitySelected = \App\Services\Community\EnlistmentMilsimPackService::filterCandidateSlotSelection(
+        $availabilitySlots,
+        preg_split('/\s*,\s*/', (string) $prefill['weekly_availability']) ?: []
+    );
+}
+$timezoneOptions = \App\Support\Profile\EnlistmentTimezoneCatalog::optionsForSelect();
 $recruitmentPresets = $enlistmentContext['recruitmentPresets'] ?? [];
 $hasMembershipOnTarget = !empty($enlistmentContext['hasMembershipOnTarget']);
 $switchToTargetUrl = $enlistmentContext['switchToTargetUrl'] ?? null;
@@ -32,6 +48,20 @@ $enlistmentMemberOpeningInsight = is_array($enlistmentMemberOpeningInsight ?? nu
 $compactAccountOpening = $canUseAccount && $selectedRecruitmentOpening !== null;
 $publishedOpenings = is_array($publishedOpenings ?? null) ? $publishedOpenings : [];
 $tenantBranding = is_array($tenantBranding ?? null) ? $tenantBranding : [];
+$existingCandidature = is_array($existingCandidature ?? null) ? $existingCandidature : null;
+$blocksNewCandidature = $existingCandidature !== null && !empty($existingCandidature['blocks_form']);
+$customQuestions = \App\Services\Community\EnlistmentMilsimPackService::normalizeCustomQuestions($p['custom_questions'] ?? []);
+$customBySection = ['identity' => [], 'gear' => [], 'motivation' => [], 'commitment' => []];
+foreach ($customQuestions as $cqRow) {
+    $sec = (string) ($cqRow['section'] ?? 'commitment');
+    if (!isset($customBySection[$sec])) {
+        $sec = 'commitment';
+    }
+    $customBySection[$sec][] = $cqRow;
+}
+$disclaimerRecruitment = is_array($p['disclaimer_recruitment_lines'] ?? null) && $p['disclaimer_recruitment_lines'] !== []
+    ? array_values(array_filter($p['disclaimer_recruitment_lines'], static fn ($l) => is_string($l) && trim($l) !== ''))
+    : \App\Services\Community\EnlistmentMilsimPackService::defaultRecruitmentDisclaimerLines();
 
 $brandLogo = trim((string) ($tenantBranding['logo_url'] ?? ''));
 $brandBanner = trim((string) ($tenantBranding['banner_url'] ?? ''));
@@ -63,6 +93,19 @@ $heroLead = trim((string) ($p['preamble_lead'] ?? ''));
 $roeItems = is_array($p['roe_items'] ?? null) ? array_values(array_filter($p['roe_items'], static fn ($r) => is_string($r) && trim($r) !== '')) : [];
 $cssHref = url('assets/css/community-enlistment.css');
 $jsHref = url('assets/js/community-enlistment.js');
+$candidatePrefix = trim((string) ($p['candidate_prefix'] ?? 'Rejoindre'));
+$submittedAtLabel = '';
+if ($existingCandidature !== null && trim((string) ($existingCandidature['submitted_at'] ?? '')) !== '') {
+    try {
+        $submittedAtLabel = (new \DateTimeImmutable((string) $existingCandidature['submitted_at']))->format('d/m/Y à H:i');
+    } catch (\Throwable) {
+        $submittedAtLabel = '';
+    }
+}
+$dossierRefLabel = '';
+if ($blocksNewCandidature && (int) ($existingCandidature['enlistment_id'] ?? 0) > 0) {
+    $dossierRefLabel = 'JTN-' . str_pad((string) (int) $existingCandidature['enlistment_id'], 6, '0', STR_PAD_LEFT);
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -74,7 +117,7 @@ $jsHref = url('assets/js/community-enlistment.js');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="<?= htmlspecialchars($cssHref) ?>" rel="stylesheet">
 </head>
-<body class="ce ce--deck"<?= $ceStyle !== '' ? ' style="' . htmlspecialchars($ceStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+<body class="ce ce--deck<?= $blocksNewCandidature ? ' ce--status-only' : '' ?>"<?= $ceStyle !== '' ? ' style="' . htmlspecialchars($ceStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
 
     <div id="preamble" class="ce-gate" data-skip-if-stored="1">
         <div class="ce-gate__card">
@@ -116,12 +159,16 @@ $jsHref = url('assets/js/community-enlistment.js');
         </div>
         <nav class="ce-topbar__links" aria-label="Navigation">
             <a href="<?= htmlspecialchars($showcaseUrl) ?>">Vitrine</a>
-            <a href="<?= $formAnchor ?>">Candidater</a>
+            <?php if ($blocksNewCandidature && !empty($existingCandidature['portal_url'])): ?>
+            <a href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>">Suivre ma candidature</a>
+            <?php else: ?>
+            <a href="<?= $formAnchor ?>"><?= $blocksNewCandidature ? 'Mon dossier' : 'Candidater' ?></a>
+            <?php endif; ?>
             <span id="clock" class="ce-topbar__clock" aria-hidden="true">--:--:--</span>
         </nav>
     </header>
 
-    <div class="ce-deck" id="ce-deck" data-ce-index="0"<?= ($success || $error) ? ' data-ce-start="candidature"' : '' ?>>
+    <div class="ce-deck" id="ce-deck" data-ce-index="0"<?= ($success || $error || $blocksNewCandidature) ? ' data-ce-start="candidature"' : '' ?>>
         <div class="ce-slides" id="ce-slides">
 
     <section class="ce-slide is-active" id="slide-hero" data-ce-label="Accueil" aria-label="Accueil">
@@ -144,20 +191,29 @@ $jsHref = url('assets/js/community-enlistment.js');
                         <img class="ce-hero__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="Emblème <?= htmlspecialchars($tenantName) ?>">
                     <?php endif; ?>
                 </div>
-                <h1 class="ce-hero__name"><?= htmlspecialchars($tenantName) ?></h1>
+                <h1 class="ce-hero__name"><span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></h1>
                 <?php if ($heroLead !== ''): ?>
                 <p class="ce-hero__tagline"><?= htmlspecialchars($heroLead) ?></p>
                 <?php endif; ?>
                 <div class="ce-hero__meta">
                     <span class="ce-chip"><?= htmlspecialchars((string) $p['portal_title']) ?></span>
                     <span class="ce-chip"><?= htmlspecialchars((string) $p['classified_badge']) ?></span>
-                    <?php if ($selectedRecruitmentOpening !== null): ?>
+                    <?php if ($blocksNewCandidature): ?>
+                    <span class="ce-chip">Dossier déjà déposé</span>
+                    <?php elseif ($selectedRecruitmentOpening !== null): ?>
                     <span class="ce-chip">Poste ciblé</span>
                     <?php endif; ?>
                 </div>
                 <div class="ce-hero__cta-row">
-                    <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary"><?= htmlspecialchars((string) $p['candidate_prefix']) ?> — démarrer</a>
+                    <?php if ($blocksNewCandidature && !empty($existingCandidature['portal_url'])): ?>
+                    <a href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>" class="ce-btn ce-btn--primary">Suivre ma candidature</a>
+                    <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--ghost">Voir le statut</a>
+                    <?php elseif ($blocksNewCandidature): ?>
+                    <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary">Voir le statut de mon dossier</a>
+                    <?php else: ?>
+                    <a href="<?= $formAnchor ?>" class="ce-btn ce-btn--primary"><?= htmlspecialchars($candidatePrefix) ?> — démarrer</a>
                     <a href="#parcours" class="ce-btn ce-btn--ghost">Voir le parcours</a>
+                    <?php endif; ?>
                     <a href="<?= htmlspecialchars($showcaseUrl) ?>" class="ce-btn ce-btn--ghost">Retour à la vitrine</a>
                 </div>
             </div>
@@ -267,14 +323,68 @@ $jsHref = url('assets/js/community-enlistment.js');
         </div>
     </section>
 
-    <section class="ce-slide ce-slide--form" id="candidature" data-ce-label="Candidature" aria-label="Formulaire de candidature" aria-hidden="true" tabindex="-1">
-        <div class="ce-form-stage">
+    <section class="ce-slide ce-slide--form" id="candidature" data-ce-label="<?= $blocksNewCandidature ? 'Mon dossier' : 'Candidature' ?>" aria-label="<?= $blocksNewCandidature ? 'Statut de la candidature' : 'Formulaire de candidature' ?>" aria-hidden="true" tabindex="-1">
+        <div class="ce-form-stage<?= $blocksNewCandidature ? ' ce-form-stage--status' : '' ?>">
         <?php if ($success): ?>
         <div class="ce-alert ce-alert--ok" role="status"><?= htmlspecialchars($success) ?></div>
         <?php endif; ?>
         <?php if ($error): ?>
         <div class="ce-alert ce-alert--err" role="alert"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
+
+        <?php if ($blocksNewCandidature && $existingCandidature !== null): ?>
+        <div class="ce-wrap ce-status-layout">
+            <article class="ce-status-panel" role="status">
+                <header class="ce-status-panel__head">
+                    <p class="ce-status-panel__doc"><?= htmlspecialchars((string) ($p['doc_control'] ?? 'Dossier de recrutement')) ?></p>
+                    <h2 class="ce-status-panel__title">
+                        <span class="ce-title-verb"><?= htmlspecialchars($candidatePrefix) ?></span>
+                        <span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span>
+                    </h2>
+                    <p class="ce-status-panel__sub">Votre dossier est déjà enregistré — aucun nouveau formulaire n’est nécessaire.</p>
+                </header>
+
+                <div class="ce-status-panel__body">
+                    <p class="ce-status-badge"><?= htmlspecialchars((string) ($existingCandidature['status_label'] ?? 'En cours'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <h3 class="ce-status-panel__heading"><?= htmlspecialchars((string) ($existingCandidature['title'] ?? 'Candidature déjà en cours'), ENT_QUOTES, 'UTF-8') ?></h3>
+                    <p class="ce-status-panel__lead"><?= htmlspecialchars((string) ($existingCandidature['lead'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php if (!empty($existingCandidature['next_steps'])): ?>
+                    <p class="ce-status-panel__lead"><?= htmlspecialchars((string) $existingCandidature['next_steps'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php endif; ?>
+
+                    <dl class="ce-status-meta">
+                        <?php if ($dossierRefLabel !== ''): ?>
+                        <div class="ce-status-meta__row">
+                            <dt><?= htmlspecialchars((string) ($p['ref_label'] ?? 'Référence')) ?></dt>
+                            <dd><code><?= htmlspecialchars($dossierRefLabel) ?></code></dd>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ($submittedAtLabel !== ''): ?>
+                        <div class="ce-status-meta__row">
+                            <dt>Déposée le</dt>
+                            <dd><?= htmlspecialchars($submittedAtLabel) ?></dd>
+                        </div>
+                        <?php endif; ?>
+                        <div class="ce-status-meta__row">
+                            <dt>Connexion</dt>
+                            <dd><?= htmlspecialchars((string) ($p['security_label'] ?? 'Sécurisée')) ?></dd>
+                        </div>
+                        <div class="ce-status-meta__row">
+                            <dt>Communauté</dt>
+                            <dd><span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></dd>
+                        </div>
+                    </dl>
+
+                    <div class="ce-status-panel__actions">
+                        <?php if (!empty($existingCandidature['portal_url'])): ?>
+                        <a class="ce-btn ce-btn--primary" href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>">Suivre ma candidature</a>
+                        <?php endif; ?>
+                        <a class="ce-btn ce-btn--soft" href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la vitrine</a>
+                    </div>
+                </div>
+            </article>
+        </div>
+        <?php else: ?>
         <div class="ce-wrap ce-form-layout">
             <aside class="ce-rail" aria-label="Avancement du dossier">
                 <div class="ce-rail__block">
@@ -296,7 +406,7 @@ $jsHref = url('assets/js/community-enlistment.js');
                     <a href="#ce-sec-mode">Mode de candidature</a>
                     <a href="#ce-sec-identity">Identité et contact</a>
                     <a href="#ce-sec-gear">Matériel et expérience</a>
-                    <a href="#ce-sec-motivation">Motivation</a>
+                    <a href="#ce-sec-motivation"><?= htmlspecialchars($motivationSectionTitle) ?></a>
                     <a href="#ce-sec-commit">Engagement</a>
                 </nav>
             </aside>
@@ -304,12 +414,31 @@ $jsHref = url('assets/js/community-enlistment.js');
             <div class="ce-form-shell">
                 <div class="ce-form-head">
                     <p class="ce-form-head__doc"><?= htmlspecialchars((string) $p['doc_control']) ?></p>
-                    <h2><?= htmlspecialchars((string) $p['candidate_prefix']) ?> <?= htmlspecialchars($tenantName) ?></h2>
+                    <h2 class="ce-form-head__title">
+                        <span class="ce-title-verb"><?= htmlspecialchars($candidatePrefix) ?></span>
+                        <span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span>
+                    </h2>
                     <div class="ce-form-head__meta">
                         <span><?= htmlspecialchars((string) $p['queue_label']) ?></span>
                         <span><?= htmlspecialchars((string) $p['ref_label']) ?> <?= htmlspecialchars($ref) ?></span>
                     </div>
                 </div>
+
+                <?php if ($existingCandidature !== null): ?>
+                    <div class="ce-notice ce-notice--<?= !empty($existingCandidature['blocks_form']) ? 'info' : 'muted' ?>" role="status">
+                        <p class="ce-notice__kicker"><?= htmlspecialchars((string) ($existingCandidature['status_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        <h3 class="ce-notice__title"><?= htmlspecialchars((string) ($existingCandidature['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="ce-notice__lead"><?= htmlspecialchars((string) ($existingCandidature['lead'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php if (!empty($existingCandidature['next_steps'])): ?>
+                            <p class="ce-notice__lead"><?= htmlspecialchars((string) $existingCandidature['next_steps'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <?php if (!empty($existingCandidature['portal_url'])): ?>
+                            <p class="ce-notice__actions">
+                                <a class="ce-btn ce-btn--primary" href="<?= htmlspecialchars((string) $existingCandidature['portal_url'], ENT_QUOTES, 'UTF-8') ?>">Suivre ma candidature</a>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
                 <div class="ce-mobile-progress">
                     <div class="ce-progress">
@@ -344,7 +473,7 @@ $jsHref = url('assets/js/community-enlistment.js');
                     <?php if ($hasMembershipOnTarget && $switchToTargetUrl): ?>
                         <div class="ce-banner ce-banner--amber">
                             <p class="ce-banner__kicker">Compte sur cette communauté</p>
-                            <p class="ce-banner__text">Basculer le contexte Athena pour préremplir avec votre compte.</p>
+                            <p class="ce-banner__text">Vous pouvez déjà candidater avec votre compte Athena. Basculer le contexte local est optionnel (dossier membre de cette communauté).</p>
                             <p class="ce-banner__text" style="margin-top:0.65rem"><a href="<?= htmlspecialchars($switchToTargetUrl) ?>">Basculer et continuer</a></p>
                         </div>
                     <?php endif; ?>
@@ -360,6 +489,7 @@ $jsHref = url('assets/js/community-enlistment.js');
                         <?php else: ?>
                             <input type="hidden" name="enlistment_flow" id="enlistment_flow" value="guest">
                             <p class="ce-help">La candidature porte sur votre <strong>personnage</strong> (univers fictionnel).</p>
+                            <p class="ce-help">Vous avez déjà un compte Athena ? <a href="<?= htmlspecialchars(url('login')) ?>">Connectez-vous</a> pour l’associer à votre candidature.</p>
                         <?php endif; ?>
 
                         <?php if ($canUseAccount): ?>
@@ -373,10 +503,6 @@ $jsHref = url('assets/js/community-enlistment.js');
                                     <label class="ce-check">
                                         <input type="checkbox" name="share_name" value="1" checked>
                                         <span>Partager mon <strong>nom</strong> (profil)</span>
-                                    </label>
-                                    <label class="ce-check">
-                                        <input type="checkbox" name="share_callsign" value="1">
-                                        <span>Partager mon <strong>indicatif</strong> du profil</span>
                                     </label>
                                 </div>
                                 <?php if (!empty($recruitmentPresets)): ?>
@@ -400,7 +526,6 @@ $jsHref = url('assets/js/community-enlistment.js');
                                     <?php
                                     $rpShareLabels = [
                                         'identity' => 'Identité personnage (prénom, nom, naissance, nationalité)',
-                                        'character_name' => 'Nom de scène (optionnel)',
                                         'bio' => 'Biographie',
                                         'cv' => 'Parcours',
                                         'image_url' => 'Portrait enregistré',
@@ -481,10 +606,6 @@ $jsHref = url('assets/js/community-enlistment.js');
                                         <label class="ce-label">Nationalité (personnage)</label>
                                         <input type="text" name="guest_rp_nationality" class="input-field track-field" maxlength="100" autocomplete="off">
                                     </div>
-                                    <div class="space-y-2 ce-span-2">
-                                        <label class="ce-label">Nom de scène (optionnel)</label>
-                                        <input type="text" name="guest_rp_scene_name" class="input-field track-field" maxlength="150" autocomplete="off" placeholder="Surcharge du libellé si renseigné">
-                                    </div>
                                 </div>
                             </div>
                             <div class="space-y-2 ce-span-2">
@@ -501,42 +622,119 @@ $jsHref = url('assets/js/community-enlistment.js');
                                     value="<?= htmlspecialchars($prefill['age']) ?>">
                             </div>
                             <div class="space-y-2">
-                                <label class="ce-label"><?= htmlspecialchars($fld('timezone')['label']) ?></label>
-                                <input type="text" name="timezone" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('timezone')['placeholder']) ?>"
-                                    value="<?= htmlspecialchars($prefill['timezone']) ?>">
+                                <label class="ce-label" for="enlist-timezone"><?= htmlspecialchars($fld('timezone')['label']) ?></label>
+                                <select name="timezone" id="enlist-timezone" class="input-field track-field">
+                                    <option value="">Sélectionner</option>
+                                    <?php foreach ($timezoneOptions as $tzOpt): ?>
+                                        <?php
+                                        $tzVal = (string) ($tzOpt['iana'] ?? '');
+                                        $tzLab = (string) ($tzOpt['option_label'] ?? $tzOpt['label'] ?? $tzVal);
+                                        $tzSel = ($prefill['timezone'] !== '' && $prefill['timezone'] === $tzVal) ? ' selected' : '';
+                                        ?>
+                                        <option value="<?= htmlspecialchars($tzVal, ENT_QUOTES, 'UTF-8') ?>"<?= $tzSel ?>><?= htmlspecialchars($tzLab, ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                             <div class="space-y-2 ce-span-2">
                                 <label class="ce-label"><?= htmlspecialchars($fld('weekly_availability')['label']) ?></label>
-                                <input type="text" name="weekly_availability" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('weekly_availability')['placeholder']) ?>"
-                                    value="<?= htmlspecialchars($prefill['weekly_availability']) ?>">
-                            </div>
-                            <div class="space-y-2 ce-span-2">
-                                <label class="ce-label"><?= htmlspecialchars($fld('callsign')['label']) ?></label>
-                                <input type="text" name="callsign" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('callsign')['placeholder']) ?>"
-                                    value="<?= htmlspecialchars($prefill['callsign']) ?>">
+                                <?php if ($availabilitySlots !== []): ?>
+                                    <div class="space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                                        <p class="text-[11px] text-slate-500">Cochez les créneaux qui vous correspondent.</p>
+                                        <?php foreach ($availabilitySlots as $slot): ?>
+                                            <?php
+                                            $slotId = (string) ($slot['id'] ?? '');
+                                            $slotLabel = (string) ($slot['label'] ?? '');
+                                            if ($slotLabel === '') {
+                                                continue;
+                                            }
+                                            $slotChecked = in_array($slotLabel, $prefillAvailabilitySelected, true);
+                                            ?>
+                                            <label class="flex items-start gap-2.5 text-sm text-slate-800">
+                                                <input type="checkbox"
+                                                       name="availability_slot[]"
+                                                       value="<?= htmlspecialchars($slotId !== '' ? $slotId : $slotLabel, ENT_QUOTES, 'UTF-8') ?>"
+                                                       class="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 track-field"
+                                                       <?= $slotChecked ? 'checked' : '' ?>>
+                                                <span><?= htmlspecialchars($slotLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <input type="text" name="weekly_availability_notes" class="input-field track-field mt-2" maxlength="300" placeholder="Précisions optionnelles (fuseau, exceptions…)">
+                                <?php else: ?>
+                                    <input type="text" name="weekly_availability" class="input-field track-field" placeholder="<?= htmlspecialchars($fld('weekly_availability')['placeholder']) ?>"
+                                        value="<?= htmlspecialchars($prefill['weekly_availability']) ?>">
+                                <?php endif; ?>
                             </div>
                         </div>
+                        <?php if ($customBySection['identity'] !== []): ?>
+                            <div class="ce-field-stack" style="margin-top:1.1rem">
+                                <?php foreach ($customBySection['identity'] as $customQuestion): ?>
+                                    <?php include base_path('views/partials/enlistment_custom_question_field.php'); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </section>
 
                     <section class="ce-form-section enlist-full-only" id="ce-sec-gear">
                         <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_2']) ?></h3>
-                        <div class="space-y-6">
-                            <?php $fieldName = 'system_config'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
-                            <div class="ce-field-grid">
-                                <?php $fieldName = 'microphone_quality'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
-                                <?php $fieldName = 'ace_acre_level'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                        <div class="ce-field-grid">
+                            <div class="ce-span-2">
+                                <?php $fieldName = 'system_config'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
                             </div>
-                            <?php $fieldName = 'past_milsim_experience'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <?php $fieldName = 'microphone_quality'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <?php $fieldName = 'ace_acre_level'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <div class="ce-span-2">
+                                <?php $fieldName = 'past_milsim_experience'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            </div>
                         </div>
+                        <?php if ($customBySection['gear'] !== []): ?>
+                            <div class="ce-field-stack" style="margin-top:1.1rem">
+                                <?php foreach ($customBySection['gear'] as $customQuestion): ?>
+                                    <?php include base_path('views/partials/enlistment_custom_question_field.php'); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </section>
 
                     <section class="ce-form-section" id="ce-sec-motivation">
-                        <h3 class="ce-section-title"><?= htmlspecialchars((string) $p['section_3']) ?></h3>
+                        <h3 class="ce-section-title"><?= htmlspecialchars($motivationSectionTitle) ?></h3>
+                        <?php if (trim((string) ($motivationSection['intro'] ?? '')) !== ''): ?>
+                            <p class="ce-help" style="margin-bottom:1.25rem;"><?= htmlspecialchars((string) $motivationSection['intro']) ?></p>
+                        <?php endif; ?>
                         <div class="space-y-6">
-                            <?php $fieldName = 'motivation_why_join'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                            <?php if (!empty($motivationSection['why_join']['enabled'])): ?>
+                                <?php
+                                $fieldName = 'motivation_why_join';
+                                $fieldRequired = !empty($motivationSection['why_join']['required']);
+                                $fieldOverride = [
+                                    'label' => (string) ($motivationSection['why_join']['label'] ?? ''),
+                                    'placeholder' => (string) ($motivationSection['why_join']['placeholder'] ?? ''),
+                                    'help' => (string) ($motivationSection['why_join']['help'] ?? ''),
+                                    'widget' => 'textarea',
+                                    'options' => [],
+                                ];
+                                include base_path('views/partials/enlistment_milsim_widget.php');
+                                ?>
+                            <?php endif; ?>
+                            <?php if (!empty($motivationSection['accountability']['enabled'])): ?>
                             <div class="enlist-full-only">
-                                <?php $fieldName = 'motivation_accountability'; include base_path('views/partials/enlistment_milsim_widget.php'); ?>
+                                <?php
+                                $fieldName = 'motivation_accountability';
+                                $fieldRequired = !empty($motivationSection['accountability']['required']);
+                                $fieldOverride = [
+                                    'label' => (string) ($motivationSection['accountability']['label'] ?? ''),
+                                    'placeholder' => (string) ($motivationSection['accountability']['placeholder'] ?? ''),
+                                    'help' => (string) ($motivationSection['accountability']['help'] ?? ''),
+                                    'widget' => 'textarea',
+                                    'options' => [],
+                                ];
+                                include base_path('views/partials/enlistment_milsim_widget.php');
+                                ?>
                             </div>
+                            <?php endif; ?>
+                            <?php foreach ($customBySection['motivation'] as $customQuestion): ?>
+                                <?php include base_path('views/partials/enlistment_custom_question_field.php'); ?>
+                            <?php endforeach; ?>
                         </div>
                     </section>
 
@@ -559,18 +757,46 @@ $jsHref = url('assets/js/community-enlistment.js');
                                 <option value="Variable">Variable</option>
                             </select>
                         </div>
+                        <?php if ($customBySection['commitment'] !== []): ?>
+                            <div class="ce-field-stack" style="margin-top:0.5rem">
+                                <?php foreach ($customBySection['commitment'] as $customQuestion): ?>
+                                    <?php include base_path('views/partials/enlistment_custom_question_field.php'); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </section>
 
-                    <!-- Code d'invitation (optionnel) -->
+                    <section class="ce-form-section" id="ce-sec-notices" aria-label="Informations importantes">
+                        <h3 class="ce-section-title">Avant d’envoyer</h3>
+                        <div class="ce-notice-stack">
+                            <aside class="ce-notice ce-notice--warn">
+                                <p class="ce-notice__kicker">Recrutement de l’unité</p>
+                                <ul class="ce-notice__list">
+                                    <?php foreach ($disclaimerRecruitment as $dLine): ?>
+                                        <li><?= htmlspecialchars((string) $dLine, ENT_QUOTES, 'UTF-8') ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </aside>
+                            <aside class="ce-notice ce-notice--muted">
+                                <p class="ce-notice__kicker">Rôle de la plateforme</p>
+                                <p class="ce-notice__lead">Athena permet de déposer et de suivre votre dossier. La plateforme n’intervient pas dans les décisions de recrutement de l’unité : l’examen, l’acceptation ou le refus relèvent uniquement de l’équipe de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>.</p>
+                            </aside>
+                            <aside class="ce-notice ce-notice--info">
+                                <p class="ce-notice__kicker">Analyse automatique des formulations</p>
+                                <p class="ce-notice__lead">Vos réponses font l’objet d’une analyse automatique destinée à repérer les insultes ou propos injurieux. Un contenu inapproprié peut entraîner le rejet d’un message ou la suspension de l’accès au suivi.</p>
+                            </aside>
+                        </div>
+                    </section>
+
                     <div class="ce-field-group">
                         <label for="invite-code" class="ce-label">
-                            Code d'invitation (optionnel)
-                            <span class="ce-label-hint">Si vous avez reçu un code d'invitation, saisissez-le ici pour accélérer votre candidature</span>
+                            Code d'invitation prioritaire (optionnel)
+                            <span class="ce-label-hint">Si l’équipe vous a transmis un code prioritaire, saisissez-le ici pour accélérer votre candidature</span>
                         </label>
-                        <input type="text" 
-                               name="invite_code" 
-                               id="invite-code" 
-                               class="ce-input"
+                        <input type="text"
+                               name="invite_code"
+                               id="invite-code"
+                               class="input-field"
                                placeholder="Ex: MIGRATION2026"
                                maxlength="64"
                                pattern="[A-Z0-9\-_]*"
@@ -592,11 +818,12 @@ $jsHref = url('assets/js/community-enlistment.js');
                 </form>
             </div>
         </div>
+        <?php endif; ?>
         </div>
 
         <footer class="ce-foot">
             <div class="ce-wrap">
-                <a href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la vitrine <?= htmlspecialchars($tenantName) ?></a>
+                <a href="<?= htmlspecialchars($showcaseUrl) ?>">Retour à la vitrine <span class="ce-community-name"><?= htmlspecialchars($tenantName) ?></span></a>
                 · Athena
             </div>
         </footer>
@@ -705,9 +932,10 @@ $jsHref = url('assets/js/community-enlistment.js');
             function syncMotivationRequired() {
                 var ta = document.querySelector('textarea[name="motivation_why_join"]');
                 if (!ta) return;
+                var tenantRequired = ta.getAttribute('data-tenant-required') === '1';
                 var flow = flowInput ? flowInput.value : 'guest';
                 var compact = form.classList.contains('enlist-compact-default') && !form.classList.contains('enlist-compact-expanded');
-                ta.required = (flow === 'account' && compact);
+                ta.required = tenantRequired || (flow === 'account' && compact);
             }
 
             function syncRpSharePanel() {
@@ -800,8 +1028,10 @@ $jsHref = url('assets/js/community-enlistment.js');
                         var payload = JSON.parse(raw);
                         var mo = document.querySelector('textarea[name="motivation_why_join"]');
                         if (mo && payload.motivation_why_join) mo.value = payload.motivation_why_join;
-                        var cs = document.querySelector('input[name="callsign"]');
-                        if (cs && payload.callsign) cs.value = payload.callsign;
+                        var tz = document.querySelector('select[name="timezone"]');
+                        if (tz && payload.timezone) tz.value = payload.timezone;
+                        var sc = document.querySelector('select[name="system_config"], input[name="system_config"], textarea[name="system_config"]');
+                        if (sc && payload.system_config) sc.value = payload.system_config;
                         var av = document.querySelector('input[name="weekly_availability"]');
                         if (av && payload.availability) av.value = payload.availability;
                     } catch (e) {}

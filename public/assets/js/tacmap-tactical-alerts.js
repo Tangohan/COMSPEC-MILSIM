@@ -14,12 +14,76 @@
     { id: 'eagle_down', label: 'À terre' },
   ];
 
+  var FRAGO_LABELS = {
+    situation: 'Situation',
+    mission: 'Mission',
+    execution: 'Exécution',
+    support: 'Soutien',
+    command: 'Commandement',
+  };
+
+  var BDA_LABELS = {
+    observer: 'Observateur',
+    grid: 'Grille (rapport)',
+    time: 'Heure (rapport)',
+    target: 'Cible / objectif',
+    damage: 'Dégâts observés',
+    enemy: 'Effets ennemis',
+    friendly: 'Effets amis / civils',
+    munitions: 'Munitions / méthode',
+    remarks: 'Remarques',
+  };
+
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function stripHtmlLite(s) {
+    return String(s == null ? '' : s)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+  }
+
+  function parseBdaFields(summary) {
+    var s = stripHtmlLite(summary);
+    if (!s) return null;
+    s = s.replace(/\s*[|·•]+\s*/g, '\n');
+    s = s.replace(/\s+[—–]\s+(?=\d\.\s)/g, '\n');
+    var rules = [
+      ['observer', /^(?:Observer|Observateur|Émetteur)\s*:\s*(.+)$/i],
+      ['grid', /^(?:Grid|Grille)\s*:\s*(.+)$/i],
+      ['time', /^(?:Time|Heure)\s*:\s*(.+)$/i],
+      ['target', /^(?:1\.\s*)?(?:Target\/?Objective|Cible(?:\s*\/\s*Objectif)?)\s*:\s*(.+)$/i],
+      ['damage', /^(?:2\.\s*)?(?:Damage\s*Observed|Dégâts(?:\s*observés)?)\s*:\s*(.+)$/i],
+      ['enemy', /^(?:3\.\s*)?(?:Enemy\s*BDA|Effets\s*ennemis)\s*:\s*(.+)$/i],
+      ['friendly', /^(?:4\.\s*)?(?:Friendly\/?Civilian\s*Effects|Effets\s*amis(?:\s*\/\s*civils)?)\s*:\s*(.+)$/i],
+      ['munitions', /^(?:5\.\s*)?(?:Munitions\/?Method|Munitions(?:\s*\/\s*méthode)?)\s*:\s*(.+)$/i],
+      ['remarks', /^(?:6\.\s*)?(?:Remarks|Remarques)\s*:\s*(.+)$/i],
+    ];
+    var out = {};
+    s.split(/\n+/).forEach(function (line) {
+      line = String(line || '').trim();
+      if (!line || /^BDA(?:\s*REPORT)?$/i.test(line)) return;
+      for (var i = 0; i < rules.length; i++) {
+        var id = rules[i][0];
+        if (out[id]) continue;
+        var m = line.match(rules[i][1]);
+        if (!m) continue;
+        var val = String(m[1] || '').trim().replace(/^[—\-–·|\s]+|[—\-–·|\s]+$/g, '');
+        if (val && !/^(n\/?a|—|-)$/i.test(val)) out[id] = val;
+        break;
+      }
+    });
+    return Object.keys(out).length ? out : null;
   }
 
   function severityClass(sev) {
@@ -37,6 +101,117 @@
     var x = a && a.pos_x != null ? parseFloat(a.pos_x) : NaN;
     var y = a && a.pos_y != null ? parseFloat(a.pos_y) : NaN;
     return !isNaN(x) && !isNaN(y) && !(Math.abs(x) < 0.5 && Math.abs(y) < 0.5);
+  }
+
+  function cleanSummary(summary, kind, callSign, grid) {
+    var s = String(summary || '').trim();
+    if (!s) return '';
+    s = s.replace(/^ORDER_ID=[^\s|—\-]+[\s|—\-]*/i, '').trim();
+    var labelMap = {
+      frago: 'Ordre fragmentaire',
+      bda: 'Bilan des dégâts',
+      eagle_down: 'Opérateur à terre',
+      tic: 'Contact',
+      tic_clear: 'Fin de contact',
+      salute: 'Compte rendu SALUTE',
+    };
+    var label = labelMap[normalizeKind(kind)] || '';
+    var prev;
+    do {
+      prev = s;
+      if (label) s = s.replace(new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[—\\-–·|]+\\s*', 'i'), '');
+      s = s.replace(/^FRAGO\s*[—\-–·|]+\s*/i, '');
+      if (callSign) {
+        var csEsc = String(callSign).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp('^' + csEsc + '\\s*[—\\-–·|]+\\s*', 'i'), '');
+        s = s.replace(new RegExp('^' + csEsc + '\\s*[·•]\\s*grille\\s+\\S+(?:\\s*[—\\-–·|]+\\s*)?', 'i'), '');
+        s = s.replace(new RegExp('^' + csEsc + '\\s*[—\\-–]\\s*Grille\\s+\\S+(?:\\s*[—\\-–·|]+\\s*)?', 'i'), '');
+      }
+      if (grid) {
+        var gEsc = String(grid).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp('^Grille\\s+' + gEsc + '(?:\\s*[—\\-–·|]+\\s*)?', 'i'), '');
+      }
+      s = s.replace(/^grille\s+\S+(?:\s*[—\-–·|]+\s*)?/i, '');
+      s = s.replace(/^FRAGO\s*[—\-–]\s*[^\—\-–]+[·•]\s*grille\s+\S+\s*[—\-–]\s*/i, '');
+      if (label && s.toLowerCase() === label.toLowerCase()) s = '';
+      s = s.trim().replace(/^[—\-–·|\s]+|[—\-–·|\s]+$/g, '');
+    } while (s !== prev);
+    return s;
+  }
+
+  function parseFragoSections(summary) {
+    var s = String(summary || '');
+    var out = {};
+    var keys = [
+      ['situation', 'Situation'],
+      ['mission', 'Mission'],
+      ['execution', 'Exécution'],
+      ['support', 'Soutien'],
+      ['command', 'Commandement'],
+    ];
+    keys.forEach(function (pair) {
+      var re = new RegExp(
+        pair[1] + '\\s*:\\s*(.+?)(?=\\s*[—\\-–]\\s*(?:Situation|Mission|Exécution|Soutien|Commandement)\\s*:|$)',
+        'i'
+      );
+      var m = s.match(re);
+      if (m && m[1] && String(m[1]).trim()) out[pair[0]] = String(m[1]).trim();
+    });
+    return out;
+  }
+
+  function bodyPreview(a) {
+    var kind = normalizeKind(a.kind);
+    var summary = cleanSummary(a.summary, kind, a.call_sign, a.grid);
+    var frago = a.frago && typeof a.frago === 'object' ? a.frago : parseFragoSections(summary);
+    if (kind === 'frago' && frago && Object.keys(frago).length) {
+      return Object.keys(FRAGO_LABELS)
+        .filter(function (k) { return frago[k]; })
+        .map(function (k) { return FRAGO_LABELS[k] + ' : ' + frago[k]; })
+        .slice(0, 2)
+        .join(' · ');
+    }
+    if (a.salute && typeof a.salute === 'object') {
+      return Object.keys(a.salute)
+        .map(function (k) { return String(a.salute[k] || '').trim(); })
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(' · ');
+    }
+    var bda = a.bda && typeof a.bda === 'object' ? a.bda : (kind === 'bda' ? parseBdaFields(a.summary || summary) : null);
+    if (kind === 'bda' && bda && Object.keys(bda).length) {
+      return ['target', 'damage', 'remarks']
+        .filter(function (k) { return bda[k]; })
+        .map(function (k) { return BDA_LABELS[k] + ' : ' + bda[k]; })
+        .slice(0, 2)
+        .join(' · ') || summary || 'Bilan des dégâts';
+    }
+    return summary || 'Aucun détail textuel.';
+  }
+
+  function formatDetailTime(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    var d = new Date(s);
+    if (isNaN(d.getTime())) {
+      var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+      if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+      d = new Date(iso);
+    }
+    if (isNaN(d.getTime())) return s;
+    try {
+      return d.toLocaleString('fr-FR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).replace(',', '');
+    } catch (e) {
+      return s;
+    }
   }
 
   function ensureFilterBar(listEl) {
@@ -77,6 +252,127 @@
     return list.filter(function (a) { return normalizeKind(a.kind) === kind; });
   }
 
+  function ensureModal() {
+    var el = document.getElementById('tacmap-talert-modal');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'tacmap-talert-modal';
+    el.className = 'tacmap-talert-modal';
+    el.hidden = true;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'tacmap-talert-modal-title');
+    el.innerHTML =
+      '<div class="tacmap-talert-modal__backdrop" data-talert-close="1"></div>' +
+      '<div class="tacmap-talert-modal__panel">' +
+        '<header class="tacmap-talert-modal__head">' +
+          '<h2 id="tacmap-talert-modal-title">Signalement</h2>' +
+          '<button type="button" class="tacmap-talert-modal__close" data-talert-close="1" aria-label="Fermer">×</button>' +
+        '</header>' +
+        '<div class="tacmap-talert-modal__body" id="tacmap-talert-modal-body"></div>' +
+        '<footer class="tacmap-talert-modal__foot" id="tacmap-talert-modal-foot"></footer>' +
+      '</div>';
+    document.body.appendChild(el);
+    el.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (t && t.getAttribute && t.getAttribute('data-talert-close')) {
+        el.hidden = true;
+      }
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && !el.hidden) el.hidden = true;
+    });
+    return el;
+  }
+
+  function openDetail(a, onLocate) {
+    var modal = ensureModal();
+    var title = document.getElementById('tacmap-talert-modal-title');
+    var body = document.getElementById('tacmap-talert-modal-body');
+    var foot = document.getElementById('tacmap-talert-modal-foot');
+    if (!body || !foot) return;
+
+    var kind = normalizeKind(a.kind);
+    var summary = cleanSummary(a.summary, kind, a.call_sign, a.grid);
+    var frago = a.frago && typeof a.frago === 'object' && Object.keys(a.frago).length
+      ? a.frago
+      : parseFragoSections(summary);
+    var bda = a.bda && typeof a.bda === 'object' && Object.keys(a.bda).length
+      ? a.bda
+      : (kind === 'bda' ? parseBdaFields(String(a.summary || '') || summary) : null);
+
+    if (title) title.textContent = a.kind_label || 'Signalement';
+
+    var rows = '';
+    rows += '<div class="tacmap-talert-modal__meta">' +
+      '<div><span>Émetteur</span><strong>' + escapeHtml(a.call_sign || a.author || '—') + '</strong></div>' +
+      '<div><span>Grille</span><strong>' + escapeHtml(a.grid || '—') + '</strong></div>' +
+      (a.created_at ? '<div><span>Heure</span><strong>' + escapeHtml(formatDetailTime(a.created_at)) + '</strong></div>' : '') +
+      '</div>';
+
+    if (kind === 'frago' && frago && Object.keys(frago).length) {
+      rows += '<ol class="tacmap-talert-modal__frago">';
+      Object.keys(FRAGO_LABELS).forEach(function (k) {
+        if (!frago[k]) return;
+        rows += '<li><strong>' + escapeHtml(FRAGO_LABELS[k]) + '</strong><p>' + escapeHtml(frago[k]) + '</p></li>';
+      });
+      rows += '</ol>';
+    } else if (a.salute && typeof a.salute === 'object') {
+      rows += '<dl class="tacmap-talert-modal__salute">';
+      Object.keys(a.salute).forEach(function (k) {
+        var v = String(a.salute[k] || '').trim();
+        if (!v) return;
+        rows += '<div><dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(v) + '</dd></div>';
+      });
+      rows += '</dl>';
+    } else if (kind === 'bda' && bda && Object.keys(bda).length) {
+      rows += '<dl class="tacmap-talert-modal__bda">';
+      Object.keys(BDA_LABELS).forEach(function (k) {
+        if (!bda[k]) return;
+        rows += '<div><dt>' + escapeHtml(BDA_LABELS[k]) + '</dt><dd>' + escapeHtml(bda[k]) + '</dd></div>';
+      });
+      rows += '</dl>';
+    } else {
+      rows += '<p class="tacmap-talert-modal__text">' + escapeHtml(summary || 'Aucun détail textuel.') + '</p>';
+    }
+    body.innerHTML = rows;
+
+    var actions = '';
+    if (hasMapPos(a)) {
+      actions += '<button type="button" class="tacmap-talert-modal__btn" data-talert-locate="1">Centrer sur la carte</button>';
+    }
+    if (a.order_id) {
+      actions += '<button type="button" class="tacmap-talert-modal__btn tacmap-talert-modal__btn--primary" data-talert-order="' +
+        escapeHtml(a.order_id) + '">Ouvrir l’ordre</button>';
+    }
+    actions += '<button type="button" class="tacmap-talert-modal__btn" data-talert-close="1">Fermer</button>';
+    foot.innerHTML = actions;
+
+    foot.querySelectorAll('[data-talert-locate]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (typeof onLocate === 'function') onLocate(parseFloat(a.pos_x), parseFloat(a.pos_y), a.id);
+        modal.hidden = true;
+      });
+    });
+    foot.querySelectorAll('[data-talert-order]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var oid = btn.getAttribute('data-talert-order');
+        modal.hidden = true;
+        try {
+          global.dispatchEvent(new CustomEvent('atak:open-order', { detail: { orderId: oid } }));
+        } catch (e) { /* ignore */ }
+        if (typeof global.ATAKOpenOrder === 'function') {
+          global.ATAKOpenOrder(oid);
+        } else {
+          var ordersTab = document.querySelector('[data-atak-tab="orders"], #atak-tab-orders, [href*="ordres"]');
+          if (ordersTab) ordersTab.click();
+        }
+      });
+    });
+
+    modal.hidden = false;
+  }
+
   function renderList(el, alerts, opts) {
     opts = opts || {};
     if (!el) return;
@@ -91,20 +387,29 @@
 
     el.innerHTML = filtered.slice().reverse().map(function (a) {
       var id = a.id != null ? String(a.id) : '';
-      var clickable = hasMapPos(a);
+      var preview = bodyPreview(a);
+      var openLabel = normalizeKind(a.kind) === 'frago' ? 'Ouvrir le FRAGO' : 'Ouvrir';
       return (
-        '<article class="tacmap-talert ' + severityClass(a.severity) +
-          (clickable ? ' tacmap-talert--locate' : '') + '"' +
-          (id ? ' data-alert-id="' + escapeHtml(id) + '"' : '') +
-          (clickable ? ' data-pos-x="' + escapeHtml(a.pos_x) + '" data-pos-y="' + escapeHtml(a.pos_y) + '" tabindex="0" role="button" title="Centrer sur la carte"' : '') +
-          '>' +
+        '<article class="tacmap-talert ' + severityClass(a.severity) + '"' +
+          (id ? ' data-alert-id="' + escapeHtml(id) + '"' : '') + '>' +
           '<header><strong>' + escapeHtml(a.kind_label || 'Alerte') + '</strong>' +
           '<span>' + escapeHtml(a.call_sign || a.author || '') + '</span></header>' +
-          '<p>' + escapeHtml(a.summary || '') + '</p>' +
           (a.grid ? '<p class="tacmap-talert__grid">Grille ' + escapeHtml(a.grid) + '</p>' : '') +
+          '<p class="tacmap-talert__preview">' + escapeHtml(preview) + '</p>' +
+          '<div class="tacmap-talert__actions">' +
+            '<button type="button" class="tacmap-talert__btn tacmap-talert__btn--open" data-talert-open="1">'+
+              escapeHtml(openLabel) + '</button>' +
+            (hasMapPos(a)
+              ? '<button type="button" class="tacmap-talert__btn" data-talert-locate="1" data-pos-x="' +
+                escapeHtml(a.pos_x) + '" data-pos-y="' + escapeHtml(a.pos_y) + '">Carte</button>'
+              : '') +
+          '</div>' +
         '</article>'
       );
     }).join('');
+
+    // Stash alerts for open handlers
+    el._talertCache = filtered;
   }
 
   function bindUi(listEl, getAlerts, onLocate) {
@@ -124,20 +429,28 @@
       });
     }
     listEl.addEventListener('click', function (ev) {
-      var art = ev.target && ev.target.closest ? ev.target.closest('.tacmap-talert--locate') : null;
-      if (!art || typeof onLocate !== 'function') return;
-      var x = parseFloat(art.getAttribute('data-pos-x'));
-      var y = parseFloat(art.getAttribute('data-pos-y'));
-      if (!isNaN(x) && !isNaN(y)) onLocate(x, y, art.getAttribute('data-alert-id'));
-    });
-    listEl.addEventListener('keydown', function (ev) {
-      if (ev.key !== 'Enter' && ev.key !== ' ') return;
-      var art = ev.target && ev.target.closest ? ev.target.closest('.tacmap-talert--locate') : null;
-      if (!art || typeof onLocate !== 'function') return;
-      ev.preventDefault();
-      var x = parseFloat(art.getAttribute('data-pos-x'));
-      var y = parseFloat(art.getAttribute('data-pos-y'));
-      if (!isNaN(x) && !isNaN(y)) onLocate(x, y, art.getAttribute('data-alert-id'));
+      var openBtn = ev.target && ev.target.closest ? ev.target.closest('[data-talert-open]') : null;
+      if (openBtn) {
+        var art = openBtn.closest('.tacmap-talert');
+        var id = art ? art.getAttribute('data-alert-id') : '';
+        var alerts = typeof getAlerts === 'function' ? getAlerts() : (listEl._talertCache || []);
+        var found = null;
+        (alerts || []).forEach(function (a) {
+          if (String(a.id) === String(id)) found = a;
+        });
+        if (!found && art) {
+          var idx = Array.prototype.indexOf.call(listEl.querySelectorAll('.tacmap-talert'), art);
+          var rev = (alerts || []).slice().reverse();
+          found = rev[idx] || null;
+        }
+        if (found) openDetail(found, onLocate);
+        return;
+      }
+      var locBtn = ev.target && ev.target.closest ? ev.target.closest('[data-talert-locate]') : null;
+      if (!locBtn || typeof onLocate !== 'function') return;
+      var x = parseFloat(locBtn.getAttribute('data-pos-x'));
+      var y = parseFloat(locBtn.getAttribute('data-pos-y'));
+      if (!isNaN(x) && !isNaN(y)) onLocate(x, y);
     });
   }
 
@@ -149,12 +462,6 @@
     return base + '/atak/tactical-alerts?mapId=' + encodeURIComponent(mapId || 1) + '&limit=40';
   }
 
-  /**
-   * @param {string} apiBase
-   * @param {number|string} mapId
-   * @param {HTMLElement} listEl
-   * @param {{ onAlerts?: function, onLocate?: function }=} opts
-   */
   function pollFlexible(apiBase, mapId, listEl, opts) {
     opts = opts || {};
     var cacheRef = { alerts: [] };
@@ -177,7 +484,6 @@
       });
   }
 
-  /** Parse client (chat ATAK) — miroir TacticalAlertParser PHP. */
   function parseChatBody(body) {
     var raw = String(body || '').trim();
     raw = raw.replace(
@@ -189,32 +495,33 @@
     var parts = raw.split('|').map(function (p) { return String(p || '').trim(); });
     var kindRaw = String(parts[1] || 'TIC').toUpperCase().replace(/[\s-]+/g, '_');
     var kindMap = {
-      TIC: 'tic',
-      CLEAR: 'tic_clear',
-      TIC_CLEAR: 'tic_clear',
-      TICCLEAR: 'tic_clear',
-      FRAGO: 'frago',
-      SALUTE: 'salute',
-      EAGLE_DOWN: 'eagle_down',
-      EAGLEDOWN: 'eagle_down',
-      PANIC: 'eagle_down',
-      BDA: 'bda',
-      BDA_REPORT: 'bda',
+      TIC: 'tic', CLEAR: 'tic_clear', TIC_CLEAR: 'tic_clear', TICCLEAR: 'tic_clear',
+      FRAGO: 'frago', SALUTE: 'salute', EAGLE_DOWN: 'eagle_down', EAGLEDOWN: 'eagle_down',
+      PANIC: 'eagle_down', BDA: 'bda', BDA_REPORT: 'bda',
     };
     var kind = kindMap[kindRaw] || 'tic';
     var labels = {
-      tic: 'Contact',
-      tic_clear: 'Fin de contact',
-      frago: 'Ordre fragmentaire',
-      salute: 'Compte rendu SALUTE',
-      eagle_down: 'Opérateur à terre',
-      bda: 'Bilan des dégâts',
+      tic: 'Contact', tic_clear: 'Fin de contact', frago: 'Ordre fragmentaire',
+      salute: 'Compte rendu SALUTE', eagle_down: 'Opérateur à terre', bda: 'Bilan des dégâts',
     };
     var callSign = parts[2] || '';
     var grid = parts[3] || '';
-    var summary = parts.slice(6).join(' — ').trim();
-    if (!summary) {
-      summary = (labels[kind] || 'Alerte') + (callSign ? ' — ' + callSign : '') + (grid ? ' — Grille ' + grid : '');
+    var posX = parts[4] !== undefined && parts[4] !== '' ? parseFloat(parts[4]) : NaN;
+    var posY = parts[5] !== undefined && parts[5] !== '' ? parseFloat(parts[5]) : NaN;
+    var tail = parts.slice(6);
+    var orderId = '';
+    if (tail.length && /^ORDER_ID=/i.test(tail[0])) {
+      orderId = String(tail[0]).replace(/^ORDER_ID=/i, '').trim();
+      tail = tail.slice(1);
+    }
+    var summary = cleanSummary(tail.join(' — ').trim(), kind, callSign, grid);
+    var frago = kind === 'frago' ? parseFragoSections(summary) : {};
+    var bda = kind === 'bda' ? parseBdaFields(tail.join(' — ').trim() || summary) : null;
+    if (kind === 'bda' && bda) {
+      var bits = ['target', 'damage', 'enemy', 'friendly', 'munitions', 'remarks']
+        .filter(function (k) { return bda[k]; })
+        .map(function (k) { return BDA_LABELS[k] + ' : ' + bda[k]; });
+      if (bits.length) summary = bits.join(' — ');
     }
     return {
       is_tactical: true,
@@ -222,7 +529,12 @@
       kind_label: labels[kind] || 'Alerte',
       call_sign: callSign,
       grid: grid,
+      pos_x: !isNaN(posX) ? posX : undefined,
+      pos_y: !isNaN(posY) ? posY : undefined,
       summary: summary,
+      order_id: orderId || undefined,
+      frago: Object.keys(frago).length ? frago : undefined,
+      bda: bda || undefined,
       severity: (kind === 'eagle_down' || kind === 'tic') ? 'critical' : (kind === 'frago' || kind === 'bda' ? 'high' : (kind === 'tic_clear' ? 'info' : 'medium')),
     };
   }
@@ -230,11 +542,20 @@
   function formatChatBody(body) {
     var p = parseChatBody(body);
     if (!p) return null;
+    var preview = bodyPreview(p);
+    var meta = escapeHtml(p.call_sign || '') + (p.grid ? ' · grille ' + escapeHtml(p.grid) : '');
+    var bodyLine = '';
+    if (
+      preview &&
+      preview !== 'Aucun détail textuel.' &&
+      preview.toLowerCase() !== String(p.kind_label || '').toLowerCase()
+    ) {
+      bodyLine = '<br/><span class="atak-chat-talert-body">' + escapeHtml(preview) + '</span>';
+    }
     return (
       '<span class="atak-chat-talert-badge">' + escapeHtml(p.kind_label) + '</span> ' +
-      escapeHtml(p.call_sign || '') +
-      (p.grid ? ' · grille ' + escapeHtml(p.grid) : '') +
-      '<br/>' + escapeHtml(p.summary)
+      meta +
+      bodyLine
     );
   }
 
@@ -256,15 +577,32 @@
     };
   }
 
-  function formatGroupChatBody(body) {
+  /**
+   * @param {string} body
+   * @param {{ outgoing?: boolean }=} opts
+   */
+  function formatGroupChatBody(body, opts) {
     var p = parseGroupBody(body);
     if (!p) return null;
+    opts = opts || {};
+    var outgoing = !!opts.outgoing;
+    var dirLabel = outgoing ? 'Transmis' : 'Reçu';
+    var dirCls = outgoing ? 'atak-chat-group-dir--out' : 'atak-chat-group-dir--in';
+    var metaBits = [];
+    if (p.group_id) metaBits.push('<span class="atak-chat-group-meta-item"><em>Groupe</em> ' + escapeHtml(p.group_id) + '</span>');
+    if (p.call_sign) metaBits.push('<span class="atak-chat-group-meta-item"><em>Indicatif</em> ' + escapeHtml(p.call_sign) + '</span>');
+    if (p.grid) metaBits.push('<span class="atak-chat-group-meta-item"><em>Grille</em> ' + escapeHtml(p.grid) + '</span>');
     return (
-      '<span class="atak-chat-group-badge">' + escapeHtml(p.label) + '</span> ' +
-      escapeHtml(p.call_sign || '') +
-      (p.group_id ? ' · ' + escapeHtml(p.group_id) : '') +
-      (p.grid ? ' · grille ' + escapeHtml(p.grid) : '') +
-      '<br/>' + escapeHtml(p.text)
+      '<div class="atak-chat-group-card' + (outgoing ? ' atak-chat-group-card--out' : '') + '">' +
+        '<div class="atak-chat-group-head">' +
+          '<span class="atak-chat-group-badge">' + escapeHtml(p.label) + '</span>' +
+          '<span class="atak-chat-group-dir ' + dirCls + '">' + dirLabel + '</span>' +
+        '</div>' +
+        '<div class="atak-chat-group-text">' + escapeHtml(p.text) + '</div>' +
+        (metaBits.length
+          ? '<div class="atak-chat-group-meta">' + metaBits.join('') + '</div>'
+          : '') +
+      '</div>'
     );
   }
 
@@ -276,5 +614,8 @@
     parseGroupBody: parseGroupBody,
     formatGroupChatBody: formatGroupChatBody,
     hasMapPos: hasMapPos,
+    openDetail: openDetail,
+    cleanSummary: cleanSummary,
+    bodyPreview: bodyPreview,
   };
 })(window);

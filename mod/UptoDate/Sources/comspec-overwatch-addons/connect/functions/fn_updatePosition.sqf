@@ -385,6 +385,9 @@ missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
 
 private _atakSync = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 if (_atakSync isEqualType createHashMap) then {
+    if (_linkState in ["linked", "degraded", "connecting"]) then {
+        missionNamespace setVariable ["COMSPEC_LinkState", _linkState, false];
+    };
     player setVariable ["COMSPEC_AtakState", _atakSync, true];
     player setVariable ["COMSPEC_LinkState", _linkState, true];
     [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;

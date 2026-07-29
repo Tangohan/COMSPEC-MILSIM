@@ -169,7 +169,7 @@ if ($json === false) {
 
     var pill = document.createElement('div');
     pill.className = 'nib-breaking-pill';
-    pill.innerHTML = '<span class="nib-live-dot" aria-hidden="true"></span><span>Breaking</span>';
+    pill.innerHTML = '<span class="nib-live-dot" aria-hidden="true"></span><span>Attention</span>';
     el.appendChild(pill);
 
     var ticker = document.createElement('div');

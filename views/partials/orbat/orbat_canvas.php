@@ -325,6 +325,26 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
                                 <p class="mb-2 text-[10px] text-slate-500 leading-snug">Texte visible sur la vitrine et la fiche publique de l’unité (mission, rôle, ambiance).</p>
                                 <textarea id="orbat-ed-mission" rows="3" maxlength="8000" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"></textarea>
                             </div>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label for="orbat-ed-founded-on" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Date de création</label>
+                                    <input id="orbat-ed-founded-on" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                                <div>
+                                    <label for="orbat-ed-custom-date" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Date complémentaire</label>
+                                    <input id="orbat-ed-custom-date" type="date" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="orbat-ed-custom-date-label" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Libellé de la date complémentaire</label>
+                                <input id="orbat-ed-custom-date-label" type="text" maxlength="80" list="orbat-date-label-suggestions" placeholder="Ex. Mise en service, Activation…" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                <datalist id="orbat-date-label-suggestions">
+                                    <option value="Mise en service"></option>
+                                    <option value="Activation"></option>
+                                    <option value="Réorganisation"></option>
+                                    <option value="Anniversaire"></option>
+                                </datalist>
+                            </div>
                         </div>
                         <div id="orbat-ed-details-block">
                             <label for="orbat-ed-details" class="mb-1 block text-[9px] font-black uppercase tracking-wider text-slate-500">Détails complémentaires</label>
@@ -548,7 +568,7 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
     function bindEditors() {
         if (!showOrbatEditTools || editorsBound) return;
         editorsBound = true;
-        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander", "orbat-ed-show-public"].forEach(function(id) {
+        ["orbat-ed-name", "orbat-ed-code", "orbat-ed-type", "orbat-ed-mission", "orbat-ed-details", "orbat-ed-commander", "orbat-ed-show-public", "orbat-ed-founded-on", "orbat-ed-custom-date", "orbat-ed-custom-date-label"].forEach(function(id) {
             const el = document.getElementById(id);
             if (!el) return;
             el.addEventListener("input", scheduleSave);
@@ -574,6 +594,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const detailsEl = document.getElementById("orbat-ed-details");
         const cmdEl = document.getElementById("orbat-ed-commander");
         const showPublicEl = document.getElementById("orbat-ed-show-public");
+        const foundedEl = document.getElementById("orbat-ed-founded-on");
+        const customDateEl = document.getElementById("orbat-ed-custom-date");
+        const customLabelEl = document.getElementById("orbat-ed-custom-date-label");
         const name = nameEl ? nameEl.value.trim() : "";
         if (!name) {
             if (statusEl) { statusEl.textContent = "Le nom affiché est obligatoire."; statusEl.className = "min-h-[1.25rem] text-xs font-medium text-red-600"; }
@@ -588,6 +611,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         body.append("code", codeEl ? codeEl.value.trim() : "");
         body.append("public_blurb", missionEl ? missionEl.value.trim() : "");
         body.append("show_on_public_page", showPublicEl && showPublicEl.checked ? "1" : "0");
+        body.append("public_founded_on", foundedEl ? foundedEl.value : "");
+        body.append("public_custom_date", customDateEl ? customDateEl.value : "");
+        body.append("public_custom_date_label", customLabelEl ? customLabelEl.value.trim() : "");
         body.append("orbat_type", typeEl ? typeEl.value : "command");
         body.append("orbat_details", detailsEl ? detailsEl.value.trim() : "");
         body.append("commander_user_id", cmdEl && cmdEl.value ? cmdEl.value : "");
@@ -623,6 +649,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         const details = document.getElementById("orbat-ed-details");
         const cmd = document.getElementById("orbat-ed-commander");
         const showPublic = document.getElementById("orbat-ed-show-public");
+        const foundedOn = document.getElementById("orbat-ed-founded-on");
+        const customDate = document.getElementById("orbat-ed-custom-date");
+        const customLabel = document.getElementById("orbat-ed-custom-date-label");
         refreshOrbatTypeSelect();
         if (name) name.value = node.label || "";
         if (code) code.value = (node.role && node.role !== "Unité") ? node.role : "";
@@ -635,6 +664,9 @@ $orbatPageLead = $orbatPageLead ?? 'Structure organique, disponibilité des unit
         if (details) details.value = node.orbatDetails || "";
         if (cmd) cmd.value = (node.commanderUserId && node.commanderUserId > 0) ? String(node.commanderUserId) : "";
         if (showPublic) showPublic.checked = node.showOnPublicPage !== false;
+        if (foundedOn) foundedOn.value = node.publicFoundedOn || "";
+        if (customDate) customDate.value = node.publicCustomDate || "";
+        if (customLabel) customLabel.value = node.publicCustomDateLabel || "";
         isHydratingForm = false;
         bindEditors();
     }

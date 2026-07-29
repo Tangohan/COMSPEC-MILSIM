@@ -229,6 +229,13 @@ private _casPollInterval = 10;
 }, 90, []] call CBA_fnc_addPerFrameHandler;
 
 [{
+    private _ctab = uiNamespace getVariable ["cTab_Android_dlg", displayNull];
+    private _hub = uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull];
+    if (isNull _ctab && {isNull _hub}) exitWith {};
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
+}, 1, []] call CBA_fnc_addPerFrameHandler;
+
+[{
     if (!(missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false])) exitWith {};
     if (isNull (uiNamespace getVariable ["COMSPEC_Hub_Display", displayNull])) exitWith {};
     [] call comspec_overwatch_connect_fnc_updateAtakEnhancedRoleplay;

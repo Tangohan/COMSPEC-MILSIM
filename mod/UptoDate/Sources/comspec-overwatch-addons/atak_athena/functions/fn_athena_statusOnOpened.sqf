@@ -16,9 +16,11 @@ uiNamespace setVariable ["COMSPEC_ATAK_Status_token", _token];
         ["", true] call comspec_overwatch_connect_fnc_syncAtakRealism;
     };
     [] call comspec_overwatch_atak_athena_fnc_athena_updateStatus;
+    [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
 };
 
 [] call comspec_overwatch_atak_athena_fnc_athena_updateStatus;
+[true] call comspec_overwatch_connect_fnc_logAtakStateChange;
 
 [_token] spawn {
     params ["_token"];

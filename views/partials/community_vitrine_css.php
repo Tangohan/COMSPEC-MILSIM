@@ -22,7 +22,7 @@ foreach ($communityVitrineCssPaths as $communityVitrineCssPath) {
     if ($communityVitrineCssBody === '') {
         continue;
     }
-    echo "\n    <!-- cv-css:inline-20260728c -->\n";
+    echo "\n    <!-- cv-css:inline-20260728e-unit-fiche -->\n";
     echo "    <style id=\"community-vitrine-fallback\">\n" . $communityVitrineCssBody . "\n    </style>\n";
     unset($communityVitrineCssBody, $communityVitrineCssPath, $communityVitrineCssPaths);
 

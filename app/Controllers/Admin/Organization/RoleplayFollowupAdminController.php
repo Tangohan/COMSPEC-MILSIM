@@ -332,6 +332,74 @@ final class RoleplayFollowupAdminController
         return Response::redirect(url('back-office/roleplay-followup'));
     }
 
+    public function immersionSettings(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+
+        $cfg = $this->roleplayFollowupConfig($tenantId);
+        $raw = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($raw['community'] ?? null) ? $raw['community'] : [];
+        $stored = is_array($community['roleplay_followup'] ?? null) ? $community['roleplay_followup'] : [];
+
+        return Response::view('layout.main', [
+            'title' => 'Réglages d’immersion',
+            'content' => 'admin.organization.roleplay_immersion_settings',
+            'rpConfig' => $cfg,
+            'rpEligibility' => is_array($stored['eligibility'] ?? null) ? $stored['eligibility'] : ($cfg['eligibility'] ?? []),
+            'immersionFormAction' => url('back-office/roleplay/immersion'),
+        ]);
+    }
+
+    public function immersionSettingsUpdate(Request $request, array $params = []): Response
+    {
+        $redirectTo = url('back-office/roleplay/immersion');
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($redirectTo);
+        }
+
+        $parseLines = static function (string $raw): array {
+            $out = [];
+            foreach (preg_split('/\R/u', $raw) ?: [] as $line) {
+                $v = trim((string) $line);
+                if ($v !== '') {
+                    $out[] = $v;
+                }
+            }
+
+            return array_values(array_unique($out));
+        };
+
+        $this->tenantRepository->updateSettings($tenantId, [
+            'community' => [
+                'roleplay_followup' => [
+                    'enabled' => $request->input('rp_followup_enabled') ? 1 : 0,
+                    'optional' => $request->input('rp_followup_optional') ? 1 : 0,
+                    'stages' => $parseLines((string) $request->input('rp_followup_stages')),
+                    'recruitment_tracks' => $parseLines((string) $request->input('rp_followup_tracks')),
+                    'eligibility' => [
+                        'min_completeness' => max(0, min(100, (int) $request->input('rp_eligibility_min_completeness', 50))),
+                        'min_readiness' => max(0, min(100, (int) $request->input('rp_eligibility_min_readiness', 30))),
+                        'require_unit' => $request->input('rp_eligibility_require_unit') ? 1 : 0,
+                        'require_callsign' => $request->input('rp_eligibility_require_callsign') ? 1 : 0,
+                        'require_tutor' => $request->input('rp_eligibility_require_tutor') ? 1 : 0,
+                    ],
+                ],
+            ],
+        ]);
+        Session::flash('success', 'Réglages du suivi d’immersion enregistrés.');
+
+        return Response::redirect($redirectTo);
+    }
+
     /** @return array{enabled: bool, optional: bool, stages: list<string>, recruitment_tracks: list<string>, eligibility: array<string,mixed>} */
     private function roleplayFollowupConfig(int $tenantId): array
     {

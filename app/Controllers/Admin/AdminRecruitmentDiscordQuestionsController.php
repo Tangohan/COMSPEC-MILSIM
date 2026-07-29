@@ -40,7 +40,7 @@ class AdminRecruitmentDiscordQuestionsController
             'discordQuestions' => $this->questionRepository->listForTenant((int) $tenantId),
             'discordInviteMissing' => $this->isDiscordInviteMissing((int) $tenantId),
             'discordQuestionTypes' => [
-                'select' => 'Liste déroulante (select)',
+                'select' => 'Liste déroulante',
                 'open' => 'Question ouverte (texte long)',
                 'closed' => 'Question fermée (Oui / Non)',
                 'free' => 'Réponse libre (texte court)',

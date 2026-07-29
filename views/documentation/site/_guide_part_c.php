@@ -224,7 +224,9 @@
         et hostiles, et précisent quand c’est utile la nature de l’élément (unité d’infanterie, poste de commandement, moyen particulier). Cette
         symbologie partagée est essentielle : elle permet à deux participants qui ne se sont jamais parlé de lire la même carte de la même manière,
         sans traduction ni légende improvisée. Les annotations et tracés éventuels (axes, zones, points de rendez-vous) viennent enrichir cette lecture
-        commune pour préparer ou suivre une manœuvre.
+        commune pour préparer ou suivre une manœuvre. La
+        <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">bibliothèque de marqueurs</a>
+        regroupe les aperçus et libellés de référence.
     </p>
     <p>
         La carte évolue en <strong>temps quasi réel</strong> : les positions se rafraîchissent au fil des remontées, ce qui fait du TACMAP un outil de
@@ -362,6 +364,22 @@
         <strong>Bon réflexe.</strong> Traitez la première liaison et la vérification du modpack comme des prérequis à part entière d’une activité
         tactique, au même titre que la lecture du briefing. Un participant « prêt » est un participant qui apparaît correctement sur la carte avant le
         début de la manœuvre, pas pendant.
+    </div>
+</section>
+
+<section id="bibliotheque-marqueurs" class="site-docs__section">
+    <h2>Bibliothèque de marqueurs</h2>
+    <p class="site-docs__lead">
+        Pour lire et poser les mêmes symboles que sur TACMAP / Overwatch, consultez la légende visuelle complète : aperçus, libellés métier et
+        catégories (amis, adverses, points d’intérêt, repères tactiques…).
+    </p>
+    <p>
+        <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la bibliothèque de marqueurs</a>
+        — utile pour les briefings, la formation des nouveaux et l’alignement de la doctrine de marquage de l’unité.
+    </p>
+    <div class="site-docs__callout site-docs__callout--tip">
+        <strong>Symbologie commune.</strong> Préférez les marqueurs de cette bibliothèque aux symboles improvisés : toute la cellule lit alors la carte
+        de la même façon, en jeu comme sur le portail.
     </div>
 </section>
 

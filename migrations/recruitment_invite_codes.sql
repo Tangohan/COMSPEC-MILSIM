@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `recruitment_invite_codes` (
   `tenant_id` INT UNSIGNED NOT NULL,
   `code` VARCHAR(64) NOT NULL COMMENT 'Code unique utilisable par les candidats',
   `label` VARCHAR(255) DEFAULT NULL COMMENT 'Libellé interne pour identifier ce code',
+  `code_kind` VARCHAR(32) NOT NULL DEFAULT 'priority' COMMENT 'priority = accélération candidature (distinct des invitations e-mail / code communauté)',
   `max_uses` INT UNSIGNED DEFAULT NULL COMMENT 'Nombre maximum d\'utilisations (NULL = illimité)',
   `uses_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Nombre d\'utilisations effectuées',
   `expires_at` DATETIME DEFAULT NULL COMMENT 'Date d\'expiration du code (NULL = pas d\'expiration)',
@@ -19,8 +20,9 @@ CREATE TABLE IF NOT EXISTS `recruitment_invite_codes` (
   UNIQUE KEY `unique_tenant_code` (`tenant_id`, `code`),
   INDEX `idx_tenant_expires` (`tenant_id`, `expires_at`),
   INDEX `idx_code_lookup` (`code`),
+  INDEX `idx_tenant_kind` (`tenant_id`, `code_kind`),
   CONSTRAINT `fk_invite_codes_tenant` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Codes d\'invitation pour validation automatique des candidatures';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Codes d\'invitation prioritaires pour accélérer les candidatures';
 
 -- Table de logs pour tracer l'utilisation des codes
 CREATE TABLE IF NOT EXISTS `recruitment_invite_code_uses` (

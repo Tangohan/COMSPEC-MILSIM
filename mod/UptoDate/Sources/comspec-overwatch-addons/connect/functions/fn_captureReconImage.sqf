@@ -30,6 +30,47 @@ if (_device isEqualTo "") then { _device = "CTAB"; };
 private _capturedAt = str (floor time);
 private _unitName = if (_feedId isEqualTo "") then { name _unit } else { _feedId };
 
+private _fxProfile = "";
+private _fxIntensity = 0;
+private _zone = createHashMap;
+if (missionNamespace getVariable ["comspec_overwatch_roleplay_enabled", false]) then {
+    private _pkt = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
+    private _loss = _pkt getOrDefault ["packet_loss_percent", 0];
+    private _disc = [] call comspec_overwatch_connect_fnc_getNetworkDisconnectInfo;
+    _zone = [] call comspec_overwatch_connect_fnc_getPlayerRoleplayZone;
+    private _atak = [] call comspec_overwatch_connect_fnc_isAtakFunctional;
+    if (_disc getOrDefault ["is_disconnected", false]) then {
+        _fxProfile = "signal_lost";
+        _fxIntensity = 1;
+    } else {
+        if !(_atak getOrDefault ["powered_on", true]) then {
+            _fxProfile = "screen_off";
+            _fxIntensity = 1;
+        } else {
+            if !(_atak getOrDefault ["can_display", true]) then {
+                _fxProfile = "screen_broken";
+                _fxIntensity = 1;
+            } else {
+                private _zoneType = if (_zone isEqualType createHashMap) then { toLower (_zone getOrDefault ["type", ""]) } else { "" };
+                if (_loss >= 35) then {
+                    _fxProfile = if (_zoneType in ["jammer", "interference"]) then { "jammed_heavy" } else { "glitch_heavy" };
+                    _fxIntensity = 1;
+                } else {
+                    if (_loss >= 18) then {
+                        _fxProfile = if (_zoneType in ["jammer", "interference"]) then { "jammed_medium" } else { "glitch_medium" };
+                        _fxIntensity = 0.7;
+                    } else {
+                        if (_loss >= 8) then {
+                            _fxProfile = "glitch_light";
+                            _fxIntensity = 0.4;
+                        };
+                    };
+                };
+            };
+        };
+    };
+};
+
 // Nettoie chemin Photo Library / BCE (guillemets, slashes).
 private _fnc_cleanPath = {
     params ["_p"];
@@ -92,7 +133,9 @@ private _fnc_uploadPath = {
             _missionId,
             _device,
             _capturedAt,
-            _feedId
+            _feedId,
+            _fxProfile,
+            str _fxIntensity
         ]
     ]] call comspec_overwatch_connect_fnc_extResult;
     private _ok = [_raw] call _isOk;
@@ -141,51 +184,16 @@ if (_path isNotEqualTo "") exitWith {
     _ok
 };
 
-// Pas de fichier : capture d’écran joueur puis upload de la plus récente
-screenshot "COMSPEC_AthenaFeed";
-[_author, _device, _caption, _feedId, _pos, _grid, _dir, _sideStr, _missionId, _unitName] spawn {
-    params ["_author", "_device", "_caption", "_feedId", "_pos", "_grid", "_dir", "_sideStr", "_missionId", "_unitName"];
-    uiSleep 0.9;
-    ["UploadLatestScreenshot", "attempt", _device, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    private _raw = ["COMSPECExtension" callExtension [
-        "UploadLatestScreenshot",
-        [
-            _author,
-            _device,
-            _caption,
-            _feedId,
-            str (_pos select 0),
-            str (_pos select 1),
-            str (_pos select 2),
-            _grid,
-            str _dir,
-            _unitName,
-            _sideStr,
-            _missionId,
-            "60"
-        ]
-    ]] call comspec_overwatch_connect_fnc_extResult;
-    private _t = if (_raw isEqualType "") then { trim _raw } else { trim (str _raw) };
-    private _ok = (_t isNotEqualTo "") && {((toUpper _t) find "OK") == 0};
-    missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
-    missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _t, false];
-    if (_ok) then {
-        ["UploadLatestScreenshot", "ok", _t, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        ["COMSPEC_Info", ["Aperçu envoyé vers Athena"]] call comspec_overwatch_connect_fnc_showNotification;
-    } else {
-        ["UploadLatestScreenshot", "fail", _t, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _low = toLower _t;
-        private _msg = "Échec d’envoi de l’aperçu vers Athena";
-        if ((_low find "file_not_found") >= 0) then {
-            _msg = "Aperçu introuvable — reprenez la capture";
-        };
-        if ((_low find "file_too_large") >= 0) then {
-            _msg = "Aperçu trop lourd — réessayez";
-        };
-        if ((_low find "not_connected") >= 0) then {
-            _msg = "Liaison Athena dégradée — reconnectez-vous";
-        };
-        ["COMSPEC_Error", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+// Pas de fichier : capture dédiée puis upload de CE fichier (pas « la plus récente » du dossier Screenshots).
+if (_path isEqualTo "") exitWith {
+    private _snapStem = "COMSPEC_AthenaFeed";
+    screenshot _snapStem;
+    [_snapStem, _caption, _device, _feedId] spawn {
+        params ["_stem", "_caption", "_device", "_feedId"];
+        uiSleep 0.9;
+        [_stem, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;
     };
+    true
 };
-true
+
+false

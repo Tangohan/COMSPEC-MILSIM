@@ -6,10 +6,12 @@
 - **`EmailService`** / **`EmailTransportResolver`** : envoi des notifications (inscription, sécurité, présence, invitations, etc.).
 - En développement, le mode **fichier** permet de vérifier les messages sans serveur SMTP.
 
-## Paiements (Stripe)
+## Paiements (PayPal + Stripe)
 
-- Routes publiques pour le parcours de création de communauté et **webhook** Stripe (`StripeWebhookController`) — typiquement exclu du mode maintenance pour traiter les événements de paiement.
-- Les secrets Stripe doivent être configurés côté serveur (variables d’environnement) et ne jamais figurer dans le dépôt.
+- **PayPal** (prioritaire) : `PayPalCheckoutService`, webhook `POST /api/paypal/webhook` (`PayPalWebhookController`). Variables : `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_MODE`, `BILLING_PROVIDER`.
+- **Stripe** (secours) : parcours création communauté + webhook `StripeWebhookController`. Variables : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+- Les webhooks sont typiquement exclus du mode maintenance pour traiter les événements de paiement.
+- Les secrets ne doivent jamais figurer dans le dépôt.
 
 ## Clients tactiques et API
 

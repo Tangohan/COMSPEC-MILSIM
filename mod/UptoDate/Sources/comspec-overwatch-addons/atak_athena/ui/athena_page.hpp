@@ -419,15 +419,25 @@ class COMSPEC_ATAK_Athena: ATAK_Message
             idc = 9732;
             x = QUOTE(COMSPEC_ATHENA_W(0.08));
             y = QUOTE(COMSPEC_ATHENA_H(10.26));
-            w = QUOTE(COMSPEC_ATHENA_W(2.84));
+            w = QUOTE(COMSPEC_ATHENA_W(1.38));
             h = QUOTE(COMSPEC_ATHENA_H(0.46));
             size = QUOTE(COMSPEC_ATHENA_H(0.26));
-            text = "Renvoyer la photo (si besoin)";
+            text = "Renvoyer photo";
             colorBackground[] = ATHENA_BTN;
             colorBackground2[] = ATHENA_BTN;
             colorBackgroundFocused[] = ATHENA_BTN_FOCUS;
             onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_sendPhoto";
             class Attributes { align = "center"; valign = "middle"; };
+        };
+        class BtnWebMarker: BtnPhoto
+        {
+            idc = 9739;
+            x = QUOTE(COMSPEC_ATHENA_W(1.54));
+            text = "Repère web";
+            colorBackground[] = ATHENA_BTN_ACCENT;
+            colorBackground2[] = ATHENA_BTN_ACCENT;
+            colorBackgroundFocused[] = ATHENA_BTN_ACCENT_F;
+            onButtonClick = "[] call comspec_overwatch_atak_athena_fnc_athena_createWebMarker";
         };
 
         class SecTriage: SecAlertes

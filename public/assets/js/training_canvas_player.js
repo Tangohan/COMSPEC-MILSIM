@@ -10,6 +10,10 @@
     return root.querySelector(sel);
   }
 
+  function qsa(root, sel) {
+    return Array.prototype.slice.call(root.querySelectorAll(sel));
+  }
+
   function showCanvasToast(root, message) {
     if (!root || !message) return;
     var t = root.querySelector('[data-lms-canvas-toast]');
@@ -233,12 +237,59 @@
     if (!root || root.__lmsPlayerInit) return;
     root.__lmsPlayerInit = true;
     var swiperEl = root.querySelector('.lms-canvas-swiper');
-    var prevBtn = qs(root, '[data-lms-prev]');
-    var nextBtn = qs(root, '[data-lms-next]');
+    var prevBtns = qsa(root, '[data-lms-prev]');
+    var nextBtns = qsa(root, '[data-lms-next]');
+    var prevBtn = prevBtns[0] || null;
+    var nextBtn = nextBtns[0] || null;
+    var dots = qsa(root, '[data-lms-canvas-dot]');
     var slides = root.querySelectorAll('[data-lms-slide]');
     var total = slides.length;
     var visited = new Set();
     var lastDwellTimer = null;
+
+    function setPrevDisabled(disabled) {
+      prevBtns.forEach(function (b) {
+        b.disabled = !!disabled;
+      });
+    }
+
+    function syncDots(activeIndex) {
+      dots.forEach(function (d, i) {
+        var on = i === activeIndex;
+        d.classList.toggle('is-active', on);
+        d.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+    }
+
+    function wireScenarioChoices() {
+      root.querySelectorAll('[data-lms-scenario]').forEach(function (box) {
+        if (box.__lmsScenarioWired) return;
+        box.__lmsScenarioWired = true;
+        var correct = String(box.getAttribute('data-correct') || '');
+        var explain = box.parentElement
+          ? box.parentElement.querySelector('[data-lms-scenario-explain]')
+          : null;
+        box.querySelectorAll('[data-lms-scenario-option]').forEach(function (inp) {
+          inp.addEventListener('change', function () {
+            var ok = correct !== '' && inp.value === correct;
+            box.querySelectorAll('label').forEach(function (lab) {
+              lab.classList.remove('border-emerald-500', 'bg-emerald-50', 'border-rose-300', 'bg-rose-50');
+            });
+            var lab = inp.closest('label');
+            if (lab) {
+              lab.classList.add(
+                ok ? 'border-emerald-500' : 'border-rose-300',
+                ok ? 'bg-emerald-50' : 'bg-rose-50'
+              );
+            }
+            if (explain) {
+              if (ok) explain.classList.remove('hidden');
+              else explain.classList.add('hidden');
+            }
+          });
+        });
+      });
+    }
 
     function markVisited(index) {
       if (typeof index === 'number' && index >= 0 && index < total) {
@@ -262,26 +313,28 @@
     }
 
     function syncNextButton(activeIndex) {
-      if (!nextBtn) return;
+      if (!nextBtns.length) return;
       var onLast = activeIndex >= total - 1;
       var slideEl = currentSlideEl(activeIndex);
       var blanksBlock = slideHasFillBlanks(slideEl) && !fillBlanksCompleteInSlide(slideEl);
-      nextBtn.disabled = !!blanksBlock;
-      if (onLast) {
-        nextBtn.textContent = 'Terminer →';
-        nextBtn.setAttribute(
-          'aria-label',
-          blanksBlock
-            ? 'Terminer — complétez d’abord tous les champs'
-            : 'Terminer le parcours visuel'
-        );
-      } else {
-        nextBtn.textContent = 'Suivant →';
-        nextBtn.setAttribute(
-          'aria-label',
-          blanksBlock ? 'Étape suivante — complétez d’abord tous les champs' : 'Étape suivante'
-        );
-      }
+      nextBtns.forEach(function (btn) {
+        btn.disabled = !!blanksBlock;
+        if (onLast) {
+          btn.textContent = 'Terminer →';
+          btn.setAttribute(
+            'aria-label',
+            blanksBlock
+              ? 'Terminer — complétez d’abord tous les champs'
+              : 'Terminer le parcours interactif'
+          );
+        } else {
+          btn.textContent = 'Suivant →';
+          btn.setAttribute(
+            'aria-label',
+            blanksBlock ? 'Étape suivante — complétez d’abord tous les champs' : 'Étape suivante'
+          );
+        }
+      });
     }
 
     function refreshNextFromActive() {
@@ -349,6 +402,7 @@
 
     wireModals();
     wireLiveFillBlanks(root, refreshNextFromActive);
+    wireScenarioChoices();
 
     if (swiperEl && typeof window.Swiper === 'function' && total > 0) {
       var sw = new window.Swiper(swiperEl, {
@@ -366,14 +420,16 @@
             markVisited(swIn.activeIndex);
             updateSlideProgress(root, swIn.activeIndex, total);
             syncNextButton(swIn.activeIndex);
+            syncDots(swIn.activeIndex);
             scheduleLastDwell(swIn.activeIndex);
-            if (prevBtn) prevBtn.disabled = swIn.activeIndex === 0;
+            setPrevDisabled(swIn.activeIndex === 0);
           },
           slideChange: function (swIn) {
             var i = swIn.activeIndex;
             markVisited(i);
-            if (prevBtn) prevBtn.disabled = i === 0;
+            setPrevDisabled(i === 0);
             syncNextButton(i);
+            syncDots(i);
             updateSlideProgress(root, i, total);
             scheduleLastDwell(i);
           },
@@ -392,44 +448,47 @@
         return origSlideTo(index, speed, runCallbacks, internal);
       };
 
-      if (prevBtn) {
-        prevBtn.addEventListener('click', function () {
-          sw.slidePrev();
-        });
+      function goPrev() {
+        sw.slidePrev();
       }
-      if (nextBtn) {
-        nextBtn.addEventListener('click', function () {
+      function goNext() {
+        var cur = sw.activeIndex;
+        if (!validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
+          syncNextButton(cur);
+          return;
+        }
+        markVisited(cur);
+        if (cur >= total - 1) {
+          tryComplete(true);
+          return;
+        }
+        sw.slideNext();
+      }
+
+      prevBtns.forEach(function (b) {
+        b.addEventListener('click', goPrev);
+      });
+      nextBtns.forEach(function (b) {
+        b.addEventListener('click', goNext);
+      });
+      dots.forEach(function (d) {
+        d.addEventListener('click', function () {
+          var i = parseInt(d.getAttribute('data-lms-canvas-dot') || '0', 10);
+          if (isNaN(i)) return;
           var cur = sw.activeIndex;
-          if (!validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
+          if (i > cur && !validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
             syncNextButton(cur);
             return;
           }
-          markVisited(cur);
-          if (cur >= total - 1) {
-            tryComplete(true);
-            return;
-          }
-          sw.slideNext();
+          sw.slideTo(i);
         });
-      }
+      });
       document.addEventListener('keydown', function (e) {
         if (!root.getBoundingClientRect || root.offsetParent === null) return;
         var r = root.getBoundingClientRect();
         if (r.top > window.innerHeight || r.bottom < 0) return;
-        if (e.key === 'ArrowRight') {
-          var cur = sw.activeIndex;
-          if (!validateFillBlanksInSlideEl(sw.slides[cur], { toast: true })) {
-            syncNextButton(cur);
-            return;
-          }
-          markVisited(cur);
-          if (cur >= total - 1) {
-            tryComplete(true);
-            return;
-          }
-          sw.slideNext();
-        }
-        if (e.key === 'ArrowLeft') sw.slidePrev();
+        if (e.key === 'ArrowRight') goNext();
+        if (e.key === 'ArrowLeft') goPrev();
       });
       return;
     }
@@ -446,18 +505,20 @@
       slides.forEach(function (el, j) {
         el.classList.toggle('hidden', j !== idx);
       });
-      if (prevBtn) prevBtn.disabled = idx === 0;
+      setPrevDisabled(idx === 0);
       syncNextButton(idx);
+      syncDots(idx);
       updateSlideProgress(root, idx, total);
       scheduleLastDwell(idx);
     }
 
-    if (prevBtn)
-      prevBtn.addEventListener('click', function () {
+    prevBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
         show(idx - 1);
       });
-    if (nextBtn)
-      nextBtn.addEventListener('click', function () {
+    });
+    nextBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
         var curEl = slides[idx];
         if (!validateFillBlanksInSlideEl(curEl, { toast: true })) {
           syncNextButton(idx);
@@ -470,6 +531,13 @@
         }
         show(idx + 1);
       });
+    });
+    dots.forEach(function (d) {
+      d.addEventListener('click', function () {
+        var i = parseInt(d.getAttribute('data-lms-canvas-dot') || '0', 10);
+        if (!isNaN(i)) show(i);
+      });
+    });
     document.addEventListener('keydown', function (e) {
       if (!root.getBoundingClientRect || root.offsetParent === null) return;
       var r = root.getBoundingClientRect();

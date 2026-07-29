@@ -204,6 +204,30 @@ $discordInviteMissing = !empty($discordInviteMissing);
             </form>
         </div>
     </div>
+    <?php elseif ((int) ($configurationUpdateBadge ?? 0) > 0): ?>
+    <?php
+        $cfgCount = (int) $configurationUpdateBadge;
+        $cfgMsg = $cfgCount . ' configuration' . ($cfgCount > 1 ? 's' : '')
+            . ' disponible' . ($cfgCount > 1 ? 's' : '')
+            . ' pour votre organisation.';
+    ?>
+    <a
+        href="<?= htmlspecialchars(url('back-office/mise-a-niveau'), ENT_QUOTES, 'UTF-8') ?>"
+        class="ath-upgrade-banner ath-rise"
+        role="status"
+        aria-label="Mise à niveau — <?= htmlspecialchars($cfgMsg, ENT_QUOTES, 'UTF-8') ?> Consulter."
+    >
+        <span class="ath-upgrade-banner__pill">
+            <span class="ath-upgrade-banner__dot" aria-hidden="true"></span>
+            <span>Attention</span>
+        </span>
+        <span class="ath-upgrade-banner__track">
+            <span class="ath-upgrade-banner__kicker">Mise à niveau</span>
+            <span class="ath-upgrade-banner__sep" aria-hidden="true">◆</span>
+            <span class="ath-upgrade-banner__text"><?= htmlspecialchars($cfgMsg, ENT_QUOTES, 'UTF-8') ?></span>
+        </span>
+        <span class="ath-upgrade-banner__cta">Voir</span>
+    </a>
     <?php endif; ?>
     <?php require base_path('views/partials/ath_dashboard_dash.php'); ?>
 </div>
@@ -307,6 +331,8 @@ $discordInviteMissing = !empty($discordInviteMissing);
         $orgTrainingFeed = $orgTrainingFeed ?? [];
         $orgTrainingFeedErr = $orgTrainingFeedError ?? null;
         $orgTrainingFeedCompletionAnalytics = $orgTrainingFeedCompletionAnalytics ?? [];
+        $orgRoleplayTimelineRows = is_array($orgRoleplayTimelineRows ?? null) ? $orgRoleplayTimelineRows : [];
+        $orgRoleplayTimelineErr = $orgRoleplayTimelineError ?? null;
         $trainingFeedBadge = static function (string $cat): array {
             return match ($cat) {
                 'training_enrollment_pending' => ['Inscription', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
@@ -316,6 +342,25 @@ $discordInviteMissing = !empty($discordInviteMissing);
             };
         };
         $trainingFeedCount = is_array($orgTrainingFeed) ? count($orgTrainingFeed) : 0;
+        $roleplayTimelineCount = is_array($orgRoleplayTimelineRows) ? count($orgRoleplayTimelineRows) : 0;
+        $roleplayTimelineUpcomingCount = 0;
+        $roleplayTimelineOverdueCount = 0;
+        foreach ($orgRoleplayTimelineRows as $roleplayTimelineRow) {
+            if (($roleplayTimelineRow['urgency'] ?? '') === 'overdue') {
+                $roleplayTimelineOverdueCount++;
+            } else {
+                $roleplayTimelineUpcomingCount++;
+            }
+        }
+        $roleplayTimelineTypeLabel = static function (string $eventType, string $fallback): array {
+            return match ($eventType) {
+                'entretien' => ['Entretien', 'bg-emerald-100 text-emerald-950 ring-emerald-200/80'],
+                'medical' => ['Médical', 'bg-sky-100 text-sky-950 ring-sky-200/80'],
+                'rotation' => ['Rotation', 'bg-violet-100 text-violet-950 ring-violet-200/80'],
+                'bilan' => ['Bilan RP', 'bg-amber-100 text-amber-950 ring-amber-200/80'],
+                default => [$fallback !== '' ? $fallback : 'Suivi', 'bg-slate-100 text-slate-800 ring-slate-200/80'],
+            };
+        };
         $kpiRowCount = is_array($kpis) ? count($kpis) : 0;
         ?>
 
@@ -573,10 +618,112 @@ $discordInviteMissing = !empty($discordInviteMissing);
         </section>
         <?php endif; ?>
 
-        <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
+        <section class="org-dash__section" aria-labelledby="org-roleplay-heading">
             <div class="org-dash__section-head">
                 <div>
                     <p class="org-dash__kicker">Section 03</p>
+                    <h2 id="org-roleplay-heading" class="org-dash__section-title">Suivi roleplay</h2>
+                    <p class="org-dash__section-lead">Échéances du dossier à venir et en retard, pour garder un oeil rapide sur les suivis prioritaires.</p>
+                </div>
+                <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="org-dash__section-link">Suivi complet →</a>
+            </div>
+            <div class="bo-sheet-panel" x-data="{ filter: 'all' }">
+                <div class="bo-sheet-toolbar">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.12em] text-slate-800">Timeline dossier roleplay</h3>
+                        <p class="mt-0.5 text-xs text-slate-500"><?= (int) $roleplayTimelineCount ?> échéance(s) sur les 3 prochaines semaines.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button
+                            type="button"
+                            @click="filter = 'all'"
+                            :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                        >Tout</button>
+                        <button
+                            type="button"
+                            @click="filter = 'upcoming'"
+                            :class="filter === 'upcoming' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                        >À venir (<?= (int) $roleplayTimelineUpcomingCount ?>)</button>
+                        <button
+                            type="button"
+                            @click="filter = 'overdue'"
+                            :class="filter === 'overdue' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                            class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm"
+                        >En retard (<?= (int) $roleplayTimelineOverdueCount ?>)</button>
+                        <a href="<?= htmlspecialchars(url('back-office/roleplay-followup'), ENT_QUOTES, 'UTF-8') ?>" class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-800">Ouvrir</a>
+                    </div>
+                </div>
+                <?php if ($orgRoleplayTimelineErr): ?>
+                    <div class="border border-t-0 border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><?= htmlspecialchars((string) $orgRoleplayTimelineErr, ENT_QUOTES, 'UTF-8') ?></div>
+                <?php endif; ?>
+                <div class="bo-sheet-wrap" style="max-height:min(44vh,26rem)">
+                    <table class="bo-sheet min-w-[56rem]">
+                        <thead>
+                            <tr>
+                                <th style="width:2.5rem">#</th>
+                                <th>Situation</th>
+                                <th>Type</th>
+                                <th>Membre</th>
+                                <th>Suivi</th>
+                                <th>Date</th>
+                                <th class="num">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if ($orgRoleplayTimelineErr): ?>
+                            <tr><td colspan="7" class="!bg-white px-4 py-8 text-center text-sm text-slate-500">Le suivi roleplay est temporairement indisponible.</td></tr>
+                        <?php elseif ($orgRoleplayTimelineRows === []): ?>
+                            <tr><td colspan="7" class="!bg-white px-4 py-12 text-center text-sm text-slate-500">Aucune échéance roleplay proche ou en retard pour le moment.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($orgRoleplayTimelineRows as $i => $rpDashRow):
+                                $urgency = (string) ($rpDashRow['urgency'] ?? 'upcoming');
+                                $isOverdue = $urgency === 'overdue';
+                                [$typeLabel, $typeClass] = $roleplayTimelineTypeLabel((string) ($rpDashRow['event_type'] ?? ''), (string) ($rpDashRow['item_label'] ?? ''));
+                                $dueRaw = trim((string) ($rpDashRow['due_date'] ?? ''));
+                                $dueTs = $dueRaw !== '' ? strtotime($dueRaw) : false;
+                                $dueLabel = $dueTs ? date('d/m/Y', $dueTs) : '—';
+                                $detail = trim((string) ($rpDashRow['item_detail'] ?? ''));
+                                $memberId = (int) ($rpDashRow['user_id'] ?? 0);
+                                ?>
+                                <tr x-show="filter === 'all' || filter === '<?= htmlspecialchars($urgency, ENT_QUOTES, 'UTF-8') ?>'">
+                                    <td class="num text-slate-400"><?= (int) ($i + 1) ?></td>
+                                    <td>
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= $isOverdue ? 'bg-rose-50 text-rose-900 ring-rose-200' : 'bg-amber-50 text-amber-900 ring-amber-200' ?>">
+                                            <?= $isOverdue ? 'En retard' : 'À venir' ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ring-1 ring-inset <?= htmlspecialchars($typeClass, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?= htmlspecialchars($typeLabel, ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    </td>
+                                    <td class="font-semibold"><?= htmlspecialchars((string) ($rpDashRow['member_label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="text-slate-600 max-w-[18rem]" title="<?= htmlspecialchars($detail !== '' ? $detail : ((string) ($rpDashRow['item_label'] ?? '')), ENT_QUOTES, 'UTF-8') ?>">
+                                        <span class="line-clamp-2"><?= htmlspecialchars($detail !== '' ? $detail : ((string) ($rpDashRow['item_label'] ?? '—')), ENT_QUOTES, 'UTF-8') ?></span>
+                                    </td>
+                                    <td class="mono whitespace-nowrap <?= $isOverdue ? 'text-rose-700' : 'text-slate-500' ?>"><?= htmlspecialchars($dueLabel, ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="num">
+                                        <?php if ($memberId > 0): ?>
+                                            <a href="<?= htmlspecialchars(url('personnel/' . $memberId . '/edit'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800">Dossier</a>
+                                        <?php else: ?>
+                                            <span class="text-slate-400">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="org-dash__section" aria-labelledby="org-actions-rapides-heading">
+            <div class="org-dash__section-head">
+                <div>
+                    <p class="org-dash__kicker">Section 04</p>
                     <h2 id="org-actions-rapides-heading" class="org-dash__section-title">Raccourcis</h2>
                     <p class="org-dash__section-lead">Accès direct aux tâches fréquentes — le menu latéral liste l’ensemble des rubriques.</p>
                 </div>

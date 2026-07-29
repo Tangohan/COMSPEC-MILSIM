@@ -28,13 +28,28 @@ if (_impact > 0.25) then {
     missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false];
     if (_realism >= 2 && {random 100 < (_impact * 50)}) then {
         _atakState set ["screen_destroyed", true];
-        _atakState set ["powered_on", false];
         ["Écran ATAK endommagé par choc", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
         playSound "FD_CP_Not_Clear_F";
+        [
+            "WARN",
+            "Terminal",
+            "Écran endommagé par choc",
+            "system",
+            format ["intensité choc=%1", (_impact toFixed 2)]
+        ] call comspec_overwatch_connect_fnc_logAtakEvent;
+        [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
     } else {
         if (_realism >= 1 && {random 100 < (_impact * 40)}) then {
             _atakState set ["powered_on", false];
             ["ATAK éteint par choc", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+            [
+                "WARN",
+                "Terminal",
+                "ATAK éteint par choc",
+                "system",
+                format ["intensité choc=%1", (_impact toFixed 2)]
+            ] call comspec_overwatch_connect_fnc_logAtakEvent;
+            [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
             [{
                 private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
                 if (_state getOrDefault ["device_destroyed", false]) exitWith {};
@@ -118,9 +133,16 @@ switch (_realism) do {
     case 2: {
         if (_chestDamage > 0.7 && {!_wasScreenDestroyed} && {random 100 < 40}) then {
             _atakState set ["screen_destroyed", true];
-            _atakState set ["powered_on", false];
             ["Écran ATAK hors service", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
+            [
+                "WARN",
+                "Terminal",
+                "Écran hors service (blessure torse)",
+                "system",
+                format ["dommages torse=%1", (_chestDamage toFixed 2)]
+            ] call comspec_overwatch_connect_fnc_logAtakEvent;
+            [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
         };
     };
     case 3: {
@@ -130,6 +152,14 @@ switch (_realism) do {
             _atakState set ["powered_on", false];
             ["ATAK hors service — liaison coupée", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
             playSound "FD_CP_Not_Clear_F";
+            [
+                "ERROR",
+                "Terminal",
+                "Appareil hors service — liaison coupée",
+                "system",
+                format ["dommages torse=%1", (_chestDamage toFixed 2)]
+            ] call comspec_overwatch_connect_fnc_logAtakEvent;
+            [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
             [] call comspec_overwatch_connect_fnc_disconnect;
         };
     };

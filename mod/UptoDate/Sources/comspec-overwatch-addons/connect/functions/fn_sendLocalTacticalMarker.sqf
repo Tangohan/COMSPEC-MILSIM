@@ -21,10 +21,24 @@ if (_color isEqualTo "" || {_color isEqualTo "Default"} || {_color isEqualTo "Co
     _color = "ColorYellow";
 };
 
-private _safeText = (_text splitString """" joinString "'");
+private _fnc_escapeJson = {
+    params ["_value"];
+    if (!(_value isEqualType "")) then { _value = str _value; };
+    _value = (_value splitString toString [92]) joinString "\\";
+    _value = (_value splitString toString [34]) joinString "'"; // évite les guillemets cassant le JSON SQF
+    _value = (_value splitString toString [10]) joinString " ";
+    _value = (_value splitString toString [13]) joinString " ";
+    _value = (_value splitString toString [9]) joinString " ";
+    _value
+};
+private _safeText = [_text] call _fnc_escapeJson;
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_cs isEqualTo "") then { _cs = name player; };
-_cs = (_cs splitString """" joinString "'");
+_cs = [_cs] call _fnc_escapeJson;
+_type = [_type] call _fnc_escapeJson;
+_color = [_color] call _fnc_escapeJson;
+_source = [_source] call _fnc_escapeJson;
+private _grid = [mapGridPosition _pos] call _fnc_escapeJson;
 
 private _json = format [
     "{""pos"":[%1,%2,%3],""type"":""%4"",""text"":""%5"",""color"":""%6"",""dir"":0,""alpha"":1,""shape"":""ICON"",""size"":[1,1],""brush"":""Solid"",""polyline"":[],""source"":""%7"",""callsign"":""%8"",""grid"":""%9""}",
@@ -36,7 +50,7 @@ private _json = format [
     _color,
     _source,
     _cs,
-    mapGridPosition _pos
+    _grid
 ];
 
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {

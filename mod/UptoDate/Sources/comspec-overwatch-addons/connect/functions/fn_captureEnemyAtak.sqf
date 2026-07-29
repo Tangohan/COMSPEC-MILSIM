@@ -12,6 +12,6 @@ if ((player distance _target) > 4) exitWith {
     false
 };
 
-["capture", 30] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _target];
+[_target, "capture", 30] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
 [format ["Appareil de %1 marqué comme capturé", name _target], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
 true

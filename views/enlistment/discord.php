@@ -77,12 +77,12 @@ $discordQuestions = is_array($discordQuestions ?? null) ? $discordQuestions : []
             </div>
         <?php endforeach; ?>
 
-        <!-- Code d'invitation (optionnel) -->
+        <!-- Code d'invitation prioritaire (optionnel) -->
         <div class="space-y-2">
             <label for="invite-code" class="block text-sm font-semibold text-slate-900">
-                Code d'invitation (optionnel)
+                Code d'invitation prioritaire (optionnel)
             </label>
-            <p class="text-xs text-slate-600">Si vous avez reçu un code d'invitation, saisissez-le ici pour accélérer votre candidature</p>
+            <p class="text-xs text-slate-600">Si l’équipe vous a transmis un code prioritaire, saisissez-le ici pour accélérer votre candidature</p>
             <input type="text" 
                    name="invite_code" 
                    id="invite-code" 

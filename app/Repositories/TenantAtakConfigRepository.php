@@ -53,6 +53,9 @@ class TenantAtakConfigRepository
             // Zones de dégradation
             'zones_enabled' => false,
             'zones_config' => null,
+
+            // Données chiffrées (certificat / compromission)
+            'intel_scramble_enabled' => false,
         ];
 
         if (!$row || !$this->hasRoleplayColumns()) {
@@ -75,6 +78,12 @@ class TenantAtakConfigRepository
             'sensor_missing_percent' => (float) ($row['roleplay_sensor_missing_percent'] ?? $defaults['sensor_missing_percent']),
             'zones_enabled' => (bool) ($row['roleplay_zones_enabled'] ?? $defaults['zones_enabled']),
             'zones_config' => ($row['roleplay_zones_config'] ?? $defaults['zones_config']),
+            'intel_scramble_enabled' => $this->hasTenantAtakConfigColumn('roleplay_intel_scramble_enabled')
+                ? (bool) ($row['roleplay_intel_scramble_enabled'] ?? $defaults['intel_scramble_enabled'])
+                : false,
+            'intel_scramble_reviewed' => $this->hasTenantAtakConfigColumn('roleplay_intel_scramble_reviewed')
+                ? (bool) ($row['roleplay_intel_scramble_reviewed'] ?? false)
+                : false,
         ];
     }
 
@@ -107,11 +116,19 @@ class TenantAtakConfigRepository
             'roleplay_sensor_missing_percent' => isset($config['sensor_missing_percent']) ? (float) $config['sensor_missing_percent'] : 0.0,
             'roleplay_zones_enabled' => isset($config['zones_enabled']) ? (int) $config['zones_enabled'] : 0,
             'roleplay_zones_config' => $config['zones_config'] ?? null,
+            'roleplay_intel_scramble_enabled' => isset($config['intel_scramble_enabled'])
+                ? (int) $config['intel_scramble_enabled']
+                : 0,
+            'roleplay_intel_scramble_reviewed' => isset($config['intel_scramble_reviewed'])
+                ? (int) $config['intel_scramble_reviewed']
+                : 1,
         ];
 
+        $scrambleCol = $this->hasTenantAtakConfigColumn('roleplay_intel_scramble_enabled');
+        $reviewedCol = $this->hasTenantAtakConfigColumn('roleplay_intel_scramble_reviewed');
+
         if ($exists) {
-            $upd = $this->pdo->prepare(
-                'UPDATE tenant_atak_config
+            $sql = 'UPDATE tenant_atak_config
                  SET roleplay_network_enabled = ?, roleplay_network_mode = ?,
                      roleplay_latency_min_ms = ?, roleplay_latency_max_ms = ?,
                      roleplay_packet_loss_percent = ?,
@@ -119,11 +136,8 @@ class TenantAtakConfigRepository
                      roleplay_disconnect_max_sec = ?, roleplay_disconnect_interval_sec = ?,
                      roleplay_sensor_enabled = ?, roleplay_sensor_failure_percent = ?,
                      roleplay_sensor_error_percent = ?, roleplay_sensor_missing_percent = ?,
-                     roleplay_zones_enabled = ?, roleplay_zones_config = ?,
-                     updated_at = NOW()
-                 WHERE tenant_id = ?'
-            );
-            $upd->execute([
+                     roleplay_zones_enabled = ?, roleplay_zones_config = ?';
+            $params = [
                 $fields['roleplay_network_enabled'],
                 $fields['roleplay_network_mode'],
                 $fields['roleplay_latency_min_ms'],
@@ -139,23 +153,30 @@ class TenantAtakConfigRepository
                 $fields['roleplay_sensor_missing_percent'],
                 $fields['roleplay_zones_enabled'],
                 $fields['roleplay_zones_config'],
-                $tenantId,
-            ]);
+            ];
+            if ($scrambleCol) {
+                $sql .= ', roleplay_intel_scramble_enabled = ?';
+                $params[] = $fields['roleplay_intel_scramble_enabled'];
+            }
+            if ($reviewedCol) {
+                $sql .= ', roleplay_intel_scramble_reviewed = ?';
+                $params[] = $fields['roleplay_intel_scramble_reviewed'];
+            }
+            $sql .= ', updated_at = NOW() WHERE tenant_id = ?';
+            $params[] = $tenantId;
+            $this->pdo->prepare($sql)->execute($params);
         } else {
-            $ins = $this->pdo->prepare(
-                'INSERT INTO tenant_atak_config
-                    (tenant_id, roleplay_network_enabled, roleplay_network_mode,
-                     roleplay_latency_min_ms, roleplay_latency_max_ms,
-                     roleplay_packet_loss_percent,
-                     roleplay_disconnect_enabled, roleplay_disconnect_min_sec,
-                     roleplay_disconnect_max_sec, roleplay_disconnect_interval_sec,
-                     roleplay_sensor_enabled, roleplay_sensor_failure_percent,
-                     roleplay_sensor_error_percent, roleplay_sensor_missing_percent,
-                     roleplay_zones_enabled, roleplay_zones_config,
-                     default_map_slug, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \'altis\', NOW(), NOW())'
-            );
-            $ins->execute([
+            $cols = [
+                'tenant_id', 'roleplay_network_enabled', 'roleplay_network_mode',
+                'roleplay_latency_min_ms', 'roleplay_latency_max_ms',
+                'roleplay_packet_loss_percent',
+                'roleplay_disconnect_enabled', 'roleplay_disconnect_min_sec',
+                'roleplay_disconnect_max_sec', 'roleplay_disconnect_interval_sec',
+                'roleplay_sensor_enabled', 'roleplay_sensor_failure_percent',
+                'roleplay_sensor_error_percent', 'roleplay_sensor_missing_percent',
+                'roleplay_zones_enabled', 'roleplay_zones_config',
+            ];
+            $vals = [
                 $tenantId,
                 $fields['roleplay_network_enabled'],
                 $fields['roleplay_network_mode'],
@@ -172,27 +193,52 @@ class TenantAtakConfigRepository
                 $fields['roleplay_sensor_missing_percent'],
                 $fields['roleplay_zones_enabled'],
                 $fields['roleplay_zones_config'],
-            ]);
+            ];
+            if ($scrambleCol) {
+                $cols[] = 'roleplay_intel_scramble_enabled';
+                $vals[] = $fields['roleplay_intel_scramble_enabled'];
+            }
+            if ($reviewedCol) {
+                $cols[] = 'roleplay_intel_scramble_reviewed';
+                $vals[] = $fields['roleplay_intel_scramble_reviewed'];
+            }
+            $cols[] = 'default_map_slug';
+            $cols[] = 'created_at';
+            $cols[] = 'updated_at';
+            $placeholders = implode(', ', array_fill(0, count($vals), '?')) . ', \'altis\', NOW(), NOW()';
+            $sql = 'INSERT INTO tenant_atak_config (' . implode(', ', $cols) . ') VALUES (' . $placeholders . ')';
+            $this->pdo->prepare($sql)->execute($vals);
         }
+    }
+
+    /**
+     * Détecte la présence d’une colonne sur tenant_atak_config (cache par requête PHP).
+     * Évite les méthodes dédiées manquantes lors d’un déploiement partiel.
+     */
+    private function hasTenantAtakConfigColumn(string $columnName): bool
+    {
+        static $cache = [];
+        if (array_key_exists($columnName, $cache)) {
+            return $cache[$columnName];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+                   AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['tenant_atak_config', $columnName]);
+            $cache[$columnName] = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $cache[$columnName] = false;
+        }
+
+        return $cache[$columnName];
     }
 
     private function hasRoleplayColumns(): bool
     {
-        static $cached = null;
-        if ($cached !== null) {
-            return $cached;
-        }
-        try {
-            $st = $this->pdo->query(
-                "SELECT 1 FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_atak_config' AND COLUMN_NAME = 'roleplay_network_enabled' LIMIT 1"
-            );
-            $cached = (bool) $st?->fetchColumn();
-        } catch (\Throwable) {
-            $cached = false;
-        }
-
-        return $cached;
+        return $this->hasTenantAtakConfigColumn('roleplay_network_enabled');
     }
 
     public function createOrUpdate(int $tenantId, array $data): void

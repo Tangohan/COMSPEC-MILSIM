@@ -1,0 +1,44 @@
+---
+description: Compatibilité tenants historiques et configuration post-mise à jour obligatoire
+alwaysApply: true
+---
+
+# Tenants historiques — configuration post-mise à jour
+
+À **chaque** évolution fonctionnelle (champs, relations, modules, paramètres, rôles, permissions, référentiels, étapes métier), traiter deux populations :
+
+1. **Tenant nouveau** — modèle actuel dès la création (wizard / bootstrap).
+2. **Tenant historique** — ne jamais casser ; migrer le certain, proposer le reste.
+
+## Séparation obligatoire
+
+- **Migration technique** = schéma + conversions sûres (NULL maîtrisé OK ; jamais inventer une donnée fausse).
+- **Configuration métier** = décisions humaines via le moteur `ConfigurationUpdateService` (pas de `if ($tenantCreatedBefore…)` dispersés).
+
+## Quand une config humaine est nécessaire
+
+1. Ajouter une entrée dans `ConfigurationUpdateCatalog` (+ seed `bootstrap/configuration_updates_migration.php` si besoin).
+2. Éligibilité = **état réel des données** (`ConfigurationUpdateProbes`), pas seulement la date de création.
+3. Niveaux : `informative` | `recommended` | `required` — **non bloquant** par défaut ; bloquer seulement une fonction précise, jamais toute la plateforme.
+4. Réutiliser les écrans settings existants (`configure_path`) — pas de second système de réglages.
+5. Nouveau tenant : `markSatisfiedForNewTenant` après création (déjà branché dans `TenantBootstrapService`).
+6. Journaliser via `AuditAction::CONFIGURATION_UPDATE_*`.
+
+## Checklist avant de déclarer terminé
+
+- [ ] Migration SQL + conservation des anciennes données
+- [ ] Défauts légitimes / NULL assumé
+- [ ] Probe d’éligibilité + satisfaction
+- [ ] Update déclarée dans le catalogue
+- [ ] Nouveau tenant déjà couvert à la création
+- [ ] Module désactivé → `NOT_APPLICABLE`
+- [ ] Tests tenant neuf / historique / partiel / dismiss
+
+## Interdit
+
+- Forcer des valeurs arbitraires pour « remplir » un NULL
+- Popups / modals agressifs pour du facultatif
+- Dupliquer l’UI de configuration
+- Logique legacy éparpillée hors du moteur de configuration
+
+Doc : `docs/technique/configuration-post-mise-a-jour-tenants.md`

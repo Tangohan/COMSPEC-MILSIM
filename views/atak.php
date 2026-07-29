@@ -1,5 +1,6 @@
 <?php
 $base = url('');
+$assetVer = platform_app_version();
 $atakToken = $atakToken ?? '';
 $nodeAtakUrl = $nodeAtakUrl ?? '';
 $visitorIp = $visitorIp ?? '';
@@ -61,12 +62,12 @@ if ($atakMapConfig) {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.css" />
-  <link href="<?= $base ?>/assets/css/atak.css?v=202607290100" rel="stylesheet" />
+  <link href="<?= $base ?>/assets/css/atak.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-map-popups.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-effects.css" rel="stylesheet" />
   <link href="<?= $base ?>/assets/css/atak-roleplay-ctab.css" rel="stylesheet" />
   <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/halo-loader.css" rel="stylesheet" />
-  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=202607270700" rel="stylesheet" />
+  <link href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/css/mission-cycle-badge.css?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet" />
   <script>
     window.ATAK_TOKEN = <?= json_encode($atakToken) ?>;
     window.ATAK_API_BASE = <?= json_encode($base) ?>;
@@ -372,9 +373,17 @@ if ($atakMapConfig) {
           <span class="atak-sound-pref-key">Apparence des positions</span>
           <select id="atak-unit-style-mode" class="atak-header-select atak-sound-pref-select" title="Style des marqueurs d’unités sur la carte">
             <option value="nato" selected>Symbole OTAN ou photo</option>
+            <option value="intel_dot">Point discret (comme les clichés)</option>
             <option value="dot">Point simple</option>
             <option value="team_dot">Point couleur d’équipe</option>
           </select>
+        </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-intel-photo-markers">
+          <span class="atak-sound-pref-key">Photos sur la carte</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-intel-photo-markers" checked />
+            <span>Afficher les points violets des clichés remontés</span>
+          </span>
         </label>
         <label class="atak-sound-pref-label" for="atak-unit-marker-priority">
           <span class="atak-sound-pref-key">Priorité symbole / photo</span>
@@ -788,6 +797,29 @@ if ($atakMapConfig) {
               </p>
             </fieldset>
 
+            <fieldset class="atak-session-hub__fieldset">
+              <legend class="atak-session-hub__legend">Interface carte</legend>
+              <label class="atak-session-hub__select-label" for="atak-session-unit-style">
+                Apparence des effectifs sur la carte
+              </label>
+              <select id="atak-session-unit-style" name="atak-session-unit-style" class="atak-session-hub__select">
+                <option value="nato">Symbole OTAN ou photo de profil</option>
+                <option value="intel_dot">Point discret (comme les clichés)</option>
+                <option value="dot">Point vert avec indicatif</option>
+                <option value="team_dot">Point couleur d’équipe</option>
+              </select>
+              <p class="atak-session-hub__field-hint">
+                Les points discrets reprennent le même style violet que les photos remontées depuis le terrain.
+              </p>
+              <label class="atak-session-hub__map-opt" for="atak-session-show-photo-points">
+                <input type="checkbox" id="atak-session-show-photo-points" name="atak-session-show-photo-points" checked />
+                <span class="atak-session-hub__map-opt-body">
+                  <strong>Points des clichés sur la carte</strong>
+                  <small>Afficher les repères violets des photos terrain (masquable à tout moment dans Compte → Affichage).</small>
+                </span>
+              </label>
+            </fieldset>
+
             <div class="atak-session-hub__actions">
               <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-session-profile-reset">Repartir des suggestions</button>
               <button type="button" class="atak-session-hub__btn atak-session-hub__btn--ghost" id="atak-hub-profile-back" hidden>Retour</button>
@@ -913,7 +945,7 @@ if ($atakMapConfig) {
       <div class="atak-tabs-content active" id="tab-cams">
         <div class="atak-cams-panel">
           <div class="atak-cams-toolbar">
-            <p class="atak-panel-hint atak-cams-toolbar-hint">Aperçus photo uniquement — pas de flux vidéo en direct. Demandez une nouvelle capture aux opérateurs en liaison.</p>
+            <p class="atak-panel-hint atak-cams-toolbar-hint">Aperçus photo — pas de RTMP. Clic droit sur un opérateur en liaison pour demander photo casque, HD ou flux d’aperçus rapides.</p>
             <button type="button" class="atak-ops-btn atak-ops-btn--primary" id="atak-cams-request-view" title="Demander une nouvelle capture photo aux opérateurs">Demander une nouvelle vue</button>
           </div>
           <div class="atak-cams-list" id="atak-cams-list">
@@ -1732,57 +1764,58 @@ if ($atakMapConfig) {
   </div>
 
   <script src="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/vendor/leaflet-1.9.4/leaflet.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-session-profile.js?v=202607282341"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-profile.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-crs.js"></script>
   <?php if (!$atakMapConfigForJs): ?><script src="<?= $base ?>/assets/js/maps/altis.js"></script><?php endif; ?>
   <script src="<?= $base ?>/assets/vendor/milsymbol/milsymbol.js"></script>
   <script src="<?= $base ?>/assets/vendor/milstd/milstd2525.js"></script>
   <script src="<?= $base ?>/assets/js/milstd-catalog.js"></script>
   <script src="<?= $base ?>/assets/js/nato-sidc-icons.js"></script>
-  <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=202607281250"></script>
-  <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=202607281250"></script>
+  <script src="<?= $base ?>/assets/js/arma-marker-catalog.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/arma-map-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-symbol-picker.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=202607261735"></script>
-  <script src="<?= $base ?>/assets/js/atak-map.js?v=202607271230"></script>
-  <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/atak-socket.js?v=202607261905"></script>
-  <script src="<?= $base ?>/assets/js/atak-units.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/atak-fire-teams.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/atak-replay.js?v=202607270730"></script>
-  <script src="<?= $base ?>/assets/js/mission-cycle-badge.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/tacmap-tactical-alerts.js?v=202607290100"></script>
+  <script src="<?= $base ?>/assets/js/atak-unit-popup.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-map.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-units.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-fire-teams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-replay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/mission-cycle-badge.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/tacmap-tactical-alerts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/tacmap-weather.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-chat.js?v=202607290030"></script>
-  <script src="<?= $base ?>/assets/js/atak-orders.js?v=202607282040"></script>
+  <script src="<?= $base ?>/assets/js/atak-chat.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-orders.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-waypoints.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-collapse.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=202607290030"></script>
-  <script src="<?= $base ?>/assets/js/atak-medevac.js?v=202607282100"></script>
+  <script src="<?= $base ?>/assets/js/atak-medical-alerts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-medevac.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-radio.js"></script>
   <script src="<?= $base ?>/assets/js/atak-soi.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=202607282200"></script>
+  <script src="<?= $base ?>/assets/js/atak-session-workspace.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-pings.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-markers.js?v=202607261735"></script>
-  <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=202607262015"></script>
-  <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=202607262015"></script>
-  <script src="<?= $base ?>/assets/js/atak-unit-menu.js?v=202607261735"></script>
+  <script src="<?= $base ?>/assets/js/atak-markers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-map-shapes.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-context-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-unit-menu.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-jtac.js"></script>
   <script src="<?= $base ?>/assets/js/atak-salute.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-iff.js?v=202607270700"></script>
-  <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=202607270730"></script>
-  <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=202607270700"></script>
+  <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-cams.js?v=202607270730"></script>
-  <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=202607282200"></script>
+  <script src="<?= $base ?>/assets/js/atak-cams.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-sse-persons.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-air-assets.js"></script>
   <script src="<?= $base ?>/assets/js/atak-laser-codes.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-activity.js?v=202607290100"></script>
+  <script src="<?= $base ?>/assets/js/atak-activity.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-arma-offline.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-sounds.js?v=202607271230"></script>
-  <script src="<?= $base ?>/assets/js/atak-panel-chrome.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=202607261900"></script>
+  <script src="<?= $base ?>/assets/js/atak-sounds.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-panel-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-shell-chrome.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-effects.js"></script>
   <script src="<?= $base ?>/assets/js/atak-roleplay-ctab.js"></script>
-  <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=202607282200"></script>
+  <script src="<?= $base ?>/assets/js/atak-intel-view.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script>
     (function () {
       var HINTS_KEY = 'atak_hide_panel_hints';
@@ -2081,7 +2114,7 @@ if ($atakMapConfig) {
         if (ms <= 350) return { label: 'Acceptable', tone: 'warn' };
         return { label: 'Dégradée', tone: 'err' };
       }
-      function refreshLiaisonMetrics(theatreAgo) {
+      function refreshLiaisonMetrics(theatreAgo, telemetry) {
         var q = qualityFromLatency(lastMeasuredLatencyMs, lastPingOk, theatreAgo);
         setMetricValue('atak-metric-quality-value', q.label, q.tone);
         if (lastPingOk && lastMeasuredLatencyMs != null && !isNaN(lastMeasuredLatencyMs)) {
@@ -2090,10 +2123,26 @@ if ($atakMapConfig) {
             Math.round(lastMeasuredLatencyMs) + ' ms',
             lastMeasuredLatencyMs <= 120 ? 'ok' : (lastMeasuredLatencyMs <= 350 ? 'warn' : 'err')
           );
+        } else if (telemetry && telemetry.latency_ms != null && telemetry.latency_ms >= 0) {
+          var gameMs = Number(telemetry.latency_ms);
+          setMetricValue(
+            'atak-metric-latency-value',
+            Math.round(gameMs) + ' ms (jeu)',
+            gameMs <= 120 ? 'ok' : (gameMs <= 350 ? 'warn' : 'err')
+          );
         } else {
           setMetricValue('atak-metric-latency-value', '—', null);
         }
-        setMetricValue('atak-metric-loss-value', '—', null);
+        var loss = telemetry && telemetry.packet_loss_percent != null ? Number(telemetry.packet_loss_percent) : null;
+        if (loss != null && !isNaN(loss)) {
+          setMetricValue(
+            'atak-metric-loss-value',
+            loss.toFixed(1) + ' %',
+            loss <= 2 ? 'ok' : (loss <= 8 ? 'warn' : 'err')
+          );
+        } else {
+          setMetricValue('atak-metric-loss-value', '—', null);
+        }
         var theatreLabel = (typeof formatAgoFr === 'function') ? formatAgoFr(theatreAgo) : null;
         setMetricValue(
           'atak-metric-theatre-value',
@@ -2132,7 +2181,7 @@ if ($atakMapConfig) {
         ]).then(function (results) {
           var d = results[1];
           if (!d) {
-            refreshLiaisonMetrics(null);
+            refreshLiaisonMetrics(null, null);
             return;
           }
           var ago = d.lastArmaActivityAgo != null ? Number(d.lastArmaActivityAgo) : null;
@@ -2144,41 +2193,54 @@ if ($atakMapConfig) {
             chip.classList.toggle('atak-chip--ok', ago != null && ago <= 60);
             chip.classList.toggle('atak-chip--warn', ago != null && ago > 60);
           }
-          refreshLiaisonMetrics(ago);
+          refreshLiaisonMetrics(ago, d.link_telemetry || d.measured_packet_loss || null);
           if (d.transmissions && window.ATAKTransmissions && typeof window.ATAKTransmissions.render === 'function') {
             window.ATAKTransmissions.render(d.transmissions);
           }
         }).catch(function () {
-          refreshLiaisonMetrics(null);
+          refreshLiaisonMetrics(null, null);
         });
       }
+      function onAtakTabSideEffects(tab) {
+        if (window.ATAKActivity && typeof window.ATAKActivity.setLiaisonTabActive === 'function') {
+          window.ATAKActivity.setLiaisonTabActive(tab === 'liaison');
+        }
+        if (window.ATAKSessionWorkspace && typeof window.ATAKSessionWorkspace.setPanelWide === 'function') {
+          window.ATAKSessionWorkspace.setPanelWide(tab === 'notes');
+        }
+        if (tab === 'replay' && window.ATAKReplay && typeof window.ATAKReplay.load === 'function') {
+          window.ATAKReplay.load();
+          if (typeof window.ATAKReplay.loadAar === 'function') window.ATAKReplay.loadAar();
+        }
+        if (tab === 'identification' && window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
+          window.ATAKIFF.onTabActivated();
+        }
+        if (tab === 'situation' && window.ATAKSitrep && typeof window.ATAKSitrep.onTabActivated === 'function') {
+          window.ATAKSitrep.onTabActivated();
+        }
+      }
+
+      document.addEventListener('atak:tab-activated', function (ev) {
+        var tab = ev && ev.detail ? ev.detail.tab : '';
+        if (tab) onAtakTabSideEffects(tab);
+      });
+
       document.querySelectorAll('.atak-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var tab = this.getAttribute('data-tab');
-          document.querySelectorAll('.atak-tab').forEach(function (b) {
-            b.classList.remove('active');
-            b.setAttribute('aria-selected', 'false');
-          });
-          document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
-          this.classList.add('active');
-          this.setAttribute('aria-selected', 'true');
-          var content = document.getElementById('tab-' + tab);
-          if (content) content.classList.add('active');
-          if (window.ATAKActivity && typeof window.ATAKActivity.setLiaisonTabActive === 'function') {
-            window.ATAKActivity.setLiaisonTabActive(tab === 'liaison');
-          }
-          if (window.ATAKSessionWorkspace && typeof window.ATAKSessionWorkspace.setPanelWide === 'function') {
-            window.ATAKSessionWorkspace.setPanelWide(tab === 'notes');
-          }
-          if (tab === 'replay' && window.ATAKReplay && typeof window.ATAKReplay.load === 'function') {
-            window.ATAKReplay.load();
-            if (typeof window.ATAKReplay.loadAar === 'function') window.ATAKReplay.loadAar();
-          }
-          if (tab === 'identification' && window.ATAKIFF && typeof window.ATAKIFF.onTabActivated === 'function') {
-            window.ATAKIFF.onTabActivated();
-          }
-          if (tab === 'situation' && window.ATAKSitrep && typeof window.ATAKSitrep.onTabActivated === 'function') {
-            window.ATAKSitrep.onTabActivated();
+          if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.activateTab === 'function') {
+            window.ATAKPanelChrome.activateTab(tab);
+          } else {
+            document.querySelectorAll('.atak-tab').forEach(function (b) {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+            var content = document.getElementById('tab-' + tab);
+            if (content) content.classList.add('active');
+            onAtakTabSideEffects(tab);
           }
         });
       });
@@ -2247,7 +2309,7 @@ if ($atakMapConfig) {
           hubUrl: <?= json_encode(url('back-office/atak/cycle-mission')) ?>,
         });
       }
-      measurePingLatency().then(function () { refreshLiaisonMetrics(null); });
+      measurePingLatency().then(function () { refreshLiaisonMetrics(null, null); });
       setInterval(function () {
         lastLiaisonChipAt = 0;
         refreshLiaisonChipQuiet();
@@ -2507,6 +2569,31 @@ if ($atakMapConfig) {
         healthRefreshInterval = null;
       }
       if (healthRefresh) healthRefresh.addEventListener('click', refreshHealth);
+
+      if (window.ATAK_POPOUT === 'left' && window.ATAK_POPOUT_TAB) {
+        var popTab = String(window.ATAK_POPOUT_TAB);
+        if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.activateTab === 'function') {
+          window.ATAKPanelChrome.activateTab(popTab);
+        } else {
+          var popBtn = document.querySelector('.atak-tab[data-tab="' + popTab + '"]');
+          if (popBtn) {
+            document.querySelectorAll('.atak-tab').forEach(function (b) {
+              b.classList.remove('active');
+              b.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.atak-tabs-content').forEach(function (c) { c.classList.remove('active'); });
+            popBtn.classList.add('active');
+            popBtn.setAttribute('aria-selected', 'true');
+            var popContent = document.getElementById('tab-' + popTab);
+            if (popContent) popContent.classList.add('active');
+            onAtakTabSideEffects(popTab);
+          }
+        }
+      }
+      if (window.ATAK_POPOUT === 'right') {
+        var rightPanel = document.getElementById('atak-panel-right');
+        if (rightPanel) rightPanel.classList.remove('collapsed');
+      }
       }
 
       (function initGameLink() {

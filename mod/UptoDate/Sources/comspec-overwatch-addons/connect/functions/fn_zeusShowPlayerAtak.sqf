@@ -60,7 +60,7 @@ private _info = format [
 private _apply = {
     params ["_action", "_unit", ["_duration", 30]];
     if (isNull _unit || {!isPlayer _unit}) exitWith {};
-    [_action, _duration] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+    [_unit, _action, _duration] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
     private _label = switch (_action) do {
         case "power_off": { "ATAK éteint" };
         case "screen_break": { "écran endommagé" };

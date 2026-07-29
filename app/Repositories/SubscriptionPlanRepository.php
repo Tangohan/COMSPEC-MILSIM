@@ -58,13 +58,50 @@ class SubscriptionPlanRepository
     }
 
     /**
-     * @param array{name: string, sort_order: int, features_json: ?string, limits_json: ?string, stripe_price_id_monthly: ?string, stripe_price_id_yearly: ?string} $data
+     * @param array{
+     *   name: string,
+     *   sort_order: int,
+     *   features_json: ?string,
+     *   limits_json: ?string,
+     *   stripe_price_id_monthly: ?string,
+     *   stripe_price_id_yearly: ?string,
+     *   paypal_plan_id_monthly?: ?string,
+     *   paypal_plan_id_yearly?: ?string
+     * } $data
      */
     public function update(int $id, array $data): bool
     {
         if ($id < 1) {
             return false;
         }
+        $hasPaypal = $this->hasPayPalPlanColumns();
+        if ($hasPaypal) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE subscription_plans SET
+                    name = ?,
+                    sort_order = ?,
+                    features_json = ?,
+                    limits_json = ?,
+                    stripe_price_id_monthly = ?,
+                    stripe_price_id_yearly = ?,
+                    paypal_plan_id_monthly = ?,
+                    paypal_plan_id_yearly = ?
+                 WHERE id = ?'
+            );
+
+            return $stmt->execute([
+                $data['name'],
+                $data['sort_order'],
+                $data['features_json'],
+                $data['limits_json'],
+                $data['stripe_price_id_monthly'],
+                $data['stripe_price_id_yearly'],
+                $data['paypal_plan_id_monthly'] ?? null,
+                $data['paypal_plan_id_yearly'] ?? null,
+                $id,
+            ]);
+        }
+
         $stmt = $this->pdo->prepare(
             'UPDATE subscription_plans SET
                 name = ?,
@@ -85,5 +122,18 @@ class SubscriptionPlanRepository
             $data['stripe_price_id_yearly'],
             $id,
         ]);
+    }
+
+    public function hasPayPalPlanColumns(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'subscription_plans' AND COLUMN_NAME = 'paypal_plan_id_monthly' LIMIT 1"
+            );
+
+            return $st && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

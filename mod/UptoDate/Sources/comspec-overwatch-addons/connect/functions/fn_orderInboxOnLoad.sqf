@@ -37,7 +37,7 @@ private _shown = [];
     private _id = _order getOrDefault ["id", ""];
     private _type = _order getOrDefault ["type", "MOVE"];
     // Signal terminal : pas listé comme ordre à répondre
-    if ((toUpper _type) in ["VIBRATE", "NOTIFY"]) then { continue };
+    if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
     private _status = _order getOrDefault ["status", "PENDING"];
     private _prio = _order getOrDefault ["priority", "IMPORTANT"];
 

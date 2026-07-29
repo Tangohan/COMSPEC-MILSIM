@@ -19,6 +19,12 @@ final class AuditAction
     public const TENANT_CREATED = 'tenant.created';
     public const TENANT_SETUP_COMPLETED = 'tenant.setup_completed';
 
+    public const CONFIGURATION_UPDATE_SEEN = 'configuration_update.seen';
+    public const CONFIGURATION_UPDATE_STARTED = 'configuration_update.started';
+    public const CONFIGURATION_UPDATE_COMPLETED = 'configuration_update.completed';
+    public const CONFIGURATION_UPDATE_DISMISSED = 'configuration_update.dismissed';
+    public const CONFIGURATION_UPDATE_REOPENED = 'configuration_update.reopened';
+
     public const INVITATION_SENT = 'invitation.sent';
     public const INVITATION_ACCEPTED = 'invitation.accepted';
     public const INVITATION_REVOKED = 'invitation.revoked';

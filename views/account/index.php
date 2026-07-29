@@ -12,6 +12,7 @@ $api = $health['api'] ?? [];
 $prefUrl = url('account/preferences');
 $callsign = trim((string) ($accountUser['callsign'] ?? ''));
 $displayNameVal = trim((string) ($accountUser['display_name'] ?? ''));
+$fullNameVal = trim((string) ($accountProfile['first_name'] ?? '') . ' ' . (string) ($accountProfile['last_name'] ?? ''));
 $tz = trim((string) ($accountProfile['timezone'] ?? ''));
 $lang = trim((string) ($accountProfile['language'] ?? ''));
 $langLabel = match ($lang) {
@@ -112,6 +113,9 @@ $chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill
                 <p class="account-hub__stat-value"><?= htmlspecialchars($displayNameVal !== '' ? $displayNameVal : 'Nom non renseigné', ENT_QUOTES, 'UTF-8') ?></p>
                 <p class="account-hub__stat-meta">
                     <?php if ($callsign !== ''): ?>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php else: ?>Indicatif non renseigné<?php endif; ?>
+                </p>
+                <p class="account-hub__stat-meta">
+                    <?= $fullNameVal !== '' ? 'Prénom et nom : ' . htmlspecialchars($fullNameVal, ENT_QUOTES, 'UTF-8') : 'Prénom et nom non renseignés' ?>
                 </p>
                 <p class="account-hub__stat-meta" style="margin-top:.55rem">
                     <a href="<?= htmlspecialchars($prefUrl, ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Modifier le profil</a>

@@ -44,6 +44,9 @@ if (!is_string($showcase_json) || $showcase_json === '') {
     <?php if (is_file(base_path('public/assets/css/navbar-info-banners.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/navbar-info-banners.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/portal-footer.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/portal-footer.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php
     $loadAlpineDashboard = (!empty($showcase_training_feature) && !empty($showcase_items))
         || !$dashboard_is_default_tenant
@@ -219,6 +222,7 @@ require base_path('views/partials/alert_banners.php');
             <?php require base_path('views/partials/dashboard_command_center.php'); ?>
         <?php endif; ?>
     </main>
+    <?php require base_path('views/partials/portal_footer.php'); ?>
     </div>
     <?php
     $lmsModuleEntryAuto = null;

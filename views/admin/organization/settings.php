@@ -11,8 +11,6 @@ declare(strict_types=1);
 /** @var string|null $navResImageUrl */
 /** @var string $orgSettingsFormAction */
 /** @var array<string, mixed> $integrations */
-/** @var list<array{slug: string, name: string}> $roleOptions */
-/** @var string $defaultGuestRoleSlug */
 
 $c = $community ?? [];
 $i = $integrations ?? [];
@@ -83,15 +81,10 @@ $navStyleLabels = [
     'minimal' => 'Liste',
 ];
 
-$roles = is_array($roleOptions ?? null) ? $roleOptions : [];
-$guestRoleSlug = trim((string) ($defaultGuestRoleSlug ?? ($c['default_guest_role_slug'] ?? 'invite')));
-$guestRoleLabel = '—';
-foreach ($roles as $role) {
-    if (($role['slug'] ?? '') === $guestRoleSlug) {
-        $guestRoleLabel = (string) ($role['name'] ?? $guestRoleSlug);
-        break;
-    }
-}
+$communityLocked = !empty($c['community_locked']);
+$publicHeroSubtitle = trim((string) ($c['public_hero_subtitle'] ?? ''));
+$publicAboutTitle = trim((string) ($c['public_about_title'] ?? ''));
+$publicAboutBody = trim((string) ($c['public_about_body'] ?? ''));
 
 $err = \App\Core\Session::getFlash('error');
 $ok = \App\Core\Session::getFlash('success');
@@ -99,10 +92,6 @@ $discordInviteMissing = \App\Services\Community\TenantCommunityProfileService::n
 
 $registryListed = !array_key_exists('registry_listed', $c) || !empty($c['registry_listed']);
 $forumMembersOnly = !empty($c['forum_members_only']);
-$communityLocked = !empty($c['community_locked']);
-$contactFormEnabled = !empty($c['contact_form_enabled']);
-$requireAiAck = !array_key_exists('require_ai_ack', $c) || !empty($c['require_ai_ack']);
-$recruitmentBadgeOpen = !empty($c['public_recruitment_badge_open']);
 $unitAffiliation = is_array($c['unit_affiliation'] ?? null) ? $c['unit_affiliation'] : [];
 $unitAffiliationIsReal = !empty($unitAffiliation['is_real']);
 $unitAffiliationMode = $unitAffiliation !== [] ? ($unitAffiliationIsReal ? 'real' : 'fictional') : '';
@@ -165,15 +154,17 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
         <div class="bo-settings-flash bo-settings-flash--warn" role="alert">
             Le recrutement via Discord est actif, mais aucun lien d’invitation n’est renseigné.
             Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public.
-            <a href="#inscription">Renseigner le lien Discord</a>
+            <a href="<?= $h(url('back-office/community/inscription#coordonnees')) ?>">Renseigner le lien Discord</a>
         </div>
     <?php endif; ?>
     <div class="bo-settings-flash bo-settings-flash--warn" role="status">
-        De nouveaux éléments de configuration sont disponibles. Vous pouvez maintenant préremplir
-        la représentation de votre communauté, le pays de rattachement, la ou les unités choisies
-        pour un même pays, ainsi que le cadre fictif si vous ne représentez pas une unité réelle.
-        <a href="#representation-unite">Compléter ces informations</a>
-        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Ouvrir la page publique</a>
+        De nouveaux réglages sont disponibles ici&nbsp;: représentation de la communauté (unité réelle ou fictive),
+        bio du bandeau et texte «&nbsp;Qui sommes-nous&nbsp;?&nbsp;».
+        Les options d’inscription (créneaux, motivation, mode de candidature) ont leur propre page.
+        <a href="#representation-unite">Représentation</a>
+        · <a href="#textes-publics">Textes publics</a>
+        · <a href="<?= $h(url('back-office/community/inscription')) ?>">Inscription</a>
+        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Vitrine complète</a>
     </div>
 
     <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
@@ -245,8 +236,8 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <?php endif; ?>
                     <div class="bo-setting-row bo-setting-row--stack">
                         <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Message d’accueil</div>
-                            <div class="bo-setting-row__help">Texte court affiché aux visiteurs sur la page publique.</div>
+                            <div class="bo-setting-row__label">Message d’accueil <span style="font-weight:600;color:var(--ath-subtle)">(facultatif)</span></div>
+                            <div class="bo-setting-row__help">Texte court de bienvenue (portail / fiche). Distinct de la bio du bandeau public dans « Textes publics ».</div>
                         </div>
                         <div class="bo-setting-row__control">
                             <textarea id="welcome_text" name="welcome_text" rows="3" maxlength="500" class="bo-setting-row__field--wide" placeholder="Présentez votre unité en quelques phrases…"><?= $h((string) ($c['welcome_text'] ?? '')) ?></textarea>
@@ -270,25 +261,26 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                             <input type="text" id="game_label" name="game_label" class="bo-setting-row__field" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3">
                         </div>
                     </div>
-                    <div class="bo-setting-row bo-setting-row--stack" id="representation-unite">
+                    <div class="bo-setting-row bo-setting-row--stack" id="affiliation">
                         <div class="bo-setting-row__copy">
                             <div class="bo-setting-row__label">Représentation de la communauté</div>
-                            <div class="bo-setting-row__help">Indiquez si votre communauté représente une unité réelle ou un cadre fictif.</div>
+                            <div class="bo-setting-row__help">Choisissez une ou plusieurs entités du référentiel militaire (commandement, composante, régiment, commando…) ou indiquez un cadre fictif. La recherche fonctionne aussi sur les alias (ex. Hubert, 1RPIMA, USASOC).</div>
                         </div>
-                        <div class="bo-setting-row__control" style="align-items:flex-start;">
-                            <div style="display:grid;gap:10px;width:min(100%, 760px);">
-                                <div style="display:flex;flex-wrap:wrap;gap:16px;">
-                                    <label style="display:inline-flex;align-items:center;gap:8px;">
+                        <div class="bo-setting-row__control" style="align-items:flex-start;max-width:100%;width:100%;">
+                            <div class="bo-unit-affiliation-panel" style="width:min(100%,760px);">
+                                <div class="bo-unit-affiliation-modes" role="radiogroup" aria-label="Type de représentation">
+                                    <label>
                                         <input type="radio" name="unit_affiliation_mode" value="real" <?= $unitAffiliationMode === 'real' ? 'checked' : '' ?>>
                                         <span>Unité réelle</span>
                                     </label>
-                                    <label style="display:inline-flex;align-items:center;gap:8px;">
+                                    <label>
                                         <input type="radio" name="unit_affiliation_mode" value="fictional" <?= $unitAffiliationMode === 'fictional' ? 'checked' : '' ?>>
                                         <span>Unité fictive</span>
                                     </label>
                                 </div>
 
-                                <div id="bo-unit-affiliation-fictional" class="<?= $unitAffiliationMode === 'fictional' ? '' : 'hidden' ?>">
+                                <div id="bo-unit-affiliation-fictional" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'fictional' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'fictional' ? '' : ' hidden' ?>>
+                                    <label class="bo-setting-row__label" for="unit_affiliation_fictional_label">Nom de l’unité fictive</label>
                                     <input
                                         type="text"
                                         name="unit_affiliation_fictional_label"
@@ -297,19 +289,23 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                                         maxlength="200"
                                         value="<?= $h($unitAffiliationFictionalLabel) ?>"
                                         placeholder="Ex. Task Force Phoenix"
+                                        <?= $unitAffiliationMode === 'fictional' ? '' : 'disabled' ?>
                                     >
+                                    <p class="bo-settings-note" style="margin-top:0;">Exemple&nbsp;: Task Force Phoenix, 1er régiment fictif…</p>
                                 </div>
 
-                                <div id="bo-unit-affiliation-real" class="<?= $unitAffiliationMode === 'real' ? '' : 'hidden' ?>" style="display:grid;gap:10px;">
-                                    <select name="unit_affiliation_country" id="unit_affiliation_country" class="bo-setting-row__field">
+                                <div id="bo-unit-affiliation-real" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'real' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'real' ? '' : ' hidden' ?>>
+                                    <label class="bo-setting-row__label" for="unit_affiliation_country">Pays de rattachement</label>
+                                    <select name="unit_affiliation_country" id="unit_affiliation_country" class="bo-setting-row__field" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
                                         <option value="">Choisir un pays</option>
                                         <?php foreach ($unitCountryLabels as $countryCode => $countryLabel): ?>
                                             <option value="<?= $h($countryCode) ?>" <?= $unitAffiliationCountry === $countryCode ? 'selected' : '' ?>><?= $h($countryLabel) ?></option>
                                         <?php endforeach; ?>
                                     </select>
-                                    <input type="search" id="unit_affiliation_search" class="bo-setting-row__field--wide" placeholder="Rechercher une unité, un régiment, un commando...">
-                                    <div id="unit_affiliation_units" style="max-height:220px;overflow:auto;border:1px solid var(--ath-line);border-radius:12px;background:#fff;padding:10px;"></div>
-                                    <p class="bo-settings-note" id="unit_affiliation_summary">Aucune unité sélectionnée.</p>
+                                    <label class="bo-setting-row__label" for="unit_affiliation_search">Rechercher une unité</label>
+                                    <input type="search" id="unit_affiliation_search" class="bo-setting-row__field--wide" placeholder="Rechercher une unité, un régiment, un commando…" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
+                                    <div id="unit_affiliation_units" class="bo-unit-affiliation-units" role="group" aria-label="Unités disponibles"></div>
+                                    <p class="bo-settings-note" id="unit_affiliation_summary" style="margin-top:0;">Aucune unité sélectionnée.</p>
                                 </div>
                             </div>
                         </div>
@@ -318,6 +314,41 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                 <?php if ($publicPageUrl !== ''): ?>
                     <p class="bo-settings-note"><a href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
                 <?php endif; ?>
+            </section>
+
+            <section class="ath-card ath-rise bo-setting-group" id="textes-publics">
+                <p class="bo-setting-group__kicker">Vitrine</p>
+                <h2 class="bo-setting-group__title">Textes publics</h2>
+                <div class="bo-setting-group__rows">
+                    <div class="bo-setting-row bo-setting-row--stack">
+                        <div class="bo-setting-row__copy">
+                            <div class="bo-setting-row__label">Bio courte du bandeau</div>
+                            <div class="bo-setting-row__help">Quelques lignes sous le titre, dans le bandeau d’accueil de la page publique. Ce n’est pas le texte « Qui sommes-nous ».</div>
+                        </div>
+                        <div class="bo-setting-row__control">
+                            <textarea id="public_hero_subtitle" name="public_hero_subtitle" rows="3" maxlength="600" class="bo-setting-row__field--wide" placeholder="Quelques lignes pour situer votre communauté dès l’arrivée sur la page."><?= $h($publicHeroSubtitle) ?></textarea>
+                        </div>
+                    </div>
+                    <div class="bo-setting-row bo-setting-row--stack">
+                        <div class="bo-setting-row__copy">
+                            <div class="bo-setting-row__label">Titre « Qui sommes-nous »</div>
+                            <div class="bo-setting-row__help">Intitulé de la section de présentation longue sur la vitrine.</div>
+                        </div>
+                        <div class="bo-setting-row__control">
+                            <input type="text" id="public_about_title" name="public_about_title" class="bo-setting-row__field--wide" maxlength="160" value="<?= $h($publicAboutTitle) ?>" placeholder="Qui sommes-nous ?">
+                        </div>
+                    </div>
+                    <div class="bo-setting-row bo-setting-row--stack">
+                        <div class="bo-setting-row__copy">
+                            <div class="bo-setting-row__label">Texte « Qui sommes-nous »</div>
+                            <div class="bo-setting-row__help">Présentation détaillée (histoire, cadre de jeu, accueil). Distinct de la bio du bandeau.</div>
+                        </div>
+                        <div class="bo-setting-row__control">
+                            <textarea id="public_about_body" name="public_about_body" rows="5" maxlength="8000" class="bo-setting-row__field--wide" placeholder="Présentez votre histoire, votre cadre de jeu, votre manière d’accueillir…"><?= $h($publicAboutBody) ?></textarea>
+                        </div>
+                    </div>
+                </div>
+                <p class="bo-settings-note">Mise en page avancée, modules et médias : <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a></p>
             </section>
 
             <section class="ath-card ath-rise bo-setting-group" id="visibilite">
@@ -372,13 +403,13 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                             </select>
                         </div>
                     </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row bo-setting-row--stack" id="timezone">
                         <div class="bo-setting-row__copy">
                             <div class="bo-setting-row__label">Fuseau horaire</div>
                             <div class="bo-setting-row__help">Base de tous les horodatages (événements, échéances, journaux).</div>
                         </div>
                         <div class="bo-setting-row__control">
-                            <select id="timezone" name="timezone" class="bo-setting-row__field--wide">
+                            <select id="timezone_select" name="timezone" class="bo-setting-row__field--wide">
                                 <?php foreach ($zones as $z): ?>
                                     <option value="<?= $h($z) ?>" <?= $z === $currentTz ? 'selected' : '' ?>><?= $h($z) ?></option>
                                 <?php endforeach; ?>
@@ -529,92 +560,19 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                 <p class="bo-setting-group__kicker">Inscription</p>
                 <h2 class="bo-setting-group__title">Arrivée des membres</h2>
                 <div class="bo-setting-group__rows">
-                    <div class="bo-setting-row bo-setting-row--stack">
+                    <div class="bo-setting-row">
                         <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Mode d’inscription</div>
-                            <div class="bo-setting-row__help">Détermine le parcours de candidature proposé aux visiteurs.</div>
+                            <div class="bo-setting-row__label">Mode actuel</div>
+                            <div class="bo-setting-row__help">Parcours de candidature, rôle d’accueil, contact des candidats, créneaux et motivation.</div>
                         </div>
                         <div class="bo-setting-row__control">
-                            <select id="registration_mode" name="registration_mode" class="bo-setting-row__field--wide">
-                                <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>Dossier MilSim complet</option>
-                                <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Formulaire court</option>
-                                <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord</option>
-                            </select>
+                            <span class="bo-setting-row__value"><?= $h($registrationLabel) ?><?= $communityLocked ? ' · recrutement fermé' : '' ?></span>
                         </div>
                     </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Rôle d’accueil</div>
-                            <div class="bo-setting-row__help">Attribué automatiquement au nouvel arrivant.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select id="default_guest_role_slug" name="default_guest_role_slug" class="bo-setting-row__field--wide">
-                                <?php if ($roles === []): ?>
-                                    <option value="<?= $h($guestRoleSlug) ?>"><?= $h($guestRoleLabel) ?></option>
-                                <?php else: ?>
-                                    <?php foreach ($roles as $role): ?>
-                                        <option value="<?= $h((string) $role['slug']) ?>" <?= ($role['slug'] ?? '') === $guestRoleSlug ? 'selected' : '' ?>><?= $h((string) $role['name']) ?></option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">E-mail de contact</div>
-                            <div class="bo-setting-row__help">Affiché aux candidats et visiteurs.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="email" id="contact_email" name="contact_email" class="bo-setting-row__field--wide" maxlength="255" value="<?= $h((string) ($c['contact_email'] ?? '')) ?>">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Lien Discord<?= $registrationMode === 'discord' ? ' *' : '' ?></div>
-                            <div class="bo-setting-row__help">Obligatoire pour le recrutement via Discord.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="url" id="contact_discord_url" name="contact_discord_url" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($c['contact_discord_url'] ?? '')) ?>" placeholder="https://discord.gg/…">
-                        </div>
-                    </div>
-                    <?php $renderToggle(
-                        'Formulaire « nous écrire »',
-                        'Permet aux visiteurs d’envoyer un message depuis la fiche publique.',
-                        'contact_form_enabled',
-                        $contactFormEnabled,
-                        'Actif',
-                        'Inactif'
-                    ); ?>
-                    <?php $renderToggle(
-                        'Fermeture temporaire du recrutement',
-                        'Suspend le dépôt de nouvelles candidatures.',
-                        'community_locked',
-                        $communityLocked,
-                        'Fermée',
-                        'Ouverte'
-                    ); ?>
-                    <?php $renderToggle(
-                        'Accusé de réception des règles',
-                        'Exige l’acceptation des règles avant dépôt d’une candidature.',
-                        'require_ai_ack',
-                        $requireAiAck,
-                        'Exigé',
-                        'Facultatif'
-                    ); ?>
-                    <?php $renderToggle(
-                        'Badge « recrutement ouvert »',
-                        'Affiche un badge sur la fiche publique lorsque le recrutement est ouvert.',
-                        'public_recruitment_badge_open',
-                        $recruitmentBadgeOpen,
-                        'Affiché',
-                        'Masqué'
-                    ); ?>
                 </div>
                 <p class="bo-settings-note">
-                    Mode actuel : <strong><?= $h($registrationLabel) ?></strong>
-                    <?php if ($registrationMode === 'discord'): ?>
-                        · <a href="<?= $h(url('back-office/recruitments/discord-questions')) ?>">Configurer les questions Discord</a>
-                    <?php endif; ?>
+                    <a href="<?= $h(url('back-office/community/inscription')) ?>">Gérer tous les paramètres d’inscription</a>
+                    · <a href="<?= $h(url('back-office/community/presentation') . '#pack-milsim-editor') ?>">Éditeur complet du dossier candidature</a>
                 </p>
             </section>
 
@@ -657,15 +615,6 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
                     <div class="bo-setting-row__control" style="gap:12px;">
                         <input type="color" name="primary_color" value="<?= $h($primaryColor) ?>" title="Couleur principale">
                         <input type="color" name="accent_color" value="<?= $h($accentColor) ?>" title="Couleur d’accent">
-                    </div>
-                </div>
-                <div class="bo-setting-row bo-setting-row--stack">
-                    <div class="bo-setting-row__copy">
-                        <div class="bo-setting-row__label">Message d’introduction contact</div>
-                        <div class="bo-setting-row__help">Texte affiché au-dessus du formulaire de contact.</div>
-                    </div>
-                    <div class="bo-setting-row__control">
-                        <input type="text" id="contact_intro" name="contact_intro" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($c['contact_intro'] ?? '')) ?>">
                     </div>
                 </div>
                 <div class="bo-setting-row bo-setting-row--stack">
@@ -723,8 +672,9 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
     </form>
 
     <p class="bo-settings-note">
-        Textes détaillés de la vitrine et formulaire de candidature complet :
-        <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
+        Inscription et vitrine :
+        <a href="<?= $h(url('back-office/community/inscription')) ?>">Paramètres d’inscription</a>
+        · <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
         · <a href="<?= $h(url('back-office/configuration-initiale')) ?>">Assistant de démarrage</a>
     </p>
 </div>
@@ -764,17 +714,54 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
     var unitsWrap = document.getElementById('unit_affiliation_units');
     var searchInput = document.getElementById('unit_affiliation_search');
     var summary = document.getElementById('unit_affiliation_summary');
+    var fictionalInput = document.getElementById('unit_affiliation_fictional_label');
 
     function currentAffiliationMode() {
         var checked = document.querySelector('input[name="unit_affiliation_mode"]:checked');
         return checked ? checked.value : '';
     }
 
+    function setPanelVisible(el, visible) {
+        if (!el) return;
+        el.classList.toggle('is-hidden', !visible);
+        el.classList.toggle('hidden', !visible);
+        if (visible) {
+            el.removeAttribute('hidden');
+        } else {
+            el.setAttribute('hidden', 'hidden');
+        }
+    }
+
+    function setDisabled(el, disabled) {
+        if (!el) return;
+        el.disabled = !!disabled;
+    }
+
     function syncAffiliationPanels() {
         var mode = currentAffiliationMode();
-        if (fictionalWrap) fictionalWrap.classList.toggle('hidden', mode !== 'fictional');
-        if (realWrap) realWrap.classList.toggle('hidden', mode !== 'real');
+        var isFictional = mode === 'fictional';
+        var isReal = mode === 'real';
+        setPanelVisible(fictionalWrap, isFictional);
+        setPanelVisible(realWrap, isReal);
+        setDisabled(fictionalInput, !isFictional);
+        setDisabled(countrySelect, !isReal);
+        setDisabled(searchInput, !isReal);
+        if (unitsWrap) {
+            unitsWrap.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                setDisabled(cb, !isReal);
+            });
+        }
         renderUnitOptions();
+    }
+
+    function tierLabel(tier) {
+        var map = {
+            command: 'Commandement',
+            component: 'Composante',
+            unit: 'Unité',
+            subunit: 'Sous-unité'
+        };
+        return map[tier] || '';
     }
 
     function renderUnitOptions() {
@@ -789,16 +776,27 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
         var rows = (unitCatalog.units && unitCatalog.units[country]) ? unitCatalog.units[country] : [];
         var query = searchInput ? String(searchInput.value || '').toLowerCase().trim() : '';
         var names = [];
+        var lastTier = '';
         rows.forEach(function (row) {
             var name = String(row.name || '');
-            if (query && name.toLowerCase().indexOf(query) === -1) return;
+            var hay = name.toLowerCase();
+            if (row.short_name) hay += ' ' + String(row.short_name).toLowerCase();
+            if (row.id) hay += ' ' + String(row.id).toLowerCase();
+            if (Array.isArray(row.aliases)) {
+                row.aliases.forEach(function (a) { hay += ' ' + String(a).toLowerCase(); });
+            }
+            var compact = hay.replace(/\s+/g, '');
+            var qCompact = query.replace(/\s+/g, '');
+            if (query && hay.indexOf(query) === -1 && compact.indexOf(qCompact) === -1) return;
+            if (row.tier && row.tier !== lastTier) {
+                lastTier = row.tier;
+                var heading = document.createElement('p');
+                heading.className = 'bo-unit-affiliation-tier';
+                heading.textContent = tierLabel(row.tier);
+                unitsWrap.appendChild(heading);
+            }
             var label = document.createElement('label');
-            label.style.display = 'flex';
-            label.style.alignItems = 'flex-start';
-            label.style.gap = '8px';
-            label.style.padding = '8px 10px';
-            label.style.borderRadius = '10px';
-            label.style.cursor = 'pointer';
+            label.className = 'bo-unit-affiliation-item';
             label.style.paddingLeft = (10 + ((parseInt(row.indent || 0, 10) || 0) * 18)) + 'px';
             var cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -846,5 +844,14 @@ $currentTypeLabel = \App\Services\Community\TenantTypeConfig::label($currentTena
         searchInput.addEventListener('input', renderUnitOptions);
     }
     syncAffiliationPanels();
+
+    if (window.location.hash === '#affiliation') {
+        var affEl = document.getElementById('affiliation');
+        if (affEl) {
+            setTimeout(function () {
+                affEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+        }
+    }
 })();
 </script>

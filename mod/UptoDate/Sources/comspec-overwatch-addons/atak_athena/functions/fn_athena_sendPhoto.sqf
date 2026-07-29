@@ -82,13 +82,6 @@ if (!isNull _drone && {alive _drone}) then {
     private _netId = netId _drone;
     if (_netId isEqualTo "") then { _netId = str _drone; };
     _feedId = format ["drone:%1", _netId];
-} else {
-    private _hasHcam = ("ItemcTabHCam" in (items player + assignedItems player))
-        || {((headgear player) in (missionNamespace getVariable ["cTab_helmetClass_has_HCam", []]))};
-    if (_hasHcam) then {
-        _device = "HELMET";
-        _feedId = format ["helmet:%1", getPlayerUID player];
-    };
 };
 
 private _ok = [_path, _caption, _device, _feedId] call comspec_overwatch_connect_fnc_captureReconImage;

@@ -165,6 +165,10 @@ final class TenantPermissionCatalog
             ['slug' => 'atak.config.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Configurer l’environnement ATAK'],
             ['slug' => 'atak.mission_cycle.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Piloter le cycle de mission ATAK'],
             ['slug' => 'atak.aar.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les comptes rendus post-opération ATAK'],
+            ['slug' => 'atak.sse.access', 'module' => 'atak', 'action' => 'view', 'name' => 'Accéder au portail de renseignement interpersonnel'],
+            ['slug' => 'atak.sse.grant', 'module' => 'atak', 'action' => 'manage', 'name' => 'Délivrer des codes d’accès temporaires au renseignement'],
+            ['slug' => 'atak.sse.case.manage', 'module' => 'atak', 'action' => 'manage', 'name' => 'Gérer les dossiers de renseignement interpersonnel'],
+            ['slug' => 'atak.sse.export', 'module' => 'atak', 'action' => 'export', 'name' => 'Exporter les dossiers de renseignement (PDF)'],
         ];
     }
 
@@ -195,6 +199,7 @@ final class TenantPermissionCatalog
             ['slug' => 'admin.audit.view', 'module' => 'admin', 'action' => 'view', 'name' => 'Voir les journaux d’audit'],
             ['slug' => 'admin.compliance.export', 'module' => 'admin', 'action' => 'export', 'name' => 'Exporter les dossiers conformité (formations)'],
             ['slug' => 'admin.settings.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les paramètres de la communauté'],
+            ['slug' => 'tenant.configuration.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer la mise à niveau de l’organisation'],
             ['slug' => 'admin.branding.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer l’identité visuelle / branding'],
             ['slug' => 'admin.integrations.manage', 'module' => 'admin', 'action' => 'manage', 'name' => 'Gérer les intégrations / API / webhooks'],
             ['slug' => 'invitations.send', 'module' => 'admin', 'action' => 'create', 'name' => 'Envoyer des invitations'],

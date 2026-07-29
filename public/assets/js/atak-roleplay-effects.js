@@ -63,7 +63,7 @@
       div.id = 'atak-roleplay-error';
       div.className = 'atak-roleplay-error';
       div.innerHTML = `
-        <div class="atak-roleplay-error-icon">⚠</div>
+        <div class="atak-roleplay-error-icon"><img src="${window.ATAK_ASSETS_BASE || ''}/assets/img/atak-link-lost-icon.png" alt="" width="32" height="32" onerror="this.outerHTML='⚠'"></div>
         <div class="atak-roleplay-error-text">${message}</div>
       `;
       
@@ -89,9 +89,12 @@
       
       if (!this.config.enabled) {
         // Afficher les mesures réelles si disponibles
-        if (lossEl && packetLoss != null && packetLoss > 0) {
-          lossEl.textContent = packetLoss.toFixed(2) + ' %';
+        if (lossEl && packetLoss != null && !isNaN(packetLoss)) {
+          lossEl.textContent = Number(packetLoss).toFixed(1) + ' %';
           lossEl.classList.remove('atak-metric-warn');
+          if (packetLoss > 8) {
+            lossEl.classList.add('atak-metric-warn');
+          }
         }
         return;
       }

@@ -7,6 +7,7 @@ window.ATAKMapTools = (function () {
   var activeDrawTool = null; // 'search-zone' | 'perimeter' | 'aoi' | 'line' | null
   var measurePoints = [];
   var measureLayer = null;
+  var measureLineUnder = null;
   var measureLine = null;
   var measureMarkers = [];
   var followTimer = null;
@@ -330,6 +331,10 @@ window.ATAKMapTools = (function () {
       try { if (map) map.removeLayer(m); } catch (e) {}
     });
     measureMarkers = [];
+    if (measureLineUnder && map) {
+      try { map.removeLayer(measureLineUnder); } catch (e) {}
+    }
+    measureLineUnder = null;
     if (measureLine && map) {
       try { map.removeLayer(measureLine); } catch (e) {}
     }
@@ -385,11 +390,17 @@ window.ATAKMapTools = (function () {
       measureMarkers.push(marker);
     });
     if (measurePoints.length === 2) {
+      measureLineUnder = L.polyline(measurePoints, {
+        color: '#111827',
+        weight: 6,
+        opacity: 0.85,
+        interactive: false
+      }).addTo(layer);
       measureLine = L.polyline(measurePoints, {
         color: '#fbbf24',
-        weight: 2,
-        dashArray: '6 5',
-        opacity: 0.95,
+        weight: 3,
+        dashArray: '8 5',
+        opacity: 1,
         interactive: false
       }).addTo(layer);
       var dist = distanceMeters(measurePoints[0], measurePoints[1]);

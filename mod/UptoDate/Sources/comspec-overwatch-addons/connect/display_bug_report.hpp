@@ -11,7 +11,7 @@ class COMSPEC_BugReport_Dialog {
             x = 0.30 * safezoneW + safezoneX;
             y = 0.22 * safezoneH + safezoneY;
             w = 0.40 * safezoneW;
-            h = 0.42 * safezoneH;
+            h = 0.48 * safezoneH;
             colorBackground[] = {0.015, 0.04, 0.08, 0.96};
         };
         class AccentBar: RscText {
@@ -62,11 +62,24 @@ class COMSPEC_BugReport_Dialog {
             colorBackground[] = {0.04, 0.08, 0.12, 1}; colorText[] = {0.95, 0.98, 0.9, 1}; sizeEx = 0.032; autocomplete = "";
             style = 16; // multi-line
         };
+        class ChkLog: RscButton {
+            idc = 9805;
+            text = "Journal de session : oui";
+            x = 0.32 * safezoneW + safezoneX;
+            y = 0.495 * safezoneH + safezoneY;
+            w = 0.36 * safezoneW;
+            h = 0.028 * safezoneH;
+            colorBackground[] = {0.04, 0.10, 0.14, 0.85};
+            colorBackgroundActive[] = {0.08, 0.28, 0.24, 1};
+            sizeEx = 0.030;
+            tooltip = "Envoie les dernières lignes du journal Overwatch (sans clé ni mot de passe).";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_BugReport_Display', displayNull]; if (isNull _d) exitWith {}; private _c = _d displayCtrl 9805; private _on = _c getVariable ['COMSPEC_LogAttach', true]; _on = !_on; _c setVariable ['COMSPEC_LogAttach', _on]; _c ctrlSetText (if (_on) then {'Journal de session : oui'} else {'Journal de session : non'});";
+        };
         class BtnSend: RscButton {
             idc = 9803;
             text = "Envoyer";
             x = 0.32 * safezoneW + safezoneX;
-            y = 0.520 * safezoneH + safezoneY;
+            y = 0.545 * safezoneH + safezoneY;
             w = 0.20 * safezoneW;
             h = 0.036 * safezoneH;
             colorBackground[] = {0.08, 0.32, 0.28, 0.95};
@@ -77,7 +90,7 @@ class COMSPEC_BugReport_Dialog {
             idc = 9804;
             text = "Annuler";
             x = 0.54 * safezoneW + safezoneX;
-            y = 0.520 * safezoneH + safezoneY;
+            y = 0.545 * safezoneH + safezoneY;
             w = 0.14 * safezoneW;
             h = 0.036 * safezoneH;
             colorBackground[] = {0.12, 0.08, 0.08, 0.95};

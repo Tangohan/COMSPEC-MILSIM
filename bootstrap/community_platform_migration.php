@@ -51,58 +51,16 @@ function run_community_platform_migration(PDO $pdo): void
         ],
     ], JSON_THROW_ON_ERROR);
 
+    require_once dirname(__DIR__) . '/app/Services/Billing/SubscriptionPlanFeaturesCatalog.php';
+    $planFeatureDefaults = \App\Services\Billing\SubscriptionPlanFeaturesCatalog::defaultsByPlanSlug();
+
     $stmt = $pdo->query("SELECT COUNT(*) FROM subscription_plans");
     if ($stmt && (int) $stmt->fetchColumn() === 0) {
-        $free = json_encode([
-            'forum' => true,
-            'documents' => true,
-            'training' => true,
-            'atak' => false,
-            'max_members' => 50,
-            'max_training_courses' => 5,
-            'advanced_integrations' => false,
-            'community_create' => true,
-        ], JSON_THROW_ON_ERROR);
-        $std = json_encode([
-            'forum' => true,
-            'documents' => true,
-            'training' => true,
-            'atak' => true,
-            'events' => true,
-            'max_members' => 200,
-            'max_training_courses' => 25,
-            'advanced_integrations' => false,
-            'community_create' => true,
-        ], JSON_THROW_ON_ERROR);
-        $pro = json_encode([
-            'forum' => true,
-            'documents' => true,
-            'training' => true,
-            'atak' => true,
-            'analytics' => true,
-            'events' => true,
-            'max_members' => 2000,
-            'max_training_courses' => 100,
-            'advanced_integrations' => false,
-            'community_create' => true,
-        ], JSON_THROW_ON_ERROR);
-        $proPlus = json_encode([
-            'forum' => true,
-            'documents' => true,
-            'training' => true,
-            'atak' => true,
-            'analytics' => true,
-            'events' => true,
-            'max_members' => 10000,
-            'max_training_courses' => 0,
-            'advanced_integrations' => true,
-            'community_create' => true,
-        ], JSON_THROW_ON_ERROR);
         $ins = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
-        $ins->execute(['free', 'Gratuit', 10, $free, $freeLimitsDefault]);
-        $ins->execute(['standard', 'Standard', 20, $std, null]);
-        $ins->execute(['pro', 'Pro', 30, $pro, null]);
-        $ins->execute(['pro_plus', 'Pro+', 40, $proPlus, null]);
+        $ins->execute(['free', 'Gratuit', 10, json_encode($planFeatureDefaults['free'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $freeLimitsDefault]);
+        $ins->execute(['standard', 'Standard', 20, json_encode($planFeatureDefaults['standard'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), null]);
+        $ins->execute(['pro', 'Pro', 30, json_encode($planFeatureDefaults['pro'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), null]);
+        $ins->execute(['pro_plus', 'Pro+', 40, json_encode($planFeatureDefaults['pro_plus'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), null]);
         echo "Plans subscription_plans insérés (free, standard, pro, pro_plus).\n";
     } else {
         $up = $pdo->prepare("UPDATE subscription_plans SET limits_json = ? WHERE slug = 'free' AND (limits_json IS NULL OR limits_json = '')");
@@ -124,21 +82,21 @@ function run_community_platform_migration(PDO $pdo): void
 
     $proPlusExists = $pdo->query("SELECT 1 FROM subscription_plans WHERE slug = 'pro_plus' LIMIT 1");
     if ($proPlusExists && !$proPlusExists->fetch()) {
-        $proPlusFeat = json_encode([
-            'forum' => true,
-            'documents' => true,
-            'training' => true,
-            'atak' => true,
-            'analytics' => true,
-            'events' => true,
-            'max_members' => 10000,
-            'max_training_courses' => 0,
-            'advanced_integrations' => true,
-            'community_create' => true,
-        ], JSON_THROW_ON_ERROR);
         $insPp = $pdo->prepare('INSERT INTO subscription_plans (slug, name, sort_order, features_json, limits_json, created_at) VALUES (?, ?, ?, ?, NULL, NOW())');
-        $insPp->execute(['pro_plus', 'Pro+', 40, $proPlusFeat]);
+        $insPp->execute(['pro_plus', 'Pro+', 40, json_encode($planFeatureDefaults['pro_plus'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
         echo "Plan pro_plus inséré.\n";
+    }
+
+    $paypalCols = [
+        'paypal_plan_id_monthly' => "ADD COLUMN paypal_plan_id_monthly varchar(100) DEFAULT NULL COMMENT 'Plan PayPal Billing mensuel (P-…)' AFTER stripe_price_id_yearly",
+        'paypal_plan_id_yearly' => "ADD COLUMN paypal_plan_id_yearly varchar(100) DEFAULT NULL COMMENT 'Plan PayPal Billing annuel (P-…)' AFTER paypal_plan_id_monthly",
+    ];
+    foreach ($paypalCols as $col => $frag) {
+        $check = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'subscription_plans' AND COLUMN_NAME = " . $pdo->quote($col));
+        if ($check && !$check->fetch()) {
+            echo "Ajout subscription_plans.$col...\n";
+            $pdo->exec("ALTER TABLE subscription_plans $frag");
+        }
     }
 
     $mergeMissingPlanFeatures = static function (PDO $pdoConn, string $slug, array $defaults): void {
@@ -162,21 +120,12 @@ function run_community_platform_migration(PDO $pdo): void
         if ($changed) {
             $up = $pdoConn->prepare('UPDATE subscription_plans SET features_json = ? WHERE slug = ?');
             $up->execute([json_encode($cur, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $slug]);
-            echo "Plan {$slug} : clés de fonctionnalités complétées (limites / intégrations).\n";
+            echo "Plan {$slug} : clés de fonctionnalités complétées.\n";
         }
     };
-    $mergeMissingPlanFeatures($pdo, 'free', [
-        'max_training_courses' => 5,
-        'advanced_integrations' => false,
-    ]);
-    $mergeMissingPlanFeatures($pdo, 'standard', [
-        'max_training_courses' => 25,
-        'advanced_integrations' => false,
-    ]);
-    $mergeMissingPlanFeatures($pdo, 'pro', [
-        'max_training_courses' => 100,
-        'advanced_integrations' => false,
-    ]);
+    foreach ($planFeatureDefaults as $slug => $defaults) {
+        $mergeMissingPlanFeatures($pdo, $slug, $defaults);
+    }
 
     $cols = [
         // Profil communauté (Complet / Effectifs / ATAK) — aussi via bootstrap/tenant_type_migration.php
@@ -185,14 +134,39 @@ function run_community_platform_migration(PDO $pdo): void
         'plan_slug' => "ADD COLUMN plan_slug varchar(50) NOT NULL DEFAULT 'free' AFTER owner_user_id",
         'stripe_customer_id' => "ADD COLUMN stripe_customer_id varchar(100) DEFAULT NULL AFTER plan_slug",
         'stripe_subscription_id' => "ADD COLUMN stripe_subscription_id varchar(100) DEFAULT NULL AFTER stripe_customer_id",
-        'subscription_status' => "ADD COLUMN subscription_status varchar(32) NOT NULL DEFAULT 'none' AFTER stripe_subscription_id",
+        'paypal_subscription_id' => "ADD COLUMN paypal_subscription_id varchar(100) DEFAULT NULL AFTER stripe_subscription_id",
+        'paypal_payer_id' => "ADD COLUMN paypal_payer_id varchar(100) DEFAULT NULL AFTER paypal_subscription_id",
+        'subscription_status' => "ADD COLUMN subscription_status varchar(32) NOT NULL DEFAULT 'none' AFTER paypal_payer_id",
         'subscription_current_period_end' => "ADD COLUMN subscription_current_period_end datetime DEFAULT NULL AFTER subscription_status",
     ];
     foreach ($cols as $col => $frag) {
         $check = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = " . $pdo->quote($col));
         if ($check && !$check->fetch()) {
             echo "Ajout tenants.$col...\n";
-            $pdo->exec("ALTER TABLE tenants $frag");
+            // Colonnes PayPal : position après stripe si déjà présentes
+            if ($col === 'paypal_subscription_id') {
+                $frag = "ADD COLUMN paypal_subscription_id varchar(100) DEFAULT NULL AFTER stripe_subscription_id";
+            } elseif ($col === 'paypal_payer_id') {
+                $frag = "ADD COLUMN paypal_payer_id varchar(100) DEFAULT NULL AFTER paypal_subscription_id";
+            } elseif ($col === 'subscription_status') {
+                $hasPaypal = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'paypal_payer_id'");
+                if ($hasPaypal && $hasPaypal->fetch()) {
+                    $frag = "ADD COLUMN subscription_status varchar(32) NOT NULL DEFAULT 'none' AFTER paypal_payer_id";
+                } else {
+                    $frag = "ADD COLUMN subscription_status varchar(32) NOT NULL DEFAULT 'none' AFTER stripe_subscription_id";
+                }
+            }
+            try {
+                $pdo->exec("ALTER TABLE tenants $frag");
+            } catch (PDOException $e) {
+                // Repli sans AFTER si schéma partiel
+                if (str_contains($e->getMessage(), 'AFTER') || str_contains($e->getMessage(), 'Unknown column')) {
+                    $simple = preg_replace('/\s+AFTER\s+\w+/i', '', $frag) ?? $frag;
+                    $pdo->exec("ALTER TABLE tenants $simple");
+                } else {
+                    throw $e;
+                }
+            }
         }
     }
 
@@ -246,6 +220,23 @@ function run_community_platform_migration(PDO $pdo): void
     if ($pccErr && !$pccErr->fetch()) {
         echo "Ajout pending_community_creates.creation_error...\n";
         $pdo->exec('ALTER TABLE pending_community_creates ADD COLUMN creation_error text DEFAULT NULL AFTER tenant_id');
+    }
+
+    $pccProvider = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pending_community_creates' AND COLUMN_NAME = 'payment_provider'");
+    if ($pccProvider && !$pccProvider->fetch()) {
+        echo "Ajout pending_community_creates.payment_provider...\n";
+        $pdo->exec("ALTER TABLE pending_community_creates ADD COLUMN payment_provider varchar(16) NOT NULL DEFAULT 'stripe' COMMENT 'stripe|paypal' AFTER stripe_price_id");
+    }
+
+    $pccPaypal = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pending_community_creates' AND COLUMN_NAME = 'paypal_subscription_id'");
+    if ($pccPaypal && !$pccPaypal->fetch()) {
+        echo "Ajout pending_community_creates.paypal_subscription_id...\n";
+        $pdo->exec('ALTER TABLE pending_community_creates ADD COLUMN paypal_subscription_id varchar(100) DEFAULT NULL AFTER stripe_checkout_session_id');
+        try {
+            $pdo->exec('ALTER TABLE pending_community_creates ADD KEY pcc_paypal_sub (paypal_subscription_id)');
+        } catch (PDOException) {
+            // ignore
+        }
     }
 
     $profSlug = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_slug'");

@@ -3,6 +3,41 @@ window.ATAKCams = (function () {
   var apiBase = null;
   var lastFeedIds = {};
   var lightboxBound = false;
+  var hiddenPhotoIds = loadHiddenPhotoIds();
+  var streamRefreshTimer = null;
+
+  function hiddenStoreKey() {
+    var tenant = window.ATAK_TENANT_ID || 0;
+    return 'atak_hidden_recon_photos_' + tenant;
+  }
+
+  function loadHiddenPhotoIds() {
+    try {
+      var raw = window.sessionStorage.getItem(hiddenStoreKey());
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHiddenPhotoIds() {
+    try {
+      window.sessionStorage.setItem(hiddenStoreKey(), JSON.stringify(hiddenPhotoIds));
+    } catch (e) {}
+  }
+
+  function isHiddenLocally(id) {
+    id = String(id || '');
+    return !!id && hiddenPhotoIds.indexOf(id) >= 0;
+  }
+
+  function hideLocally(id) {
+    id = String(id || '');
+    if (!id || isHiddenLocally(id)) return;
+    hiddenPhotoIds.push(id);
+    saveHiddenPhotoIds();
+  }
 
   function getApiBase() {
     if (apiBase !== undefined && apiBase !== null) return apiBase;
@@ -59,6 +94,11 @@ window.ATAKCams = (function () {
 
   function addPhotoMarkerOnMap(photo) {
     if (!window.ATAKMap || !window.ATAKMap.addIntelPhotoMarker) return;
+    if (window.ATAKMap.getDisplayPrefs) {
+      var prefs = window.ATAKMap.getDisplayPrefs();
+      if (prefs && prefs.showIntelPhotoMarkers === false) return;
+    }
+    if (isHiddenLocally(photo.id || photo.snapshot_id)) return;
     var px = photo.pos_x != null ? parseFloat(photo.pos_x) : null;
     var py = photo.pos_y != null ? parseFloat(photo.pos_y) : null;
     if (px == null || py == null || (Math.abs(px) < 0.5 && Math.abs(py) < 0.5)) return;
@@ -75,12 +115,17 @@ window.ATAKCams = (function () {
       if (!thumb) return;
       var src = thumb.getAttribute('data-atak-cam-full');
       if (!src) return;
+      var article = thumb.closest ? thumb.closest('.atak-cam-photo') : null;
+      var lightboxClass = 'atak-cam-lightbox';
+      if (article && article.classList && article.classList.contains('is-blurred')) {
+        lightboxClass += ' is-blurred';
+      }
       ev.preventDefault();
       var existing = document.getElementById('atak-cam-lightbox');
       if (existing) existing.remove();
       var overlay = document.createElement('div');
       overlay.id = 'atak-cam-lightbox';
-      overlay.className = 'atak-cam-lightbox';
+      overlay.className = lightboxClass;
       overlay.innerHTML =
         '<button type="button" class="atak-cam-lightbox-close" aria-label="Fermer">×</button>' +
         '<img src="' + escapeHtml(src) + '" alt="Aperçu agrandi" />';
@@ -93,6 +138,17 @@ window.ATAKCams = (function () {
           close();
         }
       });
+    });
+    document.addEventListener('click', function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest('[data-recon-action]') : null;
+      if (!btn) return;
+      ev.preventDefault();
+      var action = btn.getAttribute('data-recon-action') || '';
+      var article = btn.closest('.atak-cam-photo');
+      if (!article) return;
+      var photoId = article.getAttribute('data-id') || '';
+      if (!photoId) return;
+      handlePhotoAction(photoId, action, article, btn);
     });
   }
 
@@ -157,14 +213,16 @@ window.ATAKCams = (function () {
       var kindLabel = f.kind_label || (kind === 'drone' || kind === 'uav' ? 'Caméra drone' : 'Caméra casque');
       var status = online ? 'En ligne' : 'Hors ligne';
       var age = formatAge(f.age_sec);
+      var streaming = !!(f.streaming || f.stream_active);
       html +=
-        '<article class="atak-cam-tile ' + kindClass(kind) + (online ? ' is-online' : ' is-offline') + '" data-feed-id="' + escapeHtml(f.id || '') + '">' +
+        '<article class="atak-cam-tile ' + kindClass(kind) + (online ? ' is-online' : ' is-offline') + (streaming ? ' is-streaming' : '') + '" data-feed-id="' + escapeHtml(f.id || '') + '">' +
           '<div class="atak-cam-tile-media">' +
             (src
               ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
               : '<div class="atak-cam-tile-placeholder" aria-hidden="true"></div>') +
             '<span class="atak-cam-tile-badge">' + escapeHtml(kindLabel) + '</span>' +
-            '<span class="atak-cam-tile-status">' + escapeHtml(status) + (age ? ' · ' + escapeHtml(age) : '') + '</span>' +
+            (streaming ? '<span class="atak-cam-tile-badge atak-cam-tile-badge--stream">Flux actif</span>' : '') +
+            '<span class="atak-cam-tile-status">' + escapeHtml(status) + (age ? ' · ' + escapeHtml(age) : '') + (streaming ? ' · ~5 s' : '') + '</span>' +
           '</div>' +
           '<div class="atak-cam-tile-meta">' +
             '<strong>' + escapeHtml(f.label || kindLabel) + '</strong>' +
@@ -215,8 +273,16 @@ window.ATAKCams = (function () {
       ' · ' + (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi + ' Z';
   }
 
+  function photoFxClass(photo) {
+    var p = String((photo && photo.fx_profile) || '').toLowerCase();
+    if (!p) return '';
+    return ' atak-cam-photo--fx-' + p.replace(/[^a-z0-9_-]+/g, '-');
+  }
+
   function renderPhotos(photos, title) {
-    var list = Array.isArray(photos) ? photos : [];
+    var list = (Array.isArray(photos) ? photos : []).filter(function (p) {
+      return !isHiddenLocally(p && p.id);
+    });
     if (!list.length) return '';
     var html = '<div class="atak-cams-section">' +
       '<div class="atak-cams-section-head">' +
@@ -230,11 +296,15 @@ window.ATAKCams = (function () {
       }
       var author = p.author_callsign || p.author || '';
       var caption = p.caption || '';
+      var comment = p.operator_comment || '';
       var grid = p.grid_ref || p.grid || '';
       var label = deviceLabel(p);
       var stamp = formatPhotoStamp(p);
+      var blurred = !!Number(p.is_blurred || 0);
+      var transferred = !!(p.sse_case_id || p.sse_transferred_at);
+      var fxClass = photoFxClass(p);
       html +=
-        '<article class="atak-cam-photo" data-id="' + escapeHtml(p.id || '') + '">' +
+        '<article class="atak-cam-photo' + (blurred ? ' is-blurred' : '') + fxClass + '" data-id="' + escapeHtml(p.id || '') + '">' +
           (src
             ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
             : '<div class="atak-cam-photo-missing" role="status">Image indisponible — lien dégradé ou fichier manquant.</div>') +
@@ -244,6 +314,15 @@ window.ATAKCams = (function () {
             (author ? '<strong>' + escapeHtml(author) + '</strong>' : '') +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
+            (comment ? '<p class="atak-cam-photo-comment">Commentaire: ' + escapeHtml(comment) + '</p>' : '') +
+            (transferred ? '<p class="atak-cam-photo-flag">Archivée dans SSE</p>' : '') +
+            '<div class="atak-cam-photo-actions">' +
+              '<button type="button" class="atak-cam-photo-btn" data-recon-action="sse_transfer">Passer en SSE</button>' +
+              '<button type="button" class="atak-cam-photo-btn" data-recon-action="comment">Commenter</button>' +
+              '<button type="button" class="atak-cam-photo-btn" data-recon-action="blur">' + (blurred ? 'Retirer le flou' : 'Flouter') + '</button>' +
+              '<button type="button" class="atak-cam-photo-btn" data-recon-action="hide">Masquer</button>' +
+              '<button type="button" class="atak-cam-photo-btn atak-cam-photo-btn--danger" data-recon-action="delete">Supprimer</button>' +
+            '</div>' +
           '</div>' +
         '</article>';
       addPhotoMarkerOnMap(p);
@@ -252,8 +331,21 @@ window.ATAKCams = (function () {
     return html;
   }
 
+  function syncStreamRefresh(feeds) {
+    var any = (feeds || []).some(function (f) { return f && (f.streaming || f.stream_active); });
+    if (any && !streamRefreshTimer) {
+      streamRefreshTimer = setInterval(function () {
+        refresh();
+      }, 4500);
+    } else if (!any && streamRefreshTimer) {
+      clearInterval(streamRefreshTimer);
+      streamRefreshTimer = null;
+    }
+  }
+
   function paint(feeds, photos) {
     ensureLightbox();
+    syncStreamRefresh(feeds);
     var camsRoot = document.getElementById('atak-cams-list');
     var photosRoot = document.getElementById('atak-photos-list');
     if (!camsRoot && !photosRoot) return;
@@ -317,7 +409,34 @@ window.ATAKCams = (function () {
           if (!p) return;
           var key = String(p.url || p.path || p.image_path || p.id || '');
           if (key && seen[key]) return;
+          var deviceKey = String(p.device_type || '').toUpperCase();
+          var sig = [
+            String(p.author_callsign || p.author || '').toUpperCase(),
+            String(p.grid_ref || p.grid || ''),
+            String(p.created_at || p.captured_at || p.capturedAt || '').slice(0, 19)
+          ].join('|');
+          if (sig !== '||' && seen['sig:' + sig]) {
+            var prevDevice = seen['sig:' + sig];
+            if (deviceKey === 'HELMET' && String(p.caption || '').indexOf('Aperçu casque') === 0 && prevDevice === 'CTAB') {
+              return;
+            }
+            if (deviceKey === 'CTAB' && prevDevice === 'HELMET') {
+              for (var i = photos.length - 1; i >= 0; i--) {
+                var op = photos[i];
+                var os = [
+                  String(op.author_callsign || op.author || '').toUpperCase(),
+                  String(op.grid_ref || op.grid || ''),
+                  String(op.created_at || op.captured_at || op.capturedAt || '').slice(0, 19)
+                ].join('|');
+                if (os === sig && String(op.device_type || '').toUpperCase() === 'HELMET') {
+                  photos.splice(i, 1);
+                  break;
+                }
+              }
+            }
+          }
           if (key) seen[key] = true;
+          if (sig !== '||') seen['sig:' + sig] = deviceKey;
           photos.push(p);
         }
         recon.forEach(pushPhoto);
@@ -329,6 +448,103 @@ window.ATAKCams = (function () {
         paint(feeds, photos);
         return { feeds: feeds, photos: photos };
       });
+  }
+
+  function parseJsonResponse(r) {
+    return r.json().catch(function () { return {}; }).then(function (body) {
+      return { ok: r.ok, status: r.status, body: body || {} };
+    });
+  }
+
+  function postReconAction(photoId, payload) {
+    var base = getApiBase();
+    if (!base) return Promise.resolve({ ok: false, body: { message: 'Liaison indisponible.' } });
+    return fetch(base + '/api/recon/images/' + encodeURIComponent(photoId) + '/ops', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload || {})
+    }).then(parseJsonResponse).catch(function () {
+      return { ok: false, body: { message: 'Action indisponible pour le moment.' } };
+    });
+  }
+
+  function fetchSseCases() {
+    var base = getApiBase();
+    if (!base) return Promise.resolve([]);
+    return fetch(base + '/api/recon/images/sse-cases', {
+      credentials: 'include',
+      headers: { Accept: 'application/json' }
+    }).then(parseJsonResponse).then(function (res) {
+      return res.ok && res.body && Array.isArray(res.body.cases) ? res.body.cases : [];
+    }).catch(function () { return []; });
+  }
+
+  function handlePhotoAction(photoId, action, article, btn) {
+    if (action === 'hide') {
+      hideLocally(photoId);
+      if (window.ATAKMap && window.ATAKMap.removeIntelPhotoMarker) {
+        window.ATAKMap.removeIntelPhotoMarker(photoId);
+      }
+      if (article && article.remove) article.remove();
+      return;
+    }
+    if (action === 'delete') {
+      if (!window.confirm('Supprimer cette photo du panneau tactique ?')) return;
+      postReconAction(photoId, { action: 'delete' }).then(handleReconActionResult);
+      return;
+    }
+    if (action === 'blur') {
+      var blurred = article && article.classList && article.classList.contains('is-blurred');
+      if (article && article.classList) {
+        article.classList.toggle('is-blurred', !blurred);
+      }
+      var lightbox = document.getElementById('atak-cam-lightbox');
+      if (lightbox && lightbox.classList) {
+        lightbox.classList.toggle('is-blurred', !blurred);
+      }
+      postReconAction(photoId, { action: 'blur', blurred: !blurred }).then(handleReconActionResult);
+      return;
+    }
+    if (action === 'comment') {
+      var current = '';
+      var commentEl = article ? article.querySelector('.atak-cam-photo-comment') : null;
+      if (commentEl) current = String(commentEl.textContent || '').replace(/^Commentaire:\s*/i, '');
+      var comment = window.prompt('Commentaire opérateur pour cette photo :', current);
+      if (comment === null) return;
+      postReconAction(photoId, { action: 'comment', comment: comment }).then(handleReconActionResult);
+      return;
+    }
+    if (action === 'sse_transfer') {
+      fetchSseCases().then(function (cases) {
+        if (!cases.length) {
+          if (window.ATAKShowError) window.ATAKShowError('Aucun dossier SSE accessible. Ouvrez d’abord le portail SSE.');
+          return;
+        }
+        var choices = cases.map(function (c) {
+          return c.id + ' - ' + (c.reference_code || 'SSE') + ' - ' + (c.title || 'Sans titre');
+        }).join('\n');
+        var selected = window.prompt('Choisissez l’identifiant du dossier SSE :\n\n' + choices, String(cases[0].id));
+        if (selected === null) return;
+        var caseId = parseInt(String(selected).trim(), 10);
+        if (!caseId) {
+          if (window.ATAKShowError) window.ATAKShowError('Dossier SSE invalide.');
+          return;
+        }
+        postReconAction(photoId, { action: 'sse_transfer', case_id: caseId }).then(handleReconActionResult);
+      });
+    }
+  }
+
+  function handleReconActionResult(res) {
+    if (res && res.ok) {
+      if (window.ATAKShowNotification) window.ATAKShowNotification((res.body && res.body.message) || 'Action appliquée.');
+      refresh();
+      return;
+    }
+    if (window.ATAKShowError) {
+      window.ATAKShowError((res && res.body && res.body.message) || 'Action impossible pour le moment.');
+    }
   }
 
   function appendIntelPhoto(photo) {

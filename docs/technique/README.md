@@ -2,6 +2,19 @@
 
 Ce sommaire s’adresse aux **développeurs** et à l’**exploitation** : architecture, dépôt, configuration, sécurité et intégrations.
 
+## Mod Overwatch (documentation portail)
+
+Fiches destinées aux moddeurs / intégrateurs, exposées sur `/documentation/references` (sans surface réseau du portail) :
+
+| Document | Contenu |
+|----------|---------|
+| [Index mod](overwatch-mod/index.md) | Vue d’ensemble pack @COMSPECOverwatch |
+| [Architecture & addons](overwatch-mod/architecture.md) | PBO, extension, conventions SQF |
+| [Bibliothèques & dépendances](overwatch-mod/bibliotheques-et-dependances.md) | CBA, ACE, cTab, BCE, KAT, Mavic, radios… |
+| [Compilation & publication](overwatch-mod/compilation.md) | Build, Workshop |
+
+Sources Markdown du dépôt mod : `mod/UptoDate/docs/`.
+
 ## Pages
 
 | Document | Contenu |

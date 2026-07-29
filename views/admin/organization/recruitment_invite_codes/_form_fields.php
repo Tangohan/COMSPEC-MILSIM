@@ -2,19 +2,15 @@
 declare(strict_types=1);
 
 /**
- * Champs communs aux formulaires de création et de modification d’un code d’invitation.
+ * Champs communs aux formulaires de création et de modification d’un code prioritaire.
  *
- * Les deux écrans ne diffèrent que par la présence du champ « code » (immuable après
- * création) et par les valeurs préremplies : un seul gabarit évite d’entretenir deux
- * fois les mêmes six champs.
- *
- * @var bool $codeFieldEditable        Affiche le champ « code » (création uniquement)
- * @var string $codeLabelValue         Valeur du libellé
- * @var int|null $codeMaxUsesValue     Quota d’utilisations, null = illimité
- * @var string|null $codeExpiresAtValue Échéance au format base
- * @var bool $codeAutoAcceptValue      Validation automatique
- * @var int|null $codeOpeningIdValue   Offre de recrutement rattachée
- * @var string $codeSpecialtyValue     Spécialité par défaut
+ * @var bool $codeFieldEditable
+ * @var string $codeLabelValue
+ * @var int|null $codeMaxUsesValue
+ * @var string|null $codeExpiresAtValue
+ * @var bool $codeAutoAcceptValue
+ * @var int|null $codeOpeningIdValue
+ * @var string $codeSpecialtyValue
  * @var list<array<string, mixed>> $recruitmentOpenings
  */
 
@@ -29,7 +25,6 @@ $codeOpeningIdValue = ($codeOpeningIdValue ?? null) !== null ? (int) $codeOpenin
 $codeSpecialtyValue = (string) ($codeSpecialtyValue ?? '');
 $recruitmentOpenings = is_array($recruitmentOpenings ?? null) ? $recruitmentOpenings : [];
 
-// `datetime-local` attend « Y-m-dTH:i » : la valeur de base est convertie, jamais recopiée.
 $expiresAtInput = '';
 if ($codeExpiresAtValue !== null && trim((string) $codeExpiresAtValue) !== '') {
     $ts = strtotime((string) $codeExpiresAtValue);
@@ -38,24 +33,24 @@ if ($codeExpiresAtValue !== null && trim((string) $codeExpiresAtValue) !== '') {
 ?>
 <div class="ath-form__grid">
     <label class="ath-field">
-        <span class="ath-field__label">Libellé *</span>
+        <span class="ath-field__label">Nom interne *</span>
         <input type="text" name="label" value="<?= $h($codeLabelValue) ?>" maxlength="180" required class="ath-field__input" placeholder="Migration communauté partenaire">
         <span class="ath-field__help">Sert à retrouver le code dans la liste ; invisible pour le candidat.</span>
     </label>
     <?php if ($codeFieldEditable): ?>
     <label class="ath-field">
-        <span class="ath-field__label">Code *</span>
-        <input type="text" name="code" maxlength="64" required class="ath-field__input" placeholder="MIGRATION2026">
-        <span class="ath-field__help">Ce que le candidat saisira. Non modifiable après création.</span>
+        <span class="ath-field__label">Code à communiquer</span>
+        <input type="text" name="code" maxlength="64" class="ath-field__input" placeholder="MIGRATION2026" pattern="[A-Za-z0-9\-_]{3,64}" title="Lettres, chiffres, tirets ou underscores (3 à 64 caractères)">
+        <span class="ath-field__help">Ce que le candidat saisira. Laissez vide pour en générer un automatiquement. Non modifiable après création.</span>
     </label>
     <?php endif; ?>
     <label class="ath-field">
-        <span class="ath-field__label">Quota d’utilisations</span>
+        <span class="ath-field__label">Nombre maximum d’utilisations</span>
         <input type="number" name="max_uses" min="1" max="10000" value="<?= $codeMaxUsesValue !== null ? (int) $codeMaxUsesValue : '' ?>" class="ath-field__input" placeholder="Illimité">
         <span class="ath-field__help">Laissez vide pour un nombre d’usages illimité.</span>
     </label>
     <label class="ath-field">
-        <span class="ath-field__label">Expiration</span>
+        <span class="ath-field__label">Date d’expiration</span>
         <input type="datetime-local" name="expires_at" value="<?= $h($expiresAtInput) ?>" class="ath-field__input">
         <span class="ath-field__help">Laissez vide pour un code sans échéance.</span>
     </label>
@@ -64,11 +59,12 @@ if ($codeExpiresAtValue !== null && trim((string) $codeExpiresAtValue) !== '') {
 <div class="ath-check-grid" style="margin-top:14px;">
     <label class="ath-check">
         <input type="checkbox" name="auto_accept" value="1"<?= $codeAutoAcceptValue ? ' checked' : '' ?>>
-        <span>Validation automatique de la candidature</span>
+        <span>Accepter automatiquement la candidature</span>
     </label>
 </div>
 <p class="ath-field__help" style="margin-top:6px;">
-    Avec la validation automatique, la candidature est acceptée dès l’usage du code, sans passer par une revue.
+    Si cette option est cochée, la candidature est acceptée dès que le code est utilisé, sans revue manuelle.
+    Sinon, le dossier est simplement accéléré et reste à traiter.
 </p>
 
 <div class="ath-form__grid" style="margin-top:14px;">
@@ -81,9 +77,11 @@ if ($codeExpiresAtValue !== null && trim((string) $codeExpiresAtValue) !== '') {
             <option value="<?= $openingId ?>"<?= $codeOpeningIdValue === $openingId ? ' selected' : '' ?>><?= $h((string) ($opening['title'] ?? 'Sans titre')) ?></option>
             <?php endforeach; ?>
         </select>
+        <span class="ath-field__help">La candidature sera associée automatiquement à cette offre publiée.</span>
     </label>
     <label class="ath-field">
-        <span class="ath-field__label">Spécialité par défaut</span>
+        <span class="ath-field__label">Spécialité proposée par défaut</span>
         <input type="text" name="default_specialty" value="<?= $h($codeSpecialtyValue) ?>" maxlength="120" class="ath-field__input" placeholder="Infanterie">
+        <span class="ath-field__help">Préremplit la spécialité si le candidat ne l’a pas indiquée.</span>
     </label>
 </div>

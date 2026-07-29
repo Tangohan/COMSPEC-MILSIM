@@ -296,6 +296,7 @@ final class TenantInitialSetupController
         );
         $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
         $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
+        $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
         $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
 
         $existingModules = is_array($community['public_modules'] ?? null) ? $community['public_modules'] : [];

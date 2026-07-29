@@ -22,7 +22,7 @@ $codeValue = trim((string) ($inviteCode['code'] ?? ''));
 $baseUrl = url('back-office/recruitments/codes-invitation');
 ?>
 <div class="ath-note">
-    <p class="ath-note__title">Code <span class="ath-mono"><?= $h($codeValue !== '' ? $codeValue : '—') ?></span></p>
+    <p class="ath-note__title">Code prioritaire <span class="ath-mono"><?= $h($codeValue !== '' ? $codeValue : '—') ?></span></p>
     <p class="ath-note__text">
         Le code saisi par les candidats n’est pas modifiable : pour en changer, désactivez celui-ci
         depuis sa fiche et créez-en un nouveau. Les usages déjà enregistrés restent comptés.
@@ -31,8 +31,8 @@ $baseUrl = url('back-office/recruitments/codes-invitation');
 
 <form method="post" action="<?= $h($baseUrl . '/' . $codeId . '/modifier') ?>" class="ath-form ath-rise">
     <div class="ath-form__head">
-        <span class="ath-form__title">Modifier le code</span>
-        <span class="ath-form__hint">Libellé, quota, échéance et rattachement restent ajustables.</span>
+        <span class="ath-form__title">Modifier le code prioritaire</span>
+        <span class="ath-form__hint">Nom interne, quota, échéance et rattachement restent ajustables.</span>
     </div>
     <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
     <?php

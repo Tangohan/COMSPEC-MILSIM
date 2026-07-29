@@ -47,6 +47,9 @@ private _typeLabel = if (_typeLabelCustom != "") then {
         case "CUSTOM": { "Ordre personnalisé" };
         case "VIBRATE": { "Faire vibrer le terminal" };
         case "NOTIFY": { "Notification terminal" };
+        case "HELMET_SNAP": { "Photo casque demandée" };
+        case "HELMET_SNAP_HD": { "Photo casque HD demandée" };
+        case "HELMET_STREAM": { "Flux casque demandé" };
         default { "Se déplacer" };
     };
 };
@@ -102,6 +105,17 @@ if ((toUpper _type) isEqualTo "NOTIFY") exitWith {
     [_id, "Notification reçue"] call _ackTerminalSignal;
 };
 
+// Demande caméra casque TOC (photo / HD / flux aperçus)
+if ((toUpper _type) in ["HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) exitWith {
+    if (_alreadyConsumed) exitWith {};
+    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onHelmetMediaRequest") then {
+        [_order] call comspec_overwatch_atak_athena_fnc_athena_onHelmetMediaRequest;
+    } else {
+        ["COMSPEC_Warning", ["Demande caméra casque reçue — module Athena requis."]] call comspec_overwatch_connect_fnc_showNotification;
+    };
+    [_id, "Demande caméra reçue"] call _ackTerminalSignal;
+};
+
 private _prioLabel = switch (toUpper _priority) do {
     case "URGENT": { "Urgent" };
     case "CONTACT": { "Contact" };
@@ -109,7 +123,29 @@ private _prioLabel = switch (toUpper _priority) do {
     default { "Important" };
 };
 
-private _msg = format ["Nouvel ordre — %1 (%2) · de %3", _typeLabel, _prioLabel, _issuer];
+private _payloadRaw = trim (_order getOrDefault ["payload", ""]);
+private _wp = [_payloadRaw] call comspec_overwatch_connect_fnc_orderParseWaypoint;
+private _hasWp = (count _wp) >= 2;
+
+private _msg = if (_hasWp && {(toUpper _type) isEqualTo "MOVE"}) then {
+    private _grid = _wp getOrDefault ["grid", ""];
+    private _eta = _wp getOrDefault ["eta_min", -1];
+    private _lbl = _wp getOrDefault ["label", ""];
+    private _human = _wp getOrDefault ["text", ""];
+    private _detail = if (_human != "") then { _human } else { _lbl };
+    if (_detail isEqualTo "") then { _detail = "Point de mission"; };
+    if (_grid != "") then { _detail = _detail + format [" · %1", _grid]; };
+    if (_eta >= 0) then { _detail = _detail + format [" · ETA ~%1 min", round _eta]; };
+    format [
+        "Ordre de déplacement — %1 (%2) · %3 · de %4 — confirmez ou refusez sur l’ATAK",
+        _typeLabel,
+        _prioLabel,
+        _detail,
+        _issuer
+    ]
+} else {
+    format ["Nouvel ordre — %1 (%2) · de %3", _typeLabel, _prioLabel, _issuer]
+};
 ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
 [_msg, "orders"] call comspec_overwatch_connect_fnc_appendLinkLog;
 ["COMSPEC_OrderReceived", [_order]] call CBA_fnc_localEvent;

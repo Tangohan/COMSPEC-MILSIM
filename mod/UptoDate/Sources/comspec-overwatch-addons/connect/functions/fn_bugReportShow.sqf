@@ -40,3 +40,9 @@ lbClear _combo;
     ["Autre", "Autre"]
 ];
 _combo lbSetCurSel 0;
+
+private _chk = _disp displayCtrl 9805;
+if (!isNull _chk) then {
+    _chk setVariable ["COMSPEC_LogAttach", true];
+    _chk ctrlSetText "Journal de session : oui";
+};

@@ -29,6 +29,67 @@
   position: relative;
 }
 
+/* Bandeau intel chiffrée / brouillage */
+.atak-intel-banner {
+  position: relative;
+  z-index: 40;
+  padding: 0.55rem 1rem;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.atak-intel-banner--encrypted {
+  background: linear-gradient(90deg, rgba(120, 53, 15, 0.95), rgba(69, 26, 3, 0.92));
+  color: #fde68a;
+  animation: atak-intel-pulse 2.4s ease-in-out infinite;
+}
+.atak-intel-banner--jammed {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.92));
+  color: #cbd5e1;
+  animation: atak-glitch-anim 1.8s linear infinite;
+}
+@keyframes atak-intel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.82; }
+}
+body.atak-intel-encrypted .atak-chat-messages .atak-chat-msg-body,
+body.atak-intel-encrypted .atak-orders-list,
+body.atak-intel-jammed .atak-chat-messages .atak-chat-msg-body {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+body.atak-intel-encrypted .atak-chat-messages {
+  filter: contrast(1.05) saturate(0.7);
+}
+.atak-device-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  margin-bottom: 0.4rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.35);
+  font-size: 0.78rem;
+}
+.atak-device-alert strong {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.atak-device-alert--warn {
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fde68a;
+}
+.atak-device-alert--critical {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.25);
+}
+
 .atak-interference::before {
   content: '';
   position: absolute;

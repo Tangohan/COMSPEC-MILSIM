@@ -97,11 +97,14 @@ $boNavRoles = ($p === 'back-office/roles' || str_starts_with($p, 'back-office/ro
 $boNavRolesFx = $p === 'back-office/roles-functions' || str_starts_with($p, 'back-office/roles-functions/');
 $boNavPjr = str_starts_with($p, 'back-office/personnel-job-roles');
 $boNavRoleplayFollowup = str_starts_with($p, 'back-office/roleplay-followup');
+$boNavRoleplayImmersion = str_starts_with($p, 'back-office/roleplay/immersion');
+$boNavRoleplaySection = $boNavRoleplayFollowup || $boNavRoleplayImmersion || str_starts_with($p, 'back-office/roleplay/');
 $boNavEff = str_starts_with($p, 'back-office/organisation-effectifs');
 $boNavEffWorkspace = $p === $ewPath || str_starts_with($p, $ewPath . '/');
 $boNavOrgSettings = str_starts_with($p, 'back-office/organisation/parametres') || $p === 'back-office/community';
 $boNavInitialSetup = $p === 'back-office/configuration-initiale' || str_starts_with($p, 'back-office/configuration-initiale/');
 $boNavCommPres = str_starts_with($p, 'back-office/community/presentation');
+$boNavCommInscription = str_starts_with($p, 'back-office/community/inscription');
 $boNavMedia = $p === 'back-office/media' || str_starts_with($p, 'back-office/media/');
 $boNavInteg = str_starts_with($p, 'back-office/integrations');
 $boNavAlerts = str_starts_with($p, 'back-office/alerts');

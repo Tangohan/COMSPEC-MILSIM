@@ -724,6 +724,97 @@
   font-family: ui-monospace, 'Cascadia Code', monospace;
 }
 
+.site-docs__refs-overview {
+  margin-bottom: 2rem;
+}
+
+.site-docs__md {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--docs-body);
+}
+
+.site-docs__md h1 {
+  margin: 0 0 0.75rem;
+  font-family: var(--docs-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--docs-ink);
+}
+
+.site-docs__md h2 {
+  margin: 1.5rem 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--docs-ink);
+}
+
+.site-docs__md h3 {
+  margin: 1.15rem 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--docs-ink);
+}
+
+.site-docs__md p,
+.site-docs__md ul,
+.site-docs__md ol,
+.site-docs__md table {
+  margin: 0.55rem 0;
+}
+
+.site-docs__md ul,
+.site-docs__md ol {
+  padding-left: 1.25rem;
+}
+
+.site-docs__md a {
+  color: var(--docs-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.site-docs__md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.site-docs__md th,
+.site-docs__md td {
+  border: 1px solid var(--docs-line);
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.site-docs__md th {
+  background: var(--docs-wash);
+  font-weight: 700;
+  color: var(--docs-ink);
+}
+
+.site-docs__md pre {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--docs-line);
+  background: #0f172a0a;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+}
+
+.site-docs__md hr {
+  margin: 1.25rem 0;
+  border: 0;
+  border-top: 1px solid var(--docs-line);
+}
+
 /* --- Enrichissements guide (slides Eden, lecture confort) --- */
 .site-docs__hero {
   background:
@@ -850,4 +941,166 @@
   background: #ecfdf5;
   color: #065f46;
   border: 1px solid #a7f3d0;
+}
+
+/* Bibliothèque de marqueurs */
+.site-docs__markers-count {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--docs-muted);
+}
+
+.site-docs__markers-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+}
+
+.site-docs__markers-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.site-docs__markers-chip--friend {
+  color: #075985;
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+
+.site-docs__markers-chip--hostile {
+  color: #9f1239;
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.site-docs__markers-chip--neutral {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.site-docs__markers-chip--unknown {
+  color: #854d0e;
+  background: #fef9c3;
+  border-color: #fde047;
+}
+
+.site-docs__markers-chip--civil {
+  color: #334155;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.site-docs__markers-loading,
+.site-docs__markers-empty {
+  color: var(--docs-muted);
+  font-size: 0.95rem;
+}
+
+.site-docs__markers-section {
+  margin-top: 2rem;
+}
+
+.site-docs__markers-grid {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.site-docs__markers-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.8rem 0.9rem;
+  border: 1px solid var(--docs-line);
+  border-radius: 0.65rem;
+  background: #fff;
+  min-height: 7.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.site-docs__markers-card:hover {
+  border-color: #a7f3d0;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.08);
+}
+
+.site-docs__markers-card.is-friend {
+  border-left: 3px solid #0ea5e9;
+}
+
+.site-docs__markers-card.is-hostile {
+  border-left: 3px solid #e11d48;
+}
+
+.site-docs__markers-card.is-neutral {
+  border-left: 3px solid #22c55e;
+}
+
+.site-docs__markers-card.is-unknown {
+  border-left: 3px solid #eab308;
+}
+
+.site-docs__markers-card.is-civil {
+  border-left: 3px solid #64748b;
+}
+
+.site-docs__markers-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.35rem;
+  border-radius: 0.45rem;
+  background:
+    linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  background-color: #f8fafc;
+}
+
+.site-docs__markers-preview .arma-marker-list-badge,
+.site-docs__markers-preview .nato-sidc-badge,
+.site-docs__markers-preview .nato-sidc-icon {
+  margin: 0 !important;
+  transform: none !important;
+}
+
+.site-docs__markers-fallback {
+  color: var(--docs-muted);
+  font-size: 1.25rem;
+}
+
+.site-docs__markers-meta {
+  min-width: 0;
+}
+
+.site-docs__markers-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--docs-ink);
+}
+
+.site-docs__markers-tech {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--docs-muted);
+  font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', monospace;
+  word-break: break-all;
 }

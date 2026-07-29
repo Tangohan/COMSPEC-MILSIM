@@ -69,6 +69,11 @@ final class AtakBridgeModulesService
                 'description' => 'Envoie les captures Photo Library / BCE vers le portail.',
             ],
             [
+                'id' => 'sse_person',
+                'label' => 'Renseignement interpersonnel (SSE)',
+                'description' => 'Enregistrement de personnes (identité, photo du visage, armement) vers le poste de commandement.',
+            ],
+            [
                 'id' => 'iceman_group',
                 'label' => 'Messages de groupe',
                 'description' => 'Remonte les messages de groupe ATAK Enhanced vers la messagerie Athena.',

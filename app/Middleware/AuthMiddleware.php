@@ -17,6 +17,14 @@ class AuthMiddleware
     public function __invoke(Request $request, callable $next): Response
     {
         if (!Session::get('user_id')) {
+            $path = $request->path();
+            // Invité SSE : hors portail renseignement, renvoyer vers le sas classifié (pas de Tacmap).
+            if (str_contains($path, '/atak') && !str_contains($path, '/atak/sse')) {
+                $sse = new \App\Services\Sse\SseAccessCodeService();
+                if ($sse->hasActiveClearance() && $sse->isGuest()) {
+                    return Response::redirect(url('atak/sse/dossiers'));
+                }
+            }
             if (!LoginIntendedDestination::rememberFromRequest($request)) {
                 Session::flash('error', 'Authentification requise.');
             }

@@ -20,17 +20,23 @@ return [
             ['label' => 'Paramètres', 'href' => 'back-office/organisation/parametres'],
         ]],
         ['path' => 'back-office/community/presentation', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Page d’accueil publique'],
-        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, visibilité dans le registre des unités, options d’inscription et personnalisation de la navigation du portail.', 'quick' => [
-            ['label' => 'Identité', 'href' => 'back-office/community#identite'],
-            ['label' => 'Visibilité', 'href' => 'back-office/community#visibilite'],
-            ['label' => 'Navigation', 'href' => 'back-office/community#navigation'],
-            ['label' => 'Inscription', 'href' => 'back-office/community#inscription'],
+        ['path' => 'back-office/community/inscription', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · INSCRIPTION', 'title' => 'Paramètres d’inscription', 'subtitle' => 'Mode de candidature, rôle d’accueil, contact des candidats, créneaux de disponibilité et section Motivation.', 'quick' => [
+            ['label' => 'Parcours', 'href' => 'back-office/community/inscription#parcours'],
+            ['label' => 'Contact', 'href' => 'back-office/community/inscription#coordonnees'],
+            ['label' => 'Dossier', 'href' => 'back-office/community/inscription#dossier'],
+            ['label' => 'Identité', 'href' => 'back-office/community'],
         ]],
-        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, visibilité dans le registre des unités, options d’inscription et personnalisation de la navigation du portail.', 'quick' => [
+        ['path' => 'back-office/community', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, représentation d’unité, textes publics et navigation du portail.', 'quick' => [
+            ['label' => 'Identité', 'href' => 'back-office/community#identite'],
+            ['label' => 'Textes publics', 'href' => 'back-office/community#textes-publics'],
+            ['label' => 'Visibilité', 'href' => 'back-office/community#visibilite'],
+            ['label' => 'Inscription', 'href' => 'back-office/community/inscription'],
+        ]],
+        ['path' => 'back-office/organisation/parametres', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · IDENTITÉ', 'title' => 'Paramètres de la communauté', 'subtitle' => 'Identité, représentation d’unité, textes publics et navigation du portail.', 'quick' => [
             ['label' => 'Identité', 'href' => 'back-office/organisation/parametres#identite'],
+            ['label' => 'Textes publics', 'href' => 'back-office/organisation/parametres#textes-publics'],
             ['label' => 'Visibilité', 'href' => 'back-office/organisation/parametres#visibilite'],
-            ['label' => 'Navigation', 'href' => 'back-office/organisation/parametres#navigation'],
-            ['label' => 'Inscription', 'href' => 'back-office/organisation/parametres#inscription'],
+            ['label' => 'Inscription', 'href' => 'back-office/community/inscription'],
         ]],
         ['path' => 'back-office/media', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MÉDIAS', 'title' => 'Médias de la communauté', 'subtitle' => 'Images et vidéos pour la vitrine publique.', 'css' => ['back-office-media.css'], 'quick' => [
             ['label' => 'Vitrine publique', 'href' => 'back-office/community/presentation'],
@@ -100,7 +106,14 @@ return [
             ['label' => 'Affectations', 'href' => 'back-office/personnel-job-roles/assignments'],
             ['label' => 'Nouvel emploi', 'href' => 'back-office/personnel-job-roles/roles/create'],
         ]],
-        ['path' => 'back-office/roleplay-followup', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Suivi roleplay'],
+        ['path' => 'back-office/roleplay/immersion', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · IMMERSION', 'title' => 'Réglages d’immersion', 'subtitle' => 'Activation du suivi, étapes d’avancement, filières et indicateur « dossier prêt ».', 'quick' => [
+            ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
+            ['label' => 'Activation', 'href' => 'back-office/roleplay/immersion#activation-options'],
+            ['label' => 'Listes', 'href' => 'back-office/roleplay/immersion#listes'],
+        ]],
+        ['path' => 'back-office/roleplay-followup', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SUIVI', 'title' => 'Bureau de suivi', 'subtitle' => 'Tutorat, étapes d’immersion, bilans et échéances des dossiers.', 'quick' => [
+            ['label' => 'Réglages d’immersion', 'href' => 'back-office/roleplay/immersion'],
+        ]],
         ['path' => 'back-office/communications/history', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Historique des envois'],
         ['path' => 'back-office/communications/templates', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Modèles d’e-mail'],
         ['path' => 'back-office/communications/groups', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MESSAGES', 'title' => 'Groupes de diffusion'],
@@ -137,6 +150,7 @@ return [
         ['path' => 'back-office/conformite', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Export conformité'],
         ['path' => 'back-office/recruitments', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Recrutement'],
         ['path' => 'back-office/ressources/recrutement', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Bureau recrutement'],
+        ['path' => 'back-office/recruitments/codes-invitation', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Codes d’invitation prioritaires', 'subtitle' => 'Accélèrent une candidature sur le formulaire d’enrôlement — distincts des invitations par e-mail et du code communauté.'],
         ['path' => 'back-office/recruitment', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · RECRUTEMENT', 'title' => 'Recrutement'],
         ['path' => 'back-office/cooperation', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Coopérations inter-unités'],
         ['path' => 'back-office/forum/priorite-mission', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Publication priorité mission'],

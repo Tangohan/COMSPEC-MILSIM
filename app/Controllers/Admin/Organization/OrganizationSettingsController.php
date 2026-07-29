@@ -22,7 +22,8 @@ use App\Support\OrganizationRoleLabels;
 
 /**
  * Hub de paramétrage de la communauté : identité, images (logo, bannière, favicon,
- * couverture registre, menus), contact, fuseau, langue, accès, modules publics.
+ * couverture registre, menus), fuseau, langue, accès, modules publics.
+ * Inscription : /back-office/community/inscription
  * Routes : /back-office/community et /back-office/organisation/parametres.
  */
 final class OrganizationSettingsController
@@ -95,6 +96,57 @@ final class OrganizationSettingsController
             'roleOptions' => $this->loadRoleOptions($tenantId, $tenant, $community),
             'defaultGuestRoleSlug' => trim((string) ($community['default_guest_role_slug'] ?? 'invite')),
         ]);
+    }
+
+    public function inscription(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return Response::redirect(url('dashboard'));
+        }
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+
+        return Response::view('layout.main', [
+            'title' => 'Paramètres d’inscription',
+            'content' => 'admin.organization.inscription_settings',
+            'tenant' => $tenant,
+            'community' => $community,
+            'roleOptions' => $this->loadRoleOptions($tenantId, $tenant, $community),
+            'defaultGuestRoleSlug' => trim((string) ($community['default_guest_role_slug'] ?? 'invite')),
+            'inscriptionFormAction' => url('back-office/community/inscription'),
+        ]);
+    }
+
+    public function inscriptionUpdate(Request $request, array $params = []): Response
+    {
+        if (!$this->authService->check()) {
+            return Response::redirect(url('login'));
+        }
+        $redirectTo = url('back-office/community/inscription');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($redirectTo);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $tenant = $this->tenantRepository->findById($tenantId);
+        if (!$tenant) {
+            return Response::redirect(url('dashboard'));
+        }
+
+        $warning = $this->updateInscriptionSettings($tenantId, $request);
+        if ($warning !== null) {
+            Session::flash('success', 'Paramètres d’inscription enregistrés. ' . $warning);
+        } else {
+            Session::flash('success', 'Paramètres d’inscription enregistrés.');
+        }
+
+        return Response::redirect($redirectTo);
     }
 
     public function updateType(Request $request, array $params = []): Response
@@ -182,7 +234,7 @@ final class OrganizationSettingsController
         $notices[] = 'Identité mise à jour.';
 
         $discordWarning = $this->updateContactAccessAndOptions($tenantId, $request);
-        $notices[] = 'Contact, accès et options enregistrés.';
+        $notices[] = 'Accès et options enregistrés.';
         if ($discordWarning !== null) {
             $notices[] = $discordWarning;
         }
@@ -257,21 +309,16 @@ final class OrganizationSettingsController
         $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
         $integrations = is_array($settings['integrations'] ?? null) ? $settings['integrations'] : [];
 
-        $community['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
-        $community['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
-        $community['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
-        $community['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
+        // Les paramètres d’inscription (mode, contact candidats, créneaux, motivation…)
+        // sont gérés sur /back-office/community/inscription — on les préserve ici.
 
         $community['registry_listed'] = (string) $request->input('registry_listed', '1') !== '0';
         $community['forum_members_only'] = (string) $request->input('forum_members_only', '0') === '1';
-        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
-            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
-        );
-        $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
-        $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
-        $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
         $community['welcome_text'] = $this->clip((string) $request->input('welcome_text', ''), 500);
         $community['game_label'] = $this->clip((string) $request->input('game_label', ''), 120);
+        $community['public_hero_subtitle'] = $this->clip((string) $request->input('public_hero_subtitle', ''), 600);
+        $community['public_about_title'] = $this->clip((string) $request->input('public_about_title', ''), 160);
+        $community['public_about_body'] = $this->clip((string) $request->input('public_about_body', ''), 8000);
         $unitAffiliation = TenantCommunityProfileService::normalizeUnitAffiliationFromRequest(
             $request,
             is_array($community['unit_affiliation'] ?? null) ? $community['unit_affiliation'] : null
@@ -284,20 +331,6 @@ final class OrganizationSettingsController
                     $registryTags[] = 'soar';
                 }
                 $community['registry_tags'] = array_values(array_unique($registryTags));
-            }
-        }
-
-        $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
-        if ($guestSlug !== '') {
-            $validSlugs = [];
-            foreach ($this->rolePermissionService->listOrganizationRoles($tenantId) as $role) {
-                $s = trim((string) ($role['slug'] ?? ''));
-                if ($s !== '') {
-                    $validSlugs[$s] = true;
-                }
-            }
-            if (isset($validSlugs[$guestSlug])) {
-                $community['default_guest_role_slug'] = $guestSlug;
             }
         }
 
@@ -327,7 +360,6 @@ final class OrganizationSettingsController
             $timezone = 'Europe/Paris';
         }
 
-        $discordWarning = null;
         $warnings = [];
         $discordRaw = trim((string) $request->input('discord_webhook_url', ''));
         if ($discordRaw === '') {
@@ -344,11 +376,79 @@ final class OrganizationSettingsController
             'integrations' => $integrations,
         ]);
 
-        if (TenantCommunityProfileService::needsDiscordInviteAlert($community)) {
-            $warnings[] = 'Le recrutement via Discord est actif, mais le lien Discord n’est pas renseigné. Ajoutez-le dans « Coordonnées de contact » pour que les candidats puissent ouvrir votre serveur.';
+        if (isset($unitAffiliation) && is_array($unitAffiliation)) {
+            try {
+                $ref = \App\Core\Container::get(\App\Services\Community\MilitaryReferentialService::class);
+                if (!empty($unitAffiliation['is_real'])) {
+                    $ref->syncTenantAffiliationsFromCodes(
+                        $tenantId,
+                        is_array($unitAffiliation['unit_ids'] ?? null) ? $unitAffiliation['unit_ids'] : []
+                    );
+                } else {
+                    $ref->syncTenantAffiliationsFromCodes($tenantId, []);
+                }
+            } catch (\Throwable) {
+                // Table absente si migrations non exécutées
+            }
+        }
+
+        try {
+            $cfg = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
+            $cfg->refreshFromData($tenantId, (int) \App\Core\Session::get('user_id') ?: null);
+        } catch (\Throwable) {
+            // Moteur mise à niveau absent
         }
 
         return $warnings === [] ? null : implode(' ', $warnings);
+    }
+
+    private function updateInscriptionSettings(int $tenantId, Request $request): ?string
+    {
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $community = is_array($settings['community'] ?? null) ? $settings['community'] : [];
+
+        $community['contact_email'] = $this->sanitizeEmail((string) $request->input('contact_email', ''));
+        $community['contact_discord_url'] = $this->sanitizeUrl((string) $request->input('contact_discord_url', ''), 500);
+        $community['contact_intro'] = $this->clip((string) $request->input('contact_intro', ''), 500);
+        $community['contact_form_enabled'] = (string) $request->input('contact_form_enabled', '0') === '1';
+
+        $community['registration_mode'] = TenantCommunityProfileService::normalizeRegistrationMode(
+            $request->input('registration_mode', TenantCommunityProfileService::REGISTRATION_MODE_MILSIM)
+        );
+        $community['community_locked'] = (string) $request->input('community_locked', '0') === '1';
+        $community['require_ai_ack'] = (string) $request->input('require_ai_ack', '0') === '1';
+        $community['refuse_other_community_members'] = (string) $request->input('refuse_other_community_members', '0') === '1';
+        $community['public_recruitment_badge_open'] = (string) $request->input('public_recruitment_badge_open', '0') === '1';
+
+        $existingEm = is_array($community['enlistment_milsim'] ?? null) ? $community['enlistment_milsim'] : [];
+        $community['enlistment_milsim'] = \App\Services\Community\EnlistmentMilsimPackService::mergePartialFromCommunitySettingsRequest(
+            $request,
+            $existingEm
+        );
+
+        $guestSlug = trim((string) $request->input('default_guest_role_slug', ''));
+        if ($guestSlug !== '') {
+            $validSlugs = [];
+            foreach ($this->rolePermissionService->listOrganizationRoles($tenantId) as $role) {
+                $s = trim((string) ($role['slug'] ?? ''));
+                if ($s !== '') {
+                    $validSlugs[$s] = true;
+                }
+            }
+            if (isset($validSlugs[$guestSlug])) {
+                $community['default_guest_role_slug'] = $guestSlug;
+            }
+        }
+
+        $this->tenantRepository->mergeSettings($tenantId, [
+            'community' => $community,
+        ]);
+
+        if (TenantCommunityProfileService::needsDiscordInviteAlert($community)) {
+            return 'Le recrutement via Discord est actif, mais le lien Discord n’est pas renseigné. Ajoutez-le ci-dessous pour que les candidats puissent ouvrir votre serveur.';
+        }
+
+        return null;
     }
 
     /**

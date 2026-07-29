@@ -645,6 +645,13 @@ try {
     echo '  [ATTENTION] training_bureau_recrutement_course : ' . $e->getMessage() . "\n";
 }
 
+require_once $root . '/bootstrap/training_atak_course_seed.php';
+try {
+    run_training_atak_course_seed($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_atak_course : ' . $e->getMessage() . "\n";
+}
+
 // Pointage / RSVP : colonnes community_events + community_event_rsvps (idempotent si bootstrap déjà passé)
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_events' AND COLUMN_NAME = 'cancelled_at'");
 if ($stmt && !$stmt->fetch()) {
@@ -2155,6 +2162,30 @@ try {
     echo '  [ATTENTION] community_showcase_vitrine : ' . $e->getMessage() . "\n";
 }
 
+$unitsPublicDatesMigrate = require $root . '/bootstrap/units_public_dates_migration.php';
+try {
+    echo "Migration units public dates (création / date complémentaire)...\n";
+    $unitsPublicDatesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] units_public_dates : ' . $e->getMessage() . "\n";
+}
+
+$militaryReferentialMigrate = require $root . '/bootstrap/military_referential_migration.php';
+try {
+    echo "Migration référentiel militaire SOF (countries / military_units / affiliations)...\n";
+    $militaryReferentialMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] military_referential : ' . $e->getMessage() . "\n";
+}
+
+$configurationUpdatesMigrate = require $root . '/bootstrap/configuration_updates_migration.php';
+try {
+    echo "Migration configuration post-mise à jour (system/tenant_configuration_updates)...\n";
+    $configurationUpdatesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] configuration_updates : ' . $e->getMessage() . "\n";
+}
+
 $communityMediaReelsMigrate = require $root . '/bootstrap/community_media_reels_migration.php';
 try {
     echo "Migration community_media reels (feed / social)...\n";
@@ -2281,6 +2312,13 @@ try {
     $recruitmentTeamWallKindSubjectMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recruitment_team_wall_kind_subject : ' . $e->getMessage() . "\n";
+}
+
+$recruitmentInviteCodesMigrate = require $root . '/bootstrap/recruitment_invite_codes_migration.php';
+try {
+    $recruitmentInviteCodesMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] recruitment_invite_codes : ' . $e->getMessage() . "\n";
 }
 
 $tenantDashboardPinsMigrate = require $root . '/bootstrap/tenant_dashboard_pins_migration.php';
@@ -3045,6 +3083,14 @@ try {
     echo '  [ATTENTION] discord_recruitment : ' . $e->getMessage() . "\n";
 }
 
+$enlistmentCustomAnswersMigrate = require $root . '/bootstrap/enlistment_custom_answers_migration.php';
+try {
+    echo "Migration enlistment_custom_answers (réponses questions perso + refus auto)...\n";
+    $enlistmentCustomAnswersMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] enlistment_custom_answers : ' . $e->getMessage() . "\n";
+}
+
 $personnelRoleConsolidationMigrate = require $root . '/bootstrap/personnel_role_consolidation_migration.php';
 try {
     echo "Migration personnel_role_consolidation (fusion rôle métier / primary_role / secondary_role)...\n";
@@ -3294,6 +3340,24 @@ try {
     $atakMedicalTriageMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSsePersonsMigrate = require $root . '/bootstrap/atak_sse_persons_migration.php';
+try {
+    echo "Migration atak_sse_persons (SSE — personnes, photos, sites, watchlist)…\n";
+    $atakSsePersonsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_persons : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakSsePortalMigrate = require $root . '/bootstrap/atak_sse_portal_migration.php';
+try {
+    echo "Migration atak_sse_portal (dossiers, codes d’accès, notes, preuves)…\n";
+    $atakSsePortalMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_sse_portal : ' . $e->getMessage() . "\n";
 }
 $migrationEnsurePdo();
 

@@ -186,6 +186,17 @@ class CasNineLineRepository
         return $this->getCas($tenantId, $id);
     }
 
+    /**
+     * Supprime définitivement une demande 9-line (CAS ou MEDEVAC) de la carte.
+     */
+    public function deleteCas(int $tenantId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare('DELETE FROM atak_nine_line WHERE tenant_id = ? AND id = ?');
+        $stmt->execute([$tenantId, $id]);
+
+        return $stmt->rowCount() > 0;
+    }
+
     public function ackCas(int $tenantId, int $id): ?array
     {
         return $this->updateCasStatus($tenantId, $id, 'ACKNOWLEDGED');

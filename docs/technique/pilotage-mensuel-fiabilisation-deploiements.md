@@ -142,6 +142,8 @@ Critère: réponse HTTP `< 500` + latence mesurée.
 
 - Si `request_telemetry` indisponible: les KPI 4xx/5xx/p95 passent en **N/D** dans le dashboard.
 - Correction: relancer `php setup-database.php` puis vérifier création table.
+- **Rétention**: job cron `request_telemetry_purge` (via `php scripts/cron-run.php` ou admin cron) — conserve **90 jours**, purge par lots, puis `OPTIMIZE TABLE` si l’espace InnoDB libre reste significatif (sinon la taille phpMyAdmin reste bloquée après DELETE).
+- Purge seule (immédiat): `php scripts/cron-run.php request_telemetry_purge`.
 
 ---
 

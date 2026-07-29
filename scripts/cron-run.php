@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 /**
- * Exécute les tâches planifiées Athena (formations, modération, bilans recrutement, …).
+ * Exécute les tâches planifiées Athena (formations, modération, bilans recrutement,
+ * nettoyage du journal de performance, …).
  *
  * Usage :
  *   php scripts/cron-run.php
  *   php scripts/cron-run.php recruitment_retro_reminders
+ *   php scripts/cron-run.php request_telemetry_purge
  *
  * Planification recommandée (serveur) : une fois par jour, idéalement tôt le matin.
  */

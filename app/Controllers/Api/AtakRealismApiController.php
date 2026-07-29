@@ -12,6 +12,7 @@ use App\Repositories\AtakRealismRepository;
 use App\Repositories\TacticalPhonePairingRepository;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Repositories\UserRepository;
+use App\Services\Tactical\AtakActivityLogService;
 use App\Support\ComspecApiKeyAuth;
 use App\Support\SteamId;
 
@@ -124,6 +125,7 @@ final class AtakRealismApiController
             'expires_at' => $request->input('expires_at'),
             'duration_days' => $request->input('duration_days'),
             'revoked_reason' => $request->input('revoked_reason'),
+            'crypto_domain_id' => $request->input('crypto_domain_id'),
         ];
         if (!isset($body['duration_days']) || (int) $body['duration_days'] < 1) {
             $body['duration_days'] = (int) ($defaults['certificate_duration_days'] ?? 365);
@@ -132,6 +134,12 @@ final class AtakRealismApiController
         if (($body['status'] ?? '') === '') {
             $body['status'] = 'active';
         }
+        if ((int) ($body['crypto_domain_id'] ?? 0) < 1) {
+            $domain = $this->realismRepository->ensureDefaultCryptoDomain($tenantId);
+            if (!empty($domain['id'])) {
+                $body['crypto_domain_id'] = (int) $domain['id'];
+            }
+        }
         $certificate = $this->realismRepository->issueCertificate($tenantId, $body);
 
         return Response::json([
@@ -139,6 +147,100 @@ final class AtakRealismApiController
             'certificate' => $certificate,
             'atak_defaults' => $defaults,
         ]);
+    }
+
+    public function compromise(Request $request, array $params = []): Response
+    {
+        return $this->setCompromise($request, 'captured');
+    }
+
+    public function clearCompromise(Request $request, array $params = []): Response
+    {
+        return $this->setCompromise($request, 'none');
+    }
+
+    public function cryptoDomains(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+        if ($request->method() === 'GET') {
+            return Response::json([
+                'ok' => true,
+                'domains' => $this->realismRepository->listCryptoDomains($tenantId),
+            ]);
+        }
+        if (!$this->writeAllowed($request)) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
+        }
+        $body = $this->body($request) + [
+            'domain_ref' => $request->input('domain_ref'),
+            'label' => $request->input('label'),
+            'faction_key' => $request->input('faction_key'),
+            'status' => $request->input('status'),
+            'map_id' => $request->input('map_id'),
+        ];
+        $domain = $this->realismRepository->upsertCryptoDomain($tenantId, $body);
+
+        return Response::json(['ok' => true, 'domain' => $domain]);
+    }
+
+    private function setCompromise(Request $request, string $defaultState): Response
+    {
+        $tenantId = $this->resolveTenantId($request);
+        if ($tenantId < 1) {
+            return Response::json(['ok' => false, 'error' => 'Connexion requise.'], 401);
+        }
+        if (!$this->writeAllowed($request)) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée.'], 419);
+        }
+        $body = $this->body($request);
+        $terminalUid = trim((string) ($body['terminal_uid'] ?? $request->input('terminal_uid', '')));
+        if ($terminalUid === '') {
+            return Response::json(['ok' => false, 'error' => 'Identifiant terminal requis.'], 422);
+        }
+        $state = strtolower(trim((string) ($body['state'] ?? $defaultState)));
+        if ($defaultState === 'none') {
+            $state = 'none';
+        } elseif (!in_array($state, ['captured', 'compromised'], true)) {
+            $state = 'captured';
+        }
+        $reason = trim((string) ($body['reason'] ?? $request->input('reason', '')));
+        $terminal = $this->realismRepository->setTerminalCompromise(
+            $tenantId,
+            $terminalUid,
+            $state,
+            $reason !== '' ? $reason : null
+        );
+        if ($terminal === null) {
+            return Response::json(['ok' => false, 'error' => 'Terminal introuvable.'], 404);
+        }
+
+        try {
+            $activity = new \App\Services\Tactical\AtakActivityLogService();
+            $mapId = max(1, (int) ($body['map_id'] ?? $request->input('map_id', 1)));
+            $label = match ($state) {
+                'captured' => 'Appareil capturé — données illisibles',
+                'compromised' => 'Appareil compromis — données illisibles',
+                default => 'Contrôle appareil rétabli',
+            };
+            $activity->record(
+                $tenantId,
+                $mapId,
+                \App\Services\Tactical\AtakActivityLogService::TYPE_INTEL,
+                $label,
+                (string) ($terminal['operator_callsign'] ?? $terminalUid),
+                [
+                    'terminal_uid' => $terminalUid,
+                    'compromise_state' => $state,
+                    'source' => $this->isGameClient() ? 'game' : 'web',
+                ]
+            );
+        } catch (\Throwable) {
+        }
+
+        return Response::json(['ok' => true, 'terminal' => $terminal]);
     }
 
     private function terminalStatusForGame(int $tenantId, string $terminalUid): Response

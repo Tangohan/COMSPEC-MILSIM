@@ -101,6 +101,30 @@ window.ATAKMedicalAlerts = (function () {
     return 'u:' + (id || cs) + ':' + health;
   }
 
+  function normalizeCallsign(cs) {
+    return String(cs || '').trim().toUpperCase();
+  }
+
+  /** Indicatifs actuellement hors liaison (TTL / déconnexion / coupure manuelle). */
+  function offlineCallsignSet() {
+    var out = {};
+    if (!window.ATAKUnits || typeof window.ATAKUnits.getUnits !== 'function') return out;
+    var resolve = window.ATAKUnits.resolveLiveStatus;
+    (window.ATAKUnits.getUnits() || []).forEach(function (u) {
+      var cs = normalizeCallsign(u && u.call_sign);
+      if (!cs) return;
+      var live = resolve ? resolve(u) : String((u && u.status) || '').toLowerCase();
+      if (live === 'offline') out[cs] = true;
+    });
+    return out;
+  }
+
+  function isCallsignOffline(cs, offlineSet) {
+    var key = normalizeCallsign(cs);
+    if (!key) return false;
+    return !!(offlineSet && offlineSet[key]);
+  }
+
   function isAlertDismissed(a, state) {
     var key = alertKey(a);
     var dismissedAt = state.alerts && state.alerts[key];
@@ -143,11 +167,13 @@ window.ATAKMedicalAlerts = (function () {
   function filterData(data) {
     var state = readDismissed();
     var now = Date.now();
+    var offline = offlineCallsignSet();
     var windowMs = (data && data.active_window_seconds)
       ? (Number(data.active_window_seconds) * 1000)
       : ACTIVE_WINDOW_MS;
     var units = ((data && data.criticalUnits) || []).filter(function (u) {
       if (isUnitDismissed(u, state)) return false;
+      if (isCallsignOffline(u && u.call_sign, offline)) return false;
       var ts = (u && (u.updated_at || u.created_at)) || '';
       return isWithinActiveWindow(ts, now, windowMs);
     });
@@ -160,11 +186,13 @@ window.ATAKMedicalAlerts = (function () {
     });
     var alerts = ((data && data.alerts) || []).filter(function (a) {
       if (isAlertDismissed(a, state)) return false;
+      var acs = normalizeCallsign(a && a.call_sign);
+      if (!acs) acs = normalizeCallsign(a && a.author);
+      if (isCallsignOffline(acs, offline)) return false;
       // Alertes clôturées (Traité / KIA / Annulé) : hors bannière et liste active.
       if (a && a.triage && a.triage.is_resolved) return false;
       var status = triageStatusOf(a);
       if (status === 'traite' || status === 'kia' || status === 'annule') return false;
-      var acs = String((a && a.call_sign) || '').trim().toUpperCase();
       if (acs && unitCs[acs]) return false;
       // Alertes issues de l’API (id numérique) : déjà bornées par l’horloge MySQL — ne pas
       // re-filtrer au fuseau navigateur (Date.parse UTC vs datetime naïf).
@@ -213,7 +241,9 @@ window.ATAKMedicalAlerts = (function () {
    */
   function alertCategory(a) {
     var k = String((a && a.kind) || '').toLowerCase();
-    if (k === 'cardiac_arrest' || k === 'cardiac-arrest' || k === 'death' || k === 'dead' || k === 'kia') {
+    if (
+      k === 'cardiac_arrest' || k === 'cardiac-arrest' || k === 'death' || k === 'dead' || k === 'kia'
+    ) {
       return 'urgences';
     }
     if (k === 'unconscious' || k === 'incapacitated' || k === 'down') {
@@ -230,7 +260,11 @@ window.ATAKMedicalAlerts = (function () {
     ) {
       return 'urgences';
     }
-    if (label.indexOf('inconscient') >= 0 || label.indexOf('au sol') >= 0 || label.indexOf('immobile') >= 0) {
+    if (
+      label.indexOf('inconscient') >= 0
+      || label.indexOf('au sol') >= 0
+      || label.indexOf('immobile') >= 0
+    ) {
       return 'suivi';
     }
     return 'autres';
@@ -522,6 +556,7 @@ window.ATAKMedicalAlerts = (function () {
 
   function classifyKind(label, heartRate, haystack) {
     var ll = String(label || '') + ' ' + String(haystack || '');
+    var folded = ll.toLowerCase();
     if (isDeathLabel(ll, heartRate)) {
       return { kind: 'cardiac_arrest', severity: 'critical' };
     }
@@ -1287,7 +1322,11 @@ window.ATAKMedicalAlerts = (function () {
         var merged = Object.assign({}, existing, a);
         // Garder l’id de la vraie ligne API (triage) même si une source tchat/activité arrive après.
         if (hasApiAlertId(existing) && !hasApiAlertId(a)) merged.id = existing.id;
-        merged.triage = preferTriage(existing.triage, a.triage);
+        if (existing.triage && existing.triage.is_resolved) {
+          merged.triage = existing.triage;
+        } else {
+          merged.triage = preferTriage(existing.triage, a.triage);
+        }
         merged.client_key = existing.client_key || a.client_key || k;
         byKey[k] = merged;
       }
@@ -1480,9 +1519,7 @@ window.ATAKMedicalAlerts = (function () {
         var merged = mergeAlerts(mergeAlerts(apiAlerts, prevAlerts), cacheAlerts);
         lastData = Object.assign({}, incoming, {
           alerts: merged,
-          criticalUnits: Array.isArray(incoming.criticalUnits)
-            ? incoming.criticalUnits
-            : ((lastData && lastData.criticalUnits) || []),
+          criticalUnits: Array.isArray(incoming.criticalUnits) ? incoming.criticalUnits : [],
           can_triage: incoming.can_triage != null ? incoming.can_triage : canTriage()
         });
         apply(lastData);
@@ -1500,6 +1537,15 @@ window.ATAKMedicalAlerts = (function () {
       window.__atakMedicalProfileBound = true;
       document.addEventListener('atak:session-profile', function () {
         if (lastData) apply(lastData);
+      });
+    }
+    if (!window.__atakMedicalUnitsBound) {
+      window.__atakMedicalUnitsBound = true;
+      window.addEventListener('atak:units-updated', function () {
+        if (lastData) {
+          lastFingerprint = '';
+          apply(lastData);
+        }
       });
     }
     fetchAlerts();

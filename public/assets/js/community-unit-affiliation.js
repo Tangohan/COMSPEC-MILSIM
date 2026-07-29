@@ -92,7 +92,15 @@
 
         units.forEach(function (u) {
             var name = String(u.name || '');
-            if (q && name.toLowerCase().indexOf(q) === -1) {
+            var hay = name.toLowerCase();
+            if (u.short_name) hay += ' ' + String(u.short_name).toLowerCase();
+            if (u.id) hay += ' ' + String(u.id).toLowerCase();
+            if (Array.isArray(u.aliases)) {
+                u.aliases.forEach(function (a) { hay += ' ' + String(a).toLowerCase(); });
+            }
+            var compact = hay.replace(/\s+/g, '');
+            var qCompact = q.replace(/\s+/g, '');
+            if (q && hay.indexOf(q) === -1 && compact.indexOf(qCompact) === -1) {
                 return;
             }
             visible += 1;
@@ -135,7 +143,14 @@
         if (visible === 0) {
             var empty = document.createElement('p');
             empty.className = 'cc-unit-affiliation-empty';
-            empty.textContent = q ? 'Aucune unité ne correspond à votre recherche.' : 'Aucune unité disponible pour ce pays.';
+            var totalForCountry = units.length;
+            if (q) {
+                empty.textContent = 'Aucune unité ne correspond à votre recherche.';
+            } else if (totalForCountry === 0) {
+                empty.textContent = 'Le référentiel militaire n’est pas encore disponible pour ce pays. Exécutez les migrations sur le serveur, puis rechargez la page.';
+            } else {
+                empty.textContent = 'Aucune unité disponible pour ce pays.';
+            }
             list.appendChild(empty);
         }
     }

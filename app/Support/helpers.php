@@ -1298,4 +1298,61 @@ if (!function_exists('format_arma_playtime_french')) {
     }
 }
 
+if (!function_exists('sse_ui_theme_options')) {
+    /**
+     * Thèmes d’interface du portail SSE (choix au sas).
+     *
+     * @return array<string, array{label:string,hint:string}>
+     */
+    function sse_ui_theme_options(): array
+    {
+        return [
+            'archive' => [
+                'label' => 'Registre classifié',
+                'hint' => 'Barres de classification, sceau SSE, lecture dense type dossier.',
+            ],
+            'console' => [
+                'label' => 'Console Athena',
+                'hint' => 'En-tête Athena, bandeau d’alerte, typographie condensée ops.',
+            ],
+        ];
+    }
+}
+
+if (!function_exists('sse_ui_theme_normalize')) {
+    function sse_ui_theme_normalize(?string $theme): string
+    {
+        $theme = strtolower(trim((string) $theme));
+
+        return array_key_exists($theme, sse_ui_theme_options()) ? $theme : 'archive';
+    }
+}
+
+if (!function_exists('sse_ui_theme')) {
+    /** Thème SSE courant (cookie, défaut : registre classifié). */
+    function sse_ui_theme(): string
+    {
+        return sse_ui_theme_normalize($_COOKIE['sse_ui_theme'] ?? null);
+    }
+}
+
+if (!function_exists('sse_ui_theme_persist')) {
+    function sse_ui_theme_persist(string $theme): string
+    {
+        $theme = sse_ui_theme_normalize($theme);
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
+        setcookie('sse_ui_theme', $theme, [
+            'expires' => time() + 60 * 60 * 24 * 365,
+            'path' => '/',
+            'secure' => $secure,
+            'httponly' => false,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE['sse_ui_theme'] = $theme;
+
+        return $theme;
+    }
+}
+
 require __DIR__ . '/forum_helpers.php';

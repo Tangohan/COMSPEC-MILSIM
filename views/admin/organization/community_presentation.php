@@ -880,6 +880,55 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 </div>
             </details>
 
+            <details open class="rounded-2xl border border-amber-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-600 text-xs font-black text-white">★</span> Section Motivation</span>
+                </summary>
+                <div class="border-t border-amber-100 p-4 space-y-2">
+                    <p class="text-xs text-slate-600 mb-3">Personnalisez le bloc Motivation du formulaire public : titre, introduction, questions affichées et caractère obligatoire.</p>
+                    <?php
+                    $motivationData = is_array($em['motivation'] ?? null) ? $em['motivation'] : [];
+                    $inputPrefix = 'em_motivation';
+                    include base_path('views/partials/motivation_section_editor.php');
+                    ?>
+                </div>
+            </details>
+
+            <details open class="rounded-2xl border border-indigo-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-indigo-50/40 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-700 text-xs font-black text-white">+</span> Questions supplémentaires</span>
+                </summary>
+                <div class="border-t border-indigo-100 p-4">
+                    <?php
+                    $customQuestions = \App\Services\Community\EnlistmentMilsimPackService::normalizeCustomQuestions($em['custom_questions'] ?? []);
+                    include base_path('views/partials/enlistment_custom_questions_editor.php');
+                    ?>
+                </div>
+            </details>
+
+            <details class="rounded-2xl border border-rose-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-rose-50/40 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-700 text-xs font-black text-white">!</span> Refus automatique selon les réponses</span>
+                </summary>
+                <div class="border-t border-rose-100 p-4">
+                    <?php
+                    $autoRefuseRules = \App\Services\Community\EnlistmentMilsimPackService::normalizeAutoRefuseRules($em['auto_refuse_rules'] ?? []);
+                    $refuseFieldLabels = \App\Services\Community\EnlistmentMilsimPackService::refuseTargetFieldLabels($em);
+                    include base_path('views/partials/enlistment_auto_refuse_editor.php');
+                    ?>
+                </div>
+            </details>
+
+            <details class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-xs font-black text-white">ℹ</span> Avertissements affichés au candidat</span>
+                </summary>
+                <div class="border-t border-slate-100 p-4 space-y-2">
+                    <p class="text-xs text-slate-600">Texte recrutement (une idée par ligne). Les mentions sur le rôle d’Athena et l’analyse automatique des formulations sont toujours affichées côté plateforme.</p>
+                    <textarea name="em_disclaimer_recruitment" rows="6" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", is_array($em['disclaimer_recruitment_lines'] ?? null) ? $em['disclaimer_recruitment_lines'] : \App\Services\Community\EnlistmentMilsimPackService::defaultRecruitmentDisclaimerLines()), ENT_QUOTES, 'UTF-8') ?></textarea>
+                </div>
+            </details>
+
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Préfixe progression (sidebar)</label>
@@ -952,7 +1001,7 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <div class="grid gap-2 sm:grid-cols-2">
                     <?php for ($si = 1; $si <= 4; $si++): ?>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre section <?= $si ?></label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre section <?= $si ?><?= $si === 3 ? ' (Motivation — aussi éditable ci-dessus)' : '' ?></label>
                         <input type="text" name="em_section_<?= $si ?>" value="<?= htmlspecialchars((string) ($em['section_' . $si] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     </div>
                     <?php endfor; ?>
@@ -960,8 +1009,19 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Questions engagement (lignes)</label>
-                <input type="text" name="em_commitment_q13" value="<?= htmlspecialchars((string) ($em['commitment_q13'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Question 13">
-                <input type="text" name="em_availability_q15" value="<?= htmlspecialchars((string) ($em['availability_q15'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Question 15">
+                <input type="text" name="em_commitment_q13" value="<?= htmlspecialchars((string) ($em['commitment_q13'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Question engagement">
+                <input type="text" name="em_availability_q15" value="<?= htmlspecialchars((string) ($em['availability_q15'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Question de confirmation sur les créneaux">
+                <p class="mt-1 text-[11px] text-slate-500">Si vous laissez la confirmation vide alors que des créneaux sont cochés ci-dessous, un libellé sera proposé automatiquement.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <?php
+                $selectedSlots = is_array($em['availability_slots'] ?? null) ? $em['availability_slots'] : [];
+                $idsInputName = 'em_availability_slot_ids[]';
+                $customInputName = 'em_availability_slot_custom[]';
+                $configuredFlagName = '';
+                $formId = '';
+                include base_path('views/partials/availability_slots_editor.php');
+                ?>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Case confirmation IA</label>

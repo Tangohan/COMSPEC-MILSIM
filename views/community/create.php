@@ -164,8 +164,8 @@ $wizardSteps = [
 
                             <div id="unit-affiliation-real-picker" class="hidden">
                                 <label class="cc-label" for="wizard-real-unit-search">Rechercher une unité</label>
-                                <input type="search" id="wizard-real-unit-search" class="cc-field" placeholder="Tapez un nom, un régiment, un commando…" autocomplete="off">
-
+                                <input type="search" id="wizard-real-unit-search" class="cc-field" placeholder="Ex. Hubert, 1RPIMA, USASOC, plongée…" autocomplete="off">
+                                <p class="cc-hint mt-1">Liste issue du référentiel militaire (commandements, composantes, régiments, commandos…). La recherche inclut les alias.</p>
                                 <div class="cc-unit-affiliation-list mt-3" id="wizard-real-unit-list" role="group" aria-label="Unités de forces spéciales"></div>
 
                                 <p class="cc-hint mt-2" id="wizard-real-unit-selection-summary">Aucune unité sélectionnée.</p>
@@ -305,47 +305,48 @@ $wizardSteps = [
                     <div class="cc-panel-head">
                         <p class="cc-panel-head__eyebrow">Étape 3 sur 5</p>
                         <h1 class="cc-panel-head__title">Organisation</h1>
-                        <p class="cc-panel-head__text">Posez les rôles de départ et la structure des unités. Tout restera modifiable dans le back-office après création.</p>
+                        <p class="cc-panel-head__text">Définissez les rôles de départ et la structure des unités. Tout restera modifiable dans l’administration après la création.</p>
                     </div>
 
                     <section class="cc-section">
                         <h2 class="cc-section__title">Rôles et droits</h2>
-                        <p class="cc-section__text">Deux modèles prêts à l’emploi. Le démarrage rapide convient à la plupart des unités.</p>
+                        <p class="cc-section__text">Ces modèles créent les profils de départ de votre organisation (commandement, ressources humaines, instruction, membres, invités et modération du forum). Vous pourrez les ajuster à tout moment après la création.</p>
                         <div class="mt-5 space-y-3">
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="quick" class="sr-only" checked>
                                 <span class="cc-choice__eyebrow">Recommandé</span>
                                 <span class="cc-choice__title">Démarrage rapide</span>
-                                <span class="cc-choice__text">Profils types (Fondateur, État-major, RH, instructeur, membre, invité) avec des droits de base cohérents.</span>
+                                <span class="cc-choice__text">Convient à la plupart des unités. Les droits sont équilibrés dès le départ&nbsp;: le modérateur du forum peut gérer les échanges courants, sans étendre sa portée à tout l’espace forum de l’organisation.</span>
                             </label>
                             <label class="cc-choice">
                                 <input type="radio" name="wizard_roles_template" value="standard" class="sr-only">
-                                <span class="cc-choice__eyebrow">Modération élargie</span>
-                                <span class="cc-choice__title">Standard</span>
-                                <span class="cc-choice__text">Même base, avec une modération forum plus large pour le rôle « Modérateur forum ».</span>
+                                <span class="cc-choice__eyebrow">Alternative</span>
+                                <span class="cc-choice__title">Modération élargie</span>
+                                <span class="cc-choice__text">Même profils de base, avec un droit supplémentaire&nbsp;: le modérateur du forum peut aussi intervenir sur l’espace forum de l’organisation (annonces, sections réservées, supervision plus large).</span>
                             </label>
                         </div>
 
                         <details class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                            <summary class="cursor-pointer text-sm font-bold text-slate-800">Voir le détail des rôles</summary>
+                            <summary class="cursor-pointer text-sm font-bold text-slate-800">Comparer les rôles inclus</summary>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Aperçu des accès principaux. La seule différence entre les deux modèles concerne le rôle de modération du forum.</p>
                             <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-white">
                                 <table class="min-w-full text-left text-xs">
                                     <thead>
                                         <tr class="border-b border-slate-200 bg-slate-50">
                                             <th class="px-3 py-2 font-black text-slate-600">Rôle</th>
                                             <th class="px-3 py-2 font-black text-slate-600">Forum</th>
-                                            <th class="px-3 py-2 font-black text-slate-600">Docs / formation</th>
-                                            <th class="px-3 py-2 font-black text-slate-600">Modération org.</th>
+                                            <th class="px-3 py-2 font-black text-slate-600">Documents et formation</th>
+                                            <th class="px-3 py-2 font-black text-slate-600">Particularité</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 text-slate-700">
-                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">—</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">Complet</td><td class="px-3 py-2">—</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">RH</td><td class="px-3 py-2">Lecture / sujets</td><td class="px-3 py-2">Lecture</td><td class="px-3 py-2">—</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Membre</td><td class="px-3 py-2">Formations</td><td class="px-3 py-2">—</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Standard</td><td class="px-3 py-2">—</td><td class="px-3 py-2">—</td></tr>
-                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Lecture</td><td class="px-3 py-2">—</td><td class="px-3 py-2">—</td></tr>
-                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur forum</td><td class="px-3 py-2">Modération</td><td class="px-3 py-2">—</td><td class="px-3 py-2 font-semibold text-emerald-800">Renforcé en Standard</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Fondateur</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Pilotage de l’organisation</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">État-major</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Accès complet</td><td class="px-3 py-2">Encadrement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Ressources humaines</td><td class="px-3 py-2">Lecture et sujets</td><td class="px-3 py-2">Consultation</td><td class="px-3 py-2">Effectifs et recrutement</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Instructeur</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Gestion des formations</td><td class="px-3 py-2">Instruction</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Membre</td><td class="px-3 py-2">Participation</td><td class="px-3 py-2">Selon affectation</td><td class="px-3 py-2">Profil de base</td></tr>
+                                        <tr><td class="px-3 py-2 font-semibold">Invité</td><td class="px-3 py-2">Lecture seule</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2">Accès limité</td></tr>
+                                        <tr class="bg-emerald-50/50"><td class="px-3 py-2 font-semibold">Modérateur forum</td><td class="px-3 py-2">Modération des échanges</td><td class="px-3 py-2">Sans accès dédié</td><td class="px-3 py-2 font-semibold text-emerald-800">Portée élargie avec le modèle «&nbsp;Modération élargie&nbsp;»</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -353,7 +354,7 @@ $wizardSteps = [
 
                         <details class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                             <summary class="cursor-pointer text-sm font-bold text-slate-800">Rôles supplémentaires (optionnel)</summary>
-                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Ajoutez des profils propres à votre unité (ex. « Opérateur ATAK », « Logistique ») et cochez les autorisations. Ils pourront être attribués aux membres ensuite.</p>
+                            <p class="mt-3 text-xs leading-relaxed text-slate-600">Créez des profils propres à votre unité (par exemple «&nbsp;Cellule logistique&nbsp;» ou «&nbsp;Opérateur cartographie&nbsp;»), puis cochez les autorisations correspondantes. Vous pourrez les attribuer aux membres ensuite.</p>
                             <div id="wizard-custom-roles-container" class="mt-4 space-y-4"></div>
                             <button type="button" id="wizard-add-custom-role" class="mt-2 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-700 hover:border-emerald-400 hover:text-emerald-800">
                                 + Ajouter un rôle
@@ -368,9 +369,9 @@ $wizardSteps = [
                                         <input type="text" data-role-field="name" maxlength="80" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="ex. Cellule renseignement">
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Référence courte</label>
+                                        <label class="mb-1 block text-[10px] font-bold uppercase text-slate-500">Identifiant court</label>
                                         <input type="text" data-role-field="slug" maxlength="50" class="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm" placeholder="ex. renseignement" pattern="[a-z][a-z0-9_]{1,48}">
-                                        <p class="mt-1 text-[10px] text-slate-500">Minuscules, chiffres ou _ — commence par une lettre.</p>
+                                        <p class="mt-1 text-[10px] text-slate-500">Version courte du nom, sans espaces ni accents (lettres minuscules, chiffres ou _).</p>
                                     </div>
                                 </div>
                                 <div class="mt-4 space-y-3">
@@ -389,7 +390,7 @@ $wizardSteps = [
                                     <?php endforeach; ?>
                                 </div>
                                 <div class="mt-3 text-right">
-                                    <button type="button" class="text-xs font-bold text-red-600 hover:underline" data-remove-row>Retirer cette ligne</button>
+                                    <button type="button" class="text-xs font-bold text-red-600 hover:underline" data-remove-row>Retirer ce rôle</button>
                                 </div>
                             </div>
                         </template>
@@ -592,6 +593,13 @@ $wizardSteps = [
                                     <span>Le candidat atteste avoir rédigé sa candidature lui-même.</span>
                                 </span>
                             </label>
+                            <label class="cc-checkrow md:col-span-2">
+                                <input type="checkbox" name="refuse_other_community_members" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <span>
+                                    <strong>Refuser les comptes déjà rattachés à une autre communauté</strong>
+                                    <span>Un compte Athena déjà membre d’une autre communauté ne pourra pas candidater ici. Les visiteurs sans compte, et les comptes sans communauté (espace « Pas d’organisation »), restent acceptés.</span>
+                                </span>
+                            </label>
                         </div>
 
                         <div class="mt-5 rounded-2xl border border-emerald-200/80 bg-white p-5 ring-1 ring-emerald-100/50">
@@ -608,6 +616,21 @@ $wizardSteps = [
                                 <p class="mt-2 text-xs text-slate-500">Collez une configuration complète fournie par votre équipe si vous en disposez.</p>
                                 <textarea name="wizard_enlistment_milsim_json" id="wizard_enlistment_milsim_json" rows="5" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900" placeholder="Configuration complète du formulaire"></textarea>
                             </details>
+                        </div>
+
+                        <div class="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+                            <h3 class="text-sm font-black text-slate-900">Créneaux de disponibilité</h3>
+                            <p class="mt-1 text-xs leading-relaxed text-slate-600">Choisissez dès maintenant les créneaux attendus pour votre communauté. Vous pourrez les modifier ensuite dans la fiche organisation.</p>
+                            <div class="mt-4">
+                                <?php
+                                $selectedSlots = [];
+                                $idsInputName = 'wizard_milsim[availability_slot_ids][]';
+                                $customInputName = 'wizard_milsim[availability_slot_custom][]';
+                                $configuredFlagName = 'wizard_milsim[availability_slots_configured]';
+                                $formId = 'community-create-form';
+                                include base_path('views/partials/availability_slots_editor.php');
+                                ?>
+                            </div>
                         </div>
                     </section>
 
@@ -661,7 +684,7 @@ $wizardSteps = [
                                     <?= htmlspecialchars((string) ($offer['meta'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
                                 </span>
                                 <?php if (!$offerAvailable): ?>
-                                <span class="mt-2 block text-xs font-semibold text-amber-700">Souscription indisponible pour le moment</span>
+                                <span class="mt-2 block text-xs font-semibold text-amber-700"><?= htmlspecialchars((string) ($offer['unavailable_hint'] ?? 'Souscription indisponible pour le moment'), ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endif; ?>
                             </label>
                             <?php endforeach; ?>
@@ -860,7 +883,7 @@ window.__realUnitCatalog = <?= $realUnitCatalogJson ?>;
         if (slug) lines.push('Adresse courte : ' + slug);
         if (tz) lines.push('Fuseau : ' + tz);
         if (tenantLabel) lines.push('Type : ' + tenantLabel);
-        lines.push('Modèle rôles : ' + (roles === 'standard' ? 'Standard (modération élargie)' : 'Démarrage rapide'));
+        lines.push('Modèle rôles : ' + (roles === 'standard' ? 'Modération élargie' : 'Démarrage rapide'));
         var extraRoles = document.querySelectorAll('#wizard-custom-roles-container .wizard-custom-role-row').length;
         if (extraRoles > 0) lines.push('Rôles supplémentaires : ' + extraRoles);
         lines.push('Unités : ' + unitsCount);

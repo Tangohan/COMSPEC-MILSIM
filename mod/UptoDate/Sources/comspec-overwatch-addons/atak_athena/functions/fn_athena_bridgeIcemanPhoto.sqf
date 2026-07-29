@@ -104,24 +104,6 @@ if (!isNull _drone && {alive _drone}) then {
 
     if (_fileName isNotEqualTo "") then { _caption = _caption + format [" (%1)", _fileName]; };
 
-} else {
-
-    private _hasHcam = ("ItemcTabHCam" in (items player + assignedItems player))
-
-        || {((headgear player) in (missionNamespace getVariable ["cTab_helmetClass_has_HCam", []]))};
-
-    if (_hasHcam) then {
-
-        _device = "HELMET";
-
-        _feedId = format ["helmet:%1", getPlayerUID player];
-
-        _caption = format ["Photo casque — grille %1", _grid];
-
-        if (_fileName isNotEqualTo "") then { _caption = _caption + format [" (%1)", _fileName]; };
-
-    };
-
 };
 
 
@@ -131,46 +113,13 @@ private _ok = [_filePath, _caption, _device, _feedId] call comspec_overwatch_con
 if (!(_ok isEqualType true)) then { _ok = false; };
 
 // Repli : le chemin BCE/Photo Library pointe souvent vers un .jpg qui n’existe pas
-// (Arma_ScreenShot_Extension écrit un .png, ou n’écrit rien). Dernière chance =
-// capture native Arma dans Screenshots\ du profil + UploadLatestScreenshot.
+// (Arma_ScreenShot_Extension écrit un .png, ou n’écrit rien). On retente le poll Iceman
+// au lieu de screenshot + « dernière capture » (doublon casque / tablette).
 if (!_ok && {canSuspend}) then {
     private _detail = toLower (str (missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]));
     if ((_detail find "file_not_found") >= 0) then {
-        ["WARN", "Photo", "Cliché ATAK introuvable sur disque — repli capture native Screenshots", _filePath] call comspec_overwatch_connect_fnc_log;
-        ["UploadReconImage", "warn", "Repli capture native (Screenshots profil)", _filePath, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        screenshot "";
-        uiSleep 1.1;
-        private _authorFb = [] call comspec_overwatch_connect_fnc_getCallsign;
-        if (_authorFb isEqualTo "") then { _authorFb = name player; };
-        private _rawFb = [
-            "COMSPECExtension" callExtension [
-                "UploadLatestScreenshot",
-                [
-                    _authorFb,
-                    _device,
-                    _caption + " (repli)",
-                    _feedId,
-                    str ((getPosASL player) select 0),
-                    str ((getPosASL player) select 1),
-                    str ((getPosASL player) select 2),
-                    mapGridPosition player,
-                    str (getDir player),
-                    name player,
-                    "WEST",
-                    missionNamespace getVariable ["COMSPEC_MissionId", "op_1"],
-                    "90"
-                ]
-            ]
-        ] call comspec_overwatch_connect_fnc_extResult;
-        private _t = if (_rawFb isEqualType "") then { trim _rawFb } else { trim (str _rawFb) };
-        _ok = (_t isNotEqualTo "") && {((toUpper _t) find "OK") == 0};
-        missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
-        missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _t, false];
-        if (_ok) then {
-            ["UploadLatestScreenshot", "ok", "repli native", nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        } else {
-            ["UploadLatestScreenshot", "fail", _t, _rawFb, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        };
+        ["WARN", "Photo", "Cliché ATAK introuvable sur disque — repli poll Photo Library", _filePath] call comspec_overwatch_connect_fnc_log;
+        ["UploadReconImage", "warn", "Repli poll Photo Library", _filePath, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     };
 };
 

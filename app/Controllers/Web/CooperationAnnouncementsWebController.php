@@ -27,6 +27,10 @@ final class CooperationAnnouncementsWebController
             return Response::redirect(url('dashboard'));
         }
         $tid = (int) Session::get('tenant_id');
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$featureGate->allows($tid, 'cooperation')) {
+            return \App\Support\PlanFeatureDenial::upgradeView('cooperation', 'Pro');
+        }
         if (! $this->templates->tableExists()) {
             Session::flash('error', 'Fonction indisponible sur cette installation.');
 

@@ -12,6 +12,11 @@ if (!(missionNamespace getVariable ["comspec_overwatch_athena_feed_snapshot", fa
 if (!isNull (findDisplay 49)) exitWith {}; // pause
 if (dialog) exitWith {};
 
+// Photo ATAK / BCE en cours ou récente : ne pas recycler sa capture comme « aperçu casque ».
+private _suppressUntil = missionNamespace getVariable ["COMSPEC_SuppressFeedSnapshotUntil", 0];
+if (_suppressUntil isEqualType 0 && {diag_tickTime < _suppressUntil}) exitWith {};
+if (!isNull (uiNamespace getVariable ["BCE_PhoneCAM_View", displayNull])) exitWith {};
+
 private _device = "";
 private _feedId = "";
 private _caption = "";
@@ -57,8 +62,17 @@ if (!isNull _drone && {alive _drone}) then {
 if (_device isEqualTo "" || {_feedId isEqualTo ""}) exitWith {};
 
 // Anti-spam
+private _streamUntil = missionNamespace getVariable ["COMSPEC_HelmetStreamUntil", 0];
+private _streamActive = (_streamUntil isEqualType 0) && {diag_tickTime < _streamUntil};
+if (!_streamActive) then {
+    missionNamespace setVariable ["COMSPEC_HelmetStreamActive", false, false];
+};
+private _interval = if (_streamActive) then {
+    5
+} else {
+    missionNamespace getVariable ["comspec_overwatch_athena_feed_interval", 35]
+};
 private _last = missionNamespace getVariable ["COMSPEC_Athena_LastFeedSnapAt", 0];
-private _interval = missionNamespace getVariable ["comspec_overwatch_athena_feed_interval", 35];
 if ((diag_tickTime - _last) < _interval) exitWith {};
 missionNamespace setVariable ["COMSPEC_Athena_LastFeedSnapAt", diag_tickTime, false];
 

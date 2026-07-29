@@ -23,7 +23,14 @@ missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
 
 ["Terminal ATAK bloqué — redémarrage en cours", "system", "critical"] call comspec_overwatch_connect_fnc_ambientHint;
 ["crash"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+[
+    "WARN",
+    "Terminal",
+    format ["Terminal gelé (%1 s)", round _durationSec],
+    "system"
+] call comspec_overwatch_connect_fnc_logAtakEvent;
 [0.85, 25, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
+[] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
 
 [{
     private _state = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
@@ -37,6 +44,14 @@ missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
     missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
 
     [0, 0, true] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
+    [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;
     ["Liaison ATAK rétablie", "link", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     ["reconnect"] call comspec_overwatch_connect_fnc_playAtakEnhancedSound;
+    [
+        "INFO",
+        "Terminal",
+        "Fin du gel terminal — redémarrage terminé",
+        "system"
+    ] call comspec_overwatch_connect_fnc_logAtakEvent;
+    [true] call comspec_overwatch_connect_fnc_logAtakStateChange;
 }, [], _durationSec] call CBA_fnc_waitAndExecute;

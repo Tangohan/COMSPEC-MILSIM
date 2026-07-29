@@ -130,7 +130,7 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-800"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Barre Succès</span>
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-900"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Barre Attention</span>
                     <span class="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-800"><span class="h-2 w-2 rounded-full bg-rose-500"></span>Barre Critique</span>
-                    <span class="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold text-red-900"><span class="h-2 w-2 rounded-full bg-red-700"></span>Breaking</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold text-red-900"><span class="h-2 w-2 rounded-full bg-red-700"></span>Attention</span>
                 </div>
             </div>
 
@@ -199,7 +199,7 @@ $visibleNow = (int) ($stats['visible_now'] ?? 0);
                                             'mini_success' => ['Barre Succès', 'bg-emerald-50 text-emerald-900 ring-emerald-200'],
                                             'mini_warning' => ['Barre Attention', 'bg-amber-50 text-amber-950 ring-amber-200'],
                                             'mini_danger' => ['Barre Critique', 'bg-rose-50 text-rose-900 ring-rose-200'],
-                                            'breaking' => ['Breaking', 'bg-red-50 text-red-900 ring-red-200'],
+                                            'breaking' => ['Attention', 'bg-red-50 text-red-900 ring-red-200'],
                                             default => ['Classique', 'bg-slate-100 text-slate-800 ring-slate-200'],
                                         };
                                         ?>

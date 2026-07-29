@@ -13,8 +13,6 @@ public static class Extension
     // Timeout HttpClient = plafond global ; les appels sync utilisent aussi un CTS dédié.
     // 3 s était trop juste pour TLS+DNS sur le premier appel (redeem / whoami).
     private const int SyncTimeoutSeconds = 8;
-    /// <summary>PNG Quick Pictures ATAK souvent &gt; 5 Mo — plafond dédié aux uploads recon.</summary>
-    private const long MaxReconImageBytes = 20L * 1024 * 1024;
     private const int UploadTimeoutSeconds = 60;
     private static string _baseUrl = "";
     private static string _apiKey = "";
@@ -57,8 +55,10 @@ public static class Extension
     private static string _lastPostErrorPath = "";
     private static long _lastPostErrorAtTicks;
 
-    /// <summary>Chemin résolu du journal fichier COMSPEC Overwatch (cache : résolu une seule fois).</summary>
+    /// <summary>Chemin résolu du journal fichier COMSPEC Overwatch (une session Arma = un fichier).</summary>
     private static string? _resolvedLogPath;
+    private static bool _sessionLogInitialized;
+    private const int DefaultRetainedLogFiles = 12;
     private static readonly object LogFileLock = new();
 
     private static long _lastPostErrorCbTicks;
@@ -456,8 +456,17 @@ public static class Extension
             NoteRateLimitCleared();
             return;
         }
-        NotePostError((int)response.StatusCode, url);
-        EnqueueForRetry(url, jsonBody);
+        var code = (int)response.StatusCode;
+        NotePostError(code, url);
+        if (ShouldRetryStatusCode(code))
+            EnqueueForRetry(url, jsonBody);
+    }
+
+    private static bool ShouldRetryStatusCode(int code)
+    {
+        if (code <= 0) return true;
+        if (code >= 500) return true;
+        return code is 408 or 425;
     }
 
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
@@ -479,8 +488,10 @@ public static class Extension
             }
             if (!response.IsSuccessStatusCode)
             {
-                NotePostError((int)response.StatusCode, item.Url);
-                EnqueueForRetry(item.Url, item.Body);
+                var code = (int)response.StatusCode;
+                NotePostError(code, item.Url);
+                if (ShouldRetryStatusCode(code))
+                    EnqueueForRetry(item.Url, item.Body);
             }
             else
             {
@@ -1061,6 +1072,16 @@ public static class Extension
             return $"OK|{_lastPostErrorCode}|{_lastPostErrorPath}|{ageSec}";
         }
 
+        // Nouvelle session journal (1 fichier / lancement Arma). args[0] = nb de fichiers à conserver (défaut 12).
+        if (function == "LogSessionStart")
+        {
+            var keep = DefaultRetainedLogFiles;
+            if (args.Length >= 1 && int.TryParse((args[0] ?? "").Trim(), out var parsedKeep) && parsedKeep > 0)
+                keep = Math.Min(parsedKeep, 50);
+            var started = StartNewLogSession(keep);
+            return started != null ? $"OK|{started}" : "ERR|no_writable_path";
+        }
+
         // Journal fichier COMSPEC Overwatch (best-effort — diag_log/RPT côté SQF reste la source
         // de vérité si ce fichier est indisponible). args[0] = ligne déjà formatée par
         // comspec_overwatch_connect_fnc_log ; aucun secret n'y transite (clé Athena/tokens jamais
@@ -1070,6 +1091,26 @@ public static class Extension
             var path = ResolveLogFilePath();
             if (path == null) return "ERR|no_writable_path";
             return AppendLogLine(path, args[0]!) ? $"OK|{path}" : "ERR|write_failed";
+        }
+
+        // Dernières lignes du journal de la session en cours. args[0] = octets max (défaut 14000).
+        if (function == "GetLogTail")
+        {
+            var maxBytes = 14000;
+            if (args.Length >= 1 && int.TryParse((args[0] ?? "").Trim(), out var parsed) && parsed > 0)
+                maxBytes = Math.Min(parsed, 32000);
+
+            var path = ResolveLogFilePath();
+            if (path == null || !File.Exists(path)) return "OK|";
+
+            var main = ReadLogFileTail(path, maxBytes);
+            if (string.IsNullOrWhiteSpace(main)) return "OK|";
+
+            var combined = SanitizeLogForReport(main);
+            if (combined.Length > maxBytes)
+                combined = combined[^maxBytes..];
+            var payload = combined.Replace("\r", "").Replace('\n', '\t');
+            return "OK|" + payload;
         }
 
         // Google Slides public → PNG locaux (async callback google_deck_ready / google_deck_error).
@@ -2325,52 +2366,139 @@ public static class Extension
     }
 
     /// <summary>
-    /// Chemin du journal fichier COMSPEC Overwatch : dossier profil Arma local en priorité
-    /// (%LOCALAPPDATA%\Arma 3, là où vit déjà le RPT et où GUIDE-INSTALLATION-TEST.md documente
-    /// COMSPECExtension.log), sinon à côté de la DLL, sinon dossier temporaire système.
-    /// Résolu une seule fois (le résultat est mis en cache) via une écriture de test.
+    /// Dossier des journaux COMSPEC (%LOCALAPPDATA%\Arma 3\COMSPEC\logs en priorité).
     /// </summary>
-    private static string? ResolveLogFilePath()
+    private static string? ResolveLogDirectory()
     {
-        if (_resolvedLogPath != null) return _resolvedLogPath;
-
         var candidates = new List<string>();
         try
         {
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (!string.IsNullOrWhiteSpace(localAppData))
-                candidates.Add(Path.Combine(localAppData, "Arma 3", "COMSPECExtension.log"));
+                candidates.Add(Path.Combine(localAppData, "Arma 3", "COMSPEC", "logs"));
         }
         catch
         {
-            // Résolution LOCALAPPDATA indisponible sur cette machine — on retombe sur les autres candidats.
+            // ignore
         }
-        candidates.Add(Path.Combine(AppContext.BaseDirectory, "COMSPECExtension.log"));
-        candidates.Add(Path.Combine(Path.GetTempPath(), "COMSPECExtension.log"));
+        candidates.Add(Path.Combine(AppContext.BaseDirectory, "COMSPEC", "logs"));
+        candidates.Add(Path.Combine(Path.GetTempPath(), "COMSPEC", "logs"));
 
-        foreach (var path in candidates)
+        foreach (var dir in candidates)
         {
             try
             {
-                var dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-                File.AppendAllText(path, "", Encoding.UTF8);
-                _resolvedLogPath = path;
-                return path;
+                Directory.CreateDirectory(dir);
+                var probe = Path.Combine(dir, ".write_test");
+                File.WriteAllText(probe, "ok", Encoding.UTF8);
+                File.Delete(probe);
+                return dir;
             }
             catch
             {
-                // Essaie le prochain chemin candidat.
+                // Essaie le prochain dossier candidat.
             }
         }
         return null;
     }
 
     /// <summary>
-    /// Append une ligne horodatée au journal fichier. Best-effort : tout échec (droits, disque
-    /// plein, chemin devenu indisponible) est avalé silencieusement — jamais de spam joueur, le
-    /// RPT (diag_log, toujours exécuté côté SQF avant cet appel) reste la trace de secours.
-    /// Rotation simple : renomme en .1 (écrase l'ancien .1) au-delà de ~5 Mo.
+    /// Ouvre un nouveau fichier horodaté pour la session Arma en cours et purge les plus anciens.
+    /// </summary>
+    private static string? StartNewLogSession(int keepCount)
+    {
+        lock (LogFileLock)
+        {
+            if (_sessionLogInitialized && _resolvedLogPath != null)
+                return _resolvedLogPath;
+
+            var dir = ResolveLogDirectory();
+            if (dir == null) return null;
+
+            PurgeOldLogFiles(dir, keepCount);
+            RemoveLegacySingleLogFiles();
+
+            var stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss_fff");
+            var path = Path.Combine(dir, $"COMSPEC_{stamp}.log");
+            try
+            {
+                var header = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] === Session COMSPEC Overwatch ==={Environment.NewLine}";
+                File.WriteAllText(path, header, Encoding.UTF8);
+                _resolvedLogPath = path;
+                _sessionLogInitialized = true;
+                return path;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    private static void PurgeOldLogFiles(string dir, int keepCount)
+    {
+        keepCount = Math.Max(3, Math.Min(keepCount, 50));
+        try
+        {
+            var files = Directory.GetFiles(dir, "COMSPEC_*.log")
+                .Select(f => new FileInfo(f))
+                .OrderByDescending(f => f.LastWriteTimeUtc)
+                .ToList();
+            foreach (var info in files.Skip(keepCount))
+            {
+                try { info.Delete(); } catch { /* ignore */ }
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    /// <summary>Supprime l'ancien journal unique COMSPECExtension.log (schéma antérieur).</summary>
+    private static void RemoveLegacySingleLogFiles()
+    {
+        var legacyPaths = new List<string>();
+        try
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrWhiteSpace(localAppData))
+            {
+                legacyPaths.Add(Path.Combine(localAppData, "Arma 3", "COMSPECExtension.log"));
+                legacyPaths.Add(Path.Combine(localAppData, "Arma 3", "COMSPECExtension.log.1"));
+            }
+        }
+        catch
+        {
+            // ignore
+        }
+        legacyPaths.Add(Path.Combine(AppContext.BaseDirectory, "COMSPECExtension.log"));
+        legacyPaths.Add(Path.Combine(AppContext.BaseDirectory, "COMSPECExtension.log.1"));
+
+        foreach (var path in legacyPaths)
+        {
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+    }
+
+    /// <summary>
+    /// Chemin du journal de la session en cours (créé au premier accès si besoin).
+    /// </summary>
+    private static string? ResolveLogFilePath()
+    {
+        if (_resolvedLogPath != null) return _resolvedLogPath;
+        return StartNewLogSession(DefaultRetainedLogFiles);
+    }
+
+    /// <summary>
+    /// Append une ligne horodatée au journal fichier. Best-effort : tout échec est avalé silencieusement.
     /// </summary>
     private static bool AppendLogLine(string path, string line)
     {
@@ -2378,13 +2506,6 @@ public static class Extension
         {
             try
             {
-                var info = new FileInfo(path);
-                if (info.Exists && info.Length > 5 * 1024 * 1024)
-                {
-                    var rotated = path + ".1";
-                    try { File.Delete(rotated); } catch { /* ignore */ }
-                    File.Move(path, rotated);
-                }
                 var stamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 File.AppendAllText(path, $"[{stamp}] {line}{Environment.NewLine}", Encoding.UTF8);
                 return true;
@@ -2394,6 +2515,58 @@ public static class Extension
                 return false;
             }
         }
+    }
+
+    /// <summary>Lectures des N derniers octets d'un journal (partage lecture avec LogWrite).</summary>
+    private static string ReadLogFileTail(string path, int maxBytes)
+    {
+        if (maxBytes <= 0 || !File.Exists(path)) return "";
+        try
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var len = fs.Length;
+            if (len <= 0) return "";
+            var toRead = (int)Math.Min(maxBytes, len);
+            fs.Seek(-toRead, SeekOrigin.End);
+            var buf = new byte[toRead];
+            var read = fs.Read(buf, 0, toRead);
+            if (read <= 0) return "";
+            var text = Encoding.UTF8.GetString(buf, 0, read);
+            if (len > toRead)
+            {
+                var nl = text.IndexOf('\n');
+                if (nl >= 0 && nl + 1 < text.Length)
+                    text = text[(nl + 1)..];
+            }
+            return text;
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    /// <summary>Retire les lignes susceptibles de contenir des secrets avant remontée Athena.</summary>
+    private static string SanitizeLogForReport(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var sb = new StringBuilder();
+        foreach (var rawLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var line = rawLine.TrimEnd();
+            if (line.Length == 0) continue;
+            var lower = line.ToLowerInvariant();
+            if (lower.Contains("api_key")
+                || lower.Contains("apikey")
+                || lower.Contains("bearer ")
+                || lower.Contains("authorization:")
+                || lower.Contains("x-api-key"))
+            {
+                continue;
+            }
+            sb.AppendLine(line);
+        }
+        return sb.ToString().TrimEnd();
     }
 
     /// <summary>
@@ -3487,12 +3660,19 @@ public static class Extension
             if (function == "SendMarker" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 2)
             {
                 var armaName = args[0] ?? "";
-                var markerDataRaw = args[1] ?? "{}";
+                var markerDataRaw = SanitizeLooseJsonObject(args[1] ?? "{}");
                 var layerId = args.Length > 2 ? (args[2] ?? "1") : "1";
                 var deleted = args.Length > 3 && (args[3] ?? "") == "1";
+                var steamJson = _steamUid.Length > 0
+                    ? $",\"steam_uid\":\"{EscapeJson(_steamUid)}\""
+                    : "";
+                var sessJson = _sessionToken.Length > 0
+                    ? $",\"session_token\":\"{EscapeJson(_sessionToken)}\""
+                    : "";
+                var modJson = ModVersionJsonFragment();
                 var payload = deleted
-                    ? "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"deleted\":true}"
-                    : "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\",\"markerData\":" + markerDataRaw + "}";
+                    ? "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"deleted\":true}"
+                    : "{\"mapId\":1,\"layerId\":" + layerId + ",\"arma_name\":\"" + EscapeJson(armaName) + "\"" + steamJson + sessJson + modJson + ",\"markerData\":" + markerDataRaw + "}";
                 EnqueueOrSend(_baseUrl + "/api/atak/marker", payload);
                 return;
             }
@@ -3642,9 +3822,7 @@ public static class Extension
         {
             var fi = new FileInfo(resolved);
             if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
             if (fi.Length < 32) return "ERR|file_empty";
-            var bytes = File.ReadAllBytes(resolved);
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent("1"), "mapId");
             multipart.Add(new StringContent(author), "author");
@@ -3661,11 +3839,14 @@ public static class Extension
             multipart.Add(new StringContent(args.Length > 12 && !string.IsNullOrEmpty(args[12]) ? args[12]! : "CTAB"), "device_type");
             AddOptionalForm(multipart, "capturedAt", args, 13);
             AddOptionalForm(multipart, "feed_id", args, 14);
+            AddOptionalForm(multipart, "fx_profile", args, 15);
+            AddOptionalForm(multipart, "fx_intensity", args, 16);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
-            var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
             return QueueMultipartUpload("/api/recon/images", multipart);
         }
@@ -3696,9 +3877,7 @@ public static class Extension
         {
             var fi = new FileInfo(resolved);
             if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
             if (fi.Length < 32) return "ERR|file_empty";
-            var bytes = File.ReadAllBytes(resolved);
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent(author), "author");
             multipart.Add(new StringContent(angle), "angle");
@@ -3709,8 +3888,9 @@ public static class Extension
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "sse_face.png";
-            var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "image", fileName);
             var path = "/api/sse/persons/" + Uri.EscapeDataString(personId) + "/photos";
             return QueueMultipartUpload(path, multipart);
@@ -3739,14 +3919,15 @@ public static class Extension
         var maxAgeSec = 45;
         if (args.Length > 12 && int.TryParse(args[12], out var parsedAge) && parsedAge > 0)
             maxAgeSec = Math.Min(parsedAge, 180);
+        var fxProfile = args.Length > 13 ? (args[13] ?? "") : "";
+        var fxIntensity = args.Length > 14 ? (args[14] ?? "") : "";
         var shot = FindNewestScreenshot(TimeSpan.FromSeconds(maxAgeSec));
         if (shot == null) return "ERR|file_not_found";
         try
         {
             var fi = new FileInfo(shot);
             if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
-            var bytes = File.ReadAllBytes(shot);
+            if (fi.Length < 32) return "ERR|file_empty";
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent("1"), "mapId");
             multipart.Add(new StringContent(author), "author");
@@ -3763,10 +3944,13 @@ public static class Extension
             multipart.Add(new StringContent(side), "side");
             if (!string.IsNullOrEmpty(missionId)) multipart.Add(new StringContent(missionId), "mission_id");
             multipart.Add(new StringContent(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()), "capturedAt");
+            if (!string.IsNullOrEmpty(fxProfile)) multipart.Add(new StringContent(fxProfile), "fx_profile");
+            if (!string.IsNullOrEmpty(fxIntensity)) multipart.Add(new StringContent(fxIntensity), "fx_intensity");
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
-            var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(shot, bytes));
+            var fileStream = new FileStream(shot, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(shot));
             multipart.Add(fileContent, "image", Path.GetFileName(shot) ?? "feed.png");
             return QueueMultipartUpload("/api/recon/images", multipart);
         }
@@ -3787,15 +3971,15 @@ public static class Extension
         {
             var fi = new FileInfo(resolved);
             if (!fi.Exists) return "ERR|file_not_found";
-            if (fi.Length > MaxReconImageBytes) return "ERR|file_too_large";
-            var bytes = File.ReadAllBytes(resolved);
+            if (fi.Length < 32) return "ERR|file_empty";
             var multipart = new MultipartFormDataContent();
             multipart.Add(new StringContent("1"), "mapId");
             multipart.Add(new StringContent(author), "author");
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
-            var fileContent = new ByteArrayContent(bytes);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved, bytes));
+            var fileStream = new FileStream(resolved, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 128 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
+            var fileContent = new StreamContent(fileStream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GuessImageMediaType(resolved));
             multipart.Add(fileContent, "photo", Path.GetFileName(resolved) ?? "photo.png");
             return QueueMultipartUpload("/api/intel/photos", multipart);
         }
@@ -3823,6 +4007,33 @@ public static class Extension
         var ext = Path.GetExtension(path);
         if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) return "image/png";
         return "image/jpeg";
+    }
+
+    private static string GuessImageMediaType(string path)
+    {
+        var ext = Path.GetExtension(path ?? "");
+        if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) return "image/png";
+        return "image/jpeg";
+    }
+
+    private static string SanitizeLooseJsonObject(string raw)
+    {
+        var trimmed = (raw ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return "{}";
+        var sanitized = System.Text.RegularExpressions.Regex.Replace(
+            trimmed,
+            @"(?<=[:\[\s])(-?\d+),(\d+)(?=[,\}\]\s])",
+            "$1.$2");
+        try
+        {
+            using var _ = JsonDocument.Parse(sanitized);
+            return sanitized;
+        }
+        catch
+        {
+            return "{}";
+        }
     }
 
     /// <summary>
@@ -3899,6 +4110,7 @@ public static class Extension
     /// <summary>
     /// Résout un chemin BCE / Photo Library (absolu, relatif, ou nom seul) vers un fichier disque.
     /// Gère : guillemets, chemins Arma « \Documents\… », jpg↔png, sous-dossiers Screenshots.
+    /// Court délai d’attente uniquement si le fichier n’existe pas encore (écriture BCE).
     /// </summary>
     private static string? ResolveLocalImagePath(string? raw, TimeSpan? newestFallback = null)
     {
@@ -3908,44 +4120,75 @@ public static class Extension
 
         path = path.Replace('/', '\\');
 
-        // BCE / Arma_ScreenShot_Extension : gros PNG (10–15 Mo) souvent pas encore flushés.
-        for (var attempt = 0; attempt < 12; attempt++)
+        foreach (var candidate in ExpandLocalImageCandidates(path))
+        {
+            var found = TryReadableImageFile(candidate);
+            if (found != null)
+                return found;
+        }
+
+        var fileName = Path.GetFileName(path);
+        if (!string.IsNullOrWhiteSpace(fileName))
+        {
+            var byName = FindScreenshotByFileName(fileName);
+            if (byName != null)
+                return byName;
+        }
+
+        if (newestFallback.HasValue)
+        {
+            var immediate = FindNewestScreenshot(newestFallback.Value);
+            if (immediate != null)
+                return immediate;
+        }
+
+        // Attente courte : l’extension BCE flush souvent en < 500 ms (éviter 28×250 ms qui gèle le jeu).
+        const int maxAttempts = 8;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             foreach (var candidate in ExpandLocalImageCandidates(path))
             {
-                try
-                {
-                    if (File.Exists(candidate))
-                    {
-                        var fi = new FileInfo(candidate);
-                        // Taille stable = écriture terminée (évite de lire un fichier à moitié).
-                        if (fi.Length >= 32)
-                            return Path.GetFullPath(candidate);
-                    }
-                }
-                catch { /* ignore */ }
+                var found = TryReadableImageFile(candidate);
+                if (found != null)
+                    return found;
             }
 
-            var fileName = Path.GetFileName(path);
-            if (!string.IsNullOrWhiteSpace(fileName))
+            if (!string.IsNullOrWhiteSpace(fileName) && attempt >= 1)
             {
                 var byName = FindScreenshotByFileName(fileName);
                 if (byName != null)
                     return byName;
             }
 
-            if (newestFallback.HasValue)
+            if (newestFallback.HasValue && attempt >= 3)
             {
                 var newest = FindNewestScreenshot(newestFallback.Value);
                 if (newest != null)
                     return newest;
             }
 
-            if (attempt < 11)
-                System.Threading.Thread.Sleep(250);
+            if (attempt < maxAttempts - 1)
+                System.Threading.Thread.Sleep(80);
         }
 
         return null;
+    }
+
+    private static string? TryReadableImageFile(string candidate)
+    {
+        try
+        {
+            if (!File.Exists(candidate))
+                return null;
+            var fi = new FileInfo(candidate);
+            if (fi.Length < 32)
+                return null;
+            return Path.GetFullPath(candidate);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -4068,6 +4311,17 @@ public static class Extension
             if (string.IsNullOrWhiteSpace(stem)) continue;
             try
             {
+                foreach (var f in Directory.EnumerateFiles(dir, stem + ".*", SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        if (!IsImageExtension(Path.GetExtension(f))) continue;
+                        if (!File.Exists(f)) continue;
+                        return Path.GetFullPath(f);
+                    }
+                    catch { /* ignore */ }
+                }
+                // Sous-dossiers ATAK / profils — une seule passe, pas à chaque retry ResolveLocalImagePath.
                 foreach (var f in Directory.EnumerateFiles(dir, stem + ".*", SearchOption.AllDirectories))
                 {
                     try
@@ -4097,10 +4351,14 @@ public static class Extension
         {
             if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return;
             AddIfExists(Path.Combine(root, "Screenshots"));
+            AddIfExists(Path.Combine(root, "Screenshot"));
             try
             {
                 foreach (var sub in Directory.EnumerateDirectories(root))
+                {
                     AddIfExists(Path.Combine(sub, "Screenshots"));
+                    AddIfExists(Path.Combine(sub, "Screenshot"));
+                }
             }
             catch { /* ignore */ }
         }
@@ -4110,6 +4368,7 @@ public static class Extension
             if (!string.IsNullOrWhiteSpace(docs))
             {
                 AddIfExists(Path.Combine(docs, "Arma 3", "Screenshots"));
+                AddIfExists(Path.Combine(docs, "Arma 3", "Screenshot"));
                 AddScreenshotsUnder(Path.Combine(docs, "Arma 3 - Other Profiles"));
                 // Profils déplacés / -profiles= parfois sous Documents\Arma 3\<name>
                 AddScreenshotsUnder(Path.Combine(docs, "Arma 3"));
@@ -4122,6 +4381,7 @@ public static class Extension
             if (!string.IsNullOrWhiteSpace(userProfile))
             {
                 AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshots"));
+                AddIfExists(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3", "Screenshot"));
                 AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3 - Other Profiles"));
                 AddScreenshotsUnder(Path.Combine(userProfile, "OneDrive", "Documents", "Arma 3"));
             }
@@ -4141,6 +4401,7 @@ public static class Extension
             if (!string.IsNullOrWhiteSpace(cwd))
             {
                 AddIfExists(Path.Combine(cwd, "Screenshots"));
+                AddIfExists(Path.Combine(cwd, "Screenshot"));
                 AddIfExists(cwd);
             }
         }
@@ -4162,8 +4423,7 @@ public static class Extension
                 IEnumerable<string> files;
                 try
                 {
-                    files = Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories)
-                        .Where(f => IsImageExtension(Path.GetExtension(f)));
+                    files = EnumerateRecentImagesInDir(dir);
                 }
                 catch { continue; }
                 foreach (var f in files)
@@ -4188,14 +4448,41 @@ public static class Extension
         }
     }
 
+    /// <summary>Énumère jpg/png du dossier racine Screenshots (évite AllDirectories à chaque photo).</summary>
+    private static IEnumerable<string> EnumerateRecentImagesInDir(string dir)
+    {
+        foreach (var pattern in new[] { "*.jpg", "*.jpeg", "*.png", "*.webp" })
+        {
+            IEnumerable<string> chunk;
+            try
+            {
+                chunk = Directory.EnumerateFiles(dir, pattern, SearchOption.TopDirectoryOnly);
+            }
+            catch
+            {
+                continue;
+            }
+            foreach (var f in chunk)
+                yield return f;
+        }
+    }
+
     /// <summary>
     /// Retour callExtension attendu par SQF Phase 1-2 : ["OK","msg"] ou ["ERROR","msg"].
+    /// Échappement compatible parseSimpleArray (pas JSON : pas de \" ni \\).
     /// </summary>
     private static string FormatAtakExtArray(string status, string message)
     {
         var msg = (message ?? "").Replace('\n', ' ').Replace('\r', ' ').Replace('|', ' ');
         if (msg.Length > 480) msg = msg.Substring(0, 480);
-        return $"[\"{EscapeJson(status)}\",\"{EscapeJson(msg)}\"]";
+        return $"[\"{EscapeForSimpleArray(status)}\",\"{EscapeForSimpleArray(msg)}\"]";
+    }
+
+    /// <summary>Échappement chaîne pour parseSimpleArray Arma (guillemet = double guillemet).</summary>
+    private static string EscapeForSimpleArray(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s.Replace("\"", "\"\"");
     }
 
     /// <summary>

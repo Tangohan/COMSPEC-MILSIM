@@ -22,10 +22,10 @@ use PDO;
  */
 class AtakOrderRepository
 {
-    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY'];
+    public const TYPES = ['MOVE', 'HOLD', 'RECON', 'CAS', 'QRF', 'FRAGO', 'CUSTOM', 'VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM'];
 
     /** Signaux terminal (pas des ordres C2 à acquitter dans le panneau web). */
-    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY'];
+    public const TERMINAL_SIGNAL_TYPES = ['VIBRATE', 'NOTIFY', 'HELMET_SNAP', 'HELMET_SNAP_HD', 'HELMET_STREAM'];
     public const PRIORITIES = ['ROUTINE', 'IMPORTANT', 'URGENT', 'CONTACT'];
     public const STATUSES = ['PENDING', 'DELIVERED', 'ACK', 'EXEC', 'FAILED', 'CANCELLED'];
     public const TARGET_TYPES = ['all', 'user', 'group', 'fire_team', 'channel', 'solo'];
@@ -147,7 +147,7 @@ class AtakOrderRepository
         }
 
         $hasDeadline = $this->hasColumn('ack_deadline_at');
-        $signalExclude = "UPPER(COALESCE(order_type,'')) NOT IN ('VIBRATE','NOTIFY')";
+        $signalExclude = "UPPER(COALESCE(order_type,'')) NOT IN ('VIBRATE','NOTIFY','HELMET_SNAP','HELMET_SNAP_HD','HELMET_STREAM')";
         $overdueExpr = $hasDeadline
             ? "SUM(CASE WHEN UPPER(status) IN ('PENDING','DELIVERED')
                     AND {$signalExclude}
@@ -533,6 +533,9 @@ class AtakOrderRepository
         if ($current === 'CANCELLED' && $status !== 'CANCELLED') {
             return $existing;
         }
+        if (!$this->canTransitionStatus($current, $status)) {
+            throw new \InvalidArgumentException('invalid_transition');
+        }
 
         $by = mb_substr(trim($by), 0, 128);
         $note = mb_substr(trim($note), 0, 500);
@@ -765,6 +768,35 @@ class AtakOrderRepository
         }
 
         return in_array($s, self::STATUSES, true) ? $s : 'PENDING';
+    }
+
+    /**
+     * Transitions autorisées :
+     * PENDING/DELIVERED → ACK | FAILED | CANCELLED
+     * ACK → EXEC | FAILED | CANCELLED
+     * EXEC → FAILED | CANCELLED
+     */
+    public function canTransitionStatus(string $current, string $next): bool
+    {
+        $current = $this->normalizeStatus($current);
+        $next = $this->normalizeStatus($next);
+        if ($current === $next) {
+            return true;
+        }
+        if ($current === 'CANCELLED') {
+            return false;
+        }
+        if ($next === 'CANCELLED') {
+            return !in_array($current, ['CANCELLED', 'FAILED'], true);
+        }
+
+        return match ($next) {
+            'ACK' => in_array($current, ['PENDING', 'DELIVERED'], true),
+            'EXEC' => $current === 'ACK',
+            'FAILED' => in_array($current, ['DELIVERED', 'ACK', 'EXEC'], true),
+            'DELIVERED' => $current === 'PENDING',
+            default => false,
+        };
     }
 
     public function normalizeTargetType(string $type): string

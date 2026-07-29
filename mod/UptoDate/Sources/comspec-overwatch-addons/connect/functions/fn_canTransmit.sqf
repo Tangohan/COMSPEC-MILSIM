@@ -60,7 +60,21 @@ if (!isNil "_zoneFx" && {_zoneFx isEqualType createHashMap}) then {
 };
 if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
 
-// ATAK éteint
+// Écran endommagé : position seule (GPS / BFT) — avant le test « éteint » car l’historique
+// couplait écran cassé + powered_off=false, ce qui masquait l’opérateur du web.
+if !(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connection_ok", true]} exitWith {
+    if (_requireFull) then {
+        _result set ["can_transmit", false];
+    } else {
+        _result set ["can_transmit", true];
+    };
+    _result set ["mode", "position_only"];
+    _result set ["reason", "screen_destroyed"];
+    _result set ["link_state", [] call comspec_overwatch_connect_fnc_refreshLinkState];
+    _result
+};
+
+// ATAK éteint volontairement
 if !(_atak getOrDefault ["powered_on", true]) exitWith {
     _result set ["can_transmit", false];
     _result set ["mode", "none"];
@@ -69,17 +83,7 @@ if !(_atak getOrDefault ["powered_on", true]) exitWith {
     _result
 };
 
-// Écran endommagé : position seule sauf si liaison complète exigée
-if !(_atak getOrDefault ["screen_ok", true]) then {
-    if (_requireFull) exitWith {
-        _result set ["can_transmit", false];
-        _result set ["mode", "position_only"];
-        _result set ["reason", "screen_destroyed"];
-        _result set ["link_state", "degraded"];
-        _result
-    };
-    _result set ["mode", "position_only"];
-    _result set ["link_state", "degraded"];
-};
+private _refreshed = [] call comspec_overwatch_connect_fnc_refreshLinkState;
+_result set ["link_state", _refreshed];
 
 _result

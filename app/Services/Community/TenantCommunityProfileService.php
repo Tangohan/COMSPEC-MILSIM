@@ -521,6 +521,7 @@ final class TenantCommunityProfileService
         // Conserver clés existantes non gérées par ce formulaire
         foreach ([
             'community_locked', 'welcome_text', 'require_ai_ack',
+            'refuse_other_community_members',
             'default_locale', 'orbat_visibility', 'default_guest_role_slug',
         ] as $preserve) {
             if (!array_key_exists($preserve, $c) && array_key_exists($preserve, $existing)) {
@@ -852,26 +853,34 @@ final class TenantCommunityProfileService
      * @return array{
      *   tagline: string,
      *   style_badge_labels: list<string>,
+     *   style_badge_slugs: list<string>,
      *   registry_tag_labels: list<string>,
-     *   unit_affiliation_label: string
+     *   registry_tag_slugs: list<string>,
+     *   unit_affiliation_label: string,
+     *   locale: string,
+     *   locale_label: string
      * }
      */
     public static function registryCardMeta(array $community): array
     {
         $styleBadgeLabels = [];
+        $styleBadgeSlugs = [];
         if (!empty($community['style_badges']) && is_array($community['style_badges'])) {
             $labels = self::badgeLabels();
             foreach ($community['style_badges'] as $slug) {
                 if (is_string($slug) && isset($labels[$slug])) {
+                    $styleBadgeSlugs[] = $slug;
                     $styleBadgeLabels[] = $labels[$slug];
                 }
             }
         }
         $registryTagLabels = [];
+        $registryTagSlugs = [];
         if (!empty($community['registry_tags']) && is_array($community['registry_tags'])) {
             $reg = self::registryTagLabels();
             foreach ($community['registry_tags'] as $slug) {
                 if (is_string($slug) && isset($reg[$slug])) {
+                    $registryTagSlugs[] = $slug;
                     $registryTagLabels[] = $reg[$slug];
                 }
             }
@@ -895,13 +904,41 @@ final class TenantCommunityProfileService
         }
 
         $unitAffiliationLabel = self::unitAffiliationSummary($community);
+        [$locale, $localeLabel] = self::registryLocaleMeta($community, $registryTagSlugs);
 
         return [
             'tagline' => $tagline,
             'style_badge_labels' => $styleBadgeLabels,
+            'style_badge_slugs' => $styleBadgeSlugs,
             'registry_tag_labels' => $registryTagLabels,
+            'registry_tag_slugs' => $registryTagSlugs,
             'unit_affiliation_label' => $unitAffiliationLabel,
+            'locale' => $locale,
+            'locale_label' => $localeLabel,
         ];
+    }
+
+    /**
+     * Langue affichée / filtrable sur l’annuaire (libellés métier, jamais de codes bruts côté UI).
+     *
+     * @param list<string> $registryTagSlugs
+     * @return array{0: string, 1: string} [clé machine, libellé]
+     */
+    public static function registryLocaleMeta(array $community, array $registryTagSlugs = []): array
+    {
+        $raw = strtolower(trim((string) ($community['default_locale'] ?? '')));
+        $raw = str_replace('_', '-', $raw);
+        if ($raw === '' && in_array('fr_speaking', $registryTagSlugs, true)) {
+            return ['fr', 'Français'];
+        }
+        if ($raw === 'fr' || str_starts_with($raw, 'fr-')) {
+            return ['fr', 'Français'];
+        }
+        if ($raw === 'en' || str_starts_with($raw, 'en-')) {
+            return ['en', 'English'];
+        }
+
+        return ['', ''];
     }
 
     /**

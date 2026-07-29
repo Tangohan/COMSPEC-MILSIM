@@ -29,6 +29,7 @@ params [
 private _pfhId = missionNamespace getVariable ["COMSPEC_RoleplayPpFnc", -1];
 private _aberId = missionNamespace getVariable ["COMSPEC_RoleplayPpAber", -1];
 private _grainId = missionNamespace getVariable ["COMSPEC_RoleplayPpGrain", -1];
+private _colorId = missionNamespace getVariable ["COMSPEC_RoleplayPpColor", -1];
 
 private _cleanup = {
     if (_pfhId >= 0) then {
@@ -45,6 +46,11 @@ private _cleanup = {
         _grainId ppEffectDestroy;
         missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", -1, false];
     };
+    if (_colorId >= 0 && {_colorId isEqualType 0}) then {
+        _colorId ppEffectEnable false;
+        _colorId ppEffectDestroy;
+        missionNamespace setVariable ["COMSPEC_RoleplayPpColor", -1, false];
+    };
 };
 
 if (_stop) exitWith { call _cleanup; };
@@ -58,33 +64,44 @@ private _aberration = ppEffectCreate ["ChromAberration", 210];
 _aberration ppEffectEnable true;
 private _grain = ppEffectCreate ["FilmGrain", 2010];
 _grain ppEffectEnable true;
+private _color = ppEffectCreate ["ColorCorrections", 1998];
+_color ppEffectEnable true;
 
 missionNamespace setVariable ["COMSPEC_RoleplayPpAber", _aberration, false];
 missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", _grain, false];
+missionNamespace setVariable ["COMSPEC_RoleplayPpColor", _color, false];
 
 private _endTime = CBA_missionTime + (_durationSec max 1);
 
 private _handle = [{
     params ["_args", "_h"];
-    _args params ["_aberration", "_grain", "_endTime", "_baseIntensity"];
+    _args params ["_aberration", "_grain", "_color", "_endTime", "_baseIntensity"];
 
     if (CBA_missionTime >= _endTime) exitWith {
         _aberration ppEffectEnable false;
         _grain ppEffectEnable false;
+        _color ppEffectEnable false;
         _aberration ppEffectDestroy;
         _grain ppEffectDestroy;
+        _color ppEffectDestroy;
         missionNamespace setVariable ["COMSPEC_RoleplayPpAber", -1, false];
         missionNamespace setVariable ["COMSPEC_RoleplayPpGrain", -1, false];
+        missionNamespace setVariable ["COMSPEC_RoleplayPpColor", -1, false];
         missionNamespace setVariable ["COMSPEC_RoleplayPpFnc", -1, false];
         [_h] call CBA_fnc_removePerFrameHandler;
     };
 
     private _strength = linearConversion [_endTime - 8, _endTime, CBA_missionTime, _baseIntensity, 0.08, true];
-    private _jolt = _strength * (0.008 + random 0.04);
+    private _jolt = _strength * (0.015 + random 0.065);
     _aberration ppEffectAdjust [_jolt, _jolt, true];
-    _aberration ppEffectCommit 0.12;
-    _grain ppEffectAdjust [_strength * (0.08 + random 0.22), 1, 1, 0, 1, false];
-    _grain ppEffectCommit 0.12;
-}, 0.15, [_aberration, _grain, _endTime, _intensity min 1 max 0]] call CBA_fnc_addPerFrameHandler;
+    _aberration ppEffectCommit 0.08;
+    _grain ppEffectAdjust [_strength * (0.16 + random 0.38), 1.15, 1.3, 0, 1, false];
+    _grain ppEffectCommit 0.08;
+    private _dark = 1 - (_strength * 0.22);
+    private _sat = 1 - (_strength * 0.35);
+    private _tint = [1, 0.92 - (_strength * 0.18), 0.86 - (_strength * 0.25), 1];
+    _color ppEffectAdjust [_dark, _dark, 0, _tint, [1, 1, 1, 1], [0.199, 0.587, 0.114, 0]];
+    _color ppEffectCommit 0.08;
+}, 0.12, [_aberration, _grain, _color, _endTime, _intensity min 1 max 0]] call CBA_fnc_addPerFrameHandler;
 
 missionNamespace setVariable ["COMSPEC_RoleplayPpFnc", _handle, false];

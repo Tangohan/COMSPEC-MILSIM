@@ -9,6 +9,8 @@ $modDownloadUrl = $modDownloadUrl ?? null;
 $atakSetupUrl = (string) ($atakSetupUrl ?? url('atak/setup'));
 $atakUrl = (string) ($atakUrl ?? url('atak'));
 $docsUrl = (string) ($docsUrl ?? url('documentation'));
+$owGuideUrl = (string) ($owGuideUrl ?? url('atak/mod/guide'));
+$owFormationUrl = (string) ($owFormationUrl ?? url('atak/mod/formation'));
 $canManageMod = !empty($canManageMod);
 $adminModUrl = (string) ($adminModUrl ?? url('admin/atak-mod'));
 ?>
@@ -59,6 +61,12 @@ $adminModUrl = (string) ($adminModUrl ?? url('admin/atak-mod'));
                 <a class="atak-mod-dl__cta atak-mod-dl__cta--ghost" href="<?= htmlspecialchars($atakSetupUrl, ENT_QUOTES, 'UTF-8') ?>">
                     Guide d’installation
                 </a>
+                <a class="atak-mod-dl__cta atak-mod-dl__cta--ghost" href="<?= htmlspecialchars($owGuideUrl, ENT_QUOTES, 'UTF-8') ?>">
+                    Guide complet du mod
+                </a>
+                <a class="atak-mod-dl__cta atak-mod-dl__cta--ghost" href="<?= htmlspecialchars($owFormationUrl, ENT_QUOTES, 'UTF-8') ?>">
+                    Formation opérateur
+                </a>
                 <a class="atak-mod-dl__cta atak-mod-dl__cta--ghost" href="<?= htmlspecialchars($atakUrl, ENT_QUOTES, 'UTF-8') ?>">
                     Ouvrir ATAK
                 </a>
@@ -75,6 +83,21 @@ $adminModUrl = (string) ($adminModUrl ?? url('admin/atak-mod'));
                 <?php endif; ?>
             </div>
         <?php endif; ?>
+    </section>
+
+    <section class="atak-mod-dl__card">
+        <h2>Documentation &amp; formation</h2>
+        <p style="margin:0 0 1rem;color:#64748b;font-size:0.92rem;">
+            Guide intégré au portail et parcours de formation pas à pas (pack <?= htmlspecialchars($modVersion !== '' ? $modVersion : '1.3.0', ENT_QUOTES, 'UTF-8') ?>).
+        </p>
+        <div class="atak-mod-dl__actions">
+            <a class="atak-mod-dl__cta" href="<?= htmlspecialchars($owGuideUrl, ENT_QUOTES, 'UTF-8') ?>">
+                Lire le guide Overwatch
+            </a>
+            <a class="atak-mod-dl__cta atak-mod-dl__cta--ghost" href="<?= htmlspecialchars($owFormationUrl, ENT_QUOTES, 'UTF-8') ?>">
+                Suivre la formation (7 modules)
+            </a>
+        </div>
     </section>
 
     <section class="atak-mod-dl__card">

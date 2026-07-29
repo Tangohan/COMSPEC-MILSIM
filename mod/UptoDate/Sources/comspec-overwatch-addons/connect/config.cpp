@@ -11,9 +11,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.41;
-        versionStr = "1.4.5";
-        versionAr[] = {1, 4, 1};
+        version = 1.411;
+        versionStr = "1.4.11";
+        versionAr[] = {1, 4, 11};
     };
 };
 
@@ -43,6 +43,7 @@ class CfgFunctions {
             class reportDiag {};
             class bugReportShow {};
             class bugReportSubmit {};
+            class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
             class updatePosition {};
@@ -56,7 +57,10 @@ class CfgFunctions {
             class pauseManagerJSDialog {};
             class onInterruptLoad {};
             class log {};
+            class logAtakEvent {};
+            class logAtakStateChange {};
             class logDump {};
+            class startLogSession {};
             class logTransmission {};
             class logFnError {};
             class callExtLogged {};
@@ -102,6 +106,7 @@ class CfgFunctions {
             class deleteMapShape {};
             class pollMapShapes {};
             class captureReconImage {};
+            class markBcePhotoCapture {};
             class syncLaserCode {};
             class receiveDangerZone {};
             class updateDangerZone {};
@@ -122,6 +127,9 @@ class CfgFunctions {
             class orderComposeRefreshLinkStatus {};
             class orderComposeSubmit {};
             class updateOrderStatus {};
+            class orderCanTransition {};
+            class orderParseWaypoint {};
+            class orderApplyMoveWaypoint {};
             class receiveOrder {};
             class orderConcernsPlayer {};
             class pollOrders {};
@@ -264,6 +272,7 @@ class CfgFunctions {
             class handlePositionUpdateCallback {};
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
+            class refreshLinkState {};
             class getNetworkDisconnectInfo {};
             class playRoleplaySound {};
             class injectRoleplayEffectsInBrowser {};
@@ -295,12 +304,28 @@ class CfgFunctions {
             class createRoleplayZoneFromZeus {};
             class registerZenRoleplayModules {};
             class applyZeusAtakEffect {};
+            class relayZeusAtakEffect {};
+            class updateDeviceOverlay {};
             class syncTerminalCompromise {};
             class captureEnemyAtak {};
             class syncPlayerAtakPublicVars {};
             class zeusShowPlayerAtak {};
             class registerZenAtakPlayerActions {};
         };
+    };
+};
+
+class CfgRemoteExec {
+    class Functions {
+        mode = 1;
+        jip = 0;
+        class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
+        class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
+    };
+    class Commands {
+        mode = 1;
+        jip = 0;
     };
 };
 

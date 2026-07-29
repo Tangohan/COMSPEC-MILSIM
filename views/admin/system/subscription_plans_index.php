@@ -21,9 +21,8 @@ $rows = is_array($subscriptionPlansRows ?? null) ? $subscriptionPlansRows : [];
 
         <h1 class="text-2xl font-black text-slate-900">Formules d’accès (paliers)</h1>
         <p class="mt-2 max-w-3xl text-sm text-slate-600">
-            Libellés affichés, ordre de présentation, fonctionnalités activables (<code class="rounded bg-slate-100 px-1 text-xs">features_json</code>),
-            quotas (<code class="rounded bg-slate-100 px-1 text-xs">limits_json</code>) et identifiants de prix Stripe si vous facturez en ligne.
-            L’identifiant interne (<strong class="font-semibold text-slate-800">slug</strong>) n’est pas modifiable ici pour éviter de désynchroniser les communautés existantes.
+            Libellés, ordre d’affichage, modules inclus, plafonds et identifiants de paiement PayPal (ou Stripe en secours).
+            L’identifiant interne de chaque formule n’est pas modifiable ici, pour ne pas désynchroniser les communautés déjà créées.
         </p>
 
         <div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">

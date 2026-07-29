@@ -41,6 +41,7 @@ $tocGroups = [
             ['id' => 'evenements-messages-pointage', 'title' => 'Événements, messages & pointage'],
             ['id' => 'equipement-et-modpacks', 'title' => 'Équipement & modpacks'],
             ['id' => 'outils-cartes-et-tactique', 'title' => 'Outils, cartes & tactique'],
+            ['id' => 'bibliotheque-marqueurs', 'title' => 'Bibliothèque de marqueurs'],
             ['id' => 'diapositives-briefing-eden', 'title' => 'Diapositives de briefing (Eden)'],
             ['id' => 'recrutement-et-enrolement', 'title' => 'Recrutement & enrôlement'],
         ],
@@ -101,7 +102,10 @@ $tocGroups = [
             </div>
             <?php endforeach; ?>
             <p class="site-docs__ref-link">
-                <a href="<?= htmlspecialchars(url('documentation/references'), ENT_QUOTES, 'UTF-8') ?>">Références projet (équipe)</a>
+                <a href="<?= htmlspecialchars(url('documentation/marqueurs'), ENT_QUOTES, 'UTF-8') ?>">Bibliothèque de marqueurs</a>
+            </p>
+            <p class="site-docs__ref-link">
+                <a href="<?= htmlspecialchars(url('documentation/references'), ENT_QUOTES, 'UTF-8') ?>">Documentation technique du mod</a>
             </p>
         </aside>
 

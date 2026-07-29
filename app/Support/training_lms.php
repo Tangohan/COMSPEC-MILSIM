@@ -92,6 +92,30 @@ function training_lesson_type_labels_fr(): array
 }
 
 /**
+ * Libellés apprenant (portail) — sans jargon technique d’édition.
+ *
+ * @return array<string, string>
+ */
+function training_lesson_type_labels_learner_fr(): array
+{
+    return [
+        'richtext' => 'Fiche de synthèse',
+        'video' => 'Vidéo',
+        'video_integrated' => 'Vidéo',
+        'video_embed' => 'Vidéo',
+        'pdf' => 'Document à consulter',
+        'audio' => 'Audio',
+        'scorm_like' => 'Parcours guidé',
+        'checklist' => 'Liste de contrôle',
+        'external_link' => 'Ressource externe',
+        'canvas' => 'Parcours interactif',
+        'quiz' => 'Évaluation',
+        'modals' => 'Fiches à explorer',
+        'slideshow' => 'Diaporama',
+    ];
+}
+
+/**
  * Regroupement des types pour les listes déroulantes (ordre d’affichage).
  *
  * @return array<string, list<string>>

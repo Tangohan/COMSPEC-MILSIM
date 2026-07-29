@@ -12,6 +12,9 @@
 private _state = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
 private _result = createHashMap;
 
+[] call comspec_overwatch_connect_fnc_isNetworkDisconnected;
+_state = missionNamespace getVariable ["COMSPEC_NetworkDisconnectState", createHashMap];
+
 private _isDisconnected = _state getOrDefault ["is_disconnected", false];
 private _until = _state getOrDefault ["disconnect_until", -1];
 private _remaining = 0;

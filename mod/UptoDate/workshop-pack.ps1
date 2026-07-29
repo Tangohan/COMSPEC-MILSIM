@@ -99,6 +99,20 @@ if (Test-Path -LiteralPath $credits) {
     Copy-Item -LiteralPath $credits -Destination (Join-Path $OutDir "CREDITS.md") -Force
 }
 
+$docsSrc = Join-Path $ModRoot "docs"
+if (Test-Path -LiteralPath $docsSrc) {
+    Write-Step "Copie documentation joueur (docs/)"
+    Copy-Item -LiteralPath $docsSrc -Destination (Join-Path $OutDir "docs") -Recurse -Force
+}
+$docsIndex = Join-Path $SourceMod "DOCS.md"
+if (Test-Path -LiteralPath $docsIndex) {
+    Copy-Item -LiteralPath $docsIndex -Destination (Join-Path $OutDir "DOCS.md") -Force
+}
+$changelog = Join-Path $SourceMod "CHANGELOG.md"
+if (Test-Path -LiteralPath $changelog) {
+    Copy-Item -LiteralPath $changelog -Destination (Join-Path $OutDir "CHANGELOG.md") -Force
+}
+
 Write-Step "Copie PBO"
 Copy-Item -LiteralPath $pboMain -Destination (Join-Path $OutDir "addons\main.pbo") -Force
 Copy-Item -LiteralPath $pboConnect -Destination (Join-Path $OutDir "addons\connect.pbo") -Force

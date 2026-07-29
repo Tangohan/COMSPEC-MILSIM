@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Codes d’invitation — charte ATHENA.
+ * Codes d’invitation prioritaires — charte ATHENA.
  *
- * L’en-tête de page est rendu par la coque back-office.
+ * Distincts des invitations par e-mail (Personnel) et du code communauté.
  *
  * @var list<array<string, mixed>> $inviteCodes
  * @var bool $showAll
@@ -44,20 +44,22 @@ foreach ($inviteCodes as $code) {
 $total = count($inviteCodes);
 $pctOf = static fn (int $n): string => $total > 0 ? (string) (int) round($n / $total * 100) . '%' : '0%';
 ?>
-<nav class="ath-periods" aria-label="Filtrer les codes">
+<nav class="ath-periods" aria-label="Filtrer les codes prioritaires">
     <span class="ath-periods__label">Affichage</span>
     <a href="<?= $h($baseUrl) ?>" class="ath-btn"<?= $showAll ? '' : ' aria-current="true"' ?>>Codes actifs</a>
     <a href="<?= $h($baseUrl . '?all=1') ?>" class="ath-btn"<?= $showAll ? ' aria-current="true"' : '' ?>>Tous les codes</a>
     <span class="ath-table-toolbar__spacer" aria-hidden="true"></span>
-    <a href="<?= $h($baseUrl . '/creer') ?>" class="ath-btn ath-btn--solid">Créer un code</a>
+    <a href="<?= $h($baseUrl . '/creer') ?>" class="ath-btn ath-btn--solid">Créer un code prioritaire</a>
 </nav>
 
 <div class="ath-note">
-    <p class="ath-note__title">À propos des codes d’invitation</p>
+    <p class="ath-note__title">Codes d’invitation prioritaires</p>
     <p class="ath-note__text">
-        Un code permet à une personne de rejoindre votre communauté sans passer par le circuit
-        complet de candidature. Avec la <strong>validation automatique</strong>, la candidature est
-        acceptée dès l’usage du code. Chaque code peut être limité en nombre d’utilisations et daté.
+        Ces codes s’utilisent <strong>uniquement sur le formulaire de candidature</strong> pour accélérer
+        l’arrivée d’une personne déjà connue (migration, recrutement ciblé). Ils ne remplacent pas
+        les <strong>invitations par e-mail</strong> (ajout d’un membre déjà prévu dans l’organigramme)
+        ni le <strong>code communauté</strong> (rejoindre la communauté depuis l’accueil).
+        Avec la <strong>validation automatique</strong>, la candidature est acceptée dès l’usage du code.
     </p>
 </div>
 
@@ -71,9 +73,9 @@ $athKpis = [
 ];
 require base_path('views/partials/ath_kpis.php');
 
-$athTableTitle = $showAll ? 'Tous les codes' : 'Codes actifs';
+$athTableTitle = $showAll ? 'Tous les codes prioritaires' : 'Codes prioritaires actifs';
 $athTableCount = $total;
-$athTableCols = ['CODE|m', 'LIBELLÉ', 'VALIDATION', 'UTILISATIONS|r', 'EXPIRATION|m', 'ÉTAT|b'];
+$athTableCols = ['CODE|m', 'NOM INTERNE', 'VALIDATION', 'UTILISATIONS|r', 'EXPIRATION|m', 'ÉTAT|b'];
 $athTableRows = [];
 $athTableRowHrefs = [];
 $athTableRowActions = [];
@@ -96,14 +98,13 @@ foreach ($inviteCodes as $code) {
     $label = trim((string) ($code['label'] ?? ''));
     $athTableRows[] = [
         (string) ($code['code'] ?? '—'),
-        $label !== '' ? $label : 'Sans libellé',
+        $label !== '' ? $label : 'Sans nom',
         !empty($code['auto_accept']) ? 'Automatique' : 'Sur revue',
         $usesCount . ($maxUses !== null ? ' / ' . $maxUses : ''),
         $expiresAt !== null ? date('d/m/Y', (int) strtotime((string) $expiresAt)) : 'Sans limite',
         $state,
     ];
     $athTableRowHrefs[] = $baseUrl . '/' . $codeId;
-    // Balisage d’action construit ici, échappements compris (cf. contrat de ath_table.php).
     $athTableRowActions[] = '<a href="' . $h($baseUrl . '/' . $codeId) . '" class="ath-row-action">Détails</a> '
         . '<a href="' . $h($baseUrl . '/' . $codeId . '/modifier') . '" class="ath-row-action">Modifier</a>';
 }
@@ -114,6 +115,6 @@ $athTableShowCheckbox = false;
 $athTableExportUrl = null;
 $athTablePager = null;
 $athTableFoot = $inviteCodes === []
-    ? ($showAll ? 'Aucun code d’invitation n’a encore été créé.' : 'Aucun code actif : ajoutez « Tous les codes » pour voir les codes expirés ou épuisés.')
+    ? ($showAll ? 'Aucun code d’invitation prioritaire n’a encore été créé.' : 'Aucun code actif : consultez « Tous les codes » pour voir les codes expirés ou épuisés.')
     : 'Cliquez une ligne pour ouvrir la fiche du code et son historique d’utilisation.';
 require base_path('views/partials/ath_table.php');

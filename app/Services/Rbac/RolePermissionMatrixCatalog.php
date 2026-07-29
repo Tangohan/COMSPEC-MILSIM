@@ -208,18 +208,22 @@ final class RolePermissionMatrixCatalog
                     'atak.terminals.view', 'atak.terminals.manage',
                     'atak.certificates.view', 'atak.certificates.manage',
                     'atak.config.manage', 'atak.mission_cycle.manage', 'atak.aar.manage',
+                    'atak.sse.access', 'atak.sse.grant', 'atak.sse.case.manage', 'atak.sse.export',
                     'operations.missions.view', 'operations.missions.manage',
                     'operations.aar.view', 'operations.aar.export',
                 ],
                 self::LEVEL_SA_SECTION => [
                     'atak.terminals.view', 'atak.certificates.view',
+                    'atak.sse.access',
                     'operations.missions.view', 'operations.aar.view',
                 ],
                 self::LEVEL_SON_GROUPE => [
                     'atak.terminals.view', 'operations.missions.view',
                 ],
                 self::LEVEL_LECTURE => [
-                    'atak.terminals.view', 'atak.certificates.view', 'operations.missions.view', 'operations.aar.view',
+                    'atak.terminals.view', 'atak.certificates.view',
+                    'atak.sse.access', 'atak.sse.case.manage', 'atak.sse.export',
+                    'operations.missions.view', 'operations.aar.view',
                 ],
                 self::LEVEL_SA_FICHE => [],
                 self::LEVEL_INSTRUCTION => [
@@ -300,6 +304,7 @@ final class RolePermissionMatrixCatalog
                 'admin.compliance.export',
                 'finances.export',
                 'atak.certificates.export',
+                'atak.sse.export',
             ]);
         }
 

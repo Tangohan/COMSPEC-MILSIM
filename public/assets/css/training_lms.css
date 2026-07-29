@@ -682,6 +682,249 @@
   }
 }
 
+.lms-course-open-intro__lead {
+  margin: 0 0 1rem;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.lms-course-open-enroll__copy {
+  max-width: min(52rem, 100%);
+}
+
+.lms-course-open-enroll__grid {
+  display: grid;
+  gap: 1.25rem;
+  text-align: left;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 900px) {
+  .lms-course-open-enroll__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.75rem;
+    align-items: start;
+  }
+}
+
+.lms-course-open-enroll__section-label {
+  margin: 0 0 0.65rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(167, 243, 208, 0.9);
+}
+
+.lms-course-open-enroll__prereq,
+.lms-course-open-enroll__panel {
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1.15rem 1.2rem;
+}
+
+.lms-course-open-enroll__muted,
+.lms-course-open-enroll__lead {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.lms-course-open-enroll__lead {
+  margin-bottom: 1rem;
+}
+
+.lms-course-open-enroll__sub {
+  margin: 0.85rem 0 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.95);
+}
+
+.lms-course-open-enroll__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.lms-course-open-enroll__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #f1f5f9;
+}
+
+.lms-course-open-enroll__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.lms-course-open-enroll__mark.is-ok {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
+.lms-course-open-enroll__mark.is-warn {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+}
+
+.lms-course-open-enroll__flag {
+  margin: 0.55rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.lms-course-open-enroll__flag--err {
+  color: #fecaca;
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(251, 113, 133, 0.35);
+}
+
+.lms-course-open-enroll__waiting {
+  display: inline-flex;
+  margin: 0 0 0.85rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.65rem;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fde68a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lms-course-open-enroll__form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.lms-course-open-enroll__label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.lms-course-open-enroll__label em {
+  font-style: normal;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.lms-course-open-enroll__label textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  resize: vertical;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.lms-course-open-enroll__label textarea::placeholder {
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.lms-course-open-enroll__label textarea:focus {
+  outline: 2px solid rgba(167, 243, 208, 0.65);
+  outline-offset: 1px;
+}
+
+.lms-course-open-enroll__flash {
+  margin: 0 0 0.85rem;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.lms-course-open-enroll__flash--ok {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+
+.lms-course-open-enroll__flash--err {
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(251, 113, 133, 0.35);
+  color: #fecdd3;
+}
+
+html.lms-course-open-locked,
+html.lms-course-open-locked body {
+  overflow: hidden;
+}
+
+.lms-course-open-enroll .lms-course-open-intro__cta {
+  width: 100%;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.lms-course-open-enroll__bypass {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: rgba(167, 243, 208, 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lms-course-open-enroll__bypass:hover {
+  color: #ecfdf5;
+}
+
+@media (max-width: 899px) {
+  .lms-course-open-enroll__copy {
+    max-height: min(70dvh, 100%);
+    overflow-y: auto;
+    padding-right: 0.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lms-course-open-enroll__label textarea {
+    transition: none;
+  }
+}
+
 /* Shell fiche parcours / leçon / quiz : 2 colonnes desktop, indépendant du purge Tailwind. */
 .lms-course-shell {
   display: flex;

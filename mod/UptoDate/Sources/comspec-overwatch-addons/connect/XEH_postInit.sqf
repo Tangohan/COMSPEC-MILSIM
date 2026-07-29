@@ -5,6 +5,14 @@ if (!hasInterface) exitWith {};
 // Warmup extension (charge la DLL)
 "COMSPECExtension" callExtension "Warmup";
 
+// Nouveau journal fichier pour cette session Arma (purge des anciens)
+if (missionNamespace getVariable ["comspec_overwatch_log_to_file", true]) then {
+    private _logPath = [] call comspec_overwatch_connect_fnc_startLogSession;
+    if (_logPath isNotEqualTo "") then {
+        ["INFO", "Boot", format ["Journal session : %1", _logPath]] call comspec_overwatch_connect_fnc_log;
+    };
+};
+
 // EH marqueurs dès le PostInit (avant handshake) — file d’attente si Athena pas prêt
 if (isNil "COMSPEC_MapMarkerEHsEarly") then {
     COMSPEC_MapMarkerEHsEarly = true;
@@ -214,26 +222,25 @@ if (isNil "COMSPEC_ExtensionCallbackEH") then {
         [false] call comspec_overwatch_connect_fnc_syncCallsignFromAthena;
     };
 
-    // Alerte immédiate dès le passage KO (ACE) — le PFH position couvre aussi FC=0
+    // Alerte immédiate dès le passage KO (ACE) — le PFH position couvre aussi FC=0 / KAT
     if (isNil "COMSPEC_aceUnconsciousEH") then {
         COMSPEC_aceUnconsciousEH = ["ace_unconscious", {
             params ["_unit", "_isUnconscious"];
             if (!local _unit || {_unit != player}) exitWith {};
             if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
             if (isNull findDisplay 46) exitWith {};
-            // Ignorer les bascules ACE pendant spawn / init médicale
             if !(missionNamespace getVariable ["COMSPEC_MedicalAlertsArmed", false]) exitWith {};
             if !([] call comspec_overwatch_connect_fnc_isPlayerSpawnStable) exitWith {};
             if (_isUnconscious) then {
                 [_unit] call comspec_overwatch_connect_fnc_checkMedicalAlerts;
             } else {
-                // Réveil réel : clôturer l’alerte côté Athena (silent) + reset verrou local.
                 [true] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert;
                 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
             };
         }] call CBA_fnc_addEventHandler;
     };
 
+    // ACE : inconscience / rétablissement
     // Plus d’entrées dans le menu molette : tablette = K, hub = Ctrl+Shift+K, messagerie = Ctrl+K.
     // (Les outils restent accessibles via le hub / ACE / tablette.)
 

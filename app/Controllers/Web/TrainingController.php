@@ -687,6 +687,11 @@ class TrainingController
             'lmsCommentsEnabled' => $lmsCommentsEnabled,
             'canWithdrawEnrollment' => $canWithdrawEnrollment,
             'canPublishOperationalBoard' => $canPublishOperationalBoard,
+            'lmsOpeningStaffBypass' => $gate->allows('training.manage')
+                || $gate->allows('training.publish')
+                || $gate->allows('admin.organization')
+                || $gate->allows('admin.access')
+                || $gate->allows('admin.system'),
             'lmsPassedQuizIds' => $lmsPassedQuizIds,
             'analyticsBeacon' => [
                 'tenantId' => $tenantId,

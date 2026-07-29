@@ -17,10 +17,27 @@ if (_msg isEqualTo "") exitWith {
     ["Décrivez le problème avant d’envoyer.", "system", "warn"] call comspec_overwatch_connect_fnc_announce;
 };
 
-private _ok = ["BUG", _cat, _msg, "", "player"] call comspec_overwatch_connect_fnc_reportDiag;
+private _attachLog = true;
+private _chk = _disp displayCtrl 9805;
+if (!isNull _chk) then {
+    _attachLog = _chk getVariable ["COMSPEC_LogAttach", true];
+};
+
+private _detail = "";
+if (_attachLog) then {
+    ["INFO", "BugReport", "Collecte journal pour signalement"] call comspec_overwatch_connect_fnc_log;
+    _detail = [] call comspec_overwatch_connect_fnc_collectBugReportLog;
+};
+
+private _ok = ["BUG", _cat, _msg, _detail, "player"] call comspec_overwatch_connect_fnc_reportDiag;
 
 if (_ok) then {
-    ["Signalement transmis à l’équipe Athena. Merci.", "system", "info"] call comspec_overwatch_connect_fnc_announce;
+    private _ack = if (_attachLog && {_detail isNotEqualTo ""}) then {
+        "Signalement et journal transmis à l’équipe Athena. Merci."
+    } else {
+        "Signalement transmis à l’équipe Athena. Merci."
+    };
+    [_ack, "system", "info"] call comspec_overwatch_connect_fnc_announce;
 } else {
     ["Impossible d’envoyer le signalement pour le moment. Réessayez un peu plus tard.", "system", "warn"] call comspec_overwatch_connect_fnc_announce;
 };

@@ -10,9 +10,9 @@
     Réglage CBA : comspec_overwatch_log_level
         0 = muet, 1 = erreurs, 2 = alertes, 3 = normal, 4 = détaillé
     Réglage CBA : comspec_overwatch_log_to_file
-        Si activé, chaque ligne est aussi ajoutée à un fichier .log (via COMSPECExtension,
-        commande LogWrite) — best-effort : silencieux si l'extension est absente/indisponible,
-        le RPT (diag_log ci-dessous) reste alors la seule trace. Ne jamais faire transiter de
+        Si activé, chaque lancement Arma crée un fichier dans COMSPEC/logs (via LogWrite).
+        Les anciens journaux sont purgés automatiquement (12 derniers conservés).
+        Best-effort : silencieux si l'extension est absente. Ne jamais faire transiter de
         secret (clé Athena, tokens) dans _message/_detail : c'est écrit tel quel sur disque.
 */
 params [

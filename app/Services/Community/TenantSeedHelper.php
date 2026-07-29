@@ -864,4 +864,17 @@ final class TenantSeedHelper
         require_once $path;
         run_training_bureau_recrutement_course_for_tenant($pdo, $tenantId, $authorUserId);
     }
+
+    /**
+     * Formation LMS « ATAK Athena et Overwatch » (web + in-game) — idempotent par slug.
+     */
+    public static function ensureAtakCourse(PDO $pdo, int $tenantId, ?int $authorUserId = null): void
+    {
+        $path = dirname(__DIR__, 3) . '/bootstrap/training_atak_course_seed.php';
+        if (!is_file($path)) {
+            return;
+        }
+        require_once $path;
+        run_training_atak_course_for_tenant($pdo, $tenantId, $authorUserId);
+    }
 }

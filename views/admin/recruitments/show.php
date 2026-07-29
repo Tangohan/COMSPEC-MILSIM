@@ -14,6 +14,9 @@ $statusLabels = [
     'blocked' => 'Non admis',
 ];
 $statusLabel = $statusLabels[$statusRaw] ?? $statusRaw;
+if ($statusRaw === 'rejected' && !empty($e['auto_rejected'])) {
+    $statusLabel = 'Refusée automatiquement';
+}
 // Dossier clos = décision rendue (acceptée, refusée ou non admis) : plus d’instruction à mener, UI allégée.
 $dossierClosedStatuses = ['reviewed', 'rejected', 'blocked'];
 $isDossierClos = in_array($statusRaw, $dossierClosedStatuses, true);
@@ -1562,7 +1565,7 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                 'motivation_why_join' => 'Motivation',
                 'motivation_accountability' => 'Responsabilité & sérieux',
                 'commitment_effort' => 'Engagement',
-                'availability_wed_sat' => 'Mercredis & samedis soir',
+                'availability_wed_sat' => 'Confirmation des créneaux principaux',
                 'availability' => 'Disponibilité (résumé)',
             ];
             $hasOlympus = false;
@@ -1572,8 +1575,17 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                     break;
                 }
             }
+            $customAnswersRaw = $e['custom_answers_json'] ?? null;
+            $customAnswersList = [];
+            if (is_string($customAnswersRaw) && $customAnswersRaw !== '') {
+                $decodedCa = json_decode($customAnswersRaw, true);
+                $customAnswersList = is_array($decodedCa) ? $decodedCa : [];
+            } elseif (is_array($customAnswersRaw)) {
+                $customAnswersList = $customAnswersRaw;
+            }
+            $hasCustomAnswers = $customAnswersList !== [];
             ?>
-            <?php if ($hasOlympus && !$isDossierClos): ?>
+            <?php if (($hasOlympus || $hasCustomAnswers) && !$isDossierClos): ?>
             <section class="overflow-hidden rounded-2xl border border-stone-300/80 bg-white shadow-sm">
                 <div class="border-b border-stone-200 bg-stone-50 px-6 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Rubrique 2</p>
@@ -1587,6 +1599,20 @@ $bureauRecrutementCourseUrl = url('formations/parcours-bureau-recrutement');
                                 <p class="mt-2 text-sm leading-relaxed text-stone-800 whitespace-pre-wrap"><?= htmlspecialchars((string) $e[$col]) ?></p>
                             </div>
                         <?php endif; ?>
+                    <?php endforeach; ?>
+                    <?php foreach ($customAnswersList as $caRow): ?>
+                        <?php if (!is_array($caRow)) { continue; } ?>
+                        <?php
+                        $caLabel = trim((string) ($caRow['label'] ?? ''));
+                        $caAnswer = trim((string) ($caRow['answer'] ?? ''));
+                        if ($caLabel === '' || $caAnswer === '') {
+                            continue;
+                        }
+                        ?>
+                        <div class="py-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-stone-500"><?= htmlspecialchars($caLabel, ENT_QUOTES, 'UTF-8') ?></p>
+                            <p class="mt-2 text-sm leading-relaxed text-stone-800 whitespace-pre-wrap"><?= htmlspecialchars($caAnswer, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
                     <?php endforeach; ?>
                 </div>
             </section>

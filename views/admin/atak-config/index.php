@@ -83,7 +83,7 @@ foreach ($dataSummary as $k => $v) {
     $experienceUpdatedAt = (string) ($experienceUpdatedAt ?? '');
     $experienceSchemaReady = !empty($experienceSchemaReady);
     ?>
-    <div class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+    <div id="bridge-modules" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
         <h2 class="text-sm font-bold text-slate-800 mb-1">Modules ATAK Enhanced / cTab</h2>
         <p class="text-xs text-slate-500 mb-4 leading-relaxed">
             Chaque fonctionnalité partagée entre le jeu et la carte tactique peut être activée ou désactivée pour votre communauté.
@@ -123,6 +123,23 @@ foreach ($dataSummary as $k => $v) {
                 </button>
             </div>
         </form>
+        <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+            <h3 class="text-sm font-bold text-amber-950 mb-1">Portail de renseignement classifié</h3>
+            <p class="text-xs text-amber-900/90 leading-relaxed mb-3">
+                Dossiers d’affaire, personnes, croisements et codes d’accès temporaires.
+                Le commandement entre <strong>sans code</strong> pour délivrer les accès aux opérateurs.
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <a href="<?= htmlspecialchars(url('back-office/renseignement/codes'), ENT_QUOTES, 'UTF-8') ?>"
+                   class="inline-flex px-4 py-2 bg-amber-800 text-white text-sm font-semibold rounded-lg hover:bg-amber-900">
+                    Délivrer des codes d’accès
+                </a>
+                <a href="<?= htmlspecialchars(url('atak/sse'), ENT_QUOTES, 'UTF-8') ?>"
+                   class="inline-flex px-4 py-2 bg-white border border-amber-300 text-amber-950 text-sm font-semibold rounded-lg hover:bg-amber-50">
+                    Ouvrir le portail
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="mb-8 border border-violet-200 rounded-xl p-5 bg-violet-50/30 shadow-sm">

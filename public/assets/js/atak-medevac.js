@@ -11,6 +11,7 @@ window.ATAKMedevac = (function () {
     '8. Nationalité / statut des blessés',
     '9. Contamination NBC'
   ];
+  var TERMINAL = { CANCELLED: 1, COMPLETE: 1, ABORTED: 1 };
   var knownIds = {};
   var firstLoad = true;
 
@@ -27,8 +28,11 @@ window.ATAKMedevac = (function () {
     var u = window.ATAK_USER || {};
     return u.callsign || u.displayName || 'MEDEVAC';
   }
+  function normalizeStatus(s) {
+    return String(s || '').trim().toUpperCase();
+  }
   function statusFr(s) {
-    var k = String(s || '').toUpperCase();
+    var k = normalizeStatus(s);
     var map = {
       REQUESTED: 'Demandée',
       ACKNOWLEDGED: 'Prise en compte',
@@ -41,11 +45,63 @@ window.ATAKMedevac = (function () {
     };
     return map[k] || k || '—';
   }
+  function isTerminal(status) {
+    return !!TERMINAL[normalizeStatus(status)];
+  }
+  function statusPillClass(status) {
+    var k = normalizeStatus(status);
+    if (k === 'COMPLETE') return 'atak-medevac-pill atak-medevac-pill--done';
+    if (k === 'CANCELLED' || k === 'ABORTED') return 'atak-medevac-pill atak-medevac-pill--cancelled';
+    if (k === 'INBOUND' || k === 'LAUNCHED' || k === 'ON_SCENE') return 'atak-medevac-pill atak-medevac-pill--inbound';
+    if (k === 'ACKNOWLEDGED') return 'atak-medevac-pill atak-medevac-pill--ack';
+    return 'atak-medevac-pill atak-medevac-pill--requested';
+  }
 
   function playMedevacSound() {
     if (window.ATAKSounds && typeof window.ATAKSounds.playEvent === 'function') {
       try { window.ATAKSounds.playEvent('medevac', { priority: true }); } catch (e) {}
     }
+  }
+
+  function setStatus(mid, st) {
+    if (!mid || !st || !apiBase()) return;
+    fetch(apiBase() + '/api/atak/medevac/' + encodeURIComponent(mid) + '/status', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: st })
+    }).then(function () { fetchList(); }).catch(function () {});
+  }
+
+  function deleteMedevac(mid) {
+    if (!mid || !apiBase()) return;
+    if (!window.confirm('Supprimer définitivement cette demande et toutes ses informations ? Cette action est irréversible.')) return;
+    fetch(apiBase() + '/api/atak/medevac/' + encodeURIComponent(mid), {
+      method: 'DELETE',
+      credentials: 'include'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('fail');
+      delete knownIds[String(mid)];
+      fetchList();
+      if (window.ATAKShowNotification) {
+        try { window.ATAKShowNotification('Demande MEDEVAC supprimée.'); } catch (e) {}
+      }
+    }).catch(function () {
+      if (window.ATAKShowError) window.ATAKShowError('Impossible de supprimer cette demande.');
+    });
+  }
+
+  function bindCardActions(el) {
+    el.querySelectorAll('[data-medevac-status]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setStatus(btn.getAttribute('data-id'), btn.getAttribute('data-medevac-status'));
+      });
+    });
+    el.querySelectorAll('[data-medevac-delete]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        deleteMedevac(btn.getAttribute('data-id'));
+      });
+    });
   }
 
   function fetchList() {
@@ -56,12 +112,14 @@ window.ATAKMedevac = (function () {
       .then(function (data) {
         var list = Array.isArray(data) ? data : [];
         var hasNew = false;
+        var nextKnown = {};
         for (var i = 0; i < list.length; i++) {
           var id = String(list[i].id || '');
           if (!id) continue;
           if (!firstLoad && !knownIds[id]) hasNew = true;
-          knownIds[id] = true;
+          nextKnown[id] = true;
         }
+        knownIds = nextKnown;
         firstLoad = false;
         if (hasNew) playMedevacSound();
 
@@ -71,21 +129,14 @@ window.ATAKMedevac = (function () {
           return;
         }
         el.innerHTML = list.map(formatItem).join('');
-        el.querySelectorAll('[data-medevac-status]').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            var mid = btn.getAttribute('data-id');
-            var st = btn.getAttribute('data-medevac-status');
-            if (!mid || !st) return;
-            fetch(apiBase() + '/api/atak/medevac/' + encodeURIComponent(mid) + '/status', {
-              method: 'POST',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: st })
-            }).then(function () { fetchList(); }).catch(function () {});
-          });
-        });
+        bindCardActions(el);
       })
       .catch(function () {});
+  }
+
+  function statusButton(id, status, label, modifier) {
+    return '<button type="button" class="atak-medevac-btn atak-medevac-btn--' + modifier + '" data-id="' + esc(id)
+      + '" data-medevac-status="' + esc(status) + '">' + esc(label) + '</button>';
   }
 
   function formatItem(m) {
@@ -94,17 +145,29 @@ window.ATAKMedevac = (function () {
       var v = m['line' + i];
       if (v) lines += '<div class="atak-medevac-line"><span class="atak-medevac-line-k">L' + i + '</span> ' + esc(v) + '</div>';
     }
-    return '<article class="atak-medevac-card" data-id="' + esc(m.id) + '">'
+    var st = normalizeStatus(m.status);
+    var actions = '';
+    if (!isTerminal(st)) {
+      actions += '<div class="atak-medevac-actions-flow" role="group" aria-label="Avancement de la mission">'
+        + statusButton(m.id, 'ACKNOWLEDGED', 'Prise en compte', 'ack')
+        + statusButton(m.id, 'INBOUND', 'En approche', 'inbound')
+        + statusButton(m.id, 'COMPLETE', 'Terminée', 'done')
+        + statusButton(m.id, 'CANCELLED', 'Annuler', 'cancel')
+        + '</div>';
+    } else {
+      actions += '<p class="atak-medevac-terminal-note">Mission clôturée — vous pouvez retirer la fiche du panneau.</p>';
+    }
+    actions += '<div class="atak-medevac-actions-danger">'
+      + '<button type="button" class="atak-medevac-btn atak-medevac-btn--delete" data-id="' + esc(m.id)
+      + '" data-medevac-delete="1" title="Effacer définitivement cette demande et ses lignes">Supprimer définitivement</button>'
+      + '</div>';
+
+    return '<article class="atak-medevac-card' + (isTerminal(st) ? ' atak-medevac-card--terminal' : '') + '" data-id="' + esc(m.id) + '">'
       + '<header class="atak-medevac-card-head"><strong>MEDEVAC #' + esc(m.id) + '</strong>'
-      + '<span class="atak-pill">' + esc(statusFr(m.status)) + '</span></header>'
+      + '<span class="' + statusPillClass(st) + '">' + esc(statusFr(m.status)) + '</span></header>'
       + '<p class="atak-medevac-meta">' + esc(m.author || '—') + '</p>'
       + lines
-      + '<div class="atak-medevac-actions">'
-      + '<button type="button" data-id="' + esc(m.id) + '" data-medevac-status="ACKNOWLEDGED">Prise en compte</button>'
-      + '<button type="button" data-id="' + esc(m.id) + '" data-medevac-status="INBOUND">En approche</button>'
-      + '<button type="button" data-id="' + esc(m.id) + '" data-medevac-status="COMPLETE">Terminée</button>'
-      + '<button type="button" data-id="' + esc(m.id) + '" data-medevac-status="CANCELLED">Annuler</button>'
-      + '</div></article>';
+      + '<div class="atak-medevac-actions">' + actions + '</div></article>';
   }
 
   function ensureForm() {

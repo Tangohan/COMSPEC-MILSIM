@@ -69,6 +69,23 @@ switch (_actionKey) do {
     };
 };
 
+private _current = "PENDING";
+{
+    if ((_x getOrDefault ["id", ""]) isEqualTo _orderId) exitWith {
+        _current = toUpper (_x getOrDefault ["status", "PENDING"]);
+    };
+} forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
+
+if !([_current, _status] call comspec_overwatch_connect_fnc_orderCanTransition) exitWith {
+    private _msg = if (_status isEqualTo "EXEC") then {
+        "Confirmez d’abord la réception (acceptation) avant de signaler l’exécution."
+    } else {
+        "Cette réponse n’est pas possible pour l’état actuel de l’ordre."
+    };
+    [_msg, "order", "warn"] call comspec_overwatch_connect_fnc_announce;
+    ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+};
+
 if (_actionKey in ["REFUSE", "FAILED"] && {_note isEqualTo ""}) exitWith {
     ["Indiquez un motif avant de refuser l’ordre.", "order", "warn"] call comspec_overwatch_connect_fnc_announce;
     ["COMSPEC_Warning", ["Indiquez un motif avant de refuser l’ordre."]] call comspec_overwatch_connect_fnc_showNotification;
@@ -87,5 +104,20 @@ if (!_ok) exitWith {
 
 [_feedback, "order", "info"] call comspec_overwatch_connect_fnc_announce;
 ["COMSPEC_Info", [_feedback]] call comspec_overwatch_connect_fnc_showNotification;
+
+if (_status isEqualTo "ACK") then {
+    private _orderData = createHashMap;
+    {
+        if ((_x getOrDefault ["id", ""]) isEqualTo _orderId) exitWith { _orderData = _x; };
+    } forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
+    private _ordType = toUpper (_orderData getOrDefault ["type", ""]);
+    if (_ordType isEqualTo "MOVE") then {
+        private _applied = missionNamespace getVariable ["COMSPEC_OrderWaypointsApplied", []];
+        if !(_orderId in _applied) then {
+            [_orderData] call comspec_overwatch_connect_fnc_orderApplyMoveWaypoint;
+        };
+    };
+};
+
 if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText ""; };
 [] call comspec_overwatch_connect_fnc_orderInboxOnLoad;

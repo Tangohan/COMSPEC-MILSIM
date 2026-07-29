@@ -1639,6 +1639,96 @@ body.atak-theme-light .atak-chip--weather .atak-chip-value {
   background: rgba(52, 211, 153, 0.18);
   outline: none;
 }
+.atak-activity-jump-btn {
+  width: 1.45rem;
+  height: 1.35rem;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--atak-muted, #94a3b8);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.atak-activity-jump-btn:hover,
+.atak-activity-jump-btn:focus-visible {
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.18);
+  outline: none;
+}
+.atak-activity-jump-icon {
+  display: block;
+}
+.atak-activity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin: 0.35rem 0 0;
+}
+.atak-activity-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0.12rem 0.4rem;
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  font-family: var(--atak-font-tactical, ui-monospace, monospace);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atak-activity-chip--ms {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+.atak-activity-chip--cert {
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+}
+.atak-activity-chip--freq {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fcd34d;
+}
+.atak-activity-chip--link {
+  border-color: rgba(167, 139, 250, 0.45);
+  background: rgba(167, 139, 250, 0.12);
+  color: #c4b5fd;
+}
+.atak-activity-chip--loss {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+}
+.atak-activity-chip--grid,
+.atak-activity-chip--group {
+  border-color: rgba(148, 163, 184, 0.35);
+}
+.atak-activity-chip--mod {
+  opacity: 0.85;
+}
+.atak-chat-msg--focus {
+  outline: 1px solid rgba(56, 189, 248, 0.75);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  background: rgba(56, 189, 248, 0.08);
+  transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+.atak-medical-item--focus {
+  outline: 1px solid rgba(248, 113, 113, 0.7);
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.18);
+}
 .atak-activity-details-modal {
   position: fixed;
   inset: 0;
@@ -2305,7 +2395,10 @@ body.atak-hints-hidden .atak-panel-hint {
 .atak-panel-right.collapsed { width: 44px; min-width: 44px; }
 .atak-panel-right.collapsed .atak-units-list,
 .atak-panel-right.collapsed .atak-units-header .atak-units-title,
-.atak-panel-right.collapsed .atak-filter { display: none; }
+.atak-panel-right.collapsed .atak-filter,
+.atak-panel-right.collapsed .atak-effectifs-notepad,
+.atak-panel-right.collapsed .atak-ft-composition,
+.atak-panel-right.collapsed .atak-ft-filter-row { display: none; }
 
 .atak-map-wrap {
   flex: 1;
@@ -2568,6 +2661,24 @@ body.atak-hints-hidden .atak-panel-hint {
   color: #94a3b8;
 }
 .atak-cam-photo-meta strong { color: #e2e8f0; }
+.atak-cam-photo-stamp {
+  font-family: var(--atak-font-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #7dd3fc;
+  letter-spacing: 0.02em;
+}
+.atak-cam-photo-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 0.75rem;
+  background: rgba(127, 29, 29, 0.25);
+  color: #fecaca;
+  font-size: 0.72rem;
+  text-align: center;
+}
 .atak-cam-photo-meta p {
   margin: 0.15rem 0 0;
   color: #cbd5e1;
@@ -3766,11 +3877,85 @@ body.atak-theme-light .atak-chat-messages {
 .atak-chat-msg-group {
   background: rgba(34, 197, 94, 0.08);
   border-left: 3px solid #22c55e;
-  padding: 0.25rem 0.45rem 0.35rem;
+  padding: 0.35rem 0.5rem 0.45rem;
   border-radius: 2px;
   border-bottom-color: transparent;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+.atak-chat-msg-group--out {
+  background: rgba(56, 189, 248, 0.1);
+  border-left-color: #38bdf8;
+}
+.atak-chat-msg-group--in {
+  background: rgba(34, 197, 94, 0.08);
+  border-left-color: #22c55e;
+}
+.atak-chat-group-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.atak-chat-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.atak-chat-group-dir {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.08rem 0.35rem;
+  border-radius: 0.2rem;
+  border: 1px solid transparent;
+}
+.atak-chat-group-dir--out {
+  color: #bae6fd;
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(14, 165, 233, 0.18);
+}
+.atak-chat-group-dir--in {
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(22, 163, 74, 0.16);
+}
+.atak-chat-group-text {
+  margin: 0.1rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.2rem;
+  background: rgba(0, 0, 0, 0.28);
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.atak-chat-group-card--out .atak-chat-group-text {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(8, 47, 73, 0.45);
+  color: #e0f2fe;
+}
+.atak-chat-group-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  line-height: 1.35;
+}
+.atak-chat-group-meta-item em {
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-right: 0.2rem;
 }
 .atak-chat-talert-badge,
 .atak-chat-group-badge {
@@ -3791,6 +3976,25 @@ body.atak-theme-light .atak-chat-messages {
 .atak-chat-talert-badge {
   background: rgba(245, 158, 11, 0.25);
   color: #fbbf24;
+}
+.atak-chat-talert-open {
+  display: inline-block;
+  margin-left: 0.35rem;
+  margin-top: 0.2rem;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.atak-chat-talert-open:hover {
+  background: rgba(245, 158, 11, 0.32);
 }
 .atak-chat-group-badge {
   background: rgba(34, 197, 94, 0.22);
@@ -5817,6 +6021,11 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
 .atak-order-item--failed { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
 .atak-order-item--cancelled { border-left-color: #94a3b8; opacity: 0.78; }
 .atak-order-item--overdue { border-left-color: #fb7185; background: rgba(251, 113, 133, 0.08); }
+.atak-order-item--focus {
+  outline: 2px solid rgba(56, 189, 248, 0.85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.18);
+}
 .atak-order-item-top {
   display: flex;
   justify-content: space-between;
@@ -5971,6 +6180,42 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   font-size: 0.78rem;
   color: var(--atak-text);
   line-height: 1.35;
+}
+.atak-order-waypoint-meta {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+.atak-waypoint-modal__box {
+  max-width: 28rem;
+}
+.atak-waypoint-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.35rem;
+}
+.atak-waypoint-modal__metrics {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 0.72rem;
+  color: #bae6fd;
+  line-height: 1.4;
+}
+.atak-waypoint-modal__radio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+.atak-ctx-menu__item--mission {
+  color: #fde68a;
+  font-weight: 600;
 }
 .atak-order-ack {
   margin-top: 0.25rem;
@@ -6683,6 +6928,39 @@ body.atak-session-profile-locked .atak-account-panel {
   color: rgba(148, 163, 184, 0.85);
 }
 
+.atak-session-hub__select-label {
+  display: block;
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.78);
+}
+.atak-session-hub__select {
+  width: 100%;
+  max-width: 28rem;
+  appearance: none;
+  background: rgba(15, 23, 42, 0.85)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2334d399' d='M1 1l5 5 5-5'/%3E%3C/svg%3E")
+    no-repeat right 0.75rem center / 0.7rem;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  border-radius: 0.55rem;
+  color: #e2e8f0;
+  padding: 0.65rem 2rem 0.65rem 0.8rem;
+  font: inherit;
+  font-size: 0.88rem;
+}
+.atak-session-hub__select:focus {
+  outline: none;
+  border-color: rgba(52, 211, 153, 0.65);
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.18);
+}
+.atak-session-hub__field-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: rgba(148, 163, 184, 0.9);
+  max-width: 28rem;
+}
+
 .atak-session-hub__sr {
   position: absolute;
   width: 1px;
@@ -7290,17 +7568,108 @@ a.atak-session-hub__btn {
 .atak-medevac-meta { margin: 0 0 0.35rem; font-size: 0.65rem; color: var(--atak-muted); }
 .atak-medevac-line { font-size: 0.68rem; line-height: 1.35; margin: 0.1rem 0; }
 .atak-medevac-line-k { color: #fca5a5; font-weight: 700; margin-right: 0.25rem; }
-.atak-medevac-actions { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.45rem; }
-.atak-medevac-actions button {
-  appearance: none;
-  padding: 0.22rem 0.4rem;
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  background: rgba(0, 0, 0, 0.25);
-  color: #fecaca;
+.atak-medevac-actions { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.55rem; }
+.atak-medevac-actions-flow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+.atak-medevac-actions-danger {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.15rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+.atak-medevac-terminal-note {
+  margin: 0;
   font-size: 0.62rem;
-  font-weight: 700;
+  line-height: 1.35;
+  color: #94a3b8;
+}
+.atak-medevac-btn {
+  appearance: none;
+  padding: 0.38rem 0.45rem;
+  border: 1px solid transparent;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: 3px;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.08s ease;
+}
+.atak-medevac-btn:hover { transform: translateY(-1px); }
+.atak-medevac-btn:active { transform: translateY(0); }
+.atak-medevac-btn--ack {
+  background: linear-gradient(180deg, rgba(14, 116, 144, 0.55), rgba(8, 51, 68, 0.75));
+  border-color: rgba(34, 211, 238, 0.55);
+  color: #ecfeff;
+}
+.atak-medevac-btn--inbound {
+  background: linear-gradient(180deg, rgba(180, 83, 9, 0.55), rgba(120, 53, 15, 0.8));
+  border-color: rgba(251, 191, 36, 0.55);
+  color: #fffbeb;
+}
+.atak-medevac-btn--done {
+  background: linear-gradient(180deg, rgba(21, 128, 61, 0.55), rgba(20, 83, 45, 0.85));
+  border-color: rgba(74, 222, 128, 0.55);
+  color: #ecfdf5;
+}
+.atak-medevac-btn--cancel {
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.55), rgba(30, 41, 59, 0.85));
+  border-color: rgba(148, 163, 184, 0.45);
+  color: #e2e8f0;
+}
+.atak-medevac-btn--delete {
+  background: rgba(127, 29, 29, 0.35);
+  border-color: rgba(248, 113, 113, 0.65);
+  color: #fecaca;
+  padding: 0.32rem 0.55rem;
+}
+.atak-medevac-btn--delete:hover {
+  background: rgba(185, 28, 28, 0.55);
+  color: #fff;
+}
+.atak-medevac-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.atak-medevac-pill--requested {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+}
+.atak-medevac-pill--ack {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.45);
+  color: #a5f3fc;
+}
+.atak-medevac-pill--inbound {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fde68a;
+}
+.atak-medevac-pill--done {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.45);
+  color: #bbf7d0;
+}
+.atak-medevac-pill--closed {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+}
+.atak-medevac-card--terminal {
+  opacity: 0.9;
+  border-color: rgba(148, 163, 184, 0.35);
+  border-left-color: #94a3b8;
+  background: rgba(15, 23, 42, 0.35);
 }
 
 .atak-pace-grid {
@@ -7698,6 +8067,8 @@ body.atak-resizing .atak-resize-handle {
 .atak-panel-right.is-popped-out .atak-air-assets-list,
 .atak-panel-right.is-popped-out .atak-units-header,
 .atak-panel-right.is-popped-out .atak-units-list,
+.atak-panel-right.is-popped-out .atak-effectifs-notepad,
+.atak-panel-right.is-popped-out .atak-ft-composition,
 .atak-panel-right.is-popped-out .atak-panel-chrome,
 .atak-panel-right.is-popped-out .atak-resize-handle {
   display: none !important;
@@ -7723,6 +8094,13 @@ body.atak-popout .atak-header-chips,
 body.atak-popout .atak-header-tagline {
   display: none !important;
 }
+/* Filet : même si le hub a verrouillé le body avant d’être masqué, le panneau reste visible. */
+body.atak-popout.atak-session-profile-locked .atak-header,
+body.atak-popout.atak-session-profile-locked .atak-main,
+body.atak-popout.atak-session-profile-locked .atak-medical-banner {
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
 body.atak-popout .atak-header {
   min-height: 32px;
   height: 32px;
@@ -7741,6 +8119,8 @@ body.atak-popout--right .atak-panel-right {
   min-width: 100% !important;
   max-width: none !important;
   flex: 1;
+  height: 100%;
+  min-height: 0;
   border: none;
   box-shadow: none;
 }
@@ -8205,6 +8585,54 @@ body.atak-theme-light .atak-panel-chrome-btn {
   padding: 0.65rem 0.7rem;
 }
 
+.atak-replay-events {
+  margin: 0.45rem 0 0.55rem;
+  border: 1px solid var(--atak-border);
+  border-radius: var(--atak-radius);
+  background: rgba(8, 12, 18, 0.4);
+  padding: 0.5rem 0.6rem;
+  max-height: 160px;
+  overflow: auto;
+}
+.atak-replay-events-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--atak-muted);
+}
+.atak-replay-events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.atak-replay-event {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  border-left: 3px solid #64748b;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+.atak-replay-event--contact { border-left-color: #f87171; }
+.atak-replay-event--med { border-left-color: #fb7185; }
+.atak-replay-event--order { border-left-color: #38bdf8; }
+.atak-replay-event--marker { border-left-color: #34d399; }
+.atak-replay-event-ts {
+  font-family: var(--atak-font-mono, ui-monospace, monospace);
+  color: #94a3b8;
+  font-size: 0.6rem;
+}
+.atak-replay-event-label { color: #e2e8f0; }
+
 .atak-replay-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -8551,6 +8979,20 @@ body.atak-sitrep-picking .leaflet-container {
 .atak-ft-composition {
   margin: 0.35rem 0.15rem 0.5rem;
 }
+.atak-effectifs-notepad {
+  margin: 0.25rem 0.15rem 0.55rem;
+  flex: 0 0 auto;
+}
+.atak-notepad--effectifs {
+  min-height: 5.5rem;
+  margin-top: 0.25rem;
+}
+.atak-effectifs-notepad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
 .atak-ft-compose-card {
   border: 1px solid color-mix(in srgb, var(--ft-color, #64748b) 45%, transparent);
   border-left: 3px solid var(--ft-color, #64748b);
@@ -8675,4 +9117,164 @@ body.atak-sitrep-picking .leaflet-container {
   background: rgba(251, 191, 36, 0.2);
   color: #fbbf24;
   border-color: rgba(251, 191, 36, 0.4);
+}
+/* --- Modal signalements tactiques (FRAGO / BDA / SALUTE) — styles portés depuis tacmap.css --- */
+.tacmap-talert-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.tacmap-talert-modal[hidden] {
+  display: none !important;
+}
+.tacmap-talert-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.72);
+}
+.tacmap-talert-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  max-height: min(84vh, 720px);
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0.55rem;
+  background: linear-gradient(180deg, #121820 0%, #0b1220 100%);
+  color: #e8f0f6;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+.tacmap-talert-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+}
+.tacmap-talert-modal__head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+.tacmap-talert-modal__close {
+  border: 0;
+  background: transparent;
+  color: #8aa0b4;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tacmap-talert-modal__body {
+  padding: 0.9rem 1rem 0.4rem;
+}
+.tacmap-talert-modal__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+.tacmap-talert-modal__meta span {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8aa0b4;
+  margin-bottom: 0.15rem;
+}
+.tacmap-talert-modal__meta strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e8f0f6;
+}
+.tacmap-talert-modal__frago {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.tacmap-talert-modal__frago li strong {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8aa0b4;
+  margin-bottom: 0.2rem;
+}
+.tacmap-talert-modal__frago li p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.tacmap-talert-modal__salute,
+.tacmap-talert-modal__bda {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.tacmap-talert-modal__salute div,
+.tacmap-talert-modal__bda div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.tacmap-talert-modal__salute dt,
+.tacmap-talert-modal__bda dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8aa0b4;
+}
+.tacmap-talert-modal__salute dd,
+.tacmap-talert-modal__bda dd {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #e8f0f6;
+  white-space: pre-wrap;
+}
+.tacmap-talert-modal__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: #cbd5e1;
+}
+.tacmap-talert-modal__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+.tacmap-talert-modal__btn {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(26, 34, 44, 0.9);
+  color: #e8f0f6;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+.tacmap-talert-modal__btn:hover,
+.tacmap-talert-modal__btn:focus-visible {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+  outline: none;
+}
+.tacmap-talert-modal__btn--primary {
+  border-color: rgba(251, 146, 60, 0.55);
+  background: rgba(251, 146, 60, 0.18);
 }

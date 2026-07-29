@@ -491,7 +491,7 @@ $mediaLikeCsrf = \App\Core\Csrf::token();
 $mediaLoginUrl = url('login');
 $showcaseBackUrl = trim((string) ($showcaseBackUrl ?? ''));
 if ($showcaseBackUrl === '') {
-    $showcaseBackUrl = $userId > 0 ? url('communities') : url('');
+    $showcaseBackUrl = url('communities');
 }
 ?>
 <div class="community-public-vitrine community-landing cl-vitrine"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
@@ -814,6 +814,19 @@ if ($showcaseBackUrl === '') {
             <span>Effectif</span>
             <span class="cl-mono"><?= htmlspecialchars($strengthLabel) ?></span>
           </div>
+          <?php
+            $unitFoundedRaw = trim((string) ($unit['public_founded_on'] ?? ''));
+            $unitFoundedDisp = '';
+            if ($unitFoundedRaw !== '' && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $unitFoundedRaw, $ufm)) {
+                $unitFoundedDisp = ((int) $ufm[3]) . '/' . $ufm[2] . '/' . $ufm[1];
+            }
+          ?>
+          <?php if ($unitFoundedDisp !== ''): ?>
+          <div class="cl-unit__meta">
+            <span>Création</span>
+            <span class="cl-mono"><?= htmlspecialchars($unitFoundedDisp) ?></span>
+          </div>
+          <?php endif; ?>
           <?php if ($openSlotsLabel !== null): ?>
           <div class="cl-unit__meta">
             <span>Places</span>

@@ -89,6 +89,7 @@ window.ATAKActivity = (function () {
       case 'toc_note':
       case 'medevac':
       case 'fire_team':
+      case 'tactical_report':
         return 'atak-activity-item--tactical';
       default: return '';
     }
@@ -132,6 +133,7 @@ window.ATAKActivity = (function () {
       case 'flight': return 'Vol';
       case 'sigint': return 'Écoute';
       case 'order': return 'Ordre';
+      case 'tactical_report': return 'Rapport';
       default: return 'Activité';
     }
   }
@@ -585,6 +587,22 @@ window.ATAKActivity = (function () {
     terminal_uid: 'Terminal',
     cert_status: 'Certificat',
     certificate_ref: 'Référence certificat',
+    report_type: 'Type de rapport',
+    report_number: 'N° rapport',
+    priority: 'Priorité',
+    classification: 'Classification',
+    details: 'Détails',
+    remarks: 'Remarques',
+    grid_reference: 'Grille',
+    location_description: 'Localisation',
+    dtg: 'DTG',
+    event_timestamp: 'Heure signalée',
+    report_size: 'Taille',
+    report_activity: 'Activité',
+    report_location: 'Localisation observée',
+    report_unit: 'Unité / uniforme',
+    report_time: 'Heure observée',
+    report_equipment: 'Équipement',
     radio_freq: 'Fréquence radio',
     link_state: 'État de liaison',
     latency_ms: 'Latence',
@@ -603,7 +621,10 @@ window.ATAKActivity = (function () {
     'cert_status', 'certificate_ref', 'link_state', 'terminal_uid',
     'pos_x', 'pos_y', 'asl_z', 'heading', 'health',
     'from', 'to', 'ok', 'reason', 'mentions', 'kind', 'kind_label', 'order_id', 'summary', 'source', 'side', 'affiliation',
-    'action', 'fire_team_label', 'fire_team_color', 'member_callsign', 'member_role',
+    'action', 'report_type', 'report_number', 'priority', 'classification', 'details', 'remarks',
+    'grid_reference', 'location_description', 'dtg', 'event_timestamp',
+    'report_size', 'report_activity', 'report_location', 'report_unit', 'report_time', 'report_equipment',
+    'fire_team_label', 'fire_team_color', 'member_callsign', 'member_role',
     'member_count', 'added', 'removed', 'chat_id'
   ];
 

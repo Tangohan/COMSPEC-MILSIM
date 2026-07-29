@@ -149,6 +149,14 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
                     }
                     $msg = trim((string) ($row['message'] ?? ''));
                     $detail = trim((string) ($row['detail_text'] ?? ''));
+                    $contextRaw = trim((string) ($row['context_json'] ?? ''));
+                    $sessionLog = '';
+                    if ($contextRaw !== '') {
+                        $ctx = json_decode($contextRaw, true);
+                        if (is_array($ctx) && !empty($ctx['session_log']) && is_string($ctx['session_log'])) {
+                            $sessionLog = trim($ctx['session_log']);
+                        }
+                    }
                     $player = trim((string) ($row['player_name'] ?? ''));
                     $cs = trim((string) ($row['callsign'] ?? ''));
                     $who = $player !== '' ? $player : '—';
@@ -181,6 +189,12 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
                                 <details style="margin-top:.35rem;">
                                     <summary style="cursor:pointer;font-size:.85rem;opacity:.8;">Détail technique</summary>
                                     <pre style="white-space:pre-wrap;font-size:.75rem;max-width:36rem;margin:.4rem 0 0;opacity:.85;"><?= htmlspecialchars($detail, ENT_QUOTES, 'UTF-8') ?></pre>
+                                </details>
+                            <?php endif; ?>
+                            <?php if ($sessionLog !== ''): ?>
+                                <details style="margin-top:.35rem;">
+                                    <summary style="cursor:pointer;font-size:.85rem;opacity:.8;">Journal de session</summary>
+                                    <pre style="white-space:pre-wrap;font-size:.72rem;max-width:36rem;max-height:18rem;overflow:auto;margin:.4rem 0 0;opacity:.85;"><?= htmlspecialchars($sessionLog, ENT_QUOTES, 'UTF-8') ?></pre>
                                 </details>
                             <?php endif; ?>
                             <div style="font-size:.75rem;opacity:.65;margin-top:.25rem;">

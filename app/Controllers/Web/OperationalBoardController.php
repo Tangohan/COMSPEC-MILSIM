@@ -35,6 +35,10 @@ final class OperationalBoardController
         if ($tenantId < 1) {
             return Response::redirect(url('login'));
         }
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$featureGate->allows($tenantId, 'operational_board')) {
+            return \App\Support\PlanFeatureDenial::upgradeView('operational_board', 'Standard');
+        }
 
         $posture = $this->planningEntries->getPosture($tenantId) ?? ['posture_level' => 'NORMAL'];
         $filters = [

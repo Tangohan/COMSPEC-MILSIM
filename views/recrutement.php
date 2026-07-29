@@ -119,7 +119,7 @@
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-bold">Intake ID</span>
-                        <span class="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded">JTFO-175741</span>
+                        <span class="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded">JTN-175741</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-bold">Sécurité</span>
@@ -173,7 +173,7 @@
                                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                                 File d'attente active
                             </span>
-                            <span>Réf: JTFO-175741</span>
+                            <span>Réf: JTN-175741</span>
                         </div>
                     </div>
                     <div class="text-right">

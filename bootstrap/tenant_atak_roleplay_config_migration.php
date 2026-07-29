@@ -54,6 +54,10 @@ return static function (PDO $pdo): void {
         // Dégradation liaison (zones géographiques)
         'roleplay_zones_enabled' => 'TINYINT(1) NOT NULL DEFAULT 0',
         'roleplay_zones_config' => 'TEXT DEFAULT NULL',
+
+        // Données chiffrées sans certificat / appareil compromis
+        'roleplay_intel_scramble_enabled' => 'TINYINT(1) NOT NULL DEFAULT 0',
+        'roleplay_intel_scramble_reviewed' => 'TINYINT(1) NOT NULL DEFAULT 0',
     ];
 
     $columnsToAdd = [];

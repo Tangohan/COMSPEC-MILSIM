@@ -800,7 +800,14 @@ class UnitRepository
         }
         $id = (int) $this->pdo->lastInsertId();
         $extraPublic = [];
-        foreach (['public_capacity', 'public_open_slots', 'public_accent_color'] as $extraCol) {
+        foreach ([
+            'public_capacity',
+            'public_open_slots',
+            'public_accent_color',
+            'public_founded_on',
+            'public_custom_date',
+            'public_custom_date_label',
+        ] as $extraCol) {
             if (array_key_exists($extraCol, $data) && $this->columnExists('units', $extraCol)) {
                 $extraPublic[$extraCol] = $data[$extraCol];
             }
@@ -830,6 +837,15 @@ class UnitRepository
         }
         if ($this->columnExists('units', 'public_accent_color')) {
             $allowed[] = 'public_accent_color';
+        }
+        if ($this->columnExists('units', 'public_founded_on')) {
+            $allowed[] = 'public_founded_on';
+        }
+        if ($this->columnExists('units', 'public_custom_date')) {
+            $allowed[] = 'public_custom_date';
+        }
+        if ($this->columnExists('units', 'public_custom_date_label')) {
+            $allowed[] = 'public_custom_date_label';
         }
         if ($this->columnExists('units', 'orbat_mask_mode')) {
             $allowed[] = 'orbat_mask_mode';
@@ -876,6 +892,18 @@ class UnitRepository
             } elseif ($key === 'public_accent_color') {
                 $v = trim((string) ($data[$key] ?? ''));
                 $params[] = preg_match('/^#[0-9A-Fa-f]{6}$/', $v) ? strtoupper($v) : null;
+            } elseif ($key === 'public_founded_on' || $key === 'public_custom_date') {
+                $v = trim((string) ($data[$key] ?? ''));
+                if ($v === '') {
+                    $params[] = null;
+                } elseif (preg_match('/^(\d{4}-\d{2}-\d{2})/', $v, $dm)) {
+                    $params[] = $dm[1];
+                } else {
+                    $params[] = null;
+                }
+            } elseif ($key === 'public_custom_date_label') {
+                $v = trim((string) ($data[$key] ?? ''));
+                $params[] = $v === '' ? null : mb_substr($v, 0, 80);
             } elseif ($key === 'public_blurb') {
                 $v = trim((string) $data[$key]);
                 $params[] = $v === '' ? null : $v;

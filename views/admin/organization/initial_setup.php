@@ -364,6 +364,14 @@ $renderToggle = static function (
                         'Non exigé'
                     ); ?>
                     <?php $renderToggle(
+                        'Refuser les comptes déjà rattachés à une autre communauté',
+                        'Bloque les candidatures des comptes Athena déjà membres d’une autre communauté. Les visiteurs sans compte et les comptes sans communauté restent acceptés.',
+                        'refuse_other_community_members',
+                        !empty($c['refuse_other_community_members']),
+                        'Refus activé',
+                        'Autorisé'
+                    ); ?>
+                    <?php $renderToggle(
                         'Badge « recrutement ouvert »',
                         'Affiche un indicateur sur la fiche publique de la communauté.',
                         'public_recruitment_badge_open',

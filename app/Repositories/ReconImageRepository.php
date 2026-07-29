@@ -14,11 +14,31 @@ class ReconImageRepository
     public function __construct()
     {
         $this->pdo = Database::getPdo();
+        $this->ensureSchema();
+    }
+
+    private function ensureSchema(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $path = base_path('bootstrap/atak_recon_images_actions_migration.php');
+        if (is_file($path)) {
+            $migrate = require $path;
+            if (is_callable($migrate)) {
+                try {
+                    $migrate($this->pdo);
+                } catch (\Throwable) {
+                }
+            }
+        }
+        $done = true;
     }
 
     public function list(int $tenantId, ?string $missionId = null, ?string $author = null, ?string $dateFrom = null, ?string $dateTo = null, ?int $limit = 100): array
     {
-        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ?';
+        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL';
         $params = [$tenantId];
         if ($missionId !== null && $missionId !== '') {
             $sql .= ' AND mission_id = ?';
@@ -54,7 +74,7 @@ class ReconImageRepository
     public function create(int $tenantId, array $data): array
     {
         $stmt = $this->pdo->prepare(
-            'INSERT INTO recon_images (tenant_id, mission_id, author_callsign, unit_name, side, image_path, thumb_path, caption, pos_x, pos_y, pos_z, grid_ref, heading, altitude, device_type, captured_at, atak_cas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO recon_images (tenant_id, mission_id, author_callsign, unit_name, side, image_path, thumb_path, caption, fx_profile, fx_intensity, pos_x, pos_y, pos_z, grid_ref, heading, altitude, device_type, captured_at, atak_cas_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $tenantId,
@@ -65,6 +85,8 @@ class ReconImageRepository
             $data['image_path'],
             $data['thumb_path'] ?? null,
             $data['caption'] ?? null,
+            $data['fx_profile'] ?? null,
+            $data['fx_intensity'] ?? null,
             $data['pos_x'] ?? null,
             $data['pos_y'] ?? null,
             $data['pos_z'] ?? null,
@@ -90,6 +112,48 @@ class ReconImageRepository
         return $this->get($tenantId, $id);
     }
 
+    public function updateOps(int $tenantId, int $id, array $data): ?array
+    {
+        $fields = [];
+        $params = ['tenant_id' => $tenantId, 'id' => $id];
+
+        if (array_key_exists('operator_comment', $data)) {
+            $fields[] = 'operator_comment = :operator_comment';
+            $comment = trim((string) ($data['operator_comment'] ?? ''));
+            $params['operator_comment'] = $comment !== '' ? $comment : null;
+        }
+        if (array_key_exists('is_blurred', $data)) {
+            $fields[] = 'is_blurred = :is_blurred';
+            $params['is_blurred'] = !empty($data['is_blurred']) ? 1 : 0;
+        }
+        if (array_key_exists('deleted_at', $data)) {
+            $fields[] = 'deleted_at = :deleted_at';
+            $params['deleted_at'] = $data['deleted_at'];
+        }
+        if (array_key_exists('sse_case_id', $data)) {
+            $fields[] = 'sse_case_id = :sse_case_id';
+            $params['sse_case_id'] = $data['sse_case_id'] !== null ? (int) $data['sse_case_id'] : null;
+        }
+        if (array_key_exists('sse_evidence_id', $data)) {
+            $fields[] = 'sse_evidence_id = :sse_evidence_id';
+            $params['sse_evidence_id'] = $data['sse_evidence_id'] !== null ? (int) $data['sse_evidence_id'] : null;
+        }
+        if (array_key_exists('sse_transferred_at', $data)) {
+            $fields[] = 'sse_transferred_at = :sse_transferred_at';
+            $params['sse_transferred_at'] = $data['sse_transferred_at'];
+        }
+
+        if ($fields === []) {
+            return $this->get($tenantId, $id);
+        }
+
+        $sql = 'UPDATE recon_images SET ' . implode(', ', $fields) . ' WHERE tenant_id = :tenant_id AND id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $this->get($tenantId, $id);
+    }
+
     /**
      * Dernière image par feed (unit_name = feed_id) ou par couple auteur + type d’appareil.
      *
@@ -98,7 +162,7 @@ class ReconImageRepository
      */
     public function latestSnapshots(int $tenantId, array $feedIds = [], int $limit = 80): array
     {
-        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ' . (int) $limit;
+        $sql = 'SELECT * FROM recon_images WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT ' . (int) $limit;
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$tenantId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

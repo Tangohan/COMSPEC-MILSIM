@@ -68,6 +68,26 @@ body.atak-page.atak-density-comfortable {
   --atak-right-w: 300px;
   font-size: 13px;
 }
+
+.atak-intel-marker {
+  background: transparent;
+  border: 0;
+}
+
+.atak-intel-marker-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #7c3aed;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.7);
+}
+
+.atak-intel-marker-dot:hover {
+  transform: scale(1.15);
+}
+
 body.atak-page.atak-theme-light {
   --atak-bg: #f4f6f8;
   --atak-panel: #ffffff;
@@ -2594,6 +2614,17 @@ body.atak-hints-hidden .atak-panel-hint {
   border-color: rgba(56, 189, 248, 0.45);
   color: #7dd3fc;
 }
+.atak-cam-tile-badge--stream {
+  left: auto;
+  right: 0.35rem;
+  top: 0.35rem;
+  border-color: rgba(167, 139, 250, 0.55);
+  color: #c4b5fd;
+  background: rgba(46, 16, 101, 0.82);
+}
+.atak-cam-tile.is-streaming .atak-cam-tile-media {
+  box-shadow: inset 0 0 0 1px rgba(167, 139, 250, 0.45);
+}
 .atak-cam-tile-status {
   position: absolute;
   right: 0.35rem;
@@ -2709,6 +2740,10 @@ body.atak-hints-hidden .atak-panel-hint {
   object-fit: contain;
   border: 1px solid rgba(148, 163, 184, 0.35);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.atak-cam-lightbox.is-blurred img {
+  filter: blur(16px);
 }
 .atak-cam-lightbox-close {
   position: absolute;
@@ -3926,14 +3961,14 @@ body.atak-theme-light .atak-chat-messages {
 }
 .atak-chat-group-text {
   margin: 0.1rem 0 0;
-  padding: 0.45rem 0.55rem;
+  padding: 0.38rem 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.2rem;
   background: rgba(0, 0, 0, 0.28);
   color: #f8fafc;
-  font-size: 0.88rem;
-  font-weight: 600;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
   white-space: pre-wrap;
 }
 .atak-chat-group-card--out .atak-chat-group-text {
@@ -5484,6 +5519,55 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   border: 1px solid rgba(255,255,255,0.25);
   flex-shrink: 0;
 }
+.atak-shape-form__range {
+  width: 100%;
+}
+.atak-shape-form__range-value {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--atak-text);
+}
+.atak-shape-center-icon {
+  background: transparent;
+  border: 0;
+}
+.atak-shape-center-icon__text,
+.atak-shape-center-icon__image {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.75);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff7ed;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+.atak-shape-center-icon__image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.atak-shape-gradient-halo {
+  filter: blur(8px);
+}
+.atak-shape-popup__comment,
+.atak-shape-popup__icon {
+  margin-top: 0.35rem;
+}
+.atak-shape-popup__image {
+  margin-top: 0.45rem;
+}
+.atak-shape-popup__image img {
+  display: block;
+  max-width: 240px;
+  max-height: 180px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
 
 /* S?lecteur symboles tactiques (milsymbol) */
 .atak-sym-picker__preview {
@@ -6180,6 +6264,42 @@ body.atak-theme-light .atak-map-wrap .leaflet-control-scale-line {
   font-size: 0.78rem;
   color: var(--atak-text);
   line-height: 1.35;
+}
+.atak-order-waypoint-meta {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+.atak-waypoint-modal__box {
+  max-width: 28rem;
+}
+.atak-waypoint-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.35rem;
+}
+.atak-waypoint-modal__metrics {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 0.72rem;
+  color: #bae6fd;
+  line-height: 1.4;
+}
+.atak-waypoint-modal__radio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+.atak-ctx-menu__item--mission {
+  color: #fde68a;
+  font-weight: 600;
 }
 .atak-order-ack {
   margin-top: 0.25rem;
@@ -7036,6 +7156,35 @@ body.atak-session-profile-locked .atak-account-panel {
   color: rgba(226, 232, 240, 0.6);
 }
 
+.atak-session-hub__map-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+}
+.atak-session-hub__map-opt input {
+  margin-top: 0.2rem;
+  accent-color: #34d399;
+  flex-shrink: 0;
+}
+.atak-session-hub__map-opt-body strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.atak-session-hub__map-opt-body small {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgba(226, 232, 240, 0.6);
+}
+
 .atak-session-hub__actions {
   display: flex;
   flex-wrap: wrap;
@@ -7777,7 +7926,135 @@ a.atak-session-hub__btn {
 .atak-map--hide-ft-frames .atak-ft-marker-wrap::after {
   display: none;
 }
+
+.atak-cam-photo.is-blurred img {
+  filter: blur(12px);
+}
+
+.atak-cam-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+.atak-cam-photo::before,
+.atak-cam-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  mix-blend-mode: screen;
+}
+
+.atak-cam-photo--fx-glitch_light img,
+.atak-cam-photo--fx-glitch_medium img,
+.atak-cam-photo--fx-glitch_heavy img,
+.atak-cam-photo--fx-jammed_medium img,
+.atak-cam-photo--fx-jammed_heavy img,
+.atak-cam-photo--fx-signal_lost img {
+  filter: saturate(0.82) contrast(0.9);
+}
+
+.atak-cam-photo--fx-glitch_light::before,
+.atak-cam-photo--fx-glitch_medium::before,
+.atak-cam-photo--fx-glitch_heavy::before,
+.atak-cam-photo--fx-jammed_medium::before,
+.atak-cam-photo--fx-jammed_heavy::before,
+.atak-cam-photo--fx-signal_lost::before {
+  opacity: 0.24;
+  background-image:
+    linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+    url('/assets/img/atak-fx/glitch-border.png');
+  background-size: cover, contain;
+}
+
+.atak-cam-photo--fx-glitch_medium::after,
+.atak-cam-photo--fx-glitch_heavy::after,
+.atak-cam-photo--fx-jammed_medium::after,
+.atak-cam-photo--fx-jammed_heavy::after,
+.atak-cam-photo--fx-signal_lost::after {
+  opacity: 0.22;
+  background-image: url('/assets/img/atak-fx/gold-scratch.png');
+  mix-blend-mode: lighten;
+}
+
+.atak-cam-photo--fx-glitch_heavy img,
+.atak-cam-photo--fx-jammed_heavy img,
+.atak-cam-photo--fx-signal_lost img {
+  filter: saturate(0.55) contrast(0.78) blur(1.2px);
+}
+
+.atak-cam-photo--fx-glitch_heavy::after,
+.atak-cam-photo--fx-jammed_heavy::after,
+.atak-cam-photo--fx-signal_lost::after {
+  opacity: 0.38;
+  background-image: url('/assets/img/atak-fx/glitch-static-1.jpg');
+  background-size: cover;
+}
+
+.atak-cam-photo--fx-screen_broken::before,
+.atak-cam-photo--fx-screen_off::before {
+  opacity: 0.72;
+  background-image: url('/assets/img/atak-fx/broken-screen.png');
+  background-size: cover;
+  mix-blend-mode: screen;
+}
+
+.atak-cam-photo--fx-screen_broken img {
+  filter: brightness(0.7) saturate(0.4) blur(1px);
+}
+
+.atak-cam-photo--fx-screen_off img {
+  filter: brightness(0.35) saturate(0.1);
+}
+
+.atak-cam-photo-comment {
+  color: #d6e7ec;
+}
+
+.atak-cam-photo-flag {
+  color: #9fe7c8;
+  font-weight: 600;
+}
+
+.atak-cam-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.atak-cam-photo-btn {
+  appearance: none;
+  border: 1px solid rgba(92, 171, 192, 0.35);
+  background: rgba(8, 20, 28, 0.9);
+  color: #d8eef3;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.5rem;
+  cursor: pointer;
+}
+
+.atak-cam-photo-btn:hover,
+.atak-cam-photo-btn:focus {
+  border-color: rgba(92, 171, 192, 0.75);
+  background: rgba(16, 42, 54, 0.95);
+}
+
+.atak-cam-photo-btn--danger {
+  border-color: rgba(193, 85, 85, 0.45);
+  color: #ffd6d6;
+}
 .atak-unit-dot-marker {
+  background: transparent !important;
+  border: none !important;
+}
+.atak-unit-intel-dot-marker {
   background: transparent !important;
   border: none !important;
 }
@@ -8087,6 +8364,19 @@ body.atak-popout--right .atak-panel-right {
   min-height: 0;
   border: none;
   box-shadow: none;
+}
+body.atak-popout--left .atak-panel-left .atak-left-body,
+body.atak-popout--right .atak-panel-right .atak-units-list {
+  display: flex !important;
+  flex: 1;
+  min-height: 0;
+}
+body.atak-popout .atak-panel-left.is-popped-out .atak-left-rail,
+body.atak-popout .atak-panel-left.is-popped-out .atak-left-body {
+  display: flex !important;
+}
+body.atak-popout .atak-panel-left.is-popped-out .atak-panel-dock {
+  display: none !important;
 }
 body.atak-popout .atak-resize-handle,
 body.atak-popout .atak-panel-chrome [data-atak-popout],

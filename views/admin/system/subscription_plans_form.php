@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+
+use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
+
 $row = is_array($subscriptionPlanRow ?? null) ? $subscriptionPlanRow : null;
 $action = (string) ($subscriptionPlanFormAction ?? '');
 $csrf = \App\Core\Csrf::token();
@@ -16,6 +19,17 @@ $fj = $row['features_json'] ?? null;
 $lj = $row['limits_json'] ?? null;
 $sm = (string) ($row['stripe_price_id_monthly'] ?? '');
 $sy = (string) ($row['stripe_price_id_yearly'] ?? '');
+$pm = (string) ($row['paypal_plan_id_monthly'] ?? '');
+$py = (string) ($row['paypal_plan_id_yearly'] ?? '');
+
+$features = [];
+if (is_string($fj) && trim($fj) !== '') {
+    $decoded = json_decode($fj, true);
+    if (is_array($decoded)) {
+        $features = $decoded;
+    }
+}
+$defs = SubscriptionPlanFeaturesCatalog::definitions();
 
 $prettyJson = static function (?string $raw): string {
     if ($raw === null || trim($raw) === '') {
@@ -29,7 +43,6 @@ $prettyJson = static function (?string $raw): string {
 
     return $enc !== false ? $enc : (string) $raw;
 };
-$featuresVal = $prettyJson(is_string($fj) ? $fj : null);
 $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
@@ -49,44 +62,98 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
 
         <h1 class="text-2xl font-black text-slate-900">Modifier la formule</h1>
         <p class="mt-2 text-sm text-slate-600">
-            Slug technique (non modifiable) : <span class="font-mono text-xs font-semibold text-slate-800"><?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?></span>
+            Identifiant interne : <span class="font-mono text-xs font-semibold text-slate-800"><?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?></span>
         </p>
 
-        <form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 space-y-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 
             <div>
                 <label for="sp_name" class="block text-sm font-semibold text-slate-800">Libellé</label>
-                <input id="sp_name" name="name" type="text" required maxlength="100" value="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                <input id="sp_name" name="name" type="text" required maxlength="100" value="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
             </div>
 
             <div>
                 <label for="sp_sort" class="block text-sm font-semibold text-slate-800">Ordre d’affichage</label>
-                <input id="sp_sort" name="sort_order" type="number" value="<?= (int) $sort ?>" class="mt-1 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+                <input id="sp_sort" name="sort_order" type="number" value="<?= (int) $sort ?>" class="mt-1 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
             </div>
+
+            <fieldset>
+                <legend class="text-sm font-semibold text-slate-800">Modules inclus</legend>
+                <p class="mt-1 text-xs text-slate-500">Cochez les modules disponibles pour les communautés sur cette formule.</p>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <?php foreach (SubscriptionPlanFeaturesCatalog::BOOL_FEATURES as $key): ?>
+                        <?php
+                        $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
+                        $checked = !empty($features[$key]);
+                        ?>
+                        <label class="flex gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm hover:border-emerald-300">
+                            <input type="checkbox" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" <?= $checked ? 'checked' : '' ?> />
+                            <span>
+                                <span class="font-semibold text-slate-900"><?= htmlspecialchars((string) $def['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if (!empty($def['help'])): ?>
+                                    <span class="mt-0.5 block text-xs text-slate-500"><?= htmlspecialchars((string) $def['help'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php endif; ?>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend class="text-sm font-semibold text-slate-800">Plafonds</legend>
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                    <?php foreach (SubscriptionPlanFeaturesCatalog::INT_FEATURES as $key): ?>
+                        <?php
+                        $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
+                        $val = (int) ($features[$key] ?? 0);
+                        ?>
+                        <div>
+                            <label for="feat_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" class="block text-sm font-semibold text-slate-800"><?= htmlspecialchars((string) $def['label'], ENT_QUOTES, 'UTF-8') ?></label>
+                            <?php if (!empty($def['help'])): ?>
+                                <p class="mt-0.5 text-xs text-slate-500"><?= htmlspecialchars((string) $def['help'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+                            <input id="feat_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" type="number" min="0" value="<?= $val ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" />
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </fieldset>
 
             <div>
-                <label for="sp_features" class="block text-sm font-semibold text-slate-800">Fonctionnalités (JSON objet)</label>
-                <p class="mt-0.5 text-xs text-slate-500">Laissez vide pour effacer. Les clés correspondent aux drapeaux lus par le portail (voir documentation interne des paliers).</p>
-                <textarea id="sp_features" name="features_json" rows="12" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"><?= htmlspecialchars($featuresVal, ENT_QUOTES, 'UTF-8') ?></textarea>
+                <label for="sp_limits" class="block text-sm font-semibold text-slate-800">Quotas avancés (optionnel)</label>
+                <p class="mt-0.5 text-xs text-slate-500">Réservé aux plafonds périodiques (ex. événements mensuels). Laissez vide si non utilisé.</p>
+                <textarea id="sp_limits" name="limits_json" rows="6" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"><?= htmlspecialchars($limitsVal, ENT_QUOTES, 'UTF-8') ?></textarea>
             </div>
 
-            <div>
-                <label for="sp_limits" class="block text-sm font-semibold text-slate-800">Quotas (JSON objet)</label>
-                <p class="mt-0.5 text-xs text-slate-500">Optionnel — plafonds ou compteurs pour l’offre gratuite ou limitée.</p>
-                <textarea id="sp_limits" name="limits_json" rows="8" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"><?= htmlspecialchars($limitsVal, ENT_QUOTES, 'UTF-8') ?></textarea>
-            </div>
+            <fieldset>
+                <legend class="text-sm font-semibold text-slate-800">Paiement PayPal</legend>
+                <p class="mt-1 text-xs text-slate-500">Identifiants des plans d’abonnement créés dans le tableau de bord PayPal (Billing Plans).</p>
+                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="sp_paypal_m" class="block text-sm font-semibold text-slate-800">Plan mensuel</label>
+                        <input id="sp_paypal_m" name="paypal_plan_id_monthly" type="text" maxlength="100" value="<?= htmlspecialchars($pm, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="P-…" />
+                    </div>
+                    <div>
+                        <label for="sp_paypal_y" class="block text-sm font-semibold text-slate-800">Plan annuel</label>
+                        <input id="sp_paypal_y" name="paypal_plan_id_yearly" type="text" maxlength="100" value="<?= htmlspecialchars($py, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="P-…" />
+                    </div>
+                </div>
+            </fieldset>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="sp_stripe_m" class="block text-sm font-semibold text-slate-800">Stripe — prix mensuel</label>
-                    <input id="sp_stripe_m" name="stripe_price_id_monthly" type="text" maxlength="100" value="<?= htmlspecialchars($sm, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="price_…" />
+            <fieldset>
+                <legend class="text-sm font-semibold text-slate-800">Paiement Stripe (secours)</legend>
+                <p class="mt-1 text-xs text-slate-500">Utilisé uniquement si PayPal n’est pas configuré, ou en repli.</p>
+                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="sp_stripe_m" class="block text-sm font-semibold text-slate-800">Prix mensuel</label>
+                        <input id="sp_stripe_m" name="stripe_price_id_monthly" type="text" maxlength="100" value="<?= htmlspecialchars($sm, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="price_…" />
+                    </div>
+                    <div>
+                        <label for="sp_stripe_y" class="block text-sm font-semibold text-slate-800">Prix annuel</label>
+                        <input id="sp_stripe_y" name="stripe_price_id_yearly" type="text" maxlength="100" value="<?= htmlspecialchars($sy, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500" placeholder="price_…" />
+                    </div>
                 </div>
-                <div>
-                    <label for="sp_stripe_y" class="block text-sm font-semibold text-slate-800">Stripe — prix annuel</label>
-                    <input id="sp_stripe_y" name="stripe_price_id_yearly" type="text" maxlength="100" value="<?= htmlspecialchars($sy, ENT_QUOTES, 'UTF-8') ?>" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="price_…" />
-                </div>
-            </div>
+            </fieldset>
 
             <div class="flex flex-wrap gap-3 pt-2">
                 <button type="submit" class="inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">Enregistrer</button>

@@ -31,6 +31,7 @@ use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
 use App\Services\Moderation\IndicatorBlocklistService;
 use App\Services\Profile\RecruitmentPresetPayloadService;
+use App\Support\Profile\EnlistmentTimezoneCatalog;
 use App\Services\Analytics\AnalyticsEventCategory;
 use App\Services\Analytics\AnalyticsEventName;
 use App\Services\Analytics\AnalyticsEventService;
@@ -83,6 +84,14 @@ class EnlistmentController
         $communityConfig = $this->communityConfig($tenant);
         if (!empty($communityConfig['community_locked'])) {
             return Response::view('enlistment.error', ['message' => 'Le recrutement est verrouillé pour cette communauté.', 'enlistmentRetryUrl' => $this->enlistmentFormUrl($tenant)]);
+        }
+
+        $otherOrgBlock = $this->otherCommunityMembershipBlockReason($communityConfig, (int) $tenant['id']);
+        if ($otherOrgBlock !== null) {
+            return Response::view('enlistment.error', [
+                'message' => $otherOrgBlock,
+                'enlistmentRetryUrl' => $this->enlistmentFormUrl($tenant),
+            ]);
         }
 
         $mode = TenantCommunityProfileService::normalizeRegistrationMode($communityConfig['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM);
@@ -138,6 +147,8 @@ class EnlistmentController
         );
         $publishedOpenings = $this->recruitmentOpeningRepository->listPublishedForTenant($targetTenantId);
 
+        $existingCandidature = $this->resolveExistingCandidatureCard($targetTenantId, $tenant);
+
         $viewData = [
             'tenant' => $tenant,
             'communityConfig' => $communityConfig,
@@ -148,6 +159,7 @@ class EnlistmentController
             'tenantBranding' => $tenantBranding,
             'publishedOpenings' => $publishedOpenings,
             'analyticsBeacon' => $beacon,
+            'existingCandidature' => $existingCandidature,
         ];
 
         if ($mode === 'simple') {
@@ -156,6 +168,7 @@ class EnlistmentController
                 'title' => 'Inscription — ' . $tenantName,
                 'simpleEnlistmentUrl' => $this->enlistmentFormUrl($tenant),
                 'showMilsimUnavailableNotice' => true,
+                'milsimPack' => EnlistmentMilsimPackService::forCommunity($communityConfig),
             ]));
         }
 
@@ -199,6 +212,31 @@ class EnlistmentController
             Session::flash('enlistment_error', 'Le recrutement est verrouillé pour cette communauté.');
 
             return Response::redirect(url('enlistment/error'));
+        }
+
+        $otherOrgBlock = $this->otherCommunityMembershipBlockReason($communityConfig, (int) $tenant['id']);
+        if ($otherOrgBlock !== null) {
+            Session::flash('enlistment_error', $otherOrgBlock);
+
+            return Response::redirect(url('enlistment/error'));
+        }
+
+        if ($this->authService->check()) {
+            $user = $this->authService->user();
+            $uid = (int) ($user['id'] ?? 0);
+            $uemail = trim((string) ($user['email'] ?? ''));
+            if ($uid > 0) {
+                $ongoing = $this->enlistmentRepository->findOngoingSubmittedForAccount((int) $tenant['id'], $uid, $uemail);
+                if ($ongoing !== null) {
+                    Session::flash(
+                        'enlistment_error',
+                        'Vous avez déjà une candidature en cours pour cette communauté. Consultez le suivi de votre dossier plutôt que d’en déposer une nouvelle.'
+                    );
+                    Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant) . '#candidature');
+
+                    return Response::redirect(url('enlistment/error'));
+                }
+            }
         }
 
         if ((string) ($communityConfig['registration_mode'] ?? 'milsim') === 'discord') {
@@ -251,9 +289,9 @@ class EnlistmentController
             'availability' => trim((string) $request->input('availability')) ?: null,
             'notes' => trim((string) $request->input('notes')) ?: null,
             'age' => $request->input('age'),
-            'timezone' => trim((string) $request->input('timezone')) ?: null,
+            'timezone' => EnlistmentTimezoneCatalog::normalize((string) $request->input('timezone')),
             'weekly_availability' => trim((string) $request->input('weekly_availability')) ?: null,
-            'system_config' => trim((string) $request->input('system_config')) ?: null,
+            'system_config' => EnlistmentTimezoneCatalog::normalizePcPerformance((string) $request->input('system_config')),
             'microphone_quality' => trim((string) $request->input('microphone_quality')) ?: null,
             'past_milsim_experience' => trim((string) $request->input('past_milsim_experience')) ?: null,
             'ace_acre_level' => trim((string) $request->input('ace_acre_level')) ?: null,
@@ -269,15 +307,30 @@ class EnlistmentController
             'shared_fields' => null,
         ];
 
+        $milsimPack = EnlistmentMilsimPackService::forCommunity($communityConfig);
+        $configuredSlots = EnlistmentMilsimPackService::normalizeAvailabilitySlots($milsimPack['availability_slots'] ?? []);
+        if ($configuredSlots !== []) {
+            $selectedLabels = EnlistmentMilsimPackService::filterCandidateSlotSelection(
+                $configuredSlots,
+                $request->input('availability_slot')
+            );
+            $notes = trim((string) $request->input('weekly_availability_notes', ''));
+            if (mb_strlen($notes) > 300) {
+                $notes = mb_substr($notes, 0, 300);
+            }
+            $parts = $selectedLabels;
+            if ($notes !== '') {
+                $parts[] = $notes;
+            }
+            $payload['weekly_availability'] = $parts !== [] ? implode(', ', $parts) : null;
+            if ($payload['availability'] === null && $payload['weekly_availability'] !== null) {
+                $payload['availability'] = $payload['weekly_availability'];
+            }
+        }
+
         if ($flow === 'account') {
             if (!$this->authService->check()) {
                 Session::flash('enlistment_error', 'Session expirée. Reconnectez-vous pour envoyer avec votre compte.');
-
-                return Response::redirect(url('enlistment/error'));
-            }
-            $sessionTenant = Session::get('tenant_id');
-            if ((int) $sessionTenant !== $targetTenantId) {
-                Session::flash('enlistment_error', 'Contexte communautaire invalide. Basculez vers cette communauté ou utilisez le formulaire invité.');
 
                 return Response::redirect(url('enlistment/error'));
             }
@@ -292,9 +345,11 @@ class EnlistmentController
                 return Response::redirect(url('enlistment/error'));
             }
 
+            // Compte Athena connecté (n’importe quelle communauté) : on rattache le dépôt à
+            // l’utilisateur de session. L’acceptation recrée / relie le membre local si besoin.
             $user = $this->authService->user();
-            if (!$user || (int) ($user['tenant_id'] ?? 0) !== $targetTenantId) {
-                Session::flash('enlistment_error', 'Compte non valide pour cette communauté.');
+            if (!$user || (int) ($user['id'] ?? 0) < 1) {
+                Session::flash('enlistment_error', 'Session expirée. Reconnectez-vous pour envoyer avec votre compte.');
 
                 return Response::redirect(url('enlistment/error'));
             }
@@ -302,7 +357,6 @@ class EnlistmentController
             $uid = (int) $user['id'];
             $shareName = (bool) $request->input('share_name');
             $shareEmail = (bool) $request->input('share_email');
-            $shareCallsign = (bool) $request->input('share_callsign');
             $profile = $this->userProfileRepository->getByUserId($uid);
 
             $email = $shareEmail ? trim((string) ($user['email'] ?? '')) : '';
@@ -317,13 +371,6 @@ class EnlistmentController
             } else {
                 $first = '—';
                 $last = '—';
-            }
-
-            $callsign = null;
-            if ($shareCallsign) {
-                $callsign = trim((string) ($user['callsign'] ?? '')) ?: null;
-            } else {
-                $callsign = trim((string) $request->input('callsign')) ?: null;
             }
 
             $presetId = (int) $request->input('recruitment_preset_id');
@@ -341,6 +388,10 @@ class EnlistmentController
 
             $rpSharesRaw = [];
             foreach (RecruitmentPresetPayloadService::rpShareSelectionKeys() as $rk) {
+                if ($rk === 'character_name') {
+                    $rpSharesRaw[$rk] = false;
+                    continue;
+                }
                 $rpSharesRaw[$rk] = $request->input('share_rp_' . $rk);
             }
             $rpShares = $this->recruitmentPresetPayloadService->normalizeRpShareSelections($rpSharesRaw);
@@ -352,6 +403,16 @@ class EnlistmentController
                     'rp_shares' => $rpShares,
                 ];
                 $this->recruitmentPresetPayloadService->mergePresetIntoEnlistmentPayload($pData, $payload, $shareOptions);
+
+                // Préférer les choix du formulaire ; sinon le modèle (si valeur encore autorisée).
+                $formTz = EnlistmentTimezoneCatalog::normalize((string) $request->input('timezone'));
+                $payload['timezone'] = $formTz ?? EnlistmentTimezoneCatalog::normalize(
+                    isset($payload['timezone']) ? (string) $payload['timezone'] : null
+                );
+                $formPc = EnlistmentTimezoneCatalog::normalizePcPerformance((string) $request->input('system_config'));
+                $payload['system_config'] = $formPc ?? EnlistmentTimezoneCatalog::normalizePcPerformance(
+                    isset($payload['system_config']) ? (string) $payload['system_config'] : null
+                );
 
                 $fullSnapForValidation = $this->recruitmentPresetPayloadService->buildRpSnapshotForEnlistment($pData, null);
                 if (!$includeMilsimFromPreset
@@ -376,17 +437,10 @@ class EnlistmentController
                 return Response::redirect(url('enlistment/error'));
             }
 
-            if ($callsign === null && $presetRow !== null) {
-                $pn = $this->recruitmentPresetPayloadService->normalizeDecodedPayload($pData);
-                if (trim((string) ($pn['callsign'] ?? '')) !== '') {
-                    $callsign = trim((string) $pn['callsign']) ?: null;
-                }
-            }
-
             $payload['first_name'] = $first ?: '—';
             $payload['last_name'] = $last ?: '—';
             $payload['email'] = $email;
-            $payload['callsign'] = $callsign;
+            $payload['callsign'] = null;
             $payload['submitter_user_id'] = $uid;
             $payload['recruitment_preset_id'] = $presetRow ? $presetId : null;
             $payload['submitted_via'] = $presetRow ? 'preset' : 'account';
@@ -394,7 +448,7 @@ class EnlistmentController
             $payload['shared_fields'] = [
                 'share_name' => $shareName,
                 'share_email' => $shareEmail,
-                'share_callsign' => $shareCallsign,
+                'share_callsign' => false,
                 'rp_shares' => $presetRow ? $rpShares : null,
                 'include_milsim_from_preset' => $presetRow ? $includeMilsimFromPreset : null,
                 'form_mode' => $isCompactAccount ? 'compact' : 'full',
@@ -411,7 +465,6 @@ class EnlistmentController
             $guestLn = trim((string) $request->input('guest_rp_last_name'));
             $guestBd = RecruitmentPresetPayloadService::normalizeRpBirthDate((string) $request->input('guest_rp_birth_date'));
             $guestNat = trim((string) $request->input('guest_rp_nationality'));
-            $guestScene = trim((string) $request->input('guest_rp_scene_name'));
             if ($guestFn === '' && $guestLn === '' && $fullName !== '') {
                 $guestFn = $fullName;
                 $guestLn = '';
@@ -428,7 +481,7 @@ class EnlistmentController
                     'last_name' => $guestLn,
                     'birth_date' => $guestBd,
                     'nationality' => function_exists('mb_substr') ? mb_substr($guestNat, 0, 100) : substr($guestNat, 0, 100),
-                    'character_name' => function_exists('mb_substr') ? mb_substr($guestScene, 0, 150) : substr($guestScene, 0, 150),
+                    'character_name' => '',
                 ],
                 'admin_notes' => '',
                 'availability' => ['schedule' => [], 'timezone_label' => '', 'free_text' => ''],
@@ -455,6 +508,28 @@ class EnlistmentController
             $payload['callsign'] = null;
         }
 
+        if (!$isCompactAccount) {
+            $motivationPack = EnlistmentMilsimPackService::forCommunity($communityConfig);
+            $motivationCfg = EnlistmentMilsimPackService::normalizeMotivationSection(
+                is_array($motivationPack['motivation'] ?? null) ? $motivationPack['motivation'] : null,
+                is_array($motivationPack['fields'] ?? null) ? $motivationPack['fields'] : null
+            );
+            if (!empty($motivationCfg['why_join']['enabled'])
+                && !empty($motivationCfg['why_join']['required'])
+                && trim((string) ($payload['motivation_why_join'] ?? '')) === '') {
+                Session::flash('enlistment_error', 'Merci de répondre à la question de motivation.');
+
+                return Response::redirect(url('enlistment/error'));
+            }
+            if (!empty($motivationCfg['accountability']['enabled'])
+                && !empty($motivationCfg['accountability']['required'])
+                && trim((string) ($payload['motivation_accountability'] ?? '')) === '') {
+                Session::flash('enlistment_error', 'Merci de répondre à la question complémentaire sur la motivation.');
+
+                return Response::redirect(url('enlistment/error'));
+            }
+        }
+
         $joinEmail = strtolower(trim((string) ($payload['email'] ?? '')));
         if ($joinEmail !== '' && filter_var($joinEmail, FILTER_VALIDATE_EMAIL)
             && $this->indicatorBlocklist->isEmailBlockedForTenant($targetTenantId, $joinEmail)) {
@@ -472,18 +547,18 @@ class EnlistmentController
             }
         }
 
-        // Gestion du code d'invitation
+        // Gestion du code d'invitation prioritaire
         $inviteCode = trim((string) $request->input('invite_code', ''));
         $inviteCodeData = null;
         if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
-            $inviteCodeData = $this->inviteCodeRepository()->findByCode($targetTenantId, $inviteCode);
+            $inviteCodeData = $this->inviteCodeRepository()->findPriorityByCode($targetTenantId, $inviteCode);
             if ($inviteCodeData === null) {
-                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'existe pas.');
+                Session::flash('enlistment_error', 'Le code d\'invitation prioritaire fourni n\'existe pas.');
                 return Response::redirect(url('enlistment/error'));
             }
 
-            if (!$this->inviteCodeRepository()->isCodeValid($targetTenantId, $inviteCode)) {
-                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
+            if (!$this->inviteCodeRepository()->isPriorityCodeValid($targetTenantId, $inviteCode)) {
+                Session::flash('enlistment_error', 'Le code d\'invitation prioritaire fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
                 return Response::redirect(url('enlistment/error'));
             }
 
@@ -499,6 +574,53 @@ class EnlistmentController
             if (!empty($inviteCodeData['auto_accept'])) {
                 $payload['status'] = 'reviewed';
             }
+        }
+
+        $customQuestions = EnlistmentMilsimPackService::normalizeCustomQuestions($milsimPack['custom_questions'] ?? []);
+        $customAnswersPayload = [];
+        $answerMapForRefuse = [
+            'microphone_quality' => trim((string) ($payload['microphone_quality'] ?? '')),
+            'system_config' => trim((string) ($payload['system_config'] ?? '')),
+            'ace_acre_level' => trim((string) ($payload['ace_acre_level'] ?? '')),
+            'commitment_effort' => trim((string) ($payload['commitment_effort'] ?? '')),
+            'availability_wed_sat' => trim((string) ($payload['availability_wed_sat'] ?? '')),
+        ];
+        foreach ($customQuestions as $cq) {
+            $cid = $cq['id'];
+            $rawAns = trim((string) $request->input('custom_q_' . $cid, ''));
+            if ($cq['required'] && $rawAns === '') {
+                Session::flash('enlistment_error', 'Merci de répondre à la question : « ' . $cq['label'] . ' ».');
+
+                return Response::redirect(url('enlistment/error'));
+            }
+            if (in_array($cq['widget'], ['select', 'yesno'], true) && $rawAns !== '' && $cq['options'] !== []) {
+                $allowed = array_map(static fn (string $o): string => mb_strtolower($o), $cq['options']);
+                if (!in_array(mb_strtolower($rawAns), $allowed, true)) {
+                    Session::flash('enlistment_error', 'Réponse invalide pour la question : « ' . $cq['label'] . ' ».');
+
+                    return Response::redirect(url('enlistment/error'));
+                }
+            }
+            if ($rawAns === '') {
+                continue;
+            }
+            $customAnswersPayload[] = [
+                'question_id' => $cid,
+                'label' => $cq['label'],
+                'widget' => $cq['widget'],
+                'answer' => mb_substr($rawAns, 0, 4000),
+            ];
+            $answerMapForRefuse[$cid] = $rawAns;
+        }
+        if ($customAnswersPayload !== []) {
+            $payload['custom_answers'] = $customAnswersPayload;
+        }
+
+        $refuseHit = EnlistmentMilsimPackService::evaluateAutoRefuse($milsimPack, $answerMapForRefuse);
+        if ($refuseHit !== null) {
+            $payload['status'] = 'rejected';
+            $payload['auto_rejected'] = true;
+            $payload['reviewer_comment'] = $refuseHit['staff_note'];
         }
 
         try {
@@ -527,7 +649,7 @@ class EnlistmentController
                     $enlistmentId,
                     'system',
                     'reception',
-                    'Code d\'invitation utilisé',
+                    'Code d\'invitation prioritaire utilisé',
                     'Code : ' . $codeLabel . $autoAcceptNote,
                     null,
                     ['invite_code_id' => (int) $inviteCodeData['id']]
@@ -559,6 +681,25 @@ class EnlistmentController
         );
 
         $this->notifyStaffNewEnlistment((int) $tenant['id'], $tenant, $enlistmentId, $payload);
+
+        if ($refuseHit !== null) {
+            if ($this->enlistmentTimelineRepository->tableExists()) {
+                $this->enlistmentTimelineRepository->append(
+                    (int) $tenant['id'],
+                    $enlistmentId,
+                    'system',
+                    'decision',
+                    'Refus automatique',
+                    $refuseHit['staff_note'],
+                    null,
+                    ['auto_rejected' => true, 'field_key' => $refuseHit['field_key']]
+                );
+            }
+            Session::flash('enlistment_error', $refuseHit['candidate_message']);
+            Session::flash('enlistment_retry_url', $this->enlistmentFormUrl($tenant));
+
+            return Response::redirect(url('enlistment/error'));
+        }
 
         return Response::redirect($this->enlistmentSuccessUrl($tenant));
     }
@@ -627,18 +768,18 @@ class EnlistmentController
             'discord_answers' => $answers,
         ];
 
-        // Gestion du code d'invitation
+        // Gestion du code d'invitation prioritaire
         $inviteCode = trim((string) $request->input('invite_code', ''));
         $inviteCodeData = null;
         if ($inviteCode !== '' && $this->inviteCodeRepository()->tablesExist()) {
-            $inviteCodeData = $this->inviteCodeRepository()->findByCode($targetTenantId, $inviteCode);
+            $inviteCodeData = $this->inviteCodeRepository()->findPriorityByCode($targetTenantId, $inviteCode);
             if ($inviteCodeData === null) {
-                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'existe pas.');
+                Session::flash('enlistment_error', 'Le code d\'invitation prioritaire fourni n\'existe pas.');
                 return Response::redirect(url('enlistment/error'));
             }
 
-            if (!$this->inviteCodeRepository()->isCodeValid($targetTenantId, $inviteCode)) {
-                Session::flash('enlistment_error', 'Le code d\'invitation fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
+            if (!$this->inviteCodeRepository()->isPriorityCodeValid($targetTenantId, $inviteCode)) {
+                Session::flash('enlistment_error', 'Le code d\'invitation prioritaire fourni n\'est plus valide (expiré ou limite d\'utilisations atteinte).');
                 return Response::redirect(url('enlistment/error'));
             }
 
@@ -679,7 +820,7 @@ class EnlistmentController
                     $enlistmentId,
                     'system',
                     'reception',
-                    'Code d\'invitation utilisé',
+                    'Code d\'invitation prioritaire utilisé',
                     'Code : ' . $codeLabel . $autoAcceptNote,
                     null,
                     ['invite_code_id' => (int) $inviteCodeData['id']]
@@ -865,27 +1006,31 @@ class EnlistmentController
 
         if ($this->authService->check()) {
             $sessionTenant = (int) (Session::get('tenant_id') ?? 0);
-            if ($sessionTenant === $targetTenantId) {
+            $user = $this->authService->user();
+            // Tout compte Athena connecté peut candidater « avec compte », même si la session
+            // est sur une autre communauté (ex. tenant système « default » après inscription).
+            if ($user && (int) ($user['id'] ?? 0) > 0) {
                 $canUseAccount = true;
-                $user = $this->authService->user();
-                if ($user) {
-                    $uid = (int) $user['id'];
-                    $prefill['email'] = (string) ($user['email'] ?? '');
-                    $profile = $this->userProfileRepository->getByUserId($uid);
-                    [$fn, $ln] = $this->resolveNamePartsFromAccount($user, $profile);
-                    if ($fn !== '—' || $ln !== '—') {
-                        $prefill['full_name'] = trim($fn . ' ' . $ln);
-                    } else {
-                        $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
-                    }
-                    try {
-                        $recruitmentPresets = $this->recruitmentPresetRepository->listForUser($uid);
-                    } catch (\Throwable) {
-                        $recruitmentPresets = [];
-                    }
+                $uid = (int) $user['id'];
+                $prefill['email'] = (string) ($user['email'] ?? '');
+                $profile = $this->userProfileRepository->getByUserId($uid);
+                [$fn, $ln] = $this->resolveNamePartsFromAccount($user, $profile);
+                if ($fn !== '—' || $ln !== '—') {
+                    $prefill['full_name'] = trim($fn . ' ' . $ln);
+                } else {
+                    $prefill['full_name'] = trim((string) ($user['display_name'] ?? ''));
                 }
-            } else {
+                try {
+                    $recruitmentPresets = $this->recruitmentPresetRepository->listForUser($uid);
+                } catch (\Throwable) {
+                    $recruitmentPresets = [];
+                }
+            }
+            if ($sessionTenant !== $targetTenantId) {
                 $email = (string) (Session::get('email') ?? '');
+                if ($email === '' && $user) {
+                    $email = (string) ($user['email'] ?? '');
+                }
                 if ($email !== '') {
                     $rows = $this->userRepository->listTenantsForEmail($email);
                     foreach ($rows as $r) {
@@ -915,6 +1060,91 @@ class EnlistmentController
     }
 
     /**
+     * Carte « candidature déjà en cours » pour le compte connecté (statut submitted).
+     *
+     * @param array<string, mixed> $tenant
+     * @return array<string, mixed>|null
+     */
+    private function resolveExistingCandidatureCard(int $targetTenantId, array $tenant): ?array
+    {
+        if (!$this->authService->check()) {
+            return null;
+        }
+        $user = $this->authService->user();
+        $uid = (int) ($user['id'] ?? 0);
+        if ($uid < 1) {
+            return null;
+        }
+        $email = trim((string) ($user['email'] ?? ''));
+        $row = $this->enlistmentRepository->findOngoingSubmittedForAccount($targetTenantId, $uid, $email);
+        if ($row === null) {
+            // Dernière candidature terminale (refusée / acceptée / annulée) — info seule, formulaire autorisé sauf acceptée récente liée
+            $latest = $this->enlistmentRepository->findLatestBySubmitter($targetTenantId, $uid);
+            if ($latest === null) {
+                return null;
+            }
+            $st = (string) ($latest['status'] ?? '');
+            if ($st === 'submitted') {
+                $row = $latest;
+            } elseif (in_array($st, ['rejected', 'blocked', 'cancelled'], true)) {
+                return [
+                    'kind' => 'closed',
+                    'status' => $st,
+                    'status_label' => match ($st) {
+                        'rejected' => 'Refusée',
+                        'blocked' => 'Non admise',
+                        'cancelled' => 'Annulée',
+                        default => 'Clôturée',
+                    },
+                    'blocks_form' => false,
+                    'title' => 'Dernière candidature clôturée',
+                    'lead' => 'Votre précédente candidature pour cette communauté est clôturée. Vous pouvez en déposer une nouvelle si le recrutement est ouvert.',
+                    'portal_url' => null,
+                    'submitted_at' => trim((string) ($latest['created_at'] ?? '')),
+                ];
+            } elseif ($st === 'reviewed') {
+                return [
+                    'kind' => 'accepted',
+                    'status' => $st,
+                    'status_label' => 'Acceptée',
+                    'blocks_form' => false,
+                    'title' => 'Candidature déjà acceptée',
+                    'lead' => 'Une candidature liée à votre compte a déjà été acceptée pour cette communauté. Utilisez le formulaire uniquement pour une évolution de poste si un avis est ouvert.',
+                    'portal_url' => null,
+                    'submitted_at' => trim((string) ($latest['created_at'] ?? '')),
+                ];
+            } else {
+                return null;
+            }
+        }
+
+        $eid = (int) ($row['id'] ?? 0);
+        $portalUrl = null;
+        if ($eid > 0) {
+            $token = $this->enlistmentRepository->findValidCandidatePortalTokenForEnlistment($targetTenantId, $eid);
+            if ($token === null) {
+                $token = $this->enlistmentRepository->ensureCandidatePortalToken($targetTenantId, $eid, 24 * 7);
+            }
+            if ($token !== null) {
+                $portalUrl = url('enlistment/suivi/' . rawurlencode($token));
+            }
+        }
+
+        return [
+            'kind' => 'ongoing',
+            'status' => 'submitted',
+            'status_label' => 'En cours',
+            'blocks_form' => true,
+            'title' => 'Candidature déjà en cours',
+            'lead' => 'Vous avez déjà déposé un dossier pour cette communauté. Il est en cours d’examen par l’équipe de recrutement. Vous ne pouvez pas en envoyer un second tant que celui-ci n’est pas clôturé.',
+            'next_steps' => 'Consultez le suivi de votre dossier pour connaître l’avancement et échanger avec l’équipe si besoin.',
+            'portal_url' => $portalUrl,
+            'submitted_at' => trim((string) ($row['created_at'] ?? '')),
+            'enlistment_id' => $eid,
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function sanitizePrefillFromQuery(Request $request): array
@@ -922,8 +1152,7 @@ class EnlistmentController
         $limits = [
             'full_name' => 200,
             'email' => 254,
-            'callsign' => 120,
-            'timezone' => 80,
+            'timezone' => 64,
             'weekly_availability' => 300,
         ];
         $out = [];
@@ -933,6 +1162,14 @@ class EnlistmentController
                 continue;
             }
             if ($k === 'email' && !filter_var($v, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            if ($k === 'timezone') {
+                $tz = EnlistmentTimezoneCatalog::normalize($v);
+                if ($tz === null) {
+                    continue;
+                }
+                $out[$k] = $tz;
                 continue;
             }
             $out[$k] = mb_substr($v, 0, $maxLen);
@@ -1018,6 +1255,33 @@ class EnlistmentController
         }
 
         return false;
+    }
+
+    /**
+     * Si le tenant refuse les comptes déjà ailleurs : message FR, sinon null.
+     * S’applique uniquement aux comptes connectés ayant une communauté réelle hors cible / hors « Pas d’organisation ».
+     *
+     * @param array<string, mixed> $communityConfig
+     */
+    private function otherCommunityMembershipBlockReason(array $communityConfig, int $targetTenantId): ?string
+    {
+        if (empty($communityConfig['refuse_other_community_members'])) {
+            return null;
+        }
+        if (!$this->authService->check()) {
+            return null;
+        }
+        $user = $this->authService->user();
+        $email = trim((string) ($user['email'] ?? ''));
+        if ($email === '') {
+            $email = trim((string) (Session::get('email') ?? ''));
+        }
+        if (!$this->userRepository->hasOtherNonDefaultCommunityMembership($email, $targetTenantId)) {
+            return null;
+        }
+
+        return 'Cette communauté n’accepte pas les candidatures des comptes Athena déjà rattachés à une autre communauté. '
+            . 'Les comptes sans communauté restent acceptés. Déconnectez-vous pour candidater sans compte, ou contactez le staff si besoin.';
     }
 
     private function resolveTenantForRequest(Request $request, array $params): ?array

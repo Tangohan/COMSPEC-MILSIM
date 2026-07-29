@@ -295,7 +295,7 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     "comspec_overwatch_log_to_file", "CHECKBOX",
     [
         "Écrire aussi dans un fichier journal",
-        "En plus du journal Arma (RPT), enregistre les mêmes lignes dans un fichier texte séparé (COMSPECExtension.log), plus simple à retrouver et à envoyer au support. Sans effet si le journal RPT est réglé sur « Muet »."
+        "En plus du journal Arma (RPT), enregistre les lignes dans un fichier horodaté par session (%LOCALAPPDATA%\\Arma 3\\COMSPEC\\logs). Les 12 derniers fichiers sont conservés, les plus anciens sont supprimés automatiquement. Sans effet si le journal RPT est réglé sur « Muet »."
     ],
     ["COMSPEC Overwatch", "Diagnostic"],
     true

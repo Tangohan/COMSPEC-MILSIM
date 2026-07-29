@@ -21,6 +21,11 @@ final class AuditActionLabel
         // Tenant / communauté
         'tenant.created' => 'Organisation créée',
         'tenant.setup_completed' => 'Configuration de l’organisation terminée',
+        'configuration_update.seen' => 'Nouveauté de configuration présentée',
+        'configuration_update.started' => 'Configuration post-mise à jour commencée',
+        'configuration_update.completed' => 'Configuration post-mise à jour terminée',
+        'configuration_update.dismissed' => 'Configuration post-mise à jour ignorée',
+        'configuration_update.reopened' => 'Configuration post-mise à jour rouverte',
         // Invitations
         'invitation.sent' => 'Invitation envoyée',
         'invitation.accepted' => 'Invitation acceptée',

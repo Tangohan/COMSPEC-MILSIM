@@ -33,6 +33,7 @@ $year = (int) date('Y');
                 </summary>
                 <ul class="portal-footer__list">
                     <li><a href="<?= htmlspecialchars(url('home'), ENT_QUOTES, 'UTF-8') ?>">Accueil</a></li>
+                    <li><a href="<?= htmlspecialchars(url('documentation'), ENT_QUOTES, 'UTF-8') ?>">Wiki</a></li>
                     <li><a href="<?= htmlspecialchars(url('documents'), ENT_QUOTES, 'UTF-8') ?>">Documents</a></li>
                     <li><a href="<?= htmlspecialchars(url('formations'), ENT_QUOTES, 'UTF-8') ?>">Formations</a></li>
                     <li><a href="<?= htmlspecialchars(url('atak'), ENT_QUOTES, 'UTF-8') ?>">ATAK &amp; cartographie</a></li>

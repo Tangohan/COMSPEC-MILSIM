@@ -629,6 +629,199 @@ html.tacmap-night .leaflet-control-attribution {
   border-color: var(--tm-accent);
   background: color-mix(in srgb, var(--tm-accent) 18%, transparent);
 }
+.tacmap-talert__preview {
+  margin-top: 0.35rem !important;
+  color: var(--tm-fg);
+  opacity: 0.92;
+}
+.tacmap-talert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.tacmap-talert__btn {
+  border: 1px solid color-mix(in srgb, var(--tm-border) 85%, transparent);
+  background: color-mix(in srgb, var(--tm-panel) 75%, transparent);
+  color: var(--tm-fg);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.28rem 0.55rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+.tacmap-talert__btn:hover {
+  border-color: var(--tm-accent);
+  background: color-mix(in srgb, var(--tm-accent) 14%, transparent);
+}
+.tacmap-talert__btn--open {
+  border-color: color-mix(in srgb, var(--tm-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--tm-accent) 18%, transparent);
+}
+.tacmap-talert-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.tacmap-talert-modal[hidden] {
+  display: none !important;
+}
+.tacmap-talert-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.72);
+}
+.tacmap-talert-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  max-height: min(84vh, 720px);
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--tm-border) 80%, transparent);
+  border-radius: 0.55rem;
+  background: var(--tm-panel, #121820);
+  color: var(--tm-fg, #e8f0f6);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+.tacmap-talert-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--tm-border) 70%, transparent);
+}
+.tacmap-talert-modal__head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.tacmap-talert-modal__close {
+  border: 0;
+  background: transparent;
+  color: var(--tm-muted, #8aa0b4);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tacmap-talert-modal__body {
+  padding: 0.9rem 1rem 0.4rem;
+}
+.tacmap-talert-modal__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+.tacmap-talert-modal__meta span {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tm-muted, #8aa0b4);
+  margin-bottom: 0.15rem;
+}
+.tacmap-talert-modal__meta strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tacmap-talert-modal__frago {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.tacmap-talert-modal__frago li strong {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tm-muted, #8aa0b4);
+  margin-bottom: 0.2rem;
+}
+.tacmap-talert-modal__frago li p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.tacmap-talert-modal__salute {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.tacmap-talert-modal__salute div {
+  display: grid;
+  gap: 0.15rem;
+}
+.tacmap-talert-modal__salute dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tm-muted, #8aa0b4);
+}
+.tacmap-talert-modal__salute dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.tacmap-talert-modal__bda {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.tacmap-talert-modal__bda div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--tm-surface-2, #1a222c) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tm-border) 55%, transparent);
+}
+.tacmap-talert-modal__bda dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tm-muted, #8aa0b4);
+}
+.tacmap-talert-modal__bda dd {
+  margin: 0;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+.tacmap-talert-modal__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.tacmap-talert-modal__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--tm-border) 60%, transparent);
+}
+.tacmap-talert-modal__btn {
+  border: 1px solid color-mix(in srgb, var(--tm-border) 85%, transparent);
+  background: color-mix(in srgb, var(--tm-surface-2, #1a222c) 90%, transparent);
+  color: var(--tm-fg, #e8f0f6);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+.tacmap-talert-modal__btn--primary {
+  border-color: color-mix(in srgb, var(--tm-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--tm-accent) 22%, transparent);
+}
 .tacmap-recon-item {
   display: grid;
   grid-template-columns: 64px 1fr;

@@ -109,12 +109,14 @@ final class TenantBootstrapService
             TenantSeedHelper::ensureOnboardingPortalCourse($pdo, $tenantId, $newUserId);
             TenantSeedHelper::ensureRolesOrgCourse($pdo, $tenantId, $newUserId);
             TenantSeedHelper::ensureBureauRecrutementCourse($pdo, $tenantId, $newUserId);
+            TenantSeedHelper::ensureAtakCourse($pdo, $tenantId, $newUserId);
 
             $this->tenantRepository->setOwner($tenantId, $newUserId);
             $communitySettings = [
                 'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode($options['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM),
                 'community_locked' => !empty($options['community_locked']),
                 'require_ai_ack' => array_key_exists('require_ai_ack', $options) ? (bool) $options['require_ai_ack'] : true,
+                'refuse_other_community_members' => !empty($options['refuse_other_community_members']),
                 'welcome_text' => trim((string) ($options['welcome_text'] ?? '')),
             ];
             $phs = trim((string) ($options['public_hero_subtitle'] ?? ''));
@@ -160,6 +162,22 @@ final class TenantBootstrapService
             $this->tenantRepository->updateSettings($tenantId, [
                 'community' => $communitySettings,
             ]);
+            $aff = $communitySettings['unit_affiliation'] ?? null;
+            if (is_array($aff)) {
+                try {
+                    $ref = \App\Core\Container::get(\App\Services\Community\MilitaryReferentialService::class);
+                    if (!empty($aff['is_real'])) {
+                        $ref->syncTenantAffiliationsFromCodes(
+                            $tenantId,
+                            is_array($aff['unit_ids'] ?? null) ? $aff['unit_ids'] : []
+                        );
+                    } else {
+                        $ref->syncTenantAffiliationsFromCodes($tenantId, []);
+                    }
+                } catch (\Throwable) {
+                    // Migrations référentiel absentes
+                }
+            }
             $merge = [
                 'founder_trial_ends_at' => date('c', strtotime('+30 days')),
             ];
@@ -188,6 +206,26 @@ final class TenantBootstrapService
                 $this->systemModeratorAccountService->ensureForTenant($tenantId);
             } catch (\Throwable $e) {
                 // Ne pas faire échouer la création communauté si le compte technique est en défaut
+            }
+
+            try {
+                $realism = new \App\Repositories\AtakRealismRepository();
+                $realism->ensureDefaultCryptoDomain($tenantId);
+                $atakCfg = new \App\Repositories\TenantAtakConfigRepository();
+                $cfg = $atakCfg->getRoleplayConfig($tenantId);
+                $cfg['intel_scramble_reviewed'] = true;
+                $atakCfg->updateRoleplayConfig($tenantId, $cfg);
+            } catch (\Throwable $e) {
+                // Schéma realism absent : non bloquant
+            }
+
+            try {
+                $configSvc = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class);
+                $configSvc->markSatisfiedForNewTenant($tenantId, $newUserId);
+                // Portail SSE : rôles seedés + module prêt — pas d’action humaine obligatoire à la création.
+                $configSvc->markCompleted($tenantId, 'SSE_PORTAL_V1', $newUserId);
+            } catch (\Throwable $e) {
+                // Tables absentes ou moteur non déployé : non bloquant
             }
 
             $referrerId = isset($options['referrer_user_id']) ? (int) $options['referrer_user_id'] : 0;

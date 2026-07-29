@@ -31,6 +31,7 @@ window.ATAKMap = (function () {
     iconSize: 16,
     labelSize: 7,
     showFtFrame: true,
+    showIntelPhotoMarkers: true,
     autoCenterSelf: false,
     showDelayedUnits: true,
     positionDelayEnabled: false,
@@ -76,7 +77,7 @@ window.ATAKMap = (function () {
   }
 
   function normalizeStyleMode(v) {
-    if (v === 'dot' || v === 'team_dot') return v;
+    if (v === 'dot' || v === 'team_dot' || v === 'intel_dot') return v;
     return 'nato';
   }
 
@@ -87,6 +88,7 @@ window.ATAKMap = (function () {
       iconSize: clampNum(src.iconSize, 8, 48, DISPLAY_PREFS_DEFAULT.iconSize),
       labelSize: clampNum(src.labelSize, 6, 16, DISPLAY_PREFS_DEFAULT.labelSize),
       showFtFrame: src.showFtFrame !== false,
+      showIntelPhotoMarkers: src.showIntelPhotoMarkers !== false,
       autoCenterSelf: !!src.autoCenterSelf,
       showDelayedUnits: src.showDelayedUnits !== false,
       positionDelayEnabled: !!src.positionDelayEnabled,
@@ -116,13 +118,21 @@ window.ATAKMap = (function () {
   }
 
   function patchDisplayPrefs(patch) {
-    var next = saveDisplayPrefs(Object.assign({}, getDisplayPrefs(), patch || {}));
+    var prev = getDisplayPrefs();
+    var next = saveDisplayPrefs(Object.assign({}, prev, patch || {}));
     applyDisplayPrefsToMapDom();
     ensurePosSimFlushTimer();
     if (patch && (patch.positionDelayEnabled === false || patch.packetLossEnabled === false
         || patch.positionDelayMs != null || patch.packetLossPercent != null)) {
       if (!next.positionDelayEnabled && !next.packetLossEnabled) {
         clearPosSimState();
+      }
+    }
+    if (patch && patch.showIntelPhotoMarkers === false) {
+      clearIntelMarkers();
+    } else if (patch && patch.showIntelPhotoMarkers === true && prev.showIntelPhotoMarkers === false) {
+      if (window.ATAKCams && typeof window.ATAKCams.refresh === 'function') {
+        window.ATAKCams.refresh();
       }
     }
     refreshUnitMarkerIcons();
@@ -222,6 +232,22 @@ window.ATAKMap = (function () {
     return liveLatlng;
   }
 
+  function buildIntelDotIcon(callSign, size, labelPx) {
+    var d = Math.max(8, Math.round(size * 0.5));
+    var label = String(callSign || '').slice(0, 12).replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    var w = Math.max(d + 4, 48);
+    var h = d + 4 + Math.round(labelPx) + 4;
+    return L.divIcon({
+      className: 'atak-unit-intel-dot-marker',
+      html: '<div class="atak-unit-dot-wrap">' +
+        '<span class="atak-intel-marker-dot" style="width:' + d + 'px;height:' + d + 'px;"></span>' +
+        '<span class="atak-unit-dot-label">' + label + '</span>' +
+        '</div>',
+      iconSize: [w, h],
+      iconAnchor: [w / 2, d / 2 + 2],
+    });
+  }
+
   function buildDotIcon(callSign, color, size, labelPx) {
     var d = Math.max(6, Math.round(size * 0.7));
     var safeColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#22c55e';
@@ -270,6 +296,8 @@ window.ATAKMap = (function () {
     if (labelVal) labelVal.textContent = String(p.labelSize);
     var ftEl = document.getElementById('atak-unit-ft-frame');
     if (ftEl) ftEl.checked = !!p.showFtFrame;
+    var intelPhotosEl = document.getElementById('atak-show-intel-photo-markers');
+    if (intelPhotosEl) intelPhotosEl.checked = !!p.showIntelPhotoMarkers;
     var autoCenterSelf = document.getElementById('atak-auto-center-self');
     if (autoCenterSelf) autoCenterSelf.checked = !!p.autoCenterSelf;
     var showDelayedUnits = document.getElementById('atak-show-delayed-units');
@@ -356,6 +384,13 @@ window.ATAKMap = (function () {
     if (ftEl) {
       ftEl.addEventListener('change', function () {
         patchDisplayPrefs({ showFtFrame: !!ftEl.checked });
+      });
+    }
+
+    var intelPhotosEl = document.getElementById('atak-show-intel-photo-markers');
+    if (intelPhotosEl) {
+      intelPhotosEl.addEventListener('change', function () {
+        patchDisplayPrefs({ showIntelPhotoMarkers: !!intelPhotosEl.checked });
       });
     }
 
@@ -1013,6 +1048,7 @@ window.ATAKMap = (function () {
   }
 
   function addIntelPhotoMarker(id, posY, posX, photoUrl) {
+    if (!getDisplayPrefs().showIntelPhotoMarkers) return;
     if (posY == null || posX == null || !photoUrl) return;
     var applied = applyOffset(posY, posX);
     var latlng = L.latLng(applied[0], applied[1]);
@@ -1025,9 +1061,9 @@ window.ATAKMap = (function () {
     var fullUrl = photoUrl.indexOf('http') === 0 || photoUrl.indexOf('//') === 0 ? photoUrl : (window.ATAKSocket && window.ATAKSocket.getApiBase ? window.ATAKSocket.getApiBase() : '') + (photoUrl.charAt(0) === '/' ? photoUrl : '/' + photoUrl);
     var icon = L.divIcon({
       className: 'atak-intel-marker',
-      html: '<span style="font-size:18px;" title="Photo CTAB">📷</span>',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
+      html: '<span class="atak-intel-marker-dot" title="Photo terrain"></span>',
+      iconSize: [10, 10],
+      iconAnchor: [5, 5]
     });
     var marker = L.marker(latlng, { icon: icon });
     marker.bindPopup('<img src="' + fullUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;" />');
@@ -1453,7 +1489,9 @@ window.ATAKMap = (function () {
       }
       var icon = null;
       if (!existing || existing._atakIconSig !== iconSig) {
-        if (prefs.styleMode === 'dot' || prefs.styleMode === 'team_dot') {
+        if (prefs.styleMode === 'intel_dot') {
+          icon = buildIntelDotIcon(u.call_sign || '', prefs.iconSize, prefs.labelSize);
+        } else if (prefs.styleMode === 'dot' || prefs.styleMode === 'team_dot') {
           var dotColor = prefs.styleMode === 'team_dot' && safeFt ? safeFt : '#22c55e';
           icon = buildDotIcon(u.call_sign || '', dotColor, prefs.iconSize, prefs.labelSize);
         } else if (preferAvatar) {
@@ -1652,6 +1690,7 @@ window.ATAKMap = (function () {
     setUnitMarkerPriority: setUnitMarkerPriority,
     getDisplayPrefs: getDisplayPrefs,
     patchDisplayPrefs: patchDisplayPrefs,
+    syncDisplayPrefsUi: syncDisplayPrefsUi,
     refreshUnitMarkerIcons: refreshUnitMarkerIcons,
     removeMarker: removeMarker,
     addOrUpdateLayer: addOrUpdateLayer,

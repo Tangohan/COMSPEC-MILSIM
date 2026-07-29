@@ -79,28 +79,28 @@ if (!isNil "ace_zeus_fnc_addModule") then {
     ["COMSPEC ATAK", "Brouiller joueur (45s)", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) exitWith {};
-        ["jam", 45] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+        [_unit, "jam", 45] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
         [format ["Zeus → %1 : brouillage", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     }] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Casser écran ATAK", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) exitWith {};
-        ["screen_break", 30] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+        [_unit, "screen_break", 30] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
         [format ["Zeus → %1 : écran endommagé", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     }] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Réparer ATAK", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) exitWith {};
-        ["repair", 30] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+        [_unit, "repair", 30] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
         [format ["Zeus → %1 : ATAK rétabli", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     }] call ace_zeus_fnc_addModule;
 
     ["COMSPEC ATAK", "Capturer appareil (illisible)", {
         params ["", ["_unit", objNull]];
         if (isNull _unit || {!isPlayer _unit}) exitWith {};
-        ["capture", 30] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+        [_unit, "capture", 30] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
         [format ["Zeus → %1 : appareil capturé", name _unit], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
     }] call ace_zeus_fnc_addModule;
 };
@@ -139,7 +139,7 @@ if (!isNil "ace_interact_menu_fnc_createAction" && {!isNil "ace_interact_menu_fn
                 private _unit = objNull;
                 { if (isPlayer _x) exitWith { _unit = _x; }; } forEach (curatorSelected select 0);
                 if (isNull _unit) exitWith {};
-                [_act, _dur] remoteExecCall ["comspec_overwatch_connect_fnc_applyZeusAtakEffect", _unit];
+                [_unit, _act, _dur] remoteExecCall ["comspec_overwatch_connect_fnc_relayZeusAtakEffect", 2];
                 [format ["Zeus → %1 : %2", name _unit, _act], "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
             },
             { true },

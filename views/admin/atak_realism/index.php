@@ -62,9 +62,17 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
                 <?php endif; ?>
                 <?php foreach ($terminals as $terminal):
                     $cs = trim((string) ($terminal['operator_callsign'] ?? ''));
+                    $rawUid = trim((string) ($terminal['terminal_uid'] ?? ''));
+                    $uidLower = strtolower($rawUid);
+                    $uidBad = $rawUid === '' || in_array($uidLower, ['null', '<null>', '<nul>', 'nil'], true) || str_starts_with($uidLower, '<null');
+                    $uidShow = $uidBad ? '—' : $rawUid;
+                    $labelShow = trim((string) ($terminal['terminal_label'] ?? ''));
+                    if ($labelShow === '') {
+                        $labelShow = $uidBad ? 'Terminal ATAK' : $rawUid;
+                    }
                     ?>
                     <tr class="border-t border-slate-100">
-                        <td class="px-4 py-3"><?= $h($terminal['terminal_label'] ?? $terminal['terminal_uid'] ?? '—') ?><div class="text-xs text-slate-500"><?= $h($terminal['terminal_uid'] ?? '') ?></div></td>
+                        <td class="px-4 py-3"><?= $h($labelShow) ?><div class="text-xs text-slate-500 font-mono"><?= $h($uidShow) ?></div></td>
                         <td class="px-4 py-3"><?= $h($cs !== '' ? $cs : '—') ?><div class="text-xs text-slate-500"><?= $h($terminal['operator_military_id'] ?? '—') ?></div></td>
                         <td class="px-4 py-3"><?= $h($terminal['display_name'] ?? '—') ?></td>
                         <td class="px-4 py-3"><?= $h($terminalStatusFr($terminal['status'] ?? null)) ?></td>

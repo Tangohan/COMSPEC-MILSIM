@@ -83,13 +83,38 @@
     return active ? active.getAttribute('data-tab') : '';
   }
 
+  /** Bascule l’onglet sans dépendre des listeners installés par startAtakApplication. */
+  function activateTab(tab, opts) {
+    opts = opts || {};
+    if (!tab) return false;
+    var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
+    if (!btn || btn.hidden) return false;
+
+    document.querySelectorAll('#atak-panel-left .atak-tab[data-tab]').forEach(function (b) {
+      var on = b === btn;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+      c.classList.toggle('active', c.id === 'tab-' + tab);
+    });
+
+    if (!opts.silent) {
+      try {
+        document.dispatchEvent(new CustomEvent('atak:tab-activated', { detail: { tab: tab } }));
+      } catch (e) { /* ignore */ }
+    }
+    return true;
+  }
+
   function selectTab(tab, fromRemote) {
     if (!tab) return;
-    var btn = document.querySelector('#atak-panel-left .atak-tab[data-tab="' + tab + '"]');
-    if (!btn) return;
     if (fromRemote) applyingRemote = true;
     try {
-      btn.click();
+      if (!activateTab(tab, { silent: !!fromRemote })) return;
+      if (!fromRemote) {
+        broadcast({ type: 'tab', tab: tab });
+      }
     } finally {
       if (fromRemote) applyingRemote = false;
     }
@@ -303,9 +328,7 @@
     var side = window.ATAK_POPOUT;
     if (!side) return;
     document.title = (side === 'left' ? 'Panneau ATAK' : 'Effectifs ATAK') + ' · COMSPEC';
-    if (side === 'left' && window.ATAK_POPOUT_TAB) {
-      setTimeout(function () { selectTab(window.ATAK_POPOUT_TAB, true); }, 0);
-    }
+    document.body.classList.remove('atak-session-profile-locked');
     window.addEventListener('beforeunload', function () {
       broadcast({ type: 'popout-closed', side: side });
     });
@@ -349,6 +372,7 @@
     applyWidth: applyWidth,
     openPopout: openPopout,
     restorePopout: restorePopout,
+    activateTab: activateTab,
     selectTab: selectTab,
     refreshMapSize: refreshMapSize
   };

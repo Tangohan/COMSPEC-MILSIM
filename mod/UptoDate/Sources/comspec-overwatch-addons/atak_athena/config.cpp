@@ -16,9 +16,9 @@ class CfgPatches
         };
         units[] = {};
         weapons[] = {};
-        version = 1.0.15;
-        versionStr = "1.0.16";
-        versionAr[] = {1, 0, 15};
+        version = 1.0.17;
+        versionStr = "1.0.17";
+        versionAr[] = {1, 0, 17};
     };
 };
 
@@ -59,12 +59,14 @@ class CfgFunctions
             class athena_bridgeVideoFeeds {};
             class athena_snapshotVideoFeed {};
             class athena_installDesktopShortcut {};
+            class athena_createWebMarker {};
             class athena_showLinkDialog {};
             class athena_showPhoneConnect {};
             class athena_openAtakApp {};
             class athena_openFeature {};
             class athena_pollIcemanPhotos {};
             class athena_onVibrate {};
+            class athena_onHelmetMediaRequest {};
             class athena_onNotify {};
             class athena_statusOnOpened {};
             class athena_updateStatus {};
@@ -125,6 +127,7 @@ class RscStructuredText;
 class RscListBox;
 class RscText;
 class RscPictureKeepAspect;
+class RscControlsGroup;
 
 #include "ui\athena_page.hpp"
 #include "ui\status_page.hpp"

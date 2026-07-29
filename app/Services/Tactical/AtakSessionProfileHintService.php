@@ -190,6 +190,11 @@ final class AtakSessionProfileHintService
         if ($this->matchesRadio($blob, $slugBlob)) {
             $addSpec('radio');
         }
+        if ($this->matchesSse($blob, $slugBlob)
+            || (function_exists('can') && (can('atak.sse.access') || can('atak.sse.case.manage') || can('atak.sse.grant') || can('admin.access')))
+        ) {
+            $addSpec('sse');
+        }
 
         $hasBasis = $isDeputy || $isCommanderFromPersonnel || $suggestedSpecialties !== [];
 
@@ -281,6 +286,19 @@ final class AtakSessionProfileHintService
 
         return (bool) preg_match(
             '/\b(radio|rto|transmetteur|transmissions|communications|comms|telecoms|operateur\s+radio|signal\s+support)\b/u',
+            $hay
+        );
+    }
+
+    private function matchesSse(string $blob, string $slugBlob): bool
+    {
+        $hay = $blob . ' ' . $slugBlob;
+        if (preg_match('/\b(sse|intel|s2|renseignement|intelligence)\b/u', $slugBlob)) {
+            return true;
+        }
+
+        return (bool) preg_match(
+            '/\b(sse|renseignement|intelligence|s2|g2|analyst|analyste|humint|interrogat|exploitation\s+de\s+site|sensitive\s+site)\b/u',
             $hay
         );
     }

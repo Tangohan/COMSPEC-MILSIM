@@ -86,9 +86,13 @@ class TenantRepository
             $meta = \App\Services\Community\TenantCommunityProfileService::registryCardMeta($community);
             $row['registry_tagline'] = $meta['tagline'];
             $row['registry_style_badge_labels'] = $meta['style_badge_labels'];
+            $row['registry_style_badge_slugs'] = $meta['style_badge_slugs'] ?? [];
             $row['registry_tag_labels'] = $meta['registry_tag_labels'];
+            $row['registry_tag_slugs'] = $meta['registry_tag_slugs'] ?? [];
             $row['registry_unit_affiliation_label'] = $meta['unit_affiliation_label'] ?? '';
             $row['game_label'] = trim((string) ($community['game_label'] ?? ''));
+            $row['registry_locale'] = (string) ($meta['locale'] ?? '');
+            $row['registry_locale_label'] = (string) ($meta['locale_label'] ?? '');
             $row['registry_locked'] = !empty($community['community_locked']);
             $row['registry_simple_reg'] = ($community['registration_mode'] ?? 'milsim') === 'simple';
             $welcome = trim((string) ($community['welcome_text'] ?? ''));
@@ -311,6 +315,76 @@ class TenantRepository
             $periodEnd ?? $row['subscription_current_period_end'] ?? null,
             $tenantId,
         ]);
+    }
+
+    public function updateSubscriptionFromPayPal(
+        int $tenantId,
+        ?string $paypalPayerId,
+        ?string $paypalSubscriptionId,
+        string $status,
+        ?string $planSlug,
+        ?string $periodEndIso
+    ): void {
+        $periodEnd = null;
+        if ($periodEndIso !== null && $periodEndIso !== '') {
+            $periodEnd = date('Y-m-d H:i:s', (int) strtotime($periodEndIso));
+        }
+        $row = $this->findById($tenantId);
+        if (!$row) {
+            return;
+        }
+        if (!$this->hasPayPalTenantColumns()) {
+            // Repli : stocke le statut / plan sans colonnes PayPal dédiées
+            $stmt = $this->pdo->prepare(
+                'UPDATE tenants SET subscription_status = ?, plan_slug = ?, subscription_current_period_end = ?, updated_at = NOW() WHERE id = ?'
+            );
+            $stmt->execute([
+                $status,
+                $planSlug ?? ($row['plan_slug'] ?? 'free'),
+                $periodEnd ?? $row['subscription_current_period_end'] ?? null,
+                $tenantId,
+            ]);
+
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE tenants SET paypal_payer_id = ?, paypal_subscription_id = ?, subscription_status = ?, plan_slug = ?, subscription_current_period_end = ?, updated_at = NOW() WHERE id = ?'
+        );
+        $stmt->execute([
+            $paypalPayerId ?? $row['paypal_payer_id'] ?? null,
+            $paypalSubscriptionId ?? $row['paypal_subscription_id'] ?? null,
+            $status,
+            $planSlug ?? ($row['plan_slug'] ?? 'free'),
+            $periodEnd ?? $row['subscription_current_period_end'] ?? null,
+            $tenantId,
+        ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findByPayPalSubscriptionId(string $subscriptionId): ?array
+    {
+        $subscriptionId = trim($subscriptionId);
+        if ($subscriptionId === '' || !$this->hasPayPalTenantColumns()) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare('SELECT * FROM tenants WHERE paypal_subscription_id = ? LIMIT 1');
+        $stmt->execute([$subscriptionId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    private function hasPayPalTenantColumns(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'paypal_subscription_id' LIMIT 1"
+            );
+
+            return $st && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /** Fusionne un objet JSON dans tenants.settings. */

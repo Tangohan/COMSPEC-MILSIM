@@ -85,6 +85,9 @@ foreach ($heroClipGroups as $candidates) {
     $heroVideoClips[] = [
         'stem' => $slotStem,
         'present' => $present,
+        'bytes' => ($present && $hasMp4 && is_file($heroVideoDir . DIRECTORY_SEPARATOR . $slotStem . '.mp4'))
+            ? (int) filesize($heroVideoDir . DIRECTORY_SEPARATOR . $slotStem . '.mp4')
+            : 0,
         'sources' => $sources,
     ];
 }
@@ -105,8 +108,46 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
 <?php
     $seo_og_title = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
     $meta_description = $meta_description ?? __('home.meta_description');
+    $og_image = $og_image ?? (rtrim($base, '/') . '/assets/images/fog-team.jpg');
     require base_path('views/partials/seo_meta.php');
 ?>
+    <meta name="theme-color" content="#050505">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($base, ENT_QUOTES, 'UTF-8') ?>/assets/icons/athena-192.png">
+    <script type="application/ld+json"><?= json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => 'Athena Compsec',
+        'url' => rtrim((string) url(''), '/'),
+        'logo' => rtrim((string) url(''), '/') . '/assets/icons/athena-192.png',
+        'description' => __('home.meta_description'),
+        'sameAs' => [],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+    <script type="application/ld+json"><?= json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => [
+            [
+                '@type' => 'Question',
+                'name' => __('home.faq_1_q'),
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => __('home.faq_1_a')],
+            ],
+            [
+                '@type' => 'Question',
+                'name' => __('home.faq_2_q'),
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => __('home.faq_2_a')],
+            ],
+            [
+                '@type' => 'Question',
+                'name' => __('home.faq_3_q'),
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => __('home.faq_3_a')],
+            ],
+            [
+                '@type' => 'Question',
+                'name' => __('home.faq_4_q'),
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => __('home.faq_4_a')],
+            ],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,59 +156,14 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
     <link href="<?= htmlspecialchars($base) ?>/assets/css/design-system.css" rel="stylesheet">
     <?php endif; ?>
     <link href="<?= $base ?>/assets/css/styles.css" rel="stylesheet">
-    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-5" rel="stylesheet">
+    <link href="<?= $base ?>/assets/css/home-impact.css?v=hero-av-6" rel="stylesheet">
 </head>
 <body class="home-impact layout-light bg-[var(--hi-void)] text-[var(--hi-ink)] antialiased selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
 
     <div id="bodyOverlay" class="overlay fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm" onclick="toggleMenu()"></div>
 
     <div id="navDrawer" class="drawer-translate fixed top-0 left-0 z-[120] flex h-full w-[min(100%,320px)] flex-col overflow-hidden border-r border-white/10 bg-[#0a0a0a] shadow-2xl">
-        <div class="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
-            <span class="hi-kicker text-white/40"><?= htmlspecialchars(__('common.menu'), ENT_QUOTES, 'UTF-8') ?></span>
-            <button type="button" onclick="toggleMenu()" class="rounded-lg p-2 text-white/50 transition hover:bg-white/5 hover:text-white" aria-label="<?= htmlspecialchars(__('common.close_menu'), ENT_QUOTES, 'UTF-8') ?>">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 py-3" aria-label="<?= htmlspecialchars(__('home.nav_aria'), ENT_QUOTES, 'UTF-8') ?>">
-            <?php
-            $homeNavLink = 'flex items-center rounded-lg px-3 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/5 hover:text-white';
-            $homeNavAccent = 'flex items-center rounded-lg px-3 py-2.5 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/10';
-            ?>
-            <?php if ($loggedIn): ?>
-                <?php
-                $scopeEntries = navigation_scope_drawer_entries();
-                $scopeGroups = navigation_scope_group_entries($scopeEntries);
-                $navCurrentPath = navigation_current_path();
-                ?>
-                <?php foreach ($scopeGroups as $groupName => $links): ?>
-                    <p class="px-3 pt-3 pb-1 hi-kicker text-white/30 first:pt-2"><?= htmlspecialchars($groupName) ?></p>
-                    <?php foreach ($links as $entry): ?>
-                        <?php
-                        $rp = (string) ($entry['routePath'] ?? '/');
-                        $pathActive = preg_replace('/#.*$/', '', $rp) ?: '/';
-                        $match = navigation_infer_active_match($pathActive);
-                        $isActive = nav_path_matches($pathActive, $navCurrentPath, $match);
-                        $rowClass = $isActive ? $homeNavAccent : $homeNavLink;
-                        ?>
-                        <a href="<?= htmlspecialchars((string) $entry['href']) ?>" onclick="toggleMenu()" class="<?= $rowClass ?>"><?= htmlspecialchars((string) $entry['label']) ?></a>
-                    <?php endforeach; ?>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <a href="<?= $base ?>/" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.home'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= url('login') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.login'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= url('register') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.register'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= url('join') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.join_code'), ENT_QUOTES, 'UTF-8') ?></a>
-                <a href="<?= url('communities') ?>" onclick="toggleMenu()" class="<?= $homeNavLink ?>"><?= htmlspecialchars(__('common.communities'), ENT_QUOTES, 'UTF-8') ?></a>
-            <?php endif; ?>
-        </nav>
-        <div class="shrink-0 space-y-3 border-t border-white/10 p-4">
-            <?php if (!$loggedIn): ?>
-                <a href="<?= url('register') ?>" onclick="toggleMenu()" class="hi-cta hi-cta-solid w-full"><?= htmlspecialchars(__('common.create_account'), ENT_QUOTES, 'UTF-8') ?></a>
-            <?php else: ?>
-                <a href="<?= url('dashboard') ?>" onclick="toggleMenu()" class="hi-cta hi-cta-solid w-full"><?= htmlspecialchars(__('common.dashboard'), ENT_QUOTES, 'UTF-8') ?></a>
-            <?php endif; ?>
-            <?php require base_path('views/partials/language_switcher.php'); ?>
-        </div>
+        <?php require base_path('views/partials/home_nav_drawer.php'); ?>
     </div>
 
     <header class="fixed inset-x-0 top-0 z-[100] border-b border-white/5 bg-black/70 backdrop-blur-md">
@@ -211,12 +207,13 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 </div>
                 <div id="heroVideoSlides" class="hi-hero-videos absolute inset-0 hi-hero-videos--idle" data-hero-video-count="<?= count($heroVideoClips) ?>" aria-hidden="true">
                     <?php foreach ($heroVideoClips as $clipIndex => $clip): ?>
-                    <div class="hi-hero-vslide<?= $clipIndex === 0 ? ' is-active' : '' ?>" data-hero-video-slide data-stem="<?= htmlspecialchars((string) $clip['stem'], ENT_QUOTES, 'UTF-8') ?>" data-present="<?= !empty($clip['present']) ? '1' : '0' ?>">
+                    <div class="hi-hero-vslide<?= $clipIndex === 0 ? ' is-active' : '' ?>" data-hero-video-slide data-stem="<?= htmlspecialchars((string) $clip['stem'], ENT_QUOTES, 'UTF-8') ?>" data-present="<?= !empty($clip['present']) ? '1' : '0' ?>"<?= !empty($clip['bytes']) ? ' data-bytes="' . (int) $clip['bytes'] . '"' : '' ?>>
                         <video
                             class="hi-hero-vslide__video"
                             playsinline
                             muted
-                            preload="<?= (!empty($clip['present']) && $clipIndex === 0) ? 'auto' : 'metadata' ?>"
+                            preload="<?= !empty($clip['present']) ? 'auto' : 'metadata' ?>"
+                            <?= ($clipIndex === 0) ? 'poster="' . htmlspecialchars($heroPosterUrl, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
                             data-hero-video
                         >
                             <?php foreach ($clip['sources'] as $source): ?>
@@ -402,6 +399,83 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                             <?= htmlspecialchars(__('home.rp_goal'), ENT_QUOTES, 'UTF-8') ?>
                         </p>
                     </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comment ça fonctionne -->
+        <section class="border-y border-slate-200 bg-white text-slate-900" aria-labelledby="how-heading" id="comment-ca-marche">
+            <div class="mx-auto max-w-6xl px-6 py-16 md:py-20">
+                <div class="mx-auto max-w-3xl text-center">
+                    <p class="hi-kicker text-emerald-700"><?= htmlspecialchars(__('home.how_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
+                    <h2 id="how-heading" class="hi-display hi-display-md mt-3 text-slate-950"><?= htmlspecialchars(__('home.how_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+                    <p class="hi-body mx-auto mt-4 max-w-2xl text-slate-600"><?= htmlspecialchars(__('home.how_lead'), ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+                <div class="mt-12 grid gap-6 md:grid-cols-3">
+                    <?php
+                    $howSteps = [
+                        ['n' => '01', 't' => __('home.how_1_t'), 'b' => __('home.how_1_b')],
+                        ['n' => '02', 't' => __('home.how_2_t'), 'b' => __('home.how_2_b')],
+                        ['n' => '03', 't' => __('home.how_3_t'), 'b' => __('home.how_3_b')],
+                    ];
+                    foreach ($howSteps as $step):
+                    ?>
+                    <article class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-left shadow-sm">
+                        <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-700"><?= htmlspecialchars($step['n'], ENT_QUOTES, 'UTF-8') ?></p>
+                        <h3 class="mt-3 text-xl font-black tracking-tight text-slate-950"><?= htmlspecialchars($step['t'], ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-600"><?= htmlspecialchars($step['b'], ENT_QUOTES, 'UTF-8') ?></p>
+                    </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pour qui -->
+        <section class="bg-[var(--hi-paper)] text-slate-900" aria-labelledby="audience-heading">
+            <div class="hi-section mx-auto max-w-[100rem]">
+                <div class="grid gap-12 lg:grid-cols-12">
+                    <div class="lg:col-span-4">
+                        <p class="hi-kicker text-slate-400"><?= htmlspecialchars(__('home.audience_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
+                        <h2 id="audience-heading" class="hi-display hi-display-md mt-4"><?= htmlspecialchars(__('home.audience_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+                        <p class="hi-body mt-5 text-slate-600"><?= htmlspecialchars(__('home.audience_lead'), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <div class="space-y-8 lg:col-span-8">
+                        <div class="hi-rule-row py-2">
+                            <h3 class="text-lg font-bold text-slate-900 md:text-xl"><?= htmlspecialchars(__('home.audience_cmd_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                            <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base"><?= htmlspecialchars(__('home.audience_cmd_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <div class="hi-rule-row py-2">
+                            <h3 class="text-lg font-bold text-slate-900 md:text-xl"><?= htmlspecialchars(__('home.audience_ops_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                            <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base"><?= htmlspecialchars(__('home.audience_ops_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                        <div class="hi-rule-row py-2">
+                            <h3 class="text-lg font-bold text-slate-900 md:text-xl"><?= htmlspecialchars(__('home.audience_train_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                            <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base"><?= htmlspecialchars(__('home.audience_train_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Confiance / isolation -->
+        <section class="border-y border-white/10 bg-black text-white" aria-labelledby="trust-heading">
+            <div class="hi-section mx-auto max-w-[100rem]">
+                <p class="hi-kicker text-emerald-300/80"><?= htmlspecialchars(__('home.trust_kicker'), ENT_QUOTES, 'UTF-8') ?></p>
+                <h2 id="trust-heading" class="hi-display hi-display-md mt-4 max-w-3xl"><?= htmlspecialchars(__('home.trust_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+                <p class="hi-body mt-6 max-w-2xl text-white/60"><?= htmlspecialchars(__('home.trust_body'), ENT_QUOTES, 'UTF-8') ?></p>
+                <div class="mt-10 grid gap-6 md:grid-cols-3">
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.16em] text-emerald-400"><?= htmlspecialchars(__('home.trust_1_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="mt-3 text-sm leading-relaxed text-white/55"><?= htmlspecialchars(__('home.trust_1_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.16em] text-emerald-400"><?= htmlspecialchars(__('home.trust_2_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="mt-3 text-sm leading-relaxed text-white/55"><?= htmlspecialchars(__('home.trust_2_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.16em] text-emerald-400"><?= htmlspecialchars(__('home.trust_3_t'), ENT_QUOTES, 'UTF-8') ?></h3>
+                        <p class="mt-3 text-sm leading-relaxed text-white/55"><?= htmlspecialchars(__('home.trust_3_b'), ENT_QUOTES, 'UTF-8') ?></p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -729,6 +803,9 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 <p class="hi-body-sm mt-3 max-w-xs text-white/45"><?= htmlspecialchars(__('home.footer_tagline'), ENT_QUOTES, 'UTF-8') ?></p>
             </div>
             <nav class="flex max-w-xl flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="<?= htmlspecialchars(__('home.footer_legal_aria'), ENT_QUOTES, 'UTF-8') ?>">
+                <a href="<?= htmlspecialchars(url('a-propos'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.about'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('contact'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.contact'), ENT_QUOTES, 'UTF-8') ?></a>
+                <a href="<?= htmlspecialchars(url('nouveautes'), ENT_QUOTES, 'UTF-8') ?>" class="font-medium text-white/40 transition hover:text-emerald-400"><?= htmlspecialchars(__('site.changelog'), ENT_QUOTES, 'UTF-8') ?></a>
                 <?php
                 $legal_link_class = 'text-white/40 transition hover:text-emerald-400 font-medium';
                 require base_path('views/partials/legal_site_links.php');
@@ -771,6 +848,8 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
             var VOL_KEY = 'athena_immersive_vol';
             var IMAGE_INTERVAL_MS = 6000;
             var VIDEO_FALLBACK_MS = 30000;
+            var VIDEO_DECODE_MIN_MS = 14000;
+            var VIDEO_DECODE_MAX_MS = 40000;
             var dlg = document.getElementById('immersive-consent');
             var btnLater = document.getElementById('btn-enable-immersive');
             var imageRoot = document.getElementById('heroImageSlides');
@@ -982,6 +1061,39 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                 return !!(video && video.videoWidth > 0 && video.readyState >= 2);
             }
 
+            function decodeTimeoutForVideo(video) {
+                if (!video) return VIDEO_DECODE_MIN_MS;
+                var slide = video.closest ? video.closest('[data-hero-video-slide]') : null;
+                var bytes = slide ? parseInt(slide.getAttribute('data-bytes') || '0', 10) : 0;
+                if (!bytes || isNaN(bytes)) return 18000;
+                var estimated = Math.round((bytes / (1024 * 1024)) * 1200);
+                return Math.min(VIDEO_DECODE_MAX_MS, Math.max(VIDEO_DECODE_MIN_MS, estimated));
+            }
+
+            function scheduleDecodeWatch(token, video, slide, startedAt) {
+                if (videoDecodeTimer) {
+                    clearTimeout(videoDecodeTimer);
+                    videoDecodeTimer = null;
+                }
+                if (!startedAt) startedAt = Date.now();
+                var budget = decodeTimeoutForVideo(video);
+                videoDecodeTimer = setTimeout(function () {
+                    videoDecodeTimer = null;
+                    if (token !== playToken || mode !== 'videos' || rotationPaused) return;
+                    if (!video) return;
+                    if (videoHasPaintedFrame(video)) {
+                        revealVideoFrame(video);
+                        return;
+                    }
+                    var elapsed = Date.now() - startedAt;
+                    if (elapsed < budget && (video.readyState >= 1 || video.networkState === 2)) {
+                        scheduleDecodeWatch(token, video, slide, startedAt);
+                        return;
+                    }
+                    handleVideoError(slide);
+                }, Math.min(4000, budget));
+            }
+
             function revealVideoFrame(video) {
                 if (!video || mode !== 'videos') return false;
                 if (!videoHasPaintedFrame(video)) return false;
@@ -1177,17 +1289,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     afterPlayStarted();
                 }
 
-                videoDecodeTimer = setTimeout(function () {
-                    videoDecodeTimer = null;
-                    if (token !== playToken || mode !== 'videos' || rotationPaused) return;
-                    if (!nextVideo) return;
-                    if (videoHasPaintedFrame(nextVideo)) {
-                        revealVideoFrame(nextVideo);
-                        return;
-                    }
-                    // Pas de frame après 5s → repli images
-                    handleVideoError(nextSlide);
-                }, 5000);
+                scheduleDecodeWatch(token, nextVideo, nextSlide);
 
                 syncAvUi();
             }

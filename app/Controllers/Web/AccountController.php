@@ -320,6 +320,8 @@ class AccountController
                 'timezone' => 'max:50',
                 'language' => 'max:10',
                 'profile_slug' => 'max:40',
+                'first_name' => 'max:100',
+                'last_name' => 'max:100',
             ]);
             $themeIn = $request->input('ui_theme');
             $densityIn = $request->input('ui_density');
@@ -378,9 +380,17 @@ class AccountController
                 if (!\App\Services\I18n\LocaleService::isSupported($language)) {
                     $language = 'fr';
                 }
+                $firstName = trim((string) $request->input('first_name'));
+                $lastName = trim((string) $request->input('last_name'));
                 $this->userProfileRepository->upsert($uid, [
+                    'first_name' => $firstName !== '' ? $firstName : null,
+                    'last_name' => $lastName !== '' ? $lastName : null,
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
+                ]);
+                $this->userLegalIdentityRepository->upsert($uid, $tenantId, [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
                 ]);
                 (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 if (!empty($vUi['normalized'])) {

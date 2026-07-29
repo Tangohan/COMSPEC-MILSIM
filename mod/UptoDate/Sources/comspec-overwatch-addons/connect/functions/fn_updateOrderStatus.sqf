@@ -7,6 +7,15 @@ params ["_orderId", ["_status", "ACK"], ["_note", ""]];
 private _valid = ["PENDING", "ACK", "EXEC", "FAILED", "CANCELLED", "DELIVERED"];
 if !((toUpper _status) in _valid) exitWith { false };
 
+private _current = "PENDING";
+{
+    if ((_x getOrDefault ["id", ""]) isEqualTo _orderId) exitWith {
+        _current = toUpper (_x getOrDefault ["status", "PENDING"]);
+    };
+} forEach (missionNamespace getVariable ["COMSPEC_Orders", []]);
+
+if !([_current, toUpper _status] call comspec_overwatch_connect_fnc_orderCanTransition) exitWith { false };
+
 private _orders = missionNamespace getVariable ["COMSPEC_Orders", []];
 private _updated = false;
 

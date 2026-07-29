@@ -9,7 +9,9 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\CooperationCatalogRepository;
+use App\Services\Platform\FeatureGateService;
 use App\Support\CooperationDictionary;
+use App\Support\PlanFeatureDenial;
 
 /**
  * Entrées supplémentaires du catalogue coopération pour la communauté active.
@@ -17,7 +19,8 @@ use App\Support\CooperationDictionary;
 final class CooperationCatalogWebController
 {
     public function __construct(
-        private CooperationCatalogRepository $catalog
+        private CooperationCatalogRepository $catalog,
+        private FeatureGateService $featureGate,
     ) {}
 
     public function index(Request $request, array $params = []): Response
@@ -26,6 +29,9 @@ final class CooperationCatalogWebController
             return Response::redirect(url('dashboard'));
         }
         $tid = (int) Session::get('tenant_id');
+        if (!$this->featureGate->allows($tid, 'cooperation')) {
+            return PlanFeatureDenial::upgradeView('cooperation', 'Pro');
+        }
 
         return Response::view('layout.main', [
             'content' => 'back_office.cooperation.catalog_index',

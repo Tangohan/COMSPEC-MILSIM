@@ -37,8 +37,8 @@ if (_state getOrDefault ["is_disconnected", false]) then {
         _state set ["next_disconnect_at", _now + _interval];
         
         // Notification (masquée en milsim / réalisme / mode discret)
-["Liaison ATAK rétablie", "link", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-missionNamespace setVariable ["COMSPEC_LinkState", "linked", false];
+        ["Liaison ATAK rétablie", "link", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+        [] call comspec_overwatch_connect_fnc_refreshLinkState;
         
         // Reset du hint pour la prochaine déconnexion
         missionNamespace setVariable ["COMSPEC_DisconnectHintShown", false, false];

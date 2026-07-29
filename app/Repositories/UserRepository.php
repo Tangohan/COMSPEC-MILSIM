@@ -1139,8 +1139,8 @@ class UserRepository
 
     /**
      * Annuaire personnel enrichi : grade, affectation principale, matricule, ancienneté, rôle métier —
-     * en une seule requête (jointures), sans boucle N+1. Recherche optionnelle (nom, indicatif, slug,
-     * identifiant Athena, nom de personnage).
+     * en une seule requête (jointures), sans boucle N+1. Recherche optionnelle (nom affiché, prénom/nom,
+     * indicatif, slug, identifiant Athena, nom de personnage).
      *
      * @return list<array<string, mixed>>
      */
@@ -1170,9 +1170,15 @@ class UserRepository
                 ? " OR (u.athena_identifier IS NOT NULL AND TRIM(u.athena_identifier) <> '' AND u.athena_identifier LIKE ?)"
                 : '';
             $where[] = '(u.display_name LIKE ?
+                 OR (uli.first_name IS NOT NULL AND uli.first_name LIKE ?)
+                 OR (uli.last_name IS NOT NULL AND uli.last_name LIKE ?)
+                 OR (CONCAT(TRIM(COALESCE(uli.first_name, \'\')), \' \', TRIM(COALESCE(uli.last_name, \'\'))) LIKE ?)
                  OR (u.callsign IS NOT NULL AND TRIM(u.callsign) <> \'\' AND u.callsign LIKE ?)
                  OR (u.profile_slug IS NOT NULL AND TRIM(u.profile_slug) <> \'\' AND u.profile_slug LIKE ?)
                  OR (pp.character_name IS NOT NULL AND pp.character_name LIKE ?)' . $athenaFilter . ')';
+            $params[] = $term;
+            $params[] = $term;
+            $params[] = $term;
             $params[] = $term;
             $params[] = $term;
             $params[] = $term;
@@ -1185,12 +1191,14 @@ class UserRepository
         $jobRole = $this->primaryJobRoleJoinFragments('u');
 
         $sql = 'SELECT u.id, u.display_name, u.callsign, u.profile_slug, ' . $athenaSelect . ', u.avatar_url, u.status, u.role_id,
+                       uli.first_name, uli.last_name,
                        ' . $gc['select'] . ',
                        un.name AS unit_name, un.code AS unit_code,
                        pp.character_name, pp.matricule_internal, pp.enlistment_date, ' . $jobRole['select_as_primary_role'] . ',
                        pp.radio_assigned, pp.readiness_score, pp.rank_display, pp.rank_display_override, pp.deployable,
                        pex.service_number, pex.date_of_enlistment
                 FROM users u
+                LEFT JOIN user_legal_identities uli ON uli.user_id = u.id
                 LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
                 LEFT JOIN personnel_extras pex ON pex.user_id = u.id
                 ' . $gc['join'] . '
@@ -2061,6 +2069,30 @@ class UserRepository
         }
 
         return null;
+    }
+
+    /**
+     * Compte Athena déjà membre d’une communauté réelle autre que `$excludeTenantId`.
+     * Le tenant système (slug `default` / « Pas d’organisation ») est ignoré.
+     */
+    public function hasOtherNonDefaultCommunityMembership(string $email, int $excludeTenantId): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        foreach ($this->listTenantsForEmail($email) as $r) {
+            if (($r['slug'] ?? '') === 'default') {
+                continue;
+            }
+            if ((int) ($r['tenant_id'] ?? 0) === $excludeTenantId) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

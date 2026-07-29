@@ -23,6 +23,8 @@ use App\Repositories\GradeRepository;
 use App\Repositories\PendingCommunityCreateRepository;
 use App\Repositories\ReferralRepository;
 use App\Repositories\SubscriptionPlanRepository;
+use App\Services\Billing\BillingProvider;
+use App\Services\Billing\PayPalCheckoutService;
 use App\Services\Billing\StripeCheckoutService;
 use App\Services\Community\CommunityOnboardingValidationService;
 use App\Services\Community\CommunityWizardUploadService;
@@ -49,6 +51,7 @@ class CommunityController
         private ReferralRepository $referralRepository,
         private PendingCommunityCreateRepository $pendingCommunityRepository,
         private StripeCheckoutService $stripeCheckoutService,
+        private PayPalCheckoutService $payPalCheckoutService,
         private SubscriptionPlanRepository $subscriptionPlanRepository,
         private EmailService $emailService,
         private CommunityWizardUploadService $communityWizardUploadService,
@@ -312,6 +315,7 @@ class CommunityController
             'unitParent' => $parentUnit,
             'tenantBranding' => $tenantBranding,
             'unitIsPreview' => empty($unit['show_on_public_page']) && $isStaffViewer,
+            'communityShowcasePage' => true,
         ]);
     }
 
@@ -674,7 +678,8 @@ class CommunityController
         if ($ref !== '') {
             Session::set('pending_referrer_code', $ref);
         }
-        $stripeConfigured = (getenv('STRIPE_SECRET_KEY') ?: '') !== '';
+        $billingConfigured = BillingProvider::anyConfigured();
+        $billingProvider = BillingProvider::preferred();
 
         $grades = new GradeRepository();
         $gradesFr = $grades->listBySystemCode('FR_CLASSIC');
@@ -683,7 +688,9 @@ class CommunityController
         return Response::view('layout.main', [
             'title' => 'Créer une communauté',
             'content' => 'community.create',
-            'stripeConfigured' => $stripeConfigured,
+            'stripeConfigured' => $billingConfigured,
+            'billingConfigured' => $billingConfigured,
+            'billingProvider' => $billingProvider,
             'gradesFr' => $gradesFr,
             'gradesUs' => $gradesUs,
             'gradesFrGrouped' => $this->groupGradesByCategory($gradesFr),
@@ -691,7 +698,7 @@ class CommunityController
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
             'wizardPermissionGroups' => CommunityOnboardingValidationService::wizardPermissionFieldGroups(),
-            'subscriptionOfferCards' => $this->subscriptionOfferCards($stripeConfigured),
+            'subscriptionOfferCards' => $this->subscriptionOfferCards($billingConfigured),
             'communityCreateDraft' => Session::get('community_create_draft') ?? [],
             'onboardingStep' => Session::getFlash('onboarding_step'),
         ]);
@@ -700,7 +707,7 @@ class CommunityController
     /**
      * @return list<array<string, mixed>>
      */
-    private function subscriptionOfferCards(bool $stripeConfigured): array
+    private function subscriptionOfferCards(bool $billingConfigured): array
     {
         $rows = [];
         foreach ($this->subscriptionPlanRepository->allOrdered() as $row) {
@@ -713,15 +720,19 @@ class CommunityController
         $standardInterval = $this->preferredPlanInterval($rows['standard'] ?? null);
         $proInterval = $this->preferredPlanInterval($rows['pro'] ?? null);
         $proPlusInterval = $this->preferredPlanInterval($rows['pro_plus'] ?? null);
+        $billingReady = $billingConfigured;
+        $unavailableHint = !$billingConfigured
+            ? 'Paiement non configuré sur la plateforme.'
+            : 'Identifiants de prix manquants pour cette formule (administration plateforme → Formules d’accès).';
 
         return [
             [
                 'slug' => 'free',
                 'title' => 'Quartier libre',
                 'eyebrow' => 'Sans engagement',
-                'description' => 'Forum, documents et formations de base pour démarrer sans frais.',
+                'description' => 'Forum, documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
                 'meta' => 'Gratuit',
-                'limits' => ['50 membres', '5 formations', '3 événements par mois', 'ATAK non inclus'],
+                'limits' => ['10 places', '5 formations', '3 événements par mois', 'Courrier et ATAK non inclus'],
                 'value' => 'free',
                 'paid' => false,
                 'available' => true,
@@ -730,23 +741,25 @@ class CommunityController
                 'slug' => 'standard',
                 'title' => 'Standard',
                 'eyebrow' => 'Équipe',
-                'description' => 'Pour une unité active avec événements réguliers et carte tactique.',
+                'description' => 'Pour une unité active : événements, courrier, mur opérationnel et carte tactique.',
                 'meta' => 'Abonnement',
-                'limits' => ['200 membres', '25 formations', 'Événements inclus', 'ATAK inclus'],
+                'limits' => ['25 places', '25 formations', 'Événements, courrier, ATAK', 'Alertes communauté'],
                 'value' => 'standard|' . $standardInterval,
                 'paid' => true,
-                'available' => $stripeConfigured && $standardInterval !== '',
+                'available' => $billingReady && $standardInterval !== '',
+                'unavailable_hint' => $unavailableHint,
             ],
             [
                 'slug' => 'pro',
                 'title' => 'Pro',
                 'eyebrow' => 'Complet',
-                'description' => 'Ajoute le pilotage avancé et les statistiques pour les communautés structurées.',
+                'description' => 'Recrutement, coopération inter-unités, analytics et plafonds relevés.',
                 'meta' => 'Abonnement',
-                'limits' => ['2 000 membres', '100 formations', 'ATAK inclus', 'Analytics inclus'],
+                'limits' => ['50 places', '100 formations', 'Recrutement + coopération', 'Analytics inclus'],
                 'value' => 'pro|' . $proInterval,
                 'paid' => true,
-                'available' => $stripeConfigured && $proInterval !== '',
+                'available' => $billingReady && $proInterval !== '',
+                'unavailable_hint' => $unavailableHint,
             ],
             [
                 'slug' => 'pro_plus',
@@ -754,20 +767,21 @@ class CommunityController
                 'eyebrow' => 'Intégrations',
                 'description' => 'Périmètre maximal avec intégrations avancées et plafonds relevés.',
                 'meta' => 'Abonnement',
-                'limits' => ['10 000 membres', 'Formations illimitées', 'Integrations avancees', 'ATAK + analytics'],
+                'limits' => ['80 places', 'Formations illimitées', 'Intégrations avancées', 'Tout le périmètre Pro'],
                 'value' => 'pro_plus|' . $proPlusInterval,
                 'paid' => true,
-                'available' => $stripeConfigured && $proPlusInterval !== '',
+                'available' => $billingReady && $proPlusInterval !== '',
+                'unavailable_hint' => $unavailableHint,
             ],
             [
                 'slug' => 'heart_support',
-                'title' => 'Support du coeur a 2 EUR',
+                'title' => 'Support du cœur à 2 €',
                 'eyebrow' => 'Soutien volontaire',
                 'description' => 'Même accès que Quartier libre, avec une contribution unique pour soutenir Athena.',
-                'meta' => '2 EUR · une seule fois',
-                'limits' => ['Creation immediate', 'Aucun engagement', 'Paiement securise', 'Soutien au projet'],
+                'meta' => '2 € · une seule fois',
+                'limits' => ['Création immédiate', 'Aucun engagement', 'Paiement sécurisé', 'Soutien au projet'],
                 'value' => 'heart_support',
-                'paid' => $stripeConfigured,
+                'paid' => $billingConfigured,
                 'heart' => true,
                 'available' => true,
             ],
@@ -779,10 +793,28 @@ class CommunityController
         if (!is_array($row)) {
             return '';
         }
-        if (trim((string) ($row['stripe_price_id_monthly'] ?? '')) !== '') {
+        $provider = BillingProvider::preferred();
+        if ($provider === BillingProvider::PAYPAL) {
+            if (trim((string) ($row['paypal_plan_id_monthly'] ?? '')) !== '') {
+                return 'monthly';
+            }
+            if (trim((string) ($row['paypal_plan_id_yearly'] ?? '')) !== '') {
+                return 'yearly';
+            }
+        }
+        if ($provider === BillingProvider::STRIPE || $provider === null) {
+            if (trim((string) ($row['stripe_price_id_monthly'] ?? '')) !== '') {
+                return 'monthly';
+            }
+            if (trim((string) ($row['stripe_price_id_yearly'] ?? '')) !== '') {
+                return 'yearly';
+            }
+        }
+        // Repli : n’importe quel fournisseur configuré sur la formule
+        if (trim((string) ($row['paypal_plan_id_monthly'] ?? '')) !== '' || trim((string) ($row['stripe_price_id_monthly'] ?? '')) !== '') {
             return 'monthly';
         }
-        if (trim((string) ($row['stripe_price_id_yearly'] ?? '')) !== '') {
+        if (trim((string) ($row['paypal_plan_id_yearly'] ?? '')) !== '' || trim((string) ($row['stripe_price_id_yearly'] ?? '')) !== '') {
             return 'yearly';
         }
 
@@ -863,6 +895,7 @@ class CommunityController
             'registration_mode' => TenantCommunityProfileService::normalizeRegistrationMode($data['registration_mode'] ?? TenantCommunityProfileService::REGISTRATION_MODE_MILSIM),
             'community_locked' => !empty($data['community_locked']),
             'require_ai_ack' => !empty($data['require_ai_ack']),
+            'refuse_other_community_members' => !empty($data['refuse_other_community_members']),
             'welcome_text' => trim((string) ($data['welcome_text'] ?? '')),
             'presentation_mode' => ((string) ($data['wizard_presentation_mode'] ?? 'simple')) === 'military' ? 'military' : 'simple',
             'simple_body' => trim((string) ($data['wizard_simple_body'] ?? '')),
@@ -954,6 +987,7 @@ class CommunityController
                 ),
                 'community_locked' => $request->input('community_locked') ? true : false,
                 'require_ai_ack' => $request->input('require_ai_ack') ? true : false,
+                'refuse_other_community_members' => $request->input('refuse_other_community_members') ? true : false,
                 'welcome_text' => trim((string) $request->input('welcome_text')),
                 'referrer_user_id' => $referrerUserId,
                 'public_page_layout' => ((string) $request->input('wizard_public_page_layout', 'legacy')) === 'showcase' ? 'showcase' : 'legacy',
@@ -977,14 +1011,29 @@ class CommunityController
 
             if ($paid !== null) {
                 [$planSlug, $interval] = $paid;
-                if ((getenv('STRIPE_SECRET_KEY') ?: '') === '') {
+                $provider = BillingProvider::preferred();
+                if ($provider === null) {
                     return $this->flashCommunityCreateErrorAndRedirect($request, 'Le paiement en ligne n’est pas disponible pour le moment.', 'review');
                 }
                 $planRow = $this->subscriptionPlanRepository->findBySlug($planSlug);
                 if (!$planRow) {
                     return $this->flashCommunityCreateErrorAndRedirect($request, 'Cette formule n’est pas disponible.', 'review');
                 }
-                $priceId = $this->stripePriceIdForInterval($planRow, $interval);
+                $priceId = $provider === BillingProvider::PAYPAL
+                    ? $this->paypalPlanIdForInterval($planRow, $interval)
+                    : $this->stripePriceIdForInterval($planRow, $interval);
+                if ($priceId === null && $provider === BillingProvider::PAYPAL) {
+                    $priceId = $this->stripePriceIdForInterval($planRow, $interval);
+                    if ($priceId !== null && BillingProvider::stripeConfigured()) {
+                        $provider = BillingProvider::STRIPE;
+                    }
+                }
+                if ($priceId === null && $provider === BillingProvider::STRIPE) {
+                    $priceId = $this->paypalPlanIdForInterval($planRow, $interval);
+                    if ($priceId !== null && BillingProvider::paypalConfigured()) {
+                        $provider = BillingProvider::PAYPAL;
+                    }
+                }
                 if ($priceId === null) {
                     return $this->flashCommunityCreateErrorAndRedirect(
                         $request,
@@ -998,7 +1047,7 @@ class CommunityController
                     'options' => $optionsBase,
                 ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
                 $token = bin2hex(random_bytes(32));
-                $this->pendingCommunityRepository->create($token, (int) $user['id'], $payload, $planSlug, $priceId);
+                $this->pendingCommunityRepository->create($token, (int) $user['id'], $payload, $planSlug, $priceId, $provider);
                 Session::forget('community_create_draft');
 
                 return Response::redirect(url('communities/create/pay?token=' . rawurlencode($token)));
@@ -1023,7 +1072,7 @@ class CommunityController
         }
     }
 
-    /** Redirection vers Stripe Checkout (paiement obligatoire pour Standard / Pro). */
+    /** Redirection vers PayPal ou Stripe Checkout (paiement obligatoire pour Standard / Pro). */
     public function pay(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
@@ -1040,10 +1089,31 @@ class CommunityController
             Session::flash('error', 'Demande de paiement introuvable ou déjà traitée.');
             return Response::redirect(url('communities/create'));
         }
+        $provider = strtolower(trim((string) ($row['payment_provider'] ?? 'stripe')));
+        if ($provider !== BillingProvider::PAYPAL) {
+            $provider = BillingProvider::STRIPE;
+        }
         try {
-            $successUrl = url('communities/create/complete') . '?session_id={CHECKOUT_SESSION_ID}';
-            $cancelUrl = url('communities/create');
             $email = (string) ($user['email'] ?? Session::get('email') ?? '');
+            $cancelUrl = url('communities/create');
+            if ($provider === BillingProvider::PAYPAL) {
+                $successUrl = url('communities/create/complete') . '?provider=paypal&token=' . rawurlencode($token);
+                $session = $this->payPalCheckoutService->createSubscription(
+                    (string) $row['stripe_price_id'],
+                    $successUrl,
+                    $cancelUrl,
+                    $email !== '' ? $email : null,
+                    [
+                        'pct' => $token,
+                        'plan' => (string) $row['plan_slug'],
+                    ]
+                );
+                $this->pendingCommunityRepository->updatePayPalSubscriptionId($token, $session['id']);
+
+                return Response::redirect($session['url']);
+            }
+
+            $successUrl = url('communities/create/complete') . '?session_id={CHECKOUT_SESSION_ID}';
             $session = $this->stripeCheckoutService->createSubscriptionCheckoutSession(
                 (string) $row['stripe_price_id'],
                 $successUrl,
@@ -1065,26 +1135,133 @@ class CommunityController
         }
     }
 
-    /** Après retour Stripe : connexion au nouveau tenant et assistant de configuration. */
+    /** Après retour PayPal / Stripe : connexion au nouveau tenant et assistant de configuration. */
     public function createComplete(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
             return Response::redirect(url('login'));
         }
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+
+        $provider = strtolower(trim((string) $request->query('provider', '')));
+        $paypalToken = trim((string) $request->query('token', ''));
+        $paypalSubId = trim((string) $request->query('subscription_id', ''));
+
+        if ($provider === BillingProvider::PAYPAL || ($paypalToken !== '' && $paypalSubId !== '')) {
+            return $this->createCompletePayPal($user, $paypalToken, $paypalSubId, $request);
+        }
+
         $sessionId = trim((string) $request->query('session_id'));
         if ($sessionId === '') {
             Session::flash('error', 'Session de paiement manquante.');
             return Response::redirect(url('communities/create'));
-        }
-        $user = $this->authService->user();
-        if (!$user) {
-            return Response::redirect(url('login'));
         }
         $pending = $this->pendingCommunityRepository->findByStripeCheckoutSessionId($sessionId);
         if (!$pending || (int) $pending['user_id'] !== (int) $user['id']) {
             Session::flash('error', 'Paiement non associé à votre compte.');
             return Response::redirect(url('communities/create'));
         }
+
+        return $this->waitOrLoginPending($pending, (string) $user['email'], $sessionId, $request);
+    }
+
+    /**
+     * @param array<string, mixed> $user
+     */
+    private function createCompletePayPal(array $user, string $token, string $subscriptionId, Request $request): Response
+    {
+        $pending = null;
+        if ($token !== '') {
+            $pending = $this->pendingCommunityRepository->findByToken($token);
+        }
+        if ($pending === null && $subscriptionId !== '') {
+            $pending = $this->pendingCommunityRepository->findByPayPalSubscriptionId($subscriptionId);
+        }
+        if (!$pending || (int) $pending['user_id'] !== (int) $user['id']) {
+            Session::flash('error', 'Paiement non associé à votre compte.');
+
+            return Response::redirect(url('communities/create'));
+        }
+        if ($subscriptionId !== '' && empty($pending['paypal_subscription_id'])) {
+            $this->pendingCommunityRepository->updatePayPalSubscriptionId((string) $pending['token'], $subscriptionId);
+        }
+        // Si le webhook n’a pas encore tourné : activer immédiatement après retour PayPal
+        if (empty($pending['tenant_id']) && $subscriptionId !== '') {
+            try {
+                $sub = $this->payPalCheckoutService->getSubscription($subscriptionId);
+                $status = strtoupper((string) ($sub['status'] ?? ''));
+                if (in_array($status, ['ACTIVE', 'APPROVED'], true)) {
+                    $this->fulfillPendingCommunityFromPayPal($pending, $subscriptionId, $sub);
+                    $pending = $this->pendingCommunityRepository->findByToken((string) $pending['token']) ?? $pending;
+                }
+            } catch (\Throwable $e) {
+                error_log('[community.createComplete.paypal] ' . $e->getMessage());
+            }
+        }
+
+        $lookupId = $subscriptionId !== '' ? $subscriptionId : (string) ($pending['paypal_subscription_id'] ?? $pending['token'] ?? '');
+
+        return $this->waitOrLoginPending($pending, (string) $user['email'], $lookupId, $request, true);
+    }
+
+    /**
+     * @param array<string, mixed> $pending
+     * @param array<string, mixed> $subscription
+     */
+    private function fulfillPendingCommunityFromPayPal(array $pending, string $subscriptionId, array $subscription): void
+    {
+        if (!empty($pending['tenant_id'])) {
+            return;
+        }
+        $token = (string) ($pending['token'] ?? '');
+        $payload = json_decode((string) ($pending['payload_json'] ?? ''), true);
+        if ($token === '' || !is_array($payload)) {
+            return;
+        }
+        $name = trim((string) ($payload['name'] ?? ''));
+        $slug = trim((string) ($payload['slug'] ?? ''));
+        $options = is_array($payload['options'] ?? null) ? $payload['options'] : [];
+        $options['plan_slug'] = (string) $pending['plan_slug'];
+        $options['skip_founder_trial'] = true;
+        try {
+            $result = $this->bootstrapService->createCommunity((int) $pending['user_id'], $name, $slug, $options);
+        } catch (\Throwable $e) {
+            $this->pendingCommunityRepository->setCreationError($token, UserFacingExceptionMapper::communityCreationMessage($e));
+
+            return;
+        }
+        $payerId = null;
+        if (isset($subscription['subscriber']) && is_array($subscription['subscriber'])) {
+            $p = $subscription['subscriber']['payer_id'] ?? null;
+            $payerId = is_string($p) ? $p : null;
+        }
+        $periodEnd = isset($subscription['billing_info']['next_billing_time'])
+            ? (string) $subscription['billing_info']['next_billing_time']
+            : null;
+        $this->tenantRepository->updateSubscriptionFromPayPal(
+            (int) $result['tenant_id'],
+            $payerId,
+            $subscriptionId,
+            'active',
+            (string) $pending['plan_slug'],
+            $periodEnd
+        );
+        $this->pendingCommunityRepository->setTenantIdForToken($token, (int) $result['tenant_id']);
+    }
+
+    /**
+     * @param array<string, mixed> $pending
+     */
+    private function waitOrLoginPending(
+        array $pending,
+        string $email,
+        string $lookupId,
+        Request $request,
+        bool $paypal = false
+    ): Response {
         $creationError = trim((string) ($pending['creation_error'] ?? ''));
         if ($creationError !== '') {
             Session::flash('error', $creationError);
@@ -1097,24 +1274,28 @@ class CommunityController
                 return Response::view('layout.main', [
                     'title' => 'Paiement en cours de validation',
                     'content' => 'community.create_pending',
-                    'sessionId' => $sessionId,
+                    'sessionId' => $lookupId,
                     'timedOut' => true,
-                    'retryUrl' => url('communities/create/complete') . '?session_id=' . rawurlencode($sessionId),
+                    'retryUrl' => $paypal
+                        ? url('communities/create/complete') . '?provider=paypal&token=' . rawurlencode((string) $pending['token']) . '&subscription_id=' . rawurlencode($lookupId)
+                        : url('communities/create/complete') . '?session_id=' . rawurlencode($lookupId),
                 ]);
             }
             $nextWait = $wait + 1;
-            $retryUrl = url('communities/create/complete') . '?session_id=' . rawurlencode($sessionId) . '&wait=' . $nextWait;
+            $retryUrl = $paypal
+                ? url('communities/create/complete') . '?provider=paypal&token=' . rawurlencode((string) $pending['token']) . '&subscription_id=' . rawurlencode($lookupId) . '&wait=' . $nextWait
+                : url('communities/create/complete') . '?session_id=' . rawurlencode($lookupId) . '&wait=' . $nextWait;
 
             return Response::view('layout.main', [
                 'title' => 'Paiement en cours de validation',
                 'content' => 'community.create_pending',
-                'sessionId' => $sessionId,
+                'sessionId' => $lookupId,
                 'timedOut' => false,
                 'retryUrl' => $retryUrl,
             ]);
         }
 
-        return $this->loginAndRedirectToNewCommunity($pending, (string) $user['email']);
+        return $this->loginAndRedirectToNewCommunity($pending, $email);
     }
 
     /**
@@ -1149,7 +1330,6 @@ class CommunityController
         $this->pendingCommunityRepository->deleteById((int) $pending['id']);
         Session::forget('pending_referrer_code');
         Session::flash('success', 'Paiement confirmé. Votre communauté est prête. Finalisez les derniers réglages.');
-        $slug = (string) ($tenant['slug'] ?? '');
 
         return Response::redirect(url('back-office/configuration-initiale'));
     }
@@ -1192,24 +1372,40 @@ class CommunityController
 
         $setupUrl = url('back-office/configuration-initiale');
 
-        if ($withHeartSupport && (getenv('STRIPE_SECRET_KEY') ?: '') !== '') {
+        if ($withHeartSupport && BillingProvider::anyConfigured()) {
             try {
                 $successUrl = $setupUrl . (str_contains($setupUrl, '?') ? '&' : '?') . 'soutien=merci';
-                $session = $this->stripeCheckoutService->createPaymentCheckoutSession(
-                    200,
-                    'eur',
-                    'Support du cœur — Athena',
-                    'Contribution volontaire de 2 € pour soutenir le projet',
-                    $successUrl,
-                    $setupUrl,
-                    $creatorEmail !== '' ? $creatorEmail : null,
-                    [
-                        'kind' => 'community_heart_support',
-                        'user_id' => (string) $newUserId,
-                        'tenant_id' => (string) $tenantId,
-                        'amount_cents' => '200',
-                    ]
-                );
+                $provider = BillingProvider::preferred();
+                if ($provider === BillingProvider::PAYPAL) {
+                    $session = $this->payPalCheckoutService->createOrder(
+                        200,
+                        'EUR',
+                        'Support du cœur — Athena (2 €)',
+                        $successUrl,
+                        $setupUrl,
+                        [
+                            'kind' => 'heart',
+                            'uid' => (string) $newUserId,
+                            'tid' => (string) $tenantId,
+                        ]
+                    );
+                } else {
+                    $session = $this->stripeCheckoutService->createPaymentCheckoutSession(
+                        200,
+                        'eur',
+                        'Support du cœur — Athena',
+                        'Contribution volontaire de 2 € pour soutenir le projet',
+                        $successUrl,
+                        $setupUrl,
+                        $creatorEmail !== '' ? $creatorEmail : null,
+                        [
+                            'kind' => 'community_heart_support',
+                            'user_id' => (string) $newUserId,
+                            'tenant_id' => (string) $tenantId,
+                            'amount_cents' => '200',
+                        ]
+                    );
+                }
                 Session::flash('success', 'Communauté créée. Merci pour votre soutien — finalisez le paiement sécurisé de 2 €.');
 
                 return Response::redirect($session['url']);
@@ -1304,6 +1500,22 @@ class CommunityController
         }
         if ($interval === 'yearly') {
             $id = trim((string) ($planRow['stripe_price_id_yearly'] ?? ''));
+
+            return $id !== '' ? $id : null;
+        }
+
+        return null;
+    }
+
+    private function paypalPlanIdForInterval(array $planRow, string $interval): ?string
+    {
+        if ($interval === 'monthly') {
+            $id = trim((string) ($planRow['paypal_plan_id_monthly'] ?? ''));
+
+            return $id !== '' ? $id : null;
+        }
+        if ($interval === 'yearly') {
+            $id = trim((string) ($planRow['paypal_plan_id_yearly'] ?? ''));
 
             return $id !== '' ? $id : null;
         }
@@ -1583,7 +1795,7 @@ class CommunityController
 
     /**
      * Destination « Retour » pour la vitrine publique.
-     * Priorité : Referer interne sûr → registre (/communities) si connecté → accueil.
+     * Priorité : Referer interne sûr → registre public (/communities).
      */
     private function resolveShowcaseBackUrl(Request $request, string $slug): string
     {
@@ -1609,11 +1821,6 @@ class CommunityController
             }
         }
 
-        if ($this->authService->check()) {
-            // Registre des communautés ; le tableau de bord reste accessible via Referer.
-            return url('communities');
-        }
-
-        return url('');
+        return url('communities');
     }
 }

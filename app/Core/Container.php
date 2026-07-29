@@ -119,6 +119,7 @@ class Container
                 self::get(\App\Repositories\ReferralRepository::class),
                 self::get(\App\Repositories\PendingCommunityCreateRepository::class),
                 self::get(\App\Services\Billing\StripeCheckoutService::class),
+                self::get(\App\Services\Billing\PayPalCheckoutService::class),
                 self::get(\App\Repositories\SubscriptionPlanRepository::class),
                 self::get(\App\Services\EmailService::class),
                 new \App\Services\Community\CommunityWizardUploadService(),
@@ -128,6 +129,21 @@ class Container
                 self::get(\App\Repositories\CommunityMediaRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Repositories\CommunityEventRepository::class),
+            ),
+            \App\Services\Billing\PayPalCheckoutService::class => new \App\Services\Billing\PayPalCheckoutService(),
+            \App\Controllers\Api\PayPalWebhookController::class => new \App\Controllers\Api\PayPalWebhookController(
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\ReferralRepository::class),
+                self::get(\App\Repositories\PendingCommunityCreateRepository::class),
+                self::get(\App\Services\Community\TenantBootstrapService::class),
+                self::get(\App\Services\Billing\PayPalCheckoutService::class),
+            ),
+            \App\Controllers\Web\PlatformSubscriptionController::class => new \App\Controllers\Web\PlatformSubscriptionController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Repositories\SubscriptionPlanRepository::class),
+                self::get(\App\Services\Billing\PayPalCheckoutService::class),
+                self::get(\App\Services\Billing\StripeCheckoutService::class),
             ),
             \App\Controllers\Web\AnalyticsBeaconController::class => new \App\Controllers\Web\AnalyticsBeaconController(
                 self::get(\App\Services\Analytics\AnalyticsEventService::class)
@@ -140,6 +156,10 @@ class Container
                 self::get(\App\Repositories\ReferralRepository::class),
             ),
             \App\Services\Community\TenantCommunityProfileService::class => new \App\Services\Community\TenantCommunityProfileService(),
+            \App\Repositories\MilitaryUnitRepository::class => new \App\Repositories\MilitaryUnitRepository(),
+            \App\Services\Community\MilitaryReferentialService::class => new \App\Services\Community\MilitaryReferentialService(
+                self::get(\App\Repositories\MilitaryUnitRepository::class)
+            ),
             \App\Controllers\Admin\Organization\OrganizationCommunityController::class => new \App\Controllers\Admin\Organization\OrganizationCommunityController(
                 self::get(AuthService::class),
                 self::get(TenantRepository::class),
@@ -159,6 +179,24 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\TenantBrandingRepository::class),
                 self::get(\App\Repositories\RoleRepository::class),
+            ),
+            \App\Repositories\ConfigurationUpdateRepository::class => new \App\Repositories\ConfigurationUpdateRepository(),
+            \App\Services\ConfigurationUpdate\ConfigurationUpdateProbes::class => new \App\Services\ConfigurationUpdate\ConfigurationUpdateProbes(
+                self::get(TenantRepository::class)
+            ),
+            \App\Services\ConfigurationUpdate\ConfigurationUpdateCatalog::class => new \App\Services\ConfigurationUpdate\ConfigurationUpdateCatalog(
+                self::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateProbes::class)
+            ),
+            \App\Services\ConfigurationUpdate\ConfigurationUpdateService::class => new \App\Services\ConfigurationUpdate\ConfigurationUpdateService(
+                self::get(\App\Repositories\ConfigurationUpdateRepository::class),
+                self::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateCatalog::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\Audit\AuditService::class)
+            ),
+            \App\Controllers\Admin\Organization\ConfigurationUpdateController::class => new \App\Controllers\Admin\Organization\ConfigurationUpdateController(
+                self::get(AuthService::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
             ),
             \App\Controllers\Admin\Organization\TenantInitialSetupController::class => new \App\Controllers\Admin\Organization\TenantInitialSetupController(
                 self::get(AuthService::class),
@@ -453,6 +491,9 @@ class Container
                 self::get(TenantRepository::class),
                 self::get(\App\Repositories\UserNotificationPreferencesRepository::class)
             ),
+            \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class => new \App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob(
+                \App\Core\Database::getPdo()
+            ),
             \App\Services\Cron\CronRunner::class => new \App\Services\Cron\CronRunner(
                 [
                     self::get(\App\Services\Cron\Jobs\TrainingExpireCronJob::class),
@@ -463,6 +504,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\TrainingForgottenDocsDigestCronJob::class),
                     self::get(\App\Services\Cron\Jobs\RoleplayBilanDueCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AttendanceRemindersCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\RequestTelemetryPurgeCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -957,6 +999,7 @@ class Container
             ),
             \App\Controllers\Admin\Organization\UserAdminController::class => new \App\Controllers\Admin\Organization\UserAdminController(
                 self::get(UserRepository::class),
+                self::get(\App\Repositories\UserLegalIdentityRepository::class),
                 self::get(\App\Repositories\UserProfileRepository::class),
                 self::get(\App\Repositories\PersonnelProfileRepository::class),
                 self::get(\App\Repositories\PersonnelExtrasRepository::class),
@@ -1309,6 +1352,10 @@ class Container
             \App\Controllers\Admin\AdminAtakConfigController::class => new \App\Controllers\Admin\AdminAtakConfigController(
                 self::get(\App\Repositories\TenantAtakConfigRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class)
+            ),
+            \App\Controllers\Admin\AdminAtakRoleplayController::class => new \App\Controllers\Admin\AdminAtakRoleplayController(
+                self::get(\App\Repositories\TenantAtakConfigRepository::class),
+                self::get(TenantRepository::class),
             ),
             \App\Repositories\FireTeamRepository::class => new \App\Repositories\FireTeamRepository(),
             \App\Controllers\Admin\AdminFireTeamsController::class => new \App\Controllers\Admin\AdminFireTeamsController(
@@ -1826,11 +1873,16 @@ class Container
             \App\Controllers\Admin\System\SystemCooperationCatalogController::class => new \App\Controllers\Admin\System\SystemCooperationCatalogController(
                 self::get(\App\Repositories\CooperationCatalogRepository::class)
             ),
+            \App\Controllers\Admin\System\SystemMilitaryReferentialController::class => new \App\Controllers\Admin\System\SystemMilitaryReferentialController(
+                self::get(\App\Repositories\MilitaryUnitRepository::class),
+                self::get(\App\Services\Community\MilitaryReferentialService::class)
+            ),
             \App\Controllers\Admin\System\SystemCooperationAnnouncementsController::class => new \App\Controllers\Admin\System\SystemCooperationAnnouncementsController(
                 self::get(\App\Repositories\CooperationAnnouncementTemplateRepository::class)
             ),
             \App\Controllers\Web\CooperationCatalogWebController::class => new \App\Controllers\Web\CooperationCatalogWebController(
-                self::get(\App\Repositories\CooperationCatalogRepository::class)
+                self::get(\App\Repositories\CooperationCatalogRepository::class),
+                self::get(\App\Services\Platform\FeatureGateService::class),
             ),
             \App\Controllers\Web\CooperationAnnouncementsWebController::class => new \App\Controllers\Web\CooperationAnnouncementsWebController(
                 self::get(\App\Repositories\CooperationAnnouncementTemplateRepository::class)

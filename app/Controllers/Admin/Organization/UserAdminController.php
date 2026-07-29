@@ -14,6 +14,7 @@ use App\Repositories\PasswordResetRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UserNotificationPreferencesRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\UserLegalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\PersonnelProfileRepository;
 use App\Repositories\PersonnelExtrasRepository;
@@ -138,6 +139,7 @@ class UserAdminController
 
     public function __construct(
         private UserRepository $userRepository,
+        private UserLegalIdentityRepository $userLegalIdentityRepository,
         private UserProfileRepository $userProfileRepository,
         private PersonnelProfileRepository $personnelProfileRepository,
         private PersonnelExtrasRepository $personnelExtrasRepository,
@@ -310,6 +312,15 @@ class UserAdminController
             return Response::redirect(url('back-office/users'));
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
+        $legalIdentity = $this->userLegalIdentityRepository->getByUserId($id) ?? [];
+        if ($legalIdentity !== []) {
+            $userProfile = is_array($userProfile) ? $userProfile : [];
+            $userProfile['first_name'] = $legalIdentity['first_name'] ?? ($userProfile['first_name'] ?? '');
+            $userProfile['last_name'] = $legalIdentity['last_name'] ?? ($userProfile['last_name'] ?? '');
+            $userProfile['phone'] = $legalIdentity['phone'] ?? ($userProfile['phone'] ?? '');
+            $userProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($userProfile['birth_date'] ?? '');
+            $userProfile['nationality'] = $legalIdentity['nationality'] ?? ($userProfile['nationality'] ?? '');
+        }
         $personnelProfile = $this->personnelProfileRepository->getByUserId($id);
         $forPlatformOperator = Gate::getInstance()->allows('admin.system');
         $completenessAccount = $this->profileCompletenessService->getCompleteness($id, $user, $userProfile, $personnelProfile, $forPlatformOperator);
@@ -625,6 +636,15 @@ class UserAdminController
             return Response::redirect(url('back-office/users'));
         }
         $userProfile = $this->userProfileRepository->getByUserId($id);
+        $legalIdentity = $this->userLegalIdentityRepository->getByUserId($id) ?? [];
+        if ($legalIdentity !== []) {
+            $userProfile = is_array($userProfile) ? $userProfile : [];
+            $userProfile['first_name'] = $legalIdentity['first_name'] ?? ($userProfile['first_name'] ?? '');
+            $userProfile['last_name'] = $legalIdentity['last_name'] ?? ($userProfile['last_name'] ?? '');
+            $userProfile['phone'] = $legalIdentity['phone'] ?? ($userProfile['phone'] ?? '');
+            $userProfile['birth_date'] = $legalIdentity['birth_date'] ?? ($userProfile['birth_date'] ?? '');
+            $userProfile['nationality'] = $legalIdentity['nationality'] ?? ($userProfile['nationality'] ?? '');
+        }
         $roles = $this->roleRepository->forTenantOrganization($tenantId);
         $roleMatrix = $this->roleRepository->organizationRolesPermissionMatrix($tenantId);
         $selectedRoleIds = $this->userRepository->listOrganizationRoleIdsForUser($id);

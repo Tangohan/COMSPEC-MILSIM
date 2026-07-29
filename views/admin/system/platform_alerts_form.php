@@ -76,7 +76,7 @@ $dismissible = $row === null || !isset($row['dismissible']) || (int) $row['dismi
                     <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-800/90">Administration · Plateforme</p>
                     <h1 class="mt-1.5 text-2xl font-black tracking-tight text-slate-900"><?= $isEdit ? 'Modifier l’annonce' : 'Nouvelle annonce' ?></h1>
                     <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
-                        Message court sur le portail : bandeau classique, barre sous le menu, ou bandeau Breaking pour les mises à jour majeures et maintenances.
+                        Message court sur le portail : bandeau classique, barre sous le menu, ou bandeau Attention pour les mises à jour majeures et maintenances.
                     </p>
                 </div>
                 <a href="<?= url('admin/system/alerts') ?>" class="inline-flex shrink-0 items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Retour à la liste</a>
@@ -132,7 +132,7 @@ $dismissible = $row === null || !isset($row['dismissible']) || (int) $row['dismi
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <p class="mt-2 text-xs text-slate-500">Les barres sous le menu et le bandeau Breaking s’affichent sur toute la largeur, juste sous la navigation.</p>
+                    <p class="mt-2 text-xs text-slate-500">Les barres sous le menu et le bandeau Attention s’affichent sur toute la largeur, juste sous la navigation.</p>
                 </fieldset>
 
                 <div>

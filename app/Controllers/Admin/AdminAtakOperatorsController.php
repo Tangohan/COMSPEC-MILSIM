@@ -67,6 +67,7 @@ final class AdminAtakOperatorsController
         }
 
         $roster = $this->buildRoster($tenantId, $request);
+        $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
         $terminals = $this->realismRepository->listTerminals($tenantId);
         $certificates = $this->realismRepository->listCertificates($tenantId);
 

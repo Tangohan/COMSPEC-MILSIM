@@ -8,47 +8,66 @@ Ce document aligne la méthode produit (score, tiers, limites) sur l’implémen
 |-------------------|----------------|
 | **Gratuit** | Plan `free` — fonctionnalités booléennes dans `features_json` + **limites** optionnelles dans `limits_json` (gratuit limité sans nouveau slug Stripe). |
 | **Gratuit limité** | Même plan `free` : quotas / rétention décrits par entrée dans `limits_json.quotas` ; l’accès partiel est accordé tant qu’il reste du quota (voir `FeatureGateService::allows`). |
-| **Premium** | Plans payants `standard`, `pro` et `pro_plus` (facturation Stripe) : fonctionnalités activées dans `features_json` ; `limits_json` vide ou sans quota pour la feature (accès illimité côté quota). |
+| **Premium** | Plans payants `standard`, `pro` et `pro_plus` (facturation PayPal, Stripe en secours) : fonctionnalités activées dans `features_json` ; `limits_json` vide ou sans quota pour la feature (accès illimité côté quota). |
 
 **Pourquoi un seul slug pour le gratuit limité** : `effectivePlanSlug()` et le webhook Stripe restent simples ; les plafonds sont **configurables en base** sans nouveau produit Stripe.
 
 ## Inventaire des `feature_key` (code)
 
-Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating applicatif :
+Les clés suivantes sont utilisées dans `features_json` et/ou dans le gating applicatif (catalogue `SubscriptionPlanFeaturesCatalog`) :
 
 | feature_key | Surfaces principales | Notes |
 |-------------|----------------------|-------|
-| `forum` | Forum communauté | Booléen plan ; pas de quota dans le code v1. |
-| `documents` | Documents / forum pièces jointes | Booléen ; `past_due` conserve l’accès. |
-| `training` | `TrainingController`, `TrainingApiController` | Booléen. |
-| `atak` | `AtakController` | Booléen (ex. Standard+). |
-| `analytics` | `OrganizationAnalyticsController` | Booléen (Pro). |
-| `events` | `CommunityEventsController`, `CommunityEventsAdminController` | Booléen Pro **ou** quota gratuit (`limits_json.quotas.events`) — **premier flux quota implémenté**. |
-| `community_create` | Bootstrap / création communauté | Booléen. |
-| `max_members` | `FeatureGateService::maxMembers` / invitations | Quota sièges (nombre, pas période). |
-| `max_training_courses` | `FeatureGateService::trainingCourseCapacityForTenant` / création parcours Studio, API admin, import JSON | Plafond absolu sur les parcours « catalogue communauté » (`lms_scope` tenant) ; `0` = sans plafond fixe. |
-| `advanced_integrations` | `OrganizationIntegrationsController`, navigation back-office / tableau de bord org | Booléen ; **Pro+** (`pro_plus`) dans le seed bootstrap. |
+| `forum` | Forum communauté | Booléen ; tous les paliers. |
+| `documents` | Documents / pièces jointes | Booléen ; `past_due` conserve l’accès. |
+| `messages` | Messagerie interne | Booléen ; tous les paliers. |
+| `personnel` | Effectifs / ORBAT | Booléen ; tous les paliers. |
+| `training` | Formations LMS | Booléen. |
+| `equipment` | Fiches équipement | Booléen ; tous les paliers. |
+| `events` | Événements / calendrier | Booléen Pro/Standard **ou** quota gratuit. |
+| `courrier` | Bureau courrier officiel | Booléen ; **Standard+**. |
+| `operational_board` | Mur opérationnel | Booléen ; **Standard+**. |
+| `recruitment` | Enrôlement / candidatures | Booléen ; inclus dès le gratuit (socle). |
+| `cooperation` | Coopération inter-unités | Booléen ; **Pro+**. |
+| `alerts` | Alertes communauté | Booléen ; **Standard+**. |
+| `atak` | Carte ATAK | Booléen ; **Standard+**. |
+| `analytics` | Analytics org | Booléen ; **Pro+**. |
+| `advanced_integrations` | Clés API / intégrations | Booléen ; **Pro+**. |
+| `community_create` | Création communauté | Booléen. |
+| `max_members` | Plafond membres | Entier. |
+| `max_training_courses` | Plafond parcours catalogue | Entier ; `0` = illimité. |
+
+## Facturation
+
+- **PayPal** (prioritaire si `PAYPAL_CLIENT_ID` + `PAYPAL_CLIENT_SECRET`) : Billing Subscriptions + webhook `/api/paypal/webhook`.
+- **Stripe** (secours) : Checkout + webhook `/api/stripe/webhook`.
+- Variable `BILLING_PROVIDER=paypal|stripe|auto` (défaut `auto`).
+- Identifiants de plans PayPal sur `subscription_plans.paypal_plan_id_monthly|yearly`.
+- Upgrade communauté existante : `POST /platform/upgrade/checkout`.
 
 ## Matrice d’audit modules (synthèse)
 
 | Domaine | Surface / action | Contrôle actuel (tenant) | Clé / limite |
 |---------|------------------|--------------------------|--------------|
-| Forum, documents | Divers | Booléens `forum`, `documents` (selon routes) | `forum`, `documents` |
+| Forum, documents, messagerie | Divers | Booléens plan | `forum`, `documents`, `messages` |
 | Formations LMS | Accès apprenant / admin | `training` | `training` |
-| Formations — **nouveau parcours** | Studio création, import échange, API `adminCourseSave` | `canCreateTenantCatalogTrainingCourse` | `max_training_courses` |
-| ATAK | `AtakController` | `atak` | `atak` |
-| Analytics | `OrganizationAnalyticsController` | `analytics` | `analytics` |
-| Événements | Web + admin + API lecture | `allows` / `allowsLimitedFeatureModule` + quota `events` | `events`, `limits_json` |
-| Intégrations (clés API) | `/back-office/integrations` | `allows(..., 'advanced_integrations')` | `advanced_integrations` |
-| Membres | Invitations, enrôlement, admin utilisateurs | `canAddMember` | `max_members` |
-
-Les zones « sensibles » encore **sans** gate tenant dédié (RBAC seul ou aucun plafond) : à compléter au fil des priorités produit (ex. volume e-mails, exports lourds, coopération) — repérage initial via navigation [`config/navigation.php`](../config/navigation.php) et contrôleurs `app/Controllers`.
+| Formations — nouveau parcours | Studio / import | `canCreateTenantCatalogTrainingCourse` | `max_training_courses` |
+| Courrier | Dashboard courrier | `courrier` | `courrier` |
+| Mur opérationnel | Tableau opérationnel | `operational_board` | `operational_board` |
+| Coopération | Catalogue / annonces | `cooperation` | `cooperation` |
+| Alertes | Admin alertes tenant | `alerts` | `alerts` |
+| ATAK | Contrôleurs ATAK | `atak` | `atak` |
+| Analytics | Org analytics | `analytics` | `analytics` |
+| Événements | Web + admin | `allows` / quota | `events` |
+| Intégrations | Back-office | `advanced_integrations` | `advanced_integrations` |
+| Membres | Invitations, enrôlement | `canAddMember` | `max_members` |
 
 ## Changelog pricing (interne)
 
 | Date (approx.) | Changement |
 |----------------|------------|
-| 2026-04 | Ajout plan `pro_plus` ; clés `max_training_courses`, `advanced_integrations` ; plafond parcours communauté ; intégrations réservées Pro+. |
+| 2026-04 | Ajout plan `pro_plus` ; clés `max_training_courses`, `advanced_integrations`. |
+| 2026-07 | Catalogue élargi (courrier, coopération, mur, alertes, messagerie, équipement) ; paiements PayPal ; upgrade existant. |
 
 ## Tableau de classification (template produit)
 

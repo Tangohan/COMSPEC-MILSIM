@@ -34,6 +34,17 @@ $previewUrl = url('communities/create/preview');
                     <textarea name="wizard_milsim[roe_lines]" form="community-create-form" rows="5" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"></textarea>
                 </div>
                 <div>
+                    <p class="mb-2 text-[11px] font-black uppercase tracking-wider text-amber-800">Section Motivation</p>
+                    <p class="mb-3 text-xs text-slate-600">Titre, introduction et questions posées aux candidats dans le bloc Motivation.</p>
+                    <?php
+                    $motivationData = \App\Services\Community\EnlistmentMilsimPackService::defaultMotivationSection();
+                    $inputPrefix = 'wizard_milsim[motivation]';
+                    $formAttr = 'community-create-form';
+                    include base_path('views/partials/motivation_section_editor.php');
+                    unset($formAttr);
+                    ?>
+                </div>
+                <div>
                     <p class="mb-2 text-[11px] font-black uppercase tracking-wider text-slate-500">Champs du dossier</p>
                     <?php
                     $fieldsData = [];

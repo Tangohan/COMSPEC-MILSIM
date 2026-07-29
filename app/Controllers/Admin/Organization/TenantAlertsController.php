@@ -37,6 +37,10 @@ final class TenantAlertsController
         if ($tenantId <= 0) {
             return Response::redirect(url('dashboard'));
         }
+        $featureGate = \App\Core\Container::get(\App\Services\Platform\FeatureGateService::class);
+        if (!$featureGate->allows($tenantId, 'alerts')) {
+            return \App\Support\PlanFeatureDenial::upgradeView('alerts', 'Standard');
+        }
 
         $showUpcoming = false;
         try {

@@ -22,6 +22,26 @@ if ($militaryId === '' && is_array($terminal)) {
 }
 
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$clean = static function (mixed $v): string {
+    $s = trim((string) $v);
+    if ($s === '') {
+        return '';
+    }
+    $lower = strtolower($s);
+    if (in_array($lower, ['null', '<null>', '<nul>', 'nil', 'undefined'], true)) {
+        return '';
+    }
+    if (str_contains($lower, '<null') || str_contains($lower, '<nul>')) {
+        return '';
+    }
+
+    return $s;
+};
+$show = static function (mixed $v) use ($clean, $h): string {
+    $s = $clean($v);
+
+    return $s !== '' ? $h($s) : '—';
+};
 
 $statusMeta = static function (?string $status): array {
     return match ((string) $status) {
@@ -129,10 +149,10 @@ $certStatus = $statusMeta(is_array($certificate) ? (string) ($certificate['statu
                     <a class="inline-flex text-sm font-semibold underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h(url('back-office/atak/realisme')) ?>">Aller au parc de terminaux</a>
                 <?php else: ?>
                     <dl class="space-y-2 text-sm">
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Nom</dt><dd class="font-semibold text-slate-900"><?= $h($terminal['terminal_label'] ?? '—') ?></dd></div>
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Identifiant</dt><dd class="font-mono text-slate-800"><?= $h($terminal['terminal_uid'] ?? '—') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Nom</dt><dd class="font-semibold text-slate-900"><?= $show($terminal['terminal_label'] ?? '') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Identifiant</dt><dd class="font-mono text-slate-800"><?= $show($terminal['terminal_uid'] ?? '') ?></dd></div>
                         <div class="flex justify-between gap-3 items-center"><dt class="text-slate-500">Statut</dt><dd><span class="inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold <?= $h($termStatus['class']) ?>"><?= $h($termStatus['label']) ?></span></dd></div>
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Dernier passage</dt><dd class="text-slate-800"><?= $h($terminal['last_seen_at'] ?? '—') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Dernier passage</dt><dd class="text-slate-800"><?= $show($terminal['last_seen_at'] ?? '') ?></dd></div>
                     </dl>
                 <?php endif; ?>
             </article>
@@ -144,10 +164,10 @@ $certStatus = $statusMeta(is_array($certificate) ? (string) ($certificate['statu
                     <a class="inline-flex text-sm font-semibold underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h(url('back-office/atak/certificats')) ?>">Gérer les certificats</a>
                 <?php else: ?>
                     <dl class="space-y-2 text-sm">
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Référence</dt><dd class="font-semibold text-slate-900"><?= $h($certificate['certificate_ref'] ?? '—') ?></dd></div>
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Autorité</dt><dd class="text-slate-800"><?= $h($certificate['authority_label'] ?? '—') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Référence</dt><dd class="font-semibold text-slate-900"><?= $show($certificate['certificate_ref'] ?? '') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Autorité</dt><dd class="text-slate-800"><?= $show($certificate['authority_label'] ?? '') ?></dd></div>
                         <div class="flex justify-between gap-3 items-center"><dt class="text-slate-500">Statut</dt><dd><span class="inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold <?= $h($certStatus['class']) ?>"><?= $h($certStatus['label']) ?></span></dd></div>
-                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Échéance</dt><dd class="text-slate-800"><?= $h($certificate['expires_at'] ?? '—') ?></dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Échéance</dt><dd class="text-slate-800"><?= $show($certificate['expires_at'] ?? '') ?></dd></div>
                     </dl>
                 <?php endif; ?>
             </article>

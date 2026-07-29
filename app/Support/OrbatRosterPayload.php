@@ -89,9 +89,22 @@ final class OrbatRosterPayload
             'commanderUserId' => (int) ($u['commander_user_id'] ?? 0),
             'showOnPublicPage' => !array_key_exists('show_on_public_page', $u)
                 || (int) ($u['show_on_public_page'] ?? 0) === 1,
+            'publicFoundedOn' => self::normalizePublicDate($u['public_founded_on'] ?? null),
+            'publicCustomDate' => self::normalizePublicDate($u['public_custom_date'] ?? null),
+            'publicCustomDateLabel' => trim((string) ($u['public_custom_date_label'] ?? '')),
             'members' => $unitRosterByUnit[$uid] ?? [],
             'children' => $children,
         ];
+    }
+
+    private static function normalizePublicDate(mixed $value): string
+    {
+        $raw = trim((string) ($value ?? ''));
+        if ($raw !== '' && preg_match('/^(\d{4}-\d{2}-\d{2})/', $raw, $m)) {
+            return $m[1];
+        }
+
+        return '';
     }
 
     /**

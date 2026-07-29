@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\TacticalPhonePairingRepository;
+use App\Services\Sse\SseAccessCodeService;
 use App\Support\LoginIntendedDestination;
 
 /**
@@ -18,6 +19,12 @@ final class AtakWebAccessMiddleware
 {
     public function __invoke(Request $request, callable $next): Response
     {
+        // Invité renseignement : périmètre limité au portail SSE (pas de carte tactique).
+        $sse = new SseAccessCodeService();
+        if ($sse->hasActiveClearance() && $sse->isGuest()) {
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
         if (Session::get('user_id')) {
             return (new AuthMiddleware())($request, $next);
         }

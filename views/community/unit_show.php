@@ -2,9 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Mini-site public d'une unité : landing, bio, informations, chaîne de commandement,
- * sous-unités, tableau des effectifs, statistiques, contact — dérivé du même design
- * system que la fiche communauté (community-landing__*).
+ * Fiche publique d’une unité — même langage visuel que la vitrine communauté (cl-vitrine).
  *
  * @var array<string,mixed> $tenant
  * @var array<string,mixed> $unit
@@ -25,6 +23,8 @@ $unitName = trim((string) ($unit['name'] ?? 'Unité'));
 $unitType = trim((string) ($unit['type'] ?? ''));
 $unitCode = trim((string) ($unit['code'] ?? ''));
 $blurb = trim((string) ($unit['public_blurb'] ?? ''));
+$orbatDetails = trim((string) ($unit['orbat_details'] ?? ''));
+$orbatImage = trim((string) ($unit['orbat_image_path'] ?? ''));
 $memberCount = (int) ($unitMemberCount ?? 0);
 $roster = is_array($unitRoster ?? null) ? $unitRoster : [];
 $commanderName = trim((string) ($unitCommanderName ?? ''));
@@ -36,6 +36,23 @@ $isPreview = !empty($unitIsPreview);
 $tenantBranding = is_array($tenantBranding ?? null) ? $tenantBranding : [];
 $brandLogo = trim((string) ($tenantBranding['logo_url'] ?? ''));
 $brandBanner = trim((string) ($tenantBranding['banner_url'] ?? ''));
+$brandPrimary = trim((string) ($tenantBranding['primary_color'] ?? ''));
+$brandAccent = trim((string) ($tenantBranding['accent_color'] ?? ''));
+if ($brandLogo !== '' && !preg_match('#^(https?:)?//#i', $brandLogo) && !str_starts_with($brandLogo, '/')) {
+    $brandLogo = asset_url(ltrim($brandLogo, '/'));
+} elseif ($brandLogo !== '' && str_starts_with($brandLogo, '/')) {
+    $brandLogo = asset_url(ltrim($brandLogo, '/'));
+}
+if ($brandBanner !== '' && !preg_match('#^(https?:)?//#i', $brandBanner) && !str_starts_with($brandBanner, '/')) {
+    $brandBanner = asset_url(ltrim($brandBanner, '/'));
+} elseif ($brandBanner !== '' && str_starts_with($brandBanner, '/')) {
+    $brandBanner = asset_url(ltrim($brandBanner, '/'));
+}
+if ($orbatImage !== '' && !preg_match('#^(https?:)?//#i', $orbatImage) && !str_starts_with($orbatImage, '/')) {
+    $orbatImage = asset_url(ltrim($orbatImage, '/'));
+} elseif ($orbatImage !== '' && str_starts_with($orbatImage, '/')) {
+    $orbatImage = asset_url(ltrim($orbatImage, '/'));
+}
 
 $tags = [];
 $rawTags = $unit['public_tags'] ?? null;
@@ -51,106 +68,293 @@ foreach ($childrenCounts as $cc) {
     $totalSubMembers += (int) $cc;
 }
 
+$capacity = isset($unit['public_capacity']) && $unit['public_capacity'] !== null && $unit['public_capacity'] !== ''
+    ? (int) $unit['public_capacity']
+    : null;
+$openSlotsRaw = $unit['public_open_slots'] ?? null;
+$openSlotsLabel = null;
+$slotsTone = 'ok';
+if ($openSlotsRaw !== null && $openSlotsRaw !== '') {
+    $os = (int) $openSlotsRaw;
+    if ($os === -1) {
+        $openSlotsLabel = 'Ouvert';
+        $slotsTone = 'info';
+    } elseif ($os === 0) {
+        $openSlotsLabel = 'Complet';
+        $slotsTone = 'warn';
+    } else {
+        $openSlotsLabel = $os . ' place' . ($os > 1 ? 's' : '');
+        $slotsTone = $os <= 2 ? 'warn' : 'ok';
+    }
+}
+$strengthLabel = $capacity !== null && $capacity > 0
+    ? $memberCount . ' / ' . $capacity
+    : (string) $memberCount;
+
+$formatPublicDate = static function (?string $raw): string {
+    $raw = trim((string) $raw);
+    if ($raw === '' || !preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $raw, $m)) {
+        return '';
+    }
+    $months = [
+        1 => 'janvier', 2 => 'février', 3 => 'mars', 4 => 'avril',
+        5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'août',
+        9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'décembre',
+    ];
+    $day = (int) $m[3];
+    $month = (int) $m[2];
+    $year = (int) $m[1];
+    if ($month < 1 || $month > 12) {
+        return '';
+    }
+
+    return $day . ' ' . $months[$month] . ' ' . $year;
+};
+
+$foundedOnLabel = $formatPublicDate(isset($unit['public_founded_on']) ? (string) $unit['public_founded_on'] : null);
+$customDateLabelText = trim((string) ($unit['public_custom_date_label'] ?? ''));
+$customDateValue = $formatPublicDate(isset($unit['public_custom_date']) ? (string) $unit['public_custom_date'] : null);
+$showCustomDate = $customDateValue !== '' && $customDateLabelText !== '';
+
+$unitTone = trim((string) ($unit['public_accent_color'] ?? ''));
+if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $unitTone)) {
+    $unitTone = '';
+}
+
+$clAccentOn = '#04231a';
+$clAccentBg = $brandAccent !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandAccent) ? $brandAccent : '';
+if ($unitTone !== '') {
+    $clAccentBg = $unitTone;
+}
+if ($clAccentBg !== '') {
+    $hx = ltrim($clAccentBg, '#');
+    $r = hexdec(substr($hx, 0, 2));
+    $g = hexdec(substr($hx, 2, 2));
+    $b = hexdec(substr($hx, 4, 2));
+    $luma = (0.2126 * $r + 0.7152 * $g + 0.0722 * $b) / 255;
+    if ($luma < 0.45) {
+        $clAccentOn = '#ffffff';
+    }
+    if ($luma < 0.18) {
+        $clAccentBg = '';
+        $clAccentOn = '#04231a';
+    }
+}
+$clStyle = '';
+if ($brandPrimary !== '' && preg_match('/^#[0-9A-Fa-f]{6}$/', $brandPrimary)) {
+    $clStyle .= '--cl-tenant-primary:' . $brandPrimary . ';';
+}
+if ($clAccentBg !== '') {
+    $clStyle .= '--cl-tenant-accent:' . $clAccentBg . ';';
+}
+$clStyle .= '--cl-on-accent:' . $clAccentOn . ';';
+
+$nameInitials = '';
+foreach (preg_split('/\s+/u', $tenantName) ?: [] as $part) {
+    $part = trim((string) $part);
+    if ($part === '') {
+        continue;
+    }
+    $nameInitials .= mb_strtoupper(mb_substr($part, 0, 1));
+    if (mb_strlen($nameInitials) >= 2) {
+        break;
+    }
+}
+if ($nameInitials === '') {
+    $nameInitials = 'C';
+}
+
 $backHref = url('c/' . rawurlencode($slug));
 $contactHref = $backHref . '#actions-contact';
+$enlistHref = url('c/' . rawurlencode($slug) . '/enlistment');
+$typeLine = $unitType !== '' ? $unitType : 'Unité';
+if ($unitCode !== '') {
+    $typeLine .= ' · ' . mb_strtoupper($unitCode);
+}
+
+$heroFacts = [];
+$heroFacts[] = ['v' => $strengthLabel, 'k' => $capacity !== null && $capacity > 0 ? 'Effectif' : 'Membres'];
+if ($openSlotsLabel !== null) {
+    $heroFacts[] = ['v' => $openSlotsLabel, 'k' => 'Places'];
+}
+if ($foundedOnLabel !== '') {
+    $heroFacts[] = ['v' => $foundedOnLabel, 'k' => 'Création'];
+} elseif ($showCustomDate) {
+    $heroFacts[] = ['v' => $customDateValue, 'k' => $customDateLabelText];
+}
+if (count($children) > 0 && count($heroFacts) < 4) {
+    $heroFacts[] = ['v' => (string) count($children), 'k' => 'Sous-unités'];
+}
+
+$parentName = $parentUnit ? trim((string) ($parentUnit['name'] ?? '')) : '';
+$parentSlug = $parentUnit ? trim((string) ($parentUnit['slug'] ?? '')) : '';
+$parentPublic = $parentUnit && !empty($parentUnit['show_on_public_page']);
+$parentHref = ($parentPublic && $parentSlug !== '')
+    ? url('c/' . rawurlencode($slug) . '/unite/' . rawurlencode($parentSlug))
+    : null;
+
+$showAbout = $blurb !== '' || $tags !== [] || $commanderName !== '' || $parentName !== '';
+$showDates = $foundedOnLabel !== '' || $showCustomDate;
+$showDetails = $orbatDetails !== '';
+$showChildren = $children !== [];
 ?>
-<div class="community-public-vitrine community-landing min-h-screen bg-slate-100 font-sans text-slate-900 -mx-4 sm:-mx-6 lg:-mx-8">
+<div class="community-public-vitrine community-landing cl-vitrine cl-unit-fiche"<?= $clStyle !== '' ? ' style="' . htmlspecialchars($clStyle, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+
   <?php if ($isPreview): ?>
-  <div class="bg-amber-400 px-6 py-2 text-center text-xs font-black uppercase tracking-wide text-amber-950">
-    Aperçu réservé au staff — cette unité n’est pas visible publiquement (« Afficher sur la page publique » désactivé)
+  <div class="cl-unit-fiche__preview" role="status">
+    Aperçu réservé au staff — cette unité n’est pas encore visible du public
   </div>
   <?php endif; ?>
 
-  <div class="community-landing__hero" style="min-height:22rem">
-    <div class="community-landing__hero-media" aria-hidden="true">
-      <?php if ($brandBanner !== ''): ?>
-      <img src="<?= htmlspecialchars($brandBanner, ENT_QUOTES, 'UTF-8') ?>" alt="" data-img-fallback="hero" data-img-label="Visuel indisponible">
+  <header class="cl-nav" role="banner">
+    <div class="cl-nav__start">
+      <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-back" aria-label="Retour à la communauté">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg>
+        <span>Communauté</span>
+      </a>
+      <div class="cl-nav__brand">
+        <?php if ($brandLogo !== ''): ?>
+        <img class="cl-nav__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="" data-img-fallback="logo" data-img-label="Emblème indisponible">
+        <?php else: ?>
+        <span class="cl-nav__mark" aria-hidden="true"><?= htmlspecialchars($nameInitials, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endif; ?>
+        <div class="cl-nav__titles">
+          <div class="cl-nav__name"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></div>
+          <div class="cl-nav__sub"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
+        </div>
+      </div>
+    </div>
+    <nav class="cl-nav__links" aria-label="Sections de la fiche">
+      <?php if ($showAbout): ?><a href="#presentation">Présentation</a><?php endif; ?>
+      <?php if ($showChildren): ?><a href="#structure">Structure</a><?php endif; ?>
+      <a href="#effectifs">Effectifs</a>
+      <a href="#rejoindre">Rejoindre</a>
+    </nav>
+    <a href="<?= htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent cl-nav__cta">Contacter</a>
+  </header>
+
+  <section class="cl-hero cl-rise" aria-labelledby="cl-unit-hero-title">
+    <div class="cl-hero__media" aria-hidden="true">
+      <?php if ($orbatImage !== ''): ?>
+      <img src="<?= htmlspecialchars($orbatImage, ENT_QUOTES, 'UTF-8') ?>" alt="">
+      <?php elseif ($brandBanner !== ''): ?>
+      <img src="<?= htmlspecialchars($brandBanner, ENT_QUOTES, 'UTF-8') ?>" alt="">
       <?php else: ?>
-      <div style="width:100%;height:100%;background:radial-gradient(circle at 20% 20%,rgba(16,185,129,.28),transparent 36%),linear-gradient(160deg,#020617,#0f172a 55%,#022c22);"></div>
+      <div class="cl-hero__fallback"></div>
       <?php endif; ?>
     </div>
-    <div class="community-landing__hero-scrim"></div>
-    <div class="community-landing__hero-inner">
-      <div class="community-landing__brand-row">
-        <?php if ($brandLogo !== ''): ?>
-        <img class="community-landing__logo" src="<?= htmlspecialchars($brandLogo, ENT_QUOTES, 'UTF-8') ?>" alt="Emblème <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>" data-img-fallback="logo" data-img-label="Emblème indisponible">
-        <?php endif; ?>
-        <a href="<?= htmlspecialchars($backHref, ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">← <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></a>
+    <div class="cl-hero__scrim" aria-hidden="true"></div>
+    <div class="cl-hero__inner">
+      <div class="cl-hero__copy">
+        <div class="cl-pill cl-pill--muted"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
+        <h1 id="cl-unit-hero-title" class="cl-hero__title"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="cl-hero__lead">
+          Unité de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>
+          <?php if ($commanderName !== ''): ?>
+          · Chef d’unité : <?= htmlspecialchars($commanderName, ENT_QUOTES, 'UTF-8') ?>
+          <?php endif; ?>
+        </p>
+        <div class="cl-hero__actions">
+          <a href="<?= htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent">Contacter la communauté</a>
+          <a href="#effectifs" class="cl-btn cl-btn--ghost">Voir les effectifs</a>
+        </div>
       </div>
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-300"><?= htmlspecialchars($unitType !== '' ? $unitType : 'Unité', ENT_QUOTES, 'UTF-8') ?><?= $unitCode !== '' ? ' · ' . htmlspecialchars($unitCode, ENT_QUOTES, 'UTF-8') : '' ?></p>
-      <h1 class="community-landing__name"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h1>
+    </div>
+    <?php if ($heroFacts !== []): ?>
+    <div class="cl-hero__facts">
+      <div class="cl-hero__facts-grid">
+        <?php foreach ($heroFacts as $f): ?>
+        <div class="cl-hero__fact">
+          <div class="cl-hero__fact-v"><?= htmlspecialchars($f['v'], ENT_QUOTES, 'UTF-8') ?></div>
+          <div class="cl-hero__fact-k"><?= htmlspecialchars(mb_strtoupper($f['k']), ENT_QUOTES, 'UTF-8') ?></div>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+  </section>
+
+  <div class="cl-wrap cl-unit-fiche__body">
+
+    <?php if ($showAbout): ?>
+    <section id="presentation" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-about-title">
+      <p class="cl-kicker">Présentation</p>
+      <h2 id="cl-unit-about-title" class="cl-h2">À propos de <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h2>
+      <?php if ($blurb !== ''): ?>
+      <p class="cl-prose"><?= nl2br(htmlspecialchars($blurb, ENT_QUOTES, 'UTF-8')) ?></p>
+      <?php else: ?>
+      <p class="cl-prose">Cette unité fait partie de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>.</p>
+      <?php endif; ?>
+
       <?php if ($tags !== []): ?>
-      <div class="mt-4 flex flex-wrap gap-2">
+      <div class="cl-unit-fiche__tags" aria-label="Mots-clés">
         <?php foreach ($tags as $tg): ?>
           <?php if (is_string($tg) && $tg !== ''): ?>
-          <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white"><?= htmlspecialchars($tg, ENT_QUOTES, 'UTF-8') ?></span>
+          <span class="cl-unit-fiche__tag"><?= htmlspecialchars($tg, ENT_QUOTES, 'UTF-8') ?></span>
           <?php endif; ?>
         <?php endforeach; ?>
       </div>
       <?php endif; ?>
-      <div class="community-landing__cta-row">
-        <a href="<?= htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--primary">Contacter la communauté</a>
-        <a href="#roster" class="community-landing__cta community-landing__cta--ghost">Voir les effectifs</a>
-        <?php if ($children !== []): ?>
-        <a href="#sub-units" class="community-landing__cta community-landing__cta--ghost">Sous-unités</a>
-        <?php endif; ?>
-      </div>
-    </div>
-  </div>
 
-  <main class="mx-auto max-w-6xl space-y-8 px-6 py-10 lg:px-8">
-
-    <section class="grid gap-4 sm:grid-cols-3">
-      <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Effectif actif</p>
-        <p class="mt-2 text-3xl font-black tracking-tight text-slate-950"><?= $memberCount ?></p>
-        <p class="mt-1 text-xs text-slate-500">membre<?= $memberCount > 1 ? 's' : '' ?> rattaché<?= $memberCount > 1 ? 's' : '' ?> directement</p>
-      </div>
-      <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Sous-unités</p>
-        <p class="mt-2 text-3xl font-black tracking-tight text-slate-950"><?= count($children) ?></p>
-        <p class="mt-1 text-xs text-slate-500"><?= $totalSubMembers ?> membre<?= $totalSubMembers > 1 ? 's' : '' ?> au total dans ces sous-unités</p>
-      </div>
-      <div class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-soft">
-        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Chef d’unité</p>
-        <p class="mt-2 text-lg font-black tracking-tight text-slate-950"><?= htmlspecialchars($commanderName !== '' ? $commanderName : 'Non désigné', ENT_QUOTES, 'UTF-8') ?></p>
-        <?php if ($parentUnit): ?>
-        <p class="mt-1 text-xs text-slate-500">Rattachée à <?= htmlspecialchars((string) ($parentUnit['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
-      </div>
-    </section>
-
-    <?php if ($blurb !== ''): ?>
-    <section id="bio" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Présentation</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">À propos de <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h2>
-      <p class="mt-4 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-slate-600"><?= nl2br(htmlspecialchars($blurb, ENT_QUOTES, 'UTF-8')) ?></p>
-    </section>
-    <?php endif; ?>
-
-    <section id="command" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Commandement</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Chef d’unité</h2>
-      <div class="mt-6 flex flex-wrap items-center gap-4">
-        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-lg font-black text-emerald-800 ring-1 ring-emerald-200">
-          <?= htmlspecialchars($commanderName !== '' ? mb_strtoupper(mb_substr($commanderName, 0, 1)) : '?', ENT_QUOTES, 'UTF-8') ?>
-        </div>
+      <div class="cl-unit-fiche__lead">
+        <div class="cl-unit-fiche__avatar" aria-hidden="true"><?= htmlspecialchars($commanderName !== '' ? mb_strtoupper(mb_substr($commanderName, 0, 1)) : '?', ENT_QUOTES, 'UTF-8') ?></div>
         <div>
-          <p class="text-lg font-black tracking-tight text-slate-950"><?= htmlspecialchars($commanderName !== '' ? $commanderName : 'Non désigné', ENT_QUOTES, 'UTF-8') ?></p>
-          <?php if ($parentUnit): ?>
-          <p class="mt-1 text-sm text-slate-500">Unité rattachée à <?= htmlspecialchars((string) ($parentUnit['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
-          <?php else: ?>
-          <p class="mt-1 text-sm text-slate-500">Responsable de cette unité au sein de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></p>
+          <p class="cl-unit-fiche__lead-k">Chef d’unité</p>
+          <p class="cl-unit-fiche__lead-v"><?= htmlspecialchars($commanderName !== '' ? $commanderName : 'Non désigné', ENT_QUOTES, 'UTF-8') ?></p>
+          <?php if ($parentName !== ''): ?>
+          <p class="cl-unit-fiche__lead-sub">
+            Rattachée à
+            <?php if ($parentHref !== null): ?>
+            <a href="<?= htmlspecialchars($parentHref, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($parentName, ENT_QUOTES, 'UTF-8') ?></a>
+            <?php else: ?>
+            <?= htmlspecialchars($parentName, ENT_QUOTES, 'UTF-8') ?>
+            <?php endif; ?>
+          </p>
           <?php endif; ?>
         </div>
       </div>
     </section>
+    <?php endif; ?>
 
-    <?php if ($children !== []): ?>
-    <section id="sub-units" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Structure</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Sous-unités</h2>
-      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <?php if ($showDates): ?>
+    <section id="dates" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-dates-title">
+      <p class="cl-kicker">Repères temporels</p>
+      <h2 id="cl-unit-dates-title" class="cl-h2">Dates de l’unité</h2>
+      <dl class="cl-unit-fiche__dates">
+        <?php if ($foundedOnLabel !== ''): ?>
+        <div class="cl-unit-fiche__date">
+          <dt>Date de création</dt>
+          <dd><?= htmlspecialchars($foundedOnLabel, ENT_QUOTES, 'UTF-8') ?></dd>
+        </div>
+        <?php endif; ?>
+        <?php if ($showCustomDate): ?>
+        <div class="cl-unit-fiche__date">
+          <dt><?= htmlspecialchars($customDateLabelText, ENT_QUOTES, 'UTF-8') ?></dt>
+          <dd><?= htmlspecialchars($customDateValue, ENT_QUOTES, 'UTF-8') ?></dd>
+        </div>
+        <?php endif; ?>
+      </dl>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($showDetails): ?>
+    <section id="reperes" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-details-title">
+      <p class="cl-kicker">Contexte</p>
+      <h2 id="cl-unit-details-title" class="cl-h2">Repères complémentaires</h2>
+      <p class="cl-prose"><?= nl2br(htmlspecialchars($orbatDetails, ENT_QUOTES, 'UTF-8')) ?></p>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($showChildren): ?>
+    <section id="structure" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-struct-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Structure</p>
+          <h2 id="cl-unit-struct-title" class="cl-h2"><?= count($children) === 1 ? 'Sous-unité' : (count($children) . ' sous-unités') ?></h2>
+        </div>
+        <p class="cl-section-aside"><?= $totalSubMembers ?> membre<?= $totalSubMembers > 1 ? 's' : '' ?> dans ces sous-unités</p>
+      </div>
+      <div class="cl-units">
         <?php foreach ($children as $child): ?>
           <?php
           $csId = (int) ($child['id'] ?? 0);
@@ -158,17 +362,22 @@ $contactHref = $backHref . '#actions-contact';
           $csCount = (int) ($childrenCounts[$csId] ?? 0);
           $csPublic = !empty($child['show_on_public_page']);
           $csHref = $csPublic && $csSlug !== '' ? url('c/' . rawurlencode($slug) . '/unite/' . rawurlencode($csSlug)) : null;
+          $csTone = trim((string) ($child['public_accent_color'] ?? ''));
+          if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $csTone)) {
+              $csTone = $clAccentBg !== '' ? $clAccentBg : '#0b8a5c';
+          }
+          $csCode = trim((string) ($child['code'] ?? ''));
+          $csType = trim((string) ($child['type'] ?? 'Unité'));
           ?>
-        <article class="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400"><?= htmlspecialchars((string) ($child['type'] ?? 'unité'), ENT_QUOTES, 'UTF-8') ?></p>
-              <h3 class="mt-1 text-base font-black tracking-tight text-slate-950"><?= htmlspecialchars((string) ($child['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
-            </div>
-            <span class="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-700 ring-1 ring-slate-200"><?= $csCount ?> pers.</span>
+        <article class="cl-unit" style="--cl-unit-tone:<?= htmlspecialchars($csTone, ENT_QUOTES, 'UTF-8') ?>">
+          <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($csCode !== '' ? $csCode : $csType), ENT_QUOTES, 'UTF-8') ?></div>
+          <h3 class="cl-unit__name"><?= htmlspecialchars((string) ($child['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+          <div class="cl-unit__meta">
+            <span>Effectif</span>
+            <span class="cl-mono"><?= $csCount ?> membre<?= $csCount > 1 ? 's' : '' ?></span>
           </div>
           <?php if ($csHref !== null): ?>
-          <a href="<?= htmlspecialchars($csHref, ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex text-xs font-bold uppercase tracking-wide text-emerald-700 hover:text-emerald-900">Ouvrir la fiche →</a>
+          <a class="cl-unit__link" href="<?= htmlspecialchars($csHref, ENT_QUOTES, 'UTF-8') ?>">Voir la fiche →</a>
           <?php endif; ?>
         </article>
         <?php endforeach; ?>
@@ -176,44 +385,49 @@ $contactHref = $backHref . '#actions-contact';
     </section>
     <?php endif; ?>
 
-    <section id="roster" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-slate-400">Effectifs</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950">Tableau des effectifs</h2>
-      <?php if ($roster === []): ?>
-      <p class="mt-6 text-sm text-slate-600">Aucun membre listé pour l’instant.</p>
-      <?php else: ?>
-      <div class="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200">
-        <div class="max-h-[420px] overflow-auto">
-          <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="sticky top-0 bg-slate-50">
-              <tr>
-                <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">#</th>
-                <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Membre</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 bg-white">
-              <?php foreach ($roster as $i => $r): ?>
-              <tr class="hover:bg-slate-50">
-                <td class="px-5 py-3 text-slate-400 tabular-nums"><?= (int) $i + 1 ?></td>
-                <td class="px-5 py-3 font-bold text-slate-950"><?= htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+    <section id="effectifs" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-roster-title">
+      <div class="cl-section-head">
+        <div>
+          <p class="cl-kicker">Effectifs</p>
+          <h2 id="cl-unit-roster-title" class="cl-h2">Membres rattachés</h2>
         </div>
+        <p class="cl-section-aside"><?= $memberCount ?> personne<?= $memberCount > 1 ? 's' : '' ?> listée<?= $memberCount > 1 ? 's' : '' ?></p>
+      </div>
+      <?php if ($roster === []): ?>
+      <p class="cl-prose">Aucun membre n’est listé pour l’instant.</p>
+      <?php else: ?>
+      <div class="cl-table-wrap">
+        <table class="cl-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Membre</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($roster as $i => $r): ?>
+            <tr>
+              <td class="cl-mono"><?= (int) $i + 1 ?></td>
+              <td><?= htmlspecialchars((string) ($r['label'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
       </div>
       <?php endif; ?>
     </section>
 
-    <section id="actions-contact" class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-soft lg:p-8">
-      <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-300">Contact</p>
-      <h2 class="mt-2 text-2xl font-black tracking-tight text-white">Intéressé par cette unité ?</h2>
-      <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Le contact et la candidature se font au niveau de la communauté <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>, qui orientera votre demande vers cette unité.</p>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <a href="<?= htmlspecialchars($backHref . '#actions-contact', ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--primary">Contacter la communauté</a>
-        <a href="<?= htmlspecialchars(url('c/' . rawurlencode($slug) . '/enlistment'), ENT_QUOTES, 'UTF-8') ?>" class="community-landing__cta community-landing__cta--ghost">Candidater</a>
+    <section id="rejoindre" class="cl-rise cl-cta" aria-labelledby="cl-unit-cta-title">
+      <div class="cl-cta__copy">
+        <p class="cl-kicker cl-kicker--on-dark">Rejoindre</p>
+        <h2 id="cl-unit-cta-title" class="cl-h2 cl-h2--on-dark">Intéressé par cette unité ?</h2>
+        <p class="cl-cta__lead">Le contact et la candidature passent par <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>, qui orientera votre demande vers <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?>.</p>
+      </div>
+      <div class="cl-cta__actions">
+        <a href="<?= htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent">Contacter la communauté</a>
+        <a href="<?= htmlspecialchars($enlistHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--ghost">Candidater</a>
       </div>
     </section>
 
-  </main>
+  </div>
 </div>

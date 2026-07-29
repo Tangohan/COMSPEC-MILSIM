@@ -182,6 +182,25 @@ window.ATAKUnitMenu = (function () {
         ? 'Hors liaison — notification impossible'
         : 'Affiche une notification cliquable sur le terminal Athena'
     });
+    html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
+    html += menuItem('helmet-snap', 'Demander une photo casque', {
+      disabled: !inLiaison,
+      title: !inLiaison
+        ? 'Hors liaison — demande impossible'
+        : 'Le terminal capture et envoie un cliché casque vers le poste de commandement'
+    });
+    html += menuItem('helmet-snap-hd', 'Demander une photo casque HD', {
+      disabled: !inLiaison,
+      title: !inLiaison
+        ? 'Hors liaison — demande impossible'
+        : 'Capture haute définition — peut prendre quelques secondes de plus'
+    });
+    html += menuItem('helmet-stream', 'Demander un flux casque', {
+      disabled: !inLiaison,
+      title: !inLiaison
+        ? 'Hors liaison — demande impossible'
+        : 'Aperçus rapides (~5 s) pendant ~3 min — ce n’est pas une vidéo RTMP'
+    });
     html += menuItem('chat', 'Ouvrir la messagerie', { muted: !inLiaison, disabled: !inLiaison, title: inLiaison ? '' : 'Disponible lorsque le contact est en liaison' });
 
     html += '<div class="atak-ctx-menu__sep" role="separator"></div>';
@@ -557,6 +576,25 @@ window.ATAKUnitMenu = (function () {
     });
   }
 
+  function requestHelmetMedia(unitId, mode) {
+    var base = getApiBase();
+    return fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/request-helmet-media', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: mode || 'snap' })
+    }).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var err = new Error((body && body.message) || 'helmet_media_failed');
+          err.body = body;
+          throw err;
+        }
+        return body;
+      });
+    });
+  }
+
   function notifyUnit(unitId, message) {
     var base = getApiBase();
     return fetch(base + '/api/units/' + encodeURIComponent(unitId) + '/notify', {
@@ -800,6 +838,39 @@ window.ATAKUnitMenu = (function () {
             window.ATAKShowError((err && err.body && err.body.message) || 'Impossible d’envoyer la notification.');
           }
         });
+      });
+      return;
+    }
+
+    if (action === 'helmet-snap' || action === 'helmet-snap-hd' || action === 'helmet-stream') {
+      if (!unit || !unit.id) {
+        if (window.ATAKShowError) window.ATAKShowError('Contact non enregistré — demande impossible.');
+        return;
+      }
+      var liveH = unitLiveStatus(unit);
+      if (liveH !== 'linked' && liveH !== 'delayed') {
+        if (window.ATAKShowNotification) window.ATAKShowNotification('Ce contact n’est plus en liaison.');
+        return;
+      }
+      var mode = action === 'helmet-snap-hd' ? 'snap_hd' : (action === 'helmet-stream' ? 'stream' : 'snap');
+      var hLabel = unit.call_sign ? String(unit.call_sign) : 'cet opérateur';
+      var confirmMsg = mode === 'stream'
+        ? 'Demander un flux casque à ' + hLabel + ' ?\n\nAperçus toutes les ~5 secondes pendant ~3 minutes. Ce n’est pas une vidéo en direct type RTMP.'
+        : (mode === 'snap_hd'
+          ? 'Demander une photo casque HD à ' + hLabel + ' ?'
+          : 'Demander une photo casque à ' + hLabel + ' ?');
+      if (!window.confirm(confirmMsg)) return;
+      requestHelmetMedia(unit.id, mode).then(function (res) {
+        if (window.ATAKShowNotification) {
+          window.ATAKShowNotification((res && res.message) || ('Demande envoyée — ' + hLabel));
+        }
+        if (mode === 'stream' && window.ATAKCams && typeof window.ATAKCams.refresh === 'function') {
+          setTimeout(function () { window.ATAKCams.refresh(); }, 2500);
+        }
+      }).catch(function (err) {
+        if (window.ATAKShowError) {
+          window.ATAKShowError((err && err.body && err.body.message) || 'Impossible d’envoyer la demande caméra.');
+        }
       });
       return;
     }

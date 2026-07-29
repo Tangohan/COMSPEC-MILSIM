@@ -3,6 +3,7 @@ window.ATAKContextMenu = (function () {
   var menuEl = null;
   var promptEl = null;
   var markerFormEl = null;
+  var shapeFormEl = null;
   var lastLatLng = null;
   var activeFeature = null;
   var suppressMapContextMenu = false;
@@ -14,6 +15,7 @@ window.ATAKContextMenu = (function () {
   var hintEl = null;
   var promptResolve = null;
   var markerFormResolve = null;
+  var shapeFormResolve = null;
 
   /** Presets zones tactiques (TOC web — indépendant du mod en jeu). */
   var ZONE_PRESETS = {
@@ -68,6 +70,24 @@ window.ATAKContextMenu = (function () {
     { value: 'sm', label: 'Petit' },
     { value: 'md', label: 'Moyen' },
     { value: 'lg', label: 'Grand' }
+  ];
+  var SHAPE_FILL_STYLES = [
+    { value: 'solid', label: 'Plein' },
+    { value: 'gradient', label: 'Dégradé' }
+  ];
+  var SHAPE_ICONS = [
+    { value: '', label: 'Aucune' },
+    { value: 'Z', label: 'Zone — Z' },
+    { value: '!', label: 'Attention — !' },
+    { value: '👁', label: 'Observation — 👁' },
+    { value: 'R', label: 'Recherche — R' },
+    { value: '⚠', label: 'Danger — ⚠' },
+    { value: '★', label: 'Objectif — ★' },
+    { value: '+', label: 'Médical — +' },
+    { value: 'H', label: 'Hélicoptère — H' },
+    { value: 'V', label: 'Véhicule — V' },
+    { value: 'I', label: 'Infanterie — I' },
+    { value: 'C', label: 'Point de commandement — C' }
   ];
 
   function getMap() {
@@ -143,6 +163,7 @@ window.ATAKContextMenu = (function () {
     return '' +
       '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--jackpot" data-action="jackpot" role="menuitem">JACKPOT — HVT</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="marker" role="menuitem">Placer un marqueur</button>' +
+      '<button type="button" class="atak-ctx-menu__item atak-ctx-menu__item--mission" data-action="waypoint" role="menuitem">Point de mission</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="sitrep" role="menuitem">Signaler une situation</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="ping" role="menuitem">Envoyer un ping</button>' +
       '<button type="button" class="atak-ctx-menu__item" data-action="line" role="menuitem">Tracer un trait</button>' +
@@ -400,6 +421,26 @@ window.ATAKContextMenu = (function () {
     }).join('');
   }
 
+  function shapeIconOptions(selected, legacyValue) {
+    var known = SHAPE_ICONS.some(function (it) { return it.value === selected; });
+    var html = SHAPE_ICONS.map(function (it) {
+      var sel = it.value === selected ? ' selected' : '';
+      return '<option value="' + escapeHtml(it.value) + '"' + sel + '>' + escapeHtml(it.label) + '</option>';
+    }).join('');
+    if (selected && !known) {
+      html = '<option value="' + escapeHtml(selected) + '" selected>Icône actuelle — ' + escapeHtml(legacyValue || selected) + '</option>' + html;
+    }
+    return html;
+  }
+
+  function setShapeIconSelect(value) {
+    var iconEl = document.getElementById('atak-shape-icon');
+    if (!iconEl) return;
+    var val = value != null ? String(value) : '';
+    iconEl.innerHTML = shapeIconOptions(val, val);
+    iconEl.value = val;
+  }
+
   function ensureMarkerForm() {
     if (markerFormEl) return markerFormEl;
     markerFormEl = document.createElement('div');
@@ -536,6 +577,133 @@ window.ATAKContextMenu = (function () {
     markerFormEl.setAttribute('aria-hidden', 'true');
     var cb = markerFormResolve;
     markerFormResolve = null;
+    if (cb) cb(value);
+  }
+
+  function ensureShapeForm() {
+    if (shapeFormEl) return shapeFormEl;
+    shapeFormEl = document.createElement('div');
+    shapeFormEl.id = 'atak-shape-modal';
+    shapeFormEl.className = 'atak-input-modal';
+    shapeFormEl.hidden = true;
+    shapeFormEl.setAttribute('aria-hidden', 'true');
+    shapeFormEl.innerHTML =
+      '<div class="atak-input-modal__backdrop" data-atak-shape-cancel></div>' +
+      '<div class="atak-input-modal__box atak-marker-form atak-shape-form" role="dialog" aria-modal="true" aria-labelledby="atak-shape-modal-title">' +
+      '<h3 class="atak-input-modal__title" id="atak-shape-modal-title">Nouvelle zone</h3>' +
+      '<p class="atak-input-modal__hint" id="atak-shape-modal-hint"></p>' +
+      '<label class="atak-marker-form__label">Libellé' +
+      '<input type="text" class="atak-input-modal__field" id="atak-shape-label" maxlength="100" placeholder="Ex. zone d’attente" autocomplete="off" /></label>' +
+      '<label class="atak-marker-form__label">Commentaire' +
+      '<textarea class="atak-marker-form__textarea" id="atak-shape-comment" maxlength="500" rows="3" placeholder="Contexte, consignes, restrictions..."></textarea></label>' +
+      '<label class="atak-marker-form__label">Image (URL)' +
+      '<input type="url" class="atak-input-modal__field" id="atak-shape-image" maxlength="500" placeholder="https://..." autocomplete="off" /></label>' +
+      '<label class="atak-marker-form__label">Icône au centre' +
+      '<select class="atak-input-modal__field" id="atak-shape-icon"></select></label>' +
+      '<fieldset class="atak-marker-form__fieldset"><legend>Couleur</legend><div class="atak-marker-form__choices" id="atak-shape-colors"></div></fieldset>' +
+      '<fieldset class="atak-marker-form__fieldset"><legend>Remplissage</legend><div class="atak-marker-form__choices" id="atak-shape-fillstyles"></div></fieldset>' +
+      '<label class="atak-marker-form__label">Opacité' +
+      '<input type="range" class="atak-shape-form__range" id="atak-shape-opacity" min="0" max="100" step="5" value="15" />' +
+      '<span class="atak-shape-form__range-value" id="atak-shape-opacity-value">15 %</span></label>' +
+      '<div class="atak-input-modal__actions">' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--ghost" data-atak-shape-cancel>Annuler</button>' +
+      '<button type="button" class="atak-input-modal__btn atak-input-modal__btn--primary" id="atak-shape-ok">Enregistrer</button>' +
+      '</div></div>';
+    document.body.appendChild(shapeFormEl);
+    document.getElementById('atak-shape-colors').innerHTML = optionButtons('shapecolor', MARKER_COLORS, '#eab308');
+    document.getElementById('atak-shape-fillstyles').innerHTML = optionButtons('shapefillstyle', SHAPE_FILL_STYLES, 'solid');
+    setShapeIconSelect('');
+    function syncOpacity() {
+      var range = document.getElementById('atak-shape-opacity');
+      var out = document.getElementById('atak-shape-opacity-value');
+      if (range && out) out.textContent = String(range.value || '15') + ' %';
+    }
+    shapeFormEl.querySelectorAll('[data-atak-shape-cancel]').forEach(function (el) {
+      el.addEventListener('click', function () { closeShapeForm(null); });
+    });
+    document.getElementById('atak-shape-opacity').addEventListener('input', syncOpacity);
+    document.getElementById('atak-shape-ok').addEventListener('click', function () {
+      closeShapeForm(readShapeForm());
+    });
+    document.getElementById('atak-shape-label').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        closeShapeForm(readShapeForm());
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeShapeForm(null);
+      }
+    });
+    syncOpacity();
+    return shapeFormEl;
+  }
+
+  function readShapeForm() {
+    var labelEl = document.getElementById('atak-shape-label');
+    var commentEl = document.getElementById('atak-shape-comment');
+    var imageEl = document.getElementById('atak-shape-image');
+    var iconEl = document.getElementById('atak-shape-icon');
+    var opacityEl = document.getElementById('atak-shape-opacity');
+    var color = (shapeFormEl.querySelector('input[name="shapecolor"]:checked') || {}).value || '#eab308';
+    var fillStyle = (shapeFormEl.querySelector('input[name="shapefillstyle"]:checked') || {}).value || 'solid';
+    return {
+      label: labelEl ? labelEl.value : '',
+      comment: commentEl ? commentEl.value : '',
+      imageUrl: imageEl ? imageEl.value : '',
+      iconText: iconEl ? iconEl.value : '',
+      color: color,
+      fillStyle: fillStyle,
+      fillOpacity: Math.max(0, Math.min(1, (parseInt(opacityEl ? opacityEl.value : '15', 10) || 15) / 100))
+    };
+  }
+
+  function openShapeForm(defaults, mode, featureTitleText) {
+    ensureShapeForm();
+    defaults = defaults || {};
+    mode = mode || 'create';
+    var titleEl = document.getElementById('atak-shape-modal-title');
+    var hintElLocal = document.getElementById('atak-shape-modal-hint');
+    var okBtn = document.getElementById('atak-shape-ok');
+    if (titleEl) titleEl.textContent = mode === 'edit' ? ('Modifier — ' + (featureTitleText || 'élément')) : (featureTitleText || 'Nouvelle zone');
+    if (hintElLocal) hintElLocal.textContent = mode === 'edit'
+      ? 'Ajustez le style, le commentaire et les informations affichées sur la carte.'
+      : 'Définissez le style, le texte et les informations visibles sur la carte.';
+    if (okBtn) okBtn.textContent = mode === 'edit' ? 'Enregistrer' : 'Créer';
+    var labelEl = document.getElementById('atak-shape-label');
+    var commentEl = document.getElementById('atak-shape-comment');
+    var imageEl = document.getElementById('atak-shape-image');
+    var opacityEl = document.getElementById('atak-shape-opacity');
+    if (labelEl) labelEl.value = defaults.label != null ? String(defaults.label) : '';
+    if (commentEl) commentEl.value = defaults.comment != null ? String(defaults.comment) : '';
+    if (imageEl) imageEl.value = defaults.imageUrl != null ? String(defaults.imageUrl) : '';
+    setShapeIconSelect(defaults.iconText != null ? String(defaults.iconText) : '');
+    if (opacityEl) opacityEl.value = String(Math.round(((defaults.fillOpacity != null ? defaults.fillOpacity : 0.15) * 100)));
+    var colorVal = defaults.color || '#eab308';
+    var fillStyleVal = defaults.fillStyle || 'solid';
+    var colorInput = shapeFormEl.querySelector('input[name="shapecolor"][value="' + colorVal + '"]') ||
+      shapeFormEl.querySelector('input[name="shapecolor"][value="#eab308"]');
+    var styleInput = shapeFormEl.querySelector('input[name="shapefillstyle"][value="' + fillStyleVal + '"]') ||
+      shapeFormEl.querySelector('input[name="shapefillstyle"][value="solid"]');
+    if (colorInput) colorInput.checked = true;
+    if (styleInput) styleInput.checked = true;
+    var syncOut = document.getElementById('atak-shape-opacity-value');
+    if (syncOut && opacityEl) syncOut.textContent = String(opacityEl.value || '15') + ' %';
+    shapeFormEl.hidden = false;
+    shapeFormEl.setAttribute('aria-hidden', 'false');
+    setTimeout(function () {
+      if (labelEl) { labelEl.focus(); labelEl.select(); }
+    }, 30);
+    return new Promise(function (resolve) {
+      shapeFormResolve = resolve;
+    });
+  }
+
+  function closeShapeForm(value) {
+    if (!shapeFormEl) return;
+    shapeFormEl.hidden = true;
+    shapeFormEl.setAttribute('aria-hidden', 'true');
+    var cb = shapeFormResolve;
+    shapeFormResolve = null;
     if (cb) cb(value);
   }
 
@@ -913,18 +1081,33 @@ window.ATAKContextMenu = (function () {
     var pts = drawPoints.slice();
     cancelDraw();
     window.dispatchEvent(new CustomEvent('atak:draw-ended'));
-    openPrompt('Libellé du trait', 'Optionnel — laissez vide pour un trait sans nom.', 'Ex. axe d’approche', '').then(function (label) {
-      if (label === null) return;
+    openShapeForm({
+      label: 'Trait',
+      comment: '',
+      imageUrl: '',
+      iconText: '',
+      color: '#34d399',
+      fillStyle: 'solid',
+      fillOpacity: 0.15
+    }, 'create', 'Nouveau trait').then(function (form) {
+      if (!form) return;
       var coordinates = pts.map(function (p) { return [p.lng, p.lat]; });
       var payload = {
         mapId: getMapId(),
         type: 'LINE',
-        label: (label || '').trim() || 'Trait',
-        color: '#34d399',
+        label: (form.label || '').trim() || 'Trait',
+        color: form.color || '#34d399',
         stroke: 2,
         createdBy: getAuthor(),
         geometry: { coordinates: coordinates },
-        meta: { category: 'manual', kind: 'line' }
+        meta: {
+          category: 'manual',
+          kind: 'line',
+          comment: (form.comment || '').trim(),
+          image_url: (form.imageUrl || '').trim(),
+          icon_text: (form.iconText || '').trim(),
+          fill_style: form.fillStyle || 'solid'
+        }
       };
       if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
         window.ATAKMapShapes.createShape(payload);
@@ -954,23 +1137,35 @@ window.ATAKContextMenu = (function () {
     if (window.ATAKMapTools && window.ATAKMapTools.refreshZoneMetrics) {
       window.ATAKMapTools.refreshZoneMetrics(radiusM);
     }
-    openPrompt(opts.title || 'Libellé de la zone', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'zone'), '').then(function (label) {
-      if (label === null) return;
+    openShapeForm({
+      label: opts.defaultLabel || 'Zone',
+      comment: '',
+      imageUrl: '',
+      iconText: '',
+      color: opts.color || '#eab308',
+      fillStyle: 'solid',
+      fillOpacity: 0.15
+    }, 'create', opts.title || 'Nouvelle zone').then(function (form) {
+      if (!form) return;
       var meta = {
         category: 'manual',
         kind: opts.kind || 'zone',
         radius_m: radiusM,
         speed_kph: speedKph,
         area_m2: metrics ? Math.round(metrics.areaM2) : Math.round(Math.PI * radiusM * radiusM),
-        delay_s: metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6))
+        delay_s: metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6)),
+        comment: (form.comment || '').trim(),
+        image_url: (form.imageUrl || '').trim(),
+        icon_text: (form.iconText || '').trim(),
+        fill_style: form.fillStyle || 'solid'
       };
       var payload = {
         mapId: getMapId(),
         type: 'CIRCLE',
-        label: (label || '').trim() || opts.defaultLabel || 'Zone',
-        color: opts.color || '#eab308',
+        label: (form.label || '').trim() || opts.defaultLabel || 'Zone',
+        color: form.color || opts.color || '#eab308',
         stroke: 2,
-        fillOpacity: 0.15,
+        fillOpacity: form.fillOpacity != null ? form.fillOpacity : 0.15,
         createdBy: getAuthor(),
         geometry: { center: [center.lng, center.lat], radius: radiusM },
         meta: meta
@@ -993,19 +1188,34 @@ window.ATAKContextMenu = (function () {
     var opts = drawOpts || ZONE_PRESETS.perimeter;
     cancelDraw();
     window.dispatchEvent(new CustomEvent('atak:draw-ended'));
-    openPrompt(opts.title || 'Nom du périmètre', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'périmètre'), '').then(function (label) {
-      if (label === null) return;
+    openShapeForm({
+      label: opts.defaultLabel || 'Périmètre',
+      comment: '',
+      imageUrl: '',
+      iconText: '',
+      color: opts.color || '#fb923c',
+      fillStyle: 'solid',
+      fillOpacity: 0.12
+    }, 'create', opts.title || 'Nouveau périmètre').then(function (form) {
+      if (!form) return;
       var coordinates = pts.map(function (p) { return [p.lng, p.lat]; });
       var payload = {
         mapId: getMapId(),
         type: 'POLYGON',
-        label: (label || '').trim() || opts.defaultLabel || 'Périmètre',
-        color: opts.color || '#fb923c',
+        label: (form.label || '').trim() || opts.defaultLabel || 'Périmètre',
+        color: form.color || opts.color || '#fb923c',
         stroke: 2,
-        fillOpacity: 0.12,
+        fillOpacity: form.fillOpacity != null ? form.fillOpacity : 0.12,
         createdBy: getAuthor(),
         geometry: { coordinates: coordinates },
-        meta: { category: 'manual', kind: opts.kind || 'perimeter' }
+        meta: {
+          category: 'manual',
+          kind: opts.kind || 'perimeter',
+          comment: (form.comment || '').trim(),
+          image_url: (form.imageUrl || '').trim(),
+          icon_text: (form.iconText || '').trim(),
+          fill_style: form.fillStyle || 'solid'
+        }
       };
       if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
         window.ATAKMapShapes.createShape(payload);
@@ -1028,18 +1238,34 @@ window.ATAKContextMenu = (function () {
       [b.lng, b.lat],
       [a.lng, b.lat]
     ];
-    openPrompt(opts.title || 'Nom de la zone d’intérêt', opts.hint || 'Optionnel.', 'Ex. ' + (opts.defaultLabel || 'zone d’intérêt'), '').then(function (label) {
-      if (label === null) return;
+    openShapeForm({
+      label: opts.defaultLabel || 'Zone d’intérêt',
+      comment: '',
+      imageUrl: '',
+      iconText: '',
+      color: opts.color || '#86efac',
+      fillStyle: 'solid',
+      fillOpacity: 0.12
+    }, 'create', opts.title || 'Nouvelle zone d’intérêt').then(function (form) {
+      if (!form) return;
       var payload = {
         mapId: getMapId(),
         type: 'POLYGON',
-        label: (label || '').trim() || opts.defaultLabel || 'Zone d’intérêt',
-        color: opts.color || '#86efac',
+        label: (form.label || '').trim() || opts.defaultLabel || 'Zone d’intérêt',
+        color: form.color || opts.color || '#86efac',
         stroke: 2,
-        fillOpacity: 0.12,
+        fillOpacity: form.fillOpacity != null ? form.fillOpacity : 0.12,
         createdBy: getAuthor(),
         geometry: { coordinates: corners },
-        meta: { category: 'manual', kind: opts.kind || 'aoi', shape: 'rectangle' }
+        meta: {
+          category: 'manual',
+          kind: opts.kind || 'aoi',
+          shape: 'rectangle',
+          comment: (form.comment || '').trim(),
+          image_url: (form.imageUrl || '').trim(),
+          icon_text: (form.iconText || '').trim(),
+          fill_style: form.fillStyle || 'solid'
+        }
       };
       if (window.ATAKMapShapes && window.ATAKMapShapes.createShape) {
         window.ATAKMapShapes.createShape(payload);
@@ -1283,55 +1509,86 @@ window.ATAKContextMenu = (function () {
       return;
     }
     if (feature.featureType === 'comment') {
-      var current = currentFeatureLabel(feature);
-      openPrompt('Modifier le commentaire', 'Texte visible sur la carte pour votre équipe.', 'Ex. couverture au nord', current).then(function (text) {
-        if (text === null) return;
-        var t = (text || '').trim();
+      var currentShape = feature.shape || {};
+      var currentMeta = currentShape.meta || {};
+      openShapeForm({
+        label: currentFeatureLabel(feature),
+        comment: currentMeta.comment || '',
+        imageUrl: currentMeta.image_url || '',
+        iconText: currentMeta.icon_text || '',
+        color: currentShape.color || '#60a5fa',
+        fillStyle: currentMeta.fill_style || 'solid',
+        fillOpacity: currentShape.fill_opacity != null ? currentShape.fill_opacity : 0.15
+      }, 'edit', 'Commentaire').then(function (form) {
+        if (!form) return;
+        var t = (form.label || '').trim();
         if (!t) {
           if (window.ATAKShowError) window.ATAKShowError('Saisissez un commentaire.');
           return;
         }
         if (window.ATAKMapShapes && window.ATAKMapShapes.updateShape) {
-          window.ATAKMapShapes.updateShape(feature.id, { label: t }).then(function (row) {
+          window.ATAKMapShapes.updateShape(feature.id, {
+            label: t,
+            color: form.color || '#60a5fa',
+            fill_opacity: form.fillOpacity != null ? form.fillOpacity : 0.15,
+            meta: Object.assign({}, currentMeta, {
+              comment: (form.comment || '').trim(),
+              image_url: (form.imageUrl || '').trim(),
+              icon_text: (form.iconText || '').trim(),
+              fill_style: form.fillStyle || 'solid'
+            })
+          }).then(function (row) {
             if (row && window.ATAKShowNotification) window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
           });
         }
       });
       return;
     }
-    // Trait / zone : libellé + couleur (choix nommés) ; cercle → rafraîchir délai (vitesse barre d’outils)
+    // Trait / zone : éditeur riche (couleur, opacité, icône, image, commentaire).
     var shape = feature.shape || {};
     var currentLabel = shape.label || feature.label || '';
-    var currentColor = shape.color || (feature.featureType === 'zone' ? '#eab308' : '#34d399');
     var isCircle = String(shape.type || '').toUpperCase() === 'CIRCLE';
-    openPrompt('Libellé — ' + featureTitle(feature), 'Modifiez le nom affiché.', 'Ex. axe d’approche', currentLabel).then(function (label) {
-      if (label === null) return;
-      var nextLabel = (label || '').trim() || featureTitle(feature);
-      openColorPick(currentColor).then(function (color) {
-        if (color === null) return;
-        if (!window.ATAKMapShapes || !window.ATAKMapShapes.updateShape) return;
-        var patch = { label: nextLabel, color: color };
-        if (isCircle) {
-          var geom = shape.geometry || {};
-          var radiusM = geom.radius != null ? Number(geom.radius) : NaN;
-          var speedKph = getDrawSpeedKph();
-          var prevMeta = Object.assign({}, shape.meta || {});
-          if (isFinite(radiusM) && radiusM > 0) {
-            var metrics = (window.ATAKMapTools && window.ATAKMapTools.circleMetrics)
-              ? window.ATAKMapTools.circleMetrics(radiusM, speedKph)
-              : null;
-            prevMeta.radius_m = Math.round(radiusM);
-            prevMeta.speed_kph = speedKph;
-            prevMeta.area_m2 = metrics ? Math.round(metrics.areaM2) : Math.round(Math.PI * radiusM * radiusM);
-            prevMeta.delay_s = metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6));
-            patch.meta = prevMeta;
-          }
+    var shapeMeta = Object.assign({}, shape.meta || {});
+    openShapeForm({
+      label: currentLabel || featureTitle(feature),
+      comment: shapeMeta.comment || '',
+      imageUrl: shapeMeta.image_url || '',
+      iconText: shapeMeta.icon_text || '',
+      color: shape.color || (feature.featureType === 'zone' ? '#eab308' : '#34d399'),
+      fillStyle: shapeMeta.fill_style || 'solid',
+      fillOpacity: shape.fill_opacity != null ? shape.fill_opacity : (feature.featureType === 'zone' ? 0.12 : 0.15)
+    }, 'edit', featureTitle(feature)).then(function (form) {
+      if (!form || !window.ATAKMapShapes || !window.ATAKMapShapes.updateShape) return;
+      var patch = {
+        label: (form.label || '').trim() || featureTitle(feature),
+        color: form.color,
+        fill_opacity: form.fillOpacity != null ? form.fillOpacity : (feature.featureType === 'zone' ? 0.12 : 0.15)
+      };
+      var nextMeta = Object.assign({}, shapeMeta, {
+        comment: (form.comment || '').trim(),
+        image_url: (form.imageUrl || '').trim(),
+        icon_text: (form.iconText || '').trim(),
+        fill_style: form.fillStyle || 'solid'
+      });
+      if (isCircle) {
+        var geom = shape.geometry || {};
+        var radiusM = geom.radius != null ? Number(geom.radius) : NaN;
+        var speedKph = getDrawSpeedKph();
+        if (isFinite(radiusM) && radiusM > 0) {
+          var metrics = (window.ATAKMapTools && window.ATAKMapTools.circleMetrics)
+            ? window.ATAKMapTools.circleMetrics(radiusM, speedKph)
+            : null;
+          nextMeta.radius_m = Math.round(radiusM);
+          nextMeta.speed_kph = speedKph;
+          nextMeta.area_m2 = metrics ? Math.round(metrics.areaM2) : Math.round(Math.PI * radiusM * radiusM);
+          nextMeta.delay_s = metrics ? Math.round(metrics.delayS) : Math.round(radiusM / (speedKph / 3.6));
         }
-        window.ATAKMapShapes.updateShape(feature.id, patch).then(function (row) {
-          if (row && window.ATAKShowNotification) {
-            window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
-          }
-        });
+      }
+      patch.meta = nextMeta;
+      window.ATAKMapShapes.updateShape(feature.id, patch).then(function (row) {
+        if (row && window.ATAKShowNotification) {
+          window.ATAKShowNotification(featureDoneMsg(feature, 'edit'));
+        }
       });
     });
   }
@@ -1473,6 +1730,14 @@ window.ATAKContextMenu = (function () {
         if (!opts) return;
         createMarkerAt(ll, opts);
       });
+      return;
+    }
+    if (action === 'waypoint') {
+      if (window.ATAKWaypoints && window.ATAKWaypoints.openAt) {
+        window.ATAKWaypoints.openAt(ll);
+      } else if (window.ATAKShowError) {
+        window.ATAKShowError('Points de mission indisponibles.');
+      }
       return;
     }
     if (action === 'sitrep') {

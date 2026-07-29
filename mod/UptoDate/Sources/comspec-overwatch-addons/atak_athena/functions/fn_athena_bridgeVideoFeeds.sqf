@@ -128,6 +128,8 @@ if (_ctabHcam isEqualTo [] && {!isNil "cTabHcamlist"} && {cTabHcamlist isEqualTy
 
     private _label = format ["Caméra casque — %1", _feedCs];
 
+    private _streaming = _x isEqualTo player && {missionNamespace getVariable ["COMSPEC_HelmetStreamActive", false]};
+
     _feeds pushBack [
 
         _id,
@@ -146,7 +148,9 @@ if (_ctabHcam isEqualTo [] && {!isNil "cTabHcamlist"} && {cTabHcamlist isEqualTy
 
         _pos select 2,
 
-        mapGridPosition _x
+        mapGridPosition _x,
+
+        _streaming
 
     ];
 
@@ -280,7 +284,9 @@ if (!isNull _terminalUav && {alive _terminalUav}) then { _uavs pushBackUnique _t
 
         _pos select 2,
 
-        mapGridPosition _x
+        mapGridPosition _x,
+
+        false
 
     ];
 
@@ -314,11 +320,13 @@ private _parts = [];
 
 {
 
-    _x params ["_id", "_kind", "_label", "_callsign", "_steam", "_px", "_py", "_pz", "_grid"];
+    _x params ["_id", "_kind", "_label", "_callsign", "_steam", "_px", "_py", "_pz", "_grid", ["_streaming", false]];
+
+    private _streamJson = if (_streaming isEqualType true && {_streaming}) then {",""streaming"":true"} else {""};
 
     _parts pushBack format [
 
-        "{""id"":""%1"",""kind"":""%2"",""label"":""%3"",""callsign"":""%4"",""steam_uid"":""%5"",""pos_x"":%6,""pos_y"":%7,""pos_z"":%8,""grid"":""%9""}",
+        "{""id"":""%1"",""kind"":""%2"",""label"":""%3"",""callsign"":""%4"",""steam_uid"":""%5"",""pos_x"":%6,""pos_y"":%7,""pos_z"":%8,""grid"":""%9""%10}",
 
         [_id] call _escape,
 
@@ -336,7 +344,9 @@ private _parts = [];
 
         _pz,
 
-        [_grid] call _escape
+        [_grid] call _escape,
+
+        _streamJson
 
     ];
 

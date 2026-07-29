@@ -77,12 +77,23 @@ final class AtakRealismRepository
         if (!$this->tablesReady() || $tenantId < 1) {
             return [];
         }
-        $sql = 'SELECT c.*, t.terminal_label, t.terminal_uid, u.display_name, u.callsign
-                FROM atak_certificates c
-                LEFT JOIN atak_terminals t ON t.id = c.terminal_id
-                LEFT JOIN users u ON u.id = c.user_id
-                WHERE c.tenant_id = ?
-                ORDER BY COALESCE(c.expires_at, c.updated_at, c.created_at) DESC, c.id DESC';
+        if ($this->cryptoDomainsReady()) {
+            $sql = 'SELECT c.*, t.terminal_label, t.terminal_uid, u.display_name, u.callsign,
+                           d.label AS crypto_domain_label, d.domain_ref AS crypto_domain_ref
+                    FROM atak_certificates c
+                    LEFT JOIN atak_terminals t ON t.id = c.terminal_id
+                    LEFT JOIN users u ON u.id = c.user_id
+                    LEFT JOIN atak_crypto_domains d ON d.id = c.crypto_domain_id
+                    WHERE c.tenant_id = ?
+                    ORDER BY COALESCE(c.expires_at, c.updated_at, c.created_at) DESC, c.id DESC';
+        } else {
+            $sql = 'SELECT c.*, t.terminal_label, t.terminal_uid, u.display_name, u.callsign
+                    FROM atak_certificates c
+                    LEFT JOIN atak_terminals t ON t.id = c.terminal_id
+                    LEFT JOIN users u ON u.id = c.user_id
+                    WHERE c.tenant_id = ?
+                    ORDER BY COALESCE(c.expires_at, c.updated_at, c.created_at) DESC, c.id DESC';
+        }
         $st = $this->pdo->prepare($sql);
         $st->execute([$tenantId]);
 
@@ -95,9 +106,9 @@ final class AtakRealismRepository
      */
     public function upsertTerminal(int $tenantId, array $payload): array
     {
-        $uid = $this->clip((string) ($payload['terminal_uid'] ?? ''), 64);
+        $uid = $this->sanitizeTerminalUid((string) ($payload['terminal_uid'] ?? ''));
         if ($uid === '') {
-            $uid = 'term-' . bin2hex(random_bytes(6));
+            $uid = 'OW-' . strtoupper(bin2hex(random_bytes(4))) . '-' . random_int(100000, 999999);
         }
 
         $userId = (int) ($payload['user_id'] ?? 0);
@@ -112,6 +123,14 @@ final class AtakRealismRepository
         }
 
         $row = $this->findTerminalByUid($tenantId, $uid);
+        // Récupère une fiche corrompue (<null>) du même compte / indicatif pour la réparer
+        if ($row === null) {
+            $corrupt = $this->findCorruptTerminal($tenantId, $userId, $callsign);
+            if ($corrupt !== null) {
+                $this->repairTerminalIdentity($tenantId, (int) $corrupt['id'], $uid);
+                $row = $this->findTerminalByUid($tenantId, $uid);
+            }
+        }
         $fields = [
             'user_id' => $userId > 0 ? $userId : null,
             'terminal_label' => $this->clip((string) ($payload['terminal_label'] ?? 'Terminal ATAK'), 160),
@@ -187,9 +206,9 @@ final class AtakRealismRepository
         $authority = $this->clip((string) ($payload['authority_label'] ?? 'Autorité ATAK locale'), 160);
         $type = $this->allowed((string) ($payload['certificate_type'] ?? 'device'), ['device', 'operator', 'gateway', 'test'], 'device');
         $status = $this->allowed((string) ($payload['status'] ?? 'issued'), ['issued', 'active', 'expired', 'revoked'], 'issued');
-        $ref = $this->clip((string) ($payload['certificate_ref'] ?? ''), 64);
+        $ref = $this->sanitizeCertificateRef((string) ($payload['certificate_ref'] ?? ''), $terminalId);
         if ($ref === '') {
-            $ref = 'CERT-' . strtoupper(substr(bin2hex(random_bytes(8)), 0, 12));
+            $ref = 'OW-CERT-' . strtoupper(substr(bin2hex(random_bytes(8)), 0, 12));
         }
         $validFrom = $this->dateValue($payload['valid_from'] ?? null) ?? gmdate('Y-m-d H:i:s');
         $expiresAt = $this->dateValue($payload['expires_at'] ?? null);
@@ -205,13 +224,14 @@ final class AtakRealismRepository
         }
         $jsonMeta = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $sql = 'INSERT INTO atak_certificates
-                (tenant_id, terminal_id, user_id, certificate_ref, authority_label, certificate_type,
+                (tenant_id, terminal_id, user_id, crypto_domain_id, certificate_ref, authority_label, certificate_type,
                  common_name, serial_number, fingerprint_sha256, status, issued_at, valid_from, expires_at,
                  revoked_at, revoked_reason, metadata_json, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
                 ON DUPLICATE KEY UPDATE
                     terminal_id = VALUES(terminal_id),
                     user_id = VALUES(user_id),
+                    crypto_domain_id = VALUES(crypto_domain_id),
                     authority_label = VALUES(authority_label),
                     certificate_type = VALUES(certificate_type),
                     common_name = VALUES(common_name),
@@ -225,10 +245,12 @@ final class AtakRealismRepository
                     revoked_reason = VALUES(revoked_reason),
                     metadata_json = VALUES(metadata_json),
                     updated_at = UTC_TIMESTAMP()';
+        $domainId = (int) ($payload['crypto_domain_id'] ?? 0);
         $this->pdo->prepare($sql)->execute([
             $tenantId,
             $terminalId > 0 ? $terminalId : null,
             $userId > 0 ? $userId : null,
+            $domainId > 0 ? $domainId : null,
             $ref,
             $authority,
             $type,
@@ -245,6 +267,216 @@ final class AtakRealismRepository
         ]);
 
         return $this->findCertificateByRef($tenantId, $ref) ?? [];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listCryptoDomains(int $tenantId): array
+    {
+        if (!$this->tablesReady() || !$this->cryptoDomainsReady() || $tenantId < 1) {
+            return [];
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM atak_crypto_domains WHERE tenant_id = ? ORDER BY label ASC, id ASC'
+        );
+        $st->execute([$tenantId]);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function upsertCryptoDomain(int $tenantId, array $payload): array
+    {
+        if (!$this->tablesReady() || !$this->cryptoDomainsReady() || $tenantId < 1) {
+            return [];
+        }
+        $ref = $this->clip((string) ($payload['domain_ref'] ?? ''), 64);
+        if ($ref === '' || $this->isCorruptIdentity($ref)) {
+            $ref = 'NET-' . strtoupper(substr(bin2hex(random_bytes(6)), 0, 10));
+        }
+        $label = $this->clip((string) ($payload['label'] ?? 'Réseau ami'), 160);
+        $faction = $this->nullableString($payload['faction_key'] ?? null, 64);
+        $status = $this->allowed((string) ($payload['status'] ?? 'active'), ['active', 'inactive'], 'active');
+        $mapId = (int) ($payload['map_id'] ?? 0);
+        $sql = 'INSERT INTO atak_crypto_domains
+                (tenant_id, map_id, domain_ref, label, faction_key, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(), UTC_TIMESTAMP())
+                ON DUPLICATE KEY UPDATE
+                    label = VALUES(label),
+                    faction_key = VALUES(faction_key),
+                    status = VALUES(status),
+                    map_id = VALUES(map_id),
+                    updated_at = UTC_TIMESTAMP()';
+        $this->pdo->prepare($sql)->execute([
+            $tenantId,
+            $mapId > 0 ? $mapId : null,
+            $ref,
+            $label,
+            $faction,
+            $status,
+        ]);
+
+        return $this->findCryptoDomainByRef($tenantId, $ref) ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findCryptoDomainByRef(int $tenantId, string $ref): ?array
+    {
+        if (!$this->cryptoDomainsReady() || $tenantId < 1 || trim($ref) === '') {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM atak_crypto_domains WHERE tenant_id = ? AND domain_ref = ? LIMIT 1'
+        );
+        $st->execute([$tenantId, trim($ref)]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findCryptoDomainById(int $tenantId, int $domainId): ?array
+    {
+        if (!$this->cryptoDomainsReady() || $tenantId < 1 || $domainId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT * FROM atak_crypto_domains WHERE tenant_id = ? AND id = ? LIMIT 1'
+        );
+        $st->execute([$tenantId, $domainId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Assure un domaine « Réseau ami » pour un tenant (nouveaux tenants / seed).
+     *
+     * @return array<string, mixed>
+     */
+    public function ensureDefaultCryptoDomain(int $tenantId): array
+    {
+        if ($tenantId < 1 || !$this->cryptoDomainsReady()) {
+            return [];
+        }
+        $existing = $this->listCryptoDomains($tenantId);
+        foreach ($existing as $row) {
+            if (($row['status'] ?? '') === 'active') {
+                return $row;
+            }
+        }
+        if ($existing !== []) {
+            return $existing[0];
+        }
+
+        return $this->upsertCryptoDomain($tenantId, [
+            'domain_ref' => 'FRIENDLY-NET',
+            'label' => 'Réseau ami',
+            'faction_key' => 'friendly',
+            'status' => 'active',
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function setTerminalCompromise(
+        int $tenantId,
+        string $terminalUid,
+        string $state,
+        ?string $reason = null
+    ): ?array {
+        if (!$this->tablesReady() || $tenantId < 1 || trim($terminalUid) === '') {
+            return null;
+        }
+        $state = $this->allowed($state, ['none', 'captured', 'compromised'], 'none');
+        $terminal = $this->findTerminalByUid($tenantId, $terminalUid);
+        if ($terminal === null) {
+            return null;
+        }
+        if (!$this->hasCompromiseColumns()) {
+            return $terminal;
+        }
+        if ($state === 'none') {
+            $this->pdo->prepare(
+                "UPDATE atak_terminals
+                 SET compromise_state = 'none', compromised_at = NULL, compromise_reason = NULL,
+                     updated_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND terminal_uid = ?"
+            )->execute([$tenantId, trim($terminalUid)]);
+        } else {
+            $this->pdo->prepare(
+                'UPDATE atak_terminals
+                 SET compromise_state = ?, compromised_at = UTC_TIMESTAMP(), compromise_reason = ?,
+                     updated_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND terminal_uid = ?'
+            )->execute([
+                $state,
+                $this->nullableString($reason, 255),
+                $tenantId,
+                trim($terminalUid),
+            ]);
+        }
+
+        return $this->findTerminalByUid($tenantId, $terminalUid);
+    }
+
+    public function certificateIsValid(array $certificate): bool
+    {
+        $status = strtolower(trim((string) ($certificate['status'] ?? '')));
+        if (!in_array($status, ['active', 'issued'], true)) {
+            return false;
+        }
+        $expires = trim((string) ($certificate['expires_at'] ?? ''));
+        if ($expires !== '') {
+            $ts = strtotime($expires . ' UTC');
+            if ($ts !== false && $ts < time()) {
+                return false;
+            }
+        }
+        $revoked = trim((string) ($certificate['revoked_at'] ?? ''));
+        if ($revoked !== '' && $status === 'revoked') {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function cryptoDomainsReady(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_crypto_domains' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function hasCompromiseColumns(): bool
+    {
+        try {
+            $st = $this->pdo->query(
+                "SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'atak_terminals'
+                   AND COLUMN_NAME = 'compromise_state' LIMIT 1"
+            );
+
+            return $st !== false && (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -294,6 +526,56 @@ final class AtakRealismRepository
         $row = $st->fetch(PDO::FETCH_ASSOC);
 
         return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findCertificateById(int $tenantId, int $certificateId): ?array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $certificateId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM atak_certificates WHERE tenant_id = ? AND id = ? LIMIT 1');
+        $st->execute([$tenantId, $certificateId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function revokeCertificate(int $tenantId, int $certificateId, ?string $reason = null): ?array
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $certificateId < 1) {
+            return null;
+        }
+        $existing = $this->findCertificateById($tenantId, $certificateId);
+        if ($existing === null) {
+            return null;
+        }
+        $reasonClip = $this->nullableString($reason, 255);
+        $sql = "UPDATE atak_certificates
+                SET status = 'revoked',
+                    revoked_at = UTC_TIMESTAMP(),
+                    revoked_reason = COALESCE(?, revoked_reason),
+                    updated_at = UTC_TIMESTAMP()
+                WHERE tenant_id = ? AND id = ?";
+        $this->pdo->prepare($sql)->execute([$reasonClip, $tenantId, $certificateId]);
+
+        return $this->findCertificateById($tenantId, $certificateId);
+    }
+
+    public function deleteCertificate(int $tenantId, int $certificateId): bool
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $certificateId < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare('DELETE FROM atak_certificates WHERE tenant_id = ? AND id = ?');
+        $st->execute([$tenantId, $certificateId]);
+
+        return $st->rowCount() > 0;
     }
 
     /**
@@ -349,6 +631,162 @@ final class AtakRealismRepository
         }
 
         return mb_substr($value, 0, $max);
+    }
+
+    /**
+     * Rejette les sentinelles Arma/SQF (« &lt;null&gt; », nil…) qui ont pollué terminal_uid.
+     */
+    private function sanitizeTerminalUid(string $uid): string
+    {
+        $uid = $this->clip($uid, 64);
+        if ($this->isCorruptIdentity($uid)) {
+            return '';
+        }
+
+        return $uid;
+    }
+
+    private function sanitizeCertificateRef(string $ref, int $terminalId = 0): string
+    {
+        $ref = $this->clip($ref, 64);
+        if ($this->isCorruptIdentity($ref) || str_contains(strtolower($ref), '<null') || str_contains(strtolower($ref), '-null')) {
+            if ($terminalId > 0) {
+                $st = $this->pdo->prepare('SELECT terminal_uid FROM atak_terminals WHERE id = ? LIMIT 1');
+                $st->execute([$terminalId]);
+                $uid = $this->sanitizeTerminalUid((string) ($st->fetchColumn() ?: ''));
+                if ($uid !== '') {
+                    return $this->clip('OW-CERT-' . $uid, 64);
+                }
+            }
+
+            return '';
+        }
+
+        return $ref;
+    }
+
+    private function isCorruptIdentity(string $value): bool
+    {
+        $lower = strtolower(trim($value));
+        if ($lower === '' || in_array($lower, ['null', '<null>', '<nul>', 'nil', 'undefined', 'any'], true)) {
+            return true;
+        }
+        if (str_starts_with($lower, '<null') || str_contains($lower, '<null') || str_contains($lower, '<nul>')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function findCorruptTerminal(int $tenantId, int $userId, ?string $callsign): ?array
+    {
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return null;
+        }
+        $sql = 'SELECT * FROM atak_terminals
+                WHERE tenant_id = ?
+                  AND (
+                    terminal_uid IS NULL
+                    OR terminal_uid = \'\'
+                    OR LOWER(terminal_uid) IN (\'null\', \'<null>\', \'<nul>\', \'nil\')
+                    OR terminal_uid LIKE \'%<null%\'
+                    OR terminal_uid LIKE \'%<nul>%\'
+                  )';
+        $params = [$tenantId];
+        if ($userId > 0) {
+            $sql .= ' AND user_id = ?';
+            $params[] = $userId;
+        } elseif ($callsign !== null && $callsign !== '') {
+            $sql .= ' AND UPPER(TRIM(operator_callsign)) = UPPER(?)';
+            $params[] = $callsign;
+        } else {
+            return null;
+        }
+        $sql .= ' ORDER BY updated_at DESC, id DESC LIMIT 1';
+        $st = $this->pdo->prepare($sql);
+        $st->execute($params);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    private function repairTerminalIdentity(int $tenantId, int $terminalId, string $newUid): void
+    {
+        if ($terminalId < 1 || $newUid === '') {
+            return;
+        }
+        $this->pdo->prepare(
+            'UPDATE atak_terminals SET terminal_uid = ?, updated_at = UTC_TIMESTAMP() WHERE tenant_id = ? AND id = ?'
+        )->execute([$newUid, $tenantId, $terminalId]);
+
+        $newRef = $this->clip('OW-CERT-' . $newUid, 64);
+        $st = $this->pdo->prepare(
+            'SELECT id, certificate_ref FROM atak_certificates WHERE tenant_id = ? AND terminal_id = ?'
+        );
+        $st->execute([$tenantId, $terminalId]);
+        $upd = $this->pdo->prepare(
+            'UPDATE atak_certificates SET certificate_ref = ?, updated_at = UTC_TIMESTAMP() WHERE id = ?'
+        );
+        while ($cert = $st->fetch(PDO::FETCH_ASSOC)) {
+            $ref = (string) ($cert['certificate_ref'] ?? '');
+            if ($this->isCorruptIdentity($ref) || str_contains(strtolower($ref), '<null') || str_contains(strtolower($ref), '-null')) {
+                $upd->execute([$newRef, (int) $cert['id']]);
+            }
+        }
+    }
+
+    /**
+     * Répare toutes les identités terminal / certificat corrompues d’un tenant.
+     * @return int Nombre de terminaux corrigés
+     */
+    public function repairCorruptIdentitiesForTenant(int $tenantId): int
+    {
+        if (!$this->tablesReady() || $tenantId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->query(
+            'SELECT id, terminal_uid FROM atak_terminals WHERE tenant_id = ' . (int) $tenantId
+        );
+        if ($st === false) {
+            return 0;
+        }
+        $fixed = 0;
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $uid = (string) ($row['terminal_uid'] ?? '');
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $needsUid = $this->isCorruptIdentity($uid);
+            $needsCert = false;
+            $cst = $this->pdo->prepare(
+                'SELECT certificate_ref FROM atak_certificates WHERE tenant_id = ? AND terminal_id = ?'
+            );
+            $cst->execute([$tenantId, $id]);
+            while ($c = $cst->fetch(PDO::FETCH_ASSOC)) {
+                $ref = (string) ($c['certificate_ref'] ?? '');
+                if ($this->isCorruptIdentity($ref) || str_contains(strtolower($ref), '<null') || str_contains(strtolower($ref), '-null')) {
+                    $needsCert = true;
+                    break;
+                }
+            }
+            if (!$needsUid && !$needsCert) {
+                continue;
+            }
+            $newUid = $needsUid
+                ? ('OW-FIX-' . $id . '-' . strtoupper(bin2hex(random_bytes(3))))
+                : $this->sanitizeTerminalUid($uid);
+            if ($newUid === '') {
+                $newUid = 'OW-FIX-' . $id . '-' . strtoupper(bin2hex(random_bytes(3)));
+            }
+            $this->repairTerminalIdentity($tenantId, $id, $newUid);
+            $fixed++;
+        }
+
+        return $fixed;
     }
 
     private function nullableString(mixed $value, int $max): ?string

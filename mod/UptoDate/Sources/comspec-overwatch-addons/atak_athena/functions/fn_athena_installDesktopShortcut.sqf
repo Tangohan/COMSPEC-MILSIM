@@ -14,7 +14,7 @@ if (missionNamespace getVariable ["COMSPEC_Athena_desktopShortcutPFH", -1] >= 0)
 
 
 
-// [idcIcon, idcLabel, x2048, texture, tooltip, labelHtml, tab]
+// [idcIcon, idcLabel, x2048, texture, tooltip, labelHtml, tab, y2048?]
 
 private _shortcuts = [
 
@@ -250,13 +250,13 @@ COMSPEC_Athena_desktopShortcutPFH = [{
 
     {
 
-        _x params ["_idcIcon", "_idcLbl", "_xOff", "_tex", "_tip", "_lblHtml", "_tab"];
+        _x params ["_idcIcon", "_idcLbl", "_xOff", "_tex", "_tip", "_lblHtml", "_tab", ["_yOff", 25, [0]]];
 
 
 
         private _xPos = _phoneSizeX + ((_xOff / 2048) * (_phoneH * 3 / 4));
 
-        private _yPos = _phoneSizeY + ((25 / 2048) * _phoneH);
+        private _yPos = _phoneSizeY + ((_yOff / 2048) * _phoneH);
 
 
 

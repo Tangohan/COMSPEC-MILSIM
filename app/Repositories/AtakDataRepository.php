@@ -1169,6 +1169,29 @@ class AtakDataRepository
         return array_reverse($stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    /**
+     * Messages plus récents qu’un id (poll jeu / TOC → Athena inbox).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getChatMessagesAfter(int $tenantId, int $mapId, int $afterId, int $limit = 50): array
+    {
+        $afterId = max(0, $afterId);
+        $limit = max(1, min($limit, 200));
+        if ($afterId < 1) {
+            return $this->getChatMessages($tenantId, $mapId, $limit);
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM atak_chat_messages
+             WHERE tenant_id = ? AND map_id = ? AND id > ?
+             ORDER BY id ASC
+             LIMIT ?'
+        );
+        $stmt->execute([$tenantId, $mapId, $afterId, $limit]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function addChatMessage(int $tenantId, int $mapId, string $author, string $body): array
     {
         $this->pdo->prepare('INSERT INTO atak_chat_messages (tenant_id, map_id, author, body) VALUES (?, ?, ?, ?)')->execute([$tenantId, $mapId, $author, $body]);

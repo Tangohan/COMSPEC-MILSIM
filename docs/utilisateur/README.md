@@ -32,13 +32,14 @@ Les droits visibles à l’écran peuvent varier : un même écran peut être **
 9. [Événements, pointage, messages](evenements-pointage-messages.md) — calendrier, présence, messagerie interne.
 10. [Courrier officiel](courrier-officiel.md) — correspondance structurée (si activé pour votre communauté).
 11. [Équipement, modpacks, outils tactiques](equipement-modpacks-atak.md) — fiches matériel, packs de mods, ATAK / cartes.
-12. [Enrôlement et recrutement](enrolement-recrutement.md) — formulaires, statuts, suivi côté membre et côté staff.
-13. [Dossier opérateur](dossier-operateur.md) — vue synthèse admissibilité et qualifications.
-14. [Back-office organisation](back-office-organisation.md) — administration de la communauté (pour profils autorisés).
-15. [Mur & tableau opérationnel](tableau-operationnel.md) — consultation du mur, pilotage, posture, fiches, FRAGO, modèles.
-16. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
-17. [FAQ](faq.md) — questions courantes.
-18. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
+12. [Bibliothèque de marqueurs](bibliotheque-marqueurs.md) — légende visuelle des symboles carte (page interactive `/documentation/marqueurs`).
+13. [Enrôlement et recrutement](enrolement-recrutement.md) — formulaires, statuts, suivi côté membre et côté staff.
+14. [Dossier opérateur](dossier-operateur.md) — vue synthèse admissibilité et qualifications.
+15. [Back-office organisation](back-office-organisation.md) — administration de la communauté (pour profils autorisés).
+16. [Mur & tableau opérationnel](tableau-operationnel.md) — consultation du mur, pilotage, posture, fiches, FRAGO, modèles.
+17. [Recherche et raccourcis](recherche-et-raccourcis.md) — recherche portail, efficacité.
+18. [FAQ](faq.md) — questions courantes.
+19. [Journal des révisions du guide intégré](JOURNAL-GUIDE.md) — jalons du guide affiché sur le portail (équipe & traçabilité).
 
 ## Convention de lecture
 

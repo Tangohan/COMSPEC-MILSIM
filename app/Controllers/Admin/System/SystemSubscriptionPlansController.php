@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Services\Audit\AuditAction;
 use App\Services\Audit\AuditService;
+use App\Services\Billing\SubscriptionPlanFeaturesCatalog;
 
 /**
  * Gestion des paliers d’accès (table subscription_plans) — super-admin uniquement.
@@ -89,21 +90,29 @@ final class SystemSubscriptionPlansController
         }
         $sortOrder = (int) $request->input('sort_order', 0);
 
-        $featuresRaw = trim((string) $request->input('features_json', ''));
-        $limitsRaw = trim((string) $request->input('limits_json', ''));
-        $featuresJson = $this->normalizeJsonField($featuresRaw, 'Fonctionnalités (JSON)');
-        if ($featuresJson === false) {
-            return Response::redirect(url('admin/system/subscription-plans/' . $id . '/edit'));
+        $existingFeatures = [];
+        $rawExisting = (string) ($before['features_json'] ?? '');
+        if ($rawExisting !== '') {
+            $decoded = json_decode($rawExisting, true);
+            if (is_array($decoded)) {
+                $existingFeatures = $decoded;
+            }
         }
-        $limitsJson = $this->normalizeJsonField($limitsRaw, 'Quotas (JSON)');
+        $features = SubscriptionPlanFeaturesCatalog::buildFeaturesFromForm($request->all(), $existingFeatures);
+        $featuresJson = json_encode($features, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+        $limitsRaw = trim((string) $request->input('limits_json', ''));
+        $limitsJson = $this->normalizeJsonField($limitsRaw, 'Quotas avancés');
         if ($limitsJson === false) {
             return Response::redirect(url('admin/system/subscription-plans/' . $id . '/edit'));
         }
 
-        $stripeM = $this->nullableStripeId($request->input('stripe_price_id_monthly'));
-        $stripeY = $this->nullableStripeId($request->input('stripe_price_id_yearly'));
-        if ($stripeM === false || $stripeY === false) {
-            Session::flash('error', 'Les identifiants de prix Stripe ne peuvent dépasser 100 caractères.');
+        $stripeM = $this->nullableExternalId($request->input('stripe_price_id_monthly'));
+        $stripeY = $this->nullableExternalId($request->input('stripe_price_id_yearly'));
+        $paypalM = $this->nullableExternalId($request->input('paypal_plan_id_monthly'));
+        $paypalY = $this->nullableExternalId($request->input('paypal_plan_id_yearly'));
+        if ($stripeM === false || $stripeY === false || $paypalM === false || $paypalY === false) {
+            Session::flash('error', 'Les identifiants de paiement ne peuvent dépasser 100 caractères.');
 
             return Response::redirect(url('admin/system/subscription-plans/' . $id . '/edit'));
         }
@@ -115,6 +124,8 @@ final class SystemSubscriptionPlansController
             'limits_json' => $limitsJson,
             'stripe_price_id_monthly' => $stripeM,
             'stripe_price_id_yearly' => $stripeY,
+            'paypal_plan_id_monthly' => $paypalM,
+            'paypal_plan_id_yearly' => $paypalY,
         ];
         $this->plans->update($id, $payload);
 
@@ -154,6 +165,8 @@ final class SystemSubscriptionPlansController
             'limits_json' => (string) ($row['limits_json'] ?? ''),
             'stripe_price_id_monthly' => (string) ($row['stripe_price_id_monthly'] ?? ''),
             'stripe_price_id_yearly' => (string) ($row['stripe_price_id_yearly'] ?? ''),
+            'paypal_plan_id_monthly' => (string) ($row['paypal_plan_id_monthly'] ?? ''),
+            'paypal_plan_id_yearly' => (string) ($row['paypal_plan_id_yearly'] ?? ''),
         ];
     }
 
@@ -165,20 +178,20 @@ final class SystemSubscriptionPlansController
         }
         json_decode($raw, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            Session::flash('error', $label . ' : JSON invalide (' . json_last_error_msg() . ').');
+            Session::flash('error', $label . ' : format invalide.');
 
             return false;
         }
         $decoded = json_decode($raw, true);
         if (!is_array($decoded)) {
-            Session::flash('error', $label . ' : attendu un objet ou tableau JSON à la racine.');
+            Session::flash('error', $label . ' : structure invalide.');
 
             return false;
         }
 
         $enc = json_encode($decoded, JSON_UNESCAPED_UNICODE);
         if ($enc === false) {
-            Session::flash('error', $label . ' : impossible de sérialiser le JSON.');
+            Session::flash('error', $label . ' : impossible d’enregistrer.');
 
             return false;
         }
@@ -187,7 +200,7 @@ final class SystemSubscriptionPlansController
     }
 
     /** @return string|null|false */
-    private function nullableStripeId(mixed $v): string|null|false
+    private function nullableExternalId(mixed $v): string|null|false
     {
         $s = trim((string) $v);
         if ($s === '') {

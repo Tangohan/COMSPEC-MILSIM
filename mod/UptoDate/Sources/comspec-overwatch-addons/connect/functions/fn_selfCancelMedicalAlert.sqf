@@ -60,7 +60,17 @@ if (_prefix != "OK") exitWith {
 missionNamespace setVariable ["COMSPEC_lastMedicalAlertKind", "", false];
 if (!_silent) then {
     ["COMSPEC_Info", ["Alerte médicale annulée — vous avez signalé aller bien."]] call comspec_overwatch_connect_fnc_showNotification;
-    [format ["[Médical] %1 a annulé sa propre alerte (« je vais bien »)", _by], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [
+        "INFO",
+        "Medical",
+        format ["%1 a annulé sa propre alerte (« je vais bien »)", _by],
+        "medical"
+    ] call comspec_overwatch_connect_fnc_logAtakEvent;
 } else {
-    [format ["[Médical] %1 — alerte clôturée (rétablissement)", _by], "medical"] call comspec_overwatch_connect_fnc_appendLinkLog;
+    [
+        "INFO",
+        "Medical",
+        format ["%1 — alerte clôturée (rétablissement)", _by],
+        "medical"
+    ] call comspec_overwatch_connect_fnc_logAtakEvent;
 };

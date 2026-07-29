@@ -11,6 +11,8 @@ use App\Repositories\Courrier\CourrierDocumentNotificationRepository;
 use App\Repositories\Courrier\CourrierDocumentRepository;
 use App\Repositories\Courrier\DocumentPresetRepository;
 use App\Repositories\Courrier\DocumentTemplateRepository;
+use App\Services\Platform\FeatureGateService;
+use App\Support\PlanFeatureDenial;
 
 class CourrierDashboardController
 {
@@ -18,8 +20,10 @@ class CourrierDashboardController
         private CourrierDocumentRepository $documentRepository,
         private DocumentTemplateRepository $templateRepository,
         private DocumentPresetRepository $presetRepository,
-        private CourrierDocumentNotificationRepository $notificationRepository
+        private CourrierDocumentNotificationRepository $notificationRepository,
+        private ?FeatureGateService $featureGate = null,
     ) {
+        $this->featureGate ??= \App\Core\Container::get(FeatureGateService::class);
     }
 
     public function index(Request $request, array $params = []): Response
@@ -28,6 +32,9 @@ class CourrierDashboardController
         $userId = (int) (Session::get('user_id') ?? 0);
         if (!$tenantId) {
             return Response::redirect(url('login'));
+        }
+        if (!$this->featureGate->allows($tenantId, 'courrier')) {
+            return PlanFeatureDenial::upgradeView('courrier', 'Standard');
         }
 
         $draftCount = $this->documentRepository->countByStatus($tenantId, 'draft');

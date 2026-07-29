@@ -1,3 +1,14 @@
+COMSPEC Overwatch 1.4.8 — 29/07/2026
+
+Médical ACE / KAT, carte web, photos recon
+
+• Détection automatique ACE : inconscient, arrêt cardiaque (états transmissibles en roleplay via l’ATAK)
+• Effets roleplay sur photos (dégradation liaison / écran cassé côté web)
+• Outils carte web : traits, zones, périmètres, formulaire icône en liste déroulante
+• Photos recon : flou, commentaire, masquage, transfert SSE ; correctif flou en aperçu agrandi
+• Détections médicales auto retirées quand l’opérateur est hors liaison
+• Correctifs upload photos, marqueurs web, scroll page statut ATAK
+
 COMSPEC Overwatch 1.4.7 — 29/07/2026
 
 Correctif — icônes bureau ATAK et bouton Tester Sons

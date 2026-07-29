@@ -61,6 +61,22 @@ window.ATAKMapShapes = (function () {
     return L.latLng(applied[0], applied[1]);
   }
 
+  function centerOfCoords(coords) {
+    var pts = Array.isArray(coords) ? coords : [];
+    if (!pts.length) return null;
+    var sx = 0;
+    var sy = 0;
+    var n = 0;
+    pts.forEach(function (pair) {
+      if (!pair || pair.length < 2) return;
+      sx += Number(pair[0]) || 0;
+      sy += Number(pair[1]) || 0;
+      n += 1;
+    });
+    if (!n) return null;
+    return toLatLng([sx / n, sy / n]);
+  }
+
   function formatIntFr(n) {
     var s = String(Math.round(Math.abs(n)));
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -140,6 +156,7 @@ window.ATAKMapShapes = (function () {
     var kind = meta.kind || '';
     var type = String(s.type || '').toUpperCase();
     var obj = null;
+    var layers = [];
     var kindLabel = '';
     if (kind === 'search_zone') kindLabel = 'Zone de recherche';
     else if (kind === 'perimeter') kindLabel = 'Périmètre';
@@ -157,11 +174,22 @@ window.ATAKMapShapes = (function () {
       });
       if (latlngs.length >= 2) {
         if (type === 'POLYGON') {
-          obj = L.polygon(latlngs, {
+          var polyOpts = {
             color: color,
             weight: s.stroke || 2,
             fillOpacity: s.fill_opacity != null ? s.fill_opacity : 0.12
-          });
+          };
+          if (meta.fill_style === 'gradient') {
+            layers.push(L.polygon(latlngs, {
+              color: color,
+              weight: (s.stroke || 2) + 8,
+              opacity: 0.18,
+              fillColor: color,
+              fillOpacity: Math.max(0.04, (s.fill_opacity != null ? s.fill_opacity : 0.12) * 0.35),
+              className: 'atak-shape-gradient-halo'
+            }));
+          }
+          obj = L.polygon(latlngs, polyOpts);
         } else {
           obj = L.polyline(latlngs, { color: color, weight: s.stroke || 2, opacity: 0.95 });
         }
@@ -172,6 +200,17 @@ window.ATAKMapShapes = (function () {
       if (center && center.length >= 2) {
         var cll = toLatLng(center);
         if (cll) {
+          if (meta.fill_style === 'gradient') {
+            layers.push(L.circle(cll, {
+              radius: radius,
+              color: color,
+              fillColor: color,
+              fillOpacity: Math.max(0.04, (s.fill_opacity != null ? s.fill_opacity : 0.15) * 0.35),
+              opacity: 0.18,
+              weight: (s.stroke || 2) + 8,
+              className: 'atak-shape-gradient-halo'
+            }));
+          }
           obj = L.circle(cll, {
             radius: radius,
             color: color,
@@ -202,6 +241,28 @@ window.ATAKMapShapes = (function () {
     }
 
     if (!obj) return;
+    layers.push(obj);
+    var iconText = String(meta.icon_text || '').trim();
+    var imageUrl = String(meta.image_url || '').trim();
+    if ((type === 'CIRCLE' || type === 'POLYGON') && (iconText || imageUrl)) {
+      var centerLatLng = type === 'CIRCLE'
+        ? toLatLng(geom.center || [])
+        : centerOfCoords(geom.coordinates || geom.points || []);
+      if (centerLatLng) {
+        var centerIcon = L.divIcon({
+          className: 'atak-shape-center-icon',
+          html: imageUrl
+            ? '<span class="atak-shape-center-icon__image" style="background-image:url(\'' + escapeHtml(imageUrl) + '\')"></span>'
+            : '<span class="atak-shape-center-icon__text">' + escapeHtml(iconText) + '</span>',
+          iconSize: imageUrl ? [34, 34] : [26, 26],
+          iconAnchor: imageUrl ? [17, 17] : [13, 13]
+        });
+        layers.push(L.marker(centerLatLng, { icon: centerIcon }));
+      }
+    }
+    if (layers.length > 1) {
+      obj = L.featureGroup(layers);
+    }
     var displayLabel = label || kindLabel || 'Élément';
     var popup = '<strong>' + escapeHtml(displayLabel) + '</strong>';
     if (kindLabel && label && kindLabel !== label) {
@@ -212,6 +273,15 @@ window.ATAKMapShapes = (function () {
     }
     if (kind === 'comment' && label) {
       popup = '<strong>Commentaire</strong><br/>' + escapeHtml(label);
+    }
+    if (meta.comment) {
+      popup += '<br/><div class="atak-shape-popup__comment">' + escapeHtml(meta.comment) + '</div>';
+    }
+    if (imageUrl) {
+      popup += '<br/><div class="atak-shape-popup__image"><img src="' + escapeHtml(imageUrl) + '" alt="Illustration de zone" loading="lazy" /></div>';
+    }
+    if (iconText) {
+      popup += '<br/><div class="atak-shape-popup__icon">Icône : <strong>' + escapeHtml(iconText) + '</strong></div>';
     }
     var circleMetrics = (type === 'CIRCLE') ? circleShapeMetrics(s) : null;
     if (circleMetrics) {

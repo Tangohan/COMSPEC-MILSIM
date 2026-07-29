@@ -174,6 +174,10 @@ if (_packetLoss > 5 && {!isNull _ctrlPacketLoss}) then {
         _color, (_packetLoss toFixed 1)
     ];
     _ctrlPacketLoss ctrlShow true;
+    if (_packetLoss > 8 && {missionNamespace getVariable ["comspec_overwatch_roleplay_visual_effects", true]}) then {
+        private _pp = linearConversion [8, 45, _packetLoss, 0.22, 1, true];
+        [_pp, 2.5, false] call comspec_overwatch_connect_fnc_applyRoleplayPpEffects;
+    };
 } else {
     if (!isNull _ctrlPacketLoss) then {
         _ctrlPacketLoss ctrlShow false;

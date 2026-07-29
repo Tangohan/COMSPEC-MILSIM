@@ -75,9 +75,10 @@ private _ensureBdaReportApp = {
 // Les clichés ATAK passent par Arma_ScreenShot_Extension puis
 // Documents\Arma 3[- Other Profiles\<profil>]\Screenshots\ (souvent .png alors que BCE annonce .jpg).
 ["bce_took_screenshot", {
+    [] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
     _this spawn {
-        // Laisser l’extension finir d’écrire (PNG 10–15 Mo fréquents).
-        uiSleep 2.2;
+        // Laisser l’extension finir d’écrire ; ResolveLocalImagePath attend au plus ~640 ms côté COMSPECExtension.
+        uiSleep 0.5;
         private _path = "";
         private _name = "";
         if (_this isEqualType []) then {
@@ -91,7 +92,7 @@ private _ensureBdaReportApp = {
         };
         private _ok = [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
         if (!(_ok isEqualType true) || {!_ok}) then {
-            uiSleep 2.0;
+            uiSleep 0.8;
             _ok = [_path, _name, true] call comspec_overwatch_atak_athena_fnc_athena_bridgeIcemanPhoto;
         };
         if (!(_ok isEqualType true) || {!_ok}) then {
@@ -104,6 +105,7 @@ private _ensureBdaReportApp = {
 // Événements Quick Pictures / Photo Library Iceman (noms variables selon version)
 {
     [_x, {
+        [] call comspec_overwatch_connect_fnc_markBcePhotoCapture;
         _this spawn {
             uiSleep 0.85;
             private _path = "";

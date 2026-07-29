@@ -67,6 +67,11 @@
                 <label for="public_tags" class="block text-sm font-medium text-slate-700">Mots-clés affichés (un par ligne)</label>
                 <textarea id="public_tags" name="public_tags" rows="3" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm text-sm"></textarea>
             </div>
+            <?php
+            $unitRow = [];
+            $idPrefix = 'group-create';
+            require base_path('views/admin/organization/partials/unit_public_dates_fields.php');
+            ?>
         </div>
         <div class="flex gap-3 pt-4">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer</button>

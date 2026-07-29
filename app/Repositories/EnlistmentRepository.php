@@ -279,8 +279,57 @@ class EnlistmentRepository
             if (($data['form_channel'] ?? '') === 'discord') {
                 $this->updateDiscordColumns($id, $data);
             }
+            if (!empty($data['custom_answers']) && is_array($data['custom_answers'])) {
+                $this->updateCustomAnswersColumn($id, $data['custom_answers']);
+            }
+            if (!empty($data['auto_rejected'])) {
+                $this->markAutoRejected($id, isset($data['reviewer_comment']) ? (string) $data['reviewer_comment'] : null);
+            }
         }
         return $id;
+    }
+
+    /**
+     * @param list<array{question_id: string, label: string, widget: string, answer: string}>|array<string, mixed> $answers
+     */
+    private function updateCustomAnswersColumn(int $enlistmentId, array $answers): void
+    {
+        try {
+            $stmt = $this->pdo->prepare('UPDATE enlistments SET custom_answers_json = ? WHERE id = ?');
+            $stmt->execute([json_encode(array_values($answers), JSON_UNESCAPED_UNICODE), $enlistmentId]);
+        } catch (\Throwable) {
+            // Colonne absente si migration non exécutée
+        }
+    }
+
+    private function markAutoRejected(int $enlistmentId, ?string $reviewerComment): void
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                'UPDATE enlistments SET auto_rejected = 1, status = \'rejected\', reviewed_at = NOW(), reviewer_comment = COALESCE(?, reviewer_comment), updated_at = NOW() WHERE id = ?'
+            );
+            $stmt->execute([$reviewerComment !== null && $reviewerComment !== '' ? $reviewerComment : null, $enlistmentId]);
+        } catch (\Throwable) {
+            try {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE enlistments SET status = \'rejected\', reviewed_at = NOW(), reviewer_comment = COALESCE(?, reviewer_comment), updated_at = NOW() WHERE id = ?'
+                );
+                $stmt->execute([$reviewerComment !== null && $reviewerComment !== '' ? $reviewerComment : null, $enlistmentId]);
+            } catch (\Throwable) {
+            }
+        }
+    }
+
+    /**
+     * Première candidature encore « en cours » (statut submitted) pour ce compte sur le tenant.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findOngoingSubmittedForAccount(int $tenantId, int $userId, string $userEmail): ?array
+    {
+        $rows = $this->listPendingSubmittedForSubmitter($tenantId, $userId, $userEmail);
+
+        return $rows[0] ?? null;
     }
 
     /**

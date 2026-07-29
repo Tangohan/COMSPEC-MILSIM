@@ -34,6 +34,7 @@ use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakIntelViewService;
 use App\Services\Tactical\RoleplaySimulationService;
 use App\Support\AtakArmaWriteGuard;
+use App\Support\AtakOrderWaypoint;
 use App\Support\AtakGameSession;
 use App\Support\ChatMentionParser;
 use App\Support\GroupMessageParser;
@@ -1551,7 +1552,8 @@ class AtakApiController
 
         $networkStats = $this->roleplaySim->getNetworkStats($tenantId);
         $sensorStats = $this->roleplaySim->getSensorStats($tenantId);
-        $measuredLoss = $this->getMeasuredPacketLoss($tenantId);
+        $mapId = $this->mapId($request);
+        $measuredLoss = $this->getLatestLinkTelemetry($tenantId, $mapId);
         $roleplayCfg = ($this->tenantAtakConfigRepository ?? new TenantAtakConfigRepository())->getRoleplayConfig($tenantId);
 
         $zonesJson = '';
@@ -1611,43 +1613,77 @@ class AtakApiController
     }
 
     /**
-     * Récupère la mesure réelle de packet loss depuis les données des unités.
+     * Télémétrie liaison remontée par le mod (extra des unités BFT).
+     *
+     * @return array{
+     *   packet_loss_percent: float,
+     *   packets_sent: int,
+     *   packets_received: int,
+     *   latency_ms: ?int,
+     *   link_state: string,
+     *   unit_callsign: string,
+     *   measured_at: ?string
+     * }|null
      */
-    private function getMeasuredPacketLoss(int $tenantId): ?array
+    private function getLatestLinkTelemetry(int $tenantId, int $mapId = self::DEFAULT_MAP_ID): ?array
     {
-        $mapId = 1; // Par défaut
-        $units = $this->atak->getUnits($tenantId, $mapId);
-        
+        $units = $this->unitsForTransmission($tenantId, $mapId);
+
         $latestMeasurement = null;
         $latestTime = 0;
-        
+
         foreach ($units as $unit) {
-            if (!isset($unit['extra'])) {
+            if (!is_array($unit)) {
                 continue;
             }
-            
-            $extra = is_string($unit['extra']) ? json_decode($unit['extra'], true) : $unit['extra'];
+            $status = (string) ($unit['status'] ?? '');
+            if ($status !== 'linked' && $status !== 'delayed') {
+                continue;
+            }
+
+            $rawExtra = $unit['extra'] ?? null;
+            if ($rawExtra === null || $rawExtra === '') {
+                continue;
+            }
+
+            $extra = is_string($rawExtra) ? json_decode($rawExtra, true) : $rawExtra;
             if (!is_array($extra)) {
                 continue;
             }
-            
-            // Chercher les stats de packet loss
-            if (isset($extra['packet_loss']) && isset($extra['updated_at'])) {
-                $updateTime = strtotime($unit['updated_at'] ?? '');
-                if ($updateTime > $latestTime) {
-                    $latestTime = $updateTime;
-                    $latestMeasurement = [
-                        'packet_loss_percent' => (float) ($extra['packet_loss'] ?? 0),
-                        'packets_sent' => (int) ($extra['packets_sent'] ?? 0),
-                        'packets_received' => (int) ($extra['packets_received'] ?? 0),
-                        'unit_callsign' => $unit['call_sign'] ?? 'Unknown',
-                        'measured_at' => $unit['updated_at'] ?? null,
-                    ];
-                }
+
+            $hasTelemetry = array_key_exists('packet_loss', $extra)
+                || array_key_exists('link_state', $extra)
+                || array_key_exists('latency_ms', $extra);
+            if (!$hasTelemetry) {
+                continue;
             }
+
+            $updateTime = strtotime((string) ($unit['updated_at'] ?? '')) ?: 0;
+            if ($updateTime <= $latestTime) {
+                continue;
+            }
+
+            $latestTime = $updateTime;
+            $latestMeasurement = [
+                'packet_loss_percent' => (float) ($extra['packet_loss'] ?? 0),
+                'packets_sent' => (int) ($extra['packets_sent'] ?? 0),
+                'packets_received' => (int) ($extra['packets_received'] ?? 0),
+                'latency_ms' => isset($extra['latency_ms']) ? (int) $extra['latency_ms'] : null,
+                'link_state' => strtolower(trim((string) ($extra['link_state'] ?? $status))),
+                'unit_callsign' => (string) ($unit['call_sign'] ?? 'Unknown'),
+                'measured_at' => $unit['updated_at'] ?? null,
+            ];
         }
-        
+
         return $latestMeasurement;
+    }
+
+    /**
+     * @deprecated Utiliser getLatestLinkTelemetry — conservé pour compatibilité interne.
+     */
+    private function getMeasuredPacketLoss(int $tenantId, int $mapId = self::DEFAULT_MAP_ID): ?array
+    {
+        return $this->getLatestLinkTelemetry($tenantId, $mapId);
     }
 
     /**
@@ -2356,13 +2392,33 @@ class AtakApiController
         $row = $this->atak->addChatMessage($tenantId, $mapId, $callSign, $msg);
         $parsed = TacticalAlertParser::enrichChatRow(is_array($row) ? $row : []);
         $summary = is_array($parsed) ? (string) ($parsed['summary'] ?? 'SALUTE') : 'SALUTE';
+        $activityMeta = [
+            'kind' => 'salute',
+            'kind_label' => 'Compte rendu SALUTE',
+            'grid' => $grid,
+            'summary' => $summary,
+        ];
+        if (is_array($parsed)) {
+            if (!empty($parsed['salute']) && is_array($parsed['salute'])) {
+                $activityMeta['salute'] = $parsed['salute'];
+            }
+            if (isset($parsed['pos_x'])) {
+                $activityMeta['pos_x'] = $parsed['pos_x'];
+            }
+            if (isset($parsed['pos_y'])) {
+                $activityMeta['pos_y'] = $parsed['pos_y'];
+            }
+        }
+        if (is_array($row) && !empty($row['id'])) {
+            $activityMeta['chat_id'] = (int) $row['id'];
+        }
         $this->activityLog->record(
             $tenantId,
             $mapId,
             AtakActivityLogService::TYPE_TACTICAL_ALERT,
             'SALUTE — ' . $summary,
             $callSign,
-            ['kind' => 'salute']
+            $activityMeta
         );
         if (is_array($row) && is_array($parsed)) {
             $row['tactical'] = $parsed;
@@ -2993,6 +3049,7 @@ class AtakApiController
             }
         }
         $transmissions = $this->buildTransmissionSources($tenantId, $mapId, $ago, $units);
+        $linkTelemetry = $this->getLatestLinkTelemetry($tenantId, $mapId);
 
         return Response::json([
             'sockets' => 0,
@@ -3001,6 +3058,8 @@ class AtakApiController
             'unitsCount' => $unitsCount,
             'activeCallSigns' => $activeCallSigns,
             'transmissions' => $transmissions,
+            'link_telemetry' => $linkTelemetry,
+            'measured_packet_loss' => $linkTelemetry,
         ]);
     }
 
@@ -4126,6 +4185,137 @@ class AtakApiController
     }
 
     /**
+     * Demande ciblée : photo casque, photo HD ou flux d’aperçus rapides (pas de RTMP).
+     * Body : { "mode": "snap" | "snap_hd" | "stream" }
+     */
+    public function unitsRequestHelmetMedia(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        if (!$this->orderRepository || !$this->orderRepository->tablesReady()) {
+            return Response::json([
+                'error' => 'not_migrated',
+                'message' => 'Les demandes de vue casque ne sont pas encore disponibles sur ce serveur.',
+            ], 503);
+        }
+        if (!$this->canIssueOrdersFromWeb()) {
+            return Response::json([
+                'error' => 'forbidden',
+                'message' => 'Connectez-vous au portail pour demander une vue casque.',
+            ], 403);
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+        $unit = $this->atak->getUnitById($r, $id);
+        if ($unit === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Contact introuvable.'], 404);
+        }
+
+        $callSign = trim((string) ($unit['call_sign'] ?? ''));
+        if ($callSign === '') {
+            return Response::json([
+                'error' => 'no_callsign',
+                'message' => 'Ce contact n’a pas d’indicatif — impossible de cibler le terminal.',
+            ], 400);
+        }
+
+        $body = $this->jsonBody($request);
+        $mode = strtolower(trim((string) ($body['mode'] ?? $body['quality'] ?? 'snap')));
+        [$orderType, $typeLabel, $payload, $activityLabel, $userMessage] = match ($mode) {
+            'snap_hd', 'hd' => [
+                'HELMET_SNAP_HD',
+                'Photo casque HD',
+                'Demande de photo casque haute définition depuis Athena',
+                'Caméra — photo HD — ',
+                'Demande de photo casque HD envoyée vers ',
+            ],
+            'stream', 'video', 'flux' => [
+                'HELMET_STREAM',
+                'Flux casque (aperçus rapides)',
+                'Demande de flux casque (~3 min, aperçus toutes les ~5 s)',
+                'Caméra — flux casque — ',
+                'Demande de flux casque envoyée vers ',
+            ],
+            default => [
+                'HELMET_SNAP',
+                'Photo casque',
+                'Demande de photo casque depuis Athena',
+                'Caméra — photo — ',
+                'Demande de photo casque envoyée vers ',
+            ],
+        };
+
+        $mapId = (int) ($unit['map_id'] ?? $this->mapId($request, true));
+        if ($mapId < 1) {
+            $mapId = self::DEFAULT_MAP_ID;
+        }
+
+        $user = $this->sessionUserBrief();
+        $issuer = '';
+        if ($user) {
+            $issuer = (string) ($user['callsign'] ?: $user['displayName'] ?: '');
+        }
+        if ($issuer === '') {
+            $issuer = 'État-major';
+        }
+
+        $externalId = 'CAM-W-' . bin2hex(random_bytes(5));
+        $row = $this->orderRepository->upsertByExternalId($r, $mapId, [
+            'external_id' => $externalId,
+            'parent_external_id' => '',
+            'order_type' => $orderType,
+            'type_label' => $typeLabel,
+            'target' => $callSign,
+            'target_type' => 'solo',
+            'target_ref' => $callSign,
+            'target_label' => $callSign,
+            'payload' => $payload,
+            'priority' => 'IMPORTANT',
+            'issuer' => $issuer,
+            'issuer_user_id' => $user['userId'] ?? null,
+            'status' => 'PENDING',
+            'source' => 'web',
+            'radio_sim' => false,
+            'note' => 'Demande caméra casque (pas un ordre C2)',
+        ]);
+        if (!$row) {
+            return Response::json([
+                'error' => 'store_failed',
+                'message' => 'Impossible d’envoyer la demande.',
+            ], 500);
+        }
+
+        $this->activityLog?->record(
+            $r,
+            $mapId,
+            AtakActivityLogService::TYPE_ORDER,
+            $activityLabel . $callSign,
+            $issuer,
+            [
+                'unit_id' => $id,
+                'call_sign' => $callSign,
+                'order_type' => $orderType,
+                'signal' => 'helmet_media',
+                'mode' => $mode,
+                'source' => 'web',
+            ]
+        );
+
+        return Response::json([
+            'ok' => true,
+            'message' => $userMessage . $callSign . ' — le terminal capture et transmet.',
+            'signal' => 'helmet_media',
+            'mode' => $mode,
+            'order' => $this->serializeOrder($row),
+        ], 201);
+    }
+
+    /**
      * Journalise les déconnexions détectées par expiration du heartbeat (TTL).
      */
     private function logStaleUnitDisconnects(int $tenantId, int $mapId): void
@@ -4642,6 +4832,7 @@ class AtakApiController
         }
         $mapId = $this->mapId($request);
         $limit = (int) ($request->query('limit') ?: 40);
+        $this->logStaleUnitDisconnects($tenantId, $mapId);
         $alerts = $this->atak->getMedicalAlertsFromChat($tenantId, $mapId, min($limit, 100));
         $alerts = $this->enrichMedicalAlertsWithTriage($tenantId, $alerts);
         $alerts = $this->reconcileMedicalAlertsWithUnitHealth($tenantId, $mapId, $alerts);
@@ -6645,7 +6836,18 @@ class AtakApiController
             }
         }
 
-        $row = $this->orderRepository->updateStatus($r, $orderMapId, $externalId, $normalized, $by, $note);
+        $row = null;
+        try {
+            $row = $this->orderRepository->updateStatus($r, $orderMapId, $externalId, $normalized, $by, $note);
+        } catch (\InvalidArgumentException $e) {
+            if ($e->getMessage() === 'invalid_transition') {
+                return Response::json([
+                    'error' => 'invalid_transition',
+                    'message' => 'Confirmez d’abord la réception de l’ordre avant de le passer en cours.',
+                ], 409);
+            }
+            throw $e;
+        }
         if (!$row) {
             return Response::json([
                 'error' => 'update_failed',
@@ -6923,7 +7125,10 @@ class AtakApiController
 
         $isCancelled = strtoupper($status) === 'CANCELLED';
 
-        return [
+        $rawPayload = (string) ($row['payload'] ?? '');
+        $waypointMeta = AtakOrderWaypoint::parse($rawPayload);
+
+        $result = [
             'id' => (string) ($row['external_id'] ?? ''),
             'db_id' => (int) ($row['id'] ?? 0),
             'parent_id' => (string) ($row['parent_external_id'] ?? ''),
@@ -6934,7 +7139,10 @@ class AtakApiController
             'target_type_label' => $this->orderTargetTypeLabelFr($targetType),
             'target_ref' => (string) ($row['target_ref'] ?? ''),
             'target_label' => $targetLabel,
-            'payload' => (string) ($row['payload'] ?? ''),
+            'payload' => $rawPayload,
+            'payload_display' => $waypointMeta !== null
+                ? AtakOrderWaypoint::displayPayload($rawPayload)
+                : $rawPayload,
             'priority' => $priority,
             'priority_label' => $this->orderPriorityLabelFr($priority),
             'issuer' => (string) ($row['issuer'] ?? ''),
@@ -6965,6 +7173,20 @@ class AtakApiController
             'created_at' => (string) ($row['created_at'] ?? ''),
             'updated_at' => (string) ($row['updated_at'] ?? ''),
         ];
+
+        if ($waypointMeta !== null) {
+            $result['waypoint'] = [
+                'pos_x' => $waypointMeta['pos_x'],
+                'pos_y' => $waypointMeta['pos_y'],
+                'grid_reference' => $waypointMeta['grid_reference'],
+                'eta_min' => $waypointMeta['eta_min'],
+                'distance_m' => $waypointMeta['distance_m'],
+                'speed_kph' => $waypointMeta['speed_kph'],
+                'label' => $waypointMeta['label'],
+            ];
+        }
+
+        return $result;
     }
 
     private function orderTypeLabelFr(string $type, string $customLabel = ''): string
@@ -6980,6 +7202,9 @@ class AtakApiController
             'FRAGO' => 'Ordre fragmentaire',
             'VIBRATE' => 'Faire vibrer le terminal',
             'NOTIFY' => 'Notification terminal',
+            'HELMET_SNAP' => 'Photo casque',
+            'HELMET_SNAP_HD' => 'Photo casque HD',
+            'HELMET_STREAM' => 'Flux casque',
             default => null,
         };
         if ($builtin !== null) {
@@ -7539,13 +7764,6 @@ class AtakApiController
 
             return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
         }
-        $maxBytes = 12 * 1024 * 1024;
-        if (!empty($_FILES['photo']['size']) && (int) $_FILES['photo']['size'] > $maxBytes) {
-            return Response::json([
-                'error' => 'file_too_large',
-                'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
-            ], 413);
-        }
         $dir = dirname(__DIR__, 2) . '/../public/uploads/intel';
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
@@ -7856,13 +8074,6 @@ class AtakApiController
 
             return Response::json(['error' => 'upload_failed', 'message' => $msg], 400);
         }
-        $maxBytes = 12 * 1024 * 1024;
-        if (!empty($file['size']) && (int) $file['size'] > $maxBytes) {
-            return Response::json([
-                'error' => 'file_too_large',
-                'message' => 'La photo est trop lourde pour être transmise. Essayez une capture plus légère.',
-            ], 413);
-        }
         $dir = dirname(__DIR__, 2) . '/../public/uploads/recon';
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
@@ -7895,6 +8106,8 @@ class AtakApiController
             'side' => $_POST['side'] ?? 'WEST',
             'mission_id' => $_POST['mission_id'] ?? $_POST['missionId'] ?? null,
             'caption' => $_POST['caption'] ?? null,
+            'fx_profile' => isset($_POST['fx_profile']) ? trim((string) $_POST['fx_profile']) : null,
+            'fx_intensity' => isset($_POST['fx_intensity']) && is_numeric($_POST['fx_intensity']) ? round((float) $_POST['fx_intensity'], 2) : null,
             'pos_x' => isset($_POST['pos_x']) ? (float) $_POST['pos_x'] : null,
             'pos_y' => isset($_POST['pos_y']) ? (float) $_POST['pos_y'] : null,
             'pos_z' => isset($_POST['pos_z']) ? (float) $_POST['pos_z'] : null,
@@ -7934,6 +8147,147 @@ class AtakApiController
         return Response::json($row);
     }
 
+    public function reconImagesSseCases(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+
+        $access = new \App\Services\Sse\SseAccessCodeService();
+        if (!$access->hasActiveClearance() || $access->tenantId() !== $tenantId) {
+            return Response::json([
+                'error' => 'sse_clearance_required',
+                'message' => 'Ouvrez d’abord le portail SSE pour choisir un dossier de renseignement.',
+            ], 403);
+        }
+
+        $cases = (new \App\Repositories\SseCaseRepository())->listForTenant($tenantId, $access->caseScope(), []);
+        $out = array_map(static function (array $row): array {
+            return [
+                'id' => (int) ($row['id'] ?? 0),
+                'reference_code' => (string) ($row['reference_code'] ?? ''),
+                'title' => (string) ($row['title'] ?? ''),
+                'classification_label' => (string) ($row['classification_label'] ?? ''),
+                'status_label' => (string) ($row['status_label'] ?? ''),
+            ];
+        }, $cases);
+
+        return Response::json(['cases' => $out, 'count' => count($out)]);
+    }
+
+    public function reconImagesOps(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        if ($resp = $this->requireReconOperatorSession($tenantId)) {
+            return $resp;
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $row = $this->reconRepo->get($tenantId, $id);
+        if ($row === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Photo introuvable.'], 404);
+        }
+
+        $body = $this->jsonBody($request);
+        $action = strtolower(trim((string) ($body['action'] ?? '')));
+        if ($action === '') {
+            return Response::json(['error' => 'action_required', 'message' => 'Action photo manquante.'], 422);
+        }
+
+        $updated = null;
+        $message = 'Action appliquée.';
+
+        if ($action === 'comment') {
+            $comment = trim((string) ($body['comment'] ?? ''));
+            $updated = $this->reconRepo->updateOps($tenantId, $id, ['operator_comment' => $comment]);
+            $message = $comment !== '' ? 'Commentaire enregistré.' : 'Commentaire retiré.';
+        } elseif ($action === 'blur') {
+            $blur = !empty($body['blurred']);
+            $updated = $this->reconRepo->updateOps($tenantId, $id, ['is_blurred' => $blur]);
+            $message = $blur ? 'Flou activé.' : 'Flou retiré.';
+        } elseif ($action === 'delete') {
+            $updated = $this->reconRepo->updateOps($tenantId, $id, ['deleted_at' => date('Y-m-d H:i:s')]);
+            $message = 'Photo supprimée du panneau tactique.';
+        } elseif ($action === 'sse_transfer') {
+            $caseId = (int) ($body['case_id'] ?? 0);
+            if ($caseId < 1) {
+                return Response::json(['error' => 'case_required', 'message' => 'Choisissez un dossier SSE.'], 422);
+            }
+            $access = new \App\Services\Sse\SseAccessCodeService();
+            if (!$access->hasActiveClearance() || $access->tenantId() !== $tenantId) {
+                return Response::json([
+                    'error' => 'sse_clearance_required',
+                    'message' => 'Ouvrez d’abord le portail SSE pour transférer une photo classifiée.',
+                ], 403);
+            }
+            $scope = $access->caseScope();
+            if ($scope !== null && !in_array($caseId, $scope, true)) {
+                return Response::json(['error' => 'case_forbidden', 'message' => 'Ce dossier SSE n’est pas accessible dans votre session.'], 403);
+            }
+            $caseRepo = new \App\Repositories\SseCaseRepository();
+            $case = $caseRepo->findById($caseId, $tenantId);
+            if ($case === null) {
+                return Response::json(['error' => 'case_not_found', 'message' => 'Dossier SSE introuvable.'], 404);
+            }
+            $srcRel = trim((string) ($row['image_path'] ?? ''));
+            $srcAbs = base_path('public/uploads/recon/' . basename($srcRel));
+            if (!is_file($srcAbs)) {
+                return Response::json(['error' => 'missing_file', 'message' => 'Le fichier source est introuvable sur le serveur.'], 404);
+            }
+            $destDir = base_path('public/uploads/sse/evidence');
+            if (!is_dir($destDir) && !@mkdir($destDir, 0755, true) && !is_dir($destDir)) {
+                return Response::json(['error' => 'storage', 'message' => 'Impossible de préparer l’archive SSE.'], 500);
+            }
+            $ext = pathinfo($srcAbs, PATHINFO_EXTENSION) ?: 'jpg';
+            $destName = sprintf('recon_%d_%d.%s', $id, time(), strtolower((string) preg_replace('/[^a-z0-9]/i', '', $ext)));
+            $destAbs = $destDir . DIRECTORY_SEPARATOR . $destName;
+            if (!@copy($srcAbs, $destAbs)) {
+                return Response::json(['error' => 'copy_failed', 'message' => 'Impossible de copier la photo vers l’espace SSE.'], 500);
+            }
+            $captionParts = [];
+            $captionBase = trim((string) ($row['caption'] ?? ''));
+            if ($captionBase !== '') {
+                $captionParts[] = $captionBase;
+            }
+            $comment = trim((string) ($row['operator_comment'] ?? ''));
+            if ($comment !== '') {
+                $captionParts[] = 'Commentaire: ' . $comment;
+            }
+            $evidenceId = $caseRepo->addEvidence($caseId, $tenantId, [
+                'label' => 'Photo terrain Athena',
+                'caption' => $captionParts !== [] ? implode("\n", $captionParts) : null,
+                'image_path' => 'uploads/sse/evidence/' . $destName,
+                'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Opérateur'),
+            ]);
+            $updated = $this->reconRepo->updateOps($tenantId, $id, [
+                'sse_case_id' => $caseId,
+                'sse_evidence_id' => $evidenceId,
+                'sse_transferred_at' => date('Y-m-d H:i:s'),
+            ]);
+            $message = 'Photo transférée dans le dossier SSE.';
+        } else {
+            return Response::json(['error' => 'unknown_action', 'message' => 'Action non prise en charge.'], 422);
+        }
+
+        if ($updated === null) {
+            return Response::json(['error' => 'update_failed', 'message' => 'Impossible de mettre à jour la photo.'], 500);
+        }
+
+        $updated['url'] = '/uploads/recon/' . basename((string) ($updated['image_path'] ?? ''));
+        $updated['device_label'] = $this->reconDeviceLabel((string) ($updated['device_type'] ?? 'CTAB'));
+
+        return Response::json(['ok' => true, 'message' => $message, 'photo' => $updated]);
+    }
+
     public function reconImagesLinkCas(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);
@@ -7952,6 +8306,21 @@ class AtakApiController
             return Response::json(['error' => 'Not found'], 404);
         }
         return Response::json($row);
+    }
+
+    private function requireReconOperatorSession(int $tenantId): ?Response
+    {
+        Session::start();
+        $userId = (int) (Session::get('user_id') ?? 0);
+        $sessionTenantId = (int) (Session::get('tenant_id') ?? 0);
+        if ($userId < 1 || $sessionTenantId !== $tenantId) {
+            return Response::json([
+                'error' => 'member_session_required',
+                'message' => 'Connectez-vous avec un compte de la communauté pour gérer les photos reçues.',
+            ], 403);
+        }
+
+        return null;
     }
 
     // --- Map shapes ---
@@ -8219,12 +8588,61 @@ class AtakApiController
 
         $reportId = $repo->create($data);
         
+        $activityMeta = $this->buildActivityMeta(
+            $tenantId,
+            $mapId,
+            $body,
+            is_array($actor) ? $actor : null,
+            (string) ($data['submitter_callsign'] ?? '')
+        );
+        $activityMeta['report_type'] = (string) ($data['report_type'] ?? 'OTHER');
+        if (!empty($reportNumber)) {
+            $activityMeta['report_number'] = (string) $reportNumber;
+        }
+        if (!empty($data['priority'])) {
+            $activityMeta['priority'] = (string) $data['priority'];
+        }
+        if (!empty($data['classification'])) {
+            $activityMeta['classification'] = (string) $data['classification'];
+        }
+        if (!empty($data['summary'])) {
+            $activityMeta['summary'] = (string) $data['summary'];
+        }
+        if (!empty($data['details'])) {
+            $activityMeta['details'] = (string) $data['details'];
+        }
+        if (!empty($data['remarks'])) {
+            $activityMeta['remarks'] = (string) $data['remarks'];
+        }
+        if (!empty($data['grid_reference'])) {
+            $activityMeta['grid_reference'] = (string) $data['grid_reference'];
+        }
+        if (!empty($data['location_description'])) {
+            $activityMeta['location_description'] = (string) $data['location_description'];
+        }
+        if (!empty($data['dtg'])) {
+            $activityMeta['dtg'] = (string) $data['dtg'];
+        }
+        if (!empty($data['event_timestamp'])) {
+            $activityMeta['event_timestamp'] = (string) $data['event_timestamp'];
+        }
+        if (!empty($data['structured_data']) && is_array($data['structured_data'])) {
+            foreach ($data['structured_data'] as $fieldKey => $fieldValue) {
+                if (is_array($fieldValue)) {
+                    continue;
+                }
+                $safeKey = preg_replace('/[^a-z0-9_]+/i', '_', (string) $fieldKey) ?: 'field';
+                $activityMeta['report_' . strtolower($safeKey)] = (string) $fieldValue;
+            }
+        }
+
         $this->activityLog->record(
             $tenantId,
             $mapId,
             'TACTICAL_REPORT',
             sprintf('Rapport %s soumis : %s', $data['report_type'], $data['summary'] ?? $reportNumber),
-            $data['submitter_callsign'] ?? 'Unknown'
+            $data['submitter_callsign'] ?? 'Unknown',
+            $activityMeta
         );
 
         $report = $repo->findById($reportId);

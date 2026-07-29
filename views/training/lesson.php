@@ -44,9 +44,10 @@ $moduleObjectives = $currentModule && function_exists('training_lms_learning_obj
 $diffKey = trim((string) ($lesson['difficulty'] ?? ''));
 $diffLabel = $diffKey !== '' && isset($levelLabels[$diffKey]) ? $levelLabels[$diffKey] : '';
 $lessonSummary = trim((string) ($lesson['summary'] ?? ''));
-$lessonTypeLabel = function_exists('training_lesson_type_labels_fr')
-    ? (training_lesson_type_labels_fr()[$lessonType] ?? $lessonType)
-    : $lessonType;
+$learnerTypeLabels = function_exists('training_lesson_type_labels_learner_fr')
+    ? training_lesson_type_labels_learner_fr()
+    : (function_exists('training_lesson_type_labels_fr') ? training_lesson_type_labels_fr() : []);
+$lessonTypeLabel = $learnerTypeLabels[$lessonType] ?? 'Leçon';
 $csrf = \App\Core\Csrf::field();
 $csrfToken = \App\Core\Csrf::token();
 $theme = function_exists('training_lms_parse_theme') ? training_lms_parse_theme((string) ($course['theme_json'] ?? '')) : [];
@@ -190,6 +191,8 @@ if (!$lessonAlreadyCompleted) {
 }
 
 $lmsExtraHead = '';
+$lmsExtraHead .= '<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">' . "\n";
+$lmsExtraHead .= '<link href="' . htmlspecialchars($base) . '/assets/css/training-parcours-deck.css" rel="stylesheet">' . "\n";
 // Le lecteur « scène » n'utilise pas Swiper : ne pas charger la librairie inutilement.
 $needsSwiper = in_array($lessonType, ['canvas', 'slideshow'], true)
     && !($useStagePlayer && $lessonType === 'slideshow');
@@ -204,6 +207,8 @@ if ($needsSwiper) {
 if (($lesson['lesson_type'] ?? '') === 'canvas') {
     $lmsExtraHead .= '<link href="' . htmlspecialchars($base) . '/assets/css/training_canvas.css" rel="stylesheet">' . "\n";
 }
+$isCanvasLesson = $lessonType === 'canvas' && $canvasDeck && !empty($canvasDeck['slides']);
+$isReadingLesson = in_array($lessonType, ['richtext', 'checklist'], true);
 if (in_array($lessonType, ['video', 'video_integrated', 'audio'], true)) {
     $lmsExtraHead .= '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">' . "\n";
 }
@@ -219,7 +224,7 @@ $headHtml = ob_get_clean();
 <head>
 <?= $headHtml ?>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen">
+<body class="lms-deck-page bg-slate-100 text-slate-900 min-h-screen">
     <div class="lms-grain"></div>
     <div class="relative z-10 lms-course-shell flex min-h-screen min-w-0 flex-col lg:flex-row">
         <?php
@@ -253,234 +258,107 @@ $headHtml = ob_get_clean();
                 </div>
             </header>
 
-            <main class="section lms-lesson-main flex-1 min-w-0 overflow-x-hidden py-4 px-3 sm:px-5 lg:px-6 pb-24">
-                <?php
-                $seqRibbonSteps = function_exists('training_lms_build_guided_sequence')
-                    ? training_lms_build_guided_sequence(is_array($course) ? $course : [])
-                    : [];
-                $seqRibbonPos = function_exists('training_lms_sequence_position')
-                    ? training_lms_sequence_position($seqRibbonSteps, 'lesson', $currentLessonId, null)
-                    : null;
-                $seqRibbonCurrent = is_array($seqRibbonPos['current'] ?? null) ? $seqRibbonPos['current'] : null;
-                $seqRibbonNext = is_array($seqRibbonPos['next'] ?? null) ? $seqRibbonPos['next'] : null;
-                $seqRibbonCurrentLabel = function_exists('training_lms_sequence_step_human_label')
-                    ? training_lms_sequence_step_human_label($seqRibbonCurrent)
-                    : (string) ($lesson['title'] ?? '');
-                $seqRibbonNextLabel = function_exists('training_lms_sequence_step_human_label')
-                    ? training_lms_sequence_step_human_label($seqRibbonNext)
-                    : $nextStepHumanLabel;
-                if ($seqRibbonCurrentLabel !== '' || $seqRibbonNextLabel !== ''):
-                ?>
-                <div class="lms-seq-ribbon mb-3">
-                    <div>
-                        <span class="lms-seq-ribbon__k">Étape actuelle<?= isset($seqRibbonPos['index']) ? ' · ' . ((int) $seqRibbonPos['index'] + 1) . '/' . (int) ($seqRibbonPos['total'] ?? 0) : '' ?></span>
-                        <span class="lms-seq-ribbon__v"><?= htmlspecialchars($seqRibbonCurrentLabel !== '' ? $seqRibbonCurrentLabel : (string) ($lesson['title'] ?? '')) ?></span>
-                        <?php if (!empty($seqRibbonCurrent['phase'])): ?>
-                        <span class="mt-0.5 block text-[11px] text-slate-500"><?= htmlspecialchars((string) $seqRibbonCurrent['phase']) ?></span>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($seqRibbonNextLabel !== ''): ?>
-                    <div class="lms-seq-ribbon__next">
-                        <span class="lms-seq-ribbon__k">Ensuite</span>
-                        <span class="lms-seq-ribbon__v"><?= htmlspecialchars($seqRibbonNextLabel) ?></span>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-                <?php if ($lessonType === 'canvas' && $canvasDeck && !empty($canvasDeck['slides'])): ?>
-                <div class="lms-lesson-stage space-y-4">
-                    <?php require base_path('views/training/partials/lms_canvas_mission_hero.php'); ?>
-                    <?php if ($moduleLessonStep !== null && (int) $moduleLessonStep['total'] > 0): ?>
-                    <?php
-                    $mcur = (int) $moduleLessonStep['current'];
-                    $mtot = (int) $moduleLessonStep['total'];
-                    $mPct = $mtot > 0 ? (int) round(100 * $mcur / $mtot) : 0;
-                    ?>
-                    <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                            <p class="lms-canvas-label">Progression dans le module</p>
-                            <p class="text-sm font-bold text-slate-900">Leçon <?= $mcur ?> sur <?= $mtot ?></p>
-                        </div>
-                        <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full rounded-full bg-emerald-500 transition-all duration-300" style="width: <?= $mPct ?>%"></div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    <div class="min-w-0 space-y-3">
-                        <?php if ($lessonStep): ?>
-                        <p class="text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?> sur l’ensemble du parcours</p>
-                        <?php endif; ?>
-                        <section class="mb-0">
-                            <p class="lms-lesson-content-eyebrow mb-2">Parcours interactif</p>
-                            <article class="module-panel p-4 sm:p-5 lg:p-6 lms-lesson-content-panel">
-                <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
-                <?php
-                $deck = $canvasDeck;
-                require base_path('views/training/partials/canvas_lesson_player.php');
-                ?>
-                <?php
-                require base_path('views/training/partials/lms_lesson_common_footer.php');
-                ?>
-                            </article>
-                        </section>
-                    </div>
-                </div>
-                <?php else: ?>
-                <div class="lms-lesson-stage">
-                    <?php if ($useStagePlayer && $lessonType === 'slideshow'): ?>
-                    <?php /* Mode « scène » : hero sombre + progression du module, à la place du fil d'ariane. */ ?>
-                    <?php require base_path('views/training/partials/lesson_stage_hero.php'); ?>
-                    <?php else: ?>
-                    <?php if ($currentModule): ?>
-                    <p class="lms-module-crumb mb-1"><?= htmlspecialchars((string) ($currentModule['title'] ?? '')) ?></p>
-                    <?php if (!empty($currentModule['subtitle'])): ?>
-                    <p class="mb-2 text-sm text-slate-600"><?= htmlspecialchars((string) $currentModule['subtitle']) ?></p>
-                    <?php endif; ?>
-                    <?php else: ?>
-                    <div class="kicker">Leçon</div>
-                    <?php endif; ?>
-                    <?php if ($lessonStep): ?>
-                    <p class="mb-2 text-sm font-medium text-slate-600">Étape <?= (int) $lessonStep['current'] ?> / <?= (int) $lessonStep['total'] ?></p>
-                    <?php endif; ?>
-                    <h1 class="page-title mb-2"><?= htmlspecialchars((string) $lesson['title']) ?></h1>
-                    <?php if ($lessonSummary !== ''): ?>
-                    <p class="mb-6 max-w-3xl text-base font-medium leading-relaxed text-slate-700"><?= htmlspecialchars($lessonSummary) ?></p>
-                    <?php else: ?>
-                    <p class="section-copy mb-8 text-sm text-slate-500">Progression liée à votre inscription au parcours.</p>
-                    <?php endif; ?>
-                    <?php endif; /* fin du choix hero « scène » / en-tête classique */ ?>
+            <main class="section lms-lesson-main flex-1 min-w-0 overflow-x-hidden pb-24">
+                <?php require base_path('views/training/partials/lms_lesson_deck_hero.php'); ?>
 
-                    <div class="lms-lesson-meta-board mb-5">
-                        <div class="lms-lesson-meta-cell">
-                            <h2 class="lms-lesson-meta-cell__title">Fiche leçon</h2>
-                            <ul class="lms-lesson-meta-list">
-                                <li><span class="lms-lesson-meta-list__k">Type</span> <span class="lms-lesson-meta-list__v"><?= htmlspecialchars($lessonTypeLabel) ?></span></li>
-                                <?php if (!empty($lesson['duration_minutes'])): ?>
-                                <li><span class="lms-lesson-meta-list__k">Durée</span> <span class="lms-lesson-meta-list__v"><?= (int) $lesson['duration_minutes'] ?> min</span></li>
+                <?php if ($moduleLessonStep !== null && (int) ($moduleLessonStep['total'] ?? 0) > 0): ?>
+                <?php
+                $mcur = max(1, (int) $moduleLessonStep['current']);
+                $mtot = max(1, (int) $moduleLessonStep['total']);
+                $mPct = (int) round(100 * $mcur / $mtot);
+                ?>
+                <section class="lms-deck-modmeter">
+                    <div class="lms-deck-modmeter__head">
+                        <span>Progression dans le module</span>
+                        <strong>Leçon <?= $mcur ?> sur <?= $mtot ?></strong>
+                    </div>
+                    <div class="lms-deck-modmeter__bar" role="img" aria-label="Progression du module : leçon <?= $mcur ?> sur <?= $mtot ?>">
+                        <span style="width: <?= $mPct ?>%"></span>
+                    </div>
+                </section>
+                <?php endif; ?>
+
+                <div class="lms-deck-row">
+                    <section class="lms-deck-main lms-lesson-content-panel">
+                        <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
+
+                        <?php if ($isCanvasLesson): ?>
+                            <?php
+                            $deck = $canvasDeck;
+                            require base_path('views/training/partials/canvas_lesson_player.php');
+                            ?>
+                        <?php else: ?>
+                            <?php
+                            $embedSrc = ($lessonType === 'video_embed' && !empty($lesson['external_url']) && function_exists('training_video_embed_iframe_src'))
+                                ? training_video_embed_iframe_src((string) $lesson['external_url'])
+                                : null;
+                            $readingEyebrow = $isReadingLesson
+                                ? (stripos((string) ($lesson['title'] ?? ''), 'retenir') !== false ? 'À retenir' : 'Fiche de synthèse')
+                                : $lessonTypeLabel;
+                            ?>
+                            <div class="lms-deck-reading" <?= ($lessonType === 'richtext' && $autoLessonComplete) ? 'data-lms-richtext-root="1"' : '' ?>>
+                                <p class="lms-deck-reading__eyebrow"><?= htmlspecialchars($readingEyebrow) ?></p>
+
+                                <?php if ($lessonType === 'quiz' && $quizData): ?>
+                                    <?php $quiz = $quizData;
+                                    require base_path('views/training/partials/lesson_quiz_player.php'); ?>
+                                <?php elseif ($lessonType === 'modals' && $modalsDeck): ?>
+                                    <?php $deck = $modalsDeck;
+                                    require base_path('views/training/partials/lesson_modals_player.php'); ?>
+                                <?php elseif ($lessonType === 'slideshow' && $showDeck): ?>
+                                    <?php $deck = $showDeck;
+                                    require base_path($useStagePlayer
+                                        ? 'views/training/partials/lesson_stage_player.php'
+                                        : 'views/training/partials/lesson_slideshow_player.php'); ?>
+                                <?php elseif ($lessonType === 'richtext' && !empty($lesson['content'])): ?>
+                                    <div class="prose prose-slate max-w-none">
+                                        <?= $lesson['content'] ?>
+                                        <?php if ($autoLessonComplete): ?>
+                                        <div id="lms-richtext-sentinel" class="h-3 w-full mt-10 clear-both" aria-hidden="true"></div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php elseif (in_array($lessonType, ['video', 'video_integrated'], true) && !empty($lesson['external_url'])): ?>
+                                    <div class="rounded-xl overflow-hidden bg-slate-900 shadow-lg">
+                                        <video id="lms-lesson-video" playsinline controls crossorigin src="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="w-full aspect-video"></video>
+                                    </div>
+                                <?php elseif ($lessonType === 'video_embed' && $embedSrc): ?>
+                                    <div class="rounded-xl overflow-hidden bg-slate-900 shadow-lg aspect-video">
+                                        <iframe class="w-full h-full min-h-[240px]" src="<?= htmlspecialchars($embedSrc) ?>" title="Vidéo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+                                    </div>
+                                <?php elseif ($lessonType === 'video_embed' && !empty($lesson['external_url'])): ?>
+                                    <?php $videoEmbedLeave = training_lms_resource_external_href((string) $lesson['external_url']); ?>
+                                    <p class="text-rose-600 text-sm">Cette vidéo ne peut pas être intégrée ici. <?php if ($videoEmbedLeave !== null): ?><a href="<?= htmlspecialchars($videoEmbedLeave, ENT_QUOTES, 'UTF-8') ?>" class="underline font-bold" target="_blank" rel="noopener noreferrer">Ouvrir le lien</a><?php endif; ?></p>
+                                <?php elseif ($lessonType === 'audio' && !empty($lesson['external_url'])): ?>
+                                    <div class="rounded-xl overflow-hidden bg-slate-100 p-4">
+                                        <audio id="lms-lesson-audio" controls crossorigin src="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="w-full"></audio>
+                                    </div>
+                                <?php elseif ($lessonType === 'pdf' && $pdfUrl !== ''): ?>
+                                    <div class="space-y-3">
+                                        <div id="lms-pdf-toolbar" class="flex flex-wrap gap-2 text-xs"></div>
+                                        <div id="lms-pdf-viewer" class="rounded-xl border border-slate-200 bg-slate-50 min-h-[480px] overflow-auto"></div>
+                                        <p class="text-xs text-slate-500"><a href="<?= htmlspecialchars($pdfUrl) ?>" class="text-emerald-600 font-semibold hover:underline" target="_blank" rel="noopener">Ouvrir le document</a></p>
+                                    </div>
+                                <?php elseif ($lessonType === 'external_link' && !empty($lesson['external_url'])): ?>
+                                    <?php $externalLessonHref = training_lms_resource_external_href((string) $lesson['external_url']); ?>
+                                    <?php if ($externalLessonHref !== null): ?>
+                                    <p class="mb-4">Ressource externe :</p>
+                                    <a href="<?= htmlspecialchars($externalLessonHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="text-emerald-600 font-bold hover:underline">Ouvrir la ressource</a>
+                                    <?php else: ?>
+                                    <p class="text-rose-600 text-sm">Le lien indiqué pour cette leçon n’est pas utilisable.</p>
+                                    <?php endif; ?>
+                                <?php elseif ($lessonType === 'checklist' && !empty($lesson['content'])): ?>
+                                    <div class="prose prose-slate max-w-none"><?= $lesson['content'] ?></div>
+                                <?php else: ?>
+                                    <p class="text-slate-500">Le contenu de cette leçon n’est pas encore disponible.</p>
                                 <?php endif; ?>
-                                <?php if ($diffLabel !== ''): ?>
-                                <li><span class="lms-lesson-meta-list__k">Niveau</span> <span class="lms-lesson-meta-list__v"><?= htmlspecialchars($diffLabel) ?></span></li>
-                                <?php endif; ?>
-                            </ul>
-                            <?php if ($currentModule && (int) ($currentModule['estimated_minutes'] ?? 0) > 0): ?>
-                            <p class="lms-lesson-meta-module-hint">Durée indicative du module : <?= (int) $currentModule['estimated_minutes'] ?> min</p>
-                            <?php endif; ?>
-                            <p class="lms-lesson-meta-progress-label">Avancement du parcours</p>
-                            <div class="lms-lesson-progress-track" role="progressbar" aria-valuenow="<?= $progressPctDisplay ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement du parcours">
-                                <span class="lms-lesson-progress-fill" style="width:<?= min(100, $progressPctDisplay) ?>%"></span>
                             </div>
-                        </div>
-                        <div class="lms-lesson-meta-cell lms-lesson-meta-cell--stat">
-                            <h2 class="lms-lesson-meta-cell__title">Progression</h2>
-                            <p class="lms-lesson-meta-stat"><?= $progressPctDisplay ?><span class="lms-lesson-meta-stat__unit">%</span></p>
-                            <?php if ($lessonsTotalCount > 0): ?>
-                            <p class="lms-lesson-meta-stat-caption">
-                                <?= $lessonsDoneCount ?> leçon<?= $lessonsDoneCount > 1 ? 's' : '' ?> terminée<?= $lessonsDoneCount > 1 ? 's' : '' ?> sur <?= $lessonsTotalCount ?>
-                            </p>
-                            <?php if ($lessonsLeftCount === 0): ?>
-                            <p class="lms-lesson-meta-remain lms-lesson-meta-remain--done">Parcours terminé — plus rien à valider.</p>
-                            <?php else: ?>
-                            <p class="lms-lesson-meta-remain">Il vous reste <?= $lessonsLeftCount ?> leçon<?= $lessonsLeftCount > 1 ? 's' : '' ?>.</p>
-                            <?php if ($remainingLessonsPreview !== []): ?>
-                            <ul class="lms-lesson-meta-remain-list">
-                                <?php foreach ($remainingLessonsPreview as $remL): ?>
-                                <li><?= htmlspecialchars((string) ($remL['title'] ?? 'Leçon')) ?></li>
-                                <?php endforeach; ?>
-                                <?php if ($lessonsLeftCount > count($remainingLessonsPreview)): ?>
-                                <li class="lms-lesson-meta-remain-list__more">… et <?= $lessonsLeftCount - count($remainingLessonsPreview) ?> autre<?= ($lessonsLeftCount - count($remainingLessonsPreview)) > 1 ? 's' : '' ?></li>
-                                <?php endif; ?>
-                            </ul>
-                            <?php endif; ?>
-                            <?php endif; ?>
-                            <?php else: ?>
-                            <p class="lms-lesson-meta-stat-caption">du parcours complété</p>
-                            <?php endif; ?>
-                        </div>
-                        <div class="lms-lesson-meta-cell" id="parcours-sequence">
-                            <h2 class="lms-lesson-meta-cell__title">Séquence</h2>
-                            <?php if ($nextStepHumanLabel !== '' && $lessonsLeftCount > 0): ?>
-                            <p class="lms-lesson-meta-next-step">
-                                <span class="lms-lesson-meta-next-step__label">Prochaine étape</span>
-                                <span class="lms-lesson-meta-next-step__value"><?= htmlspecialchars($nextStepHumanLabel) ?></span>
-                            </p>
-                            <?php elseif ($lessonsLeftCount === 0 && $lessonsTotalCount > 0): ?>
-                            <p class="lms-lesson-meta-next-step lms-lesson-meta-next-step--done">
-                                <span class="lms-lesson-meta-next-step__label">Statut</span>
-                                <span class="lms-lesson-meta-next-step__value">Toutes les leçons sont validées</span>
-                            </p>
-                            <?php endif; ?>
-                            <p class="lms-lesson-meta-sequence-copy"><?= $autoLessonComplete
-                                ? 'Parcourez le contenu jusqu’au bout, puis validez avec « Terminer la leçon ». Pour une évaluation, une note suffisante est requise.'
-                                : 'Lisez le contenu, puis indiquez que la leçon est terminée lorsque c’est pertinent pour vous.' ?></p>
-                        </div>
-                    </div>
+                        <?php endif; ?>
 
-                    <section class="mb-5">
-                        <p class="lms-lesson-content-eyebrow mb-2">Contenu à parcourir</p>
-
-                        <article class="module-panel p-4 sm:p-5 lms-lesson-content-panel">
-                <?php require base_path('views/training/partials/lms_lesson_actions_bar.php'); ?>
-                <?php
-                $embedSrc = ($lessonType === 'video_embed' && !empty($lesson['external_url']) && function_exists('training_video_embed_iframe_src'))
-                    ? training_video_embed_iframe_src((string) $lesson['external_url'])
-                    : null;
-                ?>
-                <?php if ($lessonType === 'quiz' && $quizData): ?>
-                <?php $quiz = $quizData;
-                require base_path('views/training/partials/lesson_quiz_player.php'); ?>
-                <?php elseif ($lessonType === 'modals' && $modalsDeck): ?>
-                <?php $deck = $modalsDeck;
-                require base_path('views/training/partials/lesson_modals_player.php'); ?>
-                <?php elseif ($lessonType === 'slideshow' && $showDeck): ?>
-                <?php $deck = $showDeck;
-                require base_path($useStagePlayer
-                    ? 'views/training/partials/lesson_stage_player.php'
-                    : 'views/training/partials/lesson_slideshow_player.php'); ?>
-                <?php elseif ($lessonType === 'richtext' && !empty($lesson['content'])): ?>
-                <div class="prose prose-slate max-w-none" <?= $autoLessonComplete ? 'data-lms-richtext-root="1"' : '' ?>>
-                    <?= $lesson['content'] ?>
-                    <?php if ($autoLessonComplete): ?>
-                    <div id="lms-richtext-sentinel" class="h-3 w-full mt-10 clear-both" aria-hidden="true"></div>
-                    <?php endif; ?>
-                </div>
-                <?php elseif (in_array($lessonType, ['video', 'video_integrated'], true) && !empty($lesson['external_url'])): ?>
-                <div class="rounded-xl overflow-hidden bg-slate-900 shadow-lg">
-                    <video id="lms-lesson-video" playsinline controls crossorigin src="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="w-full aspect-video"></video>
-                </div>
-                <?php elseif ($lessonType === 'video_embed' && $embedSrc): ?>
-                <div class="rounded-xl overflow-hidden bg-slate-900 shadow-lg aspect-video">
-                    <iframe class="w-full h-full min-h-[240px]" src="<?= htmlspecialchars($embedSrc) ?>" title="Vidéo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
-                </div>
-                <?php elseif ($lessonType === 'video_embed' && !empty($lesson['external_url'])): ?>
-                <?php $videoEmbedLeave = training_lms_resource_external_href((string) $lesson['external_url']); ?>
-                <p class="text-rose-600 text-sm">URL non reconnue pour l’intégration. <?php if ($videoEmbedLeave !== null): ?><a href="<?= htmlspecialchars($videoEmbedLeave, ENT_QUOTES, 'UTF-8') ?>" class="underline font-bold" target="_blank" rel="noopener noreferrer">Ouvrir le lien</a><?php else: ?>Le lien fourni n’est pas utilisable depuis cette page.<?php endif; ?></p>
-                <?php elseif ($lessonType === 'audio' && !empty($lesson['external_url'])): ?>
-                <div class="rounded-xl overflow-hidden bg-slate-100 p-4">
-                    <audio id="lms-lesson-audio" controls crossorigin src="<?= htmlspecialchars((string) $lesson['external_url']) ?>" class="w-full"></audio>
-                </div>
-                <?php elseif ($lessonType === 'pdf' && $pdfUrl !== ''): ?>
-                <div class="space-y-3">
-                    <div id="lms-pdf-toolbar" class="flex flex-wrap gap-2 text-xs"></div>
-                    <div id="lms-pdf-viewer" class="rounded-xl border border-slate-200 bg-slate-50 min-h-[480px] overflow-auto"></div>
-                    <p class="text-xs text-slate-500"><a href="<?= htmlspecialchars($pdfUrl) ?>" class="text-emerald-600 font-semibold hover:underline" target="_blank" rel="noopener">Ouvrir / télécharger le PDF</a></p>
-                </div>
-                <?php elseif ($lessonType === 'external_link' && !empty($lesson['external_url'])): ?>
-                <?php $externalLessonHref = training_lms_resource_external_href((string) $lesson['external_url']); ?>
-                <?php if ($externalLessonHref !== null): ?>
-                <p class="mb-4">Lien externe :</p>
-                <a href="<?= htmlspecialchars($externalLessonHref, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="text-emerald-600 font-bold hover:underline"><?= htmlspecialchars((string) $lesson['external_url']) ?></a>
-                <?php else: ?>
-                <p class="text-rose-600 text-sm">Le lien indiqué pour cette leçon n’est pas utilisable.</p>
-                <?php endif; ?>
-                <?php else: ?>
-                <p class="text-slate-500">Contenu à afficher (type : <?= htmlspecialchars($lessonType) ?>).</p>
-                <?php endif; ?>
-
-                <?php require base_path('views/training/partials/lms_lesson_common_footer.php'); ?>
-                        </article>
+                        <?php require base_path('views/training/partials/lms_lesson_common_footer.php'); ?>
                     </section>
+
+                    <?php require base_path('views/training/partials/lms_lesson_reperes_aside.php'); ?>
                 </div>
-                <?php endif; ?>
             </main>
         </div>
     </div>

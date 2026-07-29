@@ -1056,13 +1056,27 @@ window.ATAKOrders = (function () {
           '</div>';
       }
 
+      var payloadText = (window.ATAKWaypoints && window.ATAKWaypoints.displayPayload)
+        ? window.ATAKWaypoints.displayPayload(o)
+        : (o.payload_display || o.payload || '');
+      var waypointMeta = (window.ATAKWaypoints && window.ATAKWaypoints.renderWaypointMetaHtml)
+        ? window.ATAKWaypoints.renderWaypointMetaHtml(o)
+        : '';
+      var wpBtn = (window.ATAKWaypoints && window.ATAKWaypoints.waypointFromOrder && window.ATAKWaypoints.waypointFromOrder(o))
+        ? '<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="focus-wp" data-order-id="' + escapeHtml(id) + '">Voir sur la carte</button>'
+        : '';
+
       if (status !== 'CANCELLED' && status !== 'FAILED') {
         var btns = [];
         if (status === 'PENDING' || status === 'DELIVERED') {
           btns.push('<button type="button" class="atak-order-btn" data-order-action="ACK" data-order-id="' + escapeHtml(id) + '">Confirmer réception</button>');
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Refuser</button>');
         }
-        if (status === 'ACK' || status === 'DELIVERED' || status === 'PENDING') {
+        if (status === 'ACK') {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--exec" data-order-action="EXEC" data-order-id="' + escapeHtml(id) + '">En cours</button>');
+          btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Échec</button>');
+        }
+        if (status === 'EXEC') {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--fail" data-order-action="FAILED" data-order-id="' + escapeHtml(id) + '">Échec</button>');
         }
         if (canIssue && status !== 'EXEC') {
@@ -1072,9 +1086,12 @@ window.ATAKOrders = (function () {
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="reissue" data-order-id="' + escapeHtml(id) + '">Relancer</button>');
           btns.push('<button type="button" class="atak-order-btn atak-order-btn--cmd" data-order-cmd="frago" data-order-id="' + escapeHtml(id) + '">FRAGO de suite</button>');
         }
+        if (wpBtn) btns.push(wpBtn);
         if (btns.length) {
           actions = '<div class="atak-order-actions">' + btns.join('') + '</div>';
         }
+      } else if (wpBtn) {
+        actions = '<div class="atak-order-actions">' + wpBtn + '</div>';
       }
 
       var dest = o.target_label || o.target || 'Toute l’équipe';
@@ -1115,7 +1132,8 @@ window.ATAKOrders = (function () {
           '</div>' +
           '<div class="atak-order-issuer">De ' + escapeHtml(o.issuer || '—') + '</div>' +
           radioLine +
-          (o.payload ? '<p class="atak-order-payload">' + escapeHtml(o.payload) + '</p>' : '') +
+          (payloadText ? '<p class="atak-order-payload">' + escapeHtml(payloadText) + '</p>' : '') +
+          waypointMeta +
           ackLine +
           actions +
         '</article>'
@@ -1142,7 +1160,7 @@ window.ATAKOrders = (function () {
 
   function isTerminalSignal(o) {
     var t = String((o && o.type) || '').toUpperCase();
-    return t === 'VIBRATE' || t === 'NOTIFY';
+    return t === 'VIBRATE' || t === 'NOTIFY' || t === 'HELMET_SNAP' || t === 'HELMET_SNAP_HD' || t === 'HELMET_STREAM';
   }
 
   function mergeOrdersDelta(incoming, isDelta) {
@@ -1566,6 +1584,9 @@ window.ATAKOrders = (function () {
           var order = cid ? ordersById[String(cid)] : null;
           if (order && cmd === 'reissue') prefillIssueForm(order, false);
           else if (order && cmd === 'frago') prefillIssueForm(order, true);
+          else if (order && cmd === 'focus-wp' && window.ATAKWaypoints && window.ATAKWaypoints.focusOrderWaypoint) {
+            window.ATAKWaypoints.focusOrderWaypoint(order);
+          }
           return;
         }
         var btn = ev.target && ev.target.closest ? ev.target.closest('[data-order-action]') : null;
@@ -1600,6 +1621,55 @@ window.ATAKOrders = (function () {
     pollTimer = setInterval(fetchOrders, intervalMs || 4000);
   }
 
+  function openOrder(orderId) {
+    var oid = String(orderId || '').trim();
+    if (!oid) return false;
+
+    var tab =
+      document.querySelector('[data-atak-tab="orders"]') ||
+      document.querySelector('#atak-tab-orders') ||
+      document.querySelector('[href*="ordres"]') ||
+      document.querySelector('[data-panel="orders"]');
+    if (tab && typeof tab.click === 'function') {
+      tab.click();
+    }
+
+    var found = ordersById[oid] || null;
+    if (!found) {
+      Object.keys(ordersById).forEach(function (k) {
+        var o = ordersById[k];
+        if (!o) return;
+        if (String(o.id) === oid || String(o.external_id || '') === oid) found = o;
+      });
+    }
+
+    var focusId = found ? String(found.id || found.external_id || oid) : oid;
+    setTimeout(function () {
+      var el =
+        document.querySelector('.atak-order-item[data-order-id="' + focusId.replace(/"/g, '') + '"]') ||
+        document.querySelector('[data-order-id="' + focusId.replace(/"/g, '') + '"]');
+      if (!el && found && found.external_id) {
+        el = document.querySelector('.atak-order-item[data-order-id="' + String(found.external_id).replace(/"/g, '') + '"]');
+      }
+      if (!el) return;
+      document.querySelectorAll('.atak-order-item--focus').forEach(function (n) {
+        n.classList.remove('atak-order-item--focus');
+      });
+      el.classList.add('atak-order-item--focus');
+      if (typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 120);
+
+    return !!found;
+  }
+
+  window.ATAKOpenOrder = openOrder;
+  document.addEventListener('atak:open-order', function (ev) {
+    var detail = ev && ev.detail ? ev.detail : {};
+    openOrder(detail.orderId || detail.id || '');
+  });
+
   return {
     fetchOrders: fetchOrders,
     startPolling: startPolling,
@@ -1609,7 +1679,10 @@ window.ATAKOrders = (function () {
     parseOrderChatBody: parseOrderChatBody,
     formatChatBody: formatChatBody,
     typeLabelFr: typeLabelFr,
+    targetTypeLabel: targetTypeLabel,
+    recipientsForType: recipientsForType,
     openComposeModal: openComposeModal,
-    closeComposeModal: closeComposeModal
+    closeComposeModal: closeComposeModal,
+    openOrder: openOrder
   };
 })();

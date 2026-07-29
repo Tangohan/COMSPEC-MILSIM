@@ -214,6 +214,7 @@ $totalResults = count($results);
                             continue;
                         }
                         $displayName = trim((string) ($row['display_name'] ?? 'Profil sans nom'));
+                        $fullName = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
                         $callsign = trim((string) ($row['callsign'] ?? ''));
                         $athenaId = trim((string) ($row['athena_identifier'] ?? ''));
                         $slug = trim((string) ($row['profile_slug'] ?? ''));
@@ -251,6 +252,9 @@ $totalResults = count($results);
                                 </div>
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-black text-slate-900"><?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if ($fullName !== ''): ?>
+                                    <p class="truncate text-xs text-slate-500">Prénom / nom : <?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
                                     <?php if ($character !== ''): ?>
                                     <p class="truncate text-xs text-slate-500">RP : <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>

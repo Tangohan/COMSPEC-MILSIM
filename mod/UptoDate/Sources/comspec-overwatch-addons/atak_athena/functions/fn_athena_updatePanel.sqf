@@ -357,7 +357,7 @@ if (!(_orders isEqualType [])) then { _orders = []; };
     if (_id isEqualTo "") then { continue };
     private _type = _x getOrDefault ["type", "MOVE"];
     // Signaux terminal déjà notifiés via onVibrate / onNotify — pas une ligne « ordre »
-    if ((toUpper _type) in ["VIBRATE", "NOTIFY"]) then { continue };
+    if ((toUpper _type) in ["VIBRATE", "NOTIFY", "HELMET_SNAP", "HELMET_SNAP_HD", "HELMET_STREAM"]) then { continue };
     private _typeLabel = trim (_x getOrDefault ["typeLabel", ""]);
     if (_typeLabel isEqualTo "") then {
         _typeLabel = switch (toUpper _type) do {

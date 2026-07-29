@@ -2,6 +2,11 @@
 
 Le **guide du portail** (page « Guide du portail », connecté) est la référence principale pour les membres. Ce fichier trace les **révisions** du contenu et les grands thèmes couverts ; le détail à jour est toujours dans l’interface.
 
+## Révision 10 — 2026-07-28
+
+- **Bibliothèque de marqueurs** : page dédiée `/documentation/marqueurs` avec aperçus PNG de **tous les packs** (Arma 3, MarkersPlus, Metis, cTab), libellés métier et noms techniques.
+- Sommaire du guide : entrée « Bibliothèque de marqueurs » + liens depuis le chapitre outils cartes, le guide Overwatch et la navigation Aide.
+
 ## Révision 8 — 2026-07-20
 
 - **Réécriture complète** du guide intégré : manuel métier exhaustif (présentation / fonctionnement / utilisation / cas particuliers) pour **tous** les chapitres.

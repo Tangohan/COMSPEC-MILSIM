@@ -82,23 +82,61 @@ class COMSPEC_ATAK_Status: ATAK_Message
             };
         };
 
-        class Body: RscStructuredText
+        class BodyViewport: RscControlsGroup
         {
-            idc = 9802;
+            idc = 9806;
             x = QUOTE(COMSPEC_STATUS_W(0.08));
             y = QUOTE(COMSPEC_STATUS_H(1.62));
             w = QUOTE(COMSPEC_STATUS_W(2.84));
             h = QUOTE(COMSPEC_STATUS_H(5.35));
-            text = "";
             colorBackground[] = STATUS_BG_BODY;
-            class Attributes
+            class VScrollbar
             {
-                font = "RobotoCondensed";
-                color = "#D8E4EA";
-                align = "left";
-                valign = "top";
-                shadow = 1;
-                size = "0.68";
+                width = 0.014;
+                autoScrollEnabled = 1;
+                color[] = {0.35, 0.75, 0.95, 0.75};
+                colorActive[] = {0.45, 0.85, 1, 1};
+                colorDisabled[] = {0.25, 0.35, 0.4, 0.35};
+                shadow = 0;
+                scrollSpeed = 0.06;
+            };
+            class HScrollbar
+            {
+                height = 0;
+                color[] = {0, 0, 0, 0};
+            };
+            class ScrollBar
+            {
+                color[] = {0.35, 0.75, 0.95, 0.75};
+                colorActive[] = {0.45, 0.85, 1, 1};
+                colorDisabled[] = {0.25, 0.35, 0.4, 0.35};
+                shadow = 0;
+                thumb = "\A3\ui_f\data\gui\cfg\scrollbar\thumb_ca.paa";
+                arrowFull = "\A3\ui_f\data\gui\cfg\scrollbar\arrowFull_ca.paa";
+                arrowEmpty = "\A3\ui_f\data\gui\cfg\scrollbar\arrowEmpty_ca.paa";
+                border = "\A3\ui_f\data\gui\cfg\scrollbar\border_ca.paa";
+            };
+            class Controls
+            {
+                class Body: RscStructuredText
+                {
+                    idc = 9802;
+                    x = 0;
+                    y = 0;
+                    w = QUOTE(COMSPEC_STATUS_W(2.72));
+                    h = QUOTE(COMSPEC_STATUS_H(5.35));
+                    text = "";
+                    colorBackground[] = {0, 0, 0, 0};
+                    class Attributes
+                    {
+                        font = "RobotoCondensed";
+                        color = "#D8E4EA";
+                        align = "left";
+                        valign = "top";
+                        shadow = 1;
+                        size = "0.68";
+                    };
+                };
             };
         };
 

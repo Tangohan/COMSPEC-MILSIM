@@ -330,6 +330,7 @@ final class TenantTypeConfig
             'back-office/referentiels/grades' => 'personnel',
             'back-office/positions' => 'personnel',
             'back-office/roleplay-followup' => 'personnel',
+            'back-office/roleplay' => 'personnel',
             // Formation
             'formations' => 'training',
             'formation' => 'training',

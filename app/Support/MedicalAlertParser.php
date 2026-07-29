@@ -91,6 +91,31 @@ final class MedicalAlertParser
     }
 
     /**
+     * @return array{kind: string, severity: string}
+     */
+    private static function classifyAlertKindFromLabel(string $labelFolded, ?int $heartRate = null): array
+    {
+        $isDeath = str_contains($labelFolded, 'arrêt cardiaque')
+            || str_contains($labelFolded, 'arret cardiaque')
+            || str_contains($labelFolded, 'rythme à zéro')
+            || str_contains($labelFolded, 'rythme a zero')
+            || str_contains($labelFolded, 'kia')
+            || str_contains($labelFolded, 'hors combat')
+            || preg_match('/\bmort\b/u', $labelFolded) === 1
+            || str_contains($labelFolded, 'dead')
+            || preg_match('/\bfc\s*[=:]?\s*0\b/u', $labelFolded) === 1
+            || ($heartRate !== null && $heartRate <= 0);
+        if ($isDeath) {
+            return ['kind' => 'cardiac_arrest', 'severity' => 'critical'];
+        }
+        if (str_contains($labelFolded, 'inconscient') || str_contains($labelFolded, 'au sol')) {
+            return ['kind' => 'unconscious', 'severity' => 'critical'];
+        }
+
+        return ['kind' => 'medical_alert', 'severity' => 'urgent'];
+    }
+
+    /**
      * Parse le libellé métier affiché dans Liaison / toast
      * (« Assistance médicale — NewPI — Au sol — inconscient — FC 95 — Grille … »).
      *
@@ -157,23 +182,9 @@ final class MedicalAlertParser
         $kind = 'medical_alert';
         $severity = 'urgent';
         $labelFolded = preg_replace('/[\x{2013}\x{2014}\-]+/u', ' ', mb_strtolower($label . ' ' . $body)) ?? '';
-        $isDeath = str_contains($labelFolded, 'arrêt cardiaque')
-            || str_contains($labelFolded, 'arret cardiaque')
-            || str_contains($labelFolded, 'rythme à zéro')
-            || str_contains($labelFolded, 'rythme a zero')
-            || str_contains($labelFolded, 'kia')
-            || str_contains($labelFolded, 'hors combat')
-            || preg_match('/\bmort\b/u', $labelFolded) === 1
-            || str_contains($labelFolded, 'dead')
-            || preg_match('/\bfc\s*[=:]?\s*0\b/u', $labelFolded) === 1
-            || ($heartRate !== null && $heartRate <= 0);
-        if ($isDeath) {
-            $kind = 'cardiac_arrest';
-            $severity = 'critical';
-        } elseif (str_contains($labelFolded, 'inconscient') || str_contains($labelFolded, 'au sol')) {
-            $kind = 'unconscious';
-            $severity = 'critical';
-        }
+        $classified = self::classifyAlertKindFromLabel($labelFolded, $heartRate);
+        $kind = $classified['kind'];
+        $severity = $classified['severity'];
 
         $summaryParts = array_filter([
             $callSign !== '' ? $callSign : null,
@@ -520,23 +531,9 @@ final class MedicalAlertParser
         $severity = 'urgent';
         $labelLower = mb_strtolower($label);
         $labelFolded = preg_replace('/[\x{2013}\x{2014}\-]+/u', ' ', $labelLower) ?? $labelLower;
-        $isDeath = str_contains($labelFolded, 'arrêt cardiaque')
-            || str_contains($labelFolded, 'arret cardiaque')
-            || str_contains($labelFolded, 'rythme à zéro')
-            || str_contains($labelFolded, 'rythme a zero')
-            || str_contains($labelFolded, 'kia')
-            || str_contains($labelFolded, 'hors combat')
-            || preg_match('/\bmort\b/u', $labelFolded) === 1
-            || str_contains($labelFolded, 'dead')
-            || preg_match('/\bfc\s*[=:]?\s*0\b/u', $labelFolded) === 1
-            || ($heartRate !== null && $heartRate <= 0);
-        if ($isDeath) {
-            $kind = 'cardiac_arrest';
-            $severity = 'critical';
-        } elseif (str_contains($labelFolded, 'inconscient') || str_contains($labelFolded, 'au sol')) {
-            $kind = 'unconscious';
-            $severity = 'critical';
-        }
+        $classified = self::classifyAlertKindFromLabel($labelFolded, $heartRate);
+        $kind = $classified['kind'];
+        $severity = $classified['severity'];
 
         $summaryParts = array_filter([
             $callSign !== '' ? $callSign : null,

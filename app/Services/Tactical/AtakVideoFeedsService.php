@@ -117,6 +117,7 @@ final class AtakVideoFeedsService
                 'pos_z' => isset($feed['pos_z']) ? (float) $feed['pos_z'] : null,
                 'grid' => trim((string) ($feed['grid'] ?? $feed['grid_ref'] ?? '')),
                 'reporter' => $reporter !== '' ? $reporter : trim((string) ($feed['reporter'] ?? '')),
+                'streaming' => !empty($feed['streaming']) || !empty($feed['stream_active']),
                 'last_seen_at' => $now,
                 'online' => true,
                 'age_sec' => 0,

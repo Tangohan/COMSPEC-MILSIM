@@ -25,6 +25,7 @@ use App\Repositories\ElevationRequestRepository;
 use App\Repositories\EnlistmentRepository;
 use App\Repositories\ModerationRepository;
 use App\Repositories\OpsBoardRepository;
+use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantCommunityFeedRepository;
 use App\Repositories\TenantMessageRepository;
@@ -52,6 +53,7 @@ class OrganizationDashboardController
         private ?TenantMessageRepository $tenantMessages = null,
         private ?AtakRealismRepository $atakRealism = null,
         private ?UserRepository $users = null,
+        private ?PersonnelRoleplayTimelineRepository $personnelRoleplayTimelineRepository = null,
     ) {
         $this->metrics ??= new AdminDashboardMetricsService();
         $this->auditLogs ??= new AuditLogRepository();
@@ -69,6 +71,7 @@ class OrganizationDashboardController
         $this->tenantMessages ??= new TenantMessageRepository();
         $this->atakRealism ??= new AtakRealismRepository();
         $this->users ??= new UserRepository();
+        $this->personnelRoleplayTimelineRepository ??= new PersonnelRoleplayTimelineRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -132,6 +135,13 @@ class OrganizationDashboardController
             } catch (\Throwable) {
                 $orgTrainingFeedCompletionAnalytics = [];
             }
+        }
+        $orgRoleplayTimelineRows = [];
+        $orgRoleplayTimelineError = null;
+        try {
+            $orgRoleplayTimelineRows = $this->personnelRoleplayTimelineRepository->listDashboardDueItems($tenantId, 21, 12);
+        } catch (\Throwable) {
+            $orgRoleplayTimelineError = 'Suivi roleplay indisponible.';
         }
 
         $orgIntegrationsPlanAllowed = false;
@@ -238,6 +248,15 @@ class OrganizationDashboardController
             }
         } catch (\Throwable) {
             $initialSetupBanner = null;
+        }
+
+        $configurationUpdateBadge = 0;
+        try {
+            $cfgSummary = \App\Core\Container::get(\App\Services\ConfigurationUpdate\ConfigurationUpdateService::class)
+                ->hubSummary($tenantId);
+            $configurationUpdateBadge = (int) ($cfgSummary['nav_badge'] ?? 0);
+        } catch (\Throwable) {
+            $configurationUpdateBadge = 0;
         }
 
         $chartDays = 14;
@@ -363,11 +382,14 @@ class OrganizationDashboardController
             'orgTrainingFeed' => $orgTrainingFeed,
             'orgTrainingFeedError' => $orgTrainingFeedError,
             'orgTrainingFeedCompletionAnalytics' => $orgTrainingFeedCompletionAnalytics,
+            'orgRoleplayTimelineRows' => $orgRoleplayTimelineRows,
+            'orgRoleplayTimelineError' => $orgRoleplayTimelineError,
             'orgIntegrationsPlanAllowed' => $orgIntegrationsPlanAllowed,
             'orgAnnounceItems' => $orgAnnounceItems,
             'skipGlobalAlertBanners' => true,
             'tenantName' => $tenantName,
             'initialSetupBanner' => $initialSetupBanner,
+            'configurationUpdateBadge' => $configurationUpdateBadge,
             'discordInviteMissing' => $discordInviteMissing,
             'orgActivityChart' => $orgActivityChart,
             'orgNextOperation' => $orgNextOperation,

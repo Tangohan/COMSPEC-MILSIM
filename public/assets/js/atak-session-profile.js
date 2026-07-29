@@ -38,6 +38,11 @@ window.ATAKSessionProfile = (function () {
       id: 'jtac',
       label: 'JTAC',
       hint: 'Appui aérien et 9-line.'
+    },
+    sse: {
+      id: 'sse',
+      label: 'Renseignement',
+      hint: 'Personnes identifiées et portail classifié.'
     }
   };
 
@@ -181,6 +186,10 @@ window.ATAKSessionProfile = (function () {
         return hasSpecialty('jtac');
       case 'radio':
         return hasSpecialty('radio');
+      case 'personnes':
+        // Compte connecté : débloqué via le select « Accès renseignement » du profil de session.
+        // Invité / téléphone (pas de profil) : onglet laissé visible.
+        return !state || hasSpecialty('sse');
       case 'orders':
         return true;
       case 'cams':
@@ -206,6 +215,24 @@ window.ATAKSessionProfile = (function () {
     return !!(window.ATAK_CAPS && window.ATAK_CAPS.canTriageMedical);
   }
 
+  function activateTabUi(tab) {
+    if (window.ATAKPanelChrome && typeof window.ATAKPanelChrome.activateTab === 'function') {
+      return window.ATAKPanelChrome.activateTab(tab);
+    }
+    if (!tab) return false;
+    var btn = document.querySelector('.atak-tab[data-tab="' + tab + '"]:not([hidden])');
+    if (!btn) return false;
+    document.querySelectorAll('.atak-tab[data-tab]').forEach(function (b) {
+      var on = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelectorAll('.atak-tabs-content').forEach(function (c) {
+      c.classList.toggle('active', c.id === 'tab-' + tab);
+    });
+    return true;
+  }
+
   function applyGating() {
     var tabs = document.querySelectorAll('.atak-tab[data-tab]');
     var firstVisible = null;
@@ -225,7 +252,7 @@ window.ATAKSessionProfile = (function () {
 
     var active = document.querySelector('.atak-tab.active:not([hidden])');
     if (!active && firstVisible) {
-      firstVisible.click();
+      activateTabUi(firstVisible.getAttribute('data-tab'));
     }
 
     document.querySelectorAll('[data-atak-needs-specialty]').forEach(function (el) {
@@ -267,6 +294,7 @@ window.ATAKSessionProfile = (function () {
     window.ATAK_CAPS.sessionSpecialties = state ? state.specialties.slice() : [];
     window.ATAK_CAPS.canIssueOrdersSession = canIssueOrders();
     window.ATAK_CAPS.canTriageMedicalSession = canTriageMedicalUi();
+    window.ATAK_CAPS.canSseSession = !state || hasSpecialty('sse');
     if (isLoggedIn() && state) {
       window.ATAK_CAN_ISSUE_ORDERS = canIssueOrders();
     }
@@ -303,6 +331,33 @@ window.ATAKSessionProfile = (function () {
     }
   }
 
+  function syncMapInterfaceForm() {
+    var prefs = window.ATAKMap && window.ATAKMap.getDisplayPrefs
+      ? window.ATAKMap.getDisplayPrefs()
+      : null;
+    var styleEl = document.getElementById('atak-session-unit-style');
+    var photoEl = document.getElementById('atak-session-show-photo-points');
+    if (styleEl) {
+      styleEl.value = prefs && prefs.styleMode ? prefs.styleMode : 'nato';
+    }
+    if (photoEl) {
+      photoEl.checked = !prefs || prefs.showIntelPhotoMarkers !== false;
+    }
+  }
+
+  function applyMapInterfaceFromForm() {
+    if (!window.ATAKMap || typeof window.ATAKMap.patchDisplayPrefs !== 'function') return;
+    var styleEl = document.getElementById('atak-session-unit-style');
+    var photoEl = document.getElementById('atak-session-show-photo-points');
+    var patch = {};
+    if (styleEl) patch.styleMode = styleEl.value;
+    if (photoEl) patch.showIntelPhotoMarkers = !!photoEl.checked;
+    window.ATAKMap.patchDisplayPrefs(patch);
+    if (typeof window.ATAKMap.syncDisplayPrefsUi === 'function') {
+      window.ATAKMap.syncDisplayPrefsUi();
+    }
+  }
+
   function fillForm(suggested) {
     var roleInputs = document.querySelectorAll('input[name="atak-session-role"]');
     roleInputs.forEach(function (inp) {
@@ -312,7 +367,12 @@ window.ATAKSessionProfile = (function () {
       var inp = document.getElementById('atak-spec-' + sid);
       if (inp) inp.checked = suggested.specialties.indexOf(sid) !== -1;
     });
+    var sseSelect = document.getElementById('atak-session-sse');
+    if (sseSelect) {
+      sseSelect.value = suggested.specialties.indexOf('sse') !== -1 ? 'sse' : '';
+    }
     syncCardStates();
+    syncMapInterfaceForm();
     var hintEl = document.getElementById('atak-session-profile-suggest');
     if (hintEl) {
       var parts = [];
@@ -335,7 +395,7 @@ window.ATAKSessionProfile = (function () {
           parts.join(' — ') + basis + '. Vous pouvez tout modifier avant de continuer.';
       } else {
         hintEl.textContent =
-          'Sélectionnez votre rôle. Les spécialités débloquent des outils (médecin, radio, JTAC).';
+          'Sélectionnez votre rôle. Les spécialités et le renseignement débloquent des outils (médecin, radio, JTAC, personnes).';
       }
     }
   }
@@ -346,9 +406,14 @@ window.ATAKSessionProfile = (function () {
     if (roleInp) role = roleInp.value;
     var specialties = [];
     Object.keys(SPECIALTIES).forEach(function (sid) {
+      if (sid === 'sse') return;
       var inp = document.getElementById('atak-spec-' + sid);
       if (inp && inp.checked) specialties.push(sid);
     });
+    var sseSelect = document.getElementById('atak-session-sse');
+    if (sseSelect && sseSelect.value === 'sse') {
+      specialties.push('sse');
+    }
     return { role: role, specialties: specialties };
   }
 
@@ -530,6 +595,7 @@ window.ATAKSessionProfile = (function () {
 
   function confirmProfileFromForm() {
     save(readForm());
+    applyMapInterfaceFromForm();
     if (hubMode === 'edit') {
       hideOverlay();
       fireReady();
@@ -741,6 +807,28 @@ window.ATAKSessionProfile = (function () {
 
   function init() {
     bindUi();
+
+    // Fenêtre détachée : pas de sas / hub — le profil vient de localStorage (partagé).
+    // Sinon le hub est display:none en popout alors que .atak-main reste visibility:hidden → écran noir.
+    if (window.ATAK_POPOUT) {
+      if (isLoggedIn()) {
+        var popStored = loadStored();
+        if (popStored) {
+          state = popStored;
+          window.ATAK_SESSION_PROFILE = state;
+        }
+        applyGating();
+      } else {
+        state = null;
+        window.ATAK_SESSION_PROFILE = null;
+        applyGating();
+      }
+      hideOverlay();
+      dismissHalo();
+      fireReady();
+      return;
+    }
+
     if (!isLoggedIn()) {
       state = null;
       window.ATAK_SESSION_PROFILE = null;

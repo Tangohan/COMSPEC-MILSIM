@@ -34,7 +34,7 @@ private _fp = format ["%1|%2|%3", _severity, toLower _channel, toLower (_message
 private _map = missionNamespace getVariable ["COMSPEC_DiagReportThrottle", createHashMap];
 if (!(_map isEqualType createHashMap)) then { _map = createHashMap; };
 private _last = _map getOrDefault [_fp, -99999];
-if ((diag_tickTime - _last) < 300) exitWith { false };
+if (_source isNotEqualTo "player" && {(diag_tickTime - _last) < 300}) exitWith { false };
 _map set [_fp, diag_tickTime];
 missionNamespace setVariable ["COMSPEC_DiagReportThrottle", _map, false];
 
@@ -101,15 +101,31 @@ private _dq = toString [34];
         _ctxParts pushBack (_dq + _safe + _dq);
     };
 } forEach _tail;
-private _contextJson = "{" + _dq + "recent_log" + _dq + ":[" + (_ctxParts joinString ",") + "]}";
+private _contextJson = "{" + _dq + "recent_log" + _dq + ":[" + (_ctxParts joinString ",") + "]";
+if (_detail isNotEqualTo "") then {
+    private _logEsc = (_detail splitString _dq) joinString "'";
+    _logEsc = (_logEsc splitString toString [10]) joinString "\\n";
+    if (count _logEsc > 12000) then { _logEsc = _logEsc select [0, 12000]; };
+    _contextJson = _contextJson + "," + _dq + "session_log" + _dq + ":" + _dq + _logEsc + _dq;
+};
+_contextJson = _contextJson + "}";
+
+private _detailApi = _detail;
+if (count _detailApi > 7500) then {
+    _detailApi = (_detailApi select [0, 7500]) + "...[voir journal complet]";
+};
 
 private _fpHash = _fp;
 // Empreinte courte stable pour le serveur
 private _fpServer = "";
-{
-    _fpServer = _fpServer + str _x;
-} forEach (toArray _fp);
-if (count _fpServer > 40) then { _fpServer = _fpServer select [0, 40]; };
+if (_source isEqualTo "player") then {
+    _fpServer = format ["player_%1", round diag_tickTime];
+} else {
+    {
+        _fpServer = _fpServer + str _x;
+    } forEach (toArray _fp);
+    if (count _fpServer > 40) then { _fpServer = _fpServer select [0, 40]; };
+};
 
 private _raw = [
     "COMSPECExtension" callExtension [
@@ -119,7 +135,7 @@ private _raw = [
             _severity,
             _channel,
             _message,
-            _detail,
+            _detailApi,
             _fpServer,
             _source,
             _steamUid,

@@ -75,6 +75,9 @@ class TeamAdminController
             'public_capacity' => trim((string) $request->input('public_capacity', '')),
             'public_open_slots' => trim((string) $request->input('public_open_slots', '')),
             'public_accent_color' => trim((string) $request->input('public_accent_color', '')),
+            'public_founded_on' => trim((string) $request->input('public_founded_on', '')),
+            'public_custom_date' => trim((string) $request->input('public_custom_date', '')),
+            'public_custom_date_label' => trim((string) $request->input('public_custom_date_label', '')),
         ];
         if ($data['name'] === '') {
             Session::flash('error', 'Le nom est requis.');
@@ -174,6 +177,9 @@ class TeamAdminController
             'public_capacity' => trim((string) $request->input('public_capacity', '')),
             'public_open_slots' => trim((string) $request->input('public_open_slots', '')),
             'public_accent_color' => trim((string) $request->input('public_accent_color', '')),
+            'public_founded_on' => trim((string) $request->input('public_founded_on', '')),
+            'public_custom_date' => trim((string) $request->input('public_custom_date', '')),
+            'public_custom_date_label' => trim((string) $request->input('public_custom_date_label', '')),
         ]);
         Session::flash('success', 'Équipe mise à jour.');
         return Response::redirect(url('back-office/teams/' . $id));
