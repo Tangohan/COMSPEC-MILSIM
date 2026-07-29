@@ -66,30 +66,99 @@ $total = count($persons);
             </div>
         </div>
     <?php else: ?>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                <tr>
-                    <th>Identité</th>
-                    <th>Statut</th>
-                    <th>Alias</th>
-                    <th>Enregistrée</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($persons as $p): ?>
-                    <tr>
-                        <td>
+        <div class="sse-record-grid">
+            <?php foreach ($persons as $p):
+                $med = is_array($p['medical_context'] ?? null) ? $p['medical_context'] : [];
+                $sig = is_array($p['signature'] ?? null) ? $p['signature'] : null;
+                $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
+                $lesions = is_array($med['lesions'] ?? null) ? $med['lesions'] : [];
+                $statusSlug = (string) ($p['status'] ?? 'civil');
+            ?>
+                <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
+                    <header class="sse-record-head">
+                        <div>
                             <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
-                            <span class="record-sub">Fiche terrain</span>
-                        </td>
-                        <td><span class="badge"><?= $h($p['status_label'] ?? '') ?></span></td>
-                        <td class="record-id"><?= $h($p['alias'] ?? '—') ?></td>
-                        <td class="record-id"><?= $h($p['created_at'] ?? '') ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+                            <span class="record-sub">
+                                Fiche n° <?= $h(str_pad((string) ($p['id'] ?? 0), 4, '0', STR_PAD_LEFT)) ?>
+                                <?php if (!empty($p['alias'])): ?>
+                                    · alias « <?= $h($p['alias']) ?> »
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <span class="badge badge-status"><?= $h($p['status_label'] ?? '') ?></span>
+                    </header>
+
+                    <dl class="sse-record-facts">
+                        <?php if (!empty($p['circumstances_label'])): ?>
+                            <div><dt>Circonstances</dt><dd><?= $h($p['circumstances_label']) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if (!empty($p['nationality'])): ?>
+                            <div><dt>Nationalité</dt><dd><?= $h($p['nationality']) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if (!empty($p['affiliation'])): ?>
+                            <div><dt>Affiliation</dt><dd><?= $h($p['affiliation']) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if (!empty($p['grid_reference'])): ?>
+                            <div><dt>Grille</dt><dd><?= $h($p['grid_reference']) ?></dd></div>
+                        <?php endif; ?>
+                    </dl>
+
+                    <?php if ($med !== []): ?>
+                        <div class="sse-record-block">
+                            <div class="sse-block-title">Constat de terrain</div>
+                            <p class="sse-block-body">
+                                <strong><?= $h($med['etat_label'] ?? 'Inconnu') ?></strong>
+                                <?php if ((int) ($med['pouls'] ?? -1) > 0): ?>
+                                    · pouls <?= $h((string) $med['pouls']) ?>/min
+                                <?php endif; ?>
+                                <?php if ($lesions !== []): ?>
+                                    <br><span class="sse-muted">Lésions : <?= $h(implode(', ', $lesions)) ?></span>
+                                <?php endif; ?>
+                            </p>
+                            <p class="sse-note">Constat d’observation — ne remplace pas un bilan médical.</p>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($samples !== []): ?>
+                        <div class="sse-record-block">
+                            <div class="sse-block-title">Relevés biométriques (simulation)</div>
+                            <ul class="sse-sample-list">
+                                <?php foreach ($samples as $s):
+                                    $q = $s['quality'] === null ? null : (int) $s['quality'];
+                                    $qClass = $q === null ? '' : ($q >= 80 ? 'is-good' : ($q >= 60 ? 'is-fair' : 'is-poor'));
+                                ?>
+                                    <li>
+                                        <span class="sse-sample-kind"><?= $h($s['kind_label'] ?? '') ?></span>
+                                        <?php if ($q !== null): ?>
+                                            <span class="sse-gauge <?= $h($qClass) ?>">
+                                                <span style="width: <?= $h((string) $q) ?>%"></span>
+                                            </span>
+                                            <span class="sse-sample-score"><?= $h((string) $q) ?>%</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($s['lab_reference'])): ?>
+                                            <span class="sse-muted">réf. <?= $h($s['lab_reference']) ?></span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <footer class="sse-record-foot">
+                        <?php if ($sig !== null): ?>
+                            <span class="sse-sig is-signed">
+                                Signé ATAK · <?= $h($sig['callsign'] ?? '—') ?>
+                                <?php if (!empty($sig['terminal_uid'])): ?>
+                                    · terminal <?= $h($sig['terminal_uid']) ?>
+                                <?php endif; ?>
+                            </span>
+                        <?php else: ?>
+                            <span class="sse-sig">Non signé</span>
+                        <?php endif; ?>
+                        <span class="record-id"><?= $h($p['created_at'] ?? '') ?></span>
+                    </footer>
+                </article>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </section>

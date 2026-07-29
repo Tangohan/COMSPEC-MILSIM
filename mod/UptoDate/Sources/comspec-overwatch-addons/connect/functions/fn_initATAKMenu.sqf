@@ -151,13 +151,14 @@ private _condSse = {
         if (!(_mods isEqualType createHashMap)) exitWith { true };
         _mods getOrDefault ["sse_person", true]
     }
+    && { [] call comspec_overwatch_connect_fnc_sseHasTerminalItem }
 };
 private _sseAction = [
     "comspec_atak_sse",
-    "Enregistrer une personne",
+    "Terminal SEEK — enregistrer une personne",
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
     {
-        [] call comspec_overwatch_connect_fnc_ssePersonDialogShow;
+        [objNull] call comspec_overwatch_connect_fnc_sseOpenTerminal;
     },
     _condSse,
     _noChildren

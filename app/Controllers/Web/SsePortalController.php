@@ -372,10 +372,19 @@ final class SsePortalController
 
     public function personsIndex(Request $request, array $params = []): Response
     {
-        $list = $this->persons->listForContext($this->tenantId(), 1, [
+        $tenantId = $this->tenantId();
+        $list = $this->persons->listForContext($tenantId, 1, [
             'status' => $request->query('status'),
             'limit' => 100,
         ]);
+
+        // Relevés biométriques simulés : affichés sur la fiche, jamais agrégés ailleurs.
+        foreach ($list as $i => $p) {
+            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples(
+                (int) ($p['id'] ?? 0),
+                $tenantId
+            );
+        }
 
         return $this->portalView('atak.sse.persons', [
             'title' => 'Personnes identifiées',

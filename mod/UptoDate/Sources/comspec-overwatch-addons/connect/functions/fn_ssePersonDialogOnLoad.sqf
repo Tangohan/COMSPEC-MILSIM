@@ -125,3 +125,57 @@ private _eTxt = if ((count _equipmentLines) > 0) then {
 
 uiNamespace setVariable ["COMSPEC_SsePerson_WeaponsCache", _weaponsLines];
 uiNamespace setVariable ["COMSPEC_SsePerson_EquipmentCache", _equipmentLines];
+
+// --- Constat de terrain (ACE Medical) ---
+private _med = createHashMap;
+if (!isNull _target) then {
+    _med = [_target] call comspec_overwatch_connect_fnc_sseCollectMedical;
+};
+uiNamespace setVariable ["COMSPEC_SsePerson_Medical", _med];
+
+private _medTxt = "<t size='0.48' color='#5f7383'>Aucune personne visée — constat indisponible.</t>";
+if (_med isEqualType createHashMap && {(count _med) > 0}) then {
+    private _etat = _med getOrDefault ["etat", "inconnu"];
+    private _col = switch (_etat) do {
+        case "decede": { "#c88a8a" };
+        case "cardiac_arrest";
+        case "critical": { "#e09a7e" };
+        case "unconscious";
+        case "wounded": { "#e0d27e" };
+        default { "#7ee0a0" };
+    };
+    private _rows = [format [
+        "<t size='0.48' color='#7f95a8'>État</t>  <t size='0.48' color='%1'>%2</t>",
+        _col,
+        _med getOrDefault ["etat_label", "Inconnu"]
+    ]];
+    private _pouls = _med getOrDefault ["pouls", -1];
+    if (_pouls > 0) then {
+        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Pouls</t>  <t size='0.48' color='#c8e8ff'>%1/min</t>", _pouls];
+    };
+    private _sang = _med getOrDefault ["sang", -1];
+    if (_sang >= 0 && {_sang < 100}) then {
+        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Volémie</t>  <t size='0.48' color='#c8e8ff'>≈ %1%2</t>", _sang, "%"];
+    };
+    private _les = _med getOrDefault ["lesions", []];
+    if ((_les isEqualType []) && {(count _les) > 0}) then {
+        _rows pushBack format ["<t size='0.48' color='#7f95a8'>Lésions</t>  <t size='0.48' color='#c8e8ff'>%1</t>", _les joinString ", "];
+    };
+    _medTxt = _rows joinString "<br/>";
+
+    // Les localisations alimentent « signes distinctifs » si le champ est vide.
+    if ((_les isEqualType []) && {(count _les) > 0}) then {
+        private _marksCtrl = _disp displayCtrl 9509;
+        if ((trim (ctrlText _marksCtrl)) isEqualTo "") then {
+            _marksCtrl ctrlSetText format ["Blessures apparentes : %1", _les joinString ", "];
+        };
+    };
+};
+(_disp displayCtrl 9521) ctrlSetStructuredText parseText _medTxt;
+
+// Nouvelle fiche : aucun échantillon, aucune signature.
+uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
+uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
+(_disp displayCtrl 9518) ctrlSetText (profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]);
+
+[] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;

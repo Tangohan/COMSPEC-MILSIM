@@ -1596,6 +1596,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // SSE — Sensitive Site Exploitation (renseignement interpersonnel)
     $router->get('/api/sse/persons', [SseApiController::class, 'personsIndex']);
     $router->post('/api/sse/persons', [SseApiController::class, 'personsStore']);
+    // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
+    $router->get('/api/sse/persons/by-unit', [SseApiController::class, 'personsByUnit']);
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);
     $router->post('/api/sse/persons/{id}/photos', [SseApiController::class, 'personsPhotoStore']);
     $router->post('/api/sse/persons/{id}/biometrics-sim', [SseApiController::class, 'personsBiometricsSim']);

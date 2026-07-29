@@ -93,6 +93,12 @@ final class SsePersonRepository
             $equipment = [];
         }
 
+        // Procès-verbal ATAK : signature transmise par le terminal SEEK.
+        $signature = $data['signature'] ?? null;
+        if (!is_array($signature)) {
+            $signature = [];
+        }
+
         $sql = 'INSERT INTO sse_persons (
             tenant_id, context_id, status, last_name, first_name, alias,
             sex_apparent, age_estimated, birth_date, birth_place, nationality, language_spoken,
@@ -100,7 +106,8 @@ final class SsePersonRepository
             distinguishing_marks, affiliation, circumstances, statements, confidence_level,
             weapons_json, equipment_json, biometrics_simulated, consent_recorded,
             capture_pos_x, capture_pos_y, capture_pos_z, grid_reference, location_description,
-            submitter_user_id, submitter_callsign, submitter_steam_id, target_unit_netid
+            submitter_user_id, submitter_callsign, submitter_steam_id, target_unit_netid,
+            medical_context_json, signed_by_callsign, signed_terminal_uid, signed_atak_id, signed_at
         ) VALUES (
             :tenant_id, :context_id, :status, :last_name, :first_name, :alias,
             :sex_apparent, :age_estimated, :birth_date, :birth_place, :nationality, :language_spoken,
@@ -108,7 +115,8 @@ final class SsePersonRepository
             :distinguishing_marks, :affiliation, :circumstances, :statements, :confidence_level,
             :weapons_json, :equipment_json, :biometrics_simulated, :consent_recorded,
             :capture_pos_x, :capture_pos_y, :capture_pos_z, :grid_reference, :location_description,
-            :submitter_user_id, :submitter_callsign, :submitter_steam_id, :target_unit_netid
+            :submitter_user_id, :submitter_callsign, :submitter_steam_id, :target_unit_netid,
+            :medical_context_json, :signed_by_callsign, :signed_terminal_uid, :signed_atak_id, :signed_at
         )';
 
         $id = (int) $this->db->insert($sql, [
@@ -146,6 +154,13 @@ final class SsePersonRepository
             'submitter_callsign' => $this->nullIfEmpty($data['submitter_callsign'] ?? null),
             'submitter_steam_id' => $this->nullIfEmpty($data['submitter_steam_id'] ?? null),
             'target_unit_netid' => $this->nullIfEmpty($data['target_unit_netid'] ?? null),
+            'medical_context_json' => is_array($data['medical_context'] ?? null) && $data['medical_context'] !== []
+                ? json_encode($data['medical_context'], JSON_UNESCAPED_UNICODE)
+                : null,
+            'signed_by_callsign' => $this->nullIfEmpty($signature['callsign'] ?? null),
+            'signed_terminal_uid' => $this->nullIfEmpty($signature['terminal_uid'] ?? null),
+            'signed_atak_id' => $this->nullIfEmpty($signature['atak_id'] ?? null),
+            'signed_at' => ($signature !== [] ? date('Y-m-d H:i:s') : null),
         ]);
 
         $this->addCustodyEvent((int) ($data['tenant_id'] ?? 0), $id, null, 'capture', 'Personne enregistrée', (string) ($data['submitter_callsign'] ?? ''));
@@ -377,6 +392,9 @@ final class SsePersonRepository
             'submitter_callsign' => $row['submitter_callsign'] ?? null,
             'submitter_steam_id' => $row['submitter_steam_id'] ?? null,
             'primary_photo_id' => isset($row['primary_photo_id']) ? (int) $row['primary_photo_id'] : null,
+            'target_unit_netid' => $row['target_unit_netid'] ?? null,
+            'medical_context' => $this->decodeJsonMap($row['medical_context_json'] ?? null),
+            'signature' => $this->hydrateSignature($row),
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
         ];
@@ -398,6 +416,131 @@ final class SsePersonRepository
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
+    /**
+     * Décode une carte JSON (constat de terrain) en tolérant les valeurs absentes.
+     *
+     * @return array<string, mixed>
+     */
+    private function decodeJsonMap(mixed $raw): array
+    {
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>|null
+     */
+    private function hydrateSignature(array $row): ?array
+    {
+        $callsign = trim((string) ($row['signed_by_callsign'] ?? ''));
+        $terminal = trim((string) ($row['signed_terminal_uid'] ?? ''));
+        if ($callsign === '' && $terminal === '') {
+            return null;
+        }
+
+        return [
+            'callsign' => $callsign !== '' ? $callsign : null,
+            'terminal_uid' => $terminal !== '' ? $terminal : null,
+            'atak_id' => $this->nullIfEmpty($row['signed_atak_id'] ?? null),
+            'signed_at' => $row['signed_at'] ?? null,
+        ];
+    }
+
+    /**
+     * Fiche déjà ouverte pour une unité Arma donnée (panneau « fiche existante »).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByTargetUnit(int $tenantId, int $contextId, string $netId): ?array
+    {
+        $netId = trim($netId);
+        if ($netId === '') {
+            return null;
+        }
+        $this->ensureSchema();
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_persons
+             WHERE tenant_id = :t AND context_id = :c AND target_unit_netid = :n
+             ORDER BY id DESC LIMIT 1',
+            ['t' => $tenantId, 'c' => $contextId, 'n' => $netId]
+        );
+
+        return $row ? $this->hydrate($row, true) : null;
+    }
+
+    /**
+     * Échantillon biométrique simulé. Un seul par modalité et par personne :
+     * un second relevé remplace le précédent plutôt que d'empiler des doublons.
+     */
+    public function addBiometricSample(int $personId, int $tenantId, array $data): void
+    {
+        $kind = strtolower(trim((string) ($data['kind'] ?? 'empreintes')));
+        if (!in_array($kind, ['empreintes', 'iris', 'adn'], true)) {
+            $kind = 'empreintes';
+        }
+        $quality = isset($data['quality']) ? max(0, min(100, (int) $data['quality'])) : null;
+
+        try {
+            $this->db->execute(
+                'INSERT INTO sse_biometric_samples
+                    (person_id, tenant_id, kind, quality, lab_reference, operator_callsign)
+                 VALUES (:p, :t, :k, :q, :r, :o)
+                 ON DUPLICATE KEY UPDATE
+                    quality = VALUES(quality),
+                    lab_reference = VALUES(lab_reference),
+                    operator_callsign = VALUES(operator_callsign)',
+                [
+                    'p' => $personId,
+                    't' => $tenantId,
+                    'k' => $kind,
+                    'q' => $quality,
+                    'r' => $this->nullIfEmpty($data['lab_reference'] ?? null),
+                    'o' => $this->nullIfEmpty($data['operator_callsign'] ?? null),
+                ]
+            );
+        } catch (\Throwable) {
+            // Table absente sur une base non migrée : la fiche reste valide sans échantillon.
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listBiometricSamples(int $personId, int $tenantId): array
+    {
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT * FROM sse_biometric_samples
+                 WHERE person_id = :p AND tenant_id = :t ORDER BY id ASC',
+                ['p' => $personId, 't' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $labels = ['empreintes' => 'Empreintes', 'iris' => 'Iris', 'adn' => 'ADN'];
+        $out = [];
+        foreach ($rows as $row) {
+            $kind = (string) ($row['kind'] ?? 'empreintes');
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'kind' => $kind,
+                'kind_label' => $labels[$kind] ?? 'Empreintes',
+                'quality' => isset($row['quality']) ? (int) $row['quality'] : null,
+                'lab_reference' => $row['lab_reference'] ?? null,
+                'operator_callsign' => $row['operator_callsign'] ?? null,
+                'created_at' => $row['created_at'] ?? null,
+            ];
+        }
+
+        return $out;
+    }
+
     private function hydratePhoto(array $row): array
     {
         $path = (string) ($row['image_path'] ?? '');

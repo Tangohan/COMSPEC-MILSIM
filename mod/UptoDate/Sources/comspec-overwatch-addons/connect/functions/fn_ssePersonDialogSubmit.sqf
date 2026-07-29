@@ -78,7 +78,61 @@ private _eArr = [];
     _eArr pushBack format ["{""name"":""%1"",""type"":""item""}", [_x] call _escape];
 } forEach (_equipment select [0, (count _equipment) min 12]);
 
+// --- Classement, procès-verbal, constat, échantillons ---
+private _caseCode = toUpper (trim (ctrlText (_disp displayCtrl 9518)));
+if (_caseCode isNotEqualTo "") then {
+    profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _caseCode];
+    saveProfileNamespace;
+};
+
+private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
+if (!(_sig isEqualType [])) then { _sig = []; };
+private _sigJson = "null";
+if ((count _sig) >= 4) then {
+    _sigJson = format [
+        '{"callsign":"%1","terminal_uid":"%2","atak_id":"%3","signed_at":"%4"}',
+        [_sig select 0] call _escape,
+        [_sig select 1] call _escape,
+        [_sig select 2] call _escape,
+        [_sig select 3] call _escape
+    ];
+};
+
+private _med = uiNamespace getVariable ["COMSPEC_SsePerson_Medical", createHashMap];
+private _medJson = "null";
+if ((_med isEqualType createHashMap) && {(count _med) > 0}) then {
+    private _les = _med getOrDefault ["lesions", []];
+    if (!(_les isEqualType [])) then { _les = []; };
+    private _lesArr = [];
+    { _lesArr pushBack format ['"%1"', [_x] call _escape]; } forEach _les;
+    _medJson = format [
+        '{"etat":"%1","etat_label":"%2","sang":%3,"pouls":%4,"douleur":%5,"arret_cardiaque":%6,"lesions":[%7],"resume":"%8"}',
+        [_med getOrDefault ["etat", "inconnu"]] call _escape,
+        [_med getOrDefault ["etat_label", "Inconnu"]] call _escape,
+        _med getOrDefault ["sang", -1],
+        _med getOrDefault ["pouls", -1],
+        if (_med getOrDefault ["douleur", false]) then { "true" } else { "false" },
+        if (_med getOrDefault ["arret_cardiaque", false]) then { "true" } else { "false" },
+        _lesArr joinString ",",
+        [_med getOrDefault ["resume", ""]] call _escape
+    ];
+};
+
+private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
+if (!(_samples isEqualType [])) then { _samples = []; };
+private _sampleArr = [];
+{
+    if ((_x isEqualType []) && {(count _x) >= 3}) then {
+        _x params ["_k", "_q", "_r"];
+        _sampleArr pushBack format [
+            '{"kind":"%1","quality":%2,"lab_reference":"%3"}',
+            [_k] call _escape, _q, [_r] call _escape
+        ];
+    };
+} forEach _samples;
+
 private _bio = uiNamespace getVariable ["COMSPEC_SsePerson_BioPending", false];
+if ((count _samples) > 0) then { _bio = true; };
 private _photoPending = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
 private _ageJson = if (_age >= 0) then { str _age } else { "null" };
 private _posX = [_pos select 0, 2] call _fnc_num;
@@ -88,7 +142,7 @@ private _posZ = [_pos select 2, 2] call _fnc_num;
 (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#8aa0b4' align='center'>Transmission en cours…</t>";
 
 private _json = format [
-    '{"mapId":1,"status":"%1","last_name":"%2","first_name":"%3","alias":"%4","age_estimated":%5,"nationality":"%6","language_spoken":"%7","distinguishing_marks":"%8","affiliation":"%9","circumstances":"%10","statements":"%11","confidence_level":"moyenne","weapons":[%12],"equipment":[%13],"biometrics_simulated":%14,"consent_recorded":true,"pos_x":%15,"pos_y":%16,"pos_z":%17,"grid_reference":"%18","submitter_callsign":"%19","submitter_steam_id":"%20","target_unit_netid":"%21"}',
+    '{"mapId":1,"status":"%1","last_name":"%2","first_name":"%3","alias":"%4","age_estimated":%5,"nationality":"%6","language_spoken":"%7","distinguishing_marks":"%8","affiliation":"%9","circumstances":"%10","statements":"%11","confidence_level":"moyenne","weapons":[%12],"equipment":[%13],"biometrics_simulated":%14,"consent_recorded":true,"pos_x":%15,"pos_y":%16,"pos_z":%17,"grid_reference":"%18","submitter_callsign":"%19","submitter_steam_id":"%20","target_unit_netid":"%21","case_code":"%22","signature":%23,"medical_context":%24,"biometric_samples":[%25]}',
     _status,
     [_last] call _escape,
     [_first] call _escape,
@@ -109,7 +163,11 @@ private _json = format [
     [_grid] call _escape,
     [_callsign] call _escape,
     [_steam] call _escape,
-    [_netId] call _escape
+    [_netId] call _escape,
+    [_caseCode] call _escape,
+    _sigJson,
+    _medJson,
+    _sampleArr joinString ","
 ];
 
 private _parsed = [
@@ -136,7 +194,9 @@ if (_detail isEqualType "" && { _detail != "Success" } && { (parseNumber _detail
     _personId = str (floor (parseNumber _detail));
 };
 
-if (_bio && { _personId isNotEqualTo "" }) then {
+// Voie héritée 1.4.0 : uniquement si aucun échantillon détaillé n’accompagne la fiche
+// (sinon l’enregistrement serait compté deux fois).
+if (_bio && { _personId isNotEqualTo "" } && { (count _samples) == 0 }) then {
     private _bioJson = format [
         '{"kind":"empreintes","submitter_callsign":"%1"}',
         [_callsign] call _escape

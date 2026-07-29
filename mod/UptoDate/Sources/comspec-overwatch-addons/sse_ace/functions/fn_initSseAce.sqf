@@ -44,7 +44,7 @@ private _open = [
     "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa",
     {
         params ["_target"];
-        [_target] call comspec_overwatch_connect_fnc_ssePersonDialogShow;
+        [_target] call comspec_overwatch_connect_fnc_sseOpenTerminal;
     },
     _cond,
     _noChildren,

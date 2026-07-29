@@ -106,6 +106,25 @@ final class SseCaseRepository
         );
     }
 
+    /**
+     * Dossier par référence saisie sur le terrain (terminal SEEK).
+     * La casse et les espaces sont tolérés : l'opérateur tape sous contrainte.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findByReferenceCode(int $tenantId, string $reference): ?array
+    {
+        $reference = strtoupper(trim($reference));
+        if ($reference === '') {
+            return null;
+        }
+
+        return $this->db->fetchOne(
+            'SELECT * FROM sse_cases WHERE tenant_id = :t AND UPPER(reference_code) = :r LIMIT 1',
+            ['t' => $tenantId, 'r' => $reference]
+        );
+    }
+
     public function nextReference(int $tenantId): string
     {
         $year = date('Y');
