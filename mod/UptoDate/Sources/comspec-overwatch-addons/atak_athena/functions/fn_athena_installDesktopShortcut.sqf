@@ -1,4 +1,4 @@
-/*
+﻿/*
 
     Icônes COMSPEC sur l’écran Desktop d’ATAK Enhanced (cTab Android),
 
@@ -104,7 +104,7 @@ private _shortcuts = [
 
     [
 
-        198724, 198725, 1110,
+        198724, 198725, 1230,
 
         "a3\ui_f\data\gui\cfg\communicationmenu\instructor_ca.paa",
 
@@ -118,7 +118,7 @@ private _shortcuts = [
 
     [
 
-        198722, 198723, 990,
+        198722, 198723, 1110,
 
         "\A3\ui_f\data\igui\cfg\simpletasks\types\Radio_ca.paa",
 
@@ -132,7 +132,7 @@ private _shortcuts = [
 
     [
 
-        198726, 198727, 880,
+        198726, 198727, 990,
 
         "\A3\ui_f\data\gui\cfg\communicationmenu\call_ca.paa",
 
@@ -236,9 +236,9 @@ COMSPEC_Athena_desktopShortcutPFH = [{
 
     private _iconH = (100 / 2048) * _phoneH;
 
-    private _lblW = (140 / 2048) * (_phoneH * 3 / 4);
+    private _lblW = (160 / 2048) * (_phoneH * 3 / 4);
 
-    private _lblH = (55 / 2048) * _phoneH;
+    private _lblH = (62 / 2048) * _phoneH;
 
     // Zone cliquable = icône + libellé (évite que le texte mange le clic)
 
@@ -306,9 +306,9 @@ COMSPEC_Athena_desktopShortcutPFH = [{
 
         _lbl ctrlSetPosition [
 
-            _phoneSizeX + (((_xOff - 20) / 2048) * (_phoneH * 3 / 4)),
+            _xPos - ((_lblW - _iconW) / 2),
 
-            _phoneSizeY + ((125 / 2048) * _phoneH),
+            _yPos + _iconH + ((4 / 2048) * _phoneH),
 
             _lblW,
 

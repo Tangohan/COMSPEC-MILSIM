@@ -1,4 +1,4 @@
-/*
+﻿/*
     Actions de l’app Sons ATAK.
     Params: [_action, _delta]
 */
@@ -59,19 +59,32 @@ switch (toLower _action) do {
         ["comspec_overwatch_roleplay_visual_effects", !_cur] call comspec_overwatch_connect_fnc_setAtakSoundSetting;
     };
     case "test": {
+        // Joue directement (bypass du garde _uiBlocked : cTab est un dialog, findDisplay 46 null)
         private _pref = missionNamespace getVariable ["comspec_overwatch_notif_sound", "silent_vib"];
-        if ((toLower _pref) isEqualTo "mute") then {
-            ["Tester — silence total actif. Changez le style d’alerte pour entendre un son.", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
-        } else {
-            if ((toLower _pref) isEqualTo "silent_vib") then {
+        if (!(_pref isEqualType "")) then { _pref = "silent_vib"; };
+        switch (toLower _pref) do {
+            case "mute": {
+                ["Silence total actif - changez le style d'alerte pour entendre un son.", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+            };
+            case "silent_vib": {
                 private _vol = ["vibrate"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
                 if (_vol > 0.01) then {
                     playSoundUI ["COMSPEC_ATAK_Vibrate", _vol, 1];
                 } else {
-                    ["Tester — volume trop bas pour la vibration.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
+                    ["Volume vibration trop bas.", "system", "warn"] call comspec_overwatch_connect_fnc_ambientHint;
                 };
-            } else {
-                ["order"] call comspec_overwatch_connect_fnc_playAtakNotification;
+            };
+            case "stalker": {
+                private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+                if (_vol > 0.01) then { playSoundUI ["COMSPEC_ATAK_Stalker", _vol, 1]; };
+            };
+            case "health": {
+                private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+                if (_vol > 0.01) then { playSoundUI ["COMSPEC_ATAK_Health", _vol, 1]; };
+            };
+            default {
+                private _vol = ["notif"] call comspec_overwatch_connect_fnc_getAtakSoundVolume;
+                if (_vol > 0.01) then { playSoundUI ["COMSPEC_ATAK_Order", _vol, 1]; };
             };
         };
     };

@@ -1,3 +1,11 @@
+COMSPEC Overwatch 1.4.7 — 29/07/2026
+
+Correctif — icônes bureau ATAK et bouton Tester Sons
+
+• Icônes bureau : superposition corrigée (Sons et Photos Athena avaient le même xOff)
+• Libellés centrés sous chaque icône (plus de décalage ni chevauchement)
+• Bouton « Tester » de l'app Sons : joue maintenant directement le son (contournement du blocage dialog cTab)
+
 COMSPEC Overwatch 1.4.6 — 29/07/2026
 
 Correctif — messages web → chat groupe in-game
