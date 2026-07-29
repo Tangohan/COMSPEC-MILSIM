@@ -72,6 +72,7 @@ $total = count($persons);
                 $sig = is_array($p['signature'] ?? null) ? $p['signature'] : null;
                 $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
                 $lesions = is_array($med['lesions'] ?? null) ? $med['lesions'] : [];
+                $hits = is_array($p['watchlist'] ?? null) ? $p['watchlist'] : [];
                 $statusSlug = (string) ($p['status'] ?? 'civil');
             ?>
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
@@ -87,6 +88,29 @@ $total = count($persons);
                         </div>
                         <span class="badge badge-status"><?= $h($p['status_label'] ?? '') ?></span>
                     </header>
+
+                    <?php if ($hits !== []): ?>
+                        <div class="sse-record-block sse-hit">
+                            <div class="sse-block-title">Liste de surveillance</div>
+                            <ul class="sse-hit-list">
+                                <?php foreach ($hits as $hit):
+                                    $e = is_array($hit['entry'] ?? null) ? $hit['entry'] : [];
+                                    $name = trim(((string) ($e['first_name'] ?? '')) . ' ' . ((string) ($e['last_name'] ?? '')));
+                                    if ($name === '') { $name = (string) ($e['alias'] ?? 'Entrée surveillée'); }
+                                ?>
+                                    <li>
+                                        <span class="sse-hit-score"><?= $h((string) ($hit['score'] ?? 0)) ?>%</span>
+                                        <span class="sse-hit-name"><?= $h($name) ?></span>
+                                        <span class="sse-muted"><?= $h((string) ($hit['reason'] ?? '')) ?></span>
+                                        <?php if (!empty($e['threat_level'])): ?>
+                                            <span class="badge"><?= $h($e['threat_level']) ?></span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <p class="sse-note">Rapprochement nominatif — à confirmer par le commandement.</p>
+                        </div>
+                    <?php endif; ?>
 
                     <dl class="sse-record-facts">
                         <?php if (!empty($p['circumstances_label'])): ?>

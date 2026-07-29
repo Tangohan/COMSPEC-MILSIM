@@ -1806,3 +1806,40 @@ body.sse-theme-console .flash {
     .sse-record-grid { grid-template-columns: 1fr; padding: .5rem; }
     .sse-sample-kind { min-width: 0; }
 }
+
+/* Correspondance liste de surveillance sur une fiche personne */
+.sse-record-block.sse-hit {
+    border-color: var(--amber);
+    background: var(--amber-dark);
+}
+
+.sse-record-block.sse-hit .sse-block-title { color: var(--amber); }
+
+.sse-hit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.sse-hit-list li {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    flex-wrap: wrap;
+    font-size: .78rem;
+}
+
+.sse-hit-score {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--amber);
+    min-width: 38px;
+}
+
+.sse-hit-name {
+    color: var(--text-strong);
+    font-weight: 600;
+}

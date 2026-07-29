@@ -86,6 +86,24 @@ if (_photo) then { _bits pushBack "PHOTO ARMÉE"; };
 if ((_sig isEqualType []) && {(count _sig) >= 4}) then { _bits pushBack "SIGNÉ"; } else { _bits pushBack "NON SIGNÉ"; };
 
 (_disp displayCtrl 9525) ctrlSetStructuredText parseText format [
-    "<t size='0.5' font='EtelkaMonospacePro' color='#9ed8b4' align='center'>%1</t>",
+    "<t size='0.5' color='#9ed8b4' align='center'>%1</t>",
     _bits joinString "   ·   "
+];
+
+// --- Barre d’état de l’appareil (9526) : liaison, relevés, heure ---
+private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+private _linkTxt = switch (toLower (str _link)) do {
+    case "linked": { "<t color='#9ed8b4'>LIAISON</t>" };
+    case "degraded": { "<t color='#e0d27e'>DÉGRADÉE</t>" };
+    default { "<t color='#e09a7e'>HORS LIAISON</t>" };
+};
+private _st = systemTime;
+private _hh = _st select 3;
+private _mm = _st select 4;
+(_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
+    "<t size='0.5' align='right' color='#c8d4e0'>%1  ·  %2 éch.  ·  %3:%4</t>",
+    _linkTxt,
+    count _samples,
+    if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
+    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm }
 ];

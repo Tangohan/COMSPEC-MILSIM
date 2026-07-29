@@ -378,12 +378,13 @@ final class SsePortalController
             'limit' => 100,
         ]);
 
-        // Relevés biométriques simulés : affichés sur la fiche, jamais agrégés ailleurs.
+        // Relevés biométriques simulés + croisement listes de surveillance.
         foreach ($list as $i => $p) {
             $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples(
                 (int) ($p['id'] ?? 0),
                 $tenantId
             );
+            $list[$i]['watchlist'] = $this->cross->matchOne($p, $tenantId);
         }
 
         return $this->portalView('atak.sse.persons', [

@@ -11,6 +11,7 @@ use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Sse\SseCrossMatchService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
@@ -29,6 +30,7 @@ final class SseApiController
     public function __construct(
         private ?SsePersonRepository $persons = null,
         private ?SseCaseRepository $cases = null,
+        private ?SseCrossMatchService $cross = null,
         private ?AtakArmaWriteGuard $armaGuard = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
@@ -36,6 +38,7 @@ final class SseApiController
     ) {
         $this->persons ??= new SsePersonRepository();
         $this->cases ??= new SseCaseRepository();
+        $this->cross ??= new SseCrossMatchService();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
@@ -155,6 +158,37 @@ final class SseApiController
         if (is_array($person)) {
             $person['filing'] = $filing;
             $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $tenantId);
+
+            // Croisement listes de surveillance. Le résultat part vers le journal
+            // d'activité (poste de commandement) ; le terrain n'obtient pas de verdict
+            // dans la réponse de transmission.
+            $hits = $this->cross->matchOne($person, $tenantId);
+            $person['watchlist'] = $hits;
+            if ($hits !== []) {
+                $top = $hits[0];
+                $entry = is_array($top['entry'] ?? null) ? $top['entry'] : [];
+                $watched = trim(sprintf(
+                    '%s %s',
+                    (string) ($entry['first_name'] ?? ''),
+                    (string) ($entry['last_name'] ?? '')
+                ));
+                if ($watched === '') {
+                    $watched = (string) ($entry['alias'] ?? 'entrée surveillée');
+                }
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    'SSE_WATCHLIST',
+                    sprintf(
+                        'Correspondance liste de surveillance : %s ↔ %s (%d%%, %s)',
+                        $person['display_name'] ?? 'fiche sans nom',
+                        $watched,
+                        (int) ($top['score'] ?? 0),
+                        (string) ($top['reason'] ?? '')
+                    ),
+                    (string) ($data['submitter_callsign'] ?? 'Terrain')
+                );
+            }
         }
 
         $this->activityLog->record(

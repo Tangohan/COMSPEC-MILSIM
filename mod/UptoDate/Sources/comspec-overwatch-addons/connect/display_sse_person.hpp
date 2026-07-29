@@ -31,6 +31,14 @@
 #define SEEK_LBL    (0.014 * safezoneH)
 #define SEEK_FIELD  (0.029 * safezoneH)
 
+// Habillage de l’appareil.
+// Le châssis est dessiné en contrôles : le terminal fonctionne sans aucun asset.
+// Pour superposer l’illustration du SEEK, convertir l’image en .paa, la déposer dans
+// connect/img/device/ puis renseigner le chemin ci-dessous — les contrôles se
+// superposent alors à l’image, qui remplace le châssis dessiné.
+//   #define SEEK_CHASSIS_TEXTURE "\z\comspec_overwatch\addons\connect\img\device\seek_chassis.paa"
+#define SEEK_CHASSIS_TEXTURE ""
+
 class COMSPEC_SsePerson_Dialog {
     idd = 9991;
     movingEnable = 1;
@@ -53,6 +61,23 @@ class COMSPEC_SsePerson_Dialog {
         class BumperBL: BumperTL { y = (0.938 * safezoneH + safezoneY); };
         class BumperBR: BumperTL { x = (0.735 * safezoneW + safezoneX); y = (0.938 * safezoneH + safezoneY); };
 
+        // Poignées latérales — rappel du gabarit de l’appareil.
+        class GripLeft: RscText {
+            idc = -1;
+            x = (0.239 * safezoneW + safezoneX); y = (0.300 * safezoneH + safezoneY);
+            w = (0.014 * safezoneW); h = (0.400 * safezoneH);
+            colorBackground[] = {0.075, 0.082, 0.086, 1};
+        };
+        class GripRight: GripLeft { x = (0.748 * safezoneW + safezoneX); };
+
+        // Illustration de l’appareil : dessinée par-dessus le châssis, sous l’écran.
+        // Reste invisible tant que SEEK_CHASSIS_TEXTURE est vide.
+        class ChassisTexture: RscPicture {
+            idc = -1;
+            text = SEEK_CHASSIS_TEXTURE;
+            x = SEEK_X; y = SEEK_Y; w = SEEK_W; h = SEEK_H;
+        };
+
         // ---------------- Écran ----------------
         class Screen: RscText {
             idc = -1;
@@ -67,21 +92,42 @@ class COMSPEC_SsePerson_Dialog {
             colorBackground[] = {0.24, 0.87, 0.55, 0.95};
         };
 
+        // ---------------- Barre d’état de l’appareil ----------------
+        class StatusBar: RscText {
+            idc = -1;
+            x = (0.248 * safezoneW + safezoneX); y = (0.0585 * safezoneH + safezoneY);
+            w = (0.505 * safezoneW); h = (0.024 * safezoneH);
+            colorBackground[] = {0.169, 0.204, 0.251, 1};
+        };
+        class StatusHome: RscStructuredText {
+            idc = -1;
+            text = "<t size='0.52' color='#e8f4f0'>Home</t>";
+            x = (0.256 * safezoneW + safezoneX); y = (0.0615 * safezoneH + safezoneY);
+            w = (0.070 * safezoneW); h = (0.019 * safezoneH);
+        };
+        class StatusBrand: RscStructuredText {
+            idc = -1;
+            text = "<t font='RobotoCondensedBold' size='0.58' align='center' color='#ffffff'>SEEK</t>";
+            x = (0.330 * safezoneW + safezoneX); y = (0.0605 * safezoneH + safezoneY);
+            w = (0.340 * safezoneW); h = (0.020 * safezoneH);
+        };
+        // Renseignée au chargement : liaison, horodatage, état d’enregistrement.
+        class StatusRight: RscStructuredText {
+            idc = 9526;
+            text = "<t size='0.5' align='right' color='#c8d4e0'>--:--</t>";
+            x = (0.600 * safezoneW + safezoneX); y = (0.0615 * safezoneH + safezoneY);
+            w = (0.145 * safezoneW); h = (0.019 * safezoneH);
+        };
+
         class DeviceTitle: RscStructuredText {
             idc = -1;
-            text = "<t font='RobotoCondensedBold' size='0.82' color='#e8f4f0'>SEEK</t> <t font='RobotoCondensed' size='0.58' color='#7ee0a0'>· TERMINAL BIOMÉTRIQUE DE TERRAIN</t>";
-            x = COL_L_X; y = (0.064 * safezoneH + safezoneY); w = (0.300 * safezoneW); h = (0.026 * safezoneH);
-        };
-        class DeviceState: RscStructuredText {
-            idc = -1;
-            text = "<t size='0.48' align='right' color='#7f95a8'>ENRÔLEMENT · SESSION LOCALE</t>";
-            x = (0.470 * safezoneW + safezoneX); y = (0.067 * safezoneH + safezoneY);
-            w = (0.275 * safezoneW); h = (0.022 * safezoneH);
+            text = "<t font='RobotoCondensed' size='0.56' color='#7ee0a0'>ENRÔLEMENT BIOMÉTRIQUE DE TERRAIN</t>";
+            x = COL_L_X; y = (0.086 * safezoneH + safezoneY); w = (0.300 * safezoneW); h = (0.022 * safezoneH);
         };
         class Hint: RscStructuredText {
             idc = 9500;
             text = "<t size='0.5' color='#7f95a8'>Relevez l’identité, le contexte et la biométrie de la personne contrôlée.</t>";
-            x = COL_L_X; y = (0.090 * safezoneH + safezoneY); w = COL_FULL_W; h = (0.024 * safezoneH);
+            x = COL_L_X; y = (0.104 * safezoneH + safezoneY); w = COL_FULL_W; h = (0.022 * safezoneH);
         };
         class HeaderRule: RscText {
             idc = -1;
@@ -310,6 +356,51 @@ class COMSPEC_SsePerson_Dialog {
             text = "Annuler";
             x = (0.594 * safezoneW + safezoneX); y = (0.840 * safezoneH + safezoneY); w = (0.151 * safezoneW); h = (0.038 * safezoneH);
             action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; if (!isNull _d) then { _d closeDisplay 2; } else { closeDialog 0; };";
+        };
+
+        // ---------------- Touches physiques de l’appareil ----------------
+        // Raccourcis matériels : A1 empreintes, A2 iris, − / + photo et signature,
+        // grille pour vider les relevés, loupe pour transmettre.
+        class KeyA1: COMSPEC_RscButton {
+            idc = -1;
+            text = "A1";
+            x = (0.256 * safezoneW + safezoneX); y = (0.890 * safezoneH + safezoneY);
+            w = (0.070 * safezoneW); h = (0.030 * safezoneH);
+            tooltip = "Relevé d’empreintes";
+            action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+        };
+        class KeyA2: KeyA1 {
+            text = "A2";
+            x = (0.334 * safezoneW + safezoneX);
+            tooltip = "Relevé iris";
+            action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+        };
+        class KeyMinus: KeyA1 {
+            text = "−";
+            x = (0.412 * safezoneW + safezoneX);
+            w = (0.045 * safezoneW);
+            tooltip = "Prélèvement ADN";
+            action = "['adn'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
+        };
+        class KeyPlus: KeyA1 {
+            text = "+";
+            x = (0.461 * safezoneW + safezoneX);
+            w = (0.045 * safezoneW);
+            tooltip = "Armer la photo du visage";
+            action = "uiNamespace setVariable ['COMSPEC_SsePerson_PhotoPending', true]; ['Photo du visage : une capture récente sera jointe à la fiche.', 'tactical', 'info'] call comspec_overwatch_connect_fnc_announce; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
+        };
+        class KeyGrid: KeyA1 {
+            text = "::";
+            x = (0.586 * safezoneW + safezoneX);
+            tooltip = "Effacer les relevés en attente";
+            action = "uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_PhotoPending', false]; ['Relevés effacés.', 'tactical', 'info'] call comspec_overwatch_connect_fnc_announce; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
+        };
+        class KeySign: KeyA1 {
+            text = "SIGN";
+            x = (0.664 * safezoneW + safezoneX);
+            w = (0.081 * safezoneW);
+            tooltip = "Signer par l’ATAK";
+            action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
         };
     };
 };
