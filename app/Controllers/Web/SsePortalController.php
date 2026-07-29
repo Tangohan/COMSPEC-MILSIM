@@ -148,9 +148,15 @@ final class SsePortalController
             'classification' => $request->query('classification'),
         ]);
 
+        $counts = $this->cases->countsForCases(
+            array_map(static fn (array $c): int => (int) ($c['id'] ?? 0), $list),
+            $tenantId
+        );
+
         return $this->portalView('atak.sse.cases', [
             'title' => 'Dossiers — Renseignement interpersonnel',
             'cases' => $list,
+            'caseCounts' => $counts,
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),

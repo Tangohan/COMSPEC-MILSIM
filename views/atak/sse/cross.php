@@ -106,13 +106,18 @@ foreach ($matches as $row) {
             </div>
         </div>
     <?php else: ?>
+        <p class="sse-note" style="padding: 0 1rem;">
+            Rapprochement nominatif sur nom, prénom et alias — seuil de rétention
+            <?= (int) \App\Services\Sse\SseCrossMatchService::MATCH_THRESHOLD ?> %.
+            Un score élevé n’est pas une identification : il appelle une confirmation du commandement.
+        </p>
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
                     <th>Fiche terrain</th>
                     <th>Entrée surveillée</th>
-                    <th>Score</th>
+                    <th>Similarité</th>
                     <th>Motif</th>
                 </tr>
                 </thead>
@@ -125,7 +130,18 @@ foreach ($matches as $row) {
                                 <span class="record-name"><?= $h($m['entry']['display_name'] ?? '') ?></span>
                                 <span class="record-sub"><?= $h($m['entry']['threat_level_label'] ?? '') ?></span>
                             </td>
-                            <td class="record-id"><?= (int) $m['score'] ?> %</td>
+                            <?php
+                                $sc = (int) ($m['score'] ?? 0);
+                                $scClass = $sc >= 85 ? 'is-alert' : ($sc >= 70 ? 'is-warn' : '');
+                            ?>
+                            <td>
+                                <span class="sse-score-cell">
+                                    <span class="sse-gauge <?= $h($scClass) ?>">
+                                        <span style="width: <?= $h((string) min(100, max(0, $sc))) ?>%"></span>
+                                    </span>
+                                    <span class="sse-sample-score"><?= $sc ?>%</span>
+                                </span>
+                            </td>
                             <td><?= $h($m['reason'] ?? '') ?></td>
                         </tr>
                     <?php endforeach; ?>

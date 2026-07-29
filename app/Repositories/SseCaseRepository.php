@@ -107,6 +107,55 @@ final class SseCaseRepository
     }
 
     /**
+     * Volumétrie par dossier : personnes rattachées, notes, pièces.
+     * Trois agrégats plutôt qu'une requête par dossier et par table.
+     *
+     * @param list<int> $caseIds
+     * @return array<int, array{persons: int, notes: int, evidence: int}>
+     */
+    public function countsForCases(array $caseIds, int $tenantId): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $caseIds),
+            static fn (int $i): bool => $i > 0
+        )));
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(',', $ids);
+
+        $out = [];
+        foreach ($ids as $id) {
+            $out[$id] = ['persons' => 0, 'notes' => 0, 'evidence' => 0];
+        }
+
+        $sources = [
+            'persons' => 'sse_case_persons',
+            'notes' => 'sse_case_notes',
+            'evidence' => 'sse_case_evidence',
+        ];
+        foreach ($sources as $key => $table) {
+            try {
+                $rows = $this->db->fetchAll(
+                    "SELECT case_id, COUNT(*) AS c FROM {$table}
+                     WHERE tenant_id = :t AND case_id IN ({$in}) GROUP BY case_id",
+                    ['t' => $tenantId]
+                );
+            } catch (\Throwable) {
+                continue;
+            }
+            foreach ($rows as $row) {
+                $cid = (int) ($row['case_id'] ?? 0);
+                if (isset($out[$cid])) {
+                    $out[$cid][$key] = (int) ($row['c'] ?? 0);
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * Dossier par référence saisie sur le terrain (terminal SEEK).
      * La casse et les espaces sont tolérés : l'opérateur tape sous contrainte.
      *

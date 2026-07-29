@@ -1843,3 +1843,38 @@ body.sse-theme-console .flash {
     color: var(--text-strong);
     font-weight: 600;
 }
+
+/* Volumétrie par dossier (registre des dossiers) */
+.sse-count-set {
+    display: inline-flex;
+    gap: .55rem;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.sse-count-n {
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+/* Score de similarité (croisements) */
+.sse-score-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 120px;
+}
+
+.sse-score-cell .sse-gauge {
+    flex: 0 0 70px;
+    min-width: 70px;
+}
+
+/* Jauge de correspondance : un score élevé alerte, à l'inverse de la jauge
+   de qualité biométrique où un score élevé est favorable. Classes distinctes
+   pour éviter toute confusion de sémantique. */
+.sse-gauge.is-warn > span { background: var(--amber); }
+.sse-gauge.is-alert > span { background: var(--red); }

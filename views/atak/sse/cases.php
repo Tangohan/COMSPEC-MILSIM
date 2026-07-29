@@ -141,11 +141,16 @@ $statusBadge = static function (string $key): string {
                     <th>Dossier</th>
                     <th>Classification</th>
                     <th>Statut</th>
+                    <th>Contenu</th>
+                    <th>Mise à jour</th>
                     <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($cases as $c): ?>
+                <?php foreach ($cases as $c):
+                    $cnt = $caseCounts[(int) ($c['id'] ?? 0)] ?? ['persons' => 0, 'notes' => 0, 'evidence' => 0];
+                    $stamp = (string) ($c['updated_at'] ?? $c['created_at'] ?? '');
+                ?>
                     <tr>
                         <td><span class="record-id"><?= $h($c['reference_code']) ?></span></td>
                         <td>
@@ -162,6 +167,20 @@ $statusBadge = static function (string $key): string {
                                 <?= $h($c['status_label']) ?>
                             </span>
                         </td>
+                        <td>
+                            <span class="sse-count-set">
+                                <span class="sse-count" title="Personnes rattachées">
+                                    <span class="sse-count-n"><?= (int) $cnt['persons'] ?></span> pers.
+                                </span>
+                                <span class="sse-count" title="Notes de dossier">
+                                    <span class="sse-count-n"><?= (int) $cnt['notes'] ?></span> notes
+                                </span>
+                                <span class="sse-count" title="Pièces versées">
+                                    <span class="sse-count-n"><?= (int) $cnt['evidence'] ?></span> pièces
+                                </span>
+                            </span>
+                        </td>
+                        <td class="record-id"><?= $h($stamp !== '' ? substr($stamp, 0, 16) : '—') ?></td>
                         <td>
                             <a class="link" href="<?= $h(url('atak/sse/dossiers/' . $c['id'])) ?>">Ouvrir →</a>
                         </td>
