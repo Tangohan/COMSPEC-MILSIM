@@ -204,6 +204,26 @@ Symptôme côté jeu : les ordres ne remontent plus dans l’ATAK et les marqueu
 synchronisent plus. Uploader ces deux fichiers suffit à rétablir les deux endpoints — c’est
 exactement l’écueil décrit en section 9 (fichier absent des listes, donc jamais transféré).
 
+### Renseignement SSE 1.4.12 — terminal SEEK
+
+Ensemble cohérent : uploader **en une fois**, sinon le terminal envoie des champs que
+le serveur ignore (fiche enregistrée mais sans constat, sans relevé ni classement).
+
+| Fichier | Rôle |
+|---|---|
+| `bootstrap/atak_sse_persons_migration.php` | Colonnes constat / signature, index unité, table `sse_biometric_samples` |
+| `app/Repositories/SsePersonRepository.php` | Persistance constat, signature, échantillons, recherche par unité |
+| `app/Repositories/SseCaseRepository.php` | `findByReferenceCode()` — résolution du code dossier saisi sur le terrain |
+| `app/Controllers/Api/SseApiController.php` | `case_code`, `signature`, `medical_context`, `biometric_samples`, `by-unit` |
+| `app/Controllers/Web/SsePortalController.php` | Relevés joints au registre des personnes |
+| `routes/web.php` | Route `/api/sse/persons/by-unit` (**avant** `/{id}`) |
+| `views/atak/sse/persons.php` | Registre en fiches |
+| `public/assets/css/sse_portal.css` | Styles des fiches et jauges de qualité |
+
+La migration est idempotente et se rejoue seule au premier appel du dépôt. Si les
+`ALTER TABLE` échouent (droits), l’enregistrement d’une fiche échouera : vérifier
+`sse_persons.medical_context_json` après le premier envoi terrain.
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |
