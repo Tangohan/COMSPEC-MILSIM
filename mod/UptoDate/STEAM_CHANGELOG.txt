@@ -1,3 +1,10 @@
+COMSPEC Overwatch 1.4.6 — 29/07/2026
+
+Correctif — messages web → chat groupe in-game
+
+• Les messages envoyés depuis le portail web (tchat groupe) s'affichent maintenant en jeu via systemChat
+• Correction charabia : les messages lus par le serveur de jeu ne subissaient pas le chiffrement intel (aucun certificat requis côté serveur)
+
 COMSPEC Overwatch 1.4.5 — 29/07/2026
 
 Correctif critique — zones brouillage / intensité / casse

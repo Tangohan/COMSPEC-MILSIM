@@ -1,4 +1,4 @@
-/*
+﻿/*
     Interroge Athena (GetChatMessages) et pousse les messages web / TOC
     vers l’inbox Athena (app Messages). Les GROUPE| pair-à-pair restent
     gérés par Iceman (CBA) — on ne les rejoue pas ici pour éviter les doublons.
@@ -111,9 +111,29 @@ if (!_bootstrapped) exitWith {
 
     private _plainU = toUpper _plain;
 
-    // GROUPE| : déjà diffusé en jeu via Iceman (CBA) — ne pas doubler.
-    // On laisse le journal web ; l’inbox Athena n’a pas besoin d’une 2e copie.
-    if ((_plainU find "GROUPE|") == 0 || {_plainU isEqualTo "GROUPE"}) then { continue };
+    // GROUPE|groupId|cs|grid|texte : message de groupe.
+    // Jeu->web : l’empreinte est dans _sentFp, deja filtré plus haut.
+    // Web->jeu : pas d’empreinte -> relayer le texte en jeu via systemChat + inbox Athena.
+    if ((_plainU find "GROUPE|") == 0 || {_plainU isEqualTo "GROUPE"}) then {
+        if ((_plainU find "GROUPE|") == 0) then {
+            private _gParts = _plain splitString "|";
+            // Format : GROUPE|groupId|cs|grid|texte (champs 0..3 = prefixe, 4+ = texte)
+            private _gText = if ((count _gParts) >= 5) then {
+                private _tail = +_gParts;
+                _tail deleteRange [0, 4];
+                _tail joinString "|"
+            } else {
+                if ((count _gParts) >= 2) then { _gParts select ((count _gParts) - 1) } else { "" }
+            };
+            _gText = trim _gText;
+            if (_gText isNotEqualTo "") then {
+                systemChat format ["[%1] %2", _author, _gText];
+                _inbox pushBack ["GROUP", "Message de groupe", _gText, mapGridPosition player, _timeStr, _author];
+                _added = _added + 1;
+            };
+        };
+        continue;
+    };
 
     // Alertes / ordres déjà gérés par d’autres polls
     if ((_plainU find "ALERTE TACTIQUE") == 0) then { continue };
