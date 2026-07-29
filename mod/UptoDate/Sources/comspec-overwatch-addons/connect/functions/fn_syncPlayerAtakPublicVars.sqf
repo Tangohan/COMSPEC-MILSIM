@@ -31,3 +31,5 @@ player setVariable ["COMSPEC_LinkState", _link, true];
 if (_atakState isEqualType createHashMap) then {
     player setVariable ["COMSPEC_AtakState", _atakState, true];
 };
+// Marqueur de fraîcheur : le panneau Zeus sait ainsi si une synchro a déjà abouti.
+player setVariable ["COMSPEC_AtakSyncAt", diag_tickTime, true];

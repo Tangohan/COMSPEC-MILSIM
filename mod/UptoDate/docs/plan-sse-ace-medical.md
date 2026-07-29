@@ -243,8 +243,23 @@ Reconnaissance faciale, lecture d’iris réelle, OCR de pièce d’identité, f
 
 ---
 
-## 9. Points à trancher avant L0
+## 9. Décisions prises et état
 
-1. **PBO `sse_ace` ou intégration dans `connect`** — le PBO séparé coûte une entrée de build et rend la couche retirable ; l’intégration dans `connect` coûte zéro build mais rend la couche indissociable. Recommandation : PBO séparé.
-2. **Compromis Option B** (greffe sur le nœud médical ACE si présent) — à retenir ou non pour L0.
-3. **Retour watchlist en jeu** — confirmé « hors L1 », ou attendu plus tôt malgré l’impact roleplay ?
+| Point | Décision | État |
+|---|---|---|
+| PBO `sse_ace` ou intégration dans `connect` | PBO séparé, dans `@COMSPECOverwatch` | **Fait** (L0) |
+| Compromis Option B (greffe sur le nœud médical ACE) | **Écarté** — la sonde de config n’est pas fiable : ACE ajoute une partie de ses actions médicales au runtime, pas en config. Une greffe non vérifiable est exactement la fragilité que l’option B devait éviter | Abandonné |
+| Retour watchlist en jeu | Hors L1, à l’initiative du TOC | Inchangé |
+
+### Livré en L0
+
+- PBO `sse_ace` : `config.cpp`, `CfgEventHandlers.hpp`, `XEH_preInit.sqf` (réglage CBA), `XEH_postInitClient.sqf`, `fn_initSseAce.sqf`, `fn_sseCanExploit.sqf`, `fn_sseExploitTargetLabel.sqf`.
+- Nœud `COMSPEC_SSE` sur `ACE_MainActions` de `CAManBase`, libellé contextuel via `modifierFunction`.
+- Correctif corps décédés dans `fn_ssePersonDialogShow` / `fn_ssePersonDialogOnLoad`.
+- Entrée de build du cinquième PBO dans `build_mod.bat`.
+
+**Non exécuté** : compilation PBO et recette in-game (chaîne Windows / AddonBuilder absente de l’environnement de développement). Les fichiers passent le contrôle statique SQF (précédence de condition, équilibrage) et l’équilibrage des accolades de config.
+
+### Reste à faire
+
+L1 (fiche existante), L2 (contexte médical), L3 (biométrie) — inchangés, sections 5 et 6.

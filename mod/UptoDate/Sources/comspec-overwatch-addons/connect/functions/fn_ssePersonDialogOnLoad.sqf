@@ -40,7 +40,9 @@ private _weaponsLines = [];
 private _equipmentLines = [];
 private _statusGuess = "civil";
 
-if (!isNull _target && { alive _target }) then {
+// Le préremplissage vaut aussi pour une personne décédée (exploitation de corps) :
+// « alive » ne sert plus qu’à choisir le libellé affiché.
+if (!isNull _target) then {
     private _edenLast = _target getVariable ["COMSPEC_SSE_LastName", ""];
     private _edenFirst = _target getVariable ["COMSPEC_SSE_FirstName", ""];
     private _edenAlias = _target getVariable ["COMSPEC_SSE_Alias", ""];
@@ -94,9 +96,11 @@ if (!isNull _target && { alive _target }) then {
         };
     };
 
+    private _etat = if (alive _target) then { "" } else { " — personne décédée" };
     (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
-        "<t align='center' size='0.55' color='#8aa0b4'>Cible : %1 — inventaire et statut préremplis si disponibles.</t>",
-        name _target
+        "<t align='center' size='0.55' color='#8aa0b4'>Cible : %1%2 — inventaire et statut préremplis si disponibles.</t>",
+        name _target,
+        _etat
     ];
 };
 

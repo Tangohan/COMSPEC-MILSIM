@@ -358,13 +358,13 @@ private _troll = missionNamespace getVariable ["COMSPEC_TenantTrollMode", false]
 private _milsimUi = missionNamespace getVariable ["comspec_overwatch_milsim_ui", false];
 if (!_realism && !_milsimUi) then {
     private _immobileSec = if (_troll) then { 120 } else { 180 };
-    if {(_now - _immobileTime) > _immobileSec} && {!(missionNamespace getVariable ["COMSPEC_ImmobileAlerted", false])} then {
+    if (((_now - _immobileTime) > _immobileSec) && {!(missionNamespace getVariable ["COMSPEC_ImmobileAlerted", false])}) then {
         missionNamespace setVariable ["COMSPEC_ImmobileAlerted", true, false];
         private _alert = createHashMapFromArray [["kind", "IMMOBILE"], ["unit", _callSign], ["duration", _now - _immobileTime], ["position", _pos]];
         ["OnTrackingAnomaly", _alert] call comspec_overwatch_connect_fnc_publishEvent;
     };
     private _jumpThreshold = if (_troll) then { 150 } else { 250 };
-    if {_distance > _jumpThreshold} && {_batchInterval > 2} then {
+    if ((_distance > _jumpThreshold) && {_batchInterval > 2}) then {
         private _lastIncoherent = missionNamespace getVariable ["COMSPEC_IncoherentAlertAt", -1e9];
         if ((_now - _lastIncoherent) > 60) then {
             missionNamespace setVariable ["COMSPEC_IncoherentAlertAt", _now, false];

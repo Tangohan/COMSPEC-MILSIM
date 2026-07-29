@@ -62,7 +62,7 @@ if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
 
 // Écran endommagé : position seule (GPS / BFT) — avant le test « éteint » car l’historique
 // couplait écran cassé + powered_off=false, ce qui masquait l’opérateur du web.
-if !(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connection_ok", true]} exitWith {
+if (!(_atak getOrDefault ["screen_ok", true]) && {_atak getOrDefault ["connection_ok", true]}) exitWith {
     if (_requireFull) then {
         _result set ["can_transmit", false];
     } else {

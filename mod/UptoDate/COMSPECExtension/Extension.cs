@@ -3816,7 +3816,7 @@ public static class Extension
         if (resolved == null)
         {
             var hint = string.IsNullOrWhiteSpace(rawPath) ? "empty_path" : Path.GetFileName(rawPath.Replace('/', '\\'));
-            return $"ERR|file_not_found|{hint}";
+            return $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(rawPath)}";
         }
         try
         {
@@ -4174,6 +4174,36 @@ public static class Extension
         return null;
     }
 
+    /// <summary>
+    /// Diagnostic compact d’un échec de résolution : dossier d’origine connu ou non,
+    /// nombre de dossiers de captures balayés. Évite les « file_not_found » muets.
+    /// </summary>
+    private static string DescribeImageLookupFailure(string? rawPath)
+    {
+        try
+        {
+            var dirCount = 0;
+            foreach (var _ in EnumerateScreenshotDirs()) dirCount++;
+
+            var srcDir = "none";
+            var path = (rawPath ?? "").Trim().Trim('"').Trim('\'').Replace('/', '\\');
+            if (path.Length > 0)
+            {
+                var parent = Path.GetDirectoryName(path);
+                if (!string.IsNullOrWhiteSpace(parent))
+                    srcDir = Directory.Exists(parent) ? "srcdir_ok" : "srcdir_missing";
+                else
+                    srcDir = "name_only";
+            }
+
+            return $"{srcDir}|dirs={dirCount}";
+        }
+        catch
+        {
+            return "diag_failed";
+        }
+    }
+
     private static string? TryReadableImageFile(string candidate)
     {
         try
@@ -4338,6 +4368,74 @@ public static class Extension
         return null;
     }
 
+    /// <summary>
+    /// Dossier de captures COMSPEC — emplacement stable et prévisible, indépendant de
+    /// l’endroit où Arma ou BCE écrivent réellement. Toute capture résolue y est recopiée,
+    /// ce qui donne un point de reprise fiable quand un mod annonce un chemin inexistant.
+    /// </summary>
+    private static string? ComspecCaptureDir()
+    {
+        if (_comspecCaptureDir != null)
+            return _comspecCaptureDir.Length == 0 ? null : _comspecCaptureDir;
+        try
+        {
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(docs))
+            {
+                _comspecCaptureDir = "";
+                return null;
+            }
+            var dir = Path.Combine(docs, "Arma 3 - COMSPEC", "Captures");
+            Directory.CreateDirectory(dir);
+            _comspecCaptureDir = dir;
+            return dir;
+        }
+        catch
+        {
+            _comspecCaptureDir = "";
+            return null;
+        }
+    }
+
+    private static string? _comspecCaptureDir;
+
+    /// <summary>
+    /// Recopie best-effort d’une capture résolue dans le dossier COMSPEC (jamais bloquant).
+    /// Conserve les 200 fichiers les plus récents.
+    /// </summary>
+    private static void MirrorCapture(string resolved)
+    {
+        try
+        {
+            var dir = ComspecCaptureDir();
+            if (dir == null) return;
+            var name = Path.GetFileName(resolved);
+            if (string.IsNullOrWhiteSpace(name)) return;
+
+            var srcDir = Path.GetDirectoryName(resolved);
+            if (!string.IsNullOrWhiteSpace(srcDir)
+                && string.Equals(Path.GetFullPath(srcDir).TrimEnd('\\'), dir.TrimEnd('\\'),
+                    StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var dest = Path.Combine(dir, name);
+            if (!File.Exists(dest))
+                File.Copy(resolved, dest, false);
+
+            var files = new DirectoryInfo(dir).GetFiles();
+            if (files.Length <= 200) return;
+            Array.Sort(files, (a, b) => b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc));
+            for (var i = 200; i < files.Length; i++)
+            {
+                try { files[i].Delete(); } catch { /* ignore */ }
+            }
+        }
+        catch
+        {
+            // Le miroir ne doit jamais faire échouer un envoi.
+        }
+    }
+
     private static IEnumerable<string> EnumerateScreenshotDirs()
     {
         var dirs = new List<string>();
@@ -4403,6 +4501,18 @@ public static class Extension
                 AddIfExists(Path.Combine(cwd, "Screenshots"));
                 AddIfExists(Path.Combine(cwd, "Screenshot"));
                 AddIfExists(cwd);
+                // Profils / dossiers déportés sous la racine Arma.
+                AddScreenshotsUnder(cwd);
+
+                // Mods Workshop : BCE / ATAK Enhanced écrivent dans le dossier du mod,
+                // deux niveaux sous la racine Arma.
+                //   <Arma 3>\!Workshop\@<mod>\Screenshot\<capture>.jpg
+                foreach (var workshopRoot in new[] { "!Workshop", "!workshop" })
+                {
+                    var wr = Path.Combine(cwd, workshopRoot);
+                    if (!Directory.Exists(wr)) continue;
+                    AddScreenshotsUnder(wr);
+                }
             }
         }
         catch { /* ignore */ }

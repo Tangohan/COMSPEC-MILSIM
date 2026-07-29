@@ -190,6 +190,20 @@ Post-check :
 
 > La colonne **CR** du registre opérations (`ath_events_ops.php` + `CommunityEventsAdminController.php`) utilise `operationStatusIndexForTenant()` — déployer avec la section Opérations / Événements.
 
+### ATAK 1.4.11 — classes de support (À UPLOADER EN PRIORITÉ)
+
+Ces deux classes sont `use`-ées en tête de `app/Controllers/Api/AtakApiController.php`. Tant
+qu’elles manquent sur le serveur, **deux endpoints ATAK renvoient une erreur 500** :
+
+| Fichier | Sans lui |
+|---|---|
+| `app/Support/AtakOrderWaypoint.php` | `GET /api/atak/orders` → `Class "App\Support\AtakOrderWaypoint" not found` (`serializeOrder()`) |
+| `app/Support/ArmaMarkerLabel.php` | `POST /api/atak/marker` → `Class "App\Support\ArmaMarkerLabel" not found` (`normalizeArmaMarkerData()`) |
+
+Symptôme côté jeu : les ordres ne remontent plus dans l’ATAK et les marqueurs Arma ne se
+synchronisent plus. Uploader ces deux fichiers suffit à rétablir les deux endpoints — c’est
+exactement l’écueil décrit en section 9 (fichier absent des listes, donc jamais transféré).
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |
