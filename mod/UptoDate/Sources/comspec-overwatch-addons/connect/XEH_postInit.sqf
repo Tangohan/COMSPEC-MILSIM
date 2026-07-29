@@ -35,6 +35,15 @@ if (isNil "COMSPEC_MapMarkerEHsEarly") then {
                     [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
                 };
             }, [_marker], 0.5] call CBA_fnc_waitAndExecute;
+            [{
+                params ["_m"];
+                if (_m in allMapMarkers) then {
+                    [_m, false, true] call comspec_overwatch_connect_fnc_syncMapMarker;
+                };
+                if (!isNil "comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers") then {
+                    [] call comspec_overwatch_atak_athena_fnc_athena_bridgeCtabMarkers;
+                };
+            }, [_marker], 1.0] call CBA_fnc_waitAndExecute;
         };
         missionNamespace setVariable ["COMSPEC_MarkerResyncSoon", _resyncSoon];
         COMSPEC_MapMarkerEHs = [

@@ -2,7 +2,7 @@
 
 Documentation officielle du pack **@COMSPECOverwatch** (Arma 3 + portail Athena).
 
-**Version pack documentée : 1.3.0** · Dernière mise à jour : juillet 2026
+**Version pack documentée : 1.4.11** · Dernière mise à jour : juillet 2026
 
 ---
 
@@ -14,6 +14,7 @@ Documentation officielle du pack **@COMSPECOverwatch** (Arma 3 + portail Athena)
 | [Guide chef de mission / Zeus](guide-chef-mission.md) | Éditeur, Zeus, staff OP |
 | [Réalisme liaison ATAK](realisme-liaison-atak.md) | Staff realism, admins liaison |
 | [Terminal SSE & renseignement](terminal-sse-renseignement.md) | HUMINT, MP, renseignement (vision + roadmap) |
+| [Philosophie technique — indépendance, couche, interop, API](philosophie-technique.md) | Moddeurs, intégrateurs, dev portail |
 | [Architecture du mod](architecture-et-addons.md) | Moddeurs, intégrateurs |
 | [Compilation & publication](compilation-et-publication.md) | Build local, Workshop |
 | [Assets visuels](assets-visuels.md) | Graphistes, conversion textures |
@@ -48,12 +49,12 @@ Le mod **ne remplace pas** cTab ou BCE : il **complète** avec Athena comme post
 
 ## Versions des addons
 
-| Addon | Rôle | Version (1.3.0) |
+| Addon | Rôle | Version (1.4.11) |
 |---|---|---|
-| `comspec_overwatch_main` | Socle, logo, métadonnées | 1.3.0 |
-| `comspec_overwatch_connect` | Liaison Athena, hub, roleplay, rapports | 1.3.0 |
-| `comspec_overwatch_atak_athena` | Pont cTab / BCE | 1.0.7 |
-| `comspec_overwatch_mavik_compat` | Compat drone Mavic (si mod présent) | 1.3.0 |
+| `comspec_overwatch_main` | Socle, logo, métadonnées | 1.4.11 |
+| `comspec_overwatch_connect` | Liaison Athena, hub, roleplay, rapports | 1.4.11 |
+| `comspec_overwatch_atak_athena` | Pont cTab / BCE | 1.0.17 |
+| `comspec_overwatch_mavik_compat` | Compat drone Mavic (si mod présent) | 1.4.11 |
 
 Historique détaillé : [`@COMSPECOverwatch/CHANGELOG.md`](../@COMSPECOverwatch/CHANGELOG.md)
 

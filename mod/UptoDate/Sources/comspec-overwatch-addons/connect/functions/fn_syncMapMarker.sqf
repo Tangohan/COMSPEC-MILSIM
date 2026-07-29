@@ -177,6 +177,9 @@ if ((abs (_pos select 0) < 0.1) && {(abs (_pos select 1) < 0.1)}) exitWith { fal
 
 
 private _text = markerText _markerName;
+if (_text isEqualTo "" && {_isUnderscore}) then {
+    _text = [_markerName] call comspec_overwatch_connect_fnc_resolveBceMarkerText;
+};
 
 private _color = markerColor _markerName;
 

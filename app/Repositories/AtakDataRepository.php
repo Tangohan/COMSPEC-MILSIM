@@ -352,6 +352,24 @@ class AtakDataRepository
         return $this->addMarker($tenantId, $mapId, $layerId, $markerData, $armaName);
     }
 
+    /**
+     * @return array{id:int, marker_data:string}|null
+     */
+    public function findMarkerByArmaName(int $tenantId, int $mapId, string $armaName): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, marker_data FROM atak_markers WHERE tenant_id = ? AND map_id = ? AND arma_name = ? LIMIT 1');
+        $stmt->execute([$tenantId, $mapId, $armaName]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'id' => (int) ($row['id'] ?? 0),
+            'marker_data' => (string) ($row['marker_data'] ?? ''),
+        ];
+    }
+
     public function updateMarker(int $tenantId, int $id, string $markerData, ?int $layerId = null): ?array
     {
         $existing = $this->getMarkerById($tenantId, $id);

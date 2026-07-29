@@ -257,6 +257,7 @@ class CfgFunctions {
             class hasTerminal {};
             class canOpenOverwatchUi {};
             class openAtakEnhanced {};
+            class resolveBceMarkerText {};
             class syncMapMarker {};
             class isSyncableMapMarker {};
             class forceSyncMapMarkers {};

@@ -33,6 +33,7 @@ use App\Services\Qr\QrPngGenerator;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Services\Tactical\AtakIntelViewService;
 use App\Services\Tactical\RoleplaySimulationService;
+use App\Support\ArmaMarkerLabel;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\AtakOrderWaypoint;
 use App\Support\AtakGameSession;
@@ -3170,34 +3171,42 @@ class AtakApiController
         if ($deleted) {
             $ok = $this->atak->deleteMarkerByArmaName($tenantId, $mapId, (string) $armaName);
             if ($ok) {
+                $removedLabel = ArmaMarkerLabel::displayLabel((string) $armaName, []);
                 $this->activityLog->record(
                     $tenantId,
                     $mapId,
                     AtakActivityLogService::TYPE_MARKER,
-                    'Marqueur retiré — ' . $armaName,
-                    (string) $armaName
+                    'Marqueur retiré — ' . $removedLabel,
+                    is_string($actor) ? $actor : null
                 );
             }
 
             return Response::json(['ok' => true, 'deleted' => $ok]);
         }
+        $existingRow = $this->atak->findMarkerByArmaName($tenantId, $mapId, (string) $armaName);
         $markerData = $this->normalizeArmaMarkerData($body['markerData'] ?? '{}', (string) $armaName);
-        $row = $this->atak->upsertMarkerByArmaName($tenantId, $mapId, $layerId, $armaName, $markerData);
-        $label = (string) $armaName;
+        $row = $this->atak->upsertMarkerByArmaName($tenantId, $mapId, $layerId, (string) $armaName, $markerData);
         $decoded = json_decode($markerData, true);
-        if (is_array($decoded)) {
-            $txt = trim((string) ($decoded['text'] ?? $decoded['label'] ?? ''));
-            if ($txt !== '') {
-                $label = $txt;
+        $decoded = is_array($decoded) ? $decoded : [];
+        $label = ArmaMarkerLabel::displayLabel((string) $armaName, $decoded);
+        $logActor = ArmaMarkerLabel::actorFromMarker($decoded, is_string($actor) ? $actor : '');
+
+        $prevLabel = '';
+        if ($existingRow !== null) {
+            $prevDecoded = json_decode((string) ($existingRow['marker_data'] ?? ''), true);
+            if (is_array($prevDecoded)) {
+                $prevLabel = ArmaMarkerLabel::displayLabel((string) $armaName, $prevDecoded);
             }
         }
-        $this->activityLog->record(
-            $tenantId,
-            $mapId,
-            AtakActivityLogService::TYPE_MARKER,
-            'Marqueur placé — ' . $label,
-            (string) $armaName
-        );
+        if ($existingRow === null || $label !== $prevLabel) {
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                AtakActivityLogService::TYPE_MARKER,
+                'Marqueur placé — ' . $label,
+                $logActor
+            );
+        }
         return Response::json(['id' => $row['id'], 'layerId' => $row['layerId'], 'markerData' => $row['markerData']], 201);
     }
 
@@ -3233,10 +3242,13 @@ class AtakApiController
             $decoded['source'] = 'arma';
         }
         if (empty($decoded['text']) && empty($decoded['label']) && $armaName !== '') {
-            // Ne pas exposer les ids techniques comspec_tabletmk_* comme libellé.
-            if (!str_starts_with($armaName, 'comspec_')) {
+            if (!str_starts_with($armaName, 'comspec_') && !ArmaMarkerLabel::isTechnicalName($armaName)) {
                 $decoded['text'] = $armaName;
             }
+        }
+        $resolvedText = ArmaMarkerLabel::displayLabel($armaName, $decoded);
+        if ($resolvedText !== '' && (empty($decoded['text']) || ArmaMarkerLabel::isTechnicalName((string) ($decoded['text'] ?? '')))) {
+            $decoded['text'] = $resolvedText;
         }
         // Alias label → text pour le rendu web unifié.
         if (empty($decoded['text']) && !empty($decoded['label'])) {
