@@ -284,6 +284,15 @@ return static function (PDO $pdo): void {
         $pdo->exec('CREATE INDEX idx_sse_sites_ref ON sse_sites (tenant_id, reference_code)');
         $log("  [OK] index idx_sse_sites_ref\n");
     }
+    // Le dossier est l'unité de travail : un site lui est rattaché.
+    if ($tableExists($pdo, 'sse_sites') && !$columnExists($pdo, 'sse_sites', 'case_id')) {
+        $pdo->exec('ALTER TABLE sse_sites ADD COLUMN case_id INT UNSIGNED DEFAULT NULL AFTER context_id');
+        $log("  [OK] sse_sites.case_id\n");
+    }
+    if ($tableExists($pdo, 'sse_sites') && !$indexExists($pdo, 'sse_sites', 'idx_sse_sites_case')) {
+        $pdo->exec('CREATE INDEX idx_sse_sites_case ON sse_sites (tenant_id, case_id)');
+        $log("  [OK] index idx_sse_sites_case\n");
+    }
     if ($tableExists($pdo, 'sse_site_rooms') && !$indexExists($pdo, 'sse_site_rooms', 'idx_sse_rooms_tenant')) {
         $pdo->exec('CREATE INDEX idx_sse_rooms_tenant ON sse_site_rooms (tenant_id, site_id)');
         $log("  [OK] index idx_sse_rooms_tenant\n");

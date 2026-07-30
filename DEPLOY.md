@@ -259,6 +259,19 @@ Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
 | `bootstrap/atak_sse_persons_migration.php` | `sse_persons.identity_query_json` |
 | `app/Repositories/SsePersonRepository.php` | Persistance du verdict |
 
+### Comptes rendus SSE et rattachement des sites
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseReportService.php` | **Nouveau** — flash et compte rendu initial |
+| `app/Repositories/SseSiteRepository.php` | `case_id`, `listForCase()`, `attachToCase()` |
+| `app/Controllers/Web/SsePortalController.php` | Écran compte rendu, sites du dossier |
+| `app/Controllers/Api/SseApiController.php` | `case_code` sur l'ouverture de site |
+| `bootstrap/atak_sse_persons_migration.php` | `sse_sites.case_id` + index |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/compte-rendu` |
+| `views/atak/sse/case_report.php` | **Nouveau** — écran compte rendu |
+| `views/atak/sse/case_show.php` | Blocs sites rattachés et produits |
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

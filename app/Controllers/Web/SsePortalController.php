@@ -16,6 +16,7 @@ use App\Repositories\SseWatchlistRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
 use App\Services\Sse\SseCrossMatchService;
+use App\Services\Sse\SseReportService;
 
 final class SsePortalController
 {
@@ -28,6 +29,7 @@ final class SsePortalController
         private ?SseSiteRepository $sites = null,
         private ?SseCrossMatchService $cross = null,
         private ?SseCasePdfService $pdf = null,
+        private ?SseReportService $reports = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -37,6 +39,7 @@ final class SsePortalController
         $this->sites ??= new SseSiteRepository();
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
+        $this->reports ??= new SseReportService();
     }
 
     /** Sas d’entrée (public) */
@@ -235,12 +238,19 @@ final class SsePortalController
             }
         }
         $available = $this->persons->listForContext($this->tenantId(), 1, ['limit' => 100]);
+        $caseSites = $this->sites->listForCase($id, $this->tenantId());
+        $siteCounts = $this->sites->countsForSites(
+            array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $caseSites),
+            $this->tenantId()
+        );
 
         return $this->portalView('atak.sse.case_show', [
             'title' => $case['reference_code'] . ' — ' . $case['title'],
             'case' => $case,
             'people' => $people,
             'availablePeople' => $available,
+            'caseSites' => $caseSites,
+            'siteCounts' => $siteCounts,
             'notes' => $this->cases->listNotes($id, $this->tenantId()),
             'evidence' => $this->cases->listEvidence($id, $this->tenantId()),
             'classifications' => SseCaseRepository::CLASSIFICATION_LABELS,
@@ -408,6 +418,35 @@ final class SsePortalController
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
             'activeNav' => 'personnes',
+        ]);
+    }
+
+    /**
+     * Comptes rendus du dossier — flash et compte rendu initial.
+     * Générés à la lecture depuis les événements déjà enregistrés : aucun stockage
+     * dupliqué, le document reflète toujours l'état réel du dossier.
+     */
+    public function caseReport(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $tenantId = $this->tenantId();
+
+        return $this->portalView('atak.sse.case_report', [
+            'title' => 'Compte rendu — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'flash' => $this->reports->buildFlashReport($id, $tenantId),
+            'initial' => $this->reports->buildInitialReport($id, $tenantId),
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
         ]);
     }
 

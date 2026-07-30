@@ -208,6 +208,86 @@ $classBadge = match ($classKey) {
 </section>
 
 <p style="margin-top:1rem"><a class="link" href="<?= $h(url('atak/sse/dossiers')) ?>">← Retour aux dossiers</a></p>
+<section class="panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.05</span>
+            Sites exploités
+        </div>
+        <div class="panel-meta">Rattachés à ce dossier</div>
+    </div>
+
+    <?php if (($caseSites ?? []) === []): ?>
+        <div class="panel-body">
+            <p class="muted">
+                Aucun site rattaché. Un site ouvert depuis le terrain avec la référence
+                de ce dossier y apparaîtra automatiquement.
+            </p>
+        </div>
+    <?php else: ?>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Site</th>
+                    <th>Statut</th>
+                    <th>Fouille</th>
+                    <th>Saisies</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($caseSites as $s):
+                    $cnt = ($siteCounts ?? [])[(int) ($s['id'] ?? 0)] ?? ['rooms' => 0, 'rooms_checked' => 0, 'seizures' => 0];
+                    $pct = $cnt['rooms'] > 0 ? (int) round(($cnt['rooms_checked'] / $cnt['rooms']) * 100) : 0;
+                    $pctClass = $pct >= 100 ? 'is-good' : ($pct >= 50 ? 'is-fair' : '');
+                ?>
+                    <tr>
+                        <td><span class="record-id"><?= $h($s['reference_code'] ?? '') ?></span></td>
+                        <td>
+                            <span class="record-name"><?= $h($s['name'] ?? '') ?></span>
+                            <span class="record-sub"><?= $h($s['site_type_label'] ?? '') ?></span>
+                        </td>
+                        <td><span class="badge"><?= $h($s['status_label'] ?? '') ?></span></td>
+                        <td>
+                            <span class="sse-score-cell">
+                                <span class="sse-gauge <?= $h($pctClass) ?>">
+                                    <span style="width: <?= $h((string) $pct) ?>%"></span>
+                                </span>
+                                <span class="sse-sample-score"><?= (int) $cnt['rooms_checked'] ?>/<?= (int) $cnt['rooms'] ?></span>
+                            </span>
+                        </td>
+                        <td class="record-id"><?= (int) $cnt['seizures'] ?></td>
+                        <td>
+                            <a class="link" href="<?= $h(url('atak/sse/sites/' . (int) ($s['id'] ?? 0))) ?>">Ouvrir &rarr;</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <span class="panel-index">01.06</span>
+            Produits de renseignement
+        </div>
+    </div>
+    <div class="panel-body">
+        <p>
+            Flash et compte rendu initial, générés depuis les éléments déjà versés au
+            dossier — personnes, relevés, verdicts, sites et saisies.
+        </p>
+        <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/compte-rendu')) ?>">
+            Ouvrir le compte rendu
+        </a>
+    </div>
+</section>
+
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

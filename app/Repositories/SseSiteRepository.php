@@ -138,17 +138,18 @@ final class SseSiteRepository
 
         $id = (int) $this->db->insert(
             'INSERT INTO sse_sites (
-                tenant_id, context_id, reference_code, name, site_type, status, team_label,
+                tenant_id, context_id, case_id, reference_code, name, site_type, status, team_label,
                 pos_x, pos_y, pos_z, grid_reference, summary,
                 submitter_callsign, submitter_steam_id
             ) VALUES (
-                :tenant_id, :context_id, :reference_code, :name, :site_type, :status, :team_label,
+                :tenant_id, :context_id, :case_id, :reference_code, :name, :site_type, :status, :team_label,
                 :pos_x, :pos_y, :pos_z, :grid_reference, :summary,
                 :submitter_callsign, :submitter_steam_id
             )',
             [
                 'tenant_id' => $tenantId,
                 'context_id' => (int) ($data['context_id'] ?? $data['mapId'] ?? 1),
+                'case_id' => !empty($data['case_id']) ? (int) $data['case_id'] : null,
                 'reference_code' => $ref,
                 'name' => trim((string) ($data['name'] ?? '')) ?: 'Site sans nom',
                 'site_type' => $type,
@@ -340,6 +341,44 @@ final class SseSiteRepository
     }
 
     /**
+     * Sites rattachés à un dossier.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listForCase(int $caseId, int $tenantId): array
+    {
+        if ($caseId < 1) {
+            return [];
+        }
+        try {
+            $rows = $this->db->fetchAll(
+                'SELECT * FROM sse_sites WHERE tenant_id = :t AND case_id = :c ORDER BY id ASC',
+                ['t' => $tenantId, 'c' => $caseId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = $this->hydrate($row);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Rattache un site à un dossier après coup.
+     */
+    public function attachToCase(int $siteId, int $tenantId, ?int $caseId): bool
+    {
+        return $this->db->execute(
+            'UPDATE sse_sites SET case_id = :c WHERE id = :id AND tenant_id = :t',
+            ['c' => $caseId, 'id' => $siteId, 't' => $tenantId]
+        ) > 0;
+    }
+
+    /**
      * Volumétrie par site : pièces fouillées / total, nombre de saisies.
      *
      * @param list<int> $siteIds
@@ -508,6 +547,7 @@ final class SseSiteRepository
             'pos_z' => isset($row['pos_z']) ? (float) $row['pos_z'] : null,
             'grid_reference' => $row['grid_reference'] ?? null,
             'summary' => $row['summary'] ?? null,
+            'case_id' => isset($row['case_id']) ? (int) $row['case_id'] : null,
             'submitter_callsign' => $row['submitter_callsign'] ?? null,
             'closed_at' => $row['closed_at'] ?? null,
             'created_at' => $row['created_at'] ?? null,

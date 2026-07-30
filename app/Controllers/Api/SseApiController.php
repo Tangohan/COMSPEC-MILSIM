@@ -441,9 +441,21 @@ final class SseApiController
             ], 422);
         }
 
+        // Rattachement au dossier : le terrain transmet la référence active, pas un
+        // identifiant technique.
+        $caseId = null;
+        $caseCode = strtoupper(trim((string) ($body['case_code'] ?? '')));
+        if ($caseCode !== '') {
+            $case = $this->cases->findByReferenceCode($tenantId, $caseCode);
+            if ($case !== null) {
+                $caseId = (int) $case['id'];
+            }
+        }
+
         $data = array_merge($body, [
             'tenant_id' => $tenantId,
             'context_id' => $this->mapId($request, true),
+            'case_id' => $caseId,
             'submitter_callsign' => $body['submitter_callsign'] ?? $actor['callsign'] ?? null,
         ]);
 

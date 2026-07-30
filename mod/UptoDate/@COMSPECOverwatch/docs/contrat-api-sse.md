@@ -254,11 +254,14 @@ Les tables `sse_sites`, `sse_site_rooms` et `sse_seizures` existaient depuis la 
   "grid_reference": "045 128",
   "summary": "",
   "rooms": ["Entrée", "Séjour", "Cave"],
+  "case_code": "SSE-2026-0004",
   "submitter_callsign": "ALPHA-1"
 }
 ```
 
 `rooms` est facultatif : sans lui, la checklist est prégarnie selon `site_type`.
+`case_code` rattache le site au dossier — c'est la référence métier, jamais un identifiant
+technique. Un code inconnu n'est pas une erreur : le site est créé sans rattachement.
 Réponse `201` : site complet, avec `reference_code` (`SITE-2026-0001`), `rooms` et `seizures`.
 
 Types : `habitation`, `depot`, `poste_ennemi`, `cache`, `vehicule`, `autre`.
