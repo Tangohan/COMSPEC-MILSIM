@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePersonRepository;
+use App\Repositories\SseSiteRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
 use App\Services\Sse\SseCrossMatchService;
@@ -31,6 +32,7 @@ final class SseApiController
         private ?SsePersonRepository $persons = null,
         private ?SseCaseRepository $cases = null,
         private ?SseCrossMatchService $cross = null,
+        private ?SseSiteRepository $sites = null,
         private ?AtakArmaWriteGuard $armaGuard = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
@@ -39,6 +41,7 @@ final class SseApiController
         $this->persons ??= new SsePersonRepository();
         $this->cases ??= new SseCaseRepository();
         $this->cross ??= new SseCrossMatchService();
+        $this->sites ??= new SseSiteRepository();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
@@ -390,6 +393,213 @@ final class SseApiController
                 default => 'Simulation d’empreintes enregistrée.',
             },
         ]);
+    }
+
+    // ================= Exploitation de site =================
+
+    public function sitesIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $sites = $this->sites->listForContext($r, $this->mapId($request), [
+            'status' => $request->query('status'),
+            'site_type' => $request->query('site_type'),
+            'limit' => $request->query('limit') ? (int) $request->query('limit') : 100,
+        ]);
+
+        return Response::json(['sites' => $sites, 'count' => count($sites)]);
+    }
+
+    /**
+     * Ouvre un dossier site depuis le terrain. La checklist des pièces est
+     * prégarnie selon le type si le terrain n'en fournit pas.
+     */
+    public function sitesStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized', 'message' => 'Authentification terrain requise.'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+
+        $actor = $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $body = $this->jsonBody($request);
+        $name = trim((string) ($body['name'] ?? ''));
+        if ($name === '') {
+            return Response::json([
+                'error' => 'name_required',
+                'message' => 'Donnez un nom au site exploité.',
+            ], 422);
+        }
+
+        $data = array_merge($body, [
+            'tenant_id' => $tenantId,
+            'context_id' => $this->mapId($request, true),
+            'submitter_callsign' => $body['submitter_callsign'] ?? $actor['callsign'] ?? null,
+        ]);
+
+        $id = $this->sites->create($data);
+        $site = $this->sites->findById($id, $tenantId);
+
+        $this->activityLog->record(
+            $tenantId,
+            (int) $data['context_id'],
+            'SSE_SITE',
+            sprintf(
+                'Site ouvert : %s — %s (%s)',
+                $site['reference_code'] ?? '',
+                $site['name'] ?? '',
+                $site['site_type_label'] ?? ''
+            ),
+            (string) ($data['submitter_callsign'] ?? 'Terrain')
+        );
+
+        return Response::json($site, 201);
+    }
+
+    public function sitesShow(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $site = $this->sites->findById((int) ($params['id'] ?? 0), $r);
+        if ($site === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Site introuvable.'], 404);
+        }
+        $site['five_line_report'] = $this->sites->buildFiveLineReport($site);
+
+        return Response::json($site);
+    }
+
+    /** Marque une pièce fouillée / non fouillée. */
+    public function siteRoomUpdate(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized', 'message' => 'Authentification terrain requise.'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $body = $this->jsonBody($request);
+        $roomId = (int) ($params['roomId'] ?? $body['room_id'] ?? 0);
+        if ($roomId < 1) {
+            return Response::json(['error' => 'room_required', 'message' => 'Pièce non précisée.'], 422);
+        }
+
+        $checked = !empty($body['checked']);
+        if (!$this->sites->setRoomChecked($roomId, $r, $checked, $body['notes'] ?? null)) {
+            return Response::json(['error' => 'not_found', 'message' => 'Pièce introuvable.'], 404);
+        }
+
+        $site = $this->sites->findById((int) ($params['id'] ?? 0), $r);
+
+        return Response::json(['ok' => true, 'site' => $site]);
+    }
+
+    /** Verse une saisie au dossier site. */
+    public function siteSeizureStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized', 'message' => 'Authentification terrain requise.'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $siteId = (int) ($params['id'] ?? 0);
+
+        $actor = $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        if ($this->sites->findById($siteId, $tenantId) === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Site introuvable.'], 404);
+        }
+
+        $body = $this->jsonBody($request);
+        $items = $body['seizures'] ?? [$body];
+        if (!is_array($items)) {
+            $items = [$body];
+        }
+
+        $created = 0;
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $item['site_id'] = $siteId;
+            $item['actor_callsign'] = $item['actor_callsign'] ?? $body['submitter_callsign'] ?? $actor['callsign'] ?? null;
+            $this->sites->addSeizure($tenantId, $item);
+            $created++;
+        }
+
+        $site = $this->sites->findById($siteId, $tenantId);
+        $this->activityLog->record(
+            $tenantId,
+            (int) ($site['context_id'] ?? 1),
+            'SSE_SEIZURE',
+            sprintf('%d saisie(s) versée(s) au site %s', $created, $site['reference_code'] ?? ''),
+            (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain')
+        );
+
+        return Response::json(['ok' => true, 'created' => $created, 'site' => $site], 201);
+    }
+
+    /** Clôture le site et fige le compte rendu cinq lignes. */
+    public function siteClose(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized', 'message' => 'Authentification terrain requise.'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $siteId = (int) ($params['id'] ?? 0);
+
+        $actor = $this->armaGuard->assertActor($request, $tenantId, $this->jsonBody($request), false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+
+        $site = $this->sites->findById($siteId, $tenantId);
+        if ($site === null) {
+            return Response::json(['error' => 'not_found', 'message' => 'Site introuvable.'], 404);
+        }
+
+        $body = $this->jsonBody($request);
+        $summary = trim((string) ($body['summary'] ?? ''));
+        if ($summary === '') {
+            $summary = $this->sites->buildFiveLineReport($site);
+        }
+
+        $callsign = (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain');
+        $this->sites->close($siteId, $tenantId, $summary, $callsign);
+        $site = $this->sites->findById($siteId, $tenantId);
+
+        $this->activityLog->record(
+            $tenantId,
+            (int) ($site['context_id'] ?? 1),
+            'SSE_SITE',
+            sprintf('Site clôturé : %s', $site['reference_code'] ?? ''),
+            $callsign
+        );
+
+        return Response::json($site);
     }
 
     private function authArma(): bool

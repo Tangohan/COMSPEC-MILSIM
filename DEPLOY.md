@@ -224,6 +224,31 @@ La migration est idempotente et se rejoue seule au premier appel du dépôt. Si 
 `ALTER TABLE` échouent (droits), l’enregistrement d’une fiche échouera : vérifier
 `sse_persons.medical_context_json` après le premier envoi terrain.
 
+### Exploitation de site SSE 1.4.13
+
+| Fichier | Rôle |
+|---|---|
+| `bootstrap/atak_sse_persons_migration.php` | `sse_sites.reference_code` + index |
+| `app/Repositories/SseSiteRepository.php` | **Nouveau** — sites, pièces, saisies, compte rendu |
+| `app/Controllers/Api/SseApiController.php` | Endpoints `/api/sse/sites*` |
+| `app/Controllers/Web/SsePortalController.php` | Écrans portail sites |
+| `routes/web.php` | Routes API et portail |
+| `views/atak/sse/sites.php` | **Nouveau** — registre des sites |
+| `views/atak/sse/site_show.php` | **Nouveau** — checklist, saisies, clôture |
+| `views/atak/sse/_layout.php` | Entrée de navigation « Sites exploités » |
+| `public/assets/css/sse_portal.css` | Styles checklist et compte rendu |
+
+### Page d'accueil — vidéos hero
+
+| Fichier | Rôle |
+|---|---|
+| `app/Support/Media/VideoSourceProbe.php` | **Nouveau** — sonde de codec, écarte les sources indécodables |
+| `views/home/index.php` | Sélection des sources hero |
+
+Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
+**illisibles en navigateur** : les réencoder en H.264 avant transfert, voir
+`docs/VIDEO-HERO-ENCODAGE.md`. Transférer les vidéos **en mode binaire**.
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

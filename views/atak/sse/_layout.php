@@ -27,10 +27,11 @@ $pageTitle = (string) ($title ?? 'Renseignement interpersonnel');
 $navItems = [
     'dossiers' => ['01', 'Dossiers', url('atak/sse/dossiers')],
     'personnes' => ['02', 'Personnes', url('atak/sse/personnes')],
-    'croisements' => ['03', 'Croisements', url('atak/sse/croisements')],
+    'sites' => ['03', 'Sites exploités', url('atak/sse/sites')],
+    'croisements' => ['04', 'Croisements', url('atak/sse/croisements')],
 ];
 if ($canGrant) {
-    $navItems['acces'] = ['04', 'Codes d’accès', url('atak/sse/acces')];
+    $navItems['acces'] = ['05', 'Codes d’accès', url('atak/sse/acces')];
 }
 $themeSwitchUrl = url('atak/sse/apparence');
 $currentPath = (string) ($_SERVER['REQUEST_URI'] ?? url('atak/sse/dossiers'));

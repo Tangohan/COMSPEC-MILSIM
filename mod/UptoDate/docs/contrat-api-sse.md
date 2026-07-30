@@ -234,3 +234,82 @@ les champs ci-dessus n’imposent pas de recompilation de `COMSPECExtension`.
 `COMSPEC_Item_SeekTerminal` — « Terminal biométrique SEEK », objet d’inventaire
 (sac / gilet / uniforme). Requis pour ouvrir une fiche ; réglage CBA
 `comspec_sse_require_item` pour rétablir l’accès sans objet.
+
+---
+
+## Exploitation de site (1.4.13)
+
+Les tables `sse_sites`, `sse_site_rooms` et `sse_seizures` existaient depuis la 1.4.0 sans
+être exploitées par aucun code. Elles sont désormais servies.
+
+### `POST /api/sse/sites`
+
+```json
+{
+  "mapId": 1,
+  "name": "Habitation nord — rue basse",
+  "site_type": "habitation",
+  "team_label": "ALPHA",
+  "pos_x": 0, "pos_y": 0, "pos_z": 0,
+  "grid_reference": "045 128",
+  "summary": "",
+  "rooms": ["Entrée", "Séjour", "Cave"],
+  "submitter_callsign": "ALPHA-1"
+}
+```
+
+`rooms` est facultatif : sans lui, la checklist est prégarnie selon `site_type`.
+Réponse `201` : site complet, avec `reference_code` (`SITE-2026-0001`), `rooms` et `seizures`.
+
+Types : `habitation`, `depot`, `poste_ennemi`, `cache`, `vehicule`, `autre`.
+Statuts : `ouvert`, `en_cours`, `cloture`.
+
+### `GET /api/sse/sites` · `GET /api/sse/sites/{id}`
+
+Query de l'index : `mapId`, `status`, `site_type`, `limit`.
+La fiche détaillée porte en plus `five_line_report` (compte rendu généré).
+
+### `POST /api/sse/sites/{id}/rooms/{roomId}`
+
+`{ "checked": true, "notes": "" }` — marque une pièce fouillée. Réponse : site rafraîchi.
+
+### `POST /api/sse/sites/{id}/seizures`
+
+Un objet, ou un lot via `seizures: [...]` :
+
+```json
+{
+  "seizures": [
+    { "category": "arme", "label": "AK-74", "quantity": 1, "room_id": 12 },
+    { "category": "document", "label": "Carnet manuscrit", "quantity": 1 }
+  ],
+  "submitter_callsign": "ALPHA-1"
+}
+```
+
+Natures : `arme`, `munition`, `document`, `radio`, `medical`, `numerique`, `valeur`, `autre`.
+`person_id` rattache la saisie à une fiche personne.
+
+### `POST /api/sse/sites/{id}/close`
+
+`{ "summary": "" }` — vide, le compte rendu cinq lignes généré est retenu.
+
+### Tables
+
+| Élément | Notes |
+|---|---|
+| `sse_sites.reference_code` | Ajoutée en 1.4.13, index `(tenant_id, reference_code)` |
+| `sse_site_rooms` | Checklist ordonnée, `checked` + notes ; index `(tenant_id, site_id)` |
+| `sse_seizures` | Nature, désignation, quantité, pièce et fiche personne |
+| `sse_custody_events` | Alimentée par `site_ouvert`, `saisie`, `site_cloture` |
+
+### Portail
+
+`/atak/sse/sites` (registre, avancement de fouille) et `/atak/sse/sites/{id}` (checklist,
+saisies, compte rendu de clôture). Entrée de navigation « Sites exploités ».
+
+### Extension Arma
+
+**Non couvert.** Aucune commande n'existe encore côté `COMSPECExtension` pour ouvrir un
+site ou verser une saisie depuis le jeu : cela demande de nouvelles commandes et une
+recompilation. L'API est prête et servie.

@@ -274,6 +274,20 @@ return static function (PDO $pdo): void {
         }
     }
 
+    // Référence lisible d'un site, saisie et citée sur le terrain.
+    if ($tableExists($pdo, 'sse_sites') && !$columnExists($pdo, 'sse_sites', 'reference_code')) {
+        $pdo->exec("ALTER TABLE sse_sites ADD COLUMN reference_code VARCHAR(48) NOT NULL DEFAULT '' AFTER context_id");
+        $log("  [OK] sse_sites.reference_code\n");
+    }
+    if ($tableExists($pdo, 'sse_sites') && !$indexExists($pdo, 'sse_sites', 'idx_sse_sites_ref')) {
+        $pdo->exec('CREATE INDEX idx_sse_sites_ref ON sse_sites (tenant_id, reference_code)');
+        $log("  [OK] index idx_sse_sites_ref\n");
+    }
+    if ($tableExists($pdo, 'sse_site_rooms') && !$indexExists($pdo, 'sse_site_rooms', 'idx_sse_rooms_tenant')) {
+        $pdo->exec('CREATE INDEX idx_sse_rooms_tenant ON sse_site_rooms (tenant_id, site_id)');
+        $log("  [OK] index idx_sse_rooms_tenant\n");
+    }
+
     if (!$tableExists($pdo, 'sse_biometric_samples') && $tableExists($pdo, 'sse_persons')) {
         $pdo->exec(
             "CREATE TABLE sse_biometric_samples (

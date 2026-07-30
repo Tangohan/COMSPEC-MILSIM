@@ -11,6 +11,7 @@ use App\Core\Session;
 use App\Repositories\SseAccessCodeRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePersonRepository;
+use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
@@ -24,6 +25,7 @@ final class SsePortalController
         private ?SseCaseRepository $cases = null,
         private ?SsePersonRepository $persons = null,
         private ?SseWatchlistRepository $watchlist = null,
+        private ?SseSiteRepository $sites = null,
         private ?SseCrossMatchService $cross = null,
         private ?SseCasePdfService $pdf = null,
     ) {
@@ -32,6 +34,7 @@ final class SsePortalController
         $this->cases ??= new SseCaseRepository();
         $this->persons ??= new SsePersonRepository();
         $this->watchlist ??= new SseWatchlistRepository();
+        $this->sites ??= new SseSiteRepository();
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
     }
@@ -406,6 +409,111 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'personnes',
         ]);
+    }
+
+    public function sitesIndex(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $list = $this->sites->listForContext($tenantId, 1, [
+            'status' => $request->query('status'),
+            'site_type' => $request->query('site_type'),
+            'limit' => 100,
+        ]);
+        $counts = $this->sites->countsForSites(
+            array_map(static fn (array $s): int => (int) ($s['id'] ?? 0), $list),
+            $tenantId
+        );
+
+        return $this->portalView('atak.sse.sites', [
+            'title' => 'Sites exploités',
+            'sites' => $list,
+            'siteCounts' => $counts,
+            'statuses' => SseSiteRepository::STATUS_LABELS,
+            'types' => SseSiteRepository::TYPE_LABELS,
+            'filters' => [
+                'status' => (string) $request->query('status', ''),
+                'site_type' => (string) $request->query('site_type', ''),
+            ],
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'sites',
+        ]);
+    }
+
+    public function siteShow(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenantId();
+        $site = $this->sites->findById((int) ($params['id'] ?? 0), $tenantId);
+        if ($site === null) {
+            Session::flash('error', 'Site introuvable.');
+
+            return Response::redirect(url('atak/sse/sites'));
+        }
+
+        return $this->portalView('atak.sse.site_show', [
+            'title' => 'Site — ' . ($site['reference_code'] ?? ''),
+            'site' => $site,
+            'fiveLine' => $this->sites->buildFiveLineReport($site),
+            'seizureCategories' => SseSiteRepository::SEIZURE_LABELS,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'sites',
+        ]);
+    }
+
+    public function siteRoomToggle(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $roomId = (int) ($params['roomId'] ?? 0);
+        $checked = (string) $request->input('checked', '0') === '1';
+        if (!$this->sites->setRoomChecked($roomId, $this->tenantId(), $checked, null)) {
+            Session::flash('error', 'Pièce introuvable.');
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', $checked ? 'Pièce marquée fouillée.' : 'Pièce remise en attente.');
+
+        return Response::redirect($back);
+    }
+
+    public function siteCloseAction(Request $request, array $params = []): Response
+    {
+        $siteId = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/sites/' . $siteId);
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $tenantId = $this->tenantId();
+        $site = $this->sites->findById($siteId, $tenantId);
+        if ($site === null) {
+            Session::flash('error', 'Site introuvable.');
+
+            return Response::redirect(url('atak/sse/sites'));
+        }
+
+        $summary = trim((string) $request->input('summary', ''));
+        if ($summary === '') {
+            $summary = $this->sites->buildFiveLineReport($site);
+        }
+        $actor = (string) (Session::get('callsign') ?? Session::get('display_name') ?? 'Commandement');
+        $this->sites->close($siteId, $tenantId, $summary, $actor);
+        Session::flash('success', 'Site clôturé — compte rendu enregistré.');
+
+        return Response::redirect($back);
     }
 
     public function crossIndex(Request $request, array $params = []): Response

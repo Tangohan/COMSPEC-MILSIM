@@ -1957,3 +1957,69 @@ body.sse-theme-console .flash {
     font-size: .66rem;
     color: var(--green);
 }
+
+/* ============================================================
+   Exploitation de site (1.4.13)
+   ============================================================ */
+
+.sse-room-list {
+    list-style: none;
+    margin: 0;
+    padding: .5rem .75rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.sse-room-list li {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    padding: .4rem .55rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    font-size: .82rem;
+}
+
+.sse-room-list li.is-checked {
+    border-left: 2px solid var(--green-bright);
+    background: var(--green-dark);
+}
+
+.sse-room-mark {
+    font-family: var(--mono);
+    width: 1.1rem;
+    text-align: center;
+    color: var(--muted);
+}
+
+.sse-room-list li.is-checked .sse-room-mark { color: var(--green-bright); }
+
+.sse-room-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-strong);
+}
+
+.sse-room-list form { margin: 0; }
+
+.btn--sm {
+    padding: .2rem .5rem;
+    font-size: .68rem;
+}
+
+/* Compte rendu cinq lignes */
+.sse-report {
+    margin: .5rem 0 0;
+    padding: .7rem .8rem;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--green);
+    font-family: var(--mono);
+    font-size: .76rem;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-x: auto;
+}
