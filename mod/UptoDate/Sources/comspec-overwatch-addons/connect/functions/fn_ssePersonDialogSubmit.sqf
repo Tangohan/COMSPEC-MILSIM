@@ -51,17 +51,34 @@ private _equipment = uiNamespace getVariable ["COMSPEC_SsePerson_EquipmentCache"
 if (!(_weapons isEqualType [])) then { _weapons = []; };
 if (!(_equipment isEqualType [])) then { _equipment = []; };
 
+// Échappement JSON.
+// L'ancienne version passait par « str » puis découpait « select [1, count - 2] » pour
+// retirer les guillemets ajoutés. Sur une chaîne accentuée — « Décédée » apparaît
+// systématiquement dans le constat d'une personne décédée — ce découpage tronquait la
+// valeur et produisait un corps JSON invalide : le serveur décodait null, ne voyait plus
+// aucune identité et répondait 422. Les caractères de contrôle n'étaient pas non plus
+// échappés, alors qu'un retour à la ligne dans « Déclarations » suffit à casser le JSON.
 private _escape = {
     params ["_s"];
+    if (isNil "_s") exitWith { "" };
+    if (!(_s isEqualType "")) then { _s = str _s; };
+    if (_s isEqualTo "") exitWith { "" };
+
     private _o = "";
     private _dq = toString [34];
     private _bs = toString [92];
-    if (isNil "_s" || { _s isEqualTo "" }) exitWith { "" };
-    _s = str _s;
-    if (count _s > 1) then { _s = _s select [1, count _s - 2]; };
     {
-        if (_x == 34) then { _o = _o + _bs + _dq; }
-        else { if (_x == 92) then { _o = _o + _bs + _bs; } else { _o = _o + toString [_x]; }; };
+        switch (true) do {
+            case (_x == 34): { _o = _o + _bs + _dq; };
+            case (_x == 92): { _o = _o + _bs + _bs; };
+            case (_x == 10): { _o = _o + _bs + "n"; };
+            case (_x == 13): { _o = _o + _bs + "r"; };
+            case (_x == 9):  { _o = _o + _bs + "t"; };
+            // Autres caractères de contrôle : remplacés par une espace — invalides en
+            // JSON, et sans valeur métier dans un champ de saisie.
+            case (_x < 32):  { _o = _o + " "; };
+            default { _o = _o + toString [_x]; };
+        };
     } forEach toArray _s;
     _o
 };
@@ -181,7 +198,26 @@ private _parsed = [
 _parsed params ["_ok", "", "_detail"];
 
 if (!_ok) exitWith {
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.55' color='#ff8a4a' align='center'>Échec de transmission — vérifiez la liaison.</t>";
+    // Le serveur renvoie un motif exploitable (identité manquante, dossier inconnu…).
+    // L'afficher évite de faire chercher une panne de liaison qui n'existe pas.
+    private _reason = "Échec de transmission — vérifiez la liaison.";
+    private _d = toLower (str _detail);
+    if ((_d find "identity_required") >= 0) then {
+        _reason = "Refus du poste de commandement : indiquez au moins un nom, un prénom ou un alias.";
+    };
+    if ((_d find "maintenance") >= 0) then {
+        _reason = "Renseignement suspendu par le commandement — réessayez plus tard.";
+    };
+    if ((_d find "unauthorized") >= 0 || {(_d find "tenant_context_required") >= 0}) then {
+        _reason = "Terminal non habilité — reliez le compte Athena puis réessayez.";
+    };
+    if ((_d find "http 5") >= 0) then {
+        _reason = "Le poste de commandement est en erreur — signalez-le à l’administrateur.";
+    };
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText format [
+        "<t size='0.55' color='#ff8a4a' align='center'>%1</t>",
+        _reason
+    ];
     [([
         _detail,
         "Impossible d’enregistrer la personne — vérifiez la liaison Athena."
