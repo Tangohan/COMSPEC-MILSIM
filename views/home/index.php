@@ -45,6 +45,8 @@ $heroClipGroups = [
     ['hero-athena-3'],
 ];
 $heroVideoClips = [];
+/** Sources écartées faute de codec décodable — diagnostic pour l'équipe. */
+$heroVideoRejected = [];
 foreach ($heroClipGroups as $candidates) {
     $resolvedStem = null;
     $hasMp4 = false;
@@ -72,7 +74,28 @@ foreach ($heroClipGroups as $candidates) {
             $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.webm', 'type' => 'video/webm'];
         }
         if ($hasMp4) {
-            $sources[] = ['url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.mp4', 'type' => 'video/mp4'];
+            // Un .mp4 encodé en HEVC (export Apple) est accepté par le navigateur, qui
+            // décode l'audio et n'affiche rien : lecteur noir au lieu du repli sur
+            // l'affiche. On sonde le codec réel et on écarte la source indécodable.
+            $mp4Path = $heroVideoDir . DIRECTORY_SEPARATOR . $slotStem . '.mp4';
+            $probe = \App\Support\Media\VideoSourceProbe::inspect($mp4Path);
+            if ($probe['playable']) {
+                $sources[] = [
+                    'url' => $heroVideoUrlBase . '/' . $encodeStem($slotStem) . '.mp4',
+                    'type' => $probe['mime'],
+                ];
+            } else {
+                $hasMp4 = false;
+                $heroVideoRejected[] = [
+                    'stem' => $slotStem,
+                    'codec' => $probe['codec'],
+                    'brand' => $probe['brand'],
+                ];
+            }
+        }
+        if (!$hasWebm && !$hasMp4) {
+            // Plus aucune source exploitable : l'emplacement retombe sur l'affiche.
+            $present = false;
         }
     } else {
         // Chemins attendus : actifs dès dépôt des fichiers (data-present côté serveur).
@@ -205,6 +228,10 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                         <img src="<?= $base ?>/assets/images/night-team.jpg" alt="" class="h-full w-full scale-100 object-cover opacity-55 grayscale brightness-[0.5] transition-transform duration-[10000ms] ease-linear" width="1920" height="1080" decoding="async">
                     </div>
                 </div>
+                <?php /* Aucune source décodable : on ne rend aucun emplacement vidéo, le
+                         carrousel d'images porte alors le hero. Rendre des balises <video>
+                         sans <source> laisserait un fond noir. */ ?>
+                <?php if ($heroPresentClipCount > 0): ?>
                 <div id="heroVideoSlides" class="hi-hero-videos absolute inset-0 hi-hero-videos--idle" data-hero-video-count="<?= count($heroVideoClips) ?>" aria-hidden="true">
                     <?php foreach ($heroVideoClips as $clipIndex => $clip): ?>
                     <div class="hi-hero-vslide<?= $clipIndex === 0 ? ' is-active' : '' ?>" data-hero-video-slide data-stem="<?= htmlspecialchars((string) $clip['stem'], ENT_QUOTES, 'UTF-8') ?>" data-present="<?= !empty($clip['present']) ? '1' : '0' ?>"<?= !empty($clip['bytes']) ? ' data-bytes="' . (int) $clip['bytes'] . '"' : '' ?>>
@@ -223,6 +250,7 @@ $heroVideosPresentOnDisk = $heroPresentClipCount > 0;
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php endif; ?>
                 <div class="pointer-events-none absolute inset-0 z-[4] bg-gradient-to-t from-black via-black/55 to-black/30"></div>
             </div>
 
