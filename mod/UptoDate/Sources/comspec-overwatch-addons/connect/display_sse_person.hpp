@@ -9,6 +9,7 @@
 //   appareil        x 0.117 – 0.883   y 0.031 – 0.969
 //   écran           x 0.297 – 0.703   y 0.065 – 0.330
 //   platine verte   x 0.398 – 0.594   y 0.703 – 0.867
+//   clavier         x 0.211 – 0.781   y 0.516 – 0.609
 // Si la texture change, ce sont les seules valeurs à reprendre.
 //
 // IDC :
@@ -23,6 +24,7 @@
 //   9512 déclarations                  9525 bandeau LCD      9526 barre d'état
 //   9527 requête d'identité
 //   9530-9535 tuiles d'accueil   9540 titre de page   9541 ◄   9542 ►   9543 accueil
+//   9544 rendre le dossier actif
 //   9551-9556 libellés page sujet   9560-9565 libellés autres pages
 //   9566 platine   9567 cadre LCD
 //   Tout libellé doit porter un IDC : sans cela il ne peut pas être masqué et se
@@ -246,10 +248,20 @@ class COMSPEC_SsePerson_Dialog {
             y = (ROW(0) + LBL_H); w = IN_W;
             colorText[] = {0.62, 0.90, 0.72, 1};
         };
+        // Rend le code saisi actif pour tout l'élément : les fiches suivantes en héritent.
+        class BtnCaseActive: COMSPEC_RscButton {
+            idc = 9544;
+            text = "DOSSIER ACTIF";
+            x = IN_X; y = ROW(1); w = HALF_W; h = (0.020 * safezoneH);
+            sizeEx = 0.020;
+            tooltip = "Rend ce dossier actif pour l’élément — les fiches suivantes y seront classées.";
+            action = "private _d = uiNamespace getVariable ['COMSPEC_SsePerson_Display', displayNull]; [\'set\', ctrlText (_d displayCtrl 9518)] call comspec_overwatch_connect_fnc_sseActiveCase; [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;";
+        };
         class BtnSign: COMSPEC_RscButton {
             idc = 9519;
             text = "SIGNER PAR L’ATAK";
-            x = IN_X; y = ROW(1); w = IN_W; h = (0.020 * safezoneH);
+            x = IN_X2; y = ROW(1); w = HALF_W; h = (0.020 * safezoneH);
+            sizeEx = 0.020;
             action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
         };
         class TextSignature: RscStructuredText {
@@ -295,31 +307,31 @@ class COMSPEC_SsePerson_Dialog {
         };
 
         // ================= TOUCHES PHYSIQUES (hors écran) =================
+        // Posées sur le clavier de l'illustration, mesuré à x 0.211–0.781 / y 0.516–0.609.
         class KeyA1: COMSPEC_RscButton {
             idc = -1;
             text = "A1";
-            x = (SEEK_X + 0.300 * SEEK_W); y = (SEEK_Y + 0.360 * SEEK_H);
-            w = (0.085 * SEEK_W); h = (0.030 * SEEK_H);
+            x = (SEEK_X + 0.235 * SEEK_W); y = (SEEK_Y + 0.530 * SEEK_H);
+            w = (0.120 * SEEK_W); h = (0.060 * SEEK_H);
+            sizeEx = 0.024;
             tooltip = "Relevé d’empreintes";
             action = "['empreintes'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
         class KeyA2: KeyA1 {
             text = "A2";
-            x = (SEEK_X + 0.395 * SEEK_W);
+            x = (SEEK_X + 0.370 * SEEK_W);
             tooltip = "Relevé iris";
             action = "['iris'] call comspec_overwatch_connect_fnc_sseBiometricSample;";
         };
         class KeyQuery: KeyA1 {
-            text = "Q";
-            x = (SEEK_X + 0.490 * SEEK_W);
-            w = (0.055 * SEEK_W);
+            text = "QUERY";
+            x = (SEEK_X + 0.505 * SEEK_W);
             tooltip = "Requête d’identité";
             action = "[] call comspec_overwatch_connect_fnc_sseIdentityQuery;";
         };
         class KeySign: KeyA1 {
             text = "SIGN";
-            x = (SEEK_X + 0.555 * SEEK_W);
-            w = (0.085 * SEEK_W);
+            x = (SEEK_X + 0.640 * SEEK_W);
             tooltip = "Signer par l’ATAK";
             action = "[] call comspec_overwatch_connect_fnc_sseSignAtak;";
         };

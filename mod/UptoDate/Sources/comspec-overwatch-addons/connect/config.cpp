@@ -43,6 +43,7 @@ class CfgFunctions {
             class sseIdentityQuery {};
             class sseUnitSeed {};
             class sseTerminalPage {};
+            class sseActiveCase {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};

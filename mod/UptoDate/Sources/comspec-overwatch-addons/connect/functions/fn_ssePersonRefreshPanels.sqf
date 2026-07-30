@@ -134,10 +134,18 @@ private _linkTxt = switch (toLower (str _link)) do {
 private _st = systemTime;
 private _hh = _st select 3;
 private _mm = _st select 4;
+// Le dossier actif prime dans la barre : c'est le contexte de travail.
+private _case = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
+private _caseTxt = if (_case isEqualTo "") then {
+    "<t color='#7f95a8'>HORS DOSSIER</t>"
+} else {
+    format ["<t color='#9ed8b4'>%1</t>", _case]
+};
 (_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
-    "<t size='0.5' align='right' color='#c8d4e0'>%1  ·  %2 éch.  ·  %3:%4</t>",
+    "<t size='0.38' align='right' color='#c8d4e0'>%1  ·  %5  ·  %2 éch.  ·  %3:%4</t>",
     _linkTxt,
     count _samples,
     if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
-    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm }
+    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm },
+    _caseTxt
 ];

@@ -166,6 +166,22 @@ private _sseAction = [
 
 [_sseAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
+// Dossier SSE actif : posé une fois pour l'élément, hérité par toutes les fiches.
+// Ouvre le terminal directement sur sa page DOSSIER — inutile d'un second écran
+// de saisie, le champ et le bouton « rendre actif » y sont déjà.
+private _sseCaseAction = [
+    "comspec_atak_sse_case",
+    "Dossier SSE actif…",
+    "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",
+    {
+        [objNull, 6] call comspec_overwatch_connect_fnc_sseOpenTerminal;
+    },
+    _condSse,
+    _noChildren
+] call ace_interact_menu_fnc_createAction;
+
+[_sseCaseAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
+
 // Sous-menu: Appui
 private _supportAction = [
     "comspec_atak_support",

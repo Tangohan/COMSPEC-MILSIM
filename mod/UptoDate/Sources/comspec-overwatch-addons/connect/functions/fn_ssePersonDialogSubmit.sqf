@@ -97,6 +97,11 @@ private _eArr = [];
 
 // --- Classement, procès-verbal, constat, échantillons ---
 private _caseCode = toUpper (trim (ctrlText (_disp displayCtrl 9518)));
+// Champ laissé vide : le dossier actif de l'élément prend le relais. C'est la
+// voie normale — le code n'est saisi qu'une fois, à l'arrivée sur objectif.
+if (_caseCode isEqualTo "") then {
+    _caseCode = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
+};
 if (_caseCode isNotEqualTo "") then {
     profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _caseCode];
     saveProfileNamespace;
