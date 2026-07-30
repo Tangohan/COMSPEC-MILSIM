@@ -27,10 +27,16 @@ main, et personne ne le fera. C'est le point qui décide si le module est joué 
 
 ---
 
-## 2. Décision d'architecture : pas de `@COMSPEC_SSE` séparé
+## 2. Découpage : mod séparé ou PBO dans le pack
 
-La proposition retient un mod séparé `@COMSPEC_SSE` avec neuf addons. Je recommande de
-**garder un seul mod `@COMSPECOverwatch`** et d'y ajouter des PBO.
+Le mod séparé `@COMSPEC_SSE` avec neuf addons est la préférence exprimée, redite depuis.
+**C'est donc la voie retenue si elle est confirmée** ; l'objection ci-dessous est
+consignée une fois, elle n'a pas à être rejouée.
+
+Objection, en une ligne : `@COMSPEC_SSE` dépendrait de `COMSPEC Overwatch` pour la couche
+réseau, l'identité opérateur et le terminal — il ne serait jamais chargeable seul — et la
+DLL vit dans `@COMSPECOverwatch`. Le bénéfice recherché (séparation, retirabilité) est
+obtenu par un PBO, sans second item Workshop ni second cycle de version.
 
 | Argument | Constat |
 |---|---|
@@ -39,9 +45,14 @@ La proposition retient un mod séparé `@COMSPEC_SSE` avec neuf addons. Je recom
 | Coût réel | Second item Workshop, second cycle de version, second changelog, second point de désynchronisation — pour du code qui vit dans le même pack. |
 | Ce qu'on cherche vraiment | La séparation **logique** et la possibilité de retirer la couche. Un PBO donne exactement cela : le retirer du dossier `addons` suffit. |
 
-**Neuf addons est également trop.** Un PBO n'est pas un dossier : chacun coûte une entrée
-de build, un `CfgPatches`, une chaîne de dépendances et un risque d'ordre de chargement.
-Quatre suffisent, alignés sur les trois temps :
+**Sur le nombre d'addons, en revanche, je maintiens : neuf est trop.** Un PBO n'est pas un
+dossier — chacun coûte une entrée de build, un `CfgPatches`, une chaîne de dépendances et
+un risque d'ordre de chargement. `sse_main`, `sse_seek`, `sse_identity`, `sse_camera` et
+`sse_network` correspondent à du code déjà écrit et fonctionnel dans `connect` : les en
+extraire serait une migration à risque sans gain fonctionnel.
+
+Quatre suffisent, alignés sur les trois temps — que ce soit dans `@COMSPECOverwatch` ou
+dans un `@COMSPEC_SSE` dépendant :
 
 ```text
 @COMSPECOverwatch/addons/

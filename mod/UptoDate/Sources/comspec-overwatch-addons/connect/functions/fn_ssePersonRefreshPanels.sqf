@@ -21,19 +21,11 @@ private _lines = [];
             case "adn": { "ADN" };
             default { "EMPREINTES" };
         };
-        private _algo = switch (_kind) do {
-            case "iris": { "IrisCode v2.1" };
-            case "adn": { "STR-16 (profil court)" };
-            default { "Minuties NFIQ-2" };
-        };
         // Points caractéristiques : ordre de grandeur crédible par modalité.
         private _pts = switch (_kind) do {
             case "iris": { 96 + floor (random 64) };
             case "adn": { 16 };
             default { 24 + floor (random 40) };
-        };
-        private _qualLabel = if (_quality >= 80) then { "Bonne" } else {
-            if (_quality >= 60) then { "Acceptable" } else { "Dégradée" }
         };
         private _col = if (_quality >= 80) then { "#7ee0a0" } else {
             if (_quality >= 60) then { "#e0d27e" } else { "#e09a7e" }
@@ -45,12 +37,15 @@ private _lines = [];
             _gauge = _gauge + (if (_i <= _filled) then { "▮" } else { "▯" });
         };
 
+        // Une seule ligne par prélèvement : le panneau n'en affiche que quatre, et
+        // trois modalités sur deux lignes débordaient — l'ADN était tronqué à l'écran.
         _lines pushBack format [
-            "<t size='0.48' color='%1'>■ %2</t>  <t size='0.44' color='#7f95a8'>%3</t><br/>"
-            + "<t size='0.44' color='%1'>%4</t> <t size='0.44' color='#c8e8ff'>%5 · %6%7</t>"
-            + " <t size='0.44' color='#7f95a8'>· %8 pts · réf. %9</t>",
-            _col, _lbl, _algo,
-            _gauge, _qualLabel, _quality, "%",
+            "<t size='0.44' color='%1'>■ %2</t> <t size='0.42' color='%1'>%3</t>"
+            + " <t size='0.42' color='#c8e8ff'>%4%5</t>"
+            + " <t size='0.4' color='#7f95a8'>· %6 pts · %7</t>",
+            _col, _lbl,
+            _gauge,
+            _quality, "%",
             _pts, _ref
         ];
     };
