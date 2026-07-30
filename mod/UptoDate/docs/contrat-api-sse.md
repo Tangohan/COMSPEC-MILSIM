@@ -313,3 +313,32 @@ saisies, compte rendu de clôture). Entrée de navigation « Sites exploités »
 **Non couvert.** Aucune commande n'existe encore côté `COMSPECExtension` pour ouvrir un
 site ou verser une saisie depuis le jeu : cela demande de nouvelles commandes et une
 recompilation. L'API est prête et servie.
+
+---
+
+## Requête d'identité (1.4.13)
+
+Champ supplémentaire de `POST /api/sse/persons` :
+
+```json
+{
+  "identity_query": {
+    "result": "confirmed",
+    "confidence": 98.7,
+    "record_ref": "BIO-42871"
+  }
+}
+```
+
+`result` : `none` | `possible` | `confirmed`. Stocké en `sse_persons.identity_query_json`,
+relu sous la clé `identity_query`.
+
+C'est le **verdict rendu par le terminal**, distinct du croisement watchlist calculé par le
+serveur : le premier est un jugement de terrain sur relevés simulés, le second un
+rapprochement nominatif du poste de commandement. La fiche du portail affiche les deux
+séparément — ne pas les fusionner.
+
+Le verdict est déterministe côté jeu : il dérive d'une graine stable par entité
+(`COMSPEC_SSE_Seed`), pour qu'une même personne interrogée deux fois donne le même
+résultat. Le chef de mission peut l'imposer via `COMSPEC_SSE_MatchResult`,
+`COMSPEC_SSE_Confidence` et `COMSPEC_SSE_RecordRef`.

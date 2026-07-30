@@ -32,13 +32,11 @@
 #define SEEK_LBL    (0.014 * safezoneH)
 #define SEEK_FIELD  (0.029 * safezoneH)
 
-// Habillage de l’appareil.
-// Le châssis est dessiné en contrôles : le terminal fonctionne sans aucun asset.
-// Pour superposer l’illustration du SEEK, convertir l’image en .paa, la déposer dans
-// connect/img/device/ puis renseigner le chemin ci-dessous — les contrôles se
-// superposent alors à l’image, qui remplace le châssis dessiné.
-//   #define SEEK_CHASSIS_TEXTURE "\z\comspec_overwatch\addons\connect\img\device\seek_chassis.paa"
-#define SEEK_CHASSIS_TEXTURE ""
+// Habillage de l’appareil : illustration du SEEK, dessinée sous l’écran.
+// Le châssis dessiné en contrôles reste dessous — si la texture est retirée, le
+// terminal continue de fonctionner sans aucun asset.
+// Mettre à "" pour revenir au châssis dessiné seul.
+#define SEEK_CHASSIS_TEXTURE "\z\comspec_overwatch\addons\connect\img\device\seek_chassis.paa"
 
 class COMSPEC_SsePerson_Dialog {
     idd = 9991;
@@ -72,7 +70,7 @@ class COMSPEC_SsePerson_Dialog {
         class GripRight: GripLeft { x = (0.748 * safezoneW + safezoneX); };
 
         // Illustration de l’appareil : dessinée par-dessus le châssis, sous l’écran.
-        // Reste invisible tant que SEEK_CHASSIS_TEXTURE est vide.
+        // Vide = châssis dessiné seul.
         class ChassisTexture: RscPicture {
             idc = -1;
             text = SEEK_CHASSIS_TEXTURE;

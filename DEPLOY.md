@@ -249,6 +249,16 @@ Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
 **illisibles en navigateur** : les réencoder en H.264 avant transfert, voir
 `docs/VIDEO-HERO-ENCODAGE.md`. Transférer les vidéos **en mode binaire**.
 
+### Portail SSE 1.4.13 — charte et requête d'identité
+
+| Fichier | Rôle |
+|---|---|
+| `public/assets/css/sse_portal.css` | Charte « SSE Case File » — jetons, balayage, hachures |
+| `views/atak/sse/_layout.php` | Polices Archivo / JetBrains Mono, cache-buster CSS |
+| `views/atak/sse/persons.php` | Verdict de requête d'identité sur la fiche |
+| `bootstrap/atak_sse_persons_migration.php` | `sse_persons.identity_query_json` |
+| `app/Repositories/SsePersonRepository.php` | Persistance du verdict |
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

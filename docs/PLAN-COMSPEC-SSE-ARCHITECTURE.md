@@ -184,3 +184,101 @@ Inchangé, et à défendre : reconnaissance faciale réelle, lecture d'iris rée
 pièce d'identité, fusion avec le dossier RH des membres. Tout est simulation de scénario.
 
 La règle roleplay 1.4.8 tient également : aucune donnée KAT sur le terminal SSE.
+
+---
+
+## 7. Catalogue d'actions terrain (spécification du 30/07)
+
+Ajouté après coup. Rien n'est codé ici — c'est la liste de référence pour L4 à L9.
+
+### SEEK II — acquisition
+
+Capture visage, iris gauche et droit **séparés**, empreintes, identité déclarée, photo
+secondaire, notes opérateur, `SUBJECT ID` généré, qualité par capture, reprise d'une
+acquisition, consultation des derniers sujets du terminal.
+
+*Écart avec l'existant* : les modalités sont aujourd'hui globales (une entrée « iris »),
+pas latéralisées, et il n'y a ni `SUBJECT ID` ni historique local.
+
+### Requête distante
+
+`QUERY ATHENA` et `QUERY LOCAL WATCHLIST` distincts ; `NO MATCH`, `POSSIBLE MATCH`,
+`CONFIRMED MATCH`, `WATCHLIST HIT` ; alias et données synthétiques affichés.
+
+*Écart* : livré en 1.4.13 sous forme d'une requête unique locale. La séparation
+Athena / watchlist locale et le `WATCHLIST HIT` restent à faire.
+
+### Mode hors-ligne
+
+Acquisitions stockées, nombre de dossiers en attente, synchronisation manuelle ou
+automatique au retour du réseau.
+
+### Fouille ACE sur une personne
+
+`Inspect Identity`, `Photograph Subject`, `Open SEEK II`, `Search Clothing`,
+`Search Equipment`, `Collect Personal Effects`, `Document Subject`,
+`Associate With SSE Case`. Distinguer inventaire visible, objets révélés par la fouille,
+et objets cachés configurés dans Eden.
+
+### Photographie opérationnelle
+
+`OVERVIEW` / `EVIDENCE` / `SUBJECT` / `DOCUMENT` / `DEVICE`, chaque cliché portant
+automatiquement dossier, opérateur, DTG, coordonnées, cible et référence SSE.
+
+### Marquage de zones
+
+`SITE` / `BUILDING` / `ROOM` / `CACHE` / `COLLECTION POINT`. Tout élément récupéré dans la
+pièce **hérite de la localisation** — c'est ce qui évite la ressaisie.
+
+### Evidence
+
+Référence `SSE-26-0042-E014`, états `OBSERVED` → `DOCUMENTED` → `COLLECTED` → `BAGGED` →
+`TRANSFERRED` → `EXPLOITED`, objets d'emballage (sachet, étiquette, pochette document,
+sachet numérique), qualité de preuve dégradée si l'objet a été manipulé avant collecte.
+
+### Numérique, documents, interprète
+
+`Quick Exploitation` ne rend qu'une synthèse (`CONTACTS FOUND // 17`) ; l'exploitation
+complète est faite dans Athena. Documents à trois niveaux : contenu visible, traduit,
+analyste. Un rôle ou un objet interprète débloque `TRANSLATE`, `INTERVIEW`,
+`VERIFY DECLARED IDENTITY`.
+
+### Interview tactique
+
+`IDENTITY` / `PURPOSE` / `LOCATION` / `ASSOCIATES` / `ORGANIZATION` / `EQUIPMENT`. Le PNJ
+peut dire vrai, mentir, se taire ou répondre partiellement. Athena conserve
+`SOURCE // SUBJECT STATEMENT`, `RELIABILITY // UNVERIFIED` — cela rejoint le lot L7.
+
+### Fouille rapide ou approfondie
+
+`QUICK SEARCH` contre `THOROUGH SEARCH` : la seconde est plus longue et seule elle révèle
+les éléments cachés. C'est une vraie décision temps contre renseignement.
+
+### Véhicules, caches, radios
+
+Exploitation dédiée avec plaque fictive, occupants, inventaire ; caches avec leur propre
+identifiant de site ; radios avec fréquence relevée, rapprochée ensuite côté Athena.
+
+### Tablette SSE de terrain
+
+Écran plus large que le SEEK : dossier actif, sujets, evidence, photos, localisations,
+envois en attente, tâches. **Le SEEK reste centré identité et biométrie ; la tablette gère
+le dossier.** C'est une séparation utile — elle évite de charger le terminal.
+
+### Tâches et comptes rendus
+
+Tâches envoyées par le TOC (`OBTAIN BIOMETRICS // SUBJECT P04`), `SEND SSE FLASH` généré
+automatiquement, et écran de clôture listant ce qui reste non résolu (`ROOM 02 // NOT
+CLEARED`, `SUBJECT P04 // BIOMETRICS INCOMPLETE`).
+
+### Progression d'exploitation
+
+`SSE COMPLETION // 62%` par pièce ou par site, calculé sur les éléments configurés par le
+chef de mission. **Option désactivable** — sinon le SSE devient une chasse au pourcentage.
+
+### Boucle cible
+
+```text
+DISCOVER → SEARCH → DOCUMENT → IDENTIFY → COLLECT → CORRELATE → TRANSMIT → REPORT
+```
+

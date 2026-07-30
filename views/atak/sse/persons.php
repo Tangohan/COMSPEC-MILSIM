@@ -82,7 +82,7 @@ $total = count($persons);
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
                     <header class="sse-record-head">
                         <?php if ($photoUrl !== ''): ?>
-                            <a class="sse-mugshot" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
+                            <a class="sse-mugshot sse-scan" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
                                title="<?= $h($photo['angle_label'] ?? 'Photographie') ?>">
                                 <img src="<?= $h($photoUrl) ?>"
                                      alt="Photographie de <?= $h($p['display_name'] ?? 'la personne') ?>"

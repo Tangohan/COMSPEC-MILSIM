@@ -1,25 +1,35 @@
 :root {
-    --bg: #090b0d;
-    --bg-soft: #0d1013;
-    --surface: #11151a;
-    --surface-2: #151a20;
-    --surface-3: #1a2027;
-    --border: #2d353d;
-    --border-soft: rgba(255,255,255,.07);
-    --text: #d9dee3;
-    --text-strong: #f3f5f7;
-    --muted: #7e8993;
-    --green: #8faa83;
-    --green-bright: #b5d2a7;
-    --green-dark: #1a241c;
-    --amber: #c6a15b;
-    --amber-dark: #2a2112;
-    --red: #bf6666;
-    --red-dark: #2a1616;
-    --blue: #8094a8;
-    --mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-    --sans: "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+    /* Charte « SSE Case File » — voir docs/frontend/dc/SSE-CASE-FILE-TOKENS.md.
+       Palette de station de travail : fonds très sombres, un vert vif unique,
+       et trois couleurs sémantiques distinctes (avertissement, alerte, information). */
+    --bg: #07090b;
+    --bg-soft: #0a0e10;
+    --surface: #0a0e10;
+    --surface-2: #0d1114;
+    --surface-3: #14191c;
+    --border: #1b2227;
+    --border-soft: rgba(255,255,255,.05);
+    --text: #a9b6bc;
+    --text-strong: #e8eef1;
+    --muted: #5b686e;
+    --muted-dim: #4a565b;
+    --green: #12d18e;
+    --green-bright: #3ddc9a;
+    --green-dark: #07251b;
+    --amber: #e0a233;
+    --amber-dark: #2a1d08;
+    --red: #ff6b5e;
+    --red-dark: #2a1210;
+    --blue: #6bb2f0;
+    --blue-dark: #0d1c29;
+    --classified: #8f1d1d;
+    --mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    --sans: "Archivo", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
 }
+
+/* Archivo est utilisée en largeur condensée (75 %) : c'est la signature de la
+   maquette. Sans la police, la pile de repli reste lisible. */
+body { font-stretch: 75%; }
 
 * { box-sizing: border-box; }
 html { background: var(--bg); }
@@ -2030,3 +2040,51 @@ body.sse-theme-console .flash {
 .sse-idq.is-possible { border-color: var(--amber); background: var(--amber-dark); }
 .sse-idq.is-possible .sse-block-title { color: var(--amber); }
 .sse-idq.is-none .sse-block-title { color: var(--green); }
+
+
+/* ============================================================
+   Charte SSE Case File — motifs repris de la maquette
+   ============================================================ */
+
+@keyframes sseScan {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(1100%); }
+}
+
+/* Bloc à balayage : donne vie à une vignette biométrique ou à un lecteur. */
+.sse-scan {
+    position: relative;
+    overflow: hidden;
+}
+
+.sse-scan::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 22%;
+    background: linear-gradient(180deg, transparent, rgba(18, 209, 142, .16), transparent);
+    animation: sseScan 4.5s linear infinite;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sse-scan::after { animation: none; }
+}
+
+/* Vignette absente : hachures, plutôt qu'un tiret dans le vide. */
+.sse-mugshot.is-empty {
+    background: repeating-linear-gradient(135deg,
+        #0c1114, #0c1114 6px,
+        #0e1418 6px, #0e1418 12px);
+    color: var(--muted-dim);
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+
+/* Libellés de la charte : petits, gras, très espacés. */
+.sse-block-title,
+.sse-record-facts dt {
+    font-weight: 800;
+}
