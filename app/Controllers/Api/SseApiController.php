@@ -7,9 +7,11 @@ namespace App\Controllers\Api;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\SseCaseRepository;
 use App\Repositories\SsePersonRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Sse\SseCrossMatchService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
@@ -27,12 +29,16 @@ final class SseApiController
 
     public function __construct(
         private ?SsePersonRepository $persons = null,
+        private ?SseCaseRepository $cases = null,
+        private ?SseCrossMatchService $cross = null,
         private ?AtakArmaWriteGuard $armaGuard = null,
         private ?AtakActivityLogService $activityLog = null,
         private ?TenantAtakConfigRepository $tenantAtakConfigRepository = null,
         private ?TenantRepository $tenantRepository = null,
     ) {
         $this->persons ??= new SsePersonRepository();
+        $this->cases ??= new SseCaseRepository();
+        $this->cross ??= new SseCrossMatchService();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
         $this->tenantAtakConfigRepository ??= new TenantAtakConfigRepository();
@@ -112,7 +118,78 @@ final class SseApiController
         ]);
 
         $id = $this->persons->create($data);
+
+        // Échantillons biométriques simulés transmis par le terminal SEEK.
+        $samples = $body['biometric_samples'] ?? [];
+        if (is_array($samples)) {
+            foreach ($samples as $sample) {
+                if (!is_array($sample)) {
+                    continue;
+                }
+                $sample['operator_callsign'] = $sample['operator_callsign']
+                    ?? ($data['submitter_callsign'] ?? null);
+                $this->persons->addBiometricSample($id, $tenantId, $sample);
+            }
+        }
+
+        // Classement : code dossier saisi sur le terrain.
+        $caseCode = strtoupper(trim((string) ($body['case_code'] ?? '')));
+        $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
+        if ($caseCode !== '') {
+            $case = $this->cases->findByReferenceCode($tenantId, $caseCode);
+            if ($case !== null) {
+                $this->cases->linkPerson(
+                    (int) $case['id'],
+                    $id,
+                    $tenantId,
+                    isset($actor['user_id']) ? (int) $actor['user_id'] : null,
+                    'Classement depuis le terminal SEEK'
+                );
+                $filing['linked'] = true;
+                $filing['case'] = [
+                    'id' => (int) $case['id'],
+                    'reference_code' => (string) ($case['reference_code'] ?? ''),
+                    'title' => (string) ($case['title'] ?? ''),
+                ];
+            }
+        }
+
         $person = $this->persons->findById($id, $tenantId);
+        if (is_array($person)) {
+            $person['filing'] = $filing;
+            $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $tenantId);
+
+            // Croisement listes de surveillance. Le résultat part vers le journal
+            // d'activité (poste de commandement) ; le terrain n'obtient pas de verdict
+            // dans la réponse de transmission.
+            $hits = $this->cross->matchOne($person, $tenantId);
+            $person['watchlist'] = $hits;
+            if ($hits !== []) {
+                $top = $hits[0];
+                $entry = is_array($top['entry'] ?? null) ? $top['entry'] : [];
+                $watched = trim(sprintf(
+                    '%s %s',
+                    (string) ($entry['first_name'] ?? ''),
+                    (string) ($entry['last_name'] ?? '')
+                ));
+                if ($watched === '') {
+                    $watched = (string) ($entry['alias'] ?? 'entrée surveillée');
+                }
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    'SSE_WATCHLIST',
+                    sprintf(
+                        'Correspondance liste de surveillance : %s ↔ %s (%d%%, %s)',
+                        $person['display_name'] ?? 'fiche sans nom',
+                        $watched,
+                        (int) ($top['score'] ?? 0),
+                        (string) ($top['reason'] ?? '')
+                    ),
+                    (string) ($data['submitter_callsign'] ?? 'Terrain')
+                );
+            }
+        }
 
         $this->activityLog->record(
             $tenantId,
@@ -140,8 +217,32 @@ final class SseApiController
         if ($person === null) {
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
+        $person['biometric_samples'] = $this->persons->listBiometricSamples($id, $r);
 
         return Response::json($person);
+    }
+
+    /**
+     * Fiche déjà ouverte pour une unité Arma (terminal SEEK : « fiche existante »).
+     * L'absence de fiche n'est pas une erreur : 200 avec person = null.
+     */
+    public function personsByUnit(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $netId = trim((string) ($request->query('netid') ?? $request->query('net_id') ?? ''));
+        if ($netId === '') {
+            return Response::json(['person' => null, 'message' => 'Unité non précisée.']);
+        }
+
+        $person = $this->persons->findByTargetUnit($r, $this->mapId($request), $netId);
+        if (is_array($person)) {
+            $person['biometric_samples'] = $this->persons->listBiometricSamples((int) $person['id'], $r);
+        }
+
+        return Response::json(['person' => $person]);
     }
 
     public function personsPhotoStore(Request $request, array $params = []): Response
@@ -269,7 +370,7 @@ final class SseApiController
 
         $body = $this->jsonBody($request);
         $kind = strtolower(trim((string) ($body['kind'] ?? 'empreintes')));
-        if (!in_array($kind, ['empreintes', 'iris'], true)) {
+        if (!in_array($kind, ['empreintes', 'iris', 'adn'], true)) {
             $kind = 'empreintes';
         }
         $callsign = (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain');
@@ -283,9 +384,11 @@ final class SseApiController
         return Response::json([
             'ok' => true,
             'person' => $person,
-            'message' => $kind === 'iris'
-                ? 'Simulation iris enregistrée.'
-                : 'Simulation d’empreintes enregistrée.',
+            'message' => match ($kind) {
+                'iris' => 'Simulation iris enregistrée.',
+                'adn' => 'Simulation ADN enregistrée.',
+                default => 'Simulation d’empreintes enregistrée.',
+            },
         ]);
     }
 

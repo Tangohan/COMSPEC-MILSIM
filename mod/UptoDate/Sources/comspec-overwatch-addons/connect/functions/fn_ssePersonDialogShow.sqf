@@ -10,8 +10,9 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 if (!isNull (uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull])) exitWith {};
 
 if (isNull _target) then {
+    // L’exploitation d’un corps est un cas SSE courant : pas de filtre « alive » ici.
     private _cursor = cursorObject;
-    if (!isNull _cursor && { _cursor isKindOf "CAManBase" } && { _cursor != player } && { alive _cursor }) then {
+    if (!isNull _cursor && { _cursor isKindOf "CAManBase" } && { _cursor != player }) then {
         _target = _cursor;
     };
 };

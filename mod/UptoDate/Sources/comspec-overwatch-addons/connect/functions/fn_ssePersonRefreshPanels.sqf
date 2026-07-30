@@ -1,0 +1,109 @@
+/*
+    Rafraîchit les panneaux dynamiques du terminal SEEK :
+    bandeau LCD, échantillons biométriques, bloc signature.
+*/
+if (!hasInterface) exitWith {};
+
+private _disp = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+if (isNull _disp) then { _disp = findDisplay 9991; };
+if (isNull _disp) exitWith {};
+
+// --- Échantillons biométriques (9522) ---
+private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
+if (!(_samples isEqualType [])) then { _samples = []; };
+
+private _lines = [];
+{
+    if ((_x isEqualType []) && {(count _x) >= 3}) then {
+        _x params ["_kind", "_quality", "_ref"];
+        private _lbl = switch (_kind) do {
+            case "iris": { "IRIS" };
+            case "adn": { "ADN" };
+            default { "EMPREINTES" };
+        };
+        private _algo = switch (_kind) do {
+            case "iris": { "IrisCode v2.1" };
+            case "adn": { "STR-16 (profil court)" };
+            default { "Minuties NFIQ-2" };
+        };
+        // Points caractéristiques : ordre de grandeur crédible par modalité.
+        private _pts = switch (_kind) do {
+            case "iris": { 96 + floor (random 64) };
+            case "adn": { 16 };
+            default { 24 + floor (random 40) };
+        };
+        private _qualLabel = if (_quality >= 80) then { "Bonne" } else {
+            if (_quality >= 60) then { "Acceptable" } else { "Dégradée" }
+        };
+        private _col = if (_quality >= 80) then { "#7ee0a0" } else {
+            if (_quality >= 60) then { "#e0d27e" } else { "#e09a7e" }
+        };
+        // Jauge en blocs — même lecture que la barre de qualité de référence.
+        private _filled = round (_quality / 10);
+        private _gauge = "";
+        for "_i" from 1 to 10 do {
+            _gauge = _gauge + (if (_i <= _filled) then { "▮" } else { "▯" });
+        };
+
+        _lines pushBack format [
+            "<t size='0.48' color='%1'>■ %2</t>  <t size='0.44' color='#7f95a8'>%3</t><br/>"
+            + "<t size='0.44' color='%1'>%4</t> <t size='0.44' color='#c8e8ff'>%5 · %6%7</t>"
+            + " <t size='0.44' color='#7f95a8'>· %8 pts · réf. %9</t>",
+            _col, _lbl, _algo,
+            _gauge, _qualLabel, _quality, "%",
+            _pts, _ref
+        ];
+    };
+} forEach _samples;
+
+private _bioTxt = if ((count _lines) > 0) then {
+    (_lines joinString "<br/>")
+    + "<br/><t size='0.42' color='#5f7383'>Analyse locale simulée — le rapprochement relève du poste de commandement.</t>"
+} else {
+    "<t size='0.48' color='#5f7383'>Aucun prélèvement. Présentez la personne au lecteur.</t>"
+};
+(_disp displayCtrl 9522) ctrlSetStructuredText parseText _bioTxt;
+
+// --- Signature (9520) ---
+private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
+private _sigTxt = if ((_sig isEqualType []) && {(count _sig) >= 4}) then {
+    format [
+        "<t size='0.5' color='#7ee0a0'>SIGNÉ</t> <t size='0.5' color='#c8e8ff'>%1</t><br/><t size='0.46' color='#7f95a8'>Terminal %2 · %3</t>",
+        _sig select 0,
+        _sig select 1,
+        _sig select 3
+    ]
+} else {
+    "<t size='0.5' color='#e0b07e'>NON SIGNÉ</t> <t size='0.5' color='#5f7383'>— la fiche partira sans procès-verbal.</t>"
+};
+(_disp displayCtrl 9520) ctrlSetStructuredText parseText _sigTxt;
+
+// --- Bandeau LCD (9525) ---
+private _photo = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
+private _bits = [];
+_bits pushBack format ["%1 ÉCH.", count _samples];
+if (_photo) then { _bits pushBack "PHOTO ARMÉE"; };
+if ((_sig isEqualType []) && {(count _sig) >= 4}) then { _bits pushBack "SIGNÉ"; } else { _bits pushBack "NON SIGNÉ"; };
+
+(_disp displayCtrl 9525) ctrlSetStructuredText parseText format [
+    "<t size='0.5' color='#9ed8b4' align='center'>%1</t>",
+    _bits joinString "   ·   "
+];
+
+// --- Barre d’état de l’appareil (9526) : liaison, relevés, heure ---
+private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+private _linkTxt = switch (toLower (str _link)) do {
+    case "linked": { "<t color='#9ed8b4'>LIAISON</t>" };
+    case "degraded": { "<t color='#e0d27e'>DÉGRADÉE</t>" };
+    default { "<t color='#e09a7e'>HORS LIAISON</t>" };
+};
+private _st = systemTime;
+private _hh = _st select 3;
+private _mm = _st select 4;
+(_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
+    "<t size='0.5' align='right' color='#c8d4e0'>%1  ·  %2 éch.  ·  %3:%4</t>",
+    _linkTxt,
+    count _samples,
+    if (_hh < 10) then { format ["0%1", _hh] } else { str _hh },
+    if (_mm < 10) then { format ["0%1", _mm] } else { str _mm }
+];

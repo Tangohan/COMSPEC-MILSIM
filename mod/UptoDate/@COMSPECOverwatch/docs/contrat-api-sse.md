@@ -163,3 +163,74 @@ Update catalogue : `SSE_PORTAL_V1` — portail classifié `/atak/sse` (dossiers,
 - Tables : `sse_cases`, `sse_case_persons`, `sse_case_notes`, `sse_case_evidence`, `sse_access_codes`, `sse_access_grants_log`
 - Permissions : `atak.sse.access`, `atak.sse.grant`, `atak.sse.case.manage`, `atak.sse.export`
 - Invité : session limitée au portail (pas de carte Tacmap)
+
+---
+
+## Ajouts 1.4.12 — terminal SEEK
+
+### Champs supplémentaires de `POST /api/sse/persons`
+
+```json
+{
+  "case_code": "SSE-2026-0004",
+  "signature": {
+    "callsign": "N-10",
+    "terminal_uid": "OW-2609-279840",
+    "atak_id": "",
+    "signed_at": "2026-07-29 19:41:02"
+  },
+  "medical_context": {
+    "etat": "unconscious",
+    "etat_label": "Inconsciente",
+    "sang": 72,
+    "pouls": 118,
+    "douleur": true,
+    "arret_cardiaque": false,
+    "lesions": ["Torse", "Bras gauche"],
+    "resume": "Inconsciente · pouls 118/min · volémie ≈ 72%"
+  },
+  "biometric_samples": [
+    { "kind": "empreintes", "quality": 84, "lab_reference": "LAB-2026-EMP4821" },
+    { "kind": "iris", "quality": 67, "lab_reference": "LAB-2026-IRI1093" },
+    { "kind": "adn", "quality": 93, "lab_reference": "LAB-2026-ADN7734" }
+  ]
+}
+```
+
+Tous facultatifs. La réponse `201` porte en plus :
+
+- `filing` : `{ "code": "…", "linked": true|false, "case": { id, reference_code, title } | null }`
+  — un code inconnu n’est **pas** une erreur : la fiche est créée, simplement non classée.
+- `biometric_samples` : échantillons tels qu’enregistrés.
+- `medical_context`, `signature` : relus depuis la fiche.
+
+### `GET /api/sse/persons/by-unit`
+
+Query : `netid` (ou `net_id`), `mapId`.
+Réponse `200` : `{ "person": {…} | null }`. L’absence de fiche n’est pas une erreur.
+À déclarer **avant** `/api/sse/persons/{id}` dans le routeur.
+
+### `POST /api/sse/persons/{id}/biometrics-sim`
+
+`kind` accepte désormais `adn` en plus de `empreintes` et `iris`.
+
+### Tables
+
+| Table / colonne | Notes |
+|---|---|
+| `sse_persons.medical_context_json` | JSON — constat ACE Medical au moment du relevé |
+| `sse_persons.signed_by_callsign` / `signed_terminal_uid` / `signed_atak_id` / `signed_at` | Procès-verbal ATAK |
+| `sse_biometric_samples` | `person_id`, `tenant_id`, `kind`, `quality`, `lab_reference`, `operator_callsign` — unique par (personne, modalité) |
+| index `idx_sse_persons_unit` | `(tenant_id, context_id, target_unit_netid)` |
+
+### Extension Arma
+
+**Aucune commande nouvelle.** `SubmitSsePerson` transmet le corps JSON tel quel :
+les champs ci-dessus n’imposent pas de recompilation de `COMSPECExtension`.
+`LookupSsePersonByUnit` reste à ajouter pour exploiter `by-unit` en jeu.
+
+### Objet in-game
+
+`COMSPEC_Item_SeekTerminal` — « Terminal biométrique SEEK », objet d’inventaire
+(sac / gilet / uniforme). Requis pour ouvrir une fiche ; réglage CBA
+`comspec_sse_require_item` pour rétablir l’accès sans objet.

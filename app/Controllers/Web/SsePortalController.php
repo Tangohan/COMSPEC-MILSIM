@@ -148,9 +148,15 @@ final class SsePortalController
             'classification' => $request->query('classification'),
         ]);
 
+        $counts = $this->cases->countsForCases(
+            array_map(static fn (array $c): int => (int) ($c['id'] ?? 0), $list),
+            $tenantId
+        );
+
         return $this->portalView('atak.sse.cases', [
             'title' => 'Dossiers — Renseignement interpersonnel',
             'cases' => $list,
+            'caseCounts' => $counts,
             'canManage' => $this->canManage(),
             'canGrant' => $this->canGrant(),
             'canExport' => $this->canExport(),
@@ -372,10 +378,20 @@ final class SsePortalController
 
     public function personsIndex(Request $request, array $params = []): Response
     {
-        $list = $this->persons->listForContext($this->tenantId(), 1, [
+        $tenantId = $this->tenantId();
+        $list = $this->persons->listForContext($tenantId, 1, [
             'status' => $request->query('status'),
             'limit' => 100,
         ]);
+
+        // Relevés biométriques simulés + croisement listes de surveillance.
+        foreach ($list as $i => $p) {
+            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples(
+                (int) ($p['id'] ?? 0),
+                $tenantId
+            );
+            $list[$i]['watchlist'] = $this->cross->matchOne($p, $tenantId);
+        }
 
         return $this->portalView('atak.sse.persons', [
             'title' => 'Personnes identifiées',

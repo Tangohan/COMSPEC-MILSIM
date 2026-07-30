@@ -11,9 +11,9 @@ class CfgPatches {
         requiredVersion = 1.0;
         requiredAddons[] = {"comspec_overwatch_main", "cba_main", "cba_xeh", "cba_settings", "A3_Modules_F"};
         author = "COMSPEC";
-        version = 1.411;
-        versionStr = "1.4.11";
-        versionAr[] = {1, 4, 11};
+        version = 1.412;
+        versionStr = "1.4.12";
+        versionAr[] = {1, 4, 12};
     };
 };
 
@@ -34,6 +34,12 @@ class CfgFunctions {
             class ssePersonDialogShow {};
             class ssePersonDialogOnLoad {};
             class ssePersonDialogSubmit {};
+            class ssePersonRefreshPanels {};
+            class sseCollectMedical {};
+            class sseBiometricSample {};
+            class sseSignAtak {};
+            class sseOpenTerminal {};
+            class sseHasTerminalItem {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
             class casRequestShow {};
@@ -420,6 +426,31 @@ class CfgSounds {
         name = "Ordre prioritaire";
         sound[] = {"\z\comspec_overwatch\addons\connect\sounds\roger_prio.ogg", 1, 1, 50};
         titles[] = {};
+    };
+};
+
+// Terminal SEEK transportable (sac / gilet / uniforme).
+// Modèle et icône vanilla : aucun asset propriétaire à livrer, l’objet reste
+// utilisable immédiatement en mission. « type = 620 » = objet divers d’inventaire.
+class CfgWeapons
+{
+    class ItemCore;
+    class InventoryItem_Base_F;
+
+    class COMSPEC_Item_SeekTerminal: ItemCore
+    {
+        scope = 2;
+        author = "COMSPEC";
+        displayName = "Terminal biométrique SEEK";
+        descriptionShort = "Terminal d’enrôlement biométrique de terrain. Permet d’ouvrir une fiche de renseignement interpersonnel (SSE) sur une personne contrôlée.";
+        picture = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
+        model = "\A3\weapons_F\ammo\mag_univ.p3d";
+
+        class ItemInfo: InventoryItem_Base_F
+        {
+            mass = 45;
+            type = 620;
+        };
     };
 };
 

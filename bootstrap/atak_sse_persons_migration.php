@@ -228,4 +228,72 @@ return static function (PDO $pdo): void {
     } else {
         $log("  [OK] sse_watchlist_entries (déjà présente)\n");
     }
+
+    // ---- 1.4.12 : constat de terrain, procès-verbal ATAK, index unité ----
+    $columnExists = static function (PDO $pdo, string $table, string $column): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $column]);
+
+        return (bool) $st->fetchColumn();
+    };
+    $indexExists = static function (PDO $pdo, string $table, string $index): bool {
+        $st = $pdo->prepare(
+            'SELECT 1 FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1'
+        );
+        $st->execute([$table, $index]);
+
+        return (bool) $st->fetchColumn();
+    };
+
+    if ($tableExists($pdo, 'sse_persons')) {
+        $additions = [
+            'medical_context_json' => 'JSON NULL',
+            'signed_by_callsign' => "VARCHAR(80) DEFAULT NULL",
+            'signed_terminal_uid' => "VARCHAR(64) DEFAULT NULL",
+            'signed_atak_id' => "VARCHAR(64) DEFAULT NULL",
+            'signed_at' => 'DATETIME DEFAULT NULL',
+        ];
+        foreach ($additions as $col => $ddl) {
+            if ($columnExists($pdo, 'sse_persons', $col)) {
+                continue;
+            }
+            $pdo->exec(sprintf('ALTER TABLE sse_persons ADD COLUMN %s %s', $col, $ddl));
+            $log("  [OK] sse_persons.$col\n");
+        }
+
+        // Recherche de fiche par unité Arma (panneau « fiche existante »).
+        if (!$indexExists($pdo, 'sse_persons', 'idx_sse_persons_unit')) {
+            $pdo->exec(
+                'CREATE INDEX idx_sse_persons_unit ON sse_persons (tenant_id, context_id, target_unit_netid)'
+            );
+            $log("  [OK] index idx_sse_persons_unit\n");
+        }
+    }
+
+    if (!$tableExists($pdo, 'sse_biometric_samples') && $tableExists($pdo, 'sse_persons')) {
+        $pdo->exec(
+            "CREATE TABLE sse_biometric_samples (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                person_id INT UNSIGNED NOT NULL,
+                tenant_id INT UNSIGNED NOT NULL,
+                kind VARCHAR(16) NOT NULL DEFAULT 'empreintes',
+                quality TINYINT UNSIGNED DEFAULT NULL,
+                lab_reference VARCHAR(48) DEFAULT NULL,
+                operator_callsign VARCHAR(80) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_sample (person_id, kind),
+                KEY idx_sse_samples_tenant (tenant_id),
+                CONSTRAINT fk_sse_samples_person FOREIGN KEY (person_id) REFERENCES sse_persons (id) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT fk_sse_samples_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_biometric_samples\n");
+    } else {
+        $log("  [OK] sse_biometric_samples (déjà présente ou sse_persons absente)\n");
+    }
 };

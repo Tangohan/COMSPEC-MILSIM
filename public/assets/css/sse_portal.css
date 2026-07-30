@@ -1631,3 +1631,250 @@ body.sse-theme-console .flash {
     .metric { min-height: 75px; padding: .7rem; }
     .metric-value { font-size: 1.05rem; }
 }
+
+/* ============================================================
+   Fiches personnes — vue registre (1.4.12)
+   Remplace le tableau à quatre colonnes : une fiche par personne,
+   avec constat de terrain, relevés biométriques et procès-verbal.
+   ============================================================ */
+
+.sse-record-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: .75rem;
+    padding: .75rem;
+}
+
+.sse-record {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: .8rem .85rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--muted);
+}
+
+.sse-record[data-status="combattant"] { border-left-color: var(--red); }
+.sse-record[data-status="detenu"] { border-left-color: var(--amber); }
+.sse-record[data-status="prioritaire"] { border-left-color: var(--green-bright); }
+
+.sse-record-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .6rem;
+}
+
+.sse-record-head .record-name { display: block; }
+.sse-record-head .record-sub {
+    display: block;
+    margin-top: .15rem;
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--muted);
+}
+
+.badge-status { white-space: nowrap; }
+
+.sse-record-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: .35rem .8rem;
+    margin: 0;
+}
+
+.sse-record-facts div { min-width: 0; }
+
+.sse-record-facts dt {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.sse-record-facts dd {
+    margin: .1rem 0 0;
+    font-size: .8rem;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.sse-record-block {
+    padding: .55rem .6rem;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+}
+
+.sse-block-title {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: .3rem;
+}
+
+.sse-block-body {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: var(--text);
+}
+
+.sse-muted { color: var(--muted); }
+
+.sse-note {
+    margin: .35rem 0 0;
+    font-size: .66rem;
+    color: var(--muted);
+    font-style: italic;
+}
+
+.sse-sample-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.sse-sample-list li {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    font-size: .75rem;
+}
+
+.sse-sample-kind {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-strong);
+    min-width: 84px;
+}
+
+.sse-gauge {
+    flex: 1 1 90px;
+    min-width: 70px;
+    height: 6px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.sse-gauge > span {
+    display: block;
+    height: 100%;
+    background: var(--muted);
+}
+
+.sse-gauge.is-good > span { background: var(--green-bright); }
+.sse-gauge.is-fair > span { background: var(--amber); }
+.sse-gauge.is-poor > span { background: var(--red); }
+
+.sse-sample-score {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--text-strong);
+}
+
+.sse-record-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    flex-wrap: wrap;
+    padding-top: .5rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.sse-sig {
+    font-family: var(--mono);
+    font-size: .66rem;
+    letter-spacing: .04em;
+    color: var(--amber);
+}
+
+.sse-sig.is-signed { color: var(--green-bright); }
+
+@media (max-width: 640px) {
+    .sse-record-grid { grid-template-columns: 1fr; padding: .5rem; }
+    .sse-sample-kind { min-width: 0; }
+}
+
+/* Correspondance liste de surveillance sur une fiche personne */
+.sse-record-block.sse-hit {
+    border-color: var(--amber);
+    background: var(--amber-dark);
+}
+
+.sse-record-block.sse-hit .sse-block-title { color: var(--amber); }
+
+.sse-hit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.sse-hit-list li {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    flex-wrap: wrap;
+    font-size: .78rem;
+}
+
+.sse-hit-score {
+    font-family: var(--mono);
+    font-size: .72rem;
+    color: var(--amber);
+    min-width: 38px;
+}
+
+.sse-hit-name {
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+/* Volumétrie par dossier (registre des dossiers) */
+.sse-count-set {
+    display: inline-flex;
+    gap: .55rem;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.sse-count-n {
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+/* Score de similarité (croisements) */
+.sse-score-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 120px;
+}
+
+.sse-score-cell .sse-gauge {
+    flex: 0 0 70px;
+    min-width: 70px;
+}
+
+/* Jauge de correspondance : un score élevé alerte, à l'inverse de la jauge
+   de qualité biométrique où un score élevé est favorable. Classes distinctes
+   pour éviter toute confusion de sémantique. */
+.sse-gauge.is-warn > span { background: var(--amber); }
+.sse-gauge.is-alert > span { background: var(--red); }

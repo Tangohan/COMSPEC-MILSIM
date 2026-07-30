@@ -2,7 +2,7 @@
     Panneau Zeus : infos + actions ATAK sur un joueur.
     Params: [_unit]
 */
-params [["_unit", objNull, [objNull]]];
+params [["_unit", objNull, [objNull]], ["_retried", false, [false]]];
 
 if (!hasInterface) exitWith { false };
 if (isNull _unit || {!(_unit isKindOf "CAManBase")}) exitWith {
@@ -14,7 +14,27 @@ if !(isPlayer _unit) exitWith {
     false
 };
 
-[] remoteExecCall ["comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars", _unit];
+// La synchronisation des identifiants doit précéder la lecture. « remoteExecCall » est
+// asynchrone : lire les variables sur les lignes suivantes renvoyait les valeurs de
+// l’ouverture précédente (ID ATAK vide à la première ouverture). Cible locale = appel
+// direct ; sinon on laisse un aller-retour réseau avant de construire le panneau.
+if (local _unit) then {
+    [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
+} else {
+    [] remoteExecCall ["comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars", _unit];
+};
+
+// Cible distante jamais synchronisée : une seule nouvelle tentative après l’aller-retour
+// réseau, puis on affiche ce qu’on a (jamais de boucle si le client ne répond pas).
+if (!(local _unit) && {!_retried} && {(_unit getVariable ["COMSPEC_AtakSyncAt", -1]) < 0}) exitWith {
+    ["Lecture des identifiants ATAK…", "system", "info"] call comspec_overwatch_connect_fnc_ambientHint;
+    [
+        { [_this, true] call comspec_overwatch_connect_fnc_zeusShowPlayerAtak },
+        _unit,
+        0.6
+    ] call CBA_fnc_waitAndExecute;
+    true
+};
 
 private _steam = getPlayerUID _unit;
 private _name = name _unit;

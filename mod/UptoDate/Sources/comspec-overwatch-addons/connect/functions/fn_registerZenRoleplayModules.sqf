@@ -6,6 +6,31 @@ if (!hasInterface) exitWith {};
 if (isNil "zen_custom_modules_fnc_register") exitWith {};
 if (missionNamespace getVariable ["COMSPEC_ZenRoleplayModulesRegistered", false]) exitWith {};
 
+// Les quatre zones existent déjà comme modules Zeus classiques (CfgVehicles,
+// scopeCurator = 2, catégorie COMSPEC_Roleplay). ZEN fusionne ses modules
+// personnalisés dans le même arbre : les enregistrer ici les affichait EN DOUBLE.
+// On ne double donc la déclaration que si les modules config sont absents de l’arbre.
+// Pour forcer malgré tout la variante ZEN (placement carte / objet / unité) :
+//   missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesForce", true];
+private _configModulesVisible = false;
+if (!(missionNamespace getVariable ["COMSPEC_ZenRoleplayModulesForce", false])) then {
+    {
+        if (getNumber (configFile >> "CfgVehicles" >> _x >> "scopeCurator") > 0) exitWith {
+            _configModulesVisible = true;
+        };
+    } forEach [
+        "COMSPEC_Module_NoCoverage",
+        "COMSPEC_Module_Interference",
+        "COMSPEC_Module_Degraded",
+        "COMSPEC_Module_Jammer"
+    ];
+};
+// Sortie au niveau du script (un exitWith dans un bloc « then » ne quitterait que ce bloc).
+if (_configModulesVisible) exitWith {
+    missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesRegistered", true];
+    ["INFO", "Zeus", "Modules zone ZEN ignorés — modules config déjà présents (anti-doublon)"] call comspec_overwatch_connect_fnc_log;
+};
+
 private _icon = "\A3\ui_f\data\map\markers\military\warning_CA.paa";
 
 private _place = {

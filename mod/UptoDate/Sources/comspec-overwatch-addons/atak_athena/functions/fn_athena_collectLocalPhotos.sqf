@@ -22,7 +22,8 @@ private _fnc_cleanPath = {
             _p = trim _p;
         };
     };
-    (_p splitString "/") joinString "\\"
+    // SQF n’a pas d’échappement : "\\" vaut DEUX antislashs. Le séparateur voulu est simple.
+    (_p splitString "/") joinString "\"
 };
 
 private _push = {

@@ -91,6 +91,17 @@ if exist "%SOURCES_DIR%\mavik_compat\config.cpp" (
     )
 )
 
+:: Couche SSE / interaction ACE - PBO optionnel (retirable sans toucher au reste)
+if exist "%SOURCES_DIR%\sse_ace\config.cpp" (
+    echo [BUILD] Compilation de comspec_overwatch_sse_ace... >> "%BUILD_LOG%"
+    echo [BUILD] Compilation de comspec_overwatch_sse_ace...
+    "%BUILDER_PATH%" "%SOURCES_DIR%\sse_ace" "%OUTPUT_DIR%\addons" -packonly -prefix=z\comspec_overwatch\addons\sse_ace >> "%BUILD_LOG%" 2>&1
+    if %ERRORLEVEL% NEQ 0 (
+        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel ignore. >> "%BUILD_LOG%"
+        echo [WARN] AddonBuilder sse_ace a echoue - PBO optionnel ignore.
+    )
+)
+
 :: 4. DLL a la racine du mod (Native AOT ~5 Mo ??? jamais le stub manag?? ~30 Ko)
 ::    Ne PAS copier *.pdb / net8.0 (fuite symbols + chemins) ??? pack Workshop : workshop-pack.ps1
 echo [DEPLOY] Transfert de la DLL COMSPECExtension_x64... >> "%BUILD_LOG%"
@@ -143,11 +154,13 @@ if exist "%ARMA_PATH%" (
             if exist "%%~T\addons\main" rd /s /q "%%~T\addons\main"
             if exist "%%~T\addons\atak_athena" rd /s /q "%%~T\addons\atak_athena"
             if exist "%%~T\addons\mavik_compat" rd /s /q "%%~T\addons\mavik_compat"
+            if exist "%%~T\addons\sse_ace" rd /s /q "%%~T\addons\sse_ace"
             if exist "%%~T\addons\connect.pbo.pbo" del /f /q "%%~T\addons\connect.pbo.pbo"
             copy /Y "%OUTPUT_DIR%\addons\connect.pbo" "%%~T\addons\connect.pbo" >> "%BUILD_LOG%" 2>&1
             copy /Y "%OUTPUT_DIR%\addons\main.pbo" "%%~T\addons\main.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\addons\atak_athena.pbo" copy /Y "%OUTPUT_DIR%\addons\atak_athena.pbo" "%%~T\addons\atak_athena.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\addons\mavik_compat.pbo" copy /Y "%OUTPUT_DIR%\addons\mavik_compat.pbo" "%%~T\addons\mavik_compat.pbo" >> "%BUILD_LOG%" 2>&1
+            if exist "%OUTPUT_DIR%\addons\sse_ace.pbo" copy /Y "%OUTPUT_DIR%\addons\sse_ace.pbo" "%%~T\addons\sse_ace.pbo" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\COMSPECExtension_x64.dll" copy /Y "%OUTPUT_DIR%\COMSPECExtension_x64.dll" "%%~T\COMSPECExtension_x64.dll" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\mod.cpp" copy /Y "%OUTPUT_DIR%\mod.cpp" "%%~T\mod.cpp" >> "%BUILD_LOG%" 2>&1
             if exist "%OUTPUT_DIR%\logo.paa" copy /Y "%OUTPUT_DIR%\logo.paa" "%%~T\logo.paa" >> "%BUILD_LOG%" 2>&1

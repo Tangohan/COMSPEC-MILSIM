@@ -593,6 +593,15 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
 ] call CBA_fnc_addSetting;
 
 [
+    "comspec_sse_require_item", "CHECKBOX",
+    [
+        "Terminal SEEK requis",
+        "Exige l’objet « Terminal biométrique SEEK » dans l’inventaire pour ouvrir une fiche de renseignement. Décochez pour conserver l’accès sans objet."
+    ],
+    ["COMSPEC Overwatch", "Renseignement SSE"], true
+] call CBA_fnc_addSetting;
+
+[
     "COMSPEC Overwatch - Ordres", "comspec_order_compose_key",
     ["Ouvrir rédaction d’ordre / FRAGO", "Ouvre la mini-fenêtre contextuelle pour écrire et envoyer un ordre (chefs d’unité)."],
     {

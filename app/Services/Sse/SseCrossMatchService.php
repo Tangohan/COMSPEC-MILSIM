@@ -9,6 +9,9 @@ use App\Repositories\SseWatchlistRepository;
 
 final class SseCrossMatchService
 {
+    /** Score minimal retenu comme correspondance. */
+    public const MATCH_THRESHOLD = 60;
+
     public function __construct(
         private ?SseWatchlistRepository $watchlist = null,
         private ?SsePersonRepository $persons = null,
@@ -29,7 +32,7 @@ final class SseCrossMatchService
             $matches = [];
             foreach ($entries as $entry) {
                 $hit = $this->score($person, $entry);
-                if ($hit['score'] >= 60) {
+                if ($hit['score'] >= self::MATCH_THRESHOLD) {
                     $matches[] = $hit;
                 }
             }
@@ -40,6 +43,27 @@ final class SseCrossMatchService
         }
 
         return $out;
+    }
+
+    /**
+     * Croisement d'une seule fiche — appelé à l'enregistrement terrain.
+     * Le seuil est le même que la vue portail : une correspondance faible n'en est pas une.
+     *
+     * @param array<string, mixed> $person
+     * @return list<array{entry: array<string, mixed>, score: int, reason: string}>
+     */
+    public function matchOne(array $person, int $tenantId): array
+    {
+        $matches = [];
+        foreach ($this->watchlist->listActive($tenantId) as $entry) {
+            $hit = $this->score($person, $entry);
+            if ($hit['score'] >= self::MATCH_THRESHOLD) {
+                $matches[] = $hit;
+            }
+        }
+        usort($matches, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+
+        return $matches;
     }
 
     /**
