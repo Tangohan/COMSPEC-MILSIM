@@ -15,6 +15,7 @@ use App\Repositories\SseSiteRepository;
 use App\Repositories\SseWatchlistRepository;
 use App\Services\Sse\SseAccessCodeService;
 use App\Services\Sse\SseCasePdfService;
+use App\Services\Sse\SseCorrelationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Sse\SseReportService;
 
@@ -30,6 +31,7 @@ final class SsePortalController
         private ?SseCrossMatchService $cross = null,
         private ?SseCasePdfService $pdf = null,
         private ?SseReportService $reports = null,
+        private ?SseCorrelationService $correlation = null,
     ) {
         $this->access ??= new SseAccessCodeService();
         $this->codes ??= new SseAccessCodeRepository();
@@ -40,6 +42,7 @@ final class SsePortalController
         $this->cross ??= new SseCrossMatchService();
         $this->pdf ??= new SseCasePdfService();
         $this->reports ??= new SseReportService();
+        $this->correlation ??= new SseCorrelationService();
     }
 
     /** Sas d’entrée (public) */
@@ -448,6 +451,82 @@ final class SsePortalController
             'canExport' => $this->canExport(),
             'activeNav' => 'dossiers',
         ]);
+    }
+
+    /** Graphe de corrélation du dossier. */
+    public function caseCorrelations(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $case = $this->requireCase($id);
+        if ($case === null) {
+            Session::flash('error', 'Dossier introuvable ou hors de votre périmètre.');
+
+            return Response::redirect(url('atak/sse/dossiers'));
+        }
+
+        $graph = $this->correlation->graphForCase($id, $this->tenantId());
+
+        return $this->portalView('atak.sse.case_correlations', [
+            'title' => 'Corrélations — ' . ($case['reference_code'] ?? ''),
+            'case' => $case,
+            'nodes' => $graph['nodes'],
+            'edges' => $graph['edges'],
+            'stored' => $this->correlation->listStored($id, $this->tenantId()),
+            'relationLabels' => SseCorrelationService::RELATION_LABELS,
+            'reliabilityLabels' => SseCorrelationService::RELIABILITY_LABELS,
+            'canManage' => $this->canManage(),
+            'canGrant' => $this->canGrant(),
+            'canExport' => $this->canExport(),
+            'activeNav' => 'dossiers',
+        ]);
+    }
+
+    /** Pose une relation d'analyste sur le dossier. */
+    public function caseRelationStore(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/correlations');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $ok = $this->correlation->addRelation($this->tenantId(), $id, [
+            'from_type' => 'person',
+            'from_id' => (int) $request->input('from_id', 0),
+            'to_type' => 'person',
+            'to_id' => (int) $request->input('to_id', 0),
+            'relation' => (string) $request->input('relation', 'associe'),
+            'reliability' => (string) $request->input('reliability', 'unverified'),
+            'note' => (string) $request->input('note', ''),
+            'author_label' => (string) (Session::get('display_name') ?? Session::get('callsign') ?? 'Analyste'),
+        ]);
+
+        Session::flash($ok ? 'success' : 'error', $ok
+            ? 'Relation enregistrée.'
+            : 'Relation refusée — vérifiez les deux personnes désignées.');
+
+        return Response::redirect($back);
+    }
+
+    /** Retire une relation posée. */
+    public function caseRelationDelete(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $back = url('atak/sse/dossiers/' . $id . '/correlations');
+
+        if (!$this->canManage() || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            Session::flash('error', 'Action non autorisée.');
+
+            return Response::redirect($back);
+        }
+
+        $this->correlation->deleteRelation((int) ($params['relationId'] ?? 0), $this->tenantId());
+        Session::flash('success', 'Relation retirée.');
+
+        return Response::redirect($back);
     }
 
     public function sitesIndex(Request $request, array $params = []): Response

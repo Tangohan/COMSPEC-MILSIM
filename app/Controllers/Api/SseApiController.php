@@ -12,6 +12,7 @@ use App\Repositories\SsePersonRepository;
 use App\Repositories\SseSiteRepository;
 use App\Repositories\TenantAtakConfigRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Sse\SseAutomationService;
 use App\Services\Sse\SseCrossMatchService;
 use App\Services\Tactical\AtakActivityLogService;
 use App\Support\AtakArmaWriteGuard;
@@ -32,6 +33,7 @@ final class SseApiController
         private ?SsePersonRepository $persons = null,
         private ?SseCaseRepository $cases = null,
         private ?SseCrossMatchService $cross = null,
+        private ?SseAutomationService $automation = null,
         private ?SseSiteRepository $sites = null,
         private ?AtakArmaWriteGuard $armaGuard = null,
         private ?AtakActivityLogService $activityLog = null,
@@ -41,6 +43,7 @@ final class SseApiController
         $this->persons ??= new SsePersonRepository();
         $this->cases ??= new SseCaseRepository();
         $this->cross ??= new SseCrossMatchService();
+        $this->automation ??= new SseAutomationService();
         $this->sites ??= new SseSiteRepository();
         $this->armaGuard ??= new AtakArmaWriteGuard();
         $this->activityLog ??= new AtakActivityLogService();
@@ -138,6 +141,7 @@ final class SseApiController
         // Classement : code dossier saisi sur le terrain.
         $caseCode = strtoupper(trim((string) ($body['case_code'] ?? '')));
         $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
+        $filedCaseId = null;
         if ($caseCode !== '') {
             $case = $this->cases->findByReferenceCode($tenantId, $caseCode);
             if ($case !== null) {
@@ -149,6 +153,7 @@ final class SseApiController
                     'Classement depuis le terminal SEEK'
                 );
                 $filing['linked'] = true;
+                $filedCaseId = (int) $case['id'];
                 $filing['case'] = [
                     'id' => (int) $case['id'],
                     'reference_code' => (string) ($case['reference_code'] ?? ''),
@@ -205,6 +210,37 @@ final class SseApiController
             ),
             (string) ($data['submitter_callsign'] ?? 'Terrain')
         );
+
+        // Automatismes : classement de secours, doublons, escalade, co-présence.
+        // Ils s'exécutent après l'enregistrement — une règle qui échoue ne doit
+        // jamais faire perdre la fiche que le terrain vient de transmettre.
+        if (is_array($person)) {
+            try {
+                $applied = $this->automation->onPersonRecorded(
+                    $tenantId,
+                    $mapId,
+                    $person,
+                    $person['watchlist'] ?? [],
+                    $filedCaseId,
+                    (string) ($data['submitter_callsign'] ?? 'Terrain')
+                );
+                if ($applied !== []) {
+                    $person['automation'] = $applied;
+                    // Le classement de secours doit se voir sur le terminal : c'est
+                    // la seule action automatique dont l'opérateur a besoin sur place.
+                    foreach ($applied as $a) {
+                        if (($a['rule'] ?? '') === 'A1') {
+                            $filing['linked'] = true;
+                            $filing['auto'] = true;
+                            $filing['message'] = $a['detail'];
+                        }
+                    }
+                    $person['filing'] = $filing;
+                }
+            } catch (\Throwable) {
+                // Silencieux côté terrain : la fiche est enregistrée, c'est l'essentiel.
+            }
+        }
 
         return Response::json($person, 201);
     }
@@ -514,9 +550,21 @@ final class SseApiController
             return Response::json(['error' => 'not_found', 'message' => 'Pièce introuvable.'], 404);
         }
 
-        $site = $this->sites->findById((int) ($params['id'] ?? 0), $r);
+        $siteId = (int) ($params['id'] ?? 0);
+        $site = $this->sites->findById($siteId, $r);
 
-        return Response::json(['ok' => true, 'site' => $site]);
+        $automation = [];
+        try {
+            $automation = $this->automation->onSiteProgress(
+                $r,
+                (int) ($site['context_id'] ?? 1),
+                $siteId,
+                (string) ($body['submitter_callsign'] ?? 'Terrain')
+            );
+        } catch (\Throwable) {
+        }
+
+        return Response::json(['ok' => true, 'site' => $site, 'automation' => $automation]);
     }
 
     /** Verse une saisie au dossier site. */
@@ -548,14 +596,30 @@ final class SseApiController
         }
 
         $created = 0;
+        $automation = [];
+        $callsign = (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain');
         foreach ($items as $item) {
             if (!is_array($item)) {
                 continue;
             }
             $item['site_id'] = $siteId;
-            $item['actor_callsign'] = $item['actor_callsign'] ?? $body['submitter_callsign'] ?? $actor['callsign'] ?? null;
-            $this->sites->addSeizure($tenantId, $item);
+            $item['actor_callsign'] = $item['actor_callsign'] ?? $callsign;
+            $seizureId = $this->sites->addSeizure($tenantId, $item);
             $created++;
+
+            // Certaines natures de saisie appellent une remontée immédiate, sans
+            // attendre la clôture du site.
+            try {
+                $stored = $this->sites->findSeizure((int) $seizureId, $tenantId) ?? $item;
+                $automation = array_merge($automation, $this->automation->onSeizureRecorded(
+                    $tenantId,
+                    (int) ($this->mapId($request)),
+                    $siteId,
+                    $stored,
+                    $callsign
+                ));
+            } catch (\Throwable) {
+            }
         }
 
         $site = $this->sites->findById($siteId, $tenantId);
@@ -564,10 +628,15 @@ final class SseApiController
             (int) ($site['context_id'] ?? 1),
             'SSE_SEIZURE',
             sprintf('%d saisie(s) versée(s) au site %s', $created, $site['reference_code'] ?? ''),
-            (string) ($body['submitter_callsign'] ?? $actor['callsign'] ?? 'Terrain')
+            $callsign
         );
 
-        return Response::json(['ok' => true, 'created' => $created, 'site' => $site], 201);
+        return Response::json([
+            'ok' => true,
+            'created' => $created,
+            'site' => $site,
+            'automation' => $automation,
+        ], 201);
     }
 
     /** Clôture le site et fige le compte rendu cinq lignes. */

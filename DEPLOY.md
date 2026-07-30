@@ -272,6 +272,36 @@ Les fichiers `public/assets/video/hero-athena*.mp4` sont en HEVC / QuickTime et
 | `views/atak/sse/case_report.php` | **Nouveau** — écran compte rendu |
 | `views/atak/sse/case_show.php` | Blocs sites rattachés et produits |
 
+### Corrélation et automatismes SSE 1.4.14
+
+Nouveau service d'automatismes + graphe de corrélation. La table `sse_relations` est
+créée par la migration SSE (§ 1) : **uploader `bootstrap/atak_sse_persons_migration.php`
+avant** de rejouer les migrations, sinon la page corrélations ne stockera rien.
+
+| Fichier | Rôle |
+|---|---|
+| `app/Services/Sse/SseCorrelationService.php` | **Nouveau** — graphe du dossier, arêtes déduites + posées |
+| `app/Services/Sse/SseAutomationService.php` | **Nouveau** — règles A1 à A6 |
+| `app/Repositories/SseSiteRepository.php` | `findSeizure()` — nature normalisée pour les automatismes |
+| `app/Controllers/Web/SsePortalController.php` | Écran corrélations, pose et retrait de relation |
+| `app/Controllers/Api/SseApiController.php` | Déclenchement des automatismes, champ `automation` |
+| `bootstrap/atak_sse_persons_migration.php` | Table `sse_relations` |
+| `routes/web.php` | `/atak/sse/dossiers/{id}/correlations` (+ POST et suppression) |
+| `views/atak/sse/case_correlations.php` | **Nouveau** — écran corrélations |
+| `views/atak/sse/case_show.php` | Bouton « Voir les corrélations » |
+| `public/assets/css/sse_portal.css` | Styles graphe, arêtes, formulaire de relation |
+
+**Ordre d'upload** : le service `SseCorrelationService.php` est référencé par
+`SseAutomationService.php` **et** par la vue. Uploader les deux services avant la vue
+et les routes, sinon la page 500 le temps du transfert.
+
+Post-check :
+
+- [ ] `/atak/sse/dossiers/{id}/correlations` s'ouvre sans erreur
+- [ ] La table `sse_relations` existe
+- [ ] Une fiche transmise sans code dossier, avec **un seul** dossier ouvert, y arrive seule
+- [ ] Le journal d'activité montre une ligne `SSE_AUTO` après ce classement
+
 ### Fichier orphelin (ne pas uploader seul)
 
 | Fichier | Note |

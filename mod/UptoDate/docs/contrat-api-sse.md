@@ -345,3 +345,94 @@ Le verdict est déterministe côté jeu : il dérive d'une graine stable par ent
 (`COMSPEC_SSE_Seed`), pour qu'une même personne interrogée deux fois donne le même
 résultat. Le chef de mission peut l'imposer via `COMSPEC_SSE_MatchResult`,
 `COMSPEC_SSE_Confidence` et `COMSPEC_SSE_RecordRef`.
+
+---
+
+## Corrélation et automatismes (1.4.14)
+
+### Table `sse_relations`
+
+Arêtes **posées** — par un analyste depuis le portail, ou par un automatisme.
+
+| Colonne | Rôle |
+|---|---|
+| `from_type` / `from_id`, `to_type` / `to_id` | Extrémités ; types `person`, `site`, `room`, `seizure` |
+| `relation` | `present`, `recovered`, `found_at`, `associe`, `possede`, `contact`, `membre`, `mentionne`, `co_presence`, `meme_individu` |
+| `reliability` | `unverified`, `corroborated`, `confirmed`, `conflicting` |
+| `author_label` | Discriminant de provenance — la valeur `Automatisme` marque une arête posée par une règle |
+| `note` | Sur quoi repose le lien |
+
+Clé unique `(tenant_id, from_type, from_id, to_type, to_id, relation)` : réenregistrer
+la même arête met à jour la fiabilité et la note plutôt que de dupliquer.
+
+**Les arêtes déduites ne sont pas stockées.** « Saisie recueillie sur P02 », « objet
+trouvé en pièce 03 », « P01 rattaché au site A » existent déjà dans les données ; les
+stocker créerait un doublon qui se périme dès qu'une saisie est corrigée. Elles sont
+recalculées à chaque lecture par `SseCorrelationService::graphForCase()`.
+
+### Champ `automation` des réponses
+
+`POST /api/sse/persons`, `POST /api/sse/sites/{id}/rooms/{roomId}` et
+`POST /api/sse/sites/{id}/seizures` renvoient ce que les règles ont fait :
+
+```json
+{
+  "automation": [
+    {
+      "rule": "A1",
+      "label": "Classement automatique",
+      "detail": "Sujet non identifié classée au dossier SSE-2026-0007 : c'était le seul dossier ouvert."
+    }
+  ]
+}
+```
+
+`detail` est un libellé métier en français, directement affichable — le terminal n'a
+aucune correspondance code → texte à maintenir de son côté.
+
+Sur `POST /api/sse/persons`, un classement automatique (règle `A1`) est aussi reporté
+dans `filing` : `linked = true`, `auto = true`, `message` = le libellé. C'est la seule
+action automatique dont le terrain a besoin sur place.
+
+### Règles
+
+| Règle | Déclencheur | Effet |
+|---|---|---|
+| `A1` | Fiche sans code dossier | Rattachement si **un seul** dossier ouvert |
+| `A2` | Relevé biométrique déjà versé sous la même référence de laboratoire | Signalement + relation `meme_individu` (`corroborated`) |
+| `A3` | Croisement watchlist ≥ `HARD_MATCH_SCORE` (85) | Dossier `ouvert` → `en_cours`, note déposée |
+| `A4` | Fiches du même dossier à moins de `CO_PRESENCE_MINUTES` (45) | Relations `co_presence` (`unverified`), plafond `CO_PRESENCE_MAX_LINKS` (5) |
+| `A5` | Toutes les pièces de la checklist cochées | Signalement « prêt pour clôture » |
+| `A6` | Saisie de nature `arme`, `munition`, `numerique`, `document` | Remontée immédiate + note de dossier |
+
+Aucune règle ne clôt un site, ne fusionne des fiches, ni ne déclare une identité.
+Un échec de règle n'échoue jamais la requête : la fiche transmise est enregistrée
+d'abord, les automatismes tournent ensuite.
+
+### Portail
+
+`GET/POST /atak/sse/dossiers/{id}/correlations` et
+`POST /atak/sse/dossiers/{id}/correlations/{relationId}/supprimer`.
+La page distingue les trois provenances — déduit, automatisme, analyste — et ne les
+confond jamais visuellement.
+
+### Configuration mission maker
+
+Variables d'unité lues côté jeu, toutes réglables depuis Eden (attributs
+« COMSPEC — Exploitation SSE ») ou Zeus (module « Profil d'identité SSE ») :
+
+| Variable | Type | Effet |
+|---|---|---|
+| `COMSPEC_SSE_Seed` | Number | Graine fixe ; 0 = dérivée de l'identifiant réseau |
+| `COMSPEC_SSE_MatchResult` | String | `none` / `possible` / `confirmed` |
+| `COMSPEC_SSE_Confidence` | Number | 0-100 ; absente = calculée sur la qualité des relevés |
+| `COMSPEC_SSE_RecordRef` | String | Référence de dossier antérieur affichée |
+| `COMSPEC_SSE_LastName`, `_FirstName`, `_Alias` | String | État civil proposé |
+| `COMSPEC_SSE_Nationality`, `_Language` | String | Nationalité déclarée, langue parlée |
+
+Variable de mission : `COMSPEC_SSE_ActiveCase` (String, publique) — dossier de
+rattachement de l'élément.
+
+Point d'entrée unique côté SQF : `comspec_overwatch_connect_fnc_sseApplyProfile`,
+whitelistée en `remoteExec`. Les champs vides ne sont pas écrits, un profil partiel
+complète la génération déterministe au lieu de l'écraser.

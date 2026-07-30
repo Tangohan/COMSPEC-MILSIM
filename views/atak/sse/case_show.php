@@ -285,6 +285,9 @@ $classBadge = match ($classKey) {
         <a class="btn" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/compte-rendu')) ?>">
             Ouvrir le compte rendu
         </a>
+        <a class="btn btn--ghost" href="<?= $h(url('atak/sse/dossiers/' . $case['id'] . '/correlations')) ?>">
+            Voir les corrélations
+        </a>
     </div>
 </section>
 

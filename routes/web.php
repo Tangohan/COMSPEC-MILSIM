@@ -559,6 +559,9 @@ return function (Router $router) {
     $router->post('/atak/sse/dossiers/{id}/preuves', [SsePortalController::class, 'caseAddEvidence'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/pdf', [SsePortalController::class, 'casePdf'], $mwSsePortal);
     $router->get('/atak/sse/dossiers/{id}/compte-rendu', [SsePortalController::class, 'caseReport'], $mwSsePortal);
+    $router->get('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseCorrelations'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/correlations', [SsePortalController::class, 'caseRelationStore'], $mwSsePortal);
+    $router->post('/atak/sse/dossiers/{id}/correlations/{relationId}/supprimer', [SsePortalController::class, 'caseRelationDelete'], $mwSsePortal);
     $router->get('/atak/sse/personnes', [SsePortalController::class, 'personsIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites', [SsePortalController::class, 'sitesIndex'], $mwSsePortal);
     $router->get('/atak/sse/sites/{id}', [SsePortalController::class, 'siteShow'], $mwSsePortal);

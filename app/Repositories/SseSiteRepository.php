@@ -254,6 +254,28 @@ final class SseSiteRepository
     }
 
     /**
+     * Saisie unique, catégorie déjà traduite — nécessaire aux automatismes qui
+     * jugent sur la nature normalisée, pas sur ce que le terrain a tapé.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findSeizure(int $id, int $tenantId): ?array
+    {
+        $row = $this->db->fetchOne(
+            'SELECT * FROM sse_seizures WHERE id = :id AND tenant_id = :t',
+            ['id' => $id, 't' => $tenantId]
+        );
+        if (!$row) {
+            return null;
+        }
+        $cat = self::normalizeSeizureCategory((string) ($row['category'] ?? 'autre'));
+        $row['category'] = $cat;
+        $row['category_label'] = self::SEIZURE_LABELS[$cat] ?? 'Autre';
+
+        return $row;
+    }
+
+    /**
      * Clôture : le compte rendu est figé et le site n'accepte plus de saisie côté portail.
      */
     public function close(int $siteId, int $tenantId, ?string $summary, ?string $actor = null): bool

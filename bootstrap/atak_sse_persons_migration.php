@@ -298,6 +298,33 @@ return static function (PDO $pdo): void {
         $log("  [OK] index idx_sse_rooms_tenant\n");
     }
 
+    // Relations d'exploitation : arêtes posées à la main par l'analyste. Les arêtes
+    // déduites des données (saisie trouvée sur une personne, dans une pièce…) ne sont
+    // pas stockées — elles sont recalculées à la lecture, donc jamais périmées.
+    if (!$tableExists($pdo, 'sse_relations') && $tableExists($pdo, 'sse_persons')) {
+        $pdo->exec(
+            "CREATE TABLE sse_relations (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                tenant_id INT UNSIGNED NOT NULL,
+                case_id INT UNSIGNED DEFAULT NULL,
+                from_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                from_id INT UNSIGNED NOT NULL,
+                to_type VARCHAR(16) NOT NULL DEFAULT 'person',
+                to_id INT UNSIGNED NOT NULL,
+                relation VARCHAR(32) NOT NULL DEFAULT 'associe',
+                reliability VARCHAR(16) NOT NULL DEFAULT 'unverified',
+                note VARCHAR(255) DEFAULT NULL,
+                author_label VARCHAR(80) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uniq_sse_relation (tenant_id, from_type, from_id, to_type, to_id, relation),
+                KEY idx_sse_relations_case (tenant_id, case_id),
+                CONSTRAINT fk_sse_relations_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+        $log("  [OK] sse_relations\n");
+    }
+
     if (!$tableExists($pdo, 'sse_biometric_samples') && $tableExists($pdo, 'sse_persons')) {
         $pdo->exec(
             "CREATE TABLE sse_biometric_samples (

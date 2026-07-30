@@ -2,7 +2,7 @@
 
 Documentation officielle du pack **@COMSPECOverwatch** (Arma 3 + portail Athena).
 
-**Version pack documentée : 1.4.11** · Dernière mise à jour : juillet 2026
+**Version pack documentée : 1.4.13** · Dernière mise à jour : juillet 2026
 
 ---
 
@@ -14,6 +14,7 @@ Documentation officielle du pack **@COMSPECOverwatch** (Arma 3 + portail Athena)
 | [Guide chef de mission / Zeus](guide-chef-mission.md) | Éditeur, Zeus, staff OP |
 | [Réalisme liaison ATAK](realisme-liaison-atak.md) | Staff realism, admins liaison |
 | [Terminal SSE & renseignement](terminal-sse-renseignement.md) | HUMINT, MP, renseignement (vision + roadmap) |
+| [Guide SSE — chef de mission, Zeus, automatismes](guide-sse-chef-mission.md) | Éditeur, Zeus, analystes SSE |
 | [Philosophie technique — indépendance, couche, interop, API](philosophie-technique.md) | Moddeurs, intégrateurs, dev portail |
 | [Architecture du mod](architecture-et-addons.md) | Moddeurs, intégrateurs |
 | [Compilation & publication](compilation-et-publication.md) | Build local, Workshop |
