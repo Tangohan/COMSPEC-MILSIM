@@ -73,11 +73,24 @@ $total = count($persons);
                 $samples = is_array($p['biometric_samples'] ?? null) ? $p['biometric_samples'] : [];
                 $lesions = is_array($med['lesions'] ?? null) ? $med['lesions'] : [];
                 $hits = is_array($p['watchlist'] ?? null) ? $p['watchlist'] : [];
+                $custody = is_array($p['custody'] ?? null) ? $p['custody'] : [];
+                $photo = is_array($p['primary_photo'] ?? null) ? $p['primary_photo'] : null;
+                $photoUrl = $photo !== null ? (string) ($photo['url'] ?? '') : '';
                 $statusSlug = (string) ($p['status'] ?? 'civil');
             ?>
                 <article class="sse-record" data-status="<?= $h($statusSlug) ?>">
                     <header class="sse-record-head">
-                        <div>
+                        <?php if ($photoUrl !== ''): ?>
+                            <a class="sse-mugshot" href="<?= $h($photoUrl) ?>" target="_blank" rel="noopener"
+                               title="<?= $h($photo['angle_label'] ?? 'Photographie') ?>">
+                                <img src="<?= $h($photoUrl) ?>"
+                                     alt="Photographie de <?= $h($p['display_name'] ?? 'la personne') ?>"
+                                     loading="lazy">
+                            </a>
+                        <?php else: ?>
+                            <span class="sse-mugshot is-empty" aria-hidden="true">—</span>
+                        <?php endif; ?>
+                        <div class="sse-record-ident">
                             <span class="record-name"><?= $h($p['display_name'] ?? '') ?></span>
                             <span class="record-sub">
                                 Fiche n° <?= $h(str_pad((string) ($p['id'] ?? 0), 4, '0', STR_PAD_LEFT)) ?>
@@ -165,6 +178,28 @@ $total = count($persons);
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($custody !== []): ?>
+                        <div class="sse-record-block">
+                            <div class="sse-block-title">Chaîne de possession</div>
+                            <ol class="sse-custody">
+                                <?php foreach ($custody as $ev): ?>
+                                    <li>
+                                        <span class="sse-custody-when">
+                                            <?= $h(substr((string) ($ev['created_at'] ?? ''), 0, 16)) ?>
+                                        </span>
+                                        <span class="sse-custody-what"><?= $h($ev['type_label'] ?? '') ?></span>
+                                        <?php if (!empty($ev['label'])): ?>
+                                            <span class="sse-muted"><?= $h($ev['label']) ?></span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($ev['actor'])): ?>
+                                            <span class="sse-custody-who"><?= $h($ev['actor']) ?></span>
+                                        <?php endif; ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ol>
                         </div>
                     <?php endif; ?>
 

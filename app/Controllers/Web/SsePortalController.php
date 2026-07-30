@@ -384,13 +384,18 @@ final class SsePortalController
             'limit' => 100,
         ]);
 
+        // Chaîne de possession : une seule requête pour tout le registre.
+        $custody = $this->persons->custodyEventsForPersons(
+            array_map(static fn (array $p): int => (int) ($p['id'] ?? 0), $list),
+            $tenantId
+        );
+
         // Relevés biométriques simulés + croisement listes de surveillance.
         foreach ($list as $i => $p) {
-            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples(
-                (int) ($p['id'] ?? 0),
-                $tenantId
-            );
+            $pid = (int) ($p['id'] ?? 0);
+            $list[$i]['biometric_samples'] = $this->persons->listBiometricSamples($pid, $tenantId);
             $list[$i]['watchlist'] = $this->cross->matchOne($p, $tenantId);
+            $list[$i]['custody'] = $custody[$pid] ?? [];
         }
 
         return $this->portalView('atak.sse.persons', [

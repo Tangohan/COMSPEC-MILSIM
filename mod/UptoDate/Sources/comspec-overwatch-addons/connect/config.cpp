@@ -40,6 +40,7 @@ class CfgFunctions {
             class sseSignAtak {};
             class sseOpenTerminal {};
             class sseHasTerminalItem {};
+            class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
             class casRequestShow {};
@@ -329,6 +330,7 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_applyZeusAtakEffect { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_relayZeusAtakEffect { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
+        class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
     };
     class Commands {
         mode = 1;

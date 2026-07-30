@@ -1878,3 +1878,82 @@ body.sse-theme-console .flash {
    pour éviter toute confusion de sémantique. */
 .sse-gauge.is-warn > span { background: var(--amber); }
 .sse-gauge.is-alert > span { background: var(--red); }
+
+/* Portrait d'enrôlement — pièce centrale d'une fiche personne */
+.sse-mugshot {
+    flex: 0 0 auto;
+    display: block;
+    width: 56px;
+    height: 68px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.sse-mugshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(.25) contrast(1.05);
+}
+
+.sse-mugshot.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    color: var(--muted);
+}
+
+.sse-record-head { gap: .65rem; }
+.sse-record-ident { flex: 1 1 auto; min-width: 0; }
+
+/* Chaîne de possession */
+.sse-custody {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 .6rem;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.sse-custody li {
+    display: flex;
+    align-items: baseline;
+    gap: .45rem;
+    flex-wrap: wrap;
+    font-size: .74rem;
+    position: relative;
+}
+
+.sse-custody li::before {
+    content: "";
+    position: absolute;
+    left: -.72rem;
+    top: .38em;
+    width: 5px;
+    height: 5px;
+    background: var(--green);
+    border-radius: 50%;
+}
+
+.sse-custody-when {
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--muted);
+    min-width: 92px;
+}
+
+.sse-custody-what {
+    color: var(--text-strong);
+    font-weight: 600;
+}
+
+.sse-custody-who {
+    font-family: var(--mono);
+    font-size: .66rem;
+    color: var(--green);
+}

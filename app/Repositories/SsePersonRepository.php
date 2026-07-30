@@ -313,6 +313,61 @@ final class SsePersonRepository
         return true;
     }
 
+    /**
+     * Chaîne de possession pour plusieurs fiches, en une requête.
+     * Les événements sont écrits depuis la 1.4.0 (capture, photo, biométrie) mais
+     * n'étaient affichés nulle part.
+     *
+     * @param list<int> $personIds
+     * @return array<int, list<array{type: string, type_label: string, label: string, actor: ?string, created_at: ?string}>>
+     */
+    public function custodyEventsForPersons(array $personIds, int $tenantId): array
+    {
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $personIds),
+            static fn (int $i): bool => $i > 0
+        )));
+        if ($ids === []) {
+            return [];
+        }
+        $in = implode(',', $ids);
+
+        try {
+            $rows = $this->db->fetchAll(
+                "SELECT person_id, event_type, label, actor_callsign, created_at
+                 FROM sse_custody_events
+                 WHERE tenant_id = :t AND person_id IN ({$in})
+                 ORDER BY id ASC",
+                ['t' => $tenantId]
+            );
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $labels = [
+            'capture' => 'Prise en compte',
+            'biometrie_sim' => 'Relevé biométrique',
+            'photo' => 'Photographie',
+            'transfert' => 'Transfert de garde',
+            'liberation' => 'Remise en liberté',
+        ];
+
+        $out = [];
+        foreach ($rows as $row) {
+            $pid = (int) ($row['person_id'] ?? 0);
+            $type = (string) ($row['event_type'] ?? 'capture');
+            $out[$pid][] = [
+                'type' => $type,
+                'type_label' => $labels[$type] ?? 'Événement',
+                'label' => (string) ($row['label'] ?? ''),
+                'actor' => $row['actor_callsign'] ?? null,
+                'created_at' => $row['created_at'] ?? null,
+            ];
+        }
+
+        return $out;
+    }
+
     private function addCustodyEvent(
         int $tenantId,
         ?int $personId,
