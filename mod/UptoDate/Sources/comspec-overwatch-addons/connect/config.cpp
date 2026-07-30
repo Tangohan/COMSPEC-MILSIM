@@ -42,6 +42,7 @@ class CfgFunctions {
             class sseHasTerminalItem {};
             class sseIdentityQuery {};
             class sseUnitSeed {};
+            class sseTerminalPage {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};

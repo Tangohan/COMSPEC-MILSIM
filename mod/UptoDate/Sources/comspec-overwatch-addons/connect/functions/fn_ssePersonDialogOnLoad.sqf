@@ -180,4 +180,5 @@ uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
 uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
 (_disp displayCtrl 9518) ctrlSetText (profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""]);
 
-[] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+// Le terminal s'ouvre sur son accueil ; la page pose aussi la visibilité initiale.
+[0] call comspec_overwatch_connect_fnc_sseTerminalPage;
